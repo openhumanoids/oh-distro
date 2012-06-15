@@ -3,6 +3,5 @@
 
 externals
 #drc_lcmtypes
-envoy_lcmtypes
 #core
 #drivers
