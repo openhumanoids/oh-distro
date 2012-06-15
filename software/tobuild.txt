@@ -2,7 +2,7 @@
 # and lines starting with '#' are ignored
 
 externals
-drc_lcmtypes
+#drc_lcmtypes
 envoy_lcmtypes
-core
-drivers
+#core
+#drivers
