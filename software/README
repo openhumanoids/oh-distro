@@ -1,0 +1,137 @@
+HOLDER FOR DRC README - MFALLON JUNE 2012
+==========================
+
+This is the code base for the Envoy project. 
+
+Overview
+========
+
+envoy is a collection of several pieces of software (pods).  Some pods
+may depend on others.  The current list of pods is:
+
+
+
+External Dependencies
+====================
+
+In addition to providing its own pods, envoy depends upon third party
+pod collections via an svn:externals dependency for
+envoy/software/collections. These include
+
+  libot2
+  ======
+
+  bot2-core       C library with some simple but useful routines,
+                  and a set of core message types (LCM types).
+
+  bot2-vis        C library of classes and functions for visualizing data
+                  with OpenGL and GTK2.
+
+  bot2-lcmgl      Transmitting and rendering OpenGL commands over LCM.
+
+  bot2-procman    Process management tools for controlling many processes 
+                  on one or many workstations.
+
+  bot2-lcm-utils  LCM utility programs (tunnel LCM over TCP, chop or splice
+                  log files, etc.)
+
+Requirements
+============
+
+  (This list may not be up-to-date. See the individual README files in
+  the third party pod collections for newer dependencies.)
+
+  These are required.
+    GLib 2.0+
+    CMake
+    LCM       (http://lcm.googlecode.com)
+    Java      (Sun JDK or OpenJDK strongly preferred)
+    Python
+    GTK+ 2.0+ (required by bot2-vis)
+    OpenGL    (required by bot2-vis)
+    GLUT
+    PyGTK
+    Camunits (http://camunits.googlecode.com)
+    GSL
+
+  Note that some pods may have fewer requirements (e.g., if you just want
+  bot2-core)
+
+  On a Debian/Ubuntu system, the following packages should be sufficient:
+    libglib2.0-dev
+    cmake
+    sun-java6-jdk | default-jdk | openjdk-6-jdk
+    python-dev
+    python-gtk2
+    libgtk2.0-dev
+    mesa-common-dev
+    libgl1-mesa-dev
+    libglu1-mesa-dev
+    freeglut3-dev
+    libjpeg8-dev
+    ant
+    libsuitesparse-dev
+    eigen3 (As of July 6 2011: Not available via apt. Must be installed manually.)
+
+  On OS X, the recommended procedure is to use MacPorts and install:
+    cmake
+    pkgconfig
+    glib2
+    gtk2
+    atk
+    cairo
+    python2X (X=6 or 7)
+    py2X-gtk
+    py2X-gobject
+    pango
+    mesa
+    eigen3
+    SuiteSparse
+    gsl-devel    
+
+    Additionally, you'll need to install LCM from http://lcm.googlecode.com
+
+(Local) Installation
+====================
+  envoy adheres to the Pods core policy, and makes use of the Pods build tools. 
+  For more information about Pods, see: https://sourceforge.net/p/pods/
+
+  You can install envoy to your system by running:
+
+  $ sudo make BUILD_PREFIX=/usr/local
+
+  If you don't want to install envoy to your system, you can also build it
+  inside the source directory.  To do this, run:
+
+  $ make
+  
+  In this case, the executables, headers, libraries etc. will be
+  installed according to the Pods core policy. If no other "build"
+  directory is found, it will default to: envoy/build/
+
+Uninstallation
+==============
+
+  If compiled and installed to your system, run:
+
+  $ sudo make clean
+
+  note: this can only be done from the envoy source that was used for
+        installation
+
+Documentation
+=============
+
+  To build documentation, install Doxygen and then run:
+
+  $ cd doc
+  $ doxygen
+
+  HTML docs will then be build to doc/html/
+
+License
+=======
+
+  TBD for envoy.
+
+  libbot2 falls under the LGPL3 license.
