@@ -1,0 +1,12 @@
+package sensor_msgs;
+
+struct joint_state_t 
+{
+    int64_t timestamp;
+    int32_t num_joints;
+    string joint_name [num_joints];
+    float position [num_joints];
+    float velocity [num_joints];
+    float effort [num_joints];
+}
+

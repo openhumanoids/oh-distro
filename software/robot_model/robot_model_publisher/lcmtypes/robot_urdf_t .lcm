@@ -1,0 +1,8 @@
+package robot_model;
+
+struct robot_urdf_t 
+{
+    int64_t  timestamp;
+    string   urdf_xml_string;
+}
+

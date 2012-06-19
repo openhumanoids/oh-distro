@@ -1,0 +1,11 @@
+package sensor_msgs;
+
+struct transform_stamped_t 
+{
+   int64_t timestamp;
+   string frame_id_; 
+   string child_frame_id_; 
+   vector3_t translation;
+   quaternion_t rotation;
+}
+

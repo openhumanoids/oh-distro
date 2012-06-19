@@ -1,0 +1,8 @@
+package sensor_msgs;
+
+struct transform_t 
+{
+   vector3_t translation;
+   quaternion_t rotation;
+}
+

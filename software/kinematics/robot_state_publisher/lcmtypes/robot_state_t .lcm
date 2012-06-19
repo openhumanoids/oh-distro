@@ -1,0 +1,10 @@
+package sensor_msgs;
+
+struct robot_state_t 
+{
+    int64_t timestamp;
+    int32_t num_joints;
+    string joint_name [num_joints];
+    transform_t tf [num_joints];
+}
+

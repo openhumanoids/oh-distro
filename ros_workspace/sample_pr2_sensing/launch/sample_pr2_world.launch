@@ -1,0 +1,23 @@
+<launch>
+
+<!-- start up empty world -->
+<include file="$(find gazebo_worlds)/launch/empty_world.launch"/> 
+
+<!-- spawn pr2 robot + table + coffee cup -->
+<include file="$(find pr2_gazebo)/pr2.launch"/>
+<include file="$(find gazebo_worlds)/launch/table.launch"/>
+<include file="$(find gazebo_worlds)/launch/coffee_cup.launch"/>
+
+<!-- start tilting laser -->
+<node pkg="rosservice" type="rosservice" name="laser_commander" args="call --wait /laser_tilt_controller/set_periodic_cmd '{command: {profile: linear, period: 3, amplitude: 1, offset: 0.0}}'" /> 
+
+<!-- visualize in rviz -->
+<!-- try this config file for laser scan+ stereo point cloud  + camera image: display_config_pr2_laserscan_stereopointcloud_colorcamera.vcg  -->
+
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(find sample_pr2_sensing)/launch/display_config_pr2_laserscan_stereopointcloud_colorcamera.vcg" />
+
+<!-- Keyboard teleop (better to launch separately)-->
+<!--<include file="$(find pr2_teleop)/teleop_keyboard.launch"/> -->
+
+</launch>
+

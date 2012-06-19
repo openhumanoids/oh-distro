@@ -1,0 +1,9 @@
+package sensor_msgs;
+
+struct vector3_t 
+{
+ float x;
+ float y;
+ float z;
+}
+

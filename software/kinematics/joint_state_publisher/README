@@ -1,0 +1,36 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         joint_state_publisher
+Maintainers:  Sisir K and Maurice F
+Summary:     Communicates to gazebo/robot API to get joint angles and then 
+publishes them on JOINT_STATES lcm channel.
+
+Description:
+This pods provides two processes. 
+
+1) joint_state_publisher:
+This process communicates to gazebo/robot API to get joint angles and then 
+publishes them on JOINT_STATES lcm channel. The publisher requires access to 
+the urdf robot model. At startup, the process creates a subcription to ROBOT_MODEL
+lcm channel, waits until it receives the urdf string and then unsubcribes from this
+channel.
+
+2) joint_state_listener:
+This is a example program that subscribes to joint_angles (used for checking message comms).
+For an example usage, try the following commands in a set of terminals in the specified order:
+Term1: ./joint_state_listener
+Term2: ./joint_state_publisher
+Term3: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
+
+Requirements: 
+ lcm
+
+License:      FILL-ME-IN

@@ -1,0 +1,8 @@
+package sensor_msgs;
+
+struct test_t 
+{
+   int32_t num_joints;  
+
+}
+

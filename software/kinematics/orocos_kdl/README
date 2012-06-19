@@ -1,0 +1,22 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         orocos_kdl
+Maintainers:  Sisir K and Maurice F
+Summary:      An encapsulation of KDL library into a pod library. ROS uses the KDL library to convert joint angles to Cartesian positions (or the inverse via inverse kinematics). 
+
+Description:
+http://www.orocos.org/wiki/orocos/kdl-wiki
+http://www.orocos.org/kdl/UserManual/kinematic_solvers
+
+Requirements: 
+Eigen
+
+License:      FILL-ME-IN

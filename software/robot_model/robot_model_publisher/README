@@ -1,0 +1,28 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         robot_model_publisher
+Maintainers:  Sisir K and Maurice F
+Summary:       This pod provides two processes model publisher and listener to a robot urdf description. 
+Description: 
+
+1) broadcast_robot_model
+   This process reads from a urdf.file and publishes it as a string on ROBOT_MODEL lcm channel. 
+   The process requires the path and name of the urdf to passed as an input.
+
+    USAGE: ./broadcast_robot_model xxxx.urdf
+
+2) robot_model_listener
+   Subscribes to the ROBOT_MODEL lcm channel and prints the urdf_string to the terminal.
+
+Requirements: 
+  FILL-ME-IN
+
+License:      FILL-ME-IN

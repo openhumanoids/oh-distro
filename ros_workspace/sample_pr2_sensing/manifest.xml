@@ -1,0 +1,18 @@
+<package>
+  <description brief="sample_pr2_sensing">
+
+     sample_pr2_sensing: contains launch script to boot up a PR2 in gazebo and RVIZ, with a tilting laser and stereo point cloud.
+
+  </description>
+  <author>sisir</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url></url>
+  <depend package="gazebo_worlds"/>
+  <depend package="pr2_gazebo"/>
+  <depend package="pr2_teleop"/>
+  <depend package="rviz"/>
+
+</package>
+
+

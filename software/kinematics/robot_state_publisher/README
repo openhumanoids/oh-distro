@@ -1,0 +1,65 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         robot_state_publisher
+Maintainers:  Sisir K and Maurice F
+Summary:      Provides i) a ROS style tf publisher ii) a library for performing full forward kinematics using the KDL library. This gene
+Description:
+  FILL-ME-IN
+
+Requirements: 
+ urdf orocos-kdl kdl-parser 
+
+License:      FILL-ME-IN
+
+Description:
+This pod provides three processes and one library. 
+
+1) robot_state_publisher:
+Subscribes to JOINT_STATES lcm channel to get joint angles and then 
+publishes them as ROS style tf_t messages on JOINT_TRANSFORMS lcm channel.
+The publisher requires access to the urdf robot model. 
+At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
+waits until it receives the urdf string and then unsubcribes from this
+channel.
+
+2) robot_state_listener:
+This is a example program that subscribes to tf_t messages published on the 
+JOINT_TRANSFORMS channels.
+For an example usage, try the following commands in a set of terminals in the specified order:
+
+Term1: ./robot_state_listener
+Term2: ./robot_state_publisher
+Term3: ./joint_state_publisher (requires the joint_state_publisher pod)
+Term4: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
+
+3) test_forward_kinematics_solver
+This is a example program that subscribes to JOINT_STATES lcm channel to get joint angles
+and then shows example usage of the JntToCart routine provided in the forward-kinematics 
+SHARED library. At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
+waits until it receives the urdf string and then unsubcribes from this
+channel.
+
+For an example usage, try the following commands in a set of terminals in the specified order:
+
+Term1: ./test_forward_kinematics_solver
+Term2: ./joint_state_publisher (requires the joint_state_publisher pod)
+Term3: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
+
+4)forward-kinematics library
+This library extende the KDL library and it contains a solver class defined in treefksolverposfull_recursive.cpp. 
+This class thats provides a JntToCart routine to solve forward kinematics for the whole kinematic structure. 
+KDL library functions only provide an interface to query global position between a specified root and a tip segment.
+
+
+Requirements: 
+  FILL-ME-IN
+
+License:      FILL-ME-IN
