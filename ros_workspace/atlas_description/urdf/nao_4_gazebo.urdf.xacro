@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="nao">
+  <!--
+  ROS urdf definition of the Nao humanoid robot by Aldebaran Robotics
+  
+  This is part of the Nao-Stack of University of Freiburg, available at:
+  http://code.google.com/p/alufr-ros-pkg/
+  
+  Authors: Armin Hornung, Stefan Osswald
+  
+  Joint names and properties are according to the Nao-documentation of
+  Aldebaran Robotics ("Kinematics 4.0" for Nao V4.0). 
+  
+  
+  This file loads a basic visualization of Nao and the structure (you need both)
+  
+  -->
+
+  <include filename="$(find nao_description)/urdf/visualsandcollision.xacro" />
+  <include filename="$(find nao_description)/urdf/nao_gazebo_structure.urdf.xacro" />
+  
+<!--
+<gazebo reference="nao">
+    <material>Gazebo/Grey</material>
+   <turnGravityOff>true</turnGravityOff>
+  </gazebo> -->
+
+</robot>
+
+
+

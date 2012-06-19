@@ -1,0 +1,816 @@
+<model:physical xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz" xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body" xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom" xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint" xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering" xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics" name="atlas">
+    <xyz>0 0 0</xyz>
+    <rpy>0 0 0</rpy>
+    <body:empty name="base_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.02</mass>
+        <ixx>0.0002</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0002</iyy>
+        <iyz>0</iyz>
+        <izz>0.0002</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <body:empty name="BackYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="BackYaw">
+        <body1>BackYaw_link</body1>
+        <body2>base_link</body2>
+        <anchor>BackYaw_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-45</lowStop>
+        <highStop>45</highStop>
+    </joint:hinge>
+    <body:empty name="BackPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="BackPitch">
+        <body1>BackPitch_link</body1>
+        <body2>BackYaw_link</body2>
+        <anchor>BackPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-25</lowStop>
+        <highStop>25</highStop>
+    </joint:hinge>
+    <body:empty name="BackRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>19.277</mass>
+        <ixx>0.769142</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.418982</iyy>
+        <iyz>0</iyz>
+        <izz>0.452646</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:box name="BackRoll_link_geom_torso">
+            <xyz>0 0 0.239273</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.178562 0.499974 0.478546</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.478546</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:box>
+    </body:empty>
+    <joint:hinge name="BackRoll">
+        <body1>BackRoll_link</body1>
+        <body2>BackPitch_link</body2>
+        <anchor>BackRoll_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-40</lowStop>
+        <highStop>40</highStop>
+    </joint:hinge>
+    <body:empty name="NeckYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0.478546</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="NeckYaw">
+        <body1>NeckYaw_link</body1>
+        <body2>BackRoll_link</body2>
+        <anchor>NeckYaw_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-90</lowStop>
+        <highStop>90</highStop>
+    </joint:hinge>
+    <body:empty name="NeckPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>1.8</mass>
+        <ixx>0.0106054</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0106054</iyy>
+        <iyz>0</iyz>
+        <izz>0.00403537</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0 0.478546</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="NeckPitch_link_geom">
+            <xyz>0 0 0.137493</xyz>
+            <rpy>89.9544 -0 0</rpy>
+            <size>0.0669607 0.239273</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0.0456262 -0 0</rpy>
+                <scale>0.133921 0.133921 0.221417</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="NeckPitch">
+        <body1>NeckPitch_link</body1>
+        <body2>NeckYaw_link</body2>
+        <anchor>NeckPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-45</lowStop>
+        <highStop>45</highStop>
+    </joint:hinge>
+    <body:empty name="LShoulderYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="LShoulderYaw">
+        <body1>LShoulderYaw_link</body1>
+        <body2>BackRoll_link</body2>
+        <anchor>LShoulderYaw_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-40</lowStop>
+        <highStop>100</highStop>
+    </joint:hinge>
+    <body:empty name="LShoulderPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="LShoulderPitch">
+        <body1>LShoulderPitch_link</body1>
+        <body2>LShoulderYaw_link</body2>
+        <anchor>LShoulderPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-50</lowStop>
+        <highStop>90</highStop>
+    </joint:hinge>
+    <body:empty name="LShoulderRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>4.91675</mass>
+        <ixx>0.0500676</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0500676</iyy>
+        <iyz>0</iyz>
+        <izz>0.000783838</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LShoulderRoll_link_geom">
+            <xyz>0.174098 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.348196</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.308196</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="LShoulderRoll">
+        <body1>LShoulderRoll_link</body1>
+        <body2>LShoulderPitch_link</body2>
+        <anchor>LShoulderRoll_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>0</lowStop>
+        <highStop>115</highStop>
+    </joint:hinge>
+    <body:empty name="LElbowPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>4.91675</mass>
+        <ixx>0.0381468</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0381468</iyy>
+        <iyz>0</iyz>
+        <izz>0.000783838</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.348196 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LElbowPitch_link_geom">
+            <xyz>0.151778 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.303555</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.263555</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="LElbowPitch">
+        <body1>LElbowPitch_link</body1>
+        <body2>LShoulderRoll_link</body2>
+        <anchor>LElbowPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-135</lowStop>
+        <highStop>0</highStop>
+    </joint:hinge>
+    <body:empty name="LWristYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.651751 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="LWristYaw">
+        <body1>LWristYaw_link</body1>
+        <body2>LElbowPitch_link</body2>
+        <anchor>LWristYaw_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-85</lowStop>
+        <highStop>85</highStop>
+    </joint:hinge>
+    <body:empty name="LWristRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>2.01753e-05</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>2.01753e-05</iyy>
+        <iyz>0</iyz>
+        <izz>1.59422e-06</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.651751 0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LWristRoll_link_geom">
+            <xyz>0.076246 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.152492</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.112492</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="LWristRoll">
+        <body1>LWristRoll_link</body1>
+        <body2>LWristYaw_link</body2>
+        <anchor>LWristRoll_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-30</lowStop>
+        <highStop>60</highStop>
+    </joint:hinge>
+    <body:empty name="RShoulderYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="RShoulderYaw">
+        <body1>RShoulderYaw_link</body1>
+        <body2>BackRoll_link</body2>
+        <anchor>RShoulderYaw_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-40</lowStop>
+        <highStop>100</highStop>
+    </joint:hinge>
+    <body:empty name="RShoulderPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="RShoulderPitch">
+        <body1>RShoulderPitch_link</body1>
+        <body2>RShoulderYaw_link</body2>
+        <anchor>RShoulderPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-50</lowStop>
+        <highStop>90</highStop>
+    </joint:hinge>
+    <body:empty name="RShoulderRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>4.91675</mass>
+        <ixx>0.0500676</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0500676</iyy>
+        <iyz>0</iyz>
+        <izz>0.000783838</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RShoulderRoll_link_geom">
+            <xyz>0.174098 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.348196</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.308196</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="RShoulderRoll">
+        <body1>RShoulderRoll_link</body1>
+        <body2>RShoulderPitch_link</body2>
+        <anchor>RShoulderRoll_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-115</lowStop>
+        <highStop>-0</highStop>
+    </joint:hinge>
+    <body:empty name="RElbowPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>4.91675</mass>
+        <ixx>0.0381468</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0381468</iyy>
+        <iyz>0</iyz>
+        <izz>0.000783838</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.348196 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RElbowPitch_link_geom">
+            <xyz>0.151778 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.303555</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.263555</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="RElbowPitch">
+        <body1>RElbowPitch_link</body1>
+        <body2>RShoulderRoll_link</body2>
+        <anchor>RElbowPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-135</lowStop>
+        <highStop>0</highStop>
+    </joint:hinge>
+    <body:empty name="RWristYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.651751 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="RWristYaw">
+        <body1>RWristYaw_link</body1>
+        <body2>RElbowPitch_link</body2>
+        <anchor>RWristYaw_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-85</lowStop>
+        <highStop>85</highStop>
+    </joint:hinge>
+    <body:empty name="RWristRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>2.01753e-05</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>2.01753e-05</iyy>
+        <iyz>0</iyz>
+        <izz>1.59422e-06</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0.651751 -0.241059 0.414264</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RWristRoll_link_geom">
+            <xyz>0.076246 0 0</xyz>
+            <rpy>90 -3.18055e-15 90</rpy>
+            <size>0.025 0.152492</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.112492</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="RWristRoll">
+        <body1>RWristRoll_link</body1>
+        <body2>RWristYaw_link</body2>
+        <anchor>RWristRoll_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-60</lowStop>
+        <highStop>30</highStop>
+    </joint:hinge>
+    <body:empty name="LHipYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="LHipYaw">
+        <body1>LHipYaw_link</body1>
+        <body2>base_link</body2>
+        <anchor>LHipYaw_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-10</lowStop>
+        <highStop>70</highStop>
+    </joint:hinge>
+    <body:empty name="LHipPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="LHipPitch">
+        <body1>LHipPitch_link</body1>
+        <body2>LHipYaw_link</body2>
+        <anchor>LHipPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-100</lowStop>
+        <highStop>20</highStop>
+    </joint:hinge>
+    <body:empty name="LHipRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>9.04175</mass>
+        <ixx>0.173272</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.173272</iyy>
+        <iyz>0</iyz>
+        <izz>0.00144145</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LHipRoll_link_geom">
+            <xyz>0 0 -0.239273</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.478546</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.438546</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="LHipRoll">
+        <body1>LHipRoll_link</body1>
+        <body2>LHipPitch_link</body2>
+        <anchor>LHipRoll_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-20</lowStop>
+        <highStop>20</highStop>
+    </joint:hinge>
+    <body:empty name="LKneePitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>9.04175</mass>
+        <ixx>0.143751</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.143751</iyy>
+        <iyz>0</iyz>
+        <izz>0.00144145</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 0.108923 -0.631038</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LKneePitch_link_geom">
+            <xyz>0 0 -0.217846</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.435691</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.395691</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="LKneePitch">
+        <body1>LKneePitch_link</body1>
+        <body2>LHipRoll_link</body2>
+        <anchor>LKneePitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>0</lowStop>
+        <highStop>135</highStop>
+    </joint:hinge>
+    <body:empty name="LAnklePitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>2.02</mass>
+        <ixx>0.00492177</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.00938382</iyy>
+        <iyz>0</iyz>
+        <izz>0.00586205</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>-0.0447426</cz>
+        <xyz>0 0.108923 -1.06673</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="LAnklePitch_link_geom">
+            <xyz>0 0 -0.0216953</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.0433906</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.0433906</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+        <geom:box name="LAnklePitch_link_geom_Lfoot">
+            <xyz>0.0871383 0 -0.03769</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.224277 0.06 0.015</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.224277 0.06 0.015</scale>
+                <mesh>unit_box</mesh>
+            </visual>
+        </geom:box>
+    </body:empty>
+    <joint:hinge name="LAnklePitch">
+        <body1>LAnklePitch_link</body1>
+        <body2>LKneePitch_link</body2>
+        <anchor>LAnklePitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-40</lowStop>
+        <highStop>40</highStop>
+    </joint:hinge>
+    <body:empty name="RHipYaw_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="RHipYaw">
+        <body1>RHipYaw_link</body1>
+        <body2>base_link</body2>
+        <anchor>RHipYaw_link</anchor>
+        <axis>0 0 1</axis>
+        <lowStop>-70</lowStop>
+        <highStop>10</highStop>
+    </joint:hinge>
+    <body:empty name="RHipPitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>0.01</mass>
+        <ixx>0.0001</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.0001</iyy>
+        <iyz>0</iyz>
+        <izz>0.0001</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+    </body:empty>
+    <joint:hinge name="RHipPitch">
+        <body1>RHipPitch_link</body1>
+        <body2>RHipYaw_link</body2>
+        <anchor>RHipPitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-100</lowStop>
+        <highStop>20</highStop>
+    </joint:hinge>
+    <body:empty name="RHipRoll_link">
+        <massMatrix>true</massMatrix>
+        <mass>9.04175</mass>
+        <ixx>0.173272</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.173272</iyy>
+        <iyz>0</iyz>
+        <izz>0.00144145</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.108923 -0.152492</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RHipRoll_link_geom">
+            <xyz>0 0 -0.239273</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.478546</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.438546</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="RHipRoll">
+        <body1>RHipRoll_link</body1>
+        <body2>RHipPitch_link</body2>
+        <anchor>RHipRoll_link</anchor>
+        <axis>1 0 0</axis>
+        <lowStop>-20</lowStop>
+        <highStop>20</highStop>
+    </joint:hinge>
+    <body:empty name="RKneePitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>9.04175</mass>
+        <ixx>0.143751</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.143751</iyy>
+        <iyz>0</iyz>
+        <izz>0.00144145</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <xyz>0 -0.108923 -0.631038</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RKneePitch_link_geom">
+            <xyz>0 0 -0.217846</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.435691</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.395691</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+    </body:empty>
+    <joint:hinge name="RKneePitch">
+        <body1>RKneePitch_link</body1>
+        <body2>RHipRoll_link</body2>
+        <anchor>RKneePitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>0</lowStop>
+        <highStop>135</highStop>
+    </joint:hinge>
+    <body:empty name="RAnklePitch_link">
+        <massMatrix>true</massMatrix>
+        <mass>2.02</mass>
+        <ixx>0.00492177</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.00938382</iyy>
+        <iyz>0</iyz>
+        <izz>0.00586205</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>-0.0447426</cz>
+        <xyz>0 -0.108923 -1.06673</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:cylinder name="RAnklePitch_link_geom">
+            <xyz>0 0 -0.0216953</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.025 0.0433906</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.05 0.05 0.0433906</scale>
+                <mesh>unit_cylinder</mesh>
+            </visual>
+        </geom:cylinder>
+        <geom:box name="RAnklePitch_link_geom_Rfoot">
+            <xyz>0.0871383 0 -0.03769</xyz>
+            <rpy>0 -0 0</rpy>
+            <size>0.224277 0.06 0.015</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>0.224277 0.06 0.015</scale>
+                <mesh>unit_box</mesh>
+            </visual>
+        </geom:box>
+    </body:empty>
+    <joint:hinge name="RAnklePitch">
+        <body1>RAnklePitch_link</body1>
+        <body2>RKneePitch_link</body2>
+        <anchor>RAnklePitch_link</anchor>
+        <axis>0 1 0</axis>
+        <lowStop>-40</lowStop>
+        <highStop>40</highStop>
+    </joint:hinge>
+</model:physical>

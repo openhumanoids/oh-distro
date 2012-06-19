@@ -1,0 +1,16 @@
+<package>
+  <description brief="atlas_description">
+
+     atlas_description
+
+  </description>
+  <author>Sisir</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url></url>
+  <depend package="urdf"/>
+  <depend package="robot_state_publisher"/>
+
+</package>
+
+

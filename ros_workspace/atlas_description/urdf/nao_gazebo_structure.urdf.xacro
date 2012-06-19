@@ -1,0 +1,537 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<!-- 
+  ROS urdf definition of the Nao humanoid robot by Aldebaran Robotics
+  
+  DO NOT INCLUDE THIS FILE DIRECTLY! USE nao_robot.urdf.xacro INSTEAD!
+
+  This is part of the Nao-Stack of University of Freiburg, available at:
+  http://code.google.com/p/alufr-ros-pkg/
+
+  Authors: Armin Hornung, Stefan Osswald, Felix Burget
+
+  Joint names and properties are according to the Nao-documentation of
+  Aldebaran Robotics ("Kinematics 4.0" for Nao V4) and REP-120:
+  http://ros.org/reps/rep-0120.html 
+      
+  Note that according to the documentation, the joint limits for the left leg 
+  are different from the corresponding limits for the right leg. 
+  For {L,R}HipPitch, {L,R}KneePitch and {L,R}AnklePitch the smallest interval 
+  of the joint limits was chosen, whereas for {L,R}HipRoll and {L,R}AnkleRoll 
+  the respective (differing) limits were copied from the documentation.
+      
+  The joint limits for {L,R}ShoulderRoll and {L,R}ElbowRoll do
+  not include the zero position.
+
+  TODO: effort and velocity limits are DUMMY values!
+  TODO: Inertial matrix is wrong or contains dummdy values. 
+        Docs say inertial matrix is in link frame, URDF expects CoM frame
+-->
+
+  <!-- dummy first link, directly connects with torso -->
+  <link name="base_link">
+    <!-- dummy inertial -->
+     <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+  
+  <!-- first real link of the robot, inertial reference frame -->
+  <link name="torso" >
+  <!--<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial> -->
+    <inertial>
+      <origin xyz="-0.00413 0.00009 0.04342" rpy="0 0 0"/>
+      <mass value="1.04956"/>
+      <inertia ixx="0.00487953284"  ixy="-0.00001428591"  ixz="-0.00019545651" iyy="0.00470360698" iyz="0.00002224589" izz="0.0015671352" />
+    </inertial>
+    <xacro:insert_visualization_torso/>    
+  </link>
+  
+  <link name="HeadYaw_link">
+    <inertial>
+      <origin xyz="-0.00001 0.00014 -0.02742" rpy="0 0 0"/>
+      <mass value="0.06442"/>
+      <inertia ixx="0.00006223368"  ixy="0.00000000042"  ixz="0.00000007448" iyy="0.00006324431" iyz="0.00000010416" izz="0.00000549462" />
+    </inertial>    
+    <xacro:insert_visualization_headYaw/>
+  </link>
+  
+  <link name="HeadPitch_link">
+    <inertial>
+      <origin xyz="-0.00112 -0.00003 0.05258" rpy="0 0 0"/>
+      <mass value="0.60533"/>
+      <inertia ixx="0.00208895741"  ixy="0.00000549094"  ixz="0.0001133995" iyy="1932222.63e-9" iyz="-0.00002803917" izz="0.00082257793" />
+    </inertial>
+    <xacro:insert_visualization_head/>
+  </link>
+  
+  <link name="gaze">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+  
+  <link name="CameraTop_frame">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_cameraTop/>
+  </link>
+  
+  <link name="CameraBottom_frame">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_cameraBottom/>  
+  </link>
+  
+  <!-- Arm -->  
+  <xacro:macro name="arm_links" params="side reflect">
+  <link name = "${side}ShoulderPitch_link">
+    <inertial>
+      <origin xyz="-0.00165 ${reflect*-0.02663} 0.00014" rpy="0 0 0"/>
+      <mass value="0.07504"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+  </link>
+  
+
+  <link name = "${side}ElbowYaw_link">
+    <inertial>
+      <origin xyz="-0.02744 0.00000 -0.00014" rpy="0 0 0"/>
+      <mass value="0.06483"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>    
+  </link>
+  
+  <link name = "${side}ElbowRoll_link">
+    <inertial>
+      <origin xyz="0.02552 ${reflect*-0.00281} 0.00090" rpy="0 0 0"/>
+      <mass value="0.07778"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    
+    <xacro:insert_visualization_elbow side="${side}"/>
+  </link>
+  
+  <link name = "${side}WristYaw_link">
+    <inertial>
+      <origin xyz="0.03434 ${reflect*-0.00088} -0.00308" rpy="0 0 0"/>
+      <mass value="0.18533"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_wrist side="${side}"/>    
+  </link>
+  </xacro:macro> 
+  
+  <link name="l_wrist">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+  <link name="r_wrist">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+  
+  <link name="l_gripper">
+<!-- dummy inertial -->
+<inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_fingers side="L"/>    
+  </link>
+
+  <link name="r_gripper">
+    <!-- dummy inertial -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_fingers side="R"/>    
+  </link>
+
+  <xacro:arm_links side="L" reflect="-1"/>
+  <xacro:arm_links side="R" reflect="1"/>  
+  
+  <link name = "RShoulderRoll_link" >
+    <inertial>
+      <origin xyz="0.02429 -0.00952 0.00320" rpy="0 0 0"/>
+      <mass value="0.15794"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_arm side="R"/>
+  </link>
+
+  <link name = "LShoulderRoll_link" >
+    <inertial>
+      <origin xyz="0.02455 0.00563 0.00330" rpy="0 0 0"/>
+      <mass value="0.15777"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_arm side="L"/>
+  </link>
+   
+  <!-- Leg links -->
+  <xacro:macro name="leg_links" params="side reflect">
+  <link name="${side}HipYawPitch_link" >
+    <inertial>
+      <origin xyz="-0.00773 ${reflect*0.0115} 0.0269" rpy="0 0 0"/>
+      <mass value="0.07050"/> <!-- +/-0.00068 -->
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_hip side="${side}"/>
+  </link>
+		
+
+  <link name="${side}HipRoll_link">
+    <inertial>
+      <origin xyz="-0.01549 ${reflect*-0.00029} -0.00516" rpy="0 0 0"/>
+      <mass value="0.13053"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_hipRoll side="${side}"/>
+  </link>
+  
+  <link name="${side}HipPitch_link">
+    <inertial>
+      <origin xyz="0.00139 ${reflect*-0.00223} -0.05373" rpy="0 0 0"/>
+      <mass value="0.38972"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_thigh side="${side}"/>
+  </link>
+  
+  <link name="${side}KneePitch_link">
+    <inertial>
+      <origin xyz="0.00423 ${reflect*-0.00223} -0.04937" rpy="0 0 0"/>
+      <mass value="0.29152"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_shine side="${side}"/>    
+  </link>
+  
+  <link name="${side}AnklePitch_link">
+    <inertial>
+      <origin xyz="0.00045 ${reflect*-0.00029} 0.00684" rpy="0 0 0"/>
+      <mass value="0.13415"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_ankle side="${side}"/>
+  </link>
+  
+  <link name="${side}AnkleRoll_link">
+   <inertial>
+      <origin xyz="0.02541 ${reflect*-0.00331} -0.03239" rpy="0 0 0"/>
+      <mass value="0.16178"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <xacro:insert_visualization_ankleRoll side="${side}"/>
+  </link>
+  </xacro:macro>
+  
+  <link name="l_ankle" >
+    <!-- dummy inertial -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+
+  <link name="r_ankle" >
+    <!-- dummy inertial -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+  </link>
+  
+  <link name="l_sole">
+    <!-- dummy inertial -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_foot side="L"/>
+    </link>
+
+  <link name="r_sole">
+    <!-- dummy inertial -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1"  ixy="0"  ixz="0" iyy="1" iyz="0" izz="1" />
+    </inertial> 
+    <xacro:insert_visualization_foot side="R"/>
+  </link>
+
+  <xacro:leg_links side="L" reflect="-1"/>
+  <xacro:leg_links side="R" reflect="1"/>
+  
+<!--   Joints following below -->
+  
+  <joint name="base_joint" type="fixed">
+    <child link="torso"/>
+    <parent link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+  
+  <!-- Head joints -->
+  
+  <joint name="HeadYaw" type="revolute">
+    <parent link="torso"/>
+    <child link="HeadYaw_link"/>
+	<!-- NeckOffsetZ -->
+    <origin xyz="0 0 0.1265" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit velocity="3.0" effort="30" lower="-2.0857" upper="2.0857" />
+  </joint>
+
+  <joint name="HeadPitch" type="revolute">
+    <parent link="HeadYaw_link"/>
+    <child link="HeadPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit velocity="3.0" effort="30" lower="-0.6720" upper="0.5149" />
+  </joint>
+  
+  <joint name="gaze_joint" type="fixed">
+    <parent link="HeadPitch_link"/>
+    <child link="gaze"/>
+    <origin xyz="0.0539 0 0.05" />
+  </joint>
+  
+  <joint name="CameraTop" type="fixed">
+    <parent link="HeadPitch_link"/>
+    <child link="CameraTop_frame"/>
+    <!-- rotated by 1.2 degress -->
+    <origin xyz="0.05871 0 0.06364" rpy="-1.59174 0 -${pi_2}" />
+  </joint>
+  
+  <joint name="CameraBottom" type="fixed">
+    <parent link="HeadPitch_link"/>
+    <child link="CameraBottom_frame"/>
+    <!-- rotated by 39.7 degrees -->
+    <origin xyz="0.05071 0 0.01774" rpy="-2.263692 0 -${pi_2}" />
+  </joint>
+  
+  
+  <!-- Arm joints -->
+  <xacro:macro name="arm_joints" params="side reflect">
+  <joint name="${side}ShoulderPitch" type="revolute">
+    <parent link="torso"/>
+    <child link="${side}ShoulderPitch_link"/>
+    <origin xyz="0 ${reflect*-0.098} 0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit velocity="3.0" effort="30" lower="-2.0857" upper="2.0857"/>
+  </joint>
+    
+  <joint name="${side}ElbowYaw" type="revolute">
+    <parent link="${side}ShoulderRoll_link"/>
+    <child link="${side}ElbowYaw_link"/>
+    <origin xyz="0.105 ${reflect*-0.015} 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-2.0857" upper="2.0857"/>
+  </joint>
+  
+  
+  <joint name="${side}WristYaw" type="revolute">
+    <parent link="${side}ElbowRoll_link"/>
+    <child link="${side}WristYaw_link"/>
+    <origin xyz="0.05595 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-1.8238" upper="1.8238"/>
+  </joint>
+  </xacro:macro>
+  
+  <joint name="l_wrist_joint" type="fixed">
+    <parent link="LWristYaw_link" />
+    <child link="l_wrist" />
+    <origin xyz="0 0 0" />
+  </joint>
+  <joint name="r_wrist_joint" type="fixed">
+    <parent link="RWristYaw_link" />
+    <child link="r_wrist" />
+    <origin xyz="0 0 0" />
+  </joint>
+  
+  <joint name="l_gripper_joint" type="fixed">
+    <parent link="l_wrist" />
+    <child link="l_gripper" />
+    <origin xyz="0.058 0 -0.0159" />  
+  </joint>
+  <joint name="r_gripper_joint" type="fixed">
+    <parent link="r_wrist" />
+    <child link="r_gripper" />
+    <origin xyz="0.058 0 -0.0159" />  
+  </joint>
+  
+
+  <joint name="LElbowRoll" type="revolute">
+    <parent link="LElbowYaw_link"/>
+    <child link="LElbowRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="3.0" effort="30" lower="-1.5446" upper="-0.0349"/>
+  </joint>
+  <joint name="RElbowRoll" type="revolute">
+    <parent link="RElbowYaw_link"/>
+    <child link="RElbowRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="3.0" effort="30" lower="0.0349" upper="1.5446"/>
+  </joint>
+  
+  <joint name="LShoulderRoll" type="revolute">
+    <parent link="LShoulderPitch_link"/>
+    <child link="LShoulderRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="3.0" effort="30" lower="-0.3142" upper="1.3265"/>
+  </joint>
+  <joint name="RShoulderRoll" type="revolute">
+    <parent link="RShoulderPitch_link"/>
+    <child link="RShoulderRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="3.0" effort="30" lower="-1.3265" upper="0.3142"/>
+  </joint>
+
+  <xacro:arm_joints side="L" reflect="-1"/>
+  <xacro:arm_joints side="R" reflect="1"/>  
+  
+  <!-- Leg joints -->
+  <joint name="LHipYawPitch" type="revolute">
+    <parent link="torso"/>
+    <child link="LHipYawPitch_link"/>
+    <origin xyz="0 0.05 -0.085" rpy="0 0 0"/>
+    <axis xyz="0 0.707106 -0.707106"/>
+    <limit velocity="3.0" effort="30" lower="-1.145303" upper="0.740810"/>
+  </joint>
+  <joint name="RHipYawPitch" type="revolute">
+    <parent link="torso"/>
+    <child link="RHipYawPitch_link"/>
+    <origin xyz="0 -0.05 -0.085" rpy="0 0 0"/>
+    <axis xyz="0 0.707106 0.707106"/>
+    <limit velocity="3.0" effort="30" lower="-1.145303" upper="0.740810"/>
+    <mimic joint="LHipYawPitch" multiplier="1" offset="0"/>
+  </joint>  
+  
+  
+  <xacro:macro name="leg_joints" params="side reflect">
+  <joint name="${side}HipPitch" type="revolute">
+    <parent link="${side}HipRoll_link"/>
+    <child link="${side}HipPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <!--Nao V3 and V4-->
+    <!-- LHipPitch limits: -1.773912 .. 0.484090 -->
+    <!-- RHipPitch limits: -1.772308 .. 0.485624 -->
+    <limit velocity="3.0" effort="30" lower="-1.772308" upper="0.484090"/>
+  </joint>
+  
+  <joint name="${side}KneePitch" type="revolute">
+    <parent link="${side}HipPitch_link"/>
+    <child link="${side}KneePitch_link"/>
+    <origin xyz="0 0 -0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <!-- LKneePitch limits: -0.092346 .. 2.112528 -->
+    <!-- RKneePitch limits: -0.103083 .. 2.120198 -->
+    <limit velocity="3.0" effort="30" lower="-0.092346" upper="2.112528"/>
+  </joint>
+  
+  <joint name="${side}AnklePitch" type="revolute">
+    <parent link="${side}KneePitch_link"/>
+    <child link="${side}AnklePitch_link"/>
+    <origin xyz="0 0 -0.10290" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <!-- LAnklePitch limits: -1.189516 .. 0.922747 -->
+    <!-- RAnklePitch limits: -1.186448 .. 0.932056 -->
+    <limit velocity="3.0" effort="30" lower="-1.186448" upper="0.922747"/>
+  </joint>
+  </xacro:macro>
+  
+  <joint name="LHipRoll" type="revolute">
+    <parent link="LHipYawPitch_link"/>
+    <child link="LHipRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-0.379472" upper="0.790477"/>
+  </joint>  
+  <joint name="RHipRoll" type="revolute">
+    <parent link="RHipYawPitch_link"/>
+    <child link="RHipRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-0.738321" upper="0.414754"/>
+  </joint>  
+
+  <joint name="LAnkleRoll" type="revolute">
+    <parent link="LAnklePitch_link"/>
+    <child link="LAnkleRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-0.769001" upper="0.397880"/>
+  </joint>
+  <joint name="RAnkleRoll" type="revolute">
+    <parent link="RAnklePitch_link"/>
+    <child link="RAnkleRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="3.0" effort="30" lower="-0.388676" upper="0.785875"/>
+  </joint>
+  
+  <joint name="l_ankle_joint" type="fixed">
+    <parent link="LAnkleRoll_link" />
+    <child link="l_ankle" />
+    <origin xyz="0 0 0" />  
+  </joint>
+  <joint name="r_ankle_joint" type="fixed">
+    <parent link="RAnkleRoll_link" />
+    <child link="r_ankle" />
+    <origin xyz="0 0 0" />  
+  </joint>
+  <joint name="l_sole_joint" type="fixed">
+    <parent link="l_ankle" />
+    <child link="l_sole" />
+    <origin xyz="0 0 -0.04519" />  
+  </joint>
+  <joint name="r_sole_joint" type="fixed">
+    <parent link="r_ankle" />
+    <child link="r_sole" />
+    <origin xyz="0 0 -0.04519" />  
+  </joint>
+
+  
+  <xacro:leg_joints side="L" reflect="-1"/>
+  <xacro:leg_joints side="R" reflect="1"/>  
+  
+</robot>

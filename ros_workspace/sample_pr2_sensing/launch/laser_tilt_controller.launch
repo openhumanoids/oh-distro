@@ -1,0 +1,17 @@
+	 
+<launch>
+<rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/pr2_laser_tilt_controller.yaml" />
+
+<!--  Can't call rosservice from launch file yet... -->
+<!--  node pkg="rosservice" type="rosservice" name="laser_commander" args="call /laser_tilt_controller/set_periodic_cmd '{command: {profile: linear, period: 10.0, amplitude: 0.75, offset: 0.25}}'" /> -->
+	
+<node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" name="laser_commander"
+	        args="laser_tilt_controller linear 3.0 1.0 0.0" />
+
+<node pkg="pr2_controller_manager" type="spawner" name="laser_tilt_c_spawner"
+args="pr2_laser_tilt_controller" />
+
+
+
+	
+</launch>

@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<!--
+    A simple visualization of the Nao's kinematic structure as cylinders
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <material name="LightGrey">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="Grey">
+      <color rgba="0.6 0.6 0.6 1.0"/>
+  </material>
+  <material name="DarkGrey">
+      <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="Black">
+      <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+  
+    <xacro:property name="pi" value="3.1415926535897931"/>
+    <xacro:property name="pi_2" value="1.5707963267948966"/>
+    
+    <xacro:macro name="insert_visualization_torso" params="">
+        <visual>
+            <!-- one cylinder spanning over HipOffsetZ and NeckOffsetZ -->
+            <origin xyz="0 0 0.02075" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.2115"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 0.02075" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.2115"/>
+            </geometry>          
+        </collision>
+    </xacro:macro>
+
+    <!-- No Visuals -->
+    <xacro:macro name="insert_visualization_headYaw" params="">
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_head" params="">
+        <visual>
+            <origin xyz="0 0 0.058" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder radius="0.04" length="0.14"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+           <origin xyz="0 0 0.058" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder radius="0.04" length="0.14"/>
+            </geometry>        
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_arm" params="side">
+        <visual>
+            <origin xyz="0.045 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.09"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0.045 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.09"/>
+            </geometry>     
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_elbow" params="side">
+        <visual>
+            <origin xyz="0.025325 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.05065"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0.025325 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.05065"/>
+            </geometry>     
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_wrist" params="side">
+        <visual>
+            <origin xyz="0.029 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.058"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0.029 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.058"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_hip" params="side">
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_hipRoll" params="side">
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_thigh" params="side">
+        <visual>
+            <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.1"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.1"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_shine" params="side">
+        <visual>
+            <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.1"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.1"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_ankle" params="side">
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_ankleRoll" params="side">
+        <visual>
+            <origin xyz="0 0 -0.023" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.046"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -0.023" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.015" length="0.046"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_foot" params="side">
+        <visual>
+            <origin xyz="0.02 0 0.0075" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.16 0.06 0.015"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0.02 0 0.0075" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.16 0.06 0.015"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_cameraTop" params="">    
+    </xacro:macro>
+    
+    <xacro:macro name="insert_visualization_cameraBottom" params="">
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_fingers" params="side">
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_elbow_yaw" params="side">
+    </xacro:macro>
+</robot>

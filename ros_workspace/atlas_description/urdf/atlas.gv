@@ -1,0 +1,104 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"back" [label="back"];
+"BackYaw_link" [label="BackYaw_link"];
+"BackPitch_link" [label="BackPitch_link"];
+"BackRoll_link" [label="BackRoll_link"];
+"torso" [label="torso"];
+"NeckYaw_link" [label="NeckYaw_link"];
+"NeckPitch_link" [label="NeckPitch_link"];
+"LShoulderYaw_link" [label="LShoulderYaw_link"];
+"LShoulderPitch_link" [label="LShoulderPitch_link"];
+"LShoulderRoll_link" [label="LShoulderRoll_link"];
+"LElbowPitch_link" [label="LElbowPitch_link"];
+"LWristYaw_link" [label="LWristYaw_link"];
+"LWristRoll_link" [label="LWristRoll_link"];
+"RShoulderYaw_link" [label="RShoulderYaw_link"];
+"RShoulderPitch_link" [label="RShoulderPitch_link"];
+"RShoulderRoll_link" [label="RShoulderRoll_link"];
+"RElbowPitch_link" [label="RElbowPitch_link"];
+"RWristYaw_link" [label="RWristYaw_link"];
+"RWristRoll_link" [label="RWristRoll_link"];
+"LHipYaw_link" [label="LHipYaw_link"];
+"LHipPitch_link" [label="LHipPitch_link"];
+"LHipRoll_link" [label="LHipRoll_link"];
+"LKneePitch_link" [label="LKneePitch_link"];
+"LAnklePitch_link" [label="LAnklePitch_link"];
+"Lankle" [label="Lankle"];
+"Lfoot" [label="Lfoot"];
+"RHipYaw_link" [label="RHipYaw_link"];
+"RHipPitch_link" [label="RHipPitch_link"];
+"RHipRoll_link" [label="RHipRoll_link"];
+"RKneePitch_link" [label="RKneePitch_link"];
+"RAnklePitch_link" [label="RAnklePitch_link"];
+"Rankle" [label="Rankle"];
+"Rfoot" [label="Rfoot"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "base_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"base_joint" -> "back"
+"back" -> "BackYaw" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"BackYaw" -> "BackYaw_link"
+"BackYaw_link" -> "BackPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"BackPitch" -> "BackPitch_link"
+"BackPitch_link" -> "BackRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"BackRoll" -> "BackRoll_link"
+"BackRoll_link" -> "BackRoll_Torso_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"BackRoll_Torso_joint" -> "torso"
+"torso" -> "NeckYaw" [label="xyz: 0 0 0.478546 \nrpy: 0 -0 0"]
+"NeckYaw" -> "NeckYaw_link"
+"NeckYaw_link" -> "NeckPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"NeckPitch" -> "NeckPitch_link"
+"BackRoll_link" -> "LShoulderYaw" [label="xyz: 0 0.241059 0.414264 \nrpy: 0 -0 0"]
+"LShoulderYaw" -> "LShoulderYaw_link"
+"LShoulderYaw_link" -> "LShoulderPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LShoulderPitch" -> "LShoulderPitch_link"
+"LShoulderPitch_link" -> "LShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LShoulderRoll" -> "LShoulderRoll_link"
+"LShoulderRoll_link" -> "LElbowPitch" [label="xyz: 0.348196 0 0 \nrpy: 0 -0 0"]
+"LElbowPitch" -> "LElbowPitch_link"
+"LElbowPitch_link" -> "LWristYaw" [label="xyz: 0.303555 0 0 \nrpy: 0 -0 0"]
+"LWristYaw" -> "LWristYaw_link"
+"LWristYaw_link" -> "LWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LWristRoll" -> "LWristRoll_link"
+"BackRoll_link" -> "RShoulderYaw" [label="xyz: 0 -0.241059 0.414264 \nrpy: 0 -0 0"]
+"RShoulderYaw" -> "RShoulderYaw_link"
+"RShoulderYaw_link" -> "RShoulderPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RShoulderPitch" -> "RShoulderPitch_link"
+"RShoulderPitch_link" -> "RShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RShoulderRoll" -> "RShoulderRoll_link"
+"RShoulderRoll_link" -> "RElbowPitch" [label="xyz: 0.348196 0 0 \nrpy: 0 -0 0"]
+"RElbowPitch" -> "RElbowPitch_link"
+"RElbowPitch_link" -> "RWristYaw" [label="xyz: 0.303555 0 0 \nrpy: 0 -0 0"]
+"RWristYaw" -> "RWristYaw_link"
+"RWristYaw_link" -> "RWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RWristRoll" -> "RWristRoll_link"
+"back" -> "LHipYaw" [label="xyz: 0 0.108923 -0.152492 \nrpy: 0 -0 0"]
+"LHipYaw" -> "LHipYaw_link"
+"LHipYaw_link" -> "LHipPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LHipPitch" -> "LHipPitch_link"
+"LHipPitch_link" -> "LHipRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LHipRoll" -> "LHipRoll_link"
+"LHipRoll_link" -> "LKneePitch" [label="xyz: 0 0 -0.478546 \nrpy: 0 -0 0"]
+"LKneePitch" -> "LKneePitch_link"
+"LKneePitch_link" -> "LAnklePitch" [label="xyz: 0 0 -0.435691 \nrpy: 0 -0 0"]
+"LAnklePitch" -> "LAnklePitch_link"
+"LAnklePitch_link" -> "Lankle_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"Lankle_joint" -> "Lankle"
+"Lankle" -> "Lfoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
+"Lfoot_joint" -> "Lfoot"
+"back" -> "RHipYaw" [label="xyz: 0 -0.108923 -0.152492 \nrpy: 0 -0 0"]
+"RHipYaw" -> "RHipYaw_link"
+"RHipYaw_link" -> "RHipPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RHipPitch" -> "RHipPitch_link"
+"RHipPitch_link" -> "RHipRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RHipRoll" -> "RHipRoll_link"
+"RHipRoll_link" -> "RKneePitch" [label="xyz: 0 0 -0.478546 \nrpy: 0 -0 0"]
+"RKneePitch" -> "RKneePitch_link"
+"RKneePitch_link" -> "RAnklePitch" [label="xyz: 0 0 -0.435691 \nrpy: 0 -0 0"]
+"RAnklePitch" -> "RAnklePitch_link"
+"RAnklePitch_link" -> "Rankle_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"Rankle_joint" -> "Rankle"
+"Rankle" -> "Rfoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
+"Rfoot_joint" -> "Rfoot"
+}

@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<!--
+    A simple visualization of the Atlas's kinematic structure as cylinders
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+<!-- Height based on 50th percentile male anthropometric height (1.78562 meters). All the proportions/offsets are specified w.r.t this height parameter. The proportions/offsets were roughly estimated from the image in DRC proposer's day webcast slide-->
+<xacro:property name="height" value="1.78562" />
+
+
+<!-- visual properties (only affects visualization) -->
+<xacro:property name="cylinder_radius" value="0.025"/>   
+ <xacro:property name="buffer" value="0.04"/>  <!-- shows a gap between the links -->
+
+<!-- masses (kg) -->
+	<!-- mass of cables,skin,fluid etc. -->
+<xacro:property name="mass_misc" value="28.4" />
+	<!-- redistribyte misc mass equally across legs, arms and torso--> 
+<xacro:property name="mass_misc_div_3" value="9.467" />
+
+<xacro:property name="mass_pelvis_legs" value="30.7" />
+<xacro:property name="mass_torso_back" value= "9.8" />
+<xacro:property name="mass_arms_hands" value= "10.2" />
+<xacro:property name="mass_head_neck" value="1.8" />
+<xacro:property name="mass_power_plant" value="22.0" />
+<xacro:property name="mass_total" value="102.9" />
+
+<xacro:property name="mass_foot" value="2.0"/> <!-- made up a value for the foot mass -->
+
+<!-- proportions -->
+<xacro:property name="l_neck_head" value="0.134" />
+<xacro:property name="l_head" value="0.124" />
+<xacro:property name="l_neck" value="0.01" />
+<xacro:property name="l_torso" value="0.268" />
+<xacro:property name="l_upper_arm" value="0.195" />
+<xacro:property name="l_lower_arm" value="0.170" />
+<xacro:property name="l_hand" value="0.0854" />
+<xacro:property name="l_thigh" value="0.268" />
+<xacro:property name="l_shin" value="0.244 " />
+<xacro:property name="l_ankle" value="0.0243" />
+<xacro:property name="l_foot" value="0.0976" />
+
+<!-- guessing the width of stuff -->
+<xacro:property name="w_head" value="0.075" />
+<xacro:property name="w_arm" value="0.02" />
+<xacro:property name="w_leg" value="0.02" />
+
+<!-- offsets (meters)  -->
+<xacro:property name="o_back_shoulder_y" value="0.135" />
+<xacro:property name="o_back_shoulder_z" value="0.232" />
+<xacro:property name="o_back_hip_y" value="0.061" />
+<xacro:property name="o_back_hip_z" value="0.0854" />
+
+<!-- constants -->
+<xacro:property name="pi" value="3.1415926535897931"/>
+<xacro:property name="pi_2" value="1.5707963267948966"/>
+<xacro:property name="pi_180" value="0.01745329251"/>
+<!--  <xacro:property name="deg_2_rad" value="${pi/180}"/> -->
+
+<!-- Joint limits (radians)  -->
+<!-- adduction (min roll): motions towards the midline of the body-->
+<!-- abduction (max roll): motions away from the midline of the body-->
+<!-- adduction/abduction is analog to roll, rotation about x axis -->
+<xacro:property name="hip_adduction_limit" value="-20"/>
+<xacro:property name="hip_abduction_limit" value="20"/>
+<xacro:property name="back_adduction_limit" value="-40"/>
+<xacro:property name="back_abduction_limit" value="40"/>
+<xacro:property name="shoulder_adduction_limit" value="0"/>
+<xacro:property name="shoulder_abduction_limit" value="115"/>
+<xacro:property name="wrist_adduction_limit" value="-30"/>
+<xacro:property name="wrist_abduction_limit" value="60"/>
+
+<!-- Flexion (min pitch): decreases angle between two parts -->
+<!-- Extension (min pitch): increases angle between two parts -->
+<!-- Flexion/Extension is analog to pitch, rotation about y axis -->
+<xacro:property name="hip_flexion_limit" value="-100"/>
+<xacro:property name="hip_extension_limit" value="20"/>
+<xacro:property name="knee_flexion_limit" value="0"/>
+<xacro:property name="knee_extension_limit" value="135"/>
+<xacro:property name="ankle_flexion_limit" value="-40"/>
+<xacro:property name="ankle_extension_limit" value="40"/>
+
+<xacro:property name="back_flexion_limit" value="-25"/>
+<xacro:property name="back_extension_limit" value="25"/>
+<xacro:property name="neck_flexion_limit" value="-45"/>
+<xacro:property name="neck_extension_limit" value="45"/>
+<!-- The Boston Dynamics slide says flexion is -90 and extension is 50. But the other way makes more sense -->
+<xacro:property name="shoulder_flexion_limit" value="-50"/>
+<xacro:property name="shoulder_extension_limit" value="90"/>
+<xacro:property name="elbow_flexion_limit" value="-135"/>
+<xacro:property name="elbow_extension_limit" value="0"/>
+
+<!-- Internal/External rotation, (analog to yaw). e.g; internal rotation on hip causes the toe to point towards the mid point of the body -->
+<xacro:property name="hip_int_rotation_limit" value="-10"/>
+<xacro:property name="hip_ext_rotation_limit" value="70"/>
+<xacro:property name="back_int_rotation_limit" value="-45"/>
+<xacro:property name="back_ext_rotation_limit" value="45"/>
+<xacro:property name="neck_int_rotation_limit" value="-90"/>
+<xacro:property name="neck_ext_rotation_limit" value="90"/>
+<xacro:property name="shoulder_int_rotation_limit" value="-40"/>
+<xacro:property name="shoulder_ext_rotation_limit" value="100"/>
+<xacro:property name="wrist_int_rotation_limit" value="-85"/>
+<xacro:property name="wrist_ext_rotation_limit" value="85"/>
+
+<!-- Macros for inertial properties of simple geometries -->
+
+ <xacro:macro name="insert_inertial_cylinder" params="mass r l">
+   <!-- USAGE:: <xacro:insert_inertial_cylinder mass="10" r="1" l="2"/> -->
+      <inertial>
+         <mass value="${mass}" />
+          <inertia ixx="${(mass/12)*((3*r*r) + (l*l))}" ixy="0.0" ixz="0.0"
+                   iyy="${(mass/12)*((3*r*r) + (l*l))}" iyz="0.0"
+                   izz="${(mass/2)*(r*r)}" />
+      </inertial>
+</xacro:macro>
+
+ <xacro:macro name="insert_inertial_cuboid" params="mass l_x l_y l_z">
+  <!--USAGE: <xacro:insert_inertial_cuboid mass="10" l_x="1" l_y="2" l_z="3"/> -->
+      <inertial>
+         <mass value="${mass}" />
+          <inertia ixx="${(mass/12)*((l_y*l_y) + (l_z*l_z))}" ixy="0.0" ixz="0.0"
+                   iyy="${(mass/12)*((l_x*l_x) + (l_z*l_z))}" iyz="0.0"
+                   izz="${(mass/12)*((l_x*l_x) + (l_y*l_y))}" />
+      </inertial>
+</xacro:macro>
+
+ <xacro:macro name="insert_small_inertial"  params="">
+  <!--USAGE: <xacro:insert_small_inertial /> -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.0001"  ixy="0.0"  ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
+    </inertial>   
+</xacro:macro>
+
+ <xacro:macro name="insert_zero_inertial"  params="">
+  <!-- USAGE: <xacro:insert_zero_inertial /> -->
+  <!-- Gazebo does not like zero inertial properties (Use small inertial instead) -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.00"/>
+      <inertia ixx="0.0000"  ixy="0.0"  ixz="0.0" iyy="0.0000" iyz="0.0" izz="0.0000" />
+    </inertial>   
+</xacro:macro>
+
+    
+
+</robot>

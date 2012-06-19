@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<!--
+    A simple visualization of the Atlas's kinematic structure as cylinders
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <material name="LightGrey">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="Grey">
+      <color rgba="0.6 0.6 0.6 1.0"/>
+  </material>
+  <material name="DarkGrey">
+      <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="Black">
+      <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+
+    <xacro:macro name="insert_visualization_torso" params="">
+        <visual> 
+            <origin xyz="0.0 0.0 ${(l_torso/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_torso*height}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+              <origin xyz="0.0 0.0 ${(l_torso/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <box size=" ${0.1*height} ${0.28*height} ${0.268*height}"/>
+            </geometry>          
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_head" params="">
+        <visual>
+            <origin xyz="0 0 ${(l_neck_head/2 + l_neck)*height}" rpy="${pi_2} 0 0"/>
+            <geometry>
+		<cylinder radius="${(w_head/2)*height}" length="${l_head*height}"/>   
+ 		<!--  <sphere radius="${(l_head/2)*height}"/>-->
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+           <origin xyz="0 0 ${(l_neck_head/2 + l_neck)*height}" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder radius="${(w_head/2)*height}" length="${l_neck_head*height}"/>
+            </geometry>        
+        </collision>
+    </xacro:macro>
+
+
+    
+    <xacro:macro name="insert_visualization_upper_arm" params="side">
+        <visual>
+            <origin xyz="${(l_upper_arm/2)*height} 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_upper_arm*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="${(l_upper_arm/2)*height} 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_upper_arm*height}"/>
+            </geometry>     
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_lower_arm" params="side">
+        <visual>
+            <origin xyz="${(l_lower_arm/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${l_lower_arm*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="${(l_lower_arm/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_lower_arm*height}"/>
+            </geometry>     
+        </collision>
+    </xacro:macro>
+
+
+    <xacro:macro name="insert_visualization_hand" params="side">
+ 	<visual>
+            <origin xyz="${(l_hand/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${l_hand*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="${(l_hand/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_hand*height}"/>
+            </geometry>     
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_thigh" params="side">
+        <visual> 
+            <origin xyz="0.0 0.0 -${(l_thigh/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_thigh*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+              <origin xyz="0.0 0.0 -${(l_thigh/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_thigh*height}"/>
+            </geometry>          
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_shin" params="side">
+        <visual>
+            <origin xyz="0 0 -${(l_shin/2)*height}" rpy="0 0 0"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${l_shin*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -${(l_shin/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_shin*height}"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_ankle" params="side">
+        <visual>
+            <origin xyz="0 0 -${(l_ankle/2)*height}" rpy="0 0 0"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${l_ankle*height}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -${(l_ankle/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_ankle*height}"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_foot" params="side">
+        <visual>
+            <origin xyz="${(l_foot/2)*height} 0 0.0075" rpy="0 0 0"/>
+            <geometry>
+                <box size="${l_foot*height+0.05} 0.06 0.015"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+           <origin xyz="${(l_foot/2)*height} 0 0.0075" rpy="0 0 0"/>
+            <geometry>
+                <box size="${l_foot*height+0.05} 0.06 0.015"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
+</robot>
