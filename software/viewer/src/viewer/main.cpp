@@ -7,6 +7,10 @@
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
 
+#include <path_util/path_util.h>
+
+#include <bot_frames/bot_frames_renderers.h>
+
 //renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <renderer_drc/panorama_renderer.hpp>
@@ -45,6 +49,19 @@ int main(int argc, char *argv[])
   bot_glib_mainloop_attach_lcm(lcm);
 
 
+  std::string config_name;
+//  config_name = std::string(getConfigPath()) + "/drc_robot.cfg";
+  config_name = std::string(getConfigPath()) + "/../../../config/drc_robot.cfg";
+ // config_name = std::string(getConfigPath()) + "/drc_robot.cfg";
+  //bot_param_lcm_ = lcm_create(NULL);
+  BotParam* bot_param = bot_param_new_from_file(config_name.c_str());
+  if (bot_param == NULL) {
+    std::cerr << "Couldn't get bot param from file %s\n" << config_name << std::endl;
+    exit(-1);
+  }
+  BotFrames* bot_frames = bot_frames_new(lcm, bot_param);
+
+
   BotViewer* viewer = bot_viewer_new("MIT DRC Viewer");
 
   BotParam * param;
@@ -61,6 +78,8 @@ int main(int argc, char *argv[])
 
   setup_renderer_localize(viewer, 0,lcm);
   
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+
   status_add_renderer_to_viewer(viewer, 0, lcm);  
 
   if (use_renderer_rwx)
