@@ -1,8 +1,0 @@
-package drc;
-
-struct test_t 
-{
-   int32_t num_joints;  
-
-}
-
