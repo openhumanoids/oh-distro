@@ -102,19 +102,6 @@ namespace tf_publisher{
         tf_transform.child_frame_id_ = seg->second.tip;
         tf_transforms.push_back(tf_transform);
 
-	//for debugging
-        /*std::cout << "timestamp  : " << tf_transform.timestamp << std::endl;
-	std::cout << "frame_id_  : " << tf_transform.frame_id_ << std::endl;
-	std::cout << "child_frame_id_  : " << tf_transform.child_frame_id_ << std::endl;
-	std::cout << "translation  : " << std::endl;
-	std::cout << "\t .x  : " << tf_transform.translation.x << std::endl;
-	std::cout << "\t .y  : " << tf_transform.translation.y << std::endl;
-	std::cout << "\t .z  : " << tf_transform.translation.z << std::endl;
-	std::cout << "quaternion" << std::endl;
-	std::cout << "\t .x  : " << tf_transform.rotation.x << std::endl;
-	std::cout << "\t .y  : " << tf_transform.rotation.y << std::endl;
-	std::cout << "\t .z  : " << tf_transform.rotation.z << std::endl;
-	std::cout << "\t .w  : " << tf_transform.rotation.w << std::endl;*/
       }
     }
 
@@ -160,7 +147,7 @@ namespace tf_publisher{
       std::cerr <<"ERROR: lcm.good() returned false in TfPublisher::publishFixedTransforms" <<std::endl;
 
 
-    lcm.publish("JOINT_TRANSFORMS", &message);
+    lcm.publish("FIXEDJOINT_TRANSFORMS", &message);
     //tf_broadcaster_.sendTransform(tf_transforms);
   }
 
