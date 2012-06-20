@@ -8,36 +8,38 @@ find_package(PkgConfig REQUIRED)
 add_definitions(-Wall -std=gnu99)
 
 #####################################################################
-add_library(renderer_visualization SHARED 
+add_library(renderer_drc SHARED 
     renderer_rwx.cpp
     renderer_wavefront_model.cpp
     renderer_rwx_model.cpp
     renderer_status.cpp
     renderer_localize.cpp
-    renderer_groundtruth.cpp
-    scrollingplots_renderer.cpp
+    renderer_drcscrollingplots.cpp
     )
-set_target_properties(renderer_visualization PROPERTIES SOVERSION 1)
+set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
 
-pods_install_libraries(renderer_visualization)
+pods_install_libraries(renderer_drc)
 pods_install_headers(renderer_rwx.hpp
     renderer_wavefront_model.hpp
     renderer_rwx_model.hpp
     renderer_status.hpp 
     renderer_localize.hpp
-    renderer_groundtruth.hpp
     panorama_renderer.hpp
-    scrollingplots_renderer.hpp 
-    DESTINATION visualization)
+    renderer_drcscrollingplots.hpp
+    DESTINATION renderer_drc)
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
-pods_install_pkg_config_file(renderer_visualization
-    LIBS -lrenderer_visualization -ljpeg -l${LCMTYPES_LIBS}
+pods_install_pkg_config_file(renderer_drc
+    LIBS -lrenderer_drc -ljpeg 
     REQUIRES bot2-core bot2-vis bot2-frames 
     VERSION 0.0.1)
 
-pods_use_pkg_config_packages(renderer_visualization ${REQUIRED_LIBRARIES})
+pods_use_pkg_config_packages(renderer_drc
+    bot2-core bot2-vis bot2-frames)
+
+
+
 
 
 #####################################################################

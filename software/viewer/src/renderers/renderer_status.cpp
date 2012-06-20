@@ -33,13 +33,7 @@
 #include <sstream>
 #include <string>
 
-//#include <visualization/renderer_status.hpp>
-
-#include <lcmtypes/vs_system_status_t.h>
-//#include "visualization/collections.hpp"
-//#include "lcmtypes/vs_system_status_t.h"
-//#include "lcmtypes/fbn_p2v_mvmt_command_t.h"
-//#include "lcmtypes/fbn_v2p_reconstate_t.h"
+#include <lcmtypes/drc_system_status_t.h>
 
 using namespace std;
 
@@ -74,7 +68,7 @@ typedef struct
     
 //    fbn_feat_ping_t_subscription_t *sub;
 // disabled for now    fbn_water_state_t_subscription_t *water_sub;
-    vs_system_status_t_subscription_t *status_sub;
+    drc_system_status_t_subscription_t *status_sub;
 //    fbn_v2p_reconstate_t_subscription_t *reconstate_sub;
 //    fbn_p2v_mvmt_command_t_subscription_t *cmd_heading_sub;
 //    fbn_p2v_mvmt_command_t_subscription_t *cmd_speed_sub;
@@ -199,7 +193,7 @@ on_reconstate(const lcm_recv_buf_t *rbuf,
 
 static void
 on_vs_system_status(const lcm_recv_buf_t *rbuf,
-        const char *channel, const vs_system_status_t *msg, void *user)
+        const char *channel, const drc_system_status_t *msg, void *user)
 {
     RendererSystemStatus *self = (RendererSystemStatus*) user;
     
@@ -684,7 +678,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
             "P2V_CMD_DEPTH", on_cmd_depth, self);   
 */ 
     
-    self->status_sub = vs_system_status_t_subscribe(self->lcm, 
+    self->status_sub = drc_system_status_t_subscribe(self->lcm, 
             "SYSTEM_STATUS", on_vs_system_status, self);    
     self->param_status[0] = PARAM_STATUS_0_DEFAULT;    
     self->param_status[1] = PARAM_STATUS_1_DEFAULT;    

@@ -9,14 +9,11 @@
 
 //renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
-#include <visualization/collections_renderer.hpp>
-//#include <kinect/kinect_renderer.h>
-//#include <visualization/scrollingplots_renderer.hpp>
-#include <visualization/panorama_renderer.hpp>
-#include <visualization/renderer_rwx.hpp>
-#include <visualization/renderer_localize.hpp>
-#include <visualization/renderer_groundtruth.hpp>
-#include <visualization/renderer_status.hpp>
+#include <renderer_drc/panorama_renderer.hpp>
+#include <renderer_drc/renderer_rwx.hpp>
+#include <renderer_drc/renderer_localize.hpp>
+#include <renderer_drc/renderer_status.hpp>
+#include <renderer_drc/renderer_drcscrollingplots.hpp>
 
 using namespace std;
 
@@ -48,7 +45,7 @@ int main(int argc, char *argv[])
   bot_glib_mainloop_attach_lcm(lcm);
 
 
-  BotViewer* viewer = bot_viewer_new("Collections Viewer");
+  BotViewer* viewer = bot_viewer_new("MIT DRC Viewer");
 
   BotParam * param;
 
@@ -59,12 +56,10 @@ int main(int argc, char *argv[])
   bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   
   //kinect_add_renderer_to_viewer(viewer, 0,lcm,NULL,NULL, param);
-  collections_add_renderer_to_viewer(viewer, 1);
-  //scrollingplots_add_renderer_to_viewer(viewer, 0,lcm);
-  panorama_add_renderer_to_viewer(viewer, 0,lcm);
+  //drcscrollingplots_add_renderer_to_viewer(viewer, 0,lcm);
+  //panorama_add_renderer_to_viewer(viewer, 0,lcm);
 
   setup_renderer_localize(viewer, 0,lcm);
-  setup_renderer_groundtruth(viewer, 0,lcm);
   
   status_add_renderer_to_viewer(viewer, 0, lcm);  
 

@@ -23,7 +23,7 @@
 
 //#include <visualization/renderer_localize.h>
 
-#include <lcmtypes/vs_localize_reinitialize_cmd_t.h>
+#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
 
 #define RENDERER_NAME "Localize"
@@ -239,7 +239,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
         printf("x,y,t: %f %f %f.    std: %f\n",self->particle_mean.x
 	    ,self->particle_mean.y,self->theta,self->particle_std); 
         
-  	vs_localize_reinitialize_cmd_t msg;
+  	drc_localize_reinitialize_cmd_t msg;
         msg.utime = bot_timestamp_now();
         msg.mean[0] = self->particle_mean.x;
         msg.mean[1] = self->particle_mean.y;
@@ -253,10 +253,10 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
         fprintf(stderr,"Localizer Button Released => Activate Value : %d\n", self->active);
         if(self->active == 1){
             fprintf(stderr, "Reinitializing\n");
-            vs_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_REINITIALIZE", &msg);
+            drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_REINITIALIZE", &msg);
         }else if (self->active ==2){
             fprintf(stderr, "Setting Goal\n");
-            vs_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_GOAL", &msg);
+            drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_GOAL", &msg);
 	}else if (self->active ==3){ // this is only for testing
             fprintf(stderr, "Sending artificial POSE\n");
 	    bot_core_pose_t pose_msg;
@@ -345,7 +345,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 static void save_db (RendererLocalize *self){
   BotViewHandler *vhandler = self->viewer->view_handler;  
 
-  vs_localize_reinitialize_cmd_t msg;
+  drc_localize_reinitialize_cmd_t msg;
   msg.utime = bot_timestamp_now();
   msg.mean[0] = -99999;
   msg.mean[1] = -99999;
@@ -355,7 +355,7 @@ static void save_db (RendererLocalize *self){
   msg.variance[2] = -99999;
   //if(self->active == 1){
       fprintf(stderr,"Sent LOCALIZE_SAVE_DB LCM message %d\n", self->active);
-      vs_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_SAVE_DB", &msg);
+      drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_SAVE_DB", &msg);
   //}      
 //        self->active = 0;
 }
