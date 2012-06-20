@@ -8,9 +8,7 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include <kdl/tree.hpp>
-#include "lcmtypes/robot_model/robot_urdf_t.hpp"
-#include "lcmtypes/sensor_msgs/joint_state_t.hpp"
-#include "lcmtypes/sensor_msgs/joint_transform_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 #include "robot_state_publisher/treefksolverposfull_recursive.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 
@@ -33,7 +31,7 @@ namespace test_forward_kinematics_solver {
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const sensor_msgs::joint_state_t* msg)
+                const drc::joint_state_t* msg)
         {
 
 		// call a routine that calculates the transforms the joint_state_t* msg.
@@ -41,7 +39,7 @@ namespace test_forward_kinematics_solver {
     		for (unsigned int i=0; i< msg->num_joints; i++)
       			jointpos_in.insert(make_pair(msg->joint_name[i], msg->position[i]));  
 
-		 std::map<std::string, sensor_msgs::transform_t > cartpos_out;
+		 std::map<std::string, drc::transform_t > cartpos_out;
 		  
 		  // Calculate forward position kinematics
 		  bool kinematics_status;
@@ -56,9 +54,9 @@ namespace test_forward_kinematics_solver {
 		    std::cerr << "Error: could not calculate forward kinematics!" <<std::endl;
 		  }
 		  
-		  for( std::map<std::string, sensor_msgs::transform_t>::const_iterator it = cartpos_out.begin(); it!=cartpos_out.end(); it++)
+		  for( std::map<std::string, drc::transform_t>::const_iterator it = cartpos_out.begin(); it!=cartpos_out.end(); it++)
 		  { 
-		    sensor_msgs::joint_transform_t state;		    
+		    drc::joint_transform_t state;		    
 		    state.timestamp = 0;
 		    state.joint_name = it->first;
 		    state.tf.translation = it->second.translation;
@@ -87,7 +85,7 @@ namespace test_forward_kinematics_solver {
 	KDL::TreeFkSolverPosFull_recursive fksolver;
  };
 
- void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  robot_model::robot_urdf_t* msg, RobotModel*  robot) {
+ void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel*  robot) {
    // Received robot urdf string. Store it internally and get all available joints.
     robot->urdf_xml_string = msg->urdf_xml_string;
     std::cout<<"Received urdf_xml_string, storing it internally as a param"<<std::endl;

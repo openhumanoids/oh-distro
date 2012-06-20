@@ -40,7 +40,7 @@ TreeFkSolverPosFull_recursive::~TreeFkSolverPosFull_recursive()
 }
 
 
-int TreeFkSolverPosFull_recursive::JntToCart(const map<string, double>& q_in, map<string,sensor_msgs::transform_t>& p_out, bool flatten_tree)
+int TreeFkSolverPosFull_recursive::JntToCart(const map<string, double>& q_in, map<string,drc::transform_t>& p_out, bool flatten_tree)
 {      
   // clear output
   p_out.clear();
@@ -53,7 +53,7 @@ int TreeFkSolverPosFull_recursive::JntToCart(const map<string, double>& q_in, ma
 
 					     
 void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_in, 
-						  map<string, sensor_msgs::transform_t >& p_out,
+						  map<string, drc::transform_t >& p_out,
 						  const KDL::Frame& previous_frame,
 						  const SegmentMap::const_iterator this_segment,
 						  bool flatten_tree)
@@ -73,7 +73,7 @@ void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_i
   }
   this_frame = previous_frame * this_segment->second.segment.pose(jnt_p);
 
-  sensor_msgs::transform_t tf_transform;
+  drc::transform_t tf_transform;
   TransformKDLToLCMFrame(this_frame, tf_transform);  
   
   if (this_segment->first != tree.getRootSegment()->first)

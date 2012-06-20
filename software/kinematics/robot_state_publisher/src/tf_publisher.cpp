@@ -89,8 +89,8 @@ namespace tf_publisher{
    /* std::vector<tf::StampedTransform> tf_transforms;
     tf::StampedTransform tf_transform;
     tf_transform.stamp_ = time; */
-    std::vector< sensor_msgs::transform_stamped_t > tf_transforms;
-    sensor_msgs::transform_stamped_t tf_transform;
+    std::vector< drc::transform_stamped_t > tf_transforms;
+    drc::transform_stamped_t tf_transform;
     tf_transform.timestamp = time;
 
     // loop over all joints
@@ -106,7 +106,7 @@ namespace tf_publisher{
     }
 
 
-    sensor_msgs::tf_t message;  
+    drc::tf_t message;  
     message.num_joints = tf_transforms.size();
     message.tf = tf_transforms;
 	
@@ -127,8 +127,8 @@ namespace tf_publisher{
     tf::StampedTransform tf_transform;
     tf_transform.stamp_ = ros::Time::now()+ros::Duration(0.5);  // future publish by 0.5 seconds */
 
-    std::vector<sensor_msgs::transform_stamped_t> tf_transforms;
-    sensor_msgs::transform_stamped_t tf_transform;   
+    std::vector<drc::transform_stamped_t> tf_transforms;
+    drc::transform_stamped_t tf_transform;   
     tf_transform.timestamp = time;
 
     // loop over all fixed segments
@@ -139,7 +139,7 @@ namespace tf_publisher{
       tf_transforms.push_back(tf_transform);
     }
     
-   sensor_msgs::tf_t message;  
+   drc::tf_t message;  
    message.num_joints = tf_transforms.size();
    message.tf = tf_transforms;
 

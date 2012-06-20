@@ -24,7 +24,7 @@
 #define KDLTREEFKSOLVERPOSFULL_RECURSIVE_HPP
 
 #include <kdl/tree.hpp>
-#include "lcmtypes/sensor_msgs/transform_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 namespace KDL {
 
@@ -35,16 +35,16 @@ public:
   TreeFkSolverPosFull_recursive(const Tree& _tree);
   ~TreeFkSolverPosFull_recursive();
 
-  int JntToCart(const std::map<std::string, double>& q_in, std::map<std::string, sensor_msgs::transform_t>& p_out, bool flatten_tree=true);
+  int JntToCart(const std::map<std::string, double>& q_in, std::map<std::string, drc::transform_t>& p_out, bool flatten_tree=true);
 
 private:
   void addFrameToMap(const std::map<std::string, double>& q_in, 
-		     std::map<std::string, sensor_msgs::transform_t  >& p_out,
+		     std::map<std::string, drc::transform_t  >& p_out,
 		     const KDL::Frame& previous_frame,
 		     const SegmentMap::const_iterator this_segment,
 		     bool flatten_tree);
   
-  void TransformKDLToLCMFrame(const KDL::Frame &k, sensor_msgs::transform_t &t)
+  void TransformKDLToLCMFrame(const KDL::Frame &k, drc::transform_t &t)
   {
     t.translation.x = k.p[0];
     t.translation.y = k.p[1];

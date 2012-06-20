@@ -6,16 +6,16 @@ include(cmake/pods.cmake)
 
 # automatically build LCM types.  This also defines a number of CMake
 # variables, see cmake/lcmtypes.cmake for details
-include(cmake/lcmtypes.cmake)
-lcmtypes_build()
+#include(cmake/lcmtypes.cmake)
+#lcmtypes_build()
 
 set(REQUIRED_PACKAGES urdf)
 # build two LCM test programs
 add_executable(joint_state_publisher src/joint_state_publisher.cpp)
-pods_use_pkg_config_packages(joint_state_publisher lcm lcmtypes_${POD_NAME} ${REQUIRED_PACKAGES})
+pods_use_pkg_config_packages(joint_state_publisher lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 
 add_executable(joint_state_listener src/joint_state_listener.cpp)
-pods_use_pkg_config_packages(joint_state_listener lcm lcmtypes_${POD_NAME})
+pods_use_pkg_config_packages(joint_state_listener lcm lcmtypes_drc_lcmtypes)
 
 # make executables public
 #pods_install_executables(joint_state_publisher)

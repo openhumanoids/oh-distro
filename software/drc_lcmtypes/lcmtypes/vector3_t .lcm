@@ -1,4 +1,4 @@
-package sensor_msgs;
+package drc;
 
 struct vector3_t 
 {

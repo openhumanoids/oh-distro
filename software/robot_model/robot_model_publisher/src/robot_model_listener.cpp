@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/robot_model/robot_urdf_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 class Handler 
 {
@@ -10,7 +10,7 @@ class Handler
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const robot_model::robot_urdf_t * msg)
+                const drc::robot_urdf_t * msg)
         {
     	 std::cout << "Received urdf string on channel " << chan << std::endl;
      	 std::cout << "  timestamp   = " << msg->timestamp << std::endl;

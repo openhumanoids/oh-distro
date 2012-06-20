@@ -17,8 +17,7 @@
 
 #include <urdf/model.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/sensor_msgs/joint_state_t.hpp"
-#include "lcmtypes/robot_model/robot_urdf_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 namespace joint_state_publisher {
   
@@ -29,7 +28,7 @@ class RobotModel {
    std::vector<std::string> joint_names_;
  };
 
-void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  robot_model::robot_urdf_t* msg, RobotModel* robot) {
+void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot) {
   // Received robot urdf string. Store it internally and get all available joints.
   robot->urdf_xml_string = msg->urdf_xml_string;
   std::cout<<"Received urdf_xml_string, storing it internally as a param"<<std::endl;
@@ -74,7 +73,7 @@ int main(int argc, char ** argv)
         return 1;
 
 
-  sensor_msgs::joint_state_t message;
+  drc::joint_state_t message;
 
 
 // Get joint angles using  gazebo/robot API for all joints in robot->joint_names_

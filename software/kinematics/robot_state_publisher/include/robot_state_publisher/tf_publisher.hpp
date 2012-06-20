@@ -46,8 +46,7 @@
 #include <kdl/frames.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
-#include "lcmtypes/sensor_msgs/transform_stamped_t.hpp"
-#include "lcmtypes/sensor_msgs/tf_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 
 namespace tf_publisher{
@@ -83,7 +82,7 @@ public:
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);
-  void TransformKDLToLCMFrame(const KDL::Frame &k, sensor_msgs::transform_stamped_t &t)
+  void TransformKDLToLCMFrame(const KDL::Frame &k, drc::transform_stamped_t &t)
   {
     t.translation.x = k.p[0];
     t.translation.y = k.p[1];

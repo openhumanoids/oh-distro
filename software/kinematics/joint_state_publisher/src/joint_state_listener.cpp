@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/sensor_msgs/joint_state_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 namespace joint_state_listener {
 class Handler 
@@ -12,7 +12,7 @@ class Handler
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const sensor_msgs::joint_state_t* msg)
+                const drc::joint_state_t* msg)
         {
 
 		std::cout << "Received joint_state_t message on channel " << chan << std::endl;	     	 

@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/sensor_msgs/transform_stamped_t.hpp"
-#include "lcmtypes/sensor_msgs/tf_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 namespace robot_state_listener {
 class Handler 
@@ -13,12 +12,12 @@ class Handler
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const sensor_msgs::tf_t* msg)
+                const drc::tf_t* msg)
         {
 		 std::cout << "Received joint_state_t message on channel " << chan << std::endl;	     	 
-		for(std::vector<sensor_msgs::transform_stamped_t>::size_type i = 0; i != msg->num_joints; i++) 
+		for(std::vector<drc::transform_stamped_t>::size_type i = 0; i != msg->num_joints; i++) 
 		{
-		  sensor_msgs::transform_stamped_t tf_transform =  msg->tf[i];
+		  drc::transform_stamped_t tf_transform =  msg->tf[i];
 		  std::cout << "timestamp  : " << tf_transform.timestamp << std::endl;
 		  std::cout << "frame_id_  : " << tf_transform.frame_id_ << std::endl;
 		  std::cout << "child_frame_id_  : " << tf_transform.child_frame_id_ << std::endl;

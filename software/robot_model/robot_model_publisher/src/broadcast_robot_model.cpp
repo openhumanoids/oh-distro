@@ -6,7 +6,7 @@
 #include <fstream>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/robot_model/robot_urdf_t.hpp"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 
 
@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
     if(!lcm.good())
         return 1;
 
-    robot_model::robot_urdf_t message;
+    drc::robot_urdf_t message;
     message.timestamp = 0;
     message.urdf_xml_string = xml_string;
 
