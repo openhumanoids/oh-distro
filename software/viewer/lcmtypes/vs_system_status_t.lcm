@@ -1,0 +1,17 @@
+package vs;
+
+// status of the robot system
+struct system_status_t
+{
+    int64_t utime;
+    string	name;
+    int32_t     level; 
+// 0=very important but infrequent eg new feature/pose in sam map, mission status
+// 1=important but infrequent eg GPS fix
+// 2=somewhat important but infrequent eg ping number summary?
+// 3=very important but very frequent eg distance/heading to target (from MissionController.cpp)
+// 4=important but very frequent
+// 5=somewhat important but very frequent
+    string	value;
+}
+
