@@ -2,8 +2,9 @@
 # and lines starting with '#' are ignored
 
 externals
+core
 drc_lcmtypes
-#core
+viewer
 #drivers
 robot_model
 kinematics
