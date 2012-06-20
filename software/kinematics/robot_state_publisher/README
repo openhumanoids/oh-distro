@@ -24,7 +24,7 @@ This pod provides three processes and one library.
 
 1) robot_state_publisher:
 Subscribes to JOINT_STATES lcm channel to get joint angles and then 
-publishes them as ROS style tf_t messages on JOINT_TRANSFORMS lcm channel.
+publishes them as ROS style tf_t messages on JOINT_TRANSFORMS and FIXEDJOINT_TRANSFORMS lcm channels.
 The publisher requires access to the urdf robot model. 
 At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
 waits until it receives the urdf string and then unsubcribes from this
