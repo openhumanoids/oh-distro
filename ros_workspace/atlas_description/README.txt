@@ -4,6 +4,7 @@ rosrun xacro xacro.py atlas_robot.urdf.xacro > atlas_robot.urdf
 
 
 To investigate the kinematic properties of the model in Rviz, run the following from a terminal:
+roscd atlas_description/urdf
 roslaunch atlas_description displayInRviz.launch model:=atlas_robot.urdf.xacro gui:=True
 
 To spawn the URDF in gazebo, run:
