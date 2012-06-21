@@ -1,6 +1,6 @@
 <launch>
   <!-- send atlas urdf to param server -->
-  <param name="robot_description" command="$(find xacro)/xacro.py $(find nao_description)/urdf/atlas_robot.urdf.xacro" />  
+  <param name="robot_description" command="$(find xacro)/xacro.py $(find atlas_description)/urdf/atlas_robot.urdf.xacro" />  
 
   <node name="spawn_atlas" pkg="gazebo" type="spawn_model" args="-urdf -param robot_description -z 1.15 -model atlas" respawn="false" output="screen" />
 

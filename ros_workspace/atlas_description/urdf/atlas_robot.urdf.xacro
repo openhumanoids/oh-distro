@@ -8,9 +8,9 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
   Joint names and properties are according to the Boston Dynamics Slide during DRC proposers day talk.
   -->
 
-  <include filename="$(find nao_description)/urdf/atlas_properties.xacro" />
-  <include filename="$(find nao_description)/urdf/atlas_visualsandcollision.xacro" />
-  <include filename="$(find nao_description)/urdf/atlas_structure.urdf.xacro" />
+  <include filename="$(find atlas_description)/urdf/atlas_properties.xacro" />
+  <include filename="$(find atlas_description)/urdf/atlas_visualsandcollision.xacro" />
+  <include filename="$(find atlas_description)/urdf/atlas_structure.urdf.xacro" />
   
 
 
