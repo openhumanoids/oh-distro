@@ -1,3 +1,6 @@
+// file: robot_model_listener.cpp
+// test code for a robot model subscriber.
+
 #include <stdio.h>
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
@@ -14,7 +17,8 @@ class Handler
         {
     	 std::cout << "Received urdf string on channel " << chan << std::endl;
      	 std::cout << "  timestamp   = " << msg->timestamp << std::endl;
-    	 std::cout << msg->urdf_xml_string << std::endl; 
+	 std::cout << "  robot   = " << msg->robot_name << std::endl;
+    	// std::cout << msg->urdf_xml_string << std::endl; 
         }
 };
 
