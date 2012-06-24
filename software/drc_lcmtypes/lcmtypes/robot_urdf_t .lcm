@@ -3,6 +3,7 @@ package drc;
 struct robot_urdf_t 
 {
     int64_t  timestamp;
+    string   robot_name;
     string   urdf_xml_string;
 }
 
