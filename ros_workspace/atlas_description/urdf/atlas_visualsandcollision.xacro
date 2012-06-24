@@ -100,6 +100,41 @@
         </collision>
     </xacro:macro>
 
+
+
+    <xacro:macro name="insert_visualization_pelvis1" params="">
+        <visual>
+            <origin xyz="0 0 -${(l_pelvis/2)*height}" rpy="0 0 0"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${l_pelvis*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 -${(l_pelvis/2)*height}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${l_pelvis*height}"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
+
+    <xacro:macro name="insert_visualization_pelvis2" params="">
+        <visual>
+            <origin xyz="0 0 0" rpy="${pi_2} 0 0"/>
+            <geometry>
+               <cylinder radius="${cylinder_radius}" length="${w_pelvis*height-buffer}"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+            <origin xyz="0 0 0" rpy="${pi_2} 0 0"/>
+            <geometry>
+                <cylinder radius="${cylinder_radius}" length="${w_pelvis*height}"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
     <xacro:macro name="insert_visualization_thigh" params="side">
         <visual> 
             <origin xyz="0.0 0.0 -${(l_thigh/2)*height}" rpy="0 0 0"/>

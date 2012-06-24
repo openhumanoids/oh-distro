@@ -25,7 +25,7 @@
 <xacro:property name="mass_head_neck" value="1.8" />
 <xacro:property name="mass_power_plant" value="22.0" />
 <xacro:property name="mass_total" value="102.9" />
-
+<xacro:property name="mass_pelvis" value="5.7" />
 <xacro:property name="mass_foot" value="2.0"/> <!-- made up a value for the foot mass -->
 
 <!-- proportions -->
@@ -40,11 +40,14 @@
 <xacro:property name="l_shin" value="0.244 " />
 <xacro:property name="l_ankle" value="0.0243" />
 <xacro:property name="l_foot" value="0.0976" />
+<xacro:property name="l_pelvis" value="0.0854" />
+
 
 <!-- guessing the width of stuff -->
 <xacro:property name="w_head" value="0.075" />
 <xacro:property name="w_arm" value="0.02" />
 <xacro:property name="w_leg" value="0.02" />
+<xacro:property name="w_pelvis" value="0.122" />
 
 <!-- offsets (meters)  -->
 <xacro:property name="o_back_shoulder_y" value="0.135" />

@@ -20,6 +20,8 @@ node [shape=box];
 "RElbowPitch_link" [label="RElbowPitch_link"];
 "RWristYaw_link" [label="RWristYaw_link"];
 "RWristRoll_link" [label="RWristRoll_link"];
+"pelvis-link1" [label="pelvis-link1"];
+"pelvis-link2" [label="pelvis-link2"];
 "LHipYaw_link" [label="LHipYaw_link"];
 "LHipPitch_link" [label="LHipPitch_link"];
 "LHipRoll_link" [label="LHipRoll_link"];
@@ -73,7 +75,11 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "RWristYaw" -> "RWristYaw_link"
 "RWristYaw_link" -> "RWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "RWristRoll" -> "RWristRoll_link"
-"back" -> "LHipYaw" [label="xyz: 0 0.108923 -0.152492 \nrpy: 0 -0 0"]
+"back" -> "back_pelvis" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"back_pelvis" -> "pelvis-link1"
+"pelvis-link1" -> "mid_pelvis_dummy" [label="xyz: 0 0 -0.152492 \nrpy: 0 -0 0"]
+"mid_pelvis_dummy" -> "pelvis-link2"
+"pelvis-link2" -> "LHipYaw" [label="xyz: 0 0.108923 0 \nrpy: 0 -0 0"]
 "LHipYaw" -> "LHipYaw_link"
 "LHipYaw_link" -> "LHipPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "LHipPitch" -> "LHipPitch_link"
@@ -87,7 +93,7 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "Lankle_joint" -> "Lankle"
 "Lankle" -> "Lfoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
 "Lfoot_joint" -> "Lfoot"
-"back" -> "RHipYaw" [label="xyz: 0 -0.108923 -0.152492 \nrpy: 0 -0 0"]
+"pelvis-link2" -> "RHipYaw" [label="xyz: 0 -0.108923 0 \nrpy: 0 -0 0"]
 "RHipYaw" -> "RHipYaw_link"
 "RHipYaw_link" -> "RHipPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "RHipPitch" -> "RHipPitch_link"
