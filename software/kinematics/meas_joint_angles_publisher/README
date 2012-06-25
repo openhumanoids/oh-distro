@@ -8,29 +8,29 @@ templates.  The policies and templates can be found at:
 
 ====
 
-Name:         joint_state_publisher
+Name:         meas_joint_angles_publisher
 Maintainers:  Sisir K and Maurice F
 Summary:     Communicates to gazebo/robot API to get joint angles and then 
-publishes them on JOINT_STATES lcm channel.
+publishes them on MEAS_JOINT_ANGLES lcm channel.
 
 Description:
 This pods provides two processes. 
 
-1) joint_state_publisher:
+1) meas_joint_angles_publisher:
 This process communicates to gazebo/robot API to get joint angles and then 
-publishes them on JOINT_STATES lcm channel. The publisher requires access to 
+publishes them on MEAS_JOINT_ANGLES lcm channel. The publisher requires access to 
 the urdf robot model. At startup, the process creates a subcription to ROBOT_MODEL
 lcm channel, waits until it receives the urdf string and then unsubcribes from this
 channel.
 
-2) joint_state_listener:
+2) meas_joint_angles_listener:
 This is a example program that subscribes to joint_angles (used for checking message comms).
 For an example usage, try the following commands in a set of terminals in the specified order:
-Term1: ./joint_state_listener
-Term2: ./joint_state_publisher
+Term1: ./meas_joint_angles_listener
+Term2: ./meas_joint_angles_publisher
 Term3: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
 
 Requirements: 
  lcm
 
-License:      FILL-ME-IN
+License:      N/A

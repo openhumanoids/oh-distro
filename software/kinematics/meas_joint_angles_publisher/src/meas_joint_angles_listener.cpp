@@ -4,7 +4,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
 
-namespace joint_state_listener {
+namespace meas_joint_angles_listener {
 class Handler 
 {
     public:
@@ -12,13 +12,13 @@ class Handler
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const drc::joint_state_t* msg)
+                const drc::joint_angles_t* msg)
         {
 
-		std::cout << "Received joint_state_t message on channel " << chan << std::endl;	     	 
+		std::cout << "Received joint_angles_t message for robot "<<msg->robot_name<<" on channel " << chan << std::endl;	     	 
 	    	for(std::vector<std::string>::size_type i = 0; i != msg->joint_name.size(); i++) 
 	  	{
-		  std::cout<< "  timestamp   = " << msg->timestamp << "  joint name  = " <<  msg->joint_name[i] << "  position    = " <<  msg->position[i] <<std::endl;
+		  std::cout<< "  timestamp   = " << msg->timestamp << "  joint name  = " <<  msg->joint_name[i] << "  position    = " <<  msg->angular_position[i] <<std::endl;
 		}
 
         }
@@ -32,8 +32,8 @@ int main(int argc, char** argv)
     if(!lcm.good())
         return 1;
 
-    joint_state_listener::Handler handlerObject;
-    lcm.subscribe("JOINT_STATES", &joint_state_listener::Handler::handleMessage, &handlerObject);
+    meas_joint_angles_listener::Handler handlerObject;
+    lcm.subscribe("MEAS_JOINT_ANGLES", &meas_joint_angles_listener::Handler::handleMessage, &handlerObject);
 
     while(0 == lcm.handle());
 
