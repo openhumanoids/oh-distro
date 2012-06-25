@@ -16,16 +16,16 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <xacro:insert_small_inertial />
   </link>
 
-  <link name="back">   
+  <link name="Back">   
     <xacro:insert_small_inertial />
   </link>
 
-  <link name="pelvis-link1">   
+  <link name="Pelvis-link1">   
    <xacro:insert_inertial_cuboid mass="${mass_pelvis}" l_x="${0.1*height}" l_y="${w_pelvis*height}" l_z="${l_pelvis*height}"/>
    <xacro:insert_visualization_pelvis1/>
   </link>
 
-  <link name="pelvis-link2">   
+  <link name="Pelvis-link2">   
    <xacro:insert_small_inertial /> 
    <xacro:insert_visualization_pelvis2/>
   </link>
@@ -42,7 +42,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <xacro:insert_small_inertial /> 
   </link>
   
- <link name="torso" >
+ <link name="Torso" >
    <!-- assuming the rotational inertia of the torso is of a cuboid -->
   <xacro:insert_inertial_cuboid mass="${mass_torso_back+mass_misc_div_3}" l_x="${0.1*height}" l_y="${0.28*height}" l_z="${0.268*height}"/>
    <xacro:insert_visualization_torso/>    
@@ -132,7 +132,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <!--   Joints following below -->
   
   <joint name="base_joint" type="fixed">
-    <child link="back"/>
+    <child link="Back"/>
     <parent link="base_link"/>
     <origin xyz="0 0 0" rpy="0 0 0" />
   </joint>
@@ -170,7 +170,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <!-- Neck joints -->
   
   <joint name="NeckYaw" type="revolute">
-    <parent link="torso"/>
+    <parent link="Torso"/>
     <child link="NeckYaw_link"/>
     <origin xyz="0 0 ${(l_torso)*height}" rpy="0 0 0" />
     <axis xyz="0 0 1" />
@@ -260,22 +260,22 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
 <!-- Pelvis joints -->
- <joint name="back_pelvis" type="fixed">
-    <parent link="back"/>
-    <child link="pelvis-link1"/>
+ <joint name="Back_Pelvis_Joint" type="fixed">
+    <parent link="Back"/>
+    <child link="Pelvis-link1"/>
     <origin xyz="0 0 0" rpy="0 0 0" />
   </joint>
  
- <joint name="mid_pelvis_dummy" type="fixed">
-    <parent link="pelvis-link1"/>
-    <child link="pelvis-link2"/>
+ <joint name="Mid_Pelvis_Joint" type="fixed">
+    <parent link="Pelvis-link1"/>
+    <child link="Pelvis-link2"/>
     <origin xyz="0 0 ${-l_pelvis*height}" rpy="0 0 0" />
   </joint>
  
 <!-- Leg joints -->
 
  <joint name="LHipYaw" type="revolute">
-    <parent link="pelvis-link2"/>
+    <parent link="Pelvis-link2"/>
     <child link="LHipYaw_link"/>
     <origin xyz="0 ${-1*-(o_back_hip_y*height)} 0" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
@@ -283,7 +283,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
   <joint name="RHipYaw" type="revolute">
-    <parent link="pelvis-link2"/>
+    <parent link="Pelvis-link2"/>
     <child link="RHipYaw_link"/>
     <origin xyz="0 ${1*-(o_back_hip_y*height)} 0" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
