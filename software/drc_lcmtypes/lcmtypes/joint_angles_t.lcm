@@ -1,12 +1,11 @@
 package drc;
 
-struct joint_state_t 
+struct joint_angles_t 
 {
     int64_t timestamp;
+    string robot_name;
     int32_t num_joints;
     string joint_name [num_joints];
-    float position [num_joints];
-    float velocity [num_joints];
-    float effort [num_joints];
+    float angular_position [num_joints];  
 }
 
