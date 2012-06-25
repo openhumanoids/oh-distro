@@ -1,0 +1,8 @@
+package drc;
+
+struct ground_contact_state_t
+{
+   int32_t num_contacts;
+   string  id [num_contacts];
+   boolean onGround [num_contacts];
+}

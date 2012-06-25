@@ -1,0 +1,8 @@
+package drc;
+
+struct position3D_t
+{
+   vector3_t translation;
+   quaternion_t rotation;
+}
+
