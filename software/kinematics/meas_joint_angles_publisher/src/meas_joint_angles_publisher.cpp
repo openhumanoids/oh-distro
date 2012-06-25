@@ -40,11 +40,11 @@ void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const
   if (!robot_model.initString( msg->urdf_xml_string))
   {std::cerr << "ERROR: Could not generate robot model" << std::endl;}
 
-  typedef std::map<std::string, boost::shared_ptr<urdf::Joint> > joints_mapType;
+  typedef std::map<std::string, boost::shared_ptr<urdf::Joint> > joints_mapType; 
   for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
   { 
 	  if(it->second->type!=6) // All joints that not of the type FIXED.
-               robot->joint_names_.push_back(it->first);
+               robot->joint_names_.push_back(it->first);//Joint names are sorted in alphabetical order within the urdf::Model structure.
   }
  }//end onMessage
 
@@ -94,7 +94,7 @@ int main(int argc, char ** argv)
     for(std::vector<std::string>::size_type i = 0; i != robot->joint_names_.size(); i++) 
     {
       //std::cout<< robot->joint_names_[i] <<std::endl;
-      message.joint_name.push_back(robot->joint_names_[i]);
+      message.joint_name.push_back(robot->joint_names_[i]); // Joint names available in alphabetical order.
       //TODO: INSERT ROBOT/GAZEBO API HERE?
       message.angular_position.push_back(0);
 
