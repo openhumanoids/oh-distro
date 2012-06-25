@@ -15,6 +15,7 @@
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <renderer_drc/panorama_renderer.hpp>
 #include <renderer_drc/renderer_rwx.hpp>
+#include <renderer_drc/renderer_wavefront_model.hpp>
 #include <renderer_drc/renderer_localize.hpp>
 #include <renderer_drc/renderer_status.hpp>
 #include <renderer_drc/renderer_drcscrollingplots.hpp>
@@ -79,6 +80,8 @@ int main(int argc, char *argv[])
   setup_renderer_localize(viewer, 0,lcm);
   
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+
+  add_wheelchair_model_renderer_to_viewer(viewer, 1, bot_param, bot_frames);
 
   status_add_renderer_to_viewer(viewer, 0, lcm);  
 
