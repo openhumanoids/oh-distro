@@ -3,5 +3,4 @@
 
 orocos_kdl
 kdl_parser
-meas_joint_angles_publisher
 robot_state_publisher
