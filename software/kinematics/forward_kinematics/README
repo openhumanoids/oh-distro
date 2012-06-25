@@ -17,8 +17,6 @@ Description:
 Requirements: 
  urdf orocos-kdl kdl-parser 
 
-License:      FILL-ME-IN
-
 Description:
 
 The main component of this pod is the forward-kinematics library
