@@ -117,10 +117,10 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <xacro:insert_visualization_ankle side="${side}"/>
   </link>
 
-  <link name="${side}ankle">
+  <link name="${side}Ankle">
     <xacro:insert_small_inertial /> 
   </link>
-  <link name="${side}foot">
+  <link name="${side}Foot">
    <xacro:insert_inertial_cuboid mass="${mass_foot}" l_x="${l_foot*height}" l_y="0.06" l_z="0.015"/>
     <xacro:insert_visualization_foot side="${side}"/>
     </link>
@@ -138,7 +138,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
   <joint name="BackYaw" type="revolute">
-    <parent link="back"/>
+    <parent link="Back"/>
     <child link="BackYaw_link"/>
     <origin xyz="0 0 0.0" rpy="0 0 0" />
     <axis xyz="0 0 1" />
@@ -162,7 +162,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
   <joint name="BackRoll_Torso_joint" type="fixed">
-    <child link="torso"/>
+    <child link="Torso"/>
     <parent link="BackRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0" />
   </joint>
@@ -291,14 +291,14 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
  <!-- <joint name="LHipYaw" type="revolute">
-    <parent link="back"/>
+    <parent link="Back"/>
     <child link="LHipYaw_link"/>
     <origin xyz="0 ${-1*-(o_back_hip_y*height)} ${-o_back_hip_z*height}" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
   <limit velocity="3.0" effort="30" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
   </joint>
   <joint name="RHipYaw" type="revolute">
-    <parent link="back"/>
+    <parent link="Back"/>
     <child link="RHipYaw_link"/>
     <origin xyz="0 ${1*-(o_back_hip_y*height)} ${-o_back_hip_z*height}" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
@@ -339,15 +339,15 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="3.0" effort="30" lower="${ankle_flexion_limit*pi_180}" upper="${ankle_extension_limit*pi_180}"/>
   </joint>
 
-  <joint name="${side}ankle_joint" type="fixed">
+  <joint name="${side}Ankle_joint" type="fixed">
     <parent link="${side}AnklePitch_link" />
-    <child link="${side}ankle" />
+    <child link="${side}Ankle" />
     <origin xyz="0 0 0" />  
   </joint>
 
-  <joint name="${side}foot_joint" type="fixed">
-    <parent link="${side}ankle" />
-    <child link="${side}foot" />
+  <joint name="${side}Foot_joint" type="fixed">
+    <parent link="${side}Ankle" />
+    <child link="${side}Foot" />
     <origin xyz="0 0 -0.04519" />  
   </joint>
 
