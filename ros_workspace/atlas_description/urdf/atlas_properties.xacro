@@ -84,7 +84,7 @@
 <xacro:property name="ankle_flexion_limit" value="-40"/>
 <xacro:property name="ankle_extension_limit" value="40"/>
 
-<xacro:property name="back_flexion_limit" value="-25"/>
+<xacro:property name="back_flexion_limit" value="-35"/>
 <xacro:property name="back_extension_limit" value="25"/>
 <xacro:property name="neck_flexion_limit" value="-45"/>
 <xacro:property name="neck_extension_limit" value="45"/>

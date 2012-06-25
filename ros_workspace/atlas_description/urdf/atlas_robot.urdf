@@ -513,7 +513,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <child link="BackPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-0.43633231275" upper="0.43633231275" velocity="3.0"/>
+    <limit effort="30" lower="-0.61086523785" upper="0.43633231275" velocity="3.0"/>
   </joint>
   <joint name="BackRoll" type="revolute">
     <parent link="BackPitch_link"/>
