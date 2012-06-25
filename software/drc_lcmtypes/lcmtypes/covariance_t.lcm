@@ -2,7 +2,7 @@ package drc;
 
 struct covariance_t
 {
-   float position_cov[6][6];
-   float twist_cov[6][6];
+   double position_cov[6][6];
+   double twist_cov[6][6];
 }
 

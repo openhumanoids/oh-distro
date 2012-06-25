@@ -2,8 +2,8 @@ package drc;
 
 struct vector3_t
 {
- float x;
- float y;
- float z;
+ double x;
+ double y;
+ double z;
 }
 
