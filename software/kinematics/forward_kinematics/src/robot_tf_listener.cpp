@@ -1,10 +1,10 @@
-// Test program for subcription of joint angles.
+// Test program for subcription of joint angles and subsequent conversion into ROS style tf transforms.
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
 
-namespace robot_state_listener {
+namespace robot_tf_listener {
 class Handler 
 {
     public:
@@ -14,11 +14,13 @@ class Handler
                 const std::string& chan, 
                 const drc::tf_t* msg)
         {
-		 std::cout << "Received joint_state_t message on channel " << chan << std::endl;	     	 
+		 std::cout << "Received joint_state_t message on channel " << chan << std::endl;
+		 std::cout << "timestamp  : " << msg->timestamp << std::endl;
+		 std::cout << "robot  : " << msg->robot_name << std::endl;		 
 		for(std::vector<drc::transform_stamped_t>::size_type i = 0; i != msg->num_joints; i++) 
 		{
 		  drc::transform_stamped_t tf_transform =  msg->tf[i];
-		  std::cout << "timestamp  : " << tf_transform.timestamp << std::endl;
+		  
 		  std::cout << "frame_id_  : " << tf_transform.frame_id_ << std::endl;
 		  std::cout << "child_frame_id_  : " << tf_transform.child_frame_id_ << std::endl;
 		  std::cout << "translation  : " << std::endl;
@@ -44,8 +46,8 @@ int main(int argc, char** argv)
     if(!lcm.good())
         return 1;
 
-    robot_state_listener::Handler handlerObject;
-    lcm.subscribe("JOINT_TRANSFORMS", &robot_state_listener::Handler::handleMessage, &handlerObject);
+    robot_tf_listener::Handler handlerObject;
+    lcm.subscribe("JOINT_TRANSFORMS", &robot_tf_listener::Handler::handleMessage, &handlerObject);
 
     while(0 == lcm.handle());
 

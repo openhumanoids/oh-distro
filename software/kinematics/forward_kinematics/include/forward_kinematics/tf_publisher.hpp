@@ -77,8 +77,8 @@ public:
    * \param joint_positions A map of joint names and joint positions. 
    * \param time The time at which the joint positions were recorded
    */
-  void publishTransforms(const std::map<std::string, double>& joint_positions, const int64_t& time);
-  void publishFixedTransforms(const int64_t& time);
+  void publishTransforms(const std::map<std::string, double>& joint_positions, const int64_t& time, std::string robot_name);
+  void publishFixedTransforms(const int64_t& time, std::string robot_name);
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);

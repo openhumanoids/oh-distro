@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "robot_state_publisher/treefksolverposfull_recursive.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
 //#include <ros/ros.h>
 #include <iostream>
 #include <cstdio>

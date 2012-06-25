@@ -1,9 +1,0 @@
-package drc;
-
-struct joint_transform_t 
-{
-    int64_t timestamp;  
-    string joint_name;
-    transform_t tf;
-}
-

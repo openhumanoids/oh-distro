@@ -39,7 +39,7 @@
 // The tf_publisher sents out a tf tree with frame id and child frame id information.
 
 
-#include "robot_state_publisher/tf_publisher.hpp"
+#include "forward_kinematics/tf_publisher.hpp"
 #include <kdl/frames_io.hpp>
 
 
@@ -82,7 +82,7 @@ namespace tf_publisher{
 
 
   // publish moving transforms
-  void TfPublisher::publishTransforms(const map<string, double>& joint_positions, const int64_t& time)
+  void TfPublisher::publishTransforms(const map<string, double>& joint_positions, const int64_t& time, std::string robot_name)
   {
     //ROS_DEBUG("Publishing transforms for moving joints");
 
@@ -91,7 +91,7 @@ namespace tf_publisher{
     tf_transform.stamp_ = time; */
     std::vector< drc::transform_stamped_t > tf_transforms;
     drc::transform_stamped_t tf_transform;
-    tf_transform.timestamp = time;
+  
 
     // loop over all joints
     for (map<string, double>::const_iterator jnt=joint_positions.begin(); jnt != joint_positions.end(); jnt++){
@@ -107,6 +107,8 @@ namespace tf_publisher{
 
 
     drc::tf_t message;  
+    message.timestamp = time;
+    message.robot_name = robot_name;
     message.num_joints = tf_transforms.size();
     message.tf = tf_transforms;
 	
@@ -120,7 +122,7 @@ namespace tf_publisher{
 
 
   // publish fixed transforms
-  void TfPublisher::publishFixedTransforms(const int64_t& time)
+  void TfPublisher::publishFixedTransforms(const int64_t& time, std::string robot_name)
   {
     //ROS_DEBUG("Publishing transforms for moving joints");
     /*std::vector<tf::StampedTransform> tf_transforms;
@@ -129,8 +131,7 @@ namespace tf_publisher{
 
     std::vector<drc::transform_stamped_t> tf_transforms;
     drc::transform_stamped_t tf_transform;   
-    tf_transform.timestamp = time;
-
+   
     // loop over all fixed segments
     for (map<string, SegmentPair>::const_iterator seg=segments_fixed_.begin(); seg != segments_fixed_.end(); seg++){
       TransformKDLToLCMFrame(seg->second.segment.pose(0), tf_transform);    
@@ -140,6 +141,8 @@ namespace tf_publisher{
     }
     
    drc::tf_t message;  
+   message.timestamp = time;
+   message.robot_name = robot_name;
    message.num_joints = tf_transforms.size();
    message.tf = tf_transforms;
 

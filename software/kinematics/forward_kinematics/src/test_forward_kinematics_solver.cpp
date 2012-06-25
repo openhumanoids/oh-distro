@@ -1,6 +1,6 @@
 // file: test_forward_kinematics_solver.cpp
 // This file links to treefksolverposfull_recursive.cpp thats provides a routine to solve forward kinematics 
-// upon receipt of a joint_state_t message.
+// upon receipt of a joint_angles_t message.
 // for the whole kinematic tree. KDL lib functions only provide an interface to query global position between
 // a specified root and a tip segment.
 
@@ -9,7 +9,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <kdl/tree.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
-#include "robot_state_publisher/treefksolverposfull_recursive.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 
 namespace test_forward_kinematics_solver {
@@ -17,27 +17,28 @@ namespace test_forward_kinematics_solver {
  class RobotModel {
   public:
     lcm::LCM lcm;
+    std::string robot_name;
     std::string urdf_xml_string; 
     std::vector<std::string> joint_names_;
 
   };
 
 
- class JointStatesHandler 
+ class JointAnglesHandler 
  {
     public:
-        JointStatesHandler(const KDL::Tree& tree): fksolver(tree) {}
-        ~JointStatesHandler() {}
+        JointAnglesHandler(const KDL::Tree& tree): fksolver(tree) {}
+        ~JointAnglesHandler() {}
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const drc::joint_state_t* msg)
+                const drc::joint_angles_t* msg)
         {
 
 		// call a routine that calculates the transforms the joint_state_t* msg.
 		std::map<std::string, double> jointpos_in;
     		for (unsigned int i=0; i< msg->num_joints; i++)
-      			jointpos_in.insert(make_pair(msg->joint_name[i], msg->position[i]));  
+      			jointpos_in.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
 
 		 std::map<std::string, drc::transform_t > cartpos_out;
 		  
@@ -53,19 +54,18 @@ namespace test_forward_kinematics_solver {
 		      
 		    std::cerr << "Error: could not calculate forward kinematics!" <<std::endl;
 		  }
-		  
+		  std::cout << "timestamp  : " << msg->timestamp << std::endl;
 		  for( std::map<std::string, drc::transform_t>::const_iterator it = cartpos_out.begin(); it!=cartpos_out.end(); it++)
 		  { 
-		    drc::joint_transform_t state;		    
-		    state.timestamp = 0;
-		    state.joint_name = it->first;
+		    drc::link_transform_t state;	    
+		    state.link_name = it->first;
 		    state.tf.translation = it->second.translation;
 		    state.tf.rotation = it->second.rotation;
 		    
 		    //DO SOMETHING WITH THE TRANSFORMS HERE
 		    //print transforms		    
-		    std::cout << "timestamp  : " << state.timestamp << std::endl;
-		    std::cout << "joint_name : " << state.joint_name << std::endl;	
+		   
+		    std::cout << "link_name : " << state.link_name << std::endl;	
 		    std::cout << "translation  : " << std::endl;
 		    std::cout << "\t .x  : " << state.tf.translation.x << std::endl;
 		    std::cout << "\t .y  : " << state.tf.translation.y << std::endl;
@@ -87,8 +87,10 @@ namespace test_forward_kinematics_solver {
 
  void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel*  robot) {
    // Received robot urdf string. Store it internally and get all available joints.
-    robot->urdf_xml_string = msg->urdf_xml_string;
-    std::cout<<"Received urdf_xml_string, storing it internally as a param"<<std::endl;
+   robot->robot_name      = msg->robot_name;
+   robot->urdf_xml_string = msg->urdf_xml_string;
+   std::cout<<"Received urdf_xml_string of robot ["<<msg->robot_name <<"], storing it internally as a param"<<std::endl;
+
 
    // Get a urdf Model from the xml string and get all the joint names.
   urdf::Model robot_model; 
@@ -125,21 +127,21 @@ int main(int argc, char ** argv)
    std::cout<< "Number of Joints: " << robot->joint_names_.size() <<std::endl;
 
 
-  // Subscribe to JOINT_STATES.
+  // Subscribe to MEAS_JOINT_ANGLES.
   lcm::LCM lcm;
   if(!lcm.good())
         return 1;
   
   KDL::Tree tree;
-  // Parse KDL tree and pass as an argument into JOINT_STATES handler object cosntructor.
+  // Parse KDL tree and pass as an argument into MEAS_JOINT_ANGLES handler object cosntructor.
   if (!kdl_parser::treeFromString(robot->urdf_xml_string,tree)){
     std::cerr << "ERROR: Failed to extract kdl tree from xml robot description"<<std::endl; 
     return -1;
   }
 
-  // Subscribes to JOINT_STATES and computes global transforms in global frame for each joint
-  test_forward_kinematics_solver::JointStatesHandler handlerObject(tree);
-  lcm.subscribe("JOINT_STATES", &test_forward_kinematics_solver::JointStatesHandler::handleMessage, &handlerObject);
+  // Subscribes to MEAS_JOINT_ANGLES and computes global transforms in global frame for each joint
+  test_forward_kinematics_solver::JointAnglesHandler handlerObject(tree);
+  lcm.subscribe("MEAS_JOINT_ANGLES", &test_forward_kinematics_solver::JointAnglesHandler::handleMessage, &handlerObject);
   while(0 == lcm.handle());
 
 
