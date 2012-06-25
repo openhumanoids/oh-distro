@@ -222,7 +222,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <joint name="${side}ElbowPitch" type="revolute">
     <parent link="${side}ShoulderRoll_link"/>
     <child link="${side}ElbowPitch_link"/>
-    <origin xyz="${(l_upper_arm)*height} 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 -${(l_upper_arm)*height}" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit velocity="3.0" effort="30" lower="${elbow_flexion_limit*pi_180}" upper="${elbow_extension_limit*pi_180}"/>
   </joint>
@@ -231,7 +231,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <joint name="${side}WristYaw" type="revolute">
     <parent link="${side}ElbowPitch_link"/>
     <child link="${side}WristYaw_link"/>
-    <origin xyz="${(l_lower_arm)*height} 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 -${(l_lower_arm)*height}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit velocity="3.0" effort="30" lower="${wrist_int_rotation_limit*pi_180}" upper="${wrist_ext_rotation_limit*pi_180}" />
   </joint>

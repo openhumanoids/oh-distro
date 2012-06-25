@@ -89,8 +89,8 @@
 <xacro:property name="neck_flexion_limit" value="-45"/>
 <xacro:property name="neck_extension_limit" value="45"/>
 <!-- The Boston Dynamics slide says flexion is -90 and extension is 50. But the other way makes more sense -->
-<xacro:property name="shoulder_flexion_limit" value="-50"/>
-<xacro:property name="shoulder_extension_limit" value="90"/>
+<xacro:property name="shoulder_flexion_limit" value="-90"/>
+<xacro:property name="shoulder_extension_limit" value="50"/>
 <xacro:property name="elbow_flexion_limit" value="-135"/>
 <xacro:property name="elbow_extension_limit" value="0"/>
 

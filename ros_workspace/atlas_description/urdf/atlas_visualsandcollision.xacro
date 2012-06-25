@@ -53,14 +53,14 @@
     
     <xacro:macro name="insert_visualization_upper_arm" params="side">
         <visual>
-            <origin xyz="${(l_upper_arm/2)*height} 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <origin xyz="0 0 -${(l_upper_arm/2)*height}" rpy="0 0 0"/>
             <geometry>
                 <cylinder radius="${cylinder_radius}" length="${l_upper_arm*height-buffer}"/>
             </geometry>
             <material name="LightGrey"/>
         </visual>
        <collision>    
-            <origin xyz="${(l_upper_arm/2)*height} 0 0" rpy="${pi_2} 0 ${pi_2}"/>
+            <origin xyz="0 0 -${(l_upper_arm/2)*height}" rpy="0 0 0"/>
             <geometry>
                 <cylinder radius="${cylinder_radius}" length="${l_upper_arm*height}"/>
             </geometry>     
@@ -69,14 +69,14 @@
 
     <xacro:macro name="insert_visualization_lower_arm" params="side">
         <visual>
-            <origin xyz="${(l_lower_arm/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <origin xyz="0 0 -${(l_lower_arm/2)*height}"  rpy="0 0 0"/>
             <geometry>
                <cylinder radius="${cylinder_radius}" length="${l_lower_arm*height-buffer}"/>
             </geometry>
             <material name="LightGrey"/>
         </visual>
        <collision>    
-            <origin xyz="${(l_lower_arm/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <origin xyz="0 0 -${(l_lower_arm/2)*height}"  rpy="0 0 0"/>
             <geometry>
                 <cylinder radius="${cylinder_radius}" length="${l_lower_arm*height}"/>
             </geometry>     
@@ -86,14 +86,14 @@
 
     <xacro:macro name="insert_visualization_hand" params="side">
  	<visual>
-            <origin xyz="${(l_hand/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+            <origin xyz="0 0 -${(l_hand/2)*height}"  rpy="0 0 0"/>
             <geometry>
                <cylinder radius="${cylinder_radius}" length="${l_hand*height-buffer}"/>
             </geometry>
             <material name="LightGrey"/>
         </visual>
        <collision>    
-            <origin xyz="${(l_hand/2)*height} 0 0"  rpy="${pi_2} 0 ${pi_2}"/>
+             <origin xyz="0 0 -${(l_hand/2)*height}"  rpy="0 0 0"/>
             <geometry>
                 <cylinder radius="${cylinder_radius}" length="${l_hand*height}"/>
             </geometry>     
