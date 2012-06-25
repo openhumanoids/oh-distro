@@ -1,6 +1,6 @@
 package drc;
 
-struct transform_t 
+struct transform_t
 {
    vector3_t translation;
    quaternion_t rotation;

@@ -1,6 +1,6 @@
 package drc;
 
-struct tf_t 
+struct tf_t
 {
    int64_t timestamp;
    string robot_name;

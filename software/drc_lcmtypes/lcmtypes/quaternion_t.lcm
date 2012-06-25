@@ -1,6 +1,6 @@
 package drc;
 
-struct quaternion_t 
+struct quaternion_t
 {
  float x;
  float y;

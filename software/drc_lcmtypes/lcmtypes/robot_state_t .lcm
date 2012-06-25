@@ -1,10 +1,18 @@
 package drc;
 
-struct robot_state_t 
+struct robot_state_t
 {
     int64_t timestamp;
+    string robot_name;
+    position3D_t origin_position;  
+    twist_t origin_twist;   
+    covariance_t  origin_cov;
     int32_t num_joints;
     string joint_name [num_joints];
-    transform_t tf [num_joints];
+    float angular_position [num_joints];
+    float angular_velocity [num_joints];
+    float measured_torque[num_joints];
+    joint_covariance_t  joint_cov[num_joints];
+    ground_contact_state_t ground_contacts;
 }
 

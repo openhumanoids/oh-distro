@@ -1,6 +1,6 @@
 package drc;
 
-struct vector3_t 
+struct vector3_t
 {
  float x;
  float y;
