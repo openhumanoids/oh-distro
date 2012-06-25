@@ -3,4 +3,4 @@
 
 orocos_kdl
 kdl_parser
-robot_state_publisher
+forward_kinematics
