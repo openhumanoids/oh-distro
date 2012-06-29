@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<robot name="simpleHoverBot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--Properties of the robot-->
+  <xacro:property name="dtr" value="0.0174532925"/>
+  
+  <xacro:property name="base_x" value = ".3"/>
+  <xacro:property name="base_y" value = ".3"/>
+  <xacro:property name="base_z" value = ".3"/>
+  <xacro:property name="base_mass" value = "10"/>
+
+  <xacro:property name="axis" value="0 1 0"/>
+  <xacro:property name="theta_damping" value="0.01"/>
+  <xacro:property name="x_damping" value=".5"/>
+  <xacro:property name="y_damping" value=".5"/>
+
+<!--Create the visual element for a box-->
+  <xacro:macro name="box_visual" params="x y z color rgba">
+    <visual>
+         <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+         <box size="${x} ${y} ${z}" />
+      </geometry>
+      <material name="${color}">
+        <color rgba="${rgba}" />
+      </material>
+    </visual>
+  </xacro:macro>
+
+<!--Inertial element for a box-->
+  <xacro:macro name="box_inertia" params="mass x y z">
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${1/12*mass*y*y + 1/12*mass*z*z)}" ixy="0" iyy="${1/12*mass*x*x + 1/12*mass*z*z)}" iyz="0" izz="${1/12*mass*x*x + 1/12*mass*y*y)}" ixz="0"/>
+    </inertial>
+  </xacro:macro>
+
+<!--Creates a link in the form of a box-->
+  <xacro:macro name="simple_box" params="name x y z mass color rgba">
+    <link name="${name}">
+      <xacro:box_inertia mass="${mass}" x="${x}" y="${y}" z="${z}"/>
+      <xacro:box_visual x="${x}" y="${y}" z="${z}" color="${color}" rgba="${rgba}"/>
+      <!--<collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+           <sphere radius="0"/>
+        </geometry>
+      </collision>-->
+    </link>
+  </xacro:macro>
+
+<!--Creates a transmission at a joint.-->
+  <xacro:macro name="create_tranny" params="name">
+    <transmission type="SimpleTransmission" name="${name}_act">
+      <actuator name="${name}_tranny" />
+      <joint name="${name}" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+  </xacro:macro>
+
+  <link name="base_link"/>
+  <link name="Z_link"/>
+  <link name="X_link"/>
+  <xacro:simple_box name="final_link" x="${base_x}" y="${base_y}" z="${base_z}" mass="${base_mass}" color="grey" rgba=".8 .8 .8 1"/>
+  <joint name="Z" type="prismatic">
+    <parent link="base_link"/>
+    <child link="Z_link"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="200" velocity="30.0"/>
+  </joint>
+  <joint name="X" type="prismatic">
+    <parent link="Z_link"/>
+    <child link="X_link"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="200" velocity="30.0"/>
+  </joint>
+  <joint name="Theta" type="continuous">
+    <parent link="X_link"/>
+    <child link="final_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <xacro:create_tranny name="Z"/>
+  <xacro:create_tranny name="X"/>
+  <xacro:create_tranny name="Theta"/>
+</robot>
+                          
+
+  
+
