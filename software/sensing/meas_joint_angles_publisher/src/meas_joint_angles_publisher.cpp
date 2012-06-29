@@ -100,9 +100,11 @@ int main(int argc, char ** argv)
 
     }
 
+
     // Publishing joint angles.
     lcm.publish("MEAS_JOINT_ANGLES", &message);
-  
+    message.joint_name.clear();
+    message.angular_position.clear();
     //TODO: better Timing.
     usleep(50000); // publish at 20 hz.
    } 
