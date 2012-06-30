@@ -190,7 +190,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <parent link="LShoulderPitch_link"/>
     <child link="LShoulderRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
 <limit velocity="3.0" effort="30" lower="${shoulder_adduction_limit*pi_180}" upper="${shoulder_abduction_limit*pi_180}" />
   </joint>
 
@@ -198,8 +198,8 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <parent link="RShoulderPitch_link"/>
     <child link="RShoulderRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <axis xyz="0 0 1"/>
-<limit velocity="3.0" effort="30" lower="${-shoulder_abduction_limit*pi_180}" upper="${-shoulder_adduction_limit*pi_180}" />
+    <axis xyz="1 0 0"/>
+<limit velocity="3.0" effort="30" lower="-${shoulder_abduction_limit*pi_180}" upper="-${shoulder_adduction_limit*pi_180}" />
   </joint>
 
  <xacro:macro name="arm_joints" params="side reflect">
@@ -207,7 +207,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <parent link="BackRoll_link"/>
     <child link="${side}ShoulderYaw_link"/>
     <origin xyz="0 ${reflect*-(o_back_shoulder_y*height)} ${o_back_shoulder_z*height}" rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit velocity="3.0" effort="30" lower="${shoulder_int_rotation_limit*pi_180}" upper="${shoulder_ext_rotation_limit*pi_180}" />
   </joint>
 
@@ -232,7 +232,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <parent link="${side}ElbowPitch_link"/>
     <child link="${side}WristYaw_link"/>
     <origin xyz="0 0 -${(l_lower_arm)*height}" rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit velocity="3.0" effort="30" lower="${wrist_int_rotation_limit*pi_180}" upper="${wrist_ext_rotation_limit*pi_180}" />
   </joint>
 
@@ -248,14 +248,14 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <parent link="LWristYaw_link"/>
     <child link="LWristRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
 <limit velocity="3.0" effort="30" lower="${wrist_adduction_limit*pi_180}" upper="${wrist_abduction_limit*pi_180}" />
   </joint>
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
     <child link="RWristRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
 <limit velocity="3.0" effort="30" lower="${-wrist_abduction_limit*pi_180}" upper="${-wrist_adduction_limit*pi_180}" />
   </joint>
 
@@ -290,22 +290,21 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <limit velocity="3.0" effort="30" lower="${-hip_ext_rotation_limit*pi_180}" upper="${-hip_int_rotation_limit*pi_180}" />
   </joint>
 
- <!-- <joint name="LHipYaw" type="revolute">
-    <parent link="Back"/>
-    <child link="LHipYaw_link"/>
-    <origin xyz="0 ${-1*-(o_back_hip_y*height)} ${-o_back_hip_z*height}" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
-  <limit velocity="3.0" effort="30" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
-  </joint>
-  <joint name="RHipYaw" type="revolute">
-    <parent link="Back"/>
-    <child link="RHipYaw_link"/>
-    <origin xyz="0 ${1*-(o_back_hip_y*height)} ${-o_back_hip_z*height}" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
-  <limit velocity="3.0" effort="30" lower="${-hip_ext_rotation_limit*pi_180}" upper="${-hip_int_rotation_limit*pi_180}" />
-  </joint> -->
+
+
+
 
 <xacro:macro name="leg_joints" params="side reflect">
+
+ <!-- <joint name="${side}HipYaw" type="revolute">
+    <parent link="Pelvis-link2"/>
+    <child link="${side}HipYaw_link"/>
+    <origin xyz="0 ${reflect*(o_back_hip_y*height)} 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  <limit velocity="3.0" effort="30" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
+  </joint>-->
+
+
 
   <joint name="${side}HipPitch" type="revolute">
     <parent link="${side}HipYaw_link"/>
@@ -315,13 +314,17 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
       <limit velocity="3.0" effort="30" lower="${hip_flexion_limit*pi_180}" upper="${hip_extension_limit*pi_180}" />
   </joint>
 
+
   <joint name="${side}HipRoll" type="revolute">
     <parent link="${side}HipPitch_link"/>
     <child link="${side}HipRoll_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit velocity="3.0" effort="30" lower="${hip_adduction_limit*pi_180}" upper="${hip_abduction_limit*pi_180}" />
-  </joint>
+  </joint> 
+
+
+
 
   <joint name="${side}KneePitch" type="revolute">
     <parent link="${side}HipRoll_link"/>
