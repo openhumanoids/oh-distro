@@ -1,4 +1,4 @@
-// file: broadcast_robot_model.cpp
+// file: robot_model_publisher.cpp
 // Broadcasts an URDF only once. 
 
 #include <stdio.h>
@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
 {
 
   if (argc < 2){
-    std::cerr << "A URDF xml file is expected as an argument. USAGE: \"./broadcast_robot_model xxxxx.urdf\"" << std::endl;
+    std::cerr << "A URDF xml file is expected as an argument. USAGE: \"./robot_model_publisher xxxxx.urdf\"" << std::endl;
     return -1;
   }
 

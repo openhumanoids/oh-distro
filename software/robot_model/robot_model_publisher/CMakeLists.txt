@@ -10,11 +10,11 @@ include(cmake/pods.cmake)
 #lcmtypes_build()
 
 # build two LCM test programs
-add_executable(broadcast_robot_model src/broadcast_robot_model.cpp)
-pods_use_pkg_config_packages(broadcast_robot_model urdf lcm lcmtypes_drc_lcmtypes)
+add_executable(robot_model_publisher src/broadcast_robot_model.cpp)
+pods_use_pkg_config_packages(robot_model_publisher urdf lcm lcmtypes_drc_lcmtypes)
 
 add_executable(robot_model_listener src/robot_model_listener.cpp)
 pods_use_pkg_config_packages(robot_model_listener urdf lcm lcmtypes_drc_lcmtypes)
 
 # make exeutables public
-pods_install_executables(broadcast_robot_model robot_model_listener)
+pods_install_executables(robot_model_publisher robot_model_listener)
