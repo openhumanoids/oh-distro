@@ -10,7 +10,13 @@
   <url></url>
   <depend package="urdf"/>
   <depend package="robot_state_publisher"/>
-
+  <depend package="gazebo"/>
+  <depend package="gazebo_plugins"/>
+  <depend package="gazebo_msgs"/>
+   <depend package="atlas_gazebo_plugins"/>
+    <export>
+        <gazebo gazebo_media_path="${prefix}" />
+    </export>
 </package>
 
 

@@ -57,9 +57,9 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "LShoulderPitch" -> "LShoulderPitch_link"
 "LShoulderPitch_link" -> "LShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "LShoulderRoll" -> "LShoulderRoll_link"
-"LShoulderRoll_link" -> "LElbowPitch" [label="xyz: 0.348196 0 0 \nrpy: 0 -0 0"]
+"LShoulderRoll_link" -> "LElbowPitch" [label="xyz: 0 0 -0.348196 \nrpy: 0 -0 0"]
 "LElbowPitch" -> "LElbowPitch_link"
-"LElbowPitch_link" -> "LWristYaw" [label="xyz: 0.303555 0 0 \nrpy: 0 -0 0"]
+"LElbowPitch_link" -> "LWristYaw" [label="xyz: 0 0 -0.303555 \nrpy: 0 -0 0"]
 "LWristYaw" -> "LWristYaw_link"
 "LWristYaw_link" -> "LWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "LWristRoll" -> "LWristRoll_link"
@@ -69,9 +69,9 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "RShoulderPitch" -> "RShoulderPitch_link"
 "RShoulderPitch_link" -> "RShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "RShoulderRoll" -> "RShoulderRoll_link"
-"RShoulderRoll_link" -> "RElbowPitch" [label="xyz: 0.348196 0 0 \nrpy: 0 -0 0"]
+"RShoulderRoll_link" -> "RElbowPitch" [label="xyz: 0 0 -0.348196 \nrpy: 0 -0 0"]
 "RElbowPitch" -> "RElbowPitch_link"
-"RElbowPitch_link" -> "RWristYaw" [label="xyz: 0.303555 0 0 \nrpy: 0 -0 0"]
+"RElbowPitch_link" -> "RWristYaw" [label="xyz: 0 0 -0.303555 \nrpy: 0 -0 0"]
 "RWristYaw" -> "RWristYaw_link"
 "RWristYaw_link" -> "RWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "RWristRoll" -> "RWristRoll_link"

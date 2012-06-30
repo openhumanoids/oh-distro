@@ -1,0 +1,21 @@
+<package>
+  <description brief="ROS2LCM_translator">
+
+     ROS2LCM_translator
+
+  </description>
+  <author>sisir</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url> </url>
+  <depend package="gazebo"/>
+  <depend package="gazebo_msgs"/>
+  <depend package="urdf"/>
+  <depend package="urdf_interface"/>
+  <depend package="roscpp"/>
+  <depend package="atlas_gazebo_plugins"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+</package>
+
+

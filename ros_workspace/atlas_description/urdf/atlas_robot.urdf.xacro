@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro" name="atlas">
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="atlas">
   <!--
   ROS urdf definition of Atlas humanoid robot from Boston Dynamics. Represents the kinematic structure of the robot which is based on the 50th percentile male anthropometry,. 
 
@@ -11,8 +14,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
   <include filename="$(find atlas_description)/urdf/atlas_properties.xacro" />
   <include filename="$(find atlas_description)/urdf/atlas_visualsandcollision.xacro" />
   <include filename="$(find atlas_description)/urdf/atlas_structure.urdf.xacro" />
-  
-
+  <include filename="$(find atlas_description)/urdf/atlas_controllers.xacro" /> 
 
 </robot>
 
