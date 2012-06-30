@@ -1,7 +1,7 @@
 // file: joint_angle_publisher.cpp
 //
-// Communicates to gazebo/robot API to get joint angles and then 
-// publishes them on JOINT_ANGLES lcm channel.
+// Communicates to robot API to get joint angles and then 
+// publishes them on MEAS_JOINT_ANGLES lcm channel.
 // The publisher requires access to the urdf robot model. 
 // At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
 // waits until it receives the urdf string and then unsubcribes from this

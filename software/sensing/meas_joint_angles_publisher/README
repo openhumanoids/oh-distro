@@ -17,7 +17,7 @@ Description:
 This pods provides two processes. 
 
 1) meas_joint_angles_publisher:
-This process communicates to gazebo/robot API to get joint angles and then 
+This process communicates to robot API to get joint angles and then 
 publishes them on MEAS_JOINT_ANGLES lcm channel. The publisher requires access to 
 the urdf robot model. At startup, the process creates a subcription to ROBOT_MODEL
 lcm channel, waits until it receives the urdf string and then unsubcribes from this
@@ -29,6 +29,12 @@ For an example usage, try the following commands in a set of terminals in the sp
 Term1: ./meas_joint_angles_listener
 Term2: ./meas_joint_angles_publisher
 Term3: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
+
+3)sim_meas_joint_angles_publisher:
+This process publishes fake meas_joint_angles_t msgs on MEAS_JOINT_ANGLES  lcm channel.  It
+Subscribes to  TRUE_robot_state msgs published from gazebo and republishes the joint angles 
+with added noise. 
+
 
 Requirements: 
  lcm
