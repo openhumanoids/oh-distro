@@ -6,11 +6,11 @@ templates.  The policies and templates can be found at:
 ====
 
 Name:         visualization
-Maintainers:  Hordur Johannsson <hordurj@csail.mit.edu>
-Summary:      Tools for visualization of SLAM algorithms.
+Maintainers:  Michael Fleder <mfleder@mit.edu>
+Summary:      Tools for visualization of DRC Data
 Description:
-  This pod contains tools for visualization of SLAM algorithms. This
-  includes rendering posegraphs and sensor data like point clouds.
+  This pod contains tools for visualization of DRC data. This
+  includes rendering point clouds, robot state, and other sensor data.
 
 Requirements: 
   LCM (http://lcm.googlecode.com)

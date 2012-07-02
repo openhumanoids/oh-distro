@@ -9,34 +9,33 @@ add_definitions(-Wall -std=gnu99)
 
 #####################################################################
 add_library(renderer_drc SHARED 
-    renderer_rwx.cpp
-    renderer_wavefront_model.cpp
-    renderer_rwx_model.cpp
-    renderer_status.cpp
-    renderer_localize.cpp
-    renderer_drcscrollingplots.cpp
-    )
+  humanoid_renderer/renderer_humanoid.cpp
+  humanoid_renderer/RobotStateListener.cpp
+  )
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
 
 pods_install_libraries(renderer_drc)
-pods_install_headers(renderer_rwx.hpp
-    renderer_wavefront_model.hpp
-    renderer_rwx_model.hpp
-    renderer_status.hpp 
-    renderer_localize.hpp
-    panorama_renderer.hpp
-    renderer_drcscrollingplots.hpp
-    DESTINATION renderer_drc)
+pods_install_headers(humanoid_renderer/renderer_humanoid.hpp
+  humanoid_renderer/RobotStateListener.hpp
+  DESTINATION renderer_drc)
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
+if(REQUIRED_PACKAGES_HUMANOID)
+    message("REQUIRED_PACKAGES_HUMANOID already defined.  Not building viewer")
+    return()
+endif(REQUIRED_PACKAGES_HUMANOID)
+
+set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics)
+
+
 pods_install_pkg_config_file(renderer_drc
     LIBS -lrenderer_drc -ljpeg 
     REQUIRES bot2-core bot2-vis bot2-frames 
     VERSION 0.0.1)
 
 pods_use_pkg_config_packages(renderer_drc
-    bot2-core bot2-vis bot2-frames)
+  bot2-core bot2-vis bot2-frames ${REQUIRED_PACKAGES_HUMANOID})
 
 
 
