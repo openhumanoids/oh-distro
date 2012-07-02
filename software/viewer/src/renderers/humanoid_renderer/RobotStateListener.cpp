@@ -23,6 +23,7 @@ namespace fk
   RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm):
     _urdf_parsed(false),
     _lcm(lcm)
+
   {
     //lcm ok?
     if(!lcm->good())
@@ -55,6 +56,10 @@ namespace fk
 	cout << "\n handleJointAnglesMsg: Waiting for urdf to be parsed" << endl;
 	return;
       }
+    
+    //clear stored data
+    _link_tfs.clear();
+    _link_shapes.clear();    
 
     // call a routine that calculates the transforms the joint_state_t* msg.
     map<string, double> jointpos_in;
@@ -116,7 +121,7 @@ namespace fk
 	    //state.tf.translation = transform_it->second.translation;
 	    //state.tf.rotation = transform_it->second.rotation;
 	    
-	    cout << "link_name : " << it->first <<"\n"<< endl; 
+	    cout << "\nlink_name : " << it->first << endl; 
 	    cout << "timestamp  : " << msg->timestamp << endl;    
 	    shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
 
@@ -138,7 +143,7 @@ namespace fk
 	      shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
 	      cout << "BOX"<< endl;
 	      cout << "dim.x : "<<  box->dim.x << endl;
-	      cout << "dim.y : "<<  box->dim.y << endl;
+	      cout<< "dim.y : "<<  box->dim.y << endl;
 	      cout << "dim.z : "<<  box->dim.z << endl;
 	      // drawBox(dim, it->second -> visual->origin);
 	    }
@@ -158,16 +163,16 @@ namespace fk
 	      cout << "UNKNOWN"<< endl;
 	    }
 	    
-	    cout << "translation  : " << endl;
-	    cout << "\t .x  : " << state.tf.translation.x << endl;
-	    cout << "\t .y  : " << state.tf.translation.y << endl;
-	    cout << "\t .z  : " << state.tf.translation.z << endl;
-	    cout << "quaternion" << endl;
-	    cout << "\t .x  : " << state.tf.rotation.x << endl;
-	    cout << "\t .y  : " << state.tf.rotation.y << endl;
-	    cout << "\t .z  : " << state.tf.rotation.z << endl;
-	    cout << "\t .w  : " << state.tf.rotation.w << endl;   
-	    cout << "\n"<< endl;
+	    //cout << "translation  : " << endl;
+	    //cout << "\t .x  : " << state.tf.translation.x << endl;
+	    //cout << "\t .y  : " << state.tf.translation.y << endl;
+	    //cout << "\t .z  : " << state.tf.translation.z << endl;
+	    //cout << "quaternion" << endl;
+	    //cout << "\t .x  : " << state.tf.rotation.x << endl;
+	    //cout << "\t .y  : " << state.tf.rotation.y << endl;
+	    //cout << "\t .z  : " << state.tf.rotation.z << endl;
+	    //cout << "\t .w  : " << state.tf.rotation.w << endl;   
+	    //cout << "\n"<< endl;
 	    
 	  }//if(it->second->visual)
       }//end for
@@ -218,8 +223,61 @@ namespace fk
     _urdf_parsed = true;
 
     cout<< "Number of Joints: " << _joint_names_.size() <<endl;
-} 
+  } 
 
+  //================printouts
+  void RobotStateListener::getState(vector<shared_ptr<urdf::Geometry> > & shapes,
+				    vector<drc::link_transform_t> & transforms)
+    {
+      shapes = _link_shapes;
+      transforms = _link_tfs;
+      
+      //todo: why does the code below seg fault?
+      /*
+      shapes.clear();
+      transforms.clear();
+
+      if (_link_shapes.size() == 0 || _link_tfs.size() == 0)
+	{
+	  cout << "\n waiting for link/shapes to have non-zero size" << endl;
+	  return;
+	}
+      
+      
+      if (_link_shapes.size() != _link_tfs.size())
+	{
+	  cerr << "\n\nError: why aren't _link_shapes and _link_tfs of the same size" <<endl;	
+	  cout << "\n\n\nError: why aren't _link_shapes and _link_tfs of the same size\n\n\n" <<endl;	
+	  return;
+	}
+
+      for (uint i = 0; i < _link_shapes.size(); i++)
+	{
+	  shapes[i] = _link_shapes[i];
+	  transforms[i] = _link_tfs[i];
+	}
+      */
+    }
+
+  void RobotStateListener::printTransforms(const vector<shared_ptr<urdf::Geometry> > &_link_shapes,
+					   const vector<drc::link_transform_t> &_link_tfs)
+  {
+    for (uint i = 0; i < _link_tfs.size(); i++)
+      {
+	drc::link_transform_t next = _link_tfs[i];
+	cout << "translation  : " << endl;
+	cout << "\t .x  : " << next.tf.translation.x << endl;
+	cout << "\t .y  : " << next.tf.translation.y << endl;
+	cout << "\t .z  : " << next.tf.translation.z << endl;
+	cout << "quaternion" << endl;
+	cout << "\t .x  : " << next.tf.rotation.x << endl;
+	cout << "\t .y  : " << next.tf.rotation.y << endl;
+	cout << "\t .z  : " << next.tf.rotation.z << endl;
+	cout << "\t .w  : " << next.tf.rotation.w << endl;   
+	cout << "\n"<< endl;
+      }
+
+  }
 
 } //namespace fk
 

@@ -17,6 +17,10 @@
 
 #define RENDERER_NAME "Humanoid"
 
+
+using namespace std;
+using namespace boost;
+
 typedef struct _RendererHumanoid 
 {
   BotRenderer renderer;
@@ -37,14 +41,33 @@ _renderer_free (BotRenderer *super)
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
-  //RendererHumanoid *self = (RendererHumanoid*) super->user;
+  RendererHumanoid *self = (RendererHumanoid*) super->user;
 
-    glEnable(GL_DEPTH_TEST);
-    glPushMatrix();
+  glEnable(GL_DEPTH_TEST);
+  glPushMatrix();
+  
+  //
+  vector<shared_ptr<urdf::Geometry> > link_shapes;
+  vector<drc::link_transform_t> link_tfs;
+  self->robotStateListener->getState(link_shapes, link_tfs);
+  //fk::RobotStateListener::printTransforms(link_shapes, link_tfs);
+  
+  //-draw 
+  glPointSize(5.0f);
+  glBegin(GL_POINTS);
+  glColor3ub(0,1,0);
 
-    //do something
+  for(uint i = 0; i < link_tfs.size(); i++)
+    {
+      drc::link_transform_t nextTf = link_tfs[i];
+      glVertex3f(nextTf.tf.translation.x,
+		 nextTf.tf.translation.y,
+		 nextTf.tf.translation.z);
+    }
+    
+  glEnd(); //GL_POINTS
 
-    glPopMatrix();
+  glPopMatrix();
 }
 
 void 
