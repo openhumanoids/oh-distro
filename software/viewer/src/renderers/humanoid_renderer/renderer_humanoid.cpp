@@ -36,7 +36,7 @@ _renderer_free (BotRenderer *super)
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
-    RendererHumanoid *self = (RendererHumanoid*) super->user;
+  //RendererHumanoid *self = (RendererHumanoid*) super->user;
 
     glEnable(GL_DEPTH_TEST);
     glPushMatrix();

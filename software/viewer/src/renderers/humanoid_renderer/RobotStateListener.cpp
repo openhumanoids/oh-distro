@@ -58,7 +58,7 @@ namespace fk
 
     // call a routine that calculates the transforms the joint_state_t* msg.
     map<string, double> jointpos_in;
-    for (uint i=0; i< msg->num_joints; i++)
+    for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
       jointpos_in.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
     
     map<string, drc::transform_t > cartpos_out;
