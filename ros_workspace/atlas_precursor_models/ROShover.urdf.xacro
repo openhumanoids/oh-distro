@@ -77,13 +77,13 @@
     <parent link="base_link"/>
     <child link="Z_link"/>
     <axis xyz="0 0 1"/>
-    <limit effort="200" velocity="30.0"/>
+    <limit effort="200" velocity="30.0" lower="-100" upper="100"/>
   </joint>
   <joint name="X" type="prismatic">
     <parent link="Z_link"/>
     <child link="X_link"/>
     <axis xyz="1 0 0"/>
-    <limit effort="200" velocity="30.0"/>
+    <limit effort="200" velocity="30.0" lower="-100" upper="100"/>
   </joint>
   <joint name="Theta" type="continuous">
     <parent link="X_link"/>
