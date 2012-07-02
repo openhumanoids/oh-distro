@@ -20,9 +20,10 @@ namespace fk
   //==================constructor / destructor
   
   /**Subscribes to Robot URDF Model and to MEAS_JOINT_ANGLES.*/
-  RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm):
+  RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer):
     _urdf_parsed(false),
-    _lcm(lcm)
+    _lcm(lcm),
+    _viewer(viewer)
 
   {
     //lcm ok?
@@ -121,8 +122,8 @@ namespace fk
 	    //state.tf.translation = transform_it->second.translation;
 	    //state.tf.rotation = transform_it->second.rotation;
 	    
-	    cout << "\nlink_name : " << it->first << endl; 
-	    cout << "timestamp  : " << msg->timestamp << endl;    
+	    //cout << "\nlink_name : " << it->first << endl; 
+	    //cout << "timestamp  : " << msg->timestamp << endl;    
 	    shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
 
 	    //---store
@@ -134,33 +135,33 @@ namespace fk
 	    enum {SPHERE, BOX, CYLINDER, MESH}; 
 	    
 	    if (type == SPHERE){
-	      cout << "SPHERE"<< endl;
+	      //cout << "SPHERE"<< endl;
 	      shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(it->second->visual->geometry));	
-	      cout << "radius : "<<  sphere->radius << endl;
+	      //cout << "radius : "<<  sphere->radius << endl;
 	      // drawSphere(radius, it->second -> visual ->origin);
 	    }
 	    else if  (type == BOX){
 	      shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
-	      cout << "BOX"<< endl;
-	      cout << "dim.x : "<<  box->dim.x << endl;
-	      cout<< "dim.y : "<<  box->dim.y << endl;
-	      cout << "dim.z : "<<  box->dim.z << endl;
+	      //cout << "BOX"<< endl;
+	      //cout << "dim.x : "<<  box->dim.x << endl;
+	      //cout<< "dim.y : "<<  box->dim.y << endl;
+	      //cout << "dim.z : "<<  box->dim.z << endl;
 	      // drawBox(dim, it->second -> visual->origin);
 	    }
 	    else if  (type == CYLINDER){
 	      shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(it->second->visual->geometry));
-	      cout << "CYLINDER"<< endl;
-	      cout << "radius : "<<  cyl->radius << endl;
-	      cout << "length : "<<  cyl->length << endl;
+	      //cout << "CYLINDER"<< endl;
+	      //cout << "radius : "<<  cyl->radius << endl;
+	      //cout << "length : "<<  cyl->length << endl;
 	      // drawBox(radius,length, it->second -> visual->origin);
 	    }
 	    else if  (type == MESH){
-	      cout << "MESH"<< endl;
+	      //cout << "MESH"<< endl;
 	      //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
 	      //renderMesh(mesh->filename)
 	    }
 	    else {
-	      cout << "UNKNOWN"<< endl;
+	      //cout << "UNKNOWN"<< endl;
 	    }
 	    
 	    //cout << "translation  : " << endl;
@@ -176,6 +177,8 @@ namespace fk
 	    
 	  }//if(it->second->visual)
       }//end for
+
+    bot_viewer_request_redraw(_viewer);
   } // end handleMessage
 
   

@@ -75,7 +75,8 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RendererHumanoid *self = (RendererHumanoid*) calloc (1, sizeof (RendererHumanoid));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
-    self->robotStateListener = boost::shared_ptr<fk::RobotStateListener>(new fk::RobotStateListener(self->lcm));
+    self->robotStateListener = boost::shared_ptr<fk::RobotStateListener>(new fk::RobotStateListener(self->lcm, 
+												    viewer));
 
     BotRenderer *renderer = &self->renderer;
 

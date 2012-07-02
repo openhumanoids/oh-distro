@@ -9,6 +9,8 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 
+#include <bot_vis/bot_vis.h>
+
 namespace fk
 {
   /**Class for keeping track of robot link state / joint angles.
@@ -23,7 +25,6 @@ namespace fk
     std::map<std::string, boost::shared_ptr<urdf::Link> > _links_map;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
     
-    
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
     bool _urdf_parsed;
     boost::shared_ptr<lcm::LCM> _lcm;    
@@ -31,9 +32,13 @@ namespace fk
     std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
     std::vector<drc::link_transform_t> _link_tfs;
 
+    //get rid of this
+    BotViewer *_viewer;
+
     //----------------constructor/destructor
   public:
-    RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm);
+    RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm,
+		       BotViewer *viewer);
     ~RobotStateListener();
     
     
