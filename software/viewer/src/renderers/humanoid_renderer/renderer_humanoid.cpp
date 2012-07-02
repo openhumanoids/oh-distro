@@ -11,8 +11,9 @@
 #include <bot_vis/bot_vis.h>
 #include <GL/gl.h>
 
-#include "JointAnglesListener.hpp"
+#include "RobotStateListener.hpp"
 
+#include <boost/function.hpp>
 
 #define RENDERER_NAME "Humanoid"
 
@@ -21,7 +22,7 @@ typedef struct _RendererHumanoid
   BotRenderer renderer;
   BotViewer          *viewer;
   BotGtkParamWidget *pw;
-  boost::share_ptr<JointAnglesListener> robotModelListener;
+  boost::shared_ptr<fk::RobotStateListener> robotStateListener;
 } RendererHumanoid;
 
 static void
@@ -49,8 +50,8 @@ void
 setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RendererHumanoid *self = (RendererHumanoid*) calloc (1, sizeof (RendererHumanoid));
-    self->robotModelListener = 
-
+    lcm::LCM lcmCpp(lcm);
+    self->robotStateListener = boost::shared_ptr<fk::RobotStateListener>(new fk::RobotStateListener(lcmCpp));
 
     BotRenderer *renderer = &self->renderer;
 

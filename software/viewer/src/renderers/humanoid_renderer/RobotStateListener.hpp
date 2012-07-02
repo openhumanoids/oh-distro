@@ -2,6 +2,12 @@
 #define JOINT_ANGLES_LISTENER_H
 
 #include <boost/function.hpp>
+#include <map>
+
+#include "urdf/model.h"
+#include <kdl/tree.hpp>
+#include "kdl_parser/kdl_parser.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
 
 namespace fk
 {

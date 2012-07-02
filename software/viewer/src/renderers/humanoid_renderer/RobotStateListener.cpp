@@ -6,12 +6,9 @@
 
 
 #include <iostream>
+
 #include <lcm/lcm-cpp.hpp>
-#include <kdl/tree.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
-#include "forward_kinematics/treefksolverposfull_recursive.hpp"
-#include "kdl_parser/kdl_parser.hpp"
-#include "urdf/model.h"
 
 #include "RobotStateListener.hpp"
 
