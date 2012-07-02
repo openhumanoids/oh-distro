@@ -26,19 +26,24 @@ namespace fk
     
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
     bool _urdf_parsed;
-    lcm::LCM _lcm;    
+    boost::shared_ptr<lcm::LCM> _lcm;    
+    
+
+  public:
+    std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
+    std::vector<drc::link_transform_t> _link_tfs;
     
     //----------------constructor/destructor
   public:
-    RobotStateListener(lcm::LCM &lcm);
+    RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm);
     ~RobotStateListener();
     
     
     //-------------message callback
   private:
-    void  handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
+    void handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
 			       const std::string& chan, 
-			       const drc::joint_angles_t* msg);
+			      const drc::joint_angles_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg);
 }; //class JointAnglesHandler

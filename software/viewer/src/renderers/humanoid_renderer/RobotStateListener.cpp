@@ -20,23 +20,23 @@ namespace fk
   //==================constructor / destructor
   
   /**Subscribes to Robot URDF Model and to MEAS_JOINT_ANGLES.*/
-  RobotStateListener::RobotStateListener(lcm::LCM &lcm):
+  RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm):
     _urdf_parsed(false),
     _lcm(lcm)
   {
     //lcm ok?
-    if(!lcm.good())
+    if(!lcm->good())
       {
 	cerr << "\nLCM Not Good: Joint Angles Handler" << endl;
 	return;
       }
     
     // Subscribe to Robot_Model.  Will unsubscribe once a single message has been received
-    _urdf_subscription = lcm.subscribe("ROBOT_MODEL", 
+    _urdf_subscription = lcm->subscribe("ROBOT_MODEL", 
 				       &fk::RobotStateListener::handleRobotUrdfMsg,
 				       this);    
     //Subscribes to MEAS_JOINT_ANGLES 
-    lcm.subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
+    lcm->subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
   }
   
 
@@ -119,6 +119,12 @@ namespace fk
 	    cout << "link_name : " << it->first <<"\n"<< endl; 
 	    cout << "timestamp  : " << msg->timestamp << endl;    
 	    shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
+
+	    //---store
+	    _link_shapes.push_back(geom);
+	    _link_tfs.push_back(state);
+	    //---
+
 	    int type = it->second->visual->geometry->type ;
 	    enum {SPHERE, BOX, CYLINDER, MESH}; 
 	    
@@ -204,7 +210,7 @@ namespace fk
       }
 
     //unsubscribe from urdf messages
-    _lcm.unsubscribe(_urdf_subscription); 
+    _lcm->unsubscribe(_urdf_subscription); 
     
     //
     _fksolver = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
