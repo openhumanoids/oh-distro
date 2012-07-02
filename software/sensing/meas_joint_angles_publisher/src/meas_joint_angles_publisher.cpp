@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
     message.joint_name.clear();
     message.angular_position.clear();
     //TODO: better Timing.
-    usleep(50000); // publish at 20 hz.
+    usleep(10000); // publish at 20 hz.
    } 
 
    delete robot; 
