@@ -74,7 +74,7 @@ robot_state_msg.ground_contacts.onGround.push_back(0);
 robot_state_msg.ground_contacts.onGround.push_back(0);
 
 lcm::LCM lcm;
- if(lcm.good())
+if(lcm.good())
  lcm.publish("TRUE_ROBOT_STATE", &robot_state_msg);
 }
 
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "testing");
   ros::NodeHandle n;
-  ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback);
+  ros::Subscriber sub = n.subscribe("true_robot_state", 10, true_robot_state_Callback);
 
 
   ros::spin();
