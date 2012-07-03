@@ -61,14 +61,14 @@ private:
   
   void TransformLCMToKDLFrame(const drc::transform_t &t, KDL::Frame &k)
   {
-    //k.p(t.translation.x, t.translation.y, t.translation.z);
     k.p[0] = t.translation.x;
     k.p[1] = t.translation.y;
     k.p[2] = t.translation.z;
+    KDL::Rotation M;
+    M =  KDL::Rotation::Quaternion( t.rotation.x,t.rotation.y,t.rotation.z,t.rotation.w);
+    k.M = M;
+  }
 
-    k.M.Quaternion( t.rotation.x,t.rotation.y,t.rotation.z,t.rotation.w);
-
-  };
   Tree tree;
 
 };
