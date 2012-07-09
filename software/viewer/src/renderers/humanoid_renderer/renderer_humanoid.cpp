@@ -130,13 +130,35 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 			nextTf.tf.rotation.z};
       bot_quat_to_angle_axis(quat, &theta, axis);
 
-      //draw
+      //---debugging
+      cout << "\n(w,x,y,z) = (" 
+	   << nextTf.tf.rotation.w 
+	   << "," << nextTf.tf.rotation.x 
+	   << "," << nextTf.tf.rotation.y 
+	   << "," << nextTf.tf.rotation.z 
+	   << ")" << endl;
+      cout << "\naxis = (" 
+	   << axis[0] << "," 
+	   << axis[1] << ","
+	   << axis[2] << ")" << endl;
+      cout << "theta = " << theta << endl;
+
+
+      //----
+
+
+      //Draw
+      //glMatrixMode(GL_MODELVIEW); 
       glPushMatrix();
+      //glLoadIdentity(); 
+      
+      
+      glRotatef(theta * 180/3.141592654, 
+		axis[0], axis[1], axis[2]);
       glTranslatef(nextTf.tf.translation.x,
 		   nextTf.tf.translation.y,
 		   nextTf.tf.translation.z);
-      glRotatef(theta, axis[0], axis[1], axis[2]);
-      
+            
       draw(nextLink);
 
       glPopMatrix();
