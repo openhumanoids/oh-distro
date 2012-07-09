@@ -161,7 +161,9 @@ public:
     catch (ParseError &e) {
       throw e.addMessage("malfomed rpy string ["+rotation_str+"]");
     }
-      
+
+    this->setFromRPY(rpy.x,rpy.y,rpy.z);  
+
   };
 
   void clear() { this->x=this->y=this->z=0.0;this->w=1.0; }
