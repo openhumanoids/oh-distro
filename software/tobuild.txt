@@ -4,8 +4,8 @@
 externals
 #core
 drc_lcmtypes
-viewer
 #drivers
 robot_model
 kinematics
 sensing
+viewer
