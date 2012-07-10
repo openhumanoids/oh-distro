@@ -95,7 +95,7 @@ namespace fk
 	    urdf::Pose visual_origin = it->second->visual->origin;
 	    
 	    KDL::Frame T_visualorigin_parentjoint, T_parentjoint_bodyorigin, T_visualorigin_bodyorigin;
-	    KDL::Rotation visualRotation; // this is defined in the URDF in visual frame
+	    KDL::Rotation visualRotation; 
 	    
 	    T_visualorigin_parentjoint.p[0]=visual_origin.position.x;
 	    T_visualorigin_parentjoint.p[1]=visual_origin.position.y;
