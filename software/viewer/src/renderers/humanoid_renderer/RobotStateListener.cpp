@@ -95,28 +95,27 @@ namespace fk
 	    urdf::Pose visual_origin = it->second->visual->origin;
 	    
 	    KDL::Frame T_visualorigin_parentjoint, T_parentjoint_bodyorigin, T_visualorigin_bodyorigin;
+	    KDL::Rotation visualRotation; // this is defined in the URDF in visual frame
 	    
 	    T_visualorigin_parentjoint.p[0]=visual_origin.position.x;
 	    T_visualorigin_parentjoint.p[1]=visual_origin.position.y;
 	    T_visualorigin_parentjoint.p[2]=visual_origin.position.z;
+	    T_visualorigin_parentjoint.M = KDL::Rotation::Identity();
 
-	    //T_visualorigin_parentjoint.M.Quaternion(visual_origin.rotation.x,visual_origin.rotation.y,visual_origin.rotation.z,visual_origin.rotation.w);
-	    // EDIT: SISIR : The above code is wrong
+    	    visualRotation =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
-    	    T_visualorigin_parentjoint.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
 	    transform_it=cartpos_out.find(it->first);
 	    
 	    T_parentjoint_bodyorigin.p[0]= transform_it->second.translation.x;
 	    T_parentjoint_bodyorigin.p[1]= transform_it->second.translation.y;
 	    T_parentjoint_bodyorigin.p[2]= transform_it->second.translation.z;	
-		
-	    //T_parentjoint_bodyorigin.M.Quaternion(transform_it->second.rotation.x,transform_it->second.rotation.y,transform_it->second.rotation.z,transform_it->second.rotation.w);
-            // EDIT: SISIR : The above code is wrong
+
 	    T_parentjoint_bodyorigin.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
 
 	    T_visualorigin_bodyorigin = T_visualorigin_parentjoint*T_parentjoint_bodyorigin; 
-	    
+	    T_visualorigin_bodyorigin.M = visualRotation*T_visualorigin_bodyorigin.M;
+
 	    drc::link_transform_t state;	    
 	    
 	    state.link_name = transform_it->first;
