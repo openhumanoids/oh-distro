@@ -40,8 +40,34 @@ _renderer_free (BotRenderer *super)
   free(self);
 }
 
-static void draw(shared_ptr<urdf::Geometry> link)
+static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf)
 {
+  
+  glPushMatrix();
+  //--get rotation in angle/axis form
+  double theta;
+  double axis[3];
+  double quat[4] = {nextTf.tf.rotation.w,
+		    nextTf.tf.rotation.x,
+		    nextTf.tf.rotation.y,
+		    nextTf.tf.rotation.z};
+  bot_quat_to_angle_axis(quat, &theta, axis);
+  
+  //---debugging
+  cout << "\n(w,x,y,z) = (" 
+       << nextTf.tf.rotation.w 
+       << "," << nextTf.tf.rotation.x 
+       << "," << nextTf.tf.rotation.y 
+       << "," << nextTf.tf.rotation.z 
+       << ")" << endl;
+  cout << "\naxis = (" 
+       << axis[0] << "," 
+       << axis[1] << ","
+       << axis[2] << ")" << endl;
+  cout << "theta = " << theta << endl;
+
+  //----
+  
   GLUquadricObj* quadric = gluNewQuadric();
   gluQuadricDrawStyle(quadric, GLU_FILL);
   gluQuadricNormals(quadric, GLU_SMOOTH);
@@ -73,15 +99,30 @@ static void draw(shared_ptr<urdf::Geometry> link)
   }
   else if  (type == CYLINDER)
     {
-    shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
-    gluCylinder(quadric,
-		cyl->radius,
-		cyl->radius,
-		(double) cyl->length,
-		36,
-		36);
-
-    //cout << "CYLINDER"<< endl;
+      shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
+      /*glPointSize(10.0f);
+      glColor3ub(0,1,0);
+      glBegin(GL_POINTS);
+      glVertex3f(nextTf.tf.translation.x,
+	       nextTf.tf.translation.y,
+	       nextTf.tf.translation.z);
+	       glEnd();*/
+     
+      glTranslatef(0,0, -cyl->length/2.0);
+      glRotatef(theta * 180/3.141592654, 
+       		axis[0], axis[1], axis[2]);
+      glTranslatef(nextTf.tf.translation.x,
+		   nextTf.tf.translation.y,
+		   nextTf.tf.translation.z);
+      
+       gluCylinder(quadric,
+		  cyl->radius,
+		  cyl->radius,
+		  (double) cyl->length,
+		  36,
+		  36);
+      
+      //cout << "CYLINDER"<< endl;
     //cout << "radius : "<<  cyl->radius << endl;
     //cout << "length : "<<  cyl->length << endl;
     // drawBox(radius,length, it->second -> visual->origin);
@@ -97,6 +138,7 @@ static void draw(shared_ptr<urdf::Geometry> link)
   }
 
   gluDeleteQuadric(quadric);
+  glPopMatrix();
 }
 
 
@@ -120,49 +162,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     {
       drc::link_transform_t nextTf = link_tfs[i];
       shared_ptr<urdf::Geometry> nextLink = link_shapes[i];
-
-      //--get rotation in angle/axis form
-      double theta;
-      double axis[3];
-      double quat[4] = {nextTf.tf.rotation.w,
-			nextTf.tf.rotation.x,
-			nextTf.tf.rotation.y,
-			nextTf.tf.rotation.z};
-      bot_quat_to_angle_axis(quat, &theta, axis);
-
-      //---debugging
-      cout << "\n(w,x,y,z) = (" 
-	   << nextTf.tf.rotation.w 
-	   << "," << nextTf.tf.rotation.x 
-	   << "," << nextTf.tf.rotation.y 
-	   << "," << nextTf.tf.rotation.z 
-	   << ")" << endl;
-      cout << "\naxis = (" 
-	   << axis[0] << "," 
-	   << axis[1] << ","
-	   << axis[2] << ")" << endl;
-      cout << "theta = " << theta << endl;
-
-
-      //----
-
-
-      //Draw
-      //glMatrixMode(GL_MODELVIEW); 
-      glPushMatrix();
-      //glLoadIdentity(); 
-      
-      
-      glRotatef(theta * 180/3.141592654, 
-		axis[0], axis[1], axis[2]);
-      glTranslatef(nextTf.tf.translation.x,
-		   nextTf.tf.translation.y,
-		   nextTf.tf.translation.z);
-            
-      draw(nextLink);
-
-      glPopMatrix();
-
+      draw(nextLink, nextTf);
     }
     
   //glPopMatrix();
