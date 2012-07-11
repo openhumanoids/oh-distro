@@ -107,21 +107,30 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 	       nextTf.tf.translation.y,
 	       nextTf.tf.translation.z);
 	       glEnd();*/
-     
-      glTranslatef(0,0, -cyl->length/2.0);
-      glRotatef(theta * 180/3.141592654, 
-       		axis[0], axis[1], axis[2]);
-      glTranslatef(nextTf.tf.translation.x,
+
+
+    // glTranslatef(0,0, -cyl->length/2.0); 
+     double v[] = {0,0, -cyl->length/2.0};
+     double result[3];
+     bot_quat_rotate_to(quat,v,result);
+
+   // Translate tf origin to cylinder centre
+     glTranslatef(result[0],result[1],result[2]); 
+
+     glTranslatef(nextTf.tf.translation.x,
 		   nextTf.tf.translation.y,
 		   nextTf.tf.translation.z);
-      
+ 
+     glRotatef(theta * 180/3.141592654, 
+       		axis[0], axis[1], axis[2]); 
+
        gluCylinder(quadric,
 		  cyl->radius,
 		  cyl->radius,
 		  (double) cyl->length,
 		  36,
 		  36);
-      
+
       //cout << "CYLINDER"<< endl;
     //cout << "radius : "<<  cyl->radius << endl;
     //cout << "length : "<<  cyl->length << endl;

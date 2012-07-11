@@ -97,12 +97,7 @@ namespace fk
 	    KDL::Frame T_visualorigin_parentjoint, T_parentjoint_bodyorigin, T_visualorigin_bodyorigin;
 	    KDL::Rotation visualRotation; 
 	    
-	    T_visualorigin_parentjoint.p[0]=visual_origin.position.x;
-	    T_visualorigin_parentjoint.p[1]=visual_origin.position.y;
-	    T_visualorigin_parentjoint.p[2]=visual_origin.position.z;
-	    T_visualorigin_parentjoint.M = KDL::Rotation::Identity();
 
-    	    visualRotation =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
 
 	    transform_it=cartpos_out.find(it->first);
@@ -112,6 +107,15 @@ namespace fk
 	    T_parentjoint_bodyorigin.p[2]= transform_it->second.translation.z;	
 
 	    T_parentjoint_bodyorigin.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
+
+
+	    T_visualorigin_parentjoint.p[0]=visual_origin.position.x;
+	    T_visualorigin_parentjoint.p[1]=visual_origin.position.y;
+	    T_visualorigin_parentjoint.p[2]=visual_origin.position.z;
+            T_visualorigin_parentjoint.p = T_parentjoint_bodyorigin.M*T_visualorigin_parentjoint.p; // the visual   offset is rotated.
+	    T_visualorigin_parentjoint.M = KDL::Rotation::Identity();
+
+    	    visualRotation =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
 	    T_visualorigin_bodyorigin = T_visualorigin_parentjoint*T_parentjoint_bodyorigin; 
 	    T_visualorigin_bodyorigin.M = visualRotation*T_visualorigin_bodyorigin.M;
