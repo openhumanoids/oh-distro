@@ -1,0 +1,11 @@
+prefix=/home/rdeits/drc/software/build
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: lcmtypes_est_robot_state_publisher
+Description: LCM types for est_robot_state_publisher
+Requires:  lcm
+Version: 0.0.0
+Libs: -L${libdir}  -llcmtypes_est_robot_state_publisher
+Cflags: -I${includedir} 

@@ -1,0 +1,12 @@
+This is a stub LCM node to publish the estimated robot state. Currently, this is done by echoing the true robot state received from Gazebo.
+
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         est_robot_state_publisher
+Maintainers:  rdeits

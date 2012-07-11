@@ -1,0 +1,11 @@
+/home/rdeits/drc/software/build/lib/liblcmtypes_est_robot_state_publisher.a
+/home/rdeits/drc/software/build/include/lcmtypes/exlcm_example_t.h
+/home/rdeits/drc/software/build/include/lcmtypes/est_robot_state_publisher.h
+/home/rdeits/drc/software/build/lib/pkgconfig/lcmtypes_est_robot_state_publisher.pc
+/home/rdeits/drc/software/build/include/lcmtypes/exlcm/example_t.hpp
+/home/rdeits/drc/software/build/include/lcmtypes/est_robot_state_publisher.hpp
+/home/rdeits/drc/software/build/share/java/lcmtypes_est_robot_state_publisher.jar
+/home/rdeits/drc/software/build/lib/python2.7/dist-packages/exlcm/__init__.py
+/home/rdeits/drc/software/build/lib/python2.7/dist-packages/exlcm/example_t.py
+/home/rdeits/drc/software/build/share/lcmtypes/example_t.lcm
+/home/rdeits/drc/software/build/bin/est_robot_state_publisher
