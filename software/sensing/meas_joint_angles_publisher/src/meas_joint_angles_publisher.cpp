@@ -97,7 +97,11 @@ int main(int argc, char ** argv)
       message.joint_name.push_back(robot->joint_names_[i]); // Joint names available in alphabetical order.
       //TODO: INSERT ROBOT/GAZEBO API HERE?
 	double val = 0;
-      /*if(robot->joint_names_[i] == "BackPitch")
+
+      // for debugging ..
+      /*if(robot->joint_names_[i] == "LShoulderRoll")
+           val = 30*3.14/180;
+      if(robot->joint_names_[i] == "RShoulderRoll")
            val = 30*3.14/180;*/
       message.angular_position.push_back(val);
 
