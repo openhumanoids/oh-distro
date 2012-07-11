@@ -14,7 +14,7 @@
 #include <bot_core/rotations.h>
 
 
-
+#include "renderer_humanoid.hpp"
 #include "RobotStateListener.hpp"
 
 
@@ -95,8 +95,28 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
+  //todo
+    glPushMatrix();
+        //size cuboid
+       
+        // move base up so that bottom face is at origin
+     // glTranslatef(0,0.5,0.0); 
+     glTranslatef(nextTf.tf.translation.x,
+ 	 	nextTf.tf.translation.y,
+  		nextTf.tf.translation.z);
 
-    //todo
+       cout << "\n(x,y,z) = (" 
+       << nextTf.tf.translation.x       
+       << "," << nextTf.tf.translation.y 
+       << "," << nextTf.tf.translation.z 
+       << ")" << endl;
+
+     glRotatef(theta * 180/3.141592654, 
+       	 axis[0], axis[1], axis[2]); 
+     glScalef(xDim,yDim,zDim);
+        cube();
+    glPopMatrix();
+  
 
   }
   else if  (type == CYLINDER)
@@ -248,4 +268,44 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 
 
     //----------lcm stuff
+}
+
+void polygon(int a, int b, int c , int d)
+{
+
+ 
+    float vertices[][3] = 
+    {
+        {-0.5,-0.5,-0.5},{0.5,-0.5,-0.5},
+        {0.5,0.5,-0.5}, {-0.5,0.5,-0.5}, {-0.5,-0.5,0.5}, 
+        {0.5,-0.5,0.5}, {0.5,0.5,0.5}, {-0.5,0.5,0.5}
+    };
+ 
+    float colors[][3] = {{0.0,0.5,0.5},{1.0,0.0,0.0},
+    {1.0,1.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,1.0}, 
+    {1.0,0.0,1.0}, {1.0,1.0,1.0}, {0.0,1.0,1.0}};
+
+    // draw a polygon using colour of first vertex
+ 
+    glBegin(GL_POLYGON);
+       // glColor3fv(colors[a]);
+        glVertex3fv(vertices[a]);
+        glVertex3fv(vertices[b]);
+        glVertex3fv(vertices[c]);
+        glVertex3fv(vertices[d]);
+    glEnd();
+}
+ 
+void cube(void)
+{
+    //Draw unit cube centred on the origin
+ 
+/* map vertices to faces */
+ 
+    polygon(0,3,2,1);
+    polygon(2,3,7,6);
+    polygon(4,7,3,0);
+    polygon(1,2,6,5);
+    polygon(7,4,5,6);
+    polygon(5,4,0,1);
 }

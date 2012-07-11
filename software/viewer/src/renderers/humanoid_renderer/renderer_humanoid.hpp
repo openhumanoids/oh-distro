@@ -6,5 +6,12 @@
 #include <bot_frames/bot_frames.h>
 
 void setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm);
+//=============================================
+// DRAW CUBOID ROUTINES
+//=============================================
+//Cube points and colours
+
+void polygon(int a, int b, int c , int d);
+void cube(void); 
 
 #endif //HUMANOID_RENDERER_H
