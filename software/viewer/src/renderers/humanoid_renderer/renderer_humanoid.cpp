@@ -43,7 +43,7 @@ _renderer_free (BotRenderer *super)
 static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf)
 {
   
-  glPushMatrix();
+ 
   //--get rotation in angle/axis form
   double theta;
   double axis[3];
@@ -79,6 +79,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   
   if (type == SPHERE)
     {
+  glPushMatrix();
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
       glPointSize(radius);
@@ -86,6 +87,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
       glBegin(GL_POINTS);
       glVertex3f(radius, radius, radius);
       glEnd();
+  glPopMatrix();
     }
   else if  (type == BOX)
     {
@@ -99,6 +101,9 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   }
   else if  (type == CYLINDER)
     {
+
+
+
       shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
       /*glPointSize(10.0f);
       glColor3ub(0,1,0);
@@ -109,7 +114,8 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 	       glEnd();*/
 
 
-    // glTranslatef(0,0, -cyl->length/2.0); 
+
+     glPushMatrix();
      double v[] = {0,0, -cyl->length/2.0};
      double result[3];
      bot_quat_rotate_to(quat,v,result);
@@ -130,6 +136,46 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 		  (double) cyl->length,
 		  36,
 		  36);
+  //gluDeleteQuadric(quadric);
+  glPopMatrix();
+
+// drawing two disks to make a SOLID cylinder
+  glPushMatrix();  
+
+  v[2] = -(cyl->length/2.0);
+  bot_quat_rotate_to(quat,v,result);
+
+   // Translate tf origin to cylinder centre
+     glTranslatef(result[0],result[1],result[2]); 
+     glTranslatef(nextTf.tf.translation.x,
+		   nextTf.tf.translation.y,
+		   nextTf.tf.translation.z);
+     glRotatef(theta * 180/3.141592654, 
+       		axis[0], axis[1], axis[2]); 
+     gluDisk(quadric,
+		  0,
+		  cyl->radius,
+		  36,
+		  1);
+  glPopMatrix();
+  glPushMatrix(); 
+
+ v[2] = (cyl->length/2.0);
+  bot_quat_rotate_to(quat,v,result);
+
+   // Translate tf origin to cylinder centre
+     glTranslatef(result[0],result[1],result[2]); 
+     glTranslatef(nextTf.tf.translation.x,
+		   nextTf.tf.translation.y,
+		   nextTf.tf.translation.z);
+     glRotatef(theta * 180/3.141592654, 
+       		axis[0], axis[1], axis[2]); 
+     gluDisk(quadric,
+		  0,
+		  cyl->radius,
+		  36,
+		  1);
+  glPopMatrix();
 
       //cout << "CYLINDER"<< endl;
     //cout << "radius : "<<  cyl->radius << endl;
@@ -147,7 +193,6 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   }
 
   gluDeleteQuadric(quadric);
-  glPopMatrix();
 }
 
 
