@@ -14,7 +14,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
   <include filename="$(find atlas_description)/urdf/atlas_properties.xacro" />
   <include filename="$(find atlas_description)/urdf/atlas_visualsandcollision.xacro" />
   <include filename="$(find atlas_description)/urdf/atlas_structure.urdf.xacro" />
-  <include filename="$(find atlas_description)/urdf/atlas_controllers.xacro" /> 
+ <include filename="$(find atlas_description)/urdf/atlas_controllers.xacro" /> 
 
 </robot>
 

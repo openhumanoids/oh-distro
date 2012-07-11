@@ -545,21 +545,21 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <parent link="LShoulderPitch_link"/>
     <child link="LShoulderRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
     <limit effort="30" lower="0.0" upper="2.00712863865" velocity="3.0"/>
   </joint>
   <joint name="RShoulderRoll" type="revolute">
     <parent link="RShoulderPitch_link"/>
     <child link="RShoulderRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
     <limit effort="30" lower="-2.00712863865" upper="-0.0" velocity="3.0"/>
   </joint>
   <joint name="LShoulderYaw" type="revolute">
     <parent link="BackRoll_link"/>
     <child link="LShoulderYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0.2410587 0.41426384"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit effort="30" lower="-0.6981317004" upper="1.745329251" velocity="3.0"/>
   </joint>
   <joint name="LShoulderPitch" type="revolute">
@@ -580,14 +580,14 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <parent link="LElbowPitch_link"/>
     <child link="LWristYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit effort="30" lower="-1.48352986335" upper="1.48352986335" velocity="3.0"/>
   </joint>
   <joint name="RShoulderYaw" type="revolute">
     <parent link="BackRoll_link"/>
     <child link="RShoulderYaw_link"/>
     <origin rpy="0 0 0" xyz="0 -0.2410587 0.41426384"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit effort="30" lower="-0.6981317004" upper="1.745329251" velocity="3.0"/>
   </joint>
   <joint name="RShoulderPitch" type="revolute">
@@ -608,21 +608,21 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <parent link="RElbowPitch_link"/>
     <child link="RWristYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit effort="30" lower="-1.48352986335" upper="1.48352986335" velocity="3.0"/>
   </joint>
   <joint name="LWristRoll" type="revolute">
     <parent link="LWristYaw_link"/>
     <child link="LWristRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
     <limit effort="30" lower="-0.5235987753" upper="1.0471975506" velocity="3.0"/>
   </joint>
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
     <child link="RWristRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
     <limit effort="30" lower="-1.0471975506" upper="0.5235987753" velocity="3.0"/>
   </joint>
   <joint name="Back_Pelvis_Joint" type="fixed">
