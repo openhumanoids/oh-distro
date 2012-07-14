@@ -26,12 +26,11 @@
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
 
-#include <gazebo/Controller.hh>
-#include <gazebo/Body.hh>
-#include <gazebo/Model.hh>
-#include <gazebo/World.hh>
-#include <gazebo/Simulator.hh>
-#include <gazebo_msgs/WorldState.h>
+#include "physics/physics.h"
+#include "transport/TransportTypes.hh"
+#include "common/Time.hh"
+#include "common/Plugin.hh"
+#include "common/Events.hh"
 
 #include <ros/ros.h>
 
@@ -40,6 +39,7 @@
 #include <string>
 
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 // Topics
 #include <atlas_gazebo_plugins/RobotState.h>
@@ -103,40 +103,29 @@ namespace gazebo
 \{
 */
 
-class GazeboRosPubRobotState : public Controller
+class GazeboRosPubRobotState : public ModelPlugin
 {
   /// \brief Constructor
-  /// \param parent The parent entity, must be a Model or a Sensor
-  public: GazeboRosPubRobotState(Entity *parent);
+  public: GazeboRosPubRobotState();
 
   /// \brief Destructor
   public: virtual ~GazeboRosPubRobotState();
 
   /// \brief Load the controller
-  /// \param node XML config node
-  protected: virtual void LoadChild(XMLConfigNode *node);
-
-  /// \brief Init the controller
-  protected: virtual void InitChild();
+  public: void Load( physics::ModelPtr _parent, sdf::ElementPtr _sdf );
 
   /// \brief Update the controller
   protected: virtual void UpdateChild();
-
-  /// \brief Finalize the controller
-  protected: virtual void FiniChild();
-
-  /// \brief: keep track of number of connections
-  private: int robotStateConnectCount;
-  private: void RobotStateConnect();
-  private: void RobotStateDisconnect();
 
   /// \brief: Message for sending world state
   //private: gazebo_msgs::WorldState worldStateMsg;
   private: atlas_gazebo_plugins::RobotState robotStateMsg;
 
   /// \bridf: parent should be a model
-  private: gazebo::Model* parent_model_;
-  private: std::map<std::string, gazebo::Joint* > joints_;
+  private: physics::WorldPtr world;
+  private: physics::ModelPtr parent_model_;
+  private: std::map<std::string, physics::JointPtr > joints_;
+  
 
   /// \bridf: ros node handle and publisher
   private: ros::NodeHandle* rosnode_;
@@ -146,27 +135,35 @@ class GazeboRosPubRobotState : public Controller
   private: boost::mutex lock;
 
   /// \brief for setting ROS name space
-  private: ParamT<std::string> *robotNamespaceP;
   private: std::string robotNamespace;
 
   /// \brief topic name
-  private: ParamT<std::string> *topicNameP;
   private: std::string topicName;
 
   /// \brief frame transform name, should match link name
-  private: ParamT<std::string> *frameNameP;
   private: std::string frameName;
 
+  /// \brief: keep track of number of connections
+  private: int robotStateConnectCount;
+  private: void RobotStateConnect();
+  private: void RobotStateDisconnect();
   // Custom Callback Queue
   private: ros::CallbackQueue queue_;
   private: void QueueThread();
   private: boost::thread callback_queue_thread_;
+  
+  // Pointer to the update event connection
+  private: event::ConnectionPtr updateConnection;
+  
+    protected: double update_rate_;
+    protected: double update_period_;
+    protected: common::Time last_update_time_;
 
 };
 
 /** \} */
 /// @}
 
-}
+} //end namespace
 #endif
 
