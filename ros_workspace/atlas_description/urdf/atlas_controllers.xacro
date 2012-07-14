@@ -8,7 +8,7 @@
 
         <gazebo>
 
-            <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
+            <!--<controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
                 <alwaysOn>true</alwaysOn>
                 <updateRate>100.0</updateRate>
                 <bodyName>base_link</bodyName>
@@ -18,7 +18,7 @@
                 <xyzOffsets>0 0 0</xyzOffsets> 
                 <rpyOffsets>0 0 0</rpyOffsets>
                 <interface:position name="p3d_base_position"/>
-            </controller:gazebo_ros_p3d>
+            </controller:gazebo_ros_p3d> -->
 
             <!-- this publishes empty joint_states due to no transmission, but
              triggering robot_state_publisher to publish tf between fixed joints in erratic,
