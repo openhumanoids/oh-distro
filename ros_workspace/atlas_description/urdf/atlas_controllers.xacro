@@ -34,7 +34,6 @@
      <topicName>true_robot_state</topicName>
       </controller:gazebo_ros_pub_robot_state>
 
-
         </gazebo> 
 
 </robot>
