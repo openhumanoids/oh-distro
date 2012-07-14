@@ -1,0 +1,24 @@
+<package>
+  <description brief="atlas_gazebo_plugins_pre_fuerte">
+
+     atlas_gazebo_plugins_pre_fuerte
+
+  </description>
+  <author>sisir</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/atlas_gazebo_plugins_pre_fuerte</url>
+  <depend package="roscpp"/>
+  <depend package="gazebo"/>
+  <depend package="gazebo_plugins"/>
+  <depend package="gazebo_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/cfg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+    <gazebo plugin_path="${prefix}/lib" />
+  </export>
+  <rosdep name="tinyxml" />
+</package>
+
+
