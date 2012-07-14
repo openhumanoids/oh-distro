@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<!--
+    A simple visualization of the Atlas's kinematic structure as cylinders
+-->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+        <gazebo>
+	<!-- 
+            <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>100.0</updateRate>
+                <bodyName>base_link</bodyName>
+                <topicName>base_pose_ground_truth</topicName>
+                <gaussianNoise>0.01</gaussianNoise>
+                <frameName>map</frameName>
+                <xyzOffsets>0 0 0</xyzOffsets> 
+                <rpyOffsets>0 0 0</rpyOffsets>
+                <interface:position name="p3d_base_position"/>
+            </controller:gazebo_ros_p3d>-->
+
+            <!-- this publishes empty joint_states due to no transmission, but
+             triggering robot_state_publisher to publish tf between fixed joints in erratic,
+             (e.g. base_laser_link for the base_scan frame) -->
+           <!--   <controller:gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>100.0</updateRate>
+                <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
+            </controller:gazebo_ros_controller_manager>-->
+      <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state_pre_fuerte.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <topicName>true_robot_state</topicName>
+      </controller:gazebo_ros_pub_robot_state>
+
+
+        </gazebo> 
+
+</robot>
