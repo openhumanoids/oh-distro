@@ -12,7 +12,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 
-#include <atlas_gazebo_plugins/RobotState.h>
+#include <atlas_gazebo_msgs/RobotState.h>
 
 #include <lcm/lcm-cpp.hpp>
 //#include <lcmtypes/bot_core.h>
@@ -25,7 +25,7 @@ double getTime_now()
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; 
 }
 
-void true_robot_state_Callback(const atlas_gazebo_plugins::RobotState::ConstPtr& msg)
+void true_robot_state_Callback(const atlas_gazebo_msgs::RobotState::ConstPtr& msg)
 {
 drc::robot_state_t robot_state_msg;
 robot_state_msg.timestamp = 1000*msg->header.stamp.toNSec();

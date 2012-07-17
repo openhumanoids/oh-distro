@@ -97,7 +97,7 @@ void GazeboRosPubRobotState::LoadChild(XMLConfigNode *node)
   this->pub_ = this->rosnode_->advertise(p3d_ao);*/
 
 
-  ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_plugins_pre_fuerte::RobotState>(
+  ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
     this->topicName,1,
     boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
     boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);

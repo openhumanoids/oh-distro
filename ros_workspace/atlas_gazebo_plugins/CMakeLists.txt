@@ -12,7 +12,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 
 
-rosbuild_genmsg()
+#rosbuild_genmsg()
 #rosbuild_gensrv()
 #  add_definitions(-fPIC)
 #include_directories(include)

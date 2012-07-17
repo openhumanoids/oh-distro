@@ -14,6 +14,7 @@
   <depend package="gazebo_msgs"/>
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
+  <depend package="atlas_gazebo_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/cfg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
     <gazebo plugin_path="${prefix}/lib" />

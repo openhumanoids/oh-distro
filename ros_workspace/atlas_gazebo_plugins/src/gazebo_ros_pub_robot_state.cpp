@@ -115,7 +115,7 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
 
   if (this->topicName != "")
   {
-  ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_plugins::RobotState>(
+  ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
     this->topicName,1,
     boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
     boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);

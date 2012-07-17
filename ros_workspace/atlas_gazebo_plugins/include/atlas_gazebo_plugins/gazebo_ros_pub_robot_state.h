@@ -42,7 +42,7 @@
 #include <boost/bind.hpp>
 
 // Topics
-#include <atlas_gazebo_plugins/RobotState.h>
+#include <atlas_gazebo_msgs/RobotState.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
@@ -119,7 +119,7 @@ class GazeboRosPubRobotState : public ModelPlugin
 
   /// \brief: Message for sending world state
   //private: gazebo_msgs::WorldState worldStateMsg;
-  private: atlas_gazebo_plugins::RobotState robotStateMsg;
+  private: atlas_gazebo_msgs::RobotState robotStateMsg;
 
   /// \bridf: parent should be a model
   private: physics::WorldPtr world;

@@ -13,7 +13,7 @@
   <depend package="urdf"/>
   <depend package="urdf_interface"/>
   <depend package="roscpp"/>
-  <depend package="atlas_gazebo_plugins"/>
+  <depend package="atlas_gazebo_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
 </package>
