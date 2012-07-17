@@ -12,6 +12,7 @@
 #include <GL/gl.h>
 #include <bot_vis/bot_vis.h>
 #include <bot_core/rotations.h>
+#include <gdk/gdkkeysyms.h>
 
 
 #include "renderer_humanoid.hpp"
@@ -31,6 +32,7 @@ typedef struct _RendererHumanoid
   BotGtkParamWidget *pw;
   boost::shared_ptr<fk::RobotStateListener> robotStateListener;
   boost::shared_ptr<lcm::LCM> lcm;
+  BotEventHandler *key_handler;
 } RendererHumanoid;
 
 static void
@@ -39,6 +41,25 @@ _renderer_free (BotRenderer *super)
   RendererHumanoid *self = (RendererHumanoid*) super->user;
   free(self);
 }
+
+
+//=========================key press================
+
+int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
+{
+  switch (event->keyval)
+    {
+
+    case GDK_Right:
+      {
+	cout << "\n right key pressed" << endl;
+      }
+    }
+  
+  return 1;
+}
+
+//=================================
 
 static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf)
 {
@@ -261,7 +282,16 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 
 
-    //----------lcm stuff
+    //----------
+    // create and register mode handler
+    self->key_handler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+    self->key_handler->name = strdup(std::string("Mode Control").c_str());
+    self->key_handler->enabled = 1;
+    self->key_handler->key_press = cb_key_press;
+    //self->key_handler->key_release = cb_key_release;
+    self->key_handler->user = self;
+    bot_viewer_add_event_handler(viewer, self->key_handler, 1);
+    
 }
 
 void polygon(int a, int b, int c , int d)
