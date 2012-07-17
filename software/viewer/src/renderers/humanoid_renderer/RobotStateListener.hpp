@@ -44,9 +44,12 @@ namespace fk
     
     //-------------message callback
   private:
-    void handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
-			       const std::string& chan, 
-			      const drc::joint_angles_t* msg);
+//  void handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
+//			       const std::string& chan, 
+//			      const drc::joint_angles_t* msg);    
+    void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
+			      const std::string& chan, 
+			      const drc::robot_state_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg);
 

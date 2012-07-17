@@ -54,7 +54,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   bot_quat_to_angle_axis(quat, &theta, axis);
   
   //---debugging
-  cout << "\n(w,x,y,z) = (" 
+ /* cout << "\n(w,x,y,z) = (" 
        << nextTf.tf.rotation.w 
        << "," << nextTf.tf.rotation.x 
        << "," << nextTf.tf.rotation.y 
@@ -64,7 +64,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
        << axis[0] << "," 
        << axis[1] << ","
        << axis[2] << ")" << endl;
-  cout << "theta = " << theta << endl;
+  cout << "theta = " << theta << endl;*/
 
   //----
   
@@ -104,12 +104,6 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
      glTranslatef(nextTf.tf.translation.x,
  	 	nextTf.tf.translation.y,
   		nextTf.tf.translation.z);
-
-       cout << "\n(x,y,z) = (" 
-       << nextTf.tf.translation.x       
-       << "," << nextTf.tf.translation.y 
-       << "," << nextTf.tf.translation.z 
-       << ")" << endl;
 
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 

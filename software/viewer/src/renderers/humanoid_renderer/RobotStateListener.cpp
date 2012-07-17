@@ -19,7 +19,7 @@ namespace fk
 {
   //==================constructor / destructor
   
-  /**Subscribes to Robot URDF Model and to MEAS_JOINT_ANGLES.*/
+  /**Subscribes to Robot URDF Model and to EST_ROBOT_STATE.*/
   RobotStateListener::RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer):
     _urdf_parsed(false),
     _lcm(lcm),
@@ -29,7 +29,7 @@ namespace fk
     //lcm ok?
     if(!lcm->good())
       {
-	cerr << "\nLCM Not Good: Joint Angles Handler" << endl;
+	cerr << "\nLCM Not Good: Robot State Handler" << endl;
 	return;
       }
     
@@ -38,7 +38,8 @@ namespace fk
 				       &fk::RobotStateListener::handleRobotUrdfMsg,
 				       this);    
     //Subscribes to MEAS_JOINT_ANGLES 
-    lcm->subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
+    //lcm->subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
+    lcm->subscribe("EST_ROBOT_STATE", &fk::RobotStateListener::handleRobotStateMsg, this); //&this ?
   }
   
 
@@ -48,13 +49,16 @@ namespace fk
 
   //=============message callbacks
 
-  void RobotStateListener::handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
+  //void RobotStateListener::handleJointAnglesMsg(const lcm::ReceiveBuffer* rbuf,
+//						 const string& chan, 
+//						 const drc::joint_angles_t* msg)
+void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::joint_angles_t* msg)
+						 const drc::robot_state_t* msg)						 
   {
     if (!_urdf_parsed)
       {
-	cout << "\n handleJointAnglesMsg: Waiting for urdf to be parsed" << endl;
+	cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
 	return;
       }
     
@@ -93,41 +97,48 @@ namespace fk
 	  {
 	    
 	    urdf::Pose visual_origin = it->second->visual->origin;
-	    
-	    KDL::Frame T_visualorigin_parentjoint, T_parentjoint_bodyorigin, T_visualorigin_bodyorigin;
-	    KDL::Rotation visualRotation; 
-	    
+	 
+	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
 
-
-
+	    T_world_body.p[0]= msg->origin_position.translation.x;
+	    T_world_body.p[1]= msg->origin_position.translation.y;
+	    T_world_body.p[2]= msg->origin_position.translation.z;		    
+	    T_world_body.M =  KDL::Rotation::Quaternion(msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z, msg->origin_position.rotation.w);
+	 
 	    transform_it=cartpos_out.find(it->first);
 	    
-	    T_parentjoint_bodyorigin.p[0]= transform_it->second.translation.x;
-	    T_parentjoint_bodyorigin.p[1]= transform_it->second.translation.y;
-	    T_parentjoint_bodyorigin.p[2]= transform_it->second.translation.z;	
+	    T_body_parentjoint.p[0]= transform_it->second.translation.x;
+	    T_body_parentjoint.p[1]= transform_it->second.translation.y;
+	    T_body_parentjoint.p[2]= transform_it->second.translation.z;	
 
-	    T_parentjoint_bodyorigin.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
+	    T_body_parentjoint.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
 
 
-	    T_visualorigin_parentjoint.p[0]=visual_origin.position.x;
-	    T_visualorigin_parentjoint.p[1]=visual_origin.position.y;
-	    T_visualorigin_parentjoint.p[2]=visual_origin.position.z;
-            T_visualorigin_parentjoint.p = T_parentjoint_bodyorigin.M*T_visualorigin_parentjoint.p; // the visual   offset is rotated.
-	    T_visualorigin_parentjoint.M = KDL::Rotation::Identity();
+	    T_parentjoint_visual.p[0]=visual_origin.position.x;
+	    T_parentjoint_visual.p[1]=visual_origin.position.y;
+	    T_parentjoint_visual.p[2]=visual_origin.position.z;
+	    T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
-    	    visualRotation =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+	    T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
+	    T_world_visual = T_world_body*T_body_visual;
 
-	    T_visualorigin_bodyorigin = T_visualorigin_parentjoint*T_parentjoint_bodyorigin; 
-	    T_visualorigin_bodyorigin.M = visualRotation*T_visualorigin_bodyorigin.M;
-
+	    
 	    drc::link_transform_t state;	    
 	    
 	    state.link_name = transform_it->first;
 	    
-	    state.tf.translation.x = T_visualorigin_bodyorigin.p[0];
-	    state.tf.translation.y = T_visualorigin_bodyorigin.p[1];
-	    state.tf.translation.z = T_visualorigin_bodyorigin.p[2];
-	    T_visualorigin_bodyorigin.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+	    // For Body Frame Viewing
+	    //state.tf.translation.x = T_body_visual.p[0];
+	    //state.tf.translation.y = T_body_visual.p[1];
+	    //state.tf.translation.z = T_body_visual.p[2];
+	    //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+	    
+	    state.tf.translation.x = T_world_visual.p[0];
+	    state.tf.translation.y = T_world_visual.p[1];
+	    state.tf.translation.z = T_world_visual.p[2];
+	    T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+	    
+	    
 	    
 	    //state.tf.translation = transform_it->second.translation;
 	    //state.tf.rotation = transform_it->second.rotation;
