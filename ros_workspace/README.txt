@@ -20,6 +20,8 @@ DESCRIPTION:
 
 3) atlas_gazebo_plugins_pre_fuerte: Same as above, but plugin api is compatible with pre Fuerte Ros releases. Must run rosmake within the  folder. 
 
+4) atlas_gazebo_msgs: Builds ROS msgs used in gazebo plugins seperately to avoid dependency issues with fuerte and pre-fuerte versions.
+
 4) ROS2LCM_translator: This node contains a translator that links to lcm and drc_lcmtypes pkg-config files. Add this following line to your .bashrc file, so that ros can successfully build this node.
 
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$HOME/drc/software/build/lib/pkgconfig/
