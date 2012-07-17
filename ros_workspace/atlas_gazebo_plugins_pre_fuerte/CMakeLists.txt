@@ -27,6 +27,10 @@ rosbuild_add_boost_directories()
 rosbuild_add_library(gazebo_ros_pub_robot_state_pre_fuerte src/gazebo_ros_pub_robot_state.cpp)
 rosbuild_link_boost(gazebo_ros_pub_robot_state_pre_fuerte thread)
 
+
+rosbuild_add_library(fourWheeled_diffdrive_plugin_pre_fuerte src/fourWheeled_diffdrive_plugin.cpp)
+rosbuild_link_boost(fourWheeled_diffdrive_plugin_pre_fuerte thread)
+
 #rosbuild_add_library(diffdrive_plugin2 src/diffdrive_plugin.cpp)
 #rosbuild_link_boost(diffdrive_plugin2 thread)
 

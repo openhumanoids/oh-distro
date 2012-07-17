@@ -1,0 +1,15 @@
+<launch>
+
+<!-- <include file="$(find gazebo_worlds)/launch/empty_world.launch"/> -->
+
+
+<!-- start gazebo with an empty plane -->
+ <param name="/use_sim_time" value="true" />
+
+<!-- starts gazebo in paused mode. -->
+<node name="gazebo" pkg="gazebo" type="gazebo" args="-u $(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen"/>
+
+
+<include file="$(find atlas_description)/launch/wheeled_atlas_spawn_gazebo_pre_fuerte.launch"/>
+
+</launch>

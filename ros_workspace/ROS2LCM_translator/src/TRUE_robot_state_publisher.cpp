@@ -80,7 +80,7 @@ if(lcm.good())
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "testing");
+  ros::init(argc, argv, "true_robot_state_publisher");
   ros::NodeHandle n;
   ros::Subscriber sub = n.subscribe("true_robot_state", 10, true_robot_state_Callback);
 
