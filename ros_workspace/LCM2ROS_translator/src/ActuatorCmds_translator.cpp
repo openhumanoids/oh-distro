@@ -53,7 +53,7 @@ class ActuatorCmdHandler{
 int main(int argc,char** argv)
 {
 	ros::init(argc,argv,"actuator_cmd_publisher");
-	/*lcm::LCM talker;
+	lcm::LCM talker;
 	if(!talker.good())
 		return 1;
 	drc::actuator_cmd_t actuator_cmd;
@@ -64,7 +64,6 @@ int main(int argc,char** argv)
 	actuator_cmd.joint_name.push_back("neck");
 	actuator_cmd.joint_effort.push_back(0.0);
 	actuator_cmd.joint_effort.push_back(1.0);
-	*/
 	lcm::LCM listener;
 	ActuatorCmdHandler handler;
 	listener.subscribe("ACTUATOR_CMD",&ActuatorCmdHandler::actuator_cmd_Callback,&handler);
