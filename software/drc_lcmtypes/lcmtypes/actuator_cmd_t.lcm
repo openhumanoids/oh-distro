@@ -1,0 +1,10 @@
+package drc;
+
+struct actuator_cmd_t
+{
+    int64_t timestamp;
+    string robot_name;
+    int32_t num_joints;
+    string joint_name [num_joints];
+    float joint_effort [num_joints];
+}
