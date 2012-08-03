@@ -91,7 +91,7 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   if (!_sdf->HasElement("frontleftJoint"))
   {
-    ROS_WARN("Differential Drive plugin missing <leftJoint>, defaults to front_left_joint");
+    ROS_WARN("Differential Drive plugin missing <frontleftJoint>, defaults to front_left_joint");
     this->frontleftJointName = "front_left_joint";
   }
   else
@@ -101,7 +101,7 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   if (!_sdf->HasElement("frontrightJoint"))
   {
-    ROS_WARN("Differential Drive plugin missing <rightJoint>, defaults to front_right_joint");
+    ROS_WARN("Differential Drive plugin missing <frontrightJoint>, defaults to front_right_joint");
     this->frontrightJointName = "front_right_joint";
   }
   else

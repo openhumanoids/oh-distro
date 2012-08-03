@@ -30,6 +30,8 @@ rosbuild_link_boost(gazebo_ros_pub_robot_state thread)
 rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
 rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
 
+rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
+rosbuild_link_boost(planar_hover_plugin thread)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
