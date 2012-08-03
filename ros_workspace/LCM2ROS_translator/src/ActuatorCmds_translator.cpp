@@ -32,7 +32,8 @@ class ActuatorCmdHandler{
 	void actuator_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::actuator_cmd_t* msg)//what is rbuf and channel here?
 	{
 		atlas_gazebo_msgs::ActuatorCmd actuator_cmd_msg;
-		actuator_cmd_msg.header.stamp.fromNSec(msg->timestamp/1000);//msg.timestamp is int64_t, how can I convert it to 'Time', why divide by 1000?
+                long t = msg->timestamp*1000; // from usec to nsec
+		actuator_cmd_msg.header.stamp.fromNSec(t);
 		actuator_cmd_msg.robot_name = msg->robot_name;
 		//actuator_cmd_msg.joint_name = new string[msg.num_joints];
 		//actuator_cmd_msg.joint_effort = new float[msg.num_joints]
@@ -66,10 +67,10 @@ int main(int argc,char** argv)
 	actuator_cmd.joint_effort.push_back(1.0);
 	lcm::LCM listener;
 	ActuatorCmdHandler handler;
-	listener.subscribe("ACTUATOR_CMD",&ActuatorCmdHandler::actuator_cmd_Callback,&handler);
+	listener.subscribe("ACTUATOR_CMDS",&ActuatorCmdHandler::actuator_cmd_Callback,&handler);
 	while(true)
 	{
-	        talker.publish("ACTUATOR_CMD",&actuator_cmd);
+	        talker.publish("ACTUATOR_CMDS",&actuator_cmd);
 		listener.handle();
 	}
 	return 0;
