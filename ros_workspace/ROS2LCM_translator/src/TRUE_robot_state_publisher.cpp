@@ -28,7 +28,7 @@ double getTime_now()
 void true_robot_state_Callback(const atlas_gazebo_msgs::RobotState::ConstPtr& msg)
 {
 drc::robot_state_t robot_state_msg;
-robot_state_msg.timestamp = 1000*msg->header.stamp.toNSec();
+robot_state_msg.timestamp = msg->header.stamp.toNSec()/1000; // from nsec to usec
 robot_state_msg.robot_name = msg->robot_name;
 robot_state_msg.origin_position.translation.x = msg->body_pose.position.x;
 robot_state_msg.origin_position.translation.y = msg->body_pose.position.y;
