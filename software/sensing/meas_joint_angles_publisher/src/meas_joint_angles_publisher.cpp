@@ -99,10 +99,14 @@ int main(int argc, char ** argv)
 	double val = 0;
 
       // for debugging ..
-      /*if(robot->joint_names_[i] == "LShoulderRoll")
-           val = 30*3.14/180;
+     /*if(robot->joint_names_[i] == "LShoulderRoll")
+           val = -30*3.14/180;
       if(robot->joint_names_[i] == "RShoulderRoll")
-           val = 30*3.14/180;*/
+           val = 30*3.14/180;
+      if(robot->joint_names_[i] == "LElbowPitch")
+           val = -30*3.14/180;
+    if(robot->joint_names_[i] == "RElbowPitch")
+           val = -30*3.14/180;*/
       message.angular_position.push_back(val);
 
     }
