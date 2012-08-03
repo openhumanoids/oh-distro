@@ -1,0 +1,59 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"X_link" [label="X_link"];
+"Y_link" [label="Y_link"];
+"base" [label="base"];
+"Torso" [label="Torso"];
+"NeckYaw_link" [label="NeckYaw_link"];
+"NeckPitch_link" [label="NeckPitch_link"];
+"LShoulderYaw_link" [label="LShoulderYaw_link"];
+"LShoulderPitch_link" [label="LShoulderPitch_link"];
+"LShoulderRoll_link" [label="LShoulderRoll_link"];
+"LElbowPitch_link" [label="LElbowPitch_link"];
+"LWristYaw_link" [label="LWristYaw_link"];
+"LWristRoll_link" [label="LWristRoll_link"];
+"RShoulderYaw_link" [label="RShoulderYaw_link"];
+"RShoulderPitch_link" [label="RShoulderPitch_link"];
+"RShoulderRoll_link" [label="RShoulderRoll_link"];
+"RElbowPitch_link" [label="RElbowPitch_link"];
+"RWristYaw_link" [label="RWristYaw_link"];
+"RWristRoll_link" [label="RWristRoll_link"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "X_Joint" [label="xyz: 0 0 0.15 \nrpy: 0 -0 0"]
+"X_Joint" -> "X_link"
+"X_link" -> "Y_Joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"Y_Joint" -> "Y_link"
+"Y_link" -> "Theta_Joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"Theta_Joint" -> "base"
+"base" -> "Base_Torso_joint" [label="xyz: 0 0 0.15 \nrpy: 0 -0 0"]
+"Base_Torso_joint" -> "Torso"
+"Torso" -> "NeckYaw" [label="xyz: 0 0 0.878546 \nrpy: 0 -0 0"]
+"NeckYaw" -> "NeckYaw_link"
+"NeckYaw_link" -> "NeckPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"NeckPitch" -> "NeckPitch_link"
+"base" -> "LShoulderYaw" [label="xyz: 0 0.241059 0.964264 \nrpy: 0 -0 0"]
+"LShoulderYaw" -> "LShoulderYaw_link"
+"LShoulderYaw_link" -> "LShoulderPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LShoulderPitch" -> "LShoulderPitch_link"
+"LShoulderPitch_link" -> "LShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LShoulderRoll" -> "LShoulderRoll_link"
+"LShoulderRoll_link" -> "LElbowPitch" [label="xyz: 0 0 -0.348196 \nrpy: 0 -0 0"]
+"LElbowPitch" -> "LElbowPitch_link"
+"LElbowPitch_link" -> "LWristYaw" [label="xyz: 0 0 -0.303555 \nrpy: 0 -0 0"]
+"LWristYaw" -> "LWristYaw_link"
+"LWristYaw_link" -> "LWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"LWristRoll" -> "LWristRoll_link"
+"base" -> "RShoulderYaw" [label="xyz: 0 -0.241059 0.964264 \nrpy: 0 -0 0"]
+"RShoulderYaw" -> "RShoulderYaw_link"
+"RShoulderYaw_link" -> "RShoulderPitch" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RShoulderPitch" -> "RShoulderPitch_link"
+"RShoulderPitch_link" -> "RShoulderRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RShoulderRoll" -> "RShoulderRoll_link"
+"RShoulderRoll_link" -> "RElbowPitch" [label="xyz: 0 0 -0.348196 \nrpy: 0 -0 0"]
+"RElbowPitch" -> "RElbowPitch_link"
+"RElbowPitch_link" -> "RWristYaw" [label="xyz: 0 0 -0.303555 \nrpy: 0 -0 0"]
+"RWristYaw" -> "RWristYaw_link"
+"RWristYaw_link" -> "RWristRoll" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"RWristRoll" -> "RWristRoll_link"
+}
