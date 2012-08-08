@@ -14,8 +14,51 @@
 //renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <renderer_drc/renderer_humanoid.hpp>
+#include <laser_utils/renderer_laser.h>
+#include <image_utils/renderer_cam_thumb.h>
+#include <visualization/collections_renderer.hpp>
+
+#include "udp_util.h"
 
 using namespace std;
+
+
+static int
+logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
+        const GdkEventKey *event)
+{
+    int keyval = event->keyval;
+
+    switch (keyval)
+    {
+    case 'P':
+    case 'p':
+        udp_send_string("127.0.0.1", 53261, "PLAYPAUSETOGGLE");
+        break;
+    case 'N':
+    case 'n':
+        udp_send_string("127.0.0.1", 53261, "STEP");
+        break;
+    case '=':
+    case '+':
+        udp_send_string("127.0.0.1", 53261, "FASTER");
+        break;
+    case '_':
+    case '-':
+        udp_send_string("127.0.0.1", 53261, "SLOWER");
+        break;
+    case '[':
+        udp_send_string("127.0.0.1", 53261, "BACK5");
+        break;
+    case ']':
+        udp_send_string("127.0.0.1", 53261, "FORWARD5");
+        break;
+    default:
+        return 0;
+    }
+
+    return 1;
+}
 
 int main(int argc, char *argv[])
 {
@@ -39,22 +82,26 @@ int main(int argc, char *argv[])
 
   BotViewer* viewer = bot_viewer_new("MIT DRC Viewer");
 
-  BotParam * param;
+//  BotParam * param;
 
   //die cleanly for control-c etc :-)
   bot_gtk_quit_on_interrupt();
 
+  // logplayer controls
+  BotEventHandler *ehandler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+  ehandler->name = "LogPlayer Remote";
+  ehandler->enabled = 1;
+  ehandler->key_press = logplayer_remote_on_key_press;
+  bot_viewer_add_event_handler(viewer, ehandler, 0);
+
   // setup renderers
   bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-
-  //---humanoid renderer
-  setup_renderer_humanoid(viewer, 0, lcm);
-  
-  //--------
-
-
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
+  laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  setup_renderer_humanoid(viewer, 0, lcm);
+  collections_add_renderer_to_viewer(viewer, 1);
 
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
