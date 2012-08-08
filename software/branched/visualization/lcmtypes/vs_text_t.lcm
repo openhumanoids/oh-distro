@@ -1,0 +1,10 @@
+package vs;
+
+struct text_t {
+  int64_t id;
+  
+  int32_t collection_id;
+  int64_t object_id;
+
+  string text;
+}

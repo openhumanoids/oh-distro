@@ -1,0 +1,45 @@
+cmake_minimum_required(VERSION 2.6.0)
+
+file(GLOB hpp_files include/visualization/*.hpp)
+#add_definitions(-Wall -msse2 -msse3)
+
+# pull in the pods macros. See cmake/pods.cmake for documentation
+set(POD_NAME visualization)
+include(cmake/pods.cmake)
+
+# automatically build LCM types.  This also defines a number of CMake
+# variables, see cmake/lcmtypes.cmake for details
+include(cmake/lcmtypes.cmake)
+lcmtypes_build()
+
+include_directories(include)
+link_libraries(${LCMTYPES_LIBS} vs_vis glut)
+
+add_subdirectory(src/renderers)
+
+add_library(vs_vis SHARED
+	src/collections_viewer/viewer.cpp
+    )
+set_target_properties(vs_vis PROPERTIES SOVERSION 1)
+
+pods_install_libraries(vs_vis)
+pods_install_headers(${hpp_files} DESTINATION visualization)
+
+pods_install_pkg_config_file(visualization
+    LIBS -l${LCMTYPES_LIBS} -lvs_vis
+    CFLAGS -I\${includedir}
+    REQUIRES lcm 
+    VERSION 0.0.1)
+
+# A sample viewer including the collections renderer.
+add_executable(collections_viewer src/collections_viewer/collections_viewer.cpp)
+target_link_libraries(collections_viewer collections_renderer)
+pods_use_pkg_config_packages(collections_viewer bot2-vis bot2-lcmgl-renderer lcm lcmtypes_visualization eigen3)
+
+# A sample client sending collections messages.
+add_executable(collections_example src/collections_viewer/collections_example.cpp)
+pods_use_pkg_config_packages(collections_example lcm)
+
+# make executables public
+pods_install_executables(collections_viewer collections_example)
+

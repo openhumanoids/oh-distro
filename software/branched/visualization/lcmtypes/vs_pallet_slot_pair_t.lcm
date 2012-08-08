@@ -1,0 +1,13 @@
+// structure for pallet slot pair.
+// all quantities in local coordinate frame.
+
+package vs;
+
+struct pallet_slot_pair_t
+{
+    int64_t utime;
+
+    pallet_slot_t left_slot;
+    pallet_slot_t right_slot;
+    double confidence;
+}

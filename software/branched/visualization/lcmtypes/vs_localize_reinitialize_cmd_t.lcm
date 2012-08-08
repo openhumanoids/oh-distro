@@ -1,0 +1,13 @@
+package vs;
+
+// Instructs the localization particle filter to re-initialize the
+// particles to a normal distribution.
+// added by mfallon. syncs with envoy re-initialize message
+
+struct localize_reinitialize_cmd_t
+{
+    int64_t utime;
+
+    double mean[3];     // x, y, theta
+    double variance[3]; // diagonal covariance matrix
+}

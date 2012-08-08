@@ -1,0 +1,11 @@
+package vs;
+
+struct text_collection_t {
+  int32_t id;     // ID of collection, needed for example for links
+  string name;    // name to display in viewer
+  int16_t type;   // what to draw, see constants below
+  boolean reset;  // start from scratch or keep previous data
+
+  int32_t n;
+  text_t texts[n];
+}

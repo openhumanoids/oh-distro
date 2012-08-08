@@ -1,0 +1,22 @@
+package vs;
+
+struct point3d_list_t
+{
+  int64_t id; // unique ID, can be timestamp
+
+  int32_t collection;
+  int64_t element_id;
+
+  int32_t npoints;
+	point3d_t points[npoints];
+
+	int32_t ncolors;
+	color_t colors[ncolors];
+
+	int32_t nnormals;
+	point3d_t normals[nnormals];
+	
+	int32_t npointids;
+	int64_t pointids[npointids];
+}
+

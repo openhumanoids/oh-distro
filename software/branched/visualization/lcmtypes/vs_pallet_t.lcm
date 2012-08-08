@@ -1,0 +1,48 @@
+// parametrization of a pallet in terms of its 6DOF pose and type
+// 
+
+// pallets are assigned a right-handed Cartesian coordinate frame 
+// with the origin located at the base of the left-hand corner 
+// with the positive x-axis to the right along one stringer, 
+// and the z-axis up.
+//
+// single-precision floats are used to store position data since
+// the precision is suitable for the magnitude of positions
+// that we are expecting.
+
+package vs;
+
+struct pallet_t
+{
+    int64_t utime;
+
+    int64_t id;
+
+    int64_t relative_to_id; // Position is relative to the object with this id.
+    	    		    // used for pallets on trailers or forklift.
+			    // 0 - local frame, 1 - forklift, 
+			    // otherwise - an object from the objects list.
+			    // currently only objects and not nested
+
+    double pos[3];          // x,y,z position (in meters) of the 
+                           // pallet's body-fixed coordinate frame
+                           // expressed in the world coordinate frame
+    
+    double orientation[4];  // quaternion that defines the rotation\
+                           // from the body-fixed frame to the world
+                           // coordinate frame
+
+    // bounding box: if the pallet_type has a corresponding RWX model, then the
+    //               bounding box fields below should be set to the extents of 
+    //               the RWX model
+    double bbox_min[3];    // [m] minimum x,y,z extent of pallet in 
+                          // body-fixed frame
+    double bbox_max[3];    // [m] maximum x,y,z extent of pallet in 
+                          // body-fixed frame
+
+    pallet_enum_t pallet_type;
+
+    int32_t num_slot_pairs;   // number of slot pairs associated with pallet
+    pallet_slot_pair_t slot_pairs[num_slot_pairs];    // slot pairs
+   
+}

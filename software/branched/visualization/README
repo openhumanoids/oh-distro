@@ -1,0 +1,20 @@
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         visualization
+Maintainers:  Hordur Johannsson <hordurj@csail.mit.edu>
+Summary:      Tools for visualization of SLAM algorithms.
+Description:
+  This pod contains tools for visualization of SLAM algorithms. This
+  includes rendering posegraphs and sensor data like point clouds.
+
+Requirements: 
+  LCM (http://lcm.googlecode.com)
+  libbot2 (svn checkout https://svn.csail.mit.edu/libbot2)
+
+License:      No license available
+

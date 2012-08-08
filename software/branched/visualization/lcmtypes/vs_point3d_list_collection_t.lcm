@@ -1,0 +1,24 @@
+package vs;
+
+struct point3d_list_collection_t
+{
+  int32_t id;     // ID of collection, needed for example for links
+  string name;    // name to display in viewer
+  int16_t type;   // what to draw, see constants below
+  boolean reset;  // start from scratch or keep previous data
+
+  int32_t nlists;  // Number of different point clouds
+  point3d_list_t point_lists[nlists];
+
+  const int16_t POINT=1,
+                LINE_STRIP=2,
+                LINE_LOOP=3,
+                LINES=4,
+                TRIANGLE_STRIP=5,
+                TRIANGLE_FAN=6,
+                TRIANGLES=7,
+                QUAD_STRIP=8,
+                QUADS=9,
+                POLYGON=10;
+
+}

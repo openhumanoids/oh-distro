@@ -1,0 +1,10 @@
+package vs;
+
+struct color_t
+{
+	float r;
+	float g;
+	float b;
+}
+
+

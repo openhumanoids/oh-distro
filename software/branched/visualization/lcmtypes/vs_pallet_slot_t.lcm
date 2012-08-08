@@ -1,0 +1,14 @@
+// structure for pallet slot.
+// all quantities in local coordinate frame.
+
+package vs;
+
+struct pallet_slot_t
+{
+    int64_t utime;
+
+    double pos[3];      // position of slot (local frame)
+    double size[2];     // width,height of slot (local units)
+    double dir[3];      // direction vector of insert (local frame)
+    double confidence;  // quality of this slot (0 to 1)
+}

@@ -1,0 +1,7 @@
+package vs;
+
+struct property_t {
+  string name;
+  string value;
+}
+

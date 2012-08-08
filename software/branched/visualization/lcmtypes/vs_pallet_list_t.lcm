@@ -1,0 +1,9 @@
+package vs;
+
+struct pallet_list_t
+{
+    int64_t utime;
+
+    int32_t num_pallets;
+    pallet_t pallets[num_pallets];
+}
