@@ -13,8 +13,6 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-install(FILES isam_include/* DESTINATION include/msam)
-
 
 include_directories(include)
 include_directories(${LCMTYPES_INCLUDE_DIRS})
