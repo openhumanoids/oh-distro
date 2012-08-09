@@ -198,6 +198,7 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   ROS_INFO("starting four wheeled diffdrive plugin in ns: %s", this->robotNamespace.c_str());
 
+
   tf_prefix_ = tf::getPrefixParam(*rosnode_);
   transform_broadcaster_ = new tf::TransformBroadcaster();
 

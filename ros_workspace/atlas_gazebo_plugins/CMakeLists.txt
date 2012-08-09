@@ -33,6 +33,9 @@ rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
 rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
 rosbuild_link_boost(planar_hover_plugin thread)
 
+
+rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
+rosbuild_link_boost(joint_actuation_plugin thread)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
