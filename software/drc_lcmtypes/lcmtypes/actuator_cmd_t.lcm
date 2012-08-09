@@ -6,5 +6,6 @@ struct actuator_cmd_t
     string robot_name;
     int32_t num_joints;
     string joint_name [num_joints];
-    float joint_effort [num_joints];
+    double joint_effort [num_joints];
+    double duration [num_joints]; //All actuation commands are only active for a finite duration (must be set the controller update rate or higher).
 }
