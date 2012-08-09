@@ -5,7 +5,8 @@ pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm lcmtypes_drc_lcmtype
 
 
 rosbuild_add_executable(ros2lcm_translator ros2lcm_translator.cpp)
-pods_use_pkg_config_packages(ros2lcm_translator lcm lcmtypes_drc_lcmtypes bot2-core  lcmtypes_bot2-core) 
+pods_use_pkg_config_packages(ros2lcm_translator lcm lcmtypes_drc_lcmtypes
+	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
 
 
 pods_install_executables(TRUE_robot_state_publisher  ros2lcm_translator)

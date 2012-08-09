@@ -7,7 +7,7 @@
   <author>sisir</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url> </url>
+  <url> </url>"ros_workspace/ROS2LCM_translator/manifest.xml"
   <depend package="gazebo"/>
   <depend package="gazebo_msgs"/>
   <depend package="urdf"/>
@@ -15,7 +15,11 @@
   <depend package="roscpp"/>
   <depend package="atlas_gazebo_msgs"/>
   <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>  
   <depend package="sensor_msgs"/>
+  <depend package="opencv2"/>  
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>  
 </package>
 
 
