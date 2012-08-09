@@ -27,6 +27,7 @@
 <xacro:property name="mass_total" value="102.9" />
 <xacro:property name="mass_pelvis" value="5.7" />
 <xacro:property name="mass_foot" value="2.0"/> <!-- made up a value for the foot mass -->
+<xacro:property name="mass_wrist" value="2.0"/> <!-- made up a value for the foot mass -->
 
 <!-- proportions -->
 <xacro:property name="l_neck_head" value="0.134" />
@@ -45,8 +46,8 @@
 
 <!-- guessing the width of stuff -->
 <xacro:property name="w_head" value="0.075" />
-<xacro:property name="w_arm" value="0.02" />
-<xacro:property name="w_leg" value="0.02" />
+<xacro:property name="w_arm" value="0.05" />
+<xacro:property name="w_leg" value="0.06" />
 <xacro:property name="w_pelvis" value="0.122" />
 
 <!-- offsets (meters)  -->
@@ -106,6 +107,33 @@
 <xacro:property name="wrist_int_rotation_limit" value="-85"/>
 <xacro:property name="wrist_ext_rotation_limit" value="85"/>
 
+<!-- Torque Limits -->
+<xacro:property name="hip_adduction_abduction_torque_limit" value="180"/>
+<xacro:property name="hip_flexion_extension_torque_limit" value="260"/>
+<xacro:property name="hip_int_ext_rotation_torque_limit" value="110"/>
+<xacro:property name="knee_flexion_extension_torque_limit" value="220"/>
+<xacro:property name="ankle_flexion_extension_torque_limit" value="220"/>
+<xacro:property name="back_adduction_abduction_torque_limit" value="100"/>
+<xacro:property name="back_flexion_extension_torque_limit" value="180"/>
+<xacro:property name="back_int_ext_rotation_torque_limit" value="110"/>
+<xacro:property name="neck_flexion_extension_torque_limit" value="25"/>
+<xacro:property name="neck_int_ext_rotation_torque_limit" value="54"/>
+<xacro:property name="shoulder_adduction_abduction_torque_limit" value="110"/>
+<xacro:property name="shoulder_flexion_extension_torque_limit" value="110"/>
+<xacro:property name="shoulder_int_ext_rotation_torque_limit" value="80"/>
+<xacro:property name="elbow_flexion_extension_torque_limit" value="100"/>
+<xacro:property name="wrist_adduction_abduction_torque_limit" value="30"/>
+<xacro:property name="wrist_int_ext_rotation_torque_limit" value="15"/>
+
+<!-- Velocity Limit -->
+<xacro:property name="joint_velocity_limit" value="3"/>
+
+<!-- Damping and friction in joints -->
+<!-- Maybe we need one for each type of joint -->
+<xacro:property name="joint_damping" value="100"/>
+<xacro:property name="joint_friction" value="10"/>
+
+
 <!-- Macros for inertial properties of simple geometries -->
 
  <xacro:macro name="insert_inertial_cylinder" params="mass r l">
@@ -145,6 +173,17 @@
       <mass value="0.00"/>
       <inertia ixx="0.0000"  ixy="0.0"  ixz="0.0" iyy="0.0000" iyz="0.0" izz="0.0000" />
     </inertial>   
+</xacro:macro>
+
+
+ <xacro:macro name="insert_inertial_cylinder2" params="mass mass4inertiatensor r l">
+   <!-- Useful when specifying inertia of multiDOF joints if they are subdivided into individual links, shoulder yaw,pitch,roll-->
+      <inertial>
+         <mass value="${mass}" />
+          <inertia ixx="${(mass4inertiatensor/12)*((3*r*r) + (l*l))}" ixy="0.0" ixz="0.0"
+                   iyy="${(mass4inertiatensor/12)*((3*r*r) + (l*l))}" iyz="0.0"
+                   izz="${(mass4inertiatensor/2)*(r*r)}" />
+        </inertial>
 </xacro:macro>
 
     

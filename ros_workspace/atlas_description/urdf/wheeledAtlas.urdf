@@ -58,22 +58,22 @@
     </collision>
   </link>
 
-<link name="NeckYaw_link">
+   <link name="NeckYaw_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="0.9"/>
+      <inertia ixx="0.00530271247008" ixy="0.0" ixz="0.0" iyy="0.00530271247008" iyz="0.0" izz="0.00201768391825"/>
     </inertial>
   </link>
   <link name="NeckPitch_link">
     <inertial>
-      <mass value="1.8"/>
-      <inertia ixx="0.0106054249402" ixy="0.0" ixz="0.0" iyy="0.0106054249402" iyz="0.0" izz="0.00403536783651"/>
+      <mass value="0.9"/>
+      <inertia ixx="0.00530271247008" ixy="0.0" ixz="0.0" iyy="0.00530271247008" iyz="0.0" izz="0.00201768391825"/>
     </inertial>
     <visual>
       <origin rpy="1.57079632679 0 0" xyz="0 0 0.13749274"/>
       <geometry>
         <cylinder length="0.22141688" radius="0.06696075"/>
+        <!--  <sphere radius="${(l_head/2)*height}"/>-->
       </geometry>
       <material name="LightGrey"/>
     </visual>
@@ -84,24 +84,22 @@
       </geometry>
     </collision>
   </link>
-  <link name="LShoulderYaw_link">
+   <link name="LShoulderYaw_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="2.18522222222"/>
+     <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
   </link>
   <link name="LShoulderPitch_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="2.18522222222"/>
+      <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
   </link>
   <link name="LShoulderRoll_link">
     <inertial>
-      <mass value="4.91675"/>
-      <inertia ixx="0.0500676407308" ixy="0.0" ixz="0.0" iyy="0.0500676407308" iyz="0.0" izz="0.00078383781966"/>
+      <mass value="2.18522222222"/>
+      <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.17409795"/>
@@ -119,8 +117,8 @@
   </link>
   <link name="LElbowPitch_link">
     <inertial>
-      <mass value="4.91675"/>
-      <inertia ixx="0.0381467738901" ixy="0.0" ixz="0.0" iyy="0.0381467738901" iyz="0.0" izz="0.00078383781966"/>
+      <mass value="3.27783333333"/>
+      <inertia ixx="0.0268028987778" ixy="0.0" ixz="0.0" iyy="0.0268028987778" iyz="0.0" izz="0.00326599091525"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.1517777"/>
@@ -138,15 +136,14 @@
   </link>
   <link name="LWristYaw_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.0048720194876" ixy="0.0" ixz="0.0" iyy="0.0048720194876" iyz="0.0" izz="0.00199277424025"/>
     </inertial>
   </link>
   <link name="LWristRoll_link">
     <inertial>
-      <mass value="0.01"/>
-      <inertia ixx="2.01752715335e-05" ixy="0.0" ixz="0.0" iyy="2.01752715335e-05" iyz="0.0" izz="1.5942193922e-06"/>
+      <mass value="1.0"/>
+  <inertia ixx="0.0048720194876" ixy="0.0" ixz="0.0" iyy="0.0048720194876" iyz="0.0" izz="0.00199277424025"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.076245974"/>
@@ -164,22 +161,20 @@
   </link>
   <link name="RShoulderYaw_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="2.18522222222"/>
+      <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
   </link>
   <link name="RShoulderPitch_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="2.18522222222"/>
+      <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
   </link>
   <link name="RShoulderRoll_link">
     <inertial>
-      <mass value="4.91675"/>
-      <inertia ixx="0.0500676407308" ixy="0.0" ixz="0.0" iyy="0.0500676407308" iyz="0.0" izz="0.00078383781966"/>
+      <mass value="2.18522222222"/>
+      <inertia ixx="0.0231667622255" ixy="0.0" ixz="0.0" iyy="0.0231667622255" iyz="0.0" izz="0.00217732727683"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.17409795"/>
@@ -197,8 +192,8 @@
   </link>
   <link name="RElbowPitch_link">
     <inertial>
-      <mass value="4.91675"/>
-      <inertia ixx="0.0381467738901" ixy="0.0" ixz="0.0" iyy="0.0381467738901" iyz="0.0" izz="0.00078383781966"/>
+      <mass value="3.27783333333"/>
+      <inertia ixx="0.0268028987778" ixy="0.0" ixz="0.0" iyy="0.0268028987778" iyz="0.0" izz="0.00326599091525"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.1517777"/>
@@ -216,15 +211,14 @@
   </link>
   <link name="RWristYaw_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      <mass value="1.0"/>
+   <inertia ixx="0.0048720194876" ixy="0.0" ixz="0.0" iyy="0.0048720194876" iyz="0.0" izz="0.00199277424025"/>
     </inertial>
   </link>
   <link name="RWristRoll_link">
     <inertial>
-      <mass value="0.01"/>
-      <inertia ixx="2.01752715335e-05" ixy="0.0" ixz="0.0" iyy="2.01752715335e-05" iyz="0.0" izz="1.5942193922e-06"/>
+      <mass value="1.0"/>
+     <inertia ixx="0.0048720194876" ixy="0.0" ixz="0.0" iyy="0.0048720194876" iyz="0.0" izz="0.00199277424025"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.076245974"/>
@@ -243,6 +237,13 @@
 
  <!-- Base and Wheels -->
   <link name="base_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+  </link>
+  <link name="base">
     <inertial>
       <mass value="121.06"/>
       <inertia ixx="1.70235" ixy="0" ixz="0" iyy="1.70235" iyz="0" izz="0.5616"/>
@@ -350,11 +351,15 @@
   
   
  <!-- JOINTS -->
-
+  <joint name="base_joint" type="fixed">
+    <child link="base"/>
+    <parent link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
 
   <joint name="Base_Torso_joint" type="fixed">
     <child link="Torso"/>
-    <parent link="base_link"/>
+    <parent link="base"/>
     <origin rpy="0 0 0" xyz="0 0 0.15"/>
   </joint>
 
@@ -363,144 +368,138 @@
     <child link="NeckYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0 0.87854616"/>
     <axis xyz="0 0 1"/>
-    <limit effort="30" lower="-1.5707963259" upper="1.5707963259" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/>     
-    <!--  Damping and friction params dont work. Acc. to
-      "http://answers.ros.org/question/12965/spawn-urdf-joint-stiffness/" 
-      they are only affected when controllers are running. Does not make any sense to me.
-    -->
+    <limit effort="54" lower="-1.5707963259" upper="1.5707963259" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="NeckPitch" type="revolute">
     <parent link="NeckYaw_link"/>
     <child link="NeckPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-0.78539816295" upper="0.78539816295" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/>     
-
+    <limit effort="25" lower="-0.78539816295" upper="0.78539816295" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LShoulderRoll" type="revolute">
     <parent link="LShoulderPitch_link"/>
     <child link="LShoulderRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit effort="30" lower="0.0" upper="2.00712863865" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/>     
-
+    <limit effort="110" lower="0.0" upper="2.00712863865" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RShoulderRoll" type="revolute">
     <parent link="RShoulderPitch_link"/>
     <child link="RShoulderRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit effort="30" lower="-2.00712863865" upper="-0.0" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/>     
-
+    <limit effort="110" lower="-2.00712863865" upper="-0.0" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LShoulderYaw" type="revolute">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="LShoulderYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0.2410587 0.96426384"/>
     <axis xyz="0 0 1"/>
-    <limit effort="30" lower="-0.6981317004" upper="1.745329251" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/>     
+    <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LShoulderPitch" type="revolute">
     <parent link="LShoulderYaw_link"/>
     <child link="LShoulderPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-1.5707963259" upper="0.8726646255" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LElbowPitch" type="revolute">
     <parent link="LShoulderRoll_link"/>
     <child link="LElbowPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-2.35619448885" upper="0.0" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LWristYaw" type="revolute">
     <parent link="LElbowPitch_link"/>
     <child link="LWristYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
-    <limit effort="30" lower="-1.48352986335" upper="1.48352986335" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RShoulderYaw" type="revolute">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="RShoulderYaw_link"/>
     <origin rpy="0 0 0" xyz="0 -0.2410587 0.96426384"/>
     <axis xyz="0 0 1"/>
-    <limit effort="30" lower="-0.6981317004" upper="1.745329251" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RShoulderPitch" type="revolute">
     <parent link="RShoulderYaw_link"/>
     <child link="RShoulderPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-1.5707963259" upper="0.8726646255" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RElbowPitch" type="revolute">
     <parent link="RShoulderRoll_link"/>
     <child link="RElbowPitch_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
-    <limit effort="30" lower="-2.35619448885" upper="0.0" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RWristYaw" type="revolute">
     <parent link="RElbowPitch_link"/>
     <child link="RWristYaw_link"/>
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
-    <limit effort="30" lower="-1.48352986335" upper="1.48352986335" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="LWristRoll" type="revolute">
     <parent link="LWristYaw_link"/>
     <child link="LWristRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit effort="30" lower="-0.5235987753" upper="1.0471975506" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="30" lower="-0.5235987753" upper="1.0471975506" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
     <child link="RWristRoll_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit effort="30" lower="-1.0471975506" upper="0.5235987753" velocity="3.0"/>
-    <dynamics damping="0" friction = "0"/> 
+    <limit effort="30" lower="-1.0471975506" upper="0.5235987753" velocity="3"/>
+    <dynamics damping="100" friction="10"/>
   </joint>
+  
   <!-- WHEELS -->
   <joint name="RfrontWheel_joint" type="continuous">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="RfrontWheel"/>
     <origin rpy="0 1.570796325 1.570796325" xyz="-0.2 -0.235 -0.15"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="LfrontWheel_joint" type="continuous">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="LfrontWheel"/>
     <origin rpy="0 1.570796325 1.570796325" xyz="-0.2 0.235 -0.15"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="RbackWheel_joint" type="continuous">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="RbackWheel"/>
     <origin rpy="0 1.570796325 1.570796325" xyz="0.2 -0.235 -0.15"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="LbackWheel_joint" type="continuous">
-    <parent link="base_link"/>
+    <parent link="base"/>
     <child link="LbackWheel"/>
     <origin rpy="0 1.570796325 1.570796325" xyz="0.2 0.235 -0.15"/>
     <axis xyz="0 0 1"/>
@@ -509,7 +508,7 @@
  
 
   <gazebo>
-     <controller:diffdrive_plugin name="differential_drive_controller" plugin="libfourWheeled_diffdrive_plugin.so">
+    <controller:diffdrive_plugin name="differential_drive_controller" plugin="libfourWheeled_diffdrive_plugin.so">
      <alwaysOn>true</alwaysOn>
      <frontleftJoint>LfrontWheel_joint</frontleftJoint>
         <frontrightJoint>RfrontWheel_joint</frontrightJoint>
@@ -518,16 +517,21 @@
         <wheelSeparation>0.47</wheelSeparation>
         <wheelDiameter>0.15</wheelDiameter>
         <torque>100</torque>
-        <interface:position name="position_iface_0"/>
+         <interface:position name="position_iface_0"/> 
         <topicName>cmd_vel</topicName>
-      </controller:diffdrive_plugin>
-
+      </controller:diffdrive_plugin>      
+      
+   <controller:joint_actuation_plugin name="joint_torque_controller" plugin="libjoint_actuation_plugin.so">
+        <alwaysOn>true</alwaysOn>
+        <topicName>actuator_cmd</topicName>
+      </controller:joint_actuation_plugin>     
+      
       <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state.so">
    	 <alwaysOn>true</alwaysOn>
    	 <updateRate>100.0</updateRate>
    	 <topicName>true_robot_state</topicName>
    	 </controller:gazebo_ros_pub_robot_state>
-   </gazebo>
+   </gazebo>-
 
 </robot>
 
