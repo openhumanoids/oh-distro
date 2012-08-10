@@ -74,6 +74,8 @@ class App{
     void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
     void send_rigid_transform(tf::StampedTransform& transform,string channel );
     void send_obj(tf::StampedTransform& transform, int pose_collection_id, int64_t pose_id, bool reset );
+
+    int points_cb_counter; // temp used to skip frames of points
 };
 
 App::App(){
@@ -85,9 +87,10 @@ App::App(){
   tilt_scan_sub_ = node_.subscribe(string("/tilt_scan"), 10, &App::tilt_scan_cb,this);
 
   clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
-  left_image_sub_ = node_.subscribe(string("/wide_stereo/left/image_rect"), 10, &App::left_image_cb,this);
-  right_image_sub_ = node_.subscribe(string("/wide_stereo/right/image_rect"), 10, &App::right_image_cb,this);
+  left_image_sub_ = node_.subscribe(string("/wide_stereo/left/image_rect_color"), 10, &App::left_image_cb,this);
+  right_image_sub_ = node_.subscribe(string("/wide_stereo/right/image_rect_color"), 10, &App::right_image_cb,this);
   points_sub_ = node_.subscribe(string("/wide_stereo/points2"), 10, &App::points_cb,this);
+  points_cb_counter=0;
 };
 
 App::~App()  {
@@ -169,7 +172,6 @@ bool pcdXYZRGB_to_lcm(lcm_t *lcm, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
   plist_coll.point_lists = plist;
   vs_point3d_list_collection_t_publish(lcm,"POINTS_COLLECTION",&plist_coll);
 
-  delete pointsids;
   delete colors;
   delete points;
 }
@@ -180,6 +182,12 @@ bool pcdXYZRGB_to_lcm(lcm_t *lcm, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
 // nan published when no xyz available
 void App::points_cb(const sensor_msgs::PointCloud2ConstPtr& msg){
   int64_t utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+
+  points_cb_counter++;
+  if (points_cb_counter %10 !=0){
+    cout << "skip\n";
+    return;
+  }
 
   if (VERBOSE){
     cout << "got points: " << utime << "\n";
@@ -393,7 +401,7 @@ void App::send_obj(tf::StampedTransform& transform,int pose_collection_id,int64_
   vs_obj_collection_t objs;
   objs.id = pose_collection_id;
   objs.name = (char*)  "Zero Pose"; // "Trajectory";
-  objs.type = 1; // a pose
+  objs.type = VS_OBJ_COLLECTION_T_AXIS3D; // a pose
   objs.reset = reset; // true will delete them from the viewer
   objs.nobjs = 1;
   vs_obj_t poses[objs.nobjs];
