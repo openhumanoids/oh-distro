@@ -5,6 +5,7 @@ externals
 #core
 drc_lcmtypes
 #drivers
+branched
 robot_model
 kinematics
 sensing
