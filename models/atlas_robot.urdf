@@ -487,7 +487,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0.0"/>
     <axis xyz="0 0 1"/>
     <limit effort="110" lower="-0.78539816295" upper="0.78539816295" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="BackPitch" type="revolute">
     <parent link="BackYaw_link"/>
@@ -495,7 +495,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="180" lower="-0.61086523785" upper="0.43633231275" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="BackRoll" type="revolute">
     <parent link="BackPitch_link"/>
@@ -503,7 +503,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="100" lower="-0.6981317004" upper="0.6981317004" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="BackRoll_Torso_joint" type="fixed">
     <child link="Torso"/>
@@ -516,7 +516,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0.47854616"/>
     <axis xyz="0 0 1"/>
     <limit effort="54" lower="-1.5707963259" upper="1.5707963259" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="NeckPitch" type="revolute">
     <parent link="NeckYaw_link"/>
@@ -524,7 +524,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="25" lower="-0.78539816295" upper="0.78539816295" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderRoll" type="revolute">
     <parent link="LShoulderPitch_link"/>
@@ -532,7 +532,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="110" lower="0.0" upper="2.00712863865" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderRoll" type="revolute">
     <parent link="RShoulderPitch_link"/>
@@ -540,7 +540,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="110" lower="-2.00712863865" upper="-0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderYaw" type="revolute">
     <parent link="BackRoll_link"/>
@@ -548,7 +548,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0.2410587 0.41426384"/>
     <axis xyz="0 0 1"/>
     <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderPitch" type="revolute">
     <parent link="LShoulderYaw_link"/>
@@ -556,7 +556,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LElbowPitch" type="revolute">
     <parent link="LShoulderRoll_link"/>
@@ -564,7 +564,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
     <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LWristYaw" type="revolute">
     <parent link="LElbowPitch_link"/>
@@ -572,7 +572,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
     <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderYaw" type="revolute">
     <parent link="BackRoll_link"/>
@@ -580,7 +580,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 -0.2410587 0.41426384"/>
     <axis xyz="0 0 1"/>
     <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderPitch" type="revolute">
     <parent link="RShoulderYaw_link"/>
@@ -588,7 +588,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RElbowPitch" type="revolute">
     <parent link="RShoulderRoll_link"/>
@@ -596,7 +596,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
     <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RWristYaw" type="revolute">
     <parent link="RElbowPitch_link"/>
@@ -604,7 +604,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
     <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LWristRoll" type="revolute">
     <parent link="LWristYaw_link"/>
@@ -612,7 +612,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="30" lower="-0.5235987753" upper="1.0471975506" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
@@ -620,7 +620,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="30" lower="-1.0471975506" upper="0.5235987753" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="Back_Pelvis_Joint" type="fixed">
     <parent link="Back"/>
@@ -638,7 +638,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0.10892282 0"/>
     <axis xyz="0 0 1"/>
     <limit effort="110" lower="-0.1745329251" upper="1.2217304757" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RHipYaw" type="revolute">
     <parent link="Pelvis-link2"/>
@@ -646,7 +646,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 -0.10892282 0"/>
     <axis xyz="0 0 1"/>
     <limit effort="110" lower="-1.2217304757" upper="0.1745329251" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LHipPitch" type="revolute">
     <parent link="LHipYaw_link"/>
@@ -654,7 +654,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="260" lower="-1.745329251" upper="0.3490658502" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LHipRoll" type="revolute">
     <parent link="LHipPitch_link"/>
@@ -662,7 +662,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="180" lower="-0.3490658502" upper="0.3490658502" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LKneePitch" type="revolute">
     <parent link="LHipRoll_link"/>
@@ -670,7 +670,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.47854616"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="0.0" upper="2.35619448885" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LAnklePitch" type="revolute">
     <parent link="LKneePitch_link"/>
@@ -678,7 +678,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.43569128"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="-0.6981317004" upper="0.6981317004" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LAnkle_joint" type="fixed">
     <parent link="LAnklePitch_link"/>
@@ -696,7 +696,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="260" lower="-1.745329251" upper="0.3490658502" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RHipRoll" type="revolute">
     <parent link="RHipPitch_link"/>
@@ -704,7 +704,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="180" lower="-0.3490658502" upper="0.3490658502" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RKneePitch" type="revolute">
     <parent link="RHipRoll_link"/>
@@ -712,7 +712,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.47854616"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="0.0" upper="2.35619448885" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RAnklePitch" type="revolute">
     <parent link="RKneePitch_link"/>
@@ -720,7 +720,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <origin rpy="0 0 0" xyz="0 0 -0.43569128"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="-0.6981317004" upper="0.6981317004" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RAnkle_joint" type="fixed">
     <parent link="RAnklePitch_link"/>
