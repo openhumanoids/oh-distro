@@ -1,0 +1,28 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         drc_controller_manager
+Maintainers:  Sisir and Hongkai
+Summary:      Provides an abstraction class that acts as a portal for all low-level controllers running on the robot side of the system. This part of the control code is expected to be platform specific.
+
+Description:
+
+The control manager, subscribes to the robot state and end_effector/whole_body/trajectory goal messages, and instantiates/updates specific controllers required to achieved the desired task. It takes into account controller priorities and make sure that no two controllers conflict. The controller manager can activate/de-activate controllers.
+
+TODO: controller prioritization has not been implemented.
+
+Current configuration:
+E.g. The drc_controller_manager instantiates a  left_arm_chain_controller (see pd_Chain_controller) to listen to  ee_goal_t msgs on the LEFT_WRISTROLL_LINK_CMD (end effector link name in caps + _CMD) channel. It also creates a subscription to the EST_ROBOT_STATE channel to listen to robot_state_t msgs. On receving a robot_state_t msg, it checks if left_arm_chain_controller is active and then calls its update routine. The chain controller creates a subscription to ee_goal_t msgs and the controller gets activated when the appropriate ee_goal_t msg is received. 
+
+
+Requirements: 
+  FILL-ME-IN
+
+License:      FILL-ME-IN

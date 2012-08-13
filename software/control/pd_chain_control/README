@@ -1,0 +1,32 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         pd_chain_control
+Maintainers:  Sisir and Hongkai
+Summary:      Contains a templated class for inverse kinematics based PD control for a kinematics chain. Also contains some eigen to kdl conversion and angle processing  functions. All the functionality is defined within a header files. (Apparantly, templated class definitions should be contained within a single header file, the c++ standard allows for defining member functions within a separate cpp file, but the compilers dont support that yet.) 
+
+Description:
+  The main file is chain_controller.hpp. It replicates PR2 arm cartesian controller in ROS. There are two algorithms here. One is a Jacobian Transpose controller similar to ROS and another one is  a pseudo inverse based controller. You can switch between different algorithms with a #define in the header file (JTranspose works well and has fewer tuning parameters).  Both algorithm consider Null space biasing to deal with redundant configurations.
+ 
+  The pod only provides the templated class. The class is instantiated within the controller_manager. See drc_controller_manager pod. 
+
+
+The pseudo-inverse algorithm is based on the following papers.
+1) T. Sugihara, "Solvability-Unconcerned Inverse Kinematics
+by the Levenberg-Marquardt method", IEEE Transactions on Robotics, 
+Vol. 27, No. 5, 2011.  
+
+2) Nakanishi et al, "Comparative Experiments on Task Space Control
+ with Redundancy Resolution", IROS ,2005 (See Eq 14)
+
+Requirements: 
+  FILL-ME-IN
+
+License:      FILL-ME-IN
