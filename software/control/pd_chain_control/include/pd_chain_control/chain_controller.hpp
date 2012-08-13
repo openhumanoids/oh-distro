@@ -301,7 +301,7 @@ ChainController<JOINTS>::ChainController(boost::shared_ptr<lcm::LCM> &lcm,
   vel_saturation_trans_=7.0;
   vel_saturation_rot_= 4.0;
   
-  debug_ =true; 
+  debug_ =false; 
   use_posture_ = true;
   uninitialized_ = true; // flag to indicate that the controller is in uninitialized_ state
   if(debug_){

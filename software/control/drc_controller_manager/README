@@ -22,6 +22,14 @@ Current configuration:
 E.g. The drc_controller_manager instantiates a  left_arm_chain_controller (see pd_Chain_controller) to listen to  ee_goal_t msgs on the LEFT_WRISTROLL_LINK_CMD (end effector link name in caps + _CMD) channel. It also creates a subscription to the EST_ROBOT_STATE channel to listen to robot_state_t msgs. On receving a robot_state_t msg, it checks if left_arm_chain_controller is active and then calls its update routine. The chain controller creates a subscription to ee_goal_t msgs and the controller gets activated when the appropriate ee_goal_t msg is received. 
 
 
+Also contains two other files:
+
+1) fixed_ee_goal_publisher: Sends fixed ee_goals for the left arm. 
+Sample usage 
+$ fixed_ee_goal_publisher X (X can be 0,1, or 2 - hard coded goals for testing.)
+
+2) ee_goal_listener
+
 Requirements: 
   FILL-ME-IN
 
