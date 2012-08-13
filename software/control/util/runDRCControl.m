@@ -7,16 +7,19 @@ function runDRCControl(sys,robot_name,state_channel,cmd_channel)
 % messages on.
 % @param cmd_channel LCM channel name on which to publish actuator_cmd_t messages (if sys has outputs)
 
+options.tspan = [0,inf];
 
 if (sys.getNumStates()~=0)
   error('not implemented yet');  % but won't be too hard
 end
 
 ndof = getNumInputs(sys)/2;
-joint_name = sys.getInputFrame.coordinates(1:dof);
+joint_name = sys.getInputFrame.coordinates(1:ndof);
 state_listener = RobotStateListener(robot_name,joint_name,state_channel);
 
-cmd_publisher = ActuatorCmdPublisher(robot_name,sys.getOutputFrame.coordinates,cmd_channel);
+if (getNumOutputs(sys)>0)
+    cmd_publisher = ActuatorCmdPublisher(robot_name,sys.getOutputFrame.coordinates,cmd_channel);
+end
 
 global g_scope_enable; g_scope_enable = true;
 
@@ -25,7 +28,7 @@ t=options.tspan(1); tic;
 while (t<=options.tspan(2))
   x = getNextMessage(state_listener,1000);
   if (~isempty(x))
-    u = obj.output(t,[],x);
+    u = sys.output(t,[],x);
     if (getNumOutputs(sys)>0)
       cmd_publisher.publish(u);
     end
