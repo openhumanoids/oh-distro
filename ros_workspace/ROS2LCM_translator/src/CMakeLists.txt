@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 2.4.6)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(TRUE_robot_state_publisher TRUE_robot_state_publisher.cpp)
 pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm lcmtypes_drc_lcmtypes bot2-core) 
@@ -12,8 +14,8 @@ pods_use_pkg_config_packages(ros2lcm_translator lcm lcmtypes_drc_lcmtypes
 pods_install_executables(TRUE_robot_state_publisher  ros2lcm_translator)
 
 # Old Stuff:
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+#rosbuild_add_executable(TRUE_robot_state_publisher src/TRUE_robot_state_publisher.cpp)
 #pods_install_executables(TRUE_robot_state_publisher)
 #pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm #lcmtypes_drc_lcmtypes bot2-core) 
 
