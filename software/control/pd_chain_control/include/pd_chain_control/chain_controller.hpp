@@ -204,10 +204,10 @@ ChainController<JOINTS>::ChainController(boost::shared_ptr<lcm::LCM> &lcm,
 	const std::string &robot_name,
 	const urdf::Model &urdf_robot_model) : kdl_chain(chain), _lcm(lcm), _robot_name(robot_name), _urdf_robot_model(urdf_robot_model)
 {
-    //lcm ok?
-    std::cout << "\n Constructing ChainController Instance that listens to "<< input_cmds_channel << " channel." << std::endl;
-   controller_state = STOPPED;
+     std::cout << "\nSpawning a chain controller that listens to "<< input_cmds_channel << " channel." << std::endl;
    
+ controller_state = STOPPED;
+     //lcm ok?
     if(!_lcm->good())
       {
 	std::cerr << "\nLCM Not Good: chain_controller" << std::endl;
@@ -221,18 +221,18 @@ ChainController<JOINTS>::ChainController(boost::shared_ptr<lcm::LCM> &lcm,
     return;
   } 
 
-   std::cout<< "\n Spawning a Chaincontroller for the following joints:"<< std::endl;  
+   std::cout<< "for the following joints:"<< std::endl;  
   for (unsigned int i=0; i< kdl_chain.getNrOfSegments() ; i++) {
  
      KDL::Joint joint = kdl_chain.segments[i].getJoint();
-     std::cout<< joint.getName() << std::endl;  
+     std::cout<< joint.getName() << ", ";  
        _chain_joint_names.push_back(joint.getName()); 
       q_lower_limit[i] = _urdf_robot_model.getJoint(joint.getName())->limits->lower;
       q_upper_limit[i] = _urdf_robot_model.getJoint(joint.getName())->limits->upper;
       q_velocity_limit[i] = _urdf_robot_model.getJoint(joint.getName())->limits->velocity;
       q_effort_limit[i] = _urdf_robot_model.getJoint(joint.getName())->limits->effort;
   }   
-    
+        std::cout << std::endl; 
 
   // Kinematics
   kin_.reset(new Kin<JOINTS>(kdl_chain));
@@ -337,15 +337,7 @@ ChainController<JOINTS>::~ChainController() {}
 template <int JOINTS>
 void ChainController<JOINTS>::init() 
 {
-  std::cout << "Initializing chain controller" << std::endl;
-
-  //Kp_x << 800.0, 800.0, 800.0,   80.0, 80.0, 80.0;
-  //Kd_x << 12.0, 12.0, 12.0,   0.0, 0.0, 0.0;
-
-  //Kd_j << 12.0, 12.0, 12.0,   12.0, 12.0, 12.0;
-  //Kp_j << 800.0, 800.0, 800.0,  800.0, 800.0, 800.0;
-
-    
+ 
   JointVector q = q_measured_;
   
   kin_->fk(q, x);

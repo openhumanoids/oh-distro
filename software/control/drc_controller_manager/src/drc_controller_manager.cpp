@@ -50,6 +50,7 @@ namespace drc_control{
     private:
        boost::shared_ptr<lcm::LCM> _lcm;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > left_arm_controller;
+       boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > right_arm_controller;
 
        std::string _robot_name;
        urdf::Model _urdf_robot_model;
@@ -165,6 +166,20 @@ namespace drc_control{
 
 	
         this->left_arm_controller = boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> >(new pd_chain_control::ChainController<NUM_OF_ARM_JOINTS>(this->_lcm,channel,kdl_chain,_robot_name,_urdf_robot_model));
+	
+	
+	tip_link_name = "RWristRoll_link";
+	if (!_tree.getChain(root_link_name,tip_link_name, kdl_chain)){
+	  std::cerr << "ERROR: Failed to extract kdl tree from xml robot description"<<std::endl; 
+	  return;
+	}
+	 NrOfJoints = (int) kdl_chain.getNrOfJoints();
+	 if(NrOfJoints!=NUM_OF_ARM_JOINTS){
+          std::cerr <<" NUM_OF_ARM_JOINTS does not match the the joints number is specified kdl_chain" <<  std::endl;
+          return;
+	}
+	channel = "RWRISTROLL_LINK_GOAL";
+        this->right_arm_controller = boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> >(new pd_chain_control::ChainController<NUM_OF_ARM_JOINTS>(this->_lcm,channel,kdl_chain,_robot_name,_urdf_robot_model));
 
   // create a robot_state subscription.
   this->_lcm->subscribe("EST_ROBOT_STATE", &drc_control::ControllerManager::handleRobotStateMsgAndUpdateControllers, this);
