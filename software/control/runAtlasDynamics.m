@@ -2,7 +2,7 @@ function runAtlasDynamics
 
 % just runs it as a passive system for now
 
-r = RigidBodyManipulator('../../models/atlas_robot.urdf');
+r = RigidBodyManipulator('../../ros_workspace/atlas_description/urdf/atlas_robot.urdf');
 r = setSimulinkParam(r,'MinStep','0.001');
 v = r.constructVisualizer;
 v.display_dt = .05;

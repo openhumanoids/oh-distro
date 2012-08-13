@@ -130,7 +130,7 @@
 
 <!-- Damping and friction in joints -->
 <!-- Maybe we need one for each type of joint -->
-<xacro:property name="joint_damping" value="100"/>
+<xacro:property name="joint_damping" value="1"/>
 <xacro:property name="joint_friction" value="10"/>
 
 

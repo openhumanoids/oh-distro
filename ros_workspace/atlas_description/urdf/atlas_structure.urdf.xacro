@@ -133,6 +133,14 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 
 
 <!--   Joints following below -->
+
+<xacro:macro name="joint_trans" params="joint_name">
+  <transmission type="SimpleTransmission" name="${joint_name}_trans">
+    <actuator name="${joint_name}Torque" />
+    <joint name="${joint_name}" />
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+</xacro:macro>
   
   <joint name="base_joint" type="fixed">
     <child link="Back"/>
@@ -148,6 +156,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${back_int_ext_rotation_torque_limit}" lower="${back_int_rotation_limit*pi_180}" upper="${back_ext_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="BackYaw"/>
   
   <joint name="BackPitch" type="revolute">
     <parent link="BackYaw_link"/>
@@ -157,6 +166,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${back_flexion_extension_torque_limit}" lower="${back_flexion_limit*pi_180}" upper="${back_extension_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="BackPitch"/>
 
   <joint name="BackRoll" type="revolute">
     <parent link="BackPitch_link"/>
@@ -166,6 +176,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${back_adduction_abduction_torque_limit}" lower="${back_adduction_limit*pi_180}" upper="${back_abduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="BackRoll"/>
 
   <joint name="BackRoll_Torso_joint" type="fixed">
     <child link="Torso"/>
@@ -183,6 +194,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${neck_int_ext_rotation_torque_limit}" lower="${neck_int_rotation_limit*pi_180}" upper="${neck_ext_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="NeckYaw"/>
 
   <joint name="NeckPitch" type="revolute">
     <parent link="NeckYaw_link"/>
@@ -192,7 +204,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${neck_flexion_extension_torque_limit}" lower="${neck_flexion_limit*pi_180}" upper="${neck_extension_limit*pi_180}"/>
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
-
+  <xacro:joint_trans joint_name="NeckPitch"/>
 
 <!-- Arm joints -->
   <joint name="LShoulderRoll" type="revolute">
@@ -203,6 +215,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <limit velocity="${joint_velocity_limit}" effort="${shoulder_adduction_abduction_torque_limit}" lower="${shoulder_adduction_limit*pi_180}" upper="${shoulder_abduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="LShoulderRoll"/>
 
   <joint name="RShoulderRoll" type="revolute">
     <parent link="RShoulderPitch_link"/>
@@ -212,6 +225,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <limit velocity="${joint_velocity_limit}" effort="${shoulder_adduction_abduction_torque_limit}" lower="-${shoulder_abduction_limit*pi_180}" upper="-${shoulder_adduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="RShoulderRoll"/>
 
  <xacro:macro name="arm_joints" params="side reflect">
   <joint name="${side}ShoulderYaw" type="revolute">
@@ -222,6 +236,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${shoulder_int_ext_rotation_torque_limit}" lower="${shoulder_int_rotation_limit*pi_180}" upper="${shoulder_ext_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}ShoulderYaw"/>
 
   <joint name="${side}ShoulderPitch" type="revolute">
     <parent link="${side}ShoulderYaw_link"/>
@@ -231,6 +246,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
    <limit velocity="${joint_velocity_limit}" effort="${shoulder_flexion_extension_torque_limit}" lower="${shoulder_flexion_limit*pi_180}" upper="${shoulder_extension_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}ShoulderPitch"/>
 
   <joint name="${side}ElbowPitch" type="revolute">
     <parent link="${side}ShoulderRoll_link"/>
@@ -240,6 +256,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${elbow_flexion_extension_torque_limit}" lower="${elbow_flexion_limit*pi_180}" upper="${elbow_extension_limit*pi_180}"/>
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}ElbowPitch"/>
 
 
   <joint name="${side}WristYaw" type="revolute">
@@ -250,6 +267,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${wrist_int_ext_rotation_torque_limit}" lower="${wrist_int_rotation_limit*pi_180}" upper="${wrist_ext_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}WristYaw"/>
 
   </xacro:macro>
   
@@ -265,6 +283,8 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <limit velocity="${joint_velocity_limit}" effort="${wrist_adduction_abduction_torque_limit}" lower="${wrist_adduction_limit*pi_180}" upper="${wrist_abduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="LWristRoll"/>
+
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
     <child link="RWristRoll_link"/>
@@ -273,6 +293,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
 <limit velocity="${joint_velocity_limit}" effort="${wrist_adduction_abduction_torque_limit}" lower="${-wrist_abduction_limit*pi_180}" upper="${-wrist_adduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="RWristRoll"/>
 
 <!-- Pelvis joints -->
  <joint name="Back_Pelvis_Joint" type="fixed">
@@ -299,6 +320,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <limit velocity="${joint_velocity_limit}" effort="${hip_int_ext_rotation_torque_limit}" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="LHipYaw"/>
 
   <joint name="RHipYaw" type="revolute">
     <parent link="Pelvis-link2"/>
@@ -308,6 +330,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <limit velocity="${joint_velocity_limit}" effort="${hip_int_ext_rotation_torque_limit}" lower="${-hip_ext_rotation_limit*pi_180}" upper="${-hip_int_rotation_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="RHipYaw"/>
 
 
 <xacro:macro name="leg_joints" params="side reflect">
@@ -331,7 +354,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
       <limit velocity="${joint_velocity_limit}" effort="${hip_flexion_extension_torque_limit}" lower="${hip_flexion_limit*pi_180}" upper="${hip_extension_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
-
+  <xacro:joint_trans joint_name="${side}HipPitch"/>
 
   <joint name="${side}HipRoll" type="revolute">
     <parent link="${side}HipPitch_link"/>
@@ -341,9 +364,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${hip_adduction_abduction_torque_limit}" lower="${hip_adduction_limit*pi_180}" upper="${hip_abduction_limit*pi_180}" />
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint> 
-
-
-
+  <xacro:joint_trans joint_name="${side}HipRoll"/>
 
   <joint name="${side}KneePitch" type="revolute">
     <parent link="${side}HipRoll_link"/>
@@ -353,6 +374,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${knee_flexion_extension_torque_limit}" lower="${knee_flexion_limit*pi_180}" upper="${knee_extension_limit*pi_180}"/>
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}KneePitch"/>
   
   <joint name="${side}AnklePitch" type="revolute">
     <parent link="${side}KneePitch_link"/>
@@ -362,6 +384,7 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <limit velocity="${joint_velocity_limit}" effort="${ankle_flexion_extension_torque_limit}" lower="${ankle_flexion_limit*pi_180}" upper="${ankle_extension_limit*pi_180}"/>
      <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
   </joint>
+  <xacro:joint_trans joint_name="${side}AnklePitch"/>
 
   <joint name="${side}Ankle_joint" type="fixed">
     <parent link="${side}AnklePitch_link" />
