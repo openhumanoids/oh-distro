@@ -1,4 +1,12 @@
-function runDRCLCMControl(sys,robot_name,state_channel,cmd_channel)
+function runDRCControl(sys,robot_name,state_channel,cmd_channel)
+%
+% @param sys Dynamical System to run as a controller (visualizers work,
+% too)
+% @param robot_name
+% @param state_channel name of the LCM channel to listen for robot_state_t
+% messages on.
+% @param cmd_channel LCM channel name on which to publish actuator_cmd_t messages (if sys has outputs)
+
 
 if (sys.getNumStates()~=0)
   error('not implemented yet');  % but won't be too hard
