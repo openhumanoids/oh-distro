@@ -1,0 +1,14 @@
+
+robot_state_t
+  angular_position, angular_velocity... not necessarily angular
+  there is a *lot* of information passes around in here.  should the state estimate be a different message (which contains this one?)
+
+actuator_cmd_t
+  presumes 6 DOF floating base then 1-1 mapping between internal joints and actuators.  not necessarily the case (e.g., pendulum, acrobot, hoveringAtlas, differential drive, ...)
+  recommend using the actuator tag
+
+
+models subdirectory is a (potentially out of sync) duplicate, e.g. of ros_workspace/atlas_description/urdf ?
+
+
+
