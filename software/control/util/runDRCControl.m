@@ -18,7 +18,8 @@ joint_name = sys.getInputFrame.coordinates(1:ndof);
 state_listener = RobotStateListener(robot_name,joint_name,state_channel);
 
 if (getNumOutputs(sys)>0)
-    cmd_publisher = ActuatorCmdPublisher(robot_name,sys.getOutputFrame.coordinates,cmd_channel);
+    cmd_names=cellfun(@(a)a(1:end-6),sys.getOutputFrame().coordinates,'UniformOutput',false);  % temporary hack: remove the string "Torque" from the end of each string    
+    cmd_publisher = ActuatorCmdPublisher(robot_name,cmd_names,cmd_channel);
 end
 
 global g_scope_enable; g_scope_enable = true;
