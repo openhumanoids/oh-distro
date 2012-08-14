@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
-namespace chain_control
+namespace drc_control
 {
 class Handler 
 {
@@ -14,7 +14,7 @@ class Handler
         {
             int i;
             printf("Received message on channel \"%s\":\n", chan.c_str());
-            printf("  timestamp   = %lld\n", (long long)msg->timestamp);
+            printf("  timestamp   = %lld\n", (long long)msg->utime);
 	    printf("  ee name        = '%s'\n", msg->ee_name.c_str());
             printf("  position    = (%f, %f, %f)\n",
                     msg->ee_goal_pos.translation.x, msg->ee_goal_pos.translation.y, msg->ee_goal_pos.translation.z);
@@ -36,8 +36,8 @@ int main(int argc, char** argv)
     if(!lcm.good())
         return 1;
 
-    chain_control::Handler handlerObject;
-    lcm.subscribe("LWRISTROLL_LINK_GOAL", &chain_control::Handler::handleMessage, &handlerObject);
+    drc_control::Handler handlerObject;
+    lcm.subscribe("LWRISTROLL_LINK_GOAL", &drc_control::Handler::handleMessage, &handlerObject);
 
     while(0 == lcm.handle());
 
@@ -45,11 +45,11 @@ int main(int argc, char** argv)
 }
 /* struct ee_goal_t
 {
-	int64_t timestamp;
+	int64_t utime;
 	string robot_name;
 	string ee_name;
 	string root_name;
-	position3D_t ee_goal_pos;
+	position_3d_t ee_goal_pos;
 	twist_t ee_goal_twist;
 	int32_t num_chain_joints;
 	boolean use_posture_bias;

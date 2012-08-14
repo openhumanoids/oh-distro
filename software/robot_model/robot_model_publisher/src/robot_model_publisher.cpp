@@ -58,14 +58,14 @@ int main(int argc, char ** argv)
 
     
     drc::robot_urdf_t message;
-    struct timeval tv;
-    gettimeofday (&tv, NULL);
-    message.timestamp = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; // TODO: replace with bot_timestamp_now() from bot_core
     message.robot_name =robot.getName();
     message.urdf_xml_string = xml_string;
     std::cout << "Broadcasting urdf of robot [" << robot.getName() << "] as a string at 1Hz\n";
+   struct timeval tv;
   while(true)
   {
+    gettimeofday (&tv, NULL);
+    message.utime = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; // TODO: replace with bot_timestamp_now() from bot_core
     lcm.publish("ROBOT_MODEL", &message);
     usleep(1000000);
   }

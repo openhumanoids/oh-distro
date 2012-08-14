@@ -14,8 +14,8 @@ class Handler
                 const std::string& chan, 
                 const drc::tf_t* msg)
         {
-		 std::cout << "Received joint_state_t message on channel " << chan << std::endl;
-		 std::cout << "timestamp  : " << msg->timestamp << std::endl;
+		 std::cout << "Received tf_t message on channel " << chan << std::endl;
+		 std::cout << "timestamp  : " << msg->utime << std::endl;
 		 std::cout << "robot  : " << msg->robot_name << std::endl;		 
 		for(std::vector<drc::transform_stamped_t>::size_type i = 0; i != msg->num_joints; i++) 
 		{

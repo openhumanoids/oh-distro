@@ -69,7 +69,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     // call a routine that calculates the transforms the joint_state_t* msg.
     map<string, double> jointpos_in;
     for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
+      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));  
     
     map<string, drc::transform_t > cartpos_out;
     
@@ -144,7 +144,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    //state.tf.rotation = transform_it->second.rotation;
 	    
 	    //cout << "\nlink_name : " << it->first << endl; 
-	    //cout << "timestamp  : " << msg->timestamp << endl;    
+	    //cout << "timestamp  : " << msg->utime << endl;    
 	    shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
 
 	    //---store

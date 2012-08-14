@@ -107,7 +107,7 @@ namespace tf_publisher{
 
 
     drc::tf_t message;  
-    message.timestamp = time;
+    message.utime = time;
     message.robot_name = robot_name;
     message.num_joints = tf_transforms.size();
     message.tf = tf_transforms;
@@ -141,7 +141,7 @@ namespace tf_publisher{
     }
     
    drc::tf_t message;  
-   message.timestamp = time;
+   message.utime = time;
    message.robot_name = robot_name;
    message.num_joints = tf_transforms.size();
    message.tf = tf_transforms;

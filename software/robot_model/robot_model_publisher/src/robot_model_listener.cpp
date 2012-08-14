@@ -16,7 +16,7 @@ class Handler
                 const drc::robot_urdf_t * msg)
         {
     	 std::cout << "Received urdf string on channel " << chan << std::endl;
-     	 std::cout << "  timestamp   = " << msg->timestamp << std::endl;
+     	 std::cout << "  timestamp   = " << msg->utime << std::endl;
 	 std::cout << "  robot   = " << msg->robot_name << std::endl;
     	// std::cout << msg->urdf_xml_string << std::endl; 
         }

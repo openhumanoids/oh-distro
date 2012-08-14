@@ -12,7 +12,7 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 
 
-namespace chain_control
+namespace drc_control
 {
  class FixedGoalPublisher {
   public:
@@ -55,7 +55,7 @@ main(int argc, char ** argv)
 
     drc::ee_goal_t my_goal;
  
-    my_goal.timestamp = getTime_now();
+    my_goal.utime = getTime_now();
     my_goal.robot_name = "wheeled_atlas";
     my_goal.ee_name = "LWristRoll_link";
     my_goal.root_name = "base";
@@ -125,7 +125,7 @@ main(int argc, char ** argv)
     
     my_goal.halt_ee_controller = false;
     std::string channel = "LWRISTROLL_LINK_GOAL";
-    chain_control::FixedGoalPublisher goalPublisher(lcm,my_goal,channel);
+    drc_control::FixedGoalPublisher goalPublisher(lcm,my_goal,channel);
     while(true){
       std::cout << "Press any key to destruct fixed goal publisher and exit: " << std::endl;
       std::string key;
@@ -138,11 +138,11 @@ main(int argc, char ** argv)
 }
 /* struct ee_goal_t
 {
-	int64_t timestamp;
+	int64_t utime;
 	string robot_name;
 	string ee_name;
 	string root_name;
-	position3D_t ee_goal_pos;
+	position_3d_t ee_goal_pos;
 	twist_t ee_goal_twist;
 	int32_t num_chain_joints;
 	boolean use_posture_bias;

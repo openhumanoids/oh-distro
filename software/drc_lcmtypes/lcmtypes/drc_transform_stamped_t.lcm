@@ -4,7 +4,7 @@ struct transform_stamped_t
 {
    string frame_id_; 
    string child_frame_id_; 
-   vector3_t translation;
+   vector_3d_t translation;
    quaternion_t rotation;
 }
 

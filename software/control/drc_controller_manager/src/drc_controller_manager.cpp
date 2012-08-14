@@ -66,25 +66,25 @@ namespace drc_control{
 			 const std::string& chan, 
 			 const drc::robot_state_t* msg)						 
   {
-     int64_t  temp = (msg->timestamp-latest_robotstatemsg_timestamp); //from usec to sec
+     int64_t  temp = (msg->utime-latest_robotstatemsg_timestamp); //from usec to sec
      double dt = (0.000001*temp); // rate at which robot state is arriving.
 
   // std::cout << "robot state msg received :" << (double)(0.001*temp)<< "msec" << std::endl;
    
-     latest_robotstatemsg_timestamp = msg->timestamp;
+     latest_robotstatemsg_timestamp = msg->utime;
 
     // call a routine that calculates the transforms the joint_state_t* msg.
      /* std::map<std::string, double> jointpos_in,jointvel_in;
   
     for (uint i=0; i< (uint) msg->num_joints; i++){ //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));
-      jointvel_in.insert(make_pair(msg->joint_name[i], msg->angular_velocity[i]));
+      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+      jointvel_in.insert(make_pair(msg->joint_name[i], msg->joint_velocity[i]));
     }*/  
 
       // update jointpos_in and jointvel_in
      for (uint i=0; i< (uint) msg->num_joints; i++){
-      jointpos_in[msg->joint_name[i]] = msg->angular_position[i]; 
-      jointvel_in[msg->joint_name[i]] = msg->angular_velocity[i]; 
+      jointpos_in[msg->joint_name[i]] = msg->joint_position[i]; 
+      jointvel_in[msg->joint_name[i]] = msg->joint_velocity[i]; 
      }
     // Only update jointpos_in and jointvel_in;
     

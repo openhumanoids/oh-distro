@@ -87,7 +87,7 @@ int main(int argc, char ** argv)
     //message.timestamp = time(NULL);
     struct timeval tv;
     gettimeofday (&tv, NULL);
-    message.timestamp = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; // TODO: replace with bot_timestamp_now() from bot_core
+    message.utime = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; // TODO: replace with bot_timestamp_now() from bot_core
     message.robot_name = robot -> robot_name;
     message.num_joints = robot->joint_names_.size();
    

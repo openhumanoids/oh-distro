@@ -2,7 +2,7 @@ package drc;
 
 struct tf_t
 {
-   int64_t timestamp;
+   int64_t utime;
    string robot_name;
    int32_t num_joints;  
    transform_stamped_t tf [num_joints];

@@ -2,7 +2,7 @@ package drc;
 
 struct transform_t
 {
-   vector3_t translation;
+   vector_3d_t translation;
    quaternion_t rotation;
 }
 

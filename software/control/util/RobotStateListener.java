@@ -33,8 +33,8 @@ public class RobotStateListener implements LCMSubscriber
 		    Integer j = m_joint_map.get(msg.joint_name[i]);
 		    if (j!=null) {
 			index = j.intValue();
-			m_x[index] = msg.angular_position[i];
-			m_x[index + m_num_joints] = msg.angular_velocity[i];
+			m_x[index] = msg.joint_position[i];
+			m_x[index + m_num_joints] = msg.joint_velocity[i];
 		    }
 		}
 		m_has_new_message = true;

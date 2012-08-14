@@ -2,7 +2,7 @@ package drc;
 
 struct joint_angles_t 
 {
-    int64_t timestamp;
+    int64_t utime;
     string robot_name;
     int32_t num_joints;
     string joint_name [num_joints];

@@ -369,7 +369,8 @@
     <origin rpy="0 0 0" xyz="0 0 0.87854616"/>
     <axis xyz="0 0 1"/>
     <limit effort="54" lower="-1.5707963259" upper="1.5707963259" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="NeckPitch" type="revolute">
     <parent link="NeckYaw_link"/>
@@ -377,7 +378,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="25" lower="-0.78539816295" upper="0.78539816295" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderRoll" type="revolute">
     <parent link="LShoulderPitch_link"/>
@@ -385,7 +387,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="110" lower="0.0" upper="2.00712863865" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderRoll" type="revolute">
     <parent link="RShoulderPitch_link"/>
@@ -393,7 +396,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="110" lower="-2.00712863865" upper="-0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderYaw" type="revolute">
     <parent link="base"/>
@@ -401,7 +405,8 @@
     <origin rpy="0 0 0" xyz="0 0.2410587 0.96426384"/>
     <axis xyz="0 0 1"/>
     <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LShoulderPitch" type="revolute">
     <parent link="LShoulderYaw_link"/>
@@ -409,7 +414,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LElbowPitch" type="revolute">
     <parent link="LShoulderRoll_link"/>
@@ -417,7 +423,8 @@
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
     <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LWristYaw" type="revolute">
     <parent link="LElbowPitch_link"/>
@@ -425,7 +432,8 @@
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
     <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderYaw" type="revolute">
     <parent link="base"/>
@@ -433,7 +441,8 @@
     <origin rpy="0 0 0" xyz="0 -0.2410587 0.96426384"/>
     <axis xyz="0 0 1"/>
     <limit effort="80" lower="-0.6981317004" upper="1.745329251" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RShoulderPitch" type="revolute">
     <parent link="RShoulderYaw_link"/>
@@ -441,7 +450,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="110" lower="-1.5707963259" upper="0.8726646255" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RElbowPitch" type="revolute">
     <parent link="RShoulderRoll_link"/>
@@ -449,7 +459,8 @@
     <origin rpy="0 0 0" xyz="0 0 -0.3481959"/>
     <axis xyz="0 1 0"/>
     <limit effort="100" lower="-2.35619448885" upper="0.0" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RWristYaw" type="revolute">
     <parent link="RElbowPitch_link"/>
@@ -457,7 +468,8 @@
     <origin rpy="0 0 0" xyz="0 0 -0.3035554"/>
     <axis xyz="0 0 1"/>
     <limit effort="15" lower="-1.48352986335" upper="1.48352986335" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="LWristRoll" type="revolute">
     <parent link="LWristYaw_link"/>
@@ -465,7 +477,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="30" lower="-0.5235987753" upper="1.0471975506" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   <joint name="RWristRoll" type="revolute">
     <parent link="RWristYaw_link"/>
@@ -473,7 +486,8 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit effort="30" lower="-1.0471975506" upper="0.5235987753" velocity="3"/>
-    <dynamics damping="100" friction="10"/>
+ <!--   <dynamics damping="100" friction="10"/>-->
+    <dynamics damping="1" friction="10"/>
   </joint>
   
   <!-- WHEELS -->

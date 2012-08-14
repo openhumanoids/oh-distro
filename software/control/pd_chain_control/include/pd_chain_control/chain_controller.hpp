@@ -688,13 +688,13 @@ tau.setZero();
   // LShoulderYaw LShoulderPitch LShoulderRoll  LElbowPitch LWristYaw LWristRoll
   //tau<< 0,-0,50,-30,0,0;
     drc::actuator_cmd_t torque_cmd;
-    torque_cmd.timestamp = getTime_now();
+    torque_cmd.utime = getTime_now();
     torque_cmd.robot_name = _robot_name;
-    torque_cmd.num_joints = _chain_joint_names.size();
-    for(int i = 0; i < torque_cmd.num_joints; i++){
-	torque_cmd.joint_name.push_back(_chain_joint_names[i]);
-        torque_cmd.joint_effort.push_back(tau[i]);
-	torque_cmd.duration.push_back(10*dt);// expires after 0.1 sec
+    torque_cmd.num_actuators = _chain_joint_names.size();
+    for(int i = 0; i < torque_cmd.num_actuators; i++){
+	torque_cmd.actuator_name.push_back(_chain_joint_names[i]);
+        torque_cmd.actuator_effort.push_back(tau[i]);
+	torque_cmd.effort_duration.push_back(10*dt);// expires after 0.1 sec
     }
  
     _lcm->publish("ACTUATOR_CMDS", &torque_cmd); // unstable;
@@ -791,11 +791,11 @@ void ChainController<JOINTS>::handleEndEffectorCmdMsg(const lcm::ReceiveBuffer* 
     }
  /*    drc::ee_goal_t
  ----------------------------
-	int64_t timestamp;
+	int64_t utime;
 	string robot_name;
 	string ee_name;
 	string root_name;
-	position3D_t ee_goal_pos;
+	position_3d_t ee_goal_pos;
 	twist_t ee_goal_twist;
 	int num_chain_joints;
 	bool use_posture_bias;
@@ -816,7 +816,7 @@ void ChainController<JOINTS>::handleEndEffectorCmdMsg(const lcm::ReceiveBuffer* 
   if(controller_state==RUNNING)
   { 
     
-        latest_goal_timestamp_ = msg->timestamp;
+        latest_goal_timestamp_ = msg->utime;
 
 	transformLCMToEigen(msg->ee_goal_pos,x_desi_);
 	transformLCMtwistToEigen(msg->ee_goal_twist, xdot_desi_);
@@ -931,7 +931,7 @@ template <int JOINTS>
 void ChainController<JOINTS>::print_3D_position(std::string &id,Eigen::Affine3d &x)
 {
   std::cout<<id<<": ";
-  drc::position3D_t m;
+  drc::position_3d_t m;
   transformEigenToLCM(x,m);
   std::cout<<  m.translation.x << " "<<  m.translation.y << " "<<  m.translation.z << " "
   <<  m.rotation.x << " "<<  m.rotation.y << " "<<  m.rotation.z << " "<<  m.rotation.w << std::endl;

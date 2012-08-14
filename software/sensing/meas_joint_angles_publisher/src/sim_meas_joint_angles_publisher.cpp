@@ -31,14 +31,14 @@ class TrueRobotStateHandler
 
                drc::joint_angles_t message;
 
-		message.timestamp =msg->timestamp; 
+		message.utime =msg->utime; 
 		message.robot_name = msg -> robot_name;
 		message.num_joints = msg->num_joints;		     	 
 
 		for (std::vector<int>::size_type i = 0; i !=  msg -> joint_name.size(); i++)  {
 	              double noise = 0; // replace with sampleGaussian(0,variance)
 		      message.joint_name.push_back(msg->joint_name[i]);
-		      message.angular_position.push_back(msg->angular_position[i]+noise);
+		      message.angular_position.push_back(msg->joint_position[i]+noise);
 		}
 
  		if(lcm.good())

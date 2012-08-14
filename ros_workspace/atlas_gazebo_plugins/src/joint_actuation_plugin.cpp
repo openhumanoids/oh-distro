@@ -185,15 +185,15 @@ void JointActuationPlugin::actuationCmdCallback(const atlas_gazebo_msgs::Actuato
      //int64_t t   =  cmd_msg->header.stamp.toNSec(); // Not Used     
       double msg_start_time  = this->world->GetSimTime().Double(); // All timing is done relative to sim time.
       //for all joints in message update ActuationCmd Buffer.      
-      for (std::vector<int>::size_type i = 0; i != cmd_msg->joint_name.size(); i++)
+      for (std::vector<int>::size_type i = 0; i != cmd_msg->actuator_name.size(); i++)
       {
-	std::string joint_name = cmd_msg->joint_name[i];
+	std::string joint_name = cmd_msg->actuator_name[i];
 	std::map<std::string, ActuationCmdStruc>::iterator it;
 	it=_joint_actuation_values.find(joint_name);	
 	  ActuationCmdStruc act_cmd;
 	  act_cmd.start_time = msg_start_time; // sim time when msg was received.
-	  act_cmd.value = cmd_msg->joint_effort[i];
-	  act_cmd.duration = cmd_msg->duration[i];
+	  act_cmd.value = cmd_msg->actuator_effort[i];
+	  act_cmd.duration = cmd_msg->effort_duration[i];
 	  act_cmd.on_flag = true;
 	  it->second = act_cmd;
       }// end for

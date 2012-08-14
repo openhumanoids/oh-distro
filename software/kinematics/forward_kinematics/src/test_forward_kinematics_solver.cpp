@@ -54,7 +54,7 @@ namespace test_forward_kinematics_solver {
 		      
 		    std::cerr << "Error: could not calculate forward kinematics!" <<std::endl;
 		  }
-		  std::cout << "timestamp  : " << msg->timestamp << std::endl;
+		  std::cout << "timestamp  : " << msg->utime << std::endl;
 		  for( std::map<std::string, drc::transform_t>::const_iterator it = cartpos_out.begin(); it!=cartpos_out.end(); it++)
 		  { 
 		    drc::link_transform_t state;	    

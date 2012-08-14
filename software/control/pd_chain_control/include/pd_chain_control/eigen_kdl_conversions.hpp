@@ -88,7 +88,7 @@ void transformKDLToEigen(const KDL::Frame &k, Eigen::Affine3d &e)
 };
 
 /// Converts a LCM position3D_t into an Eigen matrix
-void transformLCMToEigen(const drc::position3D_t &t, Eigen::Affine3d &e)
+void transformLCMToEigen(const drc::position_3d_t &t, Eigen::Affine3d &e)
 {
    //TransformLCMToKDLFrame
     KDL::Frame k;
@@ -124,7 +124,7 @@ void transformEigenToKDL(const Eigen::Affine3d &e, KDL::Frame &k)
 };
 
 
-void transformEigenToLCM(const Eigen::Affine3d &e, drc::position3D_t &m)
+void transformEigenToLCM(const Eigen::Affine3d &e, drc::position_3d_t &m)
 {
   m.translation.x = e.translation()[0];
   m.translation.y = e.translation()[1];

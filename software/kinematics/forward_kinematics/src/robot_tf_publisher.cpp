@@ -40,8 +40,8 @@ namespace robot_tf_publisher {
       			joint_positions.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
 
  		// publishes ROS style tf tree on JOINT_TRANSFORMS channel.  	        
-  		tf_publisher_.publishTransforms(joint_positions, msg->timestamp, msg->robot_name);
-		tf_publisher_.publishFixedTransforms( msg->timestamp, msg->robot_name); // publish transforms of fixed joints
+  		tf_publisher_.publishTransforms(joint_positions, msg->utime, msg->robot_name);
+		tf_publisher_.publishFixedTransforms( msg->utime, msg->robot_name); // publish transforms of fixed joints
         }
 
   	//lcm::LCM lcm;

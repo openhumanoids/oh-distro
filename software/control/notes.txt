@@ -11,4 +11,7 @@ actuator_cmd_t
 models subdirectory is a (potentially out of sync) duplicate, e.g. of ros_workspace/atlas_description/urdf ?
 
 
+Some observations (SISIR):
+
+- 'System.nanoTime()' in SendTestStateMessage.java & RobotStatePublisher.java. Our timestamps are in micro secs. (System.nanoTime()/1000) ?
 
