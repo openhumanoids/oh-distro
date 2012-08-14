@@ -887,6 +887,10 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
                 <updateRate>100.0</updateRate>
                 <interface:audio name="gazebo_ros_controller_manager_dummy_iface" />
             </controller:gazebo_ros_controller_manager>-->
+    <controller:joint_actuation_plugin name="joint_torque_controller" plugin="libjoint_actuation_plugin.so">
+       <alwaysOn>true</alwaysOn>
+       <topicName>actuator_cmd</topicName>
+    </controller:joint_actuation_plugin>
     <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
