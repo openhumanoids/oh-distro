@@ -15,7 +15,7 @@ public class ActuatorCmdPublisher
 	msg.actuator_name = joint_name;
 
 	//	msg.joint_effort = new double[msg.num_joints];
-	msg.duration = new double[msg.num_actuators];
+	msg.effort_duration = new double[msg.num_actuators];
 	for (int i=0; i<msg.num_actuators; i++)
 	    msg.effort_duration[i] = 1.0;  
 
@@ -25,7 +25,7 @@ public class ActuatorCmdPublisher
     public void publish(double[] u) // use doubles here for compatibility w/ matlab
     {
 	LCM lcm = LCM.getSingleton();
-	msg.timestamp = System.nanoTime();//must be in usec - sisir
+	msg.utime = System.nanoTime();//must be in usec - sisir
 	msg.actuator_effort = u;
 	lcm.publish(channel_name,msg);
     }
