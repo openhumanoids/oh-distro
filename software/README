@@ -25,11 +25,6 @@ Probably required: (to be confirmed)
 (This list may not be complete. See the individual README files in
 the third party pod collections for newer dependencies.)
 
-1a. Flann PCL dependencies:
-sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
-sudo apt-get update
-apt-get install libflann1.7-dev 
-
 2. INSTALL LCM v0.9
 ===================
 https://code.google.com/p/lcm/downloads/list
@@ -52,3 +47,6 @@ For Ubuntu, add these lines to "/etc/sysctl.conf":
     net.core.rmem_max=2097152
     net.core.rmem_default=2097152
 (Requires a reboot to take effect)
+
+6. Follow wiki to install drake:
+...
