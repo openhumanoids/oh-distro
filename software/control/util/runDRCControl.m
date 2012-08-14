@@ -1,4 +1,4 @@
-function runDRCControl(sys,robot_name,state_channel,cmd_channel)
+function runDRCControl(sys,robot_name,state_channel,cmd_channel,options)
 %
 % @param sys Dynamical System to run as a controller (visualizers work,
 % too)
@@ -7,7 +7,9 @@ function runDRCControl(sys,robot_name,state_channel,cmd_channel)
 % messages on.
 % @param cmd_channel LCM channel name on which to publish actuator_cmd_t messages (if sys has outputs)
 
-options.tspan = [0,inf];
+if(~isfield(options,'tspan'))
+    options.tspan = [0,inf];
+end
 
 if (sys.getNumStates()~=0)
   error('not implemented yet');  % but won't be too hard
