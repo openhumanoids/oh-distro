@@ -13,6 +13,6 @@ struct robot_state_t
     float joint_velocity [num_joints];
     float measured_effort[num_joints];
     joint_covariance_t  joint_cov[num_joints];
-    ground_contact_state_t ground_contacts;
+    contact_state_t contacts;
 }
 

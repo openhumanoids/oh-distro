@@ -32,8 +32,8 @@ public class RobotStatePublisher
 	for (int i=0; i<msg.num_joints; i++) 
 	    msg.joint_cov[i] = new drc.joint_covariance_t();
 
-	msg.ground_contacts = new drc.ground_contact_state_t();
-	msg.ground_contacts.num_contacts = 0;
+	msg.contacts = new drc.contact_state_t();
+	msg.contacts.num_contacts = 0;
 
 	channel_name = channel;
     }

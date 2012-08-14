@@ -66,12 +66,12 @@ robot_state_msg.measured_effort.push_back(0);
 robot_state_msg.joint_cov.push_back(j_cov);
 }
 
-// dummy ground contact state
-robot_state_msg.ground_contacts.num_contacts =2;
-robot_state_msg.ground_contacts.id.push_back("Left_Foot");
-robot_state_msg.ground_contacts.id.push_back("Right_Foot");
-robot_state_msg.ground_contacts.onGround.push_back(0);
-robot_state_msg.ground_contacts.onGround.push_back(0);
+// dummy ground contact states
+robot_state_msg.contacts.num_contacts =2;
+robot_state_msg.contacts.id.push_back("Left_Foot");
+robot_state_msg.contacts.id.push_back("Right_Foot");
+robot_state_msg.contacts.inContact.push_back(0);
+robot_state_msg.contacts.inContact.push_back(0);
 
 lcm::LCM lcm;
 if(lcm.good())

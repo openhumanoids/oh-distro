@@ -32,8 +32,8 @@ public class SendTestStateMessage
 	msg.joint_cov = new drc.joint_covariance_t[2];
 	msg.joint_cov[0] = new drc.joint_covariance_t();
 	msg.joint_cov[1] = new drc.joint_covariance_t();
-	msg.ground_contacts = new drc.ground_contact_state_t();
-	msg.ground_contacts.num_contacts = 0;
+	msg.contacts = new drc.contact_state_t();
+	msg.contacts.num_contacts = 0;
 
 	lcm.publish("true_robot_state", msg);
     }
