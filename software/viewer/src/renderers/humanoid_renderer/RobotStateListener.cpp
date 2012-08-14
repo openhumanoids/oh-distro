@@ -61,7 +61,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
 	return;
       }
-    
+  
     //clear stored data
     _link_tfs.clear();
     _link_shapes.clear();    
@@ -86,7 +86,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
        cerr << "Error: could not calculate forward kinematics!" <<endl;
        return;
    }
-    
+
     // PRINTS THE VISUAL PROPERTIES OF ALL LINKS THAT HAVE A VISUAL ELEMENT DEFINED IN THE URDF FILE 
     map<string, drc::transform_t>::const_iterator transform_it;
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
@@ -95,7 +95,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 
 	if(it->second->visual)
 	  {
-	    
+	
 	    urdf::Pose visual_origin = it->second->visual->origin;
 	 
 	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
@@ -106,11 +106,17 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    T_world_body.M =  KDL::Rotation::Quaternion(msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z, msg->origin_position.rotation.w);
 	 
 	    transform_it=cartpos_out.find(it->first);
-	    
+        
+           // usually find fails if base_link has a visual element.
+	   // Kdl based FK ignores the root link which must be set to body pose
+	   // manually (TODO).
+           if(transform_it!=cartpos_out.end())// fk cart pos exists
+	   {
+	  
 	    T_body_parentjoint.p[0]= transform_it->second.translation.x;
 	    T_body_parentjoint.p[1]= transform_it->second.translation.y;
 	    T_body_parentjoint.p[2]= transform_it->second.translation.z;	
-
+         
 	    T_body_parentjoint.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
 
 
@@ -121,24 +127,24 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 
 	    T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
 	    T_world_visual = T_world_body*T_body_visual;
+         
 
-	    
 	    drc::link_transform_t state;	    
-	    
+
 	    state.link_name = transform_it->first;
-	    
+	
 	    // For Body Frame Viewing
 	    //state.tf.translation.x = T_body_visual.p[0];
 	    //state.tf.translation.y = T_body_visual.p[1];
 	    //state.tf.translation.z = T_body_visual.p[2];
 	    //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-	    
+	
 	    state.tf.translation.x = T_world_visual.p[0];
 	    state.tf.translation.y = T_world_visual.p[1];
 	    state.tf.translation.z = T_world_visual.p[2];
 	    T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-	    
-	    
+	      
+	       
 	    
 	    //state.tf.translation = transform_it->second.translation;
 	    //state.tf.rotation = transform_it->second.rotation;
@@ -151,10 +157,10 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    _link_shapes.push_back(geom);
 	    _link_tfs.push_back(state);
 	    //---
-
+	
 	    int type = it->second->visual->geometry->type ;
 	    enum {SPHERE, BOX, CYLINDER, MESH}; 
-	    
+	 
 	    if (type == SPHERE){
 	      //cout << "SPHERE"<< endl;
 	      shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(it->second->visual->geometry));	
@@ -182,7 +188,8 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	      //renderMesh(mesh->filename)
 	    }
 	    else {
-	      //cout << "UNKNOWN"<< endl;
+ 
+	      // cout << "UNKNOWN"<< endl;
 	    }
 	    
 	    //cout << "translation  : " << endl;
@@ -196,9 +203,11 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    //cout << "\t .w  : " << state.tf.rotation.w << endl;   
 	    //cout << "\n"<< endl;
 	    
+	    }//if(transform_it!=cartpos_out.end())
 	  }//if(it->second->visual)
+   
       }//end for
-
+  
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage
 
