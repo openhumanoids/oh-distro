@@ -17,6 +17,7 @@
 #include <laser_utils/renderer_laser.h>
 #include <image_utils/renderer_cam_thumb.h>
 #include <visualization/collections_renderer.hpp>
+#include <octomap_utils/renderer_octomap.h>
 
 #include "udp_util.h"
 
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_humanoid(viewer, 0, lcm);
   collections_add_renderer_to_viewer(viewer, 1);
+  add_octomap_renderer_to_viewer(viewer, 1, lcm);
 
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
