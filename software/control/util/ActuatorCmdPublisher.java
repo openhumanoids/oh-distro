@@ -25,7 +25,7 @@ public class ActuatorCmdPublisher
     public void publish(double[] u) // use doubles here for compatibility w/ matlab
     {
 	LCM lcm = LCM.getSingleton();
-	msg.utime = System.nanoTime();//must be in usec - sisir
+	msg.utime = System.nanoTime()/1000;
 	msg.actuator_effort = u;
 	lcm.publish(channel_name,msg);
     }

@@ -45,9 +45,6 @@ info
 toc
 
 
-while(1)
-  v.playback(xtraj);
-  pause;
-end
+v.playback(xtraj);
 
 end

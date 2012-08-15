@@ -5,3 +5,5 @@ r = setSimulinkParam(r,'MinStep','0.001');
 v = r.constructVisualizer;
 
 runDRCControl(v,'atlas','TRUE_ROBOT_STATE');
+
+% NOTEST

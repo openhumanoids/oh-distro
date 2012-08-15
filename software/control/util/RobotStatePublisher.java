@@ -41,7 +41,7 @@ public class RobotStatePublisher
     public void publish(double[] x) // use doubles here for compatibility w/ matlab
     {
 	LCM lcm = LCM.getSingleton();
-	msg.utime = System.nanoTime();  //must be in usec - sisir
+	msg.utime = System.nanoTime()/1000; 
 	for (int i=0; i<msg.num_joints; i++) {
 	    msg.joint_position[i] = (float) x[i];
 	    msg.joint_velocity[i] = (float) x[i+msg.num_joints];

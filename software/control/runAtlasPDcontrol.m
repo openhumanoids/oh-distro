@@ -21,3 +21,5 @@ options = struct('tspan',[0,5]);
 runDRCControl(PDcontrol,'atlas','TRUE_ROBOT_STATE','ACTUATOR_CMDS',options);
 keyboard;
 end
+
+% NOTEST
