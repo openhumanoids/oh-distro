@@ -1,25 +1,24 @@
 <package>
-  <description brief="ROS2LCM_translator">
-
-     ROS2LCM_translator
+  <description brief="ros_fovis">
 
   </description>
-  <author>sisir</author>
-  <license>BSD</license>
+  <author>Maurice Fallon and Hordur Johannsson</author>
+  <license>unknown</license>
   <review status="unreviewed" notes=""/>
-  <url> </url>"ros_workspace/ROS2LCM_translator/manifest.xml"
-  <depend package="gazebo"/>
-  <depend package="gazebo_msgs"/>
-  <depend package="urdf"/>
-  <depend package="urdf_interface"/>
+  <url>http://ros.org/wiki/</url>
   <depend package="roscpp"/>
-  <depend package="atlas_gazebo_msgs"/>
-  <depend package="geometry_msgs"/>
-  <depend package="nav_msgs"/>  
   <depend package="sensor_msgs"/>
-  <depend package="opencv2"/>  
-  <depend package="pcl"/>
-  <depend package="pcl_ros"/>  
+  <depend package="message_filters"/>
+  <depend package="opencv2"/>
+  <depend package="tf"/>
+  <depend package="rosconsole"/>
+  <depend package="std_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="image_geometry"/>
+  <depend package="cv_bridge"/>
+  <depend package="map_server"/>
+  <depend package="nav_msgs"/>
+  <depend package="rospy"/>
+  <depend package="eigen"/>
 </package>
-
-

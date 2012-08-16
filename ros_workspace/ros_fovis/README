@@ -1,0 +1,27 @@
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         ros_fovis
+Maintainers:  
+Summary:      
+Description:
+
+
+Requirements: 
+  lcm
+
+Pods:
+
+Ubuntu packages:
+
+License:      No license available
+
+
+
+Example Invocation:
+./ros-fovis-stereo ~/drc/config/drc_robot.cfg wide_stereo
+
