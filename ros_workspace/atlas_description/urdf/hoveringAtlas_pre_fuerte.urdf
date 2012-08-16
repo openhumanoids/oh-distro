@@ -14,7 +14,7 @@
     <color rgba="0.1 0.1 0.1 1.0"/>
   </material>
 <!--Superheavy base_link-->
- <!--<link name="base_link">
+<!-- <link name="base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="10000"/>
@@ -255,38 +255,44 @@
     </collision>
   </link>
 
-  <link name="X_link">
-     <inertial>
+   <link name="X_link">
+    <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="121.06"/>
       <inertia ixx="1.70235" ixy="0" ixz="0" iyy="1.70235" iyz="0" izz="0.5616"/>
     </inertial>
-<!--<gazebo reference="X_link">
-    <static>true</static>
-    <turnGravityOff>true</turnGravityOff>
-</gazebo>-->
+
   </link> 
  <link name="Y_link">
-   <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>    
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="121.06"/>
       <inertia ixx="1.70235" ixy="0" ixz="0" iyy="1.70235" iyz="0" izz="0.5616"/>
     </inertial>
-<!--<gazebo reference="Y_link">
-    <static>true</static>
-    <turnGravityOff>true</turnGravityOff>
-</gazebo>-->
   </link> 
 
   <link name="world"/>
  <!-- JOINTS -->
-
+<!--<gazebo reference="base">
+    <turnGravityOff>true</turnGravityOff>
+</gazebo>-->
+<!--<gazebo reference="X_link">
+    <turnGravityOff>true</turnGravityOff>
+</gazebo>
+<gazebo reference="Y_link">
+    <turnGravityOff>true</turnGravityOff>
+</gazebo>-->
+<!--  <joint name="base_Joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0"/>
+  </joint>-->
   <joint name="X_Joint" type="prismatic">
     <parent link="world"/>
     <child link="X_link"/>
     <origin rpy="0 0 0" xyz="0 0 0.5"/>
      <axis xyz="1 0 0"/>
-    <dynamics damping="1" friction="0"/>
+    <dynamics damping="0.0" friction="0"/>
     <limit effort="200" lower="-150" upper="150" velocity="30.0"/>
   </joint>
   
@@ -295,7 +301,7 @@
     <child link="Y_link"/>
     <origin rpy="0 0 0" xyz="0 0 0.0"/>
      <axis xyz="0 1 0"/>
-    <dynamics damping="1" friction="0"/>
+    <dynamics damping="0.0" friction="0"/>
     <limit effort="200" lower="-150" upper="150" velocity="30.0"/>
   </joint>
     
@@ -303,8 +309,8 @@
     <parent link="Y_link"/>
     <child link="base"/>
     <axis xyz="0 0 1"/>
-    <origin rpy="0 0 0" xyz="0 0 0.15"/>
-    <dynamics damping="1" friction="0"/> 
+    <origin rpy="0 0 0" xyz="0 0 0.17"/>
+    <dynamics damping="0.0" friction="0"/> 
   </joint>
 
 
@@ -429,32 +435,34 @@
 
   <gazebo>
 
-     <controller:planar_hover_plugin name="planar_hover_controller" plugin="libplanar_hover_plugin.so">
+    <controller:planar_hover_plugin name="planar_hover_controller" plugin="libplanar_hover_plugin_pre_fuerte.so">
         <alwaysOn>true</alwaysOn>
+	<update>100</update>
+	<updateRate>100.0</updateRate>
         <YJoint>Y_Joint</YJoint>
         <XJoint>X_Joint</XJoint>
         <ThetaJoint>Theta_Joint</ThetaJoint>
 	<MovingBase>base</MovingBase>
-        <torque>100</torque>
+        <torque>300</torque>
         <interface:position name="position_iface_0"/>
         <topicName>cmd_vel</topicName>
       </controller:planar_hover_plugin> 
-      
-    <controller:joint_actuation_plugin name="joint_torque_controller" plugin="libjoint_actuation_plugin.so">
+
+
+   <!-- <controller:joint_actuation_plugin name="joint_torque_controller" plugin="libjoint_actuation_plugin.so">
        <alwaysOn>true</alwaysOn>
        <topicName>actuator_cmd</topicName>
-    </controller:joint_actuation_plugin>
+    </controller:joint_actuation_plugin>-->
 
-    <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state.so">
-   	 <alwaysOn>true</alwaysOn>
-   	 <updateRate>100.0</updateRate>
-   	 <topicName>true_robot_state</topicName>
-    </controller:gazebo_ros_pub_robot_state>
+
+    <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state_pre_fuerte.so">
+     	<alwaysOn>true</alwaysOn>
+     	<updateRate>100.0</updateRate>
+      	 <topicName>true_robot_state</topicName>
+     </controller:gazebo_ros_pub_robot_state>                
+	    
    </gazebo>
 
-<!-- <gazebo reference="base">
-    <static>true</static>
-    <turnGravityOff>true</turnGravityOff>
-</gazebo> -->
+
 </robot>
 

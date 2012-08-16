@@ -31,8 +31,14 @@ rosbuild_link_boost(gazebo_ros_pub_robot_state_pre_fuerte thread)
 rosbuild_add_library(fourWheeled_diffdrive_plugin_pre_fuerte src/fourWheeled_diffdrive_plugin.cpp)
 rosbuild_link_boost(fourWheeled_diffdrive_plugin_pre_fuerte thread)
 
+rosbuild_add_library(planar_hover_plugin_pre_fuerte src/planar_hover_plugin.cpp)
+rosbuild_link_boost(planar_hover_plugin_pre_fuerte thread)
+
 #rosbuild_add_library(diffdrive_plugin2 src/diffdrive_plugin.cpp)
 #rosbuild_link_boost(diffdrive_plugin2 thread)
+
+#rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
+#rosbuild_link_boost(joint_actuation_plugin thread)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()

@@ -2,6 +2,6 @@
   <!-- send atlas urdf to param server -->
   <!--  <param name="robot_description" command="" />  -->
 
-  <node name="spawn_hovering_atlas" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/hoveringAtlas.urdf -z 1 -model hovering_atlas" respawn="false" output="screen" />
+  <node name="spawn_hovering_atlas" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/hoveringAtlas.urdf -z 0.02 -model hovering_atlas" respawn="false" output="screen" />
 
 </launch>
