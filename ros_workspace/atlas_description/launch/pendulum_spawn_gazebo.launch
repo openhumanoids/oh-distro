@@ -1,0 +1,6 @@
+<launch>
+  <!-- send pendulum urdf to param server -->
+
+  <node name="spawn_pendulum" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/Pendulum.urdf -z 0.02 -model Pendulum" respawn="false" output="screen" />
+
+</launch>
