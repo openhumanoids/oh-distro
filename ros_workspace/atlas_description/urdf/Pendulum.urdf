@@ -11,7 +11,21 @@
     <color rgba="0 0 1 1" />
   </material>
 
-  <link name="world" />
+  <!--<link name="world" />-->
+  <link name="base">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="100000"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+  <visual>
+    <origin xyz="0 0 0" />
+    <geometry>
+      <box size="1 1 1" />
+    </geometry>
+    <material name="blue" />
+  </visual>
+  </link>
   <link name="base_part2">
     <inertial>
       <origin xyz="0 0 .015" rpy="0 0 0"/>
@@ -27,13 +41,13 @@
     </visual>
   </link>
   <joint name="base_weld" type="fixed">
-    <parent link="world" />
+    <parent link="base" />
     <child link="base_part2" />
   </joint>
-  <!--<link name="arm">
+  <link name="arm">
     <inertial> 
       <origin xyz="0 0 -.5" rpy="0 0 0" />
-      <mass value="0.5"/>
+      <mass value="0.5" />
       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/> 
     </inertial>
     <visual>
@@ -45,7 +59,7 @@
     </visual> 
   </link>
   <joint name="theta" type="continuous">
-    <parent link="world"/>
+    <parent link="base"/>
     <child link="arm" />
     <axis xyz="0 1 0" />
     <dynamics damping="0.1" />
@@ -72,5 +86,5 @@
     <actuator name="tau" />
     <joint name="theta" />
     <mechanicalReduction>1</mechanicalReduction>
-  </transmission>-->
+  </transmission>
 </robot>
