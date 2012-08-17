@@ -158,7 +158,7 @@ ros_fovis_stereo::ros_fovis_stereo(const std::string & camera_name,
   r_image_sub_.subscribe(it_, ros::names::resolve("wide_stereo/right/image_rect"), 3);
   r_info_sub_.subscribe(nh_, ros::names::resolve("wide_stereo/right/camera_info"), 3);
 
-  sync_.connectInput(r_image_sub_, r_info_sub_, l_image_sub_, l_info_sub_);
+  sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
   sync_.registerCallback( boost::bind(&ros_fovis_stereo::imageCb, this, _1, _2, _3, _4) );
 
   odom_ = new fovis::VisualOdometry(scal_->getLeftRectification(), vo_opts);

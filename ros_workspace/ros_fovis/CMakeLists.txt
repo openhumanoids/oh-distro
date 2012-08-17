@@ -13,3 +13,4 @@ include(cmake/pods.cmake)
 
 add_subdirectory(ros_fovis_rgbd)
 add_subdirectory(ros_fovis_stereo)
+add_subdirectory(ros_stereo2lcm)
