@@ -11,21 +11,7 @@
     <color rgba="0 0 1 1" />
   </material>
 
-  <!--<link name="world" />-->
-  <link name="base">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="100000"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-    </inertial>
-  <visual>
-    <origin xyz="0 0 0" />
-    <geometry>
-      <box size="1 1 1" />
-    </geometry>
-    <material name="blue" />
-  </visual>
-  </link>
+  <link name="world" />
   <link name="base_part2">
     <inertial>
       <origin xyz="0 0 .015" rpy="0 0 0"/>
@@ -39,10 +25,17 @@
       </geometry> 
       <material name="green" />
     </visual>
+    <collision>
+      <origin xyz="0 0 .015" />
+      <geometry>
+        <sphere radius=".015" />
+      </geometry>
+    </collision>
   </link>
   <joint name="base_weld" type="fixed">
-    <parent link="base" />
+    <parent link="world" />
     <child link="base_part2" />
+    <origin xyz="0 0 1" />
   </joint>
   <link name="arm">
     <inertial> 
@@ -57,9 +50,15 @@
       </geometry>
       <material name="red" />
     </visual> 
+    <collision>
+      <origin xyz="0 0 -.375" rpy="0 0 0" />
+      <geometry>
+         <cylinder length=".75" radius=".01" />
+      </geometry>
+    </collision>
   </link>
   <joint name="theta" type="continuous">
-    <parent link="base"/>
+    <parent link="base_part2"/>
     <child link="arm" />
     <axis xyz="0 1 0" />
     <dynamics damping="0.1" />
@@ -77,6 +76,12 @@
       </geometry>
       <material name="blue" />
     </visual>
+    <collision>
+      <origin xyz="0 0 -.5"/>
+      <geometry>
+        <sphere radius=".025"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="arm_weld" type="fixed">
     <parent link="arm" />
@@ -87,4 +92,13 @@
     <joint name="theta" />
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="base_part2">
+    <material>Gazebo/Green</material>
+  </gazebo>
+  <gazebo reference="arm">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  <gazebo reference="arm_com">
+    <material>Gazebo/Blue</material>
+  </gazebo>
 </robot>
