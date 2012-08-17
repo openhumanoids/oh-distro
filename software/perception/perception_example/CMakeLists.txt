@@ -11,7 +11,6 @@ include(cmake/pods.cmake)
 
 add_subdirectory(src/perception_example)
 
-#add_subdirectory(src/paired_stereo_odometry)
 add_subdirectory(src/modified_stereo_odometry)
 
 
