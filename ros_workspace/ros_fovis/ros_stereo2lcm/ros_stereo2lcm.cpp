@@ -135,6 +135,7 @@ int main(int argc, char **argv){
 
   std::cout << "ros to lcm stereo converter\n";
   std::cout << "Arguments: program_name inputROSchannel outputLCMchannel\n";
+  std::cout << "ros-stereo2lcm wide_stereo WIDE_STEREO_IMAGE\n";
 
   std::cout << "    program: " << argv[ 0 ] << "\n";
   std::cout << "ROS channel: " << argv[ 1 ] << " [Input]\n";
