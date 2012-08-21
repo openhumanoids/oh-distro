@@ -18,8 +18,8 @@ set(EXAMPLE_LIBRARIES  ${PCL_IO_LIBRARIES}
                        ${PCL_FILTERS_LIBRARIES}
                        ${OPENGL_LIBRARIES})
 
-add_executable(drc-local-map local_map.cpp    )
+add_executable(drc-local-map local_map.cpp   )
 target_link_libraries (drc-local-map ${EXAMPLE_LIBRARIES})
-pods_use_pkg_config_packages(drc-local-map  
+pods_use_pkg_config_packages(drc-local-map  pointcloud_vis
 		lcmtypes_drc_lcmtypes  lcmtypes_visualization)
 pods_install_executables(drc-local-map )

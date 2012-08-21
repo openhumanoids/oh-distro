@@ -14,71 +14,99 @@
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/visualization.h>
 
+#include <lcmtypes/drc_lcmtypes.h>
+
+
+#include "local_map.hpp"
+
 using namespace std;
 using namespace pcl;
 
 lcm_t * lcm;
 
-// Basic publisher for data to collections viewer:
-bool pcdXYZRGB_to_lcm(lcm_t *lcm, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
-    int64_t msg_time,int pose_collection_id, int64_t pose_id,
-    bool reset){
 
-  int npoints =cloud.points.size();
-  //int pose_id = 0; // use timestamp
+local_map::local_map(lcm_t* publish_lcm):
+      publish_lcm_(publish_lcm){
 
-  int64_t point_lists_id = pose_id; // use timestamp
-  int point_type = 1; // point
-  string collection_name = "Example Cloud";
-  int cloud_collection = 401;
 
-  vs_point3d_list_collection_t plist_coll;
-  plist_coll.id = cloud_collection;
-  plist_coll.name =(char*)   collection_name.c_str();
-  plist_coll.type =point_type; // collection of points
-  plist_coll.reset = reset;
-  plist_coll.nlists = 1; // number of seperate sets of points
-  vs_point3d_list_t plist[plist_coll.nlists];
+  pc_vis_ = new pointcloud_vis(publish_lcm_);  
 
-  // loop here for many lists
-  vs_point3d_list_t* this_plist = &(plist[0]);
-  // 3.0: header
-  this_plist->id =point_lists_id; //bot_timestamp_now();
-  this_plist->collection = pose_collection_id;
-  this_plist->element_id = pose_id;
-  // 3.1: points/entries (rename)
-  vs_point3d_t* points = new vs_point3d_t[npoints];
-  this_plist->npoints = npoints;
-  // 3.2: colors:
-  vs_color_t* colors = new vs_color_t[npoints];
-  this_plist->ncolors = npoints;
-  // 3.3: normals and ids:
-  this_plist->nnormals = 0;
-  this_plist->normals = NULL;
-  this_plist->npointids = 0;
-  this_plist->pointids= NULL;
+  lcm_t* subscribe_lcm_ = publish_lcm_;
+  drc_pointcloud2_t_subscribe(subscribe_lcm_, "WIDE_STEREO_POINTS",
+                             local_map::pointcloud_handler_aux, this);
 
-  for(int j=0; j<npoints; j++) {
-      colors[j].r = cloud.points[j].r/255.0; // points_collection values range 0-1
-      colors[j].g = cloud.points[j].g/255.0;
-      colors[j].b = cloud.points[j].b/255.0;
-      points[j].x = cloud.points[j].z;
-      points[j].y = - cloud.points[j].x;
-      points[j].z = - cloud.points[j].y;
 
-  }
-  this_plist->colors = colors;
-  this_plist->points = points;
-  plist_coll.point_lists = plist;
-  vs_point3d_list_collection_t_publish(lcm,"POINTS_COLLECTION",&plist_coll);
+  bot_core_planar_lidar_t_subscribe(subscribe_lcm_, "BASE_SCAN",
+                             local_map::lidar_handler_aux, this);
 
-  delete colors;
-  delete points;
 }
 
+void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
 
-static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, const drc_pointcloud2_t * msg, void * user){
+//  double spatialDecimationThresh = 0.2;
+//  int beam_skip=3;
+//  smPoint * points = (smPoint *) calloc(msg->nranges, sizeof(smPoint));
+  double maxRange = 29.7;
+  double validBeamAngles[] ={-2.1,2.1};
+
+  convertLidar(msg->ranges, msg->nranges, msg->rad0,
+        msg->radstep, cloud, 29.7,
+        validBeamAngles[0], validBeamAngles[1]);
+
+
+
+
+ // 3. Transmit data to viewer at null pose:
+  // 3a. Transmit Pose:
+  int pose_id=msg->utime;
+  bool reset = true;
+
+  int null_obj_collection= 600;
+  // Send a pose to hang the model on:
+  vs_obj_collection_t objs;
+  objs.id = null_obj_collection;
+  objs.name = (char*)  "Zero Pose LIDAR"; // "Trajectory";
+  objs.type = 5; // a pose
+  objs.reset = true; // true will delete them from the viewer
+  objs.nobjs = 1;
+  vs_obj_t poses[objs.nobjs];
+  poses[0].id = (int64_t) pose_id;// which specific pose
+  // directly matches the frames in gazebo: 
+  // <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/>
+  poses[0].x = 0.275;
+  poses[0].y = 0.0;
+  poses[0].z = 0.252; //0.275 0.0 0.252
+  poses[0].yaw =  0;
+  poses[0].pitch = 0;
+  poses[0].roll = M_PI/2;
+  objs.objs = poses;
+  vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);
+
+  // 3b. Send Data:
+  // Send the Model, hanging on the zero-zero pose
+  Ptcoll_cfg ptcoll_cfg;
+  ptcoll_cfg.reset=true;
+  ptcoll_cfg.point_lists_id =msg->utime;
+  ptcoll_cfg.collection = null_obj_collection;
+  ptcoll_cfg.element_id =(int64_t) pose_id;// which specific pose does this hang on .. all the same
+  ptcoll_cfg.name.assign("Model LIDAR");  
+  ptcoll_cfg.id = 601;
+  ptcoll_cfg.npoints =  cloud->points.size();
+  ptcoll_cfg.type =1;
+  float colorm_temp0[] ={-10.0,-1.0,-1.0,-1.0};
+  ptcoll_cfg.rgba.assign(colorm_temp0,colorm_temp0+4*sizeof(float));
+
+  pc_vis_->pcdXYZRGB_to_lcm(ptcoll_cfg, *cloud);
+
+
+
+}
+
+void local_map::pointcloud_handler(const drc_pointcloud2_t *msg){
+
   // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   cloud->width   = msg->width;
@@ -103,9 +131,18 @@ static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, cons
 
   std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
 
+  // Transform cloud to that its in robotic frame:
+  double x_temp;
+  for(int j=0; j<cloud->points.size(); j++) {
+    x_temp = cloud->points[j].x;
+    cloud->points[j].x = cloud->points[j].z;
+    cloud->points[j].z = - cloud->points[j].y;
+    cloud->points[j].y = - x_temp;
+  }
+
   // 3. Transmit data to viewer at null pose:
   // 3a. Transmit Pose:
-  int pose_id=1;
+  int pose_id=msg->utime;
   bool reset = true;
 
   int null_obj_collection= 400;
@@ -113,8 +150,8 @@ static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, cons
   vs_obj_collection_t objs;
   objs.id = null_obj_collection;
   objs.name = (char*)  "Zero Pose"; // "Trajectory";
-  objs.type = 1; // a pose
-  objs.reset = false; // true will delete them from the viewer
+  objs.type = 5; // a pose
+  objs.reset = true; // true will delete them from the viewer
   objs.nobjs = 1;
   vs_obj_t poses[objs.nobjs];
   poses[0].id = (int64_t) pose_id;// which specific pose
@@ -128,17 +165,31 @@ static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, cons
   vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);
 
   // 3b. Send Data:
-  pcdXYZRGB_to_lcm(lcm , *cloud, msg->utime,null_obj_collection,pose_id,reset);
+  // Send the Model, hanging on the zero-zero pose
+  Ptcoll_cfg ptcoll_cfg;
+  ptcoll_cfg.reset=true;
+  ptcoll_cfg.point_lists_id =msg->utime;
+  ptcoll_cfg.collection = null_obj_collection;
+  ptcoll_cfg.element_id =(int64_t) pose_id;// which specific pose does this hang on .. all the same
+  ptcoll_cfg.name.assign("Model");  
+  ptcoll_cfg.id = 401;
+  ptcoll_cfg.npoints =  cloud->points.size();
+  ptcoll_cfg.type =1;
+  float colorm_temp0[] ={-10.0,-1.0,-1.0,-1.0};
+  ptcoll_cfg.rgba.assign(colorm_temp0,colorm_temp0+4*sizeof(float));
+
+  pc_vis_->pcdXYZRGB_to_lcm(ptcoll_cfg, *cloud);
 }
 
 int
 main(int argc, char ** argv)
 {
-  lcm = lcm_create(NULL);
-  if(!lcm)
-    return 1;
 
-  drc_pointcloud2_t_subscribe(lcm, "WIDE_STEREO_POINTS", &on_pointcloud, NULL);
+  lcm_t* publish_lcm=lcm_create(NULL);
+
+  lcm = lcm_create(NULL);
+  local_map app(lcm);//= local_map(publish_lcm);
+
 
   while(1)
     lcm_handle(lcm);
