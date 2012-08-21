@@ -1,0 +1,18 @@
+digraph G {
+node [shape=box];
+"world" [label="world"];
+"LRAIL" [label="LRAIL"];
+"RRAIL" [label="RRAIL"];
+node [shape=box3d,  color=red];
+"Outer_Volume" [label="Outer_Volume"];
+"Inner_Volume" [label="Inner_Volume"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"world" -> "base_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"base_joint" -> "Outer_Volume"
+"Outer_Volume" -> "Inner_Volume_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"Inner_Volume_joint" -> "Inner_Volume"
+"Outer_Volume" -> "LRAIL_joint" [label="xyz: 0 -4 0 \nrpy: 0 -0 0"]
+"LRAIL_joint" -> "LRAIL"
+"Outer_Volume" -> "RRAIL_joint" [label="xyz: 0 4 0 \nrpy: 0 -0 0"]
+"RRAIL_joint" -> "RRAIL"
+}

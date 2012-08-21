@@ -12,3 +12,4 @@ sensing
 viewer
 perception
 control
+object_template_model

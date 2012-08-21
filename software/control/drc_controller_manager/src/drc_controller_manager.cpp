@@ -20,7 +20,6 @@ namespace drc_control{
     std::string robot_name;
     std::string urdf_xml_string; 
     urdf::Model urdf_robot_model;
-
   };
 
  void onUrdfMessage(const lcm::ReceiveBuffer* rbuf, 
