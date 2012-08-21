@@ -20,6 +20,86 @@
 using namespace std;
 
 
+pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
+    publish_lcm_(publish_lcm){
+
+}
+
+
+bool pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
+   
+  vs_point3d_list_collection_t plist_coll;
+  plist_coll.id = ptcoll_cfg.id;
+  plist_coll.name =(char*)   ptcoll_cfg.name.c_str();
+  plist_coll.type =ptcoll_cfg.type; // collection of points
+  plist_coll.reset = ptcoll_cfg.reset;
+  plist_coll.nlists = 1; // number of seperate sets of points
+  vs_point3d_list_t plist[plist_coll.nlists];
+  
+  // loop here for many lists
+  vs_point3d_list_t* this_plist = &(plist[0]);
+  // 3.0: header
+  this_plist->id =ptcoll_cfg.point_lists_id; //bot_timestamp_now();
+  this_plist->collection = ptcoll_cfg.collection;
+  this_plist->element_id = ptcoll_cfg.element_id;
+  // 3.1: points/entries (rename) 
+  vs_point3d_t* points = new vs_point3d_t[ptcoll_cfg.npoints];
+  this_plist->npoints = ptcoll_cfg.npoints;
+  // 3.2: colors:
+  vs_color_t* colors = new vs_color_t[ptcoll_cfg.npoints];
+  //points->colors = NULL;
+  this_plist->ncolors = ptcoll_cfg.npoints;
+  // 3.3: normals:
+  this_plist->nnormals = 0;
+  this_plist->normals = NULL;   
+  // 3.4: point ids:
+  this_plist->npointids = ptcoll_cfg.npoints;
+  int64_t* pointsids= new int64_t[ptcoll_cfg.npoints];
+  
+  float rgba[4];
+  for(int j=0; j<ptcoll_cfg.npoints; j++) {  //Nransac
+      if (ptcoll_cfg.rgba[0] <-0.5){ // if rgba value is negative use it
+	// PARTICAL FIX: now using .r.g.b values
+	//int rgba_one = *reinterpret_cast<int*>(&cloud.points[j].rgba);
+	//rgba[3] =((float) ((rgba_one >> 24) & 0xff))/255.0;
+	//rgba[2] =((float) ((rgba_one >> 16) & 0xff))/255.0;
+	//rgba[1] =((float) ((rgba_one >> 8) & 0xff))/255.0;
+	//rgba[0] =((float) (rgba_one & 0xff) )/255.0;      
+	
+	rgba[2] = cloud.points[j].b/255.0;
+	rgba[1] = cloud.points[j].g/255.0;
+	rgba[0] = cloud.points[j].r/255.0;
+      }else{ // use the rgba value
+	//rgba[3] = ptcoll_cfg.rgba[3];
+	rgba[2] = ptcoll_cfg.rgba[2];
+	rgba[1] = ptcoll_cfg.rgba[1];
+	rgba[0] = ptcoll_cfg.rgba[0];
+	
+      }
+      
+      colors[j].r =  rgba[0]; // points_collection values range 0-1
+      colors[j].g =  rgba[1];
+      colors[j].b = rgba[2];
+      points[j].x = cloud.points[j].x;
+      points[j].y = cloud.points[j].y;
+      points[j].z = cloud.points[j].z;
+      pointsids[j] = ptcoll_cfg.element_id+j; //bot_timestamp_now();
+  }   
+ 
+  this_plist->colors = colors;
+  this_plist->points = points;
+  this_plist->pointids = pointsids;
+  plist_coll.point_lists = plist;
+  vs_point3d_list_collection_t_publish(publish_lcm_,"POINTS_COLLECTION",&plist_coll);  
+  
+  
+  delete pointsids;
+  delete colors;
+  delete points;
+}
+
+
+//////////////////////////////////////// Older Code - not put into the class yet
 //from hordur:
 //time x y z qx qy qz qw - all floating points
 void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses){
@@ -434,77 +514,7 @@ bool PolygonMesh_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PolygonMesh::Ptr 
 
 
 
-bool pcdXYZRGB_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
-   
-  vs_point3d_list_collection_t plist_coll;
-  plist_coll.id = ptcoll_cfg.id;
-  plist_coll.name =(char*)   ptcoll_cfg.name.c_str();
-  plist_coll.type =ptcoll_cfg.type; // collection of points
-  plist_coll.reset = ptcoll_cfg.reset;
-  plist_coll.nlists = 1; // number of seperate sets of points
-  vs_point3d_list_t plist[plist_coll.nlists];
-  
-  // loop here for many lists
-  vs_point3d_list_t* this_plist = &(plist[0]);
-  // 3.0: header
-  this_plist->id =ptcoll_cfg.point_lists_id; //bot_timestamp_now();
-  this_plist->collection = ptcoll_cfg.collection;
-  this_plist->element_id = ptcoll_cfg.element_id;
-  // 3.1: points/entries (rename) 
-  vs_point3d_t* points = new vs_point3d_t[ptcoll_cfg.npoints];
-  this_plist->npoints = ptcoll_cfg.npoints;
-  // 3.2: colors:
-  vs_color_t* colors = new vs_color_t[ptcoll_cfg.npoints];
-  //points->colors = NULL;
-  this_plist->ncolors = ptcoll_cfg.npoints;
-  // 3.3: normals:
-  this_plist->nnormals = 0;
-  this_plist->normals = NULL;   
-  // 3.4: point ids:
-  this_plist->npointids = ptcoll_cfg.npoints;
-  int64_t* pointsids= new int64_t[ptcoll_cfg.npoints];
-  
-  float rgba[4];
-  for(int j=0; j<ptcoll_cfg.npoints; j++) {  //Nransac
-      if (ptcoll_cfg.rgba[0] <-0.5){ // if rgba value is negative use it
-	// PARTICAL FIX: now using .r.g.b values
-	//int rgba_one = *reinterpret_cast<int*>(&cloud.points[j].rgba);
-	//rgba[3] =((float) ((rgba_one >> 24) & 0xff))/255.0;
-	//rgba[2] =((float) ((rgba_one >> 16) & 0xff))/255.0;
-	//rgba[1] =((float) ((rgba_one >> 8) & 0xff))/255.0;
-	//rgba[0] =((float) (rgba_one & 0xff) )/255.0;      
-	
-	rgba[2] = cloud.points[j].b/255.0;
-	rgba[1] = cloud.points[j].g/255.0;
-	rgba[0] = cloud.points[j].r/255.0;
-      }else{ // use the rgba value
-	//rgba[3] = ptcoll_cfg.rgba[3];
-	rgba[2] = ptcoll_cfg.rgba[2];
-	rgba[1] = ptcoll_cfg.rgba[1];
-	rgba[0] = ptcoll_cfg.rgba[0];
-	
-      }
-      
-      colors[j].r =  rgba[0]; // points_collection values range 0-1
-      colors[j].g =  rgba[1];
-      colors[j].b = rgba[2];
-      points[j].x = cloud.points[j].x;
-      points[j].y = cloud.points[j].y;
-      points[j].z = cloud.points[j].z;
-      pointsids[j] = ptcoll_cfg.element_id+j; //bot_timestamp_now();
-  }   
- 
-  this_plist->colors = colors;
-  this_plist->points = points;
-  this_plist->pointids = pointsids;
-  plist_coll.point_lists = plist;
-  vs_point3d_list_collection_t_publish(lcm,"POINTS_COLLECTION",&plist_coll);  
-  
-  
-  delete pointsids;
-  delete colors;
-  delete points;
-}
+
 
 bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZ> &cloud){
    
@@ -600,323 +610,6 @@ _matrix_vector_multiply_3x4_4d (const double m[12], const double v[4],
 }
 
 
-
-
-void do_unpack_openni_ros_frame(void *user_data,pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-//  unpack->kcal = state->kcal;
-//  unpack->rgb_data=  state->rgb_data;
-//  unpack->msg =(kinect_frame_msg_t*) msg;  
-//  do_unpack_kinect_frame(unpack,cloud);
-  UnpackOpenniROS* self = static_cast<UnpackOpenniROS*>(user_data);
-
-  
-  // 1. Unpack /*&*/ Decompress the data:
-  // 1.1 RGB:
-  // TODO check width, height
-  if(self->msg->image.image_data_format == OPENNI_IMAGE_MSG_T_VIDEO_RGB) {
-      memcpy(self->rgb_data, self->msg->image.image_data, 
-	      self->msg->depth.width * self->msg->depth.height * 3);
-  } else if(self->msg->image.image_data_format == OPENNI_IMAGE_MSG_T_VIDEO_RGB_JPEG) {
-    jpegijg_decompress_8u_rgb(self->msg->image.image_data, self->msg->image.image_data_nbytes,
-            self->rgb_data, self->msg->image.width, self->msg->image.height, self->msg->image.width* 3);
-  }
-  //cout << (int) self->msg->depth.compression << "\n";
-  
-  /// 1.2. DEPTH:
-  uint8_t* uncompress_buffer;
-  int uncompress_buffer_size;
-  const uint8_t* depth_data = self->msg->depth.depth_data;
-  float* disparity_array = (float*) malloc(self->msg->depth.width * self->msg->depth.height * sizeof(float)); 
-  // 1.2.1 De-compress if necessary:
-  if(self->msg->depth.compression != OPENNI_DEPTH_MSG_T_COMPRESSION_NONE) {
-    //std:: cout << "compression \n ";
-    if(self->msg->depth.uncompressed_size > uncompress_buffer_size) {
-      uncompress_buffer_size = self->msg->depth.uncompressed_size;
-      uncompress_buffer = (uint8_t*) realloc(uncompress_buffer, uncompress_buffer_size);
-    }
-    unsigned long dlen = self->msg->depth.uncompressed_size;
-    int status = uncompress(uncompress_buffer, &dlen, 
-	      self->msg->depth.depth_data, self->msg->depth.depth_data_nbytes);
-    if(status != Z_OK) {
-      return;
-    }
-    depth_data = uncompress_buffer;
-  }else{
-    //std:: cout << "no compression \n ";
-  }
-
-  // 1.2.2 unpack raw byte data into float values in mm
-  int npixels = self->msg->depth.width * self->msg->depth.height;
-  //float* val = reinterpret_cast<float*>( self->msg->depth.depth_data );
-  const float* val = reinterpret_cast<const float*>( depth_data );
-  for(int i=0; i<npixels; i++) {
-    //cout << i << " i\n";
-    disparity_array[i] = val[i];
-  }
-
-  /// 2 Calculate transformation matrices:
-  double depth_to_rgb_uvd[12];
-  double depth_to_depth_xyz[16];
-  kinect_calib_get_depth_uvd_to_rgb_uvw_3x4(self->kcal, depth_to_rgb_uvd);
-  kinect_calib_get_depth_uvd_to_depth_xyz_4x4(self->kcal, depth_to_depth_xyz);
-  double depth_to_depth_xyz_trans[16];
-  //_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
-  bot_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
-
-  cloud->width    = (self->msg->depth.width/self->decimate_image[0]) ;
-  cloud->height   = (self->msg->depth.height/self->decimate_image[1]);
-  cloud->is_dense = false;
-  cloud->points.resize (cloud->width * cloud->height);
-  double xyzw[4];
-  int j=0;
-  int j2=0;
-  for(int v=0; v<self->msg->depth.height; v=v+ self->decimate_image[1]) { // t2b self->height 480
-    for(int u=0; u<self->msg->depth.width; u=u+self->decimate_image[0] ) {  //l2r self->width 640
-      // 3.4.1 compute distorted pixel coordinates
-//      uint16_t disparity = 
-      double uvd_depth[4] = { u, v, disparity_array[v*self->msg->depth.width+u], 1 };
-      double uvd_rgb[3];
-      _matrix_vector_multiply_3x4_4d(depth_to_rgb_uvd, uvd_depth, uvd_rgb);
-      double uv_rect[2] = {
-	  uvd_rgb[0] / uvd_rgb[2],
-	  uvd_rgb[1] / uvd_rgb[2]
-      };
-      double uv_dist[2];
-
-      kinect_calib_distort_rgb_uv(self->kcal, uv_rect, uv_dist);
-      int u_rgb = uv_dist[0] + 0.5;
-      int v_rgb = uv_dist[1] + 0.5;
-      uint8_t r, g, b;
-  //    if(u_rgb >= msg->depth.width || u_rgb < 0 || v_rgb >= msg->depth.height || v_rgb < 0) {
-//	  r = g = b = 0;
-  //    } else {
-	  r = self->rgb_data[v_rgb*self->msg->depth.width*3 + u_rgb*3 + 0];
-	  g = self->rgb_data[v_rgb*self->msg->depth.width*3 + u_rgb*3 + 1];
-	  b = self->rgb_data[v_rgb*self->msg->depth.width*3 + u_rgb*3 + 2];
-    //  }
-      
-      
-   //   r=g=b=0;
-	  r = self->rgb_data[v*self->msg->depth.width*3 + u*3 + 0];
-	  g = self->rgb_data[v*self->msg->depth.width*3 + u*3 + 1];
-	  b = self->rgb_data[v*self->msg->depth.width*3 + u*3 + 2];
-
-	  
-     // colors[j].r = ((float) r)/255.0; // points_collection values range 0-1
-     // colors[j].g = ((float) g)/255.0;
-     // colors[j].b = ((float) b)/255.0;
-      // printf("col: %f,%f,%f\n",colors[j].r,colors[j].g,colors[j].b);
-      
-      // 3.4.2 find the xyz location of the points:
-      //_matrix_multiply(depth_to_depth_xyz, 4, 4, 
-      //      uvd_depth, 4, 1, xyzw);
-      bot_matrix_multiply(depth_to_depth_xyz, 4, 4, 
-	      uvd_depth, 4, 1, xyzw);      
-
-      // printf("a: %d,%d,%f,%f,%f,%f,%f\n",u,v,(double)disparity,xyzw[0],xyzw[1],xyzw[2],xyzw[3]);
-      // TODO: look up a more accurate transformation between vehicle pose and camera pose
-      // this is sufficient for now:
-  
-        double constant = 1.0f / self->kcal->intrinsics_rgb.fx ;
-        //(cloud_msg->width);
-          //float constant = 1.0f / device_->getImageFocalLength (cloud_msg->width);
-      
-	double disparity_d = disparity_array[v*self->msg->depth.width+u];
-	
-//        entries[j].y = - (((double) u)- 319.50)*disparity_d*constant;
- //	entries[j].z = - (((double) v)- 239.50)*disparity_d*constant;
-   //     entries[j].x = disparity_d;// -xyzw[1]/xyzw[3];
-      
-      
-//      entries[j].y = -xyzw[0]/xyzw[3];
-//      entries[j].z = -xyzw[1]/xyzw[3];
-//      entries[j].x = xyzw[2]/xyzw[3];
-      
-      // 3.4.3 do some light filtering on the points:
-      // NB: these points are still published though...
-//       if (self->do_light_filtering){      
-// 	if (entries[j].x > 5.5){ // remove all points 5.5+ m away
-// 	  entries[j].x=0;
-// 	  entries[j].y=0;
-// 	  entries[j].z=0;
-// 	}else if (entries[j].x < 0){ // remove all points behind camera (null ranges)
-// 	  entries[j].x=0;
-// 	  entries[j].y=0;
-// 	  entries[j].z=0;
-// 	}
-//       }
-// 
-
-//       cloud->points[j2].y =  -xyzw[0]/xyzw[3];//y right+ (check)
-//       cloud->points[j2].z = -xyzw[1]/xyzw[3];//z up+
-//       cloud->points[j2].x = xyzw[2]/xyzw[3]; //x forward+
-	
-	
-      // 10x pre-decimated version - for ros tool chain:
-      //cloud->points[j2].y =  - (((double) u)- 31.950)*10*disparity_d*constant;
-      //cloud->points[j2].z = - (((double) v)- 23.950)*10*disparity_d*constant;
-
-      // Original not-pre decimated verison:
-      cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant;
-      cloud->points[j2].z = - (((double) v)- 239.50)*disparity_d*constant;
-      
-      cloud->points[j2].x = disparity_d;// -xyzw[1]/xyzw[3];
-
-      unsigned char* rgba_ptr = (unsigned char*)&cloud->points[j2].rgba;
-      (*rgba_ptr) =  r;     // actually blue
-      (*(rgba_ptr+1)) =  g; // actually green
-      (*(rgba_ptr+2)) =  b; // actually blue
-      (*(rgba_ptr+3)) =  0;
-      j2++;
-
-
-
-     // pointids[j] = bot_timestamp_now();
-     // j++;
-      // xyzw[0] = xyzw[0]/xyzw[3];
-      // xyzw[1] = xyzw[1]/xyzw[3];
-      // xyzw[2] = xyzw[2]/xyzw[3];
-      // printf("b: %d,%d,%f,%f,%f\n",u,v,xyzw[0],xyzw[1],xyzw[2]);
-    }
-  }   
-//   points->colors = colors;
-//   points->points = entries;
-//   points->pointids = pointids;
-//   point_lists.point_lists = point_list;
-//   vs_point3d_list_collection_t_publish(self->publish_lcm,"POINTS_COLLECTION",&point_lists);  
-//  
-// 	  cout << "\n";
-//   
-//   cout << points->npointids << "\n";
-// 
-
-  free(disparity_array);
-
-}
-
-
-
-void do_unpack_kinect_frame(void *user_data,pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-  UnpackFreenectLCM* state = static_cast<UnpackFreenectLCM*>(user_data);
-  
-  // 1. Unpack & Decompress the data:
-  // 1.1 RGB:
-  // TODO check width, height
-  if(state->msg->image.image_data_format == KINECT_IMAGE_MSG_T_VIDEO_RGB) {
-      memcpy(state->rgb_data, state->msg->image.image_data, 
-	      state->msg->depth.width * state->msg->depth.height * 3);
-  } else if(state->msg->image.image_data_format == KINECT_IMAGE_MSG_T_VIDEO_RGB_JPEG) {
-    jpegijg_decompress_8u_rgb(state->msg->image.image_data, state->msg->image.image_data_nbytes,
-            state->rgb_data, state->msg->image.width, state->msg->image.height, state->msg->image.width* 3);
-  }
-
-  /// 1.2. DEPTH:
-  uint8_t* uncompress_buffer;
-  int uncompress_buffer_size;
-  const uint8_t* depth_data = state->msg->depth.depth_data;
-  uint16_t* disparity_array = (uint16_t*) malloc(state->msg->depth.width * state->msg->depth.height * sizeof(uint16_t)); 
-  // 1.2.1 De-compress if necessary:
-  if(state->msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
-    //std:: cout << "compression \n ";
-    if(state->msg->depth.uncompressed_size > uncompress_buffer_size) {
-      uncompress_buffer_size = state->msg->depth.uncompressed_size;
-      uncompress_buffer = (uint8_t*) realloc(uncompress_buffer, uncompress_buffer_size);
-    }
-    unsigned long dlen = state->msg->depth.uncompressed_size;
-    int status = uncompress(uncompress_buffer, &dlen, 
-	      state->msg->depth.depth_data, state->msg->depth.depth_data_nbytes);
-    if(status != Z_OK) {
-      return;
-    }
-    depth_data = uncompress_buffer;
-  }else{
-    //std:: cout << "no compression \n ";
-  }
-  
-  // 1.2.2 unpack raw byte data into int values
-  int npixels = state->msg->depth.width * state->msg->depth.height;
-  switch(state->msg->depth.depth_data_format) {
-    case KINECT_DEPTH_MSG_T_DEPTH_11BIT:
-      if(G_BYTE_ORDER == G_LITTLE_ENDIAN) {
-	int16_t* rdd = (int16_t*) depth_data;
-	int i;
-	for(i=0; i<npixels; i++) {
-	  int d = rdd[i];
-	  disparity_array[i] = d;
-	}
-      } else {
-	fprintf(stderr, "Big endian systems not supported\n");
-      }
-      break;
-    case KINECT_DEPTH_MSG_T_DEPTH_10BIT:
-      fprintf(stderr, "10-bit depth data not supported\n");
-      break;
-    default:
-      break;
-  }  
-
-  /// 2 Calculate transformation matrices:
-  double depth_to_rgb_uvd[12];
-  double depth_to_depth_xyz[16];
-  kinect_calib_get_depth_uvd_to_rgb_uvw_3x4(state->kcal, depth_to_rgb_uvd);
-  kinect_calib_get_depth_uvd_to_depth_xyz_4x4(state->kcal, depth_to_depth_xyz);
-  double depth_to_depth_xyz_trans[16];
-  //_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
-  bot_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
-    
-  // 3 for each depth point find the corresponding xyz and then RGB
-  //   then put into PCL structure
-  cloud->width    = (state->msg->depth.width/state->decimate_image[0]) ;
-  cloud->height   = (state->msg->depth.height/state->decimate_image[1]);
-  cloud->is_dense = false;
-  cloud->points.resize (cloud->width * cloud->height);
-  double xyzw2[4];
-  int j2=0;
-  // NB: the order of these loop was changed... aug 2011. important
-  for(int v=0; v<state->msg->depth.height; v=v+ state->decimate_image[1]) { // t2b state->height 480
-     for(int u=0; u<state->msg->depth.width; u=u+state->decimate_image[0] ) {  //l2r state->width 640
-      // 3.4.1 compute distorted pixel coordinates
-      uint16_t disparity = disparity_array[v*state->msg->depth.width+u];
-      double uvd_depth[4] = { u, v, disparity, 1 };
-      double uvd_rgb[3];
-      _matrix_vector_multiply_3x4_4d(depth_to_rgb_uvd, uvd_depth, uvd_rgb);
-      double uv_rect[2] = {
-	  uvd_rgb[0] / uvd_rgb[2],
-	  uvd_rgb[1] / uvd_rgb[2]
-      };
-      double uv_dist[2];
-      kinect_calib_distort_rgb_uv(state->kcal, uv_rect, uv_dist);
-      int u_rgb = uv_dist[0] + 0.5;
-      int v_rgb = uv_dist[1] + 0.5;
-      uint8_t r, g, b;
-      if(u_rgb >= state->msg->depth.width || u_rgb < 0 || v_rgb >= state->msg->depth.height || v_rgb < 0) {
-	  r = g = b = 0;
-      } else {
-	  r = state->rgb_data[v_rgb*state->msg->depth.width*3 + u_rgb*3 + 0];
-	  g = state->rgb_data[v_rgb*state->msg->depth.width*3 + u_rgb*3 + 1];
-	  b = state->rgb_data[v_rgb*state->msg->depth.width*3 + u_rgb*3 + 2];
-      }
-      // 3.4.2 find the xyz location of the points:
-      bot_matrix_multiply(depth_to_depth_xyz, 4, 4, 
-	      uvd_depth, 4, 1, xyzw2);
-
-      cloud->points[j2].y = -xyzw2[0]/xyzw2[3];//y right+ (check)
-      cloud->points[j2].z = -xyzw2[1]/xyzw2[3];//z up+
-      cloud->points[j2].x = xyzw2[2]/xyzw2[3]; //x forward+
-      unsigned char* rgba_ptr = (unsigned char*)&cloud->points[j2].rgba;
-      (*rgba_ptr) =  r;
-      (*(rgba_ptr+1)) =  g;
-      (*(rgba_ptr+2)) =  b;
-      (*(rgba_ptr+3)) =  0;
-      j2++;
-    }
-  }     
-  
-  free(disparity_array);
-  if(state->msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
-    free(uncompress_buffer); // memory leak bug fixed
-  }
-}
 
 
 /*

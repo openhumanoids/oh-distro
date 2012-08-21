@@ -1,5 +1,6 @@
-#ifndef LIB_KMCL_HPP_
-#define LIB_KMCL_HPP_
+#ifndef POINTCLOUD_VIS_HPP_
+#define POINTCLOUD_VIS_HPP_
+
 
 #include <lcm/lcm.h>
 #include <iostream>
@@ -37,20 +38,12 @@
 
 #include <vector>
 #include <algorithm>
-#include "jpeg_utils/jpeg-utils.h"
-#include "jpeg_utils/jpeg-utils-ijg.h"
-
-
-#include <lcmtypes/openni_frame_msg_t.h>
-#include <lcmtypes/kinect_frame_msg_t.h>
-#include <kinect/kinect-utils.h>
 
 using namespace pcl;
 using namespace pcl::io;
-// removed due to conflict with VS_SLAM
-//typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudPtr;
 
 
+// This should be depricated:
 typedef struct _Ptcoll_cfg
 {
   int id;
@@ -64,6 +57,22 @@ typedef struct _Ptcoll_cfg
   //float rgba[4];
   std::vector <float> rgba;
 }Ptcoll_cfg;
+
+
+class pointcloud_vis {
+  public:
+    pointcloud_vis (lcm_t* publish_lcm);
+
+    // Push a colour PointCloud to LCM as a points collection
+    // assumes that you want to connect it to the collection specified in Ptcoll_cfg
+    bool pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+
+  private:
+    lcm_t *publish_lcm_; 
+
+};
+
+
 
 
 // vs_obj_t with a quaterion
@@ -162,9 +171,7 @@ bool PolygonMesh_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PolygonMesh::Ptr 
 bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,std::vector<ObjQ> objq_coll);
 
 
-// Push a colour PointCloud to LCM as a points collection
-// assumes that you want to connect it to the collection specified in Ptcoll_cfg
-bool pcdXYZRGB_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+
 
 
 // Push an un-coloured PointCloud to LCM as a points collection
@@ -173,34 +180,6 @@ bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointX
 
 
 void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name);
-
-typedef struct _UnpackOpenniROS
-{
-  openni_frame_msg_t* msg;
-  uint8_t* rgb_data;
-  KinectCalibration* kcal;    
-  int decimate_image[2];
-} UnpackOpenniROS;
-
-
-
-// Unpack the opennni ros data into a point cloud 
-// also does conversion into x,y,z 
-void do_unpack_openni_ros_frame(void *user_data,pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
-
-typedef struct _UnpackFreenectLCM
-{
-  kinect_frame_msg_t* msg;
-  uint8_t* rgb_data;
-  KinectCalibration* kcal;    
-  int decimate_image[2];
-} UnpackFreenectLCM;
-
-// Unpack the kinect disparity lcm into a point cloud 
-// also does conversion into x,y,z
-void do_unpack_kinect_frame(void *user_data,pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
-
-
 
 typedef struct _BasicPlane
 {
