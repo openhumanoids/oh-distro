@@ -19,7 +19,6 @@ typedef exprtk::symbol_table<double> ParamTable_t;
 std::string unXacroString (std::string expression_string);
 std::string removeWhiteSpaceInExpressions (const std::string &string);
 bool isExpression(std::string str);
-double parseExpression(std::string expression_string, ParamTable_t &symbol_table);
 
 //Checks if an xml tag is an expression. If it is not, it performs a lexical cast and returns the value. 
 // Or else it compiles the expression and returns the value. 

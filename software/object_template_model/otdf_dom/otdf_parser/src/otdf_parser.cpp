@@ -215,8 +215,6 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
   {
     boost::shared_ptr<Bounding_volume> bounding_volume;
     bounding_volume.reset(new Bounding_volume);
-
-
     
     try {
       bounding_volume->initXml(bvolume_xml,model->symbol_table);
@@ -260,7 +258,6 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
       else
       {
         model->joints_.insert(make_pair(joint->name,joint));
-
         //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
       }
     }

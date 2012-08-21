@@ -22,10 +22,10 @@
      or a dummy base link (<link name="xxx" \> for movable objects).
   2) The element following the root must always be the outer most bounding volume.
   3) bounding volumes can have links, or other bounding volumes as children.
-  4) links can only have other links as children.  (Root link is an exception) 
+  4) links can have links, or other bounding volumes as children.  
   5) joints associate bounding volumes and links in a tree structure.
-  6) link pattern and joint pattern tags specifies a set of links or joints that are separated 
-     from each other by a fixed relative transformation.
+  6) link pattern and joint pattern tags specifies a sequence of links or joints that are separated 
+     by a fixed relative transformation.
   7) param tags specify the arguments of the templated objects. They must also have a default 
      value specified with them.
   8) All other values in the OTDF file can be written as expressions of the specified parameters

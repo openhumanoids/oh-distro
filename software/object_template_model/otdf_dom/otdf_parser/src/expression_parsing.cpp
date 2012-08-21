@@ -11,12 +11,7 @@
 
 namespace otdf
 {
-typedef exprtk::symbol_table<double> ParamTable_t;
-/*
-std::string unXacroString (std::string expression_string);
-bool isExpression(std::string str);
-double parseExpression(std::string expression_string, ParamTable_t &symbol_table);
-double lexicalCastOrExpressionParsing(std::string attribute_str, TiXmlElement *_xml, ParamTable_t &symbol_table);*/
+//typedef exprtk::symbol_table<double> ParamTable_t;
 
 // removes ${ and } in string.
 std::string unXacroString (std::string expression_string)
@@ -75,26 +70,6 @@ bool isExpression(std::string str)
     size_t found = str.find("${");
     return (found != std::string::npos);
 }
-
-// double parseExpression(std::string expression_string, ParamTable_t &symbol_table)
-// {
-//   // removes ${ and } in string. 
-//   expression_string=unXacroString(expression_string);
-//    
-//    exprtk::expression<double> expression;
-//    expression.register_symbol_table(symbol_table);
-// 
-//    exprtk::parser<double> parser;
-//  //  parser.compile(expression_string,expression); 
-//    // expression string only needs to be compiled at init.
-//   if (!parser.compile(expression_string,expression))
-//    {
-//       std::cout << "Error: " << parser.error() << "\tExpression: " << expression_string << std::endl;
-//       return -1;
-//    }
-//   
-//   return expression.value();
-// }
 
 
 bool compileExpression(std::string expression_string, ParamTable_t &symbol_table, exprtk::expression<double> &expression)
