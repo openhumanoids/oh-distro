@@ -23,9 +23,11 @@ class local_map{
     Isometry3dTime current_pose;
     bool current_pose_init; // have we started
 
-    // Fixed transform initally:
+    // Fixed transform [initally hardcoded]:
     Eigen::Isometry3d camera_to_lidar;
 
+    // Current submap clouds
+    pcl::PointCloud<PointXYZRGB>::Ptr cloud;
 
     static void pointcloud_handler_aux(const lcm_recv_buf_t* rbuf,
                                 const char* channel,

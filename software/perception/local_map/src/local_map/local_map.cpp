@@ -40,6 +40,10 @@ local_map::local_map(lcm_t* publish_lcm):
   camera_to_lidar.translation()  << 0.275, 0.0, 0.252;
   camera_to_lidar.rotate(quat);
 
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clf (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  cloud = cloud_clf;
+
   // Unpack Config:
   pc_lcm_ = new pointcloud_lcm(publish_lcm_);
 
@@ -84,11 +88,11 @@ void local_map::pose_handler(const bot_core_pose_t *msg){
 void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
   if (!current_pose_init){     return;  }
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   double maxRange = 9.9;//29.7;
   double validBeamAngles[] ={-2.1,2.1};
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
-        msg->radstep, cloud, maxRange,
+        msg->radstep, lidar_cloud, maxRange,
         validBeamAngles[0], validBeamAngles[1]);
 
   // 3. Transmit data to viewer at null pose:
@@ -103,7 +107,12 @@ void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
   Eigen::Isometry3d lidar_pose = current_pose.pose*camera_to_lidar;
   Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
   pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(601, *cloud, pose_id, pose_id);
+  pc_vis_->ptcld_to_lcm_from_list(601, *lidar_cloud, pose_id, pose_id);
+
+
+
+  cloud += lidar_cloud;
+
 }
 
 

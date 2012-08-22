@@ -117,6 +117,7 @@ void unpack_pointcloud2(const drc_pointcloud2_t *msg,
   std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
 
   // Transform cloud to that its in robotic frame:
+  // Could also apply the cv->robotic transform directly
   double x_temp;
   for(int j=0; j<cloud->points.size(); j++) {
     x_temp = cloud->points[j].x;
@@ -124,8 +125,6 @@ void unpack_pointcloud2(const drc_pointcloud2_t *msg,
     cloud->points[j].z = - cloud->points[j].y;
     cloud->points[j].y = - x_temp;
   }
-  std::cout << "pxout\n";
-
 }
 
 
