@@ -26,170 +26,108 @@ lcm_t * lcm;
 
 
 local_map::local_map(lcm_t* publish_lcm):
-      publish_lcm_(publish_lcm){
+      publish_lcm_(publish_lcm),current_pose(0, Eigen::Isometry3d::Identity())  {
+
+  current_pose.pose.setIdentity();
+  current_pose_init = false;
+
+  // camera-to-lidar tf
+  // TODO read from config later:
+  // directly matches the frames in gazebo
+  Eigen::Quaterniond quat =euler_to_quat(0,0,M_PI/2); // ypr
+  Eigen::Isometry3d pose;
+  camera_to_lidar.setIdentity();
+  camera_to_lidar.translation()  << 0.275, 0.0, 0.252;
+  camera_to_lidar.rotate(quat);
+
+  // Unpack Config:
+  pc_lcm_ = new pointcloud_lcm(publish_lcm_);
 
 
-  pc_vis_ = new pointcloud_vis(publish_lcm_);  
+  // Vis Config:
+  pc_vis_ = new pointcloud_vis(publish_lcm_);
+  // obj: id name type reset
+  // pts: id name type reset objcoll usergb rgb
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600,"Laser Pose",5,0) );
+  float colors_a[] ={1.0,0.0,0.0};
+  vector <float> colors_v;
+  colors_v.assign(colors_a,colors_a+4*sizeof(float));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(601,"Laser"         ,1,0, 600,1,colors_v));
 
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(400,"Camera Pose",5,0) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(401,"Current Camera",1,1, 400,0,colors_v));
+
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(800,"Laser Map Pose",5,0) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(801,"Laser Map"     ,1,0, 800,1,colors_v));
+
+  // LCM:
   lcm_t* subscribe_lcm_ = publish_lcm_;
   drc_pointcloud2_t_subscribe(subscribe_lcm_, "WIDE_STEREO_POINTS",
                              local_map::pointcloud_handler_aux, this);
-
-
   bot_core_planar_lidar_t_subscribe(subscribe_lcm_, "BASE_SCAN",
                              local_map::lidar_handler_aux, this);
+  bot_core_pose_t_subscribe(subscribe_lcm_, "POSE",
+      local_map::pose_handler_aux, this);
+}
 
+void local_map::pose_handler(const bot_core_pose_t *msg){
+  current_pose.pose.setIdentity();
+  current_pose.pose.translation() << msg->pos[0], msg->pos[1], msg->pos[2];
+  Eigen::Quaterniond m;
+  m  = Eigen::Quaterniond(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
+  current_pose.pose.rotate(m);
+  current_pose.utime = msg->utime;
+
+  if (!current_pose_init){     current_pose_init = true;  }
 }
 
 void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
+  if (!current_pose_init){     return;  }
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-
-
-//  double spatialDecimationThresh = 0.2;
-//  int beam_skip=3;
-//  smPoint * points = (smPoint *) calloc(msg->nranges, sizeof(smPoint));
-  double maxRange = 29.7;
+  double maxRange = 9.9;//29.7;
   double validBeamAngles[] ={-2.1,2.1};
-
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
-        msg->radstep, cloud, 29.7,
+        msg->radstep, cloud, maxRange,
         validBeamAngles[0], validBeamAngles[1]);
-
-
-
-
- // 3. Transmit data to viewer at null pose:
-  // 3a. Transmit Pose:
-  int pose_id=msg->utime;
-  bool reset = true;
-
-  int null_obj_collection= 600;
-  // Send a pose to hang the model on:
-  vs_obj_collection_t objs;
-  objs.id = null_obj_collection;
-  objs.name = (char*)  "Zero Pose LIDAR"; // "Trajectory";
-  objs.type = 5; // a pose
-  objs.reset = true; // true will delete them from the viewer
-  objs.nobjs = 1;
-  vs_obj_t poses[objs.nobjs];
-  poses[0].id = (int64_t) pose_id;// which specific pose
-  // directly matches the frames in gazebo: 
-  // <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/>
-  poses[0].x = 0.275;
-  poses[0].y = 0.0;
-  poses[0].z = 0.252; //0.275 0.0 0.252
-  poses[0].yaw =  0;
-  poses[0].pitch = 0;
-  poses[0].roll = M_PI/2;
-  objs.objs = poses;
-  vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);
-
-  // 3b. Send Data:
-  // Send the Model, hanging on the zero-zero pose
-  Ptcoll_cfg ptcoll_cfg;
-  ptcoll_cfg.reset=true;
-  ptcoll_cfg.point_lists_id =msg->utime;
-  ptcoll_cfg.collection = null_obj_collection;
-  ptcoll_cfg.element_id =(int64_t) pose_id;// which specific pose does this hang on .. all the same
-  ptcoll_cfg.name.assign("Model LIDAR");  
-  ptcoll_cfg.id = 601;
-  ptcoll_cfg.npoints =  cloud->points.size();
-  ptcoll_cfg.type =1;
-  float colorm_temp0[] ={-10.0,-1.0,-1.0,-1.0};
-  ptcoll_cfg.rgba.assign(colorm_temp0,colorm_temp0+4*sizeof(float));
-
-  pc_vis_->pcdXYZRGB_to_lcm(ptcoll_cfg, *cloud);
-
-
-
-}
-
-void local_map::pointcloud_handler(const drc_pointcloud2_t *msg){
-
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  cloud->width   = msg->width;
-  cloud->height   = msg->height;
-  uint32_t num_points = msg->width * msg->height;
-  cloud->points.resize (num_points);
-  cloud->is_dense = false;//msg->is_dense;
-  uint8_t* cloud_data = reinterpret_cast<uint8_t*>(&cloud->points[0]);
-  uint32_t cloud_row_step = static_cast<uint32_t> (sizeof (pcl::PointXYZRGB) * cloud->width);
-  const uint8_t* msg_data = &msg->data[0];
-  memcpy (cloud_data, msg_data, msg->data_nbytes );
-
-  // 2. HACK/Workaround
-  // for some reason in pcl1.5/6, this callback results
-  // in RGB data whose offset is not correctly understood
-  // Instead of an offset of 12bytes, its offset is set to be 16
-  // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
-  msg_cld.fields[3].offset = 12;
-  pcl::fromROSMsg (msg_cld, *cloud);
-
-  std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
-
-  // Transform cloud to that its in robotic frame:
-  double x_temp;
-  for(int j=0; j<cloud->points.size(); j++) {
-    x_temp = cloud->points[j].x;
-    cloud->points[j].x = cloud->points[j].z;
-    cloud->points[j].z = - cloud->points[j].y;
-    cloud->points[j].y = - x_temp;
-  }
 
   // 3. Transmit data to viewer at null pose:
   // 3a. Transmit Pose:
   int pose_id=msg->utime;
-  bool reset = true;
+  int lidar_obj_collection= 600;
 
-  int null_obj_collection= 400;
-  // Send a pose to hang the model on:
-  vs_obj_collection_t objs;
-  objs.id = null_obj_collection;
-  objs.name = (char*)  "Zero Pose"; // "Trajectory";
-  objs.type = 5; // a pose
-  objs.reset = true; // true will delete them from the viewer
-  objs.nobjs = 1;
-  vs_obj_t poses[objs.nobjs];
-  poses[0].id = (int64_t) pose_id;// which specific pose
-  poses[0].x = 0;
-  poses[0].y = 0;
-  poses[0].z = 0;
-  poses[0].yaw = 0;
-  poses[0].pitch = 0;
-  poses[0].roll = 0;
-  objs.objs = poses;
-  vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);
+  // Use the current VO pose without interpolation or tf:
+  //Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, current_pose.pose);
 
-  // 3b. Send Data:
-  // Send the Model, hanging on the zero-zero pose
-  Ptcoll_cfg ptcoll_cfg;
-  ptcoll_cfg.reset=true;
-  ptcoll_cfg.point_lists_id =msg->utime;
-  ptcoll_cfg.collection = null_obj_collection;
-  ptcoll_cfg.element_id =(int64_t) pose_id;// which specific pose does this hang on .. all the same
-  ptcoll_cfg.name.assign("Model");  
-  ptcoll_cfg.id = 401;
-  ptcoll_cfg.npoints =  cloud->points.size();
-  ptcoll_cfg.type =1;
-  float colorm_temp0[] ={-10.0,-1.0,-1.0,-1.0};
-  ptcoll_cfg.rgba.assign(colorm_temp0,colorm_temp0+4*sizeof(float));
+  // Transform the VO pose via the inter sensor config:
+  Eigen::Isometry3d lidar_pose = current_pose.pose*camera_to_lidar;
+  Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
+  pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);
+  pc_vis_->ptcld_to_lcm_from_list(601, *cloud, pose_id, pose_id);
+}
 
-  pc_vis_->pcdXYZRGB_to_lcm(ptcoll_cfg, *cloud);
+
+void local_map::pointcloud_handler(const drc_pointcloud2_t *msg){
+  if (!current_pose_init){     return;  }
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  unpack_pointcloud2(msg, cloud);
+
+  // 3a. Transmit Pose:
+  int pose_id=msg->utime;
+  int camera_obj_collection= 400;
+
+  // Use the current VO pose without interpolation or tf:
+  Isometry3dTime camera_poseT = Isometry3dTime(pose_id, current_pose.pose);
+  pc_vis_->pose_to_lcm_from_list(camera_obj_collection, camera_poseT);
+  pc_vis_->ptcld_to_lcm_from_list(401, *cloud, pose_id, pose_id);
 }
 
 int
 main(int argc, char ** argv)
 {
-
-  lcm_t* publish_lcm=lcm_create(NULL);
-
   lcm = lcm_create(NULL);
-  local_map app(lcm);//= local_map(publish_lcm);
-
+  local_map app(lcm);
 
   while(1)
     lcm_handle(lcm);

@@ -20,6 +20,9 @@ set(EXAMPLE_LIBRARIES  ${PCL_IO_LIBRARIES}
 
 add_executable(drc-local-map local_map.cpp   )
 target_link_libraries (drc-local-map ${EXAMPLE_LIBRARIES})
-pods_use_pkg_config_packages(drc-local-map  pointcloud_vis
+pods_use_pkg_config_packages(drc-local-map  
+        pointcloud_lcm
+        pointcloud_vis
+        pointcloud_math
 		lcmtypes_drc_lcmtypes  lcmtypes_visualization)
 pods_install_executables(drc-local-map )

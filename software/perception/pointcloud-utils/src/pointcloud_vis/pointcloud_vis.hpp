@@ -43,21 +43,7 @@ using namespace pcl;
 using namespace pcl::io;
 
 
-// This should be depricated:
-typedef struct _Ptcoll_cfg
-{
-  int id;
-  std::string name;
-  bool reset;
-  int64_t point_lists_id;
-  int collection;
-  int64_t element_id;
-  int npoints;
-  int type;
-  //float rgba[4];
-  std::vector <float> rgba;
-}Ptcoll_cfg;
-
+#include <pointcloud_utils/pointcloud_math.hpp>
 
 class pointcloud_vis {
   public:
@@ -65,8 +51,18 @@ class pointcloud_vis {
 
     // Push a colour PointCloud to LCM as a points collection
     // assumes that you want to connect it to the collection specified in Ptcoll_cfg
-    bool pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
+
+    void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
+    void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
+
+    void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id);
+    void ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id);
+
+
+    std::vector <obj_cfg> obj_cfg_list;
+    std::vector <ptcld_cfg> ptcld_cfg_list;
   private:
     lcm_t *publish_lcm_; 
 
@@ -75,44 +71,9 @@ class pointcloud_vis {
 
 
 
-// vs_obj_t with a quaterion
-// a BotTrans with a utime
-// can be converted 1-to-1 to a vs_obj_t
-typedef struct _ObjQ{
-    BotTrans p;
-    int64_t utime;
-} ObjQ;
-
-
-
-
-
-// Same as above - except using Isometry3d
-typedef struct _Isometry3d_Time {
-  Eigen::Isometry3d p;
-  int64_t utime;
-} Isometry3d_Time;
-
-
-typedef struct _Objq_coll_cfg
-{
-  int id;
-  std::string name;
-  bool reset;
-  int type;  
-  int nobjs;
-}Objq_coll_cfg;
-
-
-//NaN is the only value, for which is expression value == value always false.
-template<typename T>
-inline bool isnan_kmcl_utils(T value)
-{
-return value != value;
-}
 
 // Read a csv file containign poses and timestamps:
-void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses);
+void read_poses_csv(std::string poses_files, std::vector<Isometry3dTime>& poses);
 
 // Save a PolygonMesh to PLY
 // PCL's uses VTK which produces an awkward type of PLY
@@ -168,7 +129,7 @@ bool PolygonMesh_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PolygonMesh::Ptr 
 
 // Push an OjbQ (quaterion) Collection to LCM as an Obj Collection (non-quaterion)
 // assumes that you want to connect it to the collection specified in Ptcoll_cfg
-bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,std::vector<ObjQ> objq_coll);
+//bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,std::vector<ObjQ> objq_coll);
 
 
 
@@ -180,6 +141,7 @@ bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointX
 
 
 void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name);
+
 
 typedef struct _BasicPlane
 {

@@ -26,7 +26,117 @@ pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
 }
 
 
-bool pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
+void pointcloud_vis::pose_to_lcm_from_list(int id,Isometry3dTime& poseT){
+ for (size_t i=0; i < obj_cfg_list.size() ; i++){
+   if (id == obj_cfg_list[i].id ){
+     pose_to_lcm(obj_cfg_list[i],poseT);
+       return;
+   }
+ }
+}
+
+void pointcloud_vis::pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT){
+  // Send a pose
+  vs_obj_collection_t objs;
+  objs.id = ocfg.id;
+  objs.name = (char*)  ocfg.name.c_str();
+  objs.type = ocfg.type;
+  objs.reset = ocfg.reset; // true will delete them from the viewer
+  objs.nobjs = 1;
+  vs_obj_t poses[objs.nobjs];
+  poses[0].id = (int64_t) poseT.utime;// which specific pose
+  poses[0].x = poseT.pose.translation().x();
+  poses[0].y = poseT.pose.translation().y();
+  poses[0].z = poseT.pose.translation().z();
+  Eigen::Quaterniond r(poseT.pose.rotation());
+  quat_to_euler(r, poses[0].yaw,
+      poses[0].pitch, poses[0].roll);
+  objs.objs = poses;
+  vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
+}
+
+void pointcloud_vis::ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id){
+ for (size_t i=0; i < ptcld_cfg_list.size() ; i++){
+   if (id == ptcld_cfg_list[i].id ){
+     ptcld_to_lcm(ptcld_cfg_list[i],cloud,obj_id,ptcld_id);
+       return;
+   }
+ }
+}
+
+
+void pointcloud_vis::ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id){
+  int npts = cloud.points.size();
+
+  vs_point3d_list_collection_t plist_coll;
+  plist_coll.id = pcfg.id;
+  plist_coll.name =(char*)   pcfg.name.c_str();
+  plist_coll.type =pcfg.type; // collection of points
+  plist_coll.reset = pcfg.reset;
+  plist_coll.nlists = 1; // number of seperate sets of points
+  vs_point3d_list_t plist[plist_coll.nlists];
+
+  // loop here for many lists
+  vs_point3d_list_t* this_plist = &(plist[0]);
+  // 3.0: header
+  this_plist->id = ptcld_id; // which specific cloud is this     ptcoll_cfg.point_lists_id;
+  this_plist->collection = pcfg.obj_coll;
+  this_plist->element_id = obj_id; // which specific pose axis typically a timestamp
+  // 3.1: points/entries (rename)
+  vs_point3d_t* points = new vs_point3d_t[npts];
+  this_plist->npoints = npts;
+  // 3.2: colors:
+  vs_color_t* colors = new vs_color_t[npts];
+  this_plist->ncolors = npts;
+  // 3.3: normals:
+  this_plist->nnormals = 0;
+  this_plist->normals = NULL;
+  // 3.4: point ids:
+  this_plist->npointids = 0;//cloud.points.size();
+  int64_t* pointsids= NULL;//new int64_t[ cloud.points.size() ];
+
+  float rgba[4];
+  for(int j=0; j<npts; j++) {  //Nransac
+    if (  pcfg.use_rgb){// use the rgb value
+      //rgba[3] = ptcoll_cfg.rgba[3];
+      rgba[0] = pcfg.rgb[0];
+      rgba[1] = pcfg.rgb[1];
+      rgba[2] = pcfg.rgb[2];
+    }else{
+      // PARTICAL FIX: now using .r.g.b values
+      //int rgba_one = *reinterpret_cast<int*>(&cloud.points[j].rgba);
+      //rgba[3] =((float) ((rgba_one >> 24) & 0xff))/255.0;
+      //rgba[2] =((float) ((rgba_one >> 16) & 0xff))/255.0;
+      //rgba[1] =((float) ((rgba_one >> 8) & 0xff))/255.0;
+      //rgba[0] =((float) (rgba_one & 0xff) )/255.0;
+
+      rgba[0] = cloud.points[j].r/255.0;
+      rgba[1] = cloud.points[j].g/255.0;
+      rgba[2] = cloud.points[j].b/255.0;
+    }
+
+    colors[j].r = rgba[0]; // points_collection values range 0-1
+    colors[j].g = rgba[1];
+    colors[j].b = rgba[2];
+    points[j].x = cloud.points[j].x;
+    points[j].y = cloud.points[j].y;
+    points[j].z = cloud.points[j].z;
+  }
+
+  this_plist->colors = colors;
+  this_plist->points = points;
+  this_plist->pointids = pointsids;
+  plist_coll.point_lists = plist;
+  vs_point3d_list_collection_t_publish(publish_lcm_,"POINTS_COLLECTION",&plist_coll);
+
+
+  delete pointsids;
+  delete colors;
+  delete points;
+}
+
+
+void pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
    
   vs_point3d_list_collection_t plist_coll;
   plist_coll.id = ptcoll_cfg.id;
@@ -102,7 +212,7 @@ bool pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl:
 //////////////////////////////////////// Older Code - not put into the class yet
 //from hordur:
 //time x y z qx qy qz qw - all floating points
-void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses){
+void read_poses_csv(std::string poses_files, std::vector<Isometry3dTime>& poses){
   int counter=0;
   string line;
   ifstream myfile (poses_files.c_str());
@@ -110,7 +220,6 @@ void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses
     while ( myfile.good() ){
       getline (myfile,line);
       if (line.size() > 4){
-	Isometry3d_Time apose;
 	double quat[4];
 	double pos[3];
 	
@@ -130,18 +239,19 @@ void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses
 // 	<< quat[2]<< " "
 // 	<< quat[3]<< "\n";
 	
-	apose.utime = (int64_t) (dtime);
 //  apose.utime = (int64_t) (dtime*1E6);
 // 	cout << apose.utime << "\n\n\n";
 	
 	Eigen::Quaterniond quat2(quat[0],quat[1],quat[2],quat[3]);
+	Eigen::Isometry3d pose;
+	pose.setIdentity();
+	pose.translation()  << pos[0] ,pos[1],pos[2];
+	pose.rotate(quat2);
 	
-	Eigen::Isometry3d odom_dpose;
-	apose.p.setIdentity();
-	apose.p.translation()  << pos[0] ,pos[1],pos[2];
-	apose.p.rotate(quat2);	
+	 Isometry3dTime poseT(dtime, pose);
+
 	counter++;
- 	poses.push_back(apose);
+ 	poses.push_back(poseT);
       }
     }
     myfile.close();
@@ -153,7 +263,7 @@ void read_poses_csv(std::string poses_files, std::vector<Isometry3d_Time>& poses
 
 
 
-bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,vector<ObjQ> objq_coll){
+/*bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,vector<ObjQ> objq_coll){
     vs_obj_collection_t objs;
     objs.id = objq_coll_cfg.id ; // was: this_id;
     objs.name = (char*)   objq_coll_cfg.name.c_str();
@@ -175,7 +285,7 @@ bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,vector<ObjQ> objq_coll)
     }
     objs.objs = all_objs;
     vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);  
-}
+}*/
 
 void savePLYFile(pcl::PolygonMesh::Ptr model,string fname){
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  

@@ -9,6 +9,7 @@ include(cmake/pods.cmake)
 #include(cmake/lcmtypes.cmake)
 #lcmtypes_build()
 
+add_subdirectory(src/pointcloud_math)
 add_subdirectory(src/pointcloud_vis)
 add_subdirectory(src/pointcloud_lcm)
 
