@@ -85,7 +85,6 @@
 </link>
 
 <link_pattern name="STEPS"  noofrepetitions ="${NO_OF_STEPS}">
-  <pattern_template name="STEP_TEMPLATE"> <!-- may be this is redundant -->
 		<inertial>
 			<mass value="${Density*(lX*STEP_WIDTH*STEP_THICKNESS)}" />
 			<origin rpy="0 0 0" xyz="0 0 0"/>
@@ -105,7 +104,6 @@
 				<box size="${lX} ${STEP_WIDTH} ${STEP_THICKNESS}"/>
 			</geometry>
 		</collision>
-	</pattern_template>
 </link_pattern>
 
  <!--
@@ -140,10 +138,10 @@
 
 <!-- A set of joints --> 
 <joint_pattern name="STEP_joints" noofrepetitions ="${NO_OF_STEPS}" type="fixed">
-   <first_origin rpy="0 0 0" xyz="0 0 ${lZ-(0.5*STEP_THICKNESS)}"/>
+  <origin rpy="0 0 0" xyz="0 0 ${lZ-(0.5*STEP_THICKNESS)}"/> <!-- origin of the first element, all other joints are offset from it -->
 	<pattern_offset rpy="0 0 0" xyz="0 0 ${STEP_OFFSET_Z}"/> <!--relative offsets between links--> 
 	<parent link="Inner_Volume" type="bounding_volume"/>
-	<child  link="STEP_TEMPLATE" type ="pattern_template"/>
+	<child  link="STEPS" type ="link_pattern"/>
 </joint_pattern>
 
 </object>

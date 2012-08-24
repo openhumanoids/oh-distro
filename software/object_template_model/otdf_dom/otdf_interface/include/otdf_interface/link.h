@@ -65,7 +65,7 @@ namespace otdf{
   virtual void setParentJoint(boost::shared_ptr<Joint> parent){}  
   virtual void addChild(boost::shared_ptr<BaseEntity> child){}   
   virtual void addChildJoint(boost::shared_ptr<Joint> child){}  
- virtual boost::shared_ptr<BaseEntity> getParent(){}
+  virtual boost::shared_ptr<BaseEntity> getParent(){}
   
 //   void setParent(boost::shared_ptr<BaseEntity> parent)
 //   {

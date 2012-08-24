@@ -663,5 +663,210 @@ void Bounding_volume::addChildJoint(boost::shared_ptr<Joint> child)
   //ROS_DEBUG("added child Joint '%s' to Link '%s'", child->name.c_str(), this->name.c_str());
 }
 
+
+void Link_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
+{
+  
+  this->clear();
+
+  const char *name_char = config->Attribute("name");
+  if (!name_char)
+  {
+    throw ParseError("No name given for the Link_pattern.");
+  }
+  name = std::string(name_char);
+
+  // parse noofrepetitions config->Attribute("noofrepetitions");
+  
+  
+  this->noofrepetitions  = lexicalCastOrExpressionParsing("noofrepetitions",  config , symbol_table,this->local_expressions[0],this->expression_flags[0]);
+  
+  
+  try { 
+       this->link_template->initXml(config,symbol_table); 
+      }
+  catch (ParseError &e) {
+      std::stringstream stm;
+      stm << "Could not parse link_template element for Link Pattern [" << this->name << "]";
+      throw e.addMessage(stm.str());
+      }
+
+
+   for  (unsigned int i=0; i < noofrepetitions; i++){
+     boost::shared_ptr<Link> temp; 
+     temp.reset(new Link(*link_template));
+     std::ostringstream str;   
+     str << name << "_" << i; // append ID to pattern name
+     temp->name =str.str();    
+     this->link_set.push_back(temp);
+   }
+ 
+} // end link_pattern init
+
+
+
+bool Joint_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
+{
+  
+this->clear();
+
+  // Get Joint Pattern Name
+  const char *name = config->Attribute("name");
+  if (!name)
+  {
+    //ROS_ERROR("unnamed joint found");
+    return false;
+  }
+  this->name = name;
+  
+ // Get Joint pattern type
+  const char* type_char = config->Attribute("type");
+  if (!type_char)
+  {
+    //ROS_ERROR("joint '%s' has no type, check to see if it's a reference.", this->name.c_str());
+    return false;
+  }
+  std::string type_str = type_char;
+  if (type_str == "planar")
+  {
+    type = PLANAR;
+    //ROS_WARN("Planar joints are deprecated in the URDF!\n");
+  }
+  else if (type_str == "floating")
+  {
+    type = FLOATING;
+    //ROS_WARN("Floating joints are deprecated in the URDF!\n");
+  }
+  else if (type_str == "revolute")
+    type = REVOLUTE;
+  else if (type_str == "continuous")
+    type = CONTINUOUS;
+  else if (type_str == "prismatic")
+    type = PRISMATIC;
+  else if (type_str == "fixed")
+    type = FIXED;
+  else
+  {
+     std::cerr << " ERROR: joint pattern "<< this->name <<" has no known type"<< type_str << std::endl;
+     return false;
+  } 
+  
+    this->noofrepetitions  = lexicalCastOrExpressionParsing("noofrepetitions",  config , symbol_table,this->local_expressions[0],this->expression_flags[0]);
+  
+
+  // Get transform of the base origin
+  TiXmlElement *origin_xml = config->FirstChildElement("origin");
+  if (!origin_xml)
+  {
+    //ROS_DEBUG("Joint '%s' missing origin tag under parent describing transform from Parent Link to Joint Frame, (using Identity transform).", this->name.c_str());
+    this->origin.clear();
+  }
+  else
+  {
+    try {
+      this->origin.initXml(origin_xml,symbol_table);
+    }
+    catch (ParseError &e) {
+      this->origin.clear();
+      std::stringstream stm;
+      stm << "Malformed parent origin element for joint pattern [" << this->name << "]";
+      throw ParseError(stm.str());
+    }
+  }
+  
+    // Get pattern offset
+  TiXmlElement *offset_xml = config->FirstChildElement("pattern_offset");
+  if (!offset_xml)
+  {
+    this->pattern_offset.clear();
+  }
+  else
+  {
+    try {
+      this->pattern_offset.initXml(offset_xml,symbol_table);
+    }
+    catch (ParseError &e) {
+      this->pattern_offset.clear();
+      std::stringstream stm;
+      stm << "Malformed pattern_offset element for joint pattern [" << this->name << "]";
+      throw ParseError(stm.str());
+    }
+  }
+  
+   // Get Parent Link
+  TiXmlElement *parent_xml = config->FirstChildElement("parent");
+  if (parent_xml)
+  {
+    const char *pname = parent_xml->Attribute("link");
+    if (!pname)
+    {
+      //ROS_INFO("no parent link name specified for Joint link '%s'. this might be the root?", this->name.c_str());
+    }
+    else
+    {
+      this->parent_link_name = std::string(pname);
+    }
+    const char *ptype = parent_xml->Attribute("type");
+    if (!ptype)
+    {
+      //ROS_INFO("no parent link name specified for Joint link '%s'. this might be the root?", this->name.c_str());
+    }
+    else
+    {
+      this->parent_type = std::string(ptype);
+    }
+  }
+  
+    // Get Child Link Pattern
+  TiXmlElement *child_xml = config->FirstChildElement("child");
+  if (child_xml)
+  {
+    const char *pname = child_xml->Attribute("link");
+    if (!pname)
+    {
+      //ROS_INFO("no child link name specified for Joint link '%s'.", this->name.c_str());
+    }
+    else
+    {
+      this->child_link_pattern_name = std::string(pname);
+
+    }
+    const char *ptype = child_xml->Attribute("type");
+    if (!ptype)
+    {
+      //ROS_INFO("no child link name specified for Joint link '%s'. this might be the root?", this->name.c_str());
+    }
+    else
+    {
+      this->child_link_pattern_type = std::string(ptype);
+    }
+  }
+
+  try { 
+       this->joint_template->initXml(config,symbol_table); 
+      }
+  catch (ParseError &e) {
+      std::stringstream stm;
+      stm << "Could not parse joint_template element for Link Pattern [" << this->name << "]";
+      throw e.addMessage(stm.str());
+      }
+      
+   for  (unsigned int i=0; i < noofrepetitions; i++){
+     boost::shared_ptr<Joint> temp; 
+     temp.reset(new Joint(*joint_template));
+     std::ostringstream stm;   
+     stm << name << "_" << i; // append ID to pattern name
+     temp->name =stm.str();
+     if(i==0)
+       temp->parent_to_joint_origin_transform = origin;     
+     else{
+       temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+       temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+     }   
+     this->joint_set.push_back(temp);
+   }
+
+}
+
 }// end namespace
 

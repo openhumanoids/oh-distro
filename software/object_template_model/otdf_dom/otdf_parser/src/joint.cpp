@@ -399,8 +399,8 @@ bool Joint::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
     type = FIXED;
   else
   {
-    //ROS_ERROR("Joint '%s' has no known type '%s'", this->name.c_str(), type_str.c_str());
-    return false;
+     std::cerr << " ERROR:Joint "<< this->name <<" has no known type"<< type_str << std::endl;
+     return false;
   }
 
   // Get Joint Axis
@@ -513,4 +513,7 @@ bool Joint::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
 
 
 
-}
+
+
+
+}// end namespace
