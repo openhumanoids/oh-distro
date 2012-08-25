@@ -93,7 +93,12 @@ namespace otdf
     void setParentJoint(boost::shared_ptr<Joint> child);
     void addChild(boost::shared_ptr<BaseEntity> child);
     void addChildJoint(boost::shared_ptr<Joint> child);
-    
+    void clearChildEntities(){
+      this->child_links.clear();    
+    };   
+    void clearChildJoints(){
+      this->child_joints.clear();    
+    };   
     
 //     Parent Joint element
 //       explicitly stating "parent" because we want directional-ness for tree structure
@@ -153,7 +158,7 @@ namespace otdf
     bool initXml(TiXmlElement* xml, ParamTable_t &symbol_table);
     void clear()
     {
-      this->joint_template.reset();
+      this->joint_template.reset(new Joint);
       this->joint_set.clear();
       
       this->origin.clear();
@@ -174,38 +179,33 @@ namespace otdf
     
     void update()
     {
-      this->origin.update();
-      this->pattern_offset.update();
-  
-      joint_template->update();
+
+	this->origin.update(); 
+	this->pattern_offset.update();  
+	joint_template->update();
 	if(expression_flags[0]){
-		this->noofrepetitions = this->local_expressions[0].value();
+	    this->noofrepetitions = this->local_expressions[0].value();
 	}   
+	this->joint_set.clear();
 	//Update all joints in joint_set
-	if (this->noofrepetitions < joint_set.size()) {
-	  for (unsigned int i=noofrepetitions; i < joint_set.size(); i++)
-	  {
-	      joint_set.pop_back();
-	  }    
-	}
-	else if(this->noofrepetitions > joint_set.size()) {
-	  for (unsigned int i=noofrepetitions; i < joint_set.size(); i++)
-	  {
-	      boost::shared_ptr<Joint> temp; 
-	      temp.reset(new Joint(*joint_template));
-	      std::ostringstream str;   
-	      str << name << "_" << i; // append ID to joint name
-	      temp->name =str.str();
-		if(i==0)
-		  temp->parent_to_joint_origin_transform = origin;     
-		else{
-		  temp->parent_to_joint_origin_transform.position = pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
-		  temp->parent_to_joint_origin_transform.rotation = pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
-		}  
-	      this->joint_set.push_back(temp);
-	  }    
-	}
-      
+	for  (unsigned int i=0; i < noofrepetitions; i++){
+	    boost::shared_ptr<Joint> temp; 
+	    temp.reset(new Joint(*joint_template));
+	    std::ostringstream stm;   
+	    stm << name << "_" << i; // append ID to pattern name
+	    temp->name =stm.str();
+	    stm.clear();
+	    stm.str("");
+	    stm << temp->child_link_name << "_" << i; // append ID to pattern name
+	    temp->child_link_name= stm.str();
+	    if(i==0)
+	      temp->parent_to_joint_origin_transform = origin;     
+	    else{
+	      temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+	      temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	    }   
+	    this->joint_set.push_back(temp);
+	  }
     };
   };
 
@@ -225,7 +225,7 @@ namespace otdf
 
     void clear()
     {
-      this->link_template.reset();
+      this->link_template.reset(new Link);
       this->link_set.clear();
           
       exprtk::expression<double> expression; 
@@ -243,26 +243,18 @@ namespace otdf
       if(expression_flags[0]){
 	      this->noofrepetitions = this->local_expressions[0].value();
       }   
-       //Update all links in link_set  
-      if (this->noofrepetitions < link_set.size()) {
-         for (unsigned int i=noofrepetitions; i < link_set.size(); i++)
-         {
-            link_set.pop_back();
-         }    
-       }
-       else if(this->noofrepetitions > link_set.size()) {
-         for (unsigned int i=noofrepetitions; i < link_set.size(); i++)
-         {
-             boost::shared_ptr<Link> temp; 
-             temp.reset(new Link(*link_template));
-             std::ostringstream str;   
-             str << name << "_" << i; // append ID to pattern name
-             temp->name =str.str();    
-             this->link_set.push_back(temp);
-         }    
-       }
-       
-    };
+       //Update all links in link_set 
+       this->link_set.clear();
+      
+       for  (unsigned int i=0; i < noofrepetitions; i++){
+	  boost::shared_ptr<Link> temp; 
+	  temp.reset(new Link(*link_template));
+	  std::ostringstream stm;   
+	  stm << name << "_" << i; // append ID to pattern name
+	  temp->name =stm.str();    
+	  this->link_set.push_back(temp);
+	}
+    }; // end update
     
     std::string getEntityType() const
     {
@@ -289,16 +281,6 @@ namespace otdf
       this->parent_joint_pattern = parent;
     };
 
-//void addChild(boost::shared_ptr<BaseEntity> child)
-//{
-//  this->child_links.push_back(child);
-//};
-
-//void addChildJoint(boost::shared_ptr<Joint> child)
-//{
-//  this->child_joints.push_back(child);
-//};
-    
     boost::shared_ptr<std::vector<boost::shared_ptr<Link > > > getLinkSet() const{
           boost::shared_ptr<std::vector<boost::shared_ptr<Link > > > ptr;
 	  ptr.reset(new std::vector<boost::shared_ptr<Link > >(this->link_set));
@@ -309,14 +291,7 @@ namespace otdf
 
     boost::shared_ptr<Joint_pattern> parent_joint_pattern;
     std::vector<boost::shared_ptr<Link> > link_set;
-    
-    //     Parent Joint element
-//       explicitly stating "parent" because we want directional-ness for tree structure
-//       every link can have one parent
-//    boost::shared_ptr<Joint> parent_joint;
-    //std::vector<boost::shared_ptr<Joint> > parent_joint_set;
-    //std::vector<boost::shared_ptr<Joint> > child_joints;
-    //std::vector<boost::shared_ptr<BaseEntity> > child_links;
+
     
     private:
     boost::weak_ptr<BaseEntity> parent_link_;

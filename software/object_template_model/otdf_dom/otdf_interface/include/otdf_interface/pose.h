@@ -94,8 +94,7 @@ public:
     this->clear();
     std::vector<std::string> pieces;
     std::vector<double> xyz;
-    //TODO: equations can have white spaces
-    
+ 
     std::string vector_of_expressions;
     vector_of_expressions=removeWhiteSpaceInExpressions(vector_str);
     boost::split( pieces, vector_of_expressions, boost::is_any_of(" "));
@@ -152,20 +151,25 @@ public:
   };
   void update()
   {
+//       std::cout << "flags:" <<expression_flags[0]<<expression_flags[1]<<expression_flags[2]<<std::endl;
+//        std::cout << "xyz:" <<x<<y<<z<<std::endl;  
       std::vector<float> xyz;
-     xyz[0] =   this->x;
-     xyz[1] =   this->y;
-     xyz[2] =   this->z;
-      for (unsigned int i = 0; i < xyz.size(); ++i)
+       xyz.push_back(this->x);
+       xyz.push_back(this->y);
+       xyz.push_back(this->z);
+
+     for (unsigned int i = 0; i < xyz.size(); ++i)
       {
 	if(expression_flags[i])
 	{
 	  xyz[i] = local_expressions[i].value();
 	}
-      }      
+      }  
+
     this->x = xyz[0];
     this->y = xyz[1];
     this->z = xyz[2];	
+       
   };
 };
 

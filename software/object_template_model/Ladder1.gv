@@ -1,6 +1,14 @@
 digraph G {
 node [shape=box];
 "world" [label="world"];
+"STEPS_0" [label="STEPS_0"];
+"STEPS_1" [label="STEPS_1"];
+"STEPS_2" [label="STEPS_2"];
+"STEPS_3" [label="STEPS_3"];
+"STEPS_4" [label="STEPS_4"];
+"STEPS_5" [label="STEPS_5"];
+"STEPS_6" [label="STEPS_6"];
+"STEPS_7" [label="STEPS_7"];
 "LRAIL" [label="LRAIL"];
 "RRAIL" [label="RRAIL"];
 node [shape=box3d,  color=red];
@@ -11,6 +19,22 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "base_joint" -> "Outer_Volume"
 "Outer_Volume" -> "Inner_Volume_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "Inner_Volume_joint" -> "Inner_Volume"
+"Inner_Volume" -> "STEP_joints_0" [label="xyz: 0 0 9.9 \nrpy: 0 -0 0"]
+"STEP_joints_0" -> "STEPS_0"
+"Inner_Volume" -> "STEP_joints_1" [label="xyz: 0 0 10.8 \nrpy: 0 -0 0"]
+"STEP_joints_1" -> "STEPS_1"
+"Inner_Volume" -> "STEP_joints_2" [label="xyz: 0 0 11.7 \nrpy: 0 -0 0"]
+"STEP_joints_2" -> "STEPS_2"
+"Inner_Volume" -> "STEP_joints_3" [label="xyz: 0 0 12.6 \nrpy: 0 -0 0"]
+"STEP_joints_3" -> "STEPS_3"
+"Inner_Volume" -> "STEP_joints_4" [label="xyz: 0 0 13.5 \nrpy: 0 -0 0"]
+"STEP_joints_4" -> "STEPS_4"
+"Inner_Volume" -> "STEP_joints_5" [label="xyz: 0 0 14.4 \nrpy: 0 -0 0"]
+"STEP_joints_5" -> "STEPS_5"
+"Inner_Volume" -> "STEP_joints_6" [label="xyz: 0 0 15.3 \nrpy: 0 -0 0"]
+"STEP_joints_6" -> "STEPS_6"
+"Inner_Volume" -> "STEP_joints_7" [label="xyz: 0 0 16.2 \nrpy: 0 -0 0"]
+"STEP_joints_7" -> "STEPS_7"
 "Outer_Volume" -> "LRAIL_joint" [label="xyz: 0 -4 0 \nrpy: 0 -0 0"]
 "LRAIL_joint" -> "LRAIL"
 "Outer_Volume" -> "RRAIL_joint" [label="xyz: 0 4 0 \nrpy: 0 -0 0"]

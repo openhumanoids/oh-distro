@@ -67,7 +67,7 @@ public:
     expression_flags.clear(); 
     exprtk::expression<double> expression; 
     exprtk::parser<double> parser;
-    parser.compile("1",expression);
+    parser.compile("0",expression);
     local_expressions.push_back(expression);// initialise local_expressions
     local_expressions.push_back(expression);
     expression_flags.push_back(false);
@@ -81,7 +81,6 @@ public:
     if(expression_flags[0]){
 	this->damping = this->local_expressions[0].value();
     }
-    
     if(expression_flags[1]){
 	this->friction = this->local_expressions[1].value();
     }
@@ -355,10 +354,11 @@ public:
     this->child_link_name.clear();
     this->parent_link_name.clear();
     this->parent_to_joint_origin_transform.clear();
-    this->dynamics.reset();
-    this->limits.reset();
-    this->safety.reset();
-    this->calibration.reset();
+    this->dynamics.reset(new JointDynamics);
+    this->limits.reset(new JointLimits);
+    this->safety.reset(new JointSafety);
+    this->calibration.reset(new JointCalibration);
+    this->mimic.reset(new JointMimic);
     this->type = UNKNOWN;
   };
   
@@ -370,6 +370,7 @@ public:
     this->limits->update();
     this->safety->update();
     this->calibration->update();
+    this->mimic->update();
   };
 };
 

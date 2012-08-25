@@ -140,7 +140,6 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
   }
 
 
-  
   // Get all Link elements
   for (TiXmlElement* link_xml = object_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
@@ -202,6 +201,77 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
       return model;
     }
   }
+ 
+  // Get all Link elements in a link_pattern
+  for (TiXmlElement* link_pattern_xml = object_xml->FirstChildElement("link_pattern"); link_pattern_xml; link_pattern_xml = link_pattern_xml->NextSiblingElement("link_pattern"))
+  {
+//     std::cout<< link_pattern_xml->Attribute("name") << std::endl;
+    boost::shared_ptr<Link_pattern> link_pattern;
+    link_pattern.reset(new Link_pattern);
+
+    try {
+            
+          link_pattern->initXml(link_pattern_xml,model->symbol_table);
+
+//          //Loop through all links in the link pattern acc to noofrepetitions
+//          for  (unsigned int i=0; i < link_pattern->noofrepetitions; i++)
+//          {
+//             boost::shared_ptr<Link> link;
+//             link.reset(new Link(*link_pattern->link_set[i]));
+//         
+//             if (model->getLink(link->name))
+//             {
+//               //ROS_ERROR("link '%s' is not unique.", link->name.c_str());
+//               std::cerr<< "ERROR: link in link_pattern" << link->name <<"is not unique."<< std::endl;   
+//               model.reset();
+//               return model;
+//             }
+//             else
+//             {
+//               // set link visual material
+//               //ROS_DEBUG("setting link '%s' material", link->name.c_str());
+//               if (link->visual)
+//               {
+//                 if (!link->visual->material_name.empty())
+//                 {
+//                   if (model->getMaterial(link->visual->material_name))
+//                   {
+//                     //ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name.c_str());
+//                     link->visual->material = model->getMaterial( link->visual->material_name.c_str() );
+//                   }
+//                   else
+//                   {
+//                     if (link->visual->material)
+//                     {
+//                       //ROS_DEBUG("link '%s' material '%s' defined in Visual.", link->name.c_str(),link->visual->material_name.c_str());
+//                       model->materials_.insert(make_pair(link->visual->material->name,link->visual->material));
+//                     }
+//                     else
+//                     {
+//                       //ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
+//                       std::cerr<< "ERROR: link in link pattern" << link->name <<" material " << link->visual->material_name << " is not unique."<< std::endl;   
+//                       model.reset();
+//                       return model;
+//                     }
+//                   }//end if (model->getMaterial(link->visual->material_name))
+//                 }//end if (!link->visual->material_name.empty())
+//               }//end if (link->visual)
+//               
+//               model->links_.insert(make_pair(link->name,link));
+// 	      model->entities_.insert(make_pair(link->name,link));
+// 
+//             }  //end if (model->getLink( ))
+//             }// end for  (unsigned int i=0; i < noofrepetitions; i++)
+         model->entities_.insert(make_pair(link_pattern->name,link_pattern));   
+         model->link_patterns_.insert(make_pair(link_pattern->name,link_pattern));  
+            
+    }
+    catch (ParseError &e) {
+      std::cerr<< "ERROR: link pattern xml is not initialized correctly"<< std::endl;  
+      model.reset();
+      return model;
+    }
+  }// for (TiXmlElement* link_pattern_xml 
   
   if (model->links_.empty()){
     std::cerr<< "ERROR: No link elements found in otdf file."<< std::endl;
@@ -270,6 +340,45 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
     }
   }
 
+  // Get all Joint elements in a joint_pattern and add them to model
+  for (TiXmlElement* joint_pattern_xml = object_xml->FirstChildElement("joint_pattern"); joint_pattern_xml; joint_pattern_xml = joint_pattern_xml->NextSiblingElement("joint_pattern"))
+  {
+  
+    boost::shared_ptr<Joint_pattern> joint_pattern;
+    joint_pattern.reset(new Joint_pattern);
+
+    if (joint_pattern->initXml(joint_pattern_xml,model->symbol_table))
+    {
+        //Loop through all joints in the joint pattern acc to noofrepetitions
+//         for(unsigned int i=0; i < joint_pattern->noofrepetitions; i++)
+//         {
+//           boost::shared_ptr<Joint> joint;
+//           joint.reset(new Joint(*joint_pattern->joint_set[i]));
+//         
+//           if (model->getJoint(joint->name))
+//           {
+//             //ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
+//              std::cerr<< "ERROR: material" << joint->name <<"is not unique."<< std::endl;   
+//             model.reset();
+//             return model;
+//           }
+//           else
+//           {
+//             model->joints_.insert(make_pair(joint->name,joint)); 
+//             //ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
+//           }
+//         } // end for joint_set
+        model->joint_patterns_.insert(make_pair(joint_pattern->name,joint_pattern));  
+    }
+    else
+    {
+      //ROS_ERROR("joint xml is not initialized correctly");
+      std::cerr<< "ERROR: joint pattern xml is not initialized correctly"<< std::endl;  
+      model.reset();
+      return model;
+    }
+  }
+ 
 
   // every link has children links and joints, but no parents, so we create a
   // local convenience data structure for keeping child->parent relations

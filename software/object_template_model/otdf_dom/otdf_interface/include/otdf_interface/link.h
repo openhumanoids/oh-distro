@@ -65,6 +65,8 @@ namespace otdf{
   virtual void setParentJoint(boost::shared_ptr<Joint> parent){}  
   virtual void addChild(boost::shared_ptr<BaseEntity> child){}   
   virtual void addChildJoint(boost::shared_ptr<Joint> child){}  
+  virtual void clearChildEntities(){}   
+  virtual void clearChildJoints(){}  
   virtual boost::shared_ptr<BaseEntity> getParent(){}
   
 //   void setParent(boost::shared_ptr<BaseEntity> parent)
@@ -355,15 +357,16 @@ public:
   {
     origin.clear();
     material_name.clear();
-    material.reset();
-    geometry.reset();
+    material.reset(new Material);
+    geometry.reset(); // can't set it to a object as initXml is a pure virtual.
     this->group_name.clear();
   };
   void update()
   {
     this->origin.update();
     this->material->update();
-    this->geometry->update();
+    if(geometry) // if not empty then update
+     this->geometry->update();
   };
   void initXml(TiXmlElement* config ,ParamTable_t &symbol_table);
   std::string group_name;
@@ -386,7 +389,8 @@ public:
   void update()
   {
     this->origin.update();
-    this->geometry->update();
+    if(geometry) // if not empty then update
+      this->geometry->update();
   };
   void initXml(TiXmlElement* config ,ParamTable_t &symbol_table);
   std::string group_name;
@@ -430,16 +434,21 @@ public:
 
   void clear()
   {
-    this->inertial.reset();
-    this->visual.reset();
-    this->collision.reset();
+    this->inertial.reset(new Inertial);
+    this->visual.reset(new Visual);
+    this->collision.reset(new Collision);
     this->collision_groups.clear();
   };
  void update()
   {
+ 
     this->inertial->update();
-    this->visual->update();
-    this->collision->update();
+    
+    if(this->visual)
+      this->visual->update();
+    
+    if(this->collision)
+      this->collision->update();
   };
   std::string getEntityType() const{
     std::string str = "Link";
@@ -447,7 +456,12 @@ public:
   void setParentJoint(boost::shared_ptr<Joint> child);
   void addChild(boost::shared_ptr<BaseEntity> child);
   void addChildJoint(boost::shared_ptr<Joint> child);
-
+  void clearChildEntities(){
+    this->child_links.clear();    
+  };   
+  void clearChildJoints(){
+    this->child_joints.clear();    
+  };   
   void addVisual(std::string group_name, boost::shared_ptr<Visual> visual);
   boost::shared_ptr<std::vector<boost::shared_ptr<Visual > > > getVisuals(const std::string& group_name) const;
   void addCollision(std::string group_name, boost::shared_ptr<Collision> collision);

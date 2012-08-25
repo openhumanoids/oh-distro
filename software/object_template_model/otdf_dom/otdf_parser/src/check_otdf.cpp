@@ -136,6 +136,33 @@ int main(int argc, char** argv)
 
   // print entire tree
   printTree(root_entity);
+  
+  if(object->getName()=="Ladder1"){ // for testing.
+    std::cout << "Changing Param NO_OF_STEPS to : " << 5 << std::endl;
+    object->setParam("NO_OF_STEPS", 5);
+    object->update();
+
+  std::cout << "---------- Successfully updated object ---------------" << std::endl;
+    // get root link
+    root_entity=object->getRoot();
+    if (!root_entity) return -1;
+    
+    type = root_entity->getEntityType();
+    if (type == "Link"){
+      boost::shared_ptr<const Link> downcasted_root_entity(boost::shared_dynamic_cast<const Link>(root_entity)); 
+	
+    std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
+
+    }
+    else if(type == "Bounding_volume"){
+      boost::shared_ptr<const Bounding_volume> downcasted_root_entity(boost::shared_dynamic_cast<const Bounding_volume>(root_entity)); 
+	
+    std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
+    }
+      // print entire tree after update
+    printTree(root_entity);
+  }
+  
   return 0;
 }
 

@@ -114,8 +114,6 @@ public:
 	    double value = local_expressions[i].value();
 	    rgba.push_back(value);
 	  }
-// 	  double value = parseExpression(pieces[i], symbol_table);
-// 	  rgba.push_back(value);
 
 	}
       }
@@ -138,10 +136,11 @@ public:
   void update()
   {
       std::vector<float> rgba;
-     rgba[0] =   this->r;
-     rgba[1] =   this->g;
-     rgba[2] =   this->b;
-     rgba[3] =   this->a;
+      rgba.push_back(this->r);
+      rgba.push_back(this->g);
+      rgba.push_back(this->b);
+      rgba.push_back(this->a);
+
       for (unsigned int i = 0; i < rgba.size(); ++i)
       {
 	if(expression_flags[i])
@@ -154,11 +153,7 @@ public:
     this->g = rgba[1];
     this->b = rgba[2];
     this->a = rgba[3];
-    
-//     std::cout << "r" << this->r 
-// 	      << "g" << this->g 	    
-// 	      << "b" << this->b 
-// 	      << "a"  << this->a << std::endl;
+
   };
   
   

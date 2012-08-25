@@ -182,13 +182,17 @@ int main(int argc, char** argv)
     return -1;
   }
   string output = object->getName();
-
+  
+    //   // testing object update for ladder
+    //   object->setParam("NO_OF_STEPS", 5);
+    //   object->update();
+  
   // print entire tree to file
   printTree(object->getRoot(), output+".gv");
   cout << "Created file " << output << ".gv" << endl;
 
   string command = "dot -Tpdf "+output+".gv  -o "+output+".pdf";
-  system(command.c_str());
+  int temp = system(command.c_str());
   cout << "Created file " << output << ".pdf" << endl;
   return 0;
 }

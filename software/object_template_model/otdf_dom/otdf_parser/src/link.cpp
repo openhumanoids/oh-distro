@@ -382,9 +382,9 @@ void Mesh::initXml(TiXmlElement *c, ParamTable_t &symbol_table)
 
 void Link::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
 {
-  
-  this->clear();
 
+  this->clear();
+  
   const char *name_char = config->Attribute("name");
   if (!name_char)
   {
@@ -677,11 +677,8 @@ void Link_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
   name = std::string(name_char);
 
   // parse noofrepetitions config->Attribute("noofrepetitions");
-  
-  
   this->noofrepetitions  = lexicalCastOrExpressionParsing("noofrepetitions",  config , symbol_table,this->local_expressions[0],this->expression_flags[0]);
-  
-  
+
   try { 
        this->link_template->initXml(config,symbol_table); 
       }
@@ -691,16 +688,15 @@ void Link_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
       throw e.addMessage(stm.str());
       }
 
-
    for  (unsigned int i=0; i < noofrepetitions; i++){
      boost::shared_ptr<Link> temp; 
      temp.reset(new Link(*link_template));
-     std::ostringstream str;   
-     str << name << "_" << i; // append ID to pattern name
-     temp->name =str.str();    
+     std::ostringstream stm;   
+     stm << name << "_" << i; // append ID to pattern name
+     temp->name =stm.str();    
      this->link_set.push_back(temp);
    }
- 
+
 } // end link_pattern init
 
 
@@ -708,7 +704,7 @@ void Link_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
 bool Joint_pattern::initXml(TiXmlElement* config, ParamTable_t &symbol_table)
 {
   
-this->clear();
+  this->clear();
 
   // Get Joint Pattern Name
   const char *name = config->Attribute("name");
@@ -857,6 +853,10 @@ this->clear();
      std::ostringstream stm;   
      stm << name << "_" << i; // append ID to pattern name
      temp->name =stm.str();
+     stm.clear();
+     stm.str("");
+     stm << temp->child_link_name << "_" << i; // append ID to pattern name
+     temp->child_link_name= stm.str();
      if(i==0)
        temp->parent_to_joint_origin_transform = origin;     
      else{
@@ -865,7 +865,7 @@ this->clear();
      }   
      this->joint_set.push_back(temp);
    }
-
+  return true;
 }
 
 }// end namespace
