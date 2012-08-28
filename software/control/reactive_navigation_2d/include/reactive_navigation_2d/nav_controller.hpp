@@ -159,7 +159,7 @@ NavController::~NavController() {
 
 void NavController::init() 
 {
- 
+ debug_ = false;
 
 
 }
@@ -224,7 +224,7 @@ void NavController::update(const drc::robot_state_t &robot_state, const double &
     desired_forward_speed = 0;
   }
   
-  
+  if(debug_){
   std::cout << "\n desired_forward_speed: " << desired_forward_speed<< std::endl;
   std::cout << " desired_yaw_rate: " << desired_yaw_rate<< std::endl;
   std::cout << " d_goal: " << d_goal << std::endl;
@@ -233,10 +233,11 @@ void NavController::update(const drc::robot_state_t &robot_state, const double &
   std::cout << " goal: " <<  x_goal_.translation()[0] << " " <<  x_goal_.translation()[1] << std::endl;
   std::cout << " err: " << x_err.head<2>() << std::endl;
   std::cout << " dtheta: " << to_degrees(x_err[5]) << std::endl;
-    std::cout << " dtheta_goal: " << to_degrees(dtheta_goal) << std::endl;
-    std::cout << " dheading: " << to_degrees(dheading)<< std::endl;
-      std::cout << " lamda: " << lamda << std::endl;
-   std::cout << " w_dheading: " << to_degrees(w_dheading) << std::endl;
+  std::cout << " dtheta_goal: " << to_degrees(dtheta_goal) << std::endl;
+  std::cout << " dheading: " << to_degrees(dheading)<< std::endl;
+  std::cout << " lamda: " << lamda << std::endl;
+  std::cout << " w_dheading: " << to_degrees(w_dheading) << std::endl;
+  }
     drc::twist_t body_twist_cmd;
    // body_twist_cmd.utime = getTime_now();
     //body_twist_cmd.robot_name = _robot_name;
