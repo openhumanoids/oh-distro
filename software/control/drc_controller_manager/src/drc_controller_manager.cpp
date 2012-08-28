@@ -8,6 +8,7 @@
 
 #include "kdl_parser/kdl_parser.hpp"
 #include "pd_chain_control/chain_controller.hpp"
+#include "reactive_navigation_2d/nav_controller.hpp"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -50,7 +51,8 @@ namespace drc_control{
        boost::shared_ptr<lcm::LCM> _lcm;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > left_arm_controller;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > right_arm_controller;
-
+       boost::shared_ptr<nav_control::NavController> nav_controller;
+       
        std::string _robot_name;
        urdf::Model _urdf_robot_model;
        KDL::Tree _tree;
@@ -88,9 +90,14 @@ namespace drc_control{
     // Only update jointpos_in and jointvel_in;
     
  //call controller update routine.
-  if(this->left_arm_controller->isRunning()) 
-    this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
-  } 
+    if (this->left_arm_controller->isRunning()) {
+      this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
+    } 
+    
+    if (this->nav_controller->isRunning()) {
+      this->nav_controller->update(*msg,dt); 
+    } 
+  }
 
  }; //end Class control manager
 
@@ -180,6 +187,11 @@ namespace drc_control{
 	channel = "RWRISTROLL_LINK_GOAL";
         this->right_arm_controller = boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> >(new pd_chain_control::ChainController<NUM_OF_ARM_JOINTS>(this->_lcm,channel,kdl_chain,_robot_name,_urdf_robot_model));
 
+	
+	channel ="NAV_GOAL";
+	this->nav_controller = boost::shared_ptr<nav_control::NavController >(new nav_control::NavController(this->_lcm,channel,_robot_name,_urdf_robot_model));
+
+	
   // create a robot_state subscription.
   this->_lcm->subscribe("EST_ROBOT_STATE", &drc_control::ControllerManager::handleRobotStateMsgAndUpdateControllers, this);
    } // end constructor

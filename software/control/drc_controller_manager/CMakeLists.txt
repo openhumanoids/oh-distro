@@ -36,3 +36,10 @@ pods_use_pkg_config_packages(ee_goal_listener lcm lcmtypes_drc_lcmtypes ${REQUIR
 
 # make exeutables public
 pods_install_executables(ee_goal_listener)
+
+add_executable(nav_goal_listener src/nav_goal_listener.cpp)
+#pods_use_pkg_config_packages(send_message lcm lcmtypes_${POD_NAME})
+pods_use_pkg_config_packages(nav_goal_listener lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+
+# make exeutables public
+pods_install_executables(nav_goal_listener)

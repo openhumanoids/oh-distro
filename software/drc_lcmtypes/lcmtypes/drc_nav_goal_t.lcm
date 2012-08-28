@@ -1,0 +1,9 @@
+package drc;
+
+struct nav_goal_t
+{
+	int64_t utime;
+	string robot_name;
+	position_3d_t goal_pos;
+}
+

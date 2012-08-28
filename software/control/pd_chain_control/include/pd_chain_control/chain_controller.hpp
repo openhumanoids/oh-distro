@@ -165,8 +165,7 @@ namespace pd_chain_control
   JointVector qdot_measured_;
   JointVector qdot_filtered_;
 
-
- int64_t latest_goal_timestamp_;
+  int64_t latest_goal_timestamp_;
 
     //-------------message callback
   private:  
@@ -697,7 +696,7 @@ tau.setZero();
 	torque_cmd.effort_duration.push_back(10*dt);// expires after 0.1 sec
     }
  
-    _lcm->publish("ACTUATOR_CMDS", &torque_cmd); // unstable;
+    _lcm->publish("ACTUATOR_CMDS", &torque_cmd); 
     
 
     if(debug_){

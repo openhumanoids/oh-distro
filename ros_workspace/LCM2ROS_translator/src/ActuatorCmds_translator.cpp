@@ -22,11 +22,13 @@ double getTime_now()
 class ActuatorCmdHandler{
 	private:
 		ros::Publisher actuator_cmd_pub;
+		ros::Publisher body_twist_cmd_pub;
 		ros::NodeHandle actuator_cmd_node;
 	public:
 	ActuatorCmdHandler(ros::NodeHandle &node): actuator_cmd_node(node)	
 	{
 	 actuator_cmd_pub = actuator_cmd_node.advertise<atlas_gazebo_msgs::ActuatorCmd>("actuator_cmd",10);
+	 body_twist_cmd_pub = actuator_cmd_node.advertise<geometry_msgs::Twist>("cmd_vel",10);
 	}
 	~ActuatorCmdHandler() {}
 	
@@ -48,6 +50,28 @@ class ActuatorCmdHandler{
 		}
 
 	}
+	
+	void body_twist_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg)//what is rbuf and channel here?
+	{
+		geometry_msgs::Twist body_twist_cmd_msg;
+    //long t = msg->utime*1000; // from usec to nsec
+		
+		body_twist_cmd_msg.linear.x =  msg->linear_velocity.x;
+		body_twist_cmd_msg.linear.y =  msg->linear_velocity.y;
+		body_twist_cmd_msg.linear.z =  msg->linear_velocity.z;
+		body_twist_cmd_msg.angular.x =  msg->angular_velocity.x;
+		body_twist_cmd_msg.angular.y =  msg->angular_velocity.y;
+		body_twist_cmd_msg.angular.z =  msg->angular_velocity.z;
+		
+		if(ros::ok())
+		{
+			body_twist_cmd_pub.publish(body_twist_cmd_msg);
+			//ros::spinOnce(); // required?
+		}
+
+	}
+	
+	
 };
 
 int main(int argc,char** argv)
@@ -62,6 +86,7 @@ int main(int argc,char** argv)
 	
 	//LCM subscription
 	listener.subscribe("ACTUATOR_CMDS",&ActuatorCmdHandler::actuator_cmd_Callback,&handlerObject);
+	listener.subscribe("NAV_CMDS",&ActuatorCmdHandler::body_twist_cmd_Callback,&handlerObject);
 
 	while(0 == listener.handle());
 	return 0;

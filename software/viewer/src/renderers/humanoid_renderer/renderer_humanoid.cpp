@@ -286,7 +286,7 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
     // create and register mode handler
     self->key_handler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
     self->key_handler->name = strdup(std::string("Mode Control").c_str());
-    self->key_handler->enabled = 1;
+    self->key_handler->enabled = 0;
     self->key_handler->key_press = cb_key_press;
     //self->key_handler->key_release = cb_key_release;
     self->key_handler->user = self;

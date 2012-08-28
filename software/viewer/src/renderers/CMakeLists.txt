@@ -11,14 +11,14 @@ add_definitions(-Wall -std=gnu99)
 add_library(renderer_drc SHARED 
   humanoid_renderer/renderer_humanoid.cpp
   humanoid_renderer/RobotStateListener.cpp
-  renderer_localize.cpp
+  renderer_navigation.cpp
   )
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
 
 pods_install_libraries(renderer_drc)
 pods_install_headers(humanoid_renderer/renderer_humanoid.hpp
   humanoid_renderer/RobotStateListener.hpp
-  renderer_localize.hpp
+  renderer_navigation.hpp
   DESTINATION renderer_drc)
 
 # create a pkg-config file for the library, to make it easier for other

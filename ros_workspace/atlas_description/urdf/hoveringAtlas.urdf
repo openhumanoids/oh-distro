@@ -261,10 +261,7 @@
       <mass value="121.06"/>
       <inertia ixx="1.70235" ixy="0" ixz="0" iyy="1.70235" iyz="0" izz="0.5616"/>
     </inertial>
-<!--<gazebo reference="X_link">
-    <static>true</static>
-    <turnGravityOff>true</turnGravityOff>
-</gazebo>-->
+
   </link> 
  <link name="Y_link">
    <inertial>
@@ -277,6 +274,8 @@
     <turnGravityOff>true</turnGravityOff>
 </gazebo>-->
   </link> 
+  
+
 
   <link name="world"/>
  <!-- JOINTS -->
@@ -450,11 +449,8 @@
    	 <updateRate>100.0</updateRate>
    	 <topicName>true_robot_state</topicName>
     </controller:gazebo_ros_pub_robot_state>
+
    </gazebo>
 
-<!-- <gazebo reference="base">
-    <static>true</static>
-    <turnGravityOff>true</turnGravityOff>
-</gazebo> -->
 </robot>
 

@@ -3,4 +3,6 @@
 
 # mypod1
 pd_chain_control
+reactive_navigation_2d
 drc_controller_manager
+
