@@ -25,10 +25,12 @@ Probably required: (to be confirmed)
 (This list may not be complete. See the individual README files in
 the third party pod collections for newer dependencies.)
 
-2. INSTALL LCM v0.9
+2. INSTALL pods tool from sourceforge (optional)
 ===================
-https://code.google.com/p/lcm/downloads/list
-https://code.google.com/p/lcm/wiki/BuildInstructions
+http://sourceforge.net/p/pods/wiki/PodsTool/
+$ svn checkout svn://svn.code.sf.net/p/pods/svn pods
+$ cd pods
+$ sudo python setup.py install
 
 3. BUILD
 ========

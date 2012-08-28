@@ -5,7 +5,7 @@ struct robot_plan_t
     int64_t utime;
     string robot_name;    
     int32_t num_states;
-    robot_state_t plan[num_states]; //each individual state is also timed. The time should be relative increments to the robot_plan_t.utime.
+    robot_state_t plan[num_states]; //each individual state is also timed.
 }
 
 
