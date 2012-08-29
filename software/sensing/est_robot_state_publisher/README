@@ -9,4 +9,10 @@ templates.  The policies and templates can be found at:
 ====
 
 Name:         est_robot_state_publisher
-Maintainers:  rdeits
+Maintainers:  rdeits, Sisir
+
+Description: This pod has two executables.
+
+1) est_robot_state_publisher: listens to msgs on TRUE_ROBOT_STATE (will be replaced with MEAS_JOINT_ANGLES for the real platform). Also listens to CAMERA_STATE to get an estimate of the camera's position with respect to the world. Works out forward kinematics and estimates the position of body origin relative to the camera and the world. In this case, the world (0,0,0) is the position camera at time zero.
+
+2) est_robot_state_publisher_no_sensing: Just relays msgs on TRUE_ROBOT_STATE. Use this if you are not publishing perception information. In this case, the world (0,0,0) is the position body origin at time zero.
