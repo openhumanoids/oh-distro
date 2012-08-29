@@ -8,7 +8,7 @@
 #include <kdl/tree.hpp>
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
-
+#include "lcmtypes/bot_core.hpp"
 #include <bot_vis/bot_vis.h>
 
 namespace fk
@@ -35,6 +35,7 @@ namespace fk
     //get rid of this
     BotViewer *_viewer;
 
+
     //----------------constructor/destructor
   public:
     RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm,
@@ -51,7 +52,8 @@ namespace fk
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-			    const  drc::robot_urdf_t* msg);
+			    const  drc::robot_urdf_t* msg);    
+
 
     //-----observers
   public:
@@ -62,7 +64,7 @@ namespace fk
     static void printTransforms(const std::vector<boost::shared_ptr<urdf::Geometry> > &_link_shapes,
 				const std::vector<drc::link_transform_t> &_link_tfs);
 
-}; //class JointAnglesHandler
+}; //class RobotStateListener
 
 } //namespace fk
 

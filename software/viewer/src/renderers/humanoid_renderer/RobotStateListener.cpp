@@ -40,6 +40,8 @@ namespace fk
     //Subscribes to MEAS_JOINT_ANGLES 
     //lcm->subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
     lcm->subscribe("EST_ROBOT_STATE", &fk::RobotStateListener::handleRobotStateMsg, this); //&this ?
+
+
   }
   
 
@@ -79,7 +81,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
                             //Otherwise returns relative transforms between joints. 
     
     kinematics_status = _fksolver->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-    
+
     if(kinematics_status>=0){
       // cout << "Success!" <<endl;
     }else{
@@ -88,7 +90,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
    }
 
     // PRINTS THE VISUAL PROPERTIES OF ALL LINKS THAT HAVE A VISUAL ELEMENT DEFINED IN THE URDF FILE 
-    map<string, drc::transform_t>::const_iterator transform_it;
+   
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
     for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
       {  		
@@ -97,14 +99,15 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	  {
 	
 	    urdf::Pose visual_origin = it->second->visual->origin;
-	 
+	     
 	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
 
 	    T_world_body.p[0]= msg->origin_position.translation.x;
 	    T_world_body.p[1]= msg->origin_position.translation.y;
 	    T_world_body.p[2]= msg->origin_position.translation.z;		    
 	    T_world_body.M =  KDL::Rotation::Quaternion(msg->origin_position.rotation.x, msg->origin_position.rotation.y, msg->origin_position.rotation.z, msg->origin_position.rotation.w);
-	 
+	    
+	    map<string, drc::transform_t>::const_iterator transform_it;
 	    transform_it=cartpos_out.find(it->first);
         
            // usually find fails if base_link has a visual element.
@@ -126,8 +129,9 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
 	    T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
+	   
 	    T_world_visual = T_world_body*T_body_visual;
-         
+             //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
 
 	    drc::link_transform_t state;	    
 
@@ -234,6 +238,10 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
        if(it->second->type!=6) // All joints that not of the type FIXED.
 	 _joint_names_.push_back(it->first);
      }
+   
+   // Must also add the pose of the camera link "wide_stereo_link".
+   
+     
    //robot_model.getLinks(robot->links_); 
    _links_map =  robot_model.links_;
    
@@ -258,6 +266,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     cout<< "Number of Joints: " << _joint_names_.size() <<endl;
   } 
 
+  
   //================printouts
   void RobotStateListener::getState(vector<shared_ptr<urdf::Geometry> > & shapes,
 				    vector<drc::link_transform_t> & transforms)
