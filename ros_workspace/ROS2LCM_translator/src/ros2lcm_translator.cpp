@@ -33,12 +33,14 @@
 #include <lcm/lcm-cpp.hpp>
 //#include <lcmtypes/bot_core.h>
 #include <lcmtypes/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/visualization.h>
 
 #include <pcl/ros/conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+
+#include <pcl/io/pcd_io.h>
 
 #define VERBOSE false
 using namespace std;
@@ -74,6 +76,7 @@ class App{
     void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
     void send_rigid_transform(tf::StampedTransform& transform,string channel );
     void send_obj(tf::StampedTransform& transform, int pose_collection_id, int64_t pose_id, bool reset );
+    void send_points(const sensor_msgs::PointCloud2ConstPtr& msg,string channel );
 
     int points_cb_counter; // temp used to skip frames of points
 };
@@ -176,31 +179,73 @@ bool pcdXYZRGB_to_lcm(lcm_t *lcm, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
   delete points;
 }
 
+
+//TODO: properly fill these fields:
+// seq, frame_id, is_bigendian, point_step, row_step, is_dense
+void App::send_points(const sensor_msgs::PointCloud2ConstPtr& msg,string channel){
+
+  drc_pointcloud2_t pc;
+  pc.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  pc.height = msg->height;
+  pc.width = msg->width;
+  pc.nfields = msg->fields.size();
+  drc_pointfield_t* fields = new drc_pointfield_t[pc.nfields];
+  for (size_t i=0;i < msg->fields.size();i++){
+    //cout << " field: " << msg->fields[i].name << " " << (int) msg->fields[i].datatype << "\n";
+    fields[i].name = (char*) msg->fields[i].name.c_str();
+    fields[i].offset = msg->fields[i].offset;
+    fields[i].datatype = msg->fields[i].datatype;
+    fields[i].count =msg->fields[i].count;
+  }
+  pc.fields = fields;
+  // pc.nfields =0;
+  // pc.fields = NULL;
+  //  pc.data_nbytes = 0;
+  //  pc.data = NULL;
+
+  pc.data_nbytes = (int) msg->data.size();
+  uint8_t* raw_data = new uint8_t [ pc.data_nbytes];
+  copy(msg->data.begin(), msg->data.end(), raw_data);
+  pc.data = raw_data;
+
+  drc_pointcloud2_t_publish(lcmref_, channel.c_str() ,&pc);
+  delete[] raw_data;
+}
+
+
+
+
 // typical contents:
 // 307200 pts | 480 height | 640 width | xyz rgb 4 field | 4bytes per field
 //  n_bytes: 4915200bytes: 640 x 480 x 4field x 1byte
 // nan published when no xyz available
 void App::points_cb(const sensor_msgs::PointCloud2ConstPtr& msg){
-  int64_t utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
-
   points_cb_counter++;
   if (points_cb_counter %10 !=0){
     cout << "skip\n";
     return;
   }
 
-  if (VERBOSE){
+  int64_t utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+
+  send_points(msg, "WIDE_STEREO_POINTS");
+
+  if (1==1){//(VERBOSE){
     cout << "got points: " << utime << "\n";
     cout << "    height: " << msg->height << "\n";
     cout << "     width: " << msg->width  << "\n";
     cout << "point_step: " << msg->point_step << "\n";
     cout << "  row_step: " << msg->row_step << "\n";
-    cout << "  is_dense: " << msg->is_dense << "\n";
-    cout << " bigendian: " << msg->is_bigendian << "\n";
+    cout << "  is_dense: " << (int) msg->is_dense << "\n";
+    cout << " bigendian: " << (int) msg->is_bigendian << "\n";
     cout << "  n_fields: " << msg->fields.size() << "\n";
     cout << "  n_points: " << msg->data.size() << "\n";
     for (size_t i=0;i < msg->fields.size();i++){
-      cout << " field: " << msg->fields[i].name << " " << (int) msg->fields[i].datatype << "\n";
+      cout << " field: "
+          << msg->fields[i].name << " "
+          << msg->fields[i].offset << " "
+          << (int) msg->fields[i].datatype << " "
+          << msg->fields[i].count << "\n";
     }
   }
 
@@ -212,17 +257,24 @@ void App::points_cb(const sensor_msgs::PointCloud2ConstPtr& msg){
     // Convert the sensor_msgs/PointCloud2 data to pcl/PointCloud
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::fromROSMsg (*msg, cloud);
+
+    //pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud);
+    //std::cout << "Saved " << cloud.points.size () << " data points to test_pcd.pcd." << std::endl;
+
     if (VERBOSE) cout << "Cloud contains: " << cloud.points.size() << " points\n";
 
     // Transmit pose and object collection:
     int pose_collection_id = 0;
     int64_t pose_id = floor(transform.stamp_.toSec()  * 1E6); // which specific pose
-    bool reset = false;
+    bool reset = true;
     send_obj(transform,pose_collection_id,pose_id, reset );
     pcdXYZRGB_to_lcm(lcmref_ , cloud,utime,pose_collection_id,pose_id,reset);
   }  catch (tf::TransformException ex)   {
      ROS_ERROR("lookupTransform failed: %s", ex.what());
   }
+
+
+
 }
 
 // typical contents: 640 x 480 images

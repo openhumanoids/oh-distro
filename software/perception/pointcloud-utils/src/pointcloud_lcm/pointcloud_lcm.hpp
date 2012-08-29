@@ -114,7 +114,7 @@ void unpack_pointcloud2(const drc_pointcloud2_t *msg,
   msg_cld.fields[3].offset = 12;
   pcl::fromROSMsg (msg_cld, *cloud);
 
-  std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
+  //std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
 
   // Transform cloud to that its in robotic frame:
   // Could also apply the cv->robotic transform directly

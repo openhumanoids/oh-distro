@@ -61,6 +61,20 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
 }
 
 
+Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
+  Eigen::Quaterniond r(pose_in.rotation());
+  Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
+  //Eigen::Quaternionf rf(r.x() , r.y() , r.y() , r.z() );
+
+  Eigen::Isometry3f pose_out;
+  pose_out.setIdentity();
+  pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
+  pose_out.rotate(rf);
+
+  return pose_out;
+}
+
+
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
   Eigen::Vector3d t(pose.translation());
   Eigen::Quaterniond r(pose.rotation());

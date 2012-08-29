@@ -4,7 +4,7 @@
 <include file="$(find gazebo_worlds)/launch/empty_world.launch"/> 
 
 <!-- spawn pr2 robot + table + coffee cup -->
-<include file="$(find pr2_gazebo)/pr2.launch"/>
+<include file="$(find pr2_gazebo)/launch/pr2.launch"/>
 <include file="$(find gazebo_worlds)/launch/table.launch"/>
 <include file="$(find gazebo_worlds)/launch/coffee_cup.launch"/>
 

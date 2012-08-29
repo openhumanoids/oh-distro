@@ -136,6 +136,108 @@ void pointcloud_vis::ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZR
 }
 
 
+void pointcloud_vis::mesh_to_lcm_from_list(int id, pcl::PolygonMesh::Ptr mesh,
+    int64_t obj_id, int64_t ptcld_id,
+    bool sendSubset, const vector<int> &SubsetIndicies){
+  for (size_t i=0; i < ptcld_cfg_list.size() ; i++){
+    if (id == ptcld_cfg_list[i].id ){
+      mesh_to_lcm(ptcld_cfg_list[i],mesh,obj_id,ptcld_id, sendSubset, SubsetIndicies);
+       return;
+    }
+  }
+}
+
+void pointcloud_vis::mesh_to_lcm(ptcld_cfg pcfg, pcl::PolygonMesh::Ptr mesh,
+      int64_t obj_id, int64_t ptcld_id,
+      bool sendSubset, const vector<int> &SubsetIndicies){
+
+  // skip_above_z doesnt display the z dimension
+  //TODO: have general method for skipping outside x,y,z +/-
+  int N_polygons;
+  if (!sendSubset){
+    N_polygons = mesh->polygons.size ();
+  }else{
+    N_polygons = SubsetIndicies.size ();
+  }
+
+  vs_point3d_list_collection_t point_lists;
+  point_lists.id = pcfg.id;
+  point_lists.name = (char *)pcfg.name.c_str(); // Use channel name?
+  point_lists.type = pcfg.type; // collection of POINTS
+
+  point_lists.reset = pcfg.reset;
+  point_lists.nlists = N_polygons; // number of seperate sets of points
+  vs_point3d_list_t point_list[N_polygons];
+
+  pcl::PointCloud<pcl::PointXYZRGB> newcloud;
+  pcl::fromROSMsg(mesh->cloud, newcloud);
+  Eigen::Vector4f tmp;
+  for(size_t i=0; i< N_polygons; i++){ // each triangle/polygon
+    size_t k;
+    if (!sendSubset){ // send all of the mesh
+      k = i;
+    }else{ // only send some of it:
+      k =  SubsetIndicies[i];
+    }
+
+    pcl::Vertices apoly_in = mesh->polygons[k];//[i];
+    int N_points = apoly_in.vertices.size ();
+
+    vs_point3d_list_t* points = &(point_list[i]); //[i]);
+    points->nnormals = 0;
+    points->normals = NULL;
+    points->npointids = 0;
+    points->pointids = NULL;
+
+    points->ncolors = N_points;
+    vs_color_t* colors = new vs_color_t[N_points];
+    points->npoints = N_points;
+    vs_point3d_t* entries = new vs_point3d_t[N_points];
+
+    points->id = i; // ... still i - not k
+    points->collection = pcfg.obj_coll;//PoseCollID;//collection.objectCollectionId();
+    points->element_id = obj_id;//ptcoll_cfg.element_id;
+    float rgba[4];
+    for(size_t j=0; j< N_points; j++){ // each point
+      uint32_t pt = apoly_in.vertices[j];
+      tmp = newcloud.points[pt].getVector4fMap();
+      entries[j].x =(float) tmp(0);
+      entries[j].y =(float) tmp(1);
+      entries[j].z =(float) tmp(2);
+      // r,g,b: input is ints 0->255, opengl wants floats 0->1
+      if (  pcfg.use_rgb){// use the rgb value
+        rgba[0] = pcfg.rgb[0];
+        rgba[1] = pcfg.rgb[1];
+        rgba[2] = pcfg.rgb[2];
+      }else{
+        rgba[0] = newcloud.points[pt].r/255.0;
+        rgba[1] = newcloud.points[pt].g/255.0;
+        rgba[2] = newcloud.points[pt].b/255.0;
+      }
+      colors[j].r = rgba[0]; // points_collection values range 0-1
+      colors[j].g = rgba[1];
+      colors[j].b = rgba[2];
+    }
+    points->points = entries;
+    points->colors = colors;
+  }
+  point_lists.point_lists = point_list;
+  vs_point3d_list_collection_t_publish(publish_lcm_,"POINTS_COLLECTION",&point_lists);
+
+  //TODO I don't think i am doing memory management properly!!!
+  //  delete colors;
+  for (int i=0;i<point_lists.nlists;i++) {
+    delete [] point_lists.point_lists[i].points;
+    delete [] point_lists.point_lists[i].colors;
+  }
+}
+
+
+
+
+
+
+/*
 void pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
    
   vs_point3d_list_collection_t plist_coll;
@@ -207,7 +309,7 @@ void pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl:
   delete colors;
   delete points;
 }
-
+*/
 
 //////////////////////////////////////// Older Code - not put into the class yet
 //from hordur:

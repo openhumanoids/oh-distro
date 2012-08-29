@@ -28,9 +28,10 @@
 
 #define RENDERER_NAME "Localize"
 #define PARAM_REINITIALIZE "Reinitialize"
-#define PARAM_SEND_POSE "Sent Pose"
+#define PARAM_SEND_POSE "Send Pose"
 #define PARAM_GOAL "Goal"
-#define PARAM_NAME_SAVE_DB "Save DB"
+#define PARAM_NAME_NEW_MAP "New Map"
+#define PARAM_RECT "Choose Rect"
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
 //Not sure why abe has this high a variance for the angle //((2*M_PI)*(2*M_PI))
@@ -71,6 +72,14 @@ union _point3d_any_t {
 typedef point3d_t vec3d_t;
 
 #define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
+
+
+// from mfleder's surrogate code:
+typedef struct
+{
+  int shouldDraw; //0 or 1
+  double x0, y0, x1, y1;
+} Rectangle2D;
 
 
 int geom_ray_plane_intersect_3d (const point3d_t *ray_point, const vec3d_t *ray_dir,
@@ -125,6 +134,7 @@ typedef struct _RendererLocalize {
 
     int dragging;
     int active; //1 = relocalize, 2 = set person location 
+    int last_active; //1 = relocalize, 2 = set person location
     point2d_t drag_start_local;
     point2d_t drag_finish_local;
 
@@ -133,6 +143,8 @@ typedef struct _RendererLocalize {
     double particle_std;
 
     int64_t max_draw_utime;
+
+    Rectangle2D rectangle2D;
 }RendererLocalize;
 
 static void
@@ -140,22 +152,80 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 {
     RendererLocalize *self = (RendererLocalize*) renderer;
     int64_t now = bot_timestamp_now();
+
     if(!self->dragging && now > self->max_draw_utime)
         return;
 
-    glColor3f(0, 1, 0);
-    glPushMatrix();
-    glTranslatef(self->particle_mean.x, self->particle_mean.y, 0);
-    bot_gl_draw_circle(self->particle_std);
-    //bot_gl_draw_arrow_2d();
+    if (((self->last_active ==4)  && (self->active ==0))||
+        (self->active ==4)) {
+      //bot_gl_draw_cube();
 
-    glBegin(GL_LINE_STRIP);  
-    glVertex2f(0.0,0.0);
+      // Setup gl coordinates for drawing
+      int width = (GTK_WIDGET(viewer->gl_area)->allocation.width);
+      int height = (GTK_WIDGET(viewer->gl_area)->allocation.height);
 
-    glVertex2f(self->particle_std*cos(self->theta),self->particle_std*sin(self->theta));
-    glEnd();
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      glOrtho(0, width, 0, height, -1, 1);
+      glDisable(GL_DEPTH_TEST);
 
-    glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      glLoadIdentity();
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+      const Rectangle2D& rect = self->rectangle2D;
+      //const Rectangle2D& rect = _display_info.rectangle2D;
+      glBegin(GL_QUADS);
+      glColor4f(.7, .7, 0, .2);
+      //printf("%f, %f | \n",rect.x0,rect.x1);//<< rect.x0 << " and " << rect.x1 << "\n";
+
+      //glColor4f(rgb.red, rgb.green, rgb.blue, 0.5);
+      glVertex2f(rect.x0, height - rect.y0);
+      glVertex2f(rect.x1, height - rect.y0);
+      glVertex2f(rect.x1, height - rect.y1);
+      glVertex2f(rect.x0, height - rect.y1);
+      glEnd(); //GL_QUADS
+      glDisable(GL_BLEND);
+
+      glColor3f(.7, .7, 0);
+      //color3f(Color::HIGHLIGHT);
+      glBegin(GL_LINE_LOOP);
+
+      glVertex2f(rect.x0, height - rect.y0);
+      glVertex2f(rect.x1, height - rect.y0);
+      glVertex2f(rect.x1, height - rect.y1);
+      glVertex2f(rect.x0, height - rect.y1);
+      glEnd();
+
+      glEnable(GL_DEPTH_TEST); //mf
+
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
+      glPopMatrix();
+
+    }else{ // draw circle as usual
+
+      glColor3f(0, 1, 0);
+      glPushMatrix();
+      glTranslatef(self->particle_mean.x, self->particle_mean.y, 0);
+
+
+      bot_gl_draw_circle(self->particle_std);
+
+      glBegin(GL_LINE_STRIP);
+      glVertex2f(0.0,0.0);
+
+      glVertex2f(self->particle_std*cos(self->theta),self->particle_std*sin(self->theta));
+      glEnd();
+
+      glPopMatrix();
+    }
+
 }
 
 static void
@@ -184,7 +254,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
 {
     RendererLocalize *self = (RendererLocalize*) ehandler->user;
 
-    //fprintf(stderr, "Mouse Press : %f,%f\n", ray_start[0], ray_start[1]);
+    fprintf(stderr, "Active: %d | Mouse Press : %f,%f\n",self->active, ray_start[0], ray_start[1]);
 
     self->dragging = 0;
 
@@ -202,21 +272,36 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
         return 0;
     }
 
-    point2d_t click_pt_local;
-  
-    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start), 
+    if (self->active ==4){
+
+      self->dragging = 1;
+
+      Rectangle2D *rect = &(self->rectangle2D);
+      rect->shouldDraw = 1;
+      rect->x0 = event->x;
+      rect->y0 = event->y;
+      rect->x1 = event->x;
+      rect->y1 = event->y;
+      self->max_draw_utime = bot_timestamp_now() + DRAW_PERSIST_SEC * 1000000;
+
+    }else{
+
+      point2d_t click_pt_local;
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
                                            POINT3D(ray_dir), 0, &click_pt_local)) {
         bot_viewer_request_redraw(self->viewer);
         self->active = 0;
         return 0;
+      }
+
+      self->dragging = 1;
+
+      self->drag_start_local = click_pt_local;
+      self->drag_finish_local = click_pt_local;
+
+      recompute_particle_distribution(self);
     }
 
-    self->dragging = 1;
-
-    self->drag_start_local = click_pt_local;
-    self->drag_finish_local = click_pt_local;
-
-    recompute_particle_distribution(self);
 
     bot_viewer_request_redraw(self->viewer);
     return 1;
@@ -225,65 +310,73 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
 
 
 static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
-                         const double ray_start[3], const double ray_dir[3], 
-                         const GdkEventButton *event)
+    const double ray_start[3], const double ray_dir[3],
+    const GdkEventButton *event)
 {
-    RendererLocalize *self = (RendererLocalize*) ehandler->user;
+  RendererLocalize *self = (RendererLocalize*) ehandler->user;
 
-    if (self->dragging) {
-        self->dragging = 0;
+  if (self->dragging) {
+    self->dragging = 0;
+  }
+  if (self->active != 0) {
+    // check drag points and publish
+
+    printf("x,y,t: %f %f %f.    std: %f\n",self->particle_mean.x
+        ,self->particle_mean.y,self->theta,self->particle_std);
+
+    drc_localize_reinitialize_cmd_t msg;
+    msg.utime = bot_timestamp_now();
+    msg.mean[0] = self->particle_mean.x;
+    msg.mean[1] = self->particle_mean.y;
+    msg.mean[2] = self->theta;
+
+    double v = self->particle_std * self->particle_std;
+    msg.variance[0] = v;
+    msg.variance[1] = v;
+    msg.variance[2] = VARIANCE_THETA;
+
+    fprintf(stderr,"Localizer Button Released => Activate Value : %d\n", self->active);
+    if(self->active == 1){
+      fprintf(stderr, "Reinitializing\n");
+      drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_REINITIALIZE", &msg);
+    }else if (self->active ==2){
+      fprintf(stderr, "Setting Goal\n");
+      drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_GOAL", &msg);
+    }else if (self->active ==3){ // this is only for testing
+      fprintf(stderr, "Sending artificial POSE\n");
+      bot_core_pose_t pose_msg;
+      memset(&pose_msg, 0, sizeof(pose_msg));
+      pose_msg.utime =   bot_timestamp_now();// msg->timestamp;
+      pose_msg.pos[0] = self->particle_mean.x;
+      pose_msg.pos[1] = self->particle_mean.y;
+      pose_msg.pos[2] = 0;
+      double rpy[] = {0,0,self->theta};
+      double quat_out[4];
+      bot_roll_pitch_yaw_to_quat(rpy, quat_out);
+      pose_msg.orientation[0] =  quat_out[0];
+      pose_msg.orientation[1] =  quat_out[1];
+      pose_msg.orientation[2] =  quat_out[2];
+      pose_msg.orientation[3] =  quat_out[3];
+      bot_core_pose_t_publish(self->lc, "POSE", &pose_msg);
+    }else if (self->active ==4){ // send rectangle
+      fprintf(stderr, "Sending Rectangle [... well actually sending nothing yet]\n");
+      Rectangle2D *rect = &(self->rectangle2D);
+      rect->x1 = event->x;
+      rect->y1 = event->y;
+      //rect->shouldDraw = 0;
+      self->max_draw_utime = bot_timestamp_now() + DRAW_PERSIST_SEC * 1000000;
     }
-    if (self->active != 0) {
-        // check drag points and publish
-        
-        printf("x,y,t: %f %f %f.    std: %f\n",self->particle_mean.x
-	    ,self->particle_mean.y,self->theta,self->particle_std); 
-        
-  	drc_localize_reinitialize_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.mean[0] = self->particle_mean.x;
-        msg.mean[1] = self->particle_mean.y;
-        msg.mean[2] = self->theta;
-      
-        double v = self->particle_std * self->particle_std;
-        msg.variance[0] = v;
-        msg.variance[1] = v;
-        msg.variance[2] = VARIANCE_THETA;
-      
-        fprintf(stderr,"Localizer Button Released => Activate Value : %d\n", self->active);
-        if(self->active == 1){
-            fprintf(stderr, "Reinitializing\n");
-            drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_REINITIALIZE", &msg);
-        }else if (self->active ==2){
-            fprintf(stderr, "Setting Goal\n");
-            drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_GOAL", &msg);
-	}else if (self->active ==3){ // this is only for testing
-            fprintf(stderr, "Sending artificial POSE\n");
-	    bot_core_pose_t pose_msg;
-	    memset(&pose_msg, 0, sizeof(pose_msg));
-	    pose_msg.utime =   bot_timestamp_now();// msg->timestamp;
-	    pose_msg.pos[0] = self->particle_mean.x;
-	    pose_msg.pos[1] = self->particle_mean.y;
-	    pose_msg.pos[2] = 0;  
-	    double rpy[] = {0,0,self->theta}; 
-	    double quat_out[4];
-	    bot_roll_pitch_yaw_to_quat(rpy, quat_out);  
-	    pose_msg.orientation[0] =  quat_out[0];  
-	    pose_msg.orientation[1] =  quat_out[1];  
-	    pose_msg.orientation[2] =  quat_out[2];  
-	    pose_msg.orientation[3] =  quat_out[3];
-	    bot_core_pose_t_publish(self->lc, "POSE", &pose_msg);	    
-	}
-        bot_viewer_set_status_bar_message(self->viewer, "sent msg");
-        self->active = 0;
+    bot_viewer_set_status_bar_message(self->viewer, "sent msg");
+    self->last_active = self->active;
+    self->active = 0;
 
-        ehandler->picking = 0;
-        return 1;
-    }
-    else
-        ehandler->picking = 0;
+    ehandler->picking = 0;
+    return 1;
+  }
+  else
+    ehandler->picking = 0;
 
-    return 0;
+  return 0;
 }
 
 static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
@@ -295,14 +388,24 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
     if(!self->dragging || self->active==0)
         return 0;
 
-    point2d_t drag_pt_local;
-    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start), 
+
+    if (self->active ==4){
+      Rectangle2D *rect = &(self->rectangle2D);
+      rect->shouldDraw = 1;
+      rect->x1 = event->x;
+      rect->y1 = event->y;
+      self->max_draw_utime = bot_timestamp_now() + DRAW_PERSIST_SEC * 1000000;
+
+    }else{
+
+      point2d_t drag_pt_local;
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
                                            POINT3D(ray_dir), 0, &drag_pt_local)) {
         return 0;
+      }
+      self->drag_finish_local = drag_pt_local;
+      recompute_particle_distribution(self);
     }
-
-    self->drag_finish_local = drag_pt_local;
-    recompute_particle_distribution(self);
 
     bot_viewer_request_redraw(self->viewer);
     return 1;
@@ -339,10 +442,10 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 }
 
 
-// Send a message to save the relocalize BOW DB
-// this is really lasy as it reused the reinitialse message
+// Send a message to start a new map
+// this is really lasy as it reuses the reinitialse message
 // i did this to avoid inventing another
-static void save_db (RendererLocalize *self){
+static void new_map (RendererLocalize *self){
   BotViewHandler *vhandler = self->viewer->view_handler;  
 
   drc_localize_reinitialize_cmd_t msg;
@@ -353,11 +456,8 @@ static void save_db (RendererLocalize *self){
   msg.variance[0] = -99999;
   msg.variance[1] = -99999;
   msg.variance[2] = -99999;
-  //if(self->active == 1){
-      fprintf(stderr,"Sent LOCALIZE_SAVE_DB LCM message %d\n", self->active);
-      drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_SAVE_DB", &msg);
-  //}      
-//        self->active = 0;
+  fprintf(stderr,"Sent LOCALIZE_NEW_MAP LCM message %d\n", self->active);
+  drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_NEW_MAP", &msg);
 }
 
 
@@ -372,15 +472,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         fprintf(stderr,"Clicked goal, activate\n");
         bot_viewer_request_pick (self->viewer, &(self->ehandler));
         activate(self, 2);
-    }else if (! strcmp (name, PARAM_NAME_SAVE_DB)) {
-      //activate(self, 1);
-      //if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_SAVE_DB)){
-	save_db(self);
-      //}
+    }else if (! strcmp (name, PARAM_NAME_NEW_MAP)) {
+	      new_map(self);
     }else if (! strcmp (name, PARAM_SEND_POSE)) {
         fprintf(stderr,"Clicked pose, activate\n");
         bot_viewer_request_pick (self->viewer, &(self->ehandler));
         activate(self, 3);
+    }else if(!strcmp(name, PARAM_RECT)) {
+        fprintf(stderr,"Clicked rect, activate\n");
+        bot_viewer_request_pick (self->viewer, &(self->ehandler));
+        activate(self, 4);
     }
 }
 
@@ -419,9 +520,10 @@ BotRenderer *renderer_localize_new (BotViewer *viewer, int render_priority, lcm_
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL, NULL);
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_POSE, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_RECT, NULL);
     
     bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,
-            PARAM_NAME_SAVE_DB, 0, NULL);    
+            PARAM_NAME_NEW_MAP, 0, NULL);    
 
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->renderer.widget = GTK_WIDGET(self->pw);

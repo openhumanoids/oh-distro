@@ -20,14 +20,25 @@ class local_map{
     pointcloud_lcm* pc_lcm_;
     pointcloud_vis* pc_vis_;
 
-    Isometry3dTime current_pose;
+    Isometry3dTime current_poseT;
     bool current_pose_init; // have we started
+    Isometry3dTime null_poseT;
+    Isometry3dTime local_poseT; // LIDAR pose where we started the most recent local map
 
     // Fixed transform [initally hardcoded]:
     Eigen::Isometry3d camera_to_lidar;
 
     // Current submap clouds
     pcl::PointCloud<PointXYZRGB>::Ptr cloud;
+    int cloud_counter;
+
+    static void newmap_handler_aux(const lcm_recv_buf_t* rbuf,
+                                const char* channel,
+                                const drc_localize_reinitialize_cmd_t* msg,
+                                void* user_data){
+      ((local_map *) user_data)->newmap_handler(msg);
+    }
+    void newmap_handler(const drc_localize_reinitialize_cmd_t *msg);
 
     static void pointcloud_handler_aux(const lcm_recv_buf_t* rbuf,
                                 const char* channel,

@@ -12,5 +12,6 @@ include(cmake/pods.cmake)
 add_subdirectory(src/pointcloud_math)
 add_subdirectory(src/pointcloud_vis)
 add_subdirectory(src/pointcloud_lcm)
+add_subdirectory(src/pointcloud_filters)
 
 

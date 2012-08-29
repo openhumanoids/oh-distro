@@ -59,6 +59,8 @@ private:
   sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
 
   const std::string chan_in_,chan_out_;
+
+  int counter;
 };
 
 
@@ -83,6 +85,8 @@ App::App(const std::string & chan_in,
 
   sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
   sync_.registerCallback( boost::bind(&App::imageCb, this, _1, _2, _3, _4) );
+
+  counter=0;
 }
 
 App::~App()
@@ -96,6 +100,11 @@ void App::imageCb(const sensor_msgs::ImageConstPtr& l_image,
 {
   ros::Time current_time = l_image->header.stamp;
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toSec()  * 1E6);
+
+  counter++;
+  if (counter%10 ==0){
+    std::cout << counter << "\n";
+  }
 
   namespace enc = sensor_msgs::image_encodings;
 
@@ -111,6 +120,7 @@ void App::imageCb(const sensor_msgs::ImageConstPtr& l_image,
     return;
   }
 
+  // Create stacked image:
   bot_core_image_t left;
   left.utime =current_utime;
   left.width =l_image->width;

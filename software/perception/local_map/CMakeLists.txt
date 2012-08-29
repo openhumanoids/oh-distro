@@ -11,4 +11,7 @@ include(cmake/pods.cmake)
 
 add_subdirectory(src/local_map)
 
+add_subdirectory(src/local_segment)
+add_subdirectory(src/gen-mesh)
+
 

@@ -38,7 +38,53 @@ struct ptcld_cfg{
 };
 
 
-// This are depricated:
+
+
+//
+struct Isometry3dTime{
+  Isometry3dTime(int64_t utime, const Eigen::Isometry3d & pose) : utime(utime), pose(pose) {}
+    int64_t utime;
+    Eigen::Isometry3d pose;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+
+
+
+
+
+// Simplification of slerp to give a fraction of a quaternion rotation
+// Reimplemented from Peter Cooke's toolbox and libbot2
+// q = [0.66742, 0.28604, 0.38139, 0.57208];
+// q_i = [1 0 0 0];         % identity quaternion
+// r = 0.1
+// theta = acos(q_i*q');
+// temp = (sin((1-r)*theta) * q_i + sin(r*theta) * q) / sin(theta) ;
+// q_simple =  temp(1:4)/norm(temp(1:4))
+// @input: r - fraction of the transform - in range [0:1]  NO CHECKING YET
+// @input: q - input quaternion
+// @output:q_out - quaternion equivelent to the fraction r of q 
+void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out);
+
+// From isam/Rot3d.h
+Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll);
+
+// Float version -  From isam/Rot3d.h
+Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll);
+
+void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
+
+// generic double to float converter: [remove if something in eigen works instead
+Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d );
+
+void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss);
+
+void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss);
+
+
+
+////////////////////////////////////////////////////////////////////////
+// These are all depricated
 typedef struct _Ptcoll_cfg
 {
   int id;
@@ -62,25 +108,10 @@ typedef struct _Objcoll_cfg
   bool reset;
 }Objcoll_cfg;
 
-
-
-
-//
-struct Isometry3dTime{
-  Isometry3dTime(int64_t utime, const Eigen::Isometry3d & pose) : utime(utime), pose(pose) {}
-    int64_t utime;
-    Eigen::Isometry3d pose;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
-// previous version
 //typedef struct _Isometry3d_Time {
 //  Eigen::Isometry3d p;
 //  int64_t utime;
 //} Isometry3d_Time;
-
-
-
-
 
 // vs_obj_t with a quaterion
 // a BotTrans with a utime
@@ -90,12 +121,6 @@ struct Isometry3dTime{
 //    int64_t utime;
 //} ObjQ;
 
-
-
-
-
-
-
 typedef struct _Objq_coll_cfg
 {
   int id;
@@ -104,62 +129,5 @@ typedef struct _Objq_coll_cfg
   int type;  
   int nobjs;
 }Objq_coll_cfg;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//NaN is the only value, for which is expression value == value always false.
-template<typename T>
-inline bool isnan_math_utils(T value)
-{
-return value != value;
-}
-
-
-//  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-
-
-// Simplification of slerp to give a fraction of a quaternion rotation
-// Reimplemented from Peter Cooke's toolbox and libbot2
-// q = [0.66742, 0.28604, 0.38139, 0.57208];
-// q_i = [1 0 0 0];         % identity quaternion
-// r = 0.1
-// theta = acos(q_i*q');
-// temp = (sin((1-r)*theta) * q_i + sin(r*theta) * q) / sin(theta) ;
-// q_simple =  temp(1:4)/norm(temp(1:4))
-// @input: r - fraction of the transform - in range [0:1]  NO CHECKING YET
-// @input: q - input quaternion
-// @output:q_out - quaternion equivelent to the fraction r of q 
-void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out);
-
-// From isam/Rot3d.h
-Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll);
-
-// Float version -  From isam/Rot3d.h
-Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll);
-
-
-void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
-
-void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss);
-
-void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss);
-
 
 #endif

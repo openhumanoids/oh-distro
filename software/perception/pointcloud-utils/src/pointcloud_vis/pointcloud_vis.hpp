@@ -42,8 +42,41 @@
 using namespace pcl;
 using namespace pcl::io;
 
-
 #include <pointcloud_utils/pointcloud_math.hpp>
+
+// Duplicates the list in collections renderer:
+float vis_colors[] = {
+    51/255.0, 160/255.0, 44/255.0,
+    166/255.0, 206/255.0, 227/255.0,
+    178/255.0, 223/255.0, 138/255.0,
+    31/255.0, 120/255.0, 180/255.0,
+    251/255.0, 154/255.0, 153/255.0,
+    227/255.0, 26/255.0, 28/255.0,
+    253/255.0, 191/255.0, 111/255.0,
+    106/255.0, 61/255.0, 154/255.0,
+    255/255.0, 127/255.0, 0/255.0,
+    202/255.0, 178/255.0, 214/255.0,
+    1.0, 0.0, 0.0, // red
+    0.0, 1.0, 0.0, // green
+    0.0, 0.0, 1.0, // blue
+    1.0, 1.0, 0.0,
+    1.0, 0.0, 1.0,
+    0.0, 1.0, 1.0,
+    0.5, 1.0, 0.0,
+    1.0, 0.5, 0.0,
+    0.5, 0.0, 1.0,
+    1.0, 0.0, 0.5,
+    0.0, 0.5, 1.0,
+    0.0, 1.0, 0.5,
+    1.0, 0.5, 0.5,
+    0.5, 1.0, 0.5,
+    0.5, 0.5, 1.0,
+    0.5, 0.5, 1.0,
+    0.5, 1.0, 0.5,
+    0.5, 0.5, 1.0
+};
+
+const int num_vis_colors = sizeof(vis_colors)/(3*sizeof(float));
 
 class pointcloud_vis {
   public:
@@ -51,22 +84,32 @@ class pointcloud_vis {
 
     // Push a colour PointCloud to LCM as a points collection
     // assumes that you want to connect it to the collection specified in Ptcoll_cfg
-    void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    //void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
 
     void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
     void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
 
-    void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id);
-    void ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id);
+    void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
+            int64_t obj_id, int64_t ptcld_id);
+    void ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
+            int64_t obj_id, int64_t ptcld_id);
 
+    void mesh_to_lcm_from_list(int id, pcl::PolygonMesh::Ptr mesh,
+            int64_t obj_id, int64_t ptcld_id,
+            bool sendSubset =false,const std::vector<int> &SubsetIndicies = std::vector<int>());
+    void mesh_to_lcm(ptcld_cfg pcfg,pcl::PolygonMesh::Ptr mesh,
+            int64_t obj_id, int64_t ptcld_id,
+            bool sendSubset =false,const std::vector<int> &SubsetIndicies = std::vector<int>());
 
     std::vector <obj_cfg> obj_cfg_list;
     std::vector <ptcld_cfg> ptcld_cfg_list;
   private:
-    lcm_t *publish_lcm_; 
+    lcm_t *publish_lcm_;
 
 };
+
+
 
 
 
@@ -142,7 +185,7 @@ bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointX
 
 void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name);
 
-
+/*
 typedef struct _BasicPlane
 {
   int64_t utime;
@@ -165,9 +208,10 @@ typedef struct _BasicPlane
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW 
   
 } BasicPlane;
+*/
 
 
-bool read_and_project_submaps(std::string file_path,std::string file_name_in, BasicPlane &one_plane, BasicPlane &one_plane000  );
+//bool read_and_project_submaps(std::string file_path,std::string file_name_in, BasicPlane &one_plane, BasicPlane &one_plane000  );
 
 
 
@@ -254,4 +298,3 @@ void reorder(
 
 
 #endif /* LIB_KMCL_HPP_ */
-

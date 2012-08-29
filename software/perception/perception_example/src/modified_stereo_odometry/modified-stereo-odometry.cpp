@@ -221,6 +221,9 @@ StereoOdometry::publish_motion_estimation()
     pose_msg.orientation[3] = rotation.z();
     bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
                             &pose_msg);
+    // mfallon: Added this for Sisir, aug 2012
+    bot_core_pose_t_publish(_publish_lcm, "CAMERA_STATE",
+                            &pose_msg);
     //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
   }
 
