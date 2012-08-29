@@ -52,3 +52,15 @@ For Ubuntu, add these lines to "/etc/sysctl.conf":
 
 6. Follow wiki to install drake:
 ...
+
+
+=============== HACKS/ISSUES ===============
+[ these should be properly fixed]
+1. flann installs to build/lib64 and not build/lib
+PCL cant find it, so it can build. As a fix, I have it copy over to lib on build
+mfallon
+
+2. drc/config contains vehicle config etc. I use
+drc/software/viewer/CMakeLists.txt to copy it to
+drc/software/build/config/
+mfallon
