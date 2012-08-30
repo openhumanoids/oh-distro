@@ -1,0 +1,10 @@
+<launch>
+  <!-- add tables in appropriate places for wg walls -->
+  <param name="desk1_model" textfile="$(find gazebo_worlds)/objects/desk1.model" />
+  <param name="desk2_model" textfile="$(find gazebo_worlds)/objects/desk2.model" />
+  <param name="desk3_model" textfile="$(find gazebo_worlds)/objects/desk3.model" />
+  <node name="spawn_desk1" pkg="gazebo" type="spawn_model" args="-gazebo -param desk1_model -x -2.0  -y -12.0 -model desk1_model" respawn="false" output="screen" />
+  <node name="spawn_desk2" pkg="gazebo" type="spawn_model" args="-gazebo -param desk2_model -x -11.0 -y   2.5 -model desk2_model" respawn="false" output="screen" />
+  <node name="spawn_desk3" pkg="gazebo" type="spawn_model" args="-gazebo -param desk3_model -x -4.0  -y -12.0 -model desk3_model" respawn="false" output="screen" />
+</launch>
+

@@ -1,0 +1,91 @@
+<?xml version="1.0" ?>
+<model:physical xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz" xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body" xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom" xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint" xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering" xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics" name="desk3_model">
+    <xyz>0 0 0</xyz>
+    <rpy>0 0 0</rpy>
+    <body:box name="desk3">
+        <xyz>0 0 0</xyz>
+        <rpy>0 0 0</rpy>
+
+        <massMatrix>true</massMatrix>
+        <mass>10.0</mass>
+        <ixx>0.1</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>0.1</iyy>
+        <iyz>0</iyz>
+        <izz>0.1</izz>
+        <cx>0</cx>
+        <cy>0</cy>
+        <cz>0</cz>
+        <geom:box name="desk3top_geom">
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <xyz>0 0 0.5</xyz>
+            <rpy>0 0 0</rpy>
+            <size>0.8 2.0 0.10</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 0 0</rpy>
+                <scale>0.8 2.0 0.10</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/LightWood</material>
+            </visual>
+        </geom:box>
+        <geom:box name="desk3leg1_geom">
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <xyz>-0.3 -0.8 0.25</xyz>
+            <rpy>0 0 0</rpy>
+            <size>0.05 0.05 0.5</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 0 0</rpy>
+                <scale>0.05 0.05 0.5</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Red</material>
+            </visual>
+        </geom:box>
+        <geom:box name="desk3leg2_geom">
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <xyz>0.3 -0.8 0.25</xyz>
+            <rpy>0 0 0</rpy>
+            <size>0.05 0.05 0.5</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 0 0</rpy>
+                <scale>0.05 0.05 0.5</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Red</material>
+            </visual>
+        </geom:box>
+        <geom:box name="desk3leg3_geom">
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <xyz>-0.3 0.8 0.25</xyz>
+            <rpy>0 0 0</rpy>
+            <size>0.05 0.05 0.5</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 0 0</rpy>
+                <scale>0.05 0.05 0.5</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Red</material>
+            </visual>
+        </geom:box>
+        <geom:box name="desk3leg4_geom">
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <xyz>0.3 0.8 0.25</xyz>
+            <rpy>0 0 0</rpy>
+            <size>0.05 0.05 0.5</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 0 0</rpy>
+                <scale>0.05 0.05 0.5</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Red</material>
+            </visual>
+        </geom:box>
+    </body:box>
+</model:physical>

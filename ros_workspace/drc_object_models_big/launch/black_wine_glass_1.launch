@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- send urdf to param server -->
+  <param name="black_wine_glass_1" textfile="$(find drc_object_models)/objects/black_wine_glass.model" />
+
+  <!-- push urdf to factory and spawn robot in gazebo -->
+  <node name="spawn_black_wine_glass_1" pkg="gazebo" type="spawn_model" args="-gazebo -param black_wine_glass_1 -x -0.2 -y 2.1 -z 2.0  -R 0 -P 0 -Y 0 -model black_wine_glass_1" respawn="false" output="screen" />
+
+</launch>

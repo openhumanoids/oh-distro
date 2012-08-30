@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<model:physical name="000_580_67">
+  <xyz>   0      0      0</xyz>
+  <rpy>   0.0    0.0    0.0</rpy>
+  <static>false</static>
+  <body:trimesh name="000_580_67_body">
+<!--    <turnGravityOff>true</turnGravityOff> --> 
+    <massMatrix>true</massMatrix> 
+    <mass>0.3</mass>
+    <ixx>0.001</ixx>
+    <ixy>0.0</ixy>
+    <ixz>0.0</ixz>
+    <iyy>0.001</iyy>
+    <iyz>0.0</iyz>
+    <izz>0.001</izz>
+    <cx>0.0</cx>
+    <cy>0.0</cy>
+    <cz>0.05</cz>
+
+    <geom:trimesh name="000_580_67_geom">
+      <xyz>0 0 0</xyz>
+      <laserRetro>2000.0</laserRetro>
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
+      <scale>0.005 0.005 0.005</scale>
+      <mesh>000.580.67.obj.mesh</mesh>
+      <visual>
+        <xyz>0 0 0.0</xyz>
+        <scale>0.005 0.005 0.005</scale>
+        <material>Gazebo/GrassFloor</material>
+        <mesh>wine_cup.obj.mesh</mesh>
+      </visual>
+    </geom:trimesh>
+  </body:trimesh>
+</model:physical>
+
+
+

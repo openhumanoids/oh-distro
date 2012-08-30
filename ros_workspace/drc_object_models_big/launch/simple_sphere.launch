@@ -1,0 +1,6 @@
+<launch>
+  <!-- send urdf of a simple sphere to param server -->
+  <param name="simple_sphere" textfile="$(find gazebo_worlds)/objects/simple_sphere.urdf" />
+  <node name="spawn_simple_sphere" pkg="gazebo" type="spawn_model" args="-urdf -param simple_sphere -model simple_sphere_model" respawn="false" output="screen" />
+</launch>
+
