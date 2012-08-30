@@ -425,7 +425,7 @@ _free (BotRenderer *renderer)
   free (renderer);
 }
 
-BotRenderer *renderer_localize_new (BotViewer *viewer, int render_priority, lcm_t *lcm)
+BotRenderer *renderer_navigation_new (BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
   RendererNavigation *self = (RendererNavigation*) calloc (1, sizeof (RendererNavigation));
   self->viewer = viewer;
@@ -464,8 +464,8 @@ BotRenderer *renderer_localize_new (BotViewer *viewer, int render_priority, lcm_
   return &self->renderer;
 }
 
-void setup_renderer_localize(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void setup_renderer_navigation(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
-  bot_viewer_add_renderer(viewer, renderer_localize_new(viewer, render_priority, lcm),
+  bot_viewer_add_renderer(viewer, renderer_navigation_new(viewer, render_priority, lcm),
       render_priority);
 }
