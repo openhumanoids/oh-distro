@@ -20,8 +20,8 @@
 
 // local renderers
 #include <renderer_drc/renderer_humanoid.hpp>
-//#include <renderer_drc/renderer_localize.hpp>
-#include <renderer_drc/renderer_navigation.hpp>
+#include <renderer_drc/renderer_localize.hpp>
+//#include <renderer_drc/renderer_navigation.hpp>
 
 #include "udp_util.h"
 
@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
   setup_renderer_humanoid(viewer, 0, lcm);
   collections_add_renderer_to_viewer(viewer, 1);
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
-  //setup_renderer_localize(viewer, 0,lcm);
-  setup_renderer_navigation(viewer, 0,lcm);
+  setup_renderer_localize(viewer, 0,lcm);
+  //setup_renderer_navigation(viewer, 0,lcm);
   
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
