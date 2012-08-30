@@ -1,0 +1,67 @@
+<robot name="simple_sphere"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+  <link name="world"/>
+  <joint name="my_sphere_joint" type="continuous" >
+    <!-- axis is in the parent link frame coordintates -->
+    <axis xyz="0 1 0" />
+    <parent link="world" />
+    <child link="my_sphere" />
+    <!-- initial pose of my_sphere in the parent frame coordiantes -->
+    <origin xyz="0 0 2" rpy="0 0 0" />
+  </joint>
+  <link name="my_sphere">
+    <inertial>
+      <mass value="1.0" />
+      <!-- center of mass (com) is defined w.r.t. link local coordinate system -->
+      <origin xyz="1 0 0" /> 
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
+    </inertial>
+    <visual>
+      <!-- visual origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="1 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.25" />
+      </geometry>
+    </visual>
+    <collision>
+      <!-- collision origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="1 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.25" />
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="my_sphere">
+    <material>Gazebo/Blue</material>
+    <turnGravityOff>false</turnGravityOff>
+
+    <sensor:camera name="cam_sensor">
+      <imageSize>640 480</imageSize>
+      <imageFormat>L8</imageFormat>
+      <hfov>90</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>20.0</updateRate>
+      <controller:gazebo_ros_camera name="cam_controller" plugin="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20.0</updateRate>
+        <imageTopicName>cam/image_raw</imageTopicName>
+        <cameraInfoTopicName>cam/camera_info</cameraInfoTopicName>
+        <frameName>my_sphere</frameName>
+        <CxPrime>320.5</CxPrime>
+        <Cx>320.5</Cx>
+        <Cy>240.5</Cy>
+        <focal_length>320</focal_length> <!-- image_width / (2*tan(hfov_radian /2)) -->
+        <distortion_k1>0</distortion_k1>
+        <distortion_k2>0</distortion_k2>
+        <distortion_k3>0</distortion_k3>
+        <distortion_t1>0</distortion_t1>
+        <distortion_t2>0</distortion_t2>
+        <interface:camera name="cam_iface" />
+      </controller:gazebo_ros_camera>
+    </sensor:camera>
+  </gazebo>
+
+</robot>

@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<model:physical name="701_330_68">
+  <xyz>   0      0      0</xyz>
+  <rpy>   0.0    0.0    0.0</rpy>
+  <static>false</static>
+  <body:trimesh name="701_330_68_body">
+<!--        <turnGravityOff>true</turnGravityOff>  -->
+    <massMatrix>true</massMatrix> 
+    <mass>0.2</mass>
+    <ixx>0.001</ixx>
+    <ixy>0.0</ixy>
+    <ixz>0.0</ixz>
+    <iyy>0.001</iyy>
+    <iyz>0.0</iyz>
+    <izz>0.001</izz>
+    <cx>0.0</cx>
+    <cy>0.0</cy>
+    <cz>0.05</cz>
+
+    <geom:trimesh name="701_330_68_geom">
+      <xyz>0 0 0</xyz>
+      <laserRetro>2000.0</laserRetro>
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
+      <scale>0.001 0.001 0.001</scale>
+      <mesh>black_wine_glass.mesh</mesh>
+      <visual>
+        <xyz>0 0 0.0</xyz>
+        <scale>0.001 0.001 0.001</scale>
+        <material>GazeboWorlds/StereoProjectionPattern</material>
+        <mesh>black_wine_glass.mesh</mesh>
+      </visual>
+    </geom:trimesh>
+  </body:trimesh>
+</model:physical>
+
+
+

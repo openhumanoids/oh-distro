@@ -1,0 +1,6 @@
+<launch>
+  <!-- add tables in appropriate places for wg walls -->
+  <param name="desk_1_param" textfile="$(find drc_object_models)/objects/desk_a.model" />
+  <node name="spawn_desk_1" pkg="gazebo" type="spawn_model" args="-gazebo -param desk_1_param -y 2.0 -x 0.0 -R 0 -P 0 -Y 1.0 -model desk_1" respawn="false" output="screen" />
+</launch>
+

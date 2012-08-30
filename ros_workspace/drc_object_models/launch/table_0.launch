@@ -1,0 +1,8 @@
+<launch>
+  <!-- send table urdf to param server -->
+  <param name="table_0_param" command="$(find xacro)/xacro.py $(find drc_object_models)/objects/table.urdf.xacro" />
+
+  <!-- push table_description to factory and spawn robot in gazebo -->
+  <node name="spawn_table_0" pkg="gazebo" type="spawn_model" args="-urdf -param table_0_param -z 0.01 -model table_0" respawn="false" output="screen" />
+</launch>
+

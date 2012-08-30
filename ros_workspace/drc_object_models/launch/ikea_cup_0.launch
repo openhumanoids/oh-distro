@@ -1,0 +1,10 @@
+<launch>
+
+  <!-- send urdf to param server -->
+  <param name="ikea_cup_0" textfile="$(find drc_object_models)/objects/ikea_cup.model" />
+
+  <!-- push urdf to factory and spawn robot in gazebo -->
+  <node name="spawn_ikea_cup_0" pkg="gazebo" type="spawn_model" args="-gazebo -param ikea_cup_0 -x 1.2 -y 0.2 -z 1.1  -R 0 -P 0 -Y 0 -model ikea_cup_0" respawn="false" output="screen" />
+
+</launch>
+

@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- start gazebo with an empty plane -->
+  <param name="/use_sim_time" value="true" />
+
+  <node name="gazebo" pkg="gazebo" type="gazebo" args="$(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen"/>
+
+  <!-- wg walls-->
+  <param name="small_room_walls"      textfile="$(find drc_object_models)/objects/small_room_walls.model" />
+  <node name="xml2factor_small_room_walls" pkg="gazebo" type="spawn_model" args="-gazebo -param small_room_walls -x -25.65 -y -25.65 -model small_room_walls" respawn="false" output="screen" />
+
+</launch>

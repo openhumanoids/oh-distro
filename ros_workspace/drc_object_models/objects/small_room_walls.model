@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<model:physical name="small_room">
+ <xyz>-25.65 -25.65 0.0</xyz>	
+ <rpy>0 0 0</rpy>
+ <static>true</static>
+ <body:map name="small_room_body">
+   <geom:map name="small_room_geom">
+     <image>small_room.png</image>
+     <threshold>200</threshold>
+     <granularity>1</granularity>
+     <negative>false</negative>
+     <scale>0.1</scale>
+     <offset>0 0 0</offset>
+     <material>Gazebo/Rocky</material>
+   </geom:map>
+ </body:map>
+</model:physical>

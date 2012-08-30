@@ -1,0 +1,6 @@
+<launch>
+  <!-- send urdf of a simple cylinder to param server -->
+  <param name="cylinder_0_param" textfile="$(find drc_object_models)/objects/simple_cylinder.urdf" />
+  <node name="spawn_cylinder_0" pkg="gazebo" type="spawn_model" args="-urdf -param cylinder_0_param -model cylinder_0" respawn="false" output="screen" />
+</launch>
+
