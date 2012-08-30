@@ -1,7 +1,0 @@
-<launch>
-  <!-- send atlas urdf to param server -->
-  <!--  <param name="robot_description" command="" />  -->
-
-  <node name="spawn_wheeled_atlas" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/sensing_wheeledAtlas_pre_fuerte.urdf -z 1 -model wheeled_atlas" respawn="false" output="screen" />
-
-</launch>
