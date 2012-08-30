@@ -545,7 +545,7 @@
    	 <updateRate>100.0</updateRate>
    	 <topicName>true_robot_state</topicName>
    	 </controller:gazebo_ros_pub_robot_state>
-   </gazebo>-
+   </gazebo>
 
 </robot>
 

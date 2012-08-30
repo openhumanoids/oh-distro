@@ -284,10 +284,10 @@ void FourWheeledDiffDrivePlugin::GetPositionCmd()
 
 // std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl;
 
-  wheelSpeed[FRONT_LEFT] = vr + va * wheelSeparation / 2.0;
-  wheelSpeed[FRONT_RIGHT] = vr - va * wheelSeparation / 2.0;
-  wheelSpeed[REAR_LEFT] =  vr + va * wheelSeparation / 2.0;
-  wheelSpeed[REAR_RIGHT] = vr - va * wheelSeparation / 2.0;
+  wheelSpeed[FRONT_LEFT] = vr - va * wheelSeparation / 2.0;
+  wheelSpeed[FRONT_RIGHT] = vr + va * wheelSeparation / 2.0;
+  wheelSpeed[REAR_LEFT] =  vr - va * wheelSeparation / 2.0;
+  wheelSpeed[REAR_RIGHT] = vr + va * wheelSeparation / 2.0;
   lock.unlock();
 }
 
@@ -296,7 +296,7 @@ void FourWheeledDiffDrivePlugin::cmdVelCallback(const geometry_msgs::Twist::Cons
   lock.lock();
 
   x_ = cmd_msg->linear.x;
-  rot_ = cmd_msg->angular.z;
+  rot_ = -cmd_msg->angular.z;
 
   lock.unlock();
 }

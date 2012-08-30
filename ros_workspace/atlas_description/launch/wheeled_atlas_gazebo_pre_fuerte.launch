@@ -7,7 +7,7 @@
  <param name="/use_sim_time" value="true" />
 
 <!-- starts gazebo in paused mode. -->
-<node name="gazebo" pkg="gazebo" type="gazebo" args="-u $(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen"/>
+<node name="gazebo" pkg="gazebo" type="gazebo" args="$(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen"/>
 
 
 <include file="$(find atlas_description)/launch/wheeled_atlas_spawn_gazebo_pre_fuerte.launch"/>

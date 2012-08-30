@@ -301,10 +301,12 @@ void FourWheeledDiffDrivePlugin::GetPositionCmd()
 
   //std::cout << enableMotors << std::endl;
 
-  wheelSpeed[FRONT_LEFT] = vr + va * **(wheelSepP) / 2;
-  wheelSpeed[FRONT_RIGHT] = vr - va * **(wheelSepP) / 2;
-  wheelSpeed[REAR_LEFT] = vr + va * **(wheelSepP) / 2;
-  wheelSpeed[REAR_RIGHT] = vr - va * **(wheelSepP) / 2;
+
+//left turn has positive rotation, there form when va is +ve right has to greater than left
+  wheelSpeed[FRONT_LEFT] = vr - va * **(wheelSepP) / 2;
+  wheelSpeed[FRONT_RIGHT] = vr + va * **(wheelSepP) / 2;
+  wheelSpeed[REAR_LEFT] = vr - va * **(wheelSepP) / 2;
+  wheelSpeed[REAR_RIGHT] = vr + va * **(wheelSepP) / 2;
   
   lock.unlock();
 }
@@ -316,7 +318,7 @@ void FourWheeledDiffDrivePlugin::cmdVelCallback(const geometry_msgs::Twist::Cons
 
   lock.lock();
 
-  x_ = cmd_msg->linear.x;
+  x_ = 0.5*cmd_msg->linear.x;
   rot_ = cmd_msg->angular.z;
 
   lock.unlock();
