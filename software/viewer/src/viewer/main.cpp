@@ -20,6 +20,7 @@
 
 // local renderers
 #include <renderer_drc/renderer_humanoid.hpp>
+#include <renderer_drc/renderer_robot_plan.hpp>
 //#include <renderer_drc/renderer_localize.hpp>
 #include <renderer_drc/renderer_navigation.hpp>
 
@@ -110,7 +111,8 @@ int main(int argc, char *argv[])
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
    //setup_renderer_localize(viewer, 0,lcm);
    setup_renderer_navigation(viewer, 0,lcm);
-  
+   setup_renderer_robot_plan(viewer, 0, lcm);
+   
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
   bot_viewer_load_preferences(viewer, fname);

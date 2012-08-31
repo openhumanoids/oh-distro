@@ -37,6 +37,7 @@ namespace fk
     _urdf_subscription = lcm->subscribe("ROBOT_MODEL", 
 				       &fk::RobotStateListener::handleRobotUrdfMsg,
 				       this);    
+    _urdf_subscription_on = true;
     //Subscribes to MEAS_JOINT_ANGLES 
     //lcm->subscribe("MEAS_JOINT_ANGLES", &fk::RobotStateListener::handleJointAnglesMsg, this); //&this ?
     lcm->subscribe("EST_ROBOT_STATE", &fk::RobotStateListener::handleRobotStateMsg, this); //&this ?
@@ -60,9 +61,15 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   {
     if (!_urdf_parsed)
       {
-	cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
+	//cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
 	return;
       }
+    if(_urdf_subscription_on)
+     {
+       cout << "\n handleRobotStateMsg: unsubscribing from _urdf_subscription" << endl;
+       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
+	 _urdf_subscription_on =  false; 	
+    }
   
     //clear stored data
     _link_tfs.clear();
@@ -219,6 +226,10 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   void RobotStateListener::handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
 					       const  drc::robot_urdf_t* msg) 
   {
+
+    if(_urdf_parsed ==false) 
+    {
+     cout<< "\nurdf handler @ RobotStateListener" << endl;
     // Received robot urdf string. Store it internally and get all available joints.
     _robot_name      = msg->robot_name;
     _urdf_xml_string = msg->urdf_xml_string;
@@ -256,7 +267,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       }
 
     //unsubscribe from urdf messages
-    _lcm->unsubscribe(_urdf_subscription); 
+    //_lcm->unsubscribe(_urdf_subscription);  // crashes viewer if there are other urdf subscriptions in other renderers.
     
     //
     _fksolver = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
@@ -264,6 +275,8 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     _urdf_parsed = true;
 
     cout<< "Number of Joints: " << _joint_names_.size() <<endl;
+    
+    }//  if(_urdf_parsed ==false)   
   } 
 
   

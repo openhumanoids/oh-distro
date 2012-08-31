@@ -12,6 +12,8 @@ add_library(renderer_drc SHARED
   humanoid_renderer/renderer_humanoid.cpp
   humanoid_renderer/RobotStateListener.cpp
   renderer_navigation.cpp  
+  robot_plan_renderer/renderer_robot_plan.cpp
+  robot_plan_renderer/RobotPlanListener.cpp
   )
   
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
@@ -20,6 +22,8 @@ pods_install_libraries(renderer_drc)
 pods_install_headers(humanoid_renderer/renderer_humanoid.hpp
   humanoid_renderer/RobotStateListener.hpp
   renderer_navigation.hpp
+  robot_plan_renderer/renderer_robot_plan.hpp
+  robot_plan_renderer/RobotPlanListener.hpp
   DESTINATION renderer_drc)
 
 # create a pkg-config file for the library, to make it easier for other
