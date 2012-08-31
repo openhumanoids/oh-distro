@@ -89,10 +89,10 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 
   //----
   
-  GLUquadricObj* quadric = gluNewQuadric();
-  gluQuadricDrawStyle(quadric, GLU_FILL);
-  gluQuadricNormals(quadric, GLU_SMOOTH);
-  gluQuadricOrientation(quadric, GLU_OUTSIDE);
+ GLUquadricObj* quadric = gluNewQuadric();
+ gluQuadricDrawStyle(quadric, GLU_FILL);
+ gluQuadricNormals(quadric, GLU_SMOOTH);
+ gluQuadricOrientation(quadric, GLU_OUTSIDE);
   
 
   int type = link->type ;
@@ -104,7 +104,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
       glPointSize(radius);
-      glColor3ub(0,1,0);
+      //glColor3ub(0,1,0);
       glBegin(GL_POINTS);
       glVertex3f(radius, radius, radius);
       glEnd();
@@ -119,7 +119,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   //todo
     glPushMatrix();
         //size cuboid
-       
+    
         // move base up so that bottom face is at origin
      // glTranslatef(0,0.5,0.0); 
      glTranslatef(nextTf.tf.translation.x,
@@ -129,7 +129,8 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
      glScalef(xDim,yDim,zDim);
-        cube();
+     bot_gl_draw_cube();
+        //cube();
     glPopMatrix();
   
 
@@ -170,7 +171,8 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 		  cyl->radius,
 		  (double) cyl->length,
 		  36,
-		  36);
+		  1);
+
   //gluDeleteQuadric(quadric);
   glPopMatrix();
 
@@ -246,7 +248,16 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   //-draw 
   //glPointSize(5.0f);
   //glBegin(GL_POINTS);
-  glColor3ub(0,1,0);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_COLOR_MATERIAL);
+  glEnable(GL_BLEND);
+  // glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
+  glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+ 
+ double c[3] = {0.3,0.3,0.3};
+ double alpha = 1;
+  //glColor3f(c[0],c[1],c[2]);
+  glColor4f(c[0],c[1],c[2],alpha);
   for(uint i = 0; i < link_tfs.size(); i++)
     {
       drc::link_transform_t nextTf = link_tfs[i];
@@ -313,6 +324,7 @@ void polygon(int a, int b, int c , int d)
  
     glBegin(GL_POLYGON);
        // glColor3fv(colors[a]);
+        //glColor3f(0.15,0.15,0.15);  
         glVertex3fv(vertices[a]);
         glVertex3fv(vertices[b]);
         glVertex3fv(vertices[c]);
