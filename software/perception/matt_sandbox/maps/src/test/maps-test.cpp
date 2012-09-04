@@ -1,4 +1,5 @@
 #include <maps/MapManager.hpp>
+#include <maps/SpatialQuery.hpp>
 
 #include <pcl/io/io.h>
 
@@ -23,18 +24,26 @@ public:
     memcpy(cloudData, messageData, iMessage->data_nbytes);
     pcl::PointCloud<pcl::PointXYZ> newCloud;
     pcl::copyPointCloud(pointCloud, newCloud);
-    Eigen::Affine3d transform = Eigen::Affine3d::Identity();
-    mManager.add(iMessage->utime, newCloud, transform);
+    mManager.add(iMessage->utime, newCloud, Eigen::Isometry3d::Identity());
+    MapManager::PointCloud::Ptr allPts = mManager.getPointCloud();
+    cout << "ABOUT TO CLEAR " << endl;
+    mQuery.clear();
+    cout << "CLEAR " << endl;
+    mQuery.add(allPts);
+    //mQuery.populateStructures();
     cout << "GOT COLLECTION" << endl;
+    cout << "ALL POINTS: " << allPts->size() << " POINTS " << endl;
   }
 
 public:
   MapManager mManager;
+  SpatialQuery mQuery;
 };
 
 int main(const int iArgc, const char** iArgv) {
   State state;
   state.mManager.setMapResolution(0.1);
+  state.mManager.createMap(Eigen::Isometry3d::Identity());
 
   // set up lcm instance
   // TODO: should spawn thread

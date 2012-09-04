@@ -7,7 +7,7 @@ MapChunk::
 MapChunk() {
   setId(-1);
   setLastUpdateTime(-1);
-  setTransformToLocal(Eigen::Affine3d::Identity());
+  setTransformToLocal(Eigen::Isometry3d::Identity());
   setBounds(Eigen::Vector3d(-1e20, -1e20, -1e20),
             Eigen::Vector3d(1e20, 1e20, 1e20));
   setResolution(0.01);
@@ -43,11 +43,11 @@ getLastUpdateTime() const {
 }
 
 void MapChunk::
-setTransformToLocal(const Eigen::Affine3d& iTransform) {
+setTransformToLocal(const Eigen::Isometry3d& iTransform) {
   mTransformToLocal = iTransform;
 }
 
-Eigen::Affine3d MapChunk::
+Eigen::Isometry3d MapChunk::
 getTransformToLocal() const {
   return mTransformToLocal;
 }
@@ -113,11 +113,21 @@ deepCopy(const MapChunk& iChunk) {
   *mOctree = *(iChunk.mOctree);
 }
 
-MapChunk::VoxelIterator MapChunk::
-getVoxelIterator() const {
-  return VoxelIterator(*mOctree);
+MapChunk::PointCloud::Ptr MapChunk::
+getAsPointCloud() const {
+  // TODO: can get backing point cloud instead
+  Octree::AlignedPointTVector vect;
+  mOctree->getOccupiedVoxelCenters(vect);
+  PointCloud::Ptr cloud(new PointCloud());
+  // TODO: is there a way to set this in one shot rather than loop?
+  for (int i = 0; i < vect.size(); ++i) {
+    cloud->push_back(vect[i]);
+  }
+  return cloud;
 }
 
+
+// TODO: different method required if using original points rather than voxels
 bool MapChunk::
 findDifferences(const MapChunk& iMap, PointCloud& oAdded,
                 PointCloud& oRemoved) {
@@ -129,7 +139,7 @@ findDifferences(const MapChunk& iMap, PointCloud& oAdded,
                                boundMaxX, boundMaxY, boundMaxZ);
   double resolution = iMap.mOctree->getResolution();
   Eigen::Vector3d boundMin(boundMinX, boundMinY, boundMinZ);
-  MapChunk::VoxelIterator iter = iMap.getVoxelIterator();
+  Octree::LeafNodeIterator iter(*iMap.mOctree);
   for (; (*iter) != NULL; ++iter) {
     pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
     if (mOctree->existLeaf(key.x, key.y, key.z)) {
@@ -148,7 +158,8 @@ findDifferences(const MapChunk& iMap, PointCloud& oAdded,
                           boundMaxX, boundMaxY, boundMaxZ);
   resolution = mOctree->getResolution();
   boundMin = Eigen::Vector3d(boundMinX, boundMinY, boundMinZ);
-  for (iter = getVoxelIterator(); (*iter) != NULL; ++iter) {
+  
+  for (iter = Octree::LeafNodeIterator(*mOctree); (*iter) != NULL; ++iter) {
     pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
     if (iMap.mOctree->existLeaf(key.x, key.y, key.z)) {
       continue;

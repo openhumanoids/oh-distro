@@ -36,6 +36,17 @@ add(const PointSet& iData) {
   }
 }
 
+bool PointDataBuffer::
+update(const int64_t iTimestamp, const Eigen::Isometry3d& iToLocal) {
+  PointSetGroup::iterator item = mData.find(iTimestamp);
+  if (item == mData.end()) {
+    return false;
+  }
+  item->second.mToLocal = iToLocal;
+  return true;
+}
+
+
 PointDataBuffer::PointSetGroup::const_iterator PointDataBuffer::
 begin() const {
   return mData.begin();

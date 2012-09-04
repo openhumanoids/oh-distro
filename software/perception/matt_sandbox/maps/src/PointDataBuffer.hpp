@@ -15,7 +15,7 @@ public:
   struct PointSet {
     int64_t mTimestamp;
     PointCloudPtr mPoints;
-    Eigen::Affine3d mToLocal;
+    Eigen::Isometry3d mToLocal;
   };
 
   typedef std::unordered_map<int64_t, PointSet> PointSetGroup;
@@ -30,6 +30,7 @@ public:
 
   void clear();
   void add(const PointSet& iData);
+  bool update(const int64_t iTimestamp, const Eigen::Isometry3d& iToLocal);
 
   PointSetGroup::const_iterator begin() const;
   PointSetGroup::const_iterator end() const;

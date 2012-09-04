@@ -13,10 +13,12 @@ MapManager() {
   setMapDimensions(Eigen::Vector3d(10,10,10));
   setDataBufferLength(1000);
   mNextMapId = 1;
+  std::cout << "MapManager: constructed" << std::endl;
 }
 
 MapManager::
 ~MapManager() {
+  std::cout << "MapManager: destructed" << std::endl;
 }
 
 void MapManager::
@@ -31,21 +33,27 @@ clear() {
 void MapManager::
 setMapResolution(const double iResolution) {
   mMapResolution = iResolution;
+  std::cout << "MapManager: map resolution set to " << iResolution <<
+    std::endl;
 }
 
 void MapManager::
 setMapDimensions(const Eigen::Vector3d iDims) {
   mMapDimensions = iDims;
+  std::cout << "MapManager: map dimensions set to (" <<
+    iDims[0] << "," << iDims[1] << "," << iDims[2] << ")" << std::endl;
 }
 
 void MapManager::
 setDataBufferLength(const int iLength) {
   mDataBufferLength = iLength;
+  std::cout << "MapManager: point cloud buffer length set to " <<
+    iLength << std::endl;
 }
 
 
 bool MapManager::
-createMap(const Eigen::Affine3d& iToLocal) {
+createMap(const Eigen::Isometry3d& iToLocal) {
   MapPtr chunk(new MapChunk());
   chunk->setId(mNextMapId);
   ++mNextMapId;
@@ -53,11 +61,12 @@ createMap(const Eigen::Affine3d& iToLocal) {
   chunk->setBounds(-mMapDimensions/2, mMapDimensions/2);
   chunk->setResolution(mMapResolution);
   mActiveMap = chunk;
-  std::cout << "MapManager: added new map, id=" << chunk->getId() <<
-    std::endl;
 
   mActiveMapPrev.reset(new MapChunk());
   mActiveMapPrev->deepCopy(*mActiveMap);
+
+  std::cout << "MapManager: added new map, id=" << chunk->getId() <<
+    std::endl;
 
   return true;
 }
@@ -66,6 +75,8 @@ bool MapManager::
 useMap(const int64_t iId) {
   MapCollection::iterator item = mMaps.find(iId);
   if (item == mMaps.end()) {
+    std::cout << "MapManager: could not find requested map with id=" << iId <<
+      std::endl;
     return false;
   }
   mActiveMap = item->second;
@@ -85,12 +96,13 @@ clearActiveMap() {
     return false;
   }
   mActiveMap->clear();
+  std::cout << "MapManager: cleared active map" << std::endl;
   return true;
 }
 
 bool MapManager::
 add(const int64_t iTime, const PointCloud& iPoints,
-    const Eigen::Affine3d& iToLocal, const bool iBuffer) {
+    const Eigen::Isometry3d& iToLocal, const bool iBuffer) {
   if (iBuffer) {
     PointDataBuffer::PointSet pointSet;
     pointSet.mTimestamp = iTime;
@@ -106,8 +118,8 @@ add(const int64_t iTime, const PointCloud& iPoints,
 
   // transform points
   PointCloud::Ptr points(new PointCloud);
-  Eigen::Affine3d chunkToLocal = mActiveMap->getTransformToLocal();
-  Eigen::Affine3f matx(chunkToLocal.inverse()*iToLocal);
+  Eigen::Isometry3d chunkToLocal = mActiveMap->getTransformToLocal();
+  Eigen::Affine3f matx((chunkToLocal.inverse()*iToLocal).cast<float>());
   pcl::transformPointCloud(iPoints, *points, matx);
 
   // crop points
@@ -133,7 +145,8 @@ removeFromMap(const PointCloud& iCloud) {
     return false;
   }
   PointCloud newCloud;
-  Eigen::Affine3f matx(mActiveMap->getTransformToLocal().inverse());
+  Eigen::Affine3f matx(mActiveMap->getTransformToLocal().
+                       inverse().cast<float>());
   pcl::transformPointCloud(iCloud, newCloud, matx);
   mActiveMap->remove(newCloud);
   return true;
@@ -164,7 +177,21 @@ computeDelta(MapDelta& oDelta) {
   oDelta.mCurrentTime = mActiveMap->getLastUpdateTime();
   oDelta.mPreviousTime = mActiveMapPrev->getLastUpdateTime();
   mActiveMapPrev->findDifferences(*mActiveMap, oDelta.mAdded, oDelta.mRemoved);
+  std::cout << "MapManager: found delta: " << oDelta.mAdded.size() <<
+    " added, " << oDelta.mRemoved.size() << " removed" << std::endl;
+    
   return true;
+}
+
+MapManager::PointCloud::Ptr MapManager::
+getPointCloud() const {
+  PointCloud::Ptr pts;
+  if (mActiveMap != NULL) {
+    pts = mActiveMap->getAsPointCloud();
+    Eigen::Affine3f matx(mActiveMap->getTransformToLocal().cast<float>());
+    pcl::transformPointCloud(*pts, *pts, matx);    
+  }
+  return pts;
 }
 
 bool MapManager::
@@ -173,6 +200,7 @@ resetDelta() {
     return false;
   }
   mActiveMapPrev->deepCopy(*mActiveMap);
+  std::cout << "MapManager: reset delta" << std::endl;
   return true;
 }
 

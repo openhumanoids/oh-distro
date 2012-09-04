@@ -9,6 +9,8 @@
 class PointDataBuffer;
 class MapChunk;
 
+// TODO: use pointers to point clouds everywhere?
+
 class MapManager {
 public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
@@ -39,7 +41,7 @@ public:
   void setDataBufferLength(const int iLength);
 
   // create new map and make it the active one
-  bool createMap(const Eigen::Affine3d& iToLocal);
+  bool createMap(const Eigen::Isometry3d& iToLocal);
 
   // switch to use map with given id
   bool useMap(const int64_t iId);
@@ -52,16 +54,19 @@ public:
 
   // buffer input points, transform to local frame, add to current map
   bool add(const int64_t iTime, const PointCloud& iPoints,
-           const Eigen::Affine3d& iToLocal, const bool iBuffer=true);
+           const Eigen::Isometry3d& iToLocal, const bool iBuffer=true);
 
   // remove a set of points (in local frame) from current map
   bool removeFromMap(const PointCloud& iCloud);
 
-  // fuse all current buffered points into current map
+  // fuse all current buffered points to rebuild current map
   bool fuseAll();
 
   // compute delta between current and previous version of current map
   bool computeDelta(MapDelta& oDelta);
+
+  // get point cloud for entire (current) map
+  PointCloud::Ptr getPointCloud() const;
 
   // make previous version of map same as current for deltas
   bool resetDelta();

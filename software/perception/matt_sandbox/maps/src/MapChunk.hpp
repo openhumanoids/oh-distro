@@ -11,7 +11,6 @@ public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
   typedef pcl::octree::OctreePointCloud<pcl::PointXYZ> Octree;
   typedef boost::shared_ptr<Octree> OctreePtr;
-  typedef Octree::LeafNodeIterator VoxelIterator;
 
 public:
   // constructor/destructor
@@ -30,8 +29,8 @@ public:
   int64_t getLastUpdateTime() const;
 
   // set/get transform to local frame
-  void setTransformToLocal(const Eigen::Affine3d& iTransform);
-  Eigen::Affine3d getTransformToLocal() const;
+  void setTransformToLocal(const Eigen::Isometry3d& iTransform);
+  Eigen::Isometry3d getTransformToLocal() const;
 
   // set/get 3d bounds for this volume (in map coord frame)
   bool setBounds(const Eigen::Vector3d& iMin, const Eigen::Vector3d& iMax);
@@ -51,11 +50,8 @@ public:
   // copy contents of input map into this one
   void deepCopy(const MapChunk& iChunk);
 
-  // iterators on octree data
-  // note: this api will change in pcl 1.7
-  VoxelIterator getVoxelIterator() const;
-
-  // TODO: queries for actual data
+  // export this entire representation as an ordinary point cloud
+  PointCloud::Ptr getAsPointCloud() const;
 
   // determine points that were added and removed wrt input map
   bool findDifferences(const MapChunk& iMap, PointCloud& oAdded,
@@ -72,7 +68,7 @@ protected:
   int64_t mId;
   int64_t mLastUpdateTime;
   double mResolution;
-  Eigen::Affine3d mTransformToLocal;
+  Eigen::Isometry3d mTransformToLocal;
   Eigen::Vector3d mBoundMin;
   Eigen::Vector3d mBoundMax;
   OctreePtr mOctree;
