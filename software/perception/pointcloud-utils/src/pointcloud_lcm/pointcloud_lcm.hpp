@@ -38,7 +38,7 @@
 
 
 #include <bot_core/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.h>
+#include <lcmtypes/pointcloud_utils.h>
 
 
 using namespace pcl;
@@ -89,7 +89,7 @@ convertLidar(const float * ranges, int numPoints, double thetaStart,
 
 
 
-void unpack_pointcloud2(const drc_pointcloud2_t *msg,
+void unpack_pointcloud2(const putils_pointcloud2_t *msg,
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
