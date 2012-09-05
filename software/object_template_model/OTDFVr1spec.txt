@@ -68,6 +68,10 @@
       // Modifying parameters at runtime and updating model.
       object->setParam("X", 10);
       object->update();
+      
+      // convertion to URDF
+      convertObjectInstanceToURDFfile(object); // prints urdf xml to .urdf file
+      std::string urdf_xml_string=convertObjectInstanceToURDFstring(object) // returns a string for broadcast 
 
   TODO:
   ===================================================
