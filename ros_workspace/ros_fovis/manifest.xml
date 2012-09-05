@@ -20,5 +20,5 @@
   <depend package="map_server"/>
   <depend package="nav_msgs"/>
   <depend package="rospy"/>
-  <depend package="eigen"/>
+<!--  <depend package="eigen"/> -->
 </package>

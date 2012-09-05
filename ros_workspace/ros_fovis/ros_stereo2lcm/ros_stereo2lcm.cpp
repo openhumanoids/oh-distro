@@ -69,7 +69,7 @@ App::App(const std::string & chan_in,
     chan_in_(chan_in),
     chan_out_(chan_out),
     it_(nh_),
-    sync_(10){
+    sync_(10){ // was 10 in electric
   ROS_INFO("Initializing");
   lcmref_ = lcm_create(NULL);
 
