@@ -4,6 +4,8 @@
 
 SpatialQuery::
 SpatialQuery() {
+  clear();
+  setNormalComputationRadius(0.1);
 }
 
 void SpatialQuery::
@@ -11,6 +13,12 @@ clear() {
   mCloud.reset(new pcl::PointCloud<PointType>());
   mNeedsUpdate = true;
   populateStructures();
+}
+
+void SpatialQuery::
+setNormalComputationRadius(const double iRadius) {
+  mNormalComputationRadius = iRadius;
+  mNeedsUpdate = true;
 }
 
 void SpatialQuery::
@@ -26,32 +34,13 @@ populateStructures() {
   }
 
   mSearchTree.setInputCloud(mCloud);
-
-  // NOTE: can also use other flavor which computes local surface properties
-  pcl::NormalEstimation<PointType, pcl::Normal> normalEstimator;
-  normalEstimator.setInputCloud(mCloud);
-  pcl::search::KdTree<PointType>::Ptr tree(new pcl::search::KdTree<PointType>());
-  normalEstimator.setSearchMethod(tree);  // TODO: redundant?
-  normalEstimator.setRadiusSearch(0.1);
-  mNormals.reset(new pcl::PointCloud<pcl::Normal>());
-  normalEstimator.compute(*mNormals);
   mNeedsUpdate = false;
 }
 
 bool SpatialQuery::
-getClosest(const Eigen::Vector3d& iPoint,
-           Eigen::Vector3d& oPoint) {
-  std::vector<int> indices;
-  std::vector<float> distances;
-  mSearchTree.nearestKSearch(PointType(iPoint[0], iPoint[1], iPoint[2]), 1,
-                             indices, distances);
-  if (indices.size() == 0) {
-    return false;
-  }
-
-  PointType pt = mCloud->points[indices[0]];
-  oPoint = Eigen::Vector3d(pt.x, pt.y, pt.z);
-  return true;
+getClosest(const Eigen::Vector3d& iPoint, Eigen::Vector3d& oPoint) {
+  Eigen::Vector3d dummyNormal;
+  return getClosest(iPoint, oPoint, dummyNormal);
 }
 
 bool SpatialQuery::
@@ -59,15 +48,26 @@ getClosest(const Eigen::Vector3d& iPoint,
            Eigen::Vector3d& oPoint, Eigen::Vector3d& oNormal) {
   std::vector<int> indices;
   std::vector<float> distances;
+
+  // first find closest point in cloud to query point
   mSearchTree.nearestKSearch(PointType(iPoint[0], iPoint[1], iPoint[2]), 1,
                              indices, distances);
   if (indices.size() == 0) {
     return false;
   }
-
   PointType pt = mCloud->points[indices[0]];
-  pcl::Normal normal = mNormals->points[indices[0]];
+
+  // next find points in local neighborhood of closest point
+  // and fit a surface
+  mSearchTree.radiusSearch(pt, mNormalComputationRadius, indices, distances);
+  if (indices.size() < 3) {
+    return false;
+  }
+  // TODO: fit surface, probably quadratic
+
+  // finally, find closest point on surface to original query point
+  // TODO
+
   oPoint = Eigen::Vector3d(pt.x, pt.y, pt.z);
-  oNormal = Eigen::Vector3d(normal.normal_x, normal.normal_y, normal.normal_z);
   return true;
 }

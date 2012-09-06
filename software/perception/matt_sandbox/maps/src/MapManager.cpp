@@ -60,6 +60,7 @@ createMap(const Eigen::Isometry3d& iToLocal) {
   chunk->setTransformToLocal(iToLocal);
   chunk->setBounds(-mMapDimensions/2, mMapDimensions/2);
   chunk->setResolution(mMapResolution);
+  chunk->storeBackingPoints(true);
   mActiveMap = chunk;
 
   mActiveMapPrev.reset(new MapChunk());
@@ -101,15 +102,15 @@ clearActiveMap() {
 }
 
 bool MapManager::
-add(const int64_t iTime, const PointCloud& iPoints,
+add(const int64_t iTime, const PointCloud::Ptr& iPoints,
     const Eigen::Isometry3d& iToLocal, const bool iBuffer) {
   if (iBuffer) {
     PointDataBuffer::PointSet pointSet;
     pointSet.mTimestamp = iTime;
-    pointSet.mPoints.reset(new PointCloud(iPoints));
+    pointSet.mPoints = iPoints;
     pointSet.mToLocal = iToLocal;
     mPointDataBuffer->add(pointSet);
-    std::cout << "MapManager: added " << iPoints.size() <<
+    std::cout << "MapManager: added " << iPoints->size() <<
       " points to buffer" << std::endl;
   }
   if (mActiveMap == NULL) {
@@ -120,7 +121,7 @@ add(const int64_t iTime, const PointCloud& iPoints,
   PointCloud::Ptr points(new PointCloud);
   Eigen::Isometry3d chunkToLocal = mActiveMap->getTransformToLocal();
   Eigen::Affine3f matx((chunkToLocal.inverse()*iToLocal).cast<float>());
-  pcl::transformPointCloud(iPoints, *points, matx);
+  pcl::transformPointCloud(*iPoints, *points, matx);
 
   // crop points
   pcl::CropBox<PointCloud::PointType> cropper;
@@ -129,25 +130,25 @@ add(const int64_t iTime, const PointCloud& iPoints,
   cropper.setMin(Eigen::Vector4f(boundMin[0], boundMin[1], boundMin[2], 1));
   cropper.setMax(Eigen::Vector4f(boundMax[0], boundMax[1], boundMax[2], 1));
   cropper.setInputCloud(points);
-  PointCloud pointsFinal;
-  cropper.filter(pointsFinal);
+  PointCloud::Ptr pointsFinal(new PointCloud());
+  cropper.filter(*pointsFinal);
   
   // add points
   mActiveMap->add(pointsFinal);
-  std::cout << "MapManager: added " << pointsFinal.size() <<
+  std::cout << "MapManager: added " << pointsFinal->size() <<
     " points to current map" << std::endl;  
   return true;
 }
 
 bool MapManager::
-removeFromMap(const PointCloud& iCloud) {
+removeFromMap(const PointCloud::Ptr& iCloud) {
   if (mActiveMap == NULL) {
     return false;
   }
-  PointCloud newCloud;
+  PointCloud::Ptr newCloud(new PointCloud());
   Eigen::Affine3f matx(mActiveMap->getTransformToLocal().
                        inverse().cast<float>());
-  pcl::transformPointCloud(iCloud, newCloud, matx);
+  pcl::transformPointCloud(*iCloud, *newCloud, matx);
   mActiveMap->remove(newCloud);
   return true;
 }
@@ -158,12 +159,13 @@ fuseAll() {
     return false;
   }
 
+  // TODO: for now, this just accumulates all points (logical OR)
   clearActiveMap();
   PointDataBuffer::PointSetGroup::const_iterator iter;
   for (iter = mPointDataBuffer->begin();
        iter != mPointDataBuffer->end(); ++iter) {
     const PointDataBuffer::PointSet& pointSet = iter->second;
-    add(pointSet.mTimestamp, *pointSet.mPoints, pointSet.mToLocal, false);
+    add(pointSet.mTimestamp, pointSet.mPoints, pointSet.mToLocal, false);
   }
 
   return true;
@@ -176,9 +178,11 @@ computeDelta(MapDelta& oDelta) {
   }
   oDelta.mCurrentTime = mActiveMap->getLastUpdateTime();
   oDelta.mPreviousTime = mActiveMapPrev->getLastUpdateTime();
+  oDelta.mAdded.reset(new PointCloud());
+  oDelta.mRemoved.reset(new PointCloud());
   mActiveMapPrev->findDifferences(*mActiveMap, oDelta.mAdded, oDelta.mRemoved);
-  std::cout << "MapManager: found delta: " << oDelta.mAdded.size() <<
-    " added, " << oDelta.mRemoved.size() << " removed" << std::endl;
+  std::cout << "MapManager: found delta: " << oDelta.mAdded->size() <<
+    " added, " << oDelta.mRemoved->size() << " removed" << std::endl;
     
   return true;
 }
@@ -187,7 +191,7 @@ MapManager::PointCloud::Ptr MapManager::
 getPointCloud() const {
   PointCloud::Ptr pts;
   if (mActiveMap != NULL) {
-    pts = mActiveMap->getAsPointCloud();
+    pts = mActiveMap->getAsPointCloud(false);
     Eigen::Affine3f matx(mActiveMap->getTransformToLocal().cast<float>());
     pcl::transformPointCloud(*pts, *pts, matx);    
   }

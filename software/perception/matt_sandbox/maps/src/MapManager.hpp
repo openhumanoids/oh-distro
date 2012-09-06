@@ -18,8 +18,8 @@ public:
   struct MapDelta {
     int64_t mCurrentTime;
     int64_t mPreviousTime;
-    PointCloud mAdded;
-    PointCloud mRemoved;
+    PointCloud::Ptr mAdded;
+    PointCloud::Ptr mRemoved;
   };
 
 protected:
@@ -53,11 +53,11 @@ public:
   bool clearActiveMap();
 
   // buffer input points, transform to local frame, add to current map
-  bool add(const int64_t iTime, const PointCloud& iPoints,
+  bool add(const int64_t iTime, const PointCloud::Ptr& iPoints,
            const Eigen::Isometry3d& iToLocal, const bool iBuffer=true);
 
   // remove a set of points (in local frame) from current map
-  bool removeFromMap(const PointCloud& iCloud);
+  bool removeFromMap(const PointCloud::Ptr& iCloud);
 
   // fuse all current buffered points to rebuild current map
   bool fuseAll();

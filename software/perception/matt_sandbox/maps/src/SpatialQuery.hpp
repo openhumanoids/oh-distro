@@ -12,6 +12,7 @@ public:
 
   void clear();
 
+  void setNormalComputationRadius(const double iRadius);
   void add(pcl::PointCloud<PointType>::Ptr& iCloud);
 
   void populateStructures();
@@ -26,10 +27,11 @@ public:
 
 
 protected:
+  double mNormalComputationRadius;
+
   bool mNeedsUpdate;
   pcl::PointCloud<PointType>::Ptr mCloud;
   pcl::search::KdTree<PointType> mSearchTree;
-  pcl::PointCloud<pcl::Normal>::Ptr mNormals;
 };
 
 

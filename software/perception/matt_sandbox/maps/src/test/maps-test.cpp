@@ -22,17 +22,19 @@ public:
     const uint8_t* messageData =
       reinterpret_cast<const uint8_t*>(&iMessage->data[0]);
     memcpy(cloudData, messageData, iMessage->data_nbytes);
-    pcl::PointCloud<pcl::PointXYZ> newCloud;
-    pcl::copyPointCloud(pointCloud, newCloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr newCloud(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::copyPointCloud(pointCloud, *newCloud);
     mManager.add(iMessage->utime, newCloud, Eigen::Isometry3d::Identity());
     MapManager::PointCloud::Ptr allPts = mManager.getPointCloud();
-    cout << "ABOUT TO CLEAR " << endl;
     mQuery.clear();
-    cout << "CLEAR " << endl;
     mQuery.add(allPts);
-    //mQuery.populateStructures();
+    mQuery.populateStructures();
     cout << "GOT COLLECTION" << endl;
     cout << "ALL POINTS: " << allPts->size() << " POINTS " << endl;
+    Eigen::Vector3d pt, nrm;
+    mQuery.getClosest(Eigen::Vector3d(0,0,0),pt,nrm);
+    cout << "CLOSEST POINT " << pt[0] << " " << pt[1] << " " << pt[2] << endl;
+    cout << "CLOSEST NORMAL " << nrm[0] << " " << nrm[1] << " " << nrm[2] << endl;
   }
 
 public:
@@ -42,8 +44,9 @@ public:
 
 int main(const int iArgc, const char** iArgv) {
   State state;
-  state.mManager.setMapResolution(0.1);
+  state.mManager.setMapResolution(0.01);
   state.mManager.createMap(Eigen::Isometry3d::Identity());
+  state.mQuery.setNormalComputationRadius(0.5);
 
   // set up lcm instance
   // TODO: should spawn thread

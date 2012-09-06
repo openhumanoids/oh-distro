@@ -10,11 +10,10 @@
 class PointDataBuffer {
 public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-  typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudPtr;
 
   struct PointSet {
     int64_t mTimestamp;
-    PointCloudPtr mPoints;
+    PointCloud::Ptr mPoints;
     Eigen::Isometry3d mToLocal;
   };
 

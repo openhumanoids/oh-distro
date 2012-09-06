@@ -41,21 +41,24 @@ public:
   void setResolution(const double iResolution);
   double getResolution() const;
 
+  // whether to store original points in octree
+  void storeBackingPoints(const bool iVal);
+
   // add a set of points
-  bool add(const PointCloud& iCloud);
+  bool add(const PointCloud::Ptr& iCloud);
 
   // remove a set of points
-  bool remove(const PointCloud& iCloud);
+  bool remove(const PointCloud::Ptr& iCloud);
 
   // copy contents of input map into this one
   void deepCopy(const MapChunk& iChunk);
 
   // export this entire representation as an ordinary point cloud
-  PointCloud::Ptr getAsPointCloud() const;
+  PointCloud::Ptr getAsPointCloud(const bool iVoxelCenters=true) const;
 
   // determine points that were added and removed wrt input map
-  bool findDifferences(const MapChunk& iMap, PointCloud& oAdded,
-                       PointCloud& oRemoved);
+  bool findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
+                       PointCloud::Ptr& oRemoved);
 
   // serialize to bytes
   void serialize(std::vector<char>& oBytes) const;
@@ -63,6 +66,8 @@ public:
   // deserialize from bytes
   void deserialize(const std::vector<char>& iBytes);
 
+protected:
+  void updateStructures();
 
 protected:
   int64_t mId;
@@ -71,6 +76,9 @@ protected:
   Eigen::Isometry3d mTransformToLocal;
   Eigen::Vector3d mBoundMin;
   Eigen::Vector3d mBoundMax;
+  bool mStoreBackingPoints;
+  PointCloud::Ptr mBackingPoints;
+  bool mNeedsUpdate;
   OctreePtr mOctree;
 };
 
