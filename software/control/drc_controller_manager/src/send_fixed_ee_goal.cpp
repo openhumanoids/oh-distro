@@ -57,7 +57,7 @@ main(int argc, char ** argv)
  
     my_goal.utime = getTime_now();
     my_goal.robot_name = "wheeled_atlas";
-    my_goal.ee_name = "LWristRoll_link";
+    my_goal.ee_name = "RWristRoll_link";
     my_goal.root_name = "base";
 
     
@@ -71,7 +71,7 @@ main(int argc, char ** argv)
     
     if(goalid ==2){
 	my_goal.ee_goal_pos.translation.x = 0.1335;
-	my_goal.ee_goal_pos.translation.y =  0.241013;
+	my_goal.ee_goal_pos.translation.y =  -0.241013;
 	my_goal.ee_goal_pos.translation.z = 1.17883;
 
 	my_goal.ee_goal_pos.rotation.x = -0.821902;
@@ -82,7 +82,7 @@ main(int argc, char ** argv)
     else if (goalid ==1){
 	
     my_goal.ee_goal_pos.translation.x = 0.151708;
-    my_goal.ee_goal_pos.translation.y = 0.241059;
+    my_goal.ee_goal_pos.translation.y = -0.241059;
     my_goal.ee_goal_pos.translation.z = 0.353141;
 
     my_goal.ee_goal_pos.rotation.x = 0;
@@ -93,7 +93,7 @@ main(int argc, char ** argv)
     else {
 	
 	my_goal.ee_goal_pos.translation.x = 0;
-	my_goal.ee_goal_pos.translation.y = 0.241059;
+	my_goal.ee_goal_pos.translation.y = -0.241059;
 	my_goal.ee_goal_pos.translation.z = 0.312513;
 
 	my_goal.ee_goal_pos.rotation.x = 0;
@@ -124,7 +124,7 @@ main(int argc, char ** argv)
     }
     
     my_goal.halt_ee_controller = false;
-    std::string channel = "LWRISTROLL_LINK_GOAL";
+    std::string channel = "RWRISTROLL_LINK_GOAL";
     drc_control::FixedGoalPublisher goalPublisher(lcm,my_goal,channel);
     while(true){
       std::cout << "Press any key to destruct fixed goal publisher and exit: " << std::endl;

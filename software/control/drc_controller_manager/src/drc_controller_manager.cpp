@@ -46,7 +46,7 @@ namespace drc_control{
 			  boost::shared_ptr<lcm::LCM> &lcm,
 			  urdf::Model &robot_model);
        ~ControllerManager() {}
-
+      bool toggle;
     private:
        boost::shared_ptr<lcm::LCM> _lcm;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > left_arm_controller;
@@ -90,9 +90,27 @@ namespace drc_control{
     // Only update jointpos_in and jointvel_in;
     
  //call controller update routine.
-    if (this->left_arm_controller->isRunning()) {
+   if ((this->left_arm_controller->isRunning())&(!this->right_arm_controller->isRunning())) {
       this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
     } 
+    
+    if ((this->right_arm_controller->isRunning())&(!this->left_arm_controller->isRunning())) {
+      this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
+    }  
+    
+    // Left and Right Arm clash as they are sending actuator commands one after the other.
+    //The latter controller is overiding the newer one.   
+    // TODO: Extract actuators commands from controllers and only publish one actuator command here in this file. 
+    // and check for conflicts.
+     if ((this->left_arm_controller->isRunning())&(this->right_arm_controller->isRunning())) {
+       toggle = !toggle; 
+       if(toggle) 
+	  this->left_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
+        else
+	  this->right_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
+    } 
+
+    
     
     if (this->nav_controller->isRunning()) {
       this->nav_controller->update(*msg,dt); 
@@ -115,7 +133,7 @@ namespace drc_control{
 	return;
       }     
      
-     
+     toggle = 0;
      // initialize member variables
       latest_robotstatemsg_timestamp = 0;
  
@@ -158,6 +176,13 @@ namespace drc_control{
 	  std::cerr << "ERROR: Failed to extract kdl tree from xml robot description"<<std::endl; 
 	  return;
 	}
+	
+// 	KDL::Segment dummy_palm = KDL::Segment(KDL::Joint(KDL::Joint::None),
+//                 KDL::Frame(KDL::Rotation::RPY(0.0,0.0,0.0),
+//                           KDL::Vector(0.152491948,0.0,0.0) )
+//                     );
+// 	
+// 	kdl_chain.addSegment(dummy_palm);
 	//std::cout << " Joints: " << kdl_chain.getNrOfJoints() << " Links: " << kdl_chain.getNrOfSegments() <<std::endl;
 
         int NrOfJoints = (int) kdl_chain.getNrOfJoints();
@@ -170,7 +195,7 @@ namespace drc_control{
 	std::string channel = "LWRISTROLL_LINK_GOAL";// end effector name in CAPS followed by _GOAL
 	//pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> left_arm_controller(lcm,channel,kdl_chain);
 
-	
+
         this->left_arm_controller = boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> >(new pd_chain_control::ChainController<NUM_OF_ARM_JOINTS>(this->_lcm,channel,kdl_chain,_robot_name,_urdf_robot_model));
 	
 	
@@ -179,6 +204,7 @@ namespace drc_control{
 	  std::cerr << "ERROR: Failed to extract kdl tree from xml robot description"<<std::endl; 
 	  return;
 	}
+
 	 NrOfJoints = (int) kdl_chain.getNrOfJoints();
 	 if(NrOfJoints!=NUM_OF_ARM_JOINTS){
           std::cerr <<" NUM_OF_ARM_JOINTS does not match the the joints number is specified kdl_chain" <<  std::endl;

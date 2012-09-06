@@ -256,9 +256,9 @@ ChainController<JOINTS>::ChainController(boost::shared_ptr<lcm::LCM> &lcm,
   kd_rot =2;
   
   // stable without inflated inertia tensor on Wrist links
-  kp_trans  = 350.0;
+  kp_trans  = 350.0-150;
   // kp_trans  = 800.0; // a bit of oscillation
-  kd_trans = 50.0;  
+  kd_trans = 50.0+10;  
   kp_rot = 1e-2;  
   kd_rot =1e-2;
   k_posture_ = 5e-3;
