@@ -18,3 +18,5 @@ pods_use_pkg_config_packages(listener lcm lcmtypes_${POD_NAME})
 
 # make exeutables public
 pods_install_executables(send_message listener)
+
+add_subdirectory(src/network_bridge)
