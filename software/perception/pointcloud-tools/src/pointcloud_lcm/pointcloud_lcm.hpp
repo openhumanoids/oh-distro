@@ -89,7 +89,7 @@ convertLidar(const float * ranges, int numPoints, double thetaStart,
 
 
 
-void unpack_pointcloud2(const putils_pointcloud2_t *msg,
+void unpack_pointcloud2(const ptools_pointcloud2_t *msg,
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"

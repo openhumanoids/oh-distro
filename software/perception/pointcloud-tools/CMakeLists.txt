@@ -8,7 +8,7 @@ include(cmake/pods.cmake)
 # variables, see cmake/lcmtypes.cmake for details
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
-lcmtypes_build(C_AGGREGATE_HEADER pointcloud_utils.h)
+lcmtypes_build(C_AGGREGATE_HEADER pointcloud_tools.h)
 
 add_subdirectory(src/pointcloud_math)
 add_subdirectory(src/pointcloud_vis)

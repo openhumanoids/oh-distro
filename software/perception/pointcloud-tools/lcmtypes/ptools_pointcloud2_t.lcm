@@ -17,7 +17,7 @@ struct pointcloud2_t
     boolean is_bigendian;
 
     int32_t nfields;
-    putils.pointfield_t fields[nfields];
+    ptools.pointfield_t fields[nfields];
     
 
     int32_t point_step;
