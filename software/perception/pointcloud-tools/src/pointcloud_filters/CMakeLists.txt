@@ -18,7 +18,7 @@ set_target_properties(pointcloud_filters PROPERTIES SOVERSION 1)
 pods_install_libraries(pointcloud_filters)
 pods_install_headers(filter_planes.hpp grow_cloud.hpp  
     filter_findfloor.hpp
-    DESTINATION pointcloud_utils)
+    DESTINATION pointcloud_tools)
 # filter_light.hpp 
 #    filter_person.hpp   filter_cloudtolaser.hpp
 

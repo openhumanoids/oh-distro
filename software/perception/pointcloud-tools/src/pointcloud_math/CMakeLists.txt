@@ -9,7 +9,7 @@ pods_use_pkg_config_packages(pointcloud_math
 
 set_target_properties(pointcloud_math PROPERTIES SOVERSION 1)
 pods_install_libraries(pointcloud_math)
-pods_install_headers(pointcloud_math.hpp DESTINATION pointcloud_utils)
+pods_install_headers(pointcloud_math.hpp DESTINATION pointcloud_tools)
 pods_install_pkg_config_file(pointcloud_math
     LIBS -lpointcloud_math
     VERSION 0.0.1)

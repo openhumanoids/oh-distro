@@ -11,7 +11,7 @@ pods_use_pkg_config_packages(pointcloud_vis ${PCL_LIBRARIES}  lcm eigen3   bot2-
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(pointcloud_vis PROPERTIES SOVERSION 1)
 pods_install_libraries(pointcloud_vis)
-pods_install_headers(pointcloud_vis.hpp DESTINATION pointcloud_utils)
+pods_install_headers(pointcloud_vis.hpp DESTINATION pointcloud_tools)
 pods_install_pkg_config_file(pointcloud_vis
     LIBS -lpointcloud_vis
     REQUIRES bot2-vis

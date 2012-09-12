@@ -38,7 +38,7 @@
 
 
 #include <bot_core/bot_core.h>
-#include <lcmtypes/pointcloud_utils.h>
+#include <lcmtypes/pointcloud_tools.h>
 
 
 using namespace pcl;

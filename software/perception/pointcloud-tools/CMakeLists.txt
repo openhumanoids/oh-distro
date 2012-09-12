@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6.0)
 
 # pull in the pods macros. See cmake/pods.cmake for documentation
-set(POD_NAME pointcloud-utils)
+set(POD_NAME pointcloud-tools)
 include(cmake/pods.cmake)
 
 # automatically build LCM types.  This also defines a number of CMake

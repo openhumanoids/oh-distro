@@ -42,7 +42,7 @@
 using namespace pcl;
 using namespace pcl::io;
 
-#include <pointcloud_utils/pointcloud_math.hpp>
+#include <pointcloud_tools/pointcloud_math.hpp>
 
 // Duplicates the list in collections renderer:
 float vis_colors[] = {
