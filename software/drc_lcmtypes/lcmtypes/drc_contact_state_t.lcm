@@ -3,7 +3,7 @@ package drc;
 struct contact_state_t
 {
    int32_t num_contacts;
-   string  id [num_contacts];
+   string id [num_contacts];
    boolean inContact [num_contacts];
    vector_3d_t contactForce [num_contacts];
 }
