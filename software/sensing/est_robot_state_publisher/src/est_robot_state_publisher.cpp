@@ -50,6 +50,7 @@ public:
     //lcm->subscribe("MEAS_JOINT_ANGLES", &RobotStateListener::handleJointAnglesMsg, this);  //Subscribes to MEAS_JOINT_ANGLES 
     lcm->subscribe("TRUE_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); //
     lcm->subscribe("CAMERA_STATE",&RobotStateListener::handleCameraStateMsg,this);
+    // create subscriptions to contact sensors.
 
     T_world_camera = KDL::Frame::Identity();
     _camera_link_name= "wide_stereo_link";

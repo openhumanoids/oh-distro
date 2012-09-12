@@ -26,7 +26,10 @@ int main (int argc, char ** argv)
 	Handler handlerObject;
 	lcm.subscribe("TRUE_ROBOT_STATE", &Handler::handleMessage,
 		&handlerObject);
-
+		
+	// Create subscriptions for the foot sensors.
+// CHANNELS: LFOOT_TOE_IN/OUT, LFOOT_HEEL_IN/OUT
+// CHANNELS: RFOOT_TOE_IN/OUT, RFOOT_HEEL_IN/OUT
 	while(0 == lcm.handle());
 
 	return 0;

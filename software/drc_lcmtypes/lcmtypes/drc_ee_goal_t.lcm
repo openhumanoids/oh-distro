@@ -12,6 +12,6 @@ struct ee_goal_t
 	boolean use_posture_bias;
 	double joint_posture_bias [num_chain_joints];
 	string chain_joint_names [num_chain_joints];
-        boolean halt_ee_controller;
+  boolean halt_ee_controller;
 }
 
