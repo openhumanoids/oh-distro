@@ -49,6 +49,7 @@
 <xacro:property name="w_arm" value="0.05" />
 <xacro:property name="w_leg" value="0.06" />
 <xacro:property name="w_pelvis" value="0.122" />
+<xacro:property name="w_foot" value="0.06" />
 
 <!-- offsets (meters)  -->
 <xacro:property name="o_back_shoulder_y" value="0.135" />

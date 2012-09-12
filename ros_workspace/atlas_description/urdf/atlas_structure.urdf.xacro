@@ -121,10 +121,32 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   <link name="${side}Ankle">
     <xacro:insert_inertial_cylinder mass="${1}" r="${cylinder_radius}" l="${l_ankle*height}"/>
   </link>
+
   <link name="${side}Foot">
-   <xacro:insert_inertial_cuboid mass="${mass_foot}" l_x="${l_foot*height}" l_y="0.06" l_z="0.015"/>
+    <xacro:insert_inertial_cuboid mass="${mass_foot}" l_x="${l_foot*height}" l_y="0.06" l_z="0.015"/>
     <xacro:insert_visualization_foot side="${side}"/>
-    </link>
+  </link>
+
+  <link name="${side}FootToeIn_link">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootToeOut_link">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootHeelIn_link">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootHeelOut_link">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
  </xacro:macro> 
 
   <xacro:leg_links side="L" reflect="-1"/>
@@ -393,9 +415,33 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
   </joint>
 
   <joint name="${side}Foot_joint" type="fixed">
-    <parent link="${side}Ankle" />
+    <parent link="${side}AnklePitch_link" />
     <child link="${side}Foot" />
     <origin xyz="0 0 -0.04519" />  
+  </joint>
+
+  <joint name="${side}FootToeIn_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootToeIn_link" />
+    <origin xyz="${l_foot*height+0.025} ${reflect*w_foot/2} -0.04519" /> 
+  </joint>
+
+  <joint name="${side}FootToeOut_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootToeOut_link" />
+    <origin xyz="${l_foot*height+0.025} ${-reflect*w_foot/2} -0.04519" />
+  </joint>
+
+  <joint name="${side}FootHeelIn_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootHeelIn_link" />
+    <origin xyz="-0.025 ${reflect*w_foot/2} -0.04519" />  
+  </joint>
+
+  <joint name="${side}FootHeelOut_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootHeelOut_link" />
+    <origin xyz="-0.025 ${-reflect*w_foot/2} -0.04519" />  
   </joint>
 
 </xacro:macro>

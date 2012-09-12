@@ -187,14 +187,30 @@
         <visual>
             <origin xyz="${(l_foot/2)*height} 0 0.0075" rpy="0 0 0"/>
             <geometry>
-                <box size="${l_foot*height+0.05} 0.06 0.015"/>
+                <box size="${l_foot*height+0.05} ${w_foot} 0.015"/>
             </geometry>
             <material name="LightGrey"/>
         </visual>
        <collision>    
            <origin xyz="${(l_foot/2)*height} 0 0.0075" rpy="0 0 0"/>
             <geometry>
-                <box size="${l_foot*height+0.05} 0.06 0.015"/>
+                <box size="${l_foot*height+0.05} ${w_foot} 0.015"/>
+            </geometry>
+        </collision>
+    </xacro:macro>
+
+    <xacro:macro name="insert_visualization_foot_contact_point" params="side">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <sphere radius="0.001"/>
+            </geometry>
+            <material name="LightGrey"/>
+        </visual>
+       <collision>    
+           <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <sphere radius="0.0001"/> <!-- ~=point contact -->
             </geometry>
         </collision>
     </xacro:macro>

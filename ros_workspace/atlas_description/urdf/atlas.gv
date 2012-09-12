@@ -28,6 +28,10 @@ node [shape=box];
 "LKneePitch_link" [label="LKneePitch_link"];
 "LAnklePitch_link" [label="LAnklePitch_link"];
 "LAnkle" [label="LAnkle"];
+"LFootHeelIn_link" [label="LFootHeelIn_link"];
+"LFootHeelOut_link" [label="LFootHeelOut_link"];
+"LFootToeIn_link" [label="LFootToeIn_link"];
+"LFootToeOut_link" [label="LFootToeOut_link"];
 "LFoot" [label="LFoot"];
 "RHipYaw_link" [label="RHipYaw_link"];
 "RHipPitch_link" [label="RHipPitch_link"];
@@ -35,6 +39,10 @@ node [shape=box];
 "RKneePitch_link" [label="RKneePitch_link"];
 "RAnklePitch_link" [label="RAnklePitch_link"];
 "RAnkle" [label="RAnkle"];
+"RFootHeelIn_link" [label="RFootHeelIn_link"];
+"RFootHeelOut_link" [label="RFootHeelOut_link"];
+"RFootToeIn_link" [label="RFootToeIn_link"];
+"RFootToeOut_link" [label="RFootToeOut_link"];
 "RFoot" [label="RFoot"];
 node [shape=ellipse, color=blue, fontcolor=blue];
 "base_link" -> "base_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
@@ -91,7 +99,15 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "LAnklePitch" -> "LAnklePitch_link"
 "LAnklePitch_link" -> "LAnkle_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "LAnkle_joint" -> "LAnkle"
-"LAnkle" -> "LFoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
+"LAnklePitch_link" -> "LFootHeelIn_joint" [label="xyz: -0.025 -0.03 -0.04519 \nrpy: 0 -0 0"]
+"LFootHeelIn_joint" -> "LFootHeelIn_link"
+"LAnklePitch_link" -> "LFootHeelOut_joint" [label="xyz: -0.025 0.03 -0.04519 \nrpy: 0 -0 0"]
+"LFootHeelOut_joint" -> "LFootHeelOut_link"
+"LAnklePitch_link" -> "LFootToeIn_joint" [label="xyz: 0.199277 -0.03 -0.04519 \nrpy: 0 -0 0"]
+"LFootToeIn_joint" -> "LFootToeIn_link"
+"LAnklePitch_link" -> "LFootToeOut_joint" [label="xyz: 0.199277 0.03 -0.04519 \nrpy: 0 -0 0"]
+"LFootToeOut_joint" -> "LFootToeOut_link"
+"LAnklePitch_link" -> "LFoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
 "LFoot_joint" -> "LFoot"
 "Pelvis-link2" -> "RHipYaw" [label="xyz: 0 -0.108923 0 \nrpy: 0 -0 0"]
 "RHipYaw" -> "RHipYaw_link"
@@ -105,6 +121,14 @@ node [shape=ellipse, color=blue, fontcolor=blue];
 "RAnklePitch" -> "RAnklePitch_link"
 "RAnklePitch_link" -> "RAnkle_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
 "RAnkle_joint" -> "RAnkle"
-"RAnkle" -> "RFoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
+"RAnklePitch_link" -> "RFootHeelIn_joint" [label="xyz: -0.025 0.03 -0.04519 \nrpy: 0 -0 0"]
+"RFootHeelIn_joint" -> "RFootHeelIn_link"
+"RAnklePitch_link" -> "RFootHeelOut_joint" [label="xyz: -0.025 -0.03 -0.04519 \nrpy: 0 -0 0"]
+"RFootHeelOut_joint" -> "RFootHeelOut_link"
+"RAnklePitch_link" -> "RFootToeIn_joint" [label="xyz: 0.199277 0.03 -0.04519 \nrpy: 0 -0 0"]
+"RFootToeIn_joint" -> "RFootToeIn_link"
+"RAnklePitch_link" -> "RFootToeOut_joint" [label="xyz: 0.199277 -0.03 -0.04519 \nrpy: 0 -0 0"]
+"RFootToeOut_joint" -> "RFootToeOut_link"
+"RAnklePitch_link" -> "RFoot_joint" [label="xyz: 0 0 -0.04519 \nrpy: 0 -0 0"]
 "RFoot_joint" -> "RFoot"
 }
