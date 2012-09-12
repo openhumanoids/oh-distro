@@ -43,7 +43,9 @@
 
 
 namespace otdf{
-
+  enum
+  { UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED }; 
+  
  void addGeometry(boost::shared_ptr<const Geometry> geom,TiXmlElement* element)
 {
   enum {SPHERE, BOX, CYLINDER, MESH, TORUS};
@@ -255,7 +257,20 @@ void addParentJoint(boost::shared_ptr<const BaseEntity> entity, boost::shared_pt
     boost::shared_ptr<const Link> downcasted_child(boost::shared_dynamic_cast<const Link>((child))); 
     TiXmlElement * joint_element = new TiXmlElement( "joint" );
     joint_element->SetAttribute("name", (downcasted_child)->parent_joint->name);
-    
+    int type =  (downcasted_child)->parent_joint->type;
+    if(type==FIXED)
+     joint_element->SetAttribute("type","fixed");
+    else if (type==PLANAR)
+         joint_element->SetAttribute("type","planar");
+    else if (type==FLOATING)
+         joint_element->SetAttribute("type","floating");
+    else if (type==PRISMATIC)
+         joint_element->SetAttribute("type","prismatic");
+    else if (type==CONTINUOUS)
+         joint_element->SetAttribute("type","continuous");
+    else if (type==REVOLUTE)
+         joint_element->SetAttribute("type","revolute");
+
     TiXmlElement * parent = new TiXmlElement( "parent" );
     joint_element->LinkEndChild(parent);
     parent->SetAttribute("link", (downcasted_child)->parent_joint->parent_link_name);	
@@ -282,6 +297,20 @@ void addParentJoint(boost::shared_ptr<const BaseEntity> entity, boost::shared_pt
     boost::shared_ptr<const Bounding_volume> downcasted_child(boost::shared_dynamic_cast<const Bounding_volume>((child))); 
     TiXmlElement * joint_element = new TiXmlElement( "joint" );
     joint_element->SetAttribute("name", (downcasted_child)->parent_joint->name);
+    int type =  (downcasted_child)->parent_joint->type;
+    if(type==FIXED)
+     joint_element->SetAttribute("type","fixed");
+    else if (type==PLANAR)
+         joint_element->SetAttribute("type","planar");
+    else if (type==FLOATING)
+         joint_element->SetAttribute("type","floating");
+    else if (type==PRISMATIC)
+         joint_element->SetAttribute("type","prismatic");
+    else if (type==CONTINUOUS)
+         joint_element->SetAttribute("type","continuous");
+    else if (type==REVOLUTE)
+         joint_element->SetAttribute("type","revolute");
+    
     
     TiXmlElement * parent = new TiXmlElement( "parent" );
     joint_element->LinkEndChild(parent);

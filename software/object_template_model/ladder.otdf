@@ -11,19 +11,19 @@
 <param name="Y" default_value="0.0" />
 
 <!-- Size of the outer most bounding volume -->
-<param name="lX" default_value="10.0" /> 
-<param name="lY" default_value="10.0" />
+<param name="lX" default_value="0.5" /> 
+<param name="lY" default_value="5.0" />
 <param name="lZ" default_value="10.0" /> <!-- ladder height -->
 
 <param name="STEP_THICKNESS" default_value="0.2" />
-<param name="STEP_WIDTH" default_value="6.0" /> <!-- Also specifies the width of the rails -->
+<param name="STEP_WIDTH" default_value="4.0" /> <!-- Also specifies the width of the rails -->
 <param name="STEP_OFFSET_Z" default_value="0.9" />
 <param name="Density" default_value="1.0" />
-<param name="NO_OF_STEPS" default_value="8" />
+<param name="NO_OF_STEPS" default_value="10" />
 
 
 <!-- Bounding volumes :: They become dummy links when otdf is converted to urdf for visualization-->
-<link name="world"/>
+<link name="base_link"/>
 
 <bounding_volume name="Outer_Volume">
 	<origin rpy="0 0 0" xyz="0 0 0"/>
@@ -112,7 +112,7 @@
  Ideally the tag should be something like 	<parent element="xxxx" type="link/bounding_volume/pattern_template"/>
  -->	
 <joint name="base_joint" type="fixed">
-	<parent link="world" type="link"/>
+	<parent link="base_link" type="link"/>
 	<child link="Outer_Volume" type="bounding_volume"/>
 	<origin rpy="${R} ${P} ${Y}" xyz="${X} ${Y} ${Z}"/>
 </joint>
@@ -138,7 +138,7 @@
 
 <!-- A set of joints --> 
 <joint_pattern name="STEP_joints" noofrepetitions ="${NO_OF_STEPS}" type="fixed">
-  <origin rpy="0 0 0" xyz="0 0 ${lZ-(0.5*STEP_THICKNESS)}"/> <!-- origin of the first element, all other joints are offset from it -->
+  <origin rpy="0 0 0" xyz="0 0 ${-((0.5*lZ)-(0.5*STEP_THICKNESS))+STEP_OFFSET_Z}"/> <!-- origin of the first element, all other joints are offset from it -->
 	<pattern_offset rpy="0 0 0" xyz="0 0 ${STEP_OFFSET_Z}"/> <!--relative offsets between links--> 
 	<parent link="Inner_Volume" type="bounding_volume"/>
 	<child  link="STEPS" type ="link_pattern"/>

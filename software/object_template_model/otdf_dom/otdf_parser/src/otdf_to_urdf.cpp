@@ -71,8 +71,8 @@ int main(int argc, char** argv)
   }
   
   //testing object update for ladder
-  object->setParam("NO_OF_STEPS", 5);
-  object->update();
+  //object->setParam("NO_OF_STEPS", 5);
+  //object->update();
 
   convertObjectInstanceToURDFfile(object);
   
