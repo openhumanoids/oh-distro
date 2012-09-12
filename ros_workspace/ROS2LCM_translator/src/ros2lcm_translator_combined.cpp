@@ -275,17 +275,18 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 
 
 int main(int argc, char **argv){
-  std::cout << "ros2lcm_translator launched\n";
-  ros::init(argc, argv, "ros2lcm_translator");
-  std::cout << "ros2lcm_translator converter\n";
-  std::cout << "Arguments: ros2lcm_translator ROS_stereo_channel LCM_stereo_channel\n";
-  std::cout << "ros2lcm_translator wide_stereo WIDE_STEREO_IMAGE\n";
+  std::cout << "ros2lcm_translator_combined launched\n";
+  ros::init(argc, argv, "ros2lcm_translator_combined");
 
+  App *app = new App("wide_stereo", "WIDE_STEREO_IMAGE");
+
+/*
+  std::cout << "Arguments: ros2lcm_translator_combined ROS_stereo_channel LCM_stereo_channel\n";
+  std::cout << "ros2lcm_translator_combined wide_stereo WIDE_STEREO_IMAGE\n";
   std::cout << "    program: " << argv[ 0 ] << "\n";
   std::cout << "ROS channel: " << argv[ 1 ] << " [Input]\n";
   std::cout << "LCM channel: " << argv[ 2 ] << " [Output]\n";
-
-  App *app = new App(argv[ 1 ], argv[ 2 ]);
+  App *app = new App(argv[ 1 ], argv[ 2 ]);*/
   ros::spin();
   return 0;
 }
