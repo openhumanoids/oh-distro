@@ -190,7 +190,7 @@ void local_map::pointcloud_handler(const drc_pointcloud2_t *msg){
   if (!current_pose_init){     return;  }
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  unpack_pointcloud2(msg, cloud);
+  unpack_pointcloud2( (const putils_pointcloud2_t*)   msg, cloud);
 
   // 3a. Transmit Pose:
   int pose_id=msg->utime;

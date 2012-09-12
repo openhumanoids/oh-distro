@@ -5,6 +5,7 @@
 
 #include <pointcloud_utils/pointcloud_lcm.hpp>
 #include <pointcloud_utils/pointcloud_vis.hpp>
+#include <lcmtypes/drc_lcmtypes.h>
 
 ///////////////////////////////////////////////////////////////
 class local_map{
