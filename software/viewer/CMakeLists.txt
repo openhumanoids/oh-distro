@@ -18,4 +18,5 @@ add_subdirectory(src/viewer)
 
 # this is a really terrible place to do this - need to fix it!
 install(FILES ../../config/drc_robot.cfg DESTINATION config)
+install(FILES ../../config/drc_rig.cfg DESTINATION config)
 install(DIRECTORY ../../models DESTINATION .)
