@@ -19,11 +19,11 @@ group "core" {
         exec = "est_robot_state_publisher_no_sensing";
         host = "localhost";
     }
-    cmd "pub2" {
-        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
+    cmd "r2l" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
         host = "localhost";
     }
-    cmd "pub3" {
+    cmd "l2r" {
         exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
         host = "localhost";
     }
