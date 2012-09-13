@@ -80,7 +80,7 @@ lcm->subscribe("LFOOT_TOE_IN_CONTACT_STATE", &Handler::update_LFootToeIn_Contact
   void collateContactSensors(drc::robot_state_t *msg)
   {
   
-	// TODO: Might need to check timestamps to make sure that the contact_state is not too  out of sync with robot state or old.? 
+Curre
 
 	
     std::vector<std::string>::const_iterator found;
