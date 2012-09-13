@@ -22,3 +22,9 @@ pods_use_pkg_config_packages(est_robot_state_publisher_no_sensing lcm lcmtypes_d
 
 # make exeutables public
 pods_install_executables(est_robot_state_publisher_no_sensing)
+
+add_executable(est_robot_state_publisher_no_exteroception src/est_robot_state_publisher_no_exteroception.cpp)
+pods_use_pkg_config_packages(est_robot_state_publisher_no_exteroception lcm lcmtypes_drc_lcmtypes)
+
+# make exeutables public
+pods_install_executables(est_robot_state_publisher_no_exteroception)
