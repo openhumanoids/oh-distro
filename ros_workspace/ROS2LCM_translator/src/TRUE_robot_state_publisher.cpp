@@ -68,11 +68,21 @@ robot_state_msg.joint_cov.push_back(j_cov);
 
 
 // dummy ground contact states
-robot_state_msg.contacts.num_contacts =2;
-robot_state_msg.contacts.id.push_back("Left_Foot");
-robot_state_msg.contacts.id.push_back("Right_Foot");
-robot_state_msg.contacts.inContact.push_back(0);
-robot_state_msg.contacts.inContact.push_back(0);
+robot_state_msg.contacts.num_contacts =8;
+robot_state_msg.contacts.id.push_back("LFootToeIn");
+robot_state_msg.contacts.id.push_back("LFootToeOut");
+robot_state_msg.contacts.id.push_back("LFootHeelIn");
+robot_state_msg.contacts.id.push_back("LFootHeelOut");
+robot_state_msg.contacts.id.push_back("RFootToeIn");
+robot_state_msg.contacts.id.push_back("RFootToeOut");
+robot_state_msg.contacts.id.push_back("RFootHeelIn");
+robot_state_msg.contacts.id.push_back("RFootHeelOut");
+for (int i=0; i< robot_state_msg.contacts.num_contacts; i++){
+    robot_state_msg.contacts.inContact.push_back(0);
+    drc::vector_3d_t f_zero;
+    f_zero.x = 0;f_zero.y = 0;f_zero.z = 0;
+    robot_state_msg.contacts.contactForce.push_back(f_zero);
+}
 
 lcm::LCM lcm;
 if(lcm.good())

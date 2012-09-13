@@ -13,7 +13,7 @@
 	<selfCollide>false</selfCollide>
     	<sensor:contact name="${name}_contact_sensor">
         <geom>${name}_link_geom</geom> 
-       	<updateRate>1.0</updateRate>
+        <updateRate>100.0</updateRate>
        	<controller:gazebo_ros_bumper name="${name}_gazebo_ros_bumper_controller" plugin="libgazebo_ros_bumper.so">
        		<alwaysOn>true</alwaysOn>
        		<updateRate>100.0</updateRate>
@@ -24,8 +24,6 @@
 	</gazebo>
 	</xacro:macro>
 
-<!--	<xacro:foot_bumpers name="RHipRoll"/>-->
-<!--	<xacro:foot_bumpers name="RShoulderRoll"/>-->
 
 	<xacro:foot_bumpers name="LFootToeIn"/>
 	<xacro:foot_bumpers name="LFootToeOut"/>

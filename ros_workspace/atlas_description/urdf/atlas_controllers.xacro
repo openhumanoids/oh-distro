@@ -12,7 +12,7 @@
 	<selfCollide>false</selfCollide>
     	<sensor:contact name="${name}_contact_sensor">
         <geom>${name}_link_geom</geom> 
-       	<updateRate>1.0</updateRate>
+        <updateRate>100.0</updateRate>
        	<controller:gazebo_ros_bumper name="${name}_gazebo_ros_bumper_controller" plugin="libgazebo_ros_bumper.so">
        		<alwaysOn>true</alwaysOn>
        		<updateRate>100.0</updateRate>
@@ -23,8 +23,6 @@
 	</gazebo>
 	</xacro:macro>
 
-<!--	<xacro:foot_bumpers name="RHipRoll"/>-->
-<!--	<xacro:foot_bumpers name="RShoulderRoll"/>-->
 
 	<xacro:foot_bumpers name="LFootToeIn"/>
 	<xacro:foot_bumpers name="LFootToeOut"/>
@@ -34,28 +32,6 @@
 	<xacro:foot_bumpers name="RFootToeOut"/>
 	<xacro:foot_bumpers name="RFootHeelIn"/>
 	<xacro:foot_bumpers name="RFootHeelOut"/>
-
-
-<!--    <xacro:macro name="foot_contact_force" params="name">-->
-<!--	<gazebo reference="${name}_link">-->
-<!--        <controller:gazebo_ros_f3d name="${name}_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">-->
-<!--            <alwaysOn>true</alwaysOn>-->
-<!--            <updateRate>100.0</updateRate>-->
-<!--            <bodyName>${name}_link</bodyName>-->
-<!--            <topicName>${name}_f3d</topicName>-->
-<!--            <interface:position name="{name}_gazebo_ros_f3d_position" />-->
-<!--        </controller:gazebo_ros_f3d>-->
-<!--    </gazebo>-->
-<!--	</xacro:macro>-->
-
-<!--	<xacro:foot_contact_force name="LFootToeIn"/>-->
-<!--	<xacro:foot_contact_force name="LFootToeOut"/>-->
-<!--	<xacro:foot_contact_force name="LFootHeelIn"/>-->
-<!--	<xacro:foot_contact_force name="LFootHeelOut"/>-->
-<!--	<xacro:foot_contact_force name="RFootToeIn"/>-->
-<!--	<xacro:foot_contact_force name="RFootToeOut"/>-->
-<!--	<xacro:foot_contact_force name="RFootHeelIn"/>-->
-<!--	<xacro:foot_contact_force name="RFootHeelOut"/>-->
 
 	<gazebo>
         <!--<controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">

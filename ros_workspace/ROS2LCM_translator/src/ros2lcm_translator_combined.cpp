@@ -29,6 +29,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Image.h>
 #include <atlas_gazebo_msgs/RobotState.h>
+#include <gazebo_msgs/ContactState.h>
+#include <gazebo_msgs/ContactsState.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -53,10 +55,22 @@ private:
   ros::NodeHandle node_;
 
   ros::Subscriber base_scan_sub_,rstate_sub_;
+ 
   void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg);
   void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
-
+  
+  ros::Subscriber LFootToeIn_cstate_sub_,LFootToeOut_cstate_sub_,LFootHeelIn_cstate_sub_,LFootHeelOut_cstate_sub_;
+  ros::Subscriber RFootToeIn_cstate_sub_,RFootToeOut_cstate_sub_,RFootHeelIn_cstate_sub_,RFootHeelOut_cstate_sub_;
+  void LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void LFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void LFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void LFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void RFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void RFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void RFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  void RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+  
   // Stereo Image:
   void image_cb(const sensor_msgs::ImageConstPtr& l_image,
       const sensor_msgs::CameraInfoConstPtr& l_cam_info,
@@ -86,6 +100,17 @@ App::App(const std::string & stereo_in,
 
   base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this);
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
+  
+  //Foot contact sensors.
+  LFootToeIn_cstate_sub_ = node_.subscribe("/LFootToeIn_bumper/state", 10, &App::LFootToeIn_cstate_cb,this);
+  LFootToeOut_cstate_sub_ = node_.subscribe("/LFootToeOut_bumper/state", 10, &App::LFootToeOut_cstate_cb,this);
+  LFootHeelIn_cstate_sub_ = node_.subscribe("/LFootHeelIn_bumper/state", 10, &App::LFootHeelIn_cstate_cb,this);
+  LFootHeelOut_cstate_sub_ = node_.subscribe("/LFootHeelOut_bumper/state", 10, &App::LFootHeelOut_cstate_cb,this);
+  RFootToeIn_cstate_sub_ = node_.subscribe("/RFootToeIn_bumper/state", 10, &App::RFootToeIn_cstate_cb,this);
+  RFootToeOut_cstate_sub_ = node_.subscribe("/RFootToeOut_bumper/state", 10, &App::RFootToeOut_cstate_cb,this);
+  RFootHeelIn_cstate_sub_ = node_.subscribe("/RFootHeelIn_bumper/state", 10, &App::RFootHeelIn_cstate_cb,this);
+  RFootHeelOut_cstate_sub_ = node_.subscribe("/RFootHeelOut_bumper/state", 10, &App::RFootHeelOut_cstate_cb,this);
+      
 
   // Stereo Image:
   std::string lim_string = stereo_in_ + "/left/image_mono";
@@ -237,12 +262,22 @@ void App::rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg){
     robot_state_msg.joint_cov.push_back(j_cov);
   }
 
-  // dummy ground contact states
-  robot_state_msg.contacts.num_contacts =2;
-  robot_state_msg.contacts.id.push_back("Left_Foot");
-  robot_state_msg.contacts.id.push_back("Right_Foot");
-  robot_state_msg.contacts.inContact.push_back(0);
-  robot_state_msg.contacts.inContact.push_back(0);
+// dummy ground contact states
+robot_state_msg.contacts.num_contacts =8;
+robot_state_msg.contacts.id.push_back("LFootToeIn");
+robot_state_msg.contacts.id.push_back("LFootToeOut");
+robot_state_msg.contacts.id.push_back("LFootHeelIn");
+robot_state_msg.contacts.id.push_back("LFootHeelOut");
+robot_state_msg.contacts.id.push_back("RFootToeIn");
+robot_state_msg.contacts.id.push_back("RFootToeOut");
+robot_state_msg.contacts.id.push_back("RFootHeelIn");
+robot_state_msg.contacts.id.push_back("RFootHeelOut");
+for (int i=0; i< robot_state_msg.contacts.num_contacts; i++){
+    robot_state_msg.contacts.inContact.push_back(0);
+    drc::vector_3d_t f_zero;
+    f_zero.x = 0;f_zero.y = 0;f_zero.z = 0;
+    robot_state_msg.contacts.contactForce.push_back(f_zero);
+}
 
   lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);
 }
@@ -272,6 +307,364 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   //  bot_core_planar_lidar_t_publish(lcm_publish_,channel.c_str(),&scan_out);
   if (VERBOSE) cout << channel << ": "<< scan_out.utime << "\n";
 }
+
+//==================================================================================================
+
+void App::LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+  gazebo_msgs::ContactsState contact_states = *msg;
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("LFootToeIn");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("LFootToeIn");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("LFOOT_TOE_IN_CONTACT_STATE", &lcm_msg);
+}
+
+void App::LFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("LFootToeOut");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("LFootToeOut");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("LFOOT_TOE_OUT_CONTACT_STATE", &lcm_msg);
+}
+
+
+void App::LFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("LFootHeelIn");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("LFootHeelIn");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("LFOOT_HEEL_IN_CONTACT_STATE", &lcm_msg);
+}
+
+void App::LFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("LFootHeelOut");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("LFootHeelOut");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("LFOOT_HEEL_OUT_CONTACT_STATE", &lcm_msg);
+}
+
+void App::RFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("RFootToeIn");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("RFootToeIn");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("RFOOT_TOE_IN_CONTACT_STATE", &lcm_msg);
+}
+
+void App::RFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("RFootToeOut");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("RFootToeOut");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("RFOOT_TOE_OUT_CONTACT_STATE", &lcm_msg);
+}
+
+
+void App::RFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("RFootHeelIn");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("RFootHeelIn");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("RFOOT_HEEL_IN_CONTACT_STATE", &lcm_msg);
+}
+
+void App::RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
+
+  drc::contact_state_stamped_t lcm_msg;
+  lcm_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_msg.robot_name = "atlas"; // this cb is active only for atlas
+  lcm_msg.num_contacts = 1;
+
+  if(msg->states.empty()) {
+      bool inContact = false;
+      
+       drc::vector_3d_t  f;
+       f.x = 0;
+       f.y = 0;
+       f.z = 0;
+       lcm_msg.id.push_back("RFootHeelOut");
+       lcm_msg.inContact.push_back(inContact);
+       lcm_msg.contactForce.push_back(f);
+  }
+  else{
+
+   bool inContact = true;
+    drc::vector_3d_t  f;
+     f.x = 0;  f.y = 0;   f.z = 0;
+     for (unsigned int k=0; k < msg->states.size(); k++) // for multiple collisions (usually one)
+     {
+         geometry_msgs::Wrench total_wrench;
+         total_wrench = msg->states[k].total_wrench;
+         
+         f.x = f.x + total_wrench.force.x;
+         f.y = f.y + total_wrench.force.y;
+         f.z = f.z + total_wrench.force.z;
+
+          //total_wrench.torque.x; 
+          //total_wrench.torque.y;
+          //total_wrench.torque.z; 
+     }
+
+    lcm_msg.id.push_back("RFootHeelOut");
+    lcm_msg.inContact.push_back(inContact);
+    lcm_msg.contactForce.push_back(f);
+  }
+  lcm_publish_.publish("RFOOT_HEEL_OUT_CONTACT_STATE", &lcm_msg);
+}
+
+//==================================================================================================
 
 
 int main(int argc, char **argv){
