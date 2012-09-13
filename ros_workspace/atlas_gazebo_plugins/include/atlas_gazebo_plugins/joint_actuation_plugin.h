@@ -63,6 +63,7 @@ struct ActuationCmdStruc
   bool  on_flag;
 };
 
+
 class JointActuationPlugin: public ModelPlugin
 {
   public: JointActuationPlugin();
