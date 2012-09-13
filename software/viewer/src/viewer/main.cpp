@@ -23,7 +23,7 @@
 #include <renderer_drc/renderer_robot_plan.hpp>
 //#include <renderer_drc/renderer_localize.hpp>
 #include <renderer_drc/renderer_navigation.hpp>
-#include <renderer_drc/renderer_end_effector_goal.hpp>
+#include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
 #include "udp_util.h"
 
 using namespace std;
