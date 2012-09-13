@@ -37,8 +37,8 @@ rosbuild_link_boost(planar_hover_plugin_pre_fuerte thread)
 #rosbuild_add_library(diffdrive_plugin2 src/diffdrive_plugin.cpp)
 #rosbuild_link_boost(diffdrive_plugin2 thread)
 
-#rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
-#rosbuild_link_boost(joint_actuation_plugin thread)
+rosbuild_add_library(joint_actuation_plugin_pre_fuerte src/joint_actuation_plugin.cpp)
+rosbuild_link_boost(joint_actuation_plugin_pre_fuerte thread)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
