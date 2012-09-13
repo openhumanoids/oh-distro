@@ -79,10 +79,7 @@ lcm->subscribe("LFOOT_TOE_IN_CONTACT_STATE", &Handler::update_LFootToeIn_Contact
 //==================================================================================================
   void collateContactSensors(drc::robot_state_t *msg)
   {
-  
-Curre
 
-	
     std::vector<std::string>::const_iterator found;
     //found = msg->contacts.id.find("LFootToeIn");
     found = std::find (msg->contacts.id.begin(), msg->contacts.id.end(), "LFootToeIn");
