@@ -41,7 +41,8 @@ public:
   void setDataBufferLength(const int iLength);
 
   // create new map and make it the active one
-  bool createMap(const Eigen::Isometry3d& iToLocal);
+  bool createMap(const Eigen::Isometry3d& iToLocal =
+                 Eigen::Isometry3d::Identity());
 
   // switch to use map with given id
   bool useMap(const int64_t iId);

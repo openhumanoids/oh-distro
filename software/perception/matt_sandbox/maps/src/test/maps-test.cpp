@@ -1,64 +1,86 @@
 #include <maps/MapManager.hpp>
-#include <maps/SpatialQuery.hpp>
-
-#include <pcl/io/io.h>
+#include <maps/SensorDataReceiver.hpp>
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc/pointcloud2_t.hpp>
+#include <boost/thread.hpp>
+
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/transforms.h>
 
 using namespace std;
 
 class State {
 public:
-  void onCollection(const lcm::ReceiveBuffer* iBuf,
-                    const std::string& iChannel,
-                    const drc::pointcloud2_t* iMessage) {
-    pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
-    pointCloud.width = iMessage->width;
-    pointCloud.height = iMessage->height;
-    pointCloud.points.resize(iMessage->width * iMessage->height);
-    pointCloud.is_dense = false;
-    uint8_t* cloudData = reinterpret_cast<uint8_t*>(&pointCloud.points[0]);
-    const uint8_t* messageData =
-      reinterpret_cast<const uint8_t*>(&iMessage->data[0]);
-    memcpy(cloudData, messageData, iMessage->data_nbytes);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr newCloud(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::copyPointCloud(pointCloud, *newCloud);
-    mManager.add(iMessage->utime, newCloud, Eigen::Isometry3d::Identity());
-    MapManager::PointCloud::Ptr allPts = mManager.getPointCloud();
-    mQuery.clear();
-    mQuery.add(allPts);
-    mQuery.populateStructures();
-    cout << "GOT COLLECTION" << endl;
-    cout << "ALL POINTS: " << allPts->size() << " POINTS " << endl;
-    Eigen::Vector3d pt, nrm;
-    mQuery.getClosest(Eigen::Vector3d(0,0,0),pt,nrm);
-    cout << "CLOSEST POINT " << pt[0] << " " << pt[1] << " " << pt[2] << endl;
-    cout << "CLOSEST NORMAL " << nrm[0] << " " << nrm[1] << " " << nrm[2] << endl;
+  SensorDataReceiver mSensorDataReceiver;
+  MapManager mManager;
+};
+
+class DataConsumer {
+public:
+  DataConsumer(State* iState) {
+    mState = iState;
+    mCounter = 0;
   }
 
-public:
-  MapManager mManager;
-  SpatialQuery mQuery;
+  void operator()() {
+    while(true) {
+      SensorDataReceiver::PointCloudWithPose data;
+      mState->mSensorDataReceiver.waitForData(data);
+      mState->mManager.add(data.mTimestamp, data.mPointCloud, data.mPose);
+      cout << "got data" << endl;
+
+      /*
+      // transform points to local frame
+      SensorDataReceiver::PointCloud::Ptr points(new SensorDataReceiver::PointCloud);
+      Eigen::Affine3f matx(data.mPose.cast<float>());
+      matx = Eigen::Affine3f::Identity();
+      pcl::transformPointCloud(*data.mPointCloud, *points, matx);
+
+      // write points
+      char fileName[256];
+      sprintf(fileName, "/home/antone/map_pts_%.3d.pcd", mCounter);
+      pcl::io::savePCDFileASCII(fileName, *points);
+      ++mCounter;
+      */
+    }
+  }
+
+protected:
+  State* mState;
+  int mCounter;
 };
 
 int main(const int iArgc, const char** iArgv) {
   State state;
-  state.mManager.setMapResolution(0.01);
-  state.mManager.createMap(Eigen::Isometry3d::Identity());
-  state.mQuery.setNormalComputationRadius(0.5);
+  cout << "STATE CONSTRUCTED" << endl;
 
-  // set up lcm instance
-  // TODO: should spawn thread
-  lcm::LCM theLcm;
-  if (!theLcm.good()) {
+  boost::shared_ptr<lcm::LCM> theLcm(new lcm::LCM());
+  if (!theLcm->good()) {
     cerr << "Cannot create lcm instance." << endl;
     return -1;
   }
-  theLcm.subscribe("WIDE_STEREO_POINTS", &State::onCollection, &state);
-  while (true) {
-    theLcm.handle();
-  }
+
+  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/config/drc_robot.cfg");
+
+  state.mSensorDataReceiver.setLcm(theLcm);
+  state.mSensorDataReceiver.setBotParam(theParam);
+  state.mSensorDataReceiver.setMaxBufferSize(100);
+  state.mSensorDataReceiver.
+    addChannel("WIDE_STEREO_POINTS",
+               SensorDataReceiver::SensorTypePointCloud,
+               "wide_stereo", "local");
+
+  state.mManager.setMapResolution(0.1);
+  state.mManager.setMapDimensions(Eigen::Vector3d(10,10,10));
+  state.mManager.setDataBufferLength(1000);
+  state.mManager.createMap(Eigen::Isometry3d::Identity());
+
+  DataConsumer consumer(&state);
+  boost::thread thread(consumer);
+                                       
+  while (0 == theLcm->handle());
+
+  thread.join();
 
   return 0;
 }

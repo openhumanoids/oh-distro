@@ -5,11 +5,11 @@ struct map_delta_t
   // timestamp of this message
   int64_t utime;
 
+  // id of this request
+  int64_t message_id;
+
   // id of map to be updated
   int32_t map_id;
-
-  // id of change request
-  int32_t change_id;
 
   // array of points to be added
   int32_t n_added;

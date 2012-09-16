@@ -1,7 +1,6 @@
 #include "MapChunk.hpp"
 
 #include <boost/functional/hash.hpp>
-#include <pcl/octree/octree.h>
 #include <pcl/octree/octree_impl.h>
 #include <pcl/filters/extract_indices.h>
 

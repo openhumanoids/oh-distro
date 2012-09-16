@@ -6,6 +6,12 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/crop_box.h>
 
+// TODO: re-think this:
+// Possibly can return active map and operate on it directly
+// including transform and crop
+// specify active map simply as axis-aligned bounding box in local frame?
+
+
 MapManager::
 MapManager() {
   mPointDataBuffer.reset(new PointDataBuffer());

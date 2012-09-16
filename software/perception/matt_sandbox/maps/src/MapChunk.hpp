@@ -2,9 +2,10 @@
 #define _MapChunk_hpp_
 
 #include <Eigen/Geometry>
-#include <pcl/point_types.h>
-#include <pcl/octree/octree.h>
 #include <boost/shared_ptr.hpp>
+
+#include <pcl/octree/octree.h>
+//#include "OctreeCustom.hpp"
 
 class MapChunk {
 public:
