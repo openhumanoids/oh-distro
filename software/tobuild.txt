@@ -4,7 +4,7 @@
 externals
 #core
 drc_lcmtypes
-#drivers
+drivers
 branched
 robot_model
 kinematics
@@ -13,3 +13,4 @@ viewer
 perception
 control
 object_template_model
+network
