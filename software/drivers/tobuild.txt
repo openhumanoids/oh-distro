@@ -2,3 +2,6 @@
 # and lines starting with '#' are ignored
 
 kinect
+vicon
+velodyne
+microstrain_comm
