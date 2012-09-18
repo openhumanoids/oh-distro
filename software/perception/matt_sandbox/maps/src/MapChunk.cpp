@@ -1,10 +1,8 @@
 #include "MapChunk.hpp"
 
-#include <boost/functional/hash.hpp>
 #include <pcl/octree/octree_impl.h>
-#include <pcl/filters/extract_indices.h>
-
-typedef pcl::octree::OctreePointCloudOccupancy<MapChunk::PointCloud::PointType> OccupancyOctree;
+#include <pcl/common/transforms.h>
+#include <pcl/filters/crop_box.h>
 
 MapChunk::
 MapChunk() {
@@ -13,8 +11,6 @@ MapChunk() {
   setTransformToLocal(Eigen::Isometry3d::Identity());
   setBounds(Eigen::Vector3d(-1e20, -1e20, -1e20),
             Eigen::Vector3d(1e20, 1e20, 1e20));
-  mBackingPoints.reset(new PointCloud());
-  storeBackingPoints(true);
   setResolution(0.01);
 }
 
@@ -25,7 +21,6 @@ MapChunk::
 void MapChunk::
 clear() {
   mOctree->deleteTree();
-  mBackingPoints.reset(new PointCloud());
 }
 
 void MapChunk::
@@ -81,7 +76,7 @@ getBoundMax() const {
 void MapChunk::
 setResolution(const double iResolution) {
   mResolution = iResolution;
-  mNeedsUpdate = true;
+  mOctree.reset(new Octree(mResolution));
 }
 
 double MapChunk::
@@ -89,114 +84,65 @@ getResolution() const {
   return mResolution;
 }
 
-void MapChunk::storeBackingPoints(const bool iVal) {
-  mStoreBackingPoints = iVal;
-  mNeedsUpdate = true;
-}
-
-void MapChunk::
-updateStructures() {
-  if (!mNeedsUpdate) {
-    return;
-  }
-
-  if (mStoreBackingPoints) {
-    mOctree.reset(new Octree(mResolution));
-  }
-  else {
-    // TODO: cast may not be kosher
-    mOctree.reset((Octree*)(new OccupancyOctree(mResolution)));
-  }
-  mBackingPoints.reset(new PointCloud());
-  mOctree->setInputCloud(mBackingPoints);
-  mNeedsUpdate = false;
-}
-
-
 bool MapChunk::
-add(const PointCloud::Ptr& iCloud) {
-  updateStructures();
+add(const PointCloud::Ptr& iPoints, const Eigen::Isometry3d& iToLocal) {
 
-  if (mStoreBackingPoints) {
-    for (int i = 0; i < iCloud->size(); ++i) {
-      mOctree->addPointToCloud(iCloud->points[i], mBackingPoints);
-    }
-  }
-  else {
-    OccupancyOctree* occ = (OccupancyOctree*)mOctree.get();
-    occ->setOccupiedVoxelsAtPointsFromCloud(iCloud);
-  }
+  // transform points
+  PointCloud::Ptr points(new PointCloud());
+  Eigen::Affine3f matx((mTransformToLocal.inverse()*iToLocal).cast<float>());
+  pcl::transformPointCloud(*iPoints, *points, matx);
+
+  // crop points
+  pcl::CropBox<PointCloud::PointType> cropper;
+  cropper.setMin(Eigen::Vector4f(mBoundMin[0], mBoundMin[1], mBoundMin[2], 1));
+  cropper.setMax(Eigen::Vector4f(mBoundMax[0], mBoundMax[1], mBoundMax[2], 1));
+  cropper.setInputCloud(points);
+  PointCloud::Ptr pointsFinal(new PointCloud());
+  cropper.filter(*pointsFinal);
+  
+  // add points
+  mOctree->setOccupiedVoxelsAtPointsFromCloud(pointsFinal);
+
   return true;
 }
 
 bool MapChunk::
 remove(const PointCloud::Ptr& iCloud) {
-  updateStructures();
-
-  if (mStoreBackingPoints) {
-    // TODO: is there a better way? what should the behavior be?
-    // TODO: how do we know which points were removed by this operation?
-    for (int i = 0; i < iCloud->size(); ++i) {
-      mOctree->deleteVoxelAtPoint(iCloud->points[i]);
-    }
-  }
-  else {
-    for (int i = 0; i < iCloud->size(); ++i) {
-      mOctree->deleteVoxelAtPoint(iCloud->points[i]);
-    }
+  PointCloud::Ptr newCloud(new PointCloud());
+  Eigen::Affine3f matx(mTransformToLocal.inverse().cast<float>());
+  pcl::transformPointCloud(*iCloud, *newCloud, matx);
+  for (int i = 0; i < newCloud->size(); ++i) {
+    mOctree->deleteVoxelAtPoint(newCloud->points[i]);
   }
   return true;
 }
 
 void MapChunk::
 deepCopy(const MapChunk& iChunk) {
+  OctreePtr octreeOrig = mOctree;
   *this = iChunk;
-  mNeedsUpdate = true;
-  if (!iChunk.mNeedsUpdate) {
-    updateStructures();
-    *mOctree = *(iChunk.mOctree);
-    *mBackingPoints = *(iChunk.mBackingPoints);
-  }
+  mOctree = octreeOrig;
+  *mOctree = *(iChunk.mOctree);
 }
 
 MapChunk::PointCloud::Ptr MapChunk::
-getAsPointCloud(const bool iVoxelCenters) const {
+getAsPointCloud(const bool iTransform) const {
   PointCloud::Ptr cloud(new PointCloud());
-
-  if (mNeedsUpdate) {
-    return cloud;
+  Octree::AlignedPointTVector vect;
+  mOctree->getOccupiedVoxelCenters(vect);
+  for (int i = 0; i < vect.size(); ++i) {
+    cloud->push_back(vect[i]);
   }
-
-  if (iVoxelCenters || !mStoreBackingPoints) {
-    Octree::AlignedPointTVector vect;
-    mOctree->getOccupiedVoxelCenters(vect);
-    // TODO: is there a way to set this in one shot rather than loop?
-    for (int i = 0; i < vect.size(); ++i) {
-      cloud->push_back(vect[i]);
-    }
-  }
-  else {
-    if (mOctree->getIndices() != NULL) {
-      // TODO: do we need to filter these?
-      pcl::ExtractIndices<PointCloud::PointType> filt(true);
-      filt.setInputCloud(mOctree->getInputCloud());
-      filt.setIndices(mOctree->getIndices());
-      filt.filter(*cloud);
-    }
-    else {
-      *cloud = *(mOctree->getInputCloud());
-    }
+  if (iTransform) {
+    Eigen::Affine3f matx(mTransformToLocal.cast<float>());
+    pcl::transformPointCloud(*cloud, *cloud, matx);
   }
   return cloud;
 }
 
-
-// TODO: different method required if using original points rather than voxels
 bool MapChunk::
 findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
                 PointCloud::Ptr& oRemoved) {
-
-  updateStructures();
 
   // find newly added points
   if (oAdded == NULL) {
@@ -208,17 +154,19 @@ findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
                                boundMaxX, boundMaxY, boundMaxZ);
   double resolution = iMap.mOctree->getResolution();
   Eigen::Vector3d boundMin(boundMinX, boundMinY, boundMinZ);
-  Octree::LeafNodeIterator iter(*iMap.mOctree);
-  for (; (*iter) != NULL; ++iter) {
-    pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
-    if (mOctree->existLeaf(key.x, key.y, key.z)) {
-      continue;
-    }
+  {
+    Octree::LeafNodeIterator iter(*iMap.mOctree);
+    while (*++iter) {
+      pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
+      if (mOctree->existLeaf(key.x, key.y, key.z)) {
+        continue;
+      }
 
-    Eigen::Vector3d pt(key.x, key.y, key.z);
-    pt = (pt.array() + 0.5) * resolution;
-    pt += boundMin;
-    oAdded->push_back(PointCloud::PointType(pt[0], pt[1], pt[2]));
+      Eigen::Vector3d pt(key.x, key.y, key.z);
+      pt = (pt.array() + 0.5) * resolution;
+      pt += boundMin;
+      oAdded->push_back(PointCloud::PointType(pt[0], pt[1], pt[2]));
+    }
   }
 
   // find newly removed points
@@ -230,19 +178,21 @@ findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
                           boundMaxX, boundMaxY, boundMaxZ);
   resolution = mOctree->getResolution();
   boundMin = Eigen::Vector3d(boundMinX, boundMinY, boundMinZ);
-  
-  for (iter = Octree::LeafNodeIterator(*mOctree); (*iter) != NULL; ++iter) {
-    pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
-    if (iMap.mOctree->existLeaf(key.x, key.y, key.z)) {
-      continue;
-    }
+  {
+    Octree::LeafNodeIterator iter(*iMap.mOctree);
+    while (*++iter) {
+      pcl::octree::OctreeKey key = iter.getCurrentOctreeKey();
+      if (iMap.mOctree->existLeaf(key.x, key.y, key.z)) {
+        continue;
+      }
 
-    Eigen::Vector3d pt(key.x, key.y, key.z);
-    pt = (pt.array() + 0.5) * resolution;
-    pt += boundMin;
-    oRemoved->push_back(PointCloud::PointType(pt[0], pt[1], pt[2]));
+      Eigen::Vector3d pt(key.x, key.y, key.z);
+      pt = (pt.array() + 0.5) * resolution;
+      pt += boundMin;
+      oRemoved->push_back(PointCloud::PointType(pt[0], pt[1], pt[2]));
+    }
   }
-  
+
   return true;
 }
 

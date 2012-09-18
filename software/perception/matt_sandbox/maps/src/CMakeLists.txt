@@ -7,6 +7,7 @@ add_library(maps SHARED
     WorldModel.cpp
     DenseGrid3d.cpp
     SensorDataReceiver.cpp
+    DeltaPublisher.cpp
 )
 
 # make the header public
@@ -19,6 +20,8 @@ pods_install_headers(
   WorldModel.hpp
   DenseGrid3d.hpp
   SensorDataReceiver.hpp
+  OctreeCustom.hpp
+  DeltaPublisher.hpp
   DESTINATION maps
 )
 
@@ -43,6 +46,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
 # software to use.
 pods_install_pkg_config_file(maps
     CFLAGS -std=c++0x -Wno-deprecated-declarations
-    LIBS -lmaps -lboost_thread
+    LIBS -lmaps -lboost_thread -lboost_system
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)

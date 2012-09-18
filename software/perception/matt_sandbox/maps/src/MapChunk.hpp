@@ -4,13 +4,12 @@
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
 
-#include <pcl/octree/octree.h>
-//#include "OctreeCustom.hpp"
+#include "OctreeCustom.hpp"
 
 class MapChunk {
 public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-  typedef pcl::octree::OctreePointCloud<pcl::PointXYZ> Octree;
+  typedef OctreeCustom<pcl::PointXYZ> Octree;
   typedef boost::shared_ptr<Octree> OctreePtr;
 
 public:
@@ -42,11 +41,9 @@ public:
   void setResolution(const double iResolution);
   double getResolution() const;
 
-  // whether to store original points in octree
-  void storeBackingPoints(const bool iVal);
-
-  // add a set of points
-  bool add(const PointCloud::Ptr& iCloud);
+  // buffer input points, transform to local frame, add to current map
+  bool add(const PointCloud::Ptr& iPoints,
+           const Eigen::Isometry3d& iToLocal);
 
   // remove a set of points
   bool remove(const PointCloud::Ptr& iCloud);
@@ -55,7 +52,7 @@ public:
   void deepCopy(const MapChunk& iChunk);
 
   // export this entire representation as an ordinary point cloud
-  PointCloud::Ptr getAsPointCloud(const bool iVoxelCenters=true) const;
+  PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
 
   // determine points that were added and removed wrt input map
   bool findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
@@ -68,18 +65,12 @@ public:
   void deserialize(const std::vector<char>& iBytes);
 
 protected:
-  void updateStructures();
-
-protected:
   int64_t mId;
   int64_t mLastUpdateTime;
   double mResolution;
   Eigen::Isometry3d mTransformToLocal;
   Eigen::Vector3d mBoundMin;
   Eigen::Vector3d mBoundMax;
-  bool mStoreBackingPoints;
-  PointCloud::Ptr mBackingPoints;
-  bool mNeedsUpdate;
   OctreePtr mOctree;
 };
 

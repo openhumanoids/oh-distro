@@ -66,6 +66,9 @@ public:
   bool pop(PointCloudWithPose& oData);
   bool waitForData(PointCloudWithPose& oData);
 
+  bool start();
+  bool stop();
+
 protected:
 
   // message handlers
@@ -80,6 +83,7 @@ protected:
   boost::shared_ptr<lcm::LCM> mLcm;
   BotParam* mBotParam;
   SubscriptionMap mSubscriptions;
+  bool mIsRunning;
 
   int mMaxBufferSize;
   std::deque<PointCloudWithPose> mDataBuffer;

@@ -3,15 +3,6 @@
 #include "PointDataBuffer.hpp"
 #include "MapChunk.hpp"
 
-#include <pcl/common/transforms.h>
-#include <pcl/filters/crop_box.h>
-
-// TODO: re-think this:
-// Possibly can return active map and operate on it directly
-// including transform and crop
-// specify active map simply as axis-aligned bounding box in local frame?
-
-
 MapManager::
 MapManager() {
   mPointDataBuffer.reset(new PointDataBuffer());
@@ -59,14 +50,19 @@ setDataBufferLength(const int iLength) {
 
 
 bool MapManager::
-createMap(const Eigen::Isometry3d& iToLocal) {
+createMap(const Eigen::Isometry3d& iToLocal, const int iId) {
   MapPtr chunk(new MapChunk());
-  chunk->setId(mNextMapId);
-  ++mNextMapId;
+  if (iId < 0) {
+    chunk->setId(mNextMapId);
+    ++mNextMapId;
+  }
+  else {
+    chunk->setId(iId);
+    mNextMapId = std::max(mNextMapId, iId+1);
+  }
   chunk->setTransformToLocal(iToLocal);
   chunk->setBounds(-mMapDimensions/2, mMapDimensions/2);
   chunk->setResolution(mMapResolution);
-  chunk->storeBackingPoints(true);
   mActiveMap = chunk;
 
   mActiveMapPrev.reset(new MapChunk());
@@ -92,71 +88,26 @@ useMap(const int64_t iId) {
   return true;
 }
 
-int64_t MapManager::
-getActiveMapId() const {
-  return (mActiveMap == NULL) ? -1 : mActiveMap->getId();
+boost::shared_ptr<MapChunk> MapManager::
+getActiveMap() const {
+  return mActiveMap;
 }
 
 bool MapManager::
-clearActiveMap() {
-  if (mActiveMap == NULL) {
-    return false;
-  }
-  mActiveMap->clear();
-  std::cout << "MapManager: cleared active map" << std::endl;
-  return true;
+addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
+            const Eigen::Isometry3d& iToLocal) {
+  PointDataBuffer::PointSet pointSet;
+  pointSet.mTimestamp = iTime;
+  pointSet.mPoints = iPoints;
+  pointSet.mToLocal = iToLocal;
+  mPointDataBuffer->add(pointSet);
+  std::cout << "MapManager: added " << iPoints->size() <<
+    " points to buffer" << std::endl;
 }
 
 bool MapManager::
-add(const int64_t iTime, const PointCloud::Ptr& iPoints,
-    const Eigen::Isometry3d& iToLocal, const bool iBuffer) {
-  if (iBuffer) {
-    PointDataBuffer::PointSet pointSet;
-    pointSet.mTimestamp = iTime;
-    pointSet.mPoints = iPoints;
-    pointSet.mToLocal = iToLocal;
-    mPointDataBuffer->add(pointSet);
-    std::cout << "MapManager: added " << iPoints->size() <<
-      " points to buffer" << std::endl;
-  }
-  if (mActiveMap == NULL) {
-    return false;
-  }
-
-  // transform points
-  PointCloud::Ptr points(new PointCloud);
-  Eigen::Isometry3d chunkToLocal = mActiveMap->getTransformToLocal();
-  Eigen::Affine3f matx((chunkToLocal.inverse()*iToLocal).cast<float>());
-  pcl::transformPointCloud(*iPoints, *points, matx);
-
-  // crop points
-  pcl::CropBox<PointCloud::PointType> cropper;
-  Eigen::Vector3d boundMin = mActiveMap->getBoundMin();
-  Eigen::Vector3d boundMax = mActiveMap->getBoundMax();
-  cropper.setMin(Eigen::Vector4f(boundMin[0], boundMin[1], boundMin[2], 1));
-  cropper.setMax(Eigen::Vector4f(boundMax[0], boundMax[1], boundMax[2], 1));
-  cropper.setInputCloud(points);
-  PointCloud::Ptr pointsFinal(new PointCloud());
-  cropper.filter(*pointsFinal);
-  
-  // add points
-  mActiveMap->add(pointsFinal);
-  std::cout << "MapManager: added " << pointsFinal->size() <<
-    " points to current map" << std::endl;  
-  return true;
-}
-
-bool MapManager::
-removeFromMap(const PointCloud::Ptr& iCloud) {
-  if (mActiveMap == NULL) {
-    return false;
-  }
-  PointCloud::Ptr newCloud(new PointCloud());
-  Eigen::Affine3f matx(mActiveMap->getTransformToLocal().
-                       inverse().cast<float>());
-  pcl::transformPointCloud(*iCloud, *newCloud, matx);
-  mActiveMap->remove(newCloud);
-  return true;
+updatePose(const int64_t iTime, const Eigen::Isometry3d& iToLocal) {
+  return mPointDataBuffer->update(iTime, iToLocal);
 }
 
 bool MapManager::
@@ -166,12 +117,12 @@ fuseAll() {
   }
 
   // TODO: for now, this just accumulates all points (logical OR)
-  clearActiveMap();
+  mActiveMap->clear();
   PointDataBuffer::PointSetGroup::const_iterator iter;
   for (iter = mPointDataBuffer->begin();
        iter != mPointDataBuffer->end(); ++iter) {
     const PointDataBuffer::PointSet& pointSet = iter->second;
-    add(pointSet.mTimestamp, pointSet.mPoints, pointSet.mToLocal, false);
+    mActiveMap->add(pointSet.mPoints, pointSet.mToLocal);
   }
 
   return true;
@@ -189,19 +140,9 @@ computeDelta(MapDelta& oDelta) {
   mActiveMapPrev->findDifferences(*mActiveMap, oDelta.mAdded, oDelta.mRemoved);
   std::cout << "MapManager: found delta: " << oDelta.mAdded->size() <<
     " added, " << oDelta.mRemoved->size() << " removed" << std::endl;
+  // TODO: set last update time??
     
   return true;
-}
-
-MapManager::PointCloud::Ptr MapManager::
-getPointCloud() const {
-  PointCloud::Ptr pts;
-  if (mActiveMap != NULL) {
-    pts = mActiveMap->getAsPointCloud(false);
-    Eigen::Affine3f matx(mActiveMap->getTransformToLocal().cast<float>());
-    pcl::transformPointCloud(*pts, *pts, matx);    
-  }
-  return pts;
 }
 
 bool MapManager::

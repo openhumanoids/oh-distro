@@ -42,32 +42,27 @@ public:
 
   // create new map and make it the active one
   bool createMap(const Eigen::Isometry3d& iToLocal =
-                 Eigen::Isometry3d::Identity());
+                 Eigen::Isometry3d::Identity(),
+                 const int iId=-1);
 
   // switch to use map with given id
   bool useMap(const int64_t iId);
 
-  // get id of current map, or -1 if there is no current map
-  int64_t getActiveMapId() const;
+  // get current active map, or null if there is no current map
+  boost::shared_ptr<MapChunk> getActiveMap() const;
 
-  // reset state of current map chunk
-  bool clearActiveMap();
+  // add data to internal buffer but not to map
+  bool addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
+                   const Eigen::Isometry3d& iToLocal);
 
-  // buffer input points, transform to local frame, add to current map
-  bool add(const int64_t iTime, const PointCloud::Ptr& iPoints,
-           const Eigen::Isometry3d& iToLocal, const bool iBuffer=true);
-
-  // remove a set of points (in local frame) from current map
-  bool removeFromMap(const PointCloud::Ptr& iCloud);
+  // correct pose of buffered points
+  bool updatePose(const int64_t iTime, const Eigen::Isometry3d& iToLocal);
 
   // fuse all current buffered points to rebuild current map
   bool fuseAll();
 
   // compute delta between current and previous version of current map
   bool computeDelta(MapDelta& oDelta);
-
-  // get point cloud for entire (current) map
-  PointCloud::Ptr getPointCloud() const;
 
   // make previous version of map same as current for deltas
   bool resetDelta();

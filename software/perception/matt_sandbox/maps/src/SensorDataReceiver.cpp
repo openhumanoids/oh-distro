@@ -5,6 +5,7 @@
 
 SensorDataReceiver::
 SensorDataReceiver() {
+  mIsRunning = false;
   setMaxBufferSize(100);
 }
 
@@ -118,10 +119,32 @@ waitForData(PointCloudWithPose& oData) {
   return true;
 }
 
+bool SensorDataReceiver::
+start() {
+  if (mIsRunning) {
+    return false;
+  }
+  mIsRunning = true;
+  return true;
+}
+
+bool SensorDataReceiver::
+stop() {
+  if (!mIsRunning) {
+    return false;
+  }
+  mIsRunning = false;
+  return true;
+}
+
 void SensorDataReceiver::
 onPointCloud(const lcm::ReceiveBuffer* iBuf,
              const std::string& iChannel,
              const drc::pointcloud2_t* iMessage) {
+
+  if (!mIsRunning) {
+    return;
+  }
 
   pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
   pointCloud.width = iMessage->width;
@@ -182,6 +205,10 @@ void SensorDataReceiver::
 onLidar(const lcm::ReceiveBuffer* iBuf,
         const std::string& iChannel,
         const bot_core::planar_lidar_t* iMessage) {
+
+  if (!mIsRunning) {
+    return;
+  }
 
   PointCloud::Ptr cloud(new PointCloud());
   cloud->width = iMessage->nranges;
