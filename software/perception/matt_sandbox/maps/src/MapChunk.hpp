@@ -24,10 +24,6 @@ public:
   void setId(const int64_t iId);
   int64_t getId() const;
 
-  // set/get timestamp corresponding to most recent update
-  void setLastUpdateTime(const int64_t iTime);
-  int64_t getLastUpdateTime() const;
-
   // set/get transform to local frame
   void setTransformToLocal(const Eigen::Isometry3d& iTransform);
   Eigen::Isometry3d getTransformToLocal() const;
@@ -66,7 +62,6 @@ public:
 
 protected:
   int64_t mId;
-  int64_t mLastUpdateTime;
   double mResolution;
   Eigen::Isometry3d mTransformToLocal;
   Eigen::Vector3d mBoundMin;

@@ -9,8 +9,8 @@ public:
   OctreeCustom(const double iResolution) :
     pcl::octree::OctreePointCloudOccupancy<PointT>(iResolution) {}
 
-  // TODO: need deep copy?
-  // TODO: some custom stuff here, like delta comp and deserialize
+  // TODO: custom methods here, like delta computation and
+  // deserialize from compressed representation
 };
 
 #endif

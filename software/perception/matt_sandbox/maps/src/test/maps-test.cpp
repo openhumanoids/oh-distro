@@ -1,103 +1,57 @@
-#include <maps/MapManager.hpp>
-#include <maps/MapChunk.hpp>
-#include <maps/SensorDataReceiver.hpp>
-#include <maps/DeltaPublisher.hpp>
-
-#include <lcm/lcm-cpp.hpp>
+#include <maps/SpatialQueryWrapper.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
-
-#include <pcl/io/pcd_io.h>
-#include <pcl/common/transforms.h>
+#include <boost/progress.hpp>
+#include <lcm/lcm-cpp.hpp>
 
 using namespace std;
 
-class State {
-public:
-  boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
-  boost::shared_ptr<DeltaPublisher> mDeltaPublisher;
-  boost::shared_ptr<MapManager> mManager;
-
-  State() {
-    mSensorDataReceiver.reset(new SensorDataReceiver());
-    mDeltaPublisher.reset(new DeltaPublisher());
-    mManager.reset(new MapManager());
-  }
-};
-
-class DataConsumer {
-public:
-  DataConsumer(State* iState) {
-    mState = iState;
-    mCounter = 0;
+struct Worker {
+  Worker(SpatialQueryWrapper* iWrapper) {
+    mWrapper = iWrapper;
   }
 
   void operator()() {
-    while(true) {
-      SensorDataReceiver::PointCloudWithPose data;
-      mState->mSensorDataReceiver->waitForData(data);
-      mState->mManager->addToBuffer(data.mTimestamp, data.mPointCloud, data.mPose);
-      mState->mManager->getActiveMap()->add(data.mPointCloud, data.mPose);
-      cout << "got data" << endl;
-
-      /*
-      // transform points to local frame
-      SensorDataReceiver::PointCloud::Ptr points(new SensorDataReceiver::PointCloud);
-      Eigen::Affine3f matx(data.mPose.cast<float>());
-      matx = Eigen::Affine3f::Identity();
-      pcl::transformPointCloud(*data.mPointCloud, *points, matx);
-
-      // write points
-      char fileName[256];
-      sprintf(fileName, "/home/antone/map_pts_%.3d.pcd", mCounter);
-      pcl::io::savePCDFileASCII(fileName, *points);
-      ++mCounter;
-      */
+    while (true) {
+      sleep(1);
+      {
+        boost::progress_timer timer;
+        mWrapper->lock();
+        int total = 0;
+        for (int i = 0; i < 100000; ++i) {
+          Eigen::Vector3d pt(1.74,-1.17,1.53);
+          Eigen::Vector3d outPoint, outNormal;
+          if (mWrapper->getClosest(pt, outPoint, outNormal)) {
+            ++total;
+          }
+        }
+        mWrapper->unlock();
+        cout << "succeeded for " << total << " queries" << endl;
+      }
     }
   }
 
-protected:
-  State* mState;
-  int mCounter;
+  SpatialQueryWrapper* mWrapper;
 };
 
 int main(const int iArgc, const char** iArgv) {
-  State state;
-  cout << "STATE CONSTRUCTED" << endl;
-
   boost::shared_ptr<lcm::LCM> theLcm(new lcm::LCM());
   if (!theLcm->good()) {
-    cerr << "Cannot create lcm instance." << endl;
+    cerr << "Cannot create lcm object" << endl;
     return -1;
   }
 
-  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/config/drc_robot.cfg");
+  SpatialQueryWrapper wrapper;
+  wrapper.setLcm(theLcm);
+  wrapper.setMapChannel("LOCAL_MAP");
+  wrapper.start();
 
-  state.mSensorDataReceiver->setLcm(theLcm);
-  state.mSensorDataReceiver->setBotParam(theParam);
-  state.mSensorDataReceiver->setMaxBufferSize(100);
-  state.mSensorDataReceiver->
-    addChannel("WIDE_STEREO_POINTS",
-               SensorDataReceiver::SensorTypePointCloud,
-               "wide_stereo", "local");
-  state.mSensorDataReceiver->start();
+  Worker worker(&wrapper);
+  boost::thread thread(boost::ref(worker));
 
-  state.mManager->setMapResolution(0.1);
-  state.mManager->setMapDimensions(Eigen::Vector3d(10,10,10));
-  state.mManager->setDataBufferLength(1000);
-  state.mManager->createMap(Eigen::Isometry3d::Identity());
-
-  state.mDeltaPublisher->setPublishInterval(5000);
-  state.mDeltaPublisher->setManager(state.mManager);
-  state.mDeltaPublisher->setLcm(theLcm);
-  state.mDeltaPublisher->start();
-
-  DataConsumer consumer(&state);
-  boost::thread thread(consumer);
-                                       
   while (0 == theLcm->handle());
 
-  state.mDeltaPublisher->stop();
-  thread.join();
+  wrapper.stop();
 
   return 0;
 }

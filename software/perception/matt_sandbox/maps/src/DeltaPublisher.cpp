@@ -1,8 +1,5 @@
 #include "DeltaPublisher.hpp"
 
-// TODO: maybe make this class manage the cur and prev maps?
-// make delta computation atomic?
-
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <lcm/lcm-cpp.hpp>
@@ -15,9 +12,11 @@
 DeltaPublisher::
 DeltaPublisher() {
   mIsRunning = false;
+  mAckSubscription = NULL;
   mNextMessageId = 1;
   setPublishInterval(1000);
   setPublishChannel("MAP_DELTA");
+  setAckChannel("MAP_DELTA_ACK");
 }
 
 DeltaPublisher::
@@ -42,7 +41,12 @@ setPublishInterval(const int iMilliseconds) {
 
 void DeltaPublisher::
 setPublishChannel(const std::string& iChannel) {
-  mChannel = iChannel;
+  mDeltaChannel = iChannel;
+}
+
+void DeltaPublisher::
+setAckChannel(const std::string& iChannel) {
+  mAckChannel = iChannel;
 }
 
 void DeltaPublisher::
@@ -93,10 +97,10 @@ operator()() {
       ++mNextMessageId;
 
       // publish message
-      mLcm->publish(mChannel, &deltaMessage);
+      mLcm->publish(mDeltaChannel, &deltaMessage);
       std::cout << "DeltaPublisher: published message on channel " <<
-        mChannel << std::endl;
-      mManager->resetDelta();
+        mDeltaChannel << std::endl;
+      mManager->resetDeltaBase();
     }
   }
 }
@@ -107,7 +111,9 @@ start() {
     return false;
   }
   mIsRunning = true;
-  boost::thread thread(*this);
+  mAckSubscription =
+    mLcm->subscribe(mAckChannel, &DeltaPublisher::onAck, this);
+  boost::thread thread(boost::ref(*this));
   // TODO: keep track of thread? join?
   return true;
 }
@@ -118,5 +124,42 @@ stop() {
     return false;
   }
   mIsRunning = false;
+  mLcm->unsubscribe(mAckSubscription);
+  mAckSubscription = NULL;
   return true;
+}
+
+void DeltaPublisher::
+onAck(const lcm::ReceiveBuffer* iBuf,
+      const std::string& iChannel,
+      const drc::message_ack_t* iMessage) {
+  std::cout << "DeltaPublisher: message receipt acknowledged for " <<
+    iMessage->message_id << std::endl;
+
+  // mManager->resetDeltaBase();
+
+  // TODO
+  /* ALGO
+
+     on wakeup, look at current state
+     compute delta between base and cur
+     add to send queue
+     send everything in send queue in order
+
+     on ack, take off send queue
+
+     what if ack message is lost?
+     re-send same message again, gets ignored at receiver
+
+     ideally,
+     . if couldn't be decoded at receiver, discard and send new delta
+         because old message is obe
+     . if received but not ack'd, update base and send new delta next time
+     . but we don't know which case is true at sender or receiver
+
+     sequential message ids:
+     . "first" tag, which will also create map
+     . subsequent messages increment id counter by 1
+     . keep trying to send a message until it is acknowledged
+   */
 }

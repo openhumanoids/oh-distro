@@ -1,18 +1,18 @@
 #ifndef _SensorDataReceiver_hpp_
 #define _SensorDataReceiver_hpp_
 
-#include <deque>
 #include <unordered_map>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <pcl/point_types.h>
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/drc/pointcloud2_t.hpp>
 #include <bot_param/param_client.h>
+
+#include "ThreadSafeQueue.hpp"
 
 class SensorDataReceiver {
 public:
@@ -62,7 +62,6 @@ public:
   bool removeChannel(const std::string& iSensorChannel);
 
   void setMaxBufferSize(const int iSize);
-  int getBufferSize() const;
   bool pop(PointCloudWithPose& oData);
   bool waitForData(PointCloudWithPose& oData);
 
@@ -85,8 +84,7 @@ protected:
   SubscriptionMap mSubscriptions;
   bool mIsRunning;
 
-  int mMaxBufferSize;
-  std::deque<PointCloudWithPose> mDataBuffer;
+  ThreadSafeQueue<PointCloudWithPose> mDataBuffer;
   boost::mutex mBufferMutex;
   boost::mutex mSubscriptionsMutex;
   boost::condition_variable mBufferCondition;

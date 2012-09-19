@@ -7,7 +7,6 @@
 MapChunk::
 MapChunk() {
   setId(-1);
-  setLastUpdateTime(-1);
   setTransformToLocal(Eigen::Isometry3d::Identity());
   setBounds(Eigen::Vector3d(-1e20, -1e20, -1e20),
             Eigen::Vector3d(1e20, 1e20, 1e20));
@@ -31,16 +30,6 @@ setId(const int64_t iId) {
 int64_t MapChunk::
 getId() const {
   return mId;
-}
-
-void MapChunk::
-setLastUpdateTime(const int64_t iTime) {
-  mLastUpdateTime = iTime;
-}
-
-int64_t MapChunk::
-getLastUpdateTime() const {
-  return mLastUpdateTime;
 }
 
 void MapChunk::
@@ -128,11 +117,7 @@ deepCopy(const MapChunk& iChunk) {
 MapChunk::PointCloud::Ptr MapChunk::
 getAsPointCloud(const bool iTransform) const {
   PointCloud::Ptr cloud(new PointCloud());
-  Octree::AlignedPointTVector vect;
-  mOctree->getOccupiedVoxelCenters(vect);
-  for (int i = 0; i < vect.size(); ++i) {
-    cloud->push_back(vect[i]);
-  }
+  mOctree->getOccupiedVoxelCenters(cloud->points);
   if (iTransform) {
     Eigen::Affine3f matx(mTransformToLocal.cast<float>());
     pcl::transformPointCloud(*cloud, *cloud, matx);
@@ -198,10 +183,93 @@ findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
 
 void MapChunk::
 serialize(std::vector<char>& oBytes) const {
-  // TODO
+  // write member bytes to string stream
+  std::ostringstream oss(std::ios::binary);
+  oss.write((char*)&mId, sizeof(mId));
+  oss.write((char*)&mResolution, sizeof(mResolution));
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      double val = mTransformToLocal(i,j);
+      oss.write((char*)&val, sizeof(val));
+    }
+  }
+  for (int i = 0; i < 3; ++i) {
+    double val = mBoundMin[i];
+    oss.write((char*)&val, sizeof(val));
+  }
+  for (int i = 0; i < 3; ++i) {
+    double val = mBoundMax[i];
+    oss.write((char*)&val, sizeof(val));
+  }
+
+  // serialize octree attributes
+  int treeDepth = mOctree->getTreeDepth();
+  oss.write((char*)&treeDepth, sizeof(treeDepth));
+  double xMin, yMin, zMin, xMax, yMax, zMax;
+  mOctree->getBoundingBox(xMin, yMin, zMin, xMax, yMax, zMax);
+  oss.write((char*)&xMin, sizeof(xMin));
+  oss.write((char*)&yMin, sizeof(yMin));
+  oss.write((char*)&zMin, sizeof(zMin));
+  oss.write((char*)&xMax, sizeof(xMax));
+  oss.write((char*)&yMax, sizeof(yMax));
+  oss.write((char*)&zMax, sizeof(zMax));
+
+  // convert to vector
+  std::string str = oss.str();
+  oBytes = std::vector<char>(str.begin(), str.end());
+
+  // add octree
+  std::vector<char> treeBytes;
+  mOctree->serializeTree(treeBytes);
+  oBytes.insert(oBytes.end(), treeBytes.begin(), treeBytes.end());
+  
+  // TODO: could use lcm marshalling or boost serialization for this
 }
 
 void MapChunk::
 deserialize(const std::vector<char>& iBytes) {
-  // TODO
+  const int kNumStructureBytes = sizeof(mId) + sizeof(mResolution) +
+    16*sizeof(double) + 3*sizeof(double) + 3*sizeof(double) +
+    sizeof(int) + 6*sizeof(double);
+  std::string str(iBytes.begin(), iBytes.begin()+kNumStructureBytes);
+  std::istringstream iss(str, std::ios::binary);
+
+  iss.read((char*)&mId, sizeof(mId));
+  iss.read((char*)&mResolution, sizeof(mResolution));
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      double val;
+      iss.read((char*)&val, sizeof(val));
+      mTransformToLocal(i,j) = val;
+    }
+  }
+  for (int i = 0; i < 3; ++i) {
+    double val;
+    iss.read((char*)&val, sizeof(val));
+    mBoundMin[i] = val;
+  }
+  for (int i = 0; i < 3; ++i) {
+    double val;
+    iss.read((char*)&val, sizeof(val));
+    mBoundMax[i] = val;
+  }
+
+  // read octree attributes
+  int treeDepth;
+  iss.read((char*)&treeDepth, sizeof(treeDepth));
+  double xMin, yMin, zMin, xMax, yMax, zMax;
+  iss.read((char*)&xMin, sizeof(xMin));
+  iss.read((char*)&yMin, sizeof(yMin));
+  iss.read((char*)&zMin, sizeof(zMin));
+  iss.read((char*)&xMax, sizeof(xMax));
+  iss.read((char*)&yMax, sizeof(yMax));
+  iss.read((char*)&zMax, sizeof(zMax));
+
+  // construct octree
+  std::vector<char> treeBytes(iBytes.begin()+kNumStructureBytes,
+                              iBytes.end());
+  setResolution(mResolution);
+  mOctree->setTreeDepth(treeDepth);
+  mOctree->defineBoundingBox(xMin, yMin, zMin, xMax, yMax, zMax);
+  mOctree->deserializeTree(treeBytes);
 }

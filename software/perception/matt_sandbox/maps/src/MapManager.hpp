@@ -9,15 +9,11 @@
 class PointDataBuffer;
 class MapChunk;
 
-// TODO: use pointers to point clouds everywhere?
-
 class MapManager {
 public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
   struct MapDelta {
-    int64_t mCurrentTime;
-    int64_t mPreviousTime;
     PointCloud::Ptr mAdded;
     PointCloud::Ptr mRemoved;
   };
@@ -65,17 +61,12 @@ public:
   bool computeDelta(MapDelta& oDelta);
 
   // make previous version of map same as current for deltas
-  bool resetDelta();
-
-  // serialize to bytes
-  void serialize(std::vector<char>& oBytes) const;
-
-  // deserialize from bytes
-  void deserialize(const std::vector<char>& iBytes);
+  bool resetDeltaBase();
 
 protected:
   MapPtr mActiveMap;
   MapPtr mActiveMapPrev;
+  MapPtr mActiveMapCheckpoint;
   MapCollection mMaps;
   boost::shared_ptr<PointDataBuffer> mPointDataBuffer;
 

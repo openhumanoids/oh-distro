@@ -8,6 +8,8 @@ add_library(maps SHARED
     DenseGrid3d.cpp
     SensorDataReceiver.cpp
     DeltaPublisher.cpp
+    DeltaReceiver.cpp
+    SpatialQueryWrapper.cpp
 )
 
 # make the header public
@@ -19,9 +21,12 @@ pods_install_headers(
   SpatialQuery.hpp
   WorldModel.hpp
   DenseGrid3d.hpp
+  ThreadSafeQueue.hpp
   SensorDataReceiver.hpp
   OctreeCustom.hpp
   DeltaPublisher.hpp
+  DeltaReceiver.hpp
+  SpatialQueryWrapper.hpp
   DESTINATION maps
 )
 
@@ -37,6 +42,7 @@ set(REQUIRED_PACKAGES
   pcl_io-1.6
   glib-2.0
   bot2-frames
+  lcm
 )
 pods_use_pkg_config_packages(maps ${REQUIRED_PACKAGES})
 

@@ -52,13 +52,14 @@ bool SpatialQuery::
 getClosest(const Eigen::Vector3d& iPoint,
            Eigen::Vector3d& oPoint, Eigen::Vector3d& oNormal) {
 
-  /* TODO: algorithm sketch:
-     find closest cloud point p to query point q
-     find point set s within radius r of p
-     compute local surface patch using s (mesh? nurbs? other?)
-     find closest point c to surface, return as oPoint
-     find surface normal at c, return as oNormal
-  */
+  if (mNeedsUpdate) {
+    return false;
+    // TODO: could just update here
+  }
+
+  if (mCloud->size() < 3) {
+    return false;
+  }
 
   std::vector<int> indices;
   std::vector<float> distances;
@@ -78,19 +79,19 @@ getClosest(const Eigen::Vector3d& iPoint,
   if (indices.size() < 3) {
     return false;
   }
-  // TODO: do fit
   pcl::NormalEstimation<PointType,pcl::Normal> est;
   Eigen::Vector4f plane;
   float curvature;
   est.computePointNormal(*mCloud, indices, plane, curvature);
 
   // find closest point on surface to original query point
-  // TODO
+  // TODO: for now, use closest point cloud point
 
   // estimate normal at closest point
-  // TODO
+  // TODO: for now, use the plane normal
 
   oPoint = Eigen::Vector3d(pt.x, pt.y, pt.z);
-  //  oNormal = Eigen::Vector3d(plane.x, plane.y, plane.z);
+  oNormal = Eigen::Vector3d(plane[0], plane[1], plane[2]);
+  oNormal.normalize();
   return true;
 }

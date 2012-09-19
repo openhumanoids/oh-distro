@@ -22,6 +22,7 @@ void MapManager::
 clear() {
   mActiveMap.reset();
   mActiveMapPrev.reset();
+  mActiveMapCheckpoint.reset();
   mMaps.clear();
   mPointDataBuffer->clear();
   std::cout << "MapManager: cleared all state" << std::endl;
@@ -63,10 +64,13 @@ createMap(const Eigen::Isometry3d& iToLocal, const int iId) {
   chunk->setTransformToLocal(iToLocal);
   chunk->setBounds(-mMapDimensions/2, mMapDimensions/2);
   chunk->setResolution(mMapResolution);
+  mMaps[chunk->getId()] = chunk;
   mActiveMap = chunk;
 
   mActiveMapPrev.reset(new MapChunk());
   mActiveMapPrev->deepCopy(*mActiveMap);
+  mActiveMapCheckpoint.reset(new MapChunk());
+  mActiveMapCheckpoint->deepCopy(*mActiveMap);
 
   std::cout << "MapManager: added new map, id=" << chunk->getId() <<
     std::endl;
@@ -133,34 +137,22 @@ computeDelta(MapDelta& oDelta) {
   if ((mActiveMap == NULL) || (mActiveMapPrev == NULL)) {
     return false;
   }
-  oDelta.mCurrentTime = mActiveMap->getLastUpdateTime();
-  oDelta.mPreviousTime = mActiveMapPrev->getLastUpdateTime();
   oDelta.mAdded.reset(new PointCloud());
   oDelta.mRemoved.reset(new PointCloud());
   mActiveMapPrev->findDifferences(*mActiveMap, oDelta.mAdded, oDelta.mRemoved);
+  mActiveMapCheckpoint->deepCopy(*mActiveMap);
+  // TODO: possible memory leak here?
   std::cout << "MapManager: found delta: " << oDelta.mAdded->size() <<
     " added, " << oDelta.mRemoved->size() << " removed" << std::endl;
-  // TODO: set last update time??
-    
   return true;
 }
 
 bool MapManager::
-resetDelta() {
-  if ((mActiveMap == NULL) || (mActiveMapPrev == NULL)) {
+resetDeltaBase() {
+  if ((mActiveMapCheckpoint == NULL) || (mActiveMapPrev == NULL)) {
     return false;
   }
-  mActiveMapPrev->deepCopy(*mActiveMap);
-  std::cout << "MapManager: reset delta" << std::endl;
+  mActiveMapPrev->deepCopy(*mActiveMapCheckpoint);
+  std::cout << "MapManager: reset delta base" << std::endl;
   return true;
-}
-
-void MapManager::
-serialize(std::vector<char>& oBytes) const {
-  // TODO
-}
-
-void MapManager::
-deserialize(const std::vector<char>& iBytes) {
-  // TODO
 }

@@ -85,38 +85,17 @@ removeChannel(const std::string& iSensorChannel) {
 
 void SensorDataReceiver::
 setMaxBufferSize(const int iSize) {
-  mMaxBufferSize = iSize;
-  boost::mutex::scoped_lock lock(mBufferMutex);
-  while (mDataBuffer.size() > mMaxBufferSize) {
-    mDataBuffer.pop_front();
-  }
-}
-
-int SensorDataReceiver::
-getBufferSize() const {
-  return mDataBuffer.size();
+  mDataBuffer.setMaxSize(iSize);
 }
 
 bool SensorDataReceiver::
 pop(PointCloudWithPose& oData) {
-  boost::mutex::scoped_lock lock(mBufferMutex);
-  if (mDataBuffer.size() == 0) {
-    return false;
-  }
-  oData = mDataBuffer.front();
-  mDataBuffer.pop_front();
-  return true;
+  return mDataBuffer.pop(oData);
 }
 
 bool SensorDataReceiver::
 waitForData(PointCloudWithPose& oData) {
-  boost::mutex::scoped_lock lock(mBufferMutex);
-  while (mDataBuffer.empty()) {
-    mBufferCondition.wait(lock);
-  }
-  oData = mDataBuffer.front();
-  mDataBuffer.pop_front();
-  return true;
+  return mDataBuffer.waitForData(oData);
 }
 
 bool SensorDataReceiver::
@@ -188,17 +167,7 @@ onPointCloud(const lcm::ReceiveBuffer* iBuf,
     }
   }
   PointCloudWithPose data(iMessage->utime, newCloud, pose);
-  {
-    boost::mutex::scoped_lock lock(mBufferMutex);
-    while (mDataBuffer.size() >= mMaxBufferSize) {
-      mDataBuffer.pop_front();
-      std::cout << "SensorDataReceiver: discarding item from buffer " <<
-        mDataBuffer.size() << " " << mMaxBufferSize << std::endl;
-    }
-    mDataBuffer.push_back(data);
-    lock.unlock();
-    mBufferCondition.notify_one();
-  }
+  mDataBuffer.push(data);
 }
 
 void SensorDataReceiver::
@@ -252,15 +221,5 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
     }
   }
   PointCloudWithPose data(iMessage->utime, cloud, pose);
-  {
-    boost::mutex::scoped_lock lock(mBufferMutex);
-    while (mDataBuffer.size() >= mMaxBufferSize) {
-      mDataBuffer.pop_front();
-      std::cout << "SensorDataReceiver: discarding item from buffer " <<
-        mDataBuffer.size() << " " << mMaxBufferSize << std::endl;
-    }
-    mDataBuffer.push_back(data);
-    lock.unlock();
-    mBufferCondition.notify_one();
-  }
+  mDataBuffer.push(data);
 }
