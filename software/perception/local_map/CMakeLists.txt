@@ -10,6 +10,8 @@ include(cmake/pods.cmake)
 #lcmtypes_build()
 
 add_subdirectory(src/local_map)
+#add_subdirectory(src/local_map_velodyne)
+add_subdirectory(src/velodyne2pcd)
 
 add_subdirectory(src/local_segment)
 add_subdirectory(src/gen-mesh)
