@@ -31,11 +31,23 @@ group "core" {
         exec = "est_robot_state_publisher";
         host = "localhost";
     }
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
 }
 
-group "gazebo" {
-    cmd "gazebo" {
-        exec = "roslaunch atlas_description sensing_wheeled_atlas_gazebo_pre_fuerte.launch";
+group "old_converters" {
+    cmd "tx1" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator";
+        host = "localhost";
+    }
+    cmd "tx2" {
+        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "tx3" {
+        exec = "rosrun ros_fovis ros-stereo2lcm wide_stereo WIDE_STEREO_IMAGE";
         host = "localhost";
     }
 }
@@ -62,21 +74,19 @@ group "misc" {
     }
 }
 
-group "old_converters" {
-    cmd "tx1" {
-        exec = "rosrun ROS2LCM_translator ros2lcm_translator";
-        host = "localhost";
-    }
-    cmd "tx2" {
-        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
-        host = "localhost";
-    }
-    cmd "tx3" {
-        exec = "rosrun ros_fovis ros-stereo2lcm wide_stereo WIDE_STEREO_IMAGE";
+group "camview" {
+    cmd "disparity" {
+        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
         host = "localhost";
     }
 }
 
+group "gazebo" {
+    cmd "gazebo" {
+        exec = "roslaunch atlas_description sensing_wheeled_atlas_gazebo_pre_fuerte.launch";
+        host = "localhost";
+    }
+}
 
 
 script "startup simulation" {
