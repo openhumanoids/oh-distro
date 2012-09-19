@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <signal.h>
 #include <getopt.h>
@@ -13,6 +14,7 @@
 #include <lcm/lcm.h>
 #include <lcmtypes/bot_core_image_t.h>
 #include <lcmtypes/bot_core.h>
+#include <lcmtypes/microstrain_ins_t.h>
 
 #ifdef USE_LCMGL
 #include <bot_lcmgl_client/lcmgl.h>
@@ -60,12 +62,22 @@ private:
     ((StereoOdometry *) user_data)->image_handler(msg);
   }
 
+
+  static void imu_handler_aux(const lcm_recv_buf_t* rbuf,
+                                const char* channel,
+                                const microstrain_ins_t* msg,
+                                void* user_data) {
+    ((StereoOdometry *) user_data)->imu_handler(msg);
+  }
+
+  void image_handler(const bot_core_image_t *msg);
+  void imu_handler(const microstrain_ins_t *msg);
+
   static VisualOdometryOptions getDefaultOptions();
 
   int init_lcm();
   int init_calibration(const char * key_prefix);
 
-  void image_handler(const bot_core_image_t *msg);
   void decode_image(const bot_core_image_t *msg);
   void publish_motion_estimation();
   void publish_tictoc_stats();
@@ -111,6 +123,11 @@ private:
   uint8_t* _image_right_buf;
   uint8_t* _images_buf;
   size_t _buf_size;
+
+  // IMU variables:
+  bool imu_init;
+  Eigen::Isometry3d pose;
+
 
 #ifdef USE_LCMGL
   bool _draw_lcmgl;

@@ -14,6 +14,8 @@
 #include "visualization.hpp"
 #endif
 
+using namespace std;
+
 namespace fovis
 {
 
@@ -60,6 +62,8 @@ StereoOdometry::init_calibration(const char * key_prefix)
 
   bot_matrix_to_quat(rotation, _stereo_params.right_to_left_rotation);
   std::copy(translation, translation+3, _stereo_params.right_to_left_translation);
+
+
 
   return 0;
 }
@@ -121,18 +125,11 @@ StereoOdometry::decode_image(const bot_core_image_t * msg)
 void
 StereoOdometry::publish_motion_estimation()
 {
-  Eigen::Isometry3d cam_to_local = _odom->getPose();
+  // Pose already has look vector is +X, and up is +Z
+  Eigen::Vector3d translation(pose.translation());
+  Eigen::Quaterniond rotation(pose.rotation());
 
-  // rotate coordinate frame so that look vector is +X, and up is +Z
-  Eigen::Matrix3d M;
-  M <<  0,  0, 1,
-       -1,  0, 0,
-        0, -1, 0;
-  cam_to_local = M * cam_to_local;
-  Eigen::Vector3d translation(cam_to_local.translation());
-  Eigen::Quaterniond rotation(cam_to_local.rotation());
-  rotation = rotation * M.transpose();
-
+  // Output motion estimate - in CV frame:
   Eigen::Isometry3d motion_estimate = _odom->getMotionEstimate();
   fovis_update_t update_msg;
   update_msg.timestamp = _utime_cur;
@@ -244,9 +241,17 @@ StereoOdometry::publish_motion_estimation()
   }
 }
 
+
+
 void
 StereoOdometry::image_handler(const bot_core_image_t *msg)
 {
+  if (!imu_init){
+    cout << "no imu yet, passing\n";
+    return;
+  }
+
+
   tictoc("image_handler");
   _utime_prev = _utime_cur;
   _utime_cur = msg->utime;
@@ -259,6 +264,25 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
   _depth_producer->setRightImage(_image_right_buf);
   _odom->processFrame(_image_left_buf, _depth_producer);
   tictoc("processFrame");
+
+  // Rotate incremental motion so that look vector is +X, and up is +Z
+  Eigen::Isometry3d delta_cam_to_local = _odom->getMotionEstimate();
+  Eigen::Matrix3d M;
+  M <<  0,  0, 1,
+       -1,  0, 0,
+        0, -1, 0;
+  delta_cam_to_local = M * delta_cam_to_local;
+  Eigen::Vector3d translation(delta_cam_to_local.translation());
+  Eigen::Quaterniond rotation(delta_cam_to_local.rotation());
+  rotation = rotation * M.transpose();
+
+  // Apply update to pose estimate
+  Eigen::Isometry3d delta_pose;
+  delta_pose.setIdentity();
+  delta_pose.translation() << translation[0],translation[1],translation[2];
+  delta_pose.rotate(rotation);
+  pose = pose*delta_pose;
+
 
   publish_motion_estimation();
 
@@ -528,6 +552,8 @@ StereoOdometry::initialize(int argc, char **argv)
   bot_core_image_t_subscribe(_subscribe_lcm, image_channel.c_str(),
                              StereoOdometry::image_handler_aux, this);
 
+
+  pose.setIdentity();
 
   return 0;
 }
