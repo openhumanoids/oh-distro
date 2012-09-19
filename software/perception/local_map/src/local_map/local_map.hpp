@@ -3,9 +3,10 @@
 
 #include <lcm/lcm.h>
 
-#include <pointcloud_utils/pointcloud_lcm.hpp>
-#include <pointcloud_utils/pointcloud_vis.hpp>
+#include <pointcloud_tools/pointcloud_lcm.hpp>
+#include <pointcloud_tools/pointcloud_vis.hpp>
 #include <lcmtypes/drc_lcmtypes.h>
+#include <lcmtypes/pointcloud_tools.h>
 
 ///////////////////////////////////////////////////////////////
 class local_map{

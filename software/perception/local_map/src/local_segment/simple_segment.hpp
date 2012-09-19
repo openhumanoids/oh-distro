@@ -3,8 +3,8 @@
 
 #include <lcm/lcm.h>
 
-#include <pointcloud_utils/pointcloud_lcm.hpp>
-#include <pointcloud_utils/pointcloud_vis.hpp>
+#include <pointcloud_tools/pointcloud_lcm.hpp>
+#include <pointcloud_tools/pointcloud_vis.hpp>
 
 ///////////////////////////////////////////////////////////////
 class simple_segment{
