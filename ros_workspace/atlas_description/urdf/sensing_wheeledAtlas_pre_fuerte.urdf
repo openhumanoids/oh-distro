@@ -554,9 +554,6 @@
     <parent link="Torso"/>
     <child link="sensorrig_link"/>
   </joint>
-
-
-
   <link name="sensorrig_link" type="fixed">
     <inertial>
       <mass value="0.001"/>
@@ -731,6 +728,43 @@
   <gazebo reference="wide_stereo_optical_frame">
     <material value="Gazebo/White"/>
     <turnGravityOff value="true"/>
+  </gazebo>
+<!----------------------   ROTATING LASER ON NECK ------------->
+  <joint name="rotating_laser_joint" type="fixed">
+    <axis xyz="0 1 0"/>
+    <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/>
+    <parent link="NeckYaw_link"/>
+    <child link="rotating_laser_link"/>
+  </joint>
+  <link name="rotating_laser_link" type="laser">
+    <inertial>
+      <mass value="0.001"/>
+      <origin rpy="0 90 0" xyz="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  <gazebo reference="rotating_laser_link">
+    <sensor:ray name="rotating_laser">
+      <rayCount>640</rayCount>
+      <rangeCount>640</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.0</origin>
+      <displayRays>false</displayRays>
+      <minAngle>-129.998394137</minAngle>
+      <maxAngle>129.998394137</maxAngle>
+      <minRange>0.08</minRange>
+      <maxRange>10.0</maxRange>
+      <resRange>0.01</resRange>
+      <updateRate>20</updateRate>
+      <controller:gazebo_ros_laser name="gazebo_ros_rotating_laser_controller" plugin="libgazebo_ros_laser.so">
+        <gaussianNoise>0.005</gaussianNoise>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <topicName>rotating_scan</topicName>
+        <frameName>rotating_laser_link</frameName>
+        <interface:laser name="gazebo_ros_rotating_laser_iface"/>
+      </controller:gazebo_ros_laser>
+    </sensor:ray>
   </gazebo>
 </robot>
 

@@ -547,8 +547,6 @@
    	 </controller:gazebo_ros_pub_robot_state>
    </gazebo>
 
-
-
 <!--- Sensor Blocks, mfallon -->
   <joint name="torso_sensorrig_joint" type="fixed">
     <axis xyz="0 1 0"/>
@@ -557,8 +555,6 @@
     <child link="sensorrig_link"/>
   </joint>
 
-
-
   <link name="sensorrig_link" type="fixed">
     <inertial>
       <mass value="0.001"/>
@@ -566,6 +562,7 @@
       <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.0001"/>
     </inertial>
   </link>
+
   <joint name="base_laser_joint" type="fixed">
     <axis xyz="0 1 0"/>
     <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/>
@@ -602,6 +599,8 @@
       </controller:gazebo_ros_laser>
     </sensor:ray>
   </gazebo>
+
+
   <joint name="wide_stereo_frame_joint" type="fixed">
 <!--    <origin rpy="0.0   0.0   0.0" xyz="0.045 0.0 0.0501"/> -->
 <!-- Initally the left eye will be at sensor_rig_link/0,0,0/POSE/Body -->
@@ -650,7 +649,7 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>25.0</updateRate>
-      <controller:gazebo_ros_camera name="wide_stereo_gazebo_l_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
+      <controller:gazebo_ros_depth_camera name="wide_stereo_gazebo_l_stereo_camera_controller" plugin="libgazebo_ros_depth_camera.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>25.0</updateRate>
         <cameraName>wide_stereo/left</cameraName>
@@ -663,14 +662,14 @@
         <Cy>240.5</Cy>
         <!-- image_width / (2*tan(hfov_radian /2)) -->
         <!-- 320 for wide and 772.55 for narrow stereo camera -->
-        <focal_length>320</focal_length>
-        <distortion_k1>0.0</distortion_k1>
-        <distortion_k2>0.0</distortion_k2>
-        <distortion_k3>0.0</distortion_k3>
-        <distortion_t1>0.0</distortion_t1>
-        <distortion_t2>0.0</distortion_t2>
+        <focalLength>320</focalLength>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
         <interface:camera name="wide_stereo_gazebo_l_stereo_camera_iface"/>
-      </controller:gazebo_ros_camera>
+      </controller:gazebo_ros_depth_camera>
     </sensor:camera>
     <turnGravityOff>true</turnGravityOff>
     <material>PR2/Blue</material>
@@ -701,7 +700,7 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>25.0</updateRate>
-      <controller:gazebo_ros_camera name="wide_stereo_gazebo_r_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
+      <controller:gazebo_ros_depth_camera name="wide_stereo_gazebo_r_stereo_camera_controller" plugin="libgazebo_ros_depth_camera.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>25.0</updateRate>
         <cameraName>wide_stereo/right</cameraName>
@@ -714,14 +713,14 @@
         <Cy>240.5</Cy>
         <!-- image_width / (2*tan(hfov_radian /2)) -->
         <!-- 320 for wide and 772.55 for narrow stereo camera -->
-        <focal_length>320</focal_length>
-        <distortion_k1>0.0</distortion_k1>
-        <distortion_k2>0.0</distortion_k2>
-        <distortion_k3>0.0</distortion_k3>
-        <distortion_t1>0.0</distortion_t1>
-        <distortion_t2>0.0</distortion_t2>
+        <focalLength>320</focalLength>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
         <interface:camera name="wide_stereo_gazebo_r_stereo_camera_iface"/>
-      </controller:gazebo_ros_camera>
+      </controller:gazebo_ros_depth_camera>
     </sensor:camera>
     <turnGravityOff>true</turnGravityOff>
     <material>PR2/Blue</material>
@@ -734,7 +733,6 @@
     <material value="Gazebo/White"/>
     <turnGravityOff value="true"/>
   </gazebo>
-
 
 </robot>
 
