@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <inttypes.h>
-//#include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -35,26 +34,12 @@
 #define VELODYNE_DATA_CIRC_SIZE 1
 #define SHORT_RANGE_FILTER 0.3
 
-
 using namespace std;
 
 typedef struct _xyzi_t {
   double xyz[3];
   double intensity;
 } xyzi_t;
-
-typedef struct _rate_t {
-  double current_hz;
-  int64_t last_tick;
-  int64_t tick_count;
-} rate_t;
-
-enum {
-  COLOR_Z,
-  COLOR_INTENSITY,
-  COLOR_NONE,
-};
-
 
 typedef struct _pose_data_t pose_data_t;
 struct _pose_data_t {
@@ -64,36 +49,15 @@ struct _pose_data_t {
 };
 
 typedef struct _state_t {
-
-  GMainLoop *mainloop;
-
-  rate_t* capture_rate;
-
   lcm_t *lcm;
   BotParam *param;
   BotFrames *frames;
 
-  int64_t last_collector_utime;
-
-  int have_data;
-
   velodyne_calib_t *calib;
   velodyne_laser_return_collector_t *collector;
-  //velodyne_state_t *vstate;
 
   bot_core_pose_t *bot_pose_last;
-
   BotPtrCircular   *velodyne_data_circ;
-
-
-  GAsyncQueue *velodyne_message_queue;
-  GThread *velodyne_work_thread;
-  GMutex *mutex;
-  int velodyne_work_thread_exit;
-
-  int64_t last_publish_utime;
-
-  int64_t last_msg_count;
 
   int64_t 	      last_velodyne_data_utime;
   int64_t           last_pose_utime;
@@ -101,36 +65,6 @@ typedef struct _state_t {
 } state_t;
 
 static int process_velodyne (state_t *self, const senlcm_velodyne_t *v);
-
-
-rate_t* rate_new()
-    {
-  rate_t* rt = (rate_t *) calloc(1, sizeof(rate_t));
-  return rt;
-    }
-
-void rate_destroy(rate_t* rate)
-{
-  free(rate);
-}
-
-int rate_update(rate_t* rate)
-{
-  // check the current time
-  int64_t c_utime = bot_timestamp_now();
-
-  // compute the framerate if we were to publish an image
-  int64_t dt = c_utime - rate->last_tick;
-
-  double p_framerate = GAMMA * (1.0 * 1e6 / dt) + (1 - GAMMA) * rate->current_hz;
-
-  // otherwise, update current_hz with a exponential moving average, and return 1
-  rate->current_hz = p_framerate;
-  rate->last_tick = c_utime;
-  rate->tick_count++;
-  return 1;
-}
-
 
 void write_pcd(vector <xyzi_t> &points,std::ofstream &fstream ){
 
@@ -154,15 +88,14 @@ void write_pcd(vector <xyzi_t> &points,std::ofstream &fstream ){
 }
 
 
+// When triggered to some processing on the data:
 static void
 on_pose_trigger(const lcm_recv_buf_t *buf, const char *channel,
     const bot_core_pose_t *msg, void *user) {
   state_t *self = (state_t *)user;
 
   int size = bot_ptr_circular_size(self->velodyne_data_circ);
-
   vector < xyzi_t > points;
-
   int hist_len = VELODYNE_DATA_CIRC_SIZE;
 
 
@@ -216,8 +149,6 @@ on_pose_trigger(const lcm_recv_buf_t *buf, const char *channel,
   fstream.open ("test.pcd"); // output is now xyz quat
   write_pcd(points,fstream );
   cout << "wrote output test.pcd file containing " <<points.size() << " points, finished\n";
-
-
 }
 
 
@@ -227,96 +158,25 @@ on_bot_pose (const lcm_recv_buf_t *buf, const char *channel,
     const bot_core_pose_t *msg, void *user) {
   state_t *self = (state_t *)user;
 
-//  g_mutex_lock (self->mutex);
-
   if (self->bot_pose_last)
     bot_core_pose_t_destroy (self->bot_pose_last);
+
   self->bot_pose_last = bot_core_pose_t_copy (msg);
-
-//  g_mutex_unlock (self->mutex);
 }
 
-
-static void
-on_velodyne(const lcm_recv_buf_t *rbuf, const char * channel, 
-    const senlcm_velodyne_t * msg, void * user)
-{
-  state_t *self = (state_t *)user;
-  g_assert(self);
-
-  g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (msg));
-
-  return;
-
-  int64_t now = bot_timestamp_now();
-
-  //we are missing data packets
-  //static int count = 0;
-  //count++;
-
-
-  fprintf (stdout, "---------------------------------------------------------\n");
-
-  // Is this a scan packet?
-  if (msg->packet_type == SENLCM_VELODYNE_T_TYPE_DATA_PACKET) {
-
-    fprintf(stdout,"time : %f \n", msg->utime /1.0e6);
-
-    /*int i_f = 0;
-
-        double ctheta = VELODYNE_GET_ROT_POS(msg->data, VELODYNE_DATA_FIRING_START(i_f));
-
-        static double ctheta_prev = 0; 
-
-        static double delta = 0;
-
-        if(fabs(fabs(ctheta - ctheta_prev) - delta) > 0.1 && fabs(fabs(ctheta - ctheta_prev) - delta) < 4.0 ){
-            fprintf(stderr,"%f Different Delta : %f, %f\n", msg->utime /1.0e6, fabs(ctheta - ctheta_prev), delta);
-        }
-        delta = fabs(ctheta - ctheta_prev);
-
-        ctheta_prev = ctheta;
-     */
-    /*velodyne_laser_return_collection_t *lrc =
-            velodyne_decode_data_packet(self->calib, msg->data, msg->datalen, msg->utime);
-
-        int ret = velodyne_collector_push_laser_returns (self->collector, lrc);
-
-        velodyne_free_laser_return_collection (lrc);
-
-        if (VELODYNE_COLLECTION_READY == ret) {
-            //fprintf(stderr, "Outer count : %d\n", count); 
-            //count = 0;
-
-            rate_update(self->capture_rate);
-
-            fprintf(stderr,"Data rate : %f\n", self->capture_rate->current_hz);
-
-            velodyne_laser_return_collection_t *lrc =
-                velodyne_collector_pull_collection (self->collector);
-
-            // if enough time has elapsed since the last scan push it onto the circular buffer
-
-                // memory leak city if this isnt here as soon as you increase the history spacing
-            velodyne_free_laser_return_collection (lrc);
-            }*/
-  }
-}
 
 void
 circ_free_velodyne_data(void *user, void *p) {
-
   velodyne_laser_return_collection_t *lrc = (velodyne_laser_return_collection_t*) p;
   velodyne_free_laser_return_collection (lrc);
 }
 
 static void
-on_velodyne_debug(const lcm_recv_buf_t *rbuf, const char * channel, 
+on_velodyne_list(const lcm_recv_buf_t *rbuf, const char * channel,
     const senlcm_velodyne_list_t * msg, void * user)
 {
   state_t *self = (state_t *)user;
   g_assert(self);
-
 
   static int64_t last_redraw_utime = 0;
   int64_t now = bot_timestamp_now();
@@ -325,99 +185,7 @@ on_velodyne_debug(const lcm_recv_buf_t *rbuf, const char * channel,
   for (int i=0; i < msg->num_packets; i++)
     process_velodyne (self, &(msg->packets[i]));
 
-//  if ((now - last_redraw_utime) > MAX_REFRESH_RATE_USEC) {
-//    bot_viewer_request_redraw( self->viewer );
-//    last_redraw_utime = now;
- // }
-
-
-
-
-
-
-
-
-  /*
-  senlcm_velodyne_t *msg;
-
-  int64_t now = bot_timestamp_now();
-
-  // For each of the incomping packets
-  for (int i=0; i < msgl->num_packets; i++){
-//    cout << msgl->packets[i].utime << " recd\n";
-    g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (& (msgl->packets[i])));
-  }
-  */
-
-  // cout << " ====================== \n";
-
-  //g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (msg));
   return;
-
-  //we are missing data packets
-  //static int count = 0;
-  //count++;
-
-  // Is this a scan packet?
-  /* if (msg->packet_type == SENLCM_VELODYNE_T_TYPE_DATA_PACKET) { */
-
-  /*     int i_f = 0;  */
-
-  /*     double ctheta = VELODYNE_GET_ROT_POS(msg->data, VELODYNE_DATA_FIRING_START(i_f)); */
-
-  /*     static double test_handler_ctheta_prev = 0;  */
-
-  /*     static double delta = 0; */
-
-  /*     if(fabs(fabs(ctheta - test_handler_ctheta_prev) - delta) > 0.1 && fabs(fabs(ctheta - test_handler_ctheta_prev) - delta) < 4.0 ){ */
-  /*         //fprintf(stderr,"%f Different Delta : %f, %f\n", msg->utime /1.0e6, fabs(ctheta - test_handler_ctheta_prev), delta); */
-  /*     } */
-  /*     delta = fabs(ctheta - test_handler_ctheta_prev); */
-
-  /*     test_handler_ctheta_prev = ctheta; */
-
-  /*     // Decode the data packet */
-  /* 	fprintf (stdout, "*******************************************************\n"); */
-  /*     velodyne_laser_return_collection_t *lrc = */
-  /*         velodyne_decode_data_packet(self->calib, msg->data, msg->datalen, msg->utime); */
-
-  /*     int ret = -1; */
-  /*     //int ret = velodyne_collector_push_laser_returns (self->collector, lrc); */
-
-  /*     velodyne_free_laser_return_collection (lrc); */
-
-  /*     return; */
-
-  /*     if (VELODYNE_COLLECTION_READY == ret) { */
-  /*         //fprintf(stderr, "Outer count : %d\n", count);  */
-  /*         //count = 0; */
-
-  /*         rate_update(self->capture_rate); */
-
-  /*         fprintf(stderr,"Data rate : %f\n", self->capture_rate->current_hz); */
-
-  /*         velodyne_laser_return_collection_t *lrc = */
-  /*             velodyne_collector_pull_collection (self->collector); */
-
-  /*         // if enough time has elapsed since the last scan push it onto the circular buffer */
-
-  /*             // memory leak city if this isnt here as soon as you increase the history spacing */
-  /*         velodyne_free_laser_return_collection (lrc); */
-  /*     } */
-  /*     else if(VELODYNE_COLLECTION_READY == ret) { */
-  /*         rate_update(self->capture_rate); */
-
-  /*         fprintf(stderr,"Data rate : %f\n", self->capture_rate->current_hz); */
-
-  /*         velodyne_laser_return_collection_t *lrc = */
-  /*             velodyne_collector_pull_collection (self->collector); */
-
-  /*         // if enough time has elapsed since the last scan push it onto the circular buffer */
-
-  /*             // memory leak city if this isnt here as soon as you increase the history spacing */
-  /*         velodyne_free_laser_return_collection (lrc); */
-  /*     } */
-  /* } */
 }
 
 
@@ -517,58 +285,8 @@ process_velodyne (state_t *self, const senlcm_velodyne_t *v)
 
     bot_vector_add_3d (self->bot_pose_last->vel, vel_rot, state.xyz_dot);
 
-
     // Compute angular rotation rate
     memcpy (state.rph_dot, self->bot_pose_last->rotation_rate, 3*sizeof(double));
-
-    //state.xyz[0] = x_ls[0]; state.xyz[1] = x_ls[1]; state.xyz[2] = x_ls[2];
-    //state.rph[0] = x_ls[3]; state.rph[1] = x_ls[4]; state.rph[2] = x_ls[5];
-
-    // move velocities and rates into sensor frame
-    //double O_sv[9];
-    //double rph_vs[3] = {self->x_vs[3], self->x_vs[4], self->x_vs[5]};
-    //so3_rotxyz (O_sv, rph_vs);
-    //double t_vs[3] = {self->x_vs[0], self->x_vs[1], self->x_vs[2]};
-    ////uvw_sensor = O_sv * [uvw - skewsym(t_vs)*abc];
-
-    // pose fields NEVER POPULATED
-    //double abc[3] = {self->pose->a,
-    //                 self->pose->b,
-    //                 self->pose->c};
-    //double uvw[3] = {self->pose->u,
-    //                 self->pose->v,
-    //                 self->pose->w};
-    //double skewsym[9] = { 0,       -t_vs[2],  t_vs[1],
-    //                      t_vs[2],  0,       -t_vs[0],
-    //                     -t_vs[1],  t_vs[0],  0    };
-    //GSLU_VECTOR_VIEW (uvw_sensor,3, {0});
-    //gsl_vector_view abc_v = gsl_vector_view_array (abc, 3);
-    //gsl_vector_view uvw_v = gsl_vector_view_array (uvw, 3);
-    //gsl_matrix_view O_sv_v = gsl_matrix_view_array (O_sv, 3, 3);
-    //gsl_matrix_view skewsym_v = gsl_matrix_view_array (skewsym, 3, 3);
-    //skewsym(t_vs)*abc;
-    //gslu_mv (&uvw_sensor.vector, &skewsym_v.matrix, &abc_v.vector); // uvw_sensor.vector is all zero since abc contains zeros
-    //[uvw - skewsym(t_vs)*abc]
-    //gsl_vector_sub (&uvw_v.vector, &uvw_sensor.vector);
-    //uvw_sensor = O_sv * [uvw - skewsym(t_vs)*abc];
-    //gslu_mv (&uvw_sensor.vector, &O_sv_v.matrix, &uvw_v.vector);
-
-    // sensor frame rates
-    //GSLU_VECTOR_VIEW (abc_sensor, 3, {0});
-    //gsl_matrix_view O_vs_v = gsl_matrix_view_array (O_sv, 3, 3);
-    //gsl_matrix_transpose (&O_vs_v.matrix);
-    //gslu_mv (&abc_sensor.vector, &O_vs_v.matrix, &abc_v.vector);
-
-    //rotate velodyne body velocities into local frame
-    //double R_sl[9];
-    //so3_rotxyz (R_sl, state.rph); //state.rph = rph_ls
-    //gsl_matrix_view R_sl_v = gsl_matrix_view_array (R_sl, 3, 3);
-    //GSLU_VECTOR_VIEW (xyz_dot_sensor,3, {0});
-    //gslu_mv (&xyz_dot_sensor.vector, &R_sl_v.matrix, &uvw_sensor.vector);
-    //memcpy (&(state.xyz_dot), xyz_dot_sensor.vector.data, 3*sizeof (double));
-
-    // set euler rates
-    //so3_body2euler (abc_sensor.vector.data, state.rph, state.rph_dot, NULL);
 
     velodyne_collector_push_state (self->collector, state);
     do_push_motion = 0;
@@ -577,74 +295,6 @@ process_velodyne (state_t *self, const senlcm_velodyne_t *v)
   return 1;
 }
 
-
-
-
-static int dropped_packets = 0;
-static int64_t dropped_utime;
-
-static void *
-velodyne_work_thread (void *user)
-{
-  state_t *self = (state_t *) user;
-
-  while (1) {
-
-    int MAX_QUEUE_SIZE = 650;
-    while (g_async_queue_length(self->velodyne_message_queue) > MAX_QUEUE_SIZE) {
-
-      void *msg = g_async_queue_pop (self->velodyne_message_queue);
-
-      // Check to see whether the thread should exit
-      g_mutex_lock (self->mutex);
-      if (self->velodyne_work_thread_exit) {
-        fprintf (stdout, "got exit command\n");
-        g_mutex_unlock (self->mutex);
-        g_thread_exit (NULL);
-      }
-      g_mutex_unlock (self->mutex);
-
-      // Don't exit. Keep going
-      if (msg == &(self->velodyne_work_thread_exit))
-        continue;
-
-      senlcm_velodyne_t *v = (senlcm_velodyne_t *) msg;
-
-      senlcm_velodyne_t_destroy(v);
-
-      int64_t now = bot_timestamp_now();
-      dropped_packets++;
-      double dt = (now - dropped_utime) / 1000000.0;
-      if (dt > 1 || dropped_packets % 1000 == 0) {
-        fprintf(stderr, "WARNING: dropping velodyne packets (total dropped: %d)\n", dropped_packets);
-        dropped_utime = now;
-      }
-    }
-
-    void *msg = g_async_queue_pop (self->velodyne_message_queue);
-
-    // Check to see whether the thread should exit
-    g_mutex_lock (self->mutex);
-    if (self->velodyne_work_thread_exit) {
-      fprintf (stdout, "got exit command\n");
-      g_mutex_unlock (self->mutex);
-      g_thread_exit (NULL);
-    }
-    g_mutex_unlock (self->mutex);
-
-    // Don't exit. Keep going
-    senlcm_velodyne_t *v = (senlcm_velodyne_t *) msg;
-
-    self->last_msg_count = v->utime;
-
-    // Process a velodyne_t (chunk of scans)
-    //cout << "about to process " << v->utime << "\n";
-    //process_velodyne(self, v);
-    senlcm_velodyne_t_destroy(v);
-  }
-
-  return NULL;
-}
 
 static void
 usage(const char *progname)
@@ -684,7 +334,6 @@ main(int argc, char ** argv)
   }
 
   state_t* self = new state_t();
-//  state_t *self = calloc(1,sizeof(state_t));
   self->lcm = lcm_create(NULL);//"udpm://239.255.76.67:7667?recv_buf_size=100000");
   if(!self->lcm)
     return 1;
@@ -702,8 +351,6 @@ main(int argc, char ** argv)
       return 0;
     }
   }else {
-
-
     self->param = bot_param_new_from_server(self->lcm, 0);
     if (self->param == NULL) {
       fprintf(stderr, "Couldn't get bot param from server.\n");
@@ -712,7 +359,6 @@ main(int argc, char ** argv)
   }
 
   self->frames = bot_frames_get_global (self->lcm, self->param);
-
 
   char *velodyne_model = bot_param_get_str_or_fail (self->param, "calibration.velodyne.model");
   char *calib_file = bot_param_get_str_or_fail (self->param, "calibration.velodyne.intrinsic_calib_file");
@@ -731,74 +377,24 @@ main(int argc, char ** argv)
   free (velodyne_model);
   free (calib_file);
 
-  g_thread_init (NULL);
-
 
   // Which polar segments of the velodyne returns should be logged: NBNBNBNBNB NBNBNBNBNB NBNBNBNBNB
   // self->collector = velodyne_laser_return_collector_create (1, 0, 2* M_PI); // full scan
   self->collector = velodyne_laser_return_collector_create (0, M_PI, 2* M_PI); // front facing pixels only
 
-  // Create an asynchronous queue for messages
-  self->velodyne_message_queue = g_async_queue_new ();
-
+  // Create a cyclic buffer for messages:
   self->velodyne_data_circ = bot_ptr_circular_new (VELODYNE_DATA_CIRC_SIZE,
       circ_free_velodyne_data, self);
 
-
-  self->velodyne_work_thread = g_thread_create (velodyne_work_thread, self, TRUE, NULL);
-  self->velodyne_work_thread_exit = 0;
-  self->mutex = g_mutex_new();
-
-  //senlcm_velodyne_t_subscribe (self->lcm, lcm_channel, on_velodyne, self);
-  senlcm_velodyne_list_t_subscribe (self->lcm, "VELODYNE_LIST", on_velodyne_debug, self);
+  senlcm_velodyne_list_t_subscribe (self->lcm, "VELODYNE_LIST", on_velodyne_list, self);
   bot_core_pose_t_subscribe (self->lcm, "POSE", on_bot_pose, self);
 
+  // Hack to simply inject a trigger to process:
   bot_core_pose_t_subscribe (self->lcm, "POSE_TRIGGER", on_pose_trigger, self);
 
-  self->capture_rate = rate_new();
+  while(1)
+    lcm_handle(self->lcm);
 
-  bot_glib_mainloop_attach_lcm (self->lcm);
-
-  self->mainloop = g_main_loop_new (NULL, FALSE);
-
-  bot_signal_pipe_glib_quit_on_kill (self->mainloop);
-
-  g_main_loop_run (self->mainloop);
-
-
-  // Exiting
-  fprintf (stderr, "Handler exiting,\n");
-
-  // Stop the velodyne_work thread
-  g_mutex_lock (self->mutex);
-  self->velodyne_work_thread_exit = 1;
-  g_mutex_unlock (self->mutex);
-  g_async_queue_push (self->velodyne_message_queue,
-      &(self->velodyne_work_thread_exit));
-
-
-  g_thread_join (self->velodyne_work_thread);
-
-  g_mutex_free (self->mutex);
-
-  bot_glib_mainloop_detach_lcm (self->lcm);
-
-  int num_freed = 0;
-  for (senlcm_velodyne_t *msg = (senlcm_velodyne_t*)   g_async_queue_try_pop (self->velodyne_message_queue); 
-      msg; msg = (senlcm_velodyne_t*) g_async_queue_try_pop (self->velodyne_message_queue) ) {
-
-
-//  for (senlcm_velodyne_t *msg = (senlcm_velodyne_t*)   g_async_queue_try_pop (self->velodyne_message_queue); 
-//      msg; msg = g_async_queue_try_pop (self->velodyne_message_queue)) {
-
-    if (msg ==  (senlcm_velodyne_t*) &(self->velodyne_work_thread_exit))
-      continue;
-
-    senlcm_velodyne_t_destroy(msg);
-    num_freed++;
-  }
-
-  g_async_queue_unref (self->velodyne_message_queue);
-
+  lcm_destroy(self->lcm);
   return 0;
 }
