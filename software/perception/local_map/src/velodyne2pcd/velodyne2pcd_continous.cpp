@@ -1,17 +1,19 @@
 // This simple application:
-// - listens to Velodyne data chunks
-// - takes, say, 5 of them (about a single full rotation)
-// - converts to XYZI and puts to an ascii PCD file
-// - Exits
+// - listens to Velodyne data chunks (continously)
+// - If it heres a "POSE_TRIGGER" message:
+// - takes a portion of them - currently the forward fasing 180degrees
+// - converts to XYZI and puts them into an ascii PCD file
+// - Continues
+//
 // mfallon sept 2012
 
 #include <stdio.h>
 #include <inttypes.h>
+//#include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <stdlib.h>
 
 #include <getopt.h>
 
@@ -19,6 +21,8 @@
 
 #include <bot_core/bot_core.h>
 #include <bot_param/param_client.h>
+#include <bot_frames/bot_frames.h>
+
 #include <velodyne/velodyne.h>
 #include <path_util/path_util.h>
 #include <lcmtypes/bot_param_update_t.h>
@@ -28,6 +32,9 @@
 
 #define GAMMA 0.1
 #define PUBLISH_HZ 50
+#define VELODYNE_DATA_CIRC_SIZE 1
+#define SHORT_RANGE_FILTER 0.3
+
 
 using namespace std;
 
@@ -35,7 +42,6 @@ typedef struct _xyzi_t {
   double xyz[3];
   double intensity;
 } xyzi_t;
-
 
 typedef struct _rate_t {
   double current_hz;
@@ -65,6 +71,7 @@ typedef struct _state_t {
 
   lcm_t *lcm;
   BotParam *param;
+  BotFrames *frames;
 
   int64_t last_collector_utime;
 
@@ -73,6 +80,11 @@ typedef struct _state_t {
   velodyne_calib_t *calib;
   velodyne_laser_return_collector_t *collector;
   //velodyne_state_t *vstate;
+
+  bot_core_pose_t *bot_pose_last;
+
+  BotPtrCircular   *velodyne_data_circ;
+
 
   GAsyncQueue *velodyne_message_queue;
   GThread *velodyne_work_thread;
@@ -86,18 +98,10 @@ typedef struct _state_t {
   int64_t 	      last_velodyne_data_utime;
   int64_t           last_pose_utime;
 
-  // Number of blocks to grab before exiting:
-  int no_blocks;
-  // how many blocks so far?
-  int block_counter;
-  // Name of the output file:
-  std::string output_file;
-  vector < xyzi_t > points;
-
 } state_t;
 
+static int process_velodyne (state_t *self, const senlcm_velodyne_t *v);
 
-static void process_velodyne (state_t *self, const senlcm_velodyne_t *v, vector < xyzi_t > &points);
 
 rate_t* rate_new()
     {
@@ -125,6 +129,111 @@ int rate_update(rate_t* rate)
   rate->last_tick = c_utime;
   rate->tick_count++;
   return 1;
+}
+
+
+void write_pcd(vector <xyzi_t> &points,std::ofstream &fstream ){
+
+  fstream << "# .PCD v.5 - Point Cloud Data file format" << endl;
+  fstream << "FIELDS x y z intensity" << endl;
+  fstream << "SIZE 4 4 4 4" << endl;
+  fstream << "TYPE F F F F" << endl;
+  fstream << "WIDTH " << points.size() << endl;
+  fstream << "HEIGHT 1" << endl;
+  fstream << "POINTS " << points.size() << endl;
+  fstream << "DATA ascii" << endl;
+
+  for (size_t i=0; i < points.size(); i++){
+    xyzi_t lr = points[i];
+    ostringstream temp0;
+    temp0 << lr.xyz[0] <<" " << lr.xyz[1]<< " " << lr.xyz[2] << " "<< lr.intensity << endl;
+    fstream << temp0.str();
+  }
+  fstream.close();
+
+}
+
+
+static void
+on_pose_trigger(const lcm_recv_buf_t *buf, const char *channel,
+    const bot_core_pose_t *msg, void *user) {
+  state_t *self = (state_t *)user;
+
+  int size = bot_ptr_circular_size(self->velodyne_data_circ);
+
+  vector < xyzi_t > points;
+
+  int hist_len = VELODYNE_DATA_CIRC_SIZE;
+
+
+  for (unsigned int cidx = 0;
+      cidx < bot_ptr_circular_size(self->velodyne_data_circ) && cidx < hist_len;
+      cidx++) {
+
+    velodyne_laser_return_collection_t *lrc =(velodyne_laser_return_collection_t *) bot_ptr_circular_index(self->velodyne_data_circ, cidx);
+
+    double sensor_to_local[12];
+    // Working here on bot frames
+
+    if (!bot_frames_get_trans_mat_3x4 (self->frames, "VELODYNE",
+        "local",
+        sensor_to_local)) {
+      fprintf (stderr, "Error getting bot_frames transformation from VELODYNE to local!\n");
+      return;
+    }
+
+    //printf("LASER returns : %d\n", lrc->num_lr);
+
+    int chunk_size = 32;// * 12;
+
+    for (int s = 0; s < lrc->num_lr; s++) {
+      velodyne_laser_return_t *lr = &(lrc->laser_returns[s]);
+
+      if(s % chunk_size == 0){
+        //updated the sensor_to_local transform
+        if (!bot_frames_get_trans_mat_3x4_with_utime (self->frames, "VELODYNE",
+            "local", lr->utime,
+            sensor_to_local)) {
+          fprintf (stderr, "Error getting bot_frames transformation from VELODYNE to local!\n");
+          return;
+        }
+      }
+
+      //fprintf(stderr, "\t %d - %d : %f\n", lr->physical, lr->logical, lr->phi);
+      //double local_xyz[3];
+
+      if (lr->range > SHORT_RANGE_FILTER){
+        xyzi_t point;
+        bot_vector_affine_transform_3x4_3d (sensor_to_local, lr->xyz, point.xyz);
+        point.intensity = lr->intensity;
+        points.push_back(point);
+      }
+    }
+  }
+
+
+  std::ofstream fstream;
+  fstream.open ("test.pcd"); // output is now xyz quat
+  write_pcd(points,fstream );
+  cout << "wrote output test.pcd file containing " <<points.size() << " points, finished\n";
+
+
+}
+
+
+
+static void
+on_bot_pose (const lcm_recv_buf_t *buf, const char *channel,
+    const bot_core_pose_t *msg, void *user) {
+  state_t *self = (state_t *)user;
+
+//  g_mutex_lock (self->mutex);
+
+  if (self->bot_pose_last)
+    bot_core_pose_t_destroy (self->bot_pose_last);
+  self->bot_pose_last = bot_core_pose_t_copy (msg);
+
+//  g_mutex_unlock (self->mutex);
 }
 
 
@@ -194,66 +303,53 @@ on_velodyne(const lcm_recv_buf_t *rbuf, const char * channel,
   }
 }
 
-/*
-//# .PCD v.5 - Point Cloud Data file format
-//FIELDS x y z intensity
-SIZE 4 4 4 4
-TYPE F F F F
-WIDTH 167198
-HEIGHT 1
-POINTS 167198
-DATA ascii
-*/
-void write_pcd(vector <xyzi_t> &points,std::ofstream &fstream ){
+void
+circ_free_velodyne_data(void *user, void *p) {
 
-  fstream << "# .PCD v.5 - Point Cloud Data file format" << endl;
-  fstream << "FIELDS x y z intensity" << endl;
-  fstream << "SIZE 4 4 4 4" << endl;
-  fstream << "TYPE F F F F" << endl;
-  fstream << "WIDTH " << points.size() << endl;
-  fstream << "HEIGHT 1" << endl;
-  fstream << "POINTS " << points.size() << endl;
-  fstream << "DATA ascii" << endl;
-
-  for (size_t i=0; i < points.size(); i++){
-    xyzi_t lr = points[i];
-    ostringstream temp0;
-    temp0 << lr.xyz[0] <<" " << lr.xyz[1]<< " " << lr.xyz[2] << " "<< lr.intensity << endl;
-    fstream << temp0.str();
-  }
-  fstream.close();
-
+  velodyne_laser_return_collection_t *lrc = (velodyne_laser_return_collection_t*) p;
+  velodyne_free_laser_return_collection (lrc);
 }
-
-
 
 static void
 on_velodyne_debug(const lcm_recv_buf_t *rbuf, const char * channel, 
-    const senlcm_velodyne_list_t * msgl, void * user)
+    const senlcm_velodyne_list_t * msg, void * user)
 {
   state_t *self = (state_t *)user;
   g_assert(self);
 
+
+  static int64_t last_redraw_utime = 0;
+  int64_t now = bot_timestamp_now();
+
+  //cout << msg->num_packets << " num packets\n";
+  for (int i=0; i < msg->num_packets; i++)
+    process_velodyne (self, &(msg->packets[i]));
+
+//  if ((now - last_redraw_utime) > MAX_REFRESH_RATE_USEC) {
+//    bot_viewer_request_redraw( self->viewer );
+//    last_redraw_utime = now;
+ // }
+
+
+
+
+
+
+
+
+  /*
   senlcm_velodyne_t *msg;
 
   int64_t now = bot_timestamp_now();
 
-
   // For each of the incomping packets
   for (int i=0; i < msgl->num_packets; i++){
-    process_velodyne(self, &( msgl->packets[i] ), self->points);
-    //g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (& (msgl->packets[i])));
+//    cout << msgl->packets[i].utime << " recd\n";
+    g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (& (msgl->packets[i])));
   }
+  */
 
-  self->block_counter++;
-  cout << self->block_counter << " blocks | " << self->points.size() << " points in total\n";
-  if (self->block_counter >= self->no_blocks){
-    std::ofstream fstream;
-    fstream.open (self->output_file.c_str()); // output is now xyz quat
-   write_pcd(self->points,fstream );
-   cout << "wrote output file, exiting\n";
-   exit(-1);
-  }
+  // cout << " ====================== \n";
 
   //g_async_queue_push (self->velodyne_message_queue, senlcm_velodyne_t_copy (msg));
   return;
@@ -324,86 +420,163 @@ on_velodyne_debug(const lcm_recv_buf_t *rbuf, const char * channel,
   /* } */
 }
 
-// Processes 
-static void
-process_velodyne (state_t *self, const senlcm_velodyne_t *v, vector < xyzi_t > &points)
-{
 
-  //we are missing data packets
-  //static int count = 0;
-  //count++;
+// Processes 
+static int
+process_velodyne (state_t *self, const senlcm_velodyne_t *v)
+{
+  g_assert(self);
+
+  int do_push_motion = 0; // only push motion data if we are starting a new collection or there is a new pose
+
+  // MFallon: I chose this parameter - not sure what its effect is:
+  double hist_spc = 1000.0;//bot_gtk_param_widget_get_double (self->pw, PARAM_HISTORY_FREQUENCY);
+
+
+  // Algorithm:
+  // Decodes and pushes velodyne_t packets into the collector
+  // When the collector is full it pushes the collector in its entirety into the circular buffer
+  // The collector is a portion of a scan
 
   // Is this a scan packet?
   if (v->packet_type == SENLCM_VELODYNE_T_TYPE_DATA_PACKET) {
-    int i_f = 0;
 
-    double ctheta = VELODYNE_GET_ROT_POS(v->data, VELODYNE_DATA_FIRING_START(i_f));
-
-    static double test_handler_ctheta_prev = 0;
-
-    static double delta = 0;
-
-    if(fabs(fabs(ctheta - test_handler_ctheta_prev) - delta) > 0.1 && fabs(fabs(ctheta - test_handler_ctheta_prev) - delta) < 4.0 ){
-      //fprintf(stderr,"%f Different Delta : %f, %f\n", v->utime /1.0e6, fabs(ctheta - test_handler_ctheta_prev), delta);
-    }
-    delta = fabs(ctheta - test_handler_ctheta_prev);
-
-    test_handler_ctheta_prev = ctheta;
-
-    // Decode the data packet
     velodyne_laser_return_collection_t *lrc =
         velodyne_decode_data_packet(self->calib, v->data, v->datalen, v->utime);
 
-    //cout << lrc->num_lr << " is number of lr\n";
-    for (int s = 0; s < lrc->num_lr; s++) {
-      velodyne_laser_return_t *lr = &(lrc->laser_returns[s]);
-
-      xyzi_t point;
-      point.xyz[0] = lr->xyz[0];
-      point.xyz[1] = lr->xyz[1];
-      point.xyz[2] = lr->xyz[2];
-      point.intensity = lr->intensity;
-      points.push_back(point);
-    }
-
-    int ret = -1;
-    //int ret = velodyne_collector_push_laser_returns (self->collector, lrc);
+    int ret = velodyne_collector_push_laser_returns (self->collector, lrc);
 
     velodyne_free_laser_return_collection (lrc);
 
-    return;
-
     if (VELODYNE_COLLECTION_READY == ret) {
-      //fprintf(stderr, "Outer count : %d\n", count);
-      //count = 0;
-
-      rate_update(self->capture_rate);
-
-      fprintf(stderr,"Data rate : %f\n", self->capture_rate->current_hz);
 
       velodyne_laser_return_collection_t *lrc =
           velodyne_collector_pull_collection (self->collector);
 
       // if enough time has elapsed since the last scan push it onto the circular buffer
+      if (abs (lrc->utime - self->last_velodyne_data_utime) > (int64_t)(1E6/hist_spc)) {
+        
+        bot_ptr_circular_add (self->velodyne_data_circ, lrc);
+        self->last_velodyne_data_utime = lrc->utime;
+      } else {
+        // memory leak city if this isnt here as soon as you increase the history spacing
+        velodyne_free_laser_return_collection (lrc);
+      }
 
-      // memory leak city if this isnt here as soon as you increase the history spacing
-      velodyne_free_laser_return_collection (lrc);
+      //starting a new collection
+      do_push_motion = 1;
     }
-    else if(VELODYNE_COLLECTION_READY == ret) {
-      rate_update(self->capture_rate);
-
-      fprintf(stderr,"Data rate : %f\n", self->capture_rate->current_hz);
+    else if(VELODYNE_COLLECTION_READY_LOW == ret) {
+      fprintf(stderr,"Low packet - ignoring");
 
       velodyne_laser_return_collection_t *lrc =
           velodyne_collector_pull_collection (self->collector);
 
-      // if enough time has elapsed since the last scan push it onto the circular buffer
-
-      // memory leak city if this isnt here as soon as you increase the history spacing
       velodyne_free_laser_return_collection (lrc);
     }
   }
+
+  // Update the Velodyne's state information (pos, rpy, linear/angular velocity)
+  if (do_push_motion) {
+
+    if (!self->bot_pose_last)
+      return 0;
+
+    // push new motion onto collector
+    velodyne_state_t state;
+
+    state.utime = v->utime;
+
+    // find sensor pose in local/world frame
+    /*
+     * double x_lr[6] = {self->pose->x, self->pose->y, self->pose->z,
+     *                   self->pose->r, self->pose->p, self->pose->h};
+     * double x_ls[6] = {0};
+     * ssc_head2tail (x_ls, NULL, x_lr, self->x_vs);
+     */
+
+    BotTrans velodyne_to_local;
+    bot_frames_get_trans_with_utime (self->frames, "VELODYNE", "local", v->utime, &velodyne_to_local);
+
+    memcpy (state.xyz, velodyne_to_local.trans_vec, 3*sizeof(double));
+    bot_quat_to_roll_pitch_yaw (velodyne_to_local.rot_quat, state.rph);
+
+    // Compute translational velocity
+    //
+    // v_velodyne = v_bot + r x w
+    BotTrans velodyne_to_body;
+    bot_frames_get_trans (self->frames, "VELODYNE", "body", &velodyne_to_body);
+
+    double v_velodyne[3];
+    double r_body_to_velodyne_local[3];
+    bot_quat_rotate_to (self->bot_pose_last->orientation, velodyne_to_body.trans_vec, r_body_to_velodyne_local);
+
+    // vel_rot = r x w
+    double vel_rot[3];
+    bot_vector_cross_3d (r_body_to_velodyne_local, self->bot_pose_last->rotation_rate, vel_rot);
+
+    bot_vector_add_3d (self->bot_pose_last->vel, vel_rot, state.xyz_dot);
+
+
+    // Compute angular rotation rate
+    memcpy (state.rph_dot, self->bot_pose_last->rotation_rate, 3*sizeof(double));
+
+    //state.xyz[0] = x_ls[0]; state.xyz[1] = x_ls[1]; state.xyz[2] = x_ls[2];
+    //state.rph[0] = x_ls[3]; state.rph[1] = x_ls[4]; state.rph[2] = x_ls[5];
+
+    // move velocities and rates into sensor frame
+    //double O_sv[9];
+    //double rph_vs[3] = {self->x_vs[3], self->x_vs[4], self->x_vs[5]};
+    //so3_rotxyz (O_sv, rph_vs);
+    //double t_vs[3] = {self->x_vs[0], self->x_vs[1], self->x_vs[2]};
+    ////uvw_sensor = O_sv * [uvw - skewsym(t_vs)*abc];
+
+    // pose fields NEVER POPULATED
+    //double abc[3] = {self->pose->a,
+    //                 self->pose->b,
+    //                 self->pose->c};
+    //double uvw[3] = {self->pose->u,
+    //                 self->pose->v,
+    //                 self->pose->w};
+    //double skewsym[9] = { 0,       -t_vs[2],  t_vs[1],
+    //                      t_vs[2],  0,       -t_vs[0],
+    //                     -t_vs[1],  t_vs[0],  0    };
+    //GSLU_VECTOR_VIEW (uvw_sensor,3, {0});
+    //gsl_vector_view abc_v = gsl_vector_view_array (abc, 3);
+    //gsl_vector_view uvw_v = gsl_vector_view_array (uvw, 3);
+    //gsl_matrix_view O_sv_v = gsl_matrix_view_array (O_sv, 3, 3);
+    //gsl_matrix_view skewsym_v = gsl_matrix_view_array (skewsym, 3, 3);
+    //skewsym(t_vs)*abc;
+    //gslu_mv (&uvw_sensor.vector, &skewsym_v.matrix, &abc_v.vector); // uvw_sensor.vector is all zero since abc contains zeros
+    //[uvw - skewsym(t_vs)*abc]
+    //gsl_vector_sub (&uvw_v.vector, &uvw_sensor.vector);
+    //uvw_sensor = O_sv * [uvw - skewsym(t_vs)*abc];
+    //gslu_mv (&uvw_sensor.vector, &O_sv_v.matrix, &uvw_v.vector);
+
+    // sensor frame rates
+    //GSLU_VECTOR_VIEW (abc_sensor, 3, {0});
+    //gsl_matrix_view O_vs_v = gsl_matrix_view_array (O_sv, 3, 3);
+    //gsl_matrix_transpose (&O_vs_v.matrix);
+    //gslu_mv (&abc_sensor.vector, &O_vs_v.matrix, &abc_v.vector);
+
+    //rotate velodyne body velocities into local frame
+    //double R_sl[9];
+    //so3_rotxyz (R_sl, state.rph); //state.rph = rph_ls
+    //gsl_matrix_view R_sl_v = gsl_matrix_view_array (R_sl, 3, 3);
+    //GSLU_VECTOR_VIEW (xyz_dot_sensor,3, {0});
+    //gslu_mv (&xyz_dot_sensor.vector, &R_sl_v.matrix, &uvw_sensor.vector);
+    //memcpy (&(state.xyz_dot), xyz_dot_sensor.vector.data, 3*sizeof (double));
+
+    // set euler rates
+    //so3_body2euler (abc_sensor.vector.data, state.rph, state.rph_dot, NULL);
+
+    velodyne_collector_push_state (self->collector, state);
+    do_push_motion = 0;
+  }
+
+  return 1;
 }
+
 
 
 
@@ -465,8 +638,8 @@ velodyne_work_thread (void *user)
     self->last_msg_count = v->utime;
 
     // Process a velodyne_t (chunk of scans)
-    cout << "about to process " << v->utime << "\n";
-//    process_velodyne(self, v);
+    //cout << "about to process " << v->utime << "\n";
+    //process_velodyne(self, v);
     senlcm_velodyne_t_destroy(v);
   }
 
@@ -479,31 +652,21 @@ usage(const char *progname)
   fprintf (stderr, "usage: %s [options]\n"
       "\n"
       "  -c, --config PATH      Location of config file\n"
-      "  -b, --blocks NUM       Number of velodyne_list_t blocks to combine\n"
-      "                         One Velodyne cycle is ABOUT 5 blocks\n"
-      "  -o, --output PATH      Output PCD file name\n"
       , g_path_get_basename(progname));
 }
 
 int
 main(int argc, char ** argv)
 {
-  state_t* self = new state_t();
-
-  setlinebuf(stdout);
-  char *optstring = "hc:o:b:";
+  char *optstring = "hc:";
   int c;
   struct option long_opts[] = {
       {"help", no_argument, 0, 'h'},
       {"config", required_argument, 0, 'c'},
-      {"output", required_argument, 0, 'o'},
-      {"blocks", required_argument, 0, 'b'}
   };
 
   int exit_code = 0;
   char *config_file =NULL;// g_strdup("velodyne.cfg");
-  char *output_file =NULL;
-  int no_blocks = 1;
 
   while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0)
   {
@@ -513,19 +676,6 @@ main(int argc, char ** argv)
       free(config_file);
       config_file = g_strdup(optarg);
       break;
-    case 'o':
-      free(output_file);
-      output_file = g_strdup(optarg);
-      break;
-    case 'b':
-        {
-          no_blocks = atoi(optarg);
-          if (no_blocks<1){
-              usage(argv[0]);
-              return 1;
-          }
-        }
-        break;
     case 'h':
     default:
       usage(argv[0]);
@@ -533,15 +683,11 @@ main(int argc, char ** argv)
     }
   }
 
+  state_t* self = new state_t();
 //  state_t *self = calloc(1,sizeof(state_t));
   self->lcm = lcm_create(NULL);//"udpm://239.255.76.67:7667?recv_buf_size=100000");
   if(!self->lcm)
     return 1;
-
-  self->output_file = output_file;
-  self->no_blocks = no_blocks;
-  cout << self->no_blocks << " blocks to be captured\n";
-  cout << self->output_file <<" is output file name\n";
 
   if (config_file){
     fprintf(stderr,"Reading velodyne config from file\n");
@@ -565,6 +711,9 @@ main(int argc, char ** argv)
     }
   }
 
+  self->frames = bot_frames_get_global (self->lcm, self->param);
+
+
   char *velodyne_model = bot_param_get_str_or_fail (self->param, "calibration.velodyne.model");
   char *calib_file = bot_param_get_str_or_fail (self->param, "calibration.velodyne.intrinsic_calib_file");
   char calib_file_path[2048];
@@ -584,8 +733,17 @@ main(int argc, char ** argv)
 
   g_thread_init (NULL);
 
+
+  // Which polar segments of the velodyne returns should be logged: NBNBNBNBNB NBNBNBNBNB NBNBNBNBNB
+  // self->collector = velodyne_laser_return_collector_create (1, 0, 2* M_PI); // full scan
+  self->collector = velodyne_laser_return_collector_create (0, M_PI, 2* M_PI); // front facing pixels only
+
   // Create an asynchronous queue for messages
   self->velodyne_message_queue = g_async_queue_new ();
+
+  self->velodyne_data_circ = bot_ptr_circular_new (VELODYNE_DATA_CIRC_SIZE,
+      circ_free_velodyne_data, self);
+
 
   self->velodyne_work_thread = g_thread_create (velodyne_work_thread, self, TRUE, NULL);
   self->velodyne_work_thread_exit = 0;
@@ -593,10 +751,11 @@ main(int argc, char ** argv)
 
   //senlcm_velodyne_t_subscribe (self->lcm, lcm_channel, on_velodyne, self);
   senlcm_velodyne_list_t_subscribe (self->lcm, "VELODYNE_LIST", on_velodyne_debug, self);
+  bot_core_pose_t_subscribe (self->lcm, "POSE", on_bot_pose, self);
+
+  bot_core_pose_t_subscribe (self->lcm, "POSE_TRIGGER", on_pose_trigger, self);
 
   self->capture_rate = rate_new();
-
-  self->block_counter=0;
 
   bot_glib_mainloop_attach_lcm (self->lcm);
 
