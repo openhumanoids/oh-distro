@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<chain>
+    <unit id="lcm.input" width="640" height="960" pixelformat="CAM_PIXEL_FORMAT_GRAY" format_name="640x960 Gray 8bpp">
+        <control id="channel">WIDE_STEREO_IMAGE</control>
+        <control id="lcm-url"></control>
+    </unit>
+    <unit id="bumblebee2.disparity" width="640" height="480" pixelformat="CAM_PIXEL_FORMAT_BE_SIGNED_GRAY16" format_name="640x480 Gray Big-Endian signed 16bpp">
+        <control id="sad_win_size">21</control>
+        <control id="num_disparities">0</control>
+        <control id="min_disparity">0</control>
+        <control id="stereo_preset">0</control>
+    </unit>
+    <unit id="bumblebee2.temperature" width="640" height="480" pixelformat="CAM_PIXEL_FORMAT_RGB" format_name="640x480 RGB 24bpp">
+    </unit>
+    <unit id="output.opengl" width="640" height="480" pixelformat="CAM_PIXEL_FORMAT_RGB" format_name="640x480 RGB 24bpp">
+    </unit>
+</chain>
