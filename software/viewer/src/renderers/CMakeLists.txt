@@ -16,6 +16,7 @@ add_library(renderer_drc SHARED
   robot_plan_renderer/RobotPlanListener.cpp
   end_effector_goal_renderer/renderer_end_effector_goal.cpp
   end_effector_goal_renderer/RobotStateListener.cpp
+  otdf_renderer/renderer_otdf.cpp
   )
   
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
@@ -32,6 +33,9 @@ pods_install_headers(end_effector_goal_renderer/renderer_end_effector_goal.hpp
 end_effector_goal_renderer/RobotStateListener.hpp
   DESTINATION renderer_drc/end_effector_goal_renderer)
 
+pods_install_headers(otdf_renderer/renderer_otdf.hpp
+  DESTINATION renderer_drc/otdf_renderer)
+
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
 if(REQUIRED_PACKAGES_HUMANOID)
@@ -39,7 +43,7 @@ if(REQUIRED_PACKAGES_HUMANOID)
     return()
 endif(REQUIRED_PACKAGES_HUMANOID)
 
-set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics)
+set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics otdf_dom)
 
 
 pods_install_pkg_config_file(renderer_drc

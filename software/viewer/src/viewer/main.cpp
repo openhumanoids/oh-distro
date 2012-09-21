@@ -24,6 +24,7 @@
 //#include <renderer_drc/renderer_localize.hpp>
 #include <renderer_drc/renderer_navigation.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
+#include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
 #include "udp_util.h"
 
 using namespace std;
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
    setup_renderer_navigation(viewer, 0,lcm);
    setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
-   
+  setup_renderer_otdf(viewer, 0, lcm);
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
   bot_viewer_load_preferences(viewer, fname);
