@@ -685,6 +685,13 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
 	      T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
 	                                           instance_struc._otdf_instance->getParam("Pitch"),
 	                                           instance_struc._otdf_instance->getParam("Yaw"));
+	      
+// 	      T_world_body.p[0]= 0;
+// 	      T_world_body.p[1]= 0;
+// 	      T_world_body.p[2]= 0;		    
+// 	      T_world_body.M =  KDL::Rotation::RPY(0,
+// 	                                           0,
+// 	                                           0);
 
 	    std::map<std::string, drc::transform_t>::const_iterator transform_it;
 	    transform_it=cartpos_out.find(it->first);	  

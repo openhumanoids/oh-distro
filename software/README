@@ -10,6 +10,9 @@ build-essential
 libglib2.0-dev 
 openjdk-6-jdk 
 python-dev 
+libgsl0-dev
+gsl-bin
+
 
 Probably required: (to be confirmed)
     python-gtk2
