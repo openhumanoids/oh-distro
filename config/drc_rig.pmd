@@ -25,6 +25,14 @@ group "misc" {
         exec = "drc-viewer";
         host = "localhost";
     }
+    cmd "pserver" {
+        exec = "bot-param-server drc_rig.cfg";
+        host = "localhost";
+    }
+    cmd "voplusimu" {
+        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_robot.cfg -b bumblebee";
+        host = "localhost";
+    }
 }
 
 
