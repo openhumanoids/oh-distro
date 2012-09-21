@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
+#include <getopt.h>
 #include <iostream>
 
 #include <bot_vis/bot_vis.h>
@@ -21,14 +22,22 @@
 // local renderers
 #include <renderer_drc/renderer_humanoid.hpp>
 #include <renderer_drc/renderer_robot_plan.hpp>
-//#include <renderer_drc/renderer_localize.hpp>
 #include <renderer_drc/renderer_navigation.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
+#include <velodyne/renderer_velodyne.h>
 #include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
 #include "udp_util.h"
 
 using namespace std;
 
+static void
+usage(const char *progname)
+{
+    fprintf (stderr, "usage: %s [options]\n"
+            "\n"
+            "  -c, --config PATH      Location of config file\n"
+            , g_path_get_basename(progname));
+}
 
 static int
 logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
@@ -69,6 +78,35 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
 
 int main(int argc, char *argv[])
 {
+  setlinebuf(stdout);
+
+  char *optstring = "hc:";
+  int c;
+  struct option long_opts[] = {
+      {"help", no_argument, 0, 'h'},
+      {"config", required_argument, 0, 'c'},
+  };
+
+  int exit_code = 0;
+  char *config_file =NULL;// g_strdup("velodyne.cfg");
+
+  while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0)
+  {
+      switch (c)
+      {
+          case 'c':
+              free(config_file);
+              config_file = g_strdup(optarg);
+              break;
+          case 'h':
+          default:
+              usage(argv[0]);
+              return 1;
+      }
+  }
+
+
+
   //todo: comment this section
   gtk_init(&argc, &argv);
   glutInit(&argc, argv);
@@ -77,13 +115,28 @@ int main(int argc, char *argv[])
   lcm_t * lcm = bot_lcm_get_global(NULL);
   bot_glib_mainloop_attach_lcm(lcm);
 
-  std::string config_name;
-  config_name = std::string(getConfigPath()) + "/../../../config/drc_robot.cfg";
-  BotParam* bot_param = bot_param_new_from_file(config_name.c_str());
-  if (bot_param == NULL) {
-    std::cerr << "Couldn't get bot param from file %s\n" << config_name << std::endl;
-    exit(-1);
+  BotParam * bot_param;
+
+//  std::string config_file;
+  //config_file = std::string(getConfigPath()) + "/../../../config/drc_robot.cfg";
+
+
+  if (config_file){
+    fprintf(stderr,"Reading velodyne config from file\n");
+    std::string config_path = std::string(getConfigPath()) +'/' + std::string(config_file);// "drc_robot.cfg";
+    bot_param = bot_param_new_from_file(config_path.c_str());
+    if (bot_param == NULL) {
+      std::cerr << "Couldn't get bot param from file %s\n" << config_path << std::endl;
+      exit(-1);
+    }
+  }else {
+    bot_param = bot_param_new_from_server(lcm, 0);
+    if (bot_param == NULL) {
+      fprintf(stderr, "Couldn't get bot param from server.\n");
+      return 1;
+    }
   }
+
   BotFrames* bot_frames = bot_frames_new(lcm, bot_param);
 
 
@@ -110,10 +163,10 @@ int main(int argc, char *argv[])
   setup_renderer_humanoid(viewer, 0, lcm);
   collections_add_renderer_to_viewer(viewer, 1);
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
-   //setup_renderer_localize(viewer, 0,lcm);
-   setup_renderer_navigation(viewer, 0,lcm);
-   setup_renderer_robot_plan(viewer, 0, lcm);
+  setup_renderer_navigation(viewer, 0,lcm);
+  setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
+  setup_renderer_velodyne(viewer, 0,bot_param, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
