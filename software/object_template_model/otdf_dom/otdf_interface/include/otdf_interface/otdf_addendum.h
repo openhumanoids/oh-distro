@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+
 #include <tinyxml.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -15,6 +16,12 @@
 
 namespace otdf
 {
+  
+  typedef struct _paramRangeStruc {
+    double inc;
+    double min_value;
+    double max_value;
+  } paramRangeStruc;  
 
   class Param
   {
@@ -23,6 +30,7 @@ namespace otdf
     Param(std::string &_name,double default_value ):name(_name), value(default_value) {};
     std::string name;
     double value;
+    paramRangeStruc properties;
 
     void clear()
     {
@@ -58,6 +66,64 @@ namespace otdf
 	}
       }
       this->value = value;  
+      double inc,min,max;
+      const char* inc_str = config->Attribute("inc");
+      if (inc_str == NULL){
+	//std::cout << "param: no inc for param, defaults to 0.01"<< std::endl;
+	inc = 0.01;
+      }
+      else
+      {
+	try
+	{
+	inc = boost::lexical_cast<double>(inc_str);
+	}
+	catch (boost::bad_lexical_cast &e)
+	{
+	  std::cerr << "ERROR: param default value"<< inc_str <<"is not a double"<< std::endl;
+	  return false;
+	}
+      }
+      this->properties.inc = inc;  
+      
+     const char* min_str = config->Attribute("min");
+      if (min_str == NULL){
+	//std::cout << "param: no inc for param, defaults to -100"<< std::endl;
+	min = -100;
+      }
+      else
+      {
+	try
+	{
+	min = boost::lexical_cast<double>(min_str);
+	}
+	catch (boost::bad_lexical_cast &e)
+	{
+	  std::cerr << "ERROR: param min value"<< min_str <<"is not a double"<< std::endl;
+	  return false;
+	}
+      }
+      this->properties.min_value = min;    
+      
+      const char* max_str = config->Attribute("max");
+      if (max_str == NULL){
+	//std::cout << "param: no inc for param, defaults to -100"<< std::endl;
+	max = 100;
+      }
+      else
+      {
+	try
+	{
+	max = boost::lexical_cast<double>(max_str);
+	}
+	catch (boost::bad_lexical_cast &e)
+	{
+	  std::cerr << "ERROR: param max value"<< max_str <<"is not a double"<< std::endl;
+	  return false;
+	}
+      }
+      this->properties.max_value = max; 
+      
       return true;
     };
 
@@ -188,7 +254,7 @@ namespace otdf
 	}   
 	this->joint_set.clear();
 	//Update all joints in joint_set
-	for  (unsigned int i=0; i < noofrepetitions; i++){
+	for  (unsigned int i=0; i < (unsigned int)noofrepetitions; i++){
 	    boost::shared_ptr<Joint> temp; 
 	    temp.reset(new Joint(*joint_template));
 	    std::ostringstream stm;   
@@ -246,7 +312,7 @@ namespace otdf
        //Update all links in link_set 
        this->link_set.clear();
       
-       for  (unsigned int i=0; i < noofrepetitions; i++){
+       for  (unsigned int i=0; i < (unsigned int) noofrepetitions; i++){
 	  boost::shared_ptr<Link> temp; 
 	  temp.reset(new Link(*link_template));
 	  std::ostringstream stm;   

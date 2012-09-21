@@ -340,7 +340,7 @@ void Torus::initXml(TiXmlElement *c, ParamTable_t &symbol_table)
 {
   this->clear();
 
-  this->type = CYLINDER;
+  this->type = TORUS;
   if (!c->Attribute("radius") ||
       !c->Attribute("tube_radius"))
   {

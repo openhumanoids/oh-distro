@@ -47,6 +47,7 @@
 #include "otdf_addendum.h"
 
 namespace otdf {
+ 
 
 class ModelInterface
 {
@@ -182,7 +183,8 @@ public:
     
   ParamTable_t symbol_table;
   std::map<std::string, double> params_map_;
- 
+  std::vector<std::string> params_order_; //to preserve param order
+  std::map<std::string, paramRangeStruc> param_properties_map_; // inc, max and min values
   
   double getParam(const std::string& name) const
   {

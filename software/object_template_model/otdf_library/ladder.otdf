@@ -2,24 +2,27 @@
 
 <object name="Ladder1">
 
-<!-- World origin of the object -->
-<param name="X" default_value="0.0" /> 
-<param name="Y" default_value="0.0" />
-<param name="Z" default_value="0.0" />
-<param name="Roll" default_value="0.0" /> 
-<param name="Pitch" default_value="0.0" />
-<param name="Yaw" default_value="0.0" />
+<!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+<!-- World frame origin of the object -->
+<param name="X" default_value="0.0" inc="0.01" min="-100" max="100"/> 
+<param name="Y" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="Z" default_value="0.0" inc="0.01" min="-100" max="100"/>
+
+<!--Roll,Pitch,Yaw are about Body Frame-->
+<param name="Roll" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/> 
+<param name="Pitch" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+<param name="Yaw" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
 
 <!-- Size of the outer most bounding volume -->
-<param name="lX" default_value="0.5" /> 
-<param name="lY" default_value="5.0" />
-<param name="lZ" default_value="10.0" /> <!-- ladder height -->
+<param name="lX" default_value="0.5" inc="0.01" min="0" max="100"/> 
+<param name="lY" default_value="5.0" inc="0.01" min="0" max="100"/>
+<param name="lZ" default_value="10.0" inc="0.01" min="0" max="100"/> <!-- ladder height -->
 
-<param name="STEP_THICKNESS" default_value="0.2" />
-<param name="STEP_WIDTH" default_value="4.0" /> <!-- Also specifies the width of the rails -->
-<param name="STEP_OFFSET_Z" default_value="0.9" />
-<param name="Density" default_value="1.0" />
-<param name="NO_OF_STEPS" default_value="10" />
+<param name="STEP_THICKNESS" default_value="0.2" inc="0.01" min="0" max="100"/>
+<param name="STEP_WIDTH" default_value="4.0" inc="0.01" min="0" max="100"/> <!-- Also specifies the width of the rails -->
+<param name="STEP_OFFSET_Z" default_value="0.9" inc="0.01" min="0" max="10" />
+<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>
+<param name="NO_OF_STEPS" default_value="10" inc="1" min="1" max="20"/>
 
 
 <!-- Bounding volumes :: They become dummy links when otdf is converted to urdf for visualization-->
@@ -114,7 +117,7 @@
 <joint name="base_joint" type="fixed">
 	<parent link="base_link" type="link"/>
 	<child link="Outer_Volume" type="bounding_volume"/>
-	<origin rpy="${Roll} ${Pitch} ${Yaw}" xyz="${X} ${Y} ${Z}"/>
+	<origin rpy="${Roll} ${Pitch} ${Yaw}" xyz="0 0 0"/>
 </joint>
 
 

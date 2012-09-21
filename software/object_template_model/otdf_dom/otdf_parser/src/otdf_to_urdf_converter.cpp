@@ -34,6 +34,8 @@
 
 /* Author: Wim Meeussen */
 // Modified from ROS's URDF_DOM library Written by Josh Faust and Wim Meeussen
+#include <cmath>
+#include <stdio.h>
 #include <boost/algorithm/string.hpp>
 #include <vector>
 #include "otdf_parser/otdf_parser.h"
@@ -46,14 +48,13 @@ namespace otdf{
   enum
   { UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED }; 
   
- void addGeometry(boost::shared_ptr<const Geometry> geom,TiXmlElement* element)
+ void addGeometry(boost::shared_ptr<const Geometry> geom,TiXmlElement* element, bool compliant)
 {
   enum {SPHERE, BOX, CYLINDER, MESH, TORUS};
   TiXmlElement * geometry = new TiXmlElement( "geometry" );
-  
-  if(geom->type!=(const int) TORUS)
+  //if(geom->type!=(const int) TORUS)
     element->LinkEndChild(geometry); // not recognised in urdf
-  
+
   if(geom->type== (const int) SPHERE){
    boost::shared_ptr<const Sphere> downcasted_geom(boost::shared_dynamic_cast<const Sphere>(geom)); 
    TiXmlElement * sphere = new TiXmlElement( "sphere" );
@@ -86,14 +87,23 @@ namespace otdf{
   }
   else if (geom->type==(const int) TORUS){
    boost::shared_ptr<const Torus> downcasted_geom(boost::shared_dynamic_cast<const Torus>(geom)); 
+   if(compliant==false){
    TiXmlElement * torus = new TiXmlElement( "torus" );
    torus->SetDoubleAttribute("radius", downcasted_geom->radius);
    torus->SetDoubleAttribute("tube_radius", downcasted_geom->tube_radius);
-   geometry->LinkEndChild(torus); 
+   geometry->LinkEndChild(torus);
+   }
+   else{
+   TiXmlElement * torus = new TiXmlElement( "cylinder" );
+   torus->SetDoubleAttribute("radius", downcasted_geom->radius);
+   torus->SetDoubleAttribute("length", downcasted_geom->tube_radius);
+   geometry->LinkEndChild(torus);
+  }
+    
   }
 }
 
-void addVisual(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* element)
+void addVisual(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* element, bool compliant)
 {
    TiXmlElement * visual = new TiXmlElement( "visual" );
 
@@ -112,7 +122,7 @@ void addVisual(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* ele
    origin->SetAttribute("rpy", stm.str());   
  
    if(downcasted_entity->visual->geometry){
-   addGeometry(downcasted_entity->visual->geometry,visual);   
+   addGeometry(downcasted_entity->visual->geometry,visual,compliant);   
    }
    element->LinkEndChild(visual);
 }
@@ -183,7 +193,7 @@ void addDummyInertial(double x, double y,double z,double r,double p,double yaw,T
    element->LinkEndChild(inertial);
 }
 
-void addCollision(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* element)
+void addCollision(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* element, bool compliant)
 {
    TiXmlElement * collision = new TiXmlElement( "collision" );
   
@@ -201,11 +211,11 @@ void addCollision(boost::shared_ptr<const Link> downcasted_entity,TiXmlElement* 
     stm << r << " " << p << " " << y << " ";
     origin->SetAttribute("rpy", stm.str());   
 
-   addGeometry(downcasted_entity->collision->geometry,collision); 
+   addGeometry(downcasted_entity->collision->geometry,collision,compliant); 
    element->LinkEndChild(collision);
 }
 
-void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* robot)
+void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* robot, bool compliant)
 {
   
   std::string type = entity->getEntityType();
@@ -216,19 +226,19 @@ void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* r
      link_element->SetAttribute("name", entity->name);
     if(entity->name !="world"){
      if(downcasted_entity->visual)	{
-	addVisual(downcasted_entity,link_element);
+	addVisual(downcasted_entity,link_element,compliant);
      }
      if(downcasted_entity->inertial)     {
 	addInertial(downcasted_entity,link_element);	
       }
      if(downcasted_entity->collision)	{
-     	addCollision(downcasted_entity,link_element);	
+     	addCollision(downcasted_entity,link_element,compliant);	
       }
     }
     robot->LinkEndChild( link_element );
     
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
-    addChildEntities(*child,robot);
+    addChildEntities(*child,robot,compliant);
     
   }
   else if (type == "Bounding_volume"){
@@ -247,7 +257,7 @@ void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* r
    robot->LinkEndChild( link_element );
    
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
-    addChildEntities(*child,robot);
+    addChildEntities(*child,robot,compliant);
   }
 }
 
@@ -376,7 +386,8 @@ void convertObjectInstanceToURDFfile(boost::shared_ptr<ModelInterface> object){
   element->SetAttribute("name", object->getName());
   
   boost::shared_ptr<const BaseEntity> root=object->getRoot();
-  addChildEntities(root,element); // adds all links
+  bool compliant = false;
+  addChildEntities(root,element,compliant); // adds all links
   addChildJoints(root,element);
   urdf_doc.SaveFile(  output_filename +".urdf");
    
@@ -394,7 +405,31 @@ std::string convertObjectInstanceToURDFstring(boost::shared_ptr<ModelInterface> 
   element->SetAttribute("name", object->getName());
   
   boost::shared_ptr<const BaseEntity> root=object->getRoot();
-  addChildEntities(root,element); // adds all links
+ bool compliant = false;
+  addChildEntities(root,element,compliant); // adds all links
+  addChildJoints(root,element);
+  
+  // urdf_doc.Print();
+    std::string urdf_xml_string;
+      urdf_xml_string << urdf_doc;
+//cout<< urdf_xml_string << endl;
+    return urdf_xml_string;    
+}
+
+std::string convertObjectInstanceToCompliantURDFstring(boost::shared_ptr<ModelInterface> object)
+{
+ std::string output_filename = object->getName();
+  TiXmlDocument urdf_doc;
+  TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+  urdf_doc.LinkEndChild( decl );
+	
+  TiXmlElement * element = new TiXmlElement( "robot" );
+  urdf_doc.LinkEndChild( element );
+  element->SetAttribute("name", object->getName());
+  
+  boost::shared_ptr<const BaseEntity> root=object->getRoot();
+  bool compliant = true;
+  addChildEntities(root,element,compliant); // adds all links
   addChildJoints(root,element);
   
   // urdf_doc.Print();

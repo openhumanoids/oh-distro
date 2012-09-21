@@ -88,8 +88,10 @@ boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
       }
       else
       {
-        model->params_map_.insert(make_pair(param->name,param->value));
-	
+	//std::cout << param->name << std::endl;
+	model->params_map_.insert(make_pair(param->name,param->value));
+	model->params_order_.push_back(param->name);
+	model->param_properties_map_.insert(make_pair(param->name,param->properties));
         // Add to symbol table
         model->symbol_table.add_variable(param->name,model->params_map_[param->name]);
         //ROS_DEBUG("successfully added a new material '%s'", material->name.c_str());
