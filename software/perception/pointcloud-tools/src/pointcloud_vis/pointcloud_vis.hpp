@@ -43,6 +43,7 @@ using namespace pcl;
 using namespace pcl::io;
 
 #include <pointcloud_tools/pointcloud_math.hpp>
+#include <lcmtypes/pointcloud_tools.h>
 
 // Duplicates the list in collections renderer:
 float vis_colors[] = {
@@ -101,6 +102,9 @@ class pointcloud_vis {
     void mesh_to_lcm(ptcld_cfg pcfg,pcl::PolygonMesh::Ptr mesh,
             int64_t obj_id, int64_t ptcld_id,
             bool sendSubset =false,const std::vector<int> &SubsetIndicies = std::vector<int>());
+
+    void pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud, std::string channel, int64_t cloud_utime);
+
 
     std::vector <obj_cfg> obj_cfg_list;
     std::vector <ptcld_cfg> ptcld_cfg_list;

@@ -6,7 +6,8 @@ set(PCL_LIBRARIES  pcl_io-1.6)
 
 add_library(pointcloud_vis SHARED pointcloud_vis.cpp)
 
-pods_use_pkg_config_packages(pointcloud_vis ${PCL_LIBRARIES}  lcm eigen3   bot2-core  glib-2.0  )
+pods_use_pkg_config_packages(pointcloud_vis ${PCL_LIBRARIES}  lcm eigen3   bot2-core  
+	glib-2.0  lcmtypes_pointcloud-tools)
 
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(pointcloud_vis PROPERTIES SOVERSION 1)

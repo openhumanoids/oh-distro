@@ -21,7 +21,7 @@ using namespace std;
 
 
 pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
-    publish_lcm_(publish_lcm){
+        publish_lcm_(publish_lcm){
 
   kcal = kinect_calib_new();
   kcal->intrinsics_depth.fx = 576.09757860;
@@ -48,16 +48,16 @@ pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
 // Copied from kinect-lcm
 static inline void
 _matrix_vector_multiply_3x4_4d (const double m[12], const double v[4],
-        double result[3])
+    double result[3])
 {
-    result[0] = m[0]*v[0] + m[1]*v[1] + m[2] *v[2] + m[3] *v[3];
-    result[1] = m[4]*v[0] + m[5]*v[1] + m[6] *v[2] + m[7] *v[3];
-    result[2] = m[8]*v[0] + m[9]*v[1] + m[10]*v[2] + m[11]*v[3];
+  result[0] = m[0]*v[0] + m[1]*v[1] + m[2] *v[2] + m[3] *v[3];
+  result[1] = m[4]*v[0] + m[5]*v[1] + m[6] *v[2] + m[7] *v[3];
+  result[2] = m[8]*v[0] + m[9]*v[1] + m[10]*v[2] + m[11]*v[3];
 }
 
 
 void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -97,14 +97,14 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
 
 
 void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   /////////////////////////////////////////////////////////////////////
   /// 1.1 RGB:
   // TODO check width, height
   if(msg->image.image_data_format == KINECT_IMAGE_MSG_T_VIDEO_RGB) {
-      memcpy(rgb_data, msg->image.image_data, 
-	      msg->depth.width * msg->depth.height * 3);
+    memcpy(rgb_data, msg->image.image_data,
+        msg->depth.width * msg->depth.height * 3);
   } else if(msg->image.image_data_format == KINECT_IMAGE_MSG_T_VIDEO_RGB_JPEG) {
     jpeg_decompress_8u_rgb (msg->image.image_data, msg->image.image_data_nbytes,
         rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
@@ -126,7 +126,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     }
     unsigned long dlen = msg->depth.uncompressed_size;
     int status = uncompress(uncompress_buffer, &dlen, 
-	      msg->depth.depth_data, msg->depth.depth_data_nbytes);
+        msg->depth.depth_data, msg->depth.depth_data_nbytes);
     if(status != Z_OK) {
       return;
     }
@@ -134,7 +134,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
   }else{
     depth_data = (uint8_t*) msg->depth.depth_data;
   }
-  
+
   int npixels = msg->depth.width * msg->depth.height;
   if (msg->depth.depth_data_format == KINECT_DEPTH_MSG_T_DEPTH_11BIT){ 
     /////////////////////////////////////////////////////////////////////
@@ -144,13 +144,13 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
       int16_t* rdd = (int16_t*) depth_data;
       int i;
       for(i=0; i<npixels; i++) {
-	int d = rdd[i];
-	disparity_array[i] = d;
+        int d = rdd[i];
+        disparity_array[i] = d;
       }
     } else {
       fprintf(stderr, "Big endian systems not supported\n");
     }
-  
+
     /// 2 Calculate transformation matrices:
     double depth_to_rgb_uvd[12];
     double depth_to_depth_xyz[16];
@@ -159,7 +159,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     double depth_to_depth_xyz_trans[16];
     //_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
     bot_matrix_transpose_4x4d(depth_to_depth_xyz, depth_to_depth_xyz_trans);
-      
+
     // 3 for each depth point find the corresponding xyz and then RGB
     //   then put into PCL structure
     cloud->width    = (msg->depth.width/kinect_decimate) ;
@@ -171,40 +171,40 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     // NB: the order of these loop was changed... aug 2011. important
     for(int v=0; v<msg->depth.height; v=v+ kinect_decimate) { // t2b state->height 480
       for(int u=0; u<msg->depth.width; u=u+kinect_decimate ) {  //l2r state->width 640
-	// 3.4.1 compute distorted pixel coordinates
-	uint16_t disparity = disparity_array[v*msg->depth.width+u];
-	double uvd_depth[4] = { u, v, disparity, 1 };
-	double uvd_rgb[3];
-	_matrix_vector_multiply_3x4_4d(depth_to_rgb_uvd, uvd_depth, uvd_rgb);
-	double uv_rect[2] = {
-	    uvd_rgb[0] / uvd_rgb[2],
-	    uvd_rgb[1] / uvd_rgb[2]
-	};
-	double uv_dist[2];
-	kinect_calib_distort_rgb_uv(kcal, uv_rect, uv_dist);
-	int u_rgb = uv_dist[0] + 0.5;
-	int v_rgb = uv_dist[1] + 0.5;
-	uint8_t r, g, b;
-	if(u_rgb >= msg->depth.width || u_rgb < 0 || v_rgb >= msg->depth.height || v_rgb < 0) {
-	    r = g = b = 0;
-	} else {
-	    r = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 0];
-	    g = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 1];
-	    b = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 2];
-	}
-	// 3.4.2 find the xyz location of the points:
-	bot_matrix_multiply(depth_to_depth_xyz, 4, 4, 
-		uvd_depth, 4, 1, xyzw2);
+        // 3.4.1 compute distorted pixel coordinates
+        uint16_t disparity = disparity_array[v*msg->depth.width+u];
+        double uvd_depth[4] = { u, v, disparity, 1 };
+        double uvd_rgb[3];
+        _matrix_vector_multiply_3x4_4d(depth_to_rgb_uvd, uvd_depth, uvd_rgb);
+        double uv_rect[2] = {
+            uvd_rgb[0] / uvd_rgb[2],
+            uvd_rgb[1] / uvd_rgb[2]
+        };
+        double uv_dist[2];
+        kinect_calib_distort_rgb_uv(kcal, uv_rect, uv_dist);
+        int u_rgb = uv_dist[0] + 0.5;
+        int v_rgb = uv_dist[1] + 0.5;
+        uint8_t r, g, b;
+        if(u_rgb >= msg->depth.width || u_rgb < 0 || v_rgb >= msg->depth.height || v_rgb < 0) {
+          r = g = b = 0;
+        } else {
+          r = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 0];
+          g = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 1];
+          b = rgb_data[v_rgb*msg->depth.width*3 + u_rgb*3 + 2];
+        }
+        // 3.4.2 find the xyz location of the points:
+        bot_matrix_multiply(depth_to_depth_xyz, 4, 4,
+            uvd_depth, 4, 1, xyzw2);
 
-	  cloud->points[j2].y = -xyzw2[0]/xyzw2[3];//y right+ (check)
-	  cloud->points[j2].z = -xyzw2[1]/xyzw2[3];//z up+
-	  cloud->points[j2].x = xyzw2[2]/xyzw2[3]; //x forward+
-	unsigned char* rgba_ptr = (unsigned char*)&cloud->points[j2].rgba;
-	// was bgr...
-	cloud->points[j2].b =b;
-	cloud->points[j2].r =r;
-	cloud->points[j2].g =g;
-	j2++;
+        cloud->points[j2].y = -xyzw2[0]/xyzw2[3];//y right+ (check)
+        cloud->points[j2].z = -xyzw2[1]/xyzw2[3];//z up+
+        cloud->points[j2].x = xyzw2[2]/xyzw2[3]; //x forward+
+        unsigned char* rgba_ptr = (unsigned char*)&cloud->points[j2].rgba;
+        // was bgr...
+        cloud->points[j2].b =b;
+        cloud->points[j2].r =r;
+        cloud->points[j2].g =g;
+        j2++;
       }
     }
     free(disparity_array);
@@ -213,7 +213,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     /////////////////////////////////////////////////////////////////////
     // Openni Data
     // 1.2.2 unpack raw byte data into float values in mm
-    
+
     // NB: no depth return is given 0 range - and becomes 0,0,0 here
     int npixels = msg->depth.width * msg->depth.height;
     const uint16_t* val = reinterpret_cast<const uint16_t*>( depth_data );
@@ -227,29 +227,29 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     int j2=0;
     for(int v=0; v<msg->depth.height; v=v+ kinect_decimate) { // t2b self->height 480
       for(int u=0; u<msg->depth.width; u=u+kinect_decimate ) {  //l2r self->width 640
-	uint8_t r = rgb_data[v*msg->depth.width*3 + u*3 + 0];
-	uint8_t g = rgb_data[v*msg->depth.width*3 + u*3 + 1];
-	uint8_t b = rgb_data[v*msg->depth.width*3 + u*3 + 2];
-	double constant = 1.0f / kcal->intrinsics_rgb.fx ;
-	double disparity_d = val[v*msg->depth.width+u]  / 1000.0; // convert to m
-	cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
-	cloud->points[j2].z = - (((double) v)- 239.50)*disparity_d*constant;  //z up+
-	cloud->points[j2].x = disparity_d;  //x forward+
-	if (disparity_d==0){ // place null points at negative range... arbitarty decision
-	  double disparity_d = -0.1; // convert to m
-	  cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
-	  cloud->points[j2].z =  -(((double) v)- 239.50)*disparity_d*constant;  //z up+
-	  cloud->points[j2].x = disparity_d;  //x forward+
-	}
-	
-	cloud->points[j2].b =b;
-	cloud->points[j2].r =r;
-	cloud->points[j2].g =g;
-	j2++;
+        uint8_t r = rgb_data[v*msg->depth.width*3 + u*3 + 0];
+        uint8_t g = rgb_data[v*msg->depth.width*3 + u*3 + 1];
+        uint8_t b = rgb_data[v*msg->depth.width*3 + u*3 + 2];
+        double constant = 1.0f / kcal->intrinsics_rgb.fx ;
+        double disparity_d = val[v*msg->depth.width+u]  / 1000.0; // convert to m
+        cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
+        cloud->points[j2].z = - (((double) v)- 239.50)*disparity_d*constant;  //z up+
+        cloud->points[j2].x = disparity_d;  //x forward+
+        if (disparity_d==0){ // place null points at negative range... arbitarty decision
+          double disparity_d = -0.1; // convert to m
+          cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
+          cloud->points[j2].z =  -(((double) v)- 239.50)*disparity_d*constant;  //z up+
+          cloud->points[j2].x = disparity_d;  //x forward+
+        }
+
+        cloud->points[j2].b =b;
+        cloud->points[j2].r =r;
+        cloud->points[j2].g =g;
+        j2++;
       }
     }         
   }
-  
+
   if(msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
     free(uncompress_buffer); // memory leak bug fixed
   }

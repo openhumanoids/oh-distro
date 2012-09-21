@@ -25,7 +25,6 @@ pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
 
 }
 
-
 void pointcloud_vis::pose_to_lcm_from_list(int id,Isometry3dTime& poseT){
  for (size_t i=0; i < obj_cfg_list.size() ; i++){
    if (id == obj_cfg_list[i].id ){
@@ -63,7 +62,6 @@ void pointcloud_vis::ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXY
    }
  }
 }
-
 
 void pointcloud_vis::ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud, int64_t obj_id, int64_t ptcld_id){
   int npts = cloud.points.size();
@@ -233,6 +231,43 @@ void pointcloud_vis::mesh_to_lcm(ptcld_cfg pcfg, pcl::PolygonMesh::Ptr mesh,
 }
 
 
+
+
+void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud, std::string channel, int64_t cloud_utime){
+
+  sensor_msgs::PointCloud2 senor_cloud;
+  //pcl::fromROSMsg (*msg, cloud);
+  pcl::toROSMsg(cloud, senor_cloud);
+
+  ptools_pointcloud2_t pc;
+  pc.utime = cloud_utime;//(int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  pc.height = senor_cloud.height;
+  pc.width = senor_cloud.width;
+  pc.nfields = senor_cloud.fields.size();
+
+  ptools_pointfield_t* fields = new ptools_pointfield_t[pc.nfields];
+  for (size_t i=0;i < senor_cloud.fields.size();i++){
+    //cout << " field: " << msg->fields[i].name << " " << (int) msg->fields[i].datatype << "\n";
+    fields[i].name = (char*) senor_cloud.fields[i].name.c_str();
+    fields[i].offset = senor_cloud.fields[i].offset;
+    fields[i].datatype = senor_cloud.fields[i].datatype;
+    fields[i].count =senor_cloud.fields[i].count;
+  }
+  pc.fields = fields;
+  // pc.nfields =0;
+  // pc.fields = NULL;
+  //  pc.data_nbytes = 0;
+  //  pc.data = NULL;
+
+  pc.data_nbytes = (int) senor_cloud.data.size();
+  uint8_t* raw_data = new uint8_t [ pc.data_nbytes];
+  copy(senor_cloud.data.begin(), senor_cloud.data.end(), raw_data);
+  pc.data = raw_data;
+
+  ptools_pointcloud2_t_publish(publish_lcm_, channel.c_str() ,&pc);
+  delete[] raw_data;
+
+}
 
 
 

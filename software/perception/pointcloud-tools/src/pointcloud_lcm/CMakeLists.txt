@@ -20,6 +20,6 @@ target_link_libraries(pointcloud_lcm
     z)
 pods_install_pkg_config_file(pointcloud_lcm
     LIBS -lpointcloud_lcm -lz
-    REQUIRES bot2-vis kinect-utils image-utils
+    REQUIRES bot2-vis kinect-utils image-utils eigen3 pcl_io-1.6
     VERSION 0.0.1)
 
