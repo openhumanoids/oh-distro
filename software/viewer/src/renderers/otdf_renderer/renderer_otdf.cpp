@@ -467,10 +467,10 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
     return 0;
   }
 
-//   if(event->button != 1){
-//     fprintf(stderr,"Wrong Button\n");
-//     return 0;
-//   }
+  if(event->button != 1){
+   // fprintf(stderr,"Wrong Button\n");
+    return 0;
+  }
 
   point2d_t click_pt_local;
   if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
