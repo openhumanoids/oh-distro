@@ -537,6 +537,12 @@
                 <topicName>cmd_vel</topicName>
             </controller:diffdrive_plugin>
 
+        <controller:joint_actuation_plugin name="joint_torque_controller" plugin="libjoint_actuation_plugin_pre_fuerte.so">
+           <alwaysOn>true</alwaysOn>
+           <topicName>actuator_cmd</topicName>
+            <interface:position name="position_iface_1"/>
+        </controller:joint_actuation_plugin>
+
     	  <controller:gazebo_ros_pub_robot_state name="gazebo_ros_pub_robot_controller" plugin="libgazebo_ros_pub_robot_state_pre_fuerte.so">
      	   	<alwaysOn>true</alwaysOn>
      	   	<updateRate>100.0</updateRate>
