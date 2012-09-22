@@ -8,6 +8,7 @@
 
 #include "kdl_parser/kdl_parser.hpp"
 #include "pd_chain_control/chain_controller.hpp"
+#include "gaze_control/neck_oscillator.hpp"
 #include "reactive_navigation_2d/nav_controller.hpp"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -45,13 +46,14 @@ namespace drc_control{
         ControllerManager(std::string &robot_name,
 			  boost::shared_ptr<lcm::LCM> &lcm,
 			  urdf::Model &robot_model);
-       ~ControllerManager() {}
+       ~ControllerManager();
       bool toggle;
     private:
        boost::shared_ptr<lcm::LCM> _lcm;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > left_arm_controller;
        boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> > right_arm_controller;
        boost::shared_ptr<nav_control::NavController> nav_controller;
+       boost::shared_ptr<gaze_control::NeckOscillator> neck_oscillator;
        
        std::string _robot_name;
        urdf::Model _urdf_robot_model;
@@ -89,32 +91,80 @@ namespace drc_control{
      }
     // Only update jointpos_in and jointvel_in;
     
+  drc::actuator_cmd_t collated_torque_cmd; 
+  collated_torque_cmd.num_actuators = 0;
  //call controller update routine.
-   if ((this->left_arm_controller->isRunning())&(!this->right_arm_controller->isRunning())) {
-      this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
+   drc::actuator_cmd_t left_arm_torque_cmd;
+    if (this->left_arm_controller->isRunning()){
+      left_arm_torque_cmd = this->left_arm_controller->update(jointpos_in, jointvel_in,dt);
+      
+      collated_torque_cmd.num_actuators += left_arm_torque_cmd.num_actuators;
+      for(int i = 0; i <  left_arm_torque_cmd.num_actuators; i++){
+	  collated_torque_cmd.actuator_name.push_back(left_arm_torque_cmd.actuator_name[i]);
+	  collated_torque_cmd.actuator_effort.push_back(left_arm_torque_cmd.actuator_effort[i]);
+	  collated_torque_cmd.effort_duration.push_back(left_arm_torque_cmd.effort_duration[i]);
+      }
     } 
     
-    if ((this->right_arm_controller->isRunning())&(!this->left_arm_controller->isRunning())) {
-      this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
+    drc::actuator_cmd_t right_arm_torque_cmd;
+    if (this->right_arm_controller->isRunning()){
+     right_arm_torque_cmd =  this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
+      
+     collated_torque_cmd.num_actuators += right_arm_torque_cmd.num_actuators;
+      for(int i = 0; i <  right_arm_torque_cmd.num_actuators; i++){
+	  collated_torque_cmd.actuator_name.push_back(right_arm_torque_cmd.actuator_name[i]);
+	  collated_torque_cmd.actuator_effort.push_back(right_arm_torque_cmd.actuator_effort[i]);
+	  collated_torque_cmd.effort_duration.push_back(right_arm_torque_cmd.effort_duration[i]);
+      }    
+      
     }  
+    
+    drc::actuator_cmd_t neck_torque_cmd;
+    if (this->neck_oscillator->isRunning()) {
+     neck_torque_cmd =  this->neck_oscillator->update(jointpos_in, jointvel_in,dt); 
+     collated_torque_cmd.num_actuators += neck_torque_cmd.num_actuators;
+      for(int i = 0; i <  neck_torque_cmd.num_actuators; i++){
+	  collated_torque_cmd.actuator_name.push_back(neck_torque_cmd.actuator_name[i]);
+	  collated_torque_cmd.actuator_effort.push_back(neck_torque_cmd.actuator_effort[i]);
+	  collated_torque_cmd.effort_duration.push_back(neck_torque_cmd.effort_duration[i]);
+      }  
+      
+    } 
+    
+    collated_torque_cmd.utime = pd_chain_control::getTime_now();
+    collated_torque_cmd.robot_name = this->_robot_name;
+    
+
+     if(collated_torque_cmd.num_actuators > 0)
+	this->_lcm->publish("ACTUATOR_CMDS", & collated_torque_cmd);  // publish one torque cmd
+  
+//    if ((this->left_arm_controller->isRunning())&(!this->right_arm_controller->isRunning())) {
+//       this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
+//     } 
+//     
+//     if ((this->right_arm_controller->isRunning())&(!this->left_arm_controller->isRunning())) {
+//       this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
+//     }  
     
     // Left and Right Arm clash as they are sending actuator commands one after the other.
     //The latter controller is overiding the newer one.   
-    // TODO: Extract actuators commands from controllers and only publish one actuator command here in this file. 
+    // Extract actuators commands from controllers and only publish one actuator command here in this file. 
     // and check for conflicts.
-     if ((this->left_arm_controller->isRunning())&(this->right_arm_controller->isRunning())) {
-       toggle = !toggle; 
-       if(toggle) 
-	  this->left_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
-        else
-	  this->right_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
-    } 
+//      if ((this->left_arm_controller->isRunning())&(this->right_arm_controller->isRunning())) {
+//        toggle = !toggle; 
+//        if(toggle) 
+// 	  this->left_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
+//         else
+// 	  this->right_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
+//     } 
 
-    
     
     if (this->nav_controller->isRunning()) {
       this->nav_controller->update(*msg,dt); 
     } 
+    
+   
+    
   }
 
  }; //end Class control manager
@@ -215,13 +265,35 @@ namespace drc_control{
 
 	
 	channel ="NAV_GOAL";
-	this->nav_controller = boost::shared_ptr<nav_control::NavController >(new nav_control::NavController(this->_lcm,channel,_robot_name,_urdf_robot_model));
+	this->nav_controller = boost::shared_ptr<nav_control::NavController>(new nav_control::NavController(this->_lcm,channel,_robot_name,_urdf_robot_model));
+	
+	this->neck_oscillator = boost::shared_ptr<gaze_control::NeckOscillator>(new gaze_control::NeckOscillator(this->_lcm,_robot_name));
 
 	
   // create a robot_state subscription.
   this->_lcm->subscribe("EST_ROBOT_STATE", &drc_control::ControllerManager::handleRobotStateMsgAndUpdateControllers, this);
    } // end constructor
+ 
+ 
+ 
+  ControllerManager::~ControllerManager(){
 
+    drc::actuator_cmd_t collated_torque_cmd;
+ 
+     collated_torque_cmd.num_actuators = joint_names_.size();
+      for (uint i=0; i< (uint) joint_names_.size(); i++){
+	//std::cout << joint_names_[i] << std::endl; 
+	  collated_torque_cmd.actuator_name.push_back(joint_names_[i]);
+	  collated_torque_cmd.actuator_effort.push_back(0);
+	  collated_torque_cmd.effort_duration.push_back(1);
+      }  
+    collated_torque_cmd.utime = pd_chain_control::getTime_now();
+    collated_torque_cmd.robot_name = this->_robot_name;
+    
+    this->_lcm->publish("ACTUATOR_CMDS", & collated_torque_cmd);  // publish one torque cmd
+
+    
+  }// end distructor
    
 }//end namespace
 

@@ -140,7 +140,7 @@ _lcm->subscribe(input_cmds_channel, &nav_control::NavController::handleNavGoalMs
 
 //================== destructor 
 NavController::~NavController() {
-  
+
       drc::twist_t body_twist_cmd;
     body_twist_cmd.linear_velocity.x =0;
     body_twist_cmd.linear_velocity.y =0;

@@ -32,14 +32,14 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef NAV_CONTROL_ANGLES_HPP
-#define NAV_CONTROL_ANGLES_HPP
+#ifndef GAZE_CONTROL_ANGLES_HPP
+#define GAZE_CONTROL_ANGLES_HPP
 
 #include <algorithm>
 #include <cmath>
 #include <stdio.h>
 
-namespace nav_control // these files should be a utils pod somewhere?
+namespace gaze_control // these files should be a utils pod somewhere?
 {
     
   /*!

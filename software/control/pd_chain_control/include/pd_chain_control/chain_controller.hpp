@@ -113,7 +113,7 @@ namespace pd_chain_control
     ~ChainController();
 
      void init();
-     void update(const std::map<std::string, double> &jointpos_in, const std::map<std::string, double> &jointvel_in, const double &dt);
+     drc::actuator_cmd_t update(const std::map<std::string, double> &jointpos_in, const std::map<std::string, double> &jointvel_in, const double &dt);
      void computePoseError(const Eigen::Affine3d &xact, const Eigen::Affine3d  			&xdes, Eigen::Matrix<double,6,1> &err);
      bool isRunning();
      
@@ -352,7 +352,7 @@ void ChainController<JOINTS>::init()
 
 //update() function is called from the robot state msg handler defined in controller_manager.
 template <int JOINTS>  
-void ChainController<JOINTS>::update(const std::map<std::string, double> &jointpos_in, const std::map<std::string, double> &jointvel_in, const double &dt)
+drc::actuator_cmd_t ChainController<JOINTS>::update(const std::map<std::string, double> &jointpos_in, const std::map<std::string, double> &jointvel_in, const double &dt)
 {
 
  // get the states for the subset of the joints defined in the chain.
@@ -693,10 +693,10 @@ tau.setZero();
     for(int i = 0; i < torque_cmd.num_actuators; i++){
 	torque_cmd.actuator_name.push_back(_chain_joint_names[i]);
         torque_cmd.actuator_effort.push_back(tau[i]);
-	torque_cmd.effort_duration.push_back(10*dt);// expires after 0.1 sec
+	torque_cmd.effort_duration.push_back(5*dt);// expires after 0.1 sec
     }
- 
-    _lcm->publish("ACTUATOR_CMDS", &torque_cmd); 
+  
+   // _lcm->publish("ACTUATOR_CMDS", &torque_cmd); 
     
 
     if(debug_){
@@ -707,6 +707,8 @@ tau.setZero();
 	  print_joint_vector(id,q_deg);
 	  std::cout <<"\n" << std::endl;
     } 
+    
+     return torque_cmd;
 
 }//end update
 
