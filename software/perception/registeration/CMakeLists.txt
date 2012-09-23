@@ -9,3 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+
+add_subdirectory(src/registeration)
+add_subdirectory(src/reg_vo)
+#add_subdirectory(src/descript)

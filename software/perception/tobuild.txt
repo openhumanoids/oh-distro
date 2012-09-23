@@ -1,4 +1,8 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
+pointcloud-tools
 perception_example
+motion_estimate
+local_map
+registeration

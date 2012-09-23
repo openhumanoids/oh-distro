@@ -20,5 +20,16 @@ pods_use_pkg_config_packages(drc-velodyne2pcd-continous
     path-util
     bot2-param-client
     bot2-frames
+    lcmtypes_drc_lcmtypes
         velodyne)
 pods_install_executables(drc-velodyne2pcd-continous )
+
+
+add_executable(drc-velodyne2pcd-continous-cstyle velodyne2pcd_continous_cstyle.cpp  )
+pods_use_pkg_config_packages(drc-velodyne2pcd-continous-cstyle
+    lcmtypes_velodyne
+    path-util
+    bot2-param-client
+    bot2-frames
+        velodyne)
+pods_install_executables(drc-velodyne2pcd-continous-cstyle )
