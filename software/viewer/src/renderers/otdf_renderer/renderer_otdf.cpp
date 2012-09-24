@@ -1047,6 +1047,7 @@ static void on_otdf_instance_management_widget_changed(BotGtkParamWidget *pw, co
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
    object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
    self->instantiated_objects.erase(it);
+   bot_viewer_request_redraw(self->viewer);
   }
   else if(!strcmp(name,PARAM_OTDF_INSTANCE_CLEAR_ALL)) {
      fprintf(stderr,"\nClearing Instantiated Objects\n");
@@ -1056,6 +1057,7 @@ static void on_otdf_instance_management_widget_changed(BotGtkParamWidget *pw, co
      { 
        it->second = 0;
      }
+     bot_viewer_request_redraw(self->viewer);
   }
 }
 
@@ -1166,6 +1168,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
      { 
        it->second = 0;
      }
+     bot_viewer_request_redraw(self->viewer);
 //     bot_viewer_request_pick (self->viewer, &(self->ehandler));
 //     activate(self, 3);
   }
