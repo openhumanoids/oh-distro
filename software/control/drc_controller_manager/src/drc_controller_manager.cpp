@@ -2,9 +2,13 @@
 
 
 #include <iostream>
+#include <algorithm>
+#include <vector>
+
 #include <lcm/lcm-cpp.hpp>
 #include <kdl/tree.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+
 
 #include "kdl_parser/kdl_parser.hpp"
 #include "pd_chain_control/chain_controller.hpp"
@@ -92,72 +96,38 @@ namespace drc_control{
     // Only update jointpos_in and jointvel_in;
     
   drc::actuator_cmd_t collated_torque_cmd; 
-  collated_torque_cmd.num_actuators = 0;
+ 
+   collated_torque_cmd.num_actuators = 0;
+   collated_torque_cmd.actuator_name.clear();
+   collated_torque_cmd.actuator_effort.clear();   
+   collated_torque_cmd.effort_duration.clear();
  //call controller update routine.
    drc::actuator_cmd_t left_arm_torque_cmd;
     if (this->left_arm_controller->isRunning()){
       left_arm_torque_cmd = this->left_arm_controller->update(jointpos_in, jointvel_in,dt);
-      
-      collated_torque_cmd.num_actuators += left_arm_torque_cmd.num_actuators;
-      for(int i = 0; i <  left_arm_torque_cmd.num_actuators; i++){
-	  collated_torque_cmd.actuator_name.push_back(left_arm_torque_cmd.actuator_name[i]);
-	  collated_torque_cmd.actuator_effort.push_back(left_arm_torque_cmd.actuator_effort[i]);
-	  collated_torque_cmd.effort_duration.push_back(left_arm_torque_cmd.effort_duration[i]);
-      }
+      collateTorqueCmds(collated_torque_cmd,left_arm_torque_cmd);
     } 
     
     drc::actuator_cmd_t right_arm_torque_cmd;
     if (this->right_arm_controller->isRunning()){
      right_arm_torque_cmd =  this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
-      
-     collated_torque_cmd.num_actuators += right_arm_torque_cmd.num_actuators;
-      for(int i = 0; i <  right_arm_torque_cmd.num_actuators; i++){
-	  collated_torque_cmd.actuator_name.push_back(right_arm_torque_cmd.actuator_name[i]);
-	  collated_torque_cmd.actuator_effort.push_back(right_arm_torque_cmd.actuator_effort[i]);
-	  collated_torque_cmd.effort_duration.push_back(right_arm_torque_cmd.effort_duration[i]);
-      }    
+    collateTorqueCmds(collated_torque_cmd,right_arm_torque_cmd);  
       
     }  
     
     drc::actuator_cmd_t neck_torque_cmd;
     if (this->neck_oscillator->isRunning()) {
      neck_torque_cmd =  this->neck_oscillator->update(jointpos_in, jointvel_in,dt); 
-     collated_torque_cmd.num_actuators += neck_torque_cmd.num_actuators;
-      for(int i = 0; i <  neck_torque_cmd.num_actuators; i++){
-	  collated_torque_cmd.actuator_name.push_back(neck_torque_cmd.actuator_name[i]);
-	  collated_torque_cmd.actuator_effort.push_back(neck_torque_cmd.actuator_effort[i]);
-	  collated_torque_cmd.effort_duration.push_back(neck_torque_cmd.effort_duration[i]);
-      }  
+      collateTorqueCmds(collated_torque_cmd,neck_torque_cmd);  
       
     } 
     
     collated_torque_cmd.utime = pd_chain_control::getTime_now();
     collated_torque_cmd.robot_name = this->_robot_name;
     
-
      if(collated_torque_cmd.num_actuators > 0)
 	this->_lcm->publish("ACTUATOR_CMDS", & collated_torque_cmd);  // publish one torque cmd
   
-//    if ((this->left_arm_controller->isRunning())&(!this->right_arm_controller->isRunning())) {
-//       this->left_arm_controller->update(jointpos_in, jointvel_in,dt); 
-//     } 
-//     
-//     if ((this->right_arm_controller->isRunning())&(!this->left_arm_controller->isRunning())) {
-//       this->right_arm_controller->update(jointpos_in, jointvel_in,dt); 
-//     }  
-    
-    // Left and Right Arm clash as they are sending actuator commands one after the other.
-    //The latter controller is overiding the newer one.   
-    // Extract actuators commands from controllers and only publish one actuator command here in this file. 
-    // and check for conflicts.
-//      if ((this->left_arm_controller->isRunning())&(this->right_arm_controller->isRunning())) {
-//        toggle = !toggle; 
-//        if(toggle) 
-// 	  this->left_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
-//         else
-// 	  this->right_arm_controller->update(jointpos_in, jointvel_in,3*dt); 
-//     } 
-
     
     if (this->nav_controller->isRunning()) {
       this->nav_controller->update(*msg,dt); 
@@ -166,6 +136,25 @@ namespace drc_control{
    
     
   }
+  
+   void collateTorqueCmds (drc::actuator_cmd_t &collated_torque_cmd,drc::actuator_cmd_t &new_torque_cmd){
+      for(int i = 0; i <  new_torque_cmd.num_actuators; i++){
+	std::vector<std::string>::iterator it;
+	it= std::find(collated_torque_cmd.actuator_name.begin(), 
+		      collated_torque_cmd.actuator_name.end(),
+		      new_torque_cmd.actuator_name[i]);
+	 if(it==collated_torque_cmd.actuator_name.end()){
+	  collated_torque_cmd.actuator_name.push_back(new_torque_cmd.actuator_name[i]);
+	  collated_torque_cmd.actuator_effort.push_back(new_torque_cmd.actuator_effort[i]);
+	  collated_torque_cmd.effort_duration.push_back(new_torque_cmd.effort_duration[i]);
+	  collated_torque_cmd.num_actuators += 1;
+	 }
+	 else{
+	 std::cerr <<"ERROR: two controllers commanding the same actuator: " << new_torque_cmd.actuator_name[i]  << std::endl;
+	}
+      }  
+     
+  };
 
  }; //end Class control manager
 
@@ -294,6 +283,9 @@ namespace drc_control{
 
     
   }// end distructor
+  
+  
+ 
    
 }//end namespace
 
