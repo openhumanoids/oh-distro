@@ -382,7 +382,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="LFootToeIn_link">
+  <link drakeIgnore="True" name="LFootToeIn_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -403,7 +403,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="LFootToeOut_link">
+  <link drakeIgnore="True" name="LFootToeOut_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -424,7 +424,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="LFootHeelIn_link">
+  <link drakeIgnore="True" name="LFootHeelIn_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -445,7 +445,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="LFootHeelOut_link">
+  <link drakeIgnore="True" name="LFootHeelOut_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -560,7 +560,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="RFootToeIn_link">
+  <link drakeIgnore="True" name="RFootToeIn_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -581,7 +581,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="RFootToeOut_link">
+  <link drakeIgnore="True" name="RFootToeOut_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -602,7 +602,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="RFootHeelIn_link">
+  <link drakeIgnore="True" name="RFootHeelIn_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -623,7 +623,7 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
       </geometry>
     </collision>
   </link>
-  <link name="RFootHeelOut_link">
+  <link drakeIgnore="True" name="RFootHeelOut_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
@@ -973,22 +973,22 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <child link="LFoot"/>
     <origin xyz="0 0 -0.04519"/>
   </joint>
-  <joint name="LFootToeIn_joint" type="fixed">
+  <joint drakeIgnore="True" name="LFootToeIn_joint" type="fixed">
     <parent link="LAnklePitch_link"/>
     <child link="LFootToeIn_link"/>
     <origin xyz="0.199276512 -0.03 -0.04519"/>
   </joint>
-  <joint name="LFootToeOut_joint" type="fixed">
+  <joint drakeIgnore="True" name="LFootToeOut_joint" type="fixed">
     <parent link="LAnklePitch_link"/>
     <child link="LFootToeOut_link"/>
     <origin xyz="0.199276512 0.03 -0.04519"/>
   </joint>
-  <joint name="LFootHeelIn_joint" type="fixed">
+  <joint drakeIgnore="True" name="LFootHeelIn_joint" type="fixed">
     <parent link="LAnklePitch_link"/>
     <child link="LFootHeelIn_link"/>
     <origin xyz="-0.025 -0.03 -0.04519"/>
   </joint>
-  <joint name="LFootHeelOut_joint" type="fixed">
+  <joint drakeIgnore="True" name="LFootHeelOut_joint" type="fixed">
     <parent link="LAnklePitch_link"/>
     <child link="LFootHeelOut_link"/>
     <origin xyz="-0.025 0.03 -0.04519"/>
@@ -1055,98 +1055,26 @@ This file has been based upon a similar urdf file for the Nao humanoid robot (by
     <child link="RFoot"/>
     <origin xyz="0 0 -0.04519"/>
   </joint>
-  <joint name="RFootToeIn_joint" type="fixed">
+  <joint drakeIgnore="True" name="RFootToeIn_joint" type="fixed">
     <parent link="RAnklePitch_link"/>
     <child link="RFootToeIn_link"/>
     <origin xyz="0.199276512 0.03 -0.04519"/>
   </joint>
-  <joint name="RFootToeOut_joint" type="fixed">
+  <joint drakeIgnore="True" name="RFootToeOut_joint" type="fixed">
     <parent link="RAnklePitch_link"/>
     <child link="RFootToeOut_link"/>
     <origin xyz="0.199276512 -0.03 -0.04519"/>
   </joint>
-  <joint name="RFootHeelIn_joint" type="fixed">
+  <joint drakeIgnore="True" name="RFootHeelIn_joint" type="fixed">
     <parent link="RAnklePitch_link"/>
     <child link="RFootHeelIn_link"/>
     <origin xyz="-0.025 0.03 -0.04519"/>
   </joint>
-  <joint name="RFootHeelOut_joint" type="fixed">
+  <joint drakeIgnore="True" name="RFootHeelOut_joint" type="fixed">
     <parent link="RAnklePitch_link"/>
     <child link="RFootHeelOut_link"/>
     <origin xyz="-0.025 -0.03 -0.04519"/>
   </joint>
-  <gazebo reference="LFootToeIn_link">
-    <controller:gazebo_ros_f3d name="LFootToeIn_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>LFootToeIn_link</bodyName>
-      <topicName>LFootToeIn_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="LFootToeOut_link">
-    <controller:gazebo_ros_f3d name="LFootToeOut_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>LFootToeOut_link</bodyName>
-      <topicName>LFootToeOut_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="LFootHeelIn_link">
-    <controller:gazebo_ros_f3d name="LFootHeelIn_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>LFootHeelIn_link</bodyName>
-      <topicName>LFootHeelIn_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="LFootHeelOut_link">
-    <controller:gazebo_ros_f3d name="LFootHeelOut_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>LFootHeelOut_link</bodyName>
-      <topicName>LFootHeelOut_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="RFootToeIn_link">
-    <controller:gazebo_ros_f3d name="RFootToeIn_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>RFootToeIn_link</bodyName>
-      <topicName>RFootToeIn_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="RFootToeOut_link">
-    <controller:gazebo_ros_f3d name="RFootToeOut_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>RFootToeOut_link</bodyName>
-      <topicName>RFootToeOut_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="RFootHeelIn_link">
-    <controller:gazebo_ros_f3d name="RFootHeelIn_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>RFootHeelIn_link</bodyName>
-      <topicName>RFootHeelIn_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
-  <gazebo reference="RFootHeelOut_link">
-    <controller:gazebo_ros_f3d name="RFootHeelOut_gazebo_ros_f3d_controller" plugin="libgazebo_ros_f3d.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>RFootHeelOut_link</bodyName>
-      <topicName>RFootHeelOut_f3d</topicName>
-      <interface:position name="{name}_gazebo_ros_f3d_position"/>
-    </controller:gazebo_ros_f3d>
-  </gazebo>
   <gazebo>
     <!--<controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
                 <alwaysOn>true</alwaysOn>

@@ -127,22 +127,22 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <xacro:insert_visualization_foot side="${side}"/>
   </link>
 
-  <link name="${side}FootToeIn_link">
+  <link name="${side}FootToeIn_link" drakeIgnore="True">
     <xacro:insert_small_inertial /> 
     <xacro:insert_visualization_foot_contact_point side="${side}"/>
   </link>
 
-  <link name="${side}FootToeOut_link">
+  <link name="${side}FootToeOut_link" drakeIgnore="True">
     <xacro:insert_small_inertial /> 
     <xacro:insert_visualization_foot_contact_point side="${side}"/>
   </link>
 
-  <link name="${side}FootHeelIn_link">
+  <link name="${side}FootHeelIn_link" drakeIgnore="True">
     <xacro:insert_small_inertial /> 
     <xacro:insert_visualization_foot_contact_point side="${side}"/>
   </link>
 
-  <link name="${side}FootHeelOut_link">
+  <link name="${side}FootHeelOut_link" drakeIgnore="True">
     <xacro:insert_small_inertial /> 
     <xacro:insert_visualization_foot_contact_point side="${side}"/>
   </link>
@@ -420,25 +420,25 @@ Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is
     <origin xyz="0 0 -0.04519" />  
   </joint>
 
-  <joint name="${side}FootToeIn_joint" type="fixed">
+  <joint name="${side}FootToeIn_joint" type="fixed" drakeIgnore="True">
     <parent link="${side}AnklePitch_link" />
     <child link="${side}FootToeIn_link" />
     <origin xyz="${l_foot*height+0.025} ${reflect*w_foot/2} -0.04519" /> 
   </joint>
 
-  <joint name="${side}FootToeOut_joint" type="fixed">
+  <joint name="${side}FootToeOut_joint" type="fixed" drakeIgnore="True">
     <parent link="${side}AnklePitch_link" />
     <child link="${side}FootToeOut_link" />
     <origin xyz="${l_foot*height+0.025} ${-reflect*w_foot/2} -0.04519" />
   </joint>
 
-  <joint name="${side}FootHeelIn_joint" type="fixed">
+  <joint name="${side}FootHeelIn_joint" type="fixed" drakeIgnore="True">
     <parent link="${side}AnklePitch_link" />
     <child link="${side}FootHeelIn_link" />
     <origin xyz="-0.025 ${reflect*w_foot/2} -0.04519" />  
   </joint>
 
-  <joint name="${side}FootHeelOut_joint" type="fixed">
+  <joint name="${side}FootHeelOut_joint" type="fixed" drakeIgnore="True">
     <parent link="${side}AnklePitch_link" />
     <child link="${side}FootHeelOut_link" />
     <origin xyz="-0.025 ${-reflect*w_foot/2} -0.04519" />  
