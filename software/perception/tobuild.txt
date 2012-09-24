@@ -4,5 +4,5 @@
 pointcloud-tools
 perception_example
 motion_estimate
-local_map
-registeration
+#local_map
+#registeration
