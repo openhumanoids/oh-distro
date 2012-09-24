@@ -24,7 +24,7 @@ group "core" {
         host = "localhost";
     }
     cmd "proc" {
-        exec = "ROS_NAMESPACE=wide_stereo rosrun stereo_image_proc stereo_image_proc";
+        exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
         host = "localhost";
     }
     cmd "estpub" {
@@ -33,6 +33,10 @@ group "core" {
     }
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "test_tf_solver" {
+        exec = "test_tf_solver";
         host = "localhost";
     }
 }
@@ -47,14 +51,14 @@ group "old_converters" {
         host = "localhost";
     }
     cmd "tx3" {
-        exec = "rosrun ros_fovis ros-stereo2lcm wide_stereo WIDE_STEREO_IMAGE";
+        exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
         host = "localhost";
     }
 }
 
 group "sensing" {
     cmd "vo" {
-        exec = "drc-modified-stereo-odometry -p POSE -c $HOME/drc/config/drc_robot.cfg -b wide_stereo";
+        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_robot.cfg -b CAMERA";
         host = "localhost";
     }
     cmd "local-map" {
