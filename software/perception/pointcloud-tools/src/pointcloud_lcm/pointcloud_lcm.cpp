@@ -60,7 +60,6 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   cloud->width   = msg->width;
   cloud->height   = msg->height;
   uint32_t num_points = msg->width * msg->height;
@@ -80,8 +79,6 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
   pcl::toROSMsg(*cloud, msg_cld);
   msg_cld.fields[3].offset = 12;
   pcl::fromROSMsg (msg_cld, *cloud);
-
-  //std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
 
   // Transform cloud to that its in robotic frame:
   // Could also apply the cv->robotic transform directly
