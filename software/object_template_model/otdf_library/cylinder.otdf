@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<object name="cylinder">
+
+
+
+<!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+<!-- World frame origin of the object -->
+<param name="X" default_value="0.0" inc="0.01" min="-100" max="100"/> 
+<param name="Y" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="Z" default_value="0.0" inc="0.01" min="-100" max="100"/>
+
+<!--Roll,Pitch,Yaw are about Body Frame-->
+<param name="Roll" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/> 
+<param name="Pitch" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+<param name="Yaw" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+
+<!-- Size of the outer most bounding volume -->
+<param name="radius" default_value="0.5" inc="0.01" min="0" max="100"/> 
+<param name="length" default_value="2.0" inc="0.01" min="0" max="100"/>
+<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>
+
+
+
+<link name="base_link"/>
+
+<link name="cylinder">
+<inertial>
+   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />
+   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"
+            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"
+            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />
+</inertial>
+	<visual>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+		<geometry>
+			<cylinder radius="${radius}" length="${length}"/> 
+		</geometry>
+	</visual>
+	<collision>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+		<geometry>
+			<cylinder radius="${radius}" length="${length}"/> 
+		</geometry>
+	</collision>
+</link>
+
+<joint name="base_joint" type="fixed">
+	<parent link="base_link" type="link"/>
+	<child link="cylinder" type="link"/>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<axis xyz="0 0 1"/>
+</joint>
+
+</object>
+
+
+

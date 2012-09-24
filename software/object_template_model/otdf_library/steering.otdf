@@ -65,28 +65,6 @@
 </link>
 
 
-<!--<link name="steering_wheel">-->
-<!--<inertial>-->
-<!--   <mass value="${(Density*(3.141^2)*(wheel_radius)*(tube_radius^2))}" />-->
-<!--   <inertia ixx="${((Density*(3.141^2)*(wheel_radius)*(tube_radius^2))/8)*(5*(wheel_radius^2)+4*(tube_radius^2))}"  ixy="0.0" ixz="0.0"-->
-<!--            iyy="${((Density*(3.141^2)*(wheel_radius)*(tube_radius^2))/8)*(5*(wheel_radius^2)+4*(tube_radius^2))}" iyz="0.0"-->
-<!--            izz="${(Density*(3.141^2)*(wheel_radius)*(tube_radius^2))*((3/4)*(wheel_radius^2)+(tube_radius^2))}" />-->
-<!--</inertial>-->
-<!--	<visual>-->
-<!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-<!--		<geometry>-->
-<!--			<cylinder radius="${wheel_radius}" length="${tube_radius}"/> -->
-<!--		</geometry>-->
-<!--	</visual>-->
-<!--	<collision>-->
-<!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-<!--		<geometry>-->
-<!--			<cylinder radius="${wheel_radius}" length="${tube_radius}"/> -->
-<!--		</geometry>-->
-<!--	</collision>-->
-<!--</link>-->
-
-
  <!--
  Parents and child for a joint can be a link, volume, or a linkpattern.
  To keep the protocol urdf consistent we add a new xml attribute "type" to distinguish the different elements.
