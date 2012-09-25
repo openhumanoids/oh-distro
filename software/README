@@ -13,6 +13,11 @@ python-dev
 libgsl0-dev
 gsl-bin
 
+(OpenNI: required only for the drivers/kinect):
+sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
+sudo apt-get update
+sudo apt-get install openni-dev ps-engine 
+
 
 Probably required: (to be confirmed)
     python-gtk2
