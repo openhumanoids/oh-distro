@@ -1,0 +1,1243 @@
+/*
+ * ui_processing.cc
+ *
+ *  Created on: Dec 17, 2011
+ *      Author: mfleder
+ */
+#include <gdk/gdkkeysyms.h>
+#include "UIProcessing.h"
+#include "LinearAlgebra.h"
+#include "Segmentation.h"
+#include "SurrogateException.h"
+#include "PclSurrogateUtils.h"
+#include <lcmtypes/lkr_grasp_request_t.h>
+#include <iostream>
+
+#include "perception/EdgesToR3.h"
+#include "perception/contour_classification/ContourUtils.h"
+
+#include <pcl/common/distances.h>
+
+using namespace std;
+using namespace pcl;
+using namespace boost;
+
+namespace surrogate_gui
+{
+
+	//======================================
+	//======================================
+	//======================================
+	//==============================constructor/destructor
+	UIProcessing::UIProcessing(BotViewer *viewer, lcm_t *lcm, string kinect_channel) :
+		_gui_state(SEGMENTING),
+		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
+		_objTracker(),
+		_edgeFinder()
+	{
+
+		//===========================================
+		//===========================================
+		//=========menu setup
+		BotGtkParamWidget *pw = _surrogate_renderer._pw;
+
+		//selection mode
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_MOUSE_MODE, BOT_GTK_PARAM_WIDGET_MENU,
+									  0, //initial value
+									  "Camera Move", CAMERA_MOVE,
+									  "Rectangle Select", RECTANGLE_SELECT,
+									  NULL);
+		//self->mouse_mode = CAMERA_MOVE;
+
+		//pause
+		bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
+		//self->paused = 0;
+
+		// current object
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_CURR_OBJECT, BOT_GTK_PARAM_WIDGET_MENU,
+									  0, //initial value
+									  "None", NO_OBJECT,
+									  NULL);
+		//self->curr_object = NO_OBJECT;
+
+		// New object button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_NEW_OBJECT, NULL);
+
+		// Clear object button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_OBJECT, NULL);
+
+
+		// Tracking mode
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_TRACK_METHOD, BOT_GTK_PARAM_WIDGET_MENU,
+									  0, //initial value
+									  "ICP", ICP,
+									  //"3D-only", TRACK_3D,
+									  //"2D and 3D", TRACK_2D,
+									  NULL);
+		//self->track_mode = TRACK_3D;
+
+		//manipulation action type
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_MANIP_TYPE, BOT_GTK_PARAM_WIDGET_MENU,
+									  LKR_GRASP_REQUEST_T_ROTATE, //initial value, defined in lcm type
+									  "Rotate", LKR_GRASP_REQUEST_T_ROTATE,
+									  "Dig", LKR_GRASP_REQUEST_T_DIG,
+									  "Lift", LKR_GRASP_REQUEST_T_LIFT,
+ 									   NULL);
+		//===live tracking button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_TRACK_OBJECTS, NULL);
+
+		//Pr2 Grasp button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_PR2_GRASP, NULL);
+
+		// master reset button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
+
+		//Clear Warning Messages
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_WARNING_MSGS, NULL);
+
+
+		//===========================================
+		//===========================================
+		//===========================================
+
+		//other fields
+		_lcm					= lcm;
+		_button_states.shift_L_is_down = false;
+		_button_states.shift_R_is_down = false;
+
+		//=event handler
+		_ehandler		 			= (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+		_ehandler->name 			= strdup(std::string("S Mouse Handler").c_str());
+		_ehandler->mouse_press 		= cb_mouse_press;
+		_ehandler->mouse_release 	= cb_mouse_release;
+		_ehandler->mouse_motion 	= cb_mouse_motion;
+		_ehandler->enabled 			= 0;
+		_ehandler->user 			= this;
+
+		/*added by mfleder:
+		_ehandler.key_press 	= cb_key_press;
+		_ehandler.key_release 	= cb_key_release;*/
+		bot_viewer_add_event_handler(viewer, _ehandler, 0); //moved from main, todo: mfleder: need to allocate ehandler?
+
+		// create and register mode handler
+		_mode_handler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+		_mode_handler->name 			= strdup(std::string("Mode Control").c_str());
+		_mode_handler->enabled 		= 1;
+		_mode_handler->key_press 	= cb_key_press;
+		_mode_handler->key_release 	= cb_key_release;
+		_mode_handler->user 		= this;
+		 bot_viewer_add_event_handler(viewer, _mode_handler, 1);
+
+
+		//gui callbacks
+		g_signal_connect (G_OBJECT (pw), "changed",
+						  G_CALLBACK (cb_on_param_widget_changed_xyzrgb), this);
+
+		//lcm callbacks
+		ptools_pointcloud2_t_subscribe(lcm, kinect_channel.c_str(), cb_on_kinect_frame, this);
+		//lkr_color_point_cloud_t_subscribe(lcm, kinect_channel.c_str(), cb_on_kinect_frame, this);
+		//lkr_index_vector_t_subscribe(sh->lcm, "VISION_OBJECT_INDEX", on_2d_indices, sh);
+	}
+
+	UIProcessing::~UIProcessing()
+	{
+		free(_ehandler);
+		free(_mode_handler);
+	}
+	//======================================
+	//======================================
+	//======================================
+	//======================================
+	//======================================mutators============
+	//======================================
+	//======================================
+	//======================================
+	//======================================
+
+	//================segmentation
+	/**Adds the given indices (into the sh->renderer->msg) to the current object
+	 * @requires getCurrentObjectSelected != NULL*/
+	void UIProcessing::addIndicesToCurrentObject(set<int> &selected_indices)
+	{
+		if (_gui_state != SEGMENTING || !_surrogate_renderer.isPaused())
+			throw SurrogateException("addIndicesToCurrentObject: should be segmenting and paused");
+
+		//get the current object
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+		if (currObj == ObjectPointsPtr())
+		{
+			_surrogate_renderer.setWarningText("No Object Selected for Storing Segmentation!!! Please hit 'New Object'");
+			return;
+		}
+
+		// Insert the indices into the current view and intersection
+		for(set<int>::iterator i = selected_indices.begin();
+			i != selected_indices.end(); ++i)
+		{
+			currObj->indices->insert(*i);
+		}
+
+		return;
+	}
+
+	/**@requires getCurrentObjectSelected() != null*/
+	void UIProcessing::intersectViews(set<int> &selected_indices)
+	{
+		if (_gui_state != SEGMENTING || !_surrogate_renderer.isPaused())
+			throw SurrogateException("intersect views: should be segmenting and paused");
+
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+		if (currObj == ObjectPointsPtr())
+		{
+			_surrogate_renderer.setWarningText("No Object Selected for Storing Segmentation!!! Please hit 'New Object'");
+			return;
+		}
+
+		SetIntPtr intersect (new set<int>);
+		std::set_intersection(
+							currObj->indices->begin(),
+							currObj->indices->end(),
+							selected_indices.begin(),
+							selected_indices.end(),
+							std::inserter(*intersect, intersect->begin() ) );
+
+		currObj->indices = intersect;
+	}
+
+	void UIProcessing::suggestSegments()
+	{
+		if (_gui_state != SEGMENTING || !_surrogate_renderer.isPaused())
+			throw SurrogateException("should be segmenting and paused");
+
+		//get the current object
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+
+		if (currObj == ObjectPointsPtr() || currObj->indices->size() == 0)
+		{
+			//warning should have been already printed if null
+			//can't do anything if no indices
+			return;
+		}
+
+		vector<PointIndices::Ptr> planes = Segmentation::segment(_surrogate_renderer._display_info.cloud,
+																 currObj->indices);
+		if (planes.size() == 0)
+		{
+			_surrogate_renderer.setHintText("");
+			//_surrogate_renderer.setHintText("No planar components found");
+			return;
+		}
+
+		currObj->auto_segment_indices.clear(); //get rid of existing plane segment suggestions
+		for (uint u = 0; u < planes.size(); u++)
+		{
+			//todo: use shared ptrs
+			PointIndices::Ptr nextPlane = planes[u];
+			SetIntPtr nextPlaneSet (new set<int>);
+			for (uint i = 0; i < nextPlane->indices.size(); i++)
+			{
+				nextPlaneSet->insert(nextPlane->indices[i]);
+			}
+
+			currObj->auto_segment_indices.push_back(nextPlaneSet);
+		}
+
+		_surrogate_renderer.setHintText(Color::to_string(currObj->auto_segment_indices.size())
+										  + " segment suggestions");
+	}
+
+	void UIProcessing::runModelFitting()
+	{
+		//========defensive checks
+		if (_gui_state != SEGMENTING)
+		{
+			_surrogate_renderer.setWarningText("Can't run model fit when not segmenting (currently)");
+			return;
+		}
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+		if (currObj == ObjectPointsPtr() || currObj->indices->size() == 0)
+		{
+			_surrogate_renderer.setWarningText("No Points Selected for Model Fitting");
+			return;
+		}
+		if (_edgeFinder == shared_ptr<EdgesToR3>())
+		{
+			_surrogate_renderer.setWarningText("Can't Model Fit Until Edge Cloud is processed");
+			return;
+		}
+
+		//------finished defensive checks
+		//---Run model fitting on whatever selection is being displayed
+		SetIntPtr selection = currObj->getSegmentBeingDisplayed();
+		ContourUtils::fitModel(_surrogate_renderer._display_info.cloud,  selection, WHEEL,
+							   _surrogate_renderer.getModelInfo());
+
+		_surrogate_renderer.setHintText("Model Fitting ran");
+	}
+
+	//======================================mouse
+	//======================================
+	//======================================
+	//======================================
+
+	/**handle mouse button clicks*/
+	int UIProcessing::mouse_press  (BotViewer *viewer, BotEventHandler *ehandler,
+								   const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
+	{
+		//SegHandler *sh = (SegHandler*) ehandler->user;
+		if (event->button == 1 && getMouseMode() == RECTANGLE_SELECT) //left button press and rectangle select?
+		{
+			Rectangle2D *rect = &(getDisplayInfo()->rectangle2D);
+			rect->shouldDraw = 1;
+			rect->x0 = event->x;
+			rect->y0 = event->y;
+			rect->x1 = event->x;
+			rect->y1 = event->y;
+		}
+
+		return 1;
+	}
+
+	int UIProcessing::mouse_release (BotViewer *viewer, BotEventHandler *ehandler,
+									 const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
+	{
+		if (event->button == 1 && getMouseMode() == RECTANGLE_SELECT) //left button press and rectangle select?
+		{
+			//--------get rectangle selection and update rectangle display
+			Rectangle2D *rect = &(getDisplayInfo()->rectangle2D);
+			rect->x1 = event->x;
+			rect->y1 = event->y;
+			rect->shouldDraw = 0;
+			set<int> selected_indices = _surrogate_renderer.mouseRectTo3D(rect->x0, rect->y0, rect->x1, rect->y1);
+
+			//cout << endl << "selected intersect indices size: " << selected_indices.size() << endl;
+
+			//object selected for messing w/ indices?
+			ObjectPointsPtr currObj = getCurrentObjectSelected();
+			if ( currObj == ObjectPointsPtr())
+			{
+				_surrogate_renderer.setWarningText("No Object Selected for Storing Segmentation!!! Please hit 'New Object'");
+				return 1;
+			}
+
+			//user is editing whatever's being displayed
+			currObj->indices = currObj->getSegmentBeingDisplayed();
+			currObj->clearAutoSegments(); //get rid of old auto-segments, since we're about to modify
+
+			if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
+				addIndicesToCurrentObject(selected_indices);
+			else if (selected_indices.size() != 0)//intersect
+				intersectViews(selected_indices);
+			else if (selected_indices.size() == 0) //empty intersection, clear
+			{
+				currObj->indices->clear();
+				_surrogate_renderer.getModelInfo()->circles.clear();
+				_surrogate_renderer.getModelInfo()->lines.clear();
+				_surrogate_renderer.setHintText("Selection Cleared");
+				return 1;
+			}
+
+			suggestSegments();
+			currObj->setDisplayFullPointSet(); //show full point set initially
+			bot_viewer_request_redraw(_surrogate_renderer._viewer);
+		}
+
+		//===============right button click?
+		if (event->button == 3 && getMouseMode() == RECTANGLE_SELECT
+			&& _gui_state == SEGMENTING)
+		{
+			if (stringsEqual(getCurrentObjectSelectedName(), "None") || getCurrentObjectSelected()->indices->size() == 0)
+				return 1; //nothing segmented, nothing to do
+
+			//---display a menu
+			GtkWidget *menu 	= gtk_menu_new();
+			GtkWidget *deleteSegment = gtk_menu_item_new_with_label("Delete Segment");
+
+			g_signal_connect(deleteSegment, "activate",
+							(GCallback) cb_right_click_popup_menu, this);
+			gtk_menu_shell_append(GTK_MENU_SHELL(menu), deleteSegment);
+
+			gtk_widget_show_all(menu);
+
+			gtk_menu_popup(GTK_MENU(menu),
+						   NULL, NULL, NULL, NULL,
+						   event->button,
+						   gdk_event_get_time((GdkEvent*) event));
+		}
+
+	  return 1;
+	}
+
+	int UIProcessing::mouse_motion(BotViewer *viewer, BotEventHandler *ehandler,
+								  const double ray_start[3], const double ray_dir[3], const GdkEventMotion *event)
+	{
+		//SegHandler *sh = (SegHandler*) ehandler->user;
+		Rectangle2D *rect = &(getDisplayInfo()->rectangle2D);
+		if (rect->shouldDraw)
+		{
+			rect->x1 = event->x;
+			rect->y1 = event->y;
+			bot_viewer_request_redraw(_surrogate_renderer._viewer);
+		}
+
+	  return 1;
+	}
+
+	/**Handles right-click pop-up menu items*/
+	void UIProcessing::right_click_popup(GtkWidget *menuItem)
+	{
+		//get which menu item was clicked
+		string label(gtk_menu_item_get_label((GtkMenuItem*) menuItem));
+
+		if (stringsEqual(label, "Delete Segment"))
+		{
+			//----defensive checks
+			if (_gui_state != SEGMENTING)
+				throw SurrogateException("Menu should not have been constructed outside of Segmenting state");
+			if (stringsEqual(getCurrentObjectSelectedName(), "None"))
+				throw SurrogateException("No object selected for deleting");
+
+			ObjectPointsPtr currObj = getCurrentObjectSelected();
+			if (currObj->indices->size() == 0)
+				throw SurrogateException("shouldn't have displayed this menu option: delete segment. No indices");
+
+			//----actually delete
+			currObj->deleteCurrentSegment();
+
+			//--------update user
+			_surrogate_renderer.setHintText(Color::to_string(currObj->auto_segment_indices.size())
+												  + " segment suggestions");
+		}
+	}
+
+	//=================================================
+	//=================================================
+	//=================================================
+	//=================================================
+	//=================================================
+	//=================================key presses
+	/**Handles key presses*/
+	int UIProcessing::key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
+	{
+		GraspInfo *gi = _surrogate_renderer.getGraspInfo();
+		AdjustableVector *fvec = &(gi->forceVector);
+		AdjustableVector *rvec = &(gi->rotationAxis);
+		if (fvec->displaySelected() == rvec->displaySelected())
+		{
+			fvec->displaySelected(true);
+			rvec->displaySelected(false);
+		}
+		AdjustableVector *vec = fvec->displaySelected()
+							   ? fvec : rvec;
+		switch (event->keyval)
+		{
+			case GDK_1:
+				_surrogate_renderer.setCamera(CAMERA_FRONT);
+				break;
+
+			case GDK_2:
+				_surrogate_renderer.setCamera(CAMERA_SIDE);
+				break;
+
+			case GDK_3:
+				_surrogate_renderer.setCamera(CAMERA_TOP);
+				break;
+
+			case GDK_Shift_L:
+				_button_states.shift_L_is_down = true;
+				break;
+			case GDK_Shift_R:
+				_button_states.shift_R_is_down = true;
+				break;
+			case GDK_Tab:
+			{
+				if (_gui_state == TRACKING)
+				{
+					//flip each state
+					//Top of function guarantees they are in different states
+					fvec->displaySelected(!fvec->displaySelected());
+					rvec->displaySelected(!rvec->displaySelected());
+				}
+				if (fvec->displaySelected())
+					_surrogate_renderer.setWarningText("Force Vector Selected");
+				else
+					_surrogate_renderer.setWarningText("Rotation Axis Selected");
+
+				break;
+			}
+				break;
+			case GDK_a:
+			{
+				if (_gui_state != TRACKING)
+					_surrogate_renderer.setWarningText("'a' unmapped key in segmenting state");
+				else
+					vec->_displayAxes = !vec->_displayAxes;
+				break;
+			}
+			case GDK_g:
+			{
+				if (_gui_state != TRACKING)
+					_surrogate_renderer.setWarningText("'g' key unmapped in segmenting state");
+				else if (!gi->forceVector.updateOrientationCalled() ||
+						!gi->forceVector.basisInitialized() ||
+						!gi->rotationAxis.updateOrientationCalled() ||
+						!gi->rotationAxis.basisInitialized())
+					_surrogate_renderer.setWarningText("won't generate a trajectory until you adjust force/rotation vectors");
+				else
+				_surrogate_renderer.getGraspInfo()->displayTrajectory =
+							!_surrogate_renderer.getGraspInfo()->displayTrajectory;
+			}
+
+			case GDK_s:
+			{
+				UserSegmentation *user_seg_info = &(getDisplayInfo()->user_seg_info);
+				user_seg_info->color_segments = !(user_seg_info->color_segments);
+				break;
+			}
+			case GDK_c:
+				bot_gtk_param_widget_set_enum(_surrogate_renderer._pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);
+				break;
+
+			case GDK_r:
+				bot_gtk_param_widget_set_enum(_surrogate_renderer._pw, PARAM_NAME_MOUSE_MODE, RECTANGLE_SELECT);
+				break;
+
+			case GDK_t:
+				if (_gui_state != TRACKING)
+					_surrogate_renderer.setWarningText("Can't turn on/off tracking cloud if not tracking");
+				else
+				{
+					TrackingInfo *ti = &(getDisplayInfo()->tracking_info);
+					ti->displayTrackingCloud = !(ti->displayTrackingCloud);
+				}
+				break;
+
+			case GDK_u:
+				_surrogate_renderer.getModelInfo()->displayOn =
+						!_surrogate_renderer.getModelInfo()->displayOn;
+				break;
+
+			case GDK_l: //toggle from: lcm --> edge --> off --> (start over lcm)
+			{	SurrogateDisplayInfo *d = getDisplayInfo();
+				if (d->displayLcmCloud && !d->displayEdgeCloud) //showing lcm and not edge
+				{
+					d->displayLcmCloud = false;
+					d->displayEdgeCloud = true;
+				}
+				else if (d->displayEdgeCloud && !d->displayLcmCloud)
+					d->displayEdgeCloud = false; //
+				else if (!d->displayEdgeCloud && !d->displayLcmCloud)
+					d->displayLcmCloud = true;
+				else if (d->displayEdgeCloud && d->displayLcmCloud)
+					throw SurrogateException("shouldn't have lcm cloud and edge cloud both displaying");
+				else
+					throw SurrogateException("What is this edge/lcm case?");
+				break;
+			}
+			case GDK_m: //run model fitting
+			{
+				runModelFitting();
+				break;
+			}
+			case GDK_Left:
+			{
+				if (_gui_state == TRACKING)
+				{
+					if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
+						vec->translateAlongAxis(0, -vec->TRANSLATE_INC, 0);
+					else
+						vec->updateOrientation(vec->ANGLE_INC, 0);
+				}
+				else if (_gui_state == SEGMENTING)
+					getCurrentObjectSelected()->setDisplayPreviousSubSegment();
+				else
+					_surrogate_renderer.setWarningText("left arrow not implemented in this mode");
+				break;
+			}
+			case GDK_Right:
+			{
+				if (_gui_state == TRACKING)
+				{
+					if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
+						vec->translateAlongAxis(0, vec->TRANSLATE_INC, 0);
+					else
+						vec->updateOrientation(-vec->ANGLE_INC, 0);
+				}
+				else if (_gui_state == SEGMENTING)
+					getCurrentObjectSelected()->setDisplayNextSubSegment();
+				else
+					_surrogate_renderer.setWarningText("right arrow not implemented in this mode");
+				break;
+			}
+			case GDK_Up:
+			{
+				if (_gui_state == TRACKING)
+				{
+					if (_button_states.shift_L_is_down && _button_states.shift_R_is_down)
+						vec->translateAlongAxis(vec->TRANSLATE_INC,0,0); //both shifts are down
+					else if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
+						vec->translateAlongAxis(0, 0, vec->TRANSLATE_INC); //1 shift is down
+					else
+						vec->updateOrientation(0, vec->ANGLE_INC);
+				}
+				else
+					_surrogate_renderer.setWarningText("up arrow not implemented in this mode");
+				break;
+			}
+			case GDK_Down:
+			{
+				if (_gui_state == TRACKING)
+				{
+					if (_button_states.shift_L_is_down && _button_states.shift_R_is_down)
+						vec->translateAlongAxis(-vec->TRANSLATE_INC,0,0); //both shifts are down
+					else if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
+						vec->translateAlongAxis(0, 0, -vec->TRANSLATE_INC);
+					else
+						vec->updateOrientation(0, -vec->ANGLE_INC);
+				}
+				else
+					_surrogate_renderer.setWarningText("up arrow not implemented in this mode");
+				break;
+			}
+			case GDK_plus:
+			{
+				vec->updateLength(vec->LENGTH_INC);
+				break;
+			}
+
+			case GDK_minus:
+			{
+				vec->updateLength(-vec->LENGTH_INC);
+				break;
+			}
+
+			default:
+				_surrogate_renderer.setWarningText("Unsupported key stroke");
+				break;
+		}
+
+		bot_viewer_request_redraw(_surrogate_renderer._viewer);
+
+		return 0;
+	}
+
+	int UIProcessing::key_release (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey  *event)
+	{
+		//SegHandler* sh = (SegHandler*) ehandler->user;
+		if (event->keyval == GDK_Shift_L)
+			_button_states.shift_L_is_down = false;
+		else if (event->keyval == GDK_Shift_R)
+			_button_states.shift_R_is_down = false;
+		return 1;
+	}
+
+
+	//================================
+	//================================
+	//================================
+	//================================
+	//================================
+	//================================
+	//=================lcm
+  void UIProcessing::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
+					pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+  {
+    // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+    cloud->width   = msg->width;
+    cloud->height   = msg->height;
+    uint32_t num_points = msg->width * msg->height;
+
+    cloud->points.resize (num_points);
+    cloud->is_dense = false;//msg->is_dense;
+    uint8_t* cloud_data = reinterpret_cast<uint8_t*>(&cloud->points[0]);
+    //not used? uint32_t cloud_row_step = static_cast<uint32_t> (sizeof (pcl::PointXYZRGB) * cloud->width);
+    const uint8_t* msg_data = &msg->data[0];
+    memcpy (cloud_data, msg_data, msg->data_nbytes );
+
+    // 2. HACK/Workaround
+    // for some reason in pcl1.5/6, this callback results
+    // in RGB data whose offset is not correctly understood
+    // Instead of an offset of 12bytes, its offset is set to be 16
+    // this fix corrects for the issue:
+    sensor_msgs::PointCloud2 msg_cld;
+    pcl::toROSMsg(*cloud, msg_cld);
+    msg_cld.fields[3].offset = 12;
+    pcl::fromROSMsg (msg_cld, *cloud);
+
+    // Transform cloud to that its in robotic frame:
+    // Could also apply the cv->robotic transform directly
+    double x_temp;
+    for(uint j=0; j<cloud->points.size(); j++) {
+      x_temp = cloud->points[j].x;
+      cloud->points[j].x = cloud->points[j].z;
+      //cloud->points[j].z = - cloud->points[j].y;
+      cloud->points[j].z = x_temp;
+    }
+  }
+  
+
+	// On Kinect frame, copy data into msg
+	void UIProcessing::on_kinect_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+					    const ptools_pointcloud2_t *msg, void *user_data )
+	{
+		if (_surrogate_renderer.isPaused())
+			return; //discard any new messages, we're paused
+
+		//lcm cloud
+		cout << "\n\n about to try and unpacked\n\n" << endl;
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr unpacked(new PointCloud<PointXYZRGB>);
+		unpack_pointcloud2(msg, unpacked);
+
+		cout << "\n\n unpacked cloud \n\n" << endl;
+
+		getDisplayInfo()->cloud = unpacked;  //PclSurrogateUtils::toPcl(msg);
+		getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
+
+		//edge cloud
+		if (_edgeFinder == shared_ptr<EdgesToR3>())
+			_edgeFinder = shared_ptr<EdgesToR3>(new EdgesToR3(getDisplayInfo()->cloud->width,
+								  getDisplayInfo()->cloud->height));
+
+		getDisplayInfo()->edgeCloud =_edgeFinder->displayRgbToEdgeCloud(getDisplayInfo()->cloud);
+
+		if (_gui_state == TRACKING && getTrackMode() == ICP)
+		{
+			_objTracker->findObjectInCloud(getDisplayInfo()->cloud);
+			TrackingInfo *ti = &(getDisplayInfo()->tracking_info);
+
+			ti->planeNormal 			= _objTracker->getPlaneNormal();
+			ti->trackedObject 			= _objTracker->getTrackedObject()->makeShared();
+			ti->trackedObjectTransform 	= _objTracker->getTrackedObjectTransform();
+			ti->centroidTrace			= _objTracker->_centroidTrace;
+
+			//-----update force vector start location
+			GraspInfo *gi = _surrogate_renderer.getGraspInfo();
+			ModelFit *model = _surrogate_renderer.getModelInfo();
+			PointXYZ objCentroidLast = ti->centroidTrace.back();
+			if (!gi->forceVector.updateOrientationCalled())
+			{
+				//determine intitial direction guess
+				PointXYZ forceInitDir = model->haveModel
+										? model->rotationAxisGuess.planeVec0
+										: LinearAlgebra::mult(-1, LinearAlgebra::normalize(ti->planeNormal));
+
+				PointXYZRGB minPt, maxPt; //points on the maximum diameter of the segment guess indices
+				pcl::getMaxSegment (*_objTracker->getTrackedObject(),
+				         		    minPt, maxPt);
+				PointXYZ fOffset = LinearAlgebra::sub(objCentroidLast,
+													  PointXYZ(minPt.x, minPt.y, minPt.z));
+
+				gi->forceVector.set(forceInitDir,
+						            objCentroidLast,
+						            0.15,
+						            fOffset);
+			}
+			else
+				gi->forceVector.updateOrigin(objCentroidLast);
+
+			//-----initialize rotation axis
+			if (!gi->rotationAxis.updateOrientationCalled() && !gi->rotationAxis.translateCalled())
+			{
+				if (model->haveModel)
+				{
+					Circle3D *rCircle = &model->rotationAxisGuess;
+					PointXYZ rotDir = LinearAlgebra::crossProduct(rCircle->planeVec0, rCircle->planeVec1);
+					gi->rotationAxis.set(rotDir, rCircle->center, 0.15, PointXYZ(0,0,0));
+				}
+				else
+					gi->rotationAxis.set(gi->forceVector.getVectorUnitDir(),
+										 objCentroidLast,
+										 0.18,
+										 PointXYZ(0, 0, 0));
+			}
+
+			//---generate trajectory if everything has been updated
+		}
+
+		if (_gui_state == TRACKING)
+			_surrogate_renderer.setModeText("Tracking");
+		else if (_gui_state == SEGMENTING)
+			_surrogate_renderer.setModeText("Segmenting");
+		else
+			_surrogate_renderer.setWarningText("Unknown state");
+
+		bot_viewer_request_redraw(_surrogate_renderer._viewer);
+	}
+
+
+	//========================user menu/button interactions
+	//===================
+	//===================
+	//===================
+	//===================
+	//===================
+	void UIProcessing::handleMouseModeAdjust(BotEventHandler *default_handler, BotGtkParamWidget *pw)
+	{
+		//-------------are we tracking and the user tries to rectangle select?
+		if (getMouseMode() == RECTANGLE_SELECT && _gui_state != SEGMENTING)
+		{
+			_surrogate_renderer.setWarningText("Can't Segment While Tracking!");
+
+			// reverse the effect
+			//_gui_state = SEGMENTING;
+			bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);
+			//_gui_state = TRACKING;
+			return;
+		}
+
+
+		if (getMouseMode() == CAMERA_MOVE)
+		{
+			default_handler->enabled = 1;
+			_ehandler->enabled = 0;
+			_surrogate_renderer._display_info.rectangle2D.shouldDraw = 0;
+			printf("DEFAULT CAMERA MODE\n");
+		}
+		else if (getMouseMode () == RECTANGLE_SELECT && _gui_state == SEGMENTING)
+		{
+			default_handler->enabled = 0;
+			_ehandler->enabled = 1;
+			//pause the display
+			bot_gtk_param_widget_set_bool(_surrogate_renderer._pw, PARAM_NAME_CLOUD_PAUSE, 1);
+			printf("SEG MODE: RECTANGLE\n");
+		}
+		else
+			throw SurrogateException("UNKNOWN MOUSE MODE!!!");
+	}
+
+	void UIProcessing::handleTrackLiveButton(BotGtkParamWidget *pw)
+	{
+		UserSegmentation *segInfo = _surrogate_renderer.getSegInfo();
+
+		if (_gui_state == TRACKING)
+		{
+			_surrogate_renderer.setWarningText("already tracking!");
+			return;
+		}
+
+		// see if any object have been segmented?
+		if (segInfo->objectPtsMap->size() == 0)
+		{
+			_surrogate_renderer.setWarningText("no segmented objects have been created!");
+			return;
+		}
+
+		if (segInfo->objectPtsMap->size() >= 2)
+		{
+			_surrogate_renderer.setWarningText("Multiple Object Tracking Not Currently Supported.  Please Reset.");
+			return;
+		}
+
+		// make sure the first object has some points
+		SetIntPtr objIndices   = getCurrentObjectSelected()->getSegmentBeingDisplayed();
+		if (objIndices->size() == 0)
+		{
+			_surrogate_renderer.setWarningText("no object points to track: current object is empty");
+			return;
+		}
+
+		//clear model fitting
+		_surrogate_renderer.getModelInfo()->displayOn = true;
+		_surrogate_renderer.getModelInfo()->drawCircles = false;
+		_surrogate_renderer.getModelInfo()->drawLines = false;
+		_surrogate_renderer.getModelInfo()->circles.clear();
+		_surrogate_renderer.getModelInfo()->lines.clear();
+
+		// switch the gui state!
+		_surrogate_renderer.setModeText("TRACKING");
+		_surrogate_renderer.setHintText("");
+		_gui_state = TRACKING;
+
+		//ok, let's initialize the tracker
+		ObjectTracker *objTrkr = new ObjectTracker(getDisplayInfo()->cloud, objIndices);
+		_objTracker = ObjectTracker::Ptr(objTrkr);
+
+		// unpause the feed
+		bot_gtk_param_widget_set_bool(pw, PARAM_NAME_CLOUD_PAUSE, 0);
+
+		// go into camera mode
+		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);
+
+		//clear the segmented objects: indices are no longer meaningful w/ different clouds
+		segInfo->objectPtsMap->clear();
+
+		_surrogate_renderer.getTrackInfo()->displayTrackingCloud 	= true;
+	}
+
+	void UIProcessing::handlePr2GraspButton()
+	{
+		if (_gui_state != TRACKING)
+		{
+			_surrogate_renderer.setWarningText("Pr2 Grasp called outside tracking mode");
+			return;
+		}
+
+		if (!(_surrogate_renderer.getGraspInfo()->forceVector.updateOrientationCalled()))
+		{
+			_surrogate_renderer.setWarningText("Pr2 Grasp called before force vector adjusted");
+			return;
+		}
+
+
+		//======initialize grasp cloud
+		lkr_color_point_cloud_t object_cloud_lcm;
+		PointCloud<PointXYZRGB>::Ptr trackedObject = _objTracker->getTrackedObject();
+
+		object_cloud_lcm.header.frame_id = strdup(getDisplayInfo()->lcmCloudFrameId.c_str());
+		object_cloud_lcm.num_points = trackedObject->points.size();
+		object_cloud_lcm.points = (lkr_point_xyzrgb_t *) malloc(sizeof(lkr_point_xyzrgb_t)*trackedObject->points.size());
+		object_cloud_lcm.width = trackedObject->width;
+		object_cloud_lcm.height = trackedObject->height;
+
+		for(uint i = 0; i < trackedObject->points.size(); i++)
+		{
+			//extract pcl point
+			PointXYZRGB nextPt = trackedObject->points[i];
+			RGB_PCL rgbVal;
+			rgbVal.float_value = nextPt.rgb;
+
+			//copy to lcm format
+			lkr_point_xyzrgb_t next_lcm_pt;
+			next_lcm_pt.x = nextPt.x;
+			next_lcm_pt.y = nextPt.y;
+			next_lcm_pt.z = nextPt.z;
+			next_lcm_pt.r = rgbVal.red;
+			next_lcm_pt.g = rgbVal.green;
+			next_lcm_pt.b = rgbVal.blue;
+
+			object_cloud_lcm.points[i] = next_lcm_pt;
+		}
+
+		//============
+		//===setup the grasp message
+		lkr_grasp_request_t grasp_msg;
+
+		//grasp cloud
+		grasp_msg.grasp_cloud = object_cloud_lcm;
+
+		//grasp point
+		PointXYZ centroid = _surrogate_renderer.getTrackInfo()->centroidTrace.back();
+		copy(centroid, grasp_msg.grasp_point);
+
+		//manipulation type
+		grasp_msg.manipulation_type = getManipulationType();
+
+		//force direction
+		GraspInfo *gi = _surrogate_renderer.getGraspInfo();
+		PointXYZ forceVector = gi->forceVector.getVectorUnitDir();
+		copy(forceVector, grasp_msg.force_direction);
+
+		//---see if we should copy rotation information
+		//rotation axis center
+		PointXYZ rotationCenter, axisPt;
+
+		if (grasp_msg.manipulation_type == LKR_GRASP_REQUEST_T_ROTATE)
+		{
+			//we require that the user has adjusted the rotation axis at least once
+			AdjustableVector &rotationAxis = gi->rotationAxis;
+			if (!rotationAxis.valuesInitialized() || !rotationAxis.updateOrientationCalled() ||
+				!rotationAxis.basisInitialized())
+			{
+				_surrogate_renderer.setWarningText("Can't request a rotate without update the rotation axis");
+				return;
+			}
+			/*if(gi->trajectory.size() == 0)
+			{
+				_surrogate_renderer.setWarningText("Generate trajectory with 'g' before request PR2 rotate");
+				return;
+			}*/
+
+			_surrogate_renderer.getGraspInfo()->rotationAxis.getVectorStartEndNonUnit(rotationCenter, axisPt);
+		}
+
+		//these will be 0 unless the if-statement executed
+		copy(rotationCenter, grasp_msg.rotation_center);
+		copy(axisPt, grasp_msg.rotation_axis_pt);
+
+
+		//way points
+		//todo
+
+		//publish
+		lkr_grasp_request_t_publish(_lcm, "GRASP_REQUEST", &grasp_msg);
+
+		//print
+		cout << endl << "\n\n***********=======published grasp message=======++*********" << endl;
+		cout << "frame_id = " << object_cloud_lcm.header.frame_id << endl;
+		cout << "\ngrasp_point = " << centroid << endl;
+		cout << "\ngrasp_direction = " << forceVector << endl;
+		cout << "\nrotation center = " << rotationCenter << endl;
+		cout << "\naxisPt = " << axisPt << endl;
+		cout << "\nmanipulation_type = " << (int) grasp_msg.manipulation_type << endl;
+		cout << endl << "\n======================\n\n" << endl;
+
+		//clean up
+		free(object_cloud_lcm.points);
+		return;
+	}
+
+	/**copy p into dest*/
+	void UIProcessing::copy(const PointXYZ &p, lkr_point_xyz_t &dest)
+	{
+		dest.x = p.x;
+		dest.y = p.y;
+		dest.z = p.z;
+	}
+
+	void UIProcessing::handleFullResetButton(BotGtkParamWidget *pw)
+	{
+		_gui_state = SEGMENTING;
+		UserSegmentation *segInfo = _surrogate_renderer.getSegInfo();
+		segInfo->objectPtsMap->clear();
+		_objTracker = ObjectTracker::Ptr();
+		_edgeFinder		= boost::shared_ptr<EdgesToR3>();
+		_surrogate_renderer.initVals();
+		bot_gtk_param_widget_set_bool(pw, PARAM_NAME_CLOUD_PAUSE, 0);
+		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);
+		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_TRACK_METHOD, ICP);
+		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MANIP_TYPE, LKR_GRASP_REQUEST_T_ROTATE);
+		bot_gtk_param_widget_clear_enum(pw, PARAM_NAME_CURR_OBJECT);
+		_surrogate_renderer.setCamera(CAMERA_FRONT);
+	}
+
+	//=========main handler for menu changes, button clicks, etc
+	void UIProcessing::on_param_widget_changed_xyzrgb (BotGtkParamWidget *pw, const char *name, void *user)
+	{
+		if (!_surrogate_renderer._viewer)
+			return;
+
+		UserSegmentation *segInfo = _surrogate_renderer.getSegInfo();
+		TrackingInfo *trackInfo = _surrogate_renderer.getTrackInfo();
+
+		//pause
+		if (stringsEqual(name, PARAM_NAME_CLOUD_PAUSE))
+		{
+			if (_surrogate_renderer.isPaused())
+				return; //no state to update
+
+			//not paused, so get rid of segmentation info
+			_surrogate_renderer._display_info.user_seg_info.numObjects = 0;
+			_surrogate_renderer._display_info.user_seg_info.objectPtsMap->clear();
+			_surrogate_renderer.getModelInfo()->circles.clear();
+			_surrogate_renderer.getModelInfo()->lines.clear();
+			_surrogate_renderer.getModelInfo()->drawCircles = false;
+			_surrogate_renderer.getModelInfo()->drawLines = false;
+			bot_gtk_param_widget_clear_enum(pw, PARAM_NAME_CURR_OBJECT); //cleared objects, so clean out the enum
+			//_surrogate_renderer.setHintText("Object Segmentation Cleared");
+			return;
+		}
+
+		//clear warnings
+		if (stringsEqual(name, PARAM_NAME_CLEAR_WARNING_MSGS))
+		{
+			_surrogate_renderer.setWarningText("");
+			//return;
+		}
+
+		//Camera Move or Selection Mode ?
+		if (stringsEqual(name, PARAM_NAME_MOUSE_MODE))
+		{
+			handleMouseModeAdjust((BotEventHandler *) _surrogate_renderer._viewer->default_view_handler->user,
+								 pw);
+			//return;
+		}
+
+		// current object
+		if (stringsEqual(name, PARAM_NAME_CURR_OBJECT))
+		{
+			if (_gui_state == TRACKING)
+			{
+				//old warning; since we now clear the objects list
+				//_surrogate_renderer.setWarningText("Can't change current object while tracking! TODO: switch back");
+				//todo:
+				// reverse the effect
+				//_gui_state = SEGMENTING;
+				//bot_gtk_param_widget_set_enum(pw, PARAM_NAME_CURR_OBJECT, getCurrentObjectSelected());
+				//_gui_state = TRACKING;
+				//return;
+			}
+
+			//see if none selected
+			if (stringsEqual(getCurrentObjectSelectedName(), "None")) //no object selected?
+			{
+				trackInfo->displayTrackingCloud 	= false;
+				//return;
+			}
+
+			//return;
+		}
+
+		// new object
+		if (stringsEqual(name, PARAM_NAME_NEW_OBJECT))
+		{
+			if (_gui_state == SEGMENTING)
+			{
+				segInfo->numObjects++;
+				char newName[50];
+				sprintf(newName, "Object %d", segInfo->numObjects);
+				bot_gtk_param_widget_modify_enum(pw, PARAM_NAME_CURR_OBJECT, newName, segInfo->numObjects);
+
+				//add object into the map
+				ObjectPointsPtr newObjPts (new ObjectPoints(Color::getColor(segInfo->numObjects)));
+				segInfo->objectPtsMap->insert(make_pair(newName, newObjPts));
+			}
+			else
+			{
+				_surrogate_renderer.setWarningText("Can't create new object while tracking!");
+			}
+			//return;
+		}
+		// clear object
+		if (stringsEqual(name, PARAM_NAME_CLEAR_OBJECT))
+		{
+			if (_gui_state == SEGMENTING)
+			{
+				ObjectPointsPtr currObj = getCurrentObjectSelected();
+
+				if (currObj == ObjectPointsPtr() || currObj->indices->size() == 0)
+					_surrogate_renderer.setWarningText("Nothing to clear");
+				else
+				{
+					currObj->indices->clear();
+					currObj->auto_segment_indices.clear();
+				}
+			}
+			else
+			{
+				_surrogate_renderer.setWarningText("Can't reset object while tracking!");
+			}
+			//return;
+		}
+
+		// tracking mode
+		if (stringsEqual(name, PARAM_NAME_TRACK_METHOD))
+		{
+			if (_gui_state == TRACKING)
+				_surrogate_renderer.setWarningText("attempted to change tracking method while already tracking");
+			//return;
+		}
+
+		// live tracking button
+		if (stringsEqual(name, PARAM_NAME_TRACK_OBJECTS))
+		{
+			handleTrackLiveButton(pw);
+			//return;
+		}
+
+		// master reset button
+		if (stringsEqual(name, PARAM_NAME_RESET))
+		{
+			handleFullResetButton(pw);
+			//return;
+		}
+
+		if (stringsEqual(name, PARAM_NAME_PR2_GRASP))
+		{
+			handlePr2GraspButton();
+			//return;
+		}
+
+		bot_viewer_request_redraw(_surrogate_renderer._viewer);
+	}
+
+
+	//======================================
+	//======================================
+	//======================================
+	//===============================observers
+	/**@return RECTANGLE Or CAMERA_MOVE*/
+	MouseMode UIProcessing::getMouseMode() const //rectangle or camera move
+	{
+		int mouse_mode = bot_gtk_param_widget_get_enum(_surrogate_renderer._pw, PARAM_NAME_MOUSE_MODE);
+		return (MouseMode) mouse_mode;
+	}
+
+
+	string UIProcessing::getCurrentObjectSelectedName() const
+	{
+		return _surrogate_renderer.getCurrentObjectSelectedName();
+	}
+
+	/**@returns the object currently selected in the drop-down menu.  Or
+	 * null if no object selected*/
+	ObjectPointsPtr UIProcessing::getCurrentObjectSelected()
+	{
+		return _surrogate_renderer.getCurrentObjectSelected();
+	}
+
+	SurrogateDisplayInfo *UIProcessing::getDisplayInfo()
+	{
+		return &(_surrogate_renderer._display_info);
+	}
+
+	TrackMode UIProcessing::getTrackMode() const
+	{
+		int trackMode = bot_gtk_param_widget_get_enum(_surrogate_renderer._pw, PARAM_NAME_TRACK_METHOD);
+		return (TrackMode) trackMode;
+	}
+
+	/**@return currently selected manipulation action type (in drop-down menu)*/
+	int8_t UIProcessing::getManipulationType() const
+	{
+		return (int8_t) bot_gtk_param_widget_get_enum(_surrogate_renderer._pw, PARAM_NAME_MANIP_TYPE);
+	}
+
+	//==================static helpers
+	bool UIProcessing::stringsEqual(string a, string b)
+	{
+		return (a.compare(b) == 0);
+	}
+
+	//==========================================================
+	//==========================================================
+	//==========================================================
+	//==========================================================
+	//==========================================================
+	//==========================================================
+	//=================================callback conversion
+
+	void UIProcessing::cb_right_click_popup_menu(GtkWidget *menuItem, gpointer userdata)
+	{
+		((UIProcessing*) userdata)->right_click_popup(menuItem);
+	}
+
+	void UIProcessing::cb_on_param_widget_changed_xyzrgb (BotGtkParamWidget *pw, const char *name, void *user)
+	{
+		((UIProcessing*) user)->on_param_widget_changed_xyzrgb(pw, name, user);
+	}
+
+	int UIProcessing::cb_mouse_press(BotViewer *viewer, BotEventHandler *ehandler,
+						const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
+	{
+		return ((UIProcessing*) ehandler->user)->mouse_press(viewer, ehandler, ray_start, ray_dir, event);
+	}
+	
+	int UIProcessing::cb_mouse_release (BotViewer *viewer, BotEventHandler *ehandler,
+							 const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
+	{
+		return ((UIProcessing*) ehandler->user)->mouse_release(viewer, ehandler, ray_start, ray_dir, event);
+	}
+
+	int UIProcessing::cb_mouse_motion(BotViewer *viewer, BotEventHandler *ehandler,
+							 const double ray_start[3], const double ray_dir[3], const GdkEventMotion *event)
+	{
+		return ((UIProcessing*) ehandler->user)->mouse_motion(viewer, ehandler, ray_start, ray_dir, event);
+	}
+
+	int UIProcessing::cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
+	{
+		return ((UIProcessing*) ehandler->user)->key_press(viewer, ehandler, event);
+	}
+
+	int UIProcessing::cb_key_release (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey  *event)
+	{
+		return ((UIProcessing*) ehandler->user)->key_release(viewer, ehandler, event);
+	}
+
+	void UIProcessing::cb_on_kinect_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+					       const ptools_pointcloud2_t *msg, void *user_data)
+	{
+		return ((UIProcessing*) user_data)->on_kinect_frame(rbuf, channel, msg, user_data);
+	}
+
+} //namespace surrogate_gui
