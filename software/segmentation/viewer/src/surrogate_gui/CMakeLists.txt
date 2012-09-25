@@ -9,8 +9,8 @@ find_package(PkgConfig REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(OpenCV REQUIRED)
 
-set(PCL_LIBRARIES pcl_io-1.3 pcl_filters-1.3
-    pcl_segmentation-1.3 pcl_sample_consensus-1.3)
+set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
+    pcl_segmentation-1.6 pcl_sample_consensus-1.6)
 
 include_directories(. perception)
 include_directories(. display_objects)
