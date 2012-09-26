@@ -40,9 +40,10 @@
 using namespace std;
 //using namespace cv;
 
+
 int width =640; // hardcoded
 int height =480; // hardcoded
-uint8_t* s_data = new uint8_t [width*height*2]; // 2 grey scale images stacked
+uint8_t* s_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
 
 class App{
 public:
@@ -54,9 +55,10 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
 
-  ros::Subscriber base_scan_sub_,rstate_sub_;
+  ros::Subscriber base_scan_sub_,rotating_scan_sub_,rstate_sub_;
  
   void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg);
   void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
   
@@ -95,10 +97,11 @@ App::App(const std::string & stereo_in,
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
-      std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
   base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this);
+  rotating_scan_sub_ = node_.subscribe(string("/rotating_scan"), 10, &App::rotating_scan_cb,this);
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
   
   //Foot contact sensors.
@@ -113,10 +116,20 @@ App::App(const std::string & stereo_in,
       
 
   // Stereo Image:
-  std::string lim_string = stereo_in_ + "/left/image_mono";
-  std::string lin_string = stereo_in_ + "/left/camera_info";
-  std::string rim_string = stereo_in_ + "/right/image_mono";
-  std::string rin_string = stereo_in_ + "/right/camera_info";
+  std::string lim_string ,lin_string,rim_string,rin_string;
+  if (1==0){ // Grey:
+    lim_string = stereo_in_ + "/left/image_rect";
+    lin_string = stereo_in_ + "/left/camera_info";
+    rim_string = stereo_in_ + "/right/image_rect";
+    rin_string = stereo_in_ + "/right/camera_info";
+  }else{ // Color:
+    lim_string = stereo_in_ + "/left/image_rect_color";
+    lin_string = stereo_in_ + "/left/camera_info";
+    rim_string = stereo_in_ + "/right/image_rect_color";
+    rin_string = stereo_in_ + "/right/camera_info";
+  }
+cout << lim_string << " is sub\n";
+
   l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
   l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
   r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
@@ -128,6 +141,8 @@ App::App(const std::string & stereo_in,
 
 App::~App()  {
 }
+
+int counter=0;
 
 void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::CameraInfoConstPtr& l_cam_info,
@@ -146,31 +161,62 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
 
   cv_bridge::CvImageConstPtr left_ptr;
   cv_bridge::CvImageConstPtr right_ptr;
+  int isize = l_image->width*l_image->height;
 
-  try {
-    left_ptr =  cv_bridge::toCvShare(l_image, enc::MONO8);
-    right_ptr =  cv_bridge::toCvShare(r_image, enc::MONO8);
+/*  try {
+    left_ptr =  cv_bridge::toCvShare(l_image, enc::BGR8);//MONO8);
+    right_ptr =  cv_bridge::toCvShare(r_image, enc::BGR8);//MONO8);
   }catch (cv_bridge::Exception& e)
   {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
-  }
+  }*/
+
+  //cout << l_image->width << " w | h " << l_image->height << "\n";
 
   bot_core::image_t stereo;
   stereo.utime =current_utime;
   stereo.width =l_image->width;
   stereo.height =2*l_image->height;
-  stereo.row_stride =l_image->width;
-  stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-  // BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
-  stereo.size =stereo.width*stereo.height;
-  copy(l_image->data.begin(), l_image->data.end(), s_data);
-  copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
-  stereo.data.assign(s_data, s_data + (2*l_image->width*l_image->height));
   stereo.nmetadata =0;
-  // stereo.metadata =NULL;
+
+  if (l_image->encoding.compare("bgr8") == 0){
+    // Need to convert image to OpenCV to invert R and B:
+    // OpenCV: BGR | LCM: RGB
+    int n_colors = 3; // 1 is grey, 3 is rgb
+    left_ptr =  cv_bridge::toCvShare(l_image, enc::BGR8);//MONO8);
+    right_ptr =  cv_bridge::toCvShare(r_image, enc::BGR8);//MONO8);
+    cv::Mat l_img;
+    cvtColor( left_ptr->image, l_img, CV_BGR2RGB);
+    cv::Mat r_img;
+    cvtColor( right_ptr->image, r_img, CV_BGR2RGB);
+
+    // Write to file:
+    //cv::imwrite("left.png", left_ptr->image);
+    //cv::imwrite("right.png", right_ptr->image);
+
+    stereo.row_stride=n_colors*l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    stereo.size =n_colors *2*isize;
+    copy(l_img.data, l_img.data + n_colors*isize, s_data);
+    copy(r_img.data, r_img.data + n_colors*isize, s_data  + (n_colors * isize));
+    stereo.data.assign(s_data, s_data + ( n_colors*2*isize));
+  }else if (l_image->encoding.compare("mono8") == 0){
+    stereo.row_stride=l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    stereo.size =2*isize;
+    copy(l_image->data.begin(), l_image->data.end(), s_data);
+    copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
+    stereo.data.assign(s_data, s_data + ( 2*isize));
+  }else{
+    cout << l_image->encoding << " image encoded not supported, not publishing\n";
+    cout << stereo_out_ << "\n";
+    return;
+  }
+
   lcm_publish_.publish(stereo_out_.c_str(), &stereo);
-  // bot_core_image_t_publish(lcmref_, stereo_out_.c_str(), &stereo);
+
+  counter++;
 }
 
 
@@ -285,6 +331,10 @@ for (int i=0; i< robot_state_msg.contacts.num_contacts; i++){
 
 void App::base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
   send_lidar(msg, "BASE_SCAN");
+}
+
+void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  send_lidar(msg, "ROTATING_SCAN");
 }
 
 void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
@@ -671,11 +721,11 @@ int main(int argc, char **argv){
   std::cout << "ros2lcm_translator_combined launched\n";
   ros::init(argc, argv, "ros2lcm_translator_combined");
 
-  App *app = new App("wide_stereo", "WIDE_STEREO_IMAGE");
+  App *app = new App("camera", "CAMERA");
 
-/*
+  /*
   std::cout << "Arguments: ros2lcm_translator_combined ROS_stereo_channel LCM_stereo_channel\n";
-  std::cout << "ros2lcm_translator_combined wide_stereo WIDE_STEREO_IMAGE\n";
+  std::cout << "ros2lcm_translator_combined camera WIDE_STEREO_IMAGE\n";
   std::cout << "    program: " << argv[ 0 ] << "\n";
   std::cout << "ROS channel: " << argv[ 1 ] << " [Input]\n";
   std::cout << "LCM channel: " << argv[ 2 ] << " [Output]\n";
