@@ -125,8 +125,12 @@ private:
   size_t _buf_size;
 
   // IMU variables:
-  bool imu_init;
+  bool _imu_attitude; // use imu in attitude estimation
+  bool _imu_init; // has the 1st imu measurement been received?
   Eigen::Isometry3d pose;
+
+  // Publish POSE at base of robot's spine:
+  Eigen::Isometry3d camera_to_body;
 
 
 #ifdef USE_LCMGL

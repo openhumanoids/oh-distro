@@ -65,7 +65,8 @@ StereoOdometry::init_calibration(const char * key_prefix)
 
 
   // IMU variables:
-  imu_init=false;
+  _imu_init=false;
+  camera_to_body.setIdentity();
 
   return 0;
 }
@@ -95,17 +96,43 @@ StereoOdometry::publish_tictoc_stats()
   }
 }
 
+
+/// Added for RGB-to-Gray:
+int
+pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
+        int height, const uint8_t *src, int sstride)
+{
+  int i, j;
+  for (i=0; i<height; i++) {
+    uint8_t *drow = dest + i * dstride;
+    const uint8_t *srow = src + i * sstride;
+    for (j=0; j<width; j++) {
+      drow[j] = 0.2125 * srow[j*3+0] +
+        0.7154 * srow[j*3+1] +
+        0.0721 * srow[j*3+2];
+    }
+  }
+  return 0;
+}
+
+
 void
 StereoOdometry::decode_image(const bot_core_image_t * msg)
 {
   // extract image data
-  // TODO add support for raw RGB
   switch (msg->pixelformat) {
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
       // in stereo the two images are simply one above the other, so the pointer for
       // the right image is at the half of the images_buf
       std::copy(msg->data             , msg->data+msg->size/2 , _image_left_buf);
       std::copy(msg->data+msg->size/2 , msg->data+msg->size   , _image_right_buf);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+      // image came in as raw RGB buffer.  convert to grayscale:
+      pixel_convert_8u_rgb_to_8u_gray(  _image_left_buf, msg->width,
+          msg->width, msg->height/2, msg->data,  msg->width*3);
+      pixel_convert_8u_rgb_to_8u_gray(  _image_right_buf, msg->width,
+          msg->width, msg->height/2, msg->data+msg->size/2,  msg->width*3);
       break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
       // for some reason msg->row_stride is 0, so we use msg->width instead.
@@ -128,8 +155,11 @@ void
 StereoOdometry::publish_motion_estimation()
 {
   // Pose already has look vector is +X, and up is +Z
-  Eigen::Vector3d translation(pose.translation());
-  Eigen::Quaterniond rotation(pose.rotation());
+  Eigen::Isometry3d body = camera_to_body*pose;
+
+
+  Eigen::Vector3d translation(body.translation());
+  Eigen::Quaterniond rotation(body.rotation());
 
   // Output motion estimate - in CV frame:
   Eigen::Isometry3d motion_estimate = _odom->getMotionEstimate();
@@ -218,8 +248,8 @@ StereoOdometry::publish_motion_estimation()
     pose_msg.orientation[1] = rotation.x();
     pose_msg.orientation[2] = rotation.y();
     pose_msg.orientation[3] = rotation.z();
-    bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
-                            &pose_msg);
+    //bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
+    //                        &pose_msg);
     // mfallon: Added this for Sisir, aug 2012
     bot_core_pose_t_publish(_publish_lcm, "CAMERA_STATE",
                             &pose_msg);
@@ -299,9 +329,11 @@ void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
 void
 StereoOdometry::image_handler(const bot_core_image_t *msg)
 {
-  if (!imu_init){
-    cout << "no imu yet, passing\n";
-    return;
+  if (_imu_attitude){
+    if (!_imu_init){
+      cout << "no imu yet, passing\n";
+      return;
+    }
   }
 
 
@@ -345,21 +377,31 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
 #endif
 }
 
+
+//void
+//StereoOdometry::body_to_camera(const bot_core_image_t *msg){
+//
+//  cout << "got body_to_camera\n";
+//}
+
 void
 StereoOdometry::imu_handler(const microstrain_ins_t *msg)
 {
 
-  if (!imu_init){
+  if (_imu_attitude){
+  if (!_imu_init){
     Eigen::Quaterniond m = imu2robotquat(msg);
     Eigen::Isometry3d init_pose;
     init_pose.setIdentity();
     init_pose.translation() << 0,0,0;
     init_pose.rotate(m);
     pose = init_pose;
-    imu_init = true;
+    _imu_init = true;
     cout << "got first IMU measurement\n";
   }
-
+  }else{
+    cout << "got IMU measurement - not incorporating them\n";
+  }
 
 }
 
@@ -388,6 +430,7 @@ StereoOdometry::usage(const char* progname)
 #ifdef USE_LCMGL
       "  -l, --lcmgl                   Render debugging information with LCMGL\n"
 #endif
+      "  -m, --imu NUM                 Use IMU to inferfer attitude.\n"
       "  -h, --help                    Shows this help text and exits\n",
       progname);
 }
@@ -395,7 +438,7 @@ StereoOdometry::usage(const char* progname)
 int
 StereoOdometry::parse_command_line_options(int argc, char **argv) {
   // TODO parse options
-  const char *optstring = "hp::u::s::t::o::i:w:c:b:a:l";
+  const char *optstring = "hp::u::s::t::o::i:w:c:b:a:l:m";
   int c;
   struct option long_opts[] = {
     { "help", no_argument, 0, 'h' },
@@ -410,6 +453,7 @@ StereoOdometry::parse_command_line_options(int argc, char **argv) {
     { "camera-block", required_argument, 0, 'b' },
     { "param-file", required_argument, 0, 'a'},
     { "lcmgl", no_argument, 0, 'l' },
+    { "imu", no_argument, 0, 'm' },
     {0, 0, 0, 0}
   };
 
@@ -460,6 +504,9 @@ StereoOdometry::parse_command_line_options(int argc, char **argv) {
         _draw_lcmgl = true;
         break;
 #endif
+      case 'm':
+        _imu_attitude = true;
+        break;
       case 'h':
       default:
         usage(argv[0]);
@@ -486,6 +533,7 @@ StereoOdometry::StereoOdometry() :
     _publish_frame_update(false),
     _publish_stats(false),
     _publish_tictoc(false),
+    _imu_attitude(false),
     _utime_cur(0),
     _utime_prev(0),
     _image_left_buf(NULL),
@@ -620,6 +668,7 @@ StereoOdometry::initialize(int argc, char **argv)
   // subscribe to image events
   //std::string image_channel(bot_param_get_camera_lcm_channel(_bot_param, "stereo")); 
   std::string image_channel(bot_param_get_camera_lcm_channel(_bot_param, _camera_block.c_str())); // added mfallon
+  cout << image_channel.c_str() << " is cannel\n";
   bot_core_image_t_subscribe(_subscribe_lcm, image_channel.c_str(),
                              StereoOdometry::image_handler_aux, this);
 
