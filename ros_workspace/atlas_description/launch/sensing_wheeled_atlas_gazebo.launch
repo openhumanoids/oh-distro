@@ -1,32 +1,38 @@
 <launch>
 
-<!-- <include file="$(find gazebo_worlds)/launch/empty_world.launch"/> -->
-
 <!-- start up empty world -->
-<!--<include file="$(find gazebo_worlds)/launch/empty_world.launch"/>  -->
+<!--<include file="$(find gazebo_worlds)/launch/empty_world.launch"/>   -->
+
+
+
 <!--<include file="$(find gazebo_worlds)/launch/wg_world.launch"/>  -->
-<include file="$(find drc_object_models)/launch/small_room_world.launch"/> 
+<!--<include file="$(find drc_object_models)/launch/small_room_world.launch"/>  -->
 
 <!-- spawn pr2 robot + table + coffee cup -->
+<!--
 <include file="$(find drc_object_models_big)/launch/table_0.launch"/>
 <include file="$(find drc_object_models_big)/launch/coffee_cup.launch"/>
 <include file="$(find drc_object_models_big)/launch/desk_1.launch"/>
 
 <include file="$(find drc_object_models_big)/launch/table_1.launch"/>
 <include file="$(find drc_object_models_big)/launch/wine_cup_0.launch"/>
-
+-->
 <!-- <include file="$(find drc_object_models_big)/launch/cylinder_0.launch"/> -->
 <!-- <include file="$(find drc_object_models_big)/launch/box_0.launch"/> -->
-
+<!--
 <include file="$(find drc_object_models_big)/launch/ikea_cup_0.launch"/> 
 <include file="$(find drc_object_models_big)/launch/black_wine_glass_0.launch"/> 
 <include file="$(find drc_object_models_big)/launch/black_wine_glass_1.launch"/>
+-->
 
 <!-- start gazebo with an empty plane -->
 <param name="/use_sim_time" value="true" />
-<!-- <node name="gazebo" pkg="gazebo" type="gazebo" args="-u $(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen"/> -->
-<!-- send atlas urdf to param server -->
-<!--  <param name="robot_description" command="" />  -->
-<node name="spawn_wheeled_atlas" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/wheeledAtlas.urdf -z 1 -model wheeled_atlas" respawn="false" output="screen" />
+
+<!-- starts gazebo in paused mode. -->
+<node name="gazebo" pkg="gazebo" type="gazebo" args="$(find gazebo_worlds)/worlds/empty_throttled.world" respawn="false" output="screen"/>
+
+<node name="gazebo_gui" pkg="gazebo" type="gui" respawn="false" output="screen"/>
+
+  <node name="spawn_wheeled_atlas" pkg="gazebo" type="spawn_model" args="-urdf -file $(find atlas_description)/urdf/sensing_wheeledAtlas.urdf -z 1 -model wheeled_atlas" respawn="false" output="screen" />
 
 </launch>

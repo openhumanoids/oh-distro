@@ -603,14 +603,14 @@
       </controller:gazebo_ros_laser>
     </sensor:ray>
   </gazebo>
-  <joint name="wide_stereo_frame_joint" type="fixed">
+  <joint name="camera_frame_joint" type="fixed">
 <!--    <origin rpy="0.0   0.0   0.0" xyz="0.045 0.0 0.0501"/> -->
 <!-- Initally the left eye will be at sensor_rig_link/0,0,0/POSE/Body -->
     <origin rpy="0.0   0.0   0.0" xyz="0.0 0.0 0.0"/>
     <parent link="sensorrig_link"/>
-    <child link="wide_stereo_link"/>
+    <child link="camera_link"/>
   </joint>
-  <link name="wide_stereo_link">
+  <link name="camera_link">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -618,46 +618,46 @@
       <!-- this inertia is made up for now. -->
     </inertial>
   </link>
-  <joint name="wide_stereo_optical_frame_joint" type="fixed">
+  <joint name="camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
     <!-- rotate frame from x-forward to z-forward camera coords -->
-    <parent link="wide_stereo_link"/>
-    <child link="wide_stereo_optical_frame"/>
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
   </joint>
-  <link name="wide_stereo_optical_frame" type="camera"/>
-  <joint name="wide_stereo_gazebo_l_stereo_camera_frame_joint" type="fixed">
+  <link name="camera_optical_frame" type="camera"/>
+  <joint name="camera_gazebo_l_stereo_camera_frame_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="wide_stereo_link"/>
-    <child link="wide_stereo_gazebo_l_stereo_camera_frame"/>
+    <parent link="camera_link"/>
+    <child link="camera_gazebo_l_stereo_camera_frame"/>
   </joint>
-  <link name="wide_stereo_gazebo_l_stereo_camera_frame">
+  <link name="camera_gazebo_l_stereo_camera_frame">
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
   </link>
-  <joint name="wide_stereo_gazebo_l_stereo_camera_optical_frame_joint" type="fixed">
+  <joint name="camera_gazebo_l_stereo_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
-    <parent link="wide_stereo_gazebo_l_stereo_camera_frame"/>
-    <child link="wide_stereo_gazebo_l_stereo_camera_optical_frame"/>
+    <parent link="camera_gazebo_l_stereo_camera_frame"/>
+    <child link="camera_gazebo_l_stereo_camera_optical_frame"/>
   </joint>
-  <link name="wide_stereo_gazebo_l_stereo_camera_optical_frame"/>
-  <gazebo reference="wide_stereo_gazebo_l_stereo_camera_frame">
-    <sensor:camera name="wide_stereo_gazebo_l_stereo_camera_sensor">
+  <link name="camera_gazebo_l_stereo_camera_optical_frame"/>
+  <gazebo reference="camera_gazebo_l_stereo_camera_frame">
+    <sensor:camera name="camera_gazebo_l_stereo_camera_sensor">
       <imageSize>640 480</imageSize>
       <imageFormat>BAYER_BGGR8</imageFormat>
       <hfov>90</hfov>
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>25.0</updateRate>
-      <controller:gazebo_ros_camera name="wide_stereo_gazebo_l_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
+      <controller:gazebo_ros_camera name="camera_gazebo_l_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>25.0</updateRate>
-        <cameraName>wide_stereo/left</cameraName>
+        <cameraName>camera/left</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>wide_stereo_optical_frame</frameName>
+        <frameName>camera_optical_frame</frameName>
         <hackBaseline>0</hackBaseline>
         <CxPrime>320.5</CxPrime>
         <Cx>320.5</Cx>
@@ -670,45 +670,45 @@
         <distortion_k3>0.0</distortion_k3>
         <distortion_t1>0.0</distortion_t1>
         <distortion_t2>0.0</distortion_t2>
-        <interface:camera name="wide_stereo_gazebo_l_stereo_camera_iface"/>
+        <interface:camera name="camera_gazebo_l_stereo_camera_iface"/>
       </controller:gazebo_ros_camera>
     </sensor:camera>
     <turnGravityOff>true</turnGravityOff>
     <material>PR2/Blue</material>
   </gazebo>
-  <joint name="wide_stereo_gazebo_r_stereo_camera_frame_joint" type="fixed">
+  <joint name="camera_gazebo_r_stereo_camera_frame_joint" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.09 0.0"/>
-    <parent link="wide_stereo_gazebo_l_stereo_camera_frame"/>
-    <child link="wide_stereo_gazebo_r_stereo_camera_frame"/>
+    <parent link="camera_gazebo_l_stereo_camera_frame"/>
+    <child link="camera_gazebo_r_stereo_camera_frame"/>
   </joint>
-  <link name="wide_stereo_gazebo_r_stereo_camera_frame">
+  <link name="camera_gazebo_r_stereo_camera_frame">
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
   </link>
-  <joint name="wide_stereo_gazebo_r_stereo_camera_optical_frame_joint" type="fixed">
+  <joint name="camera_gazebo_r_stereo_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
-    <parent link="wide_stereo_gazebo_r_stereo_camera_frame"/>
-    <child link="wide_stereo_gazebo_r_stereo_camera_optical_frame"/>
+    <parent link="camera_gazebo_r_stereo_camera_frame"/>
+    <child link="camera_gazebo_r_stereo_camera_optical_frame"/>
   </joint>
-  <link name="wide_stereo_gazebo_r_stereo_camera_optical_frame"/>
-  <gazebo reference="wide_stereo_gazebo_r_stereo_camera_frame">
-    <sensor:camera name="wide_stereo_gazebo_r_stereo_camera_sensor">
+  <link name="camera_gazebo_r_stereo_camera_optical_frame"/>
+  <gazebo reference="camera_gazebo_r_stereo_camera_frame">
+    <sensor:camera name="camera_gazebo_r_stereo_camera_sensor">
       <imageSize>640 480</imageSize>
       <imageFormat>BAYER_BGGR8</imageFormat>
       <hfov>90</hfov>
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>25.0</updateRate>
-      <controller:gazebo_ros_camera name="wide_stereo_gazebo_r_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
+      <controller:gazebo_ros_camera name="camera_gazebo_r_stereo_camera_controller" plugin="libgazebo_ros_camera.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>25.0</updateRate>
-        <cameraName>wide_stereo/right</cameraName>
+        <cameraName>camera/right</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>wide_stereo_optical_frame</frameName>
+        <frameName>camera_optical_frame</frameName>
         <hackBaseline>0.09</hackBaseline>
         <CxPrime>320.5</CxPrime>
         <Cx>320.5</Cx>
@@ -721,17 +721,17 @@
         <distortion_k3>0.0</distortion_k3>
         <distortion_t1>0.0</distortion_t1>
         <distortion_t2>0.0</distortion_t2>
-        <interface:camera name="wide_stereo_gazebo_r_stereo_camera_iface"/>
+        <interface:camera name="camera_gazebo_r_stereo_camera_iface"/>
       </controller:gazebo_ros_camera>
     </sensor:camera>
     <turnGravityOff>true</turnGravityOff>
     <material>PR2/Blue</material>
   </gazebo>
-  <gazebo reference="wide_stereo_link">
+  <gazebo reference="camera_link">
     <material value="PR2/Blue"/>
     <turnGravityOff value="true"/>
   </gazebo>
-  <gazebo reference="wide_stereo_optical_frame">
+  <gazebo reference="camera_optical_frame">
     <material value="Gazebo/White"/>
     <turnGravityOff value="true"/>
   </gazebo>
