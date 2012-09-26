@@ -70,7 +70,10 @@ int main(int argc, char *argv[])
     //KinectRendererXYZRGB *krxyzrgb = kinect_add_renderer_xyzrgb_to_viewer(viewer, 0,NULL,NULL);
 
 	// create segmentation handler
-    UIProcessing uip(viewer, app.lcm, "LOCAL_MAP_POINTS"); //"KINECT_XYZRGB_ROS");
+    std::string channel_name = "LOCAL_MAP_POINTS";
+    UIProcessing uip(viewer, app.lcm, channel_name.c_str()); //"KINECT_XYZRGB_ROS");
+
+    std::cout << "Listening to data from channel: " << channel_name << "\n";
 
     // load saved preferences
     char *fname = g_build_filename(g_get_user_config_dir(), ".surrogate_guirc", NULL);

@@ -937,7 +937,7 @@ namespace surrogate_gui
 
 		cout << "\n\n\n=========Linear Algebra Test 2===== " << endl;
 		projected = projectAndChangeBasis(toPcl(points),
-									      Eigen::Vector3f(1,1,0)/sqrt(2),
+									      Eigen::Vector3f(1,1,0)/sqrt(2.0),
 									      Eigen::Vector3f(0,0,1));
 		for(uint i = 0; i < projected->points.size(); i++)
 			cout << projected->points[i] << endl;
