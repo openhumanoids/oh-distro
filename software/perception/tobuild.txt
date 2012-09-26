@@ -6,3 +6,4 @@ perception_example
 motion_estimate
 #local_map
 #registeration
+map_store
