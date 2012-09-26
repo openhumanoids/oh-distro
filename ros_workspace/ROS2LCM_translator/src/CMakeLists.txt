@@ -5,18 +5,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_executable(TRUE_robot_state_publisher TRUE_robot_state_publisher.cpp)
 pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm lcmtypes_drc_lcmtypes bot2-core) 
 
-rosbuild_add_executable(ros2lcm_translator ros2lcm_translator.cpp)
-pods_use_pkg_config_packages(ros2lcm_translator lcm lcmtypes_drc_lcmtypes
-	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
+#rosbuild_add_executable(ros2lcm_translator_no_sensing ros2lcm_translator_no_sensing.cpp)
+#pods_use_pkg_config_packages(ros2lcm_translator_no_sensing lcm lcmtypes_drc_lcmtypes
+#	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
+
+#pods_install_executables(TRUE_robot_state_publisher  ros2lcm_translator ros2lcm_translator_no_sensing)
 
 rosbuild_add_executable(ros2lcm_translator_combined ros2lcm_translator_combined.cpp)
 pods_use_pkg_config_packages(ros2lcm_translator_combined lcm lcmtypes_drc_lcmtypes
 	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
 
-pods_install_executables(TRUE_robot_state_publisher  ros2lcm_translator ros2lcm_translator_combined)
-
-# Old Stuff:
-#rosbuild_add_executable(TRUE_robot_state_publisher src/TRUE_robot_state_publisher.cpp)
-#pods_install_executables(TRUE_robot_state_publisher)
-#pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm #lcmtypes_drc_lcmtypes bot2-core) 
+pods_install_executables(TRUE_robot_state_publisher ros2lcm_translator_combined)
 
