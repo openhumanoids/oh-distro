@@ -82,13 +82,16 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
 
   // Transform cloud to that its in robotic frame:
   // Could also apply the cv->robotic transform directly
-  double x_temp;
+  /*
+   * Removed in Sept 2012:
+   * double x_temp;
   for(int j=0; j<cloud->points.size(); j++) {
     x_temp = cloud->points[j].x;
     cloud->points[j].x = cloud->points[j].z;
     cloud->points[j].z = - cloud->points[j].y;
     cloud->points[j].y = - x_temp;
   }
+  */
 }
 
 

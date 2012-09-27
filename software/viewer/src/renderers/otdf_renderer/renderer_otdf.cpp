@@ -1,7 +1,3 @@
-// Renderer for a point-and-click message publisher
-// used to send a message to relocalize a robot
-// this was orginally part of envoy/renderers
-// mfallon aug2011
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +34,8 @@
 //#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
+
+#include <path_util/path_util.h>
 
 #include <kdl/tree.hpp>
 #include <kdl_parser/kdl_parser.hpp>
@@ -1203,6 +1201,9 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
   ehandler->mouse_motion = mouse_motion;
   ehandler->user = self;
  
+  string models_path = getModelsPath();
+  cout << models_path << "blah\n";
+
     std::string dir;
   char * pPath;
   pPath = getenv ("DRC_PATH");

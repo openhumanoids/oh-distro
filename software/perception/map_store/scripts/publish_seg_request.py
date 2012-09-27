@@ -17,15 +17,10 @@ print 'Argument List:', str(sys.argv)
 print sys.argv[1]
 # wheelchair robot assumes 40Hz
 
-    print "send a single message"
-    time.sleep(0.025)
-    pose = localize_reinitialize_cmd_t() 
-    # example pose in 8th floor map
-    #pose.pos[0] = 43.66
-    #pose.pos[1] = 11.33
-    #pose.pos[1] = 0.0
+print "send a single message"
 
+pose = localize_reinitialize_cmd_t() 
 
     #pose.orientation[0] = 1.000000
-    pose.utime =timestamp_now()
-    lc.publish(sys.argv[1], pose.encode())
+pose.utime =timestamp_now()
+lc.publish(sys.argv[1], pose.encode())

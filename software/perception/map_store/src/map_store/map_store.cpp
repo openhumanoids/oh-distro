@@ -96,7 +96,7 @@ void map_store::dump_maps(DumpCode code, double x_offset){
 
     Eigen::Isometry3d offset_pose = m.base_pose;
     offset_pose.translation() << m.base_pose.translation().x() + x_offset*i,
-               m.base_pose.translation().y(),
+               m.base_pose.translation().y()+ 40,
                m.base_pose.translation().z();
 
     Isometry3dTime offset_poseT = Isometry3dTime(m.utime, offset_pose);
@@ -114,7 +114,7 @@ void map_store::dump_maps_handler(const drc_localize_reinitialize_cmd_t *msg){
 
   // ... transmit the map to the segmentation gui
 
-  dump_maps(DUMP_SCREEN,10.0);
+  dump_maps(DUMP_SCREEN,40.0);
 }
 
 void map_store::current_map_handler(const drc_localize_reinitialize_cmd_t *msg){
