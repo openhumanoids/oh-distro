@@ -66,8 +66,8 @@ class App{
 App::App(){
   lcmref_ = lcm_create(NULL);
 
-  left_image_sub_ = node_.subscribe(string("/wide_stereo/left/image_rect_color"), 10, &App::left_image_cb,this);
-  right_image_sub_ = node_.subscribe(string("/wide_stereo/right/image_rect_color"), 10, &App::right_image_cb,this);
+  left_image_sub_ = node_.subscribe(string("/wide_stereo/left/image_raw"), 10, &App::left_image_cb,this);
+  right_image_sub_ = node_.subscribe(string("/wide_stereo/right/image_raw"), 10, &App::right_image_cb,this);
 };
 
 App::~App()  {
@@ -82,14 +82,14 @@ void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
   left_time = msg->header.stamp.toSec();
 //  std::cout << "here right\n";
   double diff =  right_time - left_time;
-  std::cout << "L: "<< msg->header.stamp.toSec() << " " << diff  << "\n";
+  std::cout << "L: "<< msg->header.stamp.toSec() << " " << diff  << " [RAW]\n";
 
 }
 void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
   right_time = msg->header.stamp.toSec();
 //  std::cout << "here right\n";
   double diff =  right_time - left_time;
-  std::cout << "R: "<<msg->header.stamp.toSec() << " " << diff  << "\n";
+  std::cout << "R: "<<msg->header.stamp.toSec() << " " << diff  << " [RAW]\n";
 
 
 }

@@ -9,11 +9,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/message_filter.h>
-#include <sensor_msgs/PointCloud.h>
-#include <nav_msgs/Odometry.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
@@ -26,9 +21,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-//#include <bot_core/bot_core.h>
-//#include <bot_param/param_client.h>
-//#include <bot_param/param_util.h>
 #include <lcmtypes/bot_core.h>
 
 int width =640; // hardcoded
