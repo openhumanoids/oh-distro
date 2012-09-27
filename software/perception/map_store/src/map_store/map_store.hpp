@@ -1,5 +1,5 @@
-#ifndef LOCAL_MAP_HPP_
-#define LOCAL_MAP_HPP_
+#ifndef map_store_HPP_
+#define map_store_HPP_
 
 #include <lcm/lcm.h>
 
@@ -9,12 +9,36 @@
 #include <lcmtypes/bot_core.h>
 
 
+/**
+ * Represent a single image feature.
+ */
+struct LocalMap
+{
+  int map_id; // a unique incrementing counter for each map
+  int64_t utime; // a time stamp - corresponds to the time of pose
+  Eigen::Isometry3d pose; // this one of the camera poses from which the robot captured this map
+  Eigen::Isometry3d base_pose; // the base pose, initially 0,0,0, is the grounding pose for this map
+
+  pcl::PointCloud<PointXYZRGB>::Ptr cloud; // the raw point cloud
+
+  // otdf
+  // rgb stills
+  // segmentation sequences
+
+  // @todo what more is needed?
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+enum DumpCode { DUMP_FILE = 0, DUMP_LCM = 1, DUMP_SCREEN = 2 }; // possibly also to its own seperate log file
+
+
+
 ///////////////////////////////////////////////////////////////
-class local_map{
+class map_store{
   public:
-    local_map(lcm_t* publish_lcm);
+    map_store(lcm_t* publish_lcm);
     
-    ~local_map(){
+    ~map_store(){
     }
     
   private:
@@ -23,62 +47,50 @@ class local_map{
     pointcloud_lcm* pc_lcm_;
     pointcloud_vis* pc_vis_;
 
-    Isometry3dTime current_poseT;
-    bool current_pose_init; // have we started
-    Isometry3dTime null_poseT;
-    Isometry3dTime local_poseT; // LIDAR pose where we started the most recent local map
+    vector <LocalMap> maps;
 
-    // Fixed rigid transform
-    Eigen::Isometry3d body_to_lidar;
+    void dump_maps(DumpCode code, double x_offset);
 
-    // Current submap clouds
-    pcl::PointCloud<PointXYZRGB>::Ptr cloud;
-    int cloud_counter;
-    int newmap_requested;
-    bool newmap_started;
-
-    static void newmap_handler_aux(const lcm_recv_buf_t* rbuf,
+    static void seg_request_handler_aux(const lcm_recv_buf_t* rbuf,
                                 const char* channel,
                                 const drc_localize_reinitialize_cmd_t* msg,
                                 void* user_data){
-      ((local_map *) user_data)->newmap_handler(msg);
+      ((map_store *) user_data)->seg_request_handler(msg);
     }
-    void newmap_handler(const drc_localize_reinitialize_cmd_t *msg);
+    void seg_request_handler(const drc_localize_reinitialize_cmd_t *msg);
+
+
+    static void seg_update_handler_aux(const lcm_recv_buf_t* rbuf,
+                                const char* channel,
+                                const drc_localize_reinitialize_cmd_t* msg,
+                                void* user_data){
+      ((map_store *) user_data)->seg_update_handler(msg);
+    }
+    void seg_update_handler(const drc_localize_reinitialize_cmd_t *msg);
+
+    static void dump_maps_handler_aux(const lcm_recv_buf_t* rbuf,
+                                const char* channel,
+                                const drc_localize_reinitialize_cmd_t* msg,
+                                void* user_data){
+      ((map_store *) user_data)->dump_maps_handler(msg);
+    }
+    void dump_maps_handler(const drc_localize_reinitialize_cmd_t *msg);
+
+    static void current_map_handler_aux(const lcm_recv_buf_t* rbuf,
+                                const char* channel,
+                                const drc_localize_reinitialize_cmd_t* msg,
+                                void* user_data){
+      ((map_store *) user_data)->current_map_handler(msg);
+    }
+    void current_map_handler(const drc_localize_reinitialize_cmd_t *msg);
 
     static void pointcloud_handler_aux(const lcm_recv_buf_t* rbuf,
                                 const char* channel,
                                 const drc_pointcloud2_t* msg,
                                 void* user_data) {
-      ((local_map *) user_data)->pointcloud_handler(msg);
+      ((map_store *) user_data)->pointcloud_handler(msg);
     }
     void pointcloud_handler(const drc_pointcloud2_t *msg);
-
-    static void lidar_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_planar_lidar_t* msg,
-                                void* user_data) {
-      ((local_map *) user_data)->lidar_handler(msg);
-    }
-    void lidar_handler(const bot_core_planar_lidar_t *msg);
-
-
-    static void pose_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_pose_t* msg,
-                                void* user_data) {
-      ((local_map *) user_data)->pose_handler(msg);
-    }
-    void pose_handler(const bot_core_pose_t *msg);
-
-    static void rigid_tf_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_rigid_transform_t* msg,
-                                void* user_data) {
-      ((local_map *) user_data)->rigid_tf_handler(msg);
-    }
-    void rigid_tf_handler(const bot_core_rigid_transform_t *msg);
-
-
 
     void send_newmap();
 

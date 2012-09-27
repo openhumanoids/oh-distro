@@ -1,3 +1,11 @@
+// Listen to map_store_POINTS files:
+// - store them in a local object
+// - maintain a list and broadcast the list
+// - support queries, which sent a specific cloud back
+// - listen for 
+
+
+
 // LCM example program for interacting  with PCL data
 // In this case it pushes the data back out to LCM in
 // a different message type for which the "collections"
@@ -25,262 +33,120 @@ using namespace pcl;
 
 /////////////////////////////////////
 
-local_map::local_map(lcm_t* publish_lcm):
-          publish_lcm_(publish_lcm),
-          current_poseT(0, Eigen::Isometry3d::Identity()),
-          null_poseT(0, Eigen::Isometry3d::Identity()),
-          local_poseT(0, Eigen::Isometry3d::Identity()) {
-
-  current_pose_init = false;
-
-  // TODO read from config later:
-  // directly matches the frames in gazebo
-  Eigen::Quaterniond quat =euler_to_quat(0,0,M_PI/2); // ypr
-  Eigen::Isometry3d pose;
-  body_to_lidar.setIdentity();
-  body_to_lidar.translation()  << 0.275, 0.0, 1.2805;
-  body_to_lidar.rotate(quat);
+map_store::map_store(lcm_t* publish_lcm):
+          publish_lcm_(publish_lcm) {
 
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clf (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  cloud = cloud_clf;
-  cloud_counter =0;
-
-  newmap_requested=0;
-
-  // Unpack Config:
-  pc_lcm_ = new pointcloud_lcm(publish_lcm_);
 
 
-  // Vis Config:
   pc_vis_ = new pointcloud_vis(publish_lcm_);
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(600,"Pose - Laser [Current]",5,1) );
-  float colors_a[] ={1.0,0.0,0.0};
-  vector <float> colors_v;
-  colors_v.assign(colors_a,colors_a+4*sizeof(float));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(601,"Cloud - Laser [Current]"         ,1,1, 600,1,colors_v));
-
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(400,"Pose - Camera",5,0) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(401,"Cloud - Current Camera",1,1, 400,0,colors_v));
-
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose - Null",5,0) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(800,"Pose - Laser Map (POSE)",5,0) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose - Dump",5,0) );
   float colors_b[] ={0.0,0.0,1.0};
+  vector <float> colors_v;
   colors_v.assign(colors_b,colors_b+4*sizeof(float));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(801,"Cloud - Laser Map"     ,1,1, 1000,1,colors_v));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(802,"Cloud - Laser Map (Full Scan)"     ,1,1, 1000,1,colors_v));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud - Dump"     ,1,0, 1000,1,colors_v));
+
+
+
 
   // LCM:
   lcm_t* subscribe_lcm_ = publish_lcm_;
-  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "LOCALIZE_NEW_MAP",
-      newmap_handler_aux, this);
-  drc_pointcloud2_t_subscribe(subscribe_lcm_, "WIDE_STEREO_POINTS",
-      local_map::pointcloud_handler_aux, this);
-  bot_core_planar_lidar_t_subscribe(subscribe_lcm_, "ROTATING_SCAN",
-      local_map::lidar_handler_aux, this);
-  bot_core_pose_t_subscribe(subscribe_lcm_, "POSE",
-      local_map::pose_handler_aux, this);
+  drc_pointcloud2_t_subscribe(subscribe_lcm_, "LOCAL_MAP_POINTS",
+      pointcloud_handler_aux, this);
 
-  bot_core_rigid_transform_t_subscribe(subscribe_lcm_, "BODY_TO_ROTATING_SCAN",
-      local_map::rigid_tf_handler_aux, this);
+  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "SEG_REQUEST",
+      seg_request_handler_aux, this);
 
-}
+  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "SEG_UPDATE",
+      seg_update_handler_aux, this);
 
-void local_map::rigid_tf_handler(const bot_core_rigid_transform_t *msg){
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1],msg->quat[2],msg->quat[3]);
-  body_to_lidar.setIdentity();
-  body_to_lidar.translation()  << msg->trans[0], msg->trans[1], msg->trans[2];
-  body_to_lidar.rotate(quat);
+  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "DUMP_MAPS",
+      dump_maps_handler_aux, this);
+
+  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "CURRENT_MAP_ID",
+      current_map_handler_aux, this);
 }
 
 
-void local_map::newmap_handler(const drc_localize_reinitialize_cmd_t *msg){
-  cout << "requested newmap\n";
+void map_store::seg_request_handler(const drc_localize_reinitialize_cmd_t *msg){
+  cout << "segmentation map requested\n";
 
-  newmap_requested=1;
-  /*
-  // Send the final version of the previous local map
-  vector <float> colors_v;
-  float colors_a[3];
-  colors_a[0] = vis_colors[3*(cloud_counter%num_vis_colors)];
-  colors_a[1] = vis_colors[3*(cloud_counter%num_vis_colors)+1];
-  colors_a[2] = vis_colors[3*(cloud_counter%num_vis_colors)+2];
-  colors_v.assign(colors_a,colors_a+4*sizeof(float));
-  stringstream ss;
-  ss << "Cloud - Local Map " << cloud_counter;
-  int map_coll_id = cloud_counter + 1000 + 1; // so that first is 1001 and null is 1000
-  ptcld_cfg pcfg = ptcld_cfg(map_coll_id,    ss.str()     ,1,1, 1000,1,colors_v);
-  pc_vis_->ptcld_to_lcm(pcfg, *cloud, null_poseT.utime, null_poseT.utime );
-
-  pcl::PCDWriter writer;
-  stringstream ss2;
-  ss2 << "cloud" << cloud_counter << ".pcd";
-  writer.write (ss2.str(), *cloud, false);
-
-  cout << cloud_counter << " finished | " << cloud->points.size() << " points\n";
-
-  // Start a new local map:
-  cloud->width    = 0;
-  cloud->height   = 1;
-  cloud->is_dense = false;
-  cloud->points.resize (0);
-  cloud_counter++;
-  cout << cloud_counter << " started | " << cloud->points.size() << " points\n";
-
-  Eigen::Isometry3d local_pose = current_poseT.pose*body_to_lidar;
-  local_poseT = Isometry3dTime(msg->utime, local_pose);
-  pc_vis_->pose_to_lcm_from_list(800, local_poseT);
-   */
+  // ... transmit the map to the segmentation gui
 }
 
 
+void map_store::seg_update_handler(const drc_localize_reinitialize_cmd_t *msg){
+  cout << "received segmentation\n";
+
+  // ... log the segmentation
+}
+
+void map_store::dump_maps(DumpCode code, double x_offset){
+
+  if (code == DUMP_SCREEN){
+   cout << "dump screen set\n";
+  }
+
+  cout << "dump maps blah\n";
+  for (size_t i=0;i<maps.size() ; i++){
+     LocalMap m = maps[i];
+    cout <<m.map_id  << " | " << m.utime << "|" << m.cloud->size() << " cloud size\n";
+
+    Eigen::Isometry3d offset_pose = m.base_pose;
+    offset_pose.translation() << m.base_pose.translation().x() + x_offset*i,
+               m.base_pose.translation().y(),
+               m.base_pose.translation().z();
+
+    Isometry3dTime offset_poseT = Isometry3dTime(m.utime, offset_pose);
+
+    pc_vis_->pose_to_lcm_from_list(1000, offset_poseT);
+    pc_vis_->ptcld_to_lcm_from_list(1001, *(m.cloud), offset_poseT.utime, offset_poseT.utime);
 
 
-void local_map::pose_handler(const bot_core_pose_t *msg){
-  current_poseT.pose.setIdentity();
-  current_poseT.pose.translation() << msg->pos[0], msg->pos[1], msg->pos[2];
-  Eigen::Quaterniond m;
-  m  = Eigen::Quaterniond(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
-  current_poseT.pose.rotate(m);
-  current_poseT.utime = msg->utime;
 
-  if (!current_pose_init){
-    current_pose_init = true;
-
-    //Eigen::Isometry3d local_pose = current_poseT.pose;
-    //local_poseT = Isometry3dTime(msg->utime, local_pose);
-    //pc_vis_->pose_to_lcm_from_list(800, local_poseT);
-
-    //c Null Pose
-    Eigen::Isometry3d lidar_pose;
-    lidar_pose.setIdentity();
-    null_poseT = Isometry3dTime(msg->utime, lidar_pose);
-    pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
-    //    vcfg->PublishPoseToLCMFromList(3001,null_pose,cloud_utime_);
   }
 }
 
-void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
-  if (!current_pose_init){     return;  }
+void map_store::dump_maps_handler(const drc_localize_reinitialize_cmd_t *msg){
+  cout << "dump maps requested\n";
 
+  // ... transmit the map to the segmentation gui
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  double maxRange = 9.9;//29.7;
-  //double validBeamAngles[] ={-2.5,2.5}; // all of it both sides
-  double validBeamAngles[] ={-M_PI/2,2.5}; //  nothing beyond directly down  | all returns up
-  convertLidar(msg->ranges, msg->nranges, msg->rad0,
-      msg->radstep, lidar_cloud, maxRange,
-      validBeamAngles[0], validBeamAngles[1]);
-
-  // 3. Transmit data to viewer at null pose:
-  // 3a. Transmit Pose:
-  int pose_id=msg->utime;
-  int lidar_obj_collection= 600;
-
-  // Use the current VO pose without interpolation or tf:
-  //Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, current_poseT.pose);
-
-  // Transform the VO pose via the inter sensor config:
-  Eigen::Isometry3d lidar_pose = current_poseT.pose*body_to_lidar;
-  Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
-  pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(601, *lidar_cloud, pose_id, pose_id);
-
-
-  Eigen::Quaterniond b2l_quat(body_to_lidar.rotation());
-  double ypr[3];
-  quat_to_euler(b2l_quat, ypr[0], ypr[1], ypr[2]);
-  if (newmap_requested){
-    if (!newmap_started){
-      if (ypr[0]> 1.3){
-        cout << "starting yaw: " << ypr[0] << "\n";
-        newmap_started=true;
-      }
-    }
-  }
-
-  if (newmap_requested && newmap_started){
-
-    Eigen::Isometry3f pose_f = Isometry_d2f(lidar_poseT.pose);
-    Eigen::Quaternionf pose_quat(pose_f.rotation());
-    pcl::transformPointCloud (*lidar_cloud, *lidar_cloud,
-        pose_f.translation(), pose_quat); // !! modifies lidar_cloud
-    (*cloud) += (*lidar_cloud);
-
-    if (ypr[0]< -1.3){
-      send_newmap();
-
-      newmap_requested=0;
-      newmap_started=false;
-    }
-
-    pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
-    pc_vis_->ptcld_to_lcm_from_list(802, *cloud, null_poseT.utime, null_poseT.utime);
-  }
-
+  dump_maps(DUMP_SCREEN,10.0);
 }
 
+void map_store::current_map_handler(const drc_localize_reinitialize_cmd_t *msg){
+  cout << "map\n";
 
-void local_map::send_newmap(){
-  cout << "im full now will send\n";
-
-  // Send the final version of the previous local map
-  vector <float> colors_v;
-  float colors_a[3];
-  colors_a[0] = vis_colors[3*(cloud_counter%num_vis_colors)];
-  colors_a[1] = vis_colors[3*(cloud_counter%num_vis_colors)+1];
-  colors_a[2] = vis_colors[3*(cloud_counter%num_vis_colors)+2];
-  colors_v.assign(colors_a,colors_a+4*sizeof(float));
-  stringstream ss;
-  ss << "Cloud - Local Map " << cloud_counter;
-  int map_coll_id = cloud_counter + 1000 + 1; // so that first is 1001 and null is 1000
-  ptcld_cfg pcfg = ptcld_cfg(map_coll_id,    ss.str()     ,1,1, 1000,1,colors_v);
-  pc_vis_->ptcld_to_lcm(pcfg, *cloud, null_poseT.utime, null_poseT.utime );
-
-
-
-  cout << "local map " << cloud_counter << " sent | " << cloud->points.size() << " points\n";
-  pc_vis_->pointcloud2_to_lcm(*cloud,"LOCAL_MAP_POINTS", null_poseT.utime);
-
-  //pcl::PCDWriter writer;
-  //stringstream ss2;
-  //ss2 << "cloud" << cloud_counter << ".pcd";
-  //writer.write (ss2.str(), *cloud, false);
-
-
-  // Start a new local map:
-  cloud->width    = 0;
-  cloud->height   = 1;
-  cloud->is_dense = false;
-  cloud->points.resize (0);
-  cloud_counter++;
-
-//  Eigen::Isometry3d local_pose = current_poseT.pose;
-//  local_poseT = Isometry3dTime(msg->utime, local_pose);
-  pc_vis_->pose_to_lcm_from_list(800, current_poseT);
-
-
-
+  // contains which map to visualise
+  // ... transmit the specified map to the segmentation gui (continously @ 1Hz in a different thread)
 }
 
+void map_store::pointcloud_handler(const drc_pointcloud2_t *msg){
 
-void local_map::pointcloud_handler(const drc_pointcloud2_t *msg){
-  if (!current_pose_init){     return;  }
+  cout << "got ptd handler\n";
+  // Create new local map object, store cloud
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pc_lcm_->unpack_pointcloud2( (const ptools_pointcloud2_t*)   msg, cloud);
-  //pc_lcm_->unpack_pointcloud2(  msg, cloud);
+   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    pc_lcm_->unpack_pointcloud2( (const ptools_pointcloud2_t*)   msg, cloud);
 
-  // 3a. Transmit Pose:
-  int pose_id=msg->utime;
-  int camera_obj_collection= 400;
 
-  // Use the current VO pose without interpolation or tf:
-  Isometry3dTime camera_poseT = Isometry3dTime(pose_id, current_poseT.pose);
-  pc_vis_->pose_to_lcm_from_list(camera_obj_collection, camera_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(401, *cloud, pose_id, pose_id);
+  LocalMap map;
+  //Eigen::Isometry3d base_pose;
+  map.map_id =maps.size(); // use a counter instead
+  map.utime =maps.size();// msg->utime; // use time later..
+
+  map.base_pose.setIdentity();
+  map.cloud =cloud;
+
+
+
+  maps.push_back(map);
+  cout << maps.size() << "maps now stored\n";
+
+
 }
 
 int
@@ -288,7 +154,7 @@ main(int argc, char ** argv)
 {
   lcm_t * lcm;
   lcm = lcm_create(NULL);
-  local_map app(lcm);
+  map_store app(lcm);
 
   while(1)
     lcm_handle(lcm);
