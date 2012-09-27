@@ -1201,29 +1201,30 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
   ehandler->mouse_motion = mouse_motion;
   ehandler->user = self;
  
-  string models_path = getModelsPath();
-  cout << models_path << "blah\n";
 
+/*
     std::string dir;
   char * pPath;
   pPath = getenv ("DRC_PATH");
  if (pPath!=NULL){
-   dir = string(pPath) + OTDF_LIBRARY_FOLDER; 
+   dir = string(pPath) + OTDF_LIBRARY_FOLDER;
   }
  else{
     pPath = getenv ("HOME");
      if (pPath!=NULL)
        printf ("The current home path is: %s\n",pPath);
-  
+
   dir = string(pPath) + "/drc" + OTDF_LIBRARY_FOLDER;
 
  }
-
   //  self->otdf_dir = dir; seg faults when  self->otdf_dir is a string, so using a string ptr
-  self->otdf_dir_name_ptr = new std::string(dir); 
+ */
+
+  string otdf_models_path = std::string(getModelsPath()) + "/otdf";
+  self->otdf_dir_name_ptr = new std::string(otdf_models_path);
   std::cout << "searching for otdf files in: "<< (*self->otdf_dir_name_ptr) << std::endl;
   std::vector<std::string> otdf_files = std::vector<std::string>();
-  get_OTDF_filenames_from_dir(dir,otdf_files);
+  get_OTDF_filenames_from_dir(otdf_models_path.c_str(),otdf_files);
   std::cout << "found " << otdf_files.size() << " files"<< std::endl;
   self->num_otdfs = otdf_files.size();
   self->otdf_names =(char **) calloc(self->num_otdfs, sizeof(char *));
@@ -1232,7 +1233,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
   self->instantiated_objects.clear();
   self->instance_selection_ptr = new std::string(" ");
 
-  for(unsigned int i=0;i<otdf_files.size();i++){
+  for(size_t i=0;i<otdf_files.size();i++){
    std::cout << otdf_files[i] << std::endl;
    self->otdf_filenames.push_back(otdf_files[i]);
    self->instance_cnt.insert(std::make_pair(otdf_files[i], (int)0));

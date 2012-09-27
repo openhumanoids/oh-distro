@@ -17,8 +17,6 @@ add_subdirectory(src/renderers)
 add_subdirectory(src/viewer)
 
 # this is a really terrible place to do this - need to fix it!
-#install(FILES ../../config/drc_robot.cfg DESTINATION config)
-#install(FILES ../../config/drc_rig.cfg DESTINATION config)
-#install(DIRECTORY ../../configmodels DESTINATION .)
-install(DIRECTORY ../../config DESTINATION .)
-install(DIRECTORY ../../models DESTINATION .)
+# REMOVED SEPT 2012 - now using simlinks
+#install(DIRECTORY ../../config DESTINATION .)
+#install(DIRECTORY ../../models DESTINATION .)
