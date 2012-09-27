@@ -1,0 +1,16 @@
+package drc;
+
+struct affordance_t{
+
+  // These are duplication ... remove?
+  int64_t map_utime;
+  int32_t map_id;
+  int16_t otdf_id;   // which object, see constants below
+   
+  int32_t nparams;
+  affordance_t params[nparams];
+ 
+  // Point Cloud IDs?
+
+  const int16_t CYLINDER=0, LEVER=1;
+}
