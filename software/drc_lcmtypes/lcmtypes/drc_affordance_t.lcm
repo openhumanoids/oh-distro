@@ -1,15 +1,29 @@
 package drc;
 
-struct affordance_t{
+struct affordance_t
+{
 
   // These are duplication ... remove?
   int64_t map_utime;
   int32_t map_id;
-  int16_t otdf_id;   // which object, see constants below
+
+  // which object in the scene is it?
+  int32_t object_id;
+  // which object, see constants below
+  int16_t otdf_id;   
+  // informal label for the affordance:
+  string name;
    
+  // geomtrical properties, 
   int32_t nparams;
-  affordance_t params[nparams];
- 
+  double params[nparams];
+  string param_names[nparams];
+
+  //   
+  int32_t nstates;
+  double states[nstates];
+  string state_names[nstates];
+
   // Point Cloud IDs?
 
   const int16_t CYLINDER=0, LEVER=1;
