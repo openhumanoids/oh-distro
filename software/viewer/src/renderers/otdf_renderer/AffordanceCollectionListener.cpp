@@ -12,8 +12,7 @@ using namespace boost;
 namespace otdf_renderer
 {
   //==================constructor / destructor
-  
-  /**Subscribes to Robot URDF Model and to EST_ROBOT_STATE.*/
+
 //   AffordanceCollectionListener::AffordanceCollectionListener(boost::shared_ptr<lcm::LCM> &lcm, RendererOtdf* otdf_renderer):
 //     _lcm(lcm),
 //     _parent_otdf_renderer(otdf_renderer)
@@ -341,10 +340,6 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
 
 
 } //namespace otdf_renderer
-
-
-
-
 
 
 // ========= TYPES ======================================================
