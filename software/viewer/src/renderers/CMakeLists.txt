@@ -17,6 +17,8 @@ add_library(renderer_drc SHARED
   end_effector_goal_renderer/renderer_end_effector_goal.cpp
   end_effector_goal_renderer/RobotStateListener.cpp
   otdf_renderer/renderer_otdf.cpp
+  otdf_renderer/AffordanceCollectionListener.cpp
+  otdf_renderer/RobotStateListener.cpp
   )
   
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
@@ -34,6 +36,8 @@ end_effector_goal_renderer/RobotStateListener.hpp
   DESTINATION renderer_drc/end_effector_goal_renderer)
 
 pods_install_headers(otdf_renderer/renderer_otdf.hpp
+  otdf_renderer/AffordanceCollectionListener.hpp 
+  otdf_renderer/RobotStateListener.hpp
   DESTINATION renderer_drc/otdf_renderer)
 
 # create a pkg-config file for the library, to make it easier for other

@@ -1,65 +1,8 @@
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <string> 
-#include <vector>
-#include <math.h>
-#include <fstream>
-#include <map>
-#include <boost/shared_ptr.hpp>
+#include "renderer_otdf.hpp"
+#include "AffordanceCollectionListener.hpp"
+#include "RobotStateListener.hpp"
 
-#include <errno.h>
-#include <dirent.h>
-
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glut.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
-#endif
-
-#include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-
-#include <bot_vis/bot_vis.h>
-#include <bot_core/bot_core.h>
-
-//#include <visualization/renderer_localize.h>
-
-//#include <lcmtypes/drc_lcmtypes.h>
-#include <lcmtypes/drc_lcmtypes.hpp>
-#include <lcmtypes/bot_core.h>
-
-#include <path_util/path_util.h>
-
-#include <kdl/tree.hpp>
-#include <kdl_parser/kdl_parser.hpp>
-#include <forward_kinematics/treefksolverposfull_recursive.hpp>
-#include <otdf_parser/otdf_parser.h>
-#include <otdf_parser/otdf_urdf_converter.h>
-
-#define OTDF_LIBRARY_FOLDER "/software/object_template_model/otdf_library/"
-#define RENDERER_NAME "OTDF"
-#define PARAM_MANAGE_INSTANCES "Manage Instances"
-//#define PARAM_ADJUST_PARAM "Adjust Params"
-#define PARAM_OTDF_SELECT "Template"
-#define PARAM_OTDF_INSTANCE_SELECT "Instance"
-#define PARAM_OTDF_ADJUST_PARAM "Adjust Params"
-#define PARAM_OTDF_ADJUST_DOF "Adjust DoFs"
-#define PARAM_OTDF_INSTANCE_CLEAR "Clear Instance"
-#define PARAM_OTDF_INSTANCE_CLEAR_ALL "Clear All"
-#define PARAM_INSTANTIATE "Instantiate/Fit"
-#define PARAM_CLEAR "Clear All Instances"
-#define DRAW_PERSIST_SEC 4
-#define VARIANCE_THETA (30.0 * 180.0 / M_PI);
-//Not sure why abe has this high a variance for the angle //((2*M_PI)*(2*M_PI))
-#define MIN_STD 0.3
-#define MAX_STD INFINITY
+using namespace otdf_renderer;
 
 ////////////////// THE FOLLOWING CODE WAS COPIED IN HERE TO AVOID
 ////////////////// DEPENDENCY WITH THE COMMON_UTILS/GEOM_UTILS POD [MFALLON]
@@ -67,38 +10,10 @@
 
 using namespace std;
 
-// ===== 2 dimensional structure =====
-#ifndef _point2d_t_h
-typedef struct _point2d {
-  double x;
-  double y;
-} point2d_t;
-#endif
 
-// ===== 3 dimensional strucutres =====
-// double 
-typedef struct _point3d {
-  double x;
-  double y;
-  double z;
-} point3d_t;
-
-#define point3d_as_array(p) ((double*)p)
-
-/* The magic below allows you to use the POINT3D() macro to convert a
- * double[3] to a point3d_t.  gcc is smart -- if you try to cast anything
- * other than a point3d_t or a double[] with this macro, gcc will emit
- * a warning. */
-union _point3d_any_t {
-  point3d_t point;
-  double array[3];
-};
-
-typedef point3d_t vec3d_t;
-
-#define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
 
 namespace otdf_renderer{
+
 int geom_ray_plane_intersect_3d (const point3d_t *ray_point, const vec3d_t *ray_dir,
     const point3d_t *plane_point, const vec3d_t *plane_normal,
     point3d_t *result, double *u)
@@ -138,6 +53,7 @@ int geom_ray_z_plane_intersect_3d(const point3d_t *ray_point,
   return 0;
 }
 
+// this function should go into otdf_utils library
 int get_OTDF_filenames_from_dir (std::string dir, std::vector<std::string> &files)
 {
     DIR *dp;
@@ -156,59 +72,12 @@ int get_OTDF_filenames_from_dir (std::string dir, std::vector<std::string> &file
     return 0;
 }
 
+}//end naemspace
 
-}//end_namespace
 ////////////////////////////// END OF CODE COPIED IN FROM COMMON_UTILS
 
-using namespace otdf_renderer;
 
-typedef struct _OtdfInstanceStruc {
-    boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
-    std::vector<boost::shared_ptr<otdf::Geometry> > _link_shapes;
-    std::vector<drc::link_transform_t> _link_tfs;
-}OtdfInstanceStruc;   
-
-typedef struct _RendererOtdf {
-  BotRenderer renderer;
-  BotEventHandler ehandler;
-  BotViewer *viewer;
-  lcm_t *lc;
-
-  BotGtkParamWidget *pw;
-
-  int dragging;
-  int active; //1 = relocalize, 2 = set person location
-  int last_active; //1 = relocalize, 2 = set person location
-  point2d_t drag_start_local;
-  point2d_t drag_finish_local;
-
-  point2d_t click_pos;
-  double theta;
-  double goal_std;
-  int otdf_id;
-
-  int64_t max_draw_utime;
-  double circle_color[3];
-
-  int num_otdfs;
-  char ** otdf_names;
-  int * otdf_nums;
-  
-  std::string* otdf_dir_name_ptr;
-  std::vector<std::string> otdf_filenames; // itdf_template_names
-  std::map<std::string, int > instance_cnt; // templateName, value.
- 
-  std::string* instance_selection_ptr; 
-  //std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > instantiated_objects; // templatename+"ID:, object
-  std::map<std::string, OtdfInstanceStruc > instantiated_objects; // templatename+"ID:, object
-
-  
-}RendererOtdf;
-
-
-  //=================================
-
+//-----------------------------------
 static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_transform_t &nextTf)
 {
 
@@ -370,8 +239,6 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
 
   gluDeleteQuadric(quadric);
 }
-
-
 
 
 static void
@@ -608,9 +475,7 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
    for (joints_mapType::iterator joint = instance_struc._otdf_instance->joints_.begin();joint != instance_struc._otdf_instance->joints_.end(); joint++)
    {
-     
-
-       if(joint->second->type!=(int) FIXED) { // All joints that not of the type FIXED.
+      if(joint->second->type!=(int) FIXED) { // All joints that not of the type FIXED.
           double dof_current_pos = 0; // TODO: need object's initial dof state from fitting
           jointpos_in.insert(make_pair(joint->first, dof_current_pos)); 
        }
@@ -641,7 +506,6 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
                             //Otherwise returns relative transforms between joints. 
     
     kinematics_status = instance_struc._fksolver->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-
     if(kinematics_status>=0){
       // cout << "Success!" <<endl;
     }
@@ -661,21 +525,17 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
     {
       _links_map.insert(std::make_pair(lp_it->second->link_set[i]->name,lp_it->second->link_set[i]));       
     } // end for all links in lp
-  }// for all link patterns
+   }// for all link patterns
   
-//     std::cout <<"jointpos_in.size(): " <<jointpos_in.size() <<std::endl;
-//     std::cout <<"cartpos_out.size(): " <<cartpos_out.size() <<std::endl;
-//     std::cout <<"_links_map.size(): " <<_links_map.size() <<std::endl;
     
-    typedef std::map<std::string, boost::shared_ptr<otdf::Link> > links_mapType;
-    for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
-    { 
+   typedef std::map<std::string, boost::shared_ptr<otdf::Link> > links_mapType;
+   for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
+   { 
     	if(it->second->visual)
-	    {
-// 	       std::cout <<"_links_map it->first: " << it->first  <<std::endl;
-	       
+	{
+
 	      otdf::Pose visual_origin = it->second->visual->origin;
-        KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
+	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
 
 	      T_world_body.p[0]= instance_struc._otdf_instance->getParam("X");
 	      T_world_body.p[1]= instance_struc._otdf_instance->getParam("Y");
@@ -683,13 +543,6 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
 	      T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
 	                                           instance_struc._otdf_instance->getParam("Pitch"),
 	                                           instance_struc._otdf_instance->getParam("Yaw"));
-	      
-// 	      T_world_body.p[0]= 0;
-// 	      T_world_body.p[1]= 0;
-// 	      T_world_body.p[2]= 0;		    
-// 	      T_world_body.M =  KDL::Rotation::RPY(0,
-// 	                                           0,
-// 	                                           0);
 
 	    std::map<std::string, drc::transform_t>::const_iterator transform_it;
 	    transform_it=cartpos_out.find(it->first);	  
@@ -716,13 +569,7 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
 	          drc::link_transform_t state;	    
 
 	          state.link_name = transform_it->first;
-	
-	          // For Body Frame Viewing
-	          //state.tf.translation.x = T_body_visual.p[0];
-	          //state.tf.translation.y = T_body_visual.p[1];
-	          //state.tf.translation.z = T_body_visual.p[2];
-	          //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-	
+
 	          state.tf.translation.x = T_world_visual.p[0];
 	          state.tf.translation.y = T_world_visual.p[1];
 	          state.tf.translation.z = T_world_visual.p[2];
@@ -738,26 +585,18 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
 	    
 	    } // end if(it->second->visual)
        
-    } // end for links in  _links_map
+   } // end for links in  _links_map
 
 } // end function run_fk_and_gen_link_shapes_and_tfs
 
 static void create_otdf_object_instance (RendererOtdf *self)
 {
- 
- std::string filename = self->otdf_filenames[self->otdf_id]+".otdf"; 
- std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
- std::string filepath =  (*self->otdf_dir_name_ptr)+filename;
- //std::cout << "instantiating " << filename << std::endl;
+
+ std::string filename = self->otdf_filenames[self->otdf_id];
  std::string xml_string;
- std::fstream xml_file(filepath.c_str(), std::fstream::in);
-  while ( xml_file.good() )
-  {
-    std::string line;
-    std::getline( xml_file, line);
-    xml_string += (line + "\n");
+ if(!otdf::get_xml_string_from_file(filename, xml_string)){
+   return; // file extraction failed
   }
-  xml_file.close();
 
   OtdfInstanceStruc instance_struc;
   instance_struc._otdf_instance = otdf::parseOTDF(xml_string);
@@ -1022,6 +861,63 @@ static void spawn_adjust_dofs_popup (RendererOtdf *self){
   gtk_widget_show_all(window); 
 }
 
+
+
+static void publish_eegoal(boost::shared_ptr<lcm::LCM> &_lcm, OtdfInstanceStruc &instance_struc, std::string channel, KDL::Frame &T_body_world)
+ {
+   drc::ee_goal_t goalmsg;
+   
+  double x,y,z,w;
+  
+  // desired ee position in world frame
+  KDL::Frame T_world_ee,T_body_ee;
+  T_world_ee.p[0]= instance_struc._otdf_instance->getParam("X");
+	T_world_ee.p[1]= instance_struc._otdf_instance->getParam("Y");
+	T_world_ee.p[2]= instance_struc._otdf_instance->getParam("Z");		    
+	T_world_ee.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
+	                                     instance_struc._otdf_instance->getParam("Pitch"),
+	                                     instance_struc._otdf_instance->getParam("Yaw"));
+	        
+  //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
+  
+  // desired ee position wrt to robot body.
+  T_body_ee = T_body_world*T_world_ee;
+  
+	T_body_ee.M.GetQuaternion(x,y,z,w);
+
+	goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
+	goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
+	goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+
+	goalmsg.ee_goal_pos.rotation.x = x;
+	goalmsg.ee_goal_pos.rotation.y = y;
+	goalmsg.ee_goal_pos.rotation.z = z;
+	goalmsg.ee_goal_pos.rotation.w = w;
+
+	goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
+	goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
+	goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
+	goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
+	goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
+	goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
+	
+	goalmsg.num_chain_joints  = 6;
+	// No specified posture bias
+	goalmsg.use_posture_bias  = false;
+	goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
+	goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
+	for(int i = 0; i < goalmsg.num_chain_joints; i++){
+		goalmsg.joint_posture_bias[i]=0;
+		goalmsg.chain_joint_names[i]= "dummy_joint_names";
+	}
+
+	// Publish the message
+	goalmsg.halt_ee_controller = false;
+
+  _lcm->publish(channel, &goalmsg);
+ 
+ }
+
 static void on_otdf_instance_management_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
 {
   RendererOtdf *self = (RendererOtdf*) user;
@@ -1056,6 +952,21 @@ static void on_otdf_instance_management_widget_changed(BotGtkParamWidget *pw, co
        it->second = 0;
      }
      bot_viewer_request_redraw(self->viewer);
+  }
+  else if(!strcmp(name,PARAM_OTDF_REACH_OBJECT_L)) {
+  fprintf(stderr,"\nReaching centroid of selected Object\n");
+      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+   object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
+   KDL::Frame T_body_world = self->robotStateListener->T_body_world;
+    publish_eegoal( self->lcm, it->second, "LWRISTROLL_LINK_GOAL",T_body_world);
+  }
+  else if(!strcmp(name,PARAM_OTDF_REACH_OBJECT_R)) {
+  fprintf(stderr,"\nReaching centroid of selected Object\n");
+      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+   object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
+   KDL::Frame T_body_world = self->robotStateListener->T_body_world;
+    publish_eegoal( self->lcm, it->second, "RWRISTROLL_LINK_GOAL",T_body_world);
+    
   }
 }
 
@@ -1122,6 +1033,8 @@ static void spawn_instance_management_popup (RendererOtdf *self)
     bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR_ALL, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_REACH_OBJECT_L, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_REACH_OBJECT_R, NULL);
    }
    
    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_instance_management_widget_changed), self);
@@ -1139,6 +1052,8 @@ static void spawn_instance_management_popup (RendererOtdf *self)
   gtk_container_add (GTK_CONTAINER (window), vbox);
   gtk_widget_show_all(window);
 }
+
+
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
@@ -1182,6 +1097,11 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
 {
   
   RendererOtdf *self = (RendererOtdf*) calloc (1, sizeof (RendererOtdf));
+  self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
+  
+ // boost::shared_ptr<AffordanceCollectionListener> affordanceMsgHandler(new AffordanceCollectionListener(self));
+ self->affordanceMsgHandler = boost::shared_ptr<AffordanceCollectionListener>(new AffordanceCollectionListener(self));
+ self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self->lcm,viewer));
 
   self->viewer = viewer;
   self->renderer.draw = _draw;
@@ -1203,6 +1123,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
  
 
 /*
+ #define OTDF_LIBRARY_FOLDER "/software/object_template_model/otdf_library/"
     std::string dir;
   char * pPath;
   pPath = getenv ("DRC_PATH");
@@ -1220,7 +1141,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
   //  self->otdf_dir = dir; seg faults when  self->otdf_dir is a string, so using a string ptr
  */
 
-  string otdf_models_path = std::string(getModelsPath()) + "/otdf";
+  string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/
   self->otdf_dir_name_ptr = new std::string(otdf_models_path);
   std::cout << "searching for otdf files in: "<< (*self->otdf_dir_name_ptr) << std::endl;
   std::vector<std::string> otdf_files = std::vector<std::string>();
@@ -1243,7 +1164,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
 
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 
-  self->lc = lcm; //globals_get_lcm_full(NULL,1);
+  //self->lc = lcm; //globals_get_lcm_full(NULL,1);
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
  
@@ -1263,6 +1184,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
  self->renderer.widget = GTK_WIDGET(self->pw);
 
  self->active = 0;
+
 
  return &self->renderer;
 }

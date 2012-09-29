@@ -1,4 +1,3 @@
-// file: test_visual_elements_extractor.cpp
 // This file links to treefksolverposfull_recursive.cpp thats provides a routine to solve forward kinematics 
 // upon receipt of a joint_angles_t message.
 // for the whole kinematic tree. KDL lib functions only provide an interface to query global position between
