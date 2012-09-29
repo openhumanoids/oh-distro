@@ -15,7 +15,7 @@ pods_install_headers(include/otdf_parser/otdf_parser.h include/otdf_parser/otdf_
 pods_install_libraries(otdf_dom)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES tinyxml)
+set(REQUIRED_PACKAGES tinyxml path-util)
 pods_use_pkg_config_packages(otdf_dom ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

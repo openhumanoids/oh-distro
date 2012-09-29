@@ -37,17 +37,25 @@
 #ifndef OTDF_PARSER_H
 #define OTDF_PARSER_H
 
-#include <string>
-#include <map>
+#include <iostream>
+#include <fstream>
 #include <tinyxml.h>
-#include <boost/function.hpp>
+
+#include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+
 #include <otdf_interface/model.h>
+#include <path_util/path_util.h>
 
 
 namespace otdf{
 
   boost::shared_ptr<ModelInterface> parseOTDF(const std::string &xml_string);
+  bool get_xml_string_from_file(const std::string& filename, std::string& xml_string);
 
-}
+
+} // end namespace
 
 #endif
