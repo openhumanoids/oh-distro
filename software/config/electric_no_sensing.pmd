@@ -12,7 +12,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modpub" {
-        exec = "robot_model_publisher $HOME/drc/models/wheeledAtlas_pre_fuerte.urdf";
+        exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/wheeledAtlas_pre_fuerte.urdf";
         host = "localhost";
     }
     cmd "pub" {
