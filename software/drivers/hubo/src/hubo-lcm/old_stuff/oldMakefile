@@ -1,0 +1,44 @@
+.PHONY: all clean
+
+LIBS =  /usr/local/lib/liblcm.so
+LIBS_DIRS = -I/usr/local/lib/
+
+#EXENAME = ../bin/mr-recontranslator
+EXENAME = mr-recontranslator
+SOURCEFILES = ReconTranslator.cpp PracticalSocket/PracticalSocket.cpp recon_translator_main.cpp
+HEADERFILES = ReconTranslator.h 
+#../lcmtypes/fbntypes.h ../../../lcmtypes/src/lcmtypes/mrtypes.h
+OBJFILES = ReconTranslator.o
+
+# libbot
+BOT_INCLUDE_DIR := ../../build/include/
+CFLAGS_BOT := -I$(BOT_INCLUDE_DIR)  -I../../build/include/lcmtypes 
+#LDFLAGS_BOT_CORE := -lbot-core
+LDFLAGS_BOT_CORE := -L/usr/local/lib/ 
+
+# LCM
+#LCMLIBS = ../lib/libfbntypes.a  ../../../lcmtypes/lib/libmrtypes.a
+#LCMHEADER = ../lcmtypes/fbntypes.h ../../../lcmtypes/src/lcmtypes/mrtypes.h
+#CFLAGS_LCM := -I../lcmtypes/ -I../../../lcmtypes/src  -I../../../lcmtypes/src/lcmtypes -I/usr/include
+CFLAGS_LCM := -I/usr/include/include
+
+
+#LCMLIBS = ../lib/libfbntypes.a  ../../../lcmtypes/lib/libmrtypes.a
+#LCMHEADER = ../lcmtypes/fbntypes.h ../../../lcmtypes/src/lcmtypes/mrtypes.h
+CFLAGS_LCM := -I../lcmtypes/ -I../../../lcmtypes/src  -I../../../lcmtypes/src/lcmtypes -I/usr/include  
+
+
+CXXFLAGS = `pkg-config --cflags lcm glib-2.0` -Wall $(CFLAGS_LCM) $(CFLAGS_BOT)
+LXXFLAGS = `pkg-config --libs lcm glib-2.0 gthread-2.0` $(LDFLAGS_BOT_CORE) $(LIBS_DIRS)
+
+all: $(EXENAME)
+
+$(EXENAME): $(LCMLIBS) $(SOURCEFILES) $(HEADERFILES) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LXXFLAGS) $(SOURCEFILES) $(LIBS) $(LCMLIBS) -o $(EXENAME)
+
+$(LCMLIBS):
+	$(MAKE) -C ../../../lcmtypes
+	$(MAKE) -C ../lcmtypes
+
+clean:
+	rm -f $(EXENAME) $(wildcard *.o)

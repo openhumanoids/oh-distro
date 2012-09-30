@@ -10,5 +10,6 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 #
+add_subdirectory(src/PracticalSocket)
 add_subdirectory(src/hubo-lcm)
 
