@@ -1,6 +1,6 @@
-#include "../PracticalSocket/PracticalSocket.h" // For UDPSocket and SocketException
 #include <iostream>          // For cout and cerr
 #include <cstdlib>           // For atoi()
+#include <hubo/PracticalSocket.h> // For UDPSocket and SocketException
 
 const int ECHOMAX = 255;     // Longest string to echo
 

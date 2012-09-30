@@ -18,3 +18,21 @@ Requirements:
   FILL-ME-IN
 
 License:      FILL-ME-IN
+
+
+
+
+
+1. App:
+When correctly functioning:
+hubo -> app -> lcm
+hubo <- app <- lcm
+
+2. Test Programs:
+a. manualHubo injects udp (simulating the hubo computer) to test:
+hubo -> app -> lcm
+
+b. manualLCM injects lcm (simulating the LCM system) to test:
+hubo <- app <- lcm
+
+c. listenSocket listens to udp traffic - to test if hubo is sending

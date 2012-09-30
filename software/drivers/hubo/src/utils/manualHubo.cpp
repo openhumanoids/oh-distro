@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <string>
-#include "../PracticalSocket/PracticalSocket.h"
+#include <hubo/PracticalSocket.h>
 
 int main(void){
   UDPSocket sock;
@@ -52,6 +52,15 @@ int main(void){
 //   std::cin>>trash;
 //   if(trash==1) return 0;
 
+
+  msg = "#S,T11:09:21.6,LAT36N36.3283,LON121W53.1985,D-0.02,DG0.00,A9.71,P2.0,R3.0,TR0,TRG0,V0.00,H103.1,HR0.2,HG0.0,M00,***\n";
+  sock.sendTo(msg.c_str(), strlen(msg.c_str()), socket_addr, socket_port);
+  std::cout << "Sent "<<msg<<" via UDP on port "<<socket_port<<" at "<<socket_addr<<std::endl;
+  std::cout << "Any number to continue, enter 1 to quit: " << std::endl;
+  std::cin>>trash;
+  if(trash==1) return 0;
+    /////////////////////////////////////////////////////////////////////
+
   
   msg = "#C,Depth,Altitude,4.0,***\n";
   sock.sendTo(msg.c_str(), strlen(msg.c_str()), socket_addr, socket_port);
@@ -61,13 +70,6 @@ int main(void){
   if(trash==1) return 0;
 
   
-  msg = "#S,T11:09:21.6,LAT36N36.3283,LON121W53.1985,D-0.02,DG0.00,A9.71,P2.0,R3.0,TR0,TRG0,V0.00,H103.1,HR0.2,HG0.0,M00,***\n";
-  sock.sendTo(msg.c_str(), strlen(msg.c_str()), socket_addr, socket_port);
-  std::cout << "Sent "<<msg<<" via UDP on port "<<socket_port<<" at "<<socket_addr<<std::endl;
-  std::cout << "Any number to continue, enter 1 to quit: " << std::endl;
-  std::cin>>trash;
-  if(trash==1) return 0;
-    /////////////////////////////////////////////////////////////////////
   
 //   msg = "#C,Depth,Altitude,3.0,***\n";
 //   sock.sendTo(msg.c_str(), strlen(msg.c_str()), socket_addr, socket_port);

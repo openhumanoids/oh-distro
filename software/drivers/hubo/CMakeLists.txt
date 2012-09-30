@@ -12,4 +12,5 @@ lcmtypes_build()
 #
 add_subdirectory(src/PracticalSocket)
 add_subdirectory(src/hubo-lcm)
+add_subdirectory(src/utils)
 

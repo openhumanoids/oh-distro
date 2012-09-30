@@ -247,12 +247,16 @@ int HuboTranslator::ParseAndPublishStateMsg(string *msg)
   int mode;
   int curr_leg_num;
 
+  cout << "Received this in ParseAndPublishStateMsg:\n";
+  cout << *msg << "\n";
+
   sscanf(msg->c_str(), "#S,T%d:%d:%f,LAT%d%c%f,LON%d%c%f,D%f,DG%f,A%f,P%f,"
     "R%f,TR%d,TRG%d,V%f,H%f,HR%f,HG%f,M%X,l%d,*%*d\n", &hours, &minutes, &seconds,
          &lat_deg, &lat_dir, &lat_min, &lon_deg, &lon_dir, &lon_min, &depth,
          &depth_goal, &altitude, &pitch, &roll, &thruster_rpm,
          &thruster_rpm_goal, &velocity, &heading, &heading_rate, &heading_goal,
          &mode, &curr_leg_num);
+
 
   lat = (lat_deg + lat_min / 60.0); //lat in decimal deg
   if (lat_dir == 'S') lat = lat * -1.0;
@@ -461,13 +465,21 @@ return 1;
 
 int HuboTranslator::ParseAndPublishCommAckMsg(string *msg)
 {
-/*
-  fbn_v2p_mvmt_response_t mvmt_resp;
-  mvmt_resp.utime = bot_timestamp_now();
-
   size_t firstcomma = msg->find_first_of(",");
   size_t firstasterisk = msg->find_first_of("*");
   string ackmsg(msg->substr(firstcomma+1, firstasterisk-firstcomma-2));
+
+  cout << "Received this in ParseAndPublishCommAckMsg:\n";
+  cout << *msg << "\n";
+
+
+  cout << "about to parse CommAckMsg\n";
+  cout << msg << " was received\n";
+  cout << ackmsg <<" was received2\n";
+/*
+
+  fbn_v2p_mvmt_response_t mvmt_resp;
+  mvmt_resp.utime = bot_timestamp_now();
   mvmt_resp.ack_msg = const_cast<char*>(ackmsg.c_str());
 
   if(!fbn_v2p_mvmt_response_t_publish(lcm, "V2P_ACK", &mvmt_resp)) return 0;
