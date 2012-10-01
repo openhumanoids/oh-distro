@@ -248,7 +248,9 @@ void create_otdf_object_instance (otdfPtr &object, string otdf_name)//(RendererO
 
 // std::string filename = self->otdf_filenames[self->otdf_id]+".otdf";
 // std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
-  std::string  filepath =  "/home/mfallon/drc/software/build/models/otdf/"+ otdf_name +".otdf";//(*self->otdf_dir_name_ptr)+filename;
+  string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/
+
+  std::string  filepath =  otdf_models_path+ otdf_name +".otdf";//(*self->otdf_dir_name_ptr)+filename;
 
  std::cout << "instantiating " << filepath << std::endl;
  std::string xml_string;
@@ -260,12 +262,7 @@ void create_otdf_object_instance (otdfPtr &object, string otdf_name)//(RendererO
     xml_string += (line + "\n");
   }
   xml_file.close();
-
-//  OtdfInstanceStruc instance_struc;
-  //instance_struc._
-
   object = otdf::parseOTDF(xml_string);
-
 }
 
 

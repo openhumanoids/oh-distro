@@ -10,6 +10,7 @@
 
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
+#include <path_util/path_util.h>
 
 
 
