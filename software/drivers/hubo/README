@@ -23,8 +23,7 @@ License:      FILL-ME-IN
 
 
 
-1. App:
-When correctly functioning:
+1. App, When correctly functioning:
 hubo -> app -> lcm
 hubo <- app <- lcm
 

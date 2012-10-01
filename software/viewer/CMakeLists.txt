@@ -16,7 +16,6 @@ include(cmake/pods.cmake)
 add_subdirectory(src/renderers)
 add_subdirectory(src/viewer)
 
-# this is a really terrible place to do this - need to fix it!
-# REMOVED SEPT 2012 - now using simlinks
+# REMOVED THIS COPY IN SEPT 2012 - now using simlinks
 #install(DIRECTORY ../../config DESTINATION .)
 #install(DIRECTORY ../../models DESTINATION .)

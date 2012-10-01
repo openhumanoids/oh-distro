@@ -283,12 +283,12 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
 	        otdf::Pose visual_origin = it->second->visual->origin;
           KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
 
-	        T_world_body.p[0]= instance_struc._otdf_instance->getParam("X");
-	        T_world_body.p[1]= instance_struc._otdf_instance->getParam("Y");
-	        T_world_body.p[2]= instance_struc._otdf_instance->getParam("Z");		    
-	        T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
-	                                             instance_struc._otdf_instance->getParam("Pitch"),
-	                                             instance_struc._otdf_instance->getParam("Yaw"));
+	        T_world_body.p[0]= instance_struc._otdf_instance->getParam("x");
+	        T_world_body.p[1]= instance_struc._otdf_instance->getParam("y");
+	        T_world_body.p[2]= instance_struc._otdf_instance->getParam("z");
+	        T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("roll"),
+	                                             instance_struc._otdf_instance->getParam("pitch"),
+	                                             instance_struc._otdf_instance->getParam("yaw"));
 
 	      std::map<std::string, drc::transform_t>::const_iterator transform_it;
 	      transform_it=cartpos_out.find(it->first);	  

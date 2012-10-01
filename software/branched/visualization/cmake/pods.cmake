@@ -26,7 +26,7 @@
 #
 # ----
 # File: pods.cmake
-# Distributed with pods version: 11.11.01
+# Distributed with pods version: 12.01.11
 
 # pods_install_headers(<header1.h> ... DESTINATION <subdir_name>)
 # 
@@ -88,7 +88,7 @@ endfunction(pods_install_libraries)
 function(pods_install_pkg_config_file)
     list(GET ARGV 0 pc_name)
     # TODO error check
-
+    
     set(pc_version 0.0.1)
     set(pc_description ${pc_name})
     set(pc_requires "")
@@ -143,19 +143,22 @@ function(pods_install_pkg_config_file)
 endfunction(pods_install_pkg_config_file)
 
 
-# pods_install_python_script(<script_name> <python_module>)
+# pods_install_python_script(<script_name> <python_module_or_file>)
 #
 # Create and install a script that invokes the python interpreter with a
-# specified module.
+# specified python module or script.
 #
-# A script will be installed to bin/<script_name>.  The script simply
-# adds <install-prefix>/lib/pythonX.Y/dist-packages and 
-# <install-prefix>/lib/pythonX.Y/site-packages to the python path, and
-# then invokes `python -m <python_module>`.
+# A launcher script will be installed to bin/<script_name>. The script simply
+# adds <install-prefix>/lib/pythonX.Y/dist-packages
+# and  <install-prefix>/lib/pythonX.Y/site-packages 
+# to the PYTHONPATH, and then 
+# invokes `python -m <python_module>` or `python python_file` 
+# depending on whether the function was passed a module name or script file.
 #
 # example:
-#    pods_install_python_script(run-pdb pdb)
-function(pods_install_python_script script_name py_module)
+#    pods_install_python_script(run-py-module py_pkg.py_module)
+#    pods_install_python_script(run-py-script py_script.py)
+function(pods_install_python_script script_name python_module_or_file)
     find_package(PythonInterp REQUIRED)
 
     # which python version?
@@ -166,28 +169,49 @@ function(pods_install_python_script script_name py_module)
     # where do we install .py files to?
     set(python_install_dir 
         ${CMAKE_INSTALL_PREFIX}/lib/python${pyversion}/dist-packages)
-    set(python_old_install_dir 
+    set(python_old_install_dir #todo: when do we get rid of this? 
         ${CMAKE_INSTALL_PREFIX}/lib/python${pyversion}/site-packages)
+        
+    if (python_module_or_file MATCHES ".+\\.py") #ends with a .py
+        get_filename_component(py_file ${python_module_or_file} ABSOLUTE)     
+            
+        if (NOT EXISTS ${py_file})
+            message(FATAL_ERROR "${python_module_or_file} is not an absolute or relative path to a python script")
+        endif()
+        
+        #get the directory where we'll install the script ${sanitized_POD_NAME}_scripts
+        string(REGEX REPLACE "[^a-zA-Z0-9]" "_" __sanitized_pod_name "${POD_NAME}")
+        set(pods_scripts_dir "${python_install_dir}/${__sanitized_pod_name}_scripts")
+                
+        # install the python script file
+        install(FILES ${py_file}  DESTINATION "${pods_scripts_dir}")
 
-    # write the script file
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${script_name} "#!/bin/sh\n"
-        "export PYTHONPATH=${python_install_dir}:${python_old_install_dir}:\${PYTHONPATH}\n"
-        "exec ${PYTHON_EXECUTABLE} -m ${py_module} $*\n")
-
+        get_filename_component(py_script_name ${py_file} NAME)
+        # write the bash script file
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${script_name} 
+            "#!/bin/sh\n"
+            "export PYTHONPATH=${python_install_dir}:${python_old_install_dir}:\${PYTHONPATH}\n"
+            "exec ${PYTHON_EXECUTABLE} ${pods_scripts_dir}/${py_script_name} $*\n")    
+    else()
+        get_filename_component(py_module ${python_module_or_file} NAME) #todo: check whether module exists?
+        # write the bash script file
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${script_name} 
+            "#!/bin/sh\n"
+            "export PYTHONPATH=${python_install_dir}:${python_old_install_dir}:\${PYTHONPATH}\n"
+            "exec ${PYTHON_EXECUTABLE} -m ${py_module} $*\n")
+    endif()
     # install it...
     install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${script_name} DESTINATION bin)
 endfunction()
 
-# pods_install_python_packages(<src_dir>)
+# _pods_install_python_package(<py_src_dir> <py_module_name>)
 #
-# Install python packages to lib/pythonX.Y/dist-packages, where X.Y refers to
-# the current python version (e.g., 2.6)
+# Internal helper function
+# Install python module in <py_src_dir> to lib/pythonX.Y/dist-packages/<py_module_name>,
+# where X.Y refers to the current python version (e.g., 2.6)
 #
-# Recursively searches <src_dir> for .py files, byte-compiles them, and
-# installs them
-function(pods_install_python_packages py_src_dir)
+function(_pods_install_python_package py_src_dir py_module_name)
     find_package(PythonInterp REQUIRED)
-
     # which python version?
     execute_process(COMMAND 
         ${PYTHON_EXECUTABLE} -c "import sys; sys.stdout.write(sys.version[:3])"
@@ -197,18 +221,55 @@ function(pods_install_python_packages py_src_dir)
     set(python_install_dir 
         ${CMAKE_INSTALL_PREFIX}/lib/python${pyversion}/dist-packages)
 
-    if(ARGC GREATER 1)
-        message(FATAL_ERROR "NYI")
-    else()
-        # get a list of all .py files
-        file(GLOB_RECURSE py_files RELATIVE ${py_src_dir} ${py_src_dir}/*.py)
-
-        #install all the .py files
+    if(EXISTS "${py_src_dir}/__init__.py")
+        #install the single module
+        file(GLOB_RECURSE py_files   ${py_src_dir}/*.py)
         foreach(py_file ${py_files})
-            get_filename_component(py_dirname ${py_file} PATH)
-            install(FILES ${py_src_dir}/${py_file}
-                DESTINATION "${python_install_dir}/${py_dirname}")
+            file(RELATIVE_PATH __tmp_path ${py_src_dir} ${py_file})
+            get_filename_component(__tmp_dir ${__tmp_path} PATH)
+            install(FILES ${py_file}
+                DESTINATION "${python_install_dir}/${py_module_name}/${__tmp_dir}")
         endforeach()
+    else()
+        message(FATAL_ERROR "${py_src_dir} is not a python package!\n")
+    endif()
+endfunction()
+
+
+# pods_install_python_packages(<src_dir1> ...)
+#
+# Install python packages to lib/pythonX.Y/dist-packages, where X.Y refers to
+# the current python version (e.g., 2.6)
+#
+# For each <src_dir> pass in, it will do the following:
+# If <src_dir> is a python package (it has a __init__.py file) it will be installed 
+# along with any .py files in subdirectories
+#
+# Otherwise the script searches for and installs any python packages in <src_dir>
+function(pods_install_python_packages py_src_dir)
+    get_filename_component(py_src_abs_dir ${py_src_dir} ABSOLUTE)
+    if(ARGC GREATER 1)
+        #install each module seperately 
+        foreach(py_module ${ARGV}) 
+            pods_install_python_packages(${py_module})
+        endforeach()
+    elseif(EXISTS "${py_src_abs_dir}/__init__.py")
+        #install the single module by name
+        get_filename_component(py_module_name ${py_src_abs_dir} NAME) 
+        _pods_install_python_package(${py_src_abs_dir} ${py_module_name})            
+    else()
+        # install any packages within the passed in py_src_dir 
+        set(_installed_a_package FALSE)
+        file(GLOB sub-dirs RELATIVE ${py_src_abs_dir} ${py_src_abs_dir}/*)
+        foreach(sub-dir ${sub-dirs})
+            if(EXISTS "${py_src_abs_dir}/${sub-dir}/__init__.py")
+                _pods_install_python_package(${py_src_abs_dir}/${sub-dir} ${sub-dir})
+                set(_installed_a_package TRUE)
+            endif()
+        endforeach()
+        if (NOT _installed_a_package)
+            message(FATAL_ERROR "${py_src_dir} does not contain any python packages!\n")
+        endif()
     endif()
 endfunction()
 
@@ -251,12 +312,12 @@ macro(pods_use_pkg_config_packages target)
     # make the target depend on libraries that are cmake targets
     if (_pods_pkg_ldflags)
         string(REPLACE " " ";" _split_ldflags ${_pods_pkg_ldflags})
-        foreach(lib ${_split_ldflags})
-                string(REGEX REPLACE "^-l" "" libname ${lib})
-                get_target_property(IS_TARGET ${libname} LOCATION)
+        foreach(__ldflag ${_split_ldflags})
+                string(REGEX REPLACE "^-l" "" __depend_target_name ${__ldflag})
+                get_target_property(IS_TARGET ${__depend_target_name} LOCATION)
                 if (NOT IS_TARGET STREQUAL "IS_TARGET-NOTFOUND")
                     #message("---- ${target} depends on  ${libname}")
-                    add_dependencies(${target} ${libname})
+                    add_dependencies(${target} ${__depend_target_name})
                 endif() 
         endforeach()
     endif()
@@ -313,7 +374,9 @@ macro(pods_config_search_paths)
         
         # hack to force cmake always create install and clean targets 
         install(FILES DESTINATION)
-        add_custom_target(tmp)
+        string(RANDOM LENGTH 32 __rand_target__name__)
+        add_custom_target(${__rand_target__name__})
+        unset(__rand_target__name__)
 
         set(__pods_setup true)
     endif(NOT DEFINED __pods_setup)

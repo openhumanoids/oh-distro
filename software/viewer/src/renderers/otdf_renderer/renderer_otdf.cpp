@@ -537,12 +537,12 @@ static void run_fk_and_gen_link_shapes_and_tfs (OtdfInstanceStruc &instance_stru
 	      otdf::Pose visual_origin = it->second->visual->origin;
 	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
 
-	      T_world_body.p[0]= instance_struc._otdf_instance->getParam("X");
-	      T_world_body.p[1]= instance_struc._otdf_instance->getParam("Y");
-	      T_world_body.p[2]= instance_struc._otdf_instance->getParam("Z");		    
-	      T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
-	                                           instance_struc._otdf_instance->getParam("Pitch"),
-	                                           instance_struc._otdf_instance->getParam("Yaw"));
+	      T_world_body.p[0]= instance_struc._otdf_instance->getParam("x");
+	      T_world_body.p[1]= instance_struc._otdf_instance->getParam("y");
+	      T_world_body.p[2]= instance_struc._otdf_instance->getParam("z");
+	      T_world_body.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("roll"),
+	                                           instance_struc._otdf_instance->getParam("pitch"),
+	                                           instance_struc._otdf_instance->getParam("yaw"));
 
 	    std::map<std::string, drc::transform_t>::const_iterator transform_it;
 	    transform_it=cartpos_out.find(it->first);	  
@@ -871,12 +871,12 @@ static void publish_eegoal(boost::shared_ptr<lcm::LCM> &_lcm, OtdfInstanceStruc 
   
   // desired ee position in world frame
   KDL::Frame T_world_ee,T_body_ee;
-  T_world_ee.p[0]= instance_struc._otdf_instance->getParam("X");
-	T_world_ee.p[1]= instance_struc._otdf_instance->getParam("Y");
-	T_world_ee.p[2]= instance_struc._otdf_instance->getParam("Z");		    
-	T_world_ee.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("Roll"),
-	                                     instance_struc._otdf_instance->getParam("Pitch"),
-	                                     instance_struc._otdf_instance->getParam("Yaw"));
+  T_world_ee.p[0]= instance_struc._otdf_instance->getParam("x");
+	T_world_ee.p[1]= instance_struc._otdf_instance->getParam("y");
+	T_world_ee.p[2]= instance_struc._otdf_instance->getParam("z");
+	T_world_ee.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("roll"),
+	                                     instance_struc._otdf_instance->getParam("pitch"),
+	                                     instance_struc._otdf_instance->getParam("yaw"));
 	        
   //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
   
