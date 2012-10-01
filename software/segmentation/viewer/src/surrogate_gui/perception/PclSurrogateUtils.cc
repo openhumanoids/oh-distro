@@ -47,21 +47,10 @@ namespace surrogate_gui
 	 * 				 	 3 : return 1/3 of the points*/
 	PointCloud<PointXYZRGB>::Ptr PclSurrogateUtils::downsample(CloudT::ConstPtr input_cloud, uint skipValue)
 	{
-		/*if (!input_cloud->isOrganized())
-			throw SurrogateException("Can't downsample unorganized point cloud");
-		if (!input_cloud->is_dense)
-			throw SurrogateException("Cloud isn't dense");
-		*/
+
 		CloudT::Ptr cloud_downsampled(new CloudT);
 		cloud_downsampled->reserve(input_cloud->size()/skipValue);
 
-		/*for (uint i = 0; i < input_cloud->width; i+=skipValue)
-		{
-			for (uint j = 0; j < input_cloud->height; j+=skipValue)
-			{
-				cloud_downsampled->push_back(input_cloud->at(i,j));
-			}
-		}*/
 
 		for(uint i = 0; i < input_cloud->size(); i+=skipValue)
 		{

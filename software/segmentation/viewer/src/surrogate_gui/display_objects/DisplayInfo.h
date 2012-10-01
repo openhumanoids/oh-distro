@@ -116,9 +116,7 @@ namespace surrogate_gui
 	typedef struct
 	{
 		pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud;
-		pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr edgeCloud;
 		std::vector<Color::StockColor> highlightColors;  //indices correspond to those in cloud
-		bool displayEdgeCloud; //if true, displays edgeCloud
 		bool displayLcmCloud;
 		std::string lcmCloudFrameId;
 

@@ -36,7 +36,6 @@
 #include "DisplayInfo.h"
 #include "SurrogateRenderer.h"
 #include "ObjectTracker.h"
-#include "EdgesToR3.h"
 
 namespace surrogate_gui
 {
@@ -67,7 +66,6 @@ namespace surrogate_gui
 			BotEventHandler *_mode_handler;
 
 			boost::shared_ptr<ObjectTracker> _objTracker;
-			boost::shared_ptr<EdgesToR3> _edgeFinder;
 
 		//=====constructor/destructor
 		public:
@@ -89,7 +87,6 @@ namespace surrogate_gui
 			void addIndicesToCurrentObject(std::set<int> &selected_indices);
 			void intersectViews(std::set<int> &selected_indices);
 			void suggestSegments();
-			void runModelFitting();
 
 			void handleMouseModeAdjust(BotEventHandler *default_handler, BotGtkParamWidget *pw); //user clicks on MouseMode drop-down menu
 			void handleTrackLiveButton(BotGtkParamWidget *pw);

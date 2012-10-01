@@ -83,8 +83,6 @@ int main(int argc, char *argv[])
     printf("'a' = display axes for currently force or rotation-axis vector [track mode]\n");
     printf("'c' = camera move\n");
     printf("'g' = display trajector determined by force vector + rotation axis\n");
-    printf("'l' = display lcm cloud on/off\n");
-    printf("'m' = model fit to current selection\n");
     printf("'r' = rectangle select (valid in selection mode)\n");
     printf("'s' = turn segment coloring on/off (valid in selection mode)\n");
     printf("'t' = turn tracking info on/off\n");

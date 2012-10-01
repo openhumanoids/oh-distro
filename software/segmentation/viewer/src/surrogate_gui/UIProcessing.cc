@@ -13,9 +13,6 @@
 #include <lcmtypes/lkr_grasp_request_t.h>
 #include <iostream>
 
-#include "perception/EdgesToR3.h"
-#include "perception/contour_classification/ContourUtils.h"
-
 #include <pcl/common/distances.h>
 
 using namespace std;
@@ -32,8 +29,7 @@ namespace surrogate_gui
 	UIProcessing::UIProcessing(BotViewer *viewer, lcm_t *lcm, string kinect_channel) :
 		_gui_state(SEGMENTING),
 		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
-		_objTracker(),
-		_edgeFinder()
+		_objTracker()
 	{
 
 		//===========================================
@@ -244,35 +240,6 @@ namespace surrogate_gui
 
 		_surrogate_renderer.setHintText(Color::to_string(currObj->auto_segment_indices.size())
 										  + " segment suggestions");
-	}
-
-	void UIProcessing::runModelFitting()
-	{
-		//========defensive checks
-		if (_gui_state != SEGMENTING)
-		{
-			_surrogate_renderer.setWarningText("Can't run model fit when not segmenting (currently)");
-			return;
-		}
-		ObjectPointsPtr currObj = getCurrentObjectSelected();
-		if (currObj == ObjectPointsPtr() || currObj->indices->size() == 0)
-		{
-			_surrogate_renderer.setWarningText("No Points Selected for Model Fitting");
-			return;
-		}
-		if (_edgeFinder == shared_ptr<EdgesToR3>())
-		{
-			_surrogate_renderer.setWarningText("Can't Model Fit Until Edge Cloud is processed");
-			return;
-		}
-
-		//------finished defensive checks
-		//---Run model fitting on whatever selection is being displayed
-		SetIntPtr selection = currObj->getSegmentBeingDisplayed();
-		ContourUtils::fitModel(_surrogate_renderer._display_info.cloud,  selection, WHEEL,
-							   _surrogate_renderer.getModelInfo());
-
-		_surrogate_renderer.setHintText("Model Fitting ran");
 	}
 
 	//======================================mouse
@@ -516,29 +483,6 @@ namespace surrogate_gui
 				_surrogate_renderer.getModelInfo()->displayOn =
 						!_surrogate_renderer.getModelInfo()->displayOn;
 				break;
-
-			case GDK_l: //toggle from: lcm --> edge --> off --> (start over lcm)
-			{	SurrogateDisplayInfo *d = getDisplayInfo();
-				if (d->displayLcmCloud && !d->displayEdgeCloud) //showing lcm and not edge
-				{
-					d->displayLcmCloud = false;
-					d->displayEdgeCloud = true;
-				}
-				else if (d->displayEdgeCloud && !d->displayLcmCloud)
-					d->displayEdgeCloud = false; //
-				else if (!d->displayEdgeCloud && !d->displayLcmCloud)
-					d->displayLcmCloud = true;
-				else if (d->displayEdgeCloud && d->displayLcmCloud)
-					throw SurrogateException("shouldn't have lcm cloud and edge cloud both displaying");
-				else
-					throw SurrogateException("What is this edge/lcm case?");
-				break;
-			}
-			case GDK_m: //run model fitting
-			{
-				runModelFitting();
-				break;
-			}
 			case GDK_Left:
 			{
 				if (_gui_state == TRACKING)
@@ -693,12 +637,6 @@ namespace surrogate_gui
 		getDisplayInfo()->cloud = unpacked;  //PclSurrogateUtils::toPcl(msg);
 		getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
 
-		//edge cloud
-		if (_edgeFinder == shared_ptr<EdgesToR3>())
-			_edgeFinder = shared_ptr<EdgesToR3>(new EdgesToR3(getDisplayInfo()->cloud->width,
-								  getDisplayInfo()->cloud->height));
-
-		getDisplayInfo()->edgeCloud =_edgeFinder->displayRgbToEdgeCloud(getDisplayInfo()->cloud);
 
 		if (_gui_state == TRACKING && getTrackMode() == ICP)
 		{
@@ -990,7 +928,6 @@ namespace surrogate_gui
 		UserSegmentation *segInfo = _surrogate_renderer.getSegInfo();
 		segInfo->objectPtsMap->clear();
 		_objTracker = ObjectTracker::Ptr();
-		_edgeFinder		= boost::shared_ptr<EdgesToR3>();
 		_surrogate_renderer.initVals();
 		bot_gtk_param_widget_set_bool(pw, PARAM_NAME_CLOUD_PAUSE, 0);
 		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);

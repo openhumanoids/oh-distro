@@ -7,7 +7,6 @@ add_definitions(-Wall -std=gnu99)
 
 find_package(PkgConfig REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(OpenCV REQUIRED)
 
 set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
     pcl_segmentation-1.6 pcl_sample_consensus-1.6)
@@ -25,13 +24,10 @@ add_library(surrogate SHARED
   perception/ObjectTracker.cc
   perception/Segmentation.cc
   perception/PclSurrogateUtils.cc
-  perception/EdgesToR3.cc
-  perception/contour_classification/ContourUtils.cc
   )
 
 target_link_libraries(surrogate
     ${OPENGL_LIBRARIES}
-    ${OpenCV_LIBS}
     )
 
 pods_use_pkg_config_packages(surrogate
@@ -44,9 +40,7 @@ pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h Lin
 					display_objects/DisplayInfo.h display_objects/Color.h 
 					display_objects/ObjectPoints.h display_objects/AdjustableVector.h
 					perception/ObjectTracker.h perception/Segmentation.h perception/PclSurrogateUtils.h
-    				perception/EdgesToR3.h
-    				perception/contour_classification/ContourUtils.h
-    				DESTINATION surrogate)
+    					DESTINATION surrogate)
 
 pods_install_libraries(surrogate)
 

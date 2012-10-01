@@ -81,11 +81,9 @@ namespace surrogate_gui
 	{
 		// LCM msg
 		_display_info.cloud 			= PointCloud<PointXYZRGB>::Ptr();
-		_display_info.edgeCloud 		= PointCloud<PointXYZRGB>::Ptr();
 		_display_info.highlightColors.clear();
 		_display_info.highlightColors.reserve(640*480);
 		_display_info.displayLcmCloud 	= true;
-		_display_info.displayEdgeCloud  = false;
 
 		//--background color
 		_viewer->backgroundColor[0] =  54/255.0; /*145.0*/ //105.0 /255.0;
@@ -263,10 +261,6 @@ namespace surrogate_gui
 		// get the cloud message
 		PointCloud<PointXYZRGB>::ConstPtr msg = _display_info.cloud;
 
-		//if edge cloud, display and return
-		if (_display_info.displayEdgeCloud)
-			msg = _display_info.edgeCloud;
-
 		//clear the color map
 		for (uint i = 0; i < _display_info.cloud->points.size(); i++)
 			_display_info.highlightColors[i] = Color::NULL_COLOR;
@@ -311,8 +305,7 @@ namespace surrogate_gui
 
 			//only draw a vertex if either (a) drawing everything or
 			//(b) we have segments to highlight
-			if (_display_info.displayLcmCloud || _display_info.highlightColors[i] != Color::NULL_COLOR ||
-				_display_info.displayEdgeCloud)
+			if (_display_info.displayLcmCloud || _display_info.highlightColors[i] != Color::NULL_COLOR)
 				glVertex3f(msg->points[i].x, msg->points[i].y, msg->points[i].z);
 		}
 		glEnd(); //-----GL_POINTS
