@@ -18,7 +18,7 @@ pods_use_pkg_config_packages(drc-map-store
     path-util
     bot2-param-client
         pointcloud_lcm        pointcloud_vis        pointcloud_math
-	lcmtypes_drc_lcmtypes  lcmtypes_visualization
+	lcmtypes_drc_lcmtypes  lcmtypes_visualization otdf_dom
        ${PCL_LIBRARIES})
 
 pods_install_executables(drc-map-store )

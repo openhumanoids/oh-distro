@@ -5,8 +5,13 @@
 
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
+
+#include <otdf_parser/otdf_parser.h>
+
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
+
+
 
 
 /**
@@ -21,7 +26,10 @@ struct LocalMap
 
   pcl::PointCloud<PointXYZRGB>::Ptr cloud; // the raw point cloud
 
-  // otdf
+  // otdfs:
+  std::vector< std::string > object_names;
+  std::vector< int16_t > object_ids;
+  std::vector< boost::shared_ptr<otdf::ModelInterface> > objects;
   // rgb stills
   // segmentation sequences
 
@@ -49,7 +57,13 @@ class map_store{
 
     vector <LocalMap> maps;
 
+    void initialize();
+
+    void publish_affordance_collection(LocalMap m);
+    void publish_local_map(unsigned int map_id);
     void dump_maps(DumpCode code, double x_offset);
+
+
 
     static void seg_request_handler_aux(const lcm_recv_buf_t* rbuf,
                                 const char* channel,
@@ -93,6 +107,8 @@ class map_store{
     void pointcloud_handler(const drc_pointcloud2_t *msg);
 
     void send_newmap();
+
+
 
 };    
 
