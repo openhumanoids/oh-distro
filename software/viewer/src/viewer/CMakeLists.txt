@@ -8,7 +8,7 @@ pods_use_pkg_config_packages(drc-viewer
         laser-util-renderer
         image-util-renderer
         path-util
-        octomap-renderer
+        #octomap-renderer
         lcmtypes_drc_lcmtypes    
         renderer_drc 
         velodyne-renderer
