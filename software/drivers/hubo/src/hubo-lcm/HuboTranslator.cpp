@@ -3,14 +3,14 @@
 // Fall 2010, MIT CSAIL Marine Robotics Lab
 // 
 // The defined class (HuboTranslator) does the grunt work of
-// translating between LCM and RECON data.  That class of the code
+// translating between LCM and HUBO data.  That class of the code
 // draws heavily from iREMUS-4, authored by Doug Horner and Tad Masek.
 //
-// The code gives hints to the protected RECON communications protocol, please
+// The code gives hints to the protected HUBO communications protocol, please
 // use appropriate caution in distributing the source.
 // 
 // The HuboTranslator class is instantiated once for every message,
-// going either direction (LCM-2-RECON or RECON-2-LCM)
+// going either direction (LCM-2-HUBO or HUBO-2-LCM)
 // 
 // I chose to use PracticalSocket as a C++ wrapper for my socket
 // communication, PracticalSocket is GNU Licensed and comments should
@@ -23,7 +23,7 @@
 // remember to do everything, it's not so bad.  This is an attempted list
 // for everything you have to do:
 // 
-// To add LCM-to-RECON message:
+// To add LCM-to-HUBO message:
 // 1) Declare a new LCM Handler Function (in *_main.cpp)
 // 2) Create a new subscription to that type/channel (in *_main.cpp)
 // 3) Add the unsubscribe function (*_main.cpp)
@@ -31,7 +31,7 @@
 // 5) Declare the EncodeAndSend function in HuboTranslator.h
 // 6) Code the EncodeAndSend function (in HuboTranslator class)
 // 
-// To add RECON-to-LCM message:
+// To add HUBO-to-LCM message:
 // 1) Declare a new ParseAndPublish function in HuboTranslator.h
 // 2) Code the ParseAndPublish function (in HuboTranslator.cpp)
 // 3) Add/Uncomment the switch case in ParseAndPublishRawString
@@ -47,10 +47,9 @@
 // **********************************************************************
 
 
-// Overloaded constructor, used for RECON-to-LCM communications
-HuboTranslator::HuboTranslator(const string inputString, double lat_origin,
-				 double lon_origin, lcm_t *lcm_ptr){
-  ReconTrans_verbose = 1;
+// Overloaded constructor, used for HUBO-to-LCM communications
+HuboTranslator::HuboTranslator(const string inputString, lcm_t *lcm_ptr){
+  HuboTrans_verbose = 1;
 
   // std::cout<<"running HuboTranslator::HuboTranslator constructor\n";
   lcm = lcm_ptr;
@@ -58,31 +57,19 @@ HuboTranslator::HuboTranslator(const string inputString, double lat_origin,
   rawString = inputString;
   // std::cout<<"rawString = "<<rawString<<std::endl;
   // Find Command Indicator (single char after 'hash mark', defined by protocol)
-  hashPosition = rawString.find("#");
-  // std::cout<<"hashPosition = "<<hashPosition<<std::endl;
-  msgIndicator = rawString[hashPosition+1];
-  // std::cout<<"msgIndicator = "<<msgIndicator<<std::endl;
-
-
-  // Below was added by mfallon jan2011:
-  //std::cout << lat_origin << " with " << lon_origin << std::endl;
-//  m_LatLongConverter.m_OriginLat = lat_origin;
-//  m_LatLongConverter.m_OriginLong = lon_origin;
-//  m_LatLongConverter.initialise (lat_origin, lon_origin);
-//  // m_LatLongConverter.m_Initialized=true;
 }
 
-// Overload the HuboTranslator constructor for LCM-to-RECON communications
+// Overload the HuboTranslator constructor for LCM-to-HUBO communications
 HuboTranslator::HuboTranslator(const void *lcm_msg_ptr,
                                  UDPSocket *inSock_ptr,
                                  string outsockHost,
                                  unsigned short outsockPort) {
-  ReconTrans_verbose = 1;
+  HuboTrans_verbose = 1;
 
   lcm_data_ptr = lcm_msg_ptr;
   sock_ptr = inSock_ptr;
-  reconHost = outsockHost;
-  reconPort = outsockPort;
+  huboHost = outsockHost;
+  huboPort = outsockPort;
 
 
 }
@@ -94,26 +81,6 @@ HuboTranslator::~HuboTranslator()
   // Clear memory?  I think this is done automatically (HGM)
 }
 
-int HuboTranslator::PublishGPSToLocal(double lat_origin, double lon_origin)
-{
-/*
-  mrlcm_gps_to_local_t gps_to_local;
-  double local[3] = { 0 }; //all elements 0
-  double lat_lon_el_theta[4] = { 0 }; //all elements 0
-  double gps_cov[4][4] = {{0}};
-  lat_lon_el_theta[0] = lat_origin;
-  lat_lon_el_theta[1] = lon_origin;
-
-  gps_to_local.utime = bot_timestamp_now();
-  memcpy(gps_to_local.local, local, 3*sizeof(double));
-  memcpy(gps_to_local.lat_lon_el_theta, lat_lon_el_theta, 4*sizeof(double));
-  memcpy(gps_to_local.gps_cov,gps_cov, 16*sizeof(double));
-
-  if(!mrlcm_gps_to_local_t_publish(lcm, "GPS_TO_LOCAL", &gps_to_local)) return 0;
-  else return 1;
-*/
-return 1;
-}
 
 int HuboTranslator::VerifyChecksum(string *msg)
 {
@@ -129,96 +96,23 @@ int HuboTranslator::VerifyChecksum(string *msg)
 
 
 
-// *************** BEGIN RECON-TO-LCM MEMBERS *********************
+// *************** BEGIN HUBO-TO-LCM MEMBERS *********************
 // ****************************************************************
 
 
 int HuboTranslator::ParseAndPublishRawString()
-{
-  // Determine and execute appropriate method to Parse and Publish msg
-  switch(msgIndicator)
-  {
-  case 'S':
-    if(ParseAndPublishStateMsg(&rawString)) return 1;
-    break;
 
-  // case 'A':
-  //   if(ParseAndPublishADCPMsg(&rawString)) return 1;
-  //   break;
+  if(ParseAndPublishJointRefMsg(&rawString)) return 1;
 
-  // case 'c':
-  //   if(ParseAndPublishCTDMsg(&rawString)) return 1;
-  //   break;
-
-  case 'C':
-    if(ParseAndPublishCommAckMsg(&rawString)) return 1;
-    break;
-
-  // case 'F':
-  //   if(ParseAndPublishFluorometerMsg(&rawString)) return 1;
-  //   break;
-
-  case 'B':
-    if(ParseAndPublishBatteryMsg(&rawString)) return 1;
-    break;
-
-  case 'E':
-    if(ParseAndPublishErrMsg(&rawString)) return 1;
-    break;
-
-  case 'V':
-    if(ParseAndPublishVerReplyMsg(&rawString)) return 1;
-    break;
-
-  case 'v':
-    if(ParseAndPublishVerRequestMsg(&rawString)) return 1;
-    break;
-
-  // case 'a':
-  //   if(ParseAndPublishAnchorStatusMsg(&rawString)) return 1;
-  //   break;
-
-  // case 'R':
-  //   if(ParseAndPublishRouteMsg(&rawString)) return 1;
-  //   break;
-
-  case 'f':
-    if(ParseAndPublishNavFixMsg(&rawString)) return 1;
-    break;
-
-  // case 's':
-  //   if(ParseAndPublishSetStatusRespMsg(&rawString)) return 1;
-  //   break;
-
-  case 'm':
-    if(ParseAndPublishModemMsgTXRespMsg(&rawString)) return 1;
-    break;
-
-  case 'Z':
-    if(ParseAndPublishDateTimeMsg(&rawString)) return 1;
-    break;
-
-  // case 'h':
-  //   if(ParseAndPublishHoverAckMsg(&rawString)) return 1;
-  //   break;
-
-  // case 't':
-  //   if(ParseAndPublishTerminateObjAckMsg(&rawString)) return 1;
-  //   break;
-
-  default:
-    // Do something to indicate unsupported message type
-    if(!(msgIndicator == 'A' || msgIndicator == 'c')){
-      std::cout<<"Publishing unknown RECON msg: '"<<msgIndicator<<"'"<<std::endl;
-    }
-    // std::cerr<<"reconString.cpp: Passing raw message to LCM anyways"<<std::endl;
-
-    if(ParseAndPublishUnsupportedRecon()) return 1;
-    else break;
-  }
   return 0;  
 }
 
+int HuboTranslator::ParseAndPublishJointRefMsg(string *msg)
+{
+  int64_t utime;
+  
+  
+}
 int HuboTranslator::ParseAndPublishStateMsg(string *msg)
 {
   //Take the string sReply and parse it to get vehicle state
@@ -284,11 +178,11 @@ int HuboTranslator::ParseAndPublishStateMsg(string *msg)
       break;
     default:
       // Output appropriate error message, state does NOT change
-      std::cerr<<"HuboTranslator.cpp: RECON reported unknown state";
+      std::cerr<<"HuboTranslator.cpp: HUBO reported unknown state";
   }
 
 /*
-  fbn_v2p_reconstate_t remus_statemsg_data;
+  fbn_v2p_hubostate_t remus_statemsg_data;
   remus_statemsg_data.utime = bot_timestamp_now();
 
   remus_statemsg_data.mission_hours = hours;
@@ -363,7 +257,7 @@ int HuboTranslator::ParseAndPublishStateMsg(string *msg)
   memcpy(pose.rotation_rate, temp_zero, 3*sizeof(double));
   memcpy(pose.accel, temp_zero, 3*sizeof(double));
   pose.vel[0] = velocity;   
-  botlcm_pose_t_publish (lcm,"POSE_RECONSTATE", &pose);  
+  botlcm_pose_t_publish (lcm,"POSE_HUBOSTATE", &pose);  
   //////////////////////////////////////////////////////////////////
 */
 
@@ -387,16 +281,16 @@ int HuboTranslator::ParseAndPublishStateMsg(string *msg)
   memcpy(pose_ypr.rotation_rate, temp_zero_2, 3*sizeof(double));
   memcpy(pose_ypr.accel, temp_zero_2, 3*sizeof(double));
   pose_ypr.vel[0] = velocity;   
-  mrlcm_pose_ypr_t_publish (lcm,"POSE_YPR_RECONSTATE", &pose_ypr);  
+  mrlcm_pose_ypr_t_publish (lcm,"POSE_YPR_HUBOSTATE", &pose_ypr);  
   //////////////////////////////////////////////////////////////////
   */
 
 /*
   if(publishINSAsState){
-    if(fbn_v2p_reconstate_t_publish(lcm, "V2P_REMUS_STATE", &remus_statemsg_data)) return -1;
+    if(fbn_v2p_hubostate_t_publish(lcm, "V2P_REMUS_STATE", &remus_statemsg_data)) return -1;
   }
 
-  if(!fbn_v2p_reconstate_t_publish(lcm, "V2P_REMUS_STATE_INS", &remus_statemsg_data)) return 0;
+  if(!fbn_v2p_hubostate_t_publish(lcm, "V2P_REMUS_STATE_INS", &remus_statemsg_data)) return 0;
 */
 
   // if (mode & 0x04)
@@ -630,7 +524,7 @@ int HuboTranslator::ParseAndPublishVerRequestMsg(string *msg)
 int HuboTranslator::ParseAndPublishNavFixMsg(string *msg)
 {
 /*
-  if (ReconTrans_verbose){
+  if (HuboTrans_verbose){
     std::cout << "New Fix: " << *msg << endl;
   }
   
@@ -685,7 +579,7 @@ int HuboTranslator::ParseAndPublishNavFixMsg(string *msg)
 /*
   mrlcm_system_status_t sys_stat;
   sys_stat.utime = fix_report.utime;
-  string tempstr = "RECON";                       // removes a compiler warning (HGM)
+  string tempstr = "HUBO";                       // removes a compiler warning (HGM)
   sys_stat.name = const_cast<char*>(tempstr.c_str()); // removes a compiler warning (HGM)
   sys_stat.level = 1; 
   //sprintf(strp.value ,"Fix:  | Local: ");
@@ -695,7 +589,7 @@ int HuboTranslator::ParseAndPublishNavFixMsg(string *msg)
   mrlcm_system_status_t_publish(lcm,"SYSTEM_STATUS",&sys_stat);
 */
   
-/*  if (ReconTrans_verbose){
+/*  if (HuboTrans_verbose){
     std::cout << "Local: " << local_xy[0] << ", "<< local_xy[1] << endl;
   }
 
@@ -802,7 +696,7 @@ int HuboTranslator::ParseAndPublishDateTimeMsg(string *msg) {
  return 1;
 }
 
-int HuboTranslator::ParseAndPublishUnsupportedRecon()
+int HuboTranslator::ParseAndPublishUnsupportedHubo()
 {
 /*
   size_t start_pos = rawString.find_first_of(",");
@@ -810,16 +704,16 @@ int HuboTranslator::ParseAndPublishUnsupportedRecon()
   string msg_indicator = rawString.substr(start_pos - 1, 1);
   string msg_substring = rawString.substr(start_pos + 1, end_pos - 1 - start_pos);
 
-  fbn_v2p_unsupported_recon_t unsuppmsg;
+  fbn_v2p_unsupported_hubo_t unsuppmsg;
   unsuppmsg.utime = bot_timestamp_now();
 
   unsuppmsg.command = const_cast<char*>(msg_indicator.c_str());
   unsuppmsg.data = const_cast<char*>(msg_substring.c_str());
 
-  string channelname = "V2P_UNSUPPORTED_RECON_";
+  string channelname = "V2P_UNSUPPORTED_HUBO_";
   channelname.append(&msgIndicator);
 
-  if(!fbn_v2p_unsupported_recon_t_publish(lcm, channelname.c_str(), &unsuppmsg)) return 0;
+  if(!fbn_v2p_unsupported_hubo_t_publish(lcm, channelname.c_str(), &unsuppmsg)) return 0;
   else
 */
  return 1;
@@ -827,7 +721,7 @@ int HuboTranslator::ParseAndPublishUnsupportedRecon()
 
 
 
-// *************** BEGIN LCM-TO-RECON MEMBERS *********************
+// *************** BEGIN LCM-TO-HUBO MEMBERS *********************
 // ****************************************************************
 /*
 int HuboTranslator::EncodeAndSendMvmtCommandMsg(const fbn_p2v_mvmt_command_t *motion_ptr){
@@ -872,63 +766,63 @@ int HuboTranslator::EncodeAndSendMvmtCommandMsg(const fbn_p2v_mvmt_command_t *mo
     }
   }
 
-  recon_msg = stm.str();
-  this->CalcAndAppendChecksum(&recon_msg);
-  this->SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  this->CalcAndAppendChecksum(&hubo_msg);
+  this->SendFormattedHuboMsg(&hubo_msg);
   
-  std::cout << "< " << recon_msg << endl;
+  std::cout << "< " << hubo_msg << endl;
   return 0;
 }
 
 // **UNSUPPORTED** (HGM 2010/10/28)
 // int HuboTranslator::EncodeAndSendQueryMotionMsg(const mrlcm_query_remus_motion_t *query_ptr) {
 //   stm << "#Q," << query_ptr->query_major << ",*";
-//   recon_msg = stm.str();
-//   CalcAndAppendChecksum(&recon_msg);
-//   SendFormattedReconMsg(&recon_msg);
+//   hubo_msg = stm.str();
+//   CalcAndAppendChecksum(&hubo_msg);
+//   SendFormattedHuboMsg(&hubo_msg);
 //   return 0;
 // }
 
 int HuboTranslator::EncodeAndSendVerRequestMsg(const fbn_p2v_ver_request_t *request_ptr) {
   stm << "#v,*";
-  recon_msg = stm.str();
-  CalcAndAppendChecksum(&recon_msg);
-  SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  CalcAndAppendChecksum(&hubo_msg);
+  SendFormattedHuboMsg(&hubo_msg);
   return 0;
 }
 
 int HuboTranslator::EncodeAndSendVerReportMsg(const fbn_p2v_ver_report_t *version_ptr) {
   stm << "#V," << "TBDXXX,*";
-  recon_msg = stm.str();
-  CalcAndAppendChecksum(&recon_msg);
-  SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  CalcAndAppendChecksum(&hubo_msg);
+  SendFormattedHuboMsg(&hubo_msg);
   return 0;
 }
 
 int HuboTranslator::EncodeAndSendSetOverrideMsg(const fbn_p2v_override_t *override_ptr) {
   stm << "#E," << override_ptr->override_code << ",*";
-  recon_msg = stm.str();
-  std::cout << "<---- RECON OVERRIDE:" << recon_msg << endl;
-  CalcAndAppendChecksum(&recon_msg);
-  SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  std::cout << "<---- HUBO OVERRIDE:" << hubo_msg << endl;
+  CalcAndAppendChecksum(&hubo_msg);
+  SendFormattedHuboMsg(&hubo_msg);
   return 0;
 }
 
 int HuboTranslator::EncodeAndSendModemCommandMsg(const fbn_p2v_modem_command_t *modem_cmd_ptr) {
   stm << "#p," << modem_cmd_ptr->request_ack << "," << modem_cmd_ptr->overwrite_flag << ","
       << modem_cmd_ptr->nmea0183_string;
-  recon_msg = stm.str();
-  // DO NOT APPEND CHECKSUM TO THIS MESSAGE! (see RECON protocol)
-  SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  // DO NOT APPEND CHECKSUM TO THIS MESSAGE! (see HUBO protocol)
+  SendFormattedHuboMsg(&hubo_msg);
   return 0;
 }
 
 int HuboTranslator::EncodeAndSendModemHexCommandMsg(const fbn_p2v_modem_hex_command_t *modem_hex_cmd_ptr) {
   stm << "#m," << modem_hex_cmd_ptr->request_ack << "," << modem_hex_cmd_ptr->overwrite_flag << ","
       << modem_hex_cmd_ptr->hex_string;
-  recon_msg = stm.str();
-  CalcAndAppendChecksum(&recon_msg);
-  SendFormattedReconMsg(&recon_msg);
+  hubo_msg = stm.str();
+  CalcAndAppendChecksum(&hubo_msg);
+  SendFormattedHuboMsg(&hubo_msg);
   return 0;
 }
 */
@@ -951,11 +845,11 @@ string HuboTranslator::CalcAndAppendChecksum(string *msg)
 }
 
 
-int HuboTranslator::SendFormattedReconMsg(string *msg) {
+int HuboTranslator::SendFormattedHuboMsg(string *msg) {
   // Verify checksum?  Shouldn't have to, would be redundant
 
-  // std::cout<<"DEBUG--Sending: "<<*msg<<" to reconSock\n";
+  // std::cout<<"DEBUG--Sending: "<<*msg<<" to huboSock\n";
   msg->append("\n");
-  sock_ptr->sendTo(msg->c_str(), (int)(msg->length()), reconHost, reconPort);
+  sock_ptr->sendTo(msg->c_str(), (int)(msg->length()), huboHost, huboPort);
   return 0;
 }

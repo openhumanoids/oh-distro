@@ -2,7 +2,7 @@
 // Author: Hunter McClelland, Fall 2010
 // 
 // Purpose: This defines the class to handle translation to/from
-// LCM and RECON, used with HuboTranslator.cpp
+// LCM and HUBO, used with HuboTranslator.cpp
 
 #ifndef __HuboTranslator_h__
 #define __HuboTranslator_h__
@@ -14,6 +14,7 @@
 #include <lcm/lcm.h> // for lcm_t type and assoc. funcs
 #include <bot_core/bot_core.h> // for bot_timestamp_now()
 #include <hubo/PracticalSocket.h>
+#include <time.h>
 
 //#include "fbntypes.h"
 //#include "mrtypes.h" // I think this is not used... (hgm 2011-jan)
@@ -25,17 +26,15 @@
 
 class HuboTranslator {
  private:
-  int hashPosition;
-  char msgIndicator;
 
-  std::string recon_msg;
+  std::string hubo_msg;
   ostringstream stm;
 
   lcm_t *lcm;
   const void *lcm_data_ptr;
   UDPSocket *sock_ptr;
-  string reconHost;
-  unsigned short reconPort;
+  string huboHost;
+  unsigned short huboPort;
 
   int ParseAndPublishStateMsg(std::string *msg);
   // int ParseAndPublishADCPMsg(std::string *msg);
@@ -52,9 +51,9 @@ class HuboTranslator {
   int ParseAndPublishModemMsgTXRespMsg(std::string *msg);
   // int ParseAndPublishRawModemMsg(std::string *msg);
   int ParseAndPublishDateTimeMsg(std::string *msg);
-  int ParseAndPublishUnsupportedRecon(void);
+  int ParseAndPublishUnsupportedHubo(void);
 
-  int ReconTrans_verbose; // initialized in constructor
+  int HuboTrans_verbose; // initialized in constructor
 
 
 
@@ -84,7 +83,7 @@ class HuboTranslator {
   int EncodeAndSendSetOverrideMsg(const fbn_p2v_override_t *override_ptr);
   int EncodeAndSendModemCommandMsg(const fbn_p2v_modem_command_t *modem_cmd_ptr);
   int EncodeAndSendModemHexCommandMsg(const fbn_p2v_modem_hex_command_t *modem_hex_cmd_ptr);*/
-  int SendFormattedReconMsg(std::string *msg);
+  int SendFormattedHuboMsg(std::string *msg);
 };
 
 
