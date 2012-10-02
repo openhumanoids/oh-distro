@@ -610,12 +610,15 @@ namespace surrogate_gui
 
     // Transform cloud to that its in robotic frame:
     // Could also apply the cv->robotic transform directly
-    double x_temp;
+    // removed by mfallon sept 2012:
+    double y_temp;
     for(uint j=0; j<cloud->points.size(); j++) {
-      x_temp = cloud->points[j].x;
-      cloud->points[j].x = cloud->points[j].z;
-      //cloud->points[j].z = - cloud->points[j].y;
-      cloud->points[j].z = x_temp;
+      // forward is fine - x=x
+      y_temp = cloud->points[j].y;
+      cloud->points[j].y =- cloud->points[j].z;
+      cloud->points[j].z = y_temp;
+cloud->points[j].x = cloud->points[j].x;
+      //cloud->points[j].z = x_temp;
     }
   }
   
