@@ -107,10 +107,11 @@ int HuboTranslator::ParseAndPublishRawString()
   return 0;  
 }
 
-int HuboTranslator::ParseAndPublishJointRefMsg(string *msg)
+int HuboTranslator::ParseAndPublishStateMsg(string *msg)
 {
+// publish hubo_state_t LCM message
   int64_t utime;
-  
+  int32_t hubo_joint_count;
   
 }
 int HuboTranslator::ParseAndPublishStateMsg(string *msg)
