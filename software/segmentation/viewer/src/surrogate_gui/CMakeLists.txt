@@ -24,6 +24,9 @@ add_library(surrogate SHARED
   perception/ObjectTracker.cc
   perception/Segmentation.cc
   perception/PclSurrogateUtils.cc
+  otdf_renderer/renderer_otdf.cpp
+  otdf_renderer/AffordanceCollectionListener.cpp
+  otdf_renderer/RobotStateListener.cpp
   )
 
 target_link_libraries(surrogate
@@ -43,6 +46,9 @@ pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h Lin
 					display_objects/DisplayInfo.h display_objects/Color.h 
 					display_objects/ObjectPoints.h display_objects/AdjustableVector.h
 					perception/ObjectTracker.h perception/Segmentation.h perception/PclSurrogateUtils.h
+					otdf_renderer/AffordanceCollectionListener.hpp
+					otdf_renderer/RobotStateListener.hpp
+					otdf_renderer/renderer_otdf.hpp
     					DESTINATION surrogate)
 
 pods_install_libraries(surrogate)

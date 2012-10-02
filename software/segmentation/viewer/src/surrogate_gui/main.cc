@@ -18,6 +18,9 @@
 #include "UIProcessing.h"
 #include "LinearAlgebra.h"
 #include "perception/PclSurrogateUtils.h"
+#include <otdf_renderer/renderer_otdf.hpp>
+
+
 
 using namespace surrogate_gui;
 
@@ -64,6 +67,11 @@ int main(int argc, char *argv[])
     app.viewer = viewer;
     app.lcm = lcm_create(NULL);
     bot_glib_mainloop_attach_lcm(app.lcm);
+
+
+    //otdf
+    setup_renderer_otdf(viewer, 0, app.lcm);
+
 
     // setup renderers
     bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
