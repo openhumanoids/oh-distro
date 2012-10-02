@@ -82,8 +82,8 @@ namespace surrogate_gui
 		//===live tracking button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_TRACK_OBJECTS, NULL);
 
-		//Pr2 Grasp button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_PR2_GRASP, NULL);
+		//affordance publish button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUB, NULL);
 
 		// master reset button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
@@ -805,112 +805,50 @@ cloud->points[j].x = cloud->points[j].x;
 		_surrogate_renderer.getTrackInfo()->displayTrackingCloud 	= true;
 	}
 
-	void UIProcessing::handlePr2GraspButton()
+	void UIProcessing::handleAffordancePubButton()
 	{
-		if (_gui_state != TRACKING)
-		{
-			_surrogate_renderer.setWarningText("Pr2 Grasp called outside tracking mode");
-			return;
-		}
-
-		if (!(_surrogate_renderer.getGraspInfo()->forceVector.updateOrientationCalled()))
-		{
-			_surrogate_renderer.setWarningText("Pr2 Grasp called before force vector adjusted");
-			return;
-		}
-
-
 		//======initialize grasp cloud
 		lkr_color_point_cloud_t object_cloud_lcm;
-		PointCloud<PointXYZRGB>::Ptr trackedObject = _objTracker->getTrackedObject();
 
-		object_cloud_lcm.header.frame_id = strdup(getDisplayInfo()->lcmCloudFrameId.c_str());
-		object_cloud_lcm.num_points = trackedObject->points.size();
-		object_cloud_lcm.points = (lkr_point_xyzrgb_t *) malloc(sizeof(lkr_point_xyzrgb_t)*trackedObject->points.size());
-		object_cloud_lcm.width = trackedObject->width;
-		object_cloud_lcm.height = trackedObject->height;
+		//get the current segment
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+		
+		int numIndices = currObj->indices->size();
+		
+		object_cloud_lcm.header.frame_id = strdup("frameNotSet");
+		object_cloud_lcm.num_points = numIndices;
+		object_cloud_lcm.points = (lkr_point_xyzrgb_t *) malloc(sizeof(lkr_point_xyzrgb_t)*numIndices);
+		object_cloud_lcm.width = numIndices;
+		object_cloud_lcm.height = 1;
 
-		for(uint i = 0; i < trackedObject->points.size(); i++)
+		PointCloud<PointXYZRGB>::ConstPtr msg = _surrogate_renderer._display_info.cloud;
+
+		int i = 0;
+		for(set<int>::iterator iter = currObj->indices->begin();
+		    iter != currObj->indices->end(); 
+		    ++iter, i++)
 		{
-			//extract pcl point
-			PointXYZRGB nextPt = trackedObject->points[i];
-			RGB_PCL rgbVal;
-			rgbVal.float_value = nextPt.rgb;
+		  int nextSegInd = *iter;
 
-			//copy to lcm format
-			lkr_point_xyzrgb_t next_lcm_pt;
-			next_lcm_pt.x = nextPt.x;
-			next_lcm_pt.y = nextPt.y;
-			next_lcm_pt.z = nextPt.z;
-			next_lcm_pt.r = rgbVal.red;
-			next_lcm_pt.g = rgbVal.green;
-			next_lcm_pt.b = rgbVal.blue;
-
-			object_cloud_lcm.points[i] = next_lcm_pt;
+		  //extract pcl point
+		  const PointXYZRGB &nextPt = msg->points[nextSegInd];
+		  RGB_PCL rgbVal;
+		  rgbVal.float_value = nextPt.rgb;
+		  
+		  //copy to lcm format
+		  lkr_point_xyzrgb_t next_lcm_pt;
+		  next_lcm_pt.x = nextPt.x;
+		  next_lcm_pt.y = nextPt.y;
+		  next_lcm_pt.z = nextPt.z;
+		  next_lcm_pt.r = rgbVal.red;
+		  next_lcm_pt.g = rgbVal.green;
+		  next_lcm_pt.b = rgbVal.blue;
+		  
+		  object_cloud_lcm.points[i] = next_lcm_pt;
 		}
-
-		//============
-		//===setup the grasp message
-		lkr_grasp_request_t grasp_msg;
-
-		//grasp cloud
-		grasp_msg.grasp_cloud = object_cloud_lcm;
-
-		//grasp point
-		PointXYZ centroid = _surrogate_renderer.getTrackInfo()->centroidTrace.back();
-		copy(centroid, grasp_msg.grasp_point);
-
-		//manipulation type
-		grasp_msg.manipulation_type = getManipulationType();
-
-		//force direction
-		GraspInfo *gi = _surrogate_renderer.getGraspInfo();
-		PointXYZ forceVector = gi->forceVector.getVectorUnitDir();
-		copy(forceVector, grasp_msg.force_direction);
-
-		//---see if we should copy rotation information
-		//rotation axis center
-		PointXYZ rotationCenter, axisPt;
-
-		if (grasp_msg.manipulation_type == LKR_GRASP_REQUEST_T_ROTATE)
-		{
-			//we require that the user has adjusted the rotation axis at least once
-			AdjustableVector &rotationAxis = gi->rotationAxis;
-			if (!rotationAxis.valuesInitialized() || !rotationAxis.updateOrientationCalled() ||
-				!rotationAxis.basisInitialized())
-			{
-				_surrogate_renderer.setWarningText("Can't request a rotate without update the rotation axis");
-				return;
-			}
-			/*if(gi->trajectory.size() == 0)
-			{
-				_surrogate_renderer.setWarningText("Generate trajectory with 'g' before request PR2 rotate");
-				return;
-			}*/
-
-			_surrogate_renderer.getGraspInfo()->rotationAxis.getVectorStartEndNonUnit(rotationCenter, axisPt);
-		}
-
-		//these will be 0 unless the if-statement executed
-		copy(rotationCenter, grasp_msg.rotation_center);
-		copy(axisPt, grasp_msg.rotation_axis_pt);
-
-
-		//way points
-		//todo
-
-		//publish
-		lkr_grasp_request_t_publish(_lcm, "GRASP_REQUEST", &grasp_msg);
-
-		//print
-		cout << endl << "\n\n***********=======published grasp message=======++*********" << endl;
-		cout << "frame_id = " << object_cloud_lcm.header.frame_id << endl;
-		cout << "\ngrasp_point = " << centroid << endl;
-		cout << "\ngrasp_direction = " << forceVector << endl;
-		cout << "\nrotation center = " << rotationCenter << endl;
-		cout << "\naxisPt = " << axisPt << endl;
-		cout << "\nmanipulation_type = " << (int) grasp_msg.manipulation_type << endl;
-		cout << endl << "\n======================\n\n" << endl;
+		
+		//todo: change to drc_affordance_t.lcm
+		//modify message to include points?
 
 		//clean up
 		free(object_cloud_lcm.points);
@@ -1071,9 +1009,9 @@ cloud->points[j].x = cloud->points[j].x;
 			//return;
 		}
 
-		if (stringsEqual(name, PARAM_NAME_PR2_GRASP))
+		if (stringsEqual(name, PARAM_NAME_AFFORDANCE_PUB))
 		{
-			handlePr2GraspButton();
+			handleAffordancePubButton();
 			//return;
 		}
 

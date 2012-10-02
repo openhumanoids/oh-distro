@@ -14,7 +14,7 @@ namespace surrogate_gui
 	#define PARAM_NAME_NEW_OBJECT "New Object"
 	#define PARAM_NAME_CLEAR_OBJECT "Clear ObjPts"
 	#define PARAM_NAME_CURR_OBJECT "Current Object"
-	#define PARAM_NAME_PR2_GRASP "Pr2 Grasp"
+	#define PARAM_NAME_AFFORDANCE_PUB "Affordance Pub"
 	#define NO_OBJECT 0
 
 	//======mouse mode

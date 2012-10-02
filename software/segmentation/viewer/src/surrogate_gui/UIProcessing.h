@@ -90,7 +90,7 @@ namespace surrogate_gui
 
 			void handleMouseModeAdjust(BotEventHandler *default_handler, BotGtkParamWidget *pw); //user clicks on MouseMode drop-down menu
 			void handleTrackLiveButton(BotGtkParamWidget *pw);
-			void handlePr2GraspButton();
+			void handleAffordancePubButton();
 			void handleFullResetButton(BotGtkParamWidget *pw);
 
 			static void copy(const pcl::PointXYZ &p, lkr_point_xyz_t &dest);
