@@ -30,11 +30,14 @@ target_link_libraries(surrogate
     ${OPENGL_LIBRARIES}
     )
 
+set(REQUIRED_DRC_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics otdf_dom)
 pods_use_pkg_config_packages(surrogate
     ${PCL_LIBRARIES}
     bot2-vis
     bot2-frames
-    bot2-param-client)
+    bot2-param-client
+    lcmtypes_drc_lcmtypes
+    ${REQUIRED_DRC_PACKAGES})
 
 pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h LinearAlgebra.h 
 					display_objects/DisplayInfo.h display_objects/Color.h 
