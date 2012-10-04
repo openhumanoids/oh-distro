@@ -1,0 +1,23 @@
+these scripts used to be part of Agile
+they convert the ppms.gz files into avi movies of various formats
+
+==== Example Usage ====
+Lossless (pretty large file size but no aliasing artifacts): 
+lcmviewer-ppms2ffv1avi 6 2010-05-18-viewer.00.ppms.gz 
+... this seems to sometimes produce faulty videos - use avidemux  co convert them to properly build videos e.g with xvid
+
+Lossy:
+lcmviewer-ppms2mpeg4 4000k 6 2010-05-18-viewer.00.ppms.gz
+
+Windows compatable:
+lcmviewer-ppms2msavi 5 25 4000k 25 2012-04-19-viewer.04.ppms.gz 
+
+
+Corresponding conversions for a series of stills to video:
+Lossless
+ffmpeg -r 30 -y -vcodec ppm -i %6d.ppm -vcodec ffv1 highquality.avi 
+
+Windows compatable:
+ffmpeg -qscale 5 -r 30 -y -vcodec ppm -i %6d.ppm -vcodec msmpeg4v2 ms_safe.avi 
+
+mfallon jan 2012
