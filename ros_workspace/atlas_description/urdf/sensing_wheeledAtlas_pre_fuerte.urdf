@@ -569,7 +569,8 @@
   </link>
   <joint name="base_laser_joint" type="fixed">
     <axis xyz="0 1 0"/>
-    <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/>
+    <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+<!-- Originally vertical:   <origin rpy="1.570796325 0 0" xyz="0.275 0.0 0.252"/> -->
     <parent link="sensorrig_link"/>
     <child link="base_laser_link"/>
   </joint>
