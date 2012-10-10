@@ -10,3 +10,5 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 add_subdirectory(src/motion_estimate)
+
+add_subdirectory(src/motion_estimate_scanmatcher)
