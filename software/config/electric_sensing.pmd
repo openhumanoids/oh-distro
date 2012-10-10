@@ -66,6 +66,19 @@ group "sensing" {
         host = "localhost";
     }
 }
+group "laser_sensing" {
+    cmd "vo" {
+        exec = "drc-motion-estimate-scanmatcherFIX_CAMERA_TO_LASER_POSE  -l BASE_SCAN -d -R 8 --pose CAMERA_STATE";
+        host = "localhost";
+    }
+    cmd "local-map" {
+        exec = "drc-local-map";
+        host = "localhost";
+    }
+}
+
+
+
 
 group "misc" {
     cmd "spy" {
@@ -99,4 +112,12 @@ script "startup simulation" {
     start group "gazebo";
     wait ms 5000;
     start group "sensing";
+}
+
+script "startup simulation laser" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "laser_sensing";
 }
