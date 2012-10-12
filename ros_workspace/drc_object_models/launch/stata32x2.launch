@@ -1,0 +1,5 @@
+<launch>
+
+ <node name="gazebo" pkg="gazebo" type="gazebo" args="$(find drc_object_models)/worlds/FP_02.world" respawn="false" output="screen"/>  
+
+</launch>
