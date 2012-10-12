@@ -125,10 +125,10 @@
     <body:trimesh name ="table3_body">
       <geom:trimesh name="table3_geom">
         <scale>1.0 1.0 1.0</scale>
-          <mesh>/home/mfallon/drc/ros_workspace/buildingmodels_to_world/stata_02_without_floorc.ply</mesh>
+          <mesh>stata_02_without_floor.ply</mesh>
         <visual>
           <scale>1.0 1.0 1.0</scale>
-          <mesh>/home/mfallon/drc/ros_workspace/buildingmodels_to_world/stata_02_without_floorc.ply</mesh>
+          <mesh>stata_02_without_floor.ply</mesh>
         </visual>
       </geom:trimesh>
     </body:trimesh>
