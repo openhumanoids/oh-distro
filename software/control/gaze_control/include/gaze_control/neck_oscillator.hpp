@@ -108,7 +108,7 @@ NeckOscillator::NeckOscillator(boost::shared_ptr<lcm::LCM> &lcm,
 
 
    // Set oscilation period
-   omega = 0.05; //0.5 hz - one oscillation per sec.
+   omega = 0.2; //0.1 hz - one oscillations per sec.
    pos_clamp = 80*(M_PI/180);  // neck only has a range of +- 90 
    neck_yaw_desired  =pos_clamp;
    neck_yaw_rate_prev = 0;
