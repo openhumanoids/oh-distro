@@ -1,21 +1,21 @@
-#ifndef _MapChunk_hpp_
-#define _MapChunk_hpp_
+#ifndef _LocalMap_hpp_
+#define _LocalMap_hpp_
 
-#include <Eigen/Geometry>
+#include <pcl/point_types.h>
+#include <octomap/octomap.h>
 #include <boost/shared_ptr.hpp>
+#include <Eigen/Geometry>
 
-#include "OctreeCustom.hpp"
-
-class MapChunk {
+class LocalMap {
 public:
+  typedef boost::shared_ptr<LocalMap> Ptr;
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-  typedef OctreeCustom<pcl::PointXYZ> Octree;
+  typedef octomap::OcTree Octree;
   typedef boost::shared_ptr<Octree> OctreePtr;
 
 public:
-  // constructor/destructor
-  MapChunk();
-  ~MapChunk();
+  LocalMap();
+  virtual ~LocalMap();
 
   // clear all state
   void clear();
@@ -37,28 +37,30 @@ public:
   void setResolution(const double iResolution);
   double getResolution() const;
 
-  // buffer input points, transform to local frame, add to current map
+  // transform to local frame, add to current map
   bool add(const PointCloud::Ptr& iPoints,
            const Eigen::Isometry3d& iToLocal);
 
-  // remove a set of points
-  bool remove(const PointCloud::Ptr& iCloud);
-
-  // copy contents of input map into this one
-  void deepCopy(const MapChunk& iChunk);
+  // add with origins (for ray casting)
+  bool add(const PointCloud::Ptr& iPoints,
+           const Eigen::Vector3d& iOrigin,
+           const Eigen::Isometry3d& iToLocal);
 
   // export this entire representation as an ordinary point cloud
   PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
 
-  // determine points that were added and removed wrt input map
-  bool findDifferences(const MapChunk& iMap, PointCloud::Ptr& oAdded,
-                       PointCloud::Ptr& oRemoved);
+  // for change detection
+  void resetChangeReference();
+  void getChanges(PointCloud::Ptr& oAdded, PointCloud::Ptr& oRemoved);
+  void applyChanges(const PointCloud::Ptr& iAdded,
+                    const PointCloud::Ptr& iRemoved);
 
   // serialize to bytes
   void serialize(std::vector<char>& oBytes) const;
 
   // deserialize from bytes
   void deserialize(const std::vector<char>& iBytes);
+
 
 protected:
   int64_t mId;

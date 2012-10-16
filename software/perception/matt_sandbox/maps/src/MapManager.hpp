@@ -7,11 +7,12 @@
 #include <Eigen/Geometry>
 
 class PointDataBuffer;
-class MapChunk;
+class LocalMap;
 
 class MapManager {
 public:
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+  typedef boost::shared_ptr<LocalMap> MapPtr;
 
   struct MapDelta {
     PointCloud::Ptr mAdded;
@@ -19,7 +20,6 @@ public:
   };
 
 protected:
-  typedef boost::shared_ptr<MapChunk> MapPtr;
   typedef std::unordered_map<int64_t, MapPtr> MapCollection;
 
 
@@ -45,7 +45,7 @@ public:
   bool useMap(const int64_t iId);
 
   // get current active map, or null if there is no current map
-  boost::shared_ptr<MapChunk> getActiveMap() const;
+  MapPtr getActiveMap() const;
 
   // add data to internal buffer but not to map
   bool addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
@@ -65,8 +65,6 @@ public:
 
 protected:
   MapPtr mActiveMap;
-  MapPtr mActiveMapPrev;
-  MapPtr mActiveMapCheckpoint;
   MapCollection mMaps;
   boost::shared_ptr<PointDataBuffer> mPointDataBuffer;
 

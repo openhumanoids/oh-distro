@@ -9,8 +9,8 @@
 #include <lcmtypes/bot_core/raw_t.hpp>
 #include <Eigen/Geometry>
 
-class MapChunk;
 class SpatialQuery;
+class LocalMap;
 
 class SpatialQueryWrapper {
 public:
@@ -27,11 +27,7 @@ public:
   bool lock();
   bool unlock();
 
-  bool getClosest(const Eigen::Vector3d& iPoint,
-                  Eigen::Vector3d& oPoint);
-  bool getClosest(const Eigen::Vector3d& iPoint,
-                  Eigen::Vector3d& oPoint, Eigen::Vector3d& oNormal);
-
+  boost::shared_ptr<SpatialQuery> query();
 
 protected:
   void onMap(const lcm::ReceiveBuffer* iBuf,
@@ -39,7 +35,7 @@ protected:
              const bot_core::raw_t* iMessage);
 
 protected:
-  boost::shared_ptr<MapChunk> mMap;
+  boost::shared_ptr<LocalMap> mMap;
   boost::shared_ptr<SpatialQuery> mQuery;
   boost::shared_ptr<lcm::LCM> mLcm;
   std::string mMapChannel;

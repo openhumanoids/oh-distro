@@ -5,7 +5,7 @@
 #include <bot_core/timestamp.h>
 
 #include "MapManager.hpp"
-#include "MapChunk.hpp"
+#include "LocalMap.hpp"
 
 DeltaReceiver::
 DeltaReceiver() {
@@ -77,15 +77,13 @@ operator()() {
       // if this message has not been received, apply delta
       if (!messageReceived(delta.message_id)) {
 
-        // TODO: what coordinate system? compressed leaves?
-
         // switch to proper map
         if (!mManager->useMap(delta.map_id)) {
           mManager->createMap(Eigen::Isometry3d::Identity(), delta.map_id);
         }
 
-        // add points
-        MapChunk::PointCloud::Ptr cloudAdded(new MapChunk::PointCloud());
+        // collect points to add
+        LocalMap::PointCloud::Ptr cloudAdded(new LocalMap::PointCloud());
         cloudAdded->width = delta.added.size();
         cloudAdded->height = 1;
         cloudAdded->is_dense = false;
@@ -95,11 +93,9 @@ operator()() {
           cloudAdded->points[i].y = delta.added[i].y;
           cloudAdded->points[i].z = delta.added[i].z;
         }
-        mManager->getActiveMap()->add(cloudAdded,
-                                      Eigen::Isometry3d::Identity());
 
-        // remove points
-        MapChunk::PointCloud::Ptr cloudRemoved(new MapChunk::PointCloud());
+        // collect points to remove
+        LocalMap::PointCloud::Ptr cloudRemoved(new LocalMap::PointCloud());
         cloudRemoved->width = delta.removed.size();
         cloudRemoved->height = 1;
         cloudRemoved->is_dense = false;
@@ -109,7 +105,9 @@ operator()() {
           cloudRemoved->points[i].y = delta.removed[i].y;
           cloudRemoved->points[i].z = delta.removed[i].z;
         }
-        mManager->getActiveMap()->remove(cloudRemoved);
+
+        // add and remove points
+        mManager->getActiveMap()->applyChanges(cloudAdded, cloudRemoved);
 
         // note that this message was received
         mReceivedMessages.insert(delta.message_id);

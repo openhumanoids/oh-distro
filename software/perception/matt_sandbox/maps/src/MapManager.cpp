@@ -1,7 +1,7 @@
 #include "MapManager.hpp"
 
 #include "PointDataBuffer.hpp"
-#include "MapChunk.hpp"
+#include "LocalMap.hpp"
 
 MapManager::
 MapManager() {
@@ -21,8 +21,6 @@ MapManager::
 void MapManager::
 clear() {
   mActiveMap.reset();
-  mActiveMapPrev.reset();
-  mActiveMapCheckpoint.reset();
   mMaps.clear();
   mPointDataBuffer->clear();
   std::cout << "MapManager: cleared all state" << std::endl;
@@ -52,27 +50,22 @@ setDataBufferLength(const int iLength) {
 
 bool MapManager::
 createMap(const Eigen::Isometry3d& iToLocal, const int iId) {
-  MapPtr chunk(new MapChunk());
+  LocalMap::Ptr localMap(new LocalMap());
   if (iId < 0) {
-    chunk->setId(mNextMapId);
+    localMap->setId(mNextMapId);
     ++mNextMapId;
   }
   else {
-    chunk->setId(iId);
+    localMap->setId(iId);
     mNextMapId = std::max(mNextMapId, iId+1);
   }
-  chunk->setTransformToLocal(iToLocal);
-  chunk->setBounds(-mMapDimensions/2, mMapDimensions/2);
-  chunk->setResolution(mMapResolution);
-  mMaps[chunk->getId()] = chunk;
-  mActiveMap = chunk;
+  localMap->setTransformToLocal(iToLocal);
+  localMap->setBounds(-mMapDimensions/2, mMapDimensions/2);
+  localMap->setResolution(mMapResolution);
+  mMaps[localMap->getId()] = localMap;
+  mActiveMap = localMap;
 
-  mActiveMapPrev.reset(new MapChunk());
-  mActiveMapPrev->deepCopy(*mActiveMap);
-  mActiveMapCheckpoint.reset(new MapChunk());
-  mActiveMapCheckpoint->deepCopy(*mActiveMap);
-
-  std::cout << "MapManager: added new map, id=" << chunk->getId() <<
+  std::cout << "MapManager: added new map, id=" << localMap->getId() <<
     std::endl;
 
   return true;
@@ -92,7 +85,7 @@ useMap(const int64_t iId) {
   return true;
 }
 
-boost::shared_ptr<MapChunk> MapManager::
+LocalMap::Ptr MapManager::
 getActiveMap() const {
   return mActiveMap;
 }
@@ -120,7 +113,6 @@ fuseAll() {
     return false;
   }
 
-  // TODO: for now, this just accumulates all points (logical OR)
   mActiveMap->clear();
   PointDataBuffer::PointSetGroup::const_iterator iter;
   for (iter = mPointDataBuffer->begin();
@@ -134,14 +126,12 @@ fuseAll() {
 
 bool MapManager::
 computeDelta(MapDelta& oDelta) {
-  if ((mActiveMap == NULL) || (mActiveMapPrev == NULL)) {
+  if (mActiveMap == NULL) {
     return false;
   }
   oDelta.mAdded.reset(new PointCloud());
   oDelta.mRemoved.reset(new PointCloud());
-  mActiveMapPrev->findDifferences(*mActiveMap, oDelta.mAdded, oDelta.mRemoved);
-  mActiveMapCheckpoint->deepCopy(*mActiveMap);
-  // TODO: possible memory leak here?
+  mActiveMap->getChanges(oDelta.mAdded, oDelta.mRemoved);
   std::cout << "MapManager: found delta: " << oDelta.mAdded->size() <<
     " added, " << oDelta.mRemoved->size() << " removed" << std::endl;
   return true;
@@ -149,10 +139,10 @@ computeDelta(MapDelta& oDelta) {
 
 bool MapManager::
 resetDeltaBase() {
-  if ((mActiveMapCheckpoint == NULL) || (mActiveMapPrev == NULL)) {
+  if (mActiveMap == NULL) {
     return false;
   }
-  mActiveMapPrev->deepCopy(*mActiveMapCheckpoint);
+  mActiveMap->resetChangeReference();
   std::cout << "MapManager: reset delta base" << std::endl;
   return true;
 }

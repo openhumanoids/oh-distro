@@ -1,5 +1,5 @@
 #include <maps/MapManager.hpp>
-#include <maps/MapChunk.hpp>
+#include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/DeltaPublisher.hpp>
 
@@ -55,7 +55,8 @@ int main(const int iArgc, const char** iArgv) {
     return -1;
   }
 
-  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/config/drc_robot.cfg");
+  // TODO: temporary; need server
+  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/software/config/drc_robot.cfg");
 
   state.mSensorDataReceiver->setLcm(theLcm);
   state.mSensorDataReceiver->setBotParam(theParam);
@@ -63,7 +64,7 @@ int main(const int iArgc, const char** iArgv) {
   state.mSensorDataReceiver->
     addChannel("WIDE_STEREO_POINTS",
                SensorDataReceiver::SensorTypePointCloud,
-               "wide_stereo", "local");
+               "CAMERA", "local");
   state.mSensorDataReceiver->start();
 
   state.mManager->setMapResolution(0.01);

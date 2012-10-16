@@ -2,7 +2,7 @@
 
 #include <boost/thread.hpp>
 
-#include "MapChunk.hpp"
+#include "LocalMap.hpp"
 #include "SpatialQuery.hpp"
 
 SpatialQueryWrapper::
@@ -11,7 +11,7 @@ SpatialQueryWrapper() {
   mMapSubscription = NULL;
   mNeedsUpdate = false;
   setMapChannel("LOCAL_MAP");
-  mMap.reset(new MapChunk());
+  mMap.reset(new LocalMap());
   mQuery.reset(new SpatialQuery());
   mNewQuery.reset(new SpatialQuery());
 }
@@ -63,10 +63,10 @@ operator()() {
       mDataReady.wait(mapLock);
     }
     if (mNeedsUpdate) {
-      MapChunk::PointCloud::Ptr cloud = mMap->getAsPointCloud();
+      LocalMap::PointCloud::Ptr cloud = mMap->getAsPointCloud();
       mNewQuery->clear();
       mNewQuery->setNormalComputationRadius(3*mMap->getResolution());
-      mNewQuery->add(cloud);
+      mNewQuery->setMap(mMap);
       mNewQuery->populateStructures();
       {
         boost::mutex::scoped_lock queryLock(mQueryMutex);
@@ -83,20 +83,14 @@ onMap(const lcm::ReceiveBuffer* iBuf,
       const bot_core::raw_t* iMessage) {
   std::vector<char> bytes(iMessage->data.begin(), iMessage->data.end());
   mMap->deserialize(bytes);
+  // TODO: only update if map has changed; use time of last update
   mNeedsUpdate = true;
   mDataReady.notify_one();
 }
 
-bool SpatialQueryWrapper::
-getClosest(const Eigen::Vector3d& iPoint,
-           Eigen::Vector3d& oPoint) {
-  return mQuery->getClosest(iPoint, oPoint);
-}
-
-bool SpatialQueryWrapper::
-getClosest(const Eigen::Vector3d& iPoint,
-           Eigen::Vector3d& oPoint, Eigen::Vector3d& oNormal) {
-  return mQuery->getClosest(iPoint, oPoint, oNormal);
+boost::shared_ptr<SpatialQuery> SpatialQueryWrapper::
+query() {
+  return mQuery;
 }
 
 bool SpatialQueryWrapper::

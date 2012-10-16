@@ -1,5 +1,6 @@
 #include "SpatialQuery.hpp"
 
+#include "LocalMap.hpp"
 #include <pcl/features/normal_3d.h>
 
 SpatialQuery::
@@ -22,8 +23,8 @@ setNormalComputationRadius(const double iRadius) {
 }
 
 void SpatialQuery::
-add(pcl::PointCloud<PointType>::Ptr& iCloud) {
-  *mCloud += *iCloud;
+setMap(const boost::shared_ptr<LocalMap>& iMap) {
+  mMap = iMap;
   mNeedsUpdate = true;
 }
 
@@ -33,11 +34,12 @@ populateStructures() {
     return;
   }
 
-  if (mCloud->size() == 0) {
+  if (mMap == NULL) {
     mNeedsUpdate = false;
     return;
   }
 
+  mCloud = mMap->getAsPointCloud();
   mSearchTree.setInputCloud(mCloud);
   mNeedsUpdate = false;
 }
@@ -94,4 +96,22 @@ getClosest(const Eigen::Vector3d& iPoint,
   oNormal = Eigen::Vector3d(plane[0], plane[1], plane[2]);
   oNormal.normalize();
   return true;
+}
+
+bool SpatialQuery::
+isObserved(const Eigen::Vector3d& iPoint) {
+  return (getOccupancy(iPoint) != LocationUnobserved);
+}
+
+SpatialQuery::LocationOccupancy SpatialQuery::
+getOccupancy(const Eigen::Vector3d& iPoint) {
+  octomap::point3d pt(iPoint[0], iPoint[1], iPoint[2]);
+  /* TODO: need to expose these methods
+  octomap::OcTreeNode* node = mOctree->search(pt);
+  if (node == NULL) {
+    return LocationUnobserved;
+  }
+  return (mOctree->isNodeOccupied(node) ? LocationOccupied : LocationFree);
+  */
+  return LocationUnobserved;  // TODO: temporary
 }

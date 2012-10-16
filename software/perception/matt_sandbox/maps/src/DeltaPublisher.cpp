@@ -7,7 +7,7 @@
 #include <bot_core/timestamp.h>
 
 #include "MapManager.hpp"
-#include "MapChunk.hpp"
+#include "LocalMap.hpp"
 
 DeltaPublisher::
 DeltaPublisher() {

@@ -1,11 +1,9 @@
 # Create a shared library
 add_library(maps SHARED
     MapManager.cpp
-    MapChunk.cpp
+    LocalMap.cpp
     PointDataBuffer.cpp
     SpatialQuery.cpp
-    WorldModel.cpp
-    DenseGrid3d.cpp
     SensorDataReceiver.cpp
     DeltaPublisher.cpp
     DeltaReceiver.cpp
@@ -16,14 +14,11 @@ add_library(maps SHARED
 # install it to include/maps
 pods_install_headers(
   MapManager.hpp
-  MapChunk.hpp
+  LocalMap.hpp
   PointDataBuffer.hpp
   SpatialQuery.hpp
-  WorldModel.hpp
-  DenseGrid3d.hpp
   ThreadSafeQueue.hpp
   SensorDataReceiver.hpp
-  OctreeCustom.hpp
   DeltaPublisher.hpp
   DeltaReceiver.hpp
   SpatialQueryWrapper.hpp
@@ -36,10 +31,10 @@ pods_install_libraries(maps)
 set(REQUIRED_PACKAGES
   eigen3
   pcl_common-1.6
-  pcl_octree-1.6
   pcl_filters-1.6
   pcl_features-1.6
   pcl_io-1.6
+  octomap
   glib-2.0
   bot2-frames
   lcm

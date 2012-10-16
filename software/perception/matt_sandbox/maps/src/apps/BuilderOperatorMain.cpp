@@ -1,5 +1,5 @@
 #include <maps/MapManager.hpp>
-#include <maps/MapChunk.hpp>
+#include <maps/LocalMap.hpp>
 #include <maps/DeltaReceiver.hpp>
 
 #include <boost/asio.hpp>
@@ -62,7 +62,7 @@ public:
         bot_lcmgl_color3f(lcmgl, 1.0f, 0.5f, 0.0f);
         bot_lcmgl_point_size(lcmgl, 3.0f);
         bot_lcmgl_begin(lcmgl, GL_POINTS);
-        MapChunk::PointCloud::Ptr cloud =
+        LocalMap::PointCloud::Ptr cloud =
           mState->mManager->getActiveMap()->getAsPointCloud();
         cout << "lcmgl'ing " << cloud->size() << " points..." << endl;
         for (int k = 0; k < cloud->size(); ++k) {

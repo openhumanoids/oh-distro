@@ -8,10 +8,6 @@
 
 class MapManager;
 
-namespace lcm {
-  class LCM;
-}
-
 class DeltaPublisher {
 public:
   DeltaPublisher();

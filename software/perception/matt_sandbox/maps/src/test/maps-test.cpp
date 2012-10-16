@@ -1,4 +1,5 @@
 #include <maps/SpatialQueryWrapper.hpp>
+#include <maps/SpatialQuery.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 #include <boost/progress.hpp>
@@ -21,7 +22,7 @@ struct Worker {
         for (int i = 0; i < 100000; ++i) {
           Eigen::Vector3d pt(1.74,-1.17,1.53);
           Eigen::Vector3d outPoint, outNormal;
-          if (mWrapper->getClosest(pt, outPoint, outNormal)) {
+          if (mWrapper->query()->getClosest(pt, outPoint, outNormal)) {
             ++total;
           }
         }

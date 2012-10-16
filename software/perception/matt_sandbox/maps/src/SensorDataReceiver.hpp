@@ -10,6 +10,7 @@
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/drc/pointcloud2_t.hpp>
+#include <lcmtypes/senlcm/velodyne_list_t.hpp>
 #include <bot_param/param_client.h>
 
 #include "ThreadSafeQueue.hpp"
@@ -18,7 +19,8 @@ class SensorDataReceiver {
 public:
   enum SensorType {
     SensorTypePlanarLidar,
-    SensorTypePointCloud
+    SensorTypePointCloud,
+    SensorTypeVelodyne
   };
 
   typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
@@ -70,6 +72,10 @@ public:
 
 protected:
 
+  bool getPose(const std::string& iChannel, const int64_t iTimestamp,
+               Eigen::Isometry3d& oPose);
+
+
   // message handlers
   void onPointCloud(const lcm::ReceiveBuffer* iBuf,
                     const std::string& iChannel,
@@ -77,6 +83,10 @@ protected:
   void onLidar(const lcm::ReceiveBuffer* iBuf,
                const std::string& iChannel,
                const bot_core::planar_lidar_t* iMessage);
+  void onVelodyne(const lcm::ReceiveBuffer* iBuf,
+                  const std::string& iChannel,
+                  const senlcm::velodyne_list_t* iMessage);
+
 
 protected:
   boost::shared_ptr<lcm::LCM> mLcm;
