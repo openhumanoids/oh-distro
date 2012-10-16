@@ -24,9 +24,9 @@ struct affordance_t
   double states[nstates];
   string state_names[nstates];
 
-  // Point Cloud IDs?
-  int32_t npts;
-  int32_t ptids[npts];
+  // Point Cloud IDs:
+  int32_t nptids;
+  int32_t ptids[nptids];
 
   const int16_t CYLINDER=0, LEVER=1;
 }
