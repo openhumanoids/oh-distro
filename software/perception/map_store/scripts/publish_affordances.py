@@ -1,11 +1,17 @@
 import sys
 import lcm
+import os
 # for bottime:
 import time
 
+myhome = os.environ.get("HOME")
 
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/site-packages")
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/dist-packages")
+path1 = myhome + "/drc/software/build/lib/python2.7/site-packages"
+path2 = myhome + "/drc/software/build/lib/python2.7/dist-packages"
+print path1
+print path2
+sys.path.append(path1)
+sys.path.append(path2)
 from drc.affordance_collection_t import affordance_collection_t
 from drc.affordance_t import affordance_t
 
@@ -53,4 +59,5 @@ for i in range(100):
   lc.publish("AFFORDANCE_COLLECTION", affc.encode())
   time.sleep(0.1)
  
+
 
