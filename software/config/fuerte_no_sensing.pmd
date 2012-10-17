@@ -27,6 +27,10 @@ group "core" {
         exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
         host = "localhost";
     }
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
 }
 
 group "gazebo" {
