@@ -1,0 +1,453 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<!-- 
+  ROS urdf definition of Atlas humanoid robot from Boston Dynamics. 
+
+This file has been based upon a similar urdf file for the Nao humanoid robot (by 
+Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg which is available at: is available at: http://code.google.com/p/alufr-ros-pkg/.
+  
+  DO NOT INCLUDE THIS FILE DIRECTLY! USE atlas_robot.urdf.xacro INSTEAD!
+
+-->
+
+<!-- dummy first link, directly connects with back joint -->
+  <link name="base_link">   
+    <xacro:insert_small_inertial />
+  </link>
+
+  <link name="Back">   
+   <xacro:insert_inertial_cylinder mass="${0.1*mass_torso_back}" r="${w_pelvis*height}" l="${0.1*height}"/>
+  </link>
+
+  <link name="Pelvis-link1">   
+   <xacro:insert_inertial_cuboid mass="${0.5*mass_pelvis}" l_x="${0.1*height}" l_y="${w_pelvis*height}" l_z="${l_pelvis*height}"/>
+   <xacro:insert_visualization_pelvis1/>
+  </link>
+
+  <link name="Pelvis-link2">   
+   <xacro:insert_inertial_cuboid mass="${0.5*mass_pelvis}" l_x="${0.1*height}" l_y="${l_pelvis*height}" l_z="${w_pelvis*height}"/>
+   <xacro:insert_visualization_pelvis2/>
+  </link>
+
+  <link name="BackYaw_link">
+   <xacro:insert_inertial_cylinder mass="${0.1*mass_torso_back}" r="${o_back_shoulder_y*height}" l="${0.1*height}"/>
+  </link>
+  
+  <link name="BackPitch_link">
+  <xacro:insert_inertial_cuboid mass="${0.1*mass_torso_back}" l_x="${0.1*height}" l_y="${0.28*height}" l_z="${0.268*height}"/>
+  </link>
+
+  <link name="BackRoll_link">
+  <xacro:insert_inertial_cuboid mass="${0.1*mass_torso_back}" l_x="${0.1*height}" l_y="${0.28*height}" l_z="${0.268*height}"/>
+  </link>
+  
+ <link name="Torso" >
+   <!-- assuming the rotational inertia of the torso is of a cuboid -->
+  <xacro:insert_inertial_cuboid mass="${0.6*mass_torso_back+mass_misc_div_3}" l_x="${0.1*height}" l_y="${0.28*height}" l_z="${0.268*height}"/>
+   <xacro:insert_visualization_torso/>    
+  </link>
+
+  <link name="NeckYaw_link">
+  <xacro:insert_inertial_cylinder mass="${0.5*mass_head_neck}" r="${(w_head/2)*height}" l="${l_neck_head*height}"/>
+  </link>
+  
+  <link name="NeckPitch_link">
+  <xacro:insert_inertial_cylinder mass="${0.5*mass_head_neck}" r="${(w_head/2)*height}" l="${l_neck_head*height}"/>
+  <xacro:insert_visualization_head/>
+  </link>
+
+
+  <!-- Arms, 2/3 of the weight is in the shoulders and upper arm. 1/3 is in the lower arm -->  
+  <xacro:macro name="arm_links" params="side reflect">
+
+  <link name = "${side}ShoulderYaw_link">
+  <xacro:insert_inertial_cylinder mass="${((mass_arms_hands+mass_misc_div_3)/9)}"
+ r="${(w_arm/2)*height}" l="${l_upper_arm*height}"/>
+  </link>
+  <link name = "${side}ShoulderPitch_link">
+  <xacro:insert_inertial_cylinder mass="${((mass_arms_hands+mass_misc_div_3)/9)}"  r="${(w_arm/2)*height}" l="${l_upper_arm*height}"/>
+   </link>
+  <link name = "${side}ShoulderRoll_link">
+  <xacro:insert_inertial_cylinder mass="${((mass_arms_hands+mass_misc_div_3)/9)}" r="${(w_arm/2)*height}" l="${l_upper_arm*height}"/>
+    <xacro:insert_visualization_upper_arm side="${side}"/>
+  </link>
+
+  <link name = "${side}ElbowPitch_link">
+  <xacro:insert_inertial_cylinder mass="${((mass_arms_hands+mass_misc_div_3)/6)}" r="${(w_arm/2)*height}" l="${l_lower_arm*height}"/>
+    <xacro:insert_visualization_lower_arm side="${side}"/>
+  </link>
+
+  <link name = "${side}WristYaw_link">
+    <xacro:insert_inertial_cylinder2 mass="${mass_wrist*0.5}" mass4inertiatensor="${mass_wrist}" r="${(w_arm/2)*height}" l="${l_hand*height}"/>
+  </link> 
+ 
+  <link name = "${side}WristRoll_link">
+   <xacro:insert_inertial_cylinder2 mass="${mass_wrist*0.5}" mass4inertiatensor="${mass_wrist}" r="${(w_arm/2)*height}" l="${l_hand*height}"/>
+   <xacro:insert_visualization_hand side="${side}"/>
+  </link>
+
+  </xacro:macro>
+
+  <xacro:arm_links side="L" reflect="-1"/>
+  <xacro:arm_links side="R" reflect="1"/>  
+
+<!-- Legs, 2/3 of the weight is in the hips and thigh and other 1/3 is in the lower leg  -->
+<xacro:macro name="leg_links" params="side reflect">
+  <link name="${side}HipYaw_link" >
+   <xacro:insert_inertial_cylinder mass="${((mass_pelvis_legs-(2*mass_foot)-mass_pelvis+mass_misc_div_3)/9)}" r="${(w_leg/2)*height}" l="${l_thigh*height}"/> 
+  </link>		
+
+  <link name="${side}HipPitch_link">
+   <xacro:insert_inertial_cylinder mass="${((mass_pelvis_legs-(2*mass_foot)-mass_pelvis+mass_misc_div_3)/9)}" r="${(w_leg/2)*height}" l="${l_thigh*height}"/>
+  </link>
+  
+  <link name="${side}HipRoll_link">
+   <xacro:insert_inertial_cylinder mass="${((mass_pelvis_legs-(2*mass_foot)-mass_pelvis+mass_misc_div_3)/9)}" r="${(w_leg/2)*height}" l="${l_thigh*height}"/>
+    <xacro:insert_visualization_thigh side="${side}"/>
+  </link>
+
+  <link name="${side}KneePitch_link">
+     <xacro:insert_inertial_cylinder mass="${((mass_pelvis_legs-(2*mass_foot)-mass_pelvis+mass_misc_div_3)/6)}" r="${(w_leg/2)*height}" l="${l_shin*height}"/>
+    <xacro:insert_visualization_shin side="${side}"/>    
+  </link>
+  
+
+  <link name="${side}AnklePitch_link">
+    <xacro:insert_inertial_cylinder mass="${1}" r="${cylinder_radius}" l="${l_ankle*height}"/>
+    <xacro:insert_visualization_ankle side="${side}"/>
+  </link>
+
+  <link name="${side}Ankle">
+    <xacro:insert_inertial_cylinder mass="${1}" r="${cylinder_radius}" l="${l_ankle*height}"/>
+  </link>
+
+  <link name="${side}Foot">
+    <xacro:insert_inertial_cuboid mass="${mass_foot}" l_x="${l_foot*height}" l_y="0.06" l_z="0.015"/>
+    <xacro:insert_visualization_foot side="${side}"/>
+  </link>
+
+  <!--<link name="${side}FootToeIn_link" drakeIgnore="True">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootToeOut_link" drakeIgnore="True">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootHeelIn_link" drakeIgnore="True">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>
+
+  <link name="${side}FootHeelOut_link" drakeIgnore="True">
+    <xacro:insert_small_inertial /> 
+    <xacro:insert_visualization_foot_contact_point side="${side}"/>
+  </link>-->
+
+ </xacro:macro> 
+
+  <xacro:leg_links side="L" reflect="-1"/>
+  <xacro:leg_links side="R" reflect="1"/>  
+
+
+
+<!--   Joints following below -->
+
+<xacro:macro name="joint_trans" params="joint_name">
+  <transmission type="SimpleTransmission" name="${joint_name}_trans">
+    <actuator name="${joint_name}Torque" />
+    <joint name="${joint_name}" />
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+</xacro:macro>
+  
+  <joint name="base_joint" type="fixed">
+    <child link="Back"/>
+    <parent link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+  <joint name="BackYaw" type="revolute">
+    <parent link="Back"/>
+    <child link="BackYaw_link"/>
+    <origin xyz="0 0 0.0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit velocity="${joint_velocity_limit}" effort="${back_int_ext_rotation_torque_limit}" lower="${back_int_rotation_limit*pi_180}" upper="${back_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="BackYaw"/>
+  
+  <joint name="BackPitch" type="revolute">
+    <parent link="BackYaw_link"/>
+    <child link="BackPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit velocity="${joint_velocity_limit}" effort="${back_flexion_extension_torque_limit}" lower="${back_flexion_limit*pi_180}" upper="${back_extension_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="BackPitch"/>
+
+  <joint name="BackRoll" type="revolute">
+    <parent link="BackPitch_link"/>
+    <child link="BackRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit velocity="${joint_velocity_limit}" effort="${back_adduction_abduction_torque_limit}" lower="${back_adduction_limit*pi_180}" upper="${back_abduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="BackRoll"/>
+
+  <joint name="BackRoll_Torso_joint" type="fixed">
+    <child link="Torso"/>
+    <parent link="BackRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+<!-- Neck joints -->
+  
+  <joint name="NeckYaw" type="revolute">
+    <parent link="Torso"/>
+    <child link="NeckYaw_link"/>
+    <origin xyz="0 0 ${(l_torso)*height}" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit velocity="${joint_velocity_limit}" effort="${neck_int_ext_rotation_torque_limit}" lower="${neck_int_rotation_limit*pi_180}" upper="${neck_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="NeckYaw"/>
+
+  <joint name="NeckPitch" type="revolute">
+    <parent link="NeckYaw_link"/>
+    <child link="NeckPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit velocity="${joint_velocity_limit}" effort="${neck_flexion_extension_torque_limit}" lower="${neck_flexion_limit*pi_180}" upper="${neck_extension_limit*pi_180}"/>
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="NeckPitch"/>
+
+<!-- Arm joints -->
+  <joint name="LShoulderRoll" type="revolute">
+    <parent link="LShoulderPitch_link"/>
+    <child link="LShoulderRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="1 0 0"/>
+<limit velocity="${joint_velocity_limit}" effort="${shoulder_adduction_abduction_torque_limit}" lower="${shoulder_adduction_limit*pi_180}" upper="${shoulder_abduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="LShoulderRoll"/>
+
+  <joint name="RShoulderRoll" type="revolute">
+    <parent link="RShoulderPitch_link"/>
+    <child link="RShoulderRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="1 0 0"/>
+<limit velocity="${joint_velocity_limit}" effort="${shoulder_adduction_abduction_torque_limit}" lower="-${shoulder_abduction_limit*pi_180}" upper="-${shoulder_adduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="RShoulderRoll"/>
+
+ <xacro:macro name="arm_joints" params="side reflect">
+  <joint name="${side}ShoulderYaw" type="revolute">
+    <parent link="BackRoll_link"/>
+    <child link="${side}ShoulderYaw_link"/>
+    <origin xyz="0 ${reflect*-(o_back_shoulder_y*height)} ${o_back_shoulder_z*height}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="${joint_velocity_limit}" effort="${shoulder_int_ext_rotation_torque_limit}" lower="${shoulder_int_rotation_limit*pi_180}" upper="${shoulder_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}ShoulderYaw"/>
+
+  <joint name="${side}ShoulderPitch" type="revolute">
+    <parent link="${side}ShoulderYaw_link"/>
+    <child link="${side}ShoulderPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0"/>
+   <limit velocity="${joint_velocity_limit}" effort="${shoulder_flexion_extension_torque_limit}" lower="${shoulder_flexion_limit*pi_180}" upper="${shoulder_extension_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}ShoulderPitch"/>
+
+  <joint name="${side}ElbowPitch" type="revolute">
+    <parent link="${side}ShoulderRoll_link"/>
+    <child link="${side}ElbowPitch_link"/>
+    <origin xyz="0 0 -${(l_upper_arm)*height}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit velocity="${joint_velocity_limit}" effort="${elbow_flexion_extension_torque_limit}" lower="${elbow_flexion_limit*pi_180}" upper="${elbow_extension_limit*pi_180}"/>
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}ElbowPitch"/>
+
+
+  <joint name="${side}WristYaw" type="revolute">
+    <parent link="${side}ElbowPitch_link"/>
+    <child link="${side}WristYaw_link"/>
+    <origin xyz="0 0 -${(l_lower_arm)*height}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit velocity="${joint_velocity_limit}" effort="${wrist_int_ext_rotation_torque_limit}" lower="${wrist_int_rotation_limit*pi_180}" upper="${wrist_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}WristYaw"/>
+
+  </xacro:macro>
+  
+  <xacro:arm_joints side="L" reflect="-1"/>
+  <xacro:arm_joints side="R" reflect="1"/>   
+
+
+  <joint name="LWristRoll" type="revolute">
+    <parent link="LWristYaw_link"/>
+    <child link="LWristRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+<limit velocity="${joint_velocity_limit}" effort="${wrist_adduction_abduction_torque_limit}" lower="${wrist_adduction_limit*pi_180}" upper="${wrist_abduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="LWristRoll"/>
+
+  <joint name="RWristRoll" type="revolute">
+    <parent link="RWristYaw_link"/>
+    <child link="RWristRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+<limit velocity="${joint_velocity_limit}" effort="${wrist_adduction_abduction_torque_limit}" lower="${-wrist_abduction_limit*pi_180}" upper="${-wrist_adduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="RWristRoll"/>
+
+<!-- Pelvis joints -->
+ <joint name="Back_Pelvis_Joint" type="fixed">
+    <parent link="Back"/>
+    <child link="Pelvis-link1"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+ 
+ <joint name="Mid_Pelvis_Joint" type="fixed">
+    <parent link="Pelvis-link1"/>
+    <child link="Pelvis-link2"/>
+    <origin xyz="0 0 ${-l_pelvis*height}" rpy="0 0 0" />
+  </joint>
+ 
+
+
+<!-- Leg joints -->
+
+ <joint name="LHipYaw" type="revolute">
+    <parent link="Pelvis-link2"/>
+    <child link="LHipYaw_link"/>
+    <origin xyz="0 ${-1*-(o_back_hip_y*height)} 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  <limit velocity="${joint_velocity_limit}" effort="${hip_int_ext_rotation_torque_limit}" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="LHipYaw"/>
+
+  <joint name="RHipYaw" type="revolute">
+    <parent link="Pelvis-link2"/>
+    <child link="RHipYaw_link"/>
+    <origin xyz="0 ${1*-(o_back_hip_y*height)} 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  <limit velocity="${joint_velocity_limit}" effort="${hip_int_ext_rotation_torque_limit}" lower="${-hip_ext_rotation_limit*pi_180}" upper="${-hip_int_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="RHipYaw"/>
+
+
+<xacro:macro name="leg_joints" params="side reflect">
+
+ <!-- <joint name="${side}HipYaw" type="revolute">
+    <parent link="Pelvis-link2"/>
+    <child link="${side}HipYaw_link"/>
+    <origin xyz="0 ${reflect*(o_back_hip_y*height)} 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  <limit velocity="${joint_velocity_limit}" effort="${hip_int_ext_rotation_torque_limit}" lower="${hip_int_rotation_limit*pi_180}" upper="${hip_ext_rotation_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>-->
+
+
+
+  <joint name="${side}HipPitch" type="revolute">
+    <parent link="${side}HipYaw_link"/>
+    <child link="${side}HipPitch_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+      <limit velocity="${joint_velocity_limit}" effort="${hip_flexion_extension_torque_limit}" lower="${hip_flexion_limit*pi_180}" upper="${hip_extension_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}HipPitch"/>
+
+  <joint name="${side}HipRoll" type="revolute">
+    <parent link="${side}HipPitch_link"/>
+    <child link="${side}HipRoll_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit velocity="${joint_velocity_limit}" effort="${hip_adduction_abduction_torque_limit}" lower="${hip_adduction_limit*pi_180}" upper="${hip_abduction_limit*pi_180}" />
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint> 
+  <xacro:joint_trans joint_name="${side}HipRoll"/>
+
+  <joint name="${side}KneePitch" type="revolute">
+    <parent link="${side}HipRoll_link"/>
+    <child link="${side}KneePitch_link"/>
+    <origin xyz="0 0 -${(l_thigh)*height}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit velocity="${joint_velocity_limit}" effort="${knee_flexion_extension_torque_limit}" lower="${knee_flexion_limit*pi_180}" upper="${knee_extension_limit*pi_180}"/>
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}KneePitch"/>
+  
+  <joint name="${side}AnklePitch" type="revolute">
+    <parent link="${side}KneePitch_link"/>
+    <child link="${side}AnklePitch_link"/>
+    <origin xyz="0 0 -${(l_shin)*height}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit velocity="${joint_velocity_limit}" effort="${ankle_flexion_extension_torque_limit}" lower="${ankle_flexion_limit*pi_180}" upper="${ankle_extension_limit*pi_180}"/>
+     <dynamics damping="${joint_damping}" friction = "${joint_friction}"/>  
+  </joint>
+  <xacro:joint_trans joint_name="${side}AnklePitch"/>
+
+  <joint name="${side}Ankle_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}Ankle" />
+    <origin xyz="0 0 0" />  
+  </joint>
+
+  <joint name="${side}Foot_joint" type="fixed">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}Foot" />
+    <origin xyz="0 0 -0.04519" />  
+  </joint>
+
+  <joint name="${side}FootToeIn_joint" type="fixed" drakeIgnore="True">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootToeIn_link" />
+    <origin xyz="${l_foot*height+0.025} ${reflect*w_foot/2} -0.04519" /> 
+  </joint>
+
+  <joint name="${side}FootToeOut_joint" type="fixed" drakeIgnore="True">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootToeOut_link" />
+    <origin xyz="${l_foot*height+0.025} ${-reflect*w_foot/2} -0.04519" />
+  </joint>
+
+  <joint name="${side}FootHeelIn_joint" type="fixed" drakeIgnore="True">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootHeelIn_link" />
+    <origin xyz="-0.025 ${reflect*w_foot/2} -0.04519" />  
+  </joint>
+
+  <joint name="${side}FootHeelOut_joint" type="fixed" drakeIgnore="True">
+    <parent link="${side}AnklePitch_link" />
+    <child link="${side}FootHeelOut_link" />
+    <origin xyz="-0.025 ${-reflect*w_foot/2} -0.04519" />  
+  </joint>
+
+</xacro:macro>
+  
+  <xacro:leg_joints side="L" reflect="-1"/>
+  <xacro:leg_joints side="R" reflect="1"/>   
+
+</robot> 
+
