@@ -1,6 +1,7 @@
 package drc;
 
-struct hubo_imu_t{
+struct hubo_imu_t
+{
 	int64_t utime;
 	double w_x;
 	double w_y;

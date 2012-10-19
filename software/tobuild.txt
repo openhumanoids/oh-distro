@@ -8,8 +8,8 @@ branched
 robot_model
 kinematics
 sensing
-perception
 control
 object_template_model
+perception
 viewer
 network

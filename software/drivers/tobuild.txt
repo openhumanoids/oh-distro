@@ -5,4 +5,4 @@ kinect
 vicon
 velodyne
 microstrain_comm
-hubo
+# hubo

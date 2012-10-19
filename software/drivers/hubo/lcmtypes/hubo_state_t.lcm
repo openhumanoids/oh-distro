@@ -1,6 +1,7 @@
 package drc;
 
-struct hubo_state_t{
+struct hubo_state_t
+{
 	int64_t utime;
 	int32_t hubo_joint_count;
 	hubo_imu_t imu;
