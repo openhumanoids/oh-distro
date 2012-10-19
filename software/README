@@ -26,7 +26,7 @@ Probably required: (to be confirmed)
     libgl1-mesa-dev
     libglu1-mesa-dev
     freeglut3-dev
-    libjpeg8-dev
+    libjpeg8-dev (installing this may break ROS electric, which wants libjpeg-dev instead)
     ant
     libsuitesparse-dev
 
@@ -72,3 +72,12 @@ mfallon
 drc/software/viewer/CMakeLists.txt to copy it to
 drc/software/build/config/
 mfallon
+
+3. OpenGL does not install properly, which causes repeated errors of the form:
+No rule to make target `/usr/lib/x86_64-linux-gnu/libGL.so
+
+To fix this, we just need to repair the symlinks like this:
+sudo rm /usr/lib/x86_64-linux-gnu/libGL.so
+sudo ln -s /usr/lib/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
+
+
