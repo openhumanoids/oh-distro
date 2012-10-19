@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="atlas">
+  <!--
+  ROS urdf definition of Atlas humanoid robot from Boston Dynamics. Represents the kinematic structure of the robot which is based on the 50th percentile male anthropometry,. 
+
+This file has been based upon a similar urdf file for the Nao humanoid robot (by Aldebaran Robotics) provided in the Nao-Stack of University of Freiburg (Authors: Armin Hornung, Stefan Osswald) which is available at: is available at: http://code.google.com/p/alufr-ros-pkg/.
+
+  Joint names and properties are according to the Boston Dynamics Slide during DRC proposers day talk.
+  -->
+
+  <include filename="$(find atlas_description)/urdf/atlas_properties.xacro" />
+  <include filename="$(find atlas_description)/urdf/atlas_visualsandcollision_minimal_contact.xacro" />
+  <include filename="$(find atlas_description)/urdf/atlas_structure_minimal_contact.urdf.xacro" />
+ <include filename="$(find atlas_description)/urdf/atlas_controllers.xacro" /> 
+
+</robot>
+
