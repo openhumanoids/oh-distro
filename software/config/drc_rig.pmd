@@ -8,15 +8,31 @@ group "sensing" {
         host = "localhost";
     }
     cmd "mstrain" {
-        exec = "microstrain_comm -r";
+        exec = "microstrain_comm -r -d /dev/ttyACM0";
         host = "localhost";
     }
     cmd "bumblebee" {
         exec = "camview --plugin-path /home/mfallon/other_projects/camunits-pods/build/lib/ -c /home/mfallon/drc/config/bumblebee_rig.camview";
         host = "localhost";
     }
+    cmd "hokuyo" {
+        exec = "hokuyo -d /dev/ttyACM1";
+        host = "localhost";
+    }
+    cmd "kinect" {
+        exec = "kinect-openni-lcm";
+        host = "localhost";
+    }
+    cmd "vicon-client" {
+        exec = "vicon-client";
+        host = "localhost";
+    }
 }
 group "misc" {
+    cmd "bot-spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
     cmd "velo-viewer" {
         exec = "velodyne-viewer -c drc_rig.cfg";
         host = "localhost";
@@ -27,10 +43,6 @@ group "misc" {
     }
     cmd "pserver" {
         exec = "bot-param-server drc_rig.cfg";
-        host = "localhost";
-    }
-    cmd "voplusimu" {
-        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_robot.cfg -b bumblebee";
         host = "localhost";
     }
 }

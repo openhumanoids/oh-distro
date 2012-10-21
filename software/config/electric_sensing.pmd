@@ -23,10 +23,6 @@ group "core" {
         exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/sensing_wheeledAtlas_pre_fuerte.urdf";
         host = "localhost";
     }
-    cmd "proc" {
-        exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
-        host = "localhost";
-    }
     cmd "estpub" {
         exec = "est_robot_state_publisher";
         host = "localhost";
@@ -54,6 +50,10 @@ group "old_converters" {
         exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
         host = "localhost";
     }
+    cmd "proc" {
+        exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
+        host = "localhost";
+    }
 }
 
 group "sensing" {
@@ -68,7 +68,7 @@ group "sensing" {
 }
 group "laser_sensing" {
     cmd "vo" {
-        exec = "drc-motion-estimate-scanmatcherFIX_CAMERA_TO_LASER_POSE  -l BASE_SCAN -d -R 8 --pose CAMERA_STATE";
+        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 8 --pose CAMERA_STATE";
         host = "localhost";
     }
     cmd "local-map" {
