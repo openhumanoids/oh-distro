@@ -17,7 +17,6 @@
   <depend package="image_transport"/>
   <depend package="image_geometry"/>
   <depend package="cv_bridge"/>
-  <depend package="map_server"/>
   <depend package="nav_msgs"/>
   <depend package="rospy"/>
 <!--  <depend package="eigen"/> -->
