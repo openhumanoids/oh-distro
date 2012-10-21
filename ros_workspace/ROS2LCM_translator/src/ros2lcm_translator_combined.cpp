@@ -117,16 +117,25 @@ App::App(const std::string & stereo_in,
 
   // Stereo Image:
   std::string lim_string ,lin_string,rim_string,rin_string;
-  if (1==0){ // Grey:
+  int which_image = 2;
+  if (which_image==0){ // Grey:
     lim_string = stereo_in_ + "/left/image_rect";
     lin_string = stereo_in_ + "/left/camera_info";
     rim_string = stereo_in_ + "/right/image_rect";
     rin_string = stereo_in_ + "/right/camera_info";
-  }else{ // Color:
+  }else if(which_image==1){ // Color:
     lim_string = stereo_in_ + "/left/image_rect_color";
     lin_string = stereo_in_ + "/left/camera_info";
     rim_string = stereo_in_ + "/right/image_rect_color";
     rin_string = stereo_in_ + "/right/camera_info";
+  }else if(which_image==2){
+    lim_string = stereo_in_ + "/left/image_raw";
+    lin_string = stereo_in_ + "/left/camera_info";
+    rim_string = stereo_in_ + "/right/image_raw";
+    rin_string = stereo_in_ + "/right/camera_info";
+  }else{
+    cout << "Image choice not supported!\n";
+    exit(-1); 
   }
 cout << lim_string << " is sub\n";
 
@@ -205,6 +214,13 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
     stereo.row_stride=l_image->width;
     stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
     stereo.size =2*isize;
+    copy(l_image->data.begin(), l_image->data.end(), s_data);
+    copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
+    stereo.data.assign(s_data, s_data + ( 2*isize));
+  }else if (l_image->encoding.compare("bayer_bggr8") == 0){
+    stereo.row_stride=l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_BAYER_BGGR;
+    stereo.size =2*isize; // I think its the same size as a typical grayscale...
     copy(l_image->data.begin(), l_image->data.end(), s_data);
     copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
     stereo.data.assign(s_data, s_data + ( 2*isize));
