@@ -1,5 +1,4 @@
 import sys
-import lcm
 import os
 # for bottime:
 import time
@@ -12,6 +11,7 @@ print path1
 print path2
 sys.path.append(path1)
 sys.path.append(path2)
+import lcm
 from drc.affordance_collection_t import affordance_collection_t
 from drc.affordance_t import affordance_t
 

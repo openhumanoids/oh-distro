@@ -1,11 +1,17 @@
 import sys
-import lcm
-# for bottime:
 import time
+import os
+# for bottime:
 
+myhome = os.environ.get("HOME")
+path1 = myhome + "/drc/software/build/lib/python2.7/site-packages"
+path2 = myhome + "/drc/software/build/lib/python2.7/dist-packages"
+print path1
+print path2
+sys.path.append(path1)
+sys.path.append(path2)
 
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/site-packages")
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/dist-packages")
+import lcm
 from drc.localize_reinitialize_cmd_t import localize_reinitialize_cmd_t
 
 def timestamp_now (): return int (time.time () * 1000000)
