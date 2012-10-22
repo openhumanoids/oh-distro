@@ -1,5 +1,0 @@
-package vs;
-
-struct reset_collections_t
-{
-}
