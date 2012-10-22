@@ -3,7 +3,7 @@
 
 #externals
 drc_lcmtypes
-drivers
+#hubo
 robot_model
 kinematics
 sensing
