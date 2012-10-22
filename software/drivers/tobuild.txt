@@ -7,5 +7,5 @@
 #velodyne
 #microstrain_comm
 
-# not building here:
+# not building by defualt yet:
 # hubo
