@@ -1,0 +1,9 @@
+PracticalSockets is a downloadable file NOT written
+by Hunter McClelland, available online (2010/October)
+at http://cs.baylor.edu/~donahoo/practical/CSockets/practical/
+
+I also downloaded UDP examples, and the makefile which can
+compile the examples... you probably won't have to do this though.
+
+My code uses PracticalSockets.cpp and PracticalSockets.h as
+libraries, and really only utilizes the UDPSocket class and its parents.

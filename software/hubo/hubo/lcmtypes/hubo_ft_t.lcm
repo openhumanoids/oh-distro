@@ -1,0 +1,9 @@
+package drc;
+
+struct hubo_ft_t
+{
+	int64_t utime;
+	double m_x;
+	double m_y;
+	double f_z;
+}

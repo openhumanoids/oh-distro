@@ -1,0 +1,11 @@
+package drc;
+
+struct hubo_state_t
+{
+	int64_t utime;
+	int32_t hubo_joint_count;
+	hubo_imu_t imu;
+	hubo_ft_t ft[4];
+	hubo_joint_state_t joint[hubo_joint_count];
+	int8_t mode[hubo_joint_count];
+}
