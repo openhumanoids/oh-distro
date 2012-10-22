@@ -12,8 +12,9 @@ openjdk-6-jdk
 python-dev 
 libgsl0-dev
 gsl-bin
+libusb-1.0-0-dev
 
-(OpenNI: required only for the drivers/kinect):
+(OpenNI: required only for the externals/kinect):
 sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
 sudo apt-get update
 sudo apt-get install openni-dev ps-engine 
