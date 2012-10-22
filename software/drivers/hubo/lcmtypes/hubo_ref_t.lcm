@@ -1,8 +1,0 @@
-package drc;
-
-struct hubo_ref_t
-{
-	int32_t hubo_joint_count;
-	int64_t utime;
-	double ref[hubo_joint_count];
-}
