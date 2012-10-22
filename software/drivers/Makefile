@@ -5,10 +5,10 @@ SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
 
 # Figure out where to build the software.
 #   Use BUILD_PREFIX if it was passed in.
-#   If not, search up to two parent directories for a 'build' directory.
+#   If not, search up to three parent directories for a 'build' directory.
 #   Otherwise, use ./build.
 ifeq "$(BUILD_PREFIX)" ""
-BUILD_PREFIX=$(shell for pfx in .. ../..; do d=`pwd`/$$pfx/build; \
+BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
 
@@ -17,16 +17,12 @@ $(VERBOSE).SILENT:
 
 all: 
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
-	- patch -s -p0 -N -i ./carmen.patch
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
 		echo "-------------------------------------------"; \
-		$(MAKE) BUILD_PREFIX=$(BUILD_PREFIX) -C $$subdir all || exit 2; \
+		$(MAKE) -C $$subdir all || exit 2; \
 	done
-
-	# Disabled for now mfallon june 2012
-        #mv $(BUILD_PREFIX)/lib/carmen/* $(BUILD_PREFIX)/lib/; rm -rf $(BUILD_PREFIX)/lib/carmen;
 	@# Place additional commands here if you have any
 
 clean:
