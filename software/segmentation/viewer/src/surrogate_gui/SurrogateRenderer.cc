@@ -249,6 +249,9 @@ namespace surrogate_gui
 
 	void SurrogateRenderer::draw_xyzrgb(BotViewer *viewer, BotRenderer *renderer)
 	{
+		//-------draw the axes
+		bot_gl_draw_axes();
+		//--------
 
 		// Return if no scene to draw
 		if (!_display_info.cloud)
@@ -273,14 +276,6 @@ namespace surrogate_gui
 		// draw the points
 		glEnable(GL_DEPTH_TEST);
 		glPointSize(2.0f);
-	
-
-
-		//-------draw the axes
-		bot_gl_draw_axes();
-		//--------
-
-
 
 
 		glColor3f(0, 0, 0);
