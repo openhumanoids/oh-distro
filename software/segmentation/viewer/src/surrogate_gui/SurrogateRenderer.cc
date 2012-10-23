@@ -249,6 +249,7 @@ namespace surrogate_gui
 
 	void SurrogateRenderer::draw_xyzrgb(BotViewer *viewer, BotRenderer *renderer)
 	{
+
 		//-------draw the axes
 		bot_gl_draw_axes();
 		//--------
@@ -660,10 +661,10 @@ namespace surrogate_gui
 					pointIter++)
 			{
 				if (colorMap[*pointIter] == Color::NULL_COLOR)
-				{
-					if (nextObject->color > Color::HIGHLIGHT)
-						throw SurrogateException("\nbanana: inserted bad color: " + Color::to_string(nextObject->color));
-					colorMap[*pointIter] = nextObject->color;
+				  {
+				    if (nextObject->color > Color::HIGHLIGHT)
+				      throw SurrogateException("\nbanana: inserted bad color: " + Color::to_string(nextObject->color));
+				    colorMap[*pointIter] = nextObject->color;
 				}
 			}
 		}
@@ -671,11 +672,8 @@ namespace surrogate_gui
 
   	void SurrogateRenderer::doGlRotateStuff()
 	{
-	  /*
-		// rotate so that X is forward and Z is up
-		glRotatef(-90, 0, 0, 1);
-		glRotatef(-90, 1, 0, 0);
-	  */
+	  // rotate so that X is forward and Z is up
+	  //glRotatef(-90, 1, 0, 0);
 	}
   
 	void SurrogateRenderer::drawCircle(const Circle3D &circle)

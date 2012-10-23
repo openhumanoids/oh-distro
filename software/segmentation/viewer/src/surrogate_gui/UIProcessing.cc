@@ -606,15 +606,17 @@ namespace surrogate_gui
     // Transform cloud to that its in robotic frame:
     // Could also apply the cv->robotic transform directly
     // removed by mfallon sept 2012:
+    /*
     double y_temp;
-    for(uint j=0; j<cloud->points.size(); j++) {
+    for(uint j=0; j<cloud->points.size(); j++) 
+      {
       // forward is fine - x=x
-      y_temp = cloud->points[j].y;
-      cloud->points[j].y =- cloud->points[j].z;
-      cloud->points[j].z = y_temp;
-cloud->points[j].x = cloud->points[j].x;
+	y_temp = cloud->points[j].y;
+	cloud->points[j].y =- cloud->points[j].z;
+	cloud->points[j].z = y_temp;
+	cloud->points[j].x = cloud->points[j].x;
       //cloud->points[j].z = x_temp;
-    }
+      }*/
   }
   
 
@@ -811,7 +813,7 @@ cloud->points[j].x = cloud->points[j].x;
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
-	  double x,y,z,roll,pitch=0,yaw=0,radius,length=1;
+	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
 					 currObj->indices,

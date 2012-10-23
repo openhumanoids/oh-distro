@@ -281,6 +281,8 @@ namespace surrogate_gui
 
 
   //==============cylinder
+  /**fits a cylinder to subcloudIndices in cloud.  currently, we assume
+     the cylinder is oriented on the z axis*/
   PointIndices::Ptr Segmentation::fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
 					      double &x, double &y, double &z,
@@ -302,8 +304,6 @@ namespace surrogate_gui
     
     cout << "\n subcloud centroid = " << centroid << endl;
     //end debugging
-
-
 
     //---normals
     pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
@@ -340,10 +340,8 @@ namespace surrogate_gui
     
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
 
-
-    cout << "\n\nsuper-hack: using centroid of the input for xyz " << endl;
-    x = centroid.x;
-    y = centroid.y;
+    //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
+    //is oriented vertically)
     z = centroid.z;
 
     return cylinderIndices;
