@@ -9,10 +9,15 @@
 #include "PclSurrogateUtils.h"
 
 #include <pcl/ModelCoefficients.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/features/normal_3d.h>  //for computePointNormal
 #include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+
 #include <pcl/sample_consensus/sac_model_plane.h>
-#include <pcl/features/normal_3d.h> //for computePointNormal
 #include <pcl/common/impl/centroid.hpp> //for computing centroid
 #include <pcl/segmentation/extract_clusters.h>
 
@@ -24,20 +29,20 @@ namespace surrogate_gui
 
 
 	vector<PointIndices::Ptr> Segmentation::segment(const PointCloud<PointXYZRGB>::ConstPtr cloud,
-													boost::shared_ptr<set<int> >  subcloudIndices)
+							boost::shared_ptr<set<int> >  subcloudIndices)
 	{
-		//return getPlanarComponents(cloud, subcloudIndices);
+	  //return getPlanarComponents(cloud, subcloudIndices);
+	  
+	  vector<PointIndices::Ptr> planeComponents = getRansacSegments(cloud,
+									PclSurrogateUtils::toPclIndices(subcloudIndices),
+									3, SACMODEL_PLANE);
+	  
+	  cout << endl << "***found " << planeComponents.size() << " plane components***" << endl;;
 
-		vector<PointIndices::Ptr> planeComponents = getRansacSegments(cloud,
-																	  PclSurrogateUtils::toPclIndices(subcloudIndices),
-																	  3, SACMODEL_PLANE);
-
-		cout << endl << "***found " << planeComponents.size() << " plane components***" << endl;;
-
-		vector<PointIndices::Ptr> segments;
-		for (uint i = 0; i < planeComponents.size(); i++)
-		{
-			vector<PointIndices::Ptr> nextEuclidSegments = getEuclideanClusters(cloud, planeComponents[i]);
+	  vector<PointIndices::Ptr> segments;
+	  for (uint i = 0; i < planeComponents.size(); i++)
+	    {
+	      vector<PointIndices::Ptr> nextEuclidSegments = getEuclideanClusters(cloud, planeComponents[i]);
 
 			//circle components
 			/*for (uint n = 0; n < nextEuclidSegments.size(); n++)
@@ -273,6 +278,59 @@ namespace surrogate_gui
 
 		return 1 - (sumSquaredErrors/ssTot);
 	}
+
+
+  //==============cylinder
+  PointIndices::Ptr Segmentation::fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					      boost::shared_ptr<set<int> >  subcloudIndices,
+					      double &x, double &y, double &z,
+					      double &roll, double &pitch, double &yaw, 
+					      double &radius,
+					      double &height)
+  {
+    cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
+    cout << "\n cloud size = " << cloud->points.size() << endl;
+
+    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+
+    //---normals
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
+    NormalEstimation<PointXYZRGB, pcl::Normal> ne;
+    ne.setSearchMethod (tree);
+    ne.setInputCloud (subcloud);
+    ne.setKSearch (50);
+    PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
+    ne.compute (*subcloud_normals);
+
+    //create the segmentation object
+    SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
+    seg.setOptimizeCoefficients(true); //optional
+    seg.setModelType(SACMODEL_CYLINDER); //pcl::SACMODEL_CYLINDER);
+    seg.setMethodType(SAC_RANSAC);
+    seg.setDistanceThreshold(0.05);
+    seg.setRadiusLimits(0, 100);
+       
+    //set input
+    seg.setInputCloud(subcloud);
+    seg.setInputNormals(subcloud_normals);
+
+    //segment
+    ModelCoefficients::Ptr coefficients(new ModelCoefficients);
+    PointIndices::Ptr cylinderIndices (new PointIndices);
+    seg.segment(*cylinderIndices, *coefficients);
+    
+    //todo: xyz / rpyaw  / radius, height
+    
+    return cylinderIndices;
+  }
+
+
+
+
+
+
+
+
 
 	//==================
 	//---------non-instantiable

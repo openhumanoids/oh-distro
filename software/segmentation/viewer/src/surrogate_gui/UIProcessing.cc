@@ -211,7 +211,7 @@ namespace surrogate_gui
 		}
 
 		vector<PointIndices::Ptr> planes = Segmentation::segment(_surrogate_renderer._display_info.cloud,
-																 currObj->indices);
+									 currObj->indices);
 		if (planes.size() == 0)
 		{
 			_surrogate_renderer.setHintText("");
@@ -807,23 +807,63 @@ cloud->points[j].x = cloud->points[j].x;
 	  	  
 	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER;
 	  affordanceMsg.name = "cylinder";
-	  
-	  //point cloud indices
-	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.numPtInds = currObj->indices->size();
-	  affordanceMsg.ptInds = vector<int>(currObj->indices->begin(),
-	  				     currObj->indices->end());
-	  
+	  	  
           //geometrical properties
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 0; //8; //xyz,rpy,radius,length
-	  affordanceMsg.nstates = 0;
+	  double x = 0,y=0,z=0,roll=0,pitch=0,yaw=0,radius=0,length=0;
+	  PointIndices::Ptr cylinderIndices 
+	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
+					 currObj->indices,
+					 x,y,z,
+					roll,pitch,yaw,
+					radius,length);
+
+	  /*
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("x");
+	  
+	  affordanceMsg.states.push_back(y);
+	  affordanceMsg.state_names.push_back("y");
+
+	  affordanceMsg.states.push_back(z);
+	  affordanceMsg.state_names.push_back("z");
+
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("roll");
+
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("pitch");
+
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("yaw");
+
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("radius");
+
+	  affordanceMsg.states.push_back(x);
+	  affordanceMsg.state_names.push_back("length");
+	  */
+
+	  //point cloud indices
+	  affordanceMsg.numPtInds = cylinderIndices->indices.size();
+	  affordanceMsg.ptInds = vector<int>(cylinderIndices->indices.begin(),
+	  				     cylinderIndices->indices.end());
+
+	  cout << "\n numPtsInds = " << affordanceMsg.numPtInds << " | ptInds.size() = " 
+	       << affordanceMsg.ptInds.size() << endl;
+
+	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.state_names.size() << endl;
 
 	  //todo : Set these
 	  //affordanceMsg.params;
 	  //affordanceMsg.param_names;
 	  
 	  //states: todo? is this used?
+	  affordanceMsg.nstates = 0;
 	  
+	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
 	  
 	  return;

@@ -29,8 +29,15 @@ namespace surrogate_gui
 															   boost::shared_ptr<std::set<int> >  subcloudIndices);
 
 			static std::vector<pcl::PointIndices::Ptr> getRansacSegments(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-																		 pcl::PointIndices::Ptr subcloudIndices,
-																		 uint maxNumSegments, pcl::SacModel shapeToFind);
+										     pcl::PointIndices::Ptr subcloudIndices,
+										     uint maxNumSegments, pcl::SacModel shapeToFind);
+
+			static pcl::PointIndices::Ptr fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+								  boost::shared_ptr<std::set<int> > subcloudIndices,
+								  double &x, double &y, double &z,
+								  double &roll, double &pitch, double &yaw, 
+								  double &radius,
+								  double &height);
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
