@@ -286,7 +286,7 @@ namespace surrogate_gui
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
 					      double &radius,
-					      double &height)
+					      double &length)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -319,7 +319,13 @@ namespace surrogate_gui
     PointIndices::Ptr cylinderIndices (new PointIndices);
     seg.segment(*cylinderIndices, *coefficients);
     
-    //todo: xyz / rpyaw  / radius, height
+    //todo: xyz / rpyaw  / radius, length
+    //model_coefficientsthe coefficients of the cylinder (point_on_axis, axis_direction, cylinder_radius_R)
+    x = coefficients->values[0];
+    y = coefficients->values[1];
+    z = coefficients->values[2];
+    
+    radius = coefficients->values[7];
     
     return cylinderIndices;
   }

@@ -811,14 +811,16 @@ cloud->points[j].x = cloud->points[j].x;
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 0; //8; //xyz,rpy,radius,length
-	  double x = 0,y=0,z=0,roll=0,pitch=0,yaw=0,radius=0,length=0;
+	  double x = 0,y=0,z=0,roll=0,pitch=0,yaw=0,radius=0.0,length=2;
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
 					 currObj->indices,
-					 x,y,z,
+					x,y,z,
 					roll,pitch,yaw,
-					radius,length);
+					radius,
+					length);
 
+	  cout << "computed radius = " << radius << endl; 
 	  /*
 	  affordanceMsg.states.push_back(x);
 	  affordanceMsg.state_names.push_back("x");
