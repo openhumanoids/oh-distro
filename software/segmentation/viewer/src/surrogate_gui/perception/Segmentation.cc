@@ -205,8 +205,8 @@ namespace surrogate_gui
 	 * http://docs.pointclouds.org/trunk/group__sample__consensus.html#gad3677a8e6b185643a2b9ae981e831c14
 	 * */
 	double Segmentation::getPlaneFitStatistics(ModelCoefficients::Ptr planeCoeffs,
-											   const PointCloud<PointXYZRGB>::ConstPtr cloud,
-											   PointIndices::Ptr planeIndices)
+						   const PointCloud<PointXYZRGB>::ConstPtr cloud,
+						   PointIndices::Ptr planeIndices)
 	{
 		//===========================================
 		//====================================defensive checks
@@ -293,6 +293,18 @@ namespace surrogate_gui
 
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
+
+
+    //debugging
+    Eigen::Vector4f centroid4f;
+    compute3DCentroid(*subcloud, centroid4f);
+    PointXYZ centroid(centroid4f[0], centroid4f[1], centroid4f[2]);
+    
+    cout << "\n subcloud centroid = " << centroid << endl;
+    //end debugging
+
+
+
     //---normals
     pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
     NormalEstimation<PointXYZRGB, pcl::Normal> ne;
@@ -308,7 +320,7 @@ namespace surrogate_gui
     seg.setModelType(SACMODEL_CYLINDER); //pcl::SACMODEL_CYLINDER);
     seg.setMethodType(SAC_RANSAC);
     seg.setDistanceThreshold(0.05);
-    seg.setRadiusLimits(0, 100);
+    seg.setRadiusLimits(0.05, 0.2);
        
     //set input
     seg.setInputCloud(subcloud);
@@ -323,10 +335,17 @@ namespace surrogate_gui
     //model_coefficientsthe coefficients of the cylinder (point_on_axis, axis_direction, cylinder_radius_R)
     x = coefficients->values[0];
     y = coefficients->values[1];
-    z = coefficients->values[2];
+    z = coefficients->values[2];    
+    radius = coefficients->values[6];
     
-    radius = coefficients->values[7];
-    
+    cout << "\n segmentation coefficients:\n" << *coefficients << endl;
+
+
+    cout << "\n\nsuper-hack: using centroid of the input for xyz " << endl;
+    x = centroid.x;
+    y = centroid.y;
+    z = centroid.z;
+
     return cylinderIndices;
   }
 

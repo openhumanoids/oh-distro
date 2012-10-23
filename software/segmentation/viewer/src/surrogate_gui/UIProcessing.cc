@@ -810,8 +810,8 @@ cloud->points[j].x = cloud->points[j].x;
 	  	  
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.nparams = 0; //8; //xyz,rpy,radius,length
-	  double x = 0,y=0,z=0,roll=0,pitch=0,yaw=0,radius=0.0,length=2;
+	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
+	  double x,y,z,roll,pitch=0,yaw=0,radius,length=1;
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
 					 currObj->indices,
@@ -819,33 +819,31 @@ cloud->points[j].x = cloud->points[j].x;
 					roll,pitch,yaw,
 					radius,
 					length);
-
-	  cout << "computed radius = " << radius << endl; 
-	  /*
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("x");
+	      
+	  affordanceMsg.params.push_back(x);
+	  affordanceMsg.param_names.push_back("x");
 	  
-	  affordanceMsg.states.push_back(y);
-	  affordanceMsg.state_names.push_back("y");
+	  affordanceMsg.params.push_back(y);
+	  affordanceMsg.param_names.push_back("y");
 
-	  affordanceMsg.states.push_back(z);
-	  affordanceMsg.state_names.push_back("z");
+	  affordanceMsg.params.push_back(z);
+	  affordanceMsg.param_names.push_back("z");
 
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("roll");
+	  affordanceMsg.params.push_back(roll);
+	  affordanceMsg.param_names.push_back("roll");
 
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("pitch");
+	  affordanceMsg.params.push_back(pitch);
+	  affordanceMsg.param_names.push_back("pitch");
 
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("yaw");
+	  affordanceMsg.params.push_back(yaw);
+	  affordanceMsg.param_names.push_back("yaw");
 
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("radius");
+	  affordanceMsg.params.push_back(radius);
+	  affordanceMsg.param_names.push_back("radius");
 
-	  affordanceMsg.states.push_back(x);
-	  affordanceMsg.state_names.push_back("length");
-	  */
+	  affordanceMsg.params.push_back(length);
+	  affordanceMsg.param_names.push_back("length");
+
 
 	  //point cloud indices
 	  affordanceMsg.numPtInds = cylinderIndices->indices.size();
@@ -856,17 +854,15 @@ cloud->points[j].x = cloud->points[j].x;
 	       << affordanceMsg.ptInds.size() << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
-	       << affordanceMsg.state_names.size() << endl;
+	       << affordanceMsg.param_names.size() << endl;
 
 	  //todo : Set these
-	  //affordanceMsg.params;
-	  //affordanceMsg.param_names;
-	  
-	  //states: todo? is this used?
+	  //states: todo? is this used? states/state_names
 	  affordanceMsg.nstates = 0;
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  cout << "\n ***published \n" << endl;
 	  
 	  return;
 	}
