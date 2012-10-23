@@ -846,12 +846,12 @@ cloud->points[j].x = cloud->points[j].x;
 
 
 	  //point cloud indices
-	  affordanceMsg.numPtInds = cylinderIndices->indices.size();
-	  affordanceMsg.ptInds = vector<int>(cylinderIndices->indices.begin(),
+	  affordanceMsg.nptinds = cylinderIndices->indices.size();
+	  affordanceMsg.ptinds = vector<int>(cylinderIndices->indices.begin(),
 	  				     cylinderIndices->indices.end());
 
-	  cout << "\n numPtsInds = " << affordanceMsg.numPtInds << " | ptInds.size() = " 
-	       << affordanceMsg.ptInds.size() << endl;
+	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
+	       << affordanceMsg.ptinds.size() << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;
