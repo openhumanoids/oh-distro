@@ -66,11 +66,12 @@ int main(int argc, char *argv[])
     BotViewer *viewer = bot_viewer_new("Viewer-Surrogate");
     app.viewer = viewer;
     app.lcm = lcm_create(NULL);
+    boost::shared_ptr<lcm::LCM> lcmCpp = boost::shared_ptr<lcm::LCM>(new lcm::LCM(app.lcm));
+    
     bot_glib_mainloop_attach_lcm(app.lcm);
 
-
     //otdf
-    setup_renderer_otdf(viewer, 0, app.lcm);
+    setup_renderer_otdf(viewer, 0, lcmCpp);
 
 
     // setup renderers
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
 	// create segmentation handler
     std::string channel_name = "LOCAL_MAP_POINTS";
-    UIProcessing uip(viewer, app.lcm, channel_name.c_str()); //"KINECT_XYZRGB_ROS");
+    UIProcessing uip(viewer, lcmCpp, channel_name.c_str()); //"KINECT_XYZRGB_ROS");
 
     std::cout << "Listening to data from channel: " << channel_name << "\n";
 

@@ -10,7 +10,7 @@
 #include "Segmentation.h"
 #include "SurrogateException.h"
 #include "PclSurrogateUtils.h"
-#include <lcmtypes/lkr_grasp_request_t.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <iostream>
 
 #include <pcl/common/distances.h>
@@ -26,7 +26,7 @@ namespace surrogate_gui
 	//======================================
 	//======================================
 	//==============================constructor/destructor
-	UIProcessing::UIProcessing(BotViewer *viewer, lcm_t *lcm, string kinect_channel) :
+  UIProcessing::UIProcessing(BotViewer *viewer, boost::shared_ptr<lcm::LCM> lcm, string kinect_channel) :
 		_gui_state(SEGMENTING),
 		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
 		_objTracker()
@@ -72,13 +72,6 @@ namespace surrogate_gui
 									  NULL);
 		//self->track_mode = TRACK_3D;
 
-		//manipulation action type
-		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_MANIP_TYPE, BOT_GTK_PARAM_WIDGET_MENU,
-									  LKR_GRASP_REQUEST_T_ROTATE, //initial value, defined in lcm type
-									  "Rotate", LKR_GRASP_REQUEST_T_ROTATE,
-									  "Dig", LKR_GRASP_REQUEST_T_DIG,
-									  "Lift", LKR_GRASP_REQUEST_T_LIFT,
- 									   NULL);
 		//===live tracking button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_TRACK_OBJECTS, NULL);
 
@@ -97,7 +90,8 @@ namespace surrogate_gui
 		//===========================================
 
 		//other fields
-		_lcm					= lcm;
+		_lcmCpp = lcm;
+
 		_button_states.shift_L_is_down = false;
 		_button_states.shift_R_is_down = false;
 
@@ -130,9 +124,10 @@ namespace surrogate_gui
 						  G_CALLBACK (cb_on_param_widget_changed_xyzrgb), this);
 
 		//lcm callbacks
-		ptools_pointcloud2_t_subscribe(lcm, kinect_channel.c_str(), cb_on_kinect_frame, this);
-		//lkr_color_point_cloud_t_subscribe(lcm, kinect_channel.c_str(), cb_on_kinect_frame, this);
-		//lkr_index_vector_t_subscribe(sh->lcm, "VISION_OBJECT_INDEX", on_2d_indices, sh);
+		//should conver to c++format
+		ptools_pointcloud2_t_subscribe(lcm->getUnderlyingLCM(), 
+					       kinect_channel.c_str(), 
+					       cb_on_kinect_frame, this);
 	}
 
 	UIProcessing::~UIProcessing()
@@ -807,62 +802,33 @@ cloud->points[j].x = cloud->points[j].x;
 
 	void UIProcessing::handleAffordancePubButton()
 	{
-		//======initialize grasp cloud
-		lkr_color_point_cloud_t object_cloud_lcm;
+	  //todo: map_utime, map_id, object_id
+	  drc::affordance_t affordanceMsg;
+	  	  
+	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER;
+	  affordanceMsg.name = "cylinder";
+	  
+	  //point cloud indices
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
+	  affordanceMsg.numPtInds = currObj->indices->size();
+	  affordanceMsg.ptInds = vector<int>(currObj->indices->begin(),
+	  				     currObj->indices->end());
+	  
+          //geometrical properties
+	  affordanceMsg.nparams = 0; //8; //xyz,rpy,radius,length
+	  affordanceMsg.nstates = 0;
 
-		//get the current segment
-		ObjectPointsPtr currObj = getCurrentObjectSelected();
-		
-		int numIndices = currObj->indices->size();
-		
-		object_cloud_lcm.header.frame_id = strdup("frameNotSet");
-		object_cloud_lcm.num_points = numIndices;
-		object_cloud_lcm.points = (lkr_point_xyzrgb_t *) malloc(sizeof(lkr_point_xyzrgb_t)*numIndices);
-		object_cloud_lcm.width = numIndices;
-		object_cloud_lcm.height = 1;
-
-		PointCloud<PointXYZRGB>::ConstPtr msg = _surrogate_renderer._display_info.cloud;
-
-		int i = 0;
-		for(set<int>::iterator iter = currObj->indices->begin();
-		    iter != currObj->indices->end(); 
-		    ++iter, i++)
-		{
-		  int nextSegInd = *iter;
-
-		  //extract pcl point
-		  const PointXYZRGB &nextPt = msg->points[nextSegInd];
-		  RGB_PCL rgbVal;
-		  rgbVal.float_value = nextPt.rgb;
-		  
-		  //copy to lcm format
-		  lkr_point_xyzrgb_t next_lcm_pt;
-		  next_lcm_pt.x = nextPt.x;
-		  next_lcm_pt.y = nextPt.y;
-		  next_lcm_pt.z = nextPt.z;
-		  next_lcm_pt.r = rgbVal.red;
-		  next_lcm_pt.g = rgbVal.green;
-		  next_lcm_pt.b = rgbVal.blue;
-		  
-		  object_cloud_lcm.points[i] = next_lcm_pt;
-		}
-		
-		//todo: change to drc_affordance_t.lcm
-		//modify message to include points?
-
-		//clean up
-		free(object_cloud_lcm.points);
-		return;
+	  //todo : Set these
+	  //affordanceMsg.params;
+	  //affordanceMsg.param_names;
+	  
+	  //states: todo? is this used?
+	  
+	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  
+	  return;
 	}
-
-	/**copy p into dest*/
-	void UIProcessing::copy(const PointXYZ &p, lkr_point_xyz_t &dest)
-	{
-		dest.x = p.x;
-		dest.y = p.y;
-		dest.z = p.z;
-	}
-
+  
 	void UIProcessing::handleFullResetButton(BotGtkParamWidget *pw)
 	{
 		_gui_state = SEGMENTING;
@@ -873,7 +839,6 @@ cloud->points[j].x = cloud->points[j].x;
 		bot_gtk_param_widget_set_bool(pw, PARAM_NAME_CLOUD_PAUSE, 0);
 		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MOUSE_MODE, CAMERA_MOVE);
 		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_TRACK_METHOD, ICP);
-		bot_gtk_param_widget_set_enum(pw, PARAM_NAME_MANIP_TYPE, LKR_GRASP_REQUEST_T_ROTATE);
 		bot_gtk_param_widget_clear_enum(pw, PARAM_NAME_CURR_OBJECT);
 		_surrogate_renderer.setCamera(CAMERA_FRONT);
 	}

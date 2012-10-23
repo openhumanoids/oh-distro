@@ -29,8 +29,6 @@ namespace surrogate_gui
 		: _viewer(viewer), _pw(pw)
 	{
 
-		//initValsKinectRenderer();
-
 		// Setup renderer
 		BotRenderer *renderer = &_renderer;
 

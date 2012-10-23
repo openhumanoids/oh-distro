@@ -10,6 +10,10 @@
 
 //================includes
 #include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
+#include <lcmtypes/ptools_pointcloud2_t.h>
+#include <lcmtypes/ptools_pointfield_t.h>
+
 #include <bot_vis/bot_vis.h>
 #include <bot_vis/glm.h>
 #include <bot_frames/bot_frames.h>
@@ -17,11 +21,6 @@
 //#include <bot_param/param_util.h>
 //#include "param_widget.h"
 
-#include <lcmtypes/lkr_color_point_cloud_t.h>
-#include <lcmtypes/lkr_point_xyzrgb_t.h>
-#include <lcmtypes/lkr_point_xyz_t.h>
-#include <lcmtypes/ptools_pointcloud2_t.h>
-#include <lcmtypes/ptools_pointfield_t.h>
 #include <vector>
 #include <string>
 #include <set>
@@ -30,7 +29,6 @@
 
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
-
 
 #include "menu_definitions.h"
 #include "DisplayInfo.h"
@@ -59,7 +57,8 @@ namespace surrogate_gui
 		private:
 			GuiState _gui_state; //segmenting or tracking
 			SurrogateRenderer _surrogate_renderer; //graphics, display
-			lcm_t     *_lcm; //incoming messages
+			boost::shared_ptr<lcm::LCM> _lcmCpp; //cpp version of _lcm
+
 			ButtonStates _button_states;  //for monitoring which keys are being held down
 
 			BotEventHandler *_ehandler;
@@ -69,7 +68,8 @@ namespace surrogate_gui
 
 		//=====constructor/destructor
 		public:
-			UIProcessing(BotViewer *viewer, lcm_t *lcm, std::string kinect_channel);
+			UIProcessing(BotViewer *viewer, boost::shared_ptr<lcm::LCM> lcmCpp, 
+				     std::string kinect_channel);
 			~UIProcessing();
 
 		//=====observers
@@ -92,8 +92,6 @@ namespace surrogate_gui
 			void handleTrackLiveButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButton();
 			void handleFullResetButton(BotGtkParamWidget *pw);
-
-			static void copy(const pcl::PointXYZ &p, lkr_point_xyz_t &dest);
 
 			//callbacks
 			void on_param_widget_changed_xyzrgb (BotGtkParamWidget *pw, const char *name, void *user); //menu item clicked / adjusted
