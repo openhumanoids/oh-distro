@@ -25,8 +25,8 @@ struct affordance_t
   string state_names[nstates];
 
   // Point Cloud Indices:
-  int32_t numPtInds;
-  int32_t ptInds[numPtInds];
+  int32_t nptinds;
+  int32_t ptinds[nptinds];
 
   const int16_t CYLINDER=0, LEVER=1;
 }
