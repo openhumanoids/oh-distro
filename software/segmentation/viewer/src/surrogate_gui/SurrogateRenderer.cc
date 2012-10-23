@@ -249,6 +249,7 @@ namespace surrogate_gui
 
 	void SurrogateRenderer::draw_xyzrgb(BotViewer *viewer, BotRenderer *renderer)
 	{
+
 		// Return if no scene to draw
 		if (!_display_info.cloud)
 		{
@@ -272,6 +273,16 @@ namespace surrogate_gui
 		// draw the points
 		glEnable(GL_DEPTH_TEST);
 		glPointSize(2.0f);
+	
+
+
+		//-------draw the axes
+		bot_gl_draw_axes();
+		//--------
+
+
+
+
 		glColor3f(0, 0, 0);
 		const uint8_t ALPHA_CLOUD_UB = 40;
 		if (shouldDrawTrackingCloud()) //only blend if going to draw tracking info
@@ -663,13 +674,15 @@ namespace surrogate_gui
 		}
 	}
 
-	void SurrogateRenderer::doGlRotateStuff()
+  	void SurrogateRenderer::doGlRotateStuff()
 	{
+	  /*
 		// rotate so that X is forward and Z is up
 		glRotatef(-90, 0, 0, 1);
 		glRotatef(-90, 1, 0, 0);
+	  */
 	}
-
+  
 	void SurrogateRenderer::drawCircle(const Circle3D &circle)
 	{
 		glBegin(GL_POINTS);
@@ -812,6 +825,7 @@ namespace surrogate_gui
 		double eye[3] = {0,0,0};
 		double away_coord = 2.5;
 
+		/*
 		switch (camera_view) {
 		case CAMERA_FRONT:
 					printf("CHANGING VIEW: FRONT\n");
@@ -833,7 +847,7 @@ namespace surrogate_gui
 			break;
 		default:
 			break;
-		}
+			}*/
 	}
 
 
