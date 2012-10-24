@@ -125,8 +125,8 @@ void map_store::publish_affordance_collection(LocalMap m){
     affs[i].states=NULL;
     affs[i].state_names=NULL;
 
-    affs[i].nptids=0;
-    affs[i].ptids=NULL;
+    affs[i].nptinds=0;
+    affs[i].ptinds=NULL;
 
     cout << endl;
   }
