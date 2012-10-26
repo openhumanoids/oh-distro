@@ -1,0 +1,85 @@
+This is the code base for the DRC project. 
+mfallon august 2012
+
+1. DEPENDENCIES
+===============
+On a Debian/Ubuntu system, the following apt packages should be sufficient:
+Definitely required:
+cmake
+build-essential 
+libglib2.0-dev 
+openjdk-6-jdk 
+python-dev 
+libgsl0-dev
+gsl-bin
+libusb-1.0-0-dev
+
+(OpenNI: required only for the externals/kinect):
+sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
+sudo apt-get update
+sudo apt-get install openni-dev ps-engine 
+TODO: make openni into a pod within the repo
+
+Probably required: (to be confirmed)
+    python-gtk2
+    libgtk2.0-dev
+    mesa-common-dev
+    libgl1-mesa-dev
+    libglu1-mesa-dev
+    freeglut3-dev
+    libjpeg8-dev (installing this may break ROS electric, which wants libjpeg-dev instead)
+    ant
+    libsuitesparse-dev
+
+(This list may not be complete. See the individual README files in
+the third party pod collections for newer dependencies.)
+
+2. INSTALL pods tool from sourceforge (optional)
+===================
+http://sourceforge.net/p/pods/wiki/PodsTool/
+$ svn checkout svn://svn.code.sf.net/p/pods/svn pods
+$ cd pods
+$ sudo python setup.py install
+
+3. BUILD
+========
+$ cd ~/drc/software/externals
+$ make    (takes about 30mins)
+$ cd ~/drc/software/   (i.e. where this README is)
+$ make  
+
+4. USEFUL .BASHRC COMMANDS
+==========================
+alias cddrc='cd $HOME/drc/software'
+PATH=$PATH:$HOME/drc/software/build/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/drc/software/build/lib/
+
+5. ENABLE LARGE UDP PACKETS
+===========================
+http://lcm.googlecode.com/svn/www/reference/lcm/multicast.html
+For Ubuntu, add these lines to "/etc/sysctl.conf":
+    net.core.rmem_max=2097152
+    net.core.rmem_default=2097152
+(Requires a reboot to take effect)
+
+6. Follow wiki to install drake:
+...
+
+
+=============== HACKS/ISSUES ===============
+[ these should be properly fixed]
+1. flann installs to build/lib64 and not build/lib
+PCL cant find it, so it can build. As a fix, I have it copy over to lib on build
+
+2. drc/config contains vehicle config etc. I use
+drc/software/viewer/CMakeLists.txt to copy it to
+drc/software/build/config/
+
+3. OpenGL does not install properly, which causes repeated errors of the form:
+No rule to make target `/usr/lib/x86_64-linux-gnu/libGL.so
+
+To fix this, we just need to repair the symlinks like this:
+sudo rm /usr/lib/x86_64-linux-gnu/libGL.so
+sudo ln -s /usr/lib/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
+
+
