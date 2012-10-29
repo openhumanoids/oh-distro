@@ -46,7 +46,7 @@ using namespace pcl::io;
 #include <lcmtypes/pointcloud_tools.h>
 
 // Duplicates the list in collections renderer:
-float vis_colors[] = {
+static float vis_colors[] = {
     51/255.0, 160/255.0, 44/255.0,  //0
     166/255.0, 206/255.0, 227/255.0,
     178/255.0, 223/255.0, 138/255.0,//6
@@ -76,7 +76,6 @@ float vis_colors[] = {
     0.5, 1.0, 0.5,
     0.5, 0.5, 1.0
 };
-
 const int num_vis_colors = sizeof(vis_colors)/(3*sizeof(float));
 
 class pointcloud_vis {
@@ -301,4 +300,4 @@ void reorder(
 
 
 
-#endif /* LIB_KMCL_HPP_ */
+#endif /* POINTCLOUD_VIS_HPP_ */
