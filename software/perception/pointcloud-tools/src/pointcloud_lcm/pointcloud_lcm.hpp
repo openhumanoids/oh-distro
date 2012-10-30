@@ -56,13 +56,13 @@ class pointcloud_lcm {
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
-    void set_kinect_decimate(double decimate_in){ kinect_decimate = decimate_in; };
+    void set_kinect_decimate(int decimate_in){ kinect_decimate = decimate_in; };
 
   private:
     lcm_t *publish_lcm_; 
 
     KinectCalibration* kcal;
-    double kinect_decimate;
+    int kinect_decimate;
 };
 
 

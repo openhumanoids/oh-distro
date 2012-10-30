@@ -162,8 +162,8 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 
     // 3 for each depth point find the corresponding xyz and then RGB
     //   then put into PCL structure
-    cloud->width    = (msg->depth.width/kinect_decimate) ;
-    cloud->height   = (msg->depth.height/kinect_decimate);
+    cloud->width    =(int) (msg->depth.width/ (double) kinect_decimate) ;
+    cloud->height   =(int) (msg->depth.height/ (double) kinect_decimate);
     cloud->is_dense = false;
     cloud->points.resize (cloud->width * cloud->height);
     double xyzw2[4];
@@ -218,8 +218,8 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     int npixels = msg->depth.width * msg->depth.height;
     const uint16_t* val = reinterpret_cast<const uint16_t*>( depth_data );
 
-    cloud->width    = (msg->depth.width/kinect_decimate) ;
-    cloud->height   = (msg->depth.height/kinect_decimate);
+    cloud->width    =(int) (msg->depth.width/ (double) kinect_decimate) ;
+    cloud->height   =(int) (msg->depth.height/ (double) kinect_decimate); 
     cloud->is_dense = false;
     cloud->points.resize (cloud->width * cloud->height);
     double xyzw[4];
