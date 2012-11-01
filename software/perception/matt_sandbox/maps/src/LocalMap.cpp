@@ -140,10 +140,70 @@ getAsPointCloud(const bool iTransform) const {
   int numPoints = mOctree->calcNumNodes();
   cloud->points.reserve(numPoints);
   for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
+    bool occupied = mOctree->isNodeOccupied(*iter);
+    if (!occupied) {
+      continue;
+    }
     PointCloud::PointType pt(iter.getX(), iter.getY(), iter.getZ());
     cloud->points.push_back(pt);
   }
   return cloud;
+}
+
+LocalMap::HeightMap LocalMap::
+getAsHeightMap() const {
+  const double unobservedValue = -1e10;
+  HeightMap heightMap;
+
+  // determine 2d extents of octree (x,y) in units of cells
+  // TODO: could also create a hash map of occupied keys
+  // TODO: ... and do everything in a single pass
+  Octree::iterator iter;
+  int xMin(65536), yMin(65536), xMax(-65536), yMax(-65536);
+  for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
+    octomap::OcTreeKey key = iter.getKey();
+    bool occupied = mOctree->isNodeOccupied(*iter);
+    if (!occupied) {
+      continue;
+    }
+    xMin = std::min(xMin, (int)key[0]);
+    yMin = std::min(yMin, (int)key[1]);
+    xMax = std::max(xMax, (int)key[0]);
+    yMax = std::max(yMax, (int)key[1]);
+  }
+
+  // determine transform from image to local coordinates
+  double scale = mOctree->getResolution();
+  double offset = mOctree->keyToCoord(0);
+  Eigen::Affine2d xform = Eigen::Affine2d::Identity();
+  xform(0,0) = xform(1,1) = scale;
+  xform(0,2) = offset + xMin*scale;
+  xform(1,2) = offset + yMin*scale;
+  heightMap.mTransformToLocal = xform;
+  
+  // initialize height map data
+  heightMap.mWidth = xMax-xMin+1;
+  heightMap.mHeight = yMax-yMin+1;
+  int totalPixels = heightMap.mWidth * heightMap.mHeight;
+  heightMap.mData.resize(totalPixels);
+  for (int i = 0; i < heightMap.mData.size(); ++i) {
+    // TODO: could use NaN here instead
+    heightMap.mData[i] = unobservedValue;
+  }
+
+  // add height values into height map
+  for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
+    octomap::OcTreeKey key = iter.getKey();
+    double z = iter.getZ();
+    int index = (key[1]-yMin)*heightMap.mWidth + (key[0]-xMin);
+    bool occupied = mOctree->isNodeOccupied(*iter);
+    if (!occupied) {
+      continue;
+    }
+    heightMap.mData[index] = std::max(heightMap.mData[index], z);
+  }
+
+  return heightMap;
 }
 
 void LocalMap::

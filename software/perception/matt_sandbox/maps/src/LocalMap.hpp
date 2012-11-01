@@ -14,6 +14,15 @@ public:
   typedef boost::shared_ptr<Octree> OctreePtr;
 
 public:
+  // TODO: abstract this later
+  struct HeightMap {
+    int mWidth;
+    int mHeight;
+    std::vector<double> mData;
+    Eigen::Affine2d mTransformToLocal;
+  };
+
+public:
   LocalMap();
   virtual ~LocalMap();
 
@@ -48,6 +57,10 @@ public:
 
   // export this entire representation as an ordinary point cloud
   PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
+
+  // export this representation as height map
+  // TODO: set desired resolution (perhaps as integer power of 2 factor)
+  HeightMap getAsHeightMap() const;
 
   // for change detection
   void resetChangeReference();
