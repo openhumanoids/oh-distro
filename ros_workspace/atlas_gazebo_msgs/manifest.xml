@@ -8,7 +8,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/atlas_gazebo_msgs</url>
-  <depend package="gazebo_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
   <export>
