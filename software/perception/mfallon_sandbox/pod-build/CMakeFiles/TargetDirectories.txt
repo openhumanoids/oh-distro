@@ -1,2 +1,0 @@
-/home/mfallon/drc/software/perception/mfallon_sandbox/pod-build/CMakeFiles/X9tzliiofOFqqHoatP1zcJxWW7TNE57d.dir
-/home/mfallon/drc/software/perception/mfallon_sandbox/pod-build/src/rgbd_vis/CMakeFiles/drc-rgbd-vis.dir
