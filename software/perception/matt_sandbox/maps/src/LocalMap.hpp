@@ -6,6 +6,8 @@
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 
+#include <lcmtypes/octomap/raw_t.hpp>
+
 class LocalMap {
 public:
   typedef boost::shared_ptr<LocalMap> Ptr;
@@ -19,7 +21,7 @@ public:
     int mWidth;
     int mHeight;
     std::vector<double> mData;
-    Eigen::Affine2d mTransformToLocal;
+    Eigen::Affine3d mTransformToLocal;
   };
 
 public:
@@ -32,6 +34,10 @@ public:
   // set/get internal id
   void setId(const int64_t iId);
   int64_t getId() const;
+
+  // set/get internal state id
+  void setStateId(const int64_t iId);
+  int64_t getStateId() const;
 
   // set/get transform to local frame
   void setTransformToLocal(const Eigen::Isometry3d& iTransform);
@@ -48,19 +54,19 @@ public:
 
   // transform to local frame, add to current map
   bool add(const PointCloud::Ptr& iPoints,
-           const Eigen::Isometry3d& iToLocal);
-
-  // add with origins (for ray casting)
-  bool add(const PointCloud::Ptr& iPoints,
-           const Eigen::Vector3d& iOrigin,
-           const Eigen::Isometry3d& iToLocal);
+           const Eigen::Isometry3d& iToLocal,
+           const bool iRayTraceFromOrigin=false);
 
   // export this entire representation as an ordinary point cloud
   PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
 
   // export this representation as height map
   // TODO: set desired resolution (perhaps as integer power of 2 factor)
-  HeightMap getAsHeightMap() const;
+  HeightMap getAsHeightMap(const int iDownSample=1,
+                           const double iMaxHeight=1e20) const;
+
+  // export to viewable lcm type
+  octomap::raw_t getAsRaw() const;
 
   // for change detection
   void resetChangeReference();
@@ -77,6 +83,7 @@ public:
 
 protected:
   int64_t mId;
+  int64_t mStateId;
   double mResolution;
   Eigen::Isometry3d mTransformToLocal;
   Eigen::Vector3d mBoundMin;

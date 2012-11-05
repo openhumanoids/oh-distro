@@ -10,9 +10,10 @@
 DeltaReceiver::
 DeltaReceiver() {
   mIsRunning = false;
-  mDeltaSubscription = NULL;
-  setDeltaChannel("MAP_DELTA");
-  setAckChannel("MAP_DELTA_ACK");
+  mUpdateSubscription = NULL;
+  setParamsChannel("MAP_PARAMS");
+  setUpdateChannel("MAP_UPDATE");
+  setAckChannel("MAP_ACK");
 }
 
 DeltaReceiver::
@@ -31,8 +32,13 @@ setLcm(boost::shared_ptr<lcm::LCM>& iLcm) {
 }
 
 void DeltaReceiver::
-setDeltaChannel(const std::string& iChannel) {
-  mDeltaChannel = iChannel;
+setParamsChannel(const std::string& iChannel) {
+  mParamsChannel = iChannel;
+}
+
+void DeltaReceiver::
+setUpdateChannel(const std::string& iChannel) {
+  mUpdateChannel = iChannel;
 }
 
 void DeltaReceiver::
@@ -47,8 +53,11 @@ start() {
   }
   mIsRunning = true;
 
-  mDeltaSubscription =
-    mLcm->subscribe(mDeltaChannel, &DeltaReceiver::onDelta, this);
+  mParamsSubscription =
+    mLcm->subscribe(mParamsChannel, &DeltaReceiver::onParams, this);
+
+  mUpdateSubscription =
+    mLcm->subscribe(mUpdateChannel, &DeltaReceiver::onUpdate, this);
   
   boost::thread thread(boost::ref(*this));
   // TODO: keep track of thread? join?
@@ -61,8 +70,8 @@ stop() {
   if (!mIsRunning) {
     return false;
   }
-  mLcm->unsubscribe(mDeltaSubscription);
-  mDeltaSubscription = NULL;
+  mLcm->unsubscribe(mUpdateSubscription);
+  mUpdateSubscription = NULL;
   mIsRunning = false;
   mDataBuffer.unblock();
   return true;
@@ -71,7 +80,7 @@ stop() {
 void DeltaReceiver::
 operator()() {
   while (mIsRunning) {
-    drc::map_delta_t delta;
+    drc::map_update_t delta;
     if (mDataBuffer.waitForData(delta)) {
 
       // if this message has not been received, apply delta
@@ -79,7 +88,9 @@ operator()() {
 
         // switch to proper map
         if (!mManager->useMap(delta.map_id)) {
-          mManager->createMap(Eigen::Isometry3d::Identity(), delta.map_id);
+          std::cout << "DeltaReceiver: error - no map with id " <<
+            delta.map_id << " exists yet" << std::endl;
+          // TODO mManager->createMap(Eigen::Isometry3d::Identity(), delta.map_id);
         }
 
         // collect points to add
@@ -123,9 +134,50 @@ operator()() {
 }
 
 void DeltaReceiver::
-onDelta(const lcm::ReceiveBuffer* iBuf,
-        const std::string& iChannel,
-        const drc::map_delta_t* iMessage) {
+onParams(const lcm::ReceiveBuffer* iBuf,
+         const std::string& iChannel,
+         const drc::map_params_t* iMessage) {
+  if (!mIsRunning) {
+    return;
+  }
+
+  std::cout << "DeltaReceiver: received params for map " <<
+    iMessage->map_id << std::endl;
+
+  // add new map if it does not exist
+  if (!mManager->hasMap(iMessage->map_id)) {
+    mManager->setMapResolution(iMessage->resolution);
+    Eigen::Vector3d dims;
+    dims[0] = iMessage->dimensions[0];
+    dims[1] = iMessage->dimensions[1];
+    dims[2] = iMessage->dimensions[2];
+    mManager->setMapDimensions(dims);
+    Eigen::Isometry3d xform;
+    Eigen::Quaterniond quat;
+    quat.x() = iMessage->transform_to_local.rotation.x;
+    quat.y() = iMessage->transform_to_local.rotation.y;
+    quat.z() = iMessage->transform_to_local.rotation.z;
+    quat.w() = iMessage->transform_to_local.rotation.w;
+    Eigen::Vector3d trans;
+    trans[0] = iMessage->transform_to_local.translation.x;
+    trans[1] = iMessage->transform_to_local.translation.y;
+    trans[2] = iMessage->transform_to_local.translation.z;
+    xform.rotate(quat);
+    xform.translate(trans);
+    mManager->createMap(xform, iMessage->map_id);
+  }
+
+  // acknowledge that we received the map parameters
+  drc::message_ack_t ack;
+  ack.utime = bot_timestamp_now();
+  ack.message_id = iMessage->message_id;
+  mLcm->publish(mAckChannel, &ack);
+}
+
+void DeltaReceiver::
+onUpdate(const lcm::ReceiveBuffer* iBuf,
+         const std::string& iChannel,
+         const drc::map_update_t* iMessage) {
   if (!mIsRunning) {
     return;
   }

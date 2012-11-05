@@ -72,6 +72,11 @@ createMap(const Eigen::Isometry3d& iToLocal, const int iId) {
 }
 
 bool MapManager::
+hasMap(const int64_t iId) {
+  return (mMaps.find(iId) != mMaps.end());
+}
+
+bool MapManager::
 useMap(const int64_t iId) {
   MapCollection::iterator item = mMaps.find(iId);
   if (item == mMaps.end()) {

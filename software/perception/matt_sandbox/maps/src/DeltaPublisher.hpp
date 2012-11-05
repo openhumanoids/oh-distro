@@ -3,6 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <string>
+#include <unordered_map>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/message_ack_t.hpp>
 
@@ -16,7 +17,8 @@ public:
   void setLcm(boost::shared_ptr<lcm::LCM>& iLcm);
   void setManager(boost::shared_ptr<MapManager>& iManager);
   void setPublishInterval(const int iMilliseconds);
-  void setPublishChannel(const std::string& iChannel);
+  void setParamsChannel(const std::string& iChannel);
+  void setUpdateChannel(const std::string& iChannel);
   void setAckChannel(const std::string& iChannel);
   
   void operator()();
@@ -31,11 +33,14 @@ protected:
 protected: 
   boost::shared_ptr<lcm::LCM> mLcm;
   boost::shared_ptr<MapManager> mManager;
-  std::string mDeltaChannel;
+  std::string mParamsChannel;
+  std::string mUpdateChannel;
   std::string mAckChannel;
   int mPublishInterval;
 
   lcm::Subscription* mAckSubscription;
+  std::unordered_map<int64_t,int64_t> mUnacknowledgedMessageIds;
+  std::unordered_map<int64_t,bool> mSentMapIds;
 
   bool mIsRunning;
   int mNextMessageId;

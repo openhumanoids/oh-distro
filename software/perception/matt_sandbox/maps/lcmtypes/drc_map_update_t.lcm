@@ -1,6 +1,6 @@
 package drc;
 
-struct map_delta_t
+struct map_update_t
 {
   // timestamp of this message
   int64_t utime;

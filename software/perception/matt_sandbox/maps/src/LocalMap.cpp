@@ -32,6 +32,17 @@ getId() const {
 }
 
 void LocalMap::
+setStateId(const int64_t iId) {
+  mStateId = iId;
+}
+
+int64_t LocalMap::
+getStateId() const {
+  return mStateId;
+}
+
+
+void LocalMap::
 setTransformToLocal(const Eigen::Isometry3d& iTransform) {
   mTransformToLocal = iTransform;
 }
@@ -75,7 +86,8 @@ getResolution() const {
 
 bool LocalMap::
 add(const PointCloud::Ptr& iPoints,
-    const Eigen::Isometry3d& iToLocal) {
+    const Eigen::Isometry3d& iToLocal,
+    const bool iRayTraceFromOrigin) {
 
   // transform points
   PointCloud::Ptr points(new PointCloud());
@@ -90,45 +102,31 @@ add(const PointCloud::Ptr& iPoints,
   PointCloud::Ptr pointsFinal(new PointCloud());
   cropper.filter(*pointsFinal);
   
-  // add points
-  for (int i = 0; i < pointsFinal->points.size(); ++i) {
-    octomap::point3d pt(pointsFinal->points[i].x,
-                        pointsFinal->points[i].y,
-                        pointsFinal->points[i].z);
-    mOctree->updateNode(pt, true);
+  // use origin if desired
+  if (iRayTraceFromOrigin) {
+    octomap::Pointcloud octPoints;
+    for (int i = 0; i < pointsFinal->points.size(); ++i) {
+      octomap::point3d pt(pointsFinal->points[i].x,
+                          pointsFinal->points[i].y,
+                          pointsFinal->points[i].z);
+      octPoints.push_back(pt);
+    }
+    // get and transform origin if desired
+    Eigen::Vector3d origin =
+      mTransformToLocal.inverse()*iToLocal.translation();
+    octomap::point3d octOrigin(origin[0], origin[1], origin[2]);
+    mOctree->insertScan(octPoints, octOrigin);
   }
 
-  return true;
-}
-
-bool LocalMap::
-add(const PointCloud::Ptr& iPoints,
-    const Eigen::Vector3d& iOrigin,
-    const Eigen::Isometry3d& iToLocal) {
-
-  // transform points
-  PointCloud::Ptr points(new PointCloud());
-  Eigen::Affine3f matx((mTransformToLocal.inverse()*iToLocal).cast<float>());
-  pcl::transformPointCloud(*iPoints, *points, matx);
-
-  // crop points
-  pcl::CropBox<PointCloud::PointType> cropper;
-  cropper.setMin(Eigen::Vector4f(mBoundMin[0], mBoundMin[1], mBoundMin[2], 1));
-  cropper.setMax(Eigen::Vector4f(mBoundMax[0], mBoundMax[1], mBoundMax[2], 1));
-  cropper.setInputCloud(points);
-  PointCloud::Ptr pointsFinal(new PointCloud());
-  cropper.filter(*pointsFinal);
-  
-  // add points
-  octomap::Pointcloud octPoints;
-  for (int i = 0; i < pointsFinal->points.size(); ++i) {
-    octomap::point3d pt(pointsFinal->points[i].x,
-                        pointsFinal->points[i].y,
-                        pointsFinal->points[i].z);
-    octPoints.push_back(pt);
+  // otherwise just treat as individual points
+  else {
+    for (int i = 0; i < pointsFinal->points.size(); ++i) {
+      octomap::point3d pt(pointsFinal->points[i].x,
+                          pointsFinal->points[i].y,
+                          pointsFinal->points[i].z);
+      mOctree->updateNode(pt, true);
+    }
   }
-  octomap::point3d origin(iOrigin[0], iOrigin[1], iOrigin[2]);
-  mOctree->insertScan(octPoints, origin);
 
   return false;
 }
@@ -151,7 +149,8 @@ getAsPointCloud(const bool iTransform) const {
 }
 
 LocalMap::HeightMap LocalMap::
-getAsHeightMap() const {
+getAsHeightMap(const int iDownSample,
+               const double iMaxHeight) const {
   const double unobservedValue = -1e10;
   HeightMap heightMap;
 
@@ -166,19 +165,19 @@ getAsHeightMap() const {
     if (!occupied) {
       continue;
     }
-    xMin = std::min(xMin, (int)key[0]);
-    yMin = std::min(yMin, (int)key[1]);
-    xMax = std::max(xMax, (int)key[0]);
-    yMax = std::max(yMax, (int)key[1]);
+    xMin = std::min(xMin, (int)key[0] >> iDownSample);
+    yMin = std::min(yMin, (int)key[1] >> iDownSample);
+    xMax = std::max(xMax, (int)key[0] >> iDownSample);
+    yMax = std::max(yMax, (int)key[1] >> iDownSample);
   }
 
   // determine transform from image to local coordinates
-  double scale = mOctree->getResolution();
+  double scale = mOctree->getResolution()*iDownSample;
   double offset = mOctree->keyToCoord(0);
-  Eigen::Affine2d xform = Eigen::Affine2d::Identity();
+  Eigen::Affine3d xform = Eigen::Affine3d::Identity();
   xform(0,0) = xform(1,1) = scale;
-  xform(0,2) = offset + xMin*scale;
-  xform(1,2) = offset + yMin*scale;
+  xform(0,3) = offset + xMin*scale;
+  xform(1,3) = offset + yMin*scale;
   heightMap.mTransformToLocal = xform;
   
   // initialize height map data
@@ -195,15 +194,32 @@ getAsHeightMap() const {
   for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
     octomap::OcTreeKey key = iter.getKey();
     double z = iter.getZ();
-    int index = (key[1]-yMin)*heightMap.mWidth + (key[0]-xMin);
     bool occupied = mOctree->isNodeOccupied(*iter);
     if (!occupied) {
       continue;
     }
-    heightMap.mData[index] = std::max(heightMap.mData[index], z);
+    if (z <= iMaxHeight) {
+      int xKey = (int)key[0] >> iDownSample;
+      int yKey = (int)key[1] >> iDownSample;
+      int index = (yKey-yMin)*heightMap.mWidth + (xKey-xMin);
+      heightMap.mData[index] = std::max(heightMap.mData[index], z);
+    }
   }
 
   return heightMap;
+}
+
+octomap::raw_t LocalMap::
+getAsRaw() const {
+  octomap::raw_t msg;
+  msg.utime = 0;
+  std::ostringstream oss;
+  mOctree->writeBinaryConst(oss);
+  std::string str = oss.str();
+  msg.length = str.size();
+  msg.data.resize(msg.length);
+  msg.data = std::vector<uint8_t>(str.begin(), str.end());
+  return msg;
 }
 
 void LocalMap::
@@ -226,6 +242,7 @@ getChanges(PointCloud::Ptr& oAdded, PointCloud::Ptr& oRemoved) {
     octomap::point3d pt = mOctree->keyToCoord(iter->first);
     octomap::OcTreeNode* node = mOctree->search(iter->first);
     bool occupied = mOctree->isNodeOccupied(node);
+    // TODO: consider using another node representation rather than 3d points
     if (occupied) {
       oAdded->points.push_back(PointCloud::PointType(pt.x(), pt.y(), pt.z()));
     }
@@ -256,6 +273,7 @@ void LocalMap::
 serialize(std::vector<char>& oBytes) const {
   std::ostringstream oss(std::ios::binary);
   oss.write((char*)&mId, sizeof(mId));
+  oss.write((char*)&mStateId, sizeof(mStateId));
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       double val = mTransformToLocal(i,j);
@@ -273,7 +291,7 @@ serialize(std::vector<char>& oBytes) const {
   oss.write((char*)&mResolution, sizeof(mResolution));
 
   // write octree structure
-  mOctree->write(oss);
+  mOctree->writeBinaryConst(oss);
 
   // convert to vector of bytes
   std::string str = oss.str();
@@ -285,6 +303,7 @@ deserialize(const std::vector<char>& iBytes) {
   // compute number of header bytes
   const int kNumStructureBytes =
     sizeof(mId) +          // id
+    sizeof(mStateId) +     // state id
     16*sizeof(double) +    // transform
     3*sizeof(double) +     // bound min
     3*sizeof(double) +     // bound max
@@ -298,6 +317,10 @@ deserialize(const std::vector<char>& iBytes) {
   int64_t id;
   iss.read((char*)&id, sizeof(id));
   setId(id);
+
+  // read state id
+  iss.read((char*)&id, sizeof(id));
+  setStateId(id);
 
   // read transform
   Eigen::Isometry3d transform;
@@ -330,6 +353,5 @@ deserialize(const std::vector<char>& iBytes) {
   setResolution(resolution);
 
   // read remaining octree structure
-  octomap::AbstractOcTree* tree = octomap::AbstractOcTree::read(iss);
-  mOctree.reset((Octree*)tree);
+  mOctree->readBinary(iss);
 }

@@ -6,6 +6,7 @@
 #include <boost/thread.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core/raw_t.hpp>
+#include <lcmtypes/drc/heightmap_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <bot_lcmgl_client/lcmgl.h>
@@ -56,6 +57,44 @@ public:
       mapBytes.data.insert(mapBytes.data.end(), bytes.begin(), bytes.end());
       mState->mLcm->publish("LOCAL_MAP", &mapBytes);
       cout << "Published map (" << bytes.size() << " bytes)" << endl;
+
+      // publish as octomap (for debugging)
+      octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
+      raw.utime = bot_timestamp_now();
+      std::cout << "Publishing debug octomap (" << raw.length <<
+        " bytes)..." << std::endl;
+      mState->mLcm->publish("OCTOMAP", &raw);
+
+      // write pgm height map (for debugging)
+      LocalMap::HeightMap heightMap =
+        mState->mManager->getActiveMap()->getAsHeightMap(3, 3.5);
+      std::ofstream ofs("/home/antone/heightmap.txt");
+      for (int i = 0; i < heightMap.mHeight; ++i) {
+        for (int j = 0; j < heightMap.mWidth; ++j) {
+          ofs << heightMap.mData[i*heightMap.mWidth+j] << " ";
+        }
+        ofs << std::endl;
+      }
+      std::cout << "Wrote debug height map" << std::endl;
+
+      // publish height map via lcm
+      drc::heightmap_t heightMapMsg;
+      heightMapMsg.utime = bot_timestamp_now();
+      heightMapMsg.nx = heightMap.mWidth;
+      heightMapMsg.ny = heightMap.mHeight;
+      heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
+      heightMapMsg.heights = heightMap.mData;
+      Eigen::Affine3d::TranslationPart trans =
+        heightMap.mTransformToLocal.translation();
+      heightMapMsg.transform_to_local.translation.x = trans[0];
+      heightMapMsg.transform_to_local.translation.y = trans[1];
+      heightMapMsg.transform_to_local.translation.z = trans[2];
+      Eigen::Quaterniond quat(heightMap.mTransformToLocal.rotation());
+      heightMapMsg.transform_to_local.rotation.x = quat.x();
+      heightMapMsg.transform_to_local.rotation.y = quat.y();
+      heightMapMsg.transform_to_local.rotation.z = quat.z();
+      heightMapMsg.transform_to_local.rotation.w = quat.w();
+      mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
 
       if (false) {
         bot_lcmgl_t* lcmgl = mState->mLcmGl;

@@ -41,6 +41,9 @@ public:
                  Eigen::Isometry3d::Identity(),
                  const int iId=-1);
 
+  // whether map with given id exists
+  bool hasMap(const int64_t iId);
+
   // switch to use map with given id
   bool useMap(const int64_t iId);
 

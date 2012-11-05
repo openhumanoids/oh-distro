@@ -3,7 +3,8 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc/map_delta_t.hpp>
+#include <lcmtypes/drc/map_params_t.hpp>
+#include <lcmtypes/drc/map_update_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include "MapManager.hpp"
@@ -15,8 +16,9 @@ DeltaPublisher() {
   mAckSubscription = NULL;
   mNextMessageId = 1;
   setPublishInterval(1000);
-  setPublishChannel("MAP_DELTA");
-  setAckChannel("MAP_DELTA_ACK");
+  setParamsChannel("MAP_PARAMS");
+  setUpdateChannel("MAP_UPDATE");
+  setAckChannel("MAP_ACK");
 }
 
 DeltaPublisher::
@@ -40,8 +42,13 @@ setPublishInterval(const int iMilliseconds) {
 }
 
 void DeltaPublisher::
-setPublishChannel(const std::string& iChannel) {
-  mDeltaChannel = iChannel;
+setParamsChannel(const std::string& iChannel) {
+  mParamsChannel = iChannel;
+}
+
+void DeltaPublisher::
+setUpdateChannel(const std::string& iChannel) {
+  mUpdateChannel = iChannel;
 }
 
 void DeltaPublisher::
@@ -64,32 +71,70 @@ operator()() {
     boost::asio::deadline_timer timer(service);
     timer.expires_from_now(boost::posix_time::milliseconds(mPublishInterval));
     timer.wait();
+    std::cout << "DeltaPublisher: timer complete" << std::endl;
+
+    // check whether map has been established at other end
+    if (mManager->getActiveMap() != NULL) {
+      boost::shared_ptr<LocalMap> activeMap = mManager->getActiveMap();
+      if (mSentMapIds.find(activeMap->getId()) == mSentMapIds.end()) {
+
+        // create map parameters message
+        drc::map_params_t paramsMessage;
+        paramsMessage.utime = bot_timestamp_now();
+        paramsMessage.message_id = mNextMessageId;
+        paramsMessage.map_id = activeMap->getId();
+        paramsMessage.resolution = activeMap->getResolution();
+        Eigen::Vector3d dims =
+          activeMap->getBoundMax() - activeMap->getBoundMin();
+        paramsMessage.dimensions[0] = dims[0];
+        paramsMessage.dimensions[1] = dims[1];
+        paramsMessage.dimensions[2] = dims[2];
+        Eigen::Isometry3d xform = activeMap->getTransformToLocal();
+        Eigen::Isometry3d::TranslationPart trans = xform.translation();
+        paramsMessage.transform_to_local.translation.x = trans[0];
+        paramsMessage.transform_to_local.translation.y = trans[1];
+        paramsMessage.transform_to_local.translation.z = trans[2];
+        Eigen::Quaterniond quat(xform.rotation());
+        paramsMessage.transform_to_local.rotation.x = quat.x();
+        paramsMessage.transform_to_local.rotation.y = quat.y();
+        paramsMessage.transform_to_local.rotation.z = quat.z();
+        paramsMessage.transform_to_local.rotation.w = quat.w();
+        ++mNextMessageId;
+
+        // send parameters message
+        mSentMapIds[paramsMessage.map_id] = false;
+        mUnacknowledgedMessageIds[paramsMessage.message_id] =
+          paramsMessage.map_id;
+        mLcm->publish(mParamsChannel, &paramsMessage);
+        std::cout << "DeltaPublisher: published map params on channel " <<
+          mParamsChannel << std::endl;
+      }
+    }
 
     // compute delta from last time
     // TODO: atomic? think about threading / safety
     MapManager::MapDelta delta;
     mManager->computeDelta(delta);
 
-    std::cout << "DeltaPublisher: timer complete" << std::endl;
     if ((delta.mAdded->size() > 0) || (delta.mRemoved->size() > 0)) {
 
       // create message
-      drc::map_delta_t deltaMessage;
-      deltaMessage.utime = bot_timestamp_now();
-      deltaMessage.message_id = mNextMessageId;
-      deltaMessage.map_id = mManager->getActiveMap()->getId();
-      deltaMessage.n_added = delta.mAdded->size();
-      deltaMessage.added.resize(deltaMessage.n_added);
+      drc::map_update_t updateMessage;
+      updateMessage.utime = bot_timestamp_now();
+      updateMessage.message_id = mNextMessageId;
+      updateMessage.map_id = mManager->getActiveMap()->getId();
+      updateMessage.n_added = delta.mAdded->size();
+      updateMessage.added.resize(updateMessage.n_added);
       for (int i = 0; i < delta.mAdded->size(); ++i) {
-        drc::vector_3d_t& pt = deltaMessage.added[i];
+        drc::vector_3d_t& pt = updateMessage.added[i];
         pt.x = delta.mAdded->points[i].x;
         pt.y = delta.mAdded->points[i].y;
         pt.z = delta.mAdded->points[i].z;
       }
-      deltaMessage.n_removed = delta.mRemoved->size();
-      deltaMessage.removed.resize(deltaMessage.n_removed);
+      updateMessage.n_removed = delta.mRemoved->size();
+      updateMessage.removed.resize(updateMessage.n_removed);
       for (int i = 0; i < delta.mRemoved->size(); ++i) {
-        drc::vector_3d_t& pt = deltaMessage.removed[i];
+        drc::vector_3d_t& pt = updateMessage.removed[i];
         pt.x = delta.mRemoved->points[i].x;
         pt.y = delta.mRemoved->points[i].y;
         pt.z = delta.mRemoved->points[i].z;
@@ -97,9 +142,11 @@ operator()() {
       ++mNextMessageId;
 
       // publish message
-      mLcm->publish(mDeltaChannel, &deltaMessage);
-      std::cout << "DeltaPublisher: published message on channel " <<
-        mDeltaChannel << std::endl;
+      mUnacknowledgedMessageIds[updateMessage.message_id] =
+        updateMessage.map_id;
+      mLcm->publish(mUpdateChannel, &updateMessage);
+      std::cout << "DeltaPublisher: published delta on channel " <<
+        mUpdateChannel << std::endl;
       mManager->resetDeltaBase();
     }
   }
@@ -136,7 +183,15 @@ onAck(const lcm::ReceiveBuffer* iBuf,
   std::cout << "DeltaPublisher: message receipt acknowledged for " <<
     iMessage->message_id << std::endl;
 
-  // mManager->resetDeltaBase();
+  // check message off list of unacknowledged and mark map as sent
+  std::unordered_map<int64_t,int64_t>::iterator item =
+    mUnacknowledgedMessageIds.find(iMessage->message_id);
+  if (item != mUnacknowledgedMessageIds.end()) {
+    mSentMapIds[item->second] = true;
+    mUnacknowledgedMessageIds.erase(item);
+  }
+
+  //mManager->resetDeltaBase();
 
   // TODO
   /* ALGO

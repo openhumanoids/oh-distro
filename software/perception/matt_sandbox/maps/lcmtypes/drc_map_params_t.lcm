@@ -1,0 +1,22 @@
+package drc;
+
+struct map_params_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // id of this request
+  int64_t message_id;
+
+  // id of map to create
+  int32_t map_id;
+
+  // resolution in m
+  double resolution;
+
+  // xyz dimensions in m
+  double dimensions[3];
+
+  // transform from map to reference (local) coords
+  transform_t transform_to_local;
+}

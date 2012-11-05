@@ -1,0 +1,18 @@
+package drc;
+
+struct heightmap_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // size of image
+  int32_t nx;
+  int32_t ny;
+  int32_t npix;
+
+  // height data samples (size nx*ny)
+  double heights[npix];
+
+  // transform from map to reference (local) coords
+  transform_t transform_to_local;
+}

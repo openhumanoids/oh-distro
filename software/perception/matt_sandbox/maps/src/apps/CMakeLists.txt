@@ -16,3 +16,9 @@ add_executable(maps-builder-operator BuilderOperatorMain.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-builder-operator bot2-lcmgl-client maps)
 pods_install_executables(maps-builder-operator)
+
+
+add_executable(maps-creator CollectAndSend.cpp)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+pods_use_pkg_config_packages(maps-creator bot2-lcmgl-client maps)
+pods_install_executables(maps-creator)
