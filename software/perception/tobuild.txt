@@ -7,4 +7,6 @@ motion_estimate
 local_map
 #registeration
 map_store
+tld-tracker
+opencv-utils
 #pcl_lcm_grabber
