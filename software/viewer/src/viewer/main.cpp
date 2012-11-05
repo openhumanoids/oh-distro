@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_humanoid(viewer, 0, lcm);
   collections_add_renderer_to_viewer(viewer, 1);
-  //add_octomap_renderer_to_viewer(viewer, 1, lcm);
+  add_octomap_renderer_to_viewer(viewer, 1, lcm);
   setup_renderer_navigation(viewer, 0,lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
