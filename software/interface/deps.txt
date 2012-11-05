@@ -1,0 +1,5 @@
+# for Ubuntu
+
+sudo apt-get install libgtkglextmm-x11-1.2-0
+sudo apt-get install libgtkglextmm-x11-1.2-dev
+sudo aptitude install libboost-signals-dev

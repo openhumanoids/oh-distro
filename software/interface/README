@@ -1,0 +1,27 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         gui
+
+Maintainers:  Plamena Petrova <plamena.petrova@baesystems.com>
+	      Isaac Evans <ine@mit.edu>
+
+Summary:      FILL-ME-IN
+Description:
+  FILL-ME-IN
+
+Requirements: 
+  gdkmm-2.4
+  glibmm-2.4
+  gtkmm-2.4
+  gtkglext-1.0
+  gtkglextmm-1.2
+
+License:      FILL-ME-IN

@@ -1,0 +1,10 @@
+GUI 0.1
+by Plamena Petrova
+
+Compile with 
+	$ g++ markerwidget.cc twostatescale.cc GlDrawingArea.cc examplewindow.cc main.cc -o simple `pkg-config gtkglextmm-1.2 --cflags --libs` && ./simple 
+
+Mostly derived from gtkmm 2.4 documentation, see http://developer.gnome.org/gtkmm-tutorial/2.24/ and gtkglextmm 1.2 Logo example
+
+
+
