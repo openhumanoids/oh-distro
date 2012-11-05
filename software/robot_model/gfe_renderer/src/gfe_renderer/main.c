@@ -5,8 +5,8 @@
 
 #include <bot_vis/bot_vis.h>
 
-void setup_renderer_wavefront(BotViewer *viewer, int render_priority, 
-                              const char *wavefront_fname);
+void setup_gfe_renderer(BotViewer *viewer, int render_priority, 
+                              const char *wavefront_fname0,const char *wavefront_fname1);
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +20,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    const char *wavefront_fname = argv[1];
+    const char *wavefront_fname0 = argv[1];
+    const char *wavefront_fname1 = argv[2];
     
     BotViewer* viewer = bot_viewer_new("Wavefront OBJ Viewer");
 
@@ -30,7 +31,7 @@ int main(int argc, char *argv[])
 
     // setup renderers
     bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
-    setup_renderer_wavefront(viewer, 1, wavefront_fname);
+    setup_gfe_renderer(viewer, 1, wavefront_fname0,wavefront_fname1);
 
     gtk_main();
 

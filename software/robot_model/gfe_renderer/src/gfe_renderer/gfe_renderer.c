@@ -111,9 +111,9 @@ on_param_widget_changed (BotGtkParamWidget *pw, const char *name, void *user)
     bot_viewer_request_redraw(self->viewer);
 }
 
-void setup_renderer_wavefront(BotViewer *viewer, int render_priority, const char *wavefront_fname);
+void setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront_fname0, const char *wavefront_fname1);
 void 
-setup_renderer_wavefront(BotViewer *viewer, int render_priority, const char *wavefront_fname)
+setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront_fname0, const char *wavefront_fname1)
 {
     GfeRenderer *self = (GfeRenderer*) calloc (1, sizeof (GfeRenderer));
 
@@ -139,8 +139,11 @@ setup_renderer_wavefront(BotViewer *viewer, int render_priority, const char *wav
     double default_dy    = 0;
     double default_dz    = 0;
 
-    if(wavefront_fname) {
-        self->wavefront_model = bot_wavefront_model_create(wavefront_fname);
+    printf("%s is fname0\n", wavefront_fname0);
+    printf("%s is fname1\n", wavefront_fname1);
+
+    if(wavefront_fname0) {
+        self->wavefront_model = bot_wavefront_model_create(wavefront_fname0);
         double minv[3];
         double maxv[3];
         bot_wavefront_model_get_extrema(self->wavefront_model, minv, maxv);
