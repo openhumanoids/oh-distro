@@ -9,5 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/rgbd_vis)
+#add_subdirectory(src/rgbd_vis)
+add_subdirectory(src/drive_map)
+add_subdirectory(src/est_robot_state_fake)
 
