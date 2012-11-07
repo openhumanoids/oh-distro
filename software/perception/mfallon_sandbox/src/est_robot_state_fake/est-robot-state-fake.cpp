@@ -48,7 +48,7 @@ void on_camstate(const lcm_recv_buf_t *rbuf, const char *channel,
 int main(int argc, char **argv){
   
   // 1. Read a log from file and grab the last state message:
-  string log_fname= "/home/mfallon/Desktop/electric_robot_log/lcmlog-2012-11-04.00";
+  string log_fname=argv[1];// "/home/mfallon/Desktop/electric_robot_log/lcmlog-2012-11-04.00";
   string begin_timestamp="0";
   publish_lcm=lcm_create(NULL);
   lcm_t* subscribe_lcm;
