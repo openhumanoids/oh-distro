@@ -9,6 +9,7 @@ local_map
 map_store
 #tld-tracker
 opencv-utils
+world_model
 
 mfallon_sandbox
 #pcl_lcm_grabber
