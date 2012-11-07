@@ -6,11 +6,19 @@ This is the code base for the DRC project.
 - Note that it is available to install at:
 drc/software/externals/lcm_pod
 
+wget https://lcm.googlecode.com/files/lcm-0.9.1.tar.gz
+tar -xzf lcm-0.9.1.tar.gz
+cd lcm-0.9.1
+./configure
+make
+sudo make install
+sudo ldconfig
+
 1. DEPENDENCIES
 ===============
 On a Debian/Ubuntu system, the following apt packages should be sufficient:
 Definitely required:
-cmake
+cmake 
 build-essential 
 libglib2.0-dev 
 openjdk-6-jdk 
@@ -22,17 +30,22 @@ libgtk2.0-dev
 freeglut3-dev
 python-gtk2
 libgtk2.0-dev
-libjpeg8-dev (installing this may break ROS electric, which wants libjpeg-dev instead)
 libvtk5-dev
 gtk-doc-tools
 libqhull-dev
 libtinyxml-dev
+
+libjpeg8-dev (installing this may break ROS electric, which wants libjpeg-dev instead)
 
 To be confirmed: Boost 1.46 and 1.48 are available. we seem to need 1.46 for ROS:
 libboost-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
 boost1.48-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
 libboost-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
 libboost1.48-all-dev
+
+>>>>> In one command <<<<<<
+sudo apt-get install cmake build-essential libglib2.0-dev openjdk-6-jdk python-dev  libgsl0-dev gsl-bin libusb-1.0-0-dev libgtk2.0-dev freeglut3-dev python-gtk2 libgtk2.0-dev libvtk5-dev gtk-doc-tools libqhull-dev libtinyxml-dev
+
 
 
 (OpenNI: required only for the externals/kinect):
@@ -81,7 +94,10 @@ For Ubuntu, add these lines to "/etc/sysctl.conf":
     net.core.rmem_default=2097152
 (Requires a reboot to take effect)
 
-6. DRAKE (LOCOMOTION GROUP CODEBASE)
+6. 
+sudo apt-get install ros-fuerte-image-pipeline
+
+7. DRAKE (LOCOMOTION GROUP CODEBASE)
 ====================================
 See:
 https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Software_Notes#Drake
