@@ -17,9 +17,9 @@ pods_use_pkg_config_packages(ros2lcm_translator_combined lcm lcmtypes_drc_lcmtyp
 target_link_libraries(ros2lcm_translator_combined boost_signals)
 pods_install_executables( ros2lcm_translator_combined)
 
-rosbuild_add_executable(ros2lcm_translator_spinning ros2lcm_translator_spinning.cpp)
-pods_use_pkg_config_packages(ros2lcm_translator_spinning lcm lcmtypes_drc_lcmtypes
-	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization eigen3) 
-target_link_libraries(ros2lcm_translator_combined boost_signals)
-pods_install_executables( ros2lcm_translator_spinning)
+#rosbuild_add_executable(ros2lcm_translator_spinning ros2lcm_translator_spinning.cpp)
+#pods_use_pkg_config_packages(ros2lcm_translator_spinning lcm lcmtypes_drc_lcmtypes
+#	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization eigen3) 
+#target_link_libraries(ros2lcm_translator_combined boost_signals)
+#pods_install_executables( ros2lcm_translator_spinning)
 
