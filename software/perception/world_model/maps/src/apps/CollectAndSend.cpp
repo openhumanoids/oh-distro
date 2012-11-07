@@ -2,6 +2,10 @@
 #include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 
+#include <lcmtypes/drc/local_map_t.hpp>
+#include <lcmtypes/drc/heightmap_t.hpp>
+#include <bot_core/timestamp.h>
+
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -58,22 +62,51 @@ public:
       timer.expires_from_now(boost::posix_time::milliseconds(3000));
       timer.wait();
 
+      // see if map exists
+      boost::shared_ptr<LocalMap> localMap = mState->mManager->getActiveMap();
+      if (localMap == NULL) {
+        continue;
+      }
+
+      // publish as local map
+      std::vector<char> bytes;
+      localMap->serialize(bytes);
+      drc::local_map_t mapMessage;
+      mapMessage.utime = bot_timestamp_now();
+      mapMessage.id = localMap->getId();
+      mapMessage.state_id = localMap->getStateId();
+      mapMessage.size_bytes = bytes.size();
+      mapMessage.data.insert(mapMessage.data.end(), bytes.begin(), bytes.end());
+      mState->mLcm->publish("LOCAL_MAP", &mapMessage);
+      cout << "Published local map (" << bytes.size() << " bytes)" << endl;
+
+
       // publish as octomap
       std::cout << "Publishing octomap..." << std::endl;
       octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
       mState->mLcm->publish("OCTOMAP", &raw);
 
-      // write pgm height map
+      // publish as height map
       LocalMap::HeightMap heightMap =
-        mState->mManager->getActiveMap()->getAsHeightMap();
-      std::ofstream ofs("/home/antone/heightmap.txt");
-      for (int i = 0; i < heightMap.mHeight; ++i) {
-        for (int j = 0; j < heightMap.mWidth; ++j) {
-          ofs << heightMap.mData[i*heightMap.mWidth+j] << " ";
+        mState->mManager->getActiveMap()->getAsHeightMap(3, 3.5);
+      drc::heightmap_t heightMapMsg;
+      heightMapMsg.utime = bot_timestamp_now();
+      heightMapMsg.nx = heightMap.mWidth;
+      heightMapMsg.ny = heightMap.mHeight;
+      heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
+      Eigen::Vector3d p0 = heightMap.mTransformToLocal*Eigen::Vector3d(0,0,0);
+      Eigen::Vector3d px = heightMap.mTransformToLocal*Eigen::Vector3d(1,0,0);
+      Eigen::Vector3d py = heightMap.mTransformToLocal*Eigen::Vector3d(0,1,0);
+      heightMapMsg.scale_x = (px-p0).norm();
+      heightMapMsg.scale_y = (py-p0).norm();
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          heightMapMsg.transform_to_local[i][j] =
+            heightMap.mTransformToLocal(i,j);
         }
-        ofs << std::endl;
       }
-      std::cout << "Writing height map..." << std::endl;
+      heightMapMsg.heights = heightMap.mData;
+      mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
     }
   }
 
@@ -90,8 +123,8 @@ int main(const int iArgc, const char** iArgv) {
     return -1;
   }
 
-  // TODO: temporary; need server
-  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/software/config/drc_robot.cfg");
+  BotParam* theParam =
+    bot_param_new_from_server(state.mLcm->getUnderlyingLCM(), 0);
 
   state.mSensorDataReceiver->setLcm(state.mLcm);
   state.mSensorDataReceiver->setBotParam(theParam);

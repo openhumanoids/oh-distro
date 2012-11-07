@@ -3,6 +3,8 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/crop_box.h>
 
+#include <limits>
+
 LocalMap::
 LocalMap() {
   setId(-1);
@@ -150,7 +152,7 @@ getAsPointCloud(const bool iTransform) const {
 LocalMap::HeightMap LocalMap::
 getAsHeightMap(const int iDownSample,
                const double iMaxHeight) const {
-  const double unobservedValue = -1e10;
+  const double unobservedValue = std::numeric_limits<double>::max();
   HeightMap heightMap;
 
   // determine 2d extents of octree (x,y) in units of cells

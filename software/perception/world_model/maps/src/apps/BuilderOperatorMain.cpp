@@ -86,17 +86,18 @@ public:
       heightMapMsg.nx = heightMap.mWidth;
       heightMapMsg.ny = heightMap.mHeight;
       heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
+      Eigen::Vector3d p0 = heightMap.mTransformToLocal*Eigen::Vector3d(0,0,0);
+      Eigen::Vector3d px = heightMap.mTransformToLocal*Eigen::Vector3d(1,0,0);
+      Eigen::Vector3d py = heightMap.mTransformToLocal*Eigen::Vector3d(0,1,0);
+      heightMapMsg.scale_x = (px-p0).norm();
+      heightMapMsg.scale_y = (py-p0).norm();
+      for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+          heightMapMsg.transform_to_local[i][j] =
+            heightMap.mTransformToLocal(i,j);
+        }
+      }
       heightMapMsg.heights = heightMap.mData;
-      Eigen::Affine3d::TranslationPart trans =
-        heightMap.mTransformToLocal.translation();
-      heightMapMsg.transform_to_local.translation.x = trans[0];
-      heightMapMsg.transform_to_local.translation.y = trans[1];
-      heightMapMsg.transform_to_local.translation.z = trans[2];
-      Eigen::Quaterniond quat(heightMap.mTransformToLocal.rotation());
-      heightMapMsg.transform_to_local.rotation.x = quat.x();
-      heightMapMsg.transform_to_local.rotation.y = quat.y();
-      heightMapMsg.transform_to_local.rotation.z = quat.z();
-      heightMapMsg.transform_to_local.rotation.w = quat.w();
       mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
 
       if (false) {

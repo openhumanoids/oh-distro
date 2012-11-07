@@ -10,9 +10,13 @@ struct heightmap_t
   int32_t ny;
   int32_t npix;
 
-  // height data samples (size nx*ny)
-  double heights[npix];
+  // scale of each sample
+  float scale_x;
+  float scale_y;
 
   // transform from map to reference (local) coords
-  transform_t transform_to_local;
+  double transform_to_local[4][4];
+
+  // height data samples (size nx*ny)
+  double heights[npix];
 }

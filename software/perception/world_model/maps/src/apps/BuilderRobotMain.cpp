@@ -57,8 +57,7 @@ int main(const int iArgc, const char** iArgv) {
     return -1;
   }
 
-  // TODO: temporary; need server
-  BotParam* theParam = bot_param_new_from_file("/home/antone/drc/software/config/drc_robot.cfg");
+  BotParam* theParam = bot_param_new_from_server(theLcm->getUnderlyingLCM(), 0);
 
   state.mSensorDataReceiver->setLcm(theLcm);
   state.mSensorDataReceiver->setBotParam(theParam);
