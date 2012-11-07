@@ -1,0 +1,12 @@
+/home/mfallon/drc/software/build/lib/liblcmtypes_gazebo_plugin.a
+/home/mfallon/drc/software/build/include/lcmtypes/exlcm_example_t.h
+/home/mfallon/drc/software/build/include/lcmtypes/gazebo_plugin.h
+/home/mfallon/drc/software/build/lib/pkgconfig/lcmtypes_gazebo_plugin.pc
+/home/mfallon/drc/software/build/include/lcmtypes/exlcm/example_t.hpp
+/home/mfallon/drc/software/build/include/lcmtypes/gazebo_plugin.hpp
+/home/mfallon/drc/software/build/share/java/lcmtypes_gazebo_plugin.jar
+/home/mfallon/drc/software/build/lib/python2.7/dist-packages/exlcm/example_t.py
+/home/mfallon/drc/software/build/lib/python2.7/dist-packages/exlcm/__init__.py
+/home/mfallon/drc/software/build/share/lcmtypes/example_t.lcm
+/home/mfallon/drc/software/build/lib/libmy_plugin.so
+/home/mfallon/drc/software/build/lib/pkgconfig/my_plugin.pc

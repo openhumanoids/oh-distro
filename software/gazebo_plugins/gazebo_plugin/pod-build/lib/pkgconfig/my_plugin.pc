@@ -1,0 +1,11 @@
+prefix=/home/mfallon/drc/software/build
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: my_plugin
+Description: my_plugin
+Requires: 
+Version: 0.0.1
+Libs: -L${libdir}  -lmy_plugin
+Cflags: -I${includedir} 

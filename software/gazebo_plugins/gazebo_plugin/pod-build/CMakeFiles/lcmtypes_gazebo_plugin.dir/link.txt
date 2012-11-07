@@ -1,0 +1,2 @@
+/usr/bin/ar cr lib/liblcmtypes_gazebo_plugin.a  CMakeFiles/lcmtypes_gazebo_plugin.dir/lcmtypes/c/lcmtypes/exlcm_example_t.c.o
+/usr/bin/ranlib lib/liblcmtypes_gazebo_plugin.a
