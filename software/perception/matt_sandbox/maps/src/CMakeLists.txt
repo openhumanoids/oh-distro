@@ -7,6 +7,7 @@ add_library(maps SHARED
     SensorDataReceiver.cpp
     DeltaPublisher.cpp
     DeltaReceiver.cpp
+    MapWrapper.cpp
     SpatialQueryWrapper.cpp
 )
 
@@ -21,6 +22,7 @@ pods_install_headers(
   SensorDataReceiver.hpp
   DeltaPublisher.hpp
   DeltaReceiver.hpp
+  MapWrapper.hpp
   SpatialQueryWrapper.hpp
   DESTINATION maps
 )

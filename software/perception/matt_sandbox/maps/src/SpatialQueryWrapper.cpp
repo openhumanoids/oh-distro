@@ -80,10 +80,14 @@ operator()() {
 void SpatialQueryWrapper::
 onMap(const lcm::ReceiveBuffer* iBuf,
       const std::string& iChannel,
-      const bot_core::raw_t* iMessage) {
+      const drc::local_map_t* iMessage) {
+  if ((iMessage->id == mMap->getId()) &&
+      (iMessage->state_id == mMap->getStateId())) {
+    return;
+  }
+
   std::vector<char> bytes(iMessage->data.begin(), iMessage->data.end());
   mMap->deserialize(bytes);
-  // TODO: only update if map has changed; use time of last update
   mNeedsUpdate = true;
   mDataReady.notify_one();
 }

@@ -120,6 +120,11 @@ operator()() {
         // add and remove points
         mManager->getActiveMap()->applyChanges(cloudAdded, cloudRemoved);
 
+        // update state id
+        // TODO: can set based on delta messages and protocol
+        int64_t id = mManager->getActiveMap()->getStateId();
+        mManager->getActiveMap()->setStateId(id+1);
+
         // note that this message was received
         mReceivedMessages.insert(delta.message_id);
       }
@@ -152,7 +157,7 @@ onParams(const lcm::ReceiveBuffer* iBuf,
     dims[1] = iMessage->dimensions[1];
     dims[2] = iMessage->dimensions[2];
     mManager->setMapDimensions(dims);
-    Eigen::Isometry3d xform;
+    Eigen::Isometry3d xform = Eigen::Isometry3d::Identity();
     Eigen::Quaterniond quat;
     quat.x() = iMessage->transform_to_local.rotation.x;
     quat.y() = iMessage->transform_to_local.rotation.y;
@@ -165,6 +170,7 @@ onParams(const lcm::ReceiveBuffer* iBuf,
     xform.rotate(quat);
     xform.translate(trans);
     mManager->createMap(xform, iMessage->map_id);
+    mManager->getActiveMap()->setStateId(0);
   }
 
   // acknowledge that we received the map parameters

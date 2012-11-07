@@ -6,6 +6,7 @@
 LocalMap::
 LocalMap() {
   setId(-1);
+  setStateId(-1);
   setTransformToLocal(Eigen::Isometry3d::Identity());
   setBounds(Eigen::Vector3d(-1e10,-1e10,-1e10),
             Eigen::Vector3d(1e10,1e10,1e10));
@@ -135,8 +136,6 @@ LocalMap::PointCloud::Ptr LocalMap::
 getAsPointCloud(const bool iTransform) const {
   PointCloud::Ptr cloud(new PointCloud());
   Octree::iterator iter;
-  int numPoints = mOctree->calcNumNodes();
-  cloud->points.reserve(numPoints);
   for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
     bool occupied = mOctree->isNodeOccupied(*iter);
     if (!occupied) {
@@ -172,13 +171,13 @@ getAsHeightMap(const int iDownSample,
   }
 
   // determine transform from image to local coordinates
-  double scale = mOctree->getResolution()*iDownSample;
+  double scale = mOctree->getResolution() * (1 << iDownSample);
   double offset = mOctree->keyToCoord(0);
   Eigen::Affine3d xform = Eigen::Affine3d::Identity();
   xform(0,0) = xform(1,1) = scale;
   xform(0,3) = offset + xMin*scale;
   xform(1,3) = offset + yMin*scale;
-  heightMap.mTransformToLocal = xform;
+  heightMap.mTransformToLocal = xform*mTransformToLocal;
   
   // initialize height map data
   heightMap.mWidth = xMax-xMin+1;

@@ -1,5 +1,5 @@
-#ifndef _SpatialQueryWrapper_hpp_
-#define _SpatialQueryWrapper_hpp_
+#ifndef _MapWrapper_hpp_
+#define _MapWrapper_hpp_
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -7,15 +7,16 @@
 #include <boost/thread/condition_variable.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/local_map_t.hpp>
-#include <Eigen/Geometry>
 
-class SpatialQuery;
 class LocalMap;
 
-class SpatialQueryWrapper {
+class MapWrapper {
 public:
-  SpatialQueryWrapper();
-  ~SpatialQueryWrapper();
+  typedef boost::shared_ptr<const LocalMap> LocalMapConstPtr;
+
+public:
+  MapWrapper();
+  ~MapWrapper();
 
   void setLcm(boost::shared_ptr<lcm::LCM>& iLcm);
   void setMapChannel(const std::string& iChannel);
@@ -27,7 +28,7 @@ public:
   bool lock();
   bool unlock();
 
-  boost::shared_ptr<SpatialQuery> query();
+  LocalMapConstPtr getMap() const;
 
 protected:
   void onMap(const lcm::ReceiveBuffer* iBuf,
@@ -36,18 +37,19 @@ protected:
 
 protected:
   boost::shared_ptr<LocalMap> mMap;
-  boost::shared_ptr<SpatialQuery> mQuery;
+  boost::shared_ptr<LocalMap> mNewMap;
   boost::shared_ptr<lcm::LCM> mLcm;
   std::string mMapChannel;
 
   lcm::Subscription* mMapSubscription;
-  boost::mutex mQueryMutex;
   boost::mutex mMapMutex;
+  boost::mutex mNewMapMutex;
+  boost::mutex mDataReadyMutex;
   boost::condition_variable mDataReady;
-  boost::shared_ptr<SpatialQuery> mNewQuery;
   bool mNeedsUpdate;
 
   bool mIsRunning;
+
 };
 
 #endif

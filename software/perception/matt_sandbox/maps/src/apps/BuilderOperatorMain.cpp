@@ -5,8 +5,8 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/bot_core/raw_t.hpp>
 #include <lcmtypes/drc/heightmap_t.hpp>
+#include <lcmtypes/drc/local_map_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <bot_lcmgl_client/lcmgl.h>
@@ -46,16 +46,19 @@ public:
       timer.expires_from_now(boost::posix_time::seconds(5));
       timer.wait();
 
-      if (mState->mManager->getActiveMap() == NULL) {
+      boost::shared_ptr<LocalMap> localMap = mState->mManager->getActiveMap();
+      if (localMap == NULL) {
         continue;
       }
       std::vector<char> bytes;
-      mState->mManager->getActiveMap()->serialize(bytes);
-      bot_core::raw_t mapBytes;
-      mapBytes.utime = bot_timestamp_now();
-      mapBytes.length = bytes.size();
-      mapBytes.data.insert(mapBytes.data.end(), bytes.begin(), bytes.end());
-      mState->mLcm->publish("LOCAL_MAP", &mapBytes);
+      localMap->serialize(bytes);
+      drc::local_map_t mapMessage;
+      mapMessage.utime = bot_timestamp_now();
+      mapMessage.id = localMap->getId();
+      mapMessage.state_id = localMap->getStateId();
+      mapMessage.size_bytes = bytes.size();
+      mapMessage.data.insert(mapMessage.data.end(), bytes.begin(), bytes.end());
+      mState->mLcm->publish("LOCAL_MAP", &mapMessage);
       cout << "Published map (" << bytes.size() << " bytes)" << endl;
 
       // publish as octomap (for debugging)

@@ -20,5 +20,10 @@ pods_install_executables(maps-builder-operator)
 
 add_executable(maps-creator CollectAndSend.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
-pods_use_pkg_config_packages(maps-creator bot2-lcmgl-client maps)
+pods_use_pkg_config_packages(maps-creator maps)
 pods_install_executables(maps-creator)
+
+add_executable(maps-client-sample SampleMapClient.cpp)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+pods_use_pkg_config_packages(maps-client-sample maps)
+pods_install_executables(maps-client-sample)
