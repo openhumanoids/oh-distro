@@ -44,10 +44,17 @@
 #define KEYCODE_S 0x73
 #define KEYCODE_D 0x64
 
+#define KEYCODE_Q 0x71
+#define KEYCODE_E 0x65
+
 #define KEYCODE_A_CAP 0x41
 #define KEYCODE_D_CAP 0x44
 #define KEYCODE_S_CAP 0x53
 #define KEYCODE_W_CAP 0x57
+
+#define KEYCODE_Q_CAP 0x51
+#define KEYCODE_E_CAP 0x45
+
 
 class ErraticKeyboardTeleopNode
 {
@@ -79,6 +86,7 @@ class ErraticKeyboardTeleopNode
         void stopRobot()
         {
             cmdvel_.linear.x = 0.0;
+            cmdvel_.linear.y = 0.0;
             cmdvel_.angular.z = 0.0;
             pub_.publish(cmdvel_);
         }
@@ -109,7 +117,8 @@ int main(int argc, char** argv)
 void ErraticKeyboardTeleopNode::keyboardLoop()
 {
     char c;
-    double max_tv = walk_vel_;
+    double max_tv_forward = walk_vel_;
+    double max_tv_strafe = walk_vel_;
     double max_rv = yaw_rate_;
     bool dirty = false;
     int speed = 0;
@@ -124,6 +133,7 @@ void ErraticKeyboardTeleopNode::keyboardLoop()
     tcsetattr(kfd, TCSANOW, &raw);
     
     puts("Reading from keyboard");
+    puts("Use Q  E keys to strafe left/right");
     puts("Use WASD keys to control the robot");
     puts("Press Shift to move faster");
     
@@ -165,13 +175,29 @@ void ErraticKeyboardTeleopNode::keyboardLoop()
         switch(c)
         {
             case KEYCODE_W:
-                max_tv = walk_vel_;
+                max_tv_forward = walk_vel_;
+                max_tv_strafe = 0;
                 speed = 1;
                 turn = 0;
                 dirty = true;
                 break;
             case KEYCODE_S:
-                max_tv = walk_vel_;
+                max_tv_forward = walk_vel_;
+                max_tv_strafe = 0;
+                speed = -1;
+                turn = 0;
+                dirty = true;
+                break;
+            case KEYCODE_Q:
+                max_tv_forward = 0;
+                max_tv_strafe =  walk_vel_;
+                speed = 1;
+                turn = 0;
+                dirty = true;
+                break;
+            case KEYCODE_E:
+                max_tv_forward = 0;
+                max_tv_strafe = walk_vel_;
                 speed = -1;
                 turn = 0;
                 dirty = true;
@@ -190,39 +216,59 @@ void ErraticKeyboardTeleopNode::keyboardLoop()
                 break;
                 
             case KEYCODE_W_CAP:
-                max_tv = run_vel_;
+                max_tv_forward = run_vel_;
+                max_tv_strafe = 0;
                 speed = 1;
                 turn = 0;
                 dirty = true;
                 break;
             case KEYCODE_S_CAP:
-                max_tv = run_vel_;
+                max_tv_forward = run_vel_;
+                max_tv_strafe = 0;
                 speed = -1;
                 turn = 0;
                 dirty = true;
                 break;
+            case KEYCODE_Q_CAP:
+                max_tv_forward = 0;
+                max_tv_strafe = run_vel_;
+                speed = 1;
+                turn = 0;
+                dirty = true;
+                break;
+            case KEYCODE_E_CAP:
+                max_tv_forward =run_vel_;
+                max_tv_strafe =  0;
+                speed = -1;
+                turn = 0;
+                dirty = true;
+                break;   
             case KEYCODE_A_CAP:
                 max_rv = yaw_rate_run_;
+                max_tv_strafe = 0;
                 speed = 0;
                 turn = 1;
                 dirty = true;
                 break;
             case KEYCODE_D_CAP:
                 max_rv = yaw_rate_run_;
+                max_tv_strafe = 0;
                 speed = 0;
                 turn = -1;
                 dirty = true;
                 break;
                 
             default:
-                max_tv = walk_vel_;
+                max_tv_forward = walk_vel_;
                 max_rv = yaw_rate_;
                 speed = 0;
                 turn = 0;
                 dirty = false;
         }
         
-        cmdvel_.linear.x = speed * max_tv;
+        cmdvel_.linear.x = speed * max_tv_forward; //fwd
+        cmdvel_.linear.y = speed * max_tv_strafe; //strafe
+
         cmdvel_.angular.z = turn * max_rv;
         pub_.publish(cmdvel_);
     }
