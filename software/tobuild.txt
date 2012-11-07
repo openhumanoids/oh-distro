@@ -13,3 +13,5 @@ perception
 viewer
 network
 #interface
+
+gazebo_plugins
