@@ -24,7 +24,6 @@
 #include <renderer_drc/renderer_robot_plan.hpp>
 #include <renderer_drc/renderer_navigation.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
-#include <velodyne/renderer_velodyne.h>
 #include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
 #include "udp_util.h"
 
@@ -122,7 +121,7 @@ int main(int argc, char *argv[])
 
 
   if (config_file){
-    fprintf(stderr,"Reading velodyne config from file\n");
+    fprintf(stderr,"Reading config from file\n");
     std::string config_path = std::string(getConfigPath()) +'/' + std::string(config_file);// "drc_robot.cfg";
     bot_param = bot_param_new_from_file(config_path.c_str());
     if (bot_param == NULL) {
@@ -166,7 +165,6 @@ int main(int argc, char *argv[])
   setup_renderer_navigation(viewer, 0,lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
-  setup_renderer_velodyne(viewer, 0,bot_param, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);

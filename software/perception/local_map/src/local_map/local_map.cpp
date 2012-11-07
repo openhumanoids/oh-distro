@@ -38,7 +38,8 @@ local_map::local_map(lcm_t* publish_lcm):
   Eigen::Quaterniond quat =euler_to_quat(0,0,M_PI/2); // ypr
   Eigen::Isometry3d pose;
   body_to_lidar.setIdentity();
-  body_to_lidar.translation()  << 0.275, 0.0, 1.2805;
+  // update for gfe in nov 2012:
+  body_to_lidar.translation()  << -0.0015, 0.0, 0.68;
   body_to_lidar.rotate(quat);
 
 
@@ -46,6 +47,7 @@ local_map::local_map(lcm_t* publish_lcm):
   cloud = cloud_clf;
   cloud_counter =0;
 
+  fill_counter =0;
   newmap_requested=0;
 
   // Unpack Config:
@@ -194,10 +196,9 @@ void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
   quat_to_euler(b2l_quat, ypr[0], ypr[1], ypr[2]);
   if (newmap_requested){
     if (!newmap_started){
-      if (ypr[0]> 1.3){
-        cout << "starting yaw: " << ypr[0] << "\n";
-        newmap_started=true;
-      }
+      fill_counter =0;
+      cout << "starting to fill cloud\n";
+      newmap_started=true;
     }
   }
 
@@ -208,8 +209,9 @@ void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
     pcl::transformPointCloud (*lidar_cloud, *lidar_cloud,
         pose_f.translation(), pose_quat); // !! modifies lidar_cloud
     (*cloud) += (*lidar_cloud);
+    fill_counter++;
 
-    if (ypr[0]< -1.3){
+    if (fill_counter > 100){
       send_newmap();
 
       newmap_requested=0;

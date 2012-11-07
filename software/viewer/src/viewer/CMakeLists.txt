@@ -11,7 +11,6 @@ pods_use_pkg_config_packages(drc-viewer
         octomap-renderer
         lcmtypes_drc_lcmtypes    
         renderer_drc 
-        velodyne-renderer
         collections_renderer)
 
 #scrollingplots_renderer

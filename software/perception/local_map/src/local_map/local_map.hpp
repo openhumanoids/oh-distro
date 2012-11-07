@@ -34,6 +34,7 @@ class local_map{
     // Current submap clouds
     pcl::PointCloud<PointXYZRGB>::Ptr cloud;
     int cloud_counter;
+    int fill_counter; // counter to fille the rotating cloud
     int newmap_requested;
     bool newmap_started;
 

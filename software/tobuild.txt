@@ -14,4 +14,5 @@ viewer
 network
 #interface
 
+# requires drcsim/gazebo1.2 and ubuntu 12.04:
 gazebo_plugins
