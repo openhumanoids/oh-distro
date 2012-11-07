@@ -94,8 +94,12 @@ For Ubuntu, add these lines to "/etc/sysctl.conf":
     net.core.rmem_default=2097152
 (Requires a reboot to take effect)
 
-6. 
+6. drc sim on wiki followed by...
+=============================================
 sudo apt-get install ros-fuerte-image-pipeline
+make -C atlas_gazebo_msgs
+make -C keyboard_teleop
+make -C ROS2LCM_translator
 
 7. DRAKE (LOCOMOTION GROUP CODEBASE)
 ====================================
