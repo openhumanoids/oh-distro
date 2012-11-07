@@ -1,8 +1,0 @@
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/HCnrsBg7QSPhLWEBpbB21Grz8yySizjB.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmgen_c.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmgen_cpp.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmgen_java.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmgen_python.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmtypes_gazebo_plugin.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/CMakeFiles/lcmtypes_gazebo_plugin_jar.dir
-/home/mfallon/drc/software/gazebo_plugins/gazebo_plugin/pod-build/src/my_plugin/CMakeFiles/my_plugin.dir
