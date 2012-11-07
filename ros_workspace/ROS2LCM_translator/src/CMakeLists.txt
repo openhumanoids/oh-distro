@@ -2,18 +2,24 @@ cmake_minimum_required(VERSION 2.4.6)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_executable(TRUE_robot_state_publisher TRUE_robot_state_publisher.cpp)
-pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm lcmtypes_drc_lcmtypes bot2-core) 
+#rosbuild_add_executable(TRUE_robot_state_publisher TRUE_robot_state_publisher.cpp)
+#pods_use_pkg_config_packages(TRUE_robot_state_publisher lcm lcmtypes_drc_lcmtypes bot2-core) 
+#pods_install_executables(TRUE_robot_state_publisher)
 
 #rosbuild_add_executable(ros2lcm_translator_no_sensing ros2lcm_translator_no_sensing.cpp)
 #pods_use_pkg_config_packages(ros2lcm_translator_no_sensing lcm lcmtypes_drc_lcmtypes
 #	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
-
-#pods_install_executables(TRUE_robot_state_publisher  ros2lcm_translator ros2lcm_translator_no_sensing)
+#pods_install_executables(ros2lcm_translator_no_sensing)
 
 rosbuild_add_executable(ros2lcm_translator_combined ros2lcm_translator_combined.cpp)
 pods_use_pkg_config_packages(ros2lcm_translator_combined lcm lcmtypes_drc_lcmtypes
 	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
+target_link_libraries(ros2lcm_translator_combined boost_signals)
+pods_install_executables( ros2lcm_translator_combined)
 
-pods_install_executables(TRUE_robot_state_publisher ros2lcm_translator_combined)
+rosbuild_add_executable(ros2lcm_translator_spinning ros2lcm_translator_spinning.cpp)
+pods_use_pkg_config_packages(ros2lcm_translator_spinning lcm lcmtypes_drc_lcmtypes
+	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization eigen3) 
+target_link_libraries(ros2lcm_translator_combined boost_signals)
+pods_install_executables( ros2lcm_translator_spinning)
 

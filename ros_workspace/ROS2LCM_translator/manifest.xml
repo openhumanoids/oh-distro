@@ -8,8 +8,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url> </url>"ros_workspace/ROS2LCM_translator/manifest.xml"
-  <depend package="gazebo"/>
-  <depend package="gazebo_msgs"/>
+<!--  <depend package="gazebo"/>
+  <depend package="gazebo_msgs"/> -->
   <depend package="urdf"/>
   <depend package="urdf_interface"/>
   <depend package="roscpp"/>
@@ -17,10 +17,12 @@
   <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>  
   <depend package="image_transport"/>
-  <depend package="image_geometry"/>
+  <depend package="image_geometry"/> 
   <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
-  <depend package="opencv2"/>  
+<!-- added purely for spinning laser state - mfallon nov 2012-->
+  <depend package="pr2_controllers_msgs"/>
+<!--  <depend package="opencv2"/> -->
 <!--  <depend package="pcl"/>-->
 <!--  <depend package="pcl_ros"/>  -->
 </package>

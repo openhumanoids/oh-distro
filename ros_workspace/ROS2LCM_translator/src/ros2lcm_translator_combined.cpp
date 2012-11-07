@@ -7,7 +7,6 @@
 
 #include <ros/ros.h>
 #include <ros/console.h>
-//#include <std_msgs/String.h>
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
@@ -22,15 +21,16 @@
 #include <image_geometry/stereo_camera_model.h>
 
 #include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+//#include <cv_bridge/cv_bridge.h>
+//#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/highgui/highgui.hpp>
 
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <atlas_gazebo_msgs/RobotState.h>
-#include <gazebo_msgs/ContactState.h>
-#include <gazebo_msgs/ContactsState.h>
+//#include <gazebo_msgs/ContactState.h>
+//#include <gazebo_msgs/ContactsState.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -41,9 +41,10 @@ using namespace std;
 //using namespace cv;
 
 
-int width =640; // hardcoded
-int height =480; // hardcoded
-uint8_t* s_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
+int width =320; // hardcoded
+int height =240; // hardcoded
+uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
+uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
 
 class App{
 public:
@@ -56,29 +57,34 @@ private:
   ros::NodeHandle node_;
 
   ros::Subscriber base_scan_sub_,rotating_scan_sub_,rstate_sub_;
- 
   void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg);
   void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
   
+
   ros::Subscriber LFootToeIn_cstate_sub_,LFootToeOut_cstate_sub_,LFootHeelIn_cstate_sub_,LFootHeelOut_cstate_sub_;
   ros::Subscriber RFootToeIn_cstate_sub_,RFootToeOut_cstate_sub_,RFootHeelIn_cstate_sub_,RFootHeelOut_cstate_sub_;
-  void LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
+/*  void LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void LFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void LFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void LFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void RFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void RFootToeOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void RFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
-  void RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
-  
+  void RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);*/
+
+  // Left and Right Images Seperately:
+  void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  void right_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  ros::Subscriber left_image_sub_,right_image_sub_;
+  void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
+
   // Stereo Image:
-  void image_cb(const sensor_msgs::ImageConstPtr& l_image,
+  void stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
       const sensor_msgs::CameraInfoConstPtr& l_cam_info,
       const sensor_msgs::ImageConstPtr& r_image,
       const sensor_msgs::CameraInfoConstPtr& r_cam_info);
-
   image_transport::ImageTransport it_;
   image_transport::SubscriberFilter l_image_sub_, r_image_sub_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> l_info_sub_, r_info_sub_;
@@ -100,24 +106,31 @@ App::App(const std::string & stereo_in,
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this);
+//  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // gfe
+  base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this); // previously
   rotating_scan_sub_ = node_.subscribe(string("/rotating_scan"), 10, &App::rotating_scan_cb,this);
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
   
   //Foot contact sensors.
-  LFootToeIn_cstate_sub_ = node_.subscribe("/LFootToeIn_bumper/state", 10, &App::LFootToeIn_cstate_cb,this);
+/*  LFootToeIn_cstate_sub_ = node_.subscribe("/LFootToeIn_bumper/state", 10, &App::LFootToeIn_cstate_cb,this);
   LFootToeOut_cstate_sub_ = node_.subscribe("/LFootToeOut_bumper/state", 10, &App::LFootToeOut_cstate_cb,this);
   LFootHeelIn_cstate_sub_ = node_.subscribe("/LFootHeelIn_bumper/state", 10, &App::LFootHeelIn_cstate_cb,this);
   LFootHeelOut_cstate_sub_ = node_.subscribe("/LFootHeelOut_bumper/state", 10, &App::LFootHeelOut_cstate_cb,this);
   RFootToeIn_cstate_sub_ = node_.subscribe("/RFootToeIn_bumper/state", 10, &App::RFootToeIn_cstate_cb,this);
   RFootToeOut_cstate_sub_ = node_.subscribe("/RFootToeOut_bumper/state", 10, &App::RFootToeOut_cstate_cb,this);
   RFootHeelIn_cstate_sub_ = node_.subscribe("/RFootHeelIn_bumper/state", 10, &App::RFootHeelIn_cstate_cb,this);
-  RFootHeelOut_cstate_sub_ = node_.subscribe("/RFootHeelOut_bumper/state", 10, &App::RFootHeelOut_cstate_cb,this);
+  RFootHeelOut_cstate_sub_ = node_.subscribe("/RFootHeelOut_bumper/state", 10, &App::RFootHeelOut_cstate_cb,this);*/
       
+
+  left_image_sub_ = node_.subscribe(string("/left_eye/image_raw"), 10, &App::left_image_cb,this);
+  right_image_sub_ = node_.subscribe(string("/right_eye/image_raw"), 10, &App::right_image_cb,this);
+  //left_image_sub_ = node_.subscribe(string("/left_eye/image_rect_color"), 10, &App::left_image_cb,this);
+  //right_image_sub_ = node_.subscribe(string("right_eye/image_rect_color"), 10, &App::right_image_cb,this);
+
 
   // Stereo Image:
   std::string lim_string ,lin_string,rim_string,rin_string;
-  int which_image = 2;
+  int which_image = 4;
   if (which_image==0){ // Grey:
     lim_string = stereo_in_ + "/left/image_rect";
     lin_string = stereo_in_ + "/left/camera_info";
@@ -128,23 +141,29 @@ App::App(const std::string & stereo_in,
     lin_string = stereo_in_ + "/left/camera_info";
     rim_string = stereo_in_ + "/right/image_rect_color";
     rin_string = stereo_in_ + "/right/camera_info";
-  }else if(which_image==2){
+  }else if(which_image==2){ // Raw:
     lim_string = stereo_in_ + "/left/image_raw";
     lin_string = stereo_in_ + "/left/camera_info";
     rim_string = stereo_in_ + "/right/image_raw";
     rin_string = stereo_in_ + "/right/camera_info";
+  }else if(which_image==4){ // Raw on GFE:
+    // OSRF decided to despense with convention and use these channels:
+    lim_string = "/left_eye/image_raw";
+    lin_string = "/left_eye/camera_info";
+    rim_string = "/right_eye/image_raw";
+    rin_string = "/right_eye/camera_info";
   }else{
     cout << "Image choice not supported!\n";
     exit(-1); 
   }
-cout << lim_string << " is sub\n";
+  cout << lim_string << " is the left stereo image subscription\n";
 
   l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
   l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
   r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
   r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
   sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
-  sync_.registerCallback( boost::bind(&App::image_cb, this, _1, _2, _3, _4) );
+  sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
   counter=0;
 };
 
@@ -152,8 +171,7 @@ App::~App()  {
 }
 
 int counter=0;
-
-void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
+void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::CameraInfoConstPtr& l_cam_info,
     const sensor_msgs::ImageConstPtr& r_image,
     const sensor_msgs::CameraInfoConstPtr& r_cam_info)
@@ -166,20 +184,11 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
     std::cout << counter << "\n";
   }
 
+  /*
   namespace enc = sensor_msgs::image_encodings;
-
   cv_bridge::CvImageConstPtr left_ptr;
   cv_bridge::CvImageConstPtr right_ptr;
   int isize = l_image->width*l_image->height;
-
-/*  try {
-    left_ptr =  cv_bridge::toCvShare(l_image, enc::BGR8);//MONO8);
-    right_ptr =  cv_bridge::toCvShare(r_image, enc::BGR8);//MONO8);
-  }catch (cv_bridge::Exception& e)
-  {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
-    return;
-  }*/
 
   //cout << l_image->width << " w | h " << l_image->height << "\n";
 
@@ -207,23 +216,23 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
     stereo.row_stride=n_colors*l_image->width;
     stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
     stereo.size =n_colors *2*isize;
-    copy(l_img.data, l_img.data + n_colors*isize, s_data);
-    copy(r_img.data, r_img.data + n_colors*isize, s_data  + (n_colors * isize));
-    stereo.data.assign(s_data, s_data + ( n_colors*2*isize));
+    copy(l_img.data, l_img.data + n_colors*isize, stereo_data);
+    copy(r_img.data, r_img.data + n_colors*isize, stereo_data  + (n_colors * isize));
+    stereo.data.assign(stereo_data, stereo_data + ( n_colors*2*isize));
   }else if (l_image->encoding.compare("mono8") == 0){
     stereo.row_stride=l_image->width;
     stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
     stereo.size =2*isize;
-    copy(l_image->data.begin(), l_image->data.end(), s_data);
-    copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
-    stereo.data.assign(s_data, s_data + ( 2*isize));
+    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
+    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
+    stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
   }else if (l_image->encoding.compare("bayer_bggr8") == 0){
     stereo.row_stride=l_image->width;
     stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_BAYER_BGGR;
     stereo.size =2*isize; // I think its the same size as a typical grayscale...
-    copy(l_image->data.begin(), l_image->data.end(), s_data);
-    copy(r_image->data.begin(), r_image->data.end(), s_data + (l_image->width*l_image->height));
-    stereo.data.assign(s_data, s_data + ( 2*isize));
+    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
+    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
+    stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
   }else{
     cout << l_image->encoding << " image encoded not supported, not publishing\n";
     cout << stereo_out_ << "\n";
@@ -231,26 +240,118 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
   }
 
   lcm_publish_.publish(stereo_out_.c_str(), &stereo);
+  */
 
   counter++;
 }
 
 
-// typical contents: 640 x 480 images
+// typical contents: 640 x 480 images (out of date)
 // points: xyz
 // channels: rgb u v
-//void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
-//  send_image(msg, "WIDE_LEFT_RECT");
-//}
-//void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
-//  send_image(msg, "WIDE_RIGHT_RECT");
-//}
+int l_counter =0;
+void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
+  l_counter++;
+  if (l_counter%30 ==0){
+    std::cout << l_counter << " left image\n";
+  }  
+  send_image(msg, "CAMERALEFT");
+}
+int r_counter =0;
+void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
+  r_counter++;
+  if (r_counter%30 ==0){
+    std::cout << r_counter << " right image\n";
+  }  
+  send_image(msg, "CAMERARIGHT");
+}
 
 // TODO: jpeg compression:
 //       look into openni_utils/openni_ros2rgb for code
 // TODO: pre-allocate image_data and retain for speed - when size is known
-/*void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
-  image_data = new uint8_t [640*480*3];
+void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
+  ros::Time current_time = msg->header.stamp;
+  int64_t current_utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  /*cout << msg->width << " " << msg->height << " | "
+       << msg->encoding << " is encoding | "
+       << current_utime << " | "<< channel << "\n";*/
+
+  int n_colors=3;
+  int isize = msg->width*msg->height;
+
+  bot_core::image_t lcm_img;
+  lcm_img.utime =current_utime;
+  lcm_img.width =msg->width;
+  lcm_img.height =msg->height;
+  lcm_img.nmetadata =0;
+  lcm_img.row_stride=n_colors*msg->width;
+  lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+  lcm_img.size =n_colors *2*isize;
+  copy(msg->data.begin(), msg->data.end(), singleimage_data);
+  lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*2*isize));
+
+  lcm_publish_.publish(channel.c_str(), &lcm_img);
+  /*
+  namespace enc = sensor_msgs::image_encodings;
+  cv_bridge::CvImageConstPtr left_ptr;
+  cv_bridge::CvImageConstPtr right_ptr;
+  int isize = l_image->width*l_image->height;
+
+  //cout << l_image->width << " w | h " << l_image->height << "\n";
+
+  bot_core::image_t stereo;
+  stereo.utime =current_utime;
+  stereo.width =l_image->width;
+  stereo.height =2*l_image->height;
+  stereo.nmetadata =0;
+
+  if (l_image->encoding.compare("bgr8") == 0){
+    // Need to convert image to OpenCV to invert R and B:
+    // OpenCV: BGR | LCM: RGB
+    int n_colors = 3; // 1 is grey, 3 is rgb
+    left_ptr =  cv_bridge::toCvShare(l_image, enc::BGR8);//MONO8);
+    right_ptr =  cv_bridge::toCvShare(r_image, enc::BGR8);//MONO8);
+    cv::Mat l_img;
+    cvtColor( left_ptr->image, l_img, CV_BGR2RGB);
+    cv::Mat r_img;
+    cvtColor( right_ptr->image, r_img, CV_BGR2RGB);
+
+    // Write to file:
+    //cv::imwrite("left.png", left_ptr->image);
+    //cv::imwrite("right.png", right_ptr->image);
+
+    stereo.row_stride=n_colors*l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    stereo.size =n_colors *2*isize;
+    copy(l_img.data, l_img.data + n_colors*isize, stereo_data);
+    copy(r_img.data, r_img.data + n_colors*isize, stereo_data  + (n_colors * isize));
+    stereo.data.assign(stereo_data, stereo_data + ( n_colors*2*isize));
+  }else if (l_image->encoding.compare("mono8") == 0){
+    stereo.row_stride=l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    stereo.size =2*isize;
+    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
+    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
+    stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
+  }else if (l_image->encoding.compare("bayer_bggr8") == 0){
+    stereo.row_stride=l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_BAYER_BGGR;
+    stereo.size =2*isize; // I think its the same size as a typical grayscale...
+    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
+    copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
+    stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
+  }else{
+    cout << l_image->encoding << " image encoded not supported, not publishing\n";
+    cout << stereo_out_ << "\n";
+    return;
+  }
+
+
+  */
+
+
+
+/*  image_data = new uint8_t [640*480*3];
   IplImage *imageBGR = cvCreateImage(cvSize( msg->width ,   msg->height), 8, 3);
   IplImage* imageRGB = cvCreateImage(cvSize( msg->width ,   msg->height), 8, 3);
 
@@ -280,8 +381,8 @@ void App::image_cb(const sensor_msgs::ImageConstPtr& l_image,
   }
   cvReleaseImage(&imageBGR);
   cvReleaseImage(&imageRGB);
-  delete[] image_data;
-}*/
+  delete[] image_data;*/
+}
 
 
 void App::rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg){
@@ -345,7 +446,12 @@ for (int i=0; i< robot_state_msg.contacts.num_contacts; i++){
 }
 
 
+int base_scan_counter=0;
 void App::base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  base_scan_counter++;
+  if (base_scan_counter%30 ==0){
+    std::cout << base_scan_counter << " base scan\n";
+  }  
   send_lidar(msg, "BASE_SCAN");
 }
 
@@ -375,7 +481,7 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 }
 
 //==================================================================================================
-
+/*
 void App::LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg){
   gazebo_msgs::ContactsState contact_states = *msg;
   drc::contact_state_stamped_t lcm_msg;
@@ -729,13 +835,13 @@ void App::RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg
   }
   lcm_publish_.publish("RFOOT_HEEL_OUT_CONTACT_STATE", &lcm_msg);
 }
-
+*/
 //==================================================================================================
 
 
 int main(int argc, char **argv){
-  std::cout << "ros2lcm_translator_combined launched\n";
-  ros::init(argc, argv, "ros2lcm_translator_combined");
+  std::cout << "ros2lcm_translator_spinning launched\n";
+  ros::init(argc, argv, "ros2lcm_translator_spinning");
 
   App *app = new App("camera", "CAMERA");
 
