@@ -23,8 +23,8 @@ group "core" {
         exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/sensing_wheeledAtlas_pre_fuerte.urdf";
         host = "localhost";
     }
-    cmd "drc-est-robot-state-fake" {
-        exec = "drc-est-robot-state-fake";
+    cmd "statefake" {
+        exec = "drc-est-robot-state-fake $HOME/drc/data/lcmlog-2012-11-04.00_electric_robot";
         host = "localhost";
     }
 }
