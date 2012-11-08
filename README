@@ -35,14 +35,6 @@ gtk-doc-tools
 libqhull-dev
 libtinyxml-dev
 
-libjpeg8-dev (installing this may break ROS electric, which wants libjpeg-dev instead)
-
-To be confirmed: Boost 1.46 and 1.48 are available. we seem to need 1.46 for ROS:
-libboost-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
-boost1.48-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
-libboost-dev (may not be necessary, libboost1.48-all-dev might be all thats necessary...)
-libboost1.48-all-dev
-
 >>>>> In one command <<<<<<
 sudo apt-get install cmake build-essential libglib2.0-dev openjdk-6-jdk python-dev  libgsl0-dev gsl-bin libusb-1.0-0-dev libgtk2.0-dev freeglut3-dev python-gtk2 libgtk2.0-dev libvtk5-dev gtk-doc-tools libqhull-dev libtinyxml-dev
 
