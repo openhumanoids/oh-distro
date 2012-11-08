@@ -1,0 +1,57 @@
+group "sensing" {
+    cmd "velodyne_cfg" {
+        exec = "sudo ifconfig eth0 192.168.3.1 netmask 255.255.0.0 broadcast 192.168.3.255";
+        host = "localhost";
+    }
+    cmd "velodyne" {
+        exec = "velodyne-lcm";
+        host = "localhost";
+    }
+    cmd "mstrain" {
+        exec = "microstrain_comm -r -d /dev/ttyACM0";
+        host = "localhost";
+    }
+    cmd "bumblebee" {
+        exec = "camview --plugin-path /home/mfallon/other_projects/camunits-pods/build/lib/ -c /home/mfallon/drc/config/bumblebee_rig.camview";
+        host = "localhost";
+    }
+    cmd "hokuyo" {
+        exec = "hokuyo -d /dev/ttyACM1";
+        host = "localhost";
+    }
+    cmd "kinect" {
+        exec = "kinect-openni-lcm";
+        host = "localhost";
+    }
+    cmd "vicon-client" {
+        exec = "vicon-client";
+        host = "localhost";
+    }
+}
+group "misc" {
+    cmd "bot-spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "velo-viewer" {
+        exec = "velodyne-viewer -c drc_rig.cfg";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server drc_rig.cfg";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "sensing";
+}
