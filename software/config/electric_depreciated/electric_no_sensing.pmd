@@ -1,0 +1,44 @@
+group "core" {
+    cmd "core" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer -c drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "control" {
+        exec = "drc_controller_manager";
+        host = "localhost";
+    }
+    cmd "modpub" {
+        exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/wheeledAtlas_pre_fuerte.urdf";
+        host = "localhost";
+    }
+    cmd "pub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        host = "localhost";
+    }
+}
+
+group "gazebo" {
+    cmd "gazebo" {
+        exec = "roslaunch atlas_description wheeled_atlas_gazebo_pre_fuerte.launch";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start cmd "gazebo";
+}

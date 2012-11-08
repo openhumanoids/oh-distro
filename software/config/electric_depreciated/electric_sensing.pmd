@@ -1,0 +1,123 @@
+group "core" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "control" {
+        exec = "drc_controller_manager";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/sensing_wheeledAtlas_pre_fuerte.urdf";
+        host = "localhost";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "test_tf_solver" {
+        exec = "test_tf_solver";
+        host = "localhost";
+    }
+}
+
+group "old_converters" {
+    cmd "tx1" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator";
+        host = "localhost";
+    }
+    cmd "tx2" {
+        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "tx3" {
+        exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
+        host = "localhost";
+    }
+    cmd "proc" {
+        exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
+        host = "localhost";
+    }
+}
+
+group "sensing" {
+    cmd "vo" {
+        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_robot.cfg -b CAMERA";
+        host = "localhost";
+    }
+    cmd "local-map" {
+        exec = "drc-local-map";
+        host = "localhost";
+    }
+}
+group "laser_sensing" {
+    cmd "vo" {
+        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 8 --pose CAMERA_STATE";
+        host = "localhost";
+    }
+    cmd "local-map" {
+        exec = "drc-local-map";
+        host = "localhost";
+    }
+}
+
+
+
+
+group "misc" {
+    cmd "spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "teleop" {
+        exec = "rosrun keyboard_teleop keyboard_teleop";
+        host = "localhost";
+    }
+}
+
+group "camview" {
+    cmd "disparity" {
+        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
+        host = "localhost";
+    }
+}
+
+group "gazebo" {
+    cmd "gazebo" {
+        exec = "roslaunch atlas_description sensing_wheeled_atlas_gazebo_pre_fuerte.launch";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "sensing";
+}
+
+script "startup simulation laser" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "laser_sensing";
+}
