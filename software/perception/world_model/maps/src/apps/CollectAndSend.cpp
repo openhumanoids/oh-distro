@@ -2,18 +2,14 @@
 #include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 
-#include <lcmtypes/drc/local_map_t.hpp>
-#include <lcmtypes/drc/heightmap_t.hpp>
-#include <bot_core/timestamp.h>
-
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
 #include <pcl/common/transforms.h>
 
-#include <bot_lcmgl_client/lcmgl.h>
-#include <GL/gl.h>
+#include <lcmtypes/drc/heightmap_t.hpp>
+#include <bot_core/timestamp.h>
 
 using namespace std;
 
@@ -22,17 +18,10 @@ public:
   boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
-  bot_lcmgl_t* mLcmGl;
 
   State() {
     mSensorDataReceiver.reset(new SensorDataReceiver());
     mManager.reset(new MapManager());
-    mLcm.reset(new lcm::LCM());
-    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "map-debug");
-  }
-
-  ~State() {
-    bot_lcmgl_destroy(mLcmGl);
   }
 };
 
@@ -72,33 +61,15 @@ public:
       timer.expires_from_now(boost::posix_time::milliseconds(3000));
       timer.wait();
 
-      // see if map exists
-      boost::shared_ptr<LocalMap> localMap = mState->mManager->getActiveMap();
-      if (localMap == NULL) {
-        continue;
-      }
-
-      // publish as local map
-      std::vector<char> bytes;
-      localMap->serialize(bytes);
-      drc::local_map_t mapMessage;
-      mapMessage.utime = bot_timestamp_now();
-      mapMessage.id = localMap->getId();
-      mapMessage.state_id = localMap->getStateId();
-      mapMessage.size_bytes = bytes.size();
-      mapMessage.data.insert(mapMessage.data.end(), bytes.begin(), bytes.end());
-      mState->mLcm->publish("LOCAL_MAP", &mapMessage);
-      cout << "Published local map (" << bytes.size() << " bytes)" << endl;
-
-
       // publish as octomap
       std::cout << "Publishing octomap..." << std::endl;
       octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
       mState->mLcm->publish("OCTOMAP", &raw);
 
-      // publish as height map
+      // write pgm height map
       LocalMap::HeightMap heightMap =
-        mState->mManager->getActiveMap()->getAsHeightMap(3, 3.5);
+        mState->mManager->getActiveMap()->getAsHeightMap();
+
       drc::heightmap_t heightMapMsg;
       heightMapMsg.utime = bot_timestamp_now();
       heightMapMsg.nx = heightMap.mWidth;
@@ -118,21 +89,14 @@ public:
       heightMapMsg.heights = heightMap.mData;
       mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
 
-      if (false) {
-        bot_lcmgl_t* lcmgl = mState->mLcmGl;
-        bot_lcmgl_color3f(lcmgl, 1.0f, 0.5f, 0.0f);
-        bot_lcmgl_begin(lcmgl, GL_POINTS);
-        LocalMap::PointCloud::Ptr cloud =
-          mState->mManager->getActiveMap()->getAsPointCloud();
-        cout << "lcmgl'ing " << cloud->size() << " points..." << endl;
-        for (int k = 0; k < cloud->size(); ++k) {
-          bot_lcmgl_vertex3f(lcmgl, cloud->points[k].x, cloud->points[k].y,
-                             cloud->points[k].z);
+      std::ofstream ofs("/home/mfallon/heightmap.txt");
+      for (int i = 0; i < heightMap.mHeight; ++i) {
+        for (int j = 0; j < heightMap.mWidth; ++j) {
+          ofs << heightMap.mData[i*heightMap.mWidth+j] << " ";
         }
-        bot_lcmgl_end(lcmgl);
-        bot_lcmgl_switch_buffer(lcmgl);
+        ofs << std::endl;
       }
-
+      std::cout << "Writing height map..." << std::endl;
     }
   }
 
@@ -149,8 +113,8 @@ int main(const int iArgc, const char** iArgv) {
     return -1;
   }
 
-  BotParam* theParam =
-    bot_param_new_from_server(state.mLcm->getUnderlyingLCM(), 0);
+  // TODO: temporary; need server
+  BotParam* theParam = bot_param_new_from_file("/home/mfallon/drc/software/config/electic_deprecated/drc_robot.cfg");
 
   state.mSensorDataReceiver->setLcm(state.mLcm);
   state.mSensorDataReceiver->setBotParam(theParam);

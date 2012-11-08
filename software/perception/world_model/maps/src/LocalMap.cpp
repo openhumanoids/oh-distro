@@ -152,7 +152,7 @@ getAsPointCloud(const bool iTransform) const {
 LocalMap::HeightMap LocalMap::
 getAsHeightMap(const int iDownSample,
                const double iMaxHeight) const {
-  const double unobservedValue = std::numeric_limits<double>::min();
+  const double unobservedValue = -std::numeric_limits<double>::max();
   HeightMap heightMap;
 
   // determine 2d extents of octree (x,y) in units of cells
