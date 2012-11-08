@@ -9,6 +9,7 @@ MapManager() {
   setMapResolution(0.01);
   setMapDimensions(Eigen::Vector3d(10,10,10));
   setDataBufferLength(1000);
+  setVerbose(false);
   mNextMapId = 1;
   std::cout << "MapManager: constructed" << std::endl;
 }
@@ -45,6 +46,13 @@ setDataBufferLength(const int iLength) {
   mDataBufferLength = iLength;
   std::cout << "MapManager: point cloud buffer length set to " <<
     iLength << std::endl;
+}
+
+void MapManager::
+setVerbose(const bool iVal) {
+  std::cout << "MapManager: verbose set to " <<
+    (iVal ? "true" : "false") << std::endl;
+  mVerbose = iVal;
 }
 
 
@@ -103,8 +111,10 @@ addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
   pointSet.mPoints = iPoints;
   pointSet.mToLocal = iToLocal;
   mPointDataBuffer->add(pointSet);
-  std::cout << "MapManager: added " << iPoints->size() <<
-    " points to buffer" << std::endl;
+  if (mVerbose) {
+    std::cout << "MapManager: added " << iPoints->size() <<
+      " points to buffer" << std::endl;
+  }
 }
 
 bool MapManager::

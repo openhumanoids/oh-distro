@@ -12,6 +12,9 @@
 
 #include <pcl/common/transforms.h>
 
+#include <bot_lcmgl_client/lcmgl.h>
+#include <GL/gl.h>
+
 using namespace std;
 
 class State {
@@ -19,10 +22,17 @@ public:
   boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
+  bot_lcmgl_t* mLcmGl;
 
   State() {
     mSensorDataReceiver.reset(new SensorDataReceiver());
     mManager.reset(new MapManager());
+    mLcm.reset(new lcm::LCM());
+    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "map-debug");
+  }
+
+  ~State() {
+    bot_lcmgl_destroy(mLcmGl);
   }
 };
 
@@ -107,6 +117,22 @@ public:
       }
       heightMapMsg.heights = heightMap.mData;
       mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
+
+      if (false) {
+        bot_lcmgl_t* lcmgl = mState->mLcmGl;
+        bot_lcmgl_color3f(lcmgl, 1.0f, 0.5f, 0.0f);
+        bot_lcmgl_begin(lcmgl, GL_POINTS);
+        LocalMap::PointCloud::Ptr cloud =
+          mState->mManager->getActiveMap()->getAsPointCloud();
+        cout << "lcmgl'ing " << cloud->size() << " points..." << endl;
+        for (int k = 0; k < cloud->size(); ++k) {
+          bot_lcmgl_vertex3f(lcmgl, cloud->points[k].x, cloud->points[k].y,
+                             cloud->points[k].z);
+        }
+        bot_lcmgl_end(lcmgl);
+        bot_lcmgl_switch_buffer(lcmgl);
+      }
+
     }
   }
 

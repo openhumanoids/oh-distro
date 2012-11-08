@@ -35,6 +35,7 @@ public:
   void setMapResolution(const double iResolution);
   void setMapDimensions(const Eigen::Vector3d iDims);
   void setDataBufferLength(const int iLength);
+  void setVerbose(const bool iVal);
 
   // create new map and make it the active one
   bool createMap(const Eigen::Isometry3d& iToLocal =
@@ -74,6 +75,7 @@ protected:
   double mMapResolution;
   Eigen::Vector3d mMapDimensions;
   int mDataBufferLength;
+  bool mVerbose;
 
   int mNextMapId;
 };
