@@ -10,5 +10,5 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 # build two LCM test programs
-add_subdirectory(src/my_plugin)
+add_subdirectory(src/hokuyospin_plugin)
 
