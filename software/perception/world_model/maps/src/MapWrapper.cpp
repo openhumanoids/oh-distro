@@ -29,6 +29,21 @@ setMapChannel(const std::string& iChannel) {
   mMapChannel = iChannel;
 }
 
+void MapWrapper::
+addListener(boost::shared_ptr<UpdateListener>& iListener) {
+  mListeners.push_back(iListener);
+}
+
+void MapWrapper::
+removeListener(boost::shared_ptr<UpdateListener>& iListener) {
+  mListeners.remove(iListener);
+}
+
+void MapWrapper::removeAllListeners() {
+  mListeners.clear();
+}
+
+
 bool MapWrapper::
 start() {
   if (mIsRunning) {
@@ -60,10 +75,16 @@ operator()() {
       mDataReady.wait(lock);
     }
     if (mNeedsUpdate) {
-      boost::mutex::scoped_lock mapLock(mMapMutex);
-      boost::mutex::scoped_lock newMapLock(mNewMapMutex);
-      std::swap(mMap, mNewMap);
-      mNeedsUpdate = false;
+      {
+        boost::mutex::scoped_lock mapLock(mMapMutex);
+        boost::mutex::scoped_lock newMapLock(mNewMapMutex);
+        std::swap(mMap, mNewMap);
+        mNeedsUpdate = false;
+      }
+      std::list<boost::shared_ptr<UpdateListener> >::iterator iter;
+      for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
+        (*iter)->notify(*this);
+      }
     }
   }
 }

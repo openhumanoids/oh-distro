@@ -18,5 +18,5 @@ struct heightmap_t
   double transform_to_local[4][4];
 
   // height data samples (size nx*ny)
-  double heights[npix];
+  float heights[npix];
 }

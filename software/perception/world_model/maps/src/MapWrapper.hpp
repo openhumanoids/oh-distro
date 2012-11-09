@@ -2,6 +2,7 @@
 #define _MapWrapper_hpp_
 
 #include <string>
+#include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
@@ -15,11 +16,21 @@ public:
   typedef boost::shared_ptr<const LocalMap> LocalMapConstPtr;
 
 public:
+  class UpdateListener {
+  public:
+    virtual void notify(MapWrapper& iWrapper) = 0;
+  };
+
+public:
   MapWrapper();
   ~MapWrapper();
 
   void setLcm(boost::shared_ptr<lcm::LCM>& iLcm);
   void setMapChannel(const std::string& iChannel);
+
+  void addListener(boost::shared_ptr<UpdateListener>& iListener);
+  void removeListener(boost::shared_ptr<UpdateListener>& iListener);
+  void removeAllListeners();
 
   void operator()();
   bool start();
@@ -40,6 +51,8 @@ protected:
   boost::shared_ptr<LocalMap> mNewMap;
   boost::shared_ptr<lcm::LCM> mLcm;
   std::string mMapChannel;
+
+  std::list<boost::shared_ptr<UpdateListener> > mListeners;
 
   lcm::Subscription* mMapSubscription;
   boost::mutex mMapMutex;

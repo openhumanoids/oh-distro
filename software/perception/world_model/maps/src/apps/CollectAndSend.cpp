@@ -12,7 +12,7 @@
 
 #include <pcl/common/transforms.h>
 
-#include <bot_lcmgl_client/lcmgl.h>
+#include <ConciseArgs>
 
 using namespace std;
 
@@ -21,17 +21,23 @@ public:
   boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
-  bot_lcmgl_t* mLcmGl;
+  bool mTraceRays;
+  int mPublishPeriod;
+  string mMapChannel;
 
   State() {
     mSensorDataReceiver.reset(new SensorDataReceiver());
     mManager.reset(new MapManager());
     mLcm.reset(new lcm::LCM());
-    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "map-debug");
+    mSensorDataReceiver->setLcm(mLcm);
+
+    // defaults; should be set by command line args in main()
+    mTraceRays = false;
+    mPublishPeriod = 3000;
+    mMapChannel = "LOCAL_MAP";
   }
 
   ~State() {
-    bot_lcmgl_destroy(mLcmGl);
   }
 };
 
@@ -48,7 +54,8 @@ public:
       if (mState->mSensorDataReceiver->waitForData(data)) {
         mState->mManager->addToBuffer(data.mTimestamp, data.mPointCloud,
                                       data.mPose);
-        mState->mManager->getActiveMap()->add(data.mPointCloud, data.mPose);
+        mState->mManager->getActiveMap()->add(data.mPointCloud, data.mPose,
+                                              mState->mTraceRays);
       }
     }
   }
@@ -68,7 +75,8 @@ public:
       // wait for timer expiry
       boost::asio::io_service service;
       boost::asio::deadline_timer timer(service);
-      timer.expires_from_now(boost::posix_time::milliseconds(3000));
+      timer.expires_from_now(boost::posix_time::
+                             milliseconds(mState->mPublishPeriod));
       timer.wait();
 
       // see if map exists
@@ -79,6 +87,7 @@ public:
 
       // publish as local map
       std::vector<char> bytes;
+      localMap->setStateId(localMap->getStateId()+1);
       localMap->serialize(bytes);
       drc::local_map_t mapMessage;
       mapMessage.utime = bot_timestamp_now();
@@ -86,94 +95,13 @@ public:
       mapMessage.state_id = localMap->getStateId();
       mapMessage.size_bytes = bytes.size();
       mapMessage.data.insert(mapMessage.data.end(), bytes.begin(), bytes.end());
-      mState->mLcm->publish("LOCAL_MAP", &mapMessage);
+      mState->mLcm->publish(mState->mMapChannel, &mapMessage);
       cout << "Published local map (" << bytes.size() << " bytes)" << endl;
-
 
       // publish as octomap
       std::cout << "Publishing octomap..." << std::endl;
       octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
       mState->mLcm->publish("OCTOMAP", &raw);
-
-      // publish as height map
-      std::cout << "Publishing height map..." << std::endl;
-      LocalMap::HeightMap heightMap = localMap->getAsHeightMap();
-      drc::heightmap_t heightMapMsg;
-      heightMapMsg.utime = bot_timestamp_now();
-      heightMapMsg.nx = heightMap.mWidth;
-      heightMapMsg.ny = heightMap.mHeight;
-      heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
-      Eigen::Vector3d p0 = heightMap.mTransformToLocal*Eigen::Vector3d(0,0,0);
-      Eigen::Vector3d px = heightMap.mTransformToLocal*Eigen::Vector3d(1,0,0);
-      Eigen::Vector3d py = heightMap.mTransformToLocal*Eigen::Vector3d(0,1,0);
-      heightMapMsg.scale_x = (px-p0).norm();
-      heightMapMsg.scale_y = (py-p0).norm();
-      for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-          heightMapMsg.transform_to_local[i][j] =
-            heightMap.mTransformToLocal(i,j);
-        }
-      }
-      heightMapMsg.heights = heightMap.mData;
-      mState->mLcm->publish("HEIGHT_MAP", &heightMapMsg);
-
-      if (true) {
-        bot_lcmgl_t* lcmgl = mState->mLcmGl;
-        bot_lcmgl_color3f(lcmgl, 1.0f, 0.5f, 0.0f);
-        for (int i = 0; i < heightMap.mHeight-1; ++i) {
-          for (int j = 0; j < heightMap.mWidth-1; ++j) {
-            int index = i*heightMap.mWidth + j;
-            double z00 = heightMap.mData[index];
-            double z10 = heightMap.mData[index+1];
-            double z01 = heightMap.mData[index+heightMap.mWidth];
-            double z11 = heightMap.mData[index+heightMap.mWidth+1];
-            bool valid00 = z00 > -1e10;
-            bool valid10 = z10 > -1e10;
-            bool valid01 = z01 > -1e10;
-            bool valid11 = z11 > -1e10;
-            int validSum = (int)valid00 + (int)valid10 +
-              (int)valid01 + (int)valid11;
-            if (validSum < 3) {
-              continue;
-            }
-
-            Eigen::Affine3f xform = heightMap.mTransformToLocal.cast<float>();
-            Eigen::Vector3f p00 = xform*Eigen::Vector3f(j,i,z00);
-            Eigen::Vector3f p10 = xform*Eigen::Vector3f(j+1,i,z10);
-            Eigen::Vector3f p01 = xform*Eigen::Vector3f(j,i+1,z01);
-            Eigen::Vector3f p11 = xform*Eigen::Vector3f(j+1,i+1,z11);
-
-#define DrawTriangle_(a,b,c)\
-            bot_lcmgl_begin(lcmgl, LCMGL_LINE_LOOP);\
-            bot_lcmgl_vertex3f(lcmgl, a[0], a[1], a[2]);\
-            bot_lcmgl_vertex3f(lcmgl, b[0], b[1], b[2]);\
-            bot_lcmgl_vertex3f(lcmgl, c[0], c[1], c[2]);\
-            bot_lcmgl_end(lcmgl);
-
-            if (validSum == 4) {
-              DrawTriangle_(p00, p10, p01);
-              DrawTriangle_(p11, p10, p01);
-            }
-
-            else {
-              if (!valid00) {
-                DrawTriangle_(p10, p01, p11);
-              }
-              else if (!valid10) {
-                DrawTriangle_(p00, p01, p11);
-              }
-              else if (!valid01) {
-                DrawTriangle_(p00, p11, p10);
-              }
-              else if (!valid11) {
-                DrawTriangle_(p00, p01, p10);
-              }
-            }
-          }
-        }
-        bot_lcmgl_switch_buffer(lcmgl);
-      }
-
     }
   }
 
@@ -182,37 +110,52 @@ protected:
 };
 
 int main(const int iArgc, const char** iArgv) {
+  // instantiate state object
   State state;
 
-  if (!state.mLcm->good()) {
-    cerr << "Cannot create lcm instance." << endl;
-    return -1;
-  }
-
-  BotParam* theParam =
-    bot_param_new_from_server(state.mLcm->getUnderlyingLCM(), 0);
-
-  state.mSensorDataReceiver->setLcm(state.mLcm);
-  state.mSensorDataReceiver->setBotParam(theParam);
-  state.mSensorDataReceiver->setMaxBufferSize(100);
-  // TODO: temporary; make configurable
+  // parse arguments
+  double mapResolution = 0.02;
+  string laserChannel = "ROTATING_SCAN";
+  double xDim(10), yDim(10), zDim(10);
+  ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(state.mMapChannel, "m", "map_channel",
+          "channel to publish local maps");
+  opt.add(laserChannel, "l", "laser", "laser channel to use in map creation");
+  opt.add(xDim, "x", "xsize", "size of map in x direction");
+  opt.add(yDim, "y", "ysize", "size of map in y direction");
+  opt.add(zDim, "z", "zsize", "size of map in z direction");
+  opt.add(state.mTraceRays, "r", "raytrace",
+          "use raytracing when creating map");
+  opt.add(state.mPublishPeriod, "p", "publish_period",
+          "interval between map publications, in ms");
+  opt.parse();
   state.mSensorDataReceiver->
-    addChannel("ROTATING_SCAN",
+    addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
-               "ROTATING_SCAN", "local");
-  state.mSensorDataReceiver->start();
-
-  state.mManager->setMapResolution(0.05);
-  state.mManager->setMapDimensions(Eigen::Vector3d(10,10,10));
+               laserChannel, "local");
+  state.mManager->setMapResolution(mapResolution);
+  state.mManager->setMapDimensions(Eigen::Vector3d(xDim, yDim, zDim));
+  
+  // set up remaining parameters
+  state.mSensorDataReceiver->setMaxBufferSize(100);
   state.mManager->setDataBufferLength(1000);
   state.mManager->createMap(Eigen::Isometry3d::Identity());
 
+  // start running data receiver
+  BotParam* theParam =
+    bot_param_new_from_server(state.mLcm->getUnderlyingLCM(), 0);
+  state.mSensorDataReceiver->setBotParam(theParam);
+  state.mSensorDataReceiver->start();
+
+  // start consuming data
   DataConsumer consumer(&state);
   boost::thread thread(consumer);
 
+  // start publishing data
   DataPublisher publisher(&state);
   boost::thread publishThread(publisher);
-                                       
+
+  // handle lcm events
   while (0 == state.mLcm->handle());
 
   thread.join();

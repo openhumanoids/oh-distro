@@ -151,8 +151,8 @@ getAsPointCloud(const bool iTransform) const {
 
 LocalMap::HeightMap LocalMap::
 getAsHeightMap(const int iDownSample,
-               const double iMaxHeight) const {
-  const double unobservedValue = -std::numeric_limits<double>::max();
+               const float iMaxHeight) const {
+  const float unobservedValue = -std::numeric_limits<float>::max();
   HeightMap heightMap;
 
   // determine 2d extents of octree (x,y) in units of cells
@@ -173,8 +173,8 @@ getAsHeightMap(const int iDownSample,
   }
 
   // determine transform from image to local coordinates
-  double scale = mOctree->getResolution() * (1 << iDownSample);
-  double offset = mOctree->keyToCoord(0);
+  float scale = mOctree->getResolution() * (1 << iDownSample);
+  float offset = mOctree->keyToCoord(0);
   Eigen::Affine3d xform = Eigen::Affine3d::Identity();
   xform(0,0) = xform(1,1) = scale;
   xform(0,3) = offset + xMin*scale;
@@ -194,7 +194,7 @@ getAsHeightMap(const int iDownSample,
   // add height values into height map
   for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
     octomap::OcTreeKey key = iter.getKey();
-    double z = iter.getZ();
+    float z = iter.getZ();
     bool occupied = mOctree->isNodeOccupied(*iter);
     if (!occupied) {
       continue;

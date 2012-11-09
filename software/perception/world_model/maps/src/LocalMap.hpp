@@ -20,7 +20,7 @@ public:
   struct HeightMap {
     int mWidth;
     int mHeight;
-    std::vector<double> mData;
+    std::vector<float> mData;
     Eigen::Affine3d mTransformToLocal;
   };
 
@@ -63,7 +63,7 @@ public:
   // export this representation as height map
   // TODO: set desired resolution (perhaps as integer power of 2 factor)
   HeightMap getAsHeightMap(const int iDownSample=1,
-                           const double iMaxHeight=1e20) const;
+                           const float iMaxHeight=1e20) const;
 
   // export to viewable lcm type
   octomap::raw_t getAsRaw() const;
