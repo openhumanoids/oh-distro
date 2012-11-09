@@ -13,13 +13,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/head.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/head.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -32,13 +32,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_clav.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_clav.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_clav.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -51,13 +51,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_farm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_farm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_farm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -70,13 +70,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_hand.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_hand.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_hand.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -89,13 +89,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_larm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_larm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_larm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -108,13 +108,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_scap.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_scap.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_scap.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -127,13 +127,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_uarm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_uarm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/l_uarm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -146,13 +146,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/ltorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/ltorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/ltorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/ltorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -165,13 +165,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/mtorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/mtorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/mtorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/mtorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -184,13 +184,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/pelvis.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/pelvis.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -203,13 +203,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_clav.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_clav.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_clav.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -222,13 +222,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_farm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_farm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_farm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -241,13 +241,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_hand.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_hand.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_hand.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -260,13 +260,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_larm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_larm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_larm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -279,13 +279,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_scap.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_scap.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_scap.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -299,13 +299,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_uarm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_uarm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/r_uarm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -318,13 +318,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/utorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://drc_robot/meshes/utorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/utorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
