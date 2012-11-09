@@ -1,9 +1,9 @@
 #include <ros/ros.h>
-#include <gazebo_msgs/GetModelProperties.h>
+/*#include <gazebo_msgs/GetModelProperties.h>
 #include <gazebo_msgs/GetModelState.h>
 #include <gazebo_msgs/SetModelState.h>
 #include <gazebo_msgs/GetJointProperties.h>
-#include <gazebo_msgs/ApplyJointEffort.h>
+#include <gazebo_msgs/ApplyJointEffort.h>*/
 #include <urdf/model.h>
 #include <urdf_interface/joint.h>
 #include <cstdlib>

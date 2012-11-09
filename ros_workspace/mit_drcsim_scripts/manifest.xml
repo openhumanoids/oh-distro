@@ -1,0 +1,17 @@
+<package>
+  <description brief="mit_drcsim_scripts">
+
+     mit_drcsim_scripts
+
+  </description>
+  <author>drc</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mit_drcsim_scripts</url>
+  <depend package="urdf"/>
+  <depend package="mit_drcsim_plugins"/>
+  <depend package="atlas_gazebo_msgs"/>
+
+</package>
+
+

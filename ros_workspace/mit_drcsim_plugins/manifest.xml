@@ -1,0 +1,24 @@
+<package>
+  <description brief="mit_drcsim_plugins">
+
+     paladin_drcsim_plugins
+
+  </description>
+  <author>drc</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mit_drcsim_plugins</url>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="atlas_gazebo_msgs"/>
+  <depend package="tf"/>
+<!--  <export>
+    <cpp cflags="-I${prefix}/cfg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+    <gazebo plugin_path="${prefix}/lib" />
+  </export> -->
+  <rosdep name="tinyxml" />
+
+</package>
+
+
