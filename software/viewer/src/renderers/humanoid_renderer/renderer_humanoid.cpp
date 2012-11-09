@@ -11,13 +11,14 @@
 
 #include <GL/gl.h>
 #include <bot_vis/bot_vis.h>
+
+
 #include <bot_core/rotations.h>
 #include <gdk/gdkkeysyms.h>
-
+#include <path_util/path_util.h>
 
 #include "renderer_humanoid.hpp"
 #include "RobotStateListener.hpp"
-
 
 #define RENDERER_NAME "Humanoid"
 
@@ -43,6 +44,8 @@ _renderer_free (BotRenderer *super)
 }
 
 
+
+
 //=========================key press================
 
 int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
@@ -61,10 +64,11 @@ int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKe
 
 //=================================
 
-static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf)
+static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf, string& nextLinkname, BotRenderer *super)
 {
   
- 
+   RendererHumanoid *self = (RendererHumanoid*) super->user;
+
   //--get rotation in angle/axis form
   double theta;
   double axis[3];
@@ -73,21 +77,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 		    nextTf.tf.rotation.y,
 		    nextTf.tf.rotation.z};
   bot_quat_to_angle_axis(quat, &theta, axis);
-  
-  //---debugging
- /* cout << "\n(w,x,y,z) = (" 
-       << nextTf.tf.rotation.w 
-       << "," << nextTf.tf.rotation.x 
-       << "," << nextTf.tf.rotation.y 
-       << "," << nextTf.tf.rotation.z 
-       << ")" << endl;
-  cout << "\naxis = (" 
-       << axis[0] << "," 
-       << axis[1] << ","
-       << axis[2] << ")" << endl;
-  cout << "theta = " << theta << endl;*/
 
-  //----
   
  GLUquadricObj* quadric = gluNewQuadric();
  gluQuadricDrawStyle(quadric, GLU_FILL);
@@ -221,9 +211,29 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   }
   else if  (type == MESH)
     {
-    //cout << "MESH"<< endl;
-    //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
-    //renderMesh(mesh->filename)
+    //cout << "MESH: " << nextLinkname << endl;
+    //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(link));
+    
+/*size_t found1;
+found1=nextLinkname.find("r_");
+if (found1!=std::string::npos)
+{*/
+    glPushMatrix();
+    glTranslatef(nextTf.tf.translation.x,
+		 nextTf.tf.translation.y,
+		 nextTf.tf.translation.z);
+     glRotatef(theta * 180/3.141592654, 
+       		axis[0], axis[1], axis[2]); 
+
+	std::map<std::string, GLuint>::const_iterator mesh_map_it;
+	mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
+	if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
+	{
+	    glCallList (mesh_map_it->second);
+	}
+
+    glPopMatrix();
+//}
   }
   else {
     //cout << "UNKNOWN"<< endl;
@@ -236,13 +246,16 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
+ //int64_t tic = bot_timestamp_now();
+ 
   RendererHumanoid *self = (RendererHumanoid*) super->user;
 
   glEnable(GL_DEPTH_TEST);
   //
   vector<shared_ptr<urdf::Geometry> > link_shapes;
   vector<drc::link_transform_t> link_tfs;
-  self->robotStateListener->getState(link_shapes, link_tfs);
+  vector<string> link_names;
+  self->robotStateListener->getState(link_shapes, link_tfs, link_names);
   //fk::RobotStateListener::printTransforms(link_shapes, link_tfs);
   
   //-draw 
@@ -253,6 +266,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   glEnable(GL_BLEND);
   // glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+  glEnable (GL_RESCALE_NORMAL);
  
  double c[3] = {0.3,0.3,0.3};
  double alpha = 1;
@@ -262,10 +276,14 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     {
       drc::link_transform_t nextTf = link_tfs[i];
       shared_ptr<urdf::Geometry> nextLink = link_shapes[i];
-      draw(nextLink, nextTf);
+      string nextLinkname = link_names[i];
+      draw(nextLink, nextTf,nextLinkname,super);
     }
     
   //glPopMatrix();
+
+// int64_t toc = bot_timestamp_now();
+// cout << bot_timestamp_useconds(toc-tic) << endl;
 }
 
 void 

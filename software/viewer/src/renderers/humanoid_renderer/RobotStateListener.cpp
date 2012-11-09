@@ -58,6 +58,8 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_state_t* msg)						 
   {
+
+   //int64_t tic = bot_timestamp_now();
     if (!_urdf_parsed)
       {
 	//cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
@@ -71,6 +73,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     }
   
     //clear stored data
+    _link_names.clear();
     _link_tfs.clear();
     _link_shapes.clear();    
 
@@ -100,10 +103,10 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
     for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
       {  		
-
+        
 	if(it->second->visual)
 	  {
-	
+	 
 	    urdf::Pose visual_origin = it->second->visual->origin;
 	     
 	    KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
@@ -164,44 +167,11 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
 
 	    //---store
+	    _link_names.push_back(it->first);
 	    _link_shapes.push_back(geom);
 	    _link_tfs.push_back(state);
 	    //---
-	
-	    int type = it->second->visual->geometry->type ;
-	    enum {SPHERE, BOX, CYLINDER, MESH}; 
-	 
-	    if (type == SPHERE){
-	      //cout << "SPHERE"<< endl;
-	      shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(it->second->visual->geometry));	
-	      //cout << "radius : "<<  sphere->radius << endl;
-	      // drawSphere(radius, it->second -> visual ->origin);
-	    }
-	    else if  (type == BOX){
-	      shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
-	      //cout << "BOX"<< endl;
-	      //cout << "dim.x : "<<  box->dim.x << endl;
-	      //cout<< "dim.y : "<<  box->dim.y << endl;
-	      //cout << "dim.z : "<<  box->dim.z << endl;
-	      // drawBox(dim, it->second -> visual->origin);
-	    }
-	    else if  (type == CYLINDER){
-	      shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(it->second->visual->geometry));
-	      //cout << "CYLINDER"<< endl;
-	      //cout << "radius : "<<  cyl->radius << endl;
-	      //cout << "length : "<<  cyl->length << endl;
-	      // drawBox(radius,length, it->second -> visual->origin);
-	    }
-	    else if  (type == MESH){
-	      //cout << "MESH"<< endl;
-	      //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
-	      //renderMesh(mesh->filename)
-	    }
-	    else {
- 
-	      // cout << "UNKNOWN"<< endl;
-	    }
-	    
+
 	    //cout << "translation  : " << endl;
 	    //cout << "\t .x  : " << state.tf.translation.x << endl;
 	    //cout << "\t .y  : " << state.tf.translation.y << endl;
@@ -214,11 +184,51 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 	    //cout << "\n"<< endl;
 	    
 	    }//if(transform_it!=cartpos_out.end())
+	    else // root link has visual element (but is not part of fk output)
+	    {
+	   
+	   
+		urdf::Pose visual_origin = it->second->visual->origin;
+		T_body_visual.p[0]=visual_origin.position.x;
+		T_body_visual.p[1]=visual_origin.position.y;
+		T_body_visual.p[2]=visual_origin.position.z;
+		T_body_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+
+		   
+		T_world_visual = T_world_body*T_body_visual;
+
+
+		   
+		shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
+		drc::link_transform_t state;
+
+		state.link_name = it->first;
+	
+		// For Body Frame Viewing
+		//state.tf.translation.x = T_body_visual.p[0];
+		//state.tf.translation.y = T_body_visual.p[1];
+		//state.tf.translation.z = T_body_visual.p[2];
+		//T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+	
+		state.tf.translation.x = T_world_visual.p[0];
+		state.tf.translation.y = T_world_visual.p[1];
+		state.tf.translation.z = T_world_visual.p[2];
+		T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+
+		//---store
+		_link_names.push_back(it->first);
+		_link_shapes.push_back(geom);
+		_link_tfs.push_back(state);
+
+	    }
+
 	  }//if(it->second->visual)
    
       }//end for
-  
+
     bot_viewer_request_redraw(_viewer);
+ //int64_t toc = bot_timestamp_now();
+ //cout << bot_timestamp_useconds(toc-tic) << endl;
   } // end handleMessage
 
   
@@ -254,7 +264,38 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
      
    //robot_model.getLinks(robot->links_); 
    _links_map =  robot_model.links_;
-   
+
+   // loop through all the links
+    typedef map<string, shared_ptr<urdf::Link> > links_mapType;
+    for(links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
+     { 
+	if(it->second->visual){
+		cout << it->first << endl;
+	  int type = it->second->visual->geometry->type;
+
+	    enum {SPHERE, BOX, CYLINDER, MESH}; 
+	   
+	   if  (type == MESH){
+	      shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
+	      
+	      // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
+    		string file_path = evalMeshFilePath(mesh->filename);
+		cout <<"MESH:" << file_path << endl;
+		BotWavefrontModel *wavefront_model;
+		wavefront_model = bot_wavefront_model_create(file_path.c_str());
+
+		GLuint dl = glGenLists (1);
+		glNewList (dl, GL_COMPILE);
+		//glEnable(GL_LIGHTING);
+		bot_wavefront_model_gl_draw(wavefront_model);
+		//glDisable(GL_LIGHTING);
+		glEndList ();
+		bot_wavefront_model_destroy(wavefront_model);
+		_mesh_map.insert(make_pair(it->first, dl)); 
+
+	    }
+	}
+     }
    //---------parse the tree and stop listening for urdf messages
 
    // Parse KDL tree
@@ -280,9 +321,9 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 
   
   //================printouts
-  void RobotStateListener::getState(vector<shared_ptr<urdf::Geometry> > & shapes,
-				    vector<drc::link_transform_t> & transforms)
+  void RobotStateListener::getState(vector<shared_ptr<urdf::Geometry> > & shapes,vector<drc::link_transform_t> & transforms, std::vector<std::string> & names)
     {
+      names = _link_names;
       shapes = _link_shapes;
       transforms = _link_tfs;
       
@@ -332,6 +373,64 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       }
 
   }
+
+std::string RobotStateListener::evalMeshFilePath(std::string file_path_expression) {
+    std::string result = "";
+    std::string package_path = std::string(getModelsPath()) + "/mit_gazebo_models/"; // getModelsPath gives /drc/software/build/models/
+    std::string token_str1 ("package://");
+    std::string token_str2 (".");
+    size_t found1, found2;
+    std::string  file_path= "";
+    found1=file_path_expression.find(token_str1);
+    if (found1!=std::string::npos) // if string contains package:// as a substring 
+    {  
+	found2=file_path_expression.find(token_str2);
+        file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+".obj"; 
+    }
+    else
+    	file_path = file_path_expression;
+
+
+    return file_path;
+}
+
+
+std::string RobotStateListener::exec(std::string cmd) {
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while(!feof(pipe)) {
+    	if(fgets(buffer, 128, pipe) != NULL)
+    		result += buffer;
+    }
+    pclose(pipe);
+    return result;
+}
+
+std::string RobotStateListener::evalROSMeshFilePath(std::string file_path_expression) {
+    std::string result = "";
+    std::string token_str1 ("package://");
+    std::string token_str2 ("/");
+    size_t found1, found2;
+    std::string  file_path= "";
+    found1=file_path_expression.find(token_str1);
+    if (found1!=std::string::npos) // if string contains package:// as a substring 
+    {
+     	found2 = file_path_expression.find(token_str2,found1+token_str1.size()+1);
+     	std::string package_name = file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size());
+
+     	std::string cmd = "rospack find " + package_name;  
+     	std::string  package_path = exec(cmd);
+
+     	file_path = package_path.substr(0,package_path.size()-1) + 	    file_path_expression.substr(found2); 	
+    }
+    else
+    	file_path = file_path_expression;
+
+    return file_path;
+}
+
 
 } //namespace fk
 

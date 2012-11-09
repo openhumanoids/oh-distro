@@ -1141,7 +1141,7 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
   //  self->otdf_dir = dir; seg faults when  self->otdf_dir is a string, so using a string ptr
  */
 
-  string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/
+  string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/models/
   self->otdf_dir_name_ptr = new std::string(otdf_models_path);
   std::cout << "searching for otdf files in: "<< (*self->otdf_dir_name_ptr) << std::endl;
   std::vector<std::string> otdf_files = std::vector<std::string>();
