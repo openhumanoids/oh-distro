@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+
+<database>
+  <name>MIT DRC models</name>
+  <license>Creative Commons Attribution 3.0 Unported</license>
+  <models>
+    <uri>file://mit_robot</uri>
+    <uri>file://mit_camhand</uri>
+    <uri>file://mit_robot_PnC</uri>
+    <uri>file://mit_wheeled_stick_torso</uri>
+    <uri>file://mit_stickbot</uri>
+    <uri>file://mit_wheeled_robot</uri>
+    <uri>file://mit_legless_robot</uri>
+    <uri>file://mit_terrain</uri>
+  </models>
+</database>
+

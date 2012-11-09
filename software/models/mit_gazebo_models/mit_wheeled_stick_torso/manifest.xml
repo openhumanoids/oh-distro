@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<model>
+  <name>MIT DRC Stick Torso On Wheels</name>
+  <version>0.1.0</version>
+  <sdf>model.sdf</sdf>
+  <author>
+    <name>Sisir</name>
+  </author>
+  <description>
+  </description>
+</model>
