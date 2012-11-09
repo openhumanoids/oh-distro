@@ -121,7 +121,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
         
            // usually find fails if base_link has a visual element.
 	   // Kdl based FK ignores the root link which must be set to body pose
-	   // manually (TODO).
+	   // manually.
            if(transform_it!=cartpos_out.end())// fk cart pos exists
 	   {
 	  
