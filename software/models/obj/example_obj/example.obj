@@ -1,0 +1,39 @@
+# File units = millimeters
+
+mtllib example.mtl
+  
+g Mesh1 Group2 Group1 Model
+
+usemtl example
+#usemtl Default_RGB_255_255_255_1
+v 0.000000 1.000000 0.000000
+v 0.000000 0.000000 0.000000
+v 1.000000 0.000000 0.000000
+v 1.000000 1.000000 0.000000
+vt 0 1.0
+vt 0 0
+vt 1.0 0
+vt 1.0 1.0
+# 4 vertices
+#212+
+#712+
+
+f 1/1 2/2 3/3 4/4
+
+
+
+
+
+usemtl example
+#usemtl Default_RGB_255_255_255_1
+v 10.000000 2.000000 0.000000
+v 10.000000 0.000000 0.000000
+v 11.000000 0.000000 0.000000
+vt 1.0 1.0
+vt 0.00 0.0
+vt 1.00 0.0
+# 4 vertices
+#212+
+#712+
+
+f 5/5 6/6 7/7
