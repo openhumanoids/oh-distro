@@ -1,0 +1,49 @@
+group "core" {
+    cmd "core" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "control" {
+        exec = "drc_controller_manager";
+        host = "localhost";
+    }
+    cmd "modpub" {
+        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.sdf";
+        host = "localhost";
+    }
+    cmd "pub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        host = "localhost";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+}
+
+group "gazebo" {
+    cmd "gfe" {
+        exec = "roslaunch mit_drcsim_scripts mit_robot_PnC.launch";
+        host = "localhost";
+    }
+
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start cmd "gfe";
+}
