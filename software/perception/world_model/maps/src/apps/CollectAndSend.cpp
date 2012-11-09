@@ -4,6 +4,7 @@
 
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/drc/heightmap_t.hpp>
+#include <lcmtypes/drc/map_params_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <lcm/lcm-cpp.hpp>
@@ -24,6 +25,8 @@ public:
   bool mTraceRays;
   int mPublishPeriod;
   string mMapChannel;
+  string mMapParamsChannel;
+  lcm::Subscription* mParamsSubscription;
 
   State() {
     mSensorDataReceiver.reset(new SensorDataReceiver());
@@ -35,9 +38,22 @@ public:
     mTraceRays = false;
     mPublishPeriod = 3000;
     mMapChannel = "LOCAL_MAP";
+    mMapParamsChannel = "MAP_CREATE";
   }
 
   ~State() {
+    mLcm->unsubscribe(mParamsSubscription);
+  }
+
+  void onMapParams(const lcm::ReceiveBuffer* iBuf,
+                   const std::string& iChannel,
+                   const drc::map_params_t* iMessage) {
+    std::cout << "Received map parameters; creating new map" << std::endl;
+    mManager->setMapResolution(iMessage->resolution);
+    mManager->setMapDimensions(Eigen::Vector3d(iMessage->dimensions[0],
+                                               iMessage->dimensions[1],
+                                               iMessage->dimensions[2]));
+    mManager->createMap(Eigen::Isometry3d::Identity(), iMessage->map_id);
   }
 };
 
@@ -140,6 +156,10 @@ int main(const int iArgc, const char** iArgv) {
   state.mSensorDataReceiver->setMaxBufferSize(100);
   state.mManager->setDataBufferLength(1000);
   state.mManager->createMap(Eigen::Isometry3d::Identity());
+  state.mParamsSubscription =
+    state.mLcm->subscribe(state.mMapParamsChannel,
+                          &State::onMapParams, &state);
+
 
   // start running data receiver
   BotParam* theParam =

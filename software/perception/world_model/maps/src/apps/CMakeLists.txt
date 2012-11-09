@@ -32,3 +32,8 @@ add_executable(maps-heightmap-publisher HeightMapPublisher.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-heightmap-publisher bot2-lcmgl-client maps)
 pods_install_executables(maps-heightmap-publisher)
+
+add_executable(maps-params-publisher ParamsPublisher.cpp)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+pods_use_pkg_config_packages(maps-params-publisher maps)
+pods_install_executables(maps-params-publisher)
