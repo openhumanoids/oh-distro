@@ -21,6 +21,12 @@ pods_use_pkg_config_packages(drc_controller_manager lcm lcmtypes_drc_lcmtypes ${
 # make exeutables public
 pods_install_executables(drc_controller_manager)
 
+add_executable(base_controller_manager src/base_controller_manager.cpp)
+pods_use_pkg_config_packages(base_controller_manager lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+
+# make exeutables public
+pods_install_executables(base_controller_manager)
+
 
 add_executable(fixed_ee_goal_publisher src/send_fixed_ee_goal.cpp)
 #pods_use_pkg_config_packages(send_message lcm lcmtypes_${POD_NAME})
