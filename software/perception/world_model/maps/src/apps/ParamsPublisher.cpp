@@ -9,7 +9,7 @@ using namespace std;
 
 int main(const int iArgc, const char** iArgv) {
   string channel = "MAP_CREATE";
-  int id(0);
+  int id(1);
   double res(0.02);
   double xdim(10), ydim(10), zdim(10);
   ConciseArgs opt(iArgc, (char**)iArgv);

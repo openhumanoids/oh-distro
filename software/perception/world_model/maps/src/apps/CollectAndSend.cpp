@@ -53,7 +53,19 @@ public:
     mManager->setMapDimensions(Eigen::Vector3d(iMessage->dimensions[0],
                                                iMessage->dimensions[1],
                                                iMessage->dimensions[2]));
-    mManager->createMap(Eigen::Isometry3d::Identity(), iMessage->map_id);
+    Eigen::Isometry3d xform = Eigen::Isometry3d::Identity();
+    Eigen::Quaterniond quat;
+    quat.x() = iMessage->transform_to_local.rotation.x;
+    quat.y() = iMessage->transform_to_local.rotation.y;
+    quat.z() = iMessage->transform_to_local.rotation.z;
+    quat.w() = iMessage->transform_to_local.rotation.w;
+    Eigen::Vector3d trans;
+    trans[0] = iMessage->transform_to_local.translation.x;
+    trans[1] = iMessage->transform_to_local.translation.y;
+    trans[2] = iMessage->transform_to_local.translation.z;
+    xform.rotate(quat);
+    xform.translate(trans);
+    mManager->createMap(xform, iMessage->map_id);
   }
 };
 
@@ -136,12 +148,14 @@ int main(const int iArgc, const char** iArgv) {
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(state.mMapChannel, "m", "map_channel",
           "channel to publish local maps");
-  opt.add(laserChannel, "l", "laser", "laser channel to use in map creation");
+  opt.add(laserChannel, "l", "laser_channel", "laser channel to use in map creation");
   opt.add(xDim, "x", "xsize", "size of map in x direction");
   opt.add(yDim, "y", "ysize", "size of map in y direction");
   opt.add(zDim, "z", "zsize", "size of map in z direction");
-  opt.add(state.mTraceRays, "r", "raytrace",
+  opt.add(state.mTraceRays, "t", "raytrace",
           "use raytracing when creating map");
+  opt.add(mapResolution, "r", "resolution",
+          "size of smallest (leaf) octree nodes");
   opt.add(state.mPublishPeriod, "p", "publish_period",
           "interval between map publications, in ms");
   opt.parse();
