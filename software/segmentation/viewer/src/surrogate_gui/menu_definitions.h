@@ -25,6 +25,8 @@ namespace surrogate_gui
 	#define PARAM_NAME_CLOUD_PAUSE "Pause Cloud Updates"
 	//#define PARAM_NAME_SHOW_CLOUD "Show Cloud Updates"
 
+	//===========pull from map
+	#define PARAM_NAME_PULL_MAP "Get Map"
 
 	//==========tracking
 	#define PARAM_NAME_TRACK_METHOD "Tracking Method"

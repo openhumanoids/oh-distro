@@ -35,6 +35,12 @@
 #include "SurrogateRenderer.h"
 #include "ObjectTracker.h"
 
+//-------pulling maps
+#include <maps/LocalMap.hpp>
+#include <maps/MapWrapper.hpp>
+#include <boost/thread.hpp>
+
+
 namespace surrogate_gui
 {
 
@@ -65,6 +71,8 @@ namespace surrogate_gui
 			BotEventHandler *_mode_handler;
 
 			boost::shared_ptr<ObjectTracker> _objTracker;
+			
+			boost::shared_ptr<MapWrapper> _mWrapper; //map pulling
 
 		//=====constructor/destructor
 		public:

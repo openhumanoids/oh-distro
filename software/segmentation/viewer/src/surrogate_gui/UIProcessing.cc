@@ -15,6 +15,7 @@
 
 #include <pcl/common/distances.h>
 
+
 using namespace std;
 using namespace pcl;
 using namespace boost;
@@ -29,9 +30,14 @@ namespace surrogate_gui
   UIProcessing::UIProcessing(BotViewer *viewer, boost::shared_ptr<lcm::LCM> lcm, string kinect_channel) :
 		_gui_state(SEGMENTING),
 		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
-		_objTracker()
+		_objTracker(),
+		_mWrapper(new MapWrapper())
 	{
-
+	       //--setup map wrapper
+	       _mWrapper->setLcm(lcm);
+	       _mWrapper->setMapChannel("LOCAL_MAP");
+	       _mWrapper->start();
+	  
 		//===========================================
 		//===========================================
 		//=========menu setup
@@ -62,6 +68,8 @@ namespace surrogate_gui
 		// Clear object button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_OBJECT, NULL);
 
+		//pull map
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_PULL_MAP, NULL);
 
 		// Tracking mode
 		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_TRACK_METHOD, BOT_GTK_PARAM_WIDGET_MENU,
@@ -991,6 +999,25 @@ namespace surrogate_gui
 			}
 			//return;
 		}
+		if (stringsEqual(name, PARAM_NAME_PULL_MAP))
+		  {
+		    _mWrapper->lock();
+		    if (_mWrapper->getMap() != NULL) 
+		      {
+			PointCloud<PointXYZ>::Ptr cloudXYZ = _mWrapper->getMap()->getAsPointCloud();
+			PointCloud<PointXYZRGB>::Ptr withRgb(new PointCloud<PointXYZRGB>);
+			PclSurrogateUtils::convertToRgb(cloudXYZ, withRgb);
+			getDisplayInfo()->cloud = withRgb;
+			getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
+		      }
+
+
+		    _mWrapper->unlock();
+		    
+		    cout << "Grabbed a point cloud of " << getDisplayInfo()->cloud->points.size() <<
+		      " points from octree" << endl;
+		  }
+
 
 		// tracking mode
 		if (stringsEqual(name, PARAM_NAME_TRACK_METHOD))

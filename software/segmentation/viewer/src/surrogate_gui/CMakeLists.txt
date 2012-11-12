@@ -41,6 +41,7 @@ pods_use_pkg_config_packages(surrogate
     bot2-frames
     bot2-param-client
     lcmtypes_drc_lcmtypes
+    maps
     ${REQUIRED_DRC_PACKAGES})
 
 pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h LinearAlgebra.h 

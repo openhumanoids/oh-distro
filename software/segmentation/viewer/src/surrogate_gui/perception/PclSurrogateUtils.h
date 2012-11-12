@@ -69,6 +69,9 @@ namespace surrogate_gui
 			static void convert(const std::vector<pcl::PointXYZRGB> &input,
 							    std::list<pcl::PointXYZ> &output);
 
+			static void convertToRgb(pcl::PointCloud<pcl::PointXYZ>::Ptr &input,
+						 pcl::PointCloud<pcl::PointXYZRGB>::Ptr &output);
+
 			static Eigen::Vector3f toVec(const pcl::PointXYZ &p);
 			static pcl::PointXYZ toPt(const Eigen::Vector3f &p);
 			static pcl::PointXY toPt2D(const Eigen::Vector2f &p);

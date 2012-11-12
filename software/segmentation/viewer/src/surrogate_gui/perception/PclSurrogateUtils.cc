@@ -219,7 +219,7 @@ namespace surrogate_gui
 	 * @param input unmodified input to convert to xyz
 	 * @param ouput will be input w/o RGB*/
 	void PclSurrogateUtils::convert(const vector<PointXYZRGB> &input,
-									list<PointXYZ> &output)
+					list<PointXYZ> &output)
 	{
 		if (input.size() == 0)
 			throw SurrogateException("convert: no points to convert");
@@ -231,6 +231,33 @@ namespace surrogate_gui
 			output.push_back(PointXYZ(next.x, next.y, next.z));
 		}
 	}
+
+
+
+	/**removes RGB info and converts to XYZ
+	 * @param input unmodified input to convert to xyz
+	 * @param ouput will be input w/o RGB*/
+  void PclSurrogateUtils::convertToRgb(PointCloud<PointXYZ>::Ptr &input,
+				       PointCloud<PointXYZRGB>::Ptr &output)
+  {
+    output->width = input->width;
+    output->height = input->height;
+    output->points.resize(input->points.size());
+
+    if (output->width * output->height != input->points.size())
+      cout << "\n weird sizing " << endl;
+    
+    for(uint i = 0; i < input->points.size(); i++)
+      {
+	const PointXYZ &next = input->points[i];
+	PointXYZRGB colored;
+	colored.x = next.x, colored.y = next.y, colored.z = next.z;
+	colored.rgb = Color::toRgbPclFloat(255, 0, 0);
+	output->points[i] = colored;
+      }
+  }
+  
+
 
 
 
