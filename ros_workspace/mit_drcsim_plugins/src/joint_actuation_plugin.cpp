@@ -134,42 +134,42 @@ void JointActuationPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 void JointActuationPlugin::UpdateChild()
 {
 
- //update forces of all joints that are active
+  //update forces of all joints that are active
 
-// Loop through all Joints
-std::map<std::string, ActuationCmdStruc>::iterator it;
+  // Loop through all Joints
+  std::map<std::string, ActuationCmdStruc>::iterator it;
 
- for (unsigned int i = 0; i < this->parent->GetJointCount(); i ++)
- {
-        std::string joint_name = this->parent->GetJoint(i)->GetName();
-	
-        
-	it=_joint_actuation_values.find(joint_name);
-	
-	// both time_now, duration and start_time must also in simTime.  
-	double time_now = this->world->GetSimTime().Double();
-	lock.lock();	
-	double duration = it->second.duration; // in seconds
-	double start_time =  it->second.start_time; 
-	bool on_flag = it->second.on_flag;
-	lock.unlock();
-	
-	if(on_flag==true) // if flag is on
-	{
-	  if (time_now <= start_time + duration)  
-	  { 
-	    this->parent->GetJoint(i)->SetForce(0,it->second.value);
-	  }
-	  else  // duration has expired, so clear forces. (duration is reset if a new torque command is received)
-	  { 
-	        //clear force
-		this->parent->GetJoint(i)->SetForce(0,0);
-		lock.lock();	
-		it->second.on_flag = false;
-		lock.unlock();	
-	  }
-        }
- } // end for loop
+  for (unsigned int i = 0; i < this->parent->GetJointCount(); i ++)
+  {
+    std::string joint_name = this->parent->GetJoint(i)->GetName();
+
+
+    it=_joint_actuation_values.find(joint_name);
+
+    // both time_now, duration and start_time must also in simTime.  
+    double time_now = this->world->GetSimTime().Double();
+    lock.lock();	
+    double duration = it->second.duration; // in seconds
+    double start_time =  it->second.start_time; 
+    bool on_flag = it->second.on_flag;
+    lock.unlock();
+
+    if(on_flag==true) // if flag is on
+    {
+      if (time_now <= start_time + duration)  
+      { 
+        this->parent->GetJoint(i)->SetForce(0,it->second.value);
+      }
+      else  // duration has expired, so clear forces. (duration is reset if a new torque command is received)
+      { 
+        //clear force
+        this->parent->GetJoint(i)->SetForce(0,0);
+        lock.lock();	
+        it->second.on_flag = false;
+        lock.unlock();	
+      }
+    }
+  } // end for loop
       
 }// end update child.
 
@@ -177,28 +177,29 @@ std::map<std::string, ActuationCmdStruc>::iterator it;
 
 void JointActuationPlugin::actuationCmdCallback(const atlas_gazebo_msgs::ActuatorCmd::ConstPtr& cmd_msg)
 {
-//std::cout << "received actuation cmd" << std::endl;
-//Double check that the msg is for the correct robot name (this->parent->getName()). 
+
+  //Double check that the msg is for the correct robot name (this->parent->getName()). 
   if(cmd_msg->robot_name == this->parent->GetName())
   {
-      lock.lock();
-     //int64_t t   =  cmd_msg->header.stamp.toNSec(); // Not Used     
-      double msg_start_time  = this->world->GetSimTime().Double(); // All timing is done relative to sim time.
-      //for all joints in message update ActuationCmd Buffer.      
-      for (std::vector<int>::size_type i = 0; i != cmd_msg->actuator_name.size(); i++)
-      {
-	std::string joint_name = cmd_msg->actuator_name[i];
-	std::map<std::string, ActuationCmdStruc>::iterator it;
-	it=_joint_actuation_values.find(joint_name);	
-	  ActuationCmdStruc act_cmd;
-	  act_cmd.start_time = msg_start_time; // sim time when msg was received.
-	  act_cmd.value = cmd_msg->actuator_effort[i];
-	  act_cmd.duration = cmd_msg->effort_duration[i];
-	  act_cmd.on_flag = true;
-	  it->second = act_cmd;
-      }// end for
-        lock.unlock();
-   }
+    lock.lock();
+    int64_t t   =  cmd_msg->header.stamp.toNSec(); 
+    double msg_start_time  = t*1e-9; // from nsec to sec 
+    //double msg_start_time  = this->world->GetSimTime().Double(); // All timing is done relative to sim time.
+    //for all joints in message update ActuationCmd Buffer.      
+    for (std::vector<int>::size_type i = 0; i != cmd_msg->actuator_name.size(); i++)
+    {
+      std::string joint_name = cmd_msg->actuator_name[i];
+      std::map<std::string, ActuationCmdStruc>::iterator it;
+      it=_joint_actuation_values.find(joint_name);	
+      ActuationCmdStruc act_cmd;
+      act_cmd.start_time = msg_start_time; // sim time when msg was received.
+      act_cmd.value = cmd_msg->actuator_effort[i];
+      act_cmd.duration = cmd_msg->effort_duration[i];
+      act_cmd.on_flag = true;
+      it->second = act_cmd;
+    }// end for
+    lock.unlock();
+  }
   
 }
 
