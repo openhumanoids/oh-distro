@@ -179,7 +179,7 @@ getAsHeightMap(const int iDownSample,
   xform(0,0) = xform(1,1) = scale;
   xform(0,3) = offset + xMin*scale;
   xform(1,3) = offset + yMin*scale;
-  heightMap.mTransformToLocal = xform*mTransformToLocal;
+  heightMap.mTransformToLocal = mTransformToLocal*xform;
   
   // initialize height map data
   heightMap.mWidth = xMax-xMin+1;
