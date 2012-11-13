@@ -53,7 +53,7 @@ public:
     // create subscriptions to contact sensors.
 
     T_world_camera = KDL::Frame::Identity();
-    _camera_link_name= "wide_stereo_link";
+    _camera_link_name= "left_camera_frame";
   }; // end constructor
 
   ~RobotStateListener() {};
