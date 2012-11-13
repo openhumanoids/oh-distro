@@ -20,13 +20,23 @@
 #define PARAM_DX    "dX"
 #define PARAM_DY    "dY"
 #define PARAM_DZ    "dZ"
-
+//-----------------------------------
+// _GfeRenderer
+//	Structure which defines the renderer
+//-----------------------------------
 typedef struct _GfeRenderer {
     BotRenderer renderer;
 
+    // Currently we only have a single pointer, we'd like to eventually replace this with
+    // an array of pointers for an arbitrary amount of object models
     BotWavefrontModel *wavefront_model;
+
+    BotWavefrontModel *wavefront_model2;
+
     int display_lists_ready;
     GLuint wavefront_dl;
+
+    GLuint wavefront_dl2; // edited
 
     BotViewer          *viewer;
     BotGtkParamWidget *pw;
@@ -41,6 +51,9 @@ _renderer_free (BotRenderer *super)
     free (self);
 }
 
+//-------------------------------------
+// Draw Function using OpenGl commands
+// ------------------------------------
 static void
 draw_wavefront_model (GfeRenderer * self)
 {
@@ -50,7 +63,11 @@ draw_wavefront_model (GfeRenderer * self)
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glShadeModel (GL_SMOOTH);
     glEnable (GL_LIGHTING);
+
     glCallList (self->wavefront_dl);
+
+    glCallList (self->wavefront_dl2); //edited
+
     glPopMatrix ();
 }
 
@@ -78,11 +95,16 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     if (!self->display_lists_ready) {
         if (self->wavefront_model)
             self->wavefront_dl = compile_display_list (self, "wavefront", self->wavefront_model);
+
+            self->wavefront_dl2 = compile_display_list (self, "wavefront", self->wavefront_model2); //edited
+
         self->display_lists_ready = 1;
     }
 
     glPushMatrix();
 
+
+// These are all widgets. Attempt to remove these widget parameters and input actual rotational values
     double scale = bot_gtk_param_widget_get_double(self->pw, PARAM_SCALE);
     glScalef (scale, scale, scale);
     
@@ -112,9 +134,11 @@ on_param_widget_changed (BotGtkParamWidget *pw, const char *name, void *user)
 }
 
 void setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront_fname0, const char *wavefront_fname1);
+
 void 
 setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront_fname0, const char *wavefront_fname1)
 {
+
     GfeRenderer *self = (GfeRenderer*) calloc (1, sizeof (GfeRenderer));
 
     BotRenderer *renderer = &self->renderer;
@@ -143,8 +167,8 @@ setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront
     printf("%s is fname1\n", wavefront_fname1);
 
     if(wavefront_fname0) {
-        self->wavefront_model = bot_wavefront_model_create(wavefront_fname0);
-        double minv[3];
+        self->wavefront_model = bot_wavefront_model_create(wavefront_fname0);      
+	double minv[3];
         double maxv[3];
         bot_wavefront_model_get_extrema(self->wavefront_model, minv, maxv);
 
@@ -166,6 +190,36 @@ setup_gfe_renderer(BotViewer *viewer, int render_priority, const char *wavefront
         printf("WAVEFRONT initial scale: %f\n", default_scale);
         printf("WAVEFRONT initial offsets: [%f, %f, %f]\n", default_dx, default_dy, default_dz);
     }
+
+
+
+    if(wavefront_fname1) {
+        self->wavefront_model2 = bot_wavefront_model_create(wavefront_fname1);      
+	double minv[3];
+        double maxv[3];
+        bot_wavefront_model_get_extrema(self->wavefront_model, minv, maxv);
+
+        double span_x = maxv[0] - minv[0];
+        double span_y = maxv[1] - minv[1];
+        double span_z = maxv[2] - minv[2];
+
+        double span_max = MAX(span_x, MAX(span_y, span_z));
+
+        // leave the default scale and translations at default
+        default_scale = 1.0;
+        default_dx = 2.0;
+        default_dy = 0.0;
+        default_dz = 0.0;
+
+        printf("WAVEFRONT extrema: [%f, %f, %f] [%f, %f, %f]\n", 
+                minv[0], minv[1], minv[2],
+                maxv[0], maxv[1], maxv[2]);
+        printf("WAVEFRONT initial scale: %f\n", default_scale);
+        printf("WAVEFRONT initial offsets: [%f, %f, %f]\n", default_dx, default_dy, default_dz);
+    }
+
+
+
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_SCALE, 
             BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 99999999999, 0.00000001, default_scale);
