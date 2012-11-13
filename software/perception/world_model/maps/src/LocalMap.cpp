@@ -214,6 +214,11 @@ octomap::raw_t LocalMap::
 getAsRaw() const {
   octomap::raw_t msg;
   msg.utime = 0;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      msg.transform[i][j] = mTransformToLocal(i,j);
+    }
+  }
   std::ostringstream oss;
   mOctree->writeBinaryConst(oss);
   std::string str = oss.str();

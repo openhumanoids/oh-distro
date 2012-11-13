@@ -2,6 +2,7 @@
 
 #include <pcl/io/io.h>
 #include <bot_frames/bot_frames.h>
+#include <bot_param/param_util.h>
 
 SensorDataReceiver::
 SensorDataReceiver() {
@@ -188,17 +189,39 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
     return;
   }
 
+  // get min and max values from config
+  double rangeMin(0), rangeMax(1e10), val;
+  char* lidarName =
+    bot_param_get_planar_lidar_name_from_lcm_channel(mBotParam,
+                                                     iChannel.c_str());
+  char prefix[1024];
+  bot_param_get_planar_lidar_prefix(NULL, lidarName, prefix,
+                                    sizeof(prefix));
+  std::string key = std::string(prefix) + ".max_range";
+  if (0 == bot_param_get_double(mBotParam, key.c_str(), &val)) {
+    rangeMax = val;
+  }
+  key = std::string(prefix) + ".min_range";
+  if (0 == bot_param_get_double(mBotParam, key.c_str(), &val)) {
+    rangeMin = val;
+  }
+  free(lidarName);
+
   PointCloud::Ptr cloud(new PointCloud());
-  cloud->width = iMessage->nranges;
   cloud->height = 1;
   cloud->is_dense = false;
-  cloud->points.resize(iMessage->nranges);
+  cloud->points.reserve(iMessage->nranges);
   for (int i = 0; i < iMessage->nranges; ++i) {
     double theta = iMessage->rad0 + i*iMessage->radstep;
     double range = iMessage->ranges[i];
-    cloud->points[i] =
-      PointCloud::PointType(cos(theta)*range, sin(theta)*range, 0);
+    if ((range < rangeMin) || (range > rangeMax)) {
+      continue;
+    }
+    cloud->points.
+      push_back(PointCloud::PointType(cos(theta)*range,
+                                      sin(theta)*range, 0));
   }
+  cloud->width = cloud->points.size();
 
   Eigen::Isometry3d pose;
   if (!getPose(iChannel, iMessage->utime, pose)) {

@@ -39,6 +39,7 @@ public:
     mPublishPeriod = 3000;
     mMapChannel = "LOCAL_MAP";
     mMapParamsChannel = "MAP_CREATE";
+    mParamsSubscription = NULL;
   }
 
   ~State() {
@@ -73,7 +74,6 @@ class DataConsumer {
 public:
   DataConsumer(State* iState) {
     mState = iState;
-    mCounter = 0;
   }
 
   void operator()() {
@@ -90,7 +90,6 @@ public:
 
 protected:
   State* mState;
-  int mCounter;
 };
 
 class DataPublisher {
@@ -129,6 +128,7 @@ public:
       // publish as octomap
       std::cout << "Publishing octomap..." << std::endl;
       octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
+      raw.utime = bot_timestamp_now();
       mState->mLcm->publish("OCTOMAP", &raw);
     }
   }
@@ -148,7 +148,8 @@ int main(const int iArgc, const char** iArgv) {
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(state.mMapChannel, "m", "map_channel",
           "channel to publish local maps");
-  opt.add(laserChannel, "l", "laser_channel", "laser channel to use in map creation");
+  opt.add(laserChannel, "l", "laser_channel",
+          "laser channel to use in map creation");
   opt.add(xDim, "x", "xsize", "size of map in x direction");
   opt.add(yDim, "y", "ysize", "size of map in y direction");
   opt.add(zDim, "z", "zsize", "size of map in z direction");
