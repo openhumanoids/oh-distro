@@ -1,6 +1,4 @@
-
 add_executable(drc-viewer main.cpp udp_util.c)
-
 pods_use_pkg_config_packages(drc-viewer 
 	bot2-vis  
         bot2-lcmgl-renderer
@@ -12,8 +10,5 @@ pods_use_pkg_config_packages(drc-viewer
         lcmtypes_drc_lcmtypes    
         renderer_drc 
         collections_renderer)
-
 #scrollingplots_renderer
-#kinect-renderer 
-
 pods_install_executables(drc-viewer)

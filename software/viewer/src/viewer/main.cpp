@@ -7,8 +7,8 @@
 #include <bot_vis/bot_vis.h>
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
-
 #include <path_util/path_util.h>
+#include <ConciseArgs>
 
 #include <bot_frames/bot_frames_renderers.h>
 
@@ -28,15 +28,6 @@
 #include "udp_util.h"
 
 using namespace std;
-
-static void
-usage(const char *progname)
-{
-    fprintf (stderr, "usage: %s [options]\n"
-            "\n"
-            "  -c, --config PATH      Location of config file\n"
-            , g_path_get_basename(progname));
-}
 
 static int
 logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
@@ -78,51 +69,40 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
 int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
-
-  char *optstring = "hc:";
-  int c;
-  struct option long_opts[] = {
-      {"help", no_argument, 0, 'h'},
-      {"config", required_argument, 0, 'c'},
-  };
-
-  int exit_code = 0;
-  char *config_file =NULL;// g_strdup("velodyne.cfg");
-
-  while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0)
-  {
-      switch (c)
-      {
-          case 'c':
-              free(config_file);
-              config_file = g_strdup(optarg);
-              break;
-          case 'h':
-          default:
-              usage(argv[0]);
-              return 1;
-      }
-  }
-
-
-
+  
+  string config_file = "";
+  string role = "robot";
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(config_file, "c", "config_file","Robot cfg file");
+  opt.add(role, "r", "role","Role - robot or base");
+  opt.parse();
+  std::cout << "config_file: " << config_file << "\n";
+  std::cout << "role: " << role << "\n";
+  
   //todo: comment this section
   gtk_init(&argc, &argv);
   glutInit(&argc, argv);
   g_thread_init(NULL);
   
-  lcm_t * lcm = bot_lcm_get_global(NULL);
+  lcm_t * lcm;
+  string viewer_title="";  
+  if(role.compare("robot") == 0){
+     lcm= bot_lcm_get_global(NULL);
+     viewer_title = "(Robot) MIT DRC Viewer";
+  }else if(role.compare("base") == 0){
+     string lcm_url = "udpm://239.255.12.68:1268?ttl=1";
+     lcm= lcm_create(lcm_url.c_str());// bot_lcm_get_global(lcm_url.c_str());
+     viewer_title = "(Base) MIT DRC Viewer";
+  }else{
+    std::cout << "DRC Viewer role not understood, choose: robot or base\n";
+    return 1;
+  }
+  
   bot_glib_mainloop_attach_lcm(lcm);
-
   BotParam * bot_param;
-
-//  std::string config_file;
-  //config_file = std::string(getConfigPath()) + "/../../../config/drc_robot.cfg";
-
-
-  if (config_file){
+  if(config_file.size()) {
     fprintf(stderr,"Reading config from file\n");
-    std::string config_path = std::string(getConfigPath()) +'/' + std::string(config_file);// "drc_robot.cfg";
+    std::string config_path = std::string(getConfigPath()) +'/' + std::string(config_file);
     bot_param = bot_param_new_from_file(config_path.c_str());
     if (bot_param == NULL) {
       std::cerr << "Couldn't get bot param from file %s\n" << config_path << std::endl;
@@ -137,11 +117,7 @@ int main(int argc, char *argv[])
   }
 
   BotFrames* bot_frames = bot_frames_new(lcm, bot_param);
-
-
-  BotViewer* viewer = bot_viewer_new("MIT DRC Viewer");
-
-//  BotParam * param;
+  BotViewer* viewer = bot_viewer_new(viewer_title.c_str());
 
   //die cleanly for control-c etc :-)
   bot_gtk_quit_on_interrupt();
@@ -167,13 +143,12 @@ int main(int argc, char *argv[])
   setup_renderer_end_effector_goal(viewer, 0, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
   // load the renderer params from the config file.
-  char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-viewerrc", NULL);
+  char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-drc-viewer", NULL);
   bot_viewer_load_preferences(viewer, fname);
 
   gtk_main();
 
   //save the renderer params to the config file.
   bot_viewer_save_preferences(viewer, fname);
-
   bot_viewer_unref(viewer);
 }

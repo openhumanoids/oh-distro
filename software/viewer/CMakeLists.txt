@@ -13,9 +13,6 @@ include(cmake/pods.cmake)
 #include(cmake/lcmtypes.cmake)
 #lcmtypes_build()
 
+add_subdirectory(src/renderer_driving)
 add_subdirectory(src/renderers)
 add_subdirectory(src/viewer)
-
-# REMOVED THIS COPY IN SEPT 2012 - now using simlinks
-#install(DIRECTORY ../../config DESTINATION .)
-#install(DIRECTORY ../../models DESTINATION .)

@@ -27,10 +27,12 @@
 #include <lcmtypes/bot_core.h>
 
 #define RENDERER_NAME "Navigate"
-#define PARAM_GOAL "[G]oal"
+#define PARAM_GOAL "[G]oal (timed)"
+#define PARAM_GOAL_TIMEOUT "Goal Lifespan"
 #define PARAM_GOAL_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
 #define PARAM_NEW_MAP "New Map"
+#define PARAM_NEW_OCTOMAP "New OctoMap"
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
 //Not sure why abe has this high a variance for the angle //((2*M_PI)*(2*M_PI))
@@ -132,9 +134,15 @@ typedef struct _RendererNavigation {
   point2d_t click_pos;
   double theta;
   double goal_std;
+  double goal_timeout; // no. seconds before this goal expires
 
   int64_t max_draw_utime;
   double circle_color[3];
+  
+  // Most recent robot position, rotation and utime
+  int64_t robot_utime;
+  double robot_pos[3];
+  double robot_rot[4]; // quaternion in xywz
 
 }RendererNavigation;
 
@@ -247,7 +255,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     fprintf(stderr,"Localizer Button Released => Activate Value : %d\n", self->active);
     if(self->active == 1){
       drc_localize_reinitialize_cmd_t msg;
-      msg.utime = bot_timestamp_now();
+      msg.utime = self->robot_utime; //bot_timestamp_now();
       msg.mean[0] = self->click_pos.x;
       msg.mean[1] = self->click_pos.y;
       msg.mean[2] = self->theta;
@@ -264,8 +272,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       self->circle_color[1] = 0;
       self->circle_color[2] = 0;
     }else if (self->active ==2){
-      drc_nav_goal_t msg;
-      msg.utime = bot_timestamp_now();
+      drc_nav_goal_timed_t msg;
+      msg.utime = self->robot_utime; //bot_timestamp_now();
+      msg.timeout = (int64_t) 1E6*self->goal_timeout;
       msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
@@ -278,12 +287,12 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       msg.goal_pos.rotation.x = quat_out[1];
       msg.goal_pos.rotation.y = quat_out[2];
       msg.goal_pos.rotation.z = quat_out[3];
-      fprintf(stderr, "Sending NAV_GOAL\n");
-      drc_nav_goal_t_publish(self->lc, "NAV_GOAL", &msg);
-      bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL");
+      fprintf(stderr, "Sending NAV_GOAL_TIMED\n");
+      drc_nav_goal_timed_t_publish(self->lc, "NAV_GOAL_TIMED", &msg);
+      bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL_TIMED");
     }else if (self->active ==3){
       drc_nav_goal_t msg;
-      msg.utime = bot_timestamp_now();
+      msg.utime = self->robot_utime; // bot_timestamp_now();
       msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
@@ -357,13 +366,14 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     const GdkEventKey *event)
 {
   RendererNavigation *self = (RendererNavigation*) ehandler->user;
+  self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
 
   if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
     printf("\n[R]einit key registered\n");
     activate(self,1);
     bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'g' || event->keyval == 'G') && self->active==0) {
-    printf("\n[G]oal key registered\n");
+    printf("\n[G]oal (timed) key registered\n");
     activate(self,2);
     bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'l' || event->keyval == 'L') && self->active==0) {
@@ -387,7 +397,7 @@ static void send_new_map (RendererNavigation *self){
   BotViewHandler *vhandler = self->viewer->view_handler;
 
   drc_localize_reinitialize_cmd_t msg;
-  msg.utime = bot_timestamp_now();
+  msg.utime = self->robot_utime;//bot_timestamp_now();
   msg.mean[0] = -99999;
   msg.mean[1] = -99999;
   msg.mean[2] = -99999;
@@ -399,15 +409,42 @@ static void send_new_map (RendererNavigation *self){
   bot_viewer_set_status_bar_message(self->viewer, "Sent LOCALIZE_NEW_MAP");
 }
 
+// Send a message to start a new OctoMap 
+static void send_new_octomap (RendererNavigation *self){
+  BotViewHandler *vhandler = self->viewer->view_handler;
+
+  drc_map_params_t msgout;
+  msgout.utime = self->robot_utime;
+  msgout.message_id = 0;
+  msgout.map_id = -1;
+  msgout.resolution = 0.02;
+  msgout.dimensions[0] = 10;
+  msgout.dimensions[1] = 10;
+  msgout.dimensions[2] = 10;
+  
+  msgout.transform_to_local.translation.x = self->robot_pos[0];
+  msgout.transform_to_local.translation.y = self->robot_pos[1];
+  msgout.transform_to_local.translation.z = self->robot_pos[2];
+  msgout.transform_to_local.rotation.x = 0;
+  msgout.transform_to_local.rotation.y = 0;
+  msgout.transform_to_local.rotation.z = 0;
+  msgout.transform_to_local.rotation.w = 1; // to keep world aligned  
+
+  drc_map_params_t_publish(self->lc,"MAP_CREATE",&msgout);
+  bot_viewer_set_status_bar_message(self->viewer, "Sent MAP_CREATE");
+}
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererNavigation *self = (RendererNavigation*) user;
+  self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
+  
   if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 1);
   }else if(!strcmp(name, PARAM_GOAL)) {
-    fprintf(stderr,"\nClicked NAV_GOAL\n");
+    fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 2);
   }else if(!strcmp(name, PARAM_GOAL_LEFT_HAND)) {
@@ -416,7 +453,23 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     activate(self, 3);
   }else if (! strcmp (name, PARAM_NEW_MAP)) {
     send_new_map(self);
+  }else if (! strcmp (name, PARAM_NEW_OCTOMAP)) {
+    send_new_octomap(self);
   }
+}
+
+static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_robot_state_t *msg, void *user){
+  RendererNavigation *self = (RendererNavigation*) user;
+  
+  self->robot_utime =msg->utime;
+  self->robot_pos[0] = msg->origin_position.translation.x;
+  self->robot_pos[1] = msg->origin_position.translation.y;
+  self->robot_pos[2] = msg->origin_position.translation.z;
+  self->robot_rot[0] = msg->origin_position.rotation.w;
+  self->robot_rot[1] = msg->origin_position.rotation.x;
+  self->robot_rot[2] = msg->origin_position.rotation.y;
+  self->robot_rot[3] = msg->origin_position.rotation.z;
 }
 
 static void
@@ -449,12 +502,19 @@ BotRenderer *renderer_navigation_new (BotViewer *viewer, int render_priority, lc
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
+  
+  
+  drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL, NULL);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
+  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_LEFT_HAND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
+
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
