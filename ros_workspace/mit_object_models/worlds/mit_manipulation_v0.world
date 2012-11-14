@@ -38,19 +38,23 @@
       <pose>0 0 1 0 0 0</pose>
     </include>
     <include>
-      <uri>model://big_cube</uri>
+      <name>sbox1</name>
+      <uri>model://simple_box</uri>
       <pose>5 0 1 0 0 0</pose>
     </include>
     <include>
-      <uri>model://big_cube2</uri>
+      <name>sbox2</name>
+      <uri>model://simple_box</uri>
       <pose>0 5 1 0 0 0</pose>
     </include>
     <include>
-      <uri>model://big_cube3</uri>
+      <name>sbox3</name>
+      <uri>model://simple_box</uri>
       <pose>0 -5 1 0 0 0</pose>
     </include>
     <include>
-      <uri>model://big_cube4</uri>
+      <name>sbox4</name>
+      <uri>model://simple_box</uri>
       <pose>-5 0 1 0 0 0</pose>
     </include>
 
