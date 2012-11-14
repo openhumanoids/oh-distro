@@ -8,7 +8,8 @@
 
   <!-- Robot Description -->
   <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot_PnC/model.sdf"/>
-  
+
+
 </launch>
   
 
