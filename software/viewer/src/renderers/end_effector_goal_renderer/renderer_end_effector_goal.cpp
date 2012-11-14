@@ -4,8 +4,10 @@
 // ppetrova aug2012
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
 #include <math.h>
+#include <string>
+#include <boost/algorithm/string.hpp>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -416,17 +418,37 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 		// Build the message
 	drc::ee_goal_t goalmsg;
 
-    
-	goalmsg.utime = getTime_now();
-	goalmsg.robot_name = "wheeled_atlas";
-	if(self->arm==0)
-	goalmsg.ee_name = "LWristRoll_link";
+    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+	{
+	    goalmsg.robot_name =self->robotStateListener->_robot_name;
+	    goalmsg.root_name = "utorso";
+	    if(self->arm==0)
+	    	goalmsg.ee_name = "l_hand";
+	    else
+		goalmsg.ee_name = "r_hand";
+
+	}
+    	else if(self->robotStateListener->_robot_name == "wheeled_atlas")
+	{
+	    goalmsg.robot_name =self->robotStateListener->_robot_name;
+	    goalmsg.root_name = "base";
+	    if(self->arm==0)
+	    	goalmsg.ee_name = "LWristRoll_link";
+	    else
+		goalmsg.ee_name = "RWristRoll_link";  
+		
+	}
 	else
-	goalmsg.ee_name = "RWristRoll_link";  
-	goalmsg.root_name = "base";
+	{
+            // unknown robot
+          std::cout << "Unknown robot in end effector goal renderer" << std::endl;
+	}
+
+	goalmsg.utime = getTime_now();
+
 
 	// TODO: add a check to see if this goal is reachable and only publish if it is within (dx and dy) of the robot
-	KDL::Frame  T_world_ee, T_body_world, T_body_ee;
+	KDL::Frame  T_world_ee, T_body_world, T_body_ee, T_body_root, T_root_ee;
 
 	T_world_ee.p[0]= self->center.x;
 	T_world_ee.p[1]= self->center.y;
@@ -434,13 +456,22 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 	T_world_ee.M =  KDL::Rotation::RPY(0*(M_PI/180),0*(M_PI/180),0.0);//  KDL::Rotation::Quaternion(0,0,0,1);
 	T_body_world= self->robotStateListener->T_body_world;
 	T_body_ee = T_body_world*T_world_ee;
-		
-	double x,y,z,w;
-	T_body_ee.M.GetQuaternion(x,y,z,w);
 
-	goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-	goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-	goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+        if(self->robotStateListener->getLinkTf(goalmsg.root_name, T_body_root))
+	{
+          T_root_ee  = T_body_root.Inverse()*T_body_ee;
+	}
+	else {
+          std::cout << "root link : " << goalmsg.root_name <<" not found in FK" << std::endl;
+          T_root_ee =T_body_ee;
+	}
+
+	double x,y,z,w;
+	T_root_ee.M.GetQuaternion(x,y,z,w);
+
+	goalmsg.ee_goal_pos.translation.x = T_root_ee.p[0];
+	goalmsg.ee_goal_pos.translation.y = T_root_ee.p[1];
+	goalmsg.ee_goal_pos.translation.z = T_root_ee.p[2];
 
 	goalmsg.ee_goal_pos.rotation.x = x;
 	goalmsg.ee_goal_pos.rotation.y = y;
@@ -472,10 +503,8 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 	//self->_goal = goalmsg; // seg faults;
 
         //drc_ee_goal_t_publish(self->lcm, "LWRISTROLL_LINK_GOAL", &goalmsg);
-	if(self->arm==0)
-	  self->_lcm->publish("LWRISTROLL_LINK_GOAL", &goalmsg); 
-	else
-	  self->_lcm->publish("RWRISTROLL_LINK_GOAL", &goalmsg);
+        std::string channel = boost::to_upper_copy(goalmsg.ee_name)+"_GOAL";
+	self->_lcm->publish(channel, &goalmsg);
     
 	ehandler->picking = 0;
 	bot_viewer_request_redraw(self->viewer);
@@ -563,14 +592,51 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	RendererEndEffectorGoal *self = (RendererEndEffectorGoal*) user;
 	if(!strcmp(name, PARAM_EE_GOAL)) {
 		fprintf(stderr,"Clicked L EE goal, activate\n");
-		KDL::Frame  T_world_ee,T_body_world,T_body_ee;
+	
+   	KDL::Frame  T_world_ee,T_body_world,T_root_ee,T_body_ee,T_body_root;
+	drc::ee_goal_t goalmsg;  
+    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+	{
+		goalmsg.robot_name =self->robotStateListener->_robot_name;
+		goalmsg.root_name = "utorso";
+		if(self->arm==0)
+			goalmsg.ee_name = "l_hand";
+		else
+			goalmsg.ee_name = "r_hand";
+
+	}
+	else if(self->robotStateListener->_robot_name == "wheeled_atlas")
+	{
+		goalmsg.robot_name =self->robotStateListener->_robot_name;
+		goalmsg.root_name = "base";
+		if(self->arm==0)
+			goalmsg.ee_name = "LWristRoll_link";
+		else
+			goalmsg.ee_name = "RWristRoll_link";  
 		
-	 T_body_ee.p[0]= 0.35;
-	 T_body_ee.p[1]= 0.3;
-	 T_body_ee.p[2]= 0.5;
+	}
+	else
+	{
+		 // unknown robot
+	   std::cout << "Unknown robot in end effector goal renderer" << std::endl;
+	}
+
+// TODO:: adjust initial position relative to root link	
+
+	   if(!self->robotStateListener->getLinkTf(goalmsg.root_name, T_body_root))
+	   {
+             std::cout << "root link : " << goalmsg.root_name <<" not found in FK" << std::endl;
+	     T_body_root = KDL::Frame::Identity();
+	   }
+
+	 T_root_ee.p[0]= 0.35;
+	 T_root_ee.p[1]= 0.3;
+	 T_root_ee.p[2]= 0.5;
 // 	 T_body_ee.p[0]= 0.0;
 // 	 T_body_ee.p[1]= 0.241059; 
 // 	 T_body_ee.p[2] = 0.312513;
+
+	 T_body_ee = T_body_root*T_root_ee;
 	 if (self->arm ==1)
 	    T_body_ee.p[1]=  -T_body_ee.p[1];
 	 
@@ -591,17 +657,34 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         else if (!strcmp(name, PARAM_CLEAR)) {
 		fprintf(stderr,"Clicked clear goal\n");
 		
-		
-    drc::ee_goal_t goalmsg;    
+   	 	drc::ee_goal_t goalmsg;   
 		goalmsg.utime = getTime_now();
-		goalmsg.robot_name = "wheeled_atlas";
 		
-		if(self->arm==0)
-		goalmsg.ee_name = "LWristRoll_link";
+	    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+		{
+			goalmsg.robot_name =self->robotStateListener->_robot_name;
+			goalmsg.root_name = "utorso";
+			if(self->arm==0)
+				goalmsg.ee_name = "l_hand";
+			else
+				goalmsg.ee_name = "r_hand";
+
+		}
+		else if(self->robotStateListener->_robot_name == "wheeled_atlas")
+		{
+			goalmsg.robot_name =self->robotStateListener->_robot_name;
+			goalmsg.root_name = "base";
+			if(self->arm==0)
+				goalmsg.ee_name = "LWristRoll_link";
+			else
+				goalmsg.ee_name = "RWristRoll_link";  
+		
+		}
 		else
-		 goalmsg.ee_name = "RWristRoll_link"; 
-		
-		goalmsg.root_name = "base";
+		{
+			 // unknown robot
+		   std::cout << "Unknown robot in end effector goal renderer" << std::endl;
+		}
 		goalmsg.ee_goal_pos.translation.x = 0;
 		goalmsg.ee_goal_pos.translation.y = 0;
 		goalmsg.ee_goal_pos.translation.z = 0;
@@ -626,10 +709,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 
 		// Publish the message
 		goalmsg.halt_ee_controller = true;
-		if(self->arm==0)
-		   self->_lcm->publish("LWRISTROLL_LINK_GOAL", &goalmsg); 
-		else
-		   self->_lcm->publish("RWRISTROLL_LINK_GOAL", &goalmsg);
+        	std::string channel = boost::to_upper_copy(goalmsg.ee_name)+"_GOAL";
+		self->_lcm->publish(channel, &goalmsg);
+		
 		bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 0);
 	}
