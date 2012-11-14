@@ -8,11 +8,11 @@ group "core" {
         host = "localhost";
     }
     cmd "control" {
-        exec = "drc_controller_manager";
+        exec = "stickbot_controller_manager";
         host = "localhost";
     }
     cmd "modpub" {
-        exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/wheeledAtlas.urdf";
+        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_wheeled_stick_torso/model.sdf";
         host = "localhost";
     }
     cmd "pub" {
