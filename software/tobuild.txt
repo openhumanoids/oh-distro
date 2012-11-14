@@ -11,7 +11,7 @@ control
 object_template_model
 perception
 viewer
-network
+#network
 #interface
 
 # requires drcsim/gazebo1.2 and ubuntu 12.04:
