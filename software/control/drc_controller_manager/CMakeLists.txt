@@ -21,6 +21,12 @@ pods_use_pkg_config_packages(drc_controller_manager lcm lcmtypes_drc_lcmtypes ${
 # make exeutables public
 pods_install_executables(drc_controller_manager)
 
+add_executable(stickbot_controller_manager src/stickbot_controller_manager.cpp)
+pods_use_pkg_config_packages(stickbot_controller_manager lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+
+# make exeutables public
+pods_install_executables(stickbot_controller_manager)
+
 add_executable(base_controller_manager src/base_controller_manager.cpp)
 pods_use_pkg_config_packages(base_controller_manager lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 
