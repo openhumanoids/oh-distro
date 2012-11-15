@@ -30,26 +30,25 @@
     <include>
       <uri>model://sun</uri>
     </include>
-
+    <!-- A ground plane -->
     <include>
-      <uri>model://low_poly_golf_cart</uri>
-      <pose>0 -2 0 0 0 0</pose>
+      <uri>model://ground_plane</uri>
     </include>
 
     <include>
-      <uri>model://powerplant</uri>
-      <pose>350 65 -0.2 0 0 0</pose>
-    </include>
-
-    <include>
-      <uri>model://drc_robot</uri>
+      <uri>model://mit_robot</uri>
       <pose>0 2 1 0 0 0</pose>
     </include>
 
-    <include>
-      <uri>model://drc_terrain</uri>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
+    <include><name>simple_box_l1</name><uri>model://simple_box</uri><pose>0 6 1 0 0 0</pose></include>
+    <include><name>simple_box_l2</name><uri>model://simple_box</uri><pose>5 6 1 0 0 0</pose></include>
+    <include><name>simple_box_l3</name><uri>model://simple_box</uri><pose>10 6 1 0 0 0</pose></include>
+    <include><name>simple_box_l4</name><uri>model://simple_box</uri><pose>15 6 1 0 0 0</pose></include>
+
+    <include><name>simple_box_r1</name><uri>model://simple_box</uri><pose>2 -2 1 0 0 0</pose></include>
+    <include><name>simple_box_r2</name><uri>model://simple_box</uri><pose>7 -2 1 0 0 0</pose></include>
+    <include><name>simple_box_r3</name><uri>model://simple_box</uri><pose>12 -2 1 0 0 0</pose></include>
+    <include><name>simple_box_r4</name><uri>model://simple_box</uri><pose>17 -2 1 0 0 0</pose></include>
 
 <!--
     <include>

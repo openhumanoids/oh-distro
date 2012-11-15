@@ -3,7 +3,7 @@
   <world name="default">
     <gui>
     <camera name="user_camera">
-      <pose>-20 0 10 0 0.2 0</pose>
+      <pose>-20 10.0 2.00 0 0.2 0</pose>
     </camera>
     </gui>
 
@@ -55,7 +55,7 @@
     <include>
       <name>sbox4</name>
       <uri>model://simple_box</uri>
-      <pose>-5 0 1 0 0 0</pose>
+      <pose>-7 0 1 0 0 0</pose>
     </include>
 
     <!-- Table stuff -->

@@ -54,38 +54,6 @@
       <pose>-7 0 1 0 0 0</pose>
     </include>
 
-    <!-- Table stuff -->
-    <include>
-      <uri>model://table</uri>
-      <pose>1.5 0.6 0.0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://coke_can</uri>
-      <pose>1.5 0.4 1.05 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://bowl</uri>
-      <pose>1.1 0.4 1.05 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://fire_hose</uri>
-      <pose>1.1 0.6 1.05 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://saucepan</uri>
-      <pose>1.3 0.6 1.35 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://standpipe</uri>
-      <pose>1.5 2 0 0 0 0</pose>
-    </include>
-
-    <!-- Cart obviously -->
-    <include>
-      <uri>model://low_poly_golf_cart</uri>
-      <pose>-2.5 0 0.1 0 0 -1.571</pose>
-    </include>
-
 <!--
     <include>
       <uri>model://ground_plane</uri>

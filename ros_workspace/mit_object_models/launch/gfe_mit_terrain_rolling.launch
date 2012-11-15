@@ -6,7 +6,8 @@
   <param name="/use_sim_time" type="bool" value="true"/>
 
   <!-- start gazebo with the DRC Robot -->
-  <node name="gazebo" pkg="mit_object_models" type="run_$(arg gzname)" args="$(find mit_object_models)/worlds/mit_rolling_v0.world"/>
+<!--  <node name="gazebo" pkg="mit_object_models" type="run_$(arg gzname)" args="$(find mit_object_models)/worlds/mit_rolling_v0.world"/> -->
+  <node name="gazebo" pkg="mit_object_models" type="run_$(arg gzname)" args="$(find mit_object_models)/worlds/mit_empty_v0.world"/>
 
   <!-- Robot Description -->
   <param name="robot_description" textfile="$(find mit_wheeled_robot)/model.sdf"/>

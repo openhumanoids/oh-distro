@@ -6,7 +6,7 @@
   <param name="/use_sim_time" type="bool" value="true"/>
 
   <!-- start gazebo with the DRC Robot -->
-  <node name="gazebo" pkg="mit_object_models" type="run_$(arg gzname)" args="$(find mit_object_models)/worlds/mit_terrain_v0_1.world"/>
+  <node name="gazebo" pkg="mit_object_models" type="run_$(arg gzname)" args="$(find mit_object_models)/worlds/mit_terrain_v0.world"/>
 
   <!-- Robot Description -->
   <param name="robot_description" textfile="$(find mit_robot)/model.sdf"/>
@@ -30,8 +30,8 @@
   <!-- Controllers that come up started -->
   <node name="drc_robot_controllers_spawner"
         pkg="pr2_controller_manager" type="spawner" output="screen"
-        args="--wait-for=/calibrated l_arm_elx_position_controller r_arm_elx_position_controller l_arm_ely_position_controller r_arm_ely_position_controller l_arm_mwx_position_controller r_arm_mwx_position_controller l_arm_shx_position_controller r_arm_shx_position_controller l_arm_usy_position_controller r_arm_usy_position_controller l_arm_uwy_position_controller r_arm_uwy_position_controller l_leg_kny_position_controller r_leg_kny_position_controller l_leg_lax_position_controller r_leg_lax_position_controller l_leg_lhy_position_controller r_leg_lhy_position_controller l_leg_mhx_position_controller r_leg_mhx_position_controller l_leg_uay_position_controller r_leg_uay_position_controller l_leg_uhz_position_controller r_leg_uhz_position_controller neck_ay_position_controller back_lbz_position_controller back_mby_position_controller back_ubx_position_controller " />
-<!-- head_hokuyo_joint_position_controller -->
+        args="--wait-for=/calibrated l_arm_elx_position_controller r_arm_elx_position_controller l_arm_ely_position_controller r_arm_ely_position_controller l_arm_mwx_position_controller r_arm_mwx_position_controller l_arm_shx_position_controller r_arm_shx_position_controller l_arm_usy_position_controller r_arm_usy_position_controller l_arm_uwy_position_controller r_arm_uwy_position_controller l_leg_kny_position_controller r_leg_kny_position_controller l_leg_lax_position_controller r_leg_lax_position_controller l_leg_lhy_position_controller r_leg_lhy_position_controller l_leg_mhx_position_controller r_leg_mhx_position_controller l_leg_uay_position_controller r_leg_uay_position_controller l_leg_uhz_position_controller r_leg_uhz_position_controller" />
+<!-- neck_ay_position_controller back_lbz_position_controller back_mby_position_controller back_ubx_position_controller  head_hokuyo_joint_position_controller -->
 
   <node name="camhand_controllers_spawner"
         pkg="pr2_controller_manager" type="spawner" output="screen"

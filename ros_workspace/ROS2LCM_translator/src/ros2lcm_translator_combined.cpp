@@ -286,7 +286,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   lcm_img.nmetadata =0;
   lcm_img.row_stride=n_colors*msg->width;
   lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-  lcm_img.size =n_colors *2*isize;
+  lcm_img.size =n_colors*isize;
   copy(msg->data.begin(), msg->data.end(), singleimage_data);
   lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*2*isize));
 
