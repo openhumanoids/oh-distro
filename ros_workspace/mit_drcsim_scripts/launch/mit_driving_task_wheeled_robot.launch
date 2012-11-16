@@ -22,7 +22,7 @@
   </node>
 
   <!-- Position Controllers -->
-  <rosparam file="$(find mit_robot)/ros/position_controllers.yaml" command="load" />
+  <rosparam file="$(find mit_drcsim_scripts)/models/mit_wheeled_robot/ros/position_controllers.yaml" command="load" />
   <rosparam file="$(find camhand)/ros/position_controllers.yaml" command="load" />
 
   <!-- Controllers that come up started -->

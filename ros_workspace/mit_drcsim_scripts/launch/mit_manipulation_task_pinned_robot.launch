@@ -9,7 +9,7 @@
   <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_manipulation_task_pinned_robot.world"/>
 
   <!-- Robot Description -->
-  <param name="robot_description" textfile="$(find mit_robot)/model.sdf"/>
+  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model.sdf"/>
 
   <!-- Controller Manager -->
   <include file="$(find pr2_controller_manager)/controller_manager.launch" />
@@ -24,7 +24,7 @@
   </node>
 
   <!-- Position Controllers -->
-  <rosparam file="$(find mit_robot)/ros/position_controllers.yaml" command="load" />
+  <rosparam file="$(find mit_drcsim_scripts)/models/mit_robot/ros/position_controllers.yaml" command="load" />
   <rosparam file="$(find camhand)/ros/position_controllers.yaml" command="load" />
 
   <!-- Controllers that come up started -->
