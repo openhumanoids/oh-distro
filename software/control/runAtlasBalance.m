@@ -2,7 +2,7 @@ function runAtlasBalance(xD,uD)
 % xD,uD is the desired state and control fixed point
 options.floating = true;
 options.view = 'right';
-m = PlanarRigidBodyModel('../../ros_workspace/atlas_description/urdf/atlas_robot.urdf',options);
+m = PlanarRigidBodyModel('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf',options);
 r = TimeSteppingRigidBodyManipulator(m,.001);
 v = r.constructVisualizer;
 v.display_dt = .05;

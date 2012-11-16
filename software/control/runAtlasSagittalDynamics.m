@@ -4,7 +4,7 @@ function runAtlasSagittalDynamics
 
 options.view = 'right';
 options.floating = true;
-m = PlanarRigidBodyModel('../../ros_workspace/atlas_description/urdf/atlas_robot.urdf',options);
+m = PlanarRigidBodyModel('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf',options);
 r = TimeSteppingRigidBodyManipulator(m,.01);
 r = setSimulinkParam(r,'MinStep','0.001');
 v = r.constructVisualizer;

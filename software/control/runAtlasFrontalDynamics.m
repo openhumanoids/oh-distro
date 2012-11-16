@@ -3,7 +3,7 @@ function runAtlasSagittalDynamics
 % just runs it as a passive system for now
 
 options.view = 'front';
-m = PlanarRigidBodyModel('../../ros_workspace/atlas_description/urdf/atlas_robot.urdf',options);
+m = PlanarRigidBodyModel('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf',options);
 r = PlanarRigidBodyManipulator(m);
 r = setSimulinkParam(r,'MinStep','0.001');
 v = r.constructVisualizer;

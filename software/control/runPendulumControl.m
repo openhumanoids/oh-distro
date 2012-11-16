@@ -1,6 +1,6 @@
 function runPendulumControl
 % swing up and stabilize the pendulum
-r = PlanarRigidBodyManipulator('../../ros_workspace/atlas_description/urdf/Pendulum.urdf');
+r = PlanarRigidBodyManipulator('../../ros_workspace/deprecated/atlas_description/urdf/Pendulum.urdf');
 r = setSimulinkParam(r,'MinStep','0.001');
 v = r.constructVisualizer;
 v.display_dt = 0.05;
