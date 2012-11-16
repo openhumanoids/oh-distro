@@ -11,8 +11,16 @@ group "core" {
         exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
         host = "localhost";
     }
+    cmd "l2r" {
+        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        host = "localhost";
+    }
     cmd "pserver" {
-        exec = "bot-param-server ${HOME}/drc/software/config/drc_robot.cfg";
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "control_manager" {
+        exec = "base_controller_manager";
         host = "localhost";
     }
     cmd "estpub" {
@@ -20,11 +28,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher $HOME/drc/ros_workspace/atlas_description/urdf/sensing_wheeledAtlas_pre_fuerte.urdf";
-        host = "localhost";
-    }
-    cmd "statefake" {
-        exec = "drc-est-robot-state-fake $HOME/drc/data/lcmlog-2012-11-04.00_electric_robot";
+        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_wheeled_robot/model.sdf";
         host = "localhost";
     }
 }
@@ -33,8 +37,8 @@ group "core" {
 
 
 group "gazebo" {
-    cmd "gfe" {
-        exec = "roslaunch mit_object_models gfe_mit_manipulation.launch";
+    cmd "manip_pinned" {
+        exec = "roslaunch mit_drcsim_scripts mit_manipulation_task_pinned_robot.launch";
         host = "localhost";
     }
     cmd "dropleft" {
@@ -83,6 +87,10 @@ group "misc" {
 }
 
 group "zother" {
+    cmd "manip_gfe" {
+        exec = "roslaunch mit_object_models gfe_mit_manipulation.launch";
+        host = "localhost";
+    }
     cmd "test_tf_solver" {
         exec = "test_tf_solver";
         host = "localhost";
