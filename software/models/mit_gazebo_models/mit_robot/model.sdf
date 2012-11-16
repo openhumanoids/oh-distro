@@ -2189,6 +2189,11 @@
     <plugin filename="libhokuyospin_plugin.so" name="hokuyospin_plugin">
       <head_hokuyo_joint>head_hokuyo_joint</head_hokuyo_joint>
     </plugin>
+      <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
+   	 <alwaysOn>true</alwaysOn>
+   	 <updateRate>100.0</updateRate>
+   	 <topicName>true_robot_state</topicName>
+   	 </plugin>
   </gazebo>
 <!--  <transmission name="back.lbz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back.lbz"/>

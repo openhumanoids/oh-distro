@@ -1,13 +1,11 @@
 <?xml version='1.0'?>
 <model>
-  <name>MIT Wheeled Robot</name>
-  <version>0.1.0</version>
+  <name>MIT DRC Wheeled Robot</name>
+  <version>0.2.0</version>
   <sdf>model.sdf</sdf>
   <author>
-    <name>John Hsu</name>
-    <email>hsu@osrfoundation.org</email>
+    <name>Sisir and Maurice</name>
   </author>
   <description>
-    This model approximates the DRC Robot, built by Boston Dynamics.
   </description>
 </model>
