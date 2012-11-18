@@ -23,7 +23,7 @@ if (0)
   simulate(sys,[0 10],x0); 
 else
   % Run simulation, then play it back at realtime speed
-  xtraj = simulate(r,[0 3],x0);
+  xtraj = simulate(r,[0 5],x0);
   save saggital.mat v xtraj;
   v.playback(xtraj);
 end

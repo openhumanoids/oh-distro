@@ -3,23 +3,23 @@ function runAtlasBalance(xD,uD)
 options.floating = true;
 options.view = 'right';
 m = PlanarRigidBodyModel('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf',options);
-r = TimeSteppingRigidBodyManipulator(m,.001);
+r = TimeSteppingRigidBodyManipulator(m,.0005);
 v = r.constructVisualizer;
 v.display_dt = .05;
 
 x0 = Point(r.getStateFrame);
 % x0.RHipPitch = -0.2;
 % x0.LHipPitch = -0.2;
-x0.RKneePitch = 0.1;
-x0.LKneePitch = 0.1;
-x0.LAnklePitch = -0.1;
-x0.RAnklePitch = -0.1;
-x0.base_link_z = 1;
+% x0.RKneePitch = 0.1;
+% x0.LKneePitch = 0.1;
+% x0.LAnklePitch = -0.1;
+% x0.RAnklePitch = -0.1;
+% x0.base_link_z = 1;
 u0 = Point(r.getInputFrame);
-x0 = xD;
-u0 = uD;
+% x0 = xD;
+% u0 = uD;
 if(nargin<3)
-    [xD,uD] = computeInitialPosture(double(x0),double(u0),r);
+    [xD,uD] = computeInitialPostureSNOPT(double(x0),double(u0),r);
     xD = Point(r.getStateFrame,xD);
     uD = Point(r.getInputFrame,uD);
 end
@@ -65,10 +65,12 @@ problem.solver = 'fmincon';
 problem.options=optimset('Algorithm','interior-point','Display','off','TolX',1e-6);
 problem.lb = [obj.manip.joint_limit_min;-inf(obj.manip.num_q,1);obj.manip.umin];
 problem.ub = [obj.manip.joint_limit_max;inf(obj.manip.num_q,1);obj.manip.umax];
-problem.ub(10) = -0.1;
-problem.lb(11) = 0.1;
-problem.ub(13) = -0.1;
-problem.lb(14) = 0.1;
+% problem.ub(10) = -0.1;
+% problem.lb(11) = 0.1;
+% problem.ub(13) = -0.1;
+% problem.lb(14) = 0.1;
+problem.ub(12) =-0.1;
+problem.ub(15) = -0.1;
 [xu_sol,~,exitflag] = fmincon(problem);
 %success=(exitflag==1);
 nX = obj.getNumStates();
@@ -113,27 +115,49 @@ x = xu(1:nX);
 u = xu(nX+(1:nU));
 q = x(1:nq);
 contactCandidate = contactConstraints(manipObj,q);
-c = -[jointLimits(manipObj,q);contactCandidate(~footContactInd)];
+c = -contactCandidate(~footContactInd);
 ceq = [stateConstraints(manipObj,x);...
     x-update(obj,0,x,u);...
     contactCandidate(footContactInd)];
 end
+function [xD,uD] = computeInitialPostureSNOPT(x0,u0,obj)
+global SNOPT_USERFUN_WOgradient;
+nX = length(x0);
+nU = length(u0);
+w0 = [x0;u0];
+wlow = [obj.manip.joint_limit_min;-inf(obj.manip.num_q,1);obj.manip.umin];
+whigh = [obj.manip.joint_limit_max;inf(obj.manip.num_q,1);obj.manip.umax];
+Flow = zeros(1+2+2+nX,1);
+Fhigh = zeros(1+2+2+nX,1);
+snseti('Derivative option',0);
+snprint('print.out');
+SNOPT_USERFUN_WOgradient = @(w) fixedPointSnoptUserFun(obj,w);
+[w,F,info] = snopt(w0,wlow,whigh,Flow,Fhigh,'snopt_userfun_wo_gradient',0,1);
+if(info~=1)
+    [str,cat] = snoptInfo(info);
+    error('SNOPT:InfoNotOne',['SNOPT exited w/ info = ',num2str(info),'.\n',cat,': ',str,'\n  Check p19 of Gill06 for more information.']);  
+end
+xD = w(1:(nX/2));
+uD = w((nX/2)+1:end);
+end
 
-function [A,B] = linDynamics(sys,xD,uD)
-nX = length(xD);
-nU = length(uD);
-A = zeros(nX);
-B = zeros(nX,nU);
-for i = 1:nX
-    x_ei = zeros(nX,1);
-    x_err = 1e-5;
-    x_ei(i) = x_err;
-    A(:,i) = (sys.update(0,xD+x_ei,uD)-xD)/x_err;
-end 
-for i = 1:nU
-    u_ei = zeros(nU,1);
-    u_err = 1e-5;
-    u_ei(i) = u_err;
-    B(:,i) = (sys.update(0,xD,uD+u_ei)-xD)/u_err;
+function f = fixedPointSnoptUserFun(obj,xu)
+manipObj = obj.manip;
+nX = manipObj.getNumStates();
+nq = nX/2;
+nU = manipObj.getNumInputs();
+% RfootGroundContactInd = [187 189];
+% LfootGroundContactInd = [171 173];
+% footContactInd = false(190,1);
+% footContactInd([LfootGroundContactInd RfootGroundContactInd]) = true(4,1);
+x = xu(1:nX);
+u = xu(nX+(1:nU));
+q = x(1:nq);
+LFoot = manipObj.model.body(13);
+RFoot = manipObj.model.body(16);
+doKinematics(manipObj.model,q);
+LFootContact = forwardKin(LFoot,LFoot.contact_pts(:,[5 7]));
+RFootContact = forwardKin(RFoot,RFoot.contact_pts(:,[5 7]));
+f = [0;LFootContact(2,:)';RFootContact(2,:)';x-update(obj,0,x,u)];
 end
-end
+
