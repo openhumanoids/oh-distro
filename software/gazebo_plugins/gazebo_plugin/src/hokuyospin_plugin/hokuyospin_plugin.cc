@@ -1,17 +1,20 @@
+// minimal two-way LCM gazebo plugin
+// - listens to LCM for rotation rate of ROTATING_SCAN
+// - publishes the angular position @ 100s of Hz
+// mfallon nov 2012
+
 #include <boost/bind.hpp>
 #include <gazebo.hh>
 #include <physics/physics.hh>
 #include <common/common.hh>
 #include <stdio.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/bot_core.hpp>
-
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
-
 
 Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
   double sy = sin(yaw*0.5);
@@ -31,9 +34,6 @@ Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
 
 namespace gazebo
 {   
-  
-
-  
   
 class MobileBasePlugin : public ModelPlugin
 {
