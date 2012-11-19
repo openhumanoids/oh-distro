@@ -19,7 +19,7 @@ pods_install_libraries(hokuyospin_plugin)
 
 # uncomment these lines to link against another library via pkg-config
 pods_use_pkg_config_packages(hokuyospin_plugin eigen3)
-target_link_libraries(hokuyospin_plugin ${GAZEBO_LIBRARIES} lcm)
+target_link_libraries(hokuyospin_plugin ${GAZEBO_LIBRARIES} lcm boost_thread)
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
