@@ -1,0 +1,57 @@
+		</geometry>
+	</library_geometries>
+	<library_visual_scenes>
+		<visual_scene id="Scene001" name="Scene001">
+			<node layer="L1" id="Mesh" name="Mesh">
+				<translate sid="translate">0.00000 0.00000 0.00000</translate>
+				<rotate sid="rotateZ">0 0 1 -0.00001</rotate>
+				<rotate sid="rotateY">0 1 0 -0.00000</rotate>
+				<rotate sid="rotateX">1 0 0 0.00000</rotate>
+				<scale sid="scale">1.00000 1.00000 1.00000</scale>
+				<instance_geometry url="#Mesh-Geometry">
+					<bind_material>
+						<technique_common>
+							<instance_material symbol="plate_2_tga" target="#plate_2_tga">
+								<bind_vertex_input input_semantic="TEXCOORD" input_set="1" semantic="CHANNEL1"/>
+							</instance_material>
+						</technique_common>
+					</bind_material>
+				</instance_geometry>
+			</node>
+		</visual_scene>
+	</library_visual_scenes>
+	<library_physics_materials>
+		<physics_material id="Mesh-PhysicsMaterial" name="Mesh-PhysicsMaterial">
+			<technique_common>
+				<dynamic_friction>0.5</dynamic_friction>
+				<restitution>0.0</restitution>
+				<static_friction>0.5</static_friction>
+			</technique_common>
+		</physics_material>
+	</library_physics_materials>
+	<library_physics_models>
+		<physics_model id="Scene001-PhysicsModel" name="Scene001-PhysicsModel">
+			<rigid_body name="Mesh-RigidBody" sid="Mesh-RigidBody">
+				<technique_common>
+					<dynamic>false</dynamic>
+					<mass>0</mass>
+					<instance_physics_material url="#Mesh-PhysicsMaterial"/>
+					<shape>
+						<instance_geometry url="#Mesh-Geometry"/>
+					</shape>
+				</technique_common>
+			</rigid_body>
+		</physics_model>
+	</library_physics_models>
+	<library_physics_scenes>
+		<physics_scene id="Scene001-Physics" name="Scene001-Physics">
+			<instance_physics_model url="#Scene001-PhysicsModel">
+				<instance_rigid_body body="Mesh-RigidBody" target="#Mesh"/>
+			</instance_physics_model>
+		</physics_scene>
+	</library_physics_scenes>
+	<scene>
+		<instance_physics_scene url="#Scene001-Physics"/>
+		<instance_visual_scene url="#Scene001"/>
+	</scene>
+</COLLADA>

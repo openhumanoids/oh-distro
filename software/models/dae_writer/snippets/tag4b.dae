@@ -1,0 +1,5 @@
+" material="plate_2_tga">
+					<input offset="0" semantic="VERTEX" source="#Mesh-Geometry-Vertex"/>
+					<input offset="1" semantic="NORMAL" source="#Mesh-Geometry-Normals"/>
+					<input offset="2" semantic="TEXCOORD" source="#Mesh-Geometry-UV"/>
+					<p>

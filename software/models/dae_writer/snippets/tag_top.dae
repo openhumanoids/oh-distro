@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA version="1.4.0" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+	<asset>
+		<contributor>
+			<author>Illusoft Collada 1.4.0 plugin for Blender - http://colladablender.illusoft.com</author>
+			<authoring_tool>Blender v:249 - Illusoft Collada Exporter v:0.3.162</authoring_tool>
+			<comments></comments>
+			<copyright></copyright>
+			<source_data>file:///u/nkoenig/plate_2.blend</source_data>
+		</contributor>
+		<created>2011-03-08T12:41:39.033566</created>
+		<modified>2011-03-08T12:41:39.033583</modified>
+		<unit meter="1.00" name="meter"/>
+		<up_axis>Z_UP</up_axis>
+	</asset>
+	<library_effects>
+		<effect id="plate_2_tga-fx" name="plate_2_tga-fx">
+			<profile_COMMON>
+				<newparam sid="plate_2_tga-surface">
+					<surface type="2D">
+						<init_from>plate_2_tga-img</init_from>
+						<format>A8R8G8B8</format>
+					</surface>
+				</newparam>
+				<newparam sid="plate_2_tga-sampler">
+					<sampler2D>
+						<source>plate_2_tga-surface</source>
+						<minfilter>LINEAR_MIPMAP_LINEAR</minfilter>
+						<magfilter>LINEAR</magfilter>
+					</sampler2D>
+				</newparam>
+				<technique sid="blender">
+					<phong>
+						<emission>
+							<color>0.30000 0.30000 0.30000 1</color>
+						</emission>
+						<ambient>
+							<color>1.00000 1.00000 1.00000 1</color>
+						</ambient>
+						<diffuse>
+							<texture texcoord="CHANNEL1" texture="plate_2_tga-sampler"/>
+						</diffuse>
+						<specular>
+							<color>0.50000 0.50000 0.50000 1</color>
+						</specular>
+						<shininess>
+							<float>12.5</float>
+						</shininess>
+						<reflective>
+							<color>1.00000 1.00000 1.00000 1</color>
+						</reflective>
+						<reflectivity>
+							<float>0.0</float>
+						</reflectivity>
+						<transparent>
+							<color>1 1 1 1</color>
+						</transparent>
+						<transparency>
+							<float>0.0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+	</library_effects>
+	<library_images>
+		<image id="plate_2_tga-img" name="plate_2_tga-img">
+			<init_from>simple_box.jpg</init_from>
+		</image>
+	</library_images>
+	<library_materials>
+		<material id="plate_2_tga" name="plate_2_tga">
+			<instance_effect url="#plate_2_tga-fx"/>
+		</material>
+	</library_materials>
+	<library_geometries>
+		<geometry id="Mesh-Geometry" name="Mesh-Geometry">
+			

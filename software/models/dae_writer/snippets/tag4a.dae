@@ -1,0 +1,4 @@
+<vertices id="Mesh-Geometry-Vertex">
+					<input semantic="POSITION" source="#Mesh-Geometry-Position"/>
+				</vertices>
+				<triangles count="

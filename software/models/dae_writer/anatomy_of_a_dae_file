@@ -1,0 +1,82 @@
+topchunk.dae
+top tag <mesh>
+
+===================================================
+
+tag1a:				
+  <source id="Mesh-Geometry-Position">
+    <float_array count="
+number1a: 24
+tag1b: " id="Mesh-Geometry-Position-array">
+array1: 0.5000 0.5000 -0.5000 0.5000 -0.5000 -0.5000 -0.5000 -0.5000 -0.5000 -0.5000 0.5000 -0.5000 0.5000 0.5000 0.5000 0.5000 -0.5000 0.5000 -0.5000 -0.5000 0.5000 -0.5000 0.5000 0.5000
+tag1c: </float_array>
+			<technique_common>
+			<accessor count="
+number1b: 8
+tag1d: " source="#Mesh-Geometry-Position-array" stride="3">
+							<param type="float" name="X"></param>
+							<param type="float" name="Y"></param>
+							<param type="float" name="Z"></param>
+						</accessor>
+					</technique_common>
+====================================================================
+
+tag2a:				</source>
+				<source id="Mesh-Geometry-Normals">
+					<float_array count="
+number2: 18
+tag2b: " id="Mesh-Geometry-Normals-array">
+array2: 0.00000 0.00000 -1.00000 0.00000 0.00000 1.00000 1.00000 -0.00000 0.00000 -0.00000 -1.00000 -0.00000 -1.00000 0.00000 -0.00000 0.00000 1.00000 0.00000
+tag2c: </float_array>
+					<technique_common>
+						<accessor count="
+number2b: 6
+tag2d: " source="#Mesh-Geometry-Normals-array" stride="3">
+							<param type="float" name="X"></param>
+							<param type="float" name="Y"></param>
+							<param type="float" name="Z"></param>
+						</accessor>
+					</technique_common>
+				</source>
+
+==================================
+
+tag3a:
+				<source id="Mesh-Geometry-UV">
+					<float_array count="
+number3a: 72
+tag3b: " id="Mesh-Geometry-UV-array">
+array3: 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 1.0 0.0
+tag3c: </float_array>
+					<technique_common>
+						<accessor count="
+number3b: 36
+tag3d: " source="#Mesh-Geometry-UV-array" stride="2">
+							<param type="float" name="S"></param>
+							<param type="float" name="T"></param>
+						</accessor>
+					</technique_common>
+				</source>
+
+============================================
+
+tag4a
+				<vertices id="Mesh-Geometry-Vertex">
+					<input semantic="POSITION" source="#Mesh-Geometry-Position"/>
+				</vertices>
+				<triangles count="
+number4: 12
+tag4b: " material="plate_2_tga">
+					<input offset="0" semantic="VERTEX" source="#Mesh-Geometry-Vertex"/>
+					<input offset="1" semantic="NORMAL" source="#Mesh-Geometry-Normals"/>
+					<input offset="2" semantic="TEXCOORD" source="#Mesh-Geometry-UV"/>
+					<p>
+array4: 0 0 0 1 0 1 2 0 2 2 0 4 3 0 5 0 0 3 4 1 0 7 1 1 6 1 2 6 1 4 5 1 5 4 1 3 0 2 0 4 2 1 5 2 2 5 2 4 1 2 5 0 2 3 1 3 0 5 3 1 6 3 2 6 3 4 2 3 5 1 3 3 2 4 0 6 4 1 7 4 2 7 4 4 3 4 5 2 4 3 4 5 0 0 5 1 3 5 2 3 5 4 7 5 5 4 5 3
+tag4c: </p>
+</triangles>
+
+===================================================
+end tag:
+			</mesh>
+
+bottomchunk.dae
