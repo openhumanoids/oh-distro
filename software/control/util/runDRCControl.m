@@ -13,12 +13,13 @@ if(~isfield(options,'tspan'))
 end
 
 if (controller.getNumContStates()~=0)
-  error('not implemented yet');  % but won't be too hard
+    error('not implemented yet');  % but won't be too hard
 end
 
 ndof = getNumStates(robot)/2;
 joint_names = robot.getStateFrame.coordinates(1:ndof);
-joint_names = regexprep(joint_names, '_', '\.', 'preservecase');
+joint_names = regexprep(joint_names, '_', '\.', 'preservecase'); % gazebo size uses dots
+joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
 state_listener = RobotStateListener(robot_name,joint_names,state_channel);
 
@@ -34,7 +35,7 @@ global g_scope_enable; g_scope_enable = true;
 % just run as fast as possible
 t=options.tspan(1); tic;
 while (t<=options.tspan(2))
-  x = getNextMessage(state_listener,10);
+  x = getNextMessage(state_listener,20);
   if (~isempty(x))
     u = controller.output(t,[],x);
     %fprintf('time is %f\n',t);

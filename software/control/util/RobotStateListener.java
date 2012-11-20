@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.*;
 import lcm.lcm.*;
 
 public class RobotStateListener implements LCMSubscriber
@@ -41,6 +42,22 @@ public class RobotStateListener implements LCMSubscriber
                         m_x[index + m_num_joints] = msg.joint_velocity[i];
                     }
                 }
+                
+                // get body position and orientation
+                m_x[m_joint_map.get("base.x")] = msg.origin_position.translation.x;
+                m_x[m_joint_map.get("base.y")] = msg.origin_position.translation.y;
+                m_x[m_joint_map.get("base.z")] = msg.origin_position.translation.z;
+                
+                // convert quaternion to euler
+                double x = msg.origin_position.rotation.x;
+                double y = msg.origin_position.rotation.y;
+                double z = msg.origin_position.rotation.z;
+                double w = msg.origin_position.rotation.w;
+
+                m_x[m_joint_map.get("base.roll")] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
+                m_x[m_joint_map.get("base.pitch")] = Math.asin(2*(x*z - w*y));
+                m_x[m_joint_map.get("base.yaw")] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w));
+                
                 m_has_new_message = true;
             }
         } catch (IOException ex) {
