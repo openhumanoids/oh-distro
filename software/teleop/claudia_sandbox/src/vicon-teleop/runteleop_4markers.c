@@ -2,10 +2,14 @@
 // pod: vicon-teleop
 
 #include <stdio.h>
+#include <GL/gl.h>
+
 #include <lcm/lcm.h>
 #include <inttypes.h>
 #include <lcmtypes/vicon_drc.h>
 #include <lcmtypes/teleop.h>
+
+#include <bot_lcmgl_client/lcmgl.h>
 
 
 // The different types of data to output
@@ -17,6 +21,55 @@ typedef enum
 } datatype;
 
 static lcm_t* lcm4;
+bot_lcmgl_t* lcmgl_;
+
+
+
+void send_gl(const viconstructs_vicon_t *msg, teleop_fourmarkers_t *msgb){
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_point_size(lcmgl_, 1.5f);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  int i;
+  for (i=0; i < msg->models[0].nummarkers; ++i) {
+    double xyz[3];
+    xyz[0] = msg->models[0].markers[i].xyz.x/1000.0;
+    xyz[1] = msg->models[0].markers[i].xyz.y/1000.0;
+    xyz[2] = msg->models[0].markers[i].xyz.z/1000.0;
+    //cout << xyz[0] <<"|"<< xyz[1] <<"|"<< xyz[2] <<"\n"; 
+    bot_lcmgl_vertex3f(lcmgl_, xyz[0], xyz[1], xyz[2]);
+  }
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_point_size(lcmgl_, 3.0f);
+  bot_lcmgl_begin(lcmgl_, GL_LINES);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 1, 0, 0); // Reg
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_RightShoulder_a[0]/1000.0 , msgb->Marker_RightShoulder_a[1]/100.0, msgb->Marker_RightShoulder_a[2] /1000.0);
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_RightHand_a[0]/1000.0 , msgb->Marker_RightHand_a[1]/1000.0, msgb->Marker_RightHand_a[2]/1000.0 );
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_RightShoulder_a[0]/1000.0 , msgb->Marker_RightShoulder_a[1]/100.0, msgb->Marker_RightShoulder_a[2] /1000.0);
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_LeftShoulder_a[0]/1000.0 , msgb->Marker_LeftShoulder_a[1]/1000.0, msgb->Marker_LeftShoulder_a[2] /1000.0);
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_LeftHand_a[0] /1000.0, msgb->Marker_LeftHand_a[1]/1000.0, msgb->Marker_LeftHand_a[2]/1000.0 );
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_LeftShoulder_a[0]/1000.0 , 	msgb->Marker_LeftShoulder_a[1]/1000.0, msgb->Marker_LeftShoulder_a[2] /1000.0);
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 0, 1, 0); // Green
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_RightShoulder_a[0]/1000.0 , msgb->Marker_RightShoulder_a[1]/100.0, msgb->Marker_RightShoulder_a[2] /1000.0);
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_RightHand_a[0]/1000.0 , msgb->Marker_RightHand_a[1]/1000.0, msgb->Marker_RightHand_a[2]/1000.0 );
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_LeftHand_a[0] /1000.0, msgb->Marker_LeftHand_a[1]/1000.0, msgb->Marker_LeftHand_a[2]/1000.0 );
+  bot_lcmgl_vertex3f(lcmgl_, msgb->Marker_LeftShoulder_a[0]/1000.0 , 	msgb->Marker_LeftShoulder_a[1]/1000.0, msgb->Marker_LeftShoulder_a[2] /1000.0);
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
+  bot_lcmgl_switch_buffer(lcmgl_);  
+}
+
+
+
 
 
 void getInfo(double dest[4], viconstructs_marker_t* marker, double origin[3])
@@ -40,6 +93,11 @@ static void get_publish_4markers (const lcm_recv_buf_t *rbuf, const char* channe
     {
         .timestamp = 0
     };
+
+
+
+
+
 
     int i, j;
     double waist[3];
@@ -97,6 +155,8 @@ static void get_publish_4markers (const lcm_recv_buf_t *rbuf, const char* channe
                 //}
             }
 
+             
+            send_gl(vicon,&vicondata);
             teleop_fourmarkers_t_publish(lcm4, "vicon4markers", &vicondata);
 
         }
@@ -114,6 +174,10 @@ int main(int argc, char ** argv)
     {
         return 1;
     }
+
+    lcmgl_ = bot_lcmgl_init(lcm4, "teleop_4markers");
+
+
 
     lcm_t* lcm_v = lcm_create(NULL);
 
