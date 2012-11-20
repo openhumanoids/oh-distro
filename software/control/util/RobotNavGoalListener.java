@@ -6,9 +6,9 @@ public class RobotNavGoalListener implements LCMSubscriber
     String m_robot_name;
     java.util.TreeMap<String,Integer> m_joint_map;
     boolean m_has_new_message = false;
-    double[] nav_translation
-    double[] nav_quaternion
-
+    double[] nav_translation;
+    double[] nav_quaternion;
+    double[] nav_goal;
     public RobotNavGoalListener(String robot_name, String channel)
     {
 	m_robot_name = robot_name;
@@ -21,20 +21,27 @@ public class RobotNavGoalListener implements LCMSubscriber
     {
 	int index;
 	try { 
-	    drc.robot_nav_goal_timed_t msg = new drc.robot_nav_goal_timed_t(dins);
-	    if (msg.robot_name.equals(m_robot_name)) {
-		nav_position = new double[3];
-		nav_position[0] = msg.goal_pos.translation.x;
-		nav_position[1] = msg.goal_pos.translation.y;
-		nav_position[2] = msg.goal_pos.translation.z;
+	    drc.nav_goal_timed_t msg = new drc.nav_goal_timed_t(dins);
+	    //if (msg.robot_name.equals(m_robot_name)) {
+		nav_translation = new double[3];
+		nav_translation[0] = msg.goal_pos.translation.x;
+		nav_translation[1] = msg.goal_pos.translation.y;
+		nav_translation[2] = msg.goal_pos.translation.z;
 		nav_quaternion = new double[4];
 		nav_quaternion[0] = msg.goal_pos.rotation.x;
 		nav_quaternion[1] = msg.goal_pos.rotation.y;
 		nav_quaternion[2] = msg.goal_pos.rotation.z;
 		nav_quaternion[3] = msg.goal_pos.rotation.w;
-		}
+		nav_goal = new double[7];
+		nav_goal[0] = nav_translation[0];
+		nav_goal[1] = nav_translation[1];
+		nav_goal[2] = nav_translation[2];
+		nav_goal[3] = nav_quaternion[0];
+		nav_goal[4] = nav_quaternion[1];
+		nav_goal[5] = nav_quaternion[2];
+		nav_goal[6] = nav_quaternion[3];
+		//}
 		m_has_new_message = true;
-	    }
 	} catch (IOException ex) {
 	    System.out.println("Exception: " + ex);
 	}
@@ -44,7 +51,7 @@ public class RobotNavGoalListener implements LCMSubscriber
     {
 	if (m_has_new_message) {
 	    m_has_new_message = false;
-	    return m_x;
+	    return nav_goal;
 	}
 
         if(timeout_ms == 0)
@@ -58,7 +65,7 @@ public class RobotNavGoalListener implements LCMSubscriber
 
 	    if (m_has_new_message) {
 		m_has_new_message = false;
-                return m_x;
+                return nav_goal;
             }
         } catch (InterruptedException xcp) { }
 
@@ -73,7 +80,7 @@ public class RobotNavGoalListener implements LCMSubscriber
     public synchronized double[] getState()
     {
 	m_has_new_message = false;
-	return m_x;
+	return nav_goal;
     }
 
 }

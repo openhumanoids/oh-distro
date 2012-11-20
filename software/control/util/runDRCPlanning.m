@@ -1,4 +1,4 @@
-function runDRCPlanning(sys,planFun,robot_name,state_channel,navGoal_channel,plan_channel,options)
+function runDRCPlanning(sys,planFun,robot_name,state_channel,navGoal_channel,options)
 % @param sys, a dynamical system, like Atlas
 % @param planFun, a function handle, takes the current state and navigation
 % goal as input, outputs the state and control profile
@@ -6,12 +6,14 @@ if(~isfield(options,'tspan'))
     options.tspan = [0,inf];
 end
 
+ndof = getNumInputs(sys)/2;
+joint_name = sys.getInputFrame.coordinates(1:ndof);
 state_listener = RobotStateListener(robot_name,joint_name,state_channel);
-navGoal_listener = RobotNavGoalListener(robot_name,navGoal_channel);
+navGoal_listener = RobotNavGoalListener('wheeled_atlas',navGoal_channel);
 t = options.tspan(1); tic;
 
 while(t<=options.tspan(2))
-    navGoal = getNextMessage(navGoal_listener,100);
+    navGoal = getNextMessage(navGoal_listener,10);
     if(~(isempty(navGoal)))
         xCurr = getNextMessage(state_listener,10);
         fprintf('time is %f\n',t);
