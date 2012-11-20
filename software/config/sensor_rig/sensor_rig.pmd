@@ -34,7 +34,7 @@ group "misc" {
         host = "localhost";
     }
     cmd "velo-viewer" {
-        exec = "velodyne-viewer -c drc_rig.cfg";
+        exec = "velodyne-viewer -c sensor_rig.cfg";
         host = "localhost";
     }
     cmd "viewer" {
@@ -42,7 +42,7 @@ group "misc" {
         host = "localhost";
     }
     cmd "pserver" {
-        exec = "bot-param-server drc_rig.cfg";
+        exec = "bot-param-server sensor_rig.cfg";
         host = "localhost";
     }
 }

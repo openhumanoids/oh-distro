@@ -4,7 +4,7 @@ group "sensing" {
         host = "localhost";
     }
     cmd "motion" {
-        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_rig.cfg -b bumblebee";
+        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/sensor_rig.cfg -b bumblebee";
         host = "localhost";
     }
 }
@@ -14,7 +14,7 @@ group "misc" {
         host = "localhost";
     }
     cmd "pserver" {
-        exec = "bot-param-server drc_rig.cfg";
+        exec = "bot-param-server sensor_rig.cfg";
         host = "localhost";
     }
     cmd "bot-spy" {
