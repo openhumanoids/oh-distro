@@ -20,7 +20,7 @@ group "core" {
         host = "localhost";
     }
     cmd "r2l" {
-        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
+        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
         host = "localhost";
     }
     cmd "l2r" {
