@@ -2461,8 +2461,8 @@
     <pose>0 0 0.93 0 0 0</pose>
   </gazebo>
   <gazebo>
- <plugin filename="libDRCRobotPlugin.so" name="mit_drc_robot_plugin"/>
- <!-- <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+  <plugin filename="libDRCRobotPlugin.so" name="mit_drc_robot_plugin"/>
+ <!--<plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
     </plugin>-->
@@ -2471,7 +2471,7 @@
       <updateRate>1000.0</updateRate>
     </plugin>
 
- <plugin name="joint_torque_controller" filename="libjoint_actuation_plugin.so">
+    <plugin name="joint_torque_controller" filename="libjoint_actuation_plugin.so">
         <alwaysOn>true</alwaysOn>
         <topicName>actuator_cmd</topicName>
       </plugin> 
@@ -2482,5 +2482,12 @@
    	 <updateRate>100.0</updateRate>
    	 <topicName>true_robot_state</topicName>
    	 </plugin>
+   	 
+    <!-- somehow fixes message dropout issue at startup. Without this, the first 10 or so robot state msgs are dropped. Not sure what fixes it - Sisir  -->
+    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+   	 
    </gazebo>
 </robot>
