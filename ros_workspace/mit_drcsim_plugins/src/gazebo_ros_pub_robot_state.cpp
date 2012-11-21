@@ -22,7 +22,8 @@
 
 
 #include "paladin_drcsim_plugins/gazebo_ros_pub_robot_state.h"
-
+#include <sys/time.h>
+#include <time.h>
 
 
 namespace gazebo
@@ -43,12 +44,14 @@ GazeboRosPubRobotState::GazeboRosPubRobotState()
 GazeboRosPubRobotState::~GazeboRosPubRobotState()
 {
   event::Events::DisconnectWorldUpdateStart(this->updateConnection);
-  // Finalize the controller
-  // Custom Callback Queue
+  this->rosnode_->shutdown();
+#ifdef USE_CBQ
   this->queue_.clear();
   this->queue_.disable();
-  this->rosnode_->shutdown();
   this->callback_queue_thread_.join();
+#else
+  this->ros_spinner_thread_.join();
+#endif
   delete this->rosnode_;
 }
 
@@ -96,16 +99,17 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
   else
     this->update_period_ = 0.0;
 
+   // Init ROS
   if (!ros::isInitialized())
   {
     int argc = 0;
     char** argv = NULL;
-    ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ros::init( argc, argv, "gazebo", ros::init_options::NoSigintHandler); //ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    
   }
 
   this->rosnode_ = new ros::NodeHandle(this->robotNamespace);
-
-
+  
   // Custom Callback Queue
   /*ros::AdvertiseOptions p3d_ao = ros::AdvertiseOptions::create<nav_msgs::Odometry>(
     this->topicName,1,
@@ -115,21 +119,31 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
 
   if (this->topicName != "")
   {
-  ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
-    this->topicName,1,
-    boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
-    boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);
-  this->pub_ = this->rosnode_->advertise(ao);
+#ifdef USE_CBQ
+    ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
+      this->topicName,1,
+      boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
+      boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);
+    this->pub_ = this->rosnode_->advertise(ao);
+#else
+    this->pub_ = this->rosnode_->advertise<atlas_gazebo_msgs::RobotState>(this->topicName, 1);
+#endif
   }
   
+ this->rosnode_->param("gazebo/start_robot_calibrated", this->calibration_status_, true);
+  
+#ifdef USE_CBQ
     // Custom Callback Queue
   this->callback_queue_thread_ = boost::thread( boost::bind( &GazeboRosPubRobotState::QueueThread,this ) );
-  
+#else
+  this->ros_spinner_thread_ = boost::thread( boost::bind( &GazeboRosPubRobotState::RosSpinnerThread,this ) );
+#endif
   // New Mechanism for Updating every World Cycle
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
   this->updateConnection = event::Events::ConnectWorldUpdateStart(
       boost::bind(&GazeboRosPubRobotState::UpdateChild, this));
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,9 +170,10 @@ void GazeboRosPubRobotState::UpdateChild()
   /*  this is called at every update simulation step             */
   /*                                                             */
   /***************************************************************/
+ #ifdef USE_CBQ
   if (this->robotStateConnectCount == 0)
     return;
-
+ #endif
   /***************************************************************/
   /*                                                             */
   /*  publish                                                    */
@@ -276,20 +291,35 @@ void GazeboRosPubRobotState::UpdateChild()
   }
 
 }
-
+#ifdef USE_CBQ
 // Custom Callback Queue
 ////////////////////////////////////////////////////////////////////////////////
 // custom callback queue thread
 void GazeboRosPubRobotState::QueueThread()
 {
-  static const double timeout = 0.01;
+
+  static const double timeout = 0.001;
 
   while (this->rosnode_->ok())
   {
     this->queue_.callAvailable(ros::WallDuration(timeout));
   }
+
 }
-
-
+#else
+void GazeboRosPubRobotState::RosSpinnerThread()
+{
+//  static const double timeout = 0.001;
+//  while (this->rosnode_->ok())
+//  {
+//    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(timeout));
+//  }
+  while (this->rosnode_->ok())
+  {
+    usleep(1000);
+    ros::spinOnce();
+  }
+}
+#endif
 GZ_REGISTER_MODEL_PLUGIN(GazeboRosPubRobotState);
 } //end namespace

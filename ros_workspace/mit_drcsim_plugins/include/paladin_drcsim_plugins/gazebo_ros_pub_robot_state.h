@@ -22,9 +22,14 @@
 #ifndef GAZEBO_ROS_PUB_ROBOT_STATE_HH
 #define GAZEBO_ROS_PUB_ROBOT_STATE_HH
 
+#define USE_CBQ
+//#undef USE_CBQ
+
 // Custom Callback Queue
+#ifdef USE_CBQ
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
+#endif
 
 #include "physics/physics.h"
 #include "transport/TransportTypes.hh"
@@ -147,11 +152,16 @@ class GazeboRosPubRobotState : public ModelPlugin
   private: int robotStateConnectCount;
   private: void RobotStateConnect();
   private: void RobotStateDisconnect();
+#ifdef USE_CBQ  
   // Custom Callback Queue
   private: ros::CallbackQueue queue_;
   private: void QueueThread();
   private: boost::thread callback_queue_thread_;
-  
+#else  
+  private: void RosSpinnerThread();
+  private: boost::thread ros_spinner_thread_;
+#endif
+  private: bool calibration_status_;
   // Pointer to the update event connection
   private: event::ConnectionPtr updateConnection;
   
