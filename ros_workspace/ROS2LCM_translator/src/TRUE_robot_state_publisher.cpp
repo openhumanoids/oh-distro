@@ -17,18 +17,20 @@
 #include <lcm/lcm-cpp.hpp>
 //#include <lcmtypes/bot_core.h>
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <ros/callback_queue.h>
 
-double getTime_now()
-{
-    struct timeval tv;
-    gettimeofday (&tv, NULL);
-    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; 
-}
+//double getTime_now()
+//{
+//    struct timeval tv;
+//    gettimeofday (&tv, NULL);
+//    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; 
+//}
 
 void true_robot_state_Callback(const atlas_gazebo_msgs::RobotState::ConstPtr& msg)
 {
 drc::robot_state_t robot_state_msg;
-robot_state_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+//std::cout << msg->header.stamp.toNSec() << std::endl;
+robot_state_msg.utime = msg->header.stamp.toNSec()/1000; //  from nsec to usec
 robot_state_msg.robot_name = msg->robot_name;
 robot_state_msg.origin_position.translation.x = msg->body_pose.position.x;
 robot_state_msg.origin_position.translation.y = msg->body_pose.position.y;
@@ -91,12 +93,19 @@ if(lcm.good())
 
 int main(int argc, char **argv)
 {
+  ros::CallbackQueue local_callback_queue;
   ros::init(argc, argv, "true_robot_state_publisher");
   ros::NodeHandle n;
-  ros::Subscriber sub = n.subscribe("true_robot_state", 10, true_robot_state_Callback);
+  n.setCallbackQueue(&local_callback_queue);
+  ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback);
   // create subscriptions to contact sensors.
 
-  ros::spin();
+    //ros::spin();
+   while (ros::ok())
+   {
+    local_callback_queue.callAvailable(ros::WallDuration(0.01));
+    //ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.001)); // dont use global call back queue; spawn a local thread
+   }
   return 0;
 }
 
