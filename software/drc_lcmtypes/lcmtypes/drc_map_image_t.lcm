@@ -1,0 +1,35 @@
+package drc;
+
+struct map_image_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // image sizes
+  int16_t width;
+  int16_t height;
+  int16_t channels;
+  int16_t row_bytes;
+  int32_t total_bytes;
+
+  // format of image
+  int8_t format;
+
+  // compression of image
+  int8_t compression;
+
+  // transform from reference (local) coords to image pixels
+  double transform[4][4];
+
+  // raw data samples
+  byte data[total_bytes];
+
+  // pixel formats (try to keep this to limited set)
+  const int8_t FORMAT_GRAY_UINT8        = 0;
+  const int8_t FORMAT_GRAY_FLOAT32      = 1;
+
+  // compression types
+  const int8_t COMPRESSION_NONE         = 0;
+  const int8_t COMPRESSION_ZLIB         = 1;
+  const int8_t COMPRESSION_JPEG         = 2;
+}
