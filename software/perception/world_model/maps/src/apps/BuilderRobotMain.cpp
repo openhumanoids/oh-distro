@@ -5,8 +5,14 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
+#include <boost/asio.hpp>
 
 #include <lcmtypes/drc/map_params_t.hpp>
+#include <lcmtypes/drc/heightmap_t.hpp>
+#include <lcmtypes/drc/local_map_t.hpp>
+#include <lcmtypes/octomap/raw_t.hpp>
+
+#include <bot_core/timestamp.h>
 
 #include <pcl/common/transforms.h>
 
@@ -17,25 +23,31 @@ using namespace std;
 class State {
 public:
   boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
-  boost::shared_ptr<DeltaPublisher> mDeltaPublisher;
+  boost::shared_ptr<DeltaPublisher> mUpdatePublisher;
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
-  bool mTraceRays;
-  string mMapParamsChannel;
+  bool mShouldTraceRays;
+  bool mShouldPublishUpdates;
+  bool mShouldPublishMap;
+  bool mShouldPublishOctomap;
+  int mPublishPeriod;
   lcm::Subscription* mParamsSubscription;
 
   State() {
     mSensorDataReceiver.reset(new SensorDataReceiver());
-    mDeltaPublisher.reset(new DeltaPublisher());
+    mUpdatePublisher.reset(new DeltaPublisher());
     mManager.reset(new MapManager());
     mLcm.reset(new lcm::LCM());
     mSensorDataReceiver->setLcm(mLcm);
-    mDeltaPublisher->setManager(mManager);
-    mDeltaPublisher->setLcm(mLcm);
+    mUpdatePublisher->setManager(mManager);
+    mUpdatePublisher->setLcm(mLcm);
 
     // defaults; should be set by command line args in main()
-    mTraceRays = false;
-    mMapParamsChannel = "MAP_CREATE";
+    mShouldTraceRays = false;
+    mShouldPublishUpdates = false;
+    mShouldPublishMap = false;
+    mShouldPublishOctomap = false;
+    mPublishPeriod = 3000;
     mParamsSubscription = NULL;
   }
 
@@ -80,7 +92,7 @@ public:
         mState->mManager->addToBuffer(data.mTimestamp, data.mPointCloud,
                                       data.mPose);
         mState->mManager->getActiveMap()->add(data.mPointCloud, data.mPose,
-                                              mState->mTraceRays);
+                                              mState->mShouldTraceRays);
       }
     }
   }
@@ -88,6 +100,67 @@ public:
 protected:
   State* mState;
 };
+
+
+class DataPublisher {
+public:
+  DataPublisher(State* iState) {
+    mState = iState;
+  }
+  void operator()() {
+    while(true) {
+      // wait for timer expiry
+      boost::asio::io_service service;
+      boost::asio::deadline_timer timer(service);
+      timer.expires_from_now(boost::posix_time::
+                             milliseconds(mState->mPublishPeriod));
+      timer.wait();
+
+      // see if map exists
+      boost::shared_ptr<LocalMap> localMap = mState->mManager->getActiveMap();
+      if (localMap == NULL) {
+        continue;
+      }
+
+      // publish as local map
+      if (mState->mShouldPublishMap) {
+        std::vector<char> bytes;
+        localMap->setStateId(localMap->getStateId()+1);
+        localMap->serialize(bytes);
+        drc::local_map_t mapMessage;
+        mapMessage.utime = bot_timestamp_now();
+        mapMessage.id = localMap->getId();
+        mapMessage.state_id = localMap->getStateId();
+        mapMessage.size_bytes = bytes.size();
+        mapMessage.data.insert(mapMessage.data.end(), bytes.begin(),
+                               bytes.end());
+        mState->mLcm->publish("LOCAL_MAP", &mapMessage);
+        cout << "Published local map (" << bytes.size() << " bytes)" << endl;
+      }
+
+      // publish as octomap
+      if (mState->mShouldPublishOctomap) {
+        std::cout << "Publishing octomap..." << std::endl;
+        octomap::raw_t raw;
+        Eigen::Isometry3d xform = localMap->getTransformToLocal();
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            // TODO: uncomment when changes to octomap-utils have been made
+            //raw.transform[i][j] = xform(i,j);
+          }
+        }
+        localMap->getAsRaw(raw.data);
+        raw.length = raw.data.size();
+        raw.utime = bot_timestamp_now();
+        mState->mLcm->publish("OCTOMAP", &raw);
+      }
+    }
+  }
+
+protected:
+  State* mState;
+};
+
 
 int main(const int iArgc, const char** iArgv) {
   // instantiate state object
@@ -97,28 +170,24 @@ int main(const int iArgc, const char** iArgv) {
   double mapResolution = 0.02;
   string laserChannel = "ROTATING_SCAN";
   double xDim(10), yDim(10), zDim(10);
-  int publishPeriod(3000);
-  string paramsChannel = "MAP_PARAMS";
-  string updateChannel = "MAP_UPDATE";
-  string ackChannel = "MAP_ACK";
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
   opt.add(xDim, "x", "xsize", "size of map in x direction");
   opt.add(yDim, "y", "ysize", "size of map in y direction");
   opt.add(zDim, "z", "zsize", "size of map in z direction");
-  opt.add(state.mTraceRays, "t", "raytrace",
+  opt.add(state.mShouldTraceRays, "t", "raytrace",
           "use raytracing when creating map");
   opt.add(mapResolution, "r", "resolution",
           "size of smallest (leaf) octree nodes");
-  opt.add(publishPeriod, "p", "publish_period",
-          "interval between delta publications, in ms");
-  opt.add(paramsChannel, "c", "create_channel",
-          "channel for publishing map create messages");
-  opt.add(updateChannel, "u", "update_channel",
-          "channel for publishing map update messages");
-  opt.add(ackChannel, "a", "ack_channel",
-          "channel for receiving ack messages");
+  opt.add(state.mPublishPeriod, "p", "publish_period",
+          "interval between update publications, in ms");
+  opt.add(state.mShouldPublishUpdates, "u", "update_publish",
+          "whether to publish incremental map updates");
+  opt.add(state.mShouldPublishMap, "m", "map_publish",
+          "whether to publish local map messages");
+  opt.add(state.mShouldPublishOctomap, "o", "octomap_publish",
+          "whether to publish octomap messages");
   opt.parse();
   state.mSensorDataReceiver->
     addChannel(laserChannel,
@@ -126,18 +195,17 @@ int main(const int iArgc, const char** iArgv) {
                laserChannel, "local");
   state.mManager->setMapResolution(mapResolution);
   state.mManager->setMapDimensions(Eigen::Vector3d(xDim, yDim, zDim));
-  state.mDeltaPublisher->setPublishInterval(publishPeriod);
-  state.mDeltaPublisher->setParamsChannel(paramsChannel);
-  state.mDeltaPublisher->setUpdateChannel(updateChannel);
-  state.mDeltaPublisher->setAckChannel(ackChannel);
+  state.mUpdatePublisher->setPublishInterval(state.mPublishPeriod);
+  state.mUpdatePublisher->setParamsChannel("MAP_PARAMS");
+  state.mUpdatePublisher->setUpdateChannel("MAP_UPDATE");
+  state.mUpdatePublisher->setAckChannel("MAP_ACK");
 
   // set up remaining parameters
   state.mSensorDataReceiver->setMaxBufferSize(100);
   state.mManager->setDataBufferLength(1000);
   state.mManager->createMap(Eigen::Isometry3d::Identity());
   state.mParamsSubscription =
-    state.mLcm->subscribe(state.mMapParamsChannel,
-                          &State::onMapParams, &state);
+    state.mLcm->subscribe("MAP_CREATE", &State::onMapParams, &state);
 
   // start running data receiver
   BotParam* theParam =
@@ -145,18 +213,25 @@ int main(const int iArgc, const char** iArgv) {
   state.mSensorDataReceiver->setBotParam(theParam);
   state.mSensorDataReceiver->start();
 
-  // start running the delta publisher
-  state.mDeltaPublisher->start();
+  // start running the update publisher
+  if (state.mShouldPublishUpdates) {
+    state.mUpdatePublisher->start();
+  }
 
   // start consuming data
   DataConsumer consumer(&state);
   boost::thread thread(consumer);
 
+  // start publishing data
+  DataPublisher publisher(&state);
+  boost::thread publishThread(publisher);
+
   // main lcm loop
   while (0 == state.mLcm->handle());
 
-  state.mDeltaPublisher->stop();
+  state.mUpdatePublisher->stop();
   thread.join();
+  publishThread.join();
 
   return 0;
 }

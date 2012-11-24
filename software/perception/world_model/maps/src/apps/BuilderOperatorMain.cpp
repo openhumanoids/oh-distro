@@ -6,6 +6,7 @@
 #include <boost/thread.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/local_map_t.hpp>
+#include <lcmtypes/octomap/raw_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <ConciseArgs>
@@ -17,6 +18,7 @@ public:
   boost::shared_ptr<DeltaReceiver> mDeltaReceiver;
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
+  bool mPublishOctomap;
 
   State() {
     mDeltaReceiver.reset(new DeltaReceiver());
@@ -24,6 +26,7 @@ public:
     mLcm.reset(new lcm::LCM());
     mDeltaReceiver->setManager(mManager);
     mDeltaReceiver->setLcm(mLcm);
+    mPublishOctomap = true;
   }
 
   ~State() {
@@ -60,11 +63,22 @@ public:
       cout << "Published map (" << bytes.size() << " bytes)" << endl;
 
       // publish as octomap (for debugging)
-      octomap::raw_t raw = localMap->getAsRaw();
-      raw.utime = bot_timestamp_now();
-      std::cout << "Publishing debug octomap (" << raw.length <<
-        " bytes)..." << std::endl;
-      mState->mLcm->publish("OCTOMAP", &raw);
+      if (mState->mPublishOctomap) {
+        octomap::raw_t raw;
+        Eigen::Isometry3d xform = localMap->getTransformToLocal();
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            // TODO: uncomment when changes to octomap-utils have been made
+            //raw.transform[i][j] = xform(i,j);
+          }
+        }
+        localMap->getAsRaw(raw.data);
+        raw.length = raw.data.size();
+        raw.utime = bot_timestamp_now();
+        std::cout << "Publishing debug octomap (" << raw.length <<
+          " bytes)..." << std::endl;
+        mState->mLcm->publish("OCTOMAP", &raw);
+      }
     }
   }
 
@@ -87,6 +101,8 @@ int main(const int iArgc, const char** iArgv) {
           "channel for receiving map update messages");
   opt.add(paramsChannel, "a", "ack_channel",
           "channel for sending ack messages");
+  opt.add(state.mPublishOctomap, "o", "octomap",
+          "whether to publish octomap messages");
   state.mDeltaReceiver->setParamsChannel(paramsChannel);
   state.mDeltaReceiver->setUpdateChannel(updateChannel);
   state.mDeltaReceiver->setAckChannel(ackChannel);

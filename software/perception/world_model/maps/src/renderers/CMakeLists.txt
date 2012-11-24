@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
-add_definitions(-Wall -std=gnu99)
+add_definitions(-Wall)
 
 #####################################################################
 add_library(renderer_heightmap SHARED 

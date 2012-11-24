@@ -10,7 +10,6 @@ lcmtypes_build()
 #tell cmake to build these subdirectories
 add_subdirectory(src)
 add_subdirectory(src/apps)
-add_subdirectory(src/test)
 
 add_subdirectory(src/renderers)
 add_subdirectory(src/utils)

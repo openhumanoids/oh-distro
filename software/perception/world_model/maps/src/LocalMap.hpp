@@ -6,8 +6,6 @@
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 
-#include <lcmtypes/octomap/raw_t.hpp>
-
 class LocalMap {
 public:
   typedef boost::shared_ptr<LocalMap> Ptr;
@@ -20,6 +18,8 @@ public:
   struct HeightMap {
     int mWidth;
     int mHeight;
+    float mMinZ;
+    float mMaxZ;
     std::vector<float> mData;
     Eigen::Affine3d mTransformToLocal;
   };
@@ -65,8 +65,8 @@ public:
   HeightMap getAsHeightMap(const int iDownSample=1,
                            const float iMaxHeight=1e20) const;
 
-  // export to viewable lcm type
-  octomap::raw_t getAsRaw() const;
+  // export raw underlying octree bytes 
+  void getAsRaw(std::vector<uint8_t>& oBytes) const;
 
   // for change detection
   void resetChangeReference();

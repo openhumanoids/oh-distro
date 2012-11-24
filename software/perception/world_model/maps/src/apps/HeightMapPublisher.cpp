@@ -3,10 +3,12 @@
 
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/drc/heightmap_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
+#include <zlib.h>
 
 #include <bot_lcmgl_client/lcmgl.h>
 
@@ -24,7 +26,9 @@ public:
   std::string mHeightMapChannel;
   double mHeightMapResolution;
   float mMaxHeight;
-  bool mPublishLcmGl;
+  bool mShouldPublishLcmGl;
+  bool mShouldCompress;
+  bool mShouldUseFloat;
   
 public:
   State() {
@@ -39,7 +43,9 @@ public:
     mHeightMapChannel = "HEIGHT_MAP";
     mHeightMapResolution = 0.08;
     mMaxHeight = 1e10;
-    mPublishLcmGl = true;
+    mShouldPublishLcmGl = true;
+    mShouldCompress = false;
+    mShouldUseFloat = true;
   }
 
   ~State() {
@@ -51,13 +57,14 @@ public:
     iWrapper.lock();
     MapWrapper::LocalMapConstPtr localMap = iWrapper.getMap();
     double factor = mHeightMapResolution/localMap->getResolution();
-    int downSample = log(factor)/log(2);
+    int downSample = (int)floor(log(factor)/log(2) + 0.5);
     LocalMap::HeightMap heightMap =
       iWrapper.getMap()->getAsHeightMap(downSample, mMaxHeight);
     iWrapper.unlock();
 
-    // publish heightmap via lcm
-    cout << "Publishing height map (downsample=" << downSample << ")...";
+    // publish legacy heightmap via lcm
+    // TODO: this is deprecated
+    cout << "Publishing legacy height map (downsample=" << downSample << ")...";
     drc::heightmap_t heightMapMsg;
     heightMapMsg.utime = bot_timestamp_now();
     heightMapMsg.nx = heightMap.mWidth;
@@ -75,11 +82,81 @@ public:
       }
     }
     heightMapMsg.heights = heightMap.mData;
-    mLcm->publish(mHeightMapChannel, &heightMapMsg);
+    mLcm->publish(mHeightMapChannel + "_DEPRECATED", &heightMapMsg);
     cout << "done." << endl;
 
+
+
+    //
+    // publish new heightmap via lcm
+    //
+
+    cout << "Publishing height map..." << endl;
+    drc::map_image_t msg;
+
+    // basic parameters
+    msg.utime = bot_timestamp_now();
+    msg.width = heightMap.mWidth;
+    msg.height = heightMap.mHeight;
+    msg.channels = 1;
+    int sampleBytes = (mShouldUseFloat ? sizeof(float) : sizeof(uint8_t));
+    msg.row_bytes = msg.width*sampleBytes;
+    msg.total_bytes = msg.height*msg.row_bytes;
+    msg.format = (mShouldUseFloat ? drc::map_image_t::FORMAT_GRAY_FLOAT32 :
+                  drc::map_image_t::FORMAT_GRAY_UINT8);
+    msg.compression = (mShouldCompress ? drc::map_image_t::COMPRESSION_ZLIB :
+                       drc::map_image_t::COMPRESSION_NONE);
+
+    // raw data conversion
+    std::vector<uint8_t> bytes(msg.total_bytes);
+    float scale(1), offset(0);
+    if (mShouldUseFloat) {
+      memcpy(&bytes[0], &heightMap.mData[0], msg.total_bytes);
+    }
+    else {
+      std::fill(bytes.begin(), bytes.end(), 0);
+      for (int i = 0; i < msg.width*msg.height; ++i) {
+        if (heightMap.mData[i] < -1e10) {
+          continue;
+        }
+        scale = 254. / (heightMap.mMaxZ - heightMap.mMinZ);
+        offset = 1 - scale*heightMap.mMinZ;
+        bytes[i] = floor(heightMap.mData[i]*scale + offset + 0.5);
+      }
+    }
+
+    // transform from world to image
+    Eigen::Affine3d xform = heightMap.mTransformToLocal.inverse();
+    Eigen::Affine3d adjustment = Eigen::Affine3d::Identity();
+    adjustment(2,2) = scale;
+    adjustment(2,3) = offset;
+    xform = adjustment.inverse() * xform;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        msg.transform[i][j] = xform(i,j);
+      }
+    }
+
+    // compression
+    if (mShouldCompress) {
+      std::vector<uint8_t> compressedBytes(bytes.size()*1.001 + 12);
+      unsigned long compressed_size = compressedBytes.size();
+      compress2(&compressedBytes[0], &compressed_size,
+                (const Bytef*)(&bytes[0]), bytes.size(),
+                Z_BEST_SPEED);
+      msg.total_bytes = (int)compressed_size;
+      msg.data = compressedBytes;
+    }
+    else {
+      msg.data = bytes;
+    }
+
+    // publish
+    mLcm->publish(mHeightMapChannel, &msg);
+
+
     // debug: publish lcmgl to visualize height map
-    if (mPublishLcmGl) {
+    if (mShouldPublishLcmGl) {
       cout << "Publishing lcmgl...";
       bot_lcmgl_t* lcmgl = mLcmGl;
       bot_lcmgl_color3f(lcmgl, 1.0f, 0.5f, 0.0f);
@@ -156,7 +233,11 @@ int main(const int iArgc, const char** iArgv) {
           "approximate desired heightmap resolution");
   opt.add(state.mMaxHeight, "x", "max_height",
           "maximum height to consider when creating height map");
-  opt.add(state.mPublishLcmGl, "g", "lcmgl",
+  opt.add(state.mShouldCompress, "z", "compress",
+          "whether to compress height data");
+  opt.add(state.mShouldUseFloat, "f", "float",
+          "whether to use floating point data");
+  opt.add(state.mShouldPublishLcmGl, "g", "lcmgl",
           "whether to publish lcmgl messages");
   opt.parse();
   state.mWrapper.setMapChannel(mapChannel);

@@ -5,6 +5,8 @@
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/drc/heightmap_t.hpp>
 #include <lcmtypes/drc/map_params_t.hpp>
+#include <lcmtypes/octomap/raw_t.hpp>
+
 #include <bot_core/timestamp.h>
 
 #include <lcm/lcm-cpp.hpp>
@@ -23,6 +25,7 @@ public:
   boost::shared_ptr<MapManager> mManager;
   boost::shared_ptr<lcm::LCM> mLcm;
   bool mTraceRays;
+  bool mPublishOctomap;
   int mPublishPeriod;
   string mMapChannel;
   string mMapParamsChannel;
@@ -36,6 +39,7 @@ public:
 
     // defaults; should be set by command line args in main()
     mTraceRays = false;
+    mPublishOctomap = true;
     mPublishPeriod = 3000;
     mMapChannel = "LOCAL_MAP";
     mMapParamsChannel = "MAP_CREATE";
@@ -126,10 +130,22 @@ public:
       cout << "Published local map (" << bytes.size() << " bytes)" << endl;
 
       // publish as octomap
-      std::cout << "Publishing octomap..." << std::endl;
-      octomap::raw_t raw = mState->mManager->getActiveMap()->getAsRaw();
-      raw.utime = bot_timestamp_now();
-      mState->mLcm->publish("OCTOMAP", &raw);
+      if (mState->mPublishOctomap) {
+        std::cout << "Publishing octomap..." << std::endl;
+        octomap::raw_t raw;
+        Eigen::Isometry3d xform = localMap->getTransformToLocal();
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            /* TODO: uncomment when changes to octomap-utils have been made
+            raw.transform[i][j] = xform(i,j);
+            */
+          }
+        }
+        localMap->getAsRaw(raw.data);
+        raw.length = raw.data.size();
+        raw.utime = bot_timestamp_now();
+        mState->mLcm->publish("OCTOMAP", &raw);
+      }
     }
   }
 
@@ -159,6 +175,8 @@ int main(const int iArgc, const char** iArgv) {
           "size of smallest (leaf) octree nodes");
   opt.add(state.mPublishPeriod, "p", "publish_period",
           "interval between map publications, in ms");
+  opt.add(state.mPublishOctomap, "o", "octomap",
+          "whether to publish octomap messages");
   opt.parse();
   state.mSensorDataReceiver->
     addChannel(laserChannel,

@@ -20,6 +20,8 @@
 #include <bot_frames/bot_frames.h>
 #include <bot_core/bot_core.h>
 #include <lcmtypes/drc_heightmap_t.h>
+#include <lcmtypes/drc_map_image_t.h>
+#include <zlib.h>
 
 using namespace std;
 
@@ -51,6 +53,7 @@ struct _RendererHeightmap {
     lcm_t *lcm;
     BotGtkParamWidget    *pw;
     drc_heightmap_t *hmap;
+    drc_map_image_t *map_img;
     double zMin;
     double zMax;
 
@@ -66,6 +69,9 @@ struct _RendererHeightmap {
 static void on_costmap(const lcm_recv_buf_t * buf, const char *channel, const drc_heightmap_t *msg, void *user_data){
     RendererHeightmap *self = (RendererHeightmap*) user_data;
   if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
+  if (self->cmap != NULL) {
+    drc_heightmap_t_destroy(self->cmap);
+  }
   self->cmap = drc_heightmap_t_copy(msg);
   bot_viewer_request_redraw(self->viewer);
 }
@@ -74,7 +80,92 @@ static void on_heightmap(const lcm_recv_buf_t * buf, const char *channel, const 
     RendererHeightmap *self = (RendererHeightmap*) user_data;
   
   if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
+  if (self->hmap != NULL) {
+    drc_heightmap_t_destroy(self->hmap);
+  }
   self->hmap = drc_heightmap_t_copy(msg);
+  bot_viewer_request_redraw(self->viewer);
+}
+
+static void on_map_image(const lcm_recv_buf_t * buf, const char *channel, const drc_map_image_t *msg, void *user_data){
+  RendererHeightmap *self = (RendererHeightmap*) user_data;
+  if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
+  if (self->map_img != NULL) {
+    drc_map_image_t_destroy(self->map_img);
+  }
+  self->map_img = drc_map_image_t_copy(msg);
+
+  vector<uint8_t> bytes;
+  if (self->hmap == NULL) {
+    self->hmap = (drc_heightmap_t*)calloc(1, sizeof(drc_heightmap_t));
+  }
+  self->hmap->heights =
+    (float*)realloc(self->hmap->heights,
+                    self->map_img->width*self->map_img->height*sizeof(float));
+
+
+  // uncompress if necessary
+  if (self->map_img->compression == DRC_MAP_IMAGE_T_COMPRESSION_ZLIB) {
+    bytes.resize(self->map_img->row_bytes*self->map_img->height);
+    unsigned long uncompressedSize;
+    uncompress(&bytes[0], &uncompressedSize,
+               self->map_img->data, self->map_img->total_bytes);
+  }
+  else {
+    bytes = vector<uint8_t>(self->map_img->data,
+                            self->map_img->data + self->map_img->total_bytes);
+  }
+
+  // convert transform
+  Eigen::Affine3d xform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      xform(i,j) = self->map_img->transform[i][j];
+    }
+  }
+
+  // convert to float if necessary
+  if (self->map_img->format == DRC_MAP_IMAGE_T_FORMAT_GRAY_UINT8) {
+    Eigen::Vector3d p0 = xform*Eigen::Vector3d(0,0,0);
+    Eigen::Vector3d p1 = xform*Eigen::Vector3d(0,0,1);
+    Eigen::Vector3d direction = p1-p0;
+    float scale = direction.norm();
+    float shift = direction.dot(p0)/scale;
+    for (int i = 0, idx=0; i < self->map_img->height; ++i) {
+      for (int j = 0; j < self->map_img->width; ++j, ++idx) {
+        uint8_t val = bytes[i*self->map_img->row_bytes + j];
+        if (val == 0) {
+          self->hmap->heights[idx] = -std::numeric_limits<float>::max();
+        }
+        else {
+          self->hmap->heights[idx] = scale*val + shift;
+        }
+      }
+    }
+    Eigen::Affine3d adjustment = Eigen::Affine3d::Identity();
+    adjustment(2,2) = scale;
+    adjustment(2,3) = shift;
+    xform = adjustment.inverse()*xform;
+  }
+  else {
+    for (int i = 0, idx=0; i < self->map_img->height; ++i) {
+      float* row = (float*)(&bytes[i*self->map_img->row_bytes]);
+      for (int j = 0; j < self->map_img->width; ++j, ++idx) {
+        self->hmap->heights[idx] = row[j];
+      }
+    }
+  }
+
+  // update hmap
+  self->hmap->nx = self->map_img->width;
+  self->hmap->ny = self->map_img->height;
+  xform = xform.inverse();
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      self->hmap->transform_to_local[i][j] = xform(i,j);
+    }
+  }
+
   bot_viewer_request_redraw(self->viewer);
 }
 
@@ -224,6 +315,7 @@ static void heightmap_plots_draw (BotViewer *viewer, BotRenderer *renderer)
 static void heightmap_plots_free (BotRenderer *renderer) 
 {
     RendererHeightmap *self = (RendererHeightmap*) renderer;
+    free (self->renderer.name);
     free (renderer);
 }
 
@@ -248,7 +340,7 @@ void heightmap_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lc
   self->viewer = viewer;
   self->renderer.draw = heightmap_plots_draw;
   self->renderer.destroy = heightmap_plots_free;
-  self->renderer.name = "Heightmap";
+  self->renderer.name = strdup("Heightmap");
   self->renderer.user = self;
   self->renderer.enabled = 1;
 
@@ -292,7 +384,9 @@ void heightmap_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lc
 
   drc_heightmap_t_subscribe(self->lcm, "COST_MAP",on_costmap, self);  
 
-  drc_heightmap_t_subscribe(self->lcm, "HEIGHT_MAP",on_heightmap, self);  
+  //drc_heightmap_t_subscribe(self->lcm, "HEIGHT_MAP",on_heightmap, self);  
+
+  drc_map_image_t_subscribe(self->lcm, "HEIGHT_MAP",on_map_image, self);
 
   printf("Finished Setting Up Scrolling Plots\n");
 
