@@ -12,7 +12,7 @@ pods_use_pkg_config_packages(maps-builder-robot maps)
 pods_install_executables(maps-builder-robot)
 
 
-add_executable(maps-builder-base BuilderOperatorMain.cpp)
+add_executable(maps-builder-base BuilderBaseMain.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-builder-base bot2-lcmgl-client maps)
 pods_install_executables(maps-builder-base)
