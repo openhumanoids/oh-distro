@@ -84,6 +84,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
   
+bool debug_mesh_display =false;
 
   int type = link->type ;
   enum {SPHERE, BOX, CYLINDER, MESH}; 
@@ -227,9 +228,23 @@ if (found1!=std::string::npos)
 
 	std::map<std::string, GLuint>::const_iterator mesh_map_it;
 	mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
+  std::map<std::string, fk::MeshExtrema>::const_iterator mesh_ext_map_it;
+	mesh_ext_map_it=self->robotStateListener->_mesh_extrema_map.find(nextLinkname);
 	if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
-	{
-	    glCallList (mesh_map_it->second);
+	{ 
+	   if(!debug_mesh_display)
+	     glCallList (mesh_map_it->second);
+	   else {
+		double xDim = mesh_ext_map_it->second.span_x;
+		double yDim = mesh_ext_map_it->second.span_y;
+		double zDim = mesh_ext_map_it->second.span_z;
+
+ 	    // get the vertices for mesh_map_it->second
+		glScalef(xDim,yDim,zDim);
+		bot_gl_draw_cube();
+		//std::cout << "Steven wants to see this thing on a terminal!" << std::endl;
+ 	   }	   
+
 	}
 
     glPopMatrix();

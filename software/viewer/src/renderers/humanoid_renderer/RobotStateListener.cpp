@@ -290,9 +290,17 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 		bot_wavefront_model_gl_draw(wavefront_model);
 		//glDisable(GL_LIGHTING);
 		glEndList ();
+		double minv[3];
+		double maxv[3];
+		bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
+    MeshExtrema ext_struct;
+		ext_struct.span_x = maxv[0] - minv[0];
+		ext_struct.span_y = maxv[1] - minv[1];
+		ext_struct.span_z = maxv[2] - minv[2];
+
 		bot_wavefront_model_destroy(wavefront_model);
 		_mesh_map.insert(make_pair(it->first, dl)); 
-
+    _mesh_extrema_map.insert(make_pair(it->first, ext_struct)); 
 	    }
 	}
      }

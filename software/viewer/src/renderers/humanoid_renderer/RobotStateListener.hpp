@@ -22,6 +22,14 @@
 
 namespace fk
 {
+  typedef struct _MeshExtrema 
+  {
+    double span_x;
+    double span_y;
+    double span_z;
+  } MeshExtrema;
+
+
   /**Class for keeping track of robot link state / joint angles.
    The constructor subscribes to MEAS_JOINT_ANGLES and registers a callback*/
   class RobotStateListener
@@ -77,7 +85,8 @@ namespace fk
     static void printTransforms(const std::vector<boost::shared_ptr<urdf::Geometry> > &_link_shapes,
 				const std::vector<drc::link_transform_t> &_link_tfs);
 
-    std::map<std::string, GLuint > _mesh_map;  
+    std::map<std::string, GLuint > _mesh_map;
+    std::map<std::string, MeshExtrema > _mesh_extrema_map;  
   private:
  std::string evalMeshFilePath(std::string file_path_expression);
  std::string exec(std::string cmd);
