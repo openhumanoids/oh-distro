@@ -5,7 +5,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_params_t.hpp>
 #include <lcmtypes/drc/map_update_t.hpp>
-#include <bot_core/timestamp.h>
+#include <drc_utils/Clock.hpp>
 
 #include "MapManager.hpp"
 #include "LocalMap.hpp"
@@ -80,7 +80,7 @@ operator()() {
 
         // create map parameters message
         drc::map_params_t paramsMessage;
-        paramsMessage.utime = bot_timestamp_now();
+        paramsMessage.utime = drc::Clock::instance()->getCurrentTime();
         paramsMessage.message_id = mNextMessageId;
         paramsMessage.map_id = activeMap->getId();
         paramsMessage.resolution = activeMap->getResolution();
@@ -120,7 +120,7 @@ operator()() {
 
       // create message
       drc::map_update_t updateMessage;
-      updateMessage.utime = bot_timestamp_now();
+      updateMessage.utime = drc::Clock::instance()->getCurrentTime();
       updateMessage.message_id = mNextMessageId;
       updateMessage.map_id = mManager->getActiveMap()->getId();
       updateMessage.n_added = delta.mAdded->size();

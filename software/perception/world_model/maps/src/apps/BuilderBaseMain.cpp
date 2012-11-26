@@ -7,7 +7,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/octomap/raw_t.hpp>
-#include <bot_core/timestamp.h>
+#include <drc_utils/Clock.hpp>
 
 #include <ConciseArgs>
 
@@ -24,6 +24,7 @@ public:
     mDeltaReceiver.reset(new DeltaReceiver());
     mManager.reset(new MapManager());
     mLcm.reset(new lcm::LCM());
+    drc::Clock::instance()->setLcm(mLcm);
     mDeltaReceiver->setManager(mManager);
     mDeltaReceiver->setLcm(mLcm);
     mPublishOctomap = true;
@@ -54,7 +55,7 @@ public:
       std::vector<char> bytes;
       localMap->serialize(bytes);
       drc::local_map_t mapMessage;
-      mapMessage.utime = bot_timestamp_now();
+      mapMessage.utime = drc::Clock::instance()->getCurrentTime();
       mapMessage.id = localMap->getId();
       mapMessage.state_id = localMap->getStateId();
       mapMessage.size_bytes = bytes.size();
@@ -73,7 +74,7 @@ public:
         }
         localMap->getAsRaw(raw.data);
         raw.length = raw.data.size();
-        raw.utime = bot_timestamp_now();
+        raw.utime = drc::Clock::instance()->getCurrentTime();
         std::cout << "Publishing debug octomap (" << raw.length <<
           " bytes)..." << std::endl;
         mState->mLcm->publish("OCTOMAP", &raw);

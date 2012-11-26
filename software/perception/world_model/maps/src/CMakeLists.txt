@@ -40,6 +40,7 @@ set(REQUIRED_PACKAGES
   glib-2.0
   bot2-frames
   lcm
+  drc-utils
 )
 pods_use_pkg_config_packages(maps ${REQUIRED_PACKAGES})
 

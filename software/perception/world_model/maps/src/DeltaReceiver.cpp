@@ -2,7 +2,7 @@
 
 #include <boost/thread.hpp>
 #include <lcmtypes/drc/message_ack_t.hpp>
-#include <bot_core/timestamp.h>
+#include <drc_utils/Clock.hpp>
 
 #include "MapManager.hpp"
 #include "LocalMap.hpp"
@@ -131,7 +131,7 @@ operator()() {
 
       // acknowledge the message
       drc::message_ack_t ack;
-      ack.utime = bot_timestamp_now();
+      ack.utime = drc::Clock::instance()->getCurrentTime();
       ack.message_id = delta.message_id;
       mLcm->publish(mAckChannel, &ack);
     }
@@ -175,7 +175,7 @@ onParams(const lcm::ReceiveBuffer* iBuf,
 
   // acknowledge that we received the map parameters
   drc::message_ack_t ack;
-  ack.utime = bot_timestamp_now();
+  ack.utime = drc::Clock::instance()->getCurrentTime();
   ack.message_id = iMessage->message_id;
   mLcm->publish(mAckChannel, &ack);
 }

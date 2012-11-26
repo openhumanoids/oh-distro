@@ -5,7 +5,8 @@
 #include <lcmtypes/drc/heightmap_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/heightmap_params_t.hpp>
-#include <bot_core/timestamp.h>
+
+#include <drc_utils/Clock.hpp>
 
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
@@ -39,6 +40,7 @@ public:
     mParamsSubscription =
       mLcm->subscribe("HEIGHTMAP_PARAMS", &State::onHeightmapParams, this);
     mWrapper.setLcm(mLcm);
+    drc::Clock::instance()->setLcm(mLcm);
     boost::shared_ptr<MapWrapper::UpdateListener> thisPtr(this);
     mWrapper.addListener(thisPtr);
 
@@ -77,7 +79,8 @@ public:
     // TODO: this is deprecated
     cout << "Publishing legacy height map (downsample=" << downSample << ")...";
     drc::heightmap_t heightMapMsg;
-    heightMapMsg.utime = bot_timestamp_now();
+    heightMapMsg.utime = drc::Clock::instance()->getCurrentTime();
+    cout << "TODO " << heightMapMsg.utime << endl;
     heightMapMsg.nx = heightMap.mWidth;
     heightMapMsg.ny = heightMap.mHeight;
     heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
@@ -106,7 +109,7 @@ public:
     drc::map_image_t msg;
 
     // basic parameters
-    msg.utime = bot_timestamp_now();
+    msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.width = heightMap.mWidth;
     msg.height = heightMap.mHeight;
     msg.channels = 1;
