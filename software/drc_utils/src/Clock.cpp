@@ -38,9 +38,9 @@ public:
     int64_t curRealTime = bot_timestamp_now();
     if (mCurrentTime > 0) {
       int64_t dt = curRealTime - mLastMessageReceivedTime;
-      if (dt > mTimeoutInterval) {
+      if (dt > mTimeoutInterval*1000) {
         std::cout << "drc::Clock: WARNING: last timestamp message received " <<
-          (dt/1000.) << " seconds ago" << std::endl;        
+          (dt/1e6) << " seconds ago" << std::endl;        
       }
       return mCurrentTime;
     }
@@ -55,9 +55,9 @@ public:
     mCurrentTime = iMessage->utime;
     int64_t curRealTime = bot_timestamp_now();
     int64_t dt = curRealTime - mLastMessageReceivedTime;
-    if ((mLastMessageReceivedTime > 0) && (dt > mTimeoutInterval)) {
+    if ((mLastMessageReceivedTime > 0) && (dt > mTimeoutInterval*1000)) {
       std::cout << "drc::Clock: WARNING: last timestamp message received " <<
-        (dt/1000.) << " seconds ago" << std::endl;
+        (dt/1e6) << " seconds ago" << std::endl;
     }
     mLastMessageReceivedTime = curRealTime;
   }
@@ -90,7 +90,7 @@ Clock::
 }
 
 Clock* Clock::
-getInstance() {
+instance() {
   static ClockImpl theClock;
   return &theClock;
 }

@@ -14,7 +14,7 @@ protected:
   virtual ~Clock();
 
 public:
-  static Clock* getInstance();
+  static Clock* instance();
 
   virtual void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
 
