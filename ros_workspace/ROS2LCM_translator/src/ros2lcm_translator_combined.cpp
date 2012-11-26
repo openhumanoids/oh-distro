@@ -29,6 +29,9 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <atlas_gazebo_msgs/RobotState.h>
+
+#include <rosgraph_msgs/Clock.h>
+
 //#include <gazebo_msgs/ContactState.h>
 //#include <gazebo_msgs/ContactsState.h>
 
@@ -55,14 +58,16 @@ public:
 private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
-
-  ros::Subscriber base_scan_sub_,rotating_scan_sub_,rstate_sub_;
-  void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
-  void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
-  void rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg);
-  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
   
-
+  // Clock:
+  ros::Subscriber clock_sub_;
+  void clock_cb(const rosgraph_msgs::ClockConstPtr& msg);
+  
+  // Robot State:
+  ros::Subscriber rstate_sub_;
+  void rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg);
+  
+  // Toe Sensors:
   ros::Subscriber LFootToeIn_cstate_sub_,LFootToeOut_cstate_sub_,LFootHeelIn_cstate_sub_,LFootHeelOut_cstate_sub_;
   ros::Subscriber RFootToeIn_cstate_sub_,RFootToeOut_cstate_sub_,RFootHeelIn_cstate_sub_,RFootHeelOut_cstate_sub_;
 /*  void LFootToeIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
@@ -74,13 +79,19 @@ private:
   void RFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);*/
 
+  // Laser:
+  ros::Subscriber base_scan_sub_,rotating_scan_sub_;
+  void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
+
   // Left and Right Images Seperately:
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void right_image_cb(const sensor_msgs::ImageConstPtr& msg);
   ros::Subscriber left_image_sub_,right_image_sub_;
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
 
-  // Stereo Image:
+  // Combined Stereo Image:
   void stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
       const sensor_msgs::CameraInfoConstPtr& l_cam_info,
       const sensor_msgs::ImageConstPtr& r_image,
@@ -91,7 +102,6 @@ private:
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo,
   sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
   const std::string stereo_in_,stereo_out_;
-  int counter;
 };
 
 App::App(const std::string & stereo_in,
@@ -106,9 +116,15 @@ App::App(const std::string & stereo_in,
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
+  // Clock:  
+  clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this); // previously  
+  
+  // Laser:
 //  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // gfe
   base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this); // previously
   rotating_scan_sub_ = node_.subscribe(string("/rotating_scan"), 10, &App::rotating_scan_cb,this);
+  
+  // Robot State:
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
   
   //Foot contact sensors.
@@ -121,12 +137,11 @@ App::App(const std::string & stereo_in,
   RFootHeelIn_cstate_sub_ = node_.subscribe("/RFootHeelIn_bumper/state", 10, &App::RFootHeelIn_cstate_cb,this);
   RFootHeelOut_cstate_sub_ = node_.subscribe("/RFootHeelOut_bumper/state", 10, &App::RFootHeelOut_cstate_cb,this);*/
       
-
+  // Mono-Cameras:
   left_image_sub_ = node_.subscribe(string("/left_eye/image_raw"), 10, &App::left_image_cb,this);
   right_image_sub_ = node_.subscribe(string("/right_eye/image_raw"), 10, &App::right_image_cb,this);
   //left_image_sub_ = node_.subscribe(string("/left_eye/image_rect_color"), 10, &App::left_image_cb,this);
   //right_image_sub_ = node_.subscribe(string("right_eye/image_rect_color"), 10, &App::right_image_cb,this);
-
 
   // Stereo Image:
   std::string lim_string ,lin_string,rim_string,rin_string;
@@ -156,21 +171,26 @@ App::App(const std::string & stereo_in,
     cout << "Image choice not supported!\n";
     exit(-1); 
   }
-  cout << lim_string << " is the left stereo image subscription\n";
-
+  cout << lim_string << " is the left stereo image subscription [for stereo]\n";
   l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
   l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
   r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
   r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
   sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
   sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
-  counter=0;
 };
 
 App::~App()  {
 }
 
-int counter=0;
+
+void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
+  drc::utime_t utime_msg;
+  utime_msg.utime = (int64_t) floor(msg->clock.toSec()  * 1E6);
+  lcm_publish_.publish("ROBOT_UTIME", &utime_msg);
+}
+
+int stereo_counter=0;
 void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::CameraInfoConstPtr& l_cam_info,
     const sensor_msgs::ImageConstPtr& r_image,
@@ -179,9 +199,9 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
   ros::Time current_time = l_image->header.stamp;
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toSec()  * 1E6);
 
-  counter++;
-  if (counter%10 ==0){
-    std::cout << counter << "\n";
+  stereo_counter++;
+  if (stereo_counter%10 ==0){
+    std::cout << stereo_counter << " STEREO\n";
   }
 
   /*
@@ -242,7 +262,7 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
   lcm_publish_.publish(stereo_out_.c_str(), &stereo);
   */
 
-  counter++;
+  stereo_counter++;
 }
 
 
@@ -385,7 +405,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 }
 
 
-void App::rstate_cb(const atlas_gazebo_msgs::RobotState::ConstPtr& msg){
+void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
   robot_state_msg.robot_name = msg->robot_name;
