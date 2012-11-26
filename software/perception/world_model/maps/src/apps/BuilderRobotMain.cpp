@@ -145,8 +145,7 @@ public:
         Eigen::Isometry3d xform = localMap->getTransformToLocal();
         for (int i = 0; i < 4; ++i) {
           for (int j = 0; j < 4; ++j) {
-            // TODO: uncomment when changes to octomap-utils have been made
-            //raw.transform[i][j] = xform(i,j);
+            raw.transform[i][j] = xform(i,j);
           }
         }
         localMap->getAsRaw(raw.data);
