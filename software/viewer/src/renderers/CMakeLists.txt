@@ -1,3 +1,10 @@
+#
+# NBNBNBNBNBNBNNBNBNBNBNBNBNBNBNNBNB
+# CONVENTION IS FOR RENDERER FILES TO BE NAMED
+# renderer_name.cpp and renderer_name.hpp
+# NBNBNBNBNBNBNNBNBNBNBNBNBNBNBNNBNB
+#
+
 find_package(PkgConfig REQUIRED)
 #pkg_check_modules(BOT2_VIS bot2-vis)
 #if(NOT BOT2_VIS_FOUND)
@@ -19,6 +26,7 @@ add_library(renderer_drc SHARED
   otdf_renderer/renderer_otdf.cpp
   otdf_renderer/AffordanceCollectionListener.cpp
   otdf_renderer/RobotStateListener.cpp
+  renderer_scrollingplots.c
   )
   
 set_target_properties(renderer_drc PROPERTIES SOVERSION 1)
@@ -29,6 +37,7 @@ pods_install_headers(humanoid_renderer/renderer_humanoid.hpp
   renderer_navigation.hpp
   robot_plan_renderer/renderer_robot_plan.hpp
   robot_plan_renderer/RobotPlanListener.hpp
+  renderer_scrollingplots.h
   DESTINATION renderer_drc)
   
 pods_install_headers(end_effector_goal_renderer/renderer_end_effector_goal.hpp
@@ -48,7 +57,6 @@ if(REQUIRED_PACKAGES_HUMANOID)
 endif(REQUIRED_PACKAGES_HUMANOID)
 
 set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics otdf_dom)
-
 
 pods_install_pkg_config_file(renderer_drc
     LIBS -lrenderer_drc -ljpeg 

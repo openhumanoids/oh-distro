@@ -7,6 +7,7 @@ pods_use_pkg_config_packages(drc-viewer
         image-util-renderer
         path-util
         octomap-renderer
+        renderer_heightmap
         lcmtypes_drc_lcmtypes    
         renderer_drc 
         collections_renderer)

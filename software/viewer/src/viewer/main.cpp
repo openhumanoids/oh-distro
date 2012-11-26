@@ -18,6 +18,7 @@
 #include <image_utils/renderer_cam_thumb.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
+#include <renderer_heightmap/renderer_heightmap.hpp>
 
 // local renderers
 #include <renderer_drc/renderer_humanoid.hpp>
@@ -25,6 +26,8 @@
 #include <renderer_drc/renderer_navigation.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
 #include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
+#include <renderer_drc/renderer_scrollingplots.h>
+
 #include "udp_util.h"
 
 using namespace std;
@@ -64,6 +67,30 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
     }
 
     return 1;
+}
+
+
+// TBD - correct location for this code?
+static void on_top_view_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  BotViewer *self = (BotViewer*) user_data;
+
+  double eye[3];
+  double look[3];
+  double up[3];
+  self->view_handler->get_eye_look(self->view_handler, eye, look, up);
+  eye[0] = 0;
+  eye[1] = 0;
+  eye[2] = 10;
+  look[0] = 0;
+  look[1] = 0;
+  look[2] = 0;
+  up[0] = 0;
+  up[1] = 10;
+  up[2] = 0;
+  self->view_handler->set_look_at(self->view_handler, eye, look, up);
+
+  bot_viewer_request_redraw(self);
 }
 
 int main(int argc, char *argv[])
@@ -136,12 +163,27 @@ int main(int argc, char *argv[])
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_humanoid(viewer, 0, lcm);
+  heightmap_add_renderer_to_viewer(viewer, 0, lcm);
   collections_add_renderer_to_viewer(viewer, 1);
+  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+  
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   setup_renderer_navigation(viewer, 0,lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
+  
+  // add custon TOP VIEW button
+  GtkWidget *top_view_button;
+  top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(top_view_button), "Top View");
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(top_view_button), viewer->tips, "Switch to Top View", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(top_view_button), 4);
+  gtk_widget_show(top_view_button);
+  g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
+
+  on_top_view_clicked(NULL, (void *) viewer);  
+  
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-drc-viewer", NULL);
   bot_viewer_load_preferences(viewer, fname);

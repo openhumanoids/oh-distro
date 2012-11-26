@@ -27,12 +27,17 @@
 #include <lcmtypes/bot_core.h>
 
 #define RENDERER_NAME "Navigate"
-#define PARAM_GOAL "[G]oal (timed)"
+#define PARAM_GOAL_SEND "[G]oal (timed)"
 #define PARAM_GOAL_TIMEOUT "Goal Lifespan"
-#define PARAM_GOAL_LEFT_HAND "[L]eft Hand Goal"
+#define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
 #define PARAM_NEW_MAP "New Map"
 #define PARAM_NEW_OCTOMAP "New OctoMap"
+
+// Controlling Spinning Lidar:
+#define PARAM_LIDAR_RATE "Lidar Rate"
+#define PARAM_LIDAR_RATE_SEND "Send Rate"
+
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
 //Not sure why abe has this high a variance for the angle //((2*M_PI)*(2*M_PI))
@@ -143,6 +148,9 @@ typedef struct _RendererNavigation {
   int64_t robot_utime;
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
+  
+  // Frequency of rotating lidar in hz:
+  double lidar_rate;
 
 }RendererNavigation;
 
@@ -367,6 +375,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 {
   RendererNavigation *self = (RendererNavigation*) ehandler->user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
+  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
 
   if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
     printf("\n[R]einit key registered\n");
@@ -409,6 +418,26 @@ static void send_new_map (RendererNavigation *self){
   bot_viewer_set_status_bar_message(self->viewer, "Sent LOCALIZE_NEW_MAP");
 }
 
+
+static void send_new_lidar_rate (RendererNavigation *self){
+  BotViewHandler *vhandler = self->viewer->view_handler;
+  // This is a direct command of the rotation rate... 
+
+  drc_twist_timed_t msg;
+  msg.utime = self->robot_utime;//bot_timestamp_now();
+  msg.angular_velocity.x = self->lidar_rate;
+  msg.angular_velocity.y = 0.0;
+  msg.angular_velocity.z = 0.0;
+  msg.linear_velocity.x = 0.0;
+  msg.linear_velocity.y = 0.0;
+  msg.linear_velocity.z = 0.0;
+
+  fprintf(stderr,"\nSending ROTATING_SCAN_RATE_CMD message %f\n",self->lidar_rate);//, self->active);
+  drc_twist_timed_t_publish(self->lc, "ROTATING_SCAN_RATE_CMD", &msg);
+  bot_viewer_set_status_bar_message(self->viewer, "Sent ROTATING_SCAN_RATE_CMD [%f Hz]",self->lidar_rate);
+}
+
+
 // Send a message to start a new OctoMap 
 static void send_new_octomap (RendererNavigation *self){
   BotViewHandler *vhandler = self->viewer->view_handler;
@@ -417,10 +446,10 @@ static void send_new_octomap (RendererNavigation *self){
   msgout.utime = self->robot_utime;
   msgout.message_id = 0;
   msgout.map_id = -1;
-  msgout.resolution = 0.02;
-  msgout.dimensions[0] = 10;
-  msgout.dimensions[1] = 10;
-  msgout.dimensions[2] = 10;
+  msgout.resolution = 0.5;//0.02
+  msgout.dimensions[0] = 40;//10;
+  msgout.dimensions[1] = 40;//10;
+  msgout.dimensions[2] = 40;//10;
   
   msgout.transform_to_local.translation.x = self->robot_pos[0];
   msgout.transform_to_local.translation.y = self->robot_pos[1];
@@ -438,19 +467,24 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 {
   RendererNavigation *self = (RendererNavigation*) user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
+  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   
   if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 1);
-  }else if(!strcmp(name, PARAM_GOAL)) {
+  }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 2);
-  }else if(!strcmp(name, PARAM_GOAL_LEFT_HAND)) {
+  }else if(!strcmp(name, PARAM_GOAL_SEND_LEFT_HAND)) {
     fprintf(stderr,"\nClicked NAV_GOAL_LEFT_HAND\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 3);
+  }else if(!strcmp(name, PARAM_LIDAR_RATE_SEND)) {
+    fprintf(stderr,"\nClicked LIDAR_RATE_SEND\n");
+    bot_viewer_request_pick (self->viewer, &(self->ehandler));
+    send_new_lidar_rate(self);
   }else if (! strcmp (name, PARAM_NEW_MAP)) {
     send_new_map(self);
   }else if (! strcmp (name, PARAM_NEW_OCTOMAP)) {
@@ -507,15 +541,18 @@ BotRenderer *renderer_navigation_new (BotViewer *viewer, int render_priority, lc
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_LEFT_HAND, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
 
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
 
+  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 0.05, 0.25);  
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);
+  
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
 
