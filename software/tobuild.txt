@@ -16,3 +16,4 @@ viewer
 
 # requires drcsim/gazebo1.2 and ubuntu 12.04:
 gazebo_plugins
+drc_utils

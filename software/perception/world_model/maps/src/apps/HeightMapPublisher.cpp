@@ -4,6 +4,7 @@
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/drc/heightmap_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
+#include <lcmtypes/drc/heightmap_params_t.hpp>
 #include <bot_core/timestamp.h>
 
 #include <lcm/lcm-cpp.hpp>
@@ -22,6 +23,7 @@ class State : public MapWrapper::UpdateListener {
 public:
   boost::shared_ptr<lcm::LCM> mLcm;
   bot_lcmgl_t* mLcmGl;
+  lcm::Subscription* mParamsSubscription;
   MapWrapper mWrapper;
   std::string mHeightMapChannel;
   double mHeightMapResolution;
@@ -34,6 +36,8 @@ public:
   State() {
     mLcm.reset(new lcm::LCM());
     mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "map-debug");
+    mParamsSubscription =
+      mLcm->subscribe("HEIGHTMAP_PARAMS", &State::onHeightmapParams, this);
     mWrapper.setLcm(mLcm);
     boost::shared_ptr<MapWrapper::UpdateListener> thisPtr(this);
     mWrapper.addListener(thisPtr);
@@ -51,6 +55,13 @@ public:
   ~State() {
     mWrapper.stop();
     bot_lcmgl_destroy(mLcmGl);
+    mLcm->unsubscribe(mParamsSubscription);
+  }
+
+  void onHeightmapParams(const lcm::ReceiveBuffer* iBuf,
+                         const std::string& iChannel,
+                         const drc::heightmap_params_t* iMessage) {
+    mHeightMapResolution = iMessage->resolution;
   }
 
   void notify(MapWrapper& iWrapper) {
@@ -140,11 +151,11 @@ public:
     // compression
     if (mShouldCompress) {
       std::vector<uint8_t> compressedBytes(bytes.size()*1.001 + 12);
-      unsigned long compressed_size = compressedBytes.size();
-      compress2(&compressedBytes[0], &compressed_size,
+      unsigned long compressedSize = compressedBytes.size();
+      compress2(&compressedBytes[0], &compressedSize,
                 (const Bytef*)(&bytes[0]), bytes.size(),
                 Z_BEST_SPEED);
-      msg.total_bytes = (int)compressed_size;
+      msg.total_bytes = (int)compressedSize;
       msg.data = compressedBytes;
     }
     else {

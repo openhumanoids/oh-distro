@@ -33,6 +33,13 @@
 #define PARAM_REINITIALIZE "[R]einit"
 #define PARAM_NEW_MAP "New Map"
 #define PARAM_NEW_OCTOMAP "New OctoMap"
+#define PARAM_HEIGHTMAP_RES "Heightmap Res"
+#define PARAM_UPDATE_HEIGHTMAP "Update Heightmap"
+
+typedef enum _heightmap_res_t {
+  HEIGHTMAP_RES_HIGH, HEIGHTMAP_RES_LOW,
+} heightmap_res_t;
+
 
 // Controlling Spinning Lidar:
 #define PARAM_LIDAR_RATE "Lidar Rate"
@@ -140,6 +147,7 @@ typedef struct _RendererNavigation {
   double theta;
   double goal_std;
   double goal_timeout; // no. seconds before this goal expires
+  heightmap_res_t heightmap_res;
 
   int64_t max_draw_utime;
   double circle_color[3];
@@ -446,7 +454,7 @@ static void send_new_octomap (RendererNavigation *self){
   msgout.utime = self->robot_utime;
   msgout.message_id = 0;
   msgout.map_id = -1;
-  msgout.resolution = 0.5;//0.02
+  msgout.resolution = 0.02;
   msgout.dimensions[0] = 40;//10;
   msgout.dimensions[1] = 40;//10;
   msgout.dimensions[2] = 40;//10;
@@ -463,11 +471,27 @@ static void send_new_octomap (RendererNavigation *self){
   bot_viewer_set_status_bar_message(self->viewer, "Sent MAP_CREATE");
 }
 
+static void update_heightmap (RendererNavigation *self) {
+  drc_heightmap_params_t msg;
+  msg.utime = self->robot_utime;
+  switch (self->heightmap_res) {
+  case HEIGHTMAP_RES_HIGH:
+    msg.resolution = 0.1; break;
+  case HEIGHTMAP_RES_LOW:
+    msg.resolution = 0.5; break;
+  default:
+    msg.resolution = 0.1; break;
+  }
+  drc_heightmap_params_t_publish(self->lc,"HEIGHTMAP_PARAMS", &msg);
+  bot_viewer_set_status_bar_message(self->viewer, "Sent HEIGHTMAP_PARAMS");
+}
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererNavigation *self = (RendererNavigation*) user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
+  self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   
   if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
@@ -489,6 +513,8 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     send_new_map(self);
   }else if (! strcmp (name, PARAM_NEW_OCTOMAP)) {
     send_new_octomap(self);
+  }else if (! strcmp (name, PARAM_UPDATE_HEIGHTMAP)) {
+    update_heightmap(self);
   }
 }
 
@@ -549,6 +575,8 @@ BotRenderer *renderer_navigation_new (BotViewer *viewer, int render_priority, lc
 
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHTMAP_RES, BOT_GTK_PARAM_WIDGET_MENU, HEIGHTMAP_RES_LOW, "High", HEIGHTMAP_RES_HIGH, "Low", HEIGHTMAP_RES_LOW, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_HEIGHTMAP, NULL);
 
   bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 0.05, 0.25);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);

@@ -10,6 +10,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_heightmap
         lcmtypes_drc_lcmtypes    
         renderer_drc 
-        collections_renderer)
+        collections_renderer
+        renderer_heightmap)
 #scrollingplots_renderer
 pods_install_executables(drc-viewer)
