@@ -9,6 +9,7 @@ kinematics
 sensing
 control
 object_template_model
+drc_utils
 perception
 viewer
 #network
@@ -16,4 +17,4 @@ viewer
 
 # requires drcsim/gazebo1.2 and ubuntu 12.04:
 gazebo_plugins
-drc_utils
+
