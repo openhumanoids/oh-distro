@@ -1,0 +1,10 @@
+package drc;
+
+// This basic type is used as 'replacement'
+// for bot_timestamp_now() as gazebo creates its own non-uniform clock
+// This message will contain this clock (via ROS)
+
+struct utime_t
+{
+   int64_t utime;
+}
