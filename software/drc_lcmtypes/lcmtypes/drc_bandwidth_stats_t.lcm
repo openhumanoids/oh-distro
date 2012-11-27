@@ -6,8 +6,8 @@ struct bandwidth_stats_t
 {
     int64_t utime;
     int64_t previous_utime;
-    int bytes_from_robot;
-    int bytes_to_robot;
+    int32_t bytes_from_robot;
+    int32_t bytes_to_robot;
 // list of messages
 // - number of messages
 // - direction
