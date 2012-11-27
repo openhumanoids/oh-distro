@@ -297,7 +297,9 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 		ext_struct.span_x = maxv[0] - minv[0];
 		ext_struct.span_y = maxv[1] - minv[1];
 		ext_struct.span_z = maxv[2] - minv[2];
-
+		ext_struct.offset_x = (maxv[0] + minv[0])/2.0;
+		ext_struct.offset_y = (maxv[1] + minv[1])/2.0;
+		ext_struct.offset_z = (maxv[2] + minv[2])/2.0;
 		bot_wavefront_model_destroy(wavefront_model);
 		_mesh_map.insert(make_pair(it->first, dl)); 
     _mesh_extrema_map.insert(make_pair(it->first, ext_struct)); 

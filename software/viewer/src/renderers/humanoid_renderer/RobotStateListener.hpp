@@ -27,6 +27,9 @@ namespace fk
     double span_x;
     double span_y;
     double span_z;
+    double offset_x;
+    double offset_y;
+    double offset_z;
   } MeshExtrema;
 
 

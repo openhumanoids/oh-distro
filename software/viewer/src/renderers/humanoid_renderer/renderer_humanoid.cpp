@@ -83,8 +83,9 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
  gluQuadricDrawStyle(quadric, GLU_FILL);
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
-  
-bool debug_mesh_display =false;
+
+// DEBUGING BOOLs
+bool debug_mesh_display = false;
 
   int type = link->type ;
   enum {SPHERE, BOX, CYLINDER, MESH}; 
@@ -120,7 +121,7 @@ bool debug_mesh_display =false;
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
      glScalef(xDim,yDim,zDim);
-     bot_gl_draw_cube();
+         bot_gl_draw_cube();
         //cube();
     glPopMatrix();
   
@@ -215,44 +216,60 @@ bool debug_mesh_display =false;
     //cout << "MESH: " << nextLinkname << endl;
     //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(link));
     
-/*size_t found1;
-found1=nextLinkname.find("r_");
-if (found1!=std::string::npos)
-{*/
-    glPushMatrix();
-    glTranslatef(nextTf.tf.translation.x,
-		 nextTf.tf.translation.y,
-		 nextTf.tf.translation.z);
-     glRotatef(theta * 180/3.141592654, 
-       		axis[0], axis[1], axis[2]); 
+     /* size_t found1;
+      found1=nextLinkname.find("r_");
+    if (found1!=std::string::npos)
+      {*/
+        glPushMatrix();
 
-	std::map<std::string, GLuint>::const_iterator mesh_map_it;
-	mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
-  std::map<std::string, fk::MeshExtrema>::const_iterator mesh_ext_map_it;
-	mesh_ext_map_it=self->robotStateListener->_mesh_extrema_map.find(nextLinkname);
-	if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
-	{ 
-	   if(!debug_mesh_display)
-	     glCallList (mesh_map_it->second);
-	   else {
-		double xDim = mesh_ext_map_it->second.span_x;
-		double yDim = mesh_ext_map_it->second.span_y;
-		double zDim = mesh_ext_map_it->second.span_z;
+        glTranslatef(nextTf.tf.translation.x,
+        nextTf.tf.translation.y,
+        nextTf.tf.translation.z);
+        glRotatef(theta * 180/3.141592654, 
+        axis[0], axis[1], axis[2]); 
 
- 	    // get the vertices for mesh_map_it->second
-		glScalef(xDim,yDim,zDim);
-		bot_gl_draw_cube();
-		//std::cout << "Steven wants to see this thing on a terminal!" << std::endl;
- 	   }	   
-
-	}
+        std::map<std::string, GLuint>::const_iterator mesh_map_it;
+        mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
+        std::map<std::string, fk::MeshExtrema>::const_iterator mesh_ext_map_it;
+        mesh_ext_map_it=self->robotStateListener->_mesh_extrema_map.find(nextLinkname);
+        if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
+        { 
+          if(!debug_mesh_display)
+          {
+            glCallList (mesh_map_it->second);
+          }
+          else 
+          {
+            // get the vertices for mesh_map_it->second
+            double xDim = mesh_ext_map_it->second.span_x;
+            double yDim = mesh_ext_map_it->second.span_y;
+            double zDim = mesh_ext_map_it->second.span_z;
+            double xc = mesh_ext_map_it->second.offset_x;
+            double yc = mesh_ext_map_it->second.offset_y;
+            double zc = mesh_ext_map_it->second.offset_z;
+            
+            glCallList (mesh_map_it->second);
+             
+            // (27th Nov- Steven and Sisir)
+            // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
+            // The visual origin itself is set to 0,0,0
+            // So if you are drawing a simple geometry you need to get the visual origin from the average of the extrema vertices
+            //============================================
+            glTranslatef(xc, yc, zc);
+            glScalef(xDim,yDim,zDim);
+            bot_gl_draw_cube_frame();
+            
+          }	
+        }
 
     glPopMatrix();
-//}
+
+   // }// end if (found1!=std::string::npos)
   }
   else {
-    //cout << "UNKNOWN"<< endl;
+  //cout << "UNKNOWN"<< endl;
   }
+
 
   gluDeleteQuadric(quadric);
 }
