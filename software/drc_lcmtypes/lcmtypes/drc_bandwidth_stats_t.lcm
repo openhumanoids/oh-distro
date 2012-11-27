@@ -1,0 +1,17 @@
+package drc;
+
+// message bandwidth for the robot to base comms
+
+struct bandwidth_stats_t
+{
+    int64_t utime;
+    int64_t previous_utime;
+    int bytes_from_robot;
+    int bytes_to_robot;
+// list of messages
+// - number of messages
+// - direction
+// - total bandwidth
+//    string      value;
+}
+
