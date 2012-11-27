@@ -394,6 +394,7 @@ std::string RobotStateListener::evalMeshFilePath(std::string file_path_expressio
     {  
 	found2=file_path_expression.find(token_str2);
         file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+".obj"; 
+        //file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+"_chull.obj"; 
     }
     else
     	file_path = file_path_expression;
