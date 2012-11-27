@@ -7,7 +7,6 @@ public class RobotNavGoalListener implements LCMSubscriber
     java.util.TreeMap<String,Integer> m_joint_map;
     boolean m_has_new_message = false;
     double[] nav_translation;
-    double[] nav_quaternion;
     double[] nav_goal;
     public RobotNavGoalListener(String robot_name, String channel)
     {
@@ -27,19 +26,21 @@ public class RobotNavGoalListener implements LCMSubscriber
 		nav_translation[0] = msg.goal_pos.translation.x;
 		nav_translation[1] = msg.goal_pos.translation.y;
 		nav_translation[2] = msg.goal_pos.translation.z;
-		nav_quaternion = new double[4];
-		nav_quaternion[0] = msg.goal_pos.rotation.x;
-		nav_quaternion[1] = msg.goal_pos.rotation.y;
-		nav_quaternion[2] = msg.goal_pos.rotation.z;
-		nav_quaternion[3] = msg.goal_pos.rotation.w;
-		nav_goal = new double[7];
+		
+		double q1= msg.goal_pos.rotation.x;
+		double q2 = msg.goal_pos.rotation.y;
+		double q3 = msg.goal_pos.rotation.z;
+		double q0 = msg.goal_pos.rotation.w;
+		double roll = Math.atan2(2*(q0*q1+q2*q3),1-2*(q1*q1+q2*q2));
+		double pitch = Math.asin(2*(q0*q2-q3*q1));
+		double yaw = Math.atan2(2*(q0*q3+q1*q2),1-2*(q2*q2+q3*q3));
+		nav_goal = new double[6];
 		nav_goal[0] = nav_translation[0];
 		nav_goal[1] = nav_translation[1];
 		nav_goal[2] = nav_translation[2];
-		nav_goal[3] = nav_quaternion[0];
-		nav_goal[4] = nav_quaternion[1];
-		nav_goal[5] = nav_quaternion[2];
-		nav_goal[6] = nav_quaternion[3];
+		nav_goal[3] = roll;
+		nav_goal[4] = pitch;
+		nav_goal[5] = yaw;
 		//}
 		m_has_new_message = true;
 	} catch (IOException ex) {
