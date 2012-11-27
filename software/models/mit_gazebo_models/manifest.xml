@@ -12,6 +12,7 @@
     <uri>file://mit_wheeled_robot</uri>
     <uri>file://mit_legless_robot</uri>
     <uri>file://mit_terrain</uri>
+    <uri>file://mit_compassGait_robot</uri>
   </models>
 </database>
 

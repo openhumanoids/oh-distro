@@ -1,0 +1,12 @@
+<?xml version='1.0'?>
+<model>
+  <name>MIT compassgait</name>
+  <version>0.1.0</version>
+  <sdf>model.sdf</sdf>
+  <author>
+    <name></name>
+    <email></email>
+  </author>
+  <description>
+  </description>
+</model>

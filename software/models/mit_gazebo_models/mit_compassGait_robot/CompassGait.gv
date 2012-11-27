@@ -1,0 +1,17 @@
+digraph G {
+node [shape=box];
+"hip" [label="hip"];
+"right_leg" [label="right_leg"];
+"right_toe" [label="right_toe"];
+"left_leg" [label="left_leg"];
+"left_toe" [label="left_toe"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"hip" -> "hip_pin" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"hip_pin" -> "right_leg"
+"right_leg" -> "right_toe_joint" [label="xyz: 0 0 -0.5 \nrpy: 0 -0 0"]
+"right_toe_joint" -> "right_toe"
+"hip" -> "left_leg_weld" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"left_leg_weld" -> "left_leg"
+"left_leg" -> "left_toe_joint" [label="xyz: 0 0 -0.5 \nrpy: 0 -0 0"]
+"left_toe_joint" -> "left_toe"
+}

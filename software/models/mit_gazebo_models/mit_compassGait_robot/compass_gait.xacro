@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+
+<robot name="CompassGait" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:property name="mh" value="10" />
+  <xacro:property name="m" value="2.5" />
+  <xacro:property name="a" value=".5" />
+  <xacro:property name="b" value="0.1"/>
+  <xacro:property name="mt" value="1"/>
+
+  <xacro:macro name="leg" params="lr cname color">
+    <link name="${lr}_leg">
+      <inertial>
+	<origin  xyz = "0 0 ${-(a)/2}"/>
+	<mass value = "${m}"/>
+	<inertia ixx="0.01"  ixy="0"  ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      <visual>
+      	<origin xyz="0 0 ${-(a)/2}" />
+	      <geometry>
+	        <cylinder radius="0.0075" length="${a}"/>
+      	</geometry>
+        <material name="${cname}">
+          <color rgba="${color}" />
+        </material>
+      </visual>
+    </link>
+    <link name="${lr}_toe">
+	<inertial>
+		<mass value = "${mt}"/>
+		<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+	</inertial>
+	<visual>
+		<geometry>
+			<cylinder radius="0.0025" length="${b}"/>
+		</geometry>
+	</visual>
+	<collision>
+		<origin xyz="0 0 ${-b/2}"/>
+		<geometry>
+			<sphere radius="0.00001"/>
+		</geometry>
+	</collision>
+    </link>
+    <joint name="${lr}_toe_joint" type="prismatic">
+	<origin xyz="0 0 ${-a}"/>
+	<parent link="${lr}_leg"/>
+	<child link="${lr}_toe"/>
+	<axis xyz="0 0 1"/>
+	<limit upper="${b/2}" lower="${-b/2}" effort="1000" velocity="1000"/>
+    </joint>
+  <transmission type="SimpleTransmission" name="${lr}_toe_trans">
+    <actuator name="${lr}_toe_torque" />
+    <joint name="${lr}_toe_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  </xacro:macro>
+
+  
+  <!--<link name="world">
+  </link>-->
+  <link name="hip">
+    <inertial>
+      <origin  xyz = "0.0 0.00 0"/>
+      <mass value="${mh}" />
+      <inertia ixx="0.01"  ixy="0"  ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+    </inertial>
+    <visual>    
+      <geometry>
+        <sphere radius="${.005*mh}" />
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+  </link>
+  
+
+  <xacro:leg lr="left" cname="red" color="1 0 0 1" />
+  <xacro:leg lr="right"  cname="blue" color="0 0 1 1" />
+
+  <joint name="leftLegWeld" type="fixed">
+    <parent link="hip" />
+    <child link="left_leg" /> 
+  </joint>
+  
+ 
+
+  <joint name="hipPin" type="continuous">
+    <parent link="hip" />
+    <child link="right_leg" />
+    <axis xyz="0 1 0"/> 
+  </joint>
+
+ 
+
+  <transmission type="SimpleTransmission" name="hip_trans">
+    <actuator name="hip_torque" />
+    <joint name="hipPin" />
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<gazebo>
+    <!-- robot model offset -->
+    <pose>0 0 0.6 0 0 0</pose>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libjoint_actuation_plugin.so" name="joint_torque_controller">
+      <alwaysOn>true</alwaysOn>
+      <topicName>actuator_cmd</topicName>
+    </plugin>
+    <plugin filename="libgazebo_ros_pub_robot_state.so" name="gazebo_ros_pub_robot_controller">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <topicName>true_robot_state</topicName>
+    </plugin>
+  </gazebo>
+
+</robot>
