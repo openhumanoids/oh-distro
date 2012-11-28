@@ -8,7 +8,6 @@
 #include <boost/asio.hpp>
 
 #include <lcmtypes/drc/map_params_t.hpp>
-#include <lcmtypes/drc/heightmap_t.hpp>
 #include <lcmtypes/drc/local_map_t.hpp>
 #include <lcmtypes/octomap/raw_t.hpp>
 

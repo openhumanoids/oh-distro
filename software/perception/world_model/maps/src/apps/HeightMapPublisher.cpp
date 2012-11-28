@@ -2,7 +2,6 @@
 #include <maps/LocalMap.hpp>
 
 #include <lcmtypes/drc/local_map_t.hpp>
-#include <lcmtypes/drc/heightmap_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/heightmap_params_t.hpp>
 
@@ -74,31 +73,6 @@ public:
     LocalMap::HeightMap heightMap =
       iWrapper.getMap()->getAsHeightMap(downSample, mMaxHeight);
     iWrapper.unlock();
-
-    // publish legacy heightmap via lcm
-    // TODO: this is deprecated
-    cout << "Publishing legacy height map (downsample=" << downSample << ")...";
-    drc::heightmap_t heightMapMsg;
-    heightMapMsg.utime = drc::Clock::instance()->getCurrentTime();
-    cout << "TODO " << heightMapMsg.utime << endl;
-    heightMapMsg.nx = heightMap.mWidth;
-    heightMapMsg.ny = heightMap.mHeight;
-    heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
-    Eigen::Vector3d p0 = heightMap.mTransformToLocal*Eigen::Vector3d(0,0,0);
-    Eigen::Vector3d px = heightMap.mTransformToLocal*Eigen::Vector3d(1,0,0);
-    Eigen::Vector3d py = heightMap.mTransformToLocal*Eigen::Vector3d(0,1,0);
-    heightMapMsg.scale_x = (px-p0).norm();
-    heightMapMsg.scale_y = (py-p0).norm();
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        heightMapMsg.transform_to_local[i][j] =
-          heightMap.mTransformToLocal(i,j);
-      }
-    }
-    heightMapMsg.heights = heightMap.mData;
-    mLcm->publish(mHeightMapChannel + "_DEPRECATED", &heightMapMsg);
-    cout << "done." << endl;
-
 
 
     //

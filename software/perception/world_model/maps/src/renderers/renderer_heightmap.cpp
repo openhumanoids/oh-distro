@@ -1,398 +1,355 @@
-/*
- * Renders a set of scrolling plots in the top right corner of the window
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
 #include <iostream>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <Eigen/StdVector>
-#include <Eigen/Geometry>
-
-#include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
 #include <bot_vis/bot_vis.h>
-#include <bot_frames/bot_frames.h>
-#include <bot_core/bot_core.h>
-#include <lcmtypes/drc_heightmap_t.h>
-#include <lcmtypes/drc_map_image_t.h>
+#include <Eigen/Geometry>
+#include <boost/shared_ptr.hpp>
+
+#include <lcmtypes/drc/map_image_t.hpp>
 #include <zlib.h>
 
-using namespace std;
+static const char* RENDERER_NAME = "Heightmap";
 
-#define PARAM_COLOR_MODE "Color Mode"
-#define PARAM_COLOR_MODE_Z_MAX_Z "Red Height"
-#define PARAM_COLOR_MODE_Z_MIN_Z "Blue Height"
+static const char* PARAM_COLOR_MODE = "Color Mode";
+static const char* PARAM_COLOR_MODE_Z_MAX_Z = "Red Height";
+static const char* PARAM_COLOR_MODE_Z_MIN_Z = "Blue Height";
+static const char* PARAM_HEIGHT_MODE = "Height Mode";
+static const char* PARAM_COLOR_ALPHA = "Alpha";
+static const char* PARAM_NAME_FREEZE = "Freeze";
 
-#define PARAM_HEIGHT_MODE "Height Mode"
+enum ColorMode {
+  COLOR_MODE_RANGE,
+  COLOR_MODE_Z,
+  COLOR_MODE_ORANGE,
+  COLOR_MODE_GRADIENT
+};
 
-#define PARAM_COLOR_ALPHA "Alpha"
-#define PARAM_NAME_FREEZE "Freeze"
-
-#define RENDERER_NAME "Heightmap"
-
-
-typedef enum _color_mode_t {
-  COLOR_MODE_RANGE, COLOR_MODE_Z, COLOR_MODE_ORANGE, COLOR_MODE_GRADIENT
-} color_mode_t;
-
-typedef enum _height_mode_t {
-  HEIGHT_MODE_MESH, HEIGHT_MODE_WIRE, HEIGHT_MODE_NONE,
-} height_mode_t;
-
-typedef struct _RendererHeightmap RendererHeightmap;
-
-struct _RendererHeightmap {
-    BotRenderer renderer;
-    BotViewer *viewer;
-    lcm_t *lcm;
-    BotGtkParamWidget    *pw;
-    drc_heightmap_t *hmap;
-    drc_map_image_t *map_img;
-    double zMin;
-    double zMax;
-
-    // Example Cost Map:
-    drc_heightmap_t *cmap;
-    
-    height_mode_t height_mode;
-    color_mode_t color_mode;
-    double color_alpha;
+enum HeightMode {
+  HEIGHT_MODE_MESH,
+  HEIGHT_MODE_WIRE,
+  HEIGHT_MODE_NONE,
 };
 
 
-static void on_costmap(const lcm_recv_buf_t * buf, const char *channel, const drc_heightmap_t *msg, void *user_data){
-    RendererHeightmap *self = (RendererHeightmap*) user_data;
-  if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
-  if (self->cmap != NULL) {
-    drc_heightmap_t_destroy(self->cmap);
-  }
-  self->cmap = drc_heightmap_t_copy(msg);
-  bot_viewer_request_redraw(self->viewer);
-}
+struct RendererHeightMap {
 
-static void on_heightmap(const lcm_recv_buf_t * buf, const char *channel, const drc_heightmap_t *msg, void *user_data){
-    RendererHeightmap *self = (RendererHeightmap*) user_data;
-  
-  if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
-  if (self->hmap != NULL) {
-    drc_heightmap_t_destroy(self->hmap);
-  }
-  self->hmap = drc_heightmap_t_copy(msg);
-  bot_viewer_request_redraw(self->viewer);
-}
+  BotRenderer mRenderer;
+  BotViewer* mViewer;
+  boost::shared_ptr<lcm::LCM> mLcm;
+  BotGtkParamWidget* mWidget;
 
-static void on_map_image(const lcm_recv_buf_t * buf, const char *channel, const drc_map_image_t *msg, void *user_data){
-  RendererHeightmap *self = (RendererHeightmap*) user_data;
-  if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
-  if (self->map_img != NULL) {
-    drc_map_image_t_destroy(self->map_img);
-  }
-  self->map_img = drc_map_image_t_copy(msg);
+  drc::map_image_t mHeightMap;
+  drc::map_image_t mCostMap;
 
-  vector<uint8_t> bytes;
-  if (self->hmap == NULL) {
-    self->hmap = (drc_heightmap_t*)calloc(1, sizeof(drc_heightmap_t));
-  }
-  self->hmap->heights =
-    (float*)realloc(self->hmap->heights,
-                    self->map_img->width*self->map_img->height*sizeof(float));
+  HeightMode mHeightMode;
+  ColorMode mColorMode;
+  double mColorAlpha;
+  double mMaxZ;
+  double mMinZ;
 
-
-  // uncompress if necessary
-  if (self->map_img->compression == DRC_MAP_IMAGE_T_COMPRESSION_ZLIB) {
-    bytes.resize(self->map_img->row_bytes*self->map_img->height);
-    unsigned long uncompressedSize;
-    uncompress(&bytes[0], &uncompressedSize,
-               self->map_img->data, self->map_img->total_bytes);
-  }
-  else {
-    bytes = vector<uint8_t>(self->map_img->data,
-                            self->map_img->data + self->map_img->total_bytes);
+  RendererHeightMap() {
+    mHeightMap.total_bytes = 0;
+    mCostMap.total_bytes = 0;
   }
 
-  // convert transform
-  Eigen::Affine3d xform;
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      xform(i,j) = self->map_img->transform[i][j];
+  void onMapImage(const lcm::ReceiveBuffer* iBuf,
+                  const std::string& iChannel,
+                  const drc::map_image_t* iMessage) {
+    if (bot_gtk_param_widget_get_bool (mWidget, PARAM_NAME_FREEZE)) {
+      return;
     }
-  }
 
-  // convert to float if necessary
-  if (self->map_img->format == DRC_MAP_IMAGE_T_FORMAT_GRAY_UINT8) {
-    Eigen::Vector3d p0 = xform*Eigen::Vector3d(0,0,0);
-    Eigen::Vector3d p1 = xform*Eigen::Vector3d(0,0,1);
-    Eigen::Vector3d direction = p1-p0;
-    float scale = direction.norm();
-    float shift = direction.dot(p0)/scale;
-    for (int i = 0, idx=0; i < self->map_img->height; ++i) {
-      for (int j = 0; j < self->map_img->width; ++j, ++idx) {
-        uint8_t val = bytes[i*self->map_img->row_bytes + j];
-        if (val == 0) {
-          self->hmap->heights[idx] = -std::numeric_limits<float>::max();
-        }
-        else {
-          self->hmap->heights[idx] = scale*val + shift;
+    drc::map_image_t* mapImage = NULL;
+
+    if (!iChannel.compare("HEIGHT_MAP")) {
+      mapImage = &mHeightMap;
+    }
+    else if (!iChannel.compare("COST_MAP")) {
+      mapImage = &mCostMap;
+    }
+    else {
+      return;
+    }
+
+    *mapImage = *iMessage;
+
+    std::vector<uint8_t> bytes;
+
+    // uncompress if necessary
+    if (mapImage->compression == drc::map_image_t::COMPRESSION_ZLIB) {
+      bytes.resize(mapImage->row_bytes*mapImage->height);
+      unsigned long uncompressedSize;
+      uncompress(&bytes[0], &uncompressedSize,
+                 &mapImage->data[0], mapImage->total_bytes);
+      mapImage->compression = drc::map_image_t::COMPRESSION_NONE;
+    }
+    else {
+      bytes = mapImage->data;
+    }
+
+    // convert from uint8 if necessary
+    if (mapImage->format == drc::map_image_t::FORMAT_GRAY_UINT8) {
+      int rowBytes = mapImage->row_bytes;
+      mapImage->row_bytes = sizeof(float)*mapImage->width;
+      mapImage->total_bytes = mapImage->row_bytes*mapImage->height;
+      mapImage->format = drc::map_image_t::FORMAT_GRAY_FLOAT32;
+      mapImage->data.resize(mapImage->total_bytes);
+      float* out = (float*)(&mapImage->data[0]);
+      for (int i = 0; i < mapImage->height; ++i) {
+        for (int j = 0; j < mapImage->width; ++j) {
+          out[i*mapImage->width+j] = mapImage->data[i*rowBytes+j];
         }
       }
     }
-    Eigen::Affine3d adjustment = Eigen::Affine3d::Identity();
-    adjustment(2,2) = scale;
-    adjustment(2,3) = shift;
-    xform = adjustment.inverse()*xform;
+    else {
+      mapImage->data = bytes;
+    }
+
+    bot_viewer_request_redraw(mViewer);
   }
-  else {
-    for (int i = 0, idx=0; i < self->map_img->height; ++i) {
-      float* row = (float*)(&bytes[i*self->map_img->row_bytes]);
-      for (int j = 0; j < self->map_img->width; ++j, ++idx) {
-        self->hmap->heights[idx] = row[j];
+
+  static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
+                                   const char *iName, 
+                                   RendererHeightMap *self) {
+    self->mMaxZ =
+      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MAX_Z);
+    self->mMinZ =
+      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MIN_Z);
+    self->mHeightMode = (HeightMode)
+      bot_gtk_param_widget_get_enum(iWidget, PARAM_HEIGHT_MODE);
+    self->mColorMode = (ColorMode)
+      bot_gtk_param_widget_get_enum(iWidget, PARAM_COLOR_MODE);
+    self->mColorAlpha =
+      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_ALPHA);
+  
+    bot_viewer_request_redraw(self->mViewer);
+  }
+
+  static void draw(BotViewer *iViewer, BotRenderer *iRenderer) {
+    RendererHeightMap *self = (RendererHeightMap*) iRenderer->user;
+    drc::map_image_t& img = self->mHeightMap;
+    if (img.total_bytes == 0) {
+      return;
+    }
+    
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
+    glEnable (GL_RESCALE_NORMAL);
+
+    // modify transform from image to world
+    glPushMatrix();
+    Eigen::Matrix4d xform;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        xform(i,j) = img.transform[i][j];
       }
     }
-  }
-
-  // update hmap
-  self->hmap->nx = self->map_img->width;
-  self->hmap->ny = self->map_img->height;
-  xform = xform.inverse();
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      self->hmap->transform_to_local[i][j] = xform(i,j);
+    xform = xform.inverse();
+    GLdouble matx[16];
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        matx[4*j + i] = xform(i,j);
+      }
     }
-  }
+    glMultMatrixd(matx);
 
-  bot_viewer_request_redraw(self->viewer);
-}
+    // draw triangles
+    // TODO: use vertex buffer for efficiency
+    float* data = (float*)(&img.data[0]);
+    for (int i=0; i < img.height-1; i++) {
+      for (int j=0; j < img.width-1; j++) {
+        int index = i*img.width + j;
+        double z00 = data[index];
+        double z10 = data[index+1];
+        double z01 = data[index+img.width];
+        double z11 = data[index+img.width+1];
+        bool valid00 = z00 > -1e10;
+        bool valid10 = z10 > -1e10;
+        bool valid01 = z01 > -1e10;
+        bool valid11 = z11 > -1e10;
+        int validSum = (int)valid00 + (int)valid10 +
+          (int)valid01 + (int)valid11;
+        if (validSum < 3) {
+          continue;
+        }
 
-static void on_param_widget_changed (BotGtkParamWidget *pw, const char *name, 
-        RendererHeightmap *self)
-{
-
-  self->zMax = bot_gtk_param_widget_get_double(self->pw, PARAM_COLOR_MODE_Z_MAX_Z);
-  self->zMin = bot_gtk_param_widget_get_double(self->pw, PARAM_COLOR_MODE_Z_MIN_Z);
-
-  self->height_mode =(height_mode_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHT_MODE);
-  self->color_mode =(color_mode_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_COLOR_MODE);
-  self->color_alpha =  bot_gtk_param_widget_get_double(self->pw, PARAM_COLOR_ALPHA);
-  
-  bot_viewer_request_redraw(self->viewer);
-}
-
-
-static void draw_tri(Eigen::Vector3f a, Eigen::Vector3f b, Eigen::Vector3f c,
-		     RendererHeightmap *self, int index){
-  double norm_val;
-  float * outC; //rgb colour out
-  if (self->color_mode== COLOR_MODE_Z){
-    // normalized 0->1 height
-    norm_val = ( a(2) - self->zMin) / (self->zMax - self->zMin);
-    outC = bot_color_util_jet(norm_val);
-  }else if(self->color_mode == COLOR_MODE_RANGE){
-    norm_val = sqrt(  pow( a(0),2) + pow( a(1),2) + pow( a(2),2) ) /5.0;
-    outC = bot_color_util_jet(norm_val);
-  }else if(self->color_mode == COLOR_MODE_ORANGE){
-    float orange[] ={1.0, 0.5, 0.0};
-    outC = orange;
-  }else if(self->color_mode == COLOR_MODE_GRADIENT){
-    if (self->cmap == NULL){
-      //cout << "no cmap\n";
-      float orange[] ={1.0, 0.5, 0.0};
-      outC = orange;
-    }else{
-      //cout << "got cmap\n";
-      norm_val =  self->cmap->heights[index] ;
-      outC = bot_color_util_jet(norm_val);
-    }
-  }else {
-    norm_val = 0.8;
-    outC = bot_color_util_jet(norm_val);
-  }
-  
-  if (self->height_mode== HEIGHT_MODE_MESH){
-    glBegin(GL_TRIANGLES);
-      glColor4f(outC[0], outC[1], outC[2], self->color_alpha);
-      glVertex3f( a(0), a(1), a(2));
-      glVertex3f( b(0), b(1), b(2));
-      glVertex3f( c(0), c(1), c(2));
-    glEnd();
-  }else if(self->height_mode== HEIGHT_MODE_WIRE){
-    glBegin(GL_LINE_LOOP);
-      glColor4f(outC[0], outC[1], outC[2], self->color_alpha);
-      glVertex3f( a(0), a(1), a(2));
-      glVertex3f( b(0), b(1), b(2));
-      glVertex3f( c(0), c(1), c(2));
-    glEnd();
-  }else if(self->height_mode== HEIGHT_MODE_NONE){
-    glBegin(GL_TRIANGLES);
-      glColor4f(outC[0], outC[1], outC[2], self->color_alpha);
-      glVertex3f( a(0), a(1), self->zMin);
-      glVertex3f( b(0), b(1), self->zMin);
-      glVertex3f( c(0), c(1), self->zMin);
-    glEnd();
-  }
-  
-
- 
-}
-
-
-static void heightmap_plots_draw (BotViewer *viewer, BotRenderer *renderer)
-{
-  RendererHeightmap *self = (RendererHeightmap*) renderer->user;
-  if (self->hmap == NULL){
-    return;
-  }
-    
-  Eigen::Isometry3f mTransformToLocal;
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      mTransformToLocal(i,j) = ((float)	  self->hmap->transform_to_local[i][j]);
-    }
-  }  
-    
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_LIGHTING);
-  glEnable(GL_COLOR_MATERIAL);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
-//  glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-  glEnable (GL_RESCALE_NORMAL);
-
-  //glTranslatef(0.0f,0.0f,0.0f);	// Move 1.5 Left And 6.0 Into The Screen.
-  //glColor4f(0.0,1.0,0.0,0.3);
-  //glScalef (1.0, 1.0, 1.0);
-
-    for (int i=0; i < self->hmap->ny -1 ;i++){
-    for (int j=0; j < self->hmap->nx -1 ;j++){
-          int index = i*self->hmap->nx + j;
-          double z00 = self->hmap->heights[index];
-          double z10 = self->hmap->heights[index+1];
-          double z01 = self->hmap->heights[index+self->hmap->nx];
-          double z11 = self->hmap->heights[index+self->hmap->nx+1];
-          bool valid00 = z00 > -1e10;
-          bool valid10 = z10 > -1e10;
-          bool valid01 = z01 > -1e10;
-          bool valid11 = z11 > -1e10;
-          int validSum = (int)valid00 + (int)valid10 +
-            (int)valid01 + (int)valid11;
-          if (validSum < 3) {
-            continue;
-          }
-
-          Eigen::Affine3f xform = mTransformToLocal.cast<float>();
-          Eigen::Vector3f p00 = xform*Eigen::Vector3f(j,i,z00);
-          Eigen::Vector3f p10 = xform*Eigen::Vector3f(j+1,i,z10);
-          Eigen::Vector3f p01 = xform*Eigen::Vector3f(j,i+1,z01);
-          Eigen::Vector3f p11 = xform*Eigen::Vector3f(j+1,i+1,z11);
+        Eigen::Vector3f p00(j,i,z00);
+        Eigen::Vector3f p10(j+1,i,z10);
+        Eigen::Vector3f p01(j,i+1,z01);
+        Eigen::Vector3f p11(j+1,i+1,z11);
 	  
-          if (validSum == 4) {
-            draw_tri(p00, p10, p01, self, index);
-            draw_tri(p11, p10, p01, self, index);
-          }	  
-          else {
-            if (!valid00) {
-              draw_tri(p10, p01, p11, self, index);
-            }
-            else if (!valid10) {
-              draw_tri(p00, p01, p11, self, index);
-            }
-            else if (!valid01) {
-              draw_tri(p00, p11, p10, self, index);
-            }
-            else if (!valid11) {
-              draw_tri(p00, p01, p10, self, index);
-            }
-	  }
+        if (validSum == 4) {
+          self->drawTriangle(p00, p10, p01, index);
+          self->drawTriangle(p11, p10, p01, index);
+        }	  
+        else {
+          if (!valid00) {
+            self->drawTriangle(p10, p01, p11, index);
+          }
+          else if (!valid10) {
+            self->drawTriangle(p00, p01, p11, index);
+          }
+          else if (!valid01) {
+            self->drawTriangle(p00, p11, p10, index);
+          }
+          else if (!valid11) {
+            self->drawTriangle(p00, p01, p10, index);
+          }
+        }
       }
     }  
+
+    glPopMatrix();
+  }
+
+  void drawTriangle(Eigen::Vector3f a, Eigen::Vector3f b, Eigen::Vector3f c,
+                    int index){
+    double normVal;
+    float *outColor; //rgb colour out
+    if (mColorMode == COLOR_MODE_Z) {
+      // normalized 0->1 height
+      normVal = (a(2) - mMinZ) / (mMaxZ - mMinZ);
+      outColor = bot_color_util_jet(normVal);
+    } else if(mColorMode == COLOR_MODE_RANGE) {
+      normVal = a.norm()/5;
+      outColor = bot_color_util_jet(normVal);
+    } else if(mColorMode == COLOR_MODE_ORANGE) {
+      float orange[] = {1.0, 0.5, 0.0};
+      outColor = orange;
+    } else if(mColorMode == COLOR_MODE_GRADIENT) {
+      if (mCostMap.total_bytes == 0) {
+        float orange[] = {1.0, 0.5, 0.0};
+        outColor = orange;
+      } else {
+        normVal = mCostMap.data[index]; // TODO: convert to float
+        // TODO: index does not need to be passed in?
+        outColor = bot_color_util_jet(normVal);
+      }
+    } else {
+      normVal = 0.8;
+      outColor = bot_color_util_jet(normVal);
+    }
+  
+    if (mHeightMode == HEIGHT_MODE_MESH) {
+      glBegin(GL_TRIANGLES);
+      glColor4f(outColor[0], outColor[1], outColor[2], mColorAlpha);
+      glVertex3f( a(0), a(1), a(2));
+      glVertex3f( b(0), b(1), b(2));
+      glVertex3f( c(0), c(1), c(2));
+      glEnd();
+    } else if(mHeightMode == HEIGHT_MODE_WIRE) {
+      glBegin(GL_LINE_LOOP);
+      glColor4f(outColor[0], outColor[1], outColor[2], mColorAlpha);
+      glVertex3f( a(0), a(1), a(2));
+      glVertex3f( b(0), b(1), b(2));
+      glVertex3f( c(0), c(1), c(2));
+      glEnd();
+    } else if(mHeightMode == HEIGHT_MODE_NONE) {
+      glBegin(GL_TRIANGLES);
+      glColor4f(outColor[0], outColor[1], outColor[2], mColorAlpha);
+      glVertex3f( a(0), a(1), mMinZ);
+      glVertex3f( b(0), b(1), mMinZ);
+      glVertex3f( c(0), c(1), mMinZ);
+      glEnd();
+    }
 }
 
-static void heightmap_plots_free (BotRenderer *renderer) 
-{
-    RendererHeightmap *self = (RendererHeightmap*) renderer;
-    free (self->renderer.name);
-    free (renderer);
+
+
+};
+
+
+// TODO: move these inside
+
+static void
+heightmap_renderer_free (BotRenderer *renderer) {
+  RendererHeightMap *self = (RendererHeightMap*) renderer;
+  free (self->mRenderer.name);
+  delete self;
 }
 
-
-
-static void on_load_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data)
-{
-    RendererHeightmap *self = (RendererHeightmap*) user_data;
-    bot_gtk_param_widget_load_from_key_file (self->pw, keyfile, RENDERER_NAME);
+static void
+on_load_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data) {
+  RendererHeightMap *self = (RendererHeightMap*) user_data;
+  bot_gtk_param_widget_load_from_key_file (self->mWidget, keyfile,
+                                           RENDERER_NAME);
 }
 
-static void on_save_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data)
-{
-    RendererHeightmap *self = (RendererHeightmap*)  user_data;
-    bot_gtk_param_widget_save_to_key_file (self->pw, keyfile, RENDERER_NAME);
+static void
+on_save_preferences (BotViewer *viewer, GKeyFile *keyfile, void *user_data) {
+    RendererHeightMap *self = (RendererHeightMap*)user_data;
+    bot_gtk_param_widget_save_to_key_file (self->mWidget, keyfile,
+                                           RENDERER_NAME);
 }
 
-void heightmap_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lcm)
-{
-  RendererHeightmap *self =
-      (RendererHeightmap*) calloc (1, sizeof (RendererHeightmap));
-  self->viewer = viewer;
-  self->renderer.draw = heightmap_plots_draw;
-  self->renderer.destroy = heightmap_plots_free;
-  self->renderer.name = strdup("Heightmap");
-  self->renderer.user = self;
-  self->renderer.enabled = 1;
+void
+heightmap_add_renderer_to_viewer(BotViewer* viewer,
+                                 int priority,
+                                 lcm_t* lcm) {
+  RendererHeightMap *self = new RendererHeightMap();
+  self->mViewer = viewer;
+  self->mRenderer.draw = RendererHeightMap::draw;
+  self->mRenderer.destroy = heightmap_renderer_free;
+  self->mRenderer.name = strdup("Heightmap");
+  self->mRenderer.user = self;
+  self->mRenderer.enabled = 1;
+  self->mRenderer.widget = gtk_alignment_new (0, 0.5, 1.0, 0);
+  self->mLcm.reset(new lcm::LCM(lcm));
 
-  self->renderer.widget = gtk_alignment_new (0, 0.5, 1.0, 0);
-  //    self->ctrans = globals_get_ctrans();
+  self->mWidget = BOT_GTK_PARAM_WIDGET (bot_gtk_param_widget_new ());
+  gtk_container_add (GTK_CONTAINER (self->mRenderer.widget),
+                     GTK_WIDGET(self->mWidget));
+  gtk_widget_show (GTK_WIDGET (self->mWidget));
 
-  //    self->lcm = globals_get_lcm ();
-  self->lcm = lcm;
+  bot_gtk_param_widget_add_double(self->mWidget, PARAM_COLOR_MODE_Z_MAX_Z,
+                                  BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                  -20, 20.0, .1, 20.0 );
+  bot_gtk_param_widget_add_double(self->mWidget, PARAM_COLOR_MODE_Z_MIN_Z,
+                                  BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                  -20, 20.0, .1, -20.0 );
 
-  self->pw = BOT_GTK_PARAM_WIDGET (bot_gtk_param_widget_new ());
-  gtk_container_add (GTK_CONTAINER (self->renderer.widget),
-      GTK_WIDGET(self->pw));
-  gtk_widget_show (GTK_WIDGET (self->pw));
+  bot_gtk_param_widget_add_enum(self->mWidget, PARAM_COLOR_MODE,
+                                BOT_GTK_PARAM_WIDGET_MENU, COLOR_MODE_Z, 
+                                "Height", COLOR_MODE_Z,
+                                "Range", COLOR_MODE_RANGE, 
+                                "Gradient", COLOR_MODE_GRADIENT,
+                                "Orange", COLOR_MODE_ORANGE, NULL);  
 
-  bot_gtk_param_widget_add_double(self->pw, PARAM_COLOR_MODE_Z_MAX_Z, BOT_GTK_PARAM_WIDGET_SPINBOX, -20, 20.0, .1,  20.0 );
-  bot_gtk_param_widget_add_double(self->pw, PARAM_COLOR_MODE_Z_MIN_Z, BOT_GTK_PARAM_WIDGET_SPINBOX, -20, 20.0, .1,  -20.0 );
-
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_COLOR_MODE, BOT_GTK_PARAM_WIDGET_MENU, COLOR_MODE_Z, 
-      "Height", COLOR_MODE_Z, "Range", COLOR_MODE_RANGE, 
-      "Gradient", COLOR_MODE_GRADIENT, "Orange", COLOR_MODE_ORANGE, NULL);  
-
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHT_MODE, BOT_GTK_PARAM_WIDGET_MENU, HEIGHT_MODE_MESH, "Mesh",
-      HEIGHT_MODE_MESH, "Wire", HEIGHT_MODE_WIRE, "None", HEIGHT_MODE_NONE, NULL);  
+  bot_gtk_param_widget_add_enum(self->mWidget, PARAM_HEIGHT_MODE,
+                                BOT_GTK_PARAM_WIDGET_MENU, HEIGHT_MODE_MESH,
+                                "Mesh", HEIGHT_MODE_MESH,
+                                "Wire", HEIGHT_MODE_WIRE,
+                                "None", HEIGHT_MODE_NONE, NULL);  
   
   
-  bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA,
-      BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
-  bot_gtk_param_widget_add_booleans (self->pw,
-      BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_NAME_FREEZE, 0, NULL);
+  bot_gtk_param_widget_add_double (self->mWidget, PARAM_COLOR_ALPHA,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER,
+                                   0, 1, 0.001, 1);
+  bot_gtk_param_widget_add_booleans (self->mWidget,
+                                     BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,
+                                     PARAM_NAME_FREEZE, 0, NULL);
   
-  g_signal_connect (G_OBJECT (self->pw), "changed",
-      G_CALLBACK (on_param_widget_changed), self);
+  g_signal_connect (G_OBJECT (self->mWidget), "changed",
+                    G_CALLBACK (RendererHeightMap::onParamWidgetChanged),
+                    self);
 
 
   // save widget modes:
   g_signal_connect (G_OBJECT (viewer), "load-preferences",
-      G_CALLBACK (on_load_preferences), self);
+                    G_CALLBACK (on_load_preferences), self);
   g_signal_connect (G_OBJECT (viewer), "save-preferences",
-      G_CALLBACK (on_save_preferences), self);
+                    G_CALLBACK (on_save_preferences), self);
 
+  self->mLcm->subscribe("COST_MAP", &RendererHeightMap::onMapImage, self);
+  self->mLcm->subscribe("HEIGHT_MAP", &RendererHeightMap::onMapImage, self);
 
-  drc_heightmap_t_subscribe(self->lcm, "COST_MAP",on_costmap, self);  
+  std::cout << "Finished Setting Up Heightmap Renderer" << std::endl;
 
-  //drc_heightmap_t_subscribe(self->lcm, "HEIGHT_MAP",on_heightmap, self);  
-
-  drc_map_image_t_subscribe(self->lcm, "HEIGHT_MAP",on_map_image, self);
-
-  printf("Finished Setting Up Scrolling Plots\n");
-
-  bot_viewer_add_renderer(viewer, &self->renderer, priority);
-
-  return;
+  bot_viewer_add_renderer(viewer, &self->mRenderer, priority);
 }
-
-
