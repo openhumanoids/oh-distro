@@ -22,15 +22,16 @@
 
 namespace fk
 {
-  typedef struct _MeshExtrema 
+  typedef struct _MeshStruct 
   {
+    GLuint displaylist;
     double span_x;
     double span_y;
     double span_z;
-    double offset_x;
+    double offset_x; // vertices are not always defined in local link frame. In the drc robot sdf, the vertices are defined in parent joint coordinates.
     double offset_y;
     double offset_z;
-  } MeshExtrema;
+  } MeshStruct;
 
 
   /**Class for keeping track of robot link state / joint angles.
@@ -88,8 +89,8 @@ namespace fk
     static void printTransforms(const std::vector<boost::shared_ptr<urdf::Geometry> > &_link_shapes,
 				const std::vector<drc::link_transform_t> &_link_tfs);
 
-    std::map<std::string, GLuint > _mesh_map;
-    std::map<std::string, MeshExtrema > _mesh_extrema_map;  
+    std::map<std::string, MeshStruct > _mesh_map;
+    //std::map<std::string, MeshStruct > _mesh_extrema_map;  
   private:
  std::string evalMeshFilePath(std::string file_path_expression);
  std::string exec(std::string cmd);

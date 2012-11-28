@@ -228,27 +228,25 @@ bool debug_mesh_display = false;
         glRotatef(theta * 180/3.141592654, 
         axis[0], axis[1], axis[2]); 
 
-        std::map<std::string, GLuint>::const_iterator mesh_map_it;
+        std::map<std::string, fk::MeshStruct>::const_iterator mesh_map_it;
         mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
-        std::map<std::string, fk::MeshExtrema>::const_iterator mesh_ext_map_it;
-        mesh_ext_map_it=self->robotStateListener->_mesh_extrema_map.find(nextLinkname);
         if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
         { 
           if(!debug_mesh_display)
           {
-            glCallList (mesh_map_it->second);
+            glCallList (mesh_map_it->second.displaylist);
           }
           else 
           {
             // get the vertices for mesh_map_it->second
-            double xDim = mesh_ext_map_it->second.span_x;
-            double yDim = mesh_ext_map_it->second.span_y;
-            double zDim = mesh_ext_map_it->second.span_z;
-            double xc = mesh_ext_map_it->second.offset_x;
-            double yc = mesh_ext_map_it->second.offset_y;
-            double zc = mesh_ext_map_it->second.offset_z;
+            double xDim = mesh_map_it->second.span_x;
+            double yDim = mesh_map_it->second.span_y;
+            double zDim = mesh_map_it->second.span_z;
+            double xc = mesh_map_it->second.offset_x;
+            double yc = mesh_map_it->second.offset_y;
+            double zc = mesh_map_it->second.offset_z;
             
-            glCallList (mesh_map_it->second);
+            glCallList (mesh_map_it->second.displaylist);
              
             // (27th Nov- Steven and Sisir)
             // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
