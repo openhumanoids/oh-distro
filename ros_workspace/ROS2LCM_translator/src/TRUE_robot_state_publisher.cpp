@@ -97,7 +97,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "true_robot_state_publisher");
   ros::NodeHandle n;
   n.setCallbackQueue(&local_callback_queue);
-  ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback);
+ //ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback);
+  ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback,ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   // create subscriptions to contact sensors.
 
     //ros::spin();
@@ -108,67 +109,5 @@ int main(int argc, char **argv)
    }
   return 0;
 }
-
-
-// Code for Service based comms. Foudn to be too slow. but iwll be useful if you want to spawn models 
-// programmatically
- /*ros::service::waitForService("/gazebo/get_joint_properties");
-  ros::ServiceClient client = n.serviceClient<gazebo_msgs::GetJointProperties>("/gazebo/get_joint_properties");
-
- std::string urdf_param_name = "robot_description";
- urdf::Model urdf_model;
-  if (!urdf_model.initParam(urdf_param_name))
-    ROS_ERROR("unable to get urdf xml from param %s",urdf_param_name.c_str());
-  // get gazebo model from urdf model name
-  ROS_INFO("urdf model name [%s]",urdf_model.getName().c_str());
-std::cout<< urdf_model.getName() <<std::endl;
-std::cout<< urdf_model.joints_.size()<<std::endl;
-
-
-std::vector<std::string> joint_names_;
-  typedef std::map<std::string, boost::shared_ptr<urdf::Joint> > joints_mapType;
-  for(  joints_mapType::const_iterator it = urdf_model.joints_.begin(); it!=urdf_model.joints_.end(); it++)
-  { 
-	if(it->second->type!=6)
-	{
-                std::cout << it->first << std::endl;
-                joint_names_.push_back(it->first);
-	}
-  }
-
-  gazebo_msgs::GetJointProperties srv;
-
-
-double tic, toc;
-tic = getTime_now();
-ros::WallTime start_time (ros::WallTime::now());
-  for( std::vector<std::string>::const_iterator it =joint_names_.begin(); it!=joint_names_.end(); it++)
- {
-    
-    srv.request.joint_name = *it;
-      //srv.request.joint_name = "BackRoll";
-     std::cout << srv.request.joint_name << std::endl;
-      if (client.call(srv))
-      {
-
-        for (unsigned int i=0; i<srv.response.position.size();i++)
-         {
-           //std::cout<< srv.response.position[i]<<std::endl;
-           ROS_INFO("Position: %.16f",srv.response.position[i]);
-   	   ROS_INFO("Rate: %.16f",srv.response.rate[i]);
-         }
-       }
-       else
-       {
-          ROS_ERROR("Failed to call service get_joint_properties");
-          return 1;
-       }
-  
-   }
-toc = getTime_now();
-ros::WallDuration elapsed_time (ros::WallTime::now() - start_time);
-ROS_INFO("elapsed: %.16f seconds", elapsed_time.toSec());
-std::cout << (toc-tic)*0.001 << " msec elapsed."<< std::endl;
-*/
 
 
