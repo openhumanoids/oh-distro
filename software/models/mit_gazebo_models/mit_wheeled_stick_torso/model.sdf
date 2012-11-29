@@ -530,11 +530,5 @@
    	 </plugin>
 
 
-    <!-- somehow fixes message dropout issue at startup. Without this, the first 10 or so robot state msgs are dropped. Not sure what fixes it - Sisir  -->
-    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
-    </plugin>
-
    </gazebo>
 </robot>
