@@ -29,7 +29,8 @@
     </include>
     <include>
       <uri>model://mit_wheeled_stick_torso</uri>
-      <pose>0 0 0.5 0 0 0</pose>
+      <!--<pose>0 0 2 0 0</pose>-->
     </include>
+
   </world>
 </gazebo>
