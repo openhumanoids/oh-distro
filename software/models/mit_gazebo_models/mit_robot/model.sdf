@@ -822,20 +822,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/palm.stl"/>
+        <mesh filename="package://mit_camhand/meshes/palm.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/palm.stl"/>
+        <mesh filename="package://mit_camhand/meshes/palm.stl"/>
       </geometry>
-      <material name="r_camhand_skin">
+      <material name="r_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <joint name="r_camhand_joint" type="fixed">
+  <joint name="r_mit_camhand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="r_palm"/>
     <origin rpy="0 3.1416  1.57079" xyz="0 -0.1 -0.03"/>
@@ -866,15 +866,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -889,15 +889,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="r_camhand_skin">
+      <material name="r_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -920,15 +920,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1029,15 +1029,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1052,15 +1052,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="r_camhand_skin">
+      <material name="r_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1083,15 +1083,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1192,15 +1192,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1215,15 +1215,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="r_camhand_skin">
+      <material name="r_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1246,15 +1246,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1355,15 +1355,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1378,15 +1378,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="r_camhand_skin">
+      <material name="r_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1409,15 +1409,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="r_camhand_skin_suntan">
+      <material name="r_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1502,20 +1502,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/palm.stl"/>
+        <mesh filename="package://mit_camhand/meshes/palm.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/palm.stl"/>
+        <mesh filename="package://mit_camhand/meshes/palm.stl"/>
       </geometry>
-      <material name="l_camhand_skin">
+      <material name="l_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <joint name="l_camhand_joint" type="fixed">
+  <joint name="l_mit_camhand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_palm"/>
     <origin rpy="0 3.1416 -1.57079" xyz="0  0.1 -0.03"/>
@@ -1546,15 +1546,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1569,15 +1569,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="l_camhand_skin">
+      <material name="l_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1600,15 +1600,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1709,15 +1709,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1732,15 +1732,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="l_camhand_skin">
+      <material name="l_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1763,15 +1763,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -1872,15 +1872,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -1895,15 +1895,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="l_camhand_skin">
+      <material name="l_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -1926,15 +1926,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -2035,15 +2035,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f0.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f0.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -2058,15 +2058,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f1.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f1.stl"/>
       </geometry>
-      <material name="l_camhand_skin">
+      <material name="l_mit_camhand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -2089,15 +2089,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://camhand/meshes/f2.stl"/>
+        <mesh filename="package://mit_camhand/meshes/f2.stl"/>
       </geometry>
-      <material name="l_camhand_skin_suntan">
+      <material name="l_mit_camhand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
