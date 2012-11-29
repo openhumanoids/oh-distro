@@ -43,6 +43,9 @@ rosbuild_link_boost(planar_hover_plugin thread)
 
 rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
 rosbuild_link_boost(joint_actuation_plugin thread)
+
+rosbuild_add_library(dummy_gazebo_ros_controller_manager src/dummy_gazebo_ros_controller_manager.cpp)
+rosbuild_link_boost(dummy_gazebo_ros_controller_manager thread)
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services

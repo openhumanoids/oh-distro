@@ -45,6 +45,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include "boost/thread/mutex.hpp"
 
 // Topics
 #include <atlas_gazebo_msgs/RobotState.h>
@@ -161,7 +162,7 @@ class GazeboRosPubRobotState : public ModelPlugin
   private: void RosSpinnerThread();
   private: boost::thread ros_spinner_thread_;
 #endif
-  private: bool calibration_status_;
+
   // Pointer to the update event connection
   private: event::ConnectionPtr updateConnection;
   

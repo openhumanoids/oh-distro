@@ -13,6 +13,7 @@
   <depend package="sensor_msgs"/>
   <depend package="atlas_gazebo_msgs"/>
   <depend package="tf"/>
+  <depend package="pr2_controller_manager"/>
 <!--  <export>
     <cpp cflags="-I${prefix}/cfg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
     <gazebo plugin_path="${prefix}/lib" />

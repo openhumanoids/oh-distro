@@ -105,18 +105,10 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
     int argc = 0;
     char** argv = NULL;
     ros::init( argc, argv, "gazebo", ros::init_options::NoSigintHandler); //ros::init(argc,argv,"gazebo",ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
-    
+    gzwarn << "should start ros::init in simulation by using the system plugin\n";
   }
-
   this->rosnode_ = new ros::NodeHandle(this->robotNamespace);
   
-  // Custom Callback Queue
-  /*ros::AdvertiseOptions p3d_ao = ros::AdvertiseOptions::create<nav_msgs::Odometry>(
-    this->topicName,1,
-    boost::bind( &GazeboRosP3D::P3DConnect,this),
-    boost::bind( &GazeboRosP3D::P3DDisconnect,this), ros::VoidPtr(), &this->p3d_queue_);
-  this->pub_ = this->rosnode_->advertise(p3d_ao);*/
-
   if (this->topicName != "")
   {
 #ifdef USE_CBQ
@@ -129,8 +121,7 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
     this->pub_ = this->rosnode_->advertise<atlas_gazebo_msgs::RobotState>(this->topicName, 1);
 #endif
   }
-  
- this->rosnode_->param("gazebo/start_robot_calibrated", this->calibration_status_, true);
+
   
 #ifdef USE_CBQ
     // Custom Callback Queue
@@ -138,6 +129,9 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
 #else
   this->ros_spinner_thread_ = boost::thread( boost::bind( &GazeboRosPubRobotState::RosSpinnerThread,this ) );
 #endif
+
+usleep(500000); // 0.5 sec delay to make sure that the subscribes find its publishers.
+
   // New Mechanism for Updating every World Cycle
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
@@ -165,14 +159,16 @@ void GazeboRosPubRobotState::RobotStateDisconnect()
 // Update the controller
 void GazeboRosPubRobotState::UpdateChild()
 {
+
+  if (this->world->IsPaused()) return;
   /***************************************************************/
   /*                                                             */
   /*  this is called at every update simulation step             */
   /*                                                             */
   /***************************************************************/
  #ifdef USE_CBQ
-  if (this->robotStateConnectCount == 0)
-    return;
+  //if (this->robotStateConnectCount == 0)
+  //  return;
  #endif
   /***************************************************************/
   /*                                                             */
@@ -298,13 +294,12 @@ void GazeboRosPubRobotState::UpdateChild()
 void GazeboRosPubRobotState::QueueThread()
 {
 
-  static const double timeout = 0.001;
-
+  static const double timeout = 0.01;
+  //gzwarn << "In GazeboRosPubRobotState::QueueThread()\n";
   while (this->rosnode_->ok())
   {
     this->queue_.callAvailable(ros::WallDuration(timeout));
   }
-
 }
 #else
 void GazeboRosPubRobotState::RosSpinnerThread()
