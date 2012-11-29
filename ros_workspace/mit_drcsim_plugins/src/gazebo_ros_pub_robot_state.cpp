@@ -177,11 +177,11 @@ void GazeboRosPubRobotState::UpdateChild()
   /***************************************************************/
   //Time cur_time = Simulator::Instance()->GetSimTime();
   common::Time cur_time = this->world->GetSimTime();
-  // std::cout << "Simtime" << cur_time.Double() <<std::endl;
+//  std::cout << "Simtime" << cur_time.Double() <<std::endl;
   // construct world state message
   if (cur_time - this->last_update_time_ >= this->update_period_)
   {
-        
+     
     this->lock.lock();
 
     // compose robotStateMsg
