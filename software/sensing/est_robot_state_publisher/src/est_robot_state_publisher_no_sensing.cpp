@@ -13,6 +13,7 @@ public:
 		const std::string& chan,
 		const drc::robot_state_t * msg)
 	{
+	  //std::cout << msg->utime << std::endl;
 		lcm.publish("EST_ROBOT_STATE", msg);
 	}
 };
