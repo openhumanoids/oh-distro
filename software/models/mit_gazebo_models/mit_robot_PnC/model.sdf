@@ -2467,10 +2467,10 @@
         <topicName>joint_trajectory</topicName>
         <updateRate>1000.0</updateRate>
       </plugin>-->
-    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+     <!-- <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-    </plugin>
+    </plugin>-->
 
     <plugin name="joint_torque_controller" filename="libjoint_actuation_plugin.so">
       <alwaysOn>true</alwaysOn>
