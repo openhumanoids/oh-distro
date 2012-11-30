@@ -1,0 +1,59 @@
+<launch>
+
+
+
+  <arg name="gzname" default="gazebo"/>
+
+
+  <!-- start gazebo with the Porterbot -->
+  <param name="/use_sim_time" type="bool" value="true"/>
+
+ 
+  <node name="gazebo" pkg="porterbot_scripts" type="run_$(arg gzname)" args="$(find porterbot_scripts)/worlds/porterbot.world"/>
+
+   <!-- Robot Description -->
+  <param name="robot_description" textfile="$(find porterbot)/model.sdf"/>
+
+  <!-- Controller Manager -->
+  <include file="$(find pr2_controller_manager)/controller_manager.launch" />
+
+  <!-- Fake Calibration -->
+  <node pkg="rostopic" type="rostopic" name="fake_joint_calibration"
+        args="pub /calibrated std_msgs/Bool true" />
+
+  <!-- TF Buffer Server -->
+  <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
+    <param name="buffer_size" value="1200.0"/>
+  </node>
+
+
+  <!-- Position Controllers -->
+  <rosparam file="$(find porterbot_scripts)/models/porterbot/ros/position_controllers.yaml" command="load" />
+ 
+ <!-- Controllers that come up started -->
+  <node name="drc_robot_controllers_spawner"
+        pkg="pr2_controller_manager" type="spawner" output="screen"
+        args="--wait-for=/calibrated 
+
+torso_joint_position_controller
+
+l_j1_position_controller 
+l_j2_position_controller
+l_j3_position_controller 
+l_j4_position_controller 
+l_j5_position_controller 
+l_j6_position_controller 
+l_j7_position_controller 
+
+r_j1_position_controller 
+r_j2_position_controller
+r_j3_position_controller 
+r_j4_position_controller 
+r_j5_position_controller 
+r_j6_position_controller 
+r_j7_position_controller 
+" />
+
+</launch>
+  
+

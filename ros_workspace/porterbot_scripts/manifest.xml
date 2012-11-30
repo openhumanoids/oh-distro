@@ -1,0 +1,18 @@
+<package>
+  <description brief="porterbot_scripts">
+
+     porterbot_scripts
+
+  </description>
+  <author>Jonathan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/porterbot_scripts</url>
+  <depend package="robot_state_publisher"/>
+  <depend package="joint_state_publisher"/>
+  <depend package="xacro"/>
+  <depend package="rviz"/>
+  <depend package="robot_mechanism_controllers"/>
+  <depend package="drc_robot_utils"/>
+
+</package>
