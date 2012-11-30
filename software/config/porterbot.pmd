@@ -1,0 +1,33 @@
+group "core" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+}
+
+
+group "gazebo" {
+    cmd "1.load Porterbot" {
+        exec = "roslaunch porterbot_scripts porterbot.launch";
+        host = "localhost";
+    }
+    cmd "2.homeposition" {
+        exec = "rosrun porterbot_scripts homeposition.py";
+        host = "localhost";
+    }
+    cmd "3.salut" {
+        exec = "rosrun porterbot_scripts salut.py";
+        host = "localhost";
+    }
+    cmd "4.joint control" {
+        exec = "rosrun porterbot_scripts joint_control.py";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+}
