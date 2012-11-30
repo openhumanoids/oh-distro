@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<model>
+  <name>Porterbot</name>
+  <version>0.1.0</version>
+  <sdf>model.sdf</sdf>
+  <author>
+    <name>Jonathan Hechtabuer</name>
+    <email>jonathan.hechtbauer@googlemail.com</email>
+  </author>
+  <description> Porterbot based on the DRC Robot. </description>
+</model>

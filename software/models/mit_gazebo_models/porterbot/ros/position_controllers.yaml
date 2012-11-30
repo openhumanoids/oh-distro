@@ -1,0 +1,114 @@
+torso_joint_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: torso_joint
+  pid: &torso_joint_gains
+    p: 200.0
+    d: 350
+    i: 1
+    i_clamp: 1
+
+l_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j1
+  pid: &l_j1_gains
+    p: 120.0
+    d: 160
+    i: 1
+    i_clamp: 1
+
+l_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j2
+  pid: *l_j1_gains
+
+
+
+l_j3_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j3
+  pid: &l_j3_gains
+    p: 80.0
+    d: 140
+    i: 1
+    i_clamp: 1
+
+l_j4_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j4
+  pid: *l_j3_gains
+
+
+l_j5_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j5
+  pid: &l_j5_gains
+    p: 40.0
+    d: 80
+    i: 1
+    i_clamp: 1
+
+l_j6_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j6
+  pid: &l_j6_gains
+    p: 40.0
+    d: 120
+    i: 1
+    i_clamp: 1
+
+
+l_j7_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: l_j7
+  pid: &l_j7_gains
+    p: 40.0
+    d: 40
+    i: 1
+    i_clamp: 1
+
+
+r_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j1
+  pid: *l_j1_gains
+
+
+r_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j2
+  pid: *l_j1_gains
+
+
+
+r_j3_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j3
+  pid: *l_j3_gains
+
+
+r_j4_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j4
+  pid: *l_j3_gains
+
+
+r_j5_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j5
+  pid: &r_j5_gains
+    p: 40.0
+    d: 50
+    i: 1
+    i_clamp: 1
+
+r_j6_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j6
+  pid: *l_j6_gains
+
+
+r_j7_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: r_j7
+  pid: *l_j7_gains
+

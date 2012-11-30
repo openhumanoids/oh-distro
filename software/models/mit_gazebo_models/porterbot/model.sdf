@@ -1,0 +1,1049 @@
+<?xml version="1.0" ?>
+<robot
+  name="Porterbot" 
+xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" 
+xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+
+<!--   
+    It seems like this infos do not affect gazebo:
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
+-->
+
+  <link name="base">
+    <inertial>
+    <mass value="56" />
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertia ixx="6.47" ixy="0" ixz="0" iyy="8.59" iyz="0" izz="11.70" /> 
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://porterbot/meshes/base_link.stl" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://porterbot/meshes/base_link.stl" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="torso_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="30" />
+      <inertia ixx="4.06" ixy="0.12" ixz="2.84" iyy="7.02" iyz="0.11" izz="0.97" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/torso_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/torso_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="torso_joint" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base" />
+    <child link="torso_link" />
+    <axis xyz="0 0 -1" />
+    <dynamics damping="1.0" friction="0"/>
+     <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/>
+  </joint>
+
+  <link name="velodyne_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2" />
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/velodyne_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/velodyne_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="velodyne_joint" type="fixed">
+    <origin xyz="0.468897281819599 0.018790855756548 0.623555288909096" rpy="0 0 0" />
+    <parent link="torso_link" />
+    <child link="velodyne_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="1.0" friction="0"/>
+     <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/>
+  </joint>
+
+
+
+<!-- left arm -->
+  <link name="l_link1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="3.6" />
+      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.0076" iyz="0" izz="0.021" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_link1.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j1" type="revolute">
+    <origin xyz="0.476177638729297 0.21171929915304 0.522533108830361" 
+	    rpy="2.50336447101917E-11 -4.22158854177918E-11 -0.476942219838041" />
+    <parent link="torso_link" />
+    <child link="l_link1" />
+    <axis xyz="0 0.996223658421194 -0.086824088834218" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/> 
+  </joint>
+
+ <link
+    name="l_link2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="3.6" />
+      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.021" iyz="0" izz="-0.0076" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link2.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j2" type="revolute">
+    <origin xyz="0.0105667650367604 0.257554514674348 0.0470134602802149"
+      rpy="-0.0879361240244671 0.150956408635412 -0.0132575780229298" />
+    <parent link="l_link1" />
+    <child link="l_link2" />
+    <axis xyz="0 0 -1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
+  </joint>
+
+  <link name="l_link3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2" />
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.008" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link3.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j3" type="revolute">
+    <origin xyz="0 0.11 -0.0700000000000001"
+      rpy="-1.38777878078145E-17 0 -5.55111512312578E-17" />
+    <parent link="l_link2" />
+    <child link="l_link3" />
+    <axis xyz="0 1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/> 
+  </joint>
+
+  <link name="l_link4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2" />
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.008" iyz="0" izz="-0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link4.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j4" type="revolute">
+    <origin xyz="0 0.218 0.0590000000000002" rpy="5.55111512312578E-17 8.32667268468867E-17 0" />
+    <parent link="l_link3" />
+    <child link="l_link4" />
+    <axis xyz="0 0 -1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-1.920" upper="1.920" velocity="0.01"/>
+  </joint>
+
+  <link name="l_link5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link5.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j5" type="revolute">
+    <origin xyz="0 0.1 -0.0590000000000002" rpy="1.38777878078145E-17 -2.77555756156289E-17 0" />
+    <parent link="l_link4" />
+    <child link="l_link5" />
+    <axis xyz="0 1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/> 
+  </joint>
+
+  <link name="l_link6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass
+        value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="-0.001" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link6.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j6" type="revolute">
+    <origin xyz="0 0.1765 0.0482499999999998"
+            rpy="6.93889390390723E-17 -5.55111512312578E-17 5.55111512312578E-17" />
+    <parent link="l_link5" />
+    <child link="l_link6" />
+    <axis xyz="0 0 -1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-1.745" upper="1.745" velocity="0.05"/>
+  </joint>
+
+  <link name="l_link7">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link7.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_j7" type="revolute">
+    <origin xyz="0 0.0800000000000001 -0.0482499999999964" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="l_link6" />
+    <child link="l_link7" />
+    <axis xyz="0 -1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/> 
+  </joint>
+
+
+  <link name="gripper_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2.6" />
+      <inertia ixx="0.007" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.007" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/gripper_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/gripper_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="gripper_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="l_link7" />
+    <child link="gripper_link" />
+    <axis xyz="0 -1 0" />
+    <limit lower="0" upper="0" effort="0" velocity="0" />
+  </joint>
+
+  <link name="l_lidar_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="1" />
+      <inertia
+        ixx="0.001"
+        ixy="0"
+        ixz="0"
+        iyy="0.001"
+        iyz="0"
+        izz="0.001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_lidar_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_lidar_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="l_lidar_joint" type="fixed">
+    <origin
+      xyz="1.19400000040126E-05 0.146390829929814 0.117130657911702"
+      rpy="-1.38777878078145E-17 0 0" />
+    <parent
+      link="gripper_link" />
+    <child
+      link="l_lidar_link" />
+    <axis
+      xyz="1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-0.65" upper="0.08" velocity="0.05"/>
+  </joint>
+  <link name="l_finger1_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.1" />
+      <inertia
+        ixx="0.0001"
+        ixy="0"
+        ixz="0"
+        iyy="0.0001"
+        iyz="0"
+        izz="0.0001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger1_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger1_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_finger1_joint" type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.38777878078145E-17 0 0" />
+    <parent
+      link="gripper_link" />
+    <child
+      link="l_finger1_link" />
+    <axis
+      xyz="1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
+  </joint>
+  <link name="l_finger2_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+
+        rpy="0 0 0" />
+      <mass
+        value="0.1" />
+      <inertia
+        ixx="0.0001"
+
+        ixy="0"
+        ixz="0"
+        iyy="0.0001"
+        iyz="0"
+        izz="0.0001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger2_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger2_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_finger2_joint" type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.38777878078145E-17 0 0" />
+    <parent
+      link="gripper_link" />
+    <child
+      link="l_finger2_link" />
+    <axis
+      xyz="-1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
+  </joint>
+
+<!-- right arm -->
+  <link name="r_link1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="3.6" />
+      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.0076" iyz="0" izz="0.021" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_link1.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+<!--      rpy="2.34760359534957E-11 4.31015090802447E-11 -2.5845441632246" /> -->
+  <joint name="r_j1" type="revolute">
+    <origin xyz="0.491592546598285 -0.172936327556441 0.522533108830358" 
+            rpy="2.34760359534957E-11 -0.298867098 -2.61059139" />
+    <parent link="torso_link" />
+    <child link="r_link1" />
+    <axis xyz="0 -0.99622365842133 0.086824088832664" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/> 
+  </joint>
+
+ <link
+    name="r_link2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="3.6" />
+      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.021" iyz="0" izz="-0.0076" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link2.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j2" type="revolute">
+    <origin xyz="0.0105667650367604 0.257554514674348 0.0470134602802149"
+      rpy="-0.0879361240244671 0.150956408635412 -0.0132575780229298" />
+    <parent link="r_link1" />
+    <child link="r_link2" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
+  </joint>
+
+  <link name="r_link3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2" />
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.008" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link3.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j3" type="revolute">
+    <origin xyz="0 0.11 -0.0700000000000001"
+      rpy="-1.38777878078145E-17 0 -5.55111512312578E-17" />
+    <parent link="r_link2" />
+    <child link="r_link3" />
+    <axis xyz="0 -1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/> 
+  </joint>
+
+  <link name="r_link4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2" />
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.008" iyz="0" izz="-0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link4.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j4" type="revolute">
+    <origin xyz="0 0.218 0.0590000000000002" rpy="5.55111512312578E-17 8.32667268468867E-17 0" />
+    <parent link="r_link3" />
+    <child link="r_link4" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-1.920" upper="1.920" velocity="0.01"/>
+  </joint>
+
+  <link name="r_link5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link5.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j5" type="revolute">
+    <origin xyz="0 0.1 -0.0590000000000002" rpy="1.38777878078145E-17 -2.77555756156289E-17 0" />
+    <parent link="r_link4" />
+    <child link="r_link5" />
+    <axis xyz="0 -1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/> 
+  </joint>
+
+  <link name="r_link6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass
+        value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="-0.001" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link6.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j6" type="revolute">
+    <origin xyz="0 0.1765 0.0482499999999998"
+            rpy="6.93889390390723E-17 -5.55111512312578E-17 5.55111512312578E-17" />
+    <parent link="r_link5" />
+    <child link="r_link6" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-1.745" upper="1.745" velocity="0.05"/>
+  </joint>
+
+  <link name="r_link7">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+       <mass value="1.2" />
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link7.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_j7" type="revolute">
+    <origin xyz="0 0.0800000000000001 -0.0482499999999964" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="r_link6" />
+    <child link="r_link7" />
+    <axis xyz="0 -1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/> 
+  </joint>
+
+
+  <link name="r_gripper_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="2.6" />
+      <inertia
+        ixx="0.007"
+        ixy="0"
+        ixz="0"
+        iyy="0.007"
+        iyz="0"
+        izz="0.007" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/gripper_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/gripper_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r_gripper_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.38777878078145E-17 0 0" />
+    <parent
+      link="r_link7" />
+    <child
+      link="r_gripper_link" />
+    <axis
+      xyz="0 -1 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="206.843" lower="-1.2" upper="1.28" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2" soft_upper_limit="11.28"/>
+  </joint>
+  <link name="r_lidar_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="1" />
+      <inertia
+        ixx="0.001"
+        ixy="0"
+        ixz="0"
+        iyy="0.001"
+        iyz="0"
+        izz="0.001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_lidar_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_lidar_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="r_lidar_joint" type="fixed">
+    <origin xyz="1.19400000040126E-05 0.146390829929814 0.117130657911702"
+      rpy="-1.38777878078145E-17 0 0" />
+    <parent link="r_gripper_link" />
+    <child link="r_lidar_link" />
+    <axis
+      xyz="1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="-0.65" upper="0.08" velocity="0.05"/>
+  </joint>
+  <link name="r_finger1_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.1" />
+      <inertia
+        ixx="0.0001"
+        ixy="0"
+        ixz="0"
+        iyy="0.0001"
+        iyz="0"
+        izz="0.0001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger1_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://porterbot/meshes/l_finger1_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_finger1_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="r_gripper_link" />
+    <child link="r_finger1_link" />
+    <axis xyz="1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
+  </joint>
+
+  <link name="r_finger2_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.1" />
+      <inertia ixx="0.0001" ixy="0"
+        ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_finger2_link.STL" />
+      </geometry>
+      <material name="metall">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://porterbot/meshes/l_finger2_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_finger2_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="r_gripper_link" />
+    <child link="r_finger2_link" />
+    <axis xyz="-1 0 0" />
+    <dynamics damping="1.0" friction="0"/>
+    <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
+  </joint>
+
+ 
+  <gazebo>
+    <!-- robot model offset -->
+    <pose>0 0 0.93 0 0 0</pose>
+  </gazebo>
+
+  <gazebo>
+
+
+    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+  </gazebo>
+
+
+
+<transmission name="torso_joint_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="torso.joint_motor"/>
+    <joint name="torso_joint"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j1_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j1_motor"/>
+    <joint name="r_j1"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j2_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j2_motor"/>
+    <joint name="r_j2"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j3_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j3_motor"/>
+    <joint name="r_j3"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j4_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j4_motor"/>
+    <joint name="r_j4"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j5_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j5_motor"/>
+    <joint name="r_j5"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j6_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j6_motor"/>
+    <joint name="r_j6"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j7_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j7_motor"/>
+    <joint name="r_j7"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j1_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j1_motor"/>
+    <joint name="l_j1"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j2_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j2_motor"/>
+    <joint name="l_j2"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j3_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j3_motor"/>
+    <joint name="l_j3"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j4_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j4_motor"/>
+    <joint name="l_j4"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j5_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j5_motor"/>
+    <joint name="l_j5"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j6_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j6_motor"/>
+    <joint name="l_j6"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="l.j7_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l.j7_motor"/>
+    <joint name="l_j7"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+</robot>
