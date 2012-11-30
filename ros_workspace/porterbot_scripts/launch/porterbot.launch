@@ -12,7 +12,7 @@
   <node name="gazebo" pkg="porterbot_scripts" type="run_$(arg gzname)" args="$(find porterbot_scripts)/worlds/porterbot.world"/>
 
    <!-- Robot Description -->
-  <param name="robot_description" textfile="$(find porterbot)/model.sdf"/>
+  <param name="robot_description" textfile="$(find porterbot_scripts)/models/porterbot/model.sdf"/>
 
   <!-- Controller Manager -->
   <include file="$(find pr2_controller_manager)/controller_manager.launch" />
