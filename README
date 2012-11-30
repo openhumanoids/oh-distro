@@ -60,7 +60,7 @@ the third party pod collections for newer dependencies.)
 ===================
 http://sourceforge.net/p/pods/wiki/PodsTool/
 $ svn checkout svn://svn.code.sf.net/p/pods/svn pods
-$ cd pods
+$ cd pods/pods-dev
 $ sudo python setup.py install
 
 3. BUILD
