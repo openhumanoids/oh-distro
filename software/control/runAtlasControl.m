@@ -1,7 +1,7 @@
 function runAtlasControl
 
 options.floating = true;
-m = RigidBodyModel('/home/scottk/Atlas/urdf/drc_robot_minimal_contact.urdf',options);
+m = RigidBodyModel('../models/mit_gazebo_models/mit_robot_drake/mit_drc_robot_minimal_contact.sdf',options);
 dt = 0.001;
 r = TimeSteppingRigidBodyManipulator(m,dt);
 r = setSimulinkParam(r,'MinStep','0.001');

@@ -44,9 +44,9 @@ public class RobotStateListener implements LCMSubscriber
                 }
                 
                 // get body position and orientation
-                m_x[m_joint_map.get("base.x")] = msg.origin_position.translation.x;
-                m_x[m_joint_map.get("base.y")] = msg.origin_position.translation.y;
-                m_x[m_joint_map.get("base.z")] = msg.origin_position.translation.z;
+                m_x[m_joint_map.get("base_x")] = msg.origin_position.translation.x;
+                m_x[m_joint_map.get("base_y")] = msg.origin_position.translation.y;
+                m_x[m_joint_map.get("base_z")] = msg.origin_position.translation.z;
                 
                 // convert quaternion to euler
                 double x = msg.origin_position.rotation.x;
@@ -54,9 +54,9 @@ public class RobotStateListener implements LCMSubscriber
                 double z = msg.origin_position.rotation.z;
                 double w = msg.origin_position.rotation.w;
 
-                m_x[m_joint_map.get("base.roll")] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
-                m_x[m_joint_map.get("base.pitch")] = Math.asin(2*(x*z - w*y));
-                m_x[m_joint_map.get("base.yaw")] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w));
+                m_x[m_joint_map.get("base_roll")] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
+                m_x[m_joint_map.get("base_pitch")] = Math.asin(2*(x*z - w*y));
+                m_x[m_joint_map.get("base_yaw")] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
                 
                 m_has_new_message = true;
             }

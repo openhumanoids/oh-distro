@@ -29,7 +29,7 @@
     </include>
     <include>
       <uri>model://mit_robot_PnC</uri>
-      <pose>0 0 1 0 0 0</pose>
+	<!--  <pose>0 0 1 0 0 0</pose>-->
     </include>
   </world>
 </gazebo>

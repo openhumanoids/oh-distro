@@ -15,6 +15,7 @@ public:
 	{
 	  //std::cout << msg->utime << std::endl;
 		lcm.publish("EST_ROBOT_STATE", msg);
+		
 	}
 };
 

@@ -406,6 +406,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 
 
 void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
+
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
   robot_state_msg.robot_name = msg->robot_name;
