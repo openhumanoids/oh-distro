@@ -25,6 +25,39 @@ pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
 
 }
 
+void pointcloud_vis::pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT){
+ for (size_t i=0; i < obj_cfg_list.size() ; i++){
+   if (id == obj_cfg_list[i].id ){
+     pose_collection_to_lcm(obj_cfg_list[i],posesT);
+       return;
+   }
+ }
+}
+
+void pointcloud_vis::pose_collection_to_lcm(obj_cfg ocfg, std::vector<Isometry3dTime> & posesT){
+  // Send a pose
+  vs_obj_collection_t objs;
+  objs.id = ocfg.id;
+  objs.name = (char*)  ocfg.name.c_str();
+  objs.type = ocfg.type;
+  objs.reset = ocfg.reset; // true will delete them from the viewer
+  objs.nobjs = posesT.size();
+  vs_obj_t poses[objs.nobjs];
+  for (int i=0;i< objs.nobjs;i++){
+    poses[i].id = (int64_t) posesT[i].utime;// which specific pose
+    poses[i].x = posesT[i].pose.translation().x();
+    poses[i].y = posesT[i].pose.translation().y();
+    poses[i].z = posesT[i].pose.translation().z();
+    Eigen::Quaterniond r(posesT[i].pose.rotation());
+    quat_to_euler(r, poses[i].yaw,
+      poses[i].pitch, poses[i].roll);
+  }
+  objs.objs = poses;
+  vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
+}
+
+
+
 void pointcloud_vis::pose_to_lcm_from_list(int id,Isometry3dTime& poseT){
  for (size_t i=0; i < obj_cfg_list.size() ; i++){
    if (id == obj_cfg_list[i].id ){

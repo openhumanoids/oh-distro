@@ -86,6 +86,9 @@ class pointcloud_vis {
     // assumes that you want to connect it to the collection specified in Ptcoll_cfg
     //void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
+    
+    void pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT);
+    void pose_collection_to_lcm(obj_cfg ocfg, std::vector<Isometry3dTime> & posesT);
 
     void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
     void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
