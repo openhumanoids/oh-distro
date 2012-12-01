@@ -47,7 +47,7 @@ cam_plugin_initialize (GTypeModule * module)
 CamUnitDriver *
 cam_plugin_create (GTypeModule * module)
 {
-    return cam_unit_driver_new_stock_full ("stereo", 
+    return cam_unit_driver_new_stock_full ("bumblebee2", 
             "split_bumblebee2",
             "Split Bumblebee2 Stereo Image", 0, 
             (CamUnitConstructor)stereo_split_stereo_new,
