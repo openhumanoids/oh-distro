@@ -42,6 +42,19 @@ group "gazebo" {
 }
 
 
+group "teleop" {
+    cmd "4markers" {
+        exec = "runteleop_4markers";
+        host = "localhost";
+    }
+    cmd "goals_pub" {
+        exec = "vicon_eegoals_publisher";
+        host = "localhost";
+    }
+
+}
+
+
 script "startup simulation" {
     start group "core";
     wait ms 1000;

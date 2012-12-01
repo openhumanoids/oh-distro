@@ -50,7 +50,7 @@ group "gazebo" {
 
 group "sensing_manip" {
     cmd "lodom" {
-        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
+        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 39 --pose CAMERA_STATE";
         host = "localhost";
     }
     cmd "local-map" {
@@ -70,11 +70,11 @@ group "sensing_manip" {
 
 group "sensing_driving" {
     cmd "lodom" {
-        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
+        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 39 --pose CAMERA_STATE";
         host = "localhost";
     }
-    cmd "maps-creator" {
-        exec = "maps-creator -x 20 -y 20 -z 20";
+    cmd "maps-builder" {
+        exec = "maps-builder-robot -x 20 -y 20 -z 20 -m -o";
         host = "localhost";
     }
     cmd "heightmap_pub" {
