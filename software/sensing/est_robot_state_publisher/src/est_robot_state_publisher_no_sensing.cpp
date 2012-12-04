@@ -25,7 +25,8 @@ boost::variate_generator<boost::mt19937, boost::normal_distribution<> >
 class Handler
 {
 public:
-  Handler(bool add_noise_):add_noise_(add_noise_) {
+  Handler(bool add_noise_,double trans_std_dev_, double rot_std_dev_):
+      add_noise_(add_noise_),trans_std_dev_(trans_std_dev_) ,rot_std_dev_(rot_std_dev_)  {
      init_dr_pose = false;
   }
 
@@ -45,6 +46,8 @@ private:
   Eigen::Isometry3d dr_pose;
   Eigen::Isometry3d last_true_pose;
   
+  double trans_std_dev_;
+  double rot_std_dev_;
 };
 
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
@@ -99,12 +102,10 @@ void Handler::add_noise_to_pose(drc::robot_state_t &rstate){
   // TODO: make values per unit time
   // TODO: determine if this value is actually the stddev or just a multiple of it
   // TODO: store as a variable:
-  double std_dev_trans =0.005;
-  double std_dev_rot =0.005;
   
   // Apply noise to ypr:
-  double ypr[]= {std_dev_rot* randn() , std_dev_rot* randn() , std_dev_rot* randn() };
-  double xyz[]= {std_dev_trans*randn(),std_dev_trans*randn() ,std_dev_trans* randn()};
+  double ypr[]= {rot_std_dev_* randn() , rot_std_dev_* randn() , rot_std_dev_* randn() };
+  double xyz[]= {trans_std_dev_*randn(),trans_std_dev_*randn() ,trans_std_dev_* randn()};
   if (1==1){ // use 2d only for simplification
     ypr[1]= 0;
     ypr[2]= 0;
@@ -179,17 +180,22 @@ void Handler::handleMessage(const lcm::ReceiveBuffer* rbuf,
 int main (int argc, char ** argv)
 {
   bool add_noise;
+  double trans_std_dev = 0.005;
+  double rot_std_dev = 0.005;
   ConciseArgs opt(argc, argv);
-  opt.add(add_noise, "n", "noise",
-          "add noise to the position estimate");
+  opt.add(add_noise, "n", "noise", "add noise to the position estimate");
+  opt.add(trans_std_dev, "t", "trans_noise", "translational noise std dev");
+  opt.add(rot_std_dev, "r", "rot_noise", "rotational noise std dev");  
   opt.parse();
   cout << "add_noise: " << add_noise << "\n";
+  cout << "trans_std_dev: " << trans_std_dev << "\n";
+  cout << "rot_std_dev: " << rot_std_dev << "\n";
 
   lcm::LCM _lcm;
   if(!_lcm.good())
     return 1;
 
-  Handler handlerObject(add_noise);
+  Handler handlerObject(add_noise,trans_std_dev,rot_std_dev);
   _lcm.subscribe("TRUE_ROBOT_STATE", &Handler::handleMessage,
     &handlerObject);
 
