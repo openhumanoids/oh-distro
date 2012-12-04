@@ -4,8 +4,10 @@
     <pose>0 0 0.93 0 0 0</pose>
   </gazebo>
  <gazebo>
-    <plugin name="mit_drc_robot_plugin" filename="libDRCRobotPlugin.so"/>
-
+    <plugin filename="libMITRobotPlugin.so" name="mit_drc_robot_plugin">
+      <mode>nominal</mode>
+      <harnessed>false</harnessed>
+    </plugin>
 <!--    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
