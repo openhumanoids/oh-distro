@@ -29,30 +29,24 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-
 rosbuild_add_boost_directories()
+
+# listens to joint angles and publishes them (no input)
 rosbuild_add_library(gazebo_ros_pub_robot_state src/gazebo_ros_pub_robot_state.cpp)
 rosbuild_link_boost(gazebo_ros_pub_robot_state thread)
 
+# drives rolling robot's base
 rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
 rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
 
 rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
 rosbuild_link_boost(planar_hover_plugin thread)
 
-
 rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
 rosbuild_link_boost(joint_actuation_plugin thread)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+# DRCSim DRCRobotPlugin with MIT's modifications
+rosbuild_add_library(MITRobotPlugin src/MITRobotPlugin.cc)
+rosbuild_link_boost(MITRobotPlugin thread)
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+

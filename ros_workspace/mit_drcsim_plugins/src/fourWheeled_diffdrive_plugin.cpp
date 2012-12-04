@@ -131,8 +131,8 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   if (!_sdf->HasElement("wheelSeparation"))
   {
-    ROS_WARN("Differential Drive plugin missing <wheelSeparation>, defaults to 0.34");
-    this->wheelSeparation = 0.34; // Modify this to suit your specific urdf
+    ROS_WARN("Differential Drive plugin missing <wheelSeparation>, defaults to 0.5");
+    this->wheelSeparation = 0.5; // Modify this to suit your specific urdf
   }
   else
   {
@@ -141,8 +141,8 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   if (!_sdf->HasElement("wheelDiameter"))
   {
-    ROS_WARN("Differential Drive plugin missing <wheelDiameter>, defaults to 0.15");
-    this->wheelDiameter = 0.15;// Modify this to suit your specific urdf
+    ROS_WARN("Differential Drive plugin missing <wheelDiameter>, defaults to 0.4");
+    this->wheelDiameter = 0.4;// Modify this to suit your specific urdf
   }
   else
   {
@@ -151,8 +151,8 @@ void FourWheeledDiffDrivePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr
 
   if (!_sdf->HasElement("torque"))
   {
-    ROS_WARN("Differential Drive plugin missing <torque>, defaults to 5.0");
-    this->torque = 5.0;
+    ROS_WARN("Differential Drive plugin missing <torque>, defaults to 50.0");
+    this->torque = 50.0;
   }
   else
   {
@@ -258,15 +258,40 @@ void FourWheeledDiffDrivePlugin::UpdateChild()
   odomVel[1] = 0.0;
   odomVel[2] = da / stepTime;
 
-  joints[FRONT_LEFT]->SetVelocity(0, wheelSpeed[FRONT_LEFT] / (wheelDiameter / 2.0));
-  joints[FRONT_RIGHT]->SetVelocity(0, wheelSpeed[FRONT_RIGHT] / (wheelDiameter / 2.0));
-  joints[REAR_LEFT]->SetVelocity(0, wheelSpeed[REAR_LEFT] / (wheelDiameter / 2.0));
-  joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[REAR_RIGHT] / (wheelDiameter / 2.0));
+/*
+gzerr << "get: " 
+      << joints[FRONT_LEFT]->GetVelocity(0) << " : "
+      << joints[FRONT_RIGHT]->GetVelocity(0) << " "
+      << joints[REAR_LEFT]->GetVelocity(0) << " "
+      << joints[REAR_RIGHT]->GetVelocity(0) << "\n";
+gzerr << "getf: " 
+      << joints[FRONT_LEFT]->GetForce(0) << " : "
+      << joints[FRONT_RIGHT]->GetForce(0) << " "
+      << joints[REAR_LEFT]->GetForce(0) << " "
+      << joints[REAR_RIGHT]->GetForce(0) << "\n";
+*/
 
-  joints[FRONT_LEFT]->SetMaxForce(0, torque);
-  joints[FRONT_RIGHT]->SetMaxForce(0, torque);
-  joints[REAR_LEFT]->SetMaxForce(0, torque);
-  joints[REAR_RIGHT]->SetMaxForce(0, torque);
+  joints[FRONT_LEFT]->SetVelocity(0, wheelSpeed[FRONT_LEFT]*10 / (wheelDiameter * 2.0));
+  joints[FRONT_RIGHT]->SetVelocity(0, wheelSpeed[FRONT_RIGHT]*10 / (wheelDiameter * 2.0));
+  joints[REAR_LEFT]->SetVelocity(0, wheelSpeed[REAR_LEFT]*10 / (wheelDiameter * 2.0));
+  joints[REAR_RIGHT]->SetVelocity(0, wheelSpeed[REAR_RIGHT]*10 / (wheelDiameter * 2.0));
+
+/*
+double a = wheelSpeed[FRONT_LEFT]*10 / (wheelDiameter * 2.0);
+double b = wheelSpeed[FRONT_RIGHT]*10 / (wheelDiameter * 2.0);
+double c = wheelSpeed[REAR_LEFT]*10 / (wheelDiameter * 2.0);
+double d = wheelSpeed[REAR_RIGHT]*10 / (wheelDiameter * 2.0);
+gzerr << "set: " 
+      << a << " | "
+      << b << " "
+      << c << " "
+      << d << "\n";
+*/
+
+  joints[FRONT_LEFT]->SetMaxForce(0, 500);
+  joints[FRONT_RIGHT]->SetMaxForce(0, 500);
+  joints[REAR_LEFT]->SetMaxForce(0, 500);
+  joints[REAR_RIGHT]->SetMaxForce(0, 500);
 
   write_position_data();
   publish_odometry();
@@ -284,10 +309,16 @@ void FourWheeledDiffDrivePlugin::GetPositionCmd()
 
 // std::cout << "X: [" << x_ << "] ROT: [" << rot_ << "]" << std::endl;
 
-  wheelSpeed[FRONT_LEFT] = vr - va * wheelSeparation / 2.0;
+/*  wheelSpeed[FRONT_LEFT] = vr - va * wheelSeparation / 2.0;
   wheelSpeed[FRONT_RIGHT] = vr + va * wheelSeparation / 2.0;
   wheelSpeed[REAR_LEFT] =  vr - va * wheelSeparation / 2.0;
-  wheelSpeed[REAR_RIGHT] = vr + va * wheelSeparation / 2.0;
+  wheelSpeed[REAR_RIGHT] = vr + va * wheelSeparation / 2.0; */
+
+
+  wheelSpeed[FRONT_LEFT] = vr + (va * wheelSeparation * 4.0);
+  wheelSpeed[FRONT_RIGHT] = vr -( va * wheelSeparation * 4.0);
+  wheelSpeed[REAR_LEFT] =  vr + (va * wheelSeparation * 4.0);
+  wheelSpeed[REAR_RIGHT] = vr - (va * wheelSeparation * 4.0);
   lock.unlock();
 }
 
@@ -363,14 +394,15 @@ void FourWheeledDiffDrivePlugin::write_position_data()
   // pos_iface_->data->velocity.pos.x = odomVel[0];
   // pos_iface_->data->velocity.yaw = odomVel[2];
 
-  math::Pose orig_pose = this->parent->GetWorldPose();
 
-  math::Pose new_pose = orig_pose;
-  new_pose.pos.x = odomPose[0];
-  new_pose.pos.y = odomPose[1];
-  new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
+// mfallon: removed this in nov 2012
+//  math::Pose orig_pose = this->parent->GetWorldPose();
 
-  this->parent->SetWorldPose( new_pose );
+//  math::Pose new_pose = orig_pose;
+//  new_pose.pos.x = odomPose[0];
+//  new_pose.pos.y = odomPose[1];
+//  new_pose.rot.SetFromEuler(math::Vector3(0,0,odomPose[2]));
+//  this->parent->SetWorldPose( new_pose );
 }
 
 GZ_REGISTER_MODEL_PLUGIN(FourWheeledDiffDrivePlugin)
