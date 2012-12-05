@@ -30,7 +30,7 @@ while(t<=options.tspan(2))
         fprintf('navigation goal is %f\n\n',navGoal);
         [tbreaks,xbreaks,utraj2D,xtraj2D,ltraj2D] = planFun(sys,navGoal,xCurr,planFunOptions);
         plan_publisher = RobotPlanPublisher(robot_name,length(tbreaks),joint_name(7:end),plan_channel);
-        plan_publisher.publish(tbreaks,xbreaks);
+        plan_publisher.publish(tbreaks,reshape(xbreaks,[],1));
         break;
     else
         fprintf(1,'waiting... (t=%f)\n',t);

@@ -12,7 +12,7 @@ r2D = PlanarRigidBodyManipulator(m2D);
 options.tspan = [0,inf];
 options.sys2D = r2D;
 keyboard;
-runDRCPlanning(r3D,@runDirtran,'CompassGait','TRUE_ROBOT_STATE','NAV_GOAL_TIMED','ROBOT_PLAN',options);
+runDRCPlanning(r3D,@runDirtran,'CompassGait','TRUE_ROBOT_STATE','NAV_GOAL_TIMED','CANDIDATE_ROBOT_PLAN',options);
 keyboard
 end
 
