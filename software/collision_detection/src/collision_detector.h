@@ -20,6 +20,8 @@ namespace collision_detection {
 
     void add_collision_object( Collision_Object * collisionObject );
 
+    void clear_collision_objects( void );
+
     unsigned int num_collisions( void );
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject );
 

@@ -42,10 +42,27 @@ add_collision_object( Collision_Object* collisionObject ){
   return;
 }
 
+/**
+ * clear_collision_objects
+ * removes all of the collision objects from the collision world
+ */
+void
+Collision_Detector::
+clear_collision_objects( void ){
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    vector< btCollisionObject* > bt_collision_objects = _collision_objects[ i ]->bt_collision_objects();
+    for( unsigned int j = 0; j < bt_collision_objects.size(); j++ ){
+      _collision_world.removeCollisionObject( bt_collision_objects[ j ] );
+    } 
+  } 
+  _collision_objects.clear();
+  return;
+}
+
 /** 
  * num_collisions
  * performs collision detection and returns the number of object collisions
- */
+  */
 unsigned int 
 Collision_Detector::
 num_collisions( void ){

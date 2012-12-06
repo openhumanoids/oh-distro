@@ -67,6 +67,12 @@ main( int argc,
   }
   cout << "(should not intersect with anything)" << endl;
 
+  // clear the collision world
+  collision_detector.clear_collision_objects();
+  
+  // check the number of collisions
+  cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
+
   cout << endl << "end of collision-detector-test" << endl << endl;
   return 0;
 }
