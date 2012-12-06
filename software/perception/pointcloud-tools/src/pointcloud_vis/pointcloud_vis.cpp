@@ -25,10 +25,10 @@ pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
 
 }
 
-void pointcloud_vis::text_collection_to_lcm(std::vector<std::string >& labels, 
-                            std::vector<int64_t>& object_ids,
-                            int text_collection_id,
-                            int object_collection_id, string text_collection_name) {
+void pointcloud_vis::text_collection_to_lcm(int text_collection_id,
+                            int object_collection_id, string text_collection_name,
+                            std::vector<std::string >& labels, 
+                            std::vector<int64_t>& object_ids) {
 
   vs_text_collection_t tcolls;
   tcolls.id = text_collection_id;

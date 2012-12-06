@@ -85,10 +85,10 @@ class pointcloud_vis {
     // Push a colour PointCloud to LCM as a points collection
     // assumes that you want to connect it to the collection specified in Ptcoll_cfg
     //void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
-    void text_collection_to_lcm(std::vector<std::string >& labels, 
-                            std::vector<int64_t>& object_ids,
-                            int text_collection_id,
-                            int object_collection_id, string text_collection_name);
+    void text_collection_to_lcm(int text_collection_id,
+                            int object_collection_id, string text_collection_name,
+                            std::vector<std::string >& labels, 
+                            std::vector<int64_t>& object_ids);
 
     
     void pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT);
