@@ -1,0 +1,34 @@
+#ifndef COLLISION_DETECTION_COLLISION_OBJECT_BOX_H
+#define COLLISION_DETECTION_COLLISION_OBJECT_BOX_H
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <btBulletCollisionCommon.h>
+#include <Eigen/Dense>
+
+#include <collision_detection/collision_object.h>
+
+namespace collision_detection {
+  class Collision_Object_Box : public Collision_Object {
+  public:
+    Collision_Object_Box( std::string id );
+    Collision_Object_Box( std::string id, Eigen::Vector3f dims );
+    Collision_Object_Box( std::string id, Eigen::Vector3f dims, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    ~Collision_Object_Box();
+
+    void set_dims( Eigen::Vector3f dims );
+    virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
+
+    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
+    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
+
+  protected:
+    btCollisionObject _bt_collision_object;
+    btBoxShape        _bt_box_shape;
+  private:
+
+  };
+}
+
+#endif /* COLLISION_DETECTION_COLLISION_OBJECT_BOX_H */
