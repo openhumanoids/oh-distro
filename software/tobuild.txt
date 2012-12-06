@@ -12,6 +12,7 @@ object_template_model
 drc_utils
 perception
 viewer
+collision_detection
 #network
 #interface
 
