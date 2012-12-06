@@ -25,6 +25,31 @@ pointcloud_vis::pointcloud_vis (lcm_t* publish_lcm):
 
 }
 
+void pointcloud_vis::text_collection_to_lcm(std::vector<std::string >& labels, 
+                            std::vector<int64_t>& object_ids,
+                            int text_collection_id,
+                            int object_collection_id, string text_collection_name) {
+
+  vs_text_collection_t tcolls;
+  tcolls.id = text_collection_id;
+  tcolls.name =  (char*) text_collection_name.c_str();
+  tcolls.type = 0;
+  tcolls.reset = true; // true will delete them from the viewer
+  tcolls.n= labels.size();
+  vs_text_t texts[tcolls.n];
+  char buffer [tcolls.n][100];
+  for (int i=0;i< tcolls.n;i++){
+    texts[i].id = (int64_t) object_ids[i]; //tiles[i].utime  ; doesnt give correct utime for some
+    texts[i].collection_id = object_collection_id;
+    texts[i].object_id = object_ids[i];//tiles[i].utime; doesnt give correct utime for some
+    //sprintf (buffer[i], "TILE_%d_%lld", tiles[i].tile_id, tiles[i].utime);
+    texts[i].text= (char*) labels[i].c_str();   
+  }
+  tcolls.texts = texts;
+  vs_text_collection_t_publish(publish_lcm_, "TEXT_COLLECTION", &tcolls);  
+}
+
+
 void pointcloud_vis::pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT){
  for (size_t i=0; i < obj_cfg_list.size() ; i++){
    if (id == obj_cfg_list[i].id ){
