@@ -29,17 +29,6 @@ Collision_Object_Box( string id,
 
 /**
  * Collision_Object_Box
- * copy constructor 
- */
-Collision_Object_Box::
-Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
-                                                            _bt_collision_object(),
-                                                            _bt_box_shape( btVector3( other.bt_box_shape().getHalfExtentsWithoutMargin().x() * 2.0, other.bt_box_shape().getHalfExtentsWithoutMargin().y() * 2.0, other.bt_box_shape().getHalfExtentsWithoutMargin().z() * 2.0 ) ){
-  _bt_collision_object.setCollisionShape( &_bt_box_shape );
-}
-
-/**
- * Collision_Object_Box
  * class constructor with id, dimension, position, and orientation arguments
  */
 Collision_Object_Box::
@@ -50,6 +39,18 @@ Collision_Object_Box( string id,
                                                 _bt_collision_object(),
                                                 _bt_box_shape( btVector3( dims.x()/2.0, dims.y()/2.0, dims.z()/2.0 ) ){
   set_transform( position, orientation );
+  _bt_collision_object.setCollisionShape( &_bt_box_shape );
+}
+
+/**
+ * Collision_Object_Box
+ * copy constructor 
+ */
+Collision_Object_Box::
+Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
+                                                            _bt_collision_object(),
+                                                            _bt_box_shape( btVector3( other.bt_box_shape().getImplicitShapeDimensions().x() + other.bt_box_shape().getMargin(), other.bt_box_shape().getImplicitShapeDimensions().y() + other.bt_box_shape().getMargin(), other.bt_box_shape().getImplicitShapeDimensions().z() + other.bt_box_shape().getMargin() ) ){
+  set_transform( other.position(), other.orientation() );
   _bt_collision_object.setCollisionShape( &_bt_box_shape );
 }
 
@@ -87,6 +88,25 @@ set_transform( Vector3f position,
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.x(), orientation.y(), orientation.z(), orientation.w() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
+}
+
+Vector3f
+Collision_Object_Box::
+position( void )const{
+  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
+  return position;
+}
+
+Vector4f
+Collision_Object_Box::
+orientation( void )const{
+  Vector4f orientation( _bt_collision_object.getWorldTransform().getRotation().getX(),
+                        _bt_collision_object.getWorldTransform().getRotation().getY(),
+                        _bt_collision_object.getWorldTransform().getRotation().getZ(),
+                        _bt_collision_object.getWorldTransform().getRotation().getW() );
+  return orientation;
 }
 
 /** 

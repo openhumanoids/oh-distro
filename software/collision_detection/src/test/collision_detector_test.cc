@@ -31,12 +31,17 @@ main( int argc,
   collision_detector.add_collision_object( &collision_object_2 );
  
   cout << "collision_object_2: " << collision_object_2 << endl;
+
+  // check out the copy constructor
+  Collision_Object_Box collision_object_3( collision_object_2 );
+  cout << "collision_object_3: " << collision_object_3 << endl;
  
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
 
   // move the second collision object too close to the first collision object
   collision_object_2.set_transform( Vector3f( 0.25, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
+  cout << "collision_object_2: " << collision_object_2 << endl;
 
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be non-zero)" << endl;

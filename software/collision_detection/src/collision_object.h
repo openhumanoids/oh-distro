@@ -30,6 +30,8 @@ namespace collision_detection {
     bool matches_uid( unsigned int uid );
 
     std::string id( void )const;
+    virtual Eigen::Vector3f position( void )const;
+    virtual Eigen::Vector4f orientation( void )const;
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
     virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 

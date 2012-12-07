@@ -61,6 +61,28 @@ id( void )const{
 }
 
 /**
+ * position
+ * returns the position of the object
+ */
+Vector3f
+Collision_Object::
+position( void )const{
+  Vector3f position;
+  return position;
+}
+
+/**
+ * orientation
+ * returns the orientation of the collision object
+ */
+Vector4f 
+Collision_Object::
+orientation( void )const{
+  Vector4f orientation;
+  return orientation;
+}
+
+/**
  * bt_collision_objects
  * returns a std::vector of btCollisionObject pointers
  */
