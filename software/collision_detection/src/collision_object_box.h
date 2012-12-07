@@ -37,6 +37,8 @@ namespace collision_detection {
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
     virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 
+    const btBoxShape& bt_box_shape( void )const;
+
   protected:
     btCollisionObject _bt_collision_object;
     btBoxShape        _bt_box_shape;

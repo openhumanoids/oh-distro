@@ -26,6 +26,7 @@ namespace collision_detection {
     Collision_Object_Sphere( std::string id );
     Collision_Object_Sphere( std::string id, double radius );
     Collision_Object_Sphere( std::string id, double radius, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    Collision_Object_Sphere( const Collision_Object_Sphere& other );
     ~Collision_Object_Sphere();
 
     virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );

@@ -34,7 +34,7 @@ Collision_Object_Box( string id,
 Collision_Object_Box::
 Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
                                                             _bt_collision_object(),
-                                                            _bt_box_shape( btVector3(0.5, 0.5, 0.5) ){
+                                                            _bt_box_shape( btVector3( other.bt_box_shape().getHalfExtentsWithoutMargin().x() * 2.0, other.bt_box_shape().getHalfExtentsWithoutMargin().y() * 2.0, other.bt_box_shape().getHalfExtentsWithoutMargin().z() * 2.0 ) ){
   _bt_collision_object.setCollisionShape( &_bt_box_shape );
 }
 
@@ -111,4 +111,14 @@ bt_collision_objects( void )const{
   vector< const btCollisionObject* > bt_collision_objects;
   bt_collision_objects.push_back( &_bt_collision_object );
   return bt_collision_objects;
+}
+
+/**
+ * bt_box_shape
+ * return a reference to the bt_box_shape
+ */
+const btBoxShape&
+Collision_Object_Box::
+bt_box_shape( void )const{
+  return _bt_box_shape;
 }

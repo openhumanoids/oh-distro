@@ -43,6 +43,17 @@ Collision_Object_Sphere( string id,
 }
 
 /**
+ * Collision_Object_Sphere
+ * copy constructor
+ */
+Collision_Object_Sphere::
+Collision_Object_Sphere( const Collision_Object_Sphere& other ): Collision_Object( other ),
+                                                                  _bt_collision_object(),
+                                                                  _bt_sphere_shape( (btScalar)(0.5) ){
+  _bt_collision_object.setCollisionShape( &_bt_sphere_shape );
+}   
+
+/**
  * ~Collision_Object_Sphere
  * class destructor
  */
