@@ -15,6 +15,7 @@ namespace collision_detection {
     Collision_Object_Box( std::string id );
     Collision_Object_Box( std::string id, Eigen::Vector3f dims );
     Collision_Object_Box( std::string id, Eigen::Vector3f dims, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    Collision_Object_Box( const Collision_Object_Box& other );
     ~Collision_Object_Box();
 
     void set_dims( Eigen::Vector3f dims );

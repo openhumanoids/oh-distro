@@ -29,6 +29,18 @@ Collision_Object_Box( string id,
 
 /**
  * Collision_Object_Box
+ * copy constructor 
+ */
+Collision_Object_Box::
+Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
+                                                            _bt_collision_object(),
+                                                            _bt_box_shape( btVector3(0.5, 0.5, 0.5) ){
+  cout << "calling copy constructor" << endl;
+  _bt_collision_object.setCollisionShape( &_bt_box_shape );
+}
+
+/**
+ * Collision_Object_Box
  * class constructor with id, dimension, position, and orientation arguments
  */
 Collision_Object_Box::
