@@ -35,7 +35,7 @@ Collision_Object_Box::
 Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
                                                             _bt_collision_object(),
                                                             _bt_box_shape( btVector3(0.5, 0.5, 0.5) ){
-  cout << "calling copy constructor" << endl;
+  //cout << "calling copy constructor" << endl;
   _bt_collision_object.setCollisionShape( &_bt_box_shape );
 }
 
