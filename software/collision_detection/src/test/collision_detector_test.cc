@@ -29,7 +29,9 @@ main( int argc,
   // add another collision object and add it to the collision detector class
   Collision_Object_Box collision_object_2( "box2", Vector3f( 0.5, 0.5, 0.5 ), Vector3f( 2.0, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
   collision_detector.add_collision_object( &collision_object_2 );
-  
+ 
+  cout << "collision_object_2: " << collision_object_2 << endl;
+ 
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
 

@@ -1,3 +1,16 @@
+/**
+ * @file collision_object_box.h
+ * @author Thomas Howard
+ * @namespace collision_detection
+ * 
+ * @section DESCRIPTION
+ * 
+ * A class used to describe a box-shaped collision object.  The
+ *   constructor takes as arguments a Eigen::Vector3f where the
+ *   x, y, and z indices equal the length, width, and height of
+ *   the box.  
+ */
+
 #ifndef COLLISION_DETECTION_COLLISION_OBJECT_BOX_H
 #define COLLISION_DETECTION_COLLISION_OBJECT_BOX_H
 

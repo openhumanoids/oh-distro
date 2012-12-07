@@ -1,3 +1,18 @@
+/**
+ * @file collision_detector.h
+ * @author Thomas Howard
+ * @namespace collision_detection
+ * 
+ * @section DESCRIPTION
+ * 
+ * A class used to evaluate collisions between objects
+ *   and ray intersections with objects in a scene.  The
+ *   most common use case of this class would involve adding
+ *   groups of Collision_Object classes to the scene and 
+ *   evaluating intersections between them and rays cast
+ *   into the scene.
+ */
+
 #ifndef COLLISION_DETECTION_COLLISION_DETECTOR_H
 #define COLLISION_DETECTION_COLLISION_DETECTOR_H
 

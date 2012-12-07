@@ -1,3 +1,15 @@
+/**
+ * @file collision_object.h
+ * @author Thomas Howard
+ * @namespace collision_detection
+ * 
+ * @section DESCRIPTION
+ * 
+ * A class used to generally describe attributes of
+ *   a collision object used by the Collision_Detector
+ *   class. 
+ */
+
 #ifndef COLLISION_DETECTION_COLLISION_OBJECT_H
 #define COLLISION_DETECTION_COLLISION_OBJECT_H
 

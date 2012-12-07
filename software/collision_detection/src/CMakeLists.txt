@@ -2,13 +2,19 @@
 add_library(collision-detection SHARED
               collision_detector.cc
               collision_object.cc
-              collision_object_box.cc)
+              collision_object_box.cc
+              collision_object_cone.cc
+              collision_object_cylinder.cc
+              collision_object_sphere.cc)
 
 # make the header public
 # install it to include/collision_detection
 pods_install_headers(collision_detector.h 
                       collision_object.h
                       collision_object_box.h
+                      collision_object_cone.h
+                      collision_object_cylinder.h
+                      collision_object_sphere.h
                       DESTINATION collision_detection)
 
 # make the library public

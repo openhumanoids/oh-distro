@@ -35,7 +35,6 @@ Collision_Object_Box::
 Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
                                                             _bt_collision_object(),
                                                             _bt_box_shape( btVector3(0.5, 0.5, 0.5) ){
-  //cout << "calling copy constructor" << endl;
   _bt_collision_object.setCollisionShape( &_bt_box_shape );
 }
 
@@ -85,7 +84,7 @@ void
 Collision_Object_Box::
 set_transform( Vector3f position,
                 Vector4f orientation ){
-  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.w(), orientation.x(), orientation.y(), orientation.z() ),
+  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.x(), orientation.y(), orientation.z(), orientation.w() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
 }

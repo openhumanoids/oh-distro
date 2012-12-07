@@ -98,6 +98,7 @@ namespace collision_detection {
       } else {
         out << "N/A";
       }
+      out << ":{pos:(" << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().x() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().y() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().z() << "),(" << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getX() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getY() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getZ() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getW() << ")}";
       if( i != ( other.bt_collision_objects().size() - 1 ) ){
         out << ",";
       }
