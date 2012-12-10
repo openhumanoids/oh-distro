@@ -22,6 +22,10 @@
 
 #define RENDERER_NAME "Humanoid"
 
+#define PARAM_WIRE "Box Wire Frame"  // Steven
+
+bool debug_mesh_display = false; //Steven
+
 
 using namespace std;
 using namespace boost;
@@ -84,8 +88,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
-// DEBUGING BOOLs
-bool debug_mesh_display = false;
+
 
   int type = link->type ;
   enum {SPHERE, BOX, CYLINDER, MESH}; 
@@ -316,8 +319,27 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 // cout << bot_timestamp_useconds(toc-tic) << endl;
 }
 
-void 
-setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
+// Steven's Edit. Needs Sisir's Checking
+static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
+{
+  RendererHumanoid *self = (RendererHumanoid*) user;
+  if(! strcmp(name, PARAM_WIRE)){
+        fprintf(stderr, "\nHELLO\n");
+        if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
+	    debug_mesh_display = true;  
+        }
+	else{
+  	    debug_mesh_display = false;
+	}
+
+    
+  }
+
+}
+// End of Steven's edit
+
+
+BotRenderer *renderer_humanoid_new(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RendererHumanoid *self = (RendererHumanoid*) calloc (1, sizeof (RendererHumanoid));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
@@ -350,7 +372,21 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
     //self->key_handler->key_release = cb_key_release;
     self->key_handler->user = self;
     bot_viewer_add_event_handler(viewer, self->key_handler, 1);
+
+    // Steven's Edit. Need Sisir's Checking
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
+    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+    self -> renderer.widget = GTK_WIDGET(self->pw);
+
+
     
+    return &self->renderer;
+
+}
+// Steven's Edit. Need's Sisir's Checking
+void setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
+{
+	bot_viewer_add_renderer(viewer, renderer_humanoid_new(viewer, render_priority, lcm), render_priority);
 }
 
 void polygon(int a, int b, int c , int d)
