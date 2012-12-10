@@ -78,11 +78,9 @@ group "sensing" {
         host = "localhost";
     }
     cmd "lodom_new" {
-        exec = "drc-motion-estimate-scanmatcher  -l RIGHTED_SCAN -d -R 9 --pose CAMERA_STATE --mask -3.14,3.14";
+        exec = "drc-motion-estimate-scanmatcher-righted-vertical   -l RIGHTED_SCAN -d -R 36 --pose CAMERA_STATE --mask -3.14,3.14";
         host = "localhost";
     }
-
-
 }
 
 group "misc" {
