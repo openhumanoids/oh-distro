@@ -13,6 +13,10 @@
 #include <bot_core/bot_core.h>
 #include <path_util/path_util.h>
 
+#include <Eigen/Dense>
+#include <collision_detection/collision_detector.h>
+#include <collision_detection/collision_object_box.h>
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -22,7 +26,7 @@
 
 namespace fk
 {
-  typedef struct _MeshStruct 
+  struct MeshStruct 
   {
     GLuint displaylist;
     double span_x;
@@ -30,8 +34,9 @@ namespace fk
     double span_z;
     double offset_x; // vertices are not always defined in local link frame. In the drc robot sdf, the vertices are defined in parent joint coordinates.
     double offset_y;
-    double offset_z;
-  } MeshStruct;
+    double offset_z; 
+    //collision_detection::Collision_Object_Box collision_object;   
+  };
 
 
   /**Class for keeping track of robot link state / joint angles.
@@ -53,7 +58,7 @@ namespace fk
     std::vector<std::string > _link_names;
     std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
     std::vector<drc::link_transform_t> _link_tfs;
-     
+
 
     //get rid of this
     BotViewer *_viewer;
@@ -90,7 +95,11 @@ namespace fk
 				const std::vector<drc::link_transform_t> &_link_tfs);
 
     std::map<std::string, MeshStruct > _mesh_map;
-    //std::map<std::string, MeshStruct > _mesh_extrema_map;  
+    std::map<std::string, collision_detection::Collision_Object_Box > _collision_object_map;
+    
+    // create a collision detector class
+    collision_detection::Collision_Detector _collision_detector;
+    
   private:
  std::string evalMeshFilePath(std::string file_path_expression);
  std::string exec(std::string cmd);

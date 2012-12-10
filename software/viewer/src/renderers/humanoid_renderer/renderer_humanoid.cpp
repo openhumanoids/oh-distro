@@ -20,15 +20,15 @@
 #include "renderer_humanoid.hpp"
 #include "RobotStateListener.hpp"
 
+
 #define RENDERER_NAME "Humanoid"
-
-#define PARAM_WIRE "Box Wire Frame"  // Steven
-
-bool debug_mesh_display = false; //Steven
-
+#define PARAM_PICKING "Enable Selection"
+#define PARAM_WIRE "Show BBoxs"  
 
 using namespace std;
 using namespace boost;
+using namespace Eigen;
+using namespace collision_detection;
 
 typedef struct _RendererHumanoid 
 {
@@ -37,7 +37,14 @@ typedef struct _RendererHumanoid
   BotGtkParamWidget *pw;
   boost::shared_ptr<fk::RobotStateListener> robotStateListener;
   boost::shared_ptr<lcm::LCM> lcm;
-  BotEventHandler *key_handler;
+  //BotEventHandler *key_handler;
+  BotEventHandler ehandler;
+  bool picking;
+  bool clicked;
+  bool visualize_bbox;
+  Eigen::Vector3f ray_start;
+  Eigen::Vector3f ray_end;
+  std::string* selection;
 } RendererHumanoid;
 
 static void
@@ -50,9 +57,9 @@ _renderer_free (BotRenderer *super)
 
 
 
-//=========================key press================
+//=========================key and mouse press================
 
-int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
+/*int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKey *event)
 {
   switch (event->keyval)
     {
@@ -63,6 +70,78 @@ int cb_key_press (BotViewer *viewer, BotEventHandler *ehandler, const GdkEventKe
       }
     }
   
+  return 1;
+}*/
+
+
+static int 
+mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], 
+    const double ray_dir[3], const GdkEventButton *event)
+{
+  RendererHumanoid *self = (RendererHumanoid*) ehandler->user;
+  if(self->picking==0){
+    //fprintf(stderr, "Ehandler Not active\n");
+    return 0;
+  }
+  self->clicked = 1;
+  fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
+
+  Eigen::Vector3f from,to;
+  from << ray_start[0], ray_start[1], ray_start[2];
+
+  Eigen::Vector3f plane_normal,plane_pt;
+  plane_normal << 0,0,1;
+  plane_pt << 0,0,0;
+  double lambda1 = ray_dir[0] * plane_normal[0]+
+                   ray_dir[1] * plane_normal[1] +
+                   ray_dir[2] * plane_normal[2];
+   // check for degenerate case where ray is (more or less) parallel to plane
+    if (fabs (lambda1) < 1e-9) return 0;
+
+   double lambda2 = (plane_pt[0] - ray_start[0]) * plane_normal[0] +
+       (plane_pt[1] - ray_start[1]) * plane_normal[1] +
+       (plane_pt[2] - ray_start[2]) * plane_normal[2];
+   double t = lambda2 / lambda1;// =1;
+  
+  to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+ 
+    self->ray_start = from;
+  self->ray_end = to;
+  std::cout  << "from " << from.transpose() << std::endl;
+  std::cout  << "to " << to.transpose() << std::endl;
+  
+   //to << ray_dir[0], ray_dir[1], ray_dir[2];
+ //std::cout  << "num_coll_objects: " << self->robotStateListener->_collision_object_map.size() <<  std::endl;
+ //std::cout  << "num_colls: " << self->robotStateListener->_collision_detector.num_collisions() <<  std::endl;// segfaults
+  collision_detection::Collision_Object * intersected_object = NULL;
+  self->robotStateListener->_collision_detector.num_collisions();
+  self->robotStateListener->_collision_detector.ray_test( from, to, intersected_object );
+  if( intersected_object != NULL ){
+    std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
+    std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
+    (*self->selection)  = std::string(intersected_object->id().c_str());
+  }
+  else
+  (*self->selection)  = " ";
+
+
+  bot_viewer_request_redraw(self->viewer);
+
+  return 1;
+}
+
+static int 
+mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], 
+    const double ray_dir[3], const GdkEventButton *event)
+{
+  RendererHumanoid *self = (RendererHumanoid*) ehandler->user;
+  self->clicked = 0;
+  if(self->picking==0){
+    //fprintf(stderr, "Ehandler Not active\n");
+    return 0;
+  }
+  
+  bot_viewer_request_redraw(self->viewer);
   return 1;
 }
 
@@ -87,7 +166,6 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
  gluQuadricDrawStyle(quadric, GLU_FILL);
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
-
 
 
   int type = link->type ;
@@ -224,18 +302,20 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
     if (found1!=std::string::npos)
       {*/
         glPushMatrix();
-
+        
         glTranslatef(nextTf.tf.translation.x,
         nextTf.tf.translation.y,
         nextTf.tf.translation.z);
+        
         glRotatef(theta * 180/3.141592654, 
         axis[0], axis[1], axis[2]); 
+
 
         std::map<std::string, fk::MeshStruct>::const_iterator mesh_map_it;
         mesh_map_it=self->robotStateListener->_mesh_map.find(nextLinkname);
         if(mesh_map_it!=self->robotStateListener->_mesh_map.end()) // exists in cache
         { 
-          if(!debug_mesh_display)
+          if(!self->visualize_bbox)
           {
             glCallList (mesh_map_it->second.displaylist);
           }
@@ -300,6 +380,16 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   // glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
   glEnable (GL_RESCALE_NORMAL);
+  
+  if((self->picking)&&(self->clicked)){
+        glLineWidth (3.0);
+        glPushMatrix();
+        glBegin(GL_LINES);
+        glVertex3f(self->ray_start[0], self->ray_start[1],self->ray_start[2]); // object coord
+        glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
+        glEnd();
+        glPopMatrix();
+  }
  
  double c[3] = {0.3,0.3,0.3};
  double alpha = 1;
@@ -310,6 +400,13 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       drc::link_transform_t nextTf = link_tfs[i];
       shared_ptr<urdf::Geometry> nextLink = link_shapes[i];
       string nextLinkname = link_names[i];
+      if((self->picking)&&((*self->selection) == nextLinkname)) {
+        glColor4f(0.7,0.1,0.1,alpha);     
+      }
+      else
+      {
+       glColor4f(c[0],c[1],c[2],alpha);
+      }
       draw(nextLink, nextTf,nextLinkname,super);
     }
     
@@ -319,27 +416,33 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 // cout << bot_timestamp_useconds(toc-tic) << endl;
 }
 
-// Steven's Edit. Needs Sisir's Checking
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
-  RendererHumanoid *self = (RendererHumanoid*) user;
-  if(! strcmp(name, PARAM_WIRE)){
-        fprintf(stderr, "\nHELLO\n");
-        if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
-	    debug_mesh_display = true;  
-        }
-	else{
-  	    debug_mesh_display = false;
+	RendererHumanoid *self = (RendererHumanoid*) user;
+	if (! strcmp(name, PARAM_PICKING)) {
+		if (bot_gtk_param_widget_get_bool(pw, PARAM_PICKING)) {
+			bot_viewer_request_pick (self->viewer, &(self->ehandler));
+			self->picking = 1;
+		}
+		else
+			self->picking = 0;
 	}
-
+    else if(! strcmp(name, PARAM_WIRE)){
+        fprintf(stderr, "\nHELLO\n");
+		if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
+			self->visualize_bbox= true;  
+		}
+		else{
+			self->visualize_bbox = false;
+		}
     
   }
-
+	
 }
-// End of Steven's edit
 
-
-BotRenderer *renderer_humanoid_new(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void 
+setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RendererHumanoid *self = (RendererHumanoid*) calloc (1, sizeof (RendererHumanoid));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
@@ -360,33 +463,39 @@ BotRenderer *renderer_humanoid_new(BotViewer *viewer, int render_priority, lcm_t
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
+  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 1, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 1, NULL);
+  	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+  	self->picking = 1;
+    self->clicked=0;	
+  	self->selection = new std::string(" ");
+    self->visualize_bbox = true;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 
 
     //----------
     // create and register mode handler
-    self->key_handler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
+    /*self->key_handler = (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
     self->key_handler->name = strdup(std::string("Mode Control").c_str());
     self->key_handler->enabled = 0;
     self->key_handler->key_press = cb_key_press;
     //self->key_handler->key_release = cb_key_release;
     self->key_handler->user = self;
-    bot_viewer_add_event_handler(viewer, self->key_handler, 1);
-
-    // Steven's Edit. Need Sisir's Checking
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
-    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-    self -> renderer.widget = GTK_WIDGET(self->pw);
-
-
+    bot_viewer_add_event_handler(viewer, self->key_handler, 1);*/
     
-    return &self->renderer;
+    
+    BotEventHandler *ehandler = &self->ehandler;
+    ehandler->name = (char*) RENDERER_NAME;
+    ehandler->enabled = 1;
+    ehandler->pick_query = NULL;
+    ehandler->hover_query = NULL;
+    ehandler->mouse_press = mouse_press;
+    ehandler->mouse_release = mouse_release;
+    ehandler->mouse_motion = NULL;
+    ehandler->user = self;
 
-}
-// Steven's Edit. Need's Sisir's Checking
-void setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
-{
-	bot_viewer_add_renderer(viewer, renderer_humanoid_new(viewer, render_priority, lcm), render_priority);
+    bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
+    
 }
 
 void polygon(int a, int b, int c , int d)
