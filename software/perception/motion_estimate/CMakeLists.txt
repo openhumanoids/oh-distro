@@ -9,6 +9,10 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/motion_estimate)
+add_subdirectory(src/joints2frames)
 
-add_subdirectory(src/motion_estimate_scanmatcher)
+add_subdirectory(src/motion_estimate)
+add_subdirectory(src/motion_estimate_scanmatcher_bolt_vertical)
+add_subdirectory(src/motion_estimate_scanmatcher_righted_vertical)
+add_subdirectory(src/motion_estimate_scanmatcher_rotating)
+
