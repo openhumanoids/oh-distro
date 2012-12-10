@@ -122,6 +122,18 @@ private:
       std::cout<< _head_link_name <<"not the head link? specify the correct head link" <<std::endl;
     }
     T_head_body = T_body_head.Inverse();
+    
+    bot_core::rigid_transform_t tf;
+    tf.utime = TRUE_state_msg->utime;
+    tf.trans[0] = T_body_head.p[0];
+    tf.trans[1] = T_body_head.p[1];
+    tf.trans[2] = T_body_head.p[2];
+    T_head_body.M.GetQuaternion(tf.quat[1], tf.quat[2], tf.quat[3], tf.quat[0]);
+    _lcm->publish("HEAD_TO_BODY", &tf);        
+    
+    
+    
+    
 
     T_world_body  = T_world_head*T_head_body;
 
@@ -137,6 +149,7 @@ private:
     _lcm->publish("EST_ROBOT_STATE", &msg);
 
 
+    
     bot_core::pose_t pose_msg;
     pose_msg.utime = msg.utime;
     pose_msg.pos[0] = body_origin.translation.x;
@@ -146,7 +159,7 @@ private:
     pose_msg.orientation[1] = body_origin.rotation.x;
     pose_msg.orientation[2] = body_origin.rotation.y;
     pose_msg.orientation[3] = body_origin.rotation.z;
-    _lcm->publish("POSE_BODY", &pose_msg);
+    _lcm->publish("POSE_BODY", &pose_msg); 
 
 
 

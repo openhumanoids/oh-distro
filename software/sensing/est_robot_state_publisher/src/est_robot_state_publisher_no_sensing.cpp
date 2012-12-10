@@ -160,7 +160,7 @@ void Handler::handleMessage(const lcm::ReceiveBuffer* rbuf,
   
   drc::robot_state_t msgout;
   msgout= *msg;
-  send_pose(msgout.origin_position, msgout.utime, "POSE_TRUE"); 
+  send_pose(msgout.origin_position, msgout.utime, "POSE_BODY_TRUE"); 
   
   if (add_noise_){
     if (!init_dr_pose){
@@ -172,8 +172,7 @@ void Handler::handleMessage(const lcm::ReceiveBuffer* rbuf,
   }
   
   _lcm.publish("EST_ROBOT_STATE", &msgout);
-  send_pose(msgout.origin_position, msgout.utime, "POSE_BODY"); 
-  // TODO: also publish the CAMERA_STATE pose_t message
+   send_pose(msgout.origin_position, msgout.utime, "POSE_BODY");
 
 }
 

@@ -165,6 +165,12 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }
     counter++;
   }
+  
+ 
+  
+  
+  
+  
   //std::cout << body_to_jointTs.size() << " jts\n";
   //pc_vis_->pose_collection_to_lcm_from_list(6000, body_to_jointTs); // all joints releative to body - publish if necessary
   pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
