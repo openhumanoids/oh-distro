@@ -125,9 +125,9 @@ private:
     
     bot_core::rigid_transform_t tf;
     tf.utime = TRUE_state_msg->utime;
-    tf.trans[0] = T_body_head.p[0];
-    tf.trans[1] = T_body_head.p[1];
-    tf.trans[2] = T_body_head.p[2];
+    tf.trans[0] = T_head_body.p[0];
+    tf.trans[1] = T_head_body.p[1];
+    tf.trans[2] = T_head_body.p[2];
     T_head_body.M.GetQuaternion(tf.quat[1], tf.quat[2], tf.quat[3], tf.quat[0]);
     _lcm->publish("HEAD_TO_BODY", &tf);        
     
