@@ -61,27 +61,27 @@
     <!-- Table stuff -->
     <include>
       <uri>model://table</uri>
-      <pose>1.5 0.6 0.0 0 0 0</pose>
+      <pose>1.5 0.6 0.0 0 0 1.571</pose>
     </include>
     <include>
       <uri>model://coke_can</uri>
-      <pose>1.5 0.4 1.05 0 0 0</pose>
+      <pose>1.6 0.4 1.05 0 0 0</pose>
     </include>
     <include>
       <uri>model://bowl</uri>
-      <pose>1.1 0.4 1.05 0 0 0</pose>
+      <pose>1.6 0.1 1.10 0 0 0</pose>
     </include>
     <include>
       <uri>model://fire_hose</uri>
-      <pose>1.1 0.6 1.05 0 0 0</pose>
+      <pose>0.6 -1.0 1.10 0 0 1.171</pose>
     </include>
     <include>
       <uri>model://saucepan</uri>
-      <pose>1.3 0.6 1.35 0 0 0</pose>
+      <pose>1.6 0.6 1.10 0 0 0</pose>
     </include>
     <include>
       <uri>model://standpipe</uri>
-      <pose>1.5 2 0 0 0 0</pose>
+      <pose>1.25 1.2 1.1 0 0 0</pose>
     </include>
 
     <!-- Cart obviously -->

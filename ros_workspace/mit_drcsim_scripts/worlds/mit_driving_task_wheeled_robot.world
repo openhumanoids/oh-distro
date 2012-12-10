@@ -32,6 +32,7 @@
       <pose>0 0 1 0 0 0</pose>
     </include>
 
+    <include><name>diybox</name><uri>model://diy_box</uri><pose>0 -1.75 0 0 0 0</pose></include>
     <include><name>simple_box_l1</name><uri>model://simple_box</uri><pose>0 4 1 0 0 0</pose></include>
     <include><name>simple_box_l2</name><uri>model://simple_box</uri><pose>5 4 1 0 0 0</pose></include>
     <include><name>simple_box_l3</name><uri>model://simple_box</uri><pose>10 4 1 0 0 0</pose></include>

@@ -28,6 +28,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/Imu.h>
 #include <atlas_gazebo_msgs/RobotState.h>
 
 #include <rosgraph_msgs/Clock.h>
@@ -79,10 +80,19 @@ private:
   void RFootHeelIn_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);
   void RFootHeelOut_cstate_cb(const gazebo_msgs::ContactsState::ConstPtr& msg);*/
 
+
+  // Imu:
+  ros::Subscriber torso_imu_sub_,head_imu_sub_;
+  void torso_imu_cb(const sensor_msgs::ImuConstPtr& msg);
+  void head_imu_cb(const sensor_msgs::ImuConstPtr& msg);
+  void send_imu(const sensor_msgs::ImuConstPtr& msg,string channel );
+  void send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel );
+
   // Laser:
-  ros::Subscriber base_scan_sub_,rotating_scan_sub_;
+  ros::Subscriber base_scan_sub_,rotating_scan_sub_,righted_scan_sub_;
   void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  void righted_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
 
   // Left and Right Images Seperately:
@@ -117,12 +127,17 @@ App::App(const std::string & stereo_in,
   }
 
   // Clock:  
-  clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this); // previously  
+  clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
+
+  // IMU:
+  torso_imu_sub_ = node_.subscribe(string("/imu"), 10, &App::torso_imu_cb,this);
+  head_imu_sub_ = node_.subscribe(string("/head_imu"), 10, &App::head_imu_cb,this);
   
   // Laser:
 //  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // gfe
-  base_scan_sub_ = node_.subscribe(string("/base_scan"), 10, &App::base_scan_cb,this); // previously
+  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // previously
   rotating_scan_sub_ = node_.subscribe(string("/rotating_scan"), 10, &App::rotating_scan_cb,this);
+  righted_scan_sub_ = node_.subscribe(string("/righted_scan"), 10, &App::righted_scan_cb,this);
   
   // Robot State:
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
@@ -183,6 +198,49 @@ App::App(const std::string & stereo_in,
 App::~App()  {
 }
 
+void App::send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ){
+  drc::imu_t imu_msg;
+  imu_msg.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);  
+  //imu_msg.frame_id = msg->header->frame_id;
+  imu_msg.orientation[0] = msg->orientation.w; // NB: order here is wxyz
+  imu_msg.orientation[1] = msg->orientation.x;
+  imu_msg.orientation[2] = msg->orientation.y;
+  imu_msg.orientation[3] = msg->orientation.z;
+  imu_msg.angular_velocity[0] = msg->angular_velocity.x;
+  imu_msg.angular_velocity[1] = msg->angular_velocity.y;
+  imu_msg.angular_velocity[2] = msg->angular_velocity.z;
+  imu_msg.linear_acceleration[0] = msg->linear_acceleration.x;
+  imu_msg.linear_acceleration[1] = msg->linear_acceleration.y;
+  imu_msg.linear_acceleration[2] = msg->linear_acceleration.z;
+  for (size_t i=0;i<9;i++){
+    imu_msg.orientation_covariance[i] = msg->orientation_covariance[i];
+    imu_msg.angular_velocity_covariance[i] = msg->angular_velocity_covariance[i];
+    imu_msg.linear_acceleration_covariance[i] = msg->linear_acceleration_covariance[i];
+  }
+  lcm_publish_.publish(channel, &imu_msg);
+}
+void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);  
+  pose_msg.pos[0] = 0;
+  pose_msg.pos[1] = 0;
+  pose_msg.pos[2] = 0;
+  pose_msg.orientation[0] = msg->orientation.w;
+  pose_msg.orientation[1] = msg->orientation.x;
+  pose_msg.orientation[2] = msg->orientation.y;
+  pose_msg.orientation[3] = msg->orientation.z;
+  lcm_publish_.publish(channel, &pose_msg);
+}
+
+void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
+  send_imu(msg,"TORSO_IMU");
+  send_imu_as_pose(msg,"POSE_TORSO_ORIENT");
+}
+
+void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
+  send_imu(msg,"HEAD_IMU");
+  send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
+}
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
   drc::utime_t utime_msg;
@@ -480,6 +538,9 @@ void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
   send_lidar(msg, "ROTATING_SCAN");
 }
 
+void App::righted_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  send_lidar(msg, "RIGHTED_SCAN");
+}
 void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   bot_core::planar_lidar_t scan_out;
 

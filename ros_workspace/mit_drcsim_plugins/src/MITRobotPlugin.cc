@@ -37,11 +37,6 @@ MITRobotPlugin::MITRobotPlugin()
   /// initial anchor pose
   this->anchorPose = math::Vector3(0, 0, 0);
   this->warpRobot = false;
-
-  // MIT:
-  this->mode_ = "nominal";
-  this->harnessed = false;
-  // available modes:no_gravity, feet, pinned, nominal;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,29 +54,8 @@ MITRobotPlugin::~MITRobotPlugin()
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void MITRobotPlugin::Load(physics::ModelPtr _parent,
-                                 sdf::ElementPtr _sdf)
+                                 sdf::ElementPtr /*_sdf*/)
 {
-
-  gzwarn << "plugin mode: " << this->mode_ << std::endl;
-  gzwarn << "harnessed  : " << this->harnessed << std::endl;
-  if (_sdf->HasElement("mode")) 
-  {
-     this->mode_ = _sdf->GetElement("mode")->GetValueString();
-     gzwarn << "updated plugin mode: " << this->mode_ << std::endl;
-  }
-  if (_sdf->HasElement("harnessed")) 
-  {
-     std::string temp_string = _sdf->GetElement("harnessed")->GetValueString();
-     //GetValueBool and GetValueString doesnt seem to work properly:
-     if ( temp_string.compare("1") ==0){
-       this->harnessed = true;
-     }else{
-       this->harnessed = false;
-     }
-     gzwarn << "updated harnessed  : " << this->harnessed << std::endl;
-  }
-  
-
   // initialize ros
   if (!ros::isInitialized())
   {
@@ -115,11 +89,8 @@ void MITRobotPlugin::Load(physics::ModelPtr _parent,
 
   // On startup, simulate "virtual harness" by turning gravity off
   // allowing the controllers can initialize without the robot falling
-
-  this->SetPluginMode(this->mode_);
-  //this->harnessed = true;
-
-
+  this->SetPluginMode("feet");
+  this->harnessed = true;
   ROS_WARN("Start robot with gravity turned off for all links.");
   ROS_WARN("  rostopic pub /mode std_msgs/String '{data: \"nominal\"}'");
   ROS_WARN("To re-engage.");

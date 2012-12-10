@@ -3,8 +3,12 @@
   <arg name="gzname" default="gazebo"/>
   <param name="/use_sim_time" type="bool" value="true"/>
 
-  <!-- start gazebo with the DRC Robot -->
+  <!-- 8 cubes -->
   <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_driving_task_wheeled_robot.world"/>
+  <!-- drc terrain map -->
+<!--  <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_driving_task_wheeled_robot_drc_terrain.world"/>  -->
+  <!-- mit terrain map -->
+<!--  <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_driving_task_wheeled_robot_terrain.world"/>  -->
 
   <!-- Robot Description -->
   <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_wheeled_robot/model.sdf"/>

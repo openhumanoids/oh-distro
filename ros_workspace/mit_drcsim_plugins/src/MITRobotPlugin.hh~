@@ -48,13 +48,13 @@
 
 namespace gazebo
 {
-  class MITRobotPlugin : public ModelPlugin
+  class DRCRobotPlugin : public ModelPlugin
   {
     /// \brief Constructor
-    public: MITRobotPlugin();
+    public: DRCRobotPlugin();
 
     /// \brief Destructor
-    public: virtual ~MITRobotPlugin();
+    public: virtual ~DRCRobotPlugin();
 
     /// \brief Load the controller
     public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);

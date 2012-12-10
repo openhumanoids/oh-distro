@@ -130,9 +130,6 @@ namespace gazebo
     private: ros::Subscriber trajectory_sub_;
     private: ros::Subscriber pose_sub_;
     private: ros::Subscriber mode_sub_;
-
-    // MIT modifications:
-    private: std::string mode_;
   };
 /** \} */
 /// @}
