@@ -1,4 +1,5 @@
 #include "collision_detection/collision_detector.h"
+#include "collision_detection/collision_object_box.h"
 
 using namespace std;
 using namespace Eigen;
@@ -88,9 +89,15 @@ ray_test( Vector3f from,
   btVector3 bt_to( to.x(), to.y(), to.z() );
   btCollisionWorld::ClosestRayResultCallback result( bt_from, bt_to );
   _collision_world.rayTest( bt_from, bt_to, result );
+ 
+  cout << "_collision_objects.size(): " << _collision_objects.size() << endl;
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    cout << "  " << *dynamic_cast< Collision_Object_Box* >(_collision_objects[ i ] )<< endl;
+  }
     
   collisionObject = NULL;
   if( result.hasHit() ){
+    cout << "hit " << result.m_hitPointWorld.x() << "," << result.m_hitPointWorld.y() << "," << result.m_hitPointWorld.z() << endl;
     for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
       if( _collision_objects[ i ]->matches_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() ) ){
         collisionObject = _collision_objects[ i ];

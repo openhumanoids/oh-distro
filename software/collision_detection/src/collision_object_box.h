@@ -47,6 +47,7 @@ namespace collision_detection {
   private:
 
   };
+  std::ostream& operator<<( std::ostream& out, const Collision_Object_Box& other );
 }
 
 #endif /* COLLISION_DETECTION_COLLISION_OBJECT_BOX_H */

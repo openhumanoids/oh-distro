@@ -142,3 +142,26 @@ Collision_Object_Box::
 bt_box_shape( void )const{
   return _bt_box_shape;
 }
+
+namespace collision_detection {
+  ostream&
+  operator<<( ostream& out,
+              const Collision_Object_Box& other ){
+    out << "id:{" << other.id().c_str() << "} ";
+    out << "bt_collision_objects[" << other.bt_collision_objects().size() << "]:{";
+    for( unsigned int i = 0; i < other.bt_collision_objects().size(); i++ ){
+      if( other.bt_collision_objects()[ i ]->getBroadphaseHandle() != NULL ){
+        out << other.bt_collision_objects()[ i ]->getBroadphaseHandle()->getUid();
+      } else {
+        out << "N/A";
+      }
+      out << ":{pos:(" << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().x() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().y() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().z() << "),(" << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getX() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getY() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getZ() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getW() << ")}";
+      out << ",box:(" << other.bt_box_shape().getImplicitShapeDimensions().x() + other.bt_box_shape().getMargin() << "," << other.bt_box_shape().getImplicitShapeDimensions().y() + other.bt_box_shape().getMargin() << "," << other.bt_box_shape().getImplicitShapeDimensions().z() + other.bt_box_shape().getMargin() << ")";
+      if( i != ( other.bt_collision_objects().size() - 1 ) ){
+        out << ",";
+      }
+    }
+    out << "}";
+    return out;
+  }
+}
