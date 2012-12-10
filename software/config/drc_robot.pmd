@@ -1,6 +1,6 @@
 group "core" {
     cmd "pserver" {
-        exec = "bot-param-server drc_robot.cfg";
+        exec = "bot-param-server ${HOME}/drc/software/config/drc_robot.cfg";
         host = "localhost";
     }
     cmd "r2l" {
