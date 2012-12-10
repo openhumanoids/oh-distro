@@ -1,0 +1,6 @@
+newmtl example
+Ka 1.000000 1.000000 1.000000
+Kd 1.0 1.0 1.0
+Ks 0.0000 0.0000 0.0000
+map_Kd example/example.jpg
+

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<model>
+  <name>Diy Box</name>
+  <version>1.0</version>
+  <sdf>model.sdf</sdf>
+
+  <description>
+    The Diy Box
+  </description>
+</model>

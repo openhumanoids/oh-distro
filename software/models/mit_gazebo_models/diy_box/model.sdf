@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<gazebo version='1.2'>
+<model name="diy_box">
+<static>true</static>
+<link name='chassis'>
+
+      <pose>0 0 0 0 0 0</pose>
+
+      <collision name='collision'>
+        <geometry>
+	    <mesh>
+	     <uri>model://diy_box/meshes/diy_box2.dae</uri>
+	    </mesh>
+        </geometry>
+      </collision>
+
+<visual name='visual'>
+  <geometry>
+    <mesh>
+     <uri>model://diy_box/meshes/diy_box.dae</uri>
+    </mesh>
+  </geometry>
+</visual>
+
+</link>  
+</model>
+</gazebo>
+
