@@ -12,7 +12,7 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #include <Eigen/Geometry>
 
-#include <lcmtypes/drc_heightmap_t.h>
+#include <lcmtypes/drc_map_image_t.h>
 #include <lcmtypes/drc_map_params_t.h>
 
 
@@ -69,35 +69,40 @@ void read_log(std::string poses_files,std::string channel){
   
  
     cout << "Publishing height map (downsample=)...\n";
-    drc_heightmap_t heightMapMsg;
+    drc_map_image_t heightMapMsg;
     heightMapMsg.utime =0;// bot_timestamp_now();
-    heightMapMsg.nx = 111;//heightMap.mWidth;
-    heightMapMsg.ny = 124;// heightMap.mHeight;
-    heightMapMsg.npix = heightMapMsg.nx * heightMapMsg.ny;
-    heightMapMsg.scale_x =0.08;// (px-p0).norm();
-    heightMapMsg.scale_y =0.08;// (py-p0).norm();
+    heightMapMsg.width = 111;//heightMap.mWidth;
+    heightMapMsg.height = 124;// heightMap.mHeight;
+    heightMapMsg.row_bytes = sizeof(float)*heightMapMsg.width;
+    heightMapMsg.total_bytes = heightMapMsg.height*heightMapMsg.row_bytes;
+//    heightMapMsg.scale_x =0.08;// (px-p0).norm();
+//    heightMapMsg.scale_y =0.08;// (py-p0).norm();
     
-    double t2l[][4]={ {0.08,0,0,-4.7631},{0,0.08,0, -4.43}, {0,0,1,-0.779999999999}, {0,0,0,1}};
+//    double t2l[][4]={ {0.08,0,0,-4.7631},{0,0.08,0, -4.43}, {0,0,1,-0.779999999999}, {0,0,0,1}};
+    double t2l[][4]={ {1,0,0,0},{0,1,0,0}, {0,0,1,0}, {0,0,0,1}};
+heightMapMsg.format = DRC_MAP_IMAGE_T_FORMAT_GRAY_FLOAT32;
     
-    
+heightMapMsg.compression = DRC_MAP_IMAGE_T_COMPRESSION_NONE;
+heightMapMsg.channels = 1;// unused currently
+     
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < 4; ++j) {
-        heightMapMsg.transform_to_local[i][j] =
+        heightMapMsg.transform[i][j] =
           t2l[i][j];//heightMap.mTransformToLocal(i,j);
       }
     }
     //heightMapMsg.heights = heightMap.mData;
     
-    float heights[heightMapMsg.npix];
+    float heights[heightMapMsg.total_bytes];
     
-  for (int i = 0; i < heightMapMsg.nx; i++) {
-        for (int j = 0; j < heightMapMsg.ny; j++) { //
-	heights[j*heightMapMsg.nx+i] = scan_stack[   j][ i ];
+  for (int i = 0; i < heightMapMsg.width; i++) {
+        for (int j = 0; j < heightMapMsg.height; j++) { //
+	heights[j*heightMapMsg.width+i] = scan_stack[   j][ i ];
 
 	}
   }
-  heightMapMsg.heights = heights;
-    drc_heightmap_t_publish(subscribe_lcm,channel.c_str(), &heightMapMsg);
+  heightMapMsg.data =(uint8_t*) heights;
+    drc_map_image_t_publish(subscribe_lcm,channel.c_str(), &heightMapMsg);
     
 //    mLcm->publish(mHeightMapChannel, &heightMapMsg);  
   

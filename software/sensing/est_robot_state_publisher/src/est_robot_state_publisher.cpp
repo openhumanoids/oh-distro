@@ -23,7 +23,7 @@ class RobotStateListener //JointAnglesHandler
 private:
   std::string _robot_name;
   std::string _urdf_xml_string;
-  std::string _camera_link_name;
+  std::string _head_link_name;
   std::vector<std::string> _joint_names_;
   std::map<std::string, boost::shared_ptr<urdf::Link> > _links_map;
   boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
@@ -34,7 +34,7 @@ private:
 
   std::vector<drc::link_transform_t> _link_tfs;
 
-  KDL::Frame  T_world_camera;
+  KDL::Frame  T_world_head;
 
   //----------------constructor/destructor
 public:
@@ -49,11 +49,11 @@ public:
 
     //lcm->subscribe("MEAS_JOINT_ANGLES", &RobotStateListener::handleJointAnglesMsg, this);  //Subscribes to MEAS_JOINT_ANGLES 
     lcm->subscribe("TRUE_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); //
-    lcm->subscribe("CAMERA_STATE",&RobotStateListener::handleCameraStateMsg,this);
+    lcm->subscribe("POSE_HEAD",&RobotStateListener::handlePoseHeadMsg,this);
     // create subscriptions to contact sensors.
 
-    T_world_camera = KDL::Frame::Identity();
-    _camera_link_name= "left_camera_frame";
+    T_world_head = KDL::Frame::Identity();
+    _head_link_name= "head";
   }; // end constructor
 
   ~RobotStateListener() {};
@@ -104,26 +104,26 @@ private:
     // PRINTS THE VISUAL PROPERTIES OF ALL LINKS THAT HAVE A VISUAL ELEMENT DEFINED IN THE URDF FILE
     map<string, drc::transform_t>::const_iterator transform_it;
 
-    KDL::Frame  T_body_camera,T_camera_body,T_world_body;
+    KDL::Frame  T_body_head,T_head_body,T_world_body;
 
-    transform_it=cartpos_out.find(_camera_link_name);
+    transform_it=cartpos_out.find(_head_link_name);
 
-    T_body_camera = KDL::Frame::Identity();
+    T_body_head = KDL::Frame::Identity();
     if(transform_it!=cartpos_out.end())// fk cart pos exists
     {
 
-      T_body_camera.p[0]= transform_it->second.translation.x;
-      T_body_camera.p[1]= transform_it->second.translation.y;
-      T_body_camera.p[2]= transform_it->second.translation.z;
-      T_body_camera.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
+      T_body_head.p[0]= transform_it->second.translation.x;
+      T_body_head.p[1]= transform_it->second.translation.y;
+      T_body_head.p[2]= transform_it->second.translation.z;
+      T_body_head.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
 
     }
     else{
-      std::cout<< _camera_link_name <<"not the camera link? specify the correct camera link" <<std::endl;
+      std::cout<< _head_link_name <<"not the head link? specify the correct head link" <<std::endl;
     }
-    T_camera_body = T_body_camera.Inverse();
+    T_head_body = T_body_head.Inverse();
 
-    T_world_body  = T_world_camera*T_camera_body;
+    T_world_body  = T_world_head*T_head_body;
 
     drc::position_3d_t body_origin;
     body_origin.translation.x = T_world_body.p[0];
@@ -200,18 +200,18 @@ private:
   };// end handleRobotUrdfMsg
 
   //==================================================================================================
-  void handleCameraStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+  void handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       const  bot_core::pose_t* msg)  {
 
-    // set world_camera pose.
-    T_world_camera.p[0]= msg->pos[0];
-    T_world_camera.p[1]= msg->pos[1];
-    T_world_camera.p[2]= msg->pos[2];
-    T_world_camera.M =  KDL::Rotation::Quaternion(msg->orientation[1],
+    // set world_head pose.
+    T_world_head.p[0]= msg->pos[0];
+    T_world_head.p[1]= msg->pos[1];
+    T_world_head.p[2]= msg->pos[2];
+    T_world_head.M =  KDL::Rotation::Quaternion(msg->orientation[1],
         msg->orientation[2],
         msg->orientation[3],
         msg->orientation[0]);
-    // std::cout<< "camera x,y,z in world frame:" <<T_world_camera.p[0] <<" , " <<T_world_camera.p[1] <<" , "<< T_world_camera.p[2] <<std::endl;
+    // std::cout<< "head x,y,z in world frame:" <<T_world_head.p[0] <<" , " <<T_world_head.p[1] <<" , "<< T_world_head.p[2] <<std::endl;
 
 
   }; // end handleRobotUrdfMsg

@@ -35,7 +35,7 @@ Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
 namespace gazebo
 {   
   
-class MobileBasePlugin : public ModelPlugin
+class HokuyoSpinPlugin : public ModelPlugin
 {
     
   public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
@@ -48,13 +48,13 @@ class MobileBasePlugin : public ModelPlugin
     this->target_velocity = M_PI/2;
       
     // LCM receive thread:
-    this->callback_queue_thread_ = boost::thread(boost::bind(&MobileBasePlugin::QueueThread, this));
+    this->callback_queue_thread_ = boost::thread(boost::bind(&HokuyoSpinPlugin::QueueThread, this));
       
     // Load parameters for this plugin
     if (this->LoadParams(_sdf)){
       // Listen to the update event. This event is broadcast every simulation iteration.
       this->updateConnection = event::Events::ConnectWorldUpdateStart(
-          boost::bind(&MobileBasePlugin::OnUpdate, this));
+          boost::bind(&HokuyoSpinPlugin::OnUpdate, this));
     }
 
       
@@ -96,6 +96,8 @@ class MobileBasePlugin : public ModelPlugin
     this->head_hokuyo_joint_->SetVelocity(0,target_velocity );
     this->head_hokuyo_joint_->SetMaxForce(0, 5.0); // from sisir's diff drive plugin 
 
+    /*
+     * Not publishing BODY_TO_ROTATING_SCAN from here anymore. its published from joints2frame
     double curr_ang, curr_vel;
     curr_ang = this->head_hokuyo_joint_->GetAngle(0).GetAsRadian();
     curr_vel=this->head_hokuyo_joint_->GetVelocity(0);
@@ -119,6 +121,7 @@ class MobileBasePlugin : public ModelPlugin
     tf.quat[2] =r.y();
     tf.quat[3] =r.z();
     lcm_publish_.publish("BODY_TO_ROTATING_SCAN", &tf);
+    */
   }
 
   ////// All LCM receive thread work:
@@ -128,7 +131,7 @@ class MobileBasePlugin : public ModelPlugin
       gzerr <<"ERROR: lcm_subscribe_ is not good()\n";
     }
   
-    lcm_subscribe_.subscribe("ROTATING_SCAN_RATE_CMD", &MobileBasePlugin::on_rotate_freq, this);
+    lcm_subscribe_.subscribe("ROTATING_SCAN_RATE_CMD", &HokuyoSpinPlugin::on_rotate_freq, this);
     gzerr << "Launching Lidar LCM handler\n";
     while (0 == lcm_subscribe_.handle());
   }    
@@ -156,5 +159,5 @@ class MobileBasePlugin : public ModelPlugin
 };
 
 // Register this plugin with the simulator
-GZ_REGISTER_MODEL_PLUGIN(MobileBasePlugin)
+GZ_REGISTER_MODEL_PLUGIN(HokuyoSpinPlugin)
 }

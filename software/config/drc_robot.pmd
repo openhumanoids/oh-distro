@@ -1,40 +1,41 @@
 group "core" {
-    cmd "roscore" {
-        exec = "roscore";
-        host = "localhost";
-    }
-    cmd "viewer" {
-        exec = "drc-viewer";
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
     }
     cmd "r2l" {
         exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
         host = "localhost";
     }
-    cmd "l2r" {
-        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
-        host = "localhost";
-    }
-    cmd "pserver" {
-        exec = "bot-param-server drc_robot.cfg";
+    cmd "roscore" {
+        exec = "roscore";
         host = "localhost";
     }
     cmd "control_manager" {
         exec = "base_controller_manager";
         host = "localhost";
     }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher";
+    cmd "viewer" {
+        exec = "drc-viewer";
         host = "localhost";
     }
     cmd "modelpub" {
         exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.sdf";
         host = "localhost";
     }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
 }
-
-
-
 
 group "gazebo" {
     cmd "manip_pinned" {
@@ -49,18 +50,17 @@ group "gazebo" {
         exec = "rostopic pub /r_arm_shx_position_controller/command std_msgs/Float64 '{ data : 1.74 }'";
         host = "localhost";
     }
+    cmd "straightback" {
+        exec = "rostopic pub /back_mby_position_controller/command std_msgs/Float64 '{ data : 0 }'";
+        host = "localhost";
+    }
+    cmd "straightneck" {
+        exec = "rostopic pub /neck_ay_position_controller/command std_msgs/Float64 '{ data : 0.35 }'";
+        host = "localhost";
+    }
 }
 
-
 group "sensing" {
-    cmd "lodom" {
-        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
-        host = "localhost";
-    }
-    cmd "local-map" {
-        exec = "drc-local-map";
-        host = "localhost";
-    }
     cmd "map-store" {
         exec = "drc-map-store";
         host = "localhost";
@@ -69,6 +69,20 @@ group "sensing" {
         exec = "surrogate_viewer";
         host = "localhost";
     }
+    cmd "local-map" {
+        exec = "drc-local-map";
+        host = "localhost";
+    }
+    cmd "lodom_old" {
+        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
+        host = "localhost";
+    }
+    cmd "lodom_new" {
+        exec = "drc-motion-estimate-scanmatcher  -l RIGHTED_SCAN -d -R 9 --pose CAMERA_STATE --mask -3.14,3.14";
+        host = "localhost";
+    }
+
+
 }
 
 group "misc" {
@@ -87,32 +101,32 @@ group "misc" {
 }
 
 group "zother" {
-    cmd "manip_gfe" {
-        exec = "roslaunch mit_object_models gfe_mit_manipulation.launch";
-        host = "localhost";
-    }
-    cmd "test_tf_solver" {
-        exec = "test_tf_solver";
-        host = "localhost";
-    }
-    cmd "disparity" {
-        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
+    cmd "oldconverter_tx3" {
+        exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
         host = "localhost";
     }
     cmd "oldconverter_tx1" {
         exec = "rosrun ROS2LCM_translator ros2lcm_translator";
         host = "localhost";
     }
-    cmd "oldconverter_tx2" {
-        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
-        host = "localhost";
-    }
-    cmd "oldconverter_tx3" {
-        exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
+    cmd "test_tf_solver" {
+        exec = "test_tf_solver";
         host = "localhost";
     }
     cmd "oldconverter_proc" {
         exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
+        host = "localhost";
+    }
+    cmd "manip_gfe" {
+        exec = "roslaunch mit_object_models gfe_mit_manipulation.launch";
+        host = "localhost";
+    }
+    cmd "disparity" {
+        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
+        host = "localhost";
+    }
+    cmd "oldconverter_tx2" {
+        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
         host = "localhost";
     }
     cmd "oldbot" {
@@ -120,7 +134,6 @@ group "zother" {
         host = "localhost";
     }
 }
-
 
 
 script "startup simulation" {

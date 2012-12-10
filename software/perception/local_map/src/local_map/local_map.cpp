@@ -85,7 +85,7 @@ local_map::local_map(lcm_t* publish_lcm):
   bot_core_pose_t_subscribe(subscribe_lcm_, "POSE",
       local_map::pose_handler_aux, this);
 
-  bot_core_rigid_transform_t_subscribe(subscribe_lcm_, "BODY_TO_ROTATING_SCAN",
+  bot_core_rigid_transform_t_subscribe(subscribe_lcm_, "BODY_TO_HEAD_HOKUYO",
       local_map::rigid_tf_handler_aux, this);
 
 }
@@ -95,6 +95,7 @@ void local_map::rigid_tf_handler(const bot_core_rigid_transform_t *msg){
   body_to_lidar.setIdentity();
   body_to_lidar.translation()  << msg->trans[0], msg->trans[1], msg->trans[2];
   body_to_lidar.rotate(quat);
+  //cout << "got body_to_lidar\n";
 }
 
 
@@ -147,6 +148,8 @@ void local_map::pose_handler(const bot_core_pose_t *msg){
   m  = Eigen::Quaterniond(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
   current_poseT.pose.rotate(m);
   current_poseT.utime = msg->utime;
+  
+  //cout << "got pose\n";
 
   if (!current_pose_init){
     current_pose_init = true;
@@ -184,7 +187,11 @@ void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
   // Use the current VO pose without interpolation or tf:
   //Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, current_poseT.pose);
 
-  // Transform the VO pose via the inter sensor config:
+  //std::stringstream ss;
+  //  print_Isometry3d(body_to_lidar, ss);
+  //  cout << ss.str() << " body_to_lidar\n";
+  
+  
   Eigen::Isometry3d lidar_pose = current_poseT.pose*body_to_lidar;
   Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
   pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);

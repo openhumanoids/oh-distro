@@ -160,7 +160,7 @@ void Handler::handleMessage(const lcm::ReceiveBuffer* rbuf,
   
   drc::robot_state_t msgout;
   msgout= *msg;
-  send_pose(msgout.origin_position, msgout.utime, "TRUE_POSE"); 
+  send_pose(msgout.origin_position, msgout.utime, "POSE_TRUE"); 
   
   if (add_noise_){
     if (!init_dr_pose){

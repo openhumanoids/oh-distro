@@ -13,3 +13,4 @@ world_model
 
 mfallon_sandbox
 #pcl_lcm_grabber
+plamena_sandbox
