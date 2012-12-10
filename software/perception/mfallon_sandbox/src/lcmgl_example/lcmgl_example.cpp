@@ -58,7 +58,7 @@ int lcmgl_example::do_some_lcmgl(int argc, char **argv){
   bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
   bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
   for (size_t i=0; i < 100; ++i) {
-    bot_lcmgl_vertex3f(lcmgl_, i,  i, i); // 100 points in line
+    bot_lcmgl_vertex3f(lcmgl_, i*10,  i*10, i*10); // 100 points in line
   }
   bot_lcmgl_end(lcmgl_);
   bot_lcmgl_pop_matrix(lcmgl_);
@@ -69,10 +69,10 @@ int lcmgl_example::do_some_lcmgl(int argc, char **argv){
   bot_lcmgl_point_size(lcmgl_, 1.5f);
   bot_lcmgl_begin(lcmgl_, GL_LINE_STRIP);  // render as points
   bot_lcmgl_color3f(lcmgl_, 1, 0, 0); // Red
-  bot_lcmgl_vertex3f(lcmgl_, 1,  2, 3);
-  bot_lcmgl_vertex3f(lcmgl_, 6,  9, 10);
-  bot_lcmgl_vertex3f(lcmgl_, -5,  2, 12);
-  bot_lcmgl_vertex3f(lcmgl_, 5,  2, -12);
+  bot_lcmgl_vertex3f(lcmgl_, 10,  20, 30);
+  bot_lcmgl_vertex3f(lcmgl_, 60,  90, 100);
+  bot_lcmgl_vertex3f(lcmgl_, -50,  20, 120);
+  bot_lcmgl_vertex3f(lcmgl_, 50,  20, -120);
   bot_lcmgl_end(lcmgl_);
   bot_lcmgl_pop_matrix(lcmgl_);
   bot_lcmgl_switch_buffer(lcmgl_);  

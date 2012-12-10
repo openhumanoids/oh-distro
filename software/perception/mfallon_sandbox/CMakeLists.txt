@@ -10,6 +10,11 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 #add_subdirectory(src/rgbd_vis)
+add_subdirectory(src/rgbd2file)
 add_subdirectory(src/lcmgl_example)
 add_subdirectory(src/est_robot_state_fake)
 
+add_subdirectory(src/image-compress)
+
+
+add_subdirectory(src/heightmap_lcmgl)
