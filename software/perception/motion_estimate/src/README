@@ -1,0 +1,18 @@
+- motion_estimate
+  VO based, 
+  when: pre-fuerte, not currently used
+
+- motion_estimate_scanmatcher_bolt_vertical
+  laser based, assumed a perfectly horizontal laser (i.e. with spine fixed)
+  when: used until dec2012
+
+- motion_estimate_scanmatcher_righted_vertical
+  laser based, listens to an actively righted laser. also listens to imu 
+  and projects returns to 2d
+  when: in use in dec2012
+  
+- motion_estimate_scanmatcher_rotating
+  laser based, listens to rotating laser. also listens to imu. 
+  when laser is close to horizontal, scan taken and used for scanmatching
+  when: future mode, stub as of 9dec2012
+
