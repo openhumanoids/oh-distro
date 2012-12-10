@@ -172,7 +172,7 @@ void Handler::handleMessage(const lcm::ReceiveBuffer* rbuf,
   }
   
   _lcm.publish("EST_ROBOT_STATE", &msgout);
-  send_pose(msgout.origin_position, msgout.utime, "POSE"); 
+  send_pose(msgout.origin_position, msgout.utime, "POSE_BODY"); 
   // TODO: also publish the CAMERA_STATE pose_t message
 
 }

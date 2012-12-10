@@ -30,7 +30,9 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm):
           world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
           body_to_headT_(0, Eigen::Isometry3d::Identity()) {
 
-  j2f_list_ += "head_hokuyo", "left_camera_optical_frame","head_statichokuyo","head_rightedhokuyo";
+  l2f_list_ += "head","head_rightedhokuyo";
+  // "head_hokuyo"
+  //"left_camera_optical_frame","head_statichokuyo"
 
   
   // Vis Config:
@@ -46,12 +48,50 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm):
 }
 
 
+
+Eigen::Quaterniond joints2frames::euler_to_quat(double yaw, double pitch, double roll) {
+  double sy = sin(yaw*0.5);
+  double cy = cos(yaw*0.5);
+  double sp = sin(pitch*0.5);
+  double cp = cos(pitch*0.5);
+  double sr = sin(roll*0.5);
+  double cr = cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return Eigen::Quaterniond(w,x,y,z);
+}
+
+
 void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (!_urdf_parsed){
     cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
     return;
   }
 
+  // This republishes the head_hokuyo_joint angle as a transform
+  // it assumes the delta pose = [0,0,0,0,0,0] ... 
+  // it is important this is true, if not change it here!
+  for (size_t i=0; i< msg->num_joints; i++){
+    if (   msg->joint_name[i].compare( "head_hokuyo_joint" ) == 0 ){
+        bot_core::rigid_transform_t tf;
+        tf.utime = msg->utime;
+        tf.trans[0] =0;
+        tf.trans[1] =0;
+        tf.trans[2] =0;
+        Eigen::Quaterniond head_quat = euler_to_quat(0,0,msg->joint_position[i]);
+        tf.quat[0] =head_quat.w();
+        tf.quat[1] =head_quat.x();
+        tf.quat[2] =head_quat.y();
+        tf.quat[3] =head_quat.z();
+        lcm_->publish("HEAD_TO_HEAD_HOKUYO", &tf);      
+      
+    }
+  }
+  
+  
+  
   //clear stored data
   _link_tfs.clear();
 
@@ -106,11 +146,11 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     world_to_jointsT.push_back(world_to_jointT);
     
     // Also see if these joints are required to be published as BOT_FRAMES poses:
-    BOOST_FOREACH(string j2f, j2f_list_ ){
-      if ( j2f.compare( joint ) == 0 ){
-        //cout << "got : " << j2f << "\n";
+    BOOST_FOREACH(string l2f, l2f_list_ ){
+      if ( l2f.compare( joint ) == 0 ){
+        //cout << "got : " << l2f << "\n";
         bot_core::rigid_transform_t tf;
-        // hard coded until inverse kin. is added:
+        tf.utime = msg->utime;
         tf.trans[0] = body_to_joint.translation().x();
         tf.trans[1] = body_to_joint.translation().y();
         tf.trans[2] = body_to_joint.translation().z();
@@ -119,8 +159,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
         tf.quat[1] =quat.x();
         tf.quat[2] =quat.y();
         tf.quat[3] =quat.z();
-        std::string j2f_upper ="BODY_TO_" + boost::to_upper_copy(j2f);
-        lcm_->publish(j2f_upper, &tf);      
+        std::string l2f_upper ="BODY_TO_" + boost::to_upper_copy(l2f);
+        lcm_->publish(l2f_upper, &tf);      
       }
     }
     counter++;

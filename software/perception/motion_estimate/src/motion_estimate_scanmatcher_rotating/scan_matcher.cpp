@@ -712,8 +712,8 @@ main(int argc, char *argv[])
     sm_planar_lidar_t_subscribe(app->lcm, app->lidar_chan, laser_handler,
             app);
 
-    bot_core_pose_t_subscribe(app->lcm, app->righted_laser_pose_chan, righted_pose_handler,
-            app);
+//    bot_core_pose_t_subscribe(app->lcm, app->righted_laser_pose_chan, righted_pose_handler,
+//            app);
     drc_imu_t_subscribe(app->lcm, app->head_imu_chan, head_imu_handler,
             app);
 

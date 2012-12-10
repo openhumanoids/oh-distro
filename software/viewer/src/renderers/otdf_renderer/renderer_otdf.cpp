@@ -1191,6 +1191,6 @@ BotRenderer *renderer_otdf_new (BotViewer *viewer, int render_priority, lcm_t *l
 
 void setup_renderer_otdf(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
-  bot_viewer_add_renderer(viewer, renderer_otdf_new(viewer, render_priority, lcm),
-      render_priority);
+  bot_viewer_add_renderer_on_side(viewer, renderer_otdf_new(viewer, render_priority, lcm),
+      render_priority, 0); // 0= add on left hand side
 }

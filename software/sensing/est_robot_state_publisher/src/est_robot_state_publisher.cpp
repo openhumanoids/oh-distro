@@ -146,7 +146,7 @@ private:
     pose_msg.orientation[1] = body_origin.rotation.x;
     pose_msg.orientation[2] = body_origin.rotation.y;
     pose_msg.orientation[3] = body_origin.rotation.z;
-    _lcm->publish("POSE", &pose_msg);
+    _lcm->publish("POSE_BODY", &pose_msg);
 
 
 

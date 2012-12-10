@@ -591,6 +591,6 @@ BotRenderer *renderer_navigation_new (BotViewer *viewer, int render_priority, lc
 
 void setup_renderer_navigation(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
-  bot_viewer_add_renderer(viewer, renderer_navigation_new(viewer, render_priority, lcm),
-      render_priority);
+  bot_viewer_add_renderer_on_side(viewer, renderer_navigation_new(viewer, render_priority, lcm),
+      render_priority , 0);
 }

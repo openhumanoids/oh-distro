@@ -37,7 +37,7 @@ class joints2frames{
     boost::shared_ptr<lcm::LCM> lcm_;
     pointcloud_vis* pc_vis_;
 
-    std::vector <std::string> j2f_list_;
+    std::vector <std::string> l2f_list_;
     
     Isometry3dTime world_to_bodyT_;
     Isometry3dTime body_to_headT_;
@@ -57,7 +57,7 @@ class joints2frames{
     bool _urdf_parsed;    
     std::vector<drc::link_transform_t> _link_tfs;
     
-    
+    Eigen::Quaterniond  euler_to_quat(double yaw, double pitch, double roll);
 };    
 
 #endif

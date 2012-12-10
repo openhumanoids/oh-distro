@@ -267,7 +267,15 @@ void GazeboRosPubRobotState::UpdateChild()
         { 
 
 	  std::string name =  it->second->GetName();//joint name
-	  double current_position = it->second->GetAngle(0).GetAsRadian(); // joint position
+          double current_position = it->second->GetAngle(0).GetAsRadian(); // joint position
+          current_position = fmod(current_position, 2*M_PI );
+          // if out of bounds, then correct: (added due to Gazebo bug in dec 2012, mfallon
+          // their angles arent bound checked
+          if (current_position > 2*M_PI){
+            current_position =  current_position- 2*M_PI;
+          }else if (current_position < 0){
+            current_position =  current_position+ 2*M_PI;
+          }
 	  double current_velocity = it->second->GetVelocity(0); // joint velocity
 	  this->robotStateMsg.joint_name.push_back(name);
 	  this->robotStateMsg.joint_position.push_back(current_position);
