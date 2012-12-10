@@ -1,8 +1,21 @@
-topchunk.dae
-top tag <mesh>
+======================== ABOUT THE DAE FORMAT ==========================
+======================== FOR A 8 CORNERED, 12 TRIANGLE CUBE ============
+Cube-Geometry-Position 8 xyz points (24 vals)  ... 8 corner points of cube
+Cube-Geometry-Normals  6 xyz normals (18 vals) ... 6 normal directions of faces
+Cube-Geometry-UV       36 st pairs (72 pixel corrdinates from 0->1) ... look up of all 36 points in image
 
-===================================================
+Cube-Geometry-Vertex   12 triangles (108 integer values from 0->35)
+- 36 triples: vertex | normal | texcoord
 
+12 triangles makes a cube with 36 (non-unique) vertices.
+-- vertex is 0>7 number in Cube-Geometry-Position
+-- normal is 0>5 normal values
+-- texcoord is 0>35 index in to paired uv values
+
+
+==================== CONTENTS OF THE VARIOUS DAE SNIPPET FILES ===========
+tag_top.dae: the top end
+tag0 <mesh>
 tag1a:				
   <source id="Mesh-Geometry-Position">
     <float_array count="
@@ -76,7 +89,7 @@ tag4c: </p>
 </triangles>
 
 ===================================================
-end tag:
+tag5:
 			</mesh>
 
-bottomchunk.dae
+tag6.dae: the bottom end

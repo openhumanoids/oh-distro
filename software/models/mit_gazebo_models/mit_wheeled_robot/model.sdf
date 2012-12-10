@@ -45,13 +45,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/head.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/head.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -64,13 +64,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_clav.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_clav.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_clav.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -83,13 +83,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_farm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_farm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_farm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -102,13 +102,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_hand.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_hand.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_hand.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -121,13 +121,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_larm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_larm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_larm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -140,13 +140,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_scap.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_scap.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_scap.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -159,13 +159,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_uarm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_uarm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/l_uarm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/l_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -178,13 +178,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/ltorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/ltorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/ltorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/ltorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -197,13 +197,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/mtorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/mtorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/mtorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/mtorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -216,13 +216,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/pelvis.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/pelvis.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -235,13 +235,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_clav.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_clav.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_clav.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -254,13 +254,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_farm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_farm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_farm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -273,13 +273,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_hand.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_hand.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_hand.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -292,13 +292,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_larm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_larm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_larm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -311,13 +311,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_scap.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_scap.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_scap.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -331,13 +331,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_uarm.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_uarm.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/r_uarm.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/r_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -350,13 +350,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/utorso.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/utorso.stl" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/utorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -1873,13 +1873,13 @@
  <!-- WHEELED Base and Wheels -->
   <link name="LfrontWheel">
     <inertial>
-      <mass value="13.51"/>
+      <mass value="43.51"/>
       <inertia ixx="0.021177" ixy="0" ixz="0" iyy="0.021177" iyz="0" izz="0.0394875"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
       <material name="red">
         <color rgba="1 0 0 1"/>
@@ -1888,19 +1888,19 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
     </collision>
   </link>
   <link name="RfrontWheel">
     <inertial>
-      <mass value="13.51"/>
+      <mass value="43.51"/>
       <inertia ixx="0.021177" ixy="0" ixz="0" iyy="0.021177" iyz="0" izz="0.0394875"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
       <material name="blue">
         <color rgba="0 0 1 1"/>
@@ -1909,19 +1909,19 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
     </collision>
   </link>
   <link name="LbackWheel">
     <inertial>
-      <mass value="13.51"/>
+      <mass value="43.51"/>
       <inertia ixx="0.021177" ixy="0" ixz="0" iyy="0.021177" iyz="0" izz="0.0394875"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
       <material name="red">
         <color rgba="1 0 0 1"/>
@@ -1930,19 +1930,19 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
     </collision>
   </link>
   <link name="RbackWheel">
     <inertial>
-      <mass value="13.51"/>
+      <mass value="43.51"/>
       <inertia ixx="0.021177" ixy="0" ixz="0" iyy="0.021177" iyz="0" izz="0.0394875"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
       <material name="blue">
         <color rgba="0 0 1 1"/>
@@ -1951,7 +1951,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.07" radius="0.15"/>
+        <cylinder length="0.25" radius="0.3"/>
       </geometry>
     </collision>
   </link>
@@ -1961,28 +1961,28 @@
   <joint name="RfrontWheel_joint" type="continuous">
     <parent link="pelvis"/>
     <child link="RfrontWheel"/>
-    <origin rpy="0 1.570796325 1.570796325" xyz="-0.2 -0.235 -0.75"/>
+    <origin rpy="0 1.570796325 1.570796325" xyz="-0.6 -0.5 -0.75"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="LfrontWheel_joint" type="continuous">
     <parent link="pelvis"/>
     <child link="LfrontWheel"/>
-    <origin rpy="0 1.570796325 1.570796325" xyz="-0.2 0.235 -0.75"/>
+    <origin rpy="0 1.570796325 1.570796325" xyz="-0.6 0.5 -0.75"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="RbackWheel_joint" type="continuous">
     <parent link="pelvis"/>
     <child link="RbackWheel"/>
-    <origin rpy="0 1.570796325 1.570796325" xyz="0.2 -0.235 -0.75"/>
+    <origin rpy="0 1.570796325 1.570796325" xyz="0.6 -0.5 -0.75"/>
     <axis xyz="0 0 1"/>
      <dynamics damping="1"/> 
   </joint>
   <joint name="LbackWheel_joint" type="continuous">
     <parent link="pelvis"/>
     <child link="LbackWheel"/>
-    <origin rpy="0 1.570796325 1.570796325" xyz="0.2 0.235 -0.75"/>
+    <origin rpy="0 1.570796325 1.570796325" xyz="0.6 0.5 -0.75"/>
     <axis xyz="0 0 1"/>
     <dynamics damping="1"/> 
   </joint>
@@ -2001,8 +2001,8 @@
         <frontrightJoint>RfrontWheel_joint</frontrightJoint>
         <rearleftJoint>LbackWheel_joint</rearleftJoint>
         <rearrightJoint>RbackWheel_joint</rearrightJoint>
-        <wheelSeparation>0.47</wheelSeparation>
-        <wheelDiameter>0.15</wheelDiameter>
+        <wheelSeparation>1.0</wheelSeparation>
+        <wheelDiameter>0.8</wheelDiameter>
         <torque>100</torque>
          <interface:position name="position_iface_0"/> 
         <topicName>cmd_vel</topicName>
@@ -2136,7 +2136,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/head.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
@@ -2156,7 +2156,7 @@
         </scan>
         <range>
           <min>0.08</min>
-          <max>10.0</max>
+          <max>40.0</max>
           <resolution>0.01</resolution>
         </range>
       </ray>
@@ -2196,7 +2196,7 @@
 <!--    <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://mit_wheeled_robot/meshes/head.dae" scale="1 1 1"/>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
       </geometry> 
     </visual>-->
   </link>
@@ -2216,7 +2216,7 @@
         </scan>
         <range>
           <min>0.08</min>
-          <max>10.0</max>
+          <max>40.0</max>
           <resolution>0.01</resolution>
         </range>
       </ray>

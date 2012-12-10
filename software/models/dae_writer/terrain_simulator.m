@@ -7,8 +7,8 @@ c=0;
 % 1 = steps
 % 2 = wedge
 % 3 = image
-% 4 
-which=1
+% 4 = canyon
+which=4
 if (which==1)
     height=40;
     width=20;
