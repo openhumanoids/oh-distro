@@ -4,6 +4,8 @@
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_util.h>
 
+using namespace maptypes;
+
 SensorDataReceiver::
 SensorDataReceiver() {
   mIsRunning = false;
@@ -217,9 +219,11 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
     if ((range < rangeMin) || (range > rangeMax)) {
       continue;
     }
-    cloud->points.
-      push_back(PointCloud::PointType(cos(theta)*range,
-                                      sin(theta)*range, 0));
+    PointType pt;
+    pt.x = cos(theta)*range;
+    pt.y = sin(theta)*range;
+    pt.z = 0;
+    cloud->points.push_back(pt);
   }
   cloud->width = cloud->points.size();
 

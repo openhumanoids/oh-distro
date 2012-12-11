@@ -6,12 +6,12 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <pcl/point_types.h>
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/drc/pointcloud2_t.hpp>
 #include <bot_param/param_client.h>
 
+#include "MapTypes.hpp"
 #include "ThreadSafeQueue.hpp"
 
 class SensorDataReceiver {
@@ -21,15 +21,14 @@ public:
     SensorTypePointCloud
   };
 
-  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-
   struct PointCloudWithPose {
     int64_t mTimestamp;
-    PointCloud::Ptr mPointCloud;
+    maptypes::PointCloud::Ptr mPointCloud;
     Eigen::Isometry3d mPose;
 
     PointCloudWithPose() {}
-    PointCloudWithPose(const int64_t iTime, const PointCloud::Ptr& iCloud,
+    PointCloudWithPose(const int64_t iTime,
+                       const maptypes::PointCloud::Ptr& iCloud,
                        const Eigen::Isometry3d& iPose) {
       mTimestamp = iTime;
       mPointCloud = iCloud;

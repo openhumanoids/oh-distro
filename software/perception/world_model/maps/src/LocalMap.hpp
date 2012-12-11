@@ -1,9 +1,10 @@
 #ifndef _LocalMap_hpp_
 #define _LocalMap_hpp_
 
-#include <pcl/point_types.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
+
+#include "MapTypes.hpp"
 
 namespace octomap {
   class OcTree;
@@ -12,7 +13,6 @@ namespace octomap {
 class LocalMap {
 public:
   typedef boost::shared_ptr<LocalMap> Ptr;
-  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
   typedef octomap::OcTree Octree;
   typedef boost::shared_ptr<Octree> OctreePtr;
 
@@ -63,12 +63,12 @@ public:
   double getResolution() const;
 
   // transform to local frame, add to current map
-  bool add(const PointCloud::Ptr& iPoints,
+  bool add(const maptypes::PointCloud::Ptr& iPoints,
            const Eigen::Isometry3d& iToLocal,
            const bool iRayTraceFromOrigin=false);
 
   // export this entire representation as an ordinary point cloud
-  PointCloud::Ptr getAsPointCloud() const;
+  maptypes::PointCloud::Ptr getAsPointCloud() const;
 
   // export this representation as height map
   HeightMap getAsHeightMap(const int iDownSample=1,
@@ -83,9 +83,10 @@ public:
 
   // for change detection
   void resetChangeReference();
-  void getChanges(PointCloud::Ptr& oAdded, PointCloud::Ptr& oRemoved);
-  void applyChanges(const PointCloud::Ptr& iAdded,
-                    const PointCloud::Ptr& iRemoved);
+  void getChanges(maptypes::PointCloud::Ptr& oAdded,
+                  maptypes::PointCloud::Ptr& oRemoved);
+  void applyChanges(const maptypes::PointCloud::Ptr& iAdded,
+                    const maptypes::PointCloud::Ptr& iRemoved);
 
   // serialize to bytes
   void serialize(std::vector<char>& oBytes) const;

@@ -5,6 +5,8 @@
 #include "LocalMap.hpp"
 #include "SpatialQuery.hpp"
 
+using namespace maptypes;
+
 SpatialQueryWrapper::
 SpatialQueryWrapper() {
   mIsRunning = false;
@@ -63,7 +65,7 @@ operator()() {
       mDataReady.wait(mapLock);
     }
     if (mNeedsUpdate) {
-      LocalMap::PointCloud::Ptr cloud = mMap->getAsPointCloud();
+      PointCloud::Ptr cloud = mMap->getAsPointCloud();
       mNewQuery->clear();
       mNewQuery->setNormalComputationRadius(3*mMap->getResolution());
       mNewQuery->setMap(mMap);

@@ -3,6 +3,8 @@
 #include "LocalMap.hpp"
 #include <pcl/features/normal_3d.h>
 
+using namespace maptypes;
+
 SpatialQuery::
 SpatialQuery() {
   clear();
@@ -67,8 +69,11 @@ getClosest(const Eigen::Vector3d& iPoint,
   std::vector<float> distances;
 
   // find closest point in cloud to query point
-  mSearchTree.nearestKSearch(PointType(iPoint[0], iPoint[1], iPoint[2]), 1,
-                             indices, distances);
+  PointType searchPoint;
+  searchPoint.x = iPoint[0];
+  searchPoint.y = iPoint[1];
+  searchPoint.z = iPoint[2];
+  mSearchTree.nearestKSearch(searchPoint, 1, indices, distances);
   if (indices.size() == 0) {
     return false;
   }

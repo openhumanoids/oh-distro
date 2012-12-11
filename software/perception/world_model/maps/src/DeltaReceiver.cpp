@@ -7,6 +7,8 @@
 #include "MapManager.hpp"
 #include "LocalMap.hpp"
 
+using namespace maptypes;
+
 DeltaReceiver::
 DeltaReceiver() {
   mIsRunning = false;
@@ -94,7 +96,7 @@ operator()() {
         }
 
         // collect points to add
-        LocalMap::PointCloud::Ptr cloudAdded(new LocalMap::PointCloud());
+        PointCloud::Ptr cloudAdded(new PointCloud());
         cloudAdded->width = delta.added.size();
         cloudAdded->height = 1;
         cloudAdded->is_dense = false;
@@ -106,7 +108,7 @@ operator()() {
         }
 
         // collect points to remove
-        LocalMap::PointCloud::Ptr cloudRemoved(new LocalMap::PointCloud());
+        PointCloud::Ptr cloudRemoved(new PointCloud());
         cloudRemoved->width = delta.removed.size();
         cloudRemoved->height = 1;
         cloudRemoved->is_dense = false;

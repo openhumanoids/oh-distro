@@ -3,20 +3,20 @@
 
 #include <unordered_map>
 #include <boost/shared_ptr.hpp>
-#include <pcl/point_types.h>
 #include <Eigen/Geometry>
+
+#include "MapTypes.hpp"
 
 class PointDataBuffer;
 class LocalMap;
 
 class MapManager {
 public:
-  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
   typedef boost::shared_ptr<LocalMap> MapPtr;
 
   struct MapDelta {
-    PointCloud::Ptr mAdded;
-    PointCloud::Ptr mRemoved;
+    maptypes::PointCloud::Ptr mAdded;
+    maptypes::PointCloud::Ptr mRemoved;
   };
 
 protected:
@@ -52,7 +52,8 @@ public:
   MapPtr getActiveMap() const;
 
   // add data to internal buffer but not to map
-  bool addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
+  bool addToBuffer(const int64_t iTime,
+                   const maptypes::PointCloud::Ptr& iPoints,
                    const Eigen::Isometry3d& iToLocal);
 
   // correct pose of buffered points

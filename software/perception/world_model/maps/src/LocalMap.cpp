@@ -6,6 +6,8 @@
 
 #include <limits>
 
+using namespace maptypes;
+
 LocalMap::
 LocalMap() {
   setId(-1);
@@ -135,7 +137,7 @@ add(const PointCloud::Ptr& iPoints,
   return false;
 }
 
-LocalMap::PointCloud::Ptr LocalMap::
+PointCloud::Ptr LocalMap::
 getAsPointCloud() const {
   // accumulate points
   PointCloud::Ptr cloud(new PointCloud());
@@ -145,7 +147,10 @@ getAsPointCloud() const {
     if (!occupied) {
       continue;
     }
-    PointCloud::PointType pt(iter.getX(), iter.getY(), iter.getZ());
+    PointCloud::PointType pt;
+    pt.x = iter.getX();
+    pt.y = iter.getY();
+    pt.z = iter.getZ();
     cloud->points.push_back(pt);
   }
 
@@ -293,12 +298,16 @@ getChanges(PointCloud::Ptr& oAdded, PointCloud::Ptr& oRemoved) {
     octomap::point3d pt = mOctree->keyToCoord(iter->first);
     octomap::OcTreeNode* node = mOctree->search(iter->first);
     bool occupied = mOctree->isNodeOccupied(node);
+    PointType point;
+    point.x = pt.x();
+    point.y = pt.y();
+    point.z = pt.z();
     // TODO: consider using another node representation rather than 3d points
     if (occupied) {
-      oAdded->points.push_back(PointCloud::PointType(pt.x(), pt.y(), pt.z()));
+      oAdded->points.push_back(point);
     }
     else {
-      oRemoved->points.push_back(PointCloud::PointType(pt.x(), pt.y(), pt.z()));
+      oRemoved->points.push_back(point);
     }
   }
 }

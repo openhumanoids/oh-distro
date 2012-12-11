@@ -3,6 +3,8 @@
 #include "PointDataBuffer.hpp"
 #include "LocalMap.hpp"
 
+using namespace maptypes;
+
 MapManager::
 MapManager() {
   mPointDataBuffer.reset(new PointDataBuffer());

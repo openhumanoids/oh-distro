@@ -3,17 +3,15 @@
 
 #include <unordered_map>
 #include <set>
-#include <pcl/point_types.h>
 #include <Eigen/Geometry>
 
+#include "MapTypes.hpp"
 
 class PointDataBuffer {
 public:
-  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-
   struct PointSet {
     int64_t mTimestamp;
-    PointCloud::Ptr mPoints;
+    maptypes::PointCloud::Ptr mPoints;
     Eigen::Isometry3d mToLocal;
   };
 

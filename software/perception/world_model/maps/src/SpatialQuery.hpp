@@ -3,11 +3,11 @@
 
 #include <pcl/search/kdtree.h>
 
+#include "MapTypes.hpp"
+
 class LocalMap;
 
 class SpatialQuery {
-protected:
-  typedef pcl::PointXYZ PointType;
 
 public:
   enum LocationOccupancy {
@@ -46,8 +46,8 @@ protected:
 
   bool mNeedsUpdate;
   boost::shared_ptr<LocalMap> mMap;
-  pcl::PointCloud<PointType>::Ptr mCloud;
-  pcl::search::KdTree<PointType> mSearchTree;
+  maptypes::PointCloud::Ptr mCloud;
+  pcl::search::KdTree<maptypes::PointType> mSearchTree;
 };
 
 

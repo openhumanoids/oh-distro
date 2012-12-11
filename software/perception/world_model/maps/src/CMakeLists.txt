@@ -14,6 +14,7 @@ add_library(maps SHARED
 # make the header public
 # install it to include/maps
 pods_install_headers(
+  MapTypes.hpp
   MapManager.hpp
   LocalMap.hpp
   PointDataBuffer.hpp
