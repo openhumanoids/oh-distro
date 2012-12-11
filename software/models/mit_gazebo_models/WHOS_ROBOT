@@ -1,18 +1,21 @@
 Scott:
-
 mit_robot_drake
 mit_robot_PnC
 
 Maurice:
 
 Sisir:
+mit_robot_hands: local descriptions of all osrf provided hands for interactive grasp synthesis for viewer and drake
 mit_stickbot
 
-
-Jonathon:
+Jonathan Hechtbauer:
 porterbot
 
 Other stuff:
 diybox
 simple_box
 mit_terrain
+
+Deprecated:
+mit_camhand (replaced by sandia_hand. TODO: delete after everyone updates to drcsim 1.1)
+
