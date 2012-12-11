@@ -105,7 +105,7 @@ isObserved(const Eigen::Vector3d& iPoint) {
 
 SpatialQuery::LocationOccupancy SpatialQuery::
 getOccupancy(const Eigen::Vector3d& iPoint) {
-  octomap::point3d pt(iPoint[0], iPoint[1], iPoint[2]);
+  //octomap::point3d pt(iPoint[0], iPoint[1], iPoint[2]);
   /* TODO: need to expose these methods
   octomap::OcTreeNode* node = mOctree->search(pt);
   if (node == NULL) {

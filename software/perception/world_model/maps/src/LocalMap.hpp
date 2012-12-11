@@ -2,9 +2,12 @@
 #define _LocalMap_hpp_
 
 #include <pcl/point_types.h>
-#include <octomap/octomap.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
+
+namespace octomap {
+  class OcTree;
+}
 
 class LocalMap {
 public:
@@ -22,6 +25,13 @@ public:
     float mMaxZ;
     std::vector<float> mData;
     Eigen::Affine3d mTransformToLocal;
+  };
+
+  struct DepthMap {
+    int mWidth;
+    int mHeight;
+    std::vector<float> mData;
+    Eigen::Affine3d mTransform;  // local to image
   };
 
 public:
@@ -58,12 +68,15 @@ public:
            const bool iRayTraceFromOrigin=false);
 
   // export this entire representation as an ordinary point cloud
-  PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
+  PointCloud::Ptr getAsPointCloud() const;
 
   // export this representation as height map
-  // TODO: set desired resolution (perhaps as integer power of 2 factor)
   HeightMap getAsHeightMap(const int iDownSample=1,
                            const float iMaxHeight=1e20) const;
+
+  // export this representation as depth map
+  DepthMap getAsDepthMap(const Eigen::Affine3d& iLocalToImage,
+                         const int iWidth, const int iHeight) const;
 
   // export raw underlying octree bytes 
   void getAsRaw(std::vector<uint8_t>& oBytes) const;

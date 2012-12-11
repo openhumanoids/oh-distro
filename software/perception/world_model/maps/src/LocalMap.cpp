@@ -1,5 +1,6 @@
 #include "LocalMap.hpp"
 
+#include <octomap/octomap.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/crop_box.h>
 
@@ -135,7 +136,8 @@ add(const PointCloud::Ptr& iPoints,
 }
 
 LocalMap::PointCloud::Ptr LocalMap::
-getAsPointCloud(const bool iTransform) const {
+getAsPointCloud() const {
+  // accumulate points
   PointCloud::Ptr cloud(new PointCloud());
   Octree::iterator iter;
   for (iter = mOctree->begin_leafs(); iter != mOctree->end_leafs(); ++iter) {
@@ -146,6 +148,11 @@ getAsPointCloud(const bool iTransform) const {
     PointCloud::PointType pt(iter.getX(), iter.getY(), iter.getZ());
     cloud->points.push_back(pt);
   }
+
+  // transform to local coords
+  Eigen::Affine3f matx(mTransformToLocal.cast<float>());
+  pcl::transformPointCloud(*cloud, *cloud, matx);
+  
   return cloud;
 }
 
@@ -221,6 +228,40 @@ getAsHeightMap(const int iDownSample,
   }
 
   return heightMap;
+}
+
+LocalMap::DepthMap LocalMap::
+getAsDepthMap(const Eigen::Affine3d& iLocalToImage,
+              const int iWidth, const int iHeight) const {
+  DepthMap depthMap;
+  depthMap.mWidth = iWidth;
+  depthMap.mHeight = iHeight;
+  depthMap.mTransform = iLocalToImage;
+
+  Eigen::Matrix4d xformToImage = (iLocalToImage*mTransformToLocal).matrix();
+  Eigen::Matrix3d xformFromImage = xformToImage.topLeftCorner<3,3>().inverse();
+  Eigen::Vector3d originTemp = xformFromImage *
+    xformToImage.topRightCorner<3,1>();
+  octomap::point3d origin(originTemp(0), originTemp(1), originTemp(2));
+
+  depthMap.mData.resize(iWidth*iHeight);
+  const float unobservedValue = -std::numeric_limits<float>::max();
+  for (int i = 0; i < iHeight; ++i) {
+    for (int j = 0; j < iWidth; ++j) {
+      int index = i*iWidth + j;
+      Eigen::Vector3d dir = xformFromImage*Eigen::Vector3d(j,i,1);
+      octomap::point3d direction(dir(0), dir(1), dir(2));
+      octomap::point3d hitPoint;
+      if (mOctree->castRay(origin, direction, hitPoint, false, -1)) {
+        depthMap.mData[index] = (hitPoint-origin).norm()/direction.norm();
+      }
+      else {
+        depthMap.mData[index] = unobservedValue;
+      }
+    }
+  }
+  
+  return depthMap;
 }
 
 void LocalMap::
