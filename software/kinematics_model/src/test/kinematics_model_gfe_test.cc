@@ -1,6 +1,6 @@
 #include <iostream>
 #include <map>
-
+#include <path_util/path_util.h>
 #include <kinematics_model/kinematics_model_gfe.h>
 
 using namespace std;
@@ -14,7 +14,8 @@ main( int argc,
       char* argv[])
 {
   cout << endl << "start of kinematics-model-gfe-test" << endl << endl;
-  Kinematics_Model_GFE kinematics_model_gfe( "/home/tmhoward/projects/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.sdf" );
+  
+  Kinematics_Model_GFE kinematics_model_gfe(getModelsPath() + string( "/mit_gazebo_models/mit_robot_PnC/model.sdf" ));
 
   robot_state_t robot_state;
   robot_state.origin_position.translation.x = 0.0;
