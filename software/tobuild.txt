@@ -12,8 +12,8 @@ control
 object_template_model
 drc_utils
 perception
-viewer
 collision_detection
+viewer
 
 #network
 #interface
