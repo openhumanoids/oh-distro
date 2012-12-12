@@ -64,20 +64,6 @@ Collision_Object_Box::
 }
 
 /** 
- * set_dims
- * sets the dimensions of the box collision object
- */
-void
-Collision_Object_Box::
-set_dims( Vector3f dims ){
-  btVector3 half_extents( dims.x()/2.0, dims.y()/2.0, dims.z()/2.0 );
-  _bt_box_shape.setSafeMargin( half_extents );
-  btVector3 margin( _bt_box_shape.getMargin(), _bt_box_shape.getMargin(), _bt_box_shape.getMargin() );
-  _bt_box_shape.setImplicitShapeDimensions( ( half_extents * _bt_box_shape.getLocalScaling() ) - margin );
-  return;
-}
-
-/** 
  * set_transform
  * sets the world-frame position and orientation of the collision object
  */
@@ -90,6 +76,10 @@ set_transform( Vector3f position,
   return;
 }
 
+/**
+ * position
+ * returns the position of the collision object
+ */
 Vector3f
 Collision_Object_Box::
 position( void )const{
@@ -99,6 +89,10 @@ position( void )const{
   return position;
 }
 
+/**
+ * orientation
+ * returns the orientation of the collision object
+ */
 Vector4f
 Collision_Object_Box::
 orientation( void )const{

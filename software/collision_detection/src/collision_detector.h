@@ -40,6 +40,10 @@ namespace collision_detection {
     unsigned int num_collisions( void );
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject );
 
+    std::vector< Collision_Object* > collision_objects( void )const;
+    btCollisionWorld& bt_collision_world( void );
+    const btCollisionWorld& bt_collision_world( void )const;
+  
   protected:
     btDefaultCollisionConfiguration _collision_configuration;
     btCollisionDispatcher _collision_dispatcher;

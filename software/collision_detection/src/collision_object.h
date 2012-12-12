@@ -23,6 +23,7 @@ namespace collision_detection {
   class Collision_Object {
   public:
     Collision_Object( std::string id );
+    Collision_Object( const Collision_Object& other );
     ~Collision_Object();
 
     virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );

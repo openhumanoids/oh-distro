@@ -88,16 +88,11 @@ ray_test( Vector3f from,
   btVector3 bt_from( from.x(), from.y(), from.z() );
   btVector3 bt_to( to.x(), to.y(), to.z() );
   btCollisionWorld::ClosestRayResultCallback result( bt_from, bt_to );
+  _collision_world.updateAabbs();
   _collision_world.rayTest( bt_from, bt_to, result );
  
-  cout << "_collision_objects.size(): " << _collision_objects.size() << endl;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    cout << "  " << *dynamic_cast< Collision_Object_Box* >(_collision_objects[ i ] )<< endl;
-  }
-    
   collisionObject = NULL;
   if( result.hasHit() ){
-    cout << "hit " << result.m_hitPointWorld.x() << "," << result.m_hitPointWorld.y() << "," << result.m_hitPointWorld.z() << endl;
     for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
       if( _collision_objects[ i ]->matches_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() ) ){
         collisionObject = _collision_objects[ i ];
@@ -109,6 +104,24 @@ ray_test( Vector3f from,
   return;
 }
 
+vector< Collision_Object* >
+Collision_Detector::
+collision_objects( void )const{
+  return _collision_objects;
+}
+
+btCollisionWorld&
+Collision_Detector::
+bt_collision_world( void ){
+  return _collision_world;
+}
+
+const btCollisionWorld&
+Collision_Detector::
+bt_collision_world( void )const{
+  return _collision_world;
+} 
+
 /**
  * operator<<
  * ostream operator function
@@ -117,6 +130,7 @@ namespace collision_detection {
   ostream&
   operator<<( ostream& out,
               const Collision_Detector& other ){
+    vector< Collision_Object* > collision_objects = other.collision_objects();
     return out;
   }
 }

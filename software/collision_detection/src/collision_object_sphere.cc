@@ -50,6 +50,7 @@ Collision_Object_Sphere::
 Collision_Object_Sphere( const Collision_Object_Sphere& other ): Collision_Object( other ),
                                                                   _bt_collision_object(),
                                                                   _bt_sphere_shape( (btScalar)(0.5) ){
+  set_transform( other.position(), other.orientation() );
   _bt_collision_object.setCollisionShape( &_bt_sphere_shape );
 }   
 
@@ -73,6 +74,33 @@ set_transform( Vector3f position,
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.w(), orientation.x(), orientation.y(), orientation.z() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
+}
+
+/**
+ * position
+ * returns the position of the collision object
+ */
+Vector3f
+Collision_Object_Sphere::
+position( void )const{
+  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
+  return position;
+}
+
+/**
+ * orientation
+ * returns the orientation of the collision object
+ */
+Vector4f
+Collision_Object_Sphere::
+orientation( void )const{
+  Vector4f orientation( _bt_collision_object.getWorldTransform().getRotation().getX(),
+                        _bt_collision_object.getWorldTransform().getRotation().getY(),
+                        _bt_collision_object.getWorldTransform().getRotation().getZ(),
+                        _bt_collision_object.getWorldTransform().getRotation().getW() );
+  return orientation;
 }
 
 /** 

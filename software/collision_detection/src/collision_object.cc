@@ -14,6 +14,15 @@ Collision_Object( string id ) : _id( id ){
 }
 
 /**
+ * Collision_Object 
+ * copy constructor
+ */
+Collision_Object::
+Collision_Object( const Collision_Object& other ) : _id( other._id ){
+
+}
+
+/**
  * ~Collision_Object
  * class destructor
  */

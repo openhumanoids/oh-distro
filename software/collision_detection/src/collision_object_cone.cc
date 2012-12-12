@@ -61,7 +61,7 @@ void
 Collision_Object_Cone::
 set_transform( Vector3f position,
                 Vector4f orientation ){
-  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.w(), orientation.x(), orientation.y(), orientation.z() ),
+  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.x(), orientation.y(), orientation.z(), orientation.w() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
 }

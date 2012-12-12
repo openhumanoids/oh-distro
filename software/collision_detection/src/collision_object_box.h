@@ -31,7 +31,6 @@ namespace collision_detection {
     Collision_Object_Box( const Collision_Object_Box& other );
     ~Collision_Object_Box();
 
-    void set_dims( Eigen::Vector3f dims );
     virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
 
     virtual Eigen::Vector3f position( void )const;
