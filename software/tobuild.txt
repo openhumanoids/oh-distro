@@ -6,6 +6,7 @@ drc_lcmtypes
 #hubo
 robot_model
 kinematics
+kinematics_model
 sensing
 control
 object_template_model
@@ -13,6 +14,7 @@ drc_utils
 perception
 viewer
 collision_detection
+
 #network
 #interface
 
