@@ -11,4 +11,5 @@ lcmtypes_build()
 
 # build two LCM test programs
 add_subdirectory(src/hokuyospin_plugin)
+add_subdirectory(src/oracle_plugin)
 
