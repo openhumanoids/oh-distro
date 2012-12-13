@@ -16,6 +16,7 @@ Collision_Object_Convex_Hull( string id ) : Collision_Object( id ),
                                             _bt_convex_hull_shape(),
                                             _chull_obj_filename( "N/A" ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
+  _bt_convex_hull_shape.setMargin( 0.0 );
 }
 
 /**
@@ -29,6 +30,7 @@ Collision_Object_Convex_Hull( string id,
                                                   _bt_convex_hull_shape(),
                                                   _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
+  _bt_convex_hull_shape.setMargin( 0.0 );
   _load_chull_obj();
 }
 
@@ -45,6 +47,7 @@ Collision_Object_Convex_Hull( string id,
                                                         _bt_convex_hull_shape(),
                                                         _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
+  _bt_convex_hull_shape.setMargin( 0.0 );
   set_transform( position, orientation );
   _load_chull_obj();
 }
@@ -59,6 +62,7 @@ Collision_Object_Convex_Hull( const Collision_Object_Convex_Hull& other ): Colli
                                                                             _bt_convex_hull_shape(),
                                                                             _chull_obj_filename( other._chull_obj_filename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
+  _bt_convex_hull_shape.setMargin( 0.0 );
   set_transform( other.position(), other.orientation() );
   _load_chull_obj();
 }   
