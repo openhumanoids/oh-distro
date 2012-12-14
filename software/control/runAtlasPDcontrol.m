@@ -1,25 +1,45 @@
 function runAtlasPDcontrol
-r = RigidBodyManipulator('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf');
-r = setSimulinkParam(r,'MinStep','0.001');
-v = r.constructVisualizer;
-v.display_dt = .05;
 
-x0 = Point(r.getStateFrame);
-xd = x0;
-xd.RElbowPitch = -0.2;
-xd.RShoulderPitch = 0.1;
-%%%%
-num_x = r.getNumContStates();
-num_u = r.getNumInputs();
-xdDouble = zeros(num_x,1);
-xdDouble(15)= -0.2;
-xdDouble(13)=0.1;
-PDcontrol = simplePDcontrol(num_x,num_u,xdDouble);
-PDcontrol = PDcontrol.setInputFrame(r.getOutputFrame());
-PDcontrol = PDcontrol.setOutputFrame(r.getInputFrame());
-options = struct('tspan',[0,5]);
-runDRCControl(PDcontrol,'atlas','TRUE_ROBOT_STATE','ACTUATOR_CMDS',options);
-keyboard;
+options.floating = true;
+m = RigidBodyModel('../models/mit_gazebo_models/mit_robot_drake/mit_drc_robot_minimal_contact.sdf',options);
+    
+dt = 0.001;
+r = TimeSteppingRigidBodyManipulator(m,dt);
+
+pgain = Point(r.getStateFrame);
+pgain.neck_ay = 10;
+pgain.l_leg_uay = 200;
+pgain.l_leg_lax = 200;
+pgain.r_leg_uay = 200;
+pgain.r_leg_lax = 200;
+pgain = double(pgain);
+
+pgain(pgain==0) = 100;
+
+nq = r.manip.getNumStates()/2;
+kp = diag(pgain(1:nq)); 
+kd = diag(2.0*ones(nq,1));
+
+B = r.manip.model.B;
+pos_mat = -B'*kp;
+vel_mat = -B'*kd;
+
+pd = LinearSystem([],[],[],[],[],[pos_mat,vel_mat]);
+
+xstar = Point(r.getStateFrame);
+xstar = r.manip.resolveConstraints(double(xstar));
+
+% align frames so the goal is at the origin
+if all(xstar==0)
+  pd = setInputFrame(pd,r.getStateFrame);
+else
+  pd = setInputFrame(pd,CoordinateFrame([r.getStateFrame.name,' - ', mat2str(xstar,3)],length(xstar),r.getStateFrame.prefix));
+  r.getStateFrame.addTransform(AffineTransform(r.getStateFrame,pd.getInputFrame,eye(length(xstar)),-xstar));
+  pd.getInputFrame.addTransform(AffineTransform(pd.getInputFrame,r.getStateFrame,eye(length(xstar)),+xstar));
+end
+pd = setOutputFrame(pd,r.getInputFrame);
+
+runDRCControl(r,pd,'mit_drc_robot','TRUE_ROBOT_STATE','ACTUATOR_CMDS',struct());
+
 end
 
-% NOTEST

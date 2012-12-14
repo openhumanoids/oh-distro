@@ -44,9 +44,15 @@ public class RobotStateListener implements LCMSubscriber
                 }
                 
                 // get body position and orientation
-                m_x[m_joint_map.get("base_x")] = msg.origin_position.translation.x;
-                m_x[m_joint_map.get("base_y")] = msg.origin_position.translation.y;
-                m_x[m_joint_map.get("base_z")] = msg.origin_position.translation.z;
+                index = m_joint_map.get("base_x").intValue();
+                m_x[index] = msg.origin_position.translation.x;
+                m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.x;
+                index = m_joint_map.get("base_y").intValue();
+                m_x[index] = msg.origin_position.translation.y;
+                m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.y;
+                index = m_joint_map.get("base_z").intValue();
+                m_x[index] = msg.origin_position.translation.z;
+                m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.z;
                 
                 // convert quaternion to euler
                 double x = msg.origin_position.rotation.x;
@@ -54,9 +60,19 @@ public class RobotStateListener implements LCMSubscriber
                 double z = msg.origin_position.rotation.z;
                 double w = msg.origin_position.rotation.w;
 
-                m_x[m_joint_map.get("base_roll")] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
-                m_x[m_joint_map.get("base_pitch")] = Math.asin(2*(x*z - w*y));
-                m_x[m_joint_map.get("base_yaw")] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
+                index = m_joint_map.get("base_roll").intValue();
+                m_x[index] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
+                m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.x;
+
+                index = m_joint_map.get("base_pitch").intValue();
+                m_x[index] = Math.asin(2*(x*z - w*y));
+                m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
+
+                index = m_joint_map.get("base_yaw").intValue();
+                m_x[index] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
+                if (m_x[index] > Math.PI)
+                   m_x[index] -= 2*Math.PI;
+                m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.z;
                 
                 m_has_new_message = true;
             }

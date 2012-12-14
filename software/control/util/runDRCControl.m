@@ -30,14 +30,23 @@ end
 
 global g_scope_enable; g_scope_enable = true;
 
-disp('waiting...');
+disp('Controller ready...');
 % just run as fast as possible
 t=options.tspan(1); tic;
 while (t<=options.tspan(2))
   x = getNextMessage(state_listener,1);
   if (~isempty(x))
-    getLastTimestamp(state_listener)
-    u = controller.output(t,[],x)
+    ts = getLastTimestamp(state_listener);
+    %t = ts/1000000
+    %x'
+    u = controller.output(t,[],x);
+    %u = zeros(robot.getNumInputs(),1);%controller.output(t,[],x);
+    %u'
+    %u =zeros(getNumInputs(robot),1);
+    %u(7) = 100;
+    %u(20) = -100;
+
+    
     %fprintf('time is %f\n',t);
     %fprintf('timestamp is %f\n',getLastTimestamp(state_listener));
     %fprintf('state is %f\n',x);

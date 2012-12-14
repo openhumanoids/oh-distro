@@ -2,7 +2,7 @@ function runAtlasPlanarDynamics()
 
 % just runs it as a passive system for now
 options.view = 'right';
-options.view = 'front';
+%options.view = 'front';
 
 options.floating = true;
 m = PlanarRigidBodyModel('../models/mit_gazebo_models/mit_robot_drake/mit_drc_robot_minimal_contact.sdf',options);
