@@ -428,8 +428,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 		else
 			self->picking = 0;
 	}
-    else if(! strcmp(name, PARAM_WIRE)){
-        fprintf(stderr, "\nHELLO\n");
+    else if(! strcmp(name, PARAM_WIRE)) {
 		if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
 			self->visualize_bbox= true;  
 		}
@@ -463,13 +462,13 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
-  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 1, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 1, NULL);
+  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->picking = 1;
     self->clicked=0;	
   	self->selection = new std::string(" ");
-    self->visualize_bbox = true;
+    self->visualize_bbox = false;
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 
 
