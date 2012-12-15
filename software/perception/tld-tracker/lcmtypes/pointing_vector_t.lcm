@@ -1,0 +1,7 @@
+package perception;
+
+struct pointing_vector_t
+{
+    double pos[3];
+    double vec[3];
+}

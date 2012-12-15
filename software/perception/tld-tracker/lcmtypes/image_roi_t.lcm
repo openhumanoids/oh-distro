@@ -1,0 +1,7 @@
+package perception; 
+
+struct image_roi_t 
+{
+    int64_t utime; 
+    perception.rect_t roi;
+}
