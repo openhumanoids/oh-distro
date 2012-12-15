@@ -1,6 +1,6 @@
 group "core" {
     cmd "pserver" {
-        exec = "bot-param-server ${HOME}/drc/software/config/drc_robot.cfg";
+        exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
     }
     cmd "r2l" {
@@ -38,7 +38,7 @@ group "core" {
 }
 
 group "gazebo" {
-    cmd "manip_pinned" {
+    cmd "gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit_manipulation_task_pinned_robot.launch";
         host = "localhost";
     }
