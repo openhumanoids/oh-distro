@@ -10,12 +10,12 @@ TLD's work well w/ features (keypts) low-level features
 #include <set>
 
 // LCM includes
-#include <perception_opencv_utils/calib_utils.hpp>
-#include <perception_opencv_utils/imshow_utils.hpp>
-#include <perception_opencv_utils/math_utils.hpp>
-#include <perception_opencv_utils/plot_utils.hpp>
-#include <perception_opencv_utils/color_utils.hpp>
-#include <perception_opencv_utils/imgproc_utils.hpp>
+// #include <perception_opencv_utils/calib_utils.hpp>
+// #include <perception_opencv_utils/imshow_utils.hpp>
+// #include <perception_opencv_utils/math_utils.hpp>
+// #include <perception_opencv_utils/plot_utils.hpp>
+// #include <perception_opencv_utils/color_utils.hpp>
+// #include <perception_opencv_utils/imgproc_utils.hpp>
 
 #include "kinect_opencv_utils.h"
 #include <lcmtypes/kinect_image_msg_t.h>
@@ -29,6 +29,9 @@ TLD's work well w/ features (keypts) low-level features
 #include <lcmtypes/perception_image_roi_t.h>
 
 #define SHOW_ALL_RECTS_BY_ONE 0
+int MAX_IMAGE_WIDTH = 0;
+int MAX_IMAGE_HEIGHT = 0;
+
 using namespace cv;
 
 typedef struct _state_t state_t;
@@ -119,7 +122,7 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         selection.y = MIN(y, origin.y);
         selection.width = std::abs(x - origin.x);
         selection.height = std::abs(y - origin.y);
-        selection &= Rect(0, 0, WIDTH, HEIGHT);
+        selection &= Rect(0, 0, MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT);
     }
 
     switch (event) {
@@ -158,6 +161,11 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     
     if (!msg->width || !msg->height)
         return;
+
+    if (!MAX_IMAGE_WIDTH || !MAX_IMAGE_HEIGHT) { 
+        MAX_IMAGE_WIDTH = msg->width;
+        MAX_IMAGE_HEIGHT = msg->height;
+    }
 
     Mat img(msg->height, msg->width, CV_8UC3);
     if (!selectObject) { 
@@ -209,7 +217,7 @@ int main(int argc, char** argv)
     bot_core_image_t_subscribe(state->lcm, "CAMERALEFT", on_image_frame, (void*)state);
     setMouseCallback( WINDOW_NAME, onMouse, &mouse);
 
-
+    
     // Install signal handler to free data.
     signal(SIGINT, INThandler);
 
