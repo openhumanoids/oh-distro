@@ -29,7 +29,7 @@
     </include>
     <include>
       <uri>model://mit_wheeled_robot</uri>
-      <pose>0 0 1 0 0 0</pose>
+      <pose>0 0 1.06 0 0 0</pose>
     </include>
 
     <include><name>diybox</name><uri>model://diy_box</uri><pose>0 -1.75 0 0 0 0</pose></include>
