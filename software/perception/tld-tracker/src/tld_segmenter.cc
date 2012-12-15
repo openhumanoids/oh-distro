@@ -149,7 +149,7 @@ void  INThandler(int sig)
 {
     // lcm_destroy(state->lcm);
     printf("Exiting\n");
-    // exit(0);
+    exit(0);
 }
 
 static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
@@ -176,7 +176,6 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
 
         // int npixels = msg->height * msg->width;
 
-        resize(img, img, Size(640,480));
         last_utime = msg->utime;
     } else 
         img = last_img;

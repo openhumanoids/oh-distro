@@ -147,6 +147,7 @@ int envoy_decompress_bot_core_image_t(const bot_core_image_t * jpeg_image, bot_c
 
 void  INThandler(int sig) {
     printf("Exiting\n");
+    exit(0);
 }
 
 
@@ -205,8 +206,6 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         memcpy(img.data, msg->data, sizeof(uint8_t)*msg->width*msg->height*3);            
     }
     cvtColor(img, img, CV_RGB2BGR);
-    resize(img, img, Size(640,480));
-
 
     if (!initDone) { 
         pthread_mutex_lock(&buffer_mutex);
