@@ -251,7 +251,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
             tld_track(bufpair.second);
 
             if(tldtracker->currBB != NULL) {
-                float roix = tldtracker->currBB->x, roiy = tldtracker->currBB->y;
+                float roix = tldtracker->currBB->x + tldtracker->currBB->width/2, roiy = tldtracker->currBB->y + tldtracker->currBB->height/2;
                 float a,b;
                 float u = -(camera_params.cx - roix);
                 float v = -(camera_params.cy - roiy);

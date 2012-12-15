@@ -135,7 +135,7 @@ void TLD::drawTemplates() {
         rectangle(roi, Point(1,1), Point(roi.cols-1,roi.rows-1), Scalar(255), 2);
     }
 
-    imshow("true positives", tp_img);
+    // imshow("true positives", tp_img);
 
     int fp = detectorCascade->nnClassifier->falsePositives->size(); 
     int fp_cols = 20;
@@ -155,7 +155,7 @@ void TLD::drawTemplates() {
         rectangle(roi, Point(1,1), Point(roi.cols-1,roi.rows-1), Scalar(255), 2);
     }
 
-    imshow("false positives", fp_img);
+    // imshow("false positives", fp_img);
 
     // cout << "NN has now " << detectorCascade->nnClassifier->truePositives->size() << " positives and " << detectorCascade->nnClassifier->falsePositives->size() << " negatives.\n";
 }
