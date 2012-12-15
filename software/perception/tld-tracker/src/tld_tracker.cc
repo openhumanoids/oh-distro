@@ -6,6 +6,7 @@ TLD's work well w/ features (keypts) low-level features
 - Does going to 3D from contour make tracking possible ??
 
 */
+#define WINDOW_NAME "TLD Tracker"
 
 #include <set>
 
@@ -27,10 +28,15 @@ TLD's work well w/ features (keypts) low-level features
 #include <bot_param/param_client.h>
 
 #include "tld/TLD.h"
+#include <lcmtypes/perception_image_roi_t.h>
+#include <lcmtypes/perception_pointing_vector_t.h>
+#include <pthread.h>
 
 // #include <pcl/registration/correspondence_rejection_sample_consensus.h>
 
 #define SHOW_ALL_RECTS_BY_ONE 0
+#define BUFFER_TIME_SIZE 3 // seconds
+
 using namespace cv;
 
 typedef struct _state_t state_t;
@@ -42,34 +48,18 @@ struct _state_t {
 };
 state_t * state = NULL;
 
-
-struct MouseEvent {
-    MouseEvent() { event = -1; buttonState = 0; }
-    Point pt;
-    int event;
-    int buttonState;
+struct CameraParams { 
+    int width, height;
+    float fx, fy, cx, cy, k1, k2, k3, p1, p2;
 };
-MouseEvent mouse;
+CameraParams camera_params;
 
-// UI selection of desired object
-Rect selection;
-Point origin;
-bool selectObject = false;
-int trackObject = 0;
 bool initLearning = false;
-
-int mser_delta = 5;
-int mser_area_threshold = 101;
-int mser_min_margin = 3;
-int mser_max_variation = 25;
-int mser_min_diversity = 2;
-
-// Tld tracker
+bool initDone = false;
 tld::TLD* tldtracker;
-cv::Mat1b currMask;
-cv::Rect currROI;
 
-Mat prev_gray;
+pthread_mutex_t buffer_mutex;
+std::deque<std::pair<int64_t, Mat> > cbuffer;
 
 static void usage(const char* progname)
 {
@@ -82,139 +72,32 @@ static void usage(const char* progname)
   exit(1);
 }
 
-struct Frame { 
-    kinect_data kinect;
-    cv::Rect BB;
-};
+void tld_track(Mat& frame) { 
+    Mat img = frame.clone();
 
-cv::Mat cvtToGray(const Mat& img) { 
-    std::vector<Mat1b> channels;
-    cv::split(img,channels);
-    
-    Mat gray;
-    addWeighted( channels[2], 0.5, channels[1], 0.5, 0, gray );
-    return gray;
-}
-
-void mser_features(Mat& img) { 
-    Mat gray;
+    Mat gray; 
     cvtColor(img, gray, CV_BGR2GRAY);
-    
-    int delta = 3; 
-    int max_area = 14400;
-    int min_area = 20;
-    int max_evolution = 50;
-    double area_threshold = mser_area_threshold * 1.f / 100;
-    double min_margin = mser_min_margin * 1.f / 1000;
-    double max_variation = mser_max_variation * 1.f / 100;
-    double min_diversity = mser_min_diversity * 1.f / 10;
-    int edge_blur_size = 5;
-    
-    Mat mser_img = img.clone();
-    MSER mser(delta, min_area, max_area, max_variation, min_diversity, 
-              max_evolution, area_threshold, min_margin, edge_blur_size);
-    
-    vector<vector< Point> > msers;
-    mser(gray, msers);
 
-    if (!msers.size())
-        return;
+    IplImage img_ipl(img);
+    tldtracker->processImage(&img_ipl);
+    int confident = (tldtracker->currConf >= .5) ? 1 : 0;
 
-    std::vector<Scalar> colors(msers.size());
-    opencv_utils::fillColors(colors);
-
-    for (int j=0; j<msers.size(); j++) 
-        for (int k=0; k<msers[j].size(); k++) 
-            circle( mser_img, msers[j][k], 2, colors[j], -1, 8);
-
-
-    imshow("mser", mser_img);
-}
-
-void tld_track(Frame& frame) { 
-    Mat img = frame.kinect.getRGB().clone();
-    // lk_features(img);
-
-    if (trackObject) { 
-        if (trackObject < 0) { 
-            opencv_utils::imshow("first frame", img);
-            trackObject = 1;
-
-            // tld tracker selection
-            tldtracker->selectObject(frame.kinect.getGray().clone(), &selection);
-        } else  {
-            IplImage img_ipl(img);
-            tldtracker->processImage(&img_ipl);
-            int confident = (tldtracker->currConf >= .5) ? 1 : 0;
-
-            CvScalar yellow = CV_RGB(255,255,0);
-            CvScalar blue = CV_RGB(0,0,255);
-            CvScalar black = CV_RGB(0,0,0);
-            CvScalar white = CV_RGB(255,255,255);
+    CvScalar yellow = CV_RGB(255,255,0);
+    CvScalar blue = CV_RGB(0,0,255);
+    CvScalar black = CV_RGB(0,0,0);
+    CvScalar white = CV_RGB(255,255,255);
         
-            if(tldtracker->currBB != NULL) {
-                CvScalar rectangleColor = (confident) ? blue : yellow;
-                cvRectangle(&img_ipl, tldtracker->currBB->tl(), tldtracker->currBB->br(), rectangleColor, 2, 2, 0);
+    if(tldtracker->currBB != NULL) {
+        CvScalar rectangleColor = (confident) ? blue : yellow;
+        cvRectangle(&img_ipl, tldtracker->currBB->tl(), tldtracker->currBB->br(), rectangleColor, 2, 2, 0);
                 
-                // plot the tracker bounding box that optical flow predicts
-                Rect* trackerBB = tldtracker->medianFlowTracker->trackerBB;
-                if (trackerBB != NULL)
-                    cvRectangle(&img_ipl, trackerBB->tl(), trackerBB->br(), white, 2, 2, 0);
+        // plot the tracker bounding box that optical flow predicts
+        Rect* trackerBB = tldtracker->medianFlowTracker->trackerBB;
+        if (trackerBB != NULL)
+            cvRectangle(&img_ipl, trackerBB->tl(), trackerBB->br(), yellow, 2, 2, 0);
                 
-                // good features within the bounding box
-                if (trackerBB != NULL) { 
-                    std::vector<Point2f> corners;
-                    Rect r(*trackerBB);
-
-                    Mat roi_orig(frame.kinect.getRGB().clone(), r);
-
-                    int rx = r.x + r.width / 2;
-                    int ry = r.y + r.height / 2;
-
-                    r.width *= 2;
-                    r.height *= 2;
-
-                    r.x = rx - r.width / 2;
-                    r.y = ry - r.height / 2;
-
-                    r &= Rect(0, 0, img.cols, img.rows);
-
-                    Mat gray = frame.kinect.getGray();
-                    // Mat roi(gray, r);
-
-                    Mat roi_color; 
-                    Mat roi(frame.kinect.getRGB().clone(), r);
-                    cvtColor(roi, roi_color, CV_BGR2Lab);
-
-                    if (!prev_gray.empty()) { 
-                        r.width = prev_gray.cols;
-                        r.height = prev_gray.rows;
-                    }
-
-                    cv::Mat patch = tldtracker->currPosPatch();
-                    if (!patch.empty()) { 
-                        cv::Mat3b patch3;
-                        cvtColor(patch, patch3, CV_GRAY2BGR);
-                        resize(patch3, patch3, roi_orig.size());
-                        addWeighted( roi_orig, 0.2, patch3, 0.8, 0, patch3 );
-                        
-                        opencv_utils::imshow("roi_orig+patch", patch3);
-                    }
-                    prev_gray = gray.clone();
-                    imshow("roi", roi);
-
-
-                    // Compute MSER Features on the ROI
-                    mser_features(roi);
-
-                }
-            }
-        
-            // printf("Current conf: %3.2f\n", tldtracker->currConf);
-        }
         opencv_utils::imshow("result", img);
     }
-    // find_corr_bb_in_bumblebee(frame, *(tldtracker->currBB));
 }
 
 
@@ -262,56 +145,142 @@ int envoy_decompress_bot_core_image_t(const bot_core_image_t * jpeg_image, bot_c
   return ret;
 }
 
-
-static void onMouse(int event, int x, int y, int flags, void* userdata) {
-    MouseEvent* data = (MouseEvent*)userdata;
-    if (selectObject) {
-        selection.x = MIN(x, origin.x);
-        selection.y = MIN(y, origin.y);
-        selection.width = std::abs(x - origin.x);
-        selection.height = std::abs(y - origin.y);
-        selection &= Rect(0, 0, WIDTH, HEIGHT);
-    }
-
-    switch (event) {
-    case CV_EVENT_LBUTTONDOWN:
-        origin = Point(x, y);
-        selection = Rect(x, y, 0, 0);
-        selectObject = true;
-        break;
-    case CV_EVENT_LBUTTONUP:
-        selectObject = false;
-        trackObject = -1;
-        break;
-    }
-    return;
-}
-
-void  INThandler(int sig)
-{
-    // lcm_destroy(state->lcm);
+void  INThandler(int sig) {
     printf("Exiting\n");
-    // exit(0);
 }
 
-static void on_kinect_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
-                            const kinect_frame_msg_t *msg, 
+
+static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const perception_image_roi_t *msg, 
                             void *user_data ) {
     
-    Frame frame;
-    frame.kinect.update(msg);
+    std::cerr << "SEGMENTATION msg: " << msg->utime << " " << msg->roi.x << " " << msg->roi.y << 
+        msg->roi.width << " " << msg->roi.height << std::endl;
 
-    tld_track(frame);
+    pthread_mutex_lock(&buffer_mutex);
+    bool found = false;
+    for (int j=0; j<cbuffer.size()-1; j++) { 
+        if (cbuffer[j].first >= msg->utime && cbuffer[j+1].first < msg->utime) { 
+            found = true;
 
-    Mat img = frame.kinect.getRGB().clone();
-    if (selectObject && selection.width > 0 && selection.height > 0) {
-        Mat roi(img, selection);
-        bitwise_not(roi, roi);
+            std::cerr << "Init TLD with " << cbuffer[j].first << std::endl;
+            opencv_utils::imshow("first frame", cbuffer[j].second);
+
+            Mat gray; 
+            cvtColor(cbuffer[j].second, gray, CV_BGR2GRAY);
+
+            // tld tracker selection
+            Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
+            tldtracker->selectObject(gray, &selection);
+
+            // Found frame: removing the older frames
+            cbuffer.erase(cbuffer.begin() + j + 1, cbuffer.end());
+            std::cerr << "Found image" << msg->utime << "=" << cbuffer[j].first << "~" << cbuffer[j+1].first << std::endl;
+            break;
+        }
     }
+    pthread_mutex_unlock(&buffer_mutex);
 
-    imshow("Kinect RGB", img);    
+    initDone = true;
+
+}
+
+
+
+static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const bot_core_image_t *msg, 
+                            void *user_data ) {
+
+    if (!msg->width || !msg->height)
+        return;
+        
+    Mat img(msg->height, msg->width, CV_8UC3);
+    static bot_core_image_t * localFrame=(bot_core_image_t *) calloc(1,sizeof(bot_core_image_t));
+    if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG) { 
+        //create space for decompressed image
+        envoy_decompress_bot_core_image_t(msg,localFrame);
+        memcpy( img.data, localFrame->data, sizeof(uint8_t)*msg->width*msg->height*3);            
+    } else { 
+        //uncompressed, just copy pointer
+        memcpy(img.data, msg->data, sizeof(uint8_t)*msg->width*msg->height*3);            
+    }
+    cvtColor(img, img, CV_RGB2BGR);
+    resize(img, img, Size(640,480));
+
+
+    if (!initDone) { 
+        pthread_mutex_lock(&buffer_mutex);
+        // Push to circular buffer
+        cbuffer.push_front(std::make_pair(msg->utime, img));
+
+        // Circular buffer implementation to allow for delay in user-segmentation
+        if (cbuffer.size()) { 
+            const std::pair<int64_t, Mat>& latest = cbuffer.front();
+
+            // Keep only BUFFER_TIME_SIZE seconds of buffer
+            int jtime;
+            for (jtime=0; jtime<cbuffer.size(); jtime++) { 
+                if (latest.first - cbuffer[jtime].first > BUFFER_TIME_SIZE * 1e6)
+                    break;
+            }
+            if (jtime < cbuffer.size()) { 
+                // std::cerr << "Clearing up " << cbuffer.size() - jtime << std::endl;
+                cbuffer.erase(cbuffer.begin() + jtime, cbuffer.end());
+            }
+        }
+        pthread_mutex_unlock(&buffer_mutex);
+    } else {
+
+        pthread_mutex_lock(&buffer_mutex);
+        // Push to circular buffer
+        cbuffer.push_front(std::make_pair(msg->utime, img));
+
+        if (cbuffer.size() > 1) { 
+            // Once the buffer is clean
+            int j = 0, count = 2;
+            while (j < count && cbuffer.size()) { 
+                std::pair<int64_t, Mat>& bufpair = cbuffer.back();
+                // Track each of the remaining buffers before going live
+                tld_track(bufpair.second);
+                cbuffer.pop_back();
+            }
+        } else if (cbuffer.size() == 1) { 
+            // std::cerr << "Live tracking " << msg->utime << std::endl;
+
+            std::pair<int64_t, Mat>& bufpair = cbuffer.back();
+            tld_track(bufpair.second);
+
+            if(tldtracker->currBB != NULL) {
+                float roix = tldtracker->currBB->x, roiy = tldtracker->currBB->y;
+                float a,b;
+                float u = -(camera_params.cx - roix);
+                float v = -(camera_params.cy - roiy);
+                if (!camera_params.fx && !camera_params.fy)
+                    a = b = 0;
+                else 
+                    a = u*1.f/camera_params.fx, b = v*1.f/camera_params.fy;
+                perception_pointing_vector_t bearing_vec;
+                bearing_vec.pos[0] = 0, 
+                    bearing_vec.pos[1] = 0, 
+                    bearing_vec.pos[2] = 0;
+
+                bearing_vec.vec[0] = a, 
+                    bearing_vec.vec[1] = b, 
+                    bearing_vec.vec[2] = 1;
+                perception_pointing_vector_t_publish(state->lcm, "OBJECT_BEARING", &bearing_vec);
+            }
+            
+
+            cbuffer.pop_back();
+        } else 
+            std::cerr << "Empty buffer: " << cbuffer.size() << std::endl;
+        pthread_mutex_unlock(&buffer_mutex);
+        
+    }
+    opencv_utils::imshow(WINDOW_NAME, img);
     return;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -324,6 +293,20 @@ int main(int argc, char** argv)
     // state->mainloop = g_main_loop_new( NULL, FALSE );  
     state->param = bot_param_new_from_server(state->lcm, 1);
     state->frames = bot_frames_get_global (state->lcm, state->param);
+
+    std::string key_prefix_str = "cameras.CAMERALEFT.intrinsic_cal";
+    camera_params.width = bot_param_get_int_or_fail(state->param, (key_prefix_str+".width").c_str());
+    camera_params.height = bot_param_get_int_or_fail(state->param,(key_prefix_str+".height").c_str());
+    camera_params.fx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fx").c_str());
+    camera_params.fy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fy").c_str());
+    camera_params.cx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cx").c_str());
+    camera_params.cy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cy").c_str());
+    camera_params.k1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k1").c_str());
+    camera_params.k2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k2").c_str());
+    camera_params.k3 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k3").c_str());
+    camera_params.p1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p1").c_str());
+    camera_params.p2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p2").c_str());
+
 
     // New TLD Tracker
     tldtracker = new tld::TLD();
@@ -358,10 +341,8 @@ int main(int argc, char** argv)
     trackObject = 1;
 #endif
 
-    // Subscribe to the kinect image
-    namedWindow( "Kinect RGB" );
-    kinect_frame_msg_t_subscribe(state->lcm, "KINECT_FRAME", on_kinect_image_frame, (void*)state);
-    setMouseCallback("Kinect RGB", onMouse, &mouse);
+    bot_core_image_t_subscribe(state->lcm, "CAMERALEFT", on_image_frame, (void*)state);
+    perception_image_roi_t_subscribe(state->lcm, "TLD_OBJECT_ROI", on_segmentation_frame, (void*)state);
 
     // Install signal handler to free data.
     signal(SIGINT, INThandler);
@@ -369,9 +350,7 @@ int main(int argc, char** argv)
     fprintf(stderr, "Starting Main Loop\n");
 
     int lcm_fd = lcm_get_fileno(state->lcm);
-
     fd_set fds;
-
     // wait a limited amount of time for an incoming message
     struct timeval timeout = { 
         0,  // seconds
@@ -403,13 +382,11 @@ int main(int argc, char** argv)
             std::cerr << "reading from model" << std::endl;
             tldtracker->readFromFile("model");
             tldtracker->learningEnabled = false;
-            trackObject = 1;
+            // htrackObject = 1;
         } else if (c == 'w') { 
             std::cerr << "exiting: writing to model" << std::endl;
             tldtracker->writeToFile("model");
         }
-
-
     }
 
     lcm_destroy(state->lcm);

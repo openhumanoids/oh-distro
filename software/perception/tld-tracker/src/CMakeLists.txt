@@ -41,3 +41,25 @@ target_link_libraries(tld-tracker
 )
 
 pods_install_executables(tld-tracker)
+
+
+# create an executable, and make it public
+add_executable(tld-segmenter 
+  tld_segmenter.cc
+)
+
+pods_use_pkg_config_packages ( tld-segmenter lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+  bot2-frames
+  bot2-param-client opencv perception-opencv-utils )
+
+
+target_link_libraries(tld-segmenter 
+  ${LCMTYPES_LIBS} 
+  ${EIGEN_LIBRARIES} 
+  ${FLANN_LIBRARIES} 
+  ${OPENGL_LIBRARIES}
+  ${GLU_LIBRARIES}
+  ${GLUT_LIBRARIES}
+)
+
+pods_install_executables(tld-segmenter)
