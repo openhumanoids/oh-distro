@@ -75,8 +75,9 @@ static void usage(const char* progname)
 void tld_track(Mat& frame) { 
     Mat img = frame.clone();
 
-    Mat gray; 
-    cvtColor(img, gray, CV_BGR2GRAY);
+    // Mat gray; 
+    // cvtColor(img, gray, CV_BGR2GRAY);
+    double tic = bot_timestamp_now();
 
     IplImage img_ipl(img);
     tldtracker->processImage(&img_ipl);
@@ -96,8 +97,11 @@ void tld_track(Mat& frame) {
         if (trackerBB != NULL)
             cvRectangle(&img_ipl, trackerBB->tl(), trackerBB->br(), yellow, 2, 2, 0);
                 
-        opencv_utils::imshow("result", img);
+        // opencv_utils::imshow("result", img);
+	opencv_utils::imshow(WINDOW_NAME, img);
     }
+    std::cerr << "tld_track: " << bot_timestamp_now() - tic << std::endl;
+
 }
 
 
@@ -165,16 +169,19 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
             found = true;
 
             std::cerr << "Init TLD with " << cbuffer[j].first << std::endl;
-            opencv_utils::imshow("first frame", cbuffer[j].second);
-
+	    
             Mat gray; 
             cvtColor(cbuffer[j].second, gray, CV_BGR2GRAY);
 
             // tld tracker selection
             Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
             tldtracker->selectObject(gray, &selection);
+	    
+	    Mat img = cbuffer[j].second.clone();
+	    rectangle(img, selection, CV_RGB(255, 0, 0), 2); 
+            opencv_utils::imshow("first frame", img);
 
-            // Found frame: removing the older frames
+	    // Found frame: removing the older frames
             cbuffer.erase(cbuffer.begin() + j + 1, cbuffer.end());
             std::cerr << "Found image" << msg->utime << "=" << cbuffer[j].first << "~" << cbuffer[j+1].first << std::endl;
             break;
@@ -241,10 +248,12 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                 std::pair<int64_t, Mat>& bufpair = cbuffer.back();
                 // Track each of the remaining buffers before going live
                 tld_track(bufpair.second);
-                cbuffer.pop_back();
+    		cbuffer.pop_back();
+    		std::cerr << "Pending frames : " << cbuffer.size() << std::endl;
+		
             }
         } else if (cbuffer.size() == 1) { 
-            // std::cerr << "Live tracking " << msg->utime << std::endl;
+            std::cerr << "Live tracking " << msg->utime << std::endl;
 
             std::pair<int64_t, Mat>& bufpair = cbuffer.back();
             tld_track(bufpair.second);
@@ -259,6 +268,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                 else 
                     a = u*1.f/camera_params.fx, b = v*1.f/camera_params.fy;
                 perception_pointing_vector_t bearing_vec;
+		bearing_vec.utime = bufpair.first;
                 bearing_vec.pos[0] = 0, 
                     bearing_vec.pos[1] = 0, 
                     bearing_vec.pos[2] = 0;
@@ -276,7 +286,9 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         pthread_mutex_unlock(&buffer_mutex);
         
     }
-    opencv_utils::imshow(WINDOW_NAME, img);
+    std::cerr << "Buffer size: " << cbuffer.size() << std::endl;
+
+    // opencv_utils::imshow(WINDOW_NAME, img);
     return;
 }
 
@@ -310,9 +322,9 @@ int main(int argc, char** argv)
     // New TLD Tracker
     tldtracker = new tld::TLD();
 
-    tldtracker->detectorCascade->imgWidth = WIDTH;
-    tldtracker->detectorCascade->imgHeight = HEIGHT;
-    tldtracker->detectorCascade->imgWidthStep = WIDTH;
+    tldtracker->detectorCascade->imgWidth = camera_params.width;
+    tldtracker->detectorCascade->imgHeight = camera_params.height;
+    tldtracker->detectorCascade->imgWidthStep = camera_params.width;
 
     tldtracker->alternating = false;
     tldtracker->learningEnabled = true;
@@ -348,26 +360,10 @@ int main(int argc, char** argv)
 
     fprintf(stderr, "Starting Main Loop\n");
 
-    int lcm_fd = lcm_get_fileno(state->lcm);
-    fd_set fds;
-    // wait a limited amount of time for an incoming message
-    struct timeval timeout = { 
-        0,  // seconds
-        10000   // microseconds
-    };
-
     while(1) { 
-        unsigned char c = cv::waitKey(10) & 0xff;
+        unsigned char c = cv::waitKey(1) & 0xff;
 
-        FD_ZERO(&fds);
-        FD_SET(lcm_fd, &fds);
-
-        // setup the LCM file descriptor for waiting.
-        int status = select(lcm_fd + 1, &fds, 0, 0, &timeout);
-        if(status && FD_ISSET(lcm_fd, &fds)) {
-            // LCM has events ready to be processed.
-            lcm_handle(state->lcm);
-        }
+	lcm_handle(state->lcm);
 
         if (c == 'q') { 
             break;      
