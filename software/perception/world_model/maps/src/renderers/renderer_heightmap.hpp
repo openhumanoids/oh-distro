@@ -12,7 +12,7 @@
 #include <bot_frames/bot_frames.h>
 
 
-void heightmap_add_renderer_to_viewer(BotViewer* viewer, int priority,lcm_t* lcm);
+void heightmap_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lcm, BotParam* param, BotFrames* frames);
 
 #endif
 

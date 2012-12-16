@@ -13,7 +13,7 @@ public:
 
   void operator ()() {
     while (true) {
-      LocalMap::PointCloud::Ptr cloud;
+      maptypes::PointCloud::Ptr cloud;
       mWrapper->lock();
       if (mWrapper->getMap() != NULL) {
         cloud = mWrapper->getMap()->getAsPointCloud();

@@ -50,7 +50,7 @@ public:
     mMaxHeight = 1e10;
     mShouldPublishLcmGl = true;
     mShouldCompress = false;
-    mShouldUseFloat = true;
+    mShouldUseFloat = false;
   }
 
   ~State() {
@@ -74,6 +74,9 @@ public:
       iWrapper.getMap()->getAsHeightMap(downSample, mMaxHeight);
     iWrapper.unlock();
 
+
+    cout << "Params (" << (mShouldUseFloat ? "float" : "uint8") << "," <<
+      (mShouldCompress ? "compress" : "raw") << ")" << endl;
 
     //
     // publish new heightmap via lcm
@@ -118,7 +121,7 @@ public:
     Eigen::Affine3d adjustment = Eigen::Affine3d::Identity();
     adjustment(2,2) = scale;
     adjustment(2,3) = offset;
-    xform = adjustment.inverse() * xform;
+    xform = adjustment * xform;
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < 4; ++j) {
         msg.transform[i][j] = xform(i,j);
@@ -130,8 +133,7 @@ public:
       std::vector<uint8_t> compressedBytes(bytes.size()*1.001 + 12);
       unsigned long compressedSize = compressedBytes.size();
       compress2(&compressedBytes[0], &compressedSize,
-                (const Bytef*)(&bytes[0]), bytes.size(),
-                Z_BEST_SPEED);
+                (const Bytef*)(&bytes[0]), bytes.size(), Z_BEST_SPEED);
       msg.total_bytes = (int)compressedSize;
       msg.data = compressedBytes;
     }
