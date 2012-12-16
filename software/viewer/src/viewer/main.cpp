@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_humanoid(viewer, 0, lcm);
-  heightmap_add_renderer_to_viewer(viewer, 0, lcm);
+  heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   collections_add_renderer_to_viewer(viewer, 1);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   
