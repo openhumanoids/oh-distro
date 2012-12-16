@@ -35,7 +35,8 @@ classdef RobotStateFrame < CoordinateFrame & LCMSubscriber & LCMPublisher
     end
     
     function str = defaultChannel(obj)
-      str = obj.name;
+      str = 'EST_ROBOT_STATE';
+%      str = obj.name;
     end
   
   end
