@@ -3,3 +3,4 @@
 
 meas_joint_angles_publisher
 est_robot_state_publisher
+test_est_robot_state_publisher
