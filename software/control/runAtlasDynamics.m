@@ -4,7 +4,7 @@ function runAtlasDynamics()
 options.floating = true;
 m = RigidBodyModel('../models/mit_gazebo_models/mit_robot_drake/mit_drc_robot_minimal_contact.sdf',options);
 %r = setSimulinkParam(r,'MinStep','0.001');
-r = TimeSteppingRigidBodyManipulator(m,.001);
+r = TimeSteppingRigidBodyManipulator(m,.005);
 v = r.constructVisualizer;
 v.display_dt = .05;
 
@@ -21,6 +21,6 @@ if (1)
 else
   % Run simulation, then play it back at realtime speed
   xtraj = simulate(r,[0 3],x0);
-  save falling.mat v xtraj;
   v.playback(xtraj);
+  save falling.mat v xtraj;
 end

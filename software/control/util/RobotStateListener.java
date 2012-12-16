@@ -8,10 +8,10 @@ public class RobotStateListener implements LCMSubscriber
     java.util.TreeMap<String,Integer> m_joint_map;
     boolean m_has_new_message = false;
     int m_num_joints;
-    long m_timestamp;
+    double m_timestamp;
     double[] m_x;
 
-    public RobotStateListener(String robot_name, String[] joint_name, String channel)
+    public RobotStateListener(String robot_name, String[] joint_name)
     {
         m_num_joints = joint_name.length;
         m_robot_name = robot_name;
@@ -22,18 +22,21 @@ public class RobotStateListener implements LCMSubscriber
         }
         m_x = new double[2*m_num_joints];
         m_timestamp = 0;
-        
-        LCM lcm = LCM.getSingleton();
-        lcm.subscribe(channel,this);
     }
 
+    public void subscribe(String channel)
+    {
+      LCM lcm = LCM.getSingleton();
+      lcm.subscribe(channel,this);
+    }
+    
     public synchronized void messageReceived(LCM lcm, String channel, LCMDataInputStream dins) 
     {
         int index;
         try { 
             drc.robot_state_t msg = new drc.robot_state_t(dins);
             if (msg.robot_name.equals(m_robot_name)) {
-                m_timestamp = msg.utime;
+                m_timestamp = (double)msg.utime / 100000.0;
                 for (int i=0; i<msg.num_joints; i++) {
                     Integer j = m_joint_map.get(msg.joint_name[i]);
                     if (j!=null) {
@@ -111,7 +114,7 @@ public class RobotStateListener implements LCMSubscriber
         return getNextMessage(-1);
     }
 
-    public synchronized long getLastTimestamp()
+    public synchronized double getLastTimestamp()
     {
         return m_timestamp;
     }
