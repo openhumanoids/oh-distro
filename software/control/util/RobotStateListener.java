@@ -10,7 +10,7 @@ public class RobotStateListener implements LCMSubscriber
     int m_num_joints;
     double m_timestamp;
     double[] m_x;
-
+    
     public RobotStateListener(String robot_name, String[] joint_name)
     {
         m_num_joints = joint_name.length;
@@ -37,66 +37,69 @@ public class RobotStateListener implements LCMSubscriber
       try {
         drc.robot_state_t msg = new drc.robot_state_t(dins);
         if (msg.robot_name.equals(m_robot_name)) {
-          m_timestamp = (double)msg.utime / 100000.0;
-          for (int i=0; i<msg.num_joints; i++) {
-            j = m_joint_map.get(msg.joint_name[i]);
+          double t = (double)msg.utime / 100000.0;
+          if (t>m_timestamp) {  // drop messages that arrive out-of-order
+            m_timestamp = t;
+            for (int i=0; i<msg.num_joints; i++) {
+              j = m_joint_map.get(msg.joint_name[i]);
+              if (j!=null) {
+                index = j.intValue();
+                m_x[index] = msg.joint_position[i];
+                m_x[index + m_num_joints] = msg.joint_velocity[i];
+              }
+            }
+            
+            // get body position and orientation
+            j = m_joint_map.get("base_x");
             if (j!=null) {
               index = j.intValue();
-              m_x[index] = msg.joint_position[i];
-              m_x[index + m_num_joints] = msg.joint_velocity[i];
+              m_x[index] = msg.origin_position.translation.x;
+              m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.x;
             }
+            j = m_joint_map.get("base_y");
+            if (j!=null) {
+              index = j.intValue();
+              m_x[index] = msg.origin_position.translation.y;
+              m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.y;
+            }
+            j = m_joint_map.get("base_z");
+            if (j!=null) {
+              index = j.intValue();
+              m_x[index] = msg.origin_position.translation.z;
+              m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.z;
+            }
+            
+            // convert quaternion to euler
+            double x = msg.origin_position.rotation.x;
+            double y = msg.origin_position.rotation.y;
+            double z = msg.origin_position.rotation.z;
+            double w = msg.origin_position.rotation.w;
+            
+            j = m_joint_map.get("base_roll");
+            if (j!=null) {
+              index = j.intValue();
+              m_x[index] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
+              m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.x;
+            }
+            
+            j = m_joint_map.get("base_pitch");
+            if (j!=null) {
+              index = j.intValue();
+              m_x[index] = Math.asin(2*(x*z - w*y));
+              m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
+            }
+            
+            j = m_joint_map.get("base_yaw");
+            if (j!=null) {
+              index = j.intValue();
+              m_x[index] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
+              if (m_x[index] > Math.PI)
+                m_x[index] -= 2*Math.PI;
+              m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.z;
+            }
+            
+            m_has_new_message = true;
           }
-          
-          // get body position and orientation
-          j = m_joint_map.get("base_x");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = msg.origin_position.translation.x;
-            m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.x;
-          }
-          j = m_joint_map.get("base_y");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = msg.origin_position.translation.y;
-            m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.y;
-          }
-          j = m_joint_map.get("base_z");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = msg.origin_position.translation.z;
-            m_x[index + m_num_joints] = msg.origin_twist.linear_velocity.z;
-          }
-                
-          // convert quaternion to euler
-          double x = msg.origin_position.rotation.x;
-          double y = msg.origin_position.rotation.y;
-          double z = msg.origin_position.rotation.z;
-          double w = msg.origin_position.rotation.w;
-          
-          j = m_joint_map.get("base_roll");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
-            m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.x;
-          }
-          
-          j = m_joint_map.get("base_pitch");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = Math.asin(2*(x*z - w*y));
-            m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
-          }
-          
-          j = m_joint_map.get("base_yaw");
-          if (j!=null) {
-            index = j.intValue();
-            m_x[index] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
-            if (m_x[index] > Math.PI)
-              m_x[index] -= 2*Math.PI;
-            m_x[index + m_num_joints] = msg.origin_twist.angular_velocity.z;
-          }
-          
-          m_has_new_message = true;
         }
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
