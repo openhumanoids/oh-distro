@@ -17,8 +17,10 @@
 #include <gdk/gdkkeysyms.h>
 #include <path_util/path_util.h>
 
-#include "renderer_humanoid.hpp"
+
 #include "RobotStateListener.hpp"
+#include "renderer_humanoid.hpp"
+
 
 
 #define RENDERER_NAME "Humanoid"
@@ -29,6 +31,7 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 using namespace collision_detection;
+using namespace humanoid_renderer;
 
 typedef struct _RendererHumanoid 
 {
@@ -173,15 +176,14 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   
   if (type == SPHERE)
     {
-  glPushMatrix();
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
-      glPointSize(radius);
-      //glColor3ub(0,1,0);
-      glBegin(GL_POINTS);
-      glVertex3f(radius, radius, radius);
-      glEnd();
-  glPopMatrix();
+       glPushMatrix();
+       glTranslatef(nextTf.tf.translation.x, nextTf.tf.translation.y, nextTf.tf.translation.z);
+	     drawSphere(6,  radius);
+    glPopMatrix();
+
+    
     }
   else if  (type == BOX)
     {
@@ -376,11 +378,12 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   //glBegin(GL_POINTS);
   glEnable(GL_LIGHTING);
   glEnable(GL_COLOR_MATERIAL);
+  
   glEnable(GL_BLEND);
   // glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
   glEnable (GL_RESCALE_NORMAL);
-  
+
   if((self->picking)&&(self->clicked)){
         glLineWidth (3.0);
         glPushMatrix();
@@ -465,7 +468,7 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
   	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  	self->picking = 1;
+  	self->picking = 0;
     self->clicked=0;	
   	self->selection = new std::string(" ");
     self->visualize_bbox = false;
@@ -497,43 +500,3 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
 }
 
-void polygon(int a, int b, int c , int d)
-{
-
- 
-    float vertices[][3] = 
-    {
-        {-0.5,-0.5,-0.5},{0.5,-0.5,-0.5},
-        {0.5,0.5,-0.5}, {-0.5,0.5,-0.5}, {-0.5,-0.5,0.5}, 
-        {0.5,-0.5,0.5}, {0.5,0.5,0.5}, {-0.5,0.5,0.5}
-    };
- 
-    float colors[][3] = {{0.0,0.5,0.5},{1.0,0.0,0.0},
-    {1.0,1.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,1.0}, 
-    {1.0,0.0,1.0}, {1.0,1.0,1.0}, {0.0,1.0,1.0}};
-
-    // draw a polygon using colour of first vertex
- 
-    glBegin(GL_POLYGON);
-       // glColor3fv(colors[a]);
-        //glColor3f(0.15,0.15,0.15);  
-        glVertex3fv(vertices[a]);
-        glVertex3fv(vertices[b]);
-        glVertex3fv(vertices[c]);
-        glVertex3fv(vertices[d]);
-    glEnd();
-}
- 
-void cube(void)
-{
-    //Draw unit cube centred on the origin
- 
-/* map vertices to faces */
- 
-    polygon(0,3,2,1);
-    polygon(2,3,7,6);
-    polygon(4,7,3,0);
-    polygon(1,2,6,5);
-    polygon(7,4,5,6);
-    polygon(5,4,0,1);
-}
