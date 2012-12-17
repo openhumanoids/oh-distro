@@ -20,6 +20,10 @@
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_heightmap/renderer_heightmap.hpp>
 
+// Individual Renderers:
+#include <renderer_driving/renderer_driving.hpp>
+
+
 // local renderers
 #include <renderer_drc/renderer_humanoid.hpp>
 #include <renderer_drc/renderer_robot_plan.hpp>
@@ -172,6 +176,8 @@ int main(int argc, char *argv[])
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
+
+  setup_renderer_driving(viewer, 0,lcm);
   
   // add custon TOP VIEW button
   GtkWidget *top_view_button;

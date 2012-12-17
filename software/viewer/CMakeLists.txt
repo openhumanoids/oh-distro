@@ -14,4 +14,5 @@ include(cmake/pods.cmake)
 #lcmtypes_build()
 
 add_subdirectory(src/renderers)
+add_subdirectory(src/renderers/driving)
 add_subdirectory(src/viewer)
