@@ -26,6 +26,9 @@
 
 #include "visualization/collections.hpp"
 
+#include <pointcloud_tools/pointcloud_math.hpp>
+
+
 // #include "kmcl/kmcl_utils.hpp"
 
 using namespace std;

@@ -45,12 +45,12 @@ namespace opencv_utils {
         void draw_image_to_frame(cv::Mat& frame, image_info& im_info);
         // void button_callback(int b, void* data);
         void imshow(const std::string& name, const cv::Mat& img);
-        void displayStatusBar(const std::string& text, int delayms) { 
-            cv::displayStatusBar("OpenCV Viewer", text, delayms);
-        }
-        void displayOverlay(const std::string& text, int delayms) { 
-            cv::displayOverlay("OpenCV Viewer", text, delayms);
-        }
+        // void displayStatusBar(const std::string& text, int delayms) { 
+        //     cv::displayStatusBar("OpenCV Viewer", text, delayms);
+        // }
+        // void displayOverlay(const std::string& text, int delayms) { 
+        //     cv::displayOverlay("OpenCV Viewer", text, delayms);
+        // }
 
     };
     
@@ -63,14 +63,14 @@ namespace opencv_utils {
             viewer.imshow(name, img);
         // cv::imshow(name, img);
     }
-    static void displayStatusBar(const std::string& text, int delayms) { 
-        if (&viewer)
-            viewer.displayStatusBar(text, delayms);
-    }
-    static void displayOverlay(const std::string& text, int delayms) { 
-        if (&viewer)
-            viewer.displayOverlay(text, delayms);
-    }
+    // static void displayStatusBar(const std::string& text, int delayms) { 
+    //     if (&viewer)
+    //         viewer.displayStatusBar(text, delayms);
+    // }
+    // static void displayOverlay(const std::string& text, int delayms) { 
+    //     if (&viewer)
+    //         viewer.displayOverlay(text, delayms);
+    // }
 
     cv::Mat drawCorrespondences(const cv::Mat& img1, const std::vector<cv::Point2f>& features1, 
                                 const cv::Mat& img2, const std::vector<cv::Point2f>& features2);

@@ -97,6 +97,11 @@ void tld_track(Mat& frame) {
         if (trackerBB != NULL)
             cvRectangle(&img_ipl, trackerBB->tl(), trackerBB->br(), yellow, 2, 2, 0);
                 
+        //         float roix = tldtracker->currBB->x + tldtracker->currBB->width/2, roiy = tldtracker->currBB->y + tldtracker->currBB->height/2;
+        CvPoint pt = cvPoint( tldtracker->currBB->x+ tldtracker->currBB->width/2, tldtracker->currBB->y + tldtracker->currBB->height/2 );
+        cvCircle(&img_ipl,pt,12,yellow,-1);
+        
+
         // opencv_utils::imshow("result", img);
 	opencv_utils::imshow(WINDOW_NAME, img);
     }

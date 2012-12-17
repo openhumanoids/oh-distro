@@ -17,8 +17,8 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 
 namespace gazebo
-{   
-class OraclePlugin: public ModelPlugin{    
+{
+class OraclePlugin: public ModelPlugin{
   
    public: OraclePlugin( ):
    est_world_to_headT_(0, Eigen::Isometry3d::Identity()),

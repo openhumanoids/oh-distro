@@ -35,6 +35,11 @@ FilterPlanes::FilterPlanes () {
   verbose_text =0;//0;
   pose_element_id =-1;
   pose_coll_id =-1;
+  
+  // works well with kinect data
+  distance_threshold_=0.045; 
+  stop_proportion_=0.1; //
+  
 }
 
 
@@ -44,7 +49,6 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   if (verbose_text>0){
     cout << "PointCloud before filtering: " << cloud->width * cloud->height << " data points." << std::endl;
   }
-  double plane_seg=0.045; //0.08 usually
   
   #if DO_TIMING_PROFILE
     vector<int64_t> tic_toc;
@@ -92,7 +96,7 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
   seg.setMaxIterations (1000);
-  seg.setDistanceThreshold (0.045); // 0.01 for table data set
+  seg.setDistanceThreshold (distance_threshold_); // 0.01 for table data set
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   
@@ -170,8 +174,8 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   tic_toc.push_back(bot_timestamp_now());
   #endif
   
-  while (cloud_filtered->points.size () > 0.1 * nr_points) { 
-    // While 50% of the original cloud is still there, was 30%
+  while (cloud_filtered->points.size () > stop_proportion_ * nr_points) { 
+    // While XX% of the original cloud is still there
     char n_major_char[10];
     sprintf(n_major_char,"%d",n_major);
     
@@ -291,6 +295,9 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
       std::vector <pcl::Vertices> vertices;
       chull.reconstruct (*cloud_hull,vertices);
       //std::cout << "Hull has: " << cloud_hull->points.size () << " vertices." << std::endl;
+      if (cloud_hull->points.size () ==0){
+        cout <<"ERROR: CONVEX HULL HAS NO POINTS! - NEED TO RESOLVE THIS\n"; 
+      }
       
       
       // d.2 Find the mean colour of the hull:

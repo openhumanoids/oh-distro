@@ -42,72 +42,71 @@
 namespace nav_control
 {
 
-   enum {STOPPED, RUNNING};
+  enum {STOPPED, RUNNING};
+  
+  enum control_type{GLOBAL, RELATIVE};
 
-   double getTime_now()
-   {
-	struct timeval tv;
-	gettimeofday (&tv,NULL);
-	return (int64_t) tv.tv_sec*1000000+tv.tv_usec;
-   };
-
- 
 // Example instantiation
 //-------------------------------------
 // int NrOfJoints  = kdl_chain.getNrOfJoints();
 // nav_control::NavController<NrOfJoints> left_arm_controller(lcm,"LEFT_ARM_CMDS",kdl_chain);
 
-  class NavController
-  {
+  class NavController{
 
-  public:
-    // Ensure 128-bit alignment for Eigen
-    // See also http://eigen.tuxfamily.org/dox/StructHavingEigenMembers.html
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    public:
+      // Ensure 128-bit alignment for Eigen
+      // See also http://eigen.tuxfamily.org/dox/StructHavingEigenMembers.html
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    //----------------constructor/destructor
-    NavController(boost::shared_ptr<lcm::LCM> &lcm, const std::string &input_cmds_channel,
-			 const std::string &robot_name,const urdf::Model &urdf_robot_model);
-    ~NavController();
+      //----------------constructor/destructor
+      NavController(boost::shared_ptr<lcm::LCM> &lcm, const std::string &input_cmds_channel,
+                        const std::string &robot_name,const urdf::Model &urdf_robot_model);
+      ~NavController();
 
-     void init();
-     void update(const drc::robot_state_t &robot_state, const double &dt);
-     void computePoseError(const Eigen::Affine3d &xact, const Eigen::Affine3d &xdes, Eigen::Matrix<double,6,1> &err);
-     bool isRunning();
+      void init();
+      void update(const drc::robot_state_t &robot_state, const double &dt);
+      void computePoseError(const Eigen::Affine3d &xact, const Eigen::Affine3d &xdes, Eigen::Matrix<double,6,1> &err);
+      bool isRunning();
 
-  private:
-    //--------type defs
-    //enum { JOINTS = 6 };
+    private:
+      //--------type defs
+      //enum { JOINTS = 6 };
 
-    typedef Eigen::Matrix<double, 6, 1> CartVector;
-    typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorXq;
-   //--------fields
-  private:
-    std::string _robot_name;
-    urdf::Model _urdf_robot_model;
-    std::vector<std::string> _chain_joint_names;
+      typedef Eigen::Matrix<double, 6, 1> CartVector;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorXq;
+      //--------fields
+      
+    private:
+      std::string _robot_name;
+      urdf::Model _urdf_robot_model;
+      std::vector<std::string> _chain_joint_names;
 
-    
-    uint controller_state;
 
-    boost::shared_ptr<lcm::LCM> _lcm;    
-    Eigen::Affine3d x, x_goal_;
+      uint controller_state;
 
-    //--------Gains
-    CartVector Kp_x, Kd_x;
+      boost::shared_ptr<lcm::LCM> _lcm;    
+      Eigen::Affine3d x, x_goal_;
 
-    bool uninitialized_;
+      //--------Gains
+      CartVector Kp_x, Kd_x;
 
-    int64_t latest_goal_timestamp_;
-    int64_t latest_goal_timeout_;
+      bool uninitialized_;
+
+      int64_t latest_goal_timestamp_;
+      int64_t latest_goal_timeout_;
+      control_type latest_goal_type_;
 
       //-------------message callback
     private:  
     void handleNavGoalMsg(const lcm::ReceiveBuffer* rbuf,
-				  const std::string& chan, 
-				  const drc::nav_goal_timed_t* msg);
+                              const std::string& chan, 
+                              const drc::nav_goal_timed_t* msg);
 
-  bool debug_;
+    void handleRelativeNavGoalMsg(const lcm::ReceiveBuffer* rbuf,
+                              const std::string& chan, 
+                              const drc::nav_goal_timed_t* msg);
+    
+    bool debug_;
 
   }; //class NavController
 
@@ -120,36 +119,38 @@ NavController::NavController(boost::shared_ptr<lcm::LCM> &lcm,
 	const std::string &robot_name,
 	const urdf::Model &urdf_robot_model) : _lcm(lcm), _robot_name(robot_name), _urdf_robot_model(urdf_robot_model)
 {
-     std::cout << "\nSpawning a nav controller that listens to "<< input_cmds_channel << " channel." << std::endl;
-   
- controller_state = STOPPED;
-     //lcm ok?
-    if(!_lcm->good())
-      {
-	std::cerr << "\nLCM Not Good: nav_controller" << std::endl;
-	return;
-      }
+  std::cout << "\nSpawning a nav controller that listens to "<< input_cmds_channel << " channel." << std::endl;
 
-   // Set gains
+  controller_state = STOPPED;
+  //lcm ok?
+  if(!_lcm->good())
+  {
+    std::cerr << "\nLCM Not Good: nav_controller" << std::endl;
+    return;
+  }
+
+  // Set gains
 
   uninitialized_ = true; // flag to indicate that the controller is in uninitialized_ state
 
- // ---------------------- subscribe to goal commands 
-_lcm->subscribe(input_cmds_channel, &nav_control::NavController::handleNavGoalMsg, this); 
-   
+  // ---------------------- subscribe to goal commands 
+  _lcm->subscribe(input_cmds_channel, &nav_control::NavController::handleNavGoalMsg, this); 
+
+  std::cout << "\nalso Spawning a nav controller that listens to RELATIVE_NAV_GOAL_TIMED channel." << std::endl;
+  _lcm->subscribe("RELATIVE_NAV_GOAL_TIMED", &nav_control::NavController::handleRelativeNavGoalMsg, this); 
 }
 
 //================== destructor 
 NavController::~NavController() {
 
-      drc::twist_t body_twist_cmd;
-    body_twist_cmd.linear_velocity.x =0;
-    body_twist_cmd.linear_velocity.y =0;
-    body_twist_cmd.linear_velocity.z =0;
-    body_twist_cmd.angular_velocity.x =0;
-    body_twist_cmd.angular_velocity.y =0;
-    body_twist_cmd.angular_velocity.z =0;
-    _lcm->publish("NAV_CMDS", &body_twist_cmd);
+  drc::twist_t body_twist_cmd;
+  body_twist_cmd.linear_velocity.x =0;
+  body_twist_cmd.linear_velocity.y =0;
+  body_twist_cmd.linear_velocity.z =0;
+  body_twist_cmd.angular_velocity.x =0;
+  body_twist_cmd.angular_velocity.y =0;
+  body_twist_cmd.angular_velocity.z =0;
+  _lcm->publish("NAV_CMDS", &body_twist_cmd);
   
   
 }
@@ -160,9 +161,7 @@ NavController::~NavController() {
 
 void NavController::init() 
 {
- debug_ = false;
-
-
+  debug_ = false;
 }
 
 //update() function is called from the robot state msg handler defined in controller_manager.
@@ -186,14 +185,42 @@ void NavController::update(const drc::robot_state_t &robot_state, const double &
     desired_forward_speed=0;
     desired_yaw_rate=0;
   }else{
- 
-    drc::position_3d_t  body_position = robot_state.origin_position;
-    drc::covariance_t  body_pos_cov = robot_state.origin_cov; // convert to uncertainty in goal
-    // ======== Get current robot state
-    transformLCMToEigen(body_position,x);
 
     CartVector x_err;
-    computePoseError(x, x_goal_, x_err); //returns  x_goal_ - x
+    if (latest_goal_type_ == GLOBAL){// original method
+      drc::position_3d_t  body_position = robot_state.origin_position;
+      drc::covariance_t  body_pos_cov = robot_state.origin_cov; // convert to uncertainty in goal
+      // ======== Get current robot state
+      transformLCMToEigen(body_position,x);
+
+      computePoseError(x, x_goal_, x_err); //returns  x_goal_ - x
+    }else if(latest_goal_type_ == RELATIVE){
+      // ======== Set current robot state to be null - for relative control:
+      x(0,3) = 0;
+      x(1,3)=0;
+      x(2,3)=0;
+      x(0,0)=1;
+      x(0,1)=0;
+      x(0,2)=0;
+      x(1,0)=0;
+      x(1,1)=1;
+      x(1,2)=0;
+      x(2,0)=0;
+      x(2,1)=0;
+      x(2,2)=1;      
+      
+      x_err[0] = x_goal_(0,3);
+      x_err[1] = x_goal_(1,3);
+      x_err[2] =0;
+      x_err[3] =0;
+      x_err[4] =0;
+      x_err[5] =0; // heading
+      
+    }else{
+       std::cout << "control type not recognised: " << latest_goal_type_ << "\n";
+       return;
+    }
+    
     double dx,dy,dtheta;
     dx = x_err[0];
     dy = x_err[1];
@@ -266,7 +293,6 @@ void NavController::update(const drc::robot_state_t &robot_state, const double &
   body_twist_cmd.angular_velocity.y =0;
   body_twist_cmd.angular_velocity.z =desired_yaw_rate;
   _lcm->publish("NAV_CMDS", &body_twist_cmd); 
-
 }//end update
 
 
@@ -274,9 +300,9 @@ void NavController::update(const drc::robot_state_t &robot_state, const double &
  
 void NavController::computePoseError(const Eigen::Affine3d &xact, const Eigen::Affine3d &xdes, Eigen::Matrix<double,6,1> &err)
 {
-// des - act
-// Better error metric from KDL.	    
- KDL::Frame kdl_xdes,kdl_xact;
+  // des - act
+  // Better error metric from KDL.	    
+  KDL::Frame kdl_xdes,kdl_xact;
   transformEigenToKDL(xdes,kdl_xdes);
   transformEigenToKDL(xact,kdl_xact);
 
@@ -285,15 +311,15 @@ void NavController::computePoseError(const Eigen::Affine3d &xact, const Eigen::A
   delta_pos =KDL::diff(kdl_xact,kdl_xdes,1);
   transformKDLtwistToEigen(delta_pos,err);
 
-// see KDL/src/frames.hpp  
-//  
-//  * KDL::diff() determines the rotation axis necessary to rotate the frame b1 to the same orientation as frame b2 and the vector
-//  * necessary to translate the origin of b1 to the origin of b2, and stores the result in a Twist datastructure.   
-// IMETHOD Twist diff(const Frame& F_a_b1,const Frame& F_a_b2,double dt=1);
-//   IMETHOD Vector diff(const Rotation& R_a_b1,const Rotation& R_a_b2,double dt) {
-// 	Rotation R_b1_b2(R_a_b1.Inverse()*R_a_b2);
-// 	return R_a_b1 * R_b1_b2.GetRot() / dt;
-// }
+  // see KDL/src/frames.hpp  
+  //  
+  //  * KDL::diff() determines the rotation axis necessary to rotate the frame b1 to the same orientation as frame b2 and the vector
+  //  * necessary to translate the origin of b1 to the origin of b2, and stores the result in a Twist datastructure.   
+  // IMETHOD Twist diff(const Frame& F_a_b1,const Frame& F_a_b2,double dt=1);
+  //   IMETHOD Vector diff(const Rotation& R_a_b1,const Rotation& R_a_b2,double dt) {
+  // 	Rotation R_b1_b2(R_a_b1.Inverse()*R_a_b2);
+  // 	return R_a_b1 * R_b1_b2.GetRot() / dt;
+  // }
 
 
 } // end computePoseError
@@ -324,6 +350,7 @@ void NavController::handleNavGoalMsg(const lcm::ReceiveBuffer* rbuf,
   if(controller_state==RUNNING){ 
     latest_goal_timestamp_ = msg->utime;
     latest_goal_timeout_ = msg->timeout;
+    latest_goal_type_ = GLOBAL;
     x_goal_ = goal;
     
     std::cout <<"RECD NAV_GOAL_TIMED: " << latest_goal_timestamp_ 
@@ -332,6 +359,51 @@ void NavController::handleNavGoalMsg(const lcm::ReceiveBuffer* rbuf,
 	
   }//if(controller_state==RUNNING)
 } // end handleNavGoalMsg
+ 
+
+ 
+void NavController::handleRelativeNavGoalMsg(const lcm::ReceiveBuffer* rbuf,
+                                                 const std::string& chan, 
+                                                 const drc::nav_goal_timed_t* msg)                                               
+{ 
+  std::cout << "got relative goal message\n";
+  Eigen::Affine3d goal;
+  transformLCMToEigen(msg->goal_pos,goal);
+ 
+  CartVector x_err;
+//  computePoseError(x, goal, x_err);
+  
+  std::cout << goal(0,3) << " and " << goal(1,3) << " is the goal\n";
+  x_err[0] = goal(0,3);
+  x_err[1] = goal(1,3);
+  x_err[2] =0;
+  x_err[3] =0;
+  x_err[4] =0;
+  x_err[5] =0; // heading
+
+  double dist_err_2d  = sqrt(x_err[0]*x_err[0]  + x_err[1]*x_err[1]);
+  if((controller_state==RUNNING)&(dist_err_2d<DIST_ERROR)&(fabs(x_err[5])<HEADING_ERROR)){
+    //     controller_state=STOPPED;
+    //     uninitialized_ = true;
+  }else if((controller_state==STOPPED)&(dist_err_2d>DIST_ERROR))
+    controller_state=RUNNING; // as we just received a goal.
+   
+  if(controller_state==RUNNING){ 
+    latest_goal_timestamp_ = msg->utime;
+    latest_goal_timeout_ = msg->timeout;
+    latest_goal_type_ = RELATIVE;
+    x_goal_ = goal;
+    
+    std::cout <<"RECD RELATIVE_NAV_GOAL_TIMED: " << latest_goal_timestamp_ 
+      << " | Expiry: " << latest_goal_timeout_ << "\n";  
+
+        
+  }//if(controller_state==RUNNING)
+  
+} // end handleNavGoalMsg
+ 
+ 
+ 
  
  
 bool NavController::isRunning()

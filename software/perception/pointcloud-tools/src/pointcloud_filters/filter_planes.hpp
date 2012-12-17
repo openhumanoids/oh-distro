@@ -26,6 +26,10 @@
 //#include "kmcl/kmcl_utils.hpp"
 #include "grow_cloud.hpp"
 
+
+
+
+
 using namespace std;
 // removed due to conflict with VS_SLAM
 //typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudPtr;
@@ -49,6 +53,14 @@ class FilterPlanes {
       publish_lcm = publish_lcm_in;
       verbose_lcm = verbose_lcm_in;
     }    
+    
+    virtual inline void setDistanceThreshold(double distance_threshold_in){
+      distance_threshold_ = distance_threshold_in;
+    }
+    
+    virtual inline void setStopProportion(double stop_proportion_in){
+      stop_proportion_ = stop_proportion_in;
+    }
 
     // Filter out the major planes in a kinect PointCloud
     // send these planes to the lcm-viewer coloured by their mean colour
@@ -72,7 +84,12 @@ class FilterPlanes {
     // 2 means publish important
     // 3 means publish all
     int verbose_lcm;
-    lcm_t *publish_lcm;    
+    lcm_t *publish_lcm;   
+    
+    // distance for ransac
+    double distance_threshold_;
+    // fraction at which we stop: [0,1]
+    double stop_proportion_;
 };
 
 

@@ -24,7 +24,7 @@ pods_install_headers(filter_planes.hpp grow_cloud.hpp
 
 pods_install_pkg_config_file(pointcloud_filters
     LIBS -lpointcloud_filters
-    REQUIRES bot2-vis lcm  lcmtypes_visualization
+    REQUIRES bot2-vis lcm  lcmtypes_visualization pointcloud_math
     VERSION 0.0.1) 
 # visualization 
 

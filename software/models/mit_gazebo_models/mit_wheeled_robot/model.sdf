@@ -945,12 +945,12 @@
   <link name="left_camera_optical_frame"/>
   <gazebo reference="left_camera_frame">
     <sensor name="left_camera_sensor" type="camera">
-      <update_rate>25.0</update_rate>
+      <update_rate>15.0</update_rate>
       <camera>
-        <horizontal_fov>1.5708</horizontal_fov>
+        <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>320</width>
-          <height>240</height>
+          <width>1024</width>
+          <height>544</height>
           <format>R8G8B8</format>
         </image>
         <clip>
@@ -960,7 +960,7 @@
       </camera>
       <plugin filename="libgazebo_ros_camera.so" name="left_camera_controller">
         <alwaysOn>true</alwaysOn>
-        <updateRate>25.0</updateRate>
+        <updateRate>15.0</updateRate>
         <cameraName>left_eye</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
@@ -995,12 +995,12 @@
   <link name="right_camera_optical_frame"/>
   <gazebo reference="right_camera_frame">
     <sensor name="right_camera_sensor" type="camera">
-      <update_rate>25.0</update_rate>
+      <update_rate>15.0</update_rate>
       <camera>
-        <horizontal_fov>1.5708</horizontal_fov>
+        <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>320</width>
-          <height>240</height>
+          <width>1024</width>
+          <height>544</height>
           <format>R8G8B8</format>
         </image>
         <clip>
@@ -1010,7 +1010,7 @@
       </camera>
       <plugin filename="libgazebo_ros_camera.so" name="right_camera_controller">
         <alwaysOn>true</alwaysOn>
-        <updateRate>25.0</updateRate>
+        <updateRate>15.0</updateRate>
         <cameraName>right_eye</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>

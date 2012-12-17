@@ -121,6 +121,7 @@ private:
     else{
       std::cout<< _head_link_name <<"not the head link? specify the correct head link" <<std::endl;
     }
+    
     T_head_body = T_body_head.Inverse();
     
     bot_core::rigid_transform_t tf;

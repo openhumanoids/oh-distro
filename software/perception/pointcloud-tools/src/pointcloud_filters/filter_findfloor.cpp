@@ -199,8 +199,13 @@ bool FilterFindfloor::getHeightPitchRoll(double height_pitch_roll[]){
       testdata.pos[0]=0;
       testdata.pos[1]=0;
       testdata.pos[2]=height;
-      double temp_rpy[] ={ roll, pitch, 0}; // no yaw estimate
-      bot_roll_pitch_yaw_to_quat(temp_rpy, testdata.orientation) ;
+      Eigen::Quaterniond quat =euler_to_quat(0,roll,pitch); // ypr
+      testdata.orientation[0] = quat.w();
+      testdata.orientation[1] = quat.x();
+      testdata.orientation[2] = quat.y();
+      testdata.orientation[3] = quat.z();
+//      double temp_rpy[] ={ roll, pitch, 0}; // no yaw estimate
+//      bot_roll_pitch_yaw_to_quat(temp_rpy, testdata.orientation) ;
       testdata.vel[0] =0;
       testdata.vel[1] =0;
       testdata.vel[2] =0;

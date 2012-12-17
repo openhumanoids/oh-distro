@@ -18,3 +18,7 @@ add_subdirectory(src/image-compress)
 
 
 add_subdirectory(src/heightmap_lcmgl)
+add_subdirectory(src/tld_lcmgl)
+
+
+add_subdirectory(src/plane_detector)
