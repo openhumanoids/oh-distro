@@ -21,16 +21,16 @@
 #include <renderer_heightmap/renderer_heightmap.hpp>
 
 // Individual Renderers:
-#include <renderer_driving/renderer_driving.hpp>
+#include <renderer_drc/renderer_scrollingplots.h>
+#include <renderer_drc/renderer_driving.hpp>
+#include <renderer_drc/renderer_manipulation.hpp>
+#include <renderer_drc/renderer_walking.hpp>
 
-
-// local renderers
+// block of renderers
 #include <renderer_drc/renderer_humanoid.hpp>
 #include <renderer_drc/renderer_robot_plan.hpp>
-#include <renderer_drc/renderer_navigation.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
 #include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
-#include <renderer_drc/renderer_scrollingplots.h>
 
 #include "udp_util.h"
 
@@ -169,15 +169,18 @@ int main(int argc, char *argv[])
   setup_renderer_humanoid(viewer, 0, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   collections_add_renderer_to_viewer(viewer, 1);
-  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
-  
+
+  // Block of Renderers:  
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
-  setup_renderer_navigation(viewer, 0,lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
   setup_renderer_otdf(viewer, 0, lcm);
 
+  // Individual Renderers:
+  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+  setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0,lcm);
+  setup_renderer_walking(viewer, 0,lcm);
   
   // add custon TOP VIEW button
   GtkWidget *top_view_button;

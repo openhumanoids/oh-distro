@@ -11,6 +11,9 @@ pods_use_pkg_config_packages(drc-viewer
         lcmtypes_drc_lcmtypes    
         renderer_drc 
         collections_renderer
-        renderer_driving)
+        renderer_manipulation
+        renderer_driving
+        renderer_walking
+        renderer_scrollingplots)
 #scrollingplots_renderer
 pods_install_executables(drc-viewer)
