@@ -11,6 +11,5 @@ map_store
 opencv-utils
 world_model
 
-mfallon_sandbox
-#pcl_lcm_grabber
+#mfallon_sandbox
 plamena_sandbox
