@@ -17,7 +17,7 @@ pods_use_pkg_config_packages(pointcloud_filters lcm eigen3   glib-2.0 )
 set_target_properties(pointcloud_filters PROPERTIES SOVERSION 1)
 pods_install_libraries(pointcloud_filters)
 pods_install_headers(filter_planes.hpp grow_cloud.hpp  
-    filter_findfloor.hpp
+    filter_findfloor.hpp filter_colorize.hpp
     DESTINATION pointcloud_tools)
 # filter_light.hpp 
 #    filter_person.hpp   filter_cloudtolaser.hpp

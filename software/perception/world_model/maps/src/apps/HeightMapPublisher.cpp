@@ -132,8 +132,11 @@ public:
     if (mShouldCompress) {
       std::vector<uint8_t> compressedBytes(bytes.size()*1.001 + 12);
       unsigned long compressedSize = compressedBytes.size();
-      compress2(&compressedBytes[0], &compressedSize,
-                (const Bytef*)(&bytes[0]), bytes.size(), Z_BEST_SPEED);
+      int ret = compress2(&compressedBytes[0], &compressedSize,
+                          (const Bytef*)(&bytes[0]), bytes.size(), Z_BEST_SPEED);
+      if (ret != Z_OK) {
+        cout << "ERROR: compression failed with error " << ret << endl;
+      }
       msg.total_bytes = (int)compressedSize;
       msg.data = compressedBytes;
     }

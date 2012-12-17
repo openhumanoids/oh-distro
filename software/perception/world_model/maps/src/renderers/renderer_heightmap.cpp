@@ -130,12 +130,14 @@ struct RendererHeightMap {
     // uncompress if necessary
     if (mapImage->compression == drc::map_image_t::COMPRESSION_ZLIB) {
       bytes.resize(mapImage->row_bytes*mapImage->height);
-      unsigned long uncompressedSize;
+      unsigned long uncompressedSize = bytes.size();
       int ret = uncompress(&bytes[0], &uncompressedSize,
                            &mapImage->data[0], mapImage->total_bytes);
       if (ret != Z_OK) {
         std::cout << "CANNOT UNCOMPRESS" << std::endl;
         std::cout << "RET=" << ret << std::endl;
+        std::cout << "COMPRESSED: " << mapImage->total_bytes << " bytes" << std::endl;
+        std::cout << "UNCOMPRESSED: " << uncompressedSize << " bytes" << std::endl;
       }
       mapImage->compression = drc::map_image_t::COMPRESSION_NONE;
     }

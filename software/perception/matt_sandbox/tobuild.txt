@@ -2,3 +2,4 @@
 # and lines starting with '#' are ignored
 
 maps
+stereo_slam
