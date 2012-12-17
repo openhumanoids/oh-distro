@@ -20,7 +20,11 @@ nx = getNumStates(robot);
 ndof = nx/2;
 joint_names = robot.getStateFrame.coordinates(1:ndof);
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-state_listener = RobotStateListener(robot_name,joint_names,state_channel);
+%state_listener = RobotStateListener(robot_name,joint_names,state_channel);
+
+lcmcoder = RobotStateCoder(robot_name, joint_names);
+state_listener=LCMCoordinateFrameWCoder(robot_name,nx,robot.getStateFrame().prefix,lcmcoder);
+state_listener.subscribe(state_channel);
 
 if (getNumOutputs(controller)>0)
     cmd_names = robot.getInputFrame().coordinates;
@@ -34,9 +38,8 @@ disp('Controller ready...');
 % just run as fast as possible
 t=options.tspan(1); tic;
 while (t<=options.tspan(2))
-  x = getNextMessage(state_listener,1);
+  [x,ts] = getNextMessage(state_listener,1);
   if (~isempty(x))
-    ts = getLastTimestamp(state_listener);
     %t = ts/1000000
     %x'
     u = controller.output(t,[],x);
