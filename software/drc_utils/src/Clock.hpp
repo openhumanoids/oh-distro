@@ -17,18 +17,26 @@ public:
   static Clock* instance();
 
   virtual void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  virtual void setLcm(const lcm_t* iLcm);
 
   virtual void setChannel(const std::string& iChannelName);
   std::string getChannel() const;
 
   void setTimeoutInterval(const int iMilliseconds);
+  void useTimeMessages(const bool iVal);
+  void useRealTimeWhenInvalid(const bool iVal);
 
   virtual int64_t getCurrentTime() const = 0;
+
+protected:
+  virtual void update() = 0;
 
 protected:
   boost::shared_ptr<lcm::LCM> mLcm;
   std::string mChannel;
   int mTimeoutInterval;
+  bool mUseTimeMessages;
+  bool mUseRealTimeWhenInvalid;
 };
  
 }

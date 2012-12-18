@@ -24,18 +24,11 @@ public:
     }
   }
 
-  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
-    Clock::setLcm(iLcm);
-    update();
-  }
-
-  void setChannel(const std::string& iChannel) {
-    Clock::setChannel(iChannel);
-    update();
-  }
-
   int64_t getCurrentTime() const {
     int64_t curRealTime = bot_timestamp_now();
+    if (!mUseTimeMessages) {
+      return curRealTime;
+    }
     if (mCurrentTime > 0) {
       int64_t dt = curRealTime - mLastMessageReceivedTime;
       if (dt > mTimeoutInterval*1000) {
@@ -45,7 +38,7 @@ public:
       return mCurrentTime;
     }
     else {
-      return curRealTime;
+      return mUseRealTimeWhenInvalid ? curRealTime : -1;
     }
   }
 
@@ -67,7 +60,9 @@ protected:
     if (mTimeSubscription != NULL) {
       mLcm->unsubscribe(mTimeSubscription);
     }
-    mTimeSubscription = mLcm->subscribe(mChannel, &ClockImpl::onTime, this);
+    if (mUseTimeMessages) {
+      mTimeSubscription = mLcm->subscribe(mChannel, &ClockImpl::onTime, this);
+    }
   }
 
 protected:
@@ -83,6 +78,8 @@ Clock() {
   mTimeoutInterval = 2000;
   mChannel = "ROBOT_UTIME";  
   mLcm.reset(new lcm::LCM());
+  mUseTimeMessages = true;
+  mUseRealTimeWhenInvalid = true;
 }
 
 Clock::
@@ -98,11 +95,19 @@ instance() {
 void Clock::
 setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
   mLcm = iLcm;
+  update();
+}
+
+void Clock::
+setLcm(const lcm_t* iLcm) {
+  mLcm.reset(new lcm::LCM((lcm_t*)iLcm));
+  update();
 }
 
 void Clock::
 setChannel(const std::string& iChannelName) {
   mChannel = iChannelName;
+  update();
 }
 
 std::string Clock::
@@ -113,4 +118,15 @@ getChannel() const {
 void Clock::
 setTimeoutInterval(const int iMilliseconds) {
   mTimeoutInterval = iMilliseconds;
+}
+
+void Clock::
+useTimeMessages(const bool iVal) {
+  mUseTimeMessages = iVal;
+  update();
+}
+
+void Clock::
+useRealTimeWhenInvalid(const bool iVal) {
+  mUseRealTimeWhenInvalid = iVal;
 }
