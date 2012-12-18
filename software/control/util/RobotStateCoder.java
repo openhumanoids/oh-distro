@@ -63,6 +63,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
             if (j!=null) {
               index = j.intValue();
               fdata.val[index] = msg.joint_position[i];
+              if (fdata.val[index] > Math.PI)
+                fdata.val[index] -= 2*Math.PI;
               fdata.val[index + m_num_joints] = msg.joint_velocity[i];
             }
           }
@@ -97,6 +99,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
+            if (fdata.val[index] > Math.PI)
+              fdata.val[index] -= 2*Math.PI;
             fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.x;
           }
           
@@ -104,6 +108,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = Math.asin(2*(x*z - w*y));
+            if (fdata.val[index] > Math.PI)
+              fdata.val[index] -= 2*Math.PI;
             fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
           }
           

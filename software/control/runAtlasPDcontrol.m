@@ -2,44 +2,49 @@ function runAtlasPDcontrol
 
 options.floating = true;
 m = RigidBodyModel('../models/mit_gazebo_models/mit_robot_drake/mit_drc_robot_minimal_contact.sdf',options);
-    
 dt = 0.001;
 r = TimeSteppingRigidBodyManipulator(m,dt);
 
-pgain = Point(r.getStateFrame);
-pgain.neck_ay = 10;
-pgain.l_leg_uay = 200;
-pgain.l_leg_lax = 200;
-pgain.r_leg_uay = 200;
-pgain.r_leg_lax = 200;
-pgain = double(pgain);
-
-pgain(pgain==0) = 100;
-
-nq = r.manip.getNumStates()/2;
-kp = diag(pgain(1:nq)); 
-kd = diag(2.0*ones(nq,1));
+nx = r.getNumStates();
 
 B = r.manip.model.B;
-pos_mat = -B'*kp;
-vel_mat = -B'*kd;
+idx = B'*(1:nx/2)';
 
-pd = LinearSystem([],[],[],[],[],[pos_mat,vel_mat]);
+[Kp,Kd] = getPDGains(r); 
 
-xstar = Point(r.getStateFrame);
-xstar = r.manip.resolveConstraints(double(xstar));
+% get feedforward and feedback systems
+[pdff,pdfb] = pdcontrol(r,Kp,Kd,idx);
 
-% align frames so the goal is at the origin
-if all(xstar==0)
-  pd = setInputFrame(pd,r.getStateFrame);
-else
-  pd = setInputFrame(pd,CoordinateFrame([r.getStateFrame.name,' - ', mat2str(xstar,3)],length(xstar),r.getStateFrame.prefix));
-  r.getStateFrame.addTransform(AffineTransform(r.getStateFrame,pd.getInputFrame,eye(length(xstar)),-xstar));
-  pd.getInputFrame.addTransform(AffineTransform(pd.getInputFrame,r.getStateFrame,eye(length(xstar)),+xstar));
+% desired position
+theta_des = Point(pdff.getInputFrame);
+theta_des = double(theta_des);
+
+joint_names = r.getStateFrame.coordinates(1:nx/2);
+joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
+
+lcmcoder = JLCMCoder(RobotStateCoder('mit_drc_robot', joint_names));
+state_listener=LCMCoordinateFrameWCoder('mit_drc_robot',nx,r.getStateFrame().prefix,lcmcoder);
+state_listener.subscribe('EST_ROBOT_STATE');
+
+cmd_names = r.getInputFrame().coordinates;
+cmd_names = regexprep(cmd_names,'_motor','');     
+cmd_publisher = ActuatorCmdPublisher('mit_drc_robot',cmd_names,'ACTUATOR_CMDS');
+
+disp('PD controller ready...');
+% just run as fast as possible
+while (1)
+  [x,ts] = getNextMessage(state_listener,1);
+  if (~isempty(x))
+    t = ts/10
+    u_ff = pdff.output(t,[],theta_des);
+    u_fb = pdfb.output(t,[],x);
+    u = u_ff + u_fb;
+%     fprintf('time is %f\n',t);
+%     fprintf('state is %f\n',x);
+%     fprintf('control is %f\n\n',u);
+    cmd_publisher.publish(u);
+  end
 end
-pd = setOutputFrame(pd,r.getInputFrame);
-
-runDRCControl(r,pd,'mit_drc_robot','TRUE_ROBOT_STATE','ACTUATOR_CMDS',struct());
 
 end
 

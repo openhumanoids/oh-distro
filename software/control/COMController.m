@@ -60,7 +60,7 @@ classdef COMController < DrakeSystem
         global alpha;
         x = u;
         p = obj.plant;
-        
+        tic;
             q = x(1:obj.nq); 
             qd = x(obj.nq+(1:obj.nq));
 
@@ -152,13 +152,13 @@ classdef COMController < DrakeSystem
             cm_ddot_des = Kp*err - Kd*cm_dot;
 
             % nominal pose PD controller
-            Kp_q = 15*eye(obj.nq);
-            Kd_q = 5*eye(obj.nq);
+            Kp_q = 1*eye(obj.nq);
+            Kd_q = 0.01*eye(obj.nq);
             err_q = obj.qstar - q;
             qdd_des = Kp_q*err_q - Kd_q*qd;
 
-            w_com = 1.0;
-            w_q = 0.3;
+            w_com = 0.0;
+            w_q = 0.1;
 
             Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
             Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0
@@ -167,6 +167,7 @@ classdef COMController < DrakeSystem
             alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
             
             y=alpha(obj.nq+(1:obj.nu));
+            toc
            
     end
     end

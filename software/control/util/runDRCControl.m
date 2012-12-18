@@ -22,8 +22,8 @@ joint_names = robot.getStateFrame.coordinates(1:ndof);
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 %state_listener = RobotStateListener(robot_name,joint_names,state_channel);
 
-lcmcoder = RobotStateCoder(robot_name, joint_names);
-state_listener=LCMCoordinateFrameWCoder(robot_name,nx,robot.getStateFrame().prefix,lcmcoder);
+lcmcoder = JLCMCoder(RobotStateCoder(robot_name, joint_names));
+state_listener = LCMCoordinateFrameWCoder(robot_name,nx,robot.getStateFrame().prefix,lcmcoder);
 state_listener.subscribe(state_channel);
 
 if (getNumOutputs(controller)>0)
@@ -43,8 +43,8 @@ while (t<=options.tspan(2))
     %t = ts/1000000
     %x'
     u = controller.output(t,[],x);
+    u'
     %u = zeros(robot.getNumInputs(),1);%controller.output(t,[],x);
-    %u'
     %u =zeros(getNumInputs(robot),1);
     %u(7) = 100;
     %u(20) = -100;
