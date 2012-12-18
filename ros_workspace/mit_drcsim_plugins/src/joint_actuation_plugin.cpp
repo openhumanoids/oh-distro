@@ -135,7 +135,8 @@ void JointActuationPlugin::UpdateChild()
 {
 
   //update forces of all joints that are active
-
+  //if (this->world->IsPaused())
+  // this->world->SetPaused(false);
   // Loop through all Joints
   std::map<std::string, ActuationCmdStruc>::iterator it;
 

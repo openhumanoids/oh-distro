@@ -71,7 +71,7 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
 
   if (!_sdf->HasElement("frameName"))
   {
-    ROS_WARN("Laser plugin missing <frameName>, defaults to /world");
+    ROS_WARN(" plugin missing <frameName>, defaults to /world");
     this->frameName = "/world";
   }
   else
@@ -79,15 +79,25 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
 
   if (!_sdf->HasElement("topicName"))
   {
-    ROS_WARN("Laser plugin missing <topicName>, defaults to /world");
+    ROS_WARN(" plugin missing <topicName>, defaults to /world");
     this->topicName = "/true_robot_state";
   }
   else
     this->topicName = _sdf->GetElement("topicName")->GetValueString();
+    
+  
+  if (!_sdf->HasElement("synchronization"))
+  {
+    ROS_WARN(" plugin missing <topicName>, defaults to false");
+    this->synchronization = "false";
+  }
+  else
+    this->synchronization = _sdf->GetElement("synchronization")->GetValueString();
+    //For some reason it parses "true" as "1" but does not like GetValueBool().
   
     if (!_sdf->GetElement("updateRate"))
   {
-    ROS_INFO("Camera plugin missing <updateRate>, defaults to 0");
+    ROS_INFO(" plugin missing <updateRate>, defaults to 0");
     this->update_rate_ = 0;
   }
   else
@@ -292,6 +302,12 @@ void GazeboRosPubRobotState::UpdateChild()
     this->lock.unlock();
 
     this->last_update_time_ = cur_time;
+    if(this->synchronization=="1")
+    {
+     // gzerr <<this->synchronization  << " ok!"<< std::endl;
+     this->world->SetPaused(true);
+    }
+  
   }
 
 }

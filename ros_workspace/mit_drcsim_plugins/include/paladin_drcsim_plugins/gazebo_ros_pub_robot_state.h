@@ -145,6 +145,7 @@ class GazeboRosPubRobotState : public ModelPlugin
 
   /// \brief topic name
   private: std::string topicName;
+  private: std::string synchronization; 
 
   /// \brief frame transform name, should match link name
   private: std::string frameName;
