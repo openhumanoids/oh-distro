@@ -132,11 +132,13 @@ fuseAll() {
 
   mActiveMap->clear();
   PointDataBuffer::PointSetGroup::const_iterator iter;
+  mPointDataBuffer->lock();
   for (iter = mPointDataBuffer->begin();
        iter != mPointDataBuffer->end(); ++iter) {
     const PointDataBuffer::PointSet& pointSet = iter->second;
     mActiveMap->add(pointSet.mPoints, pointSet.mToLocal);
   }
+  mPointDataBuffer->unlock();
 
   return true;
 }

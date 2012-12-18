@@ -31,7 +31,7 @@ public:
     int mWidth;
     int mHeight;
     std::vector<float> mData;
-    Eigen::Affine3d mTransform;  // local to image
+    Eigen::Projective3d mTransform;  // local to image
   };
 
 public:
@@ -75,7 +75,7 @@ public:
                            const float iMaxHeight=1e20) const;
 
   // export this representation as depth map
-  DepthMap getAsDepthMap(const Eigen::Affine3d& iLocalToImage,
+  DepthMap getAsDepthMap(const Eigen::Projective3d& iLocalToImage,
                          const int iWidth, const int iHeight) const;
 
   // export raw underlying octree bytes 

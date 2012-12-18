@@ -99,6 +99,9 @@ struct RendererHeightMap {
 
     if (mCamTrans == NULL) {
       mCamTrans = bot_param_get_new_camtrans(mBotParam, "CAMERALEFT");
+      if (mCamTrans == NULL) {
+        std::cout << "Error: RendererHeightMap: bad camtrans" << std::endl;
+      }
     }
 
     bot_viewer_request_redraw(mViewer);
@@ -240,7 +243,7 @@ struct RendererHeightMap {
       glGenTextures(1, &self->mCameraTextureId);
       self->mFirstDraw = false;
     }
-    
+
     // create vertex buffer
     float* data = (float*)(&img.data[0]);
     int numVertices = img.width*img.height;

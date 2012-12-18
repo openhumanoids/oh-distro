@@ -236,26 +236,27 @@ getAsHeightMap(const int iDownSample,
 }
 
 LocalMap::DepthMap LocalMap::
-getAsDepthMap(const Eigen::Affine3d& iLocalToImage,
+getAsDepthMap(const Eigen::Projective3d& iLocalToImage,
               const int iWidth, const int iHeight) const {
   DepthMap depthMap;
   depthMap.mWidth = iWidth;
   depthMap.mHeight = iHeight;
   depthMap.mTransform = iLocalToImage;
 
-  Eigen::Matrix4d xformToImage = (iLocalToImage*mTransformToLocal).matrix();
-  Eigen::Matrix3d xformFromImage = xformToImage.topLeftCorner<3,3>().inverse();
-  Eigen::Vector3d originTemp = xformFromImage *
-    xformToImage.topRightCorner<3,1>();
-  octomap::point3d origin(originTemp(0), originTemp(1), originTemp(2));
+  Eigen::Projective3d xformToImage = iLocalToImage*mTransformToLocal;
+  Eigen::Projective3d xformFromImage = xformToImage.inverse();
+  Eigen::Vector4d o = xformFromImage.matrix()*Eigen::Vector4d(0,0,1,0);
+  octomap::point3d origin(o(0)/o(3), o(1)/o(3), o(2)/o(3));
 
   depthMap.mData.resize(iWidth*iHeight);
   const float unobservedValue = -std::numeric_limits<float>::max();
   for (int i = 0; i < iHeight; ++i) {
     for (int j = 0; j < iWidth; ++j) {
       int index = i*iWidth + j;
-      Eigen::Vector3d dir = xformFromImage*Eigen::Vector3d(j,i,1);
-      octomap::point3d direction(dir(0), dir(1), dir(2));
+      Eigen::Vector4d dir = xformFromImage*Eigen::Vector4d(j,i,1,1);
+      octomap::point3d direction(dir(0)/dir(3)-origin(0),
+                                 dir(1)/dir(3)-origin(1),
+                                 dir(2)/dir(3)-origin(2));
       octomap::point3d hitPoint;
       if (mOctree->castRay(origin, direction, hitPoint, false, -1)) {
         depthMap.mData[index] = (hitPoint-origin).norm()/direction.norm();
