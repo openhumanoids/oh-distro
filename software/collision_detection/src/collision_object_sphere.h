@@ -29,7 +29,9 @@ namespace collision_detection {
     Collision_Object_Sphere( const Collision_Object_Sphere& other );
     ~Collision_Object_Sphere();
 
-    virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
+    virtual void set_active( bool active );
+    virtual void set_position( const Eigen::Vector3f position );
+    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
   
     virtual Eigen::Vector3f position( void )const;
     virtual Eigen::Vector4f orientation( void )const;

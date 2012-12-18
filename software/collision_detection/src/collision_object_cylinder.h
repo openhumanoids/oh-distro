@@ -29,7 +29,7 @@ namespace collision_detection {
     Collision_Object_Cylinder( std::string id, double radius, double height, Eigen::Vector3f position, Eigen::Vector4f orientation );
     ~Collision_Object_Cylinder();
 
-    virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
+    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
 
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
     virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;

@@ -63,14 +63,32 @@ Collision_Object_Sphere::
 
 }
 
+void
+Collision_Object_Sphere::
+set_active( bool active ){
+  if( !active ){
+    _bt_collision_object.setWorldTransform( btTransform( btQuaternion( 0.0, 0.0, 0.0, 1.0 ),
+                                                          btVector3( 10000.0, 10000.0, 10000.0 ) ) );
+  }
+  return;
+}
+
+void
+Collision_Object_Sphere::
+set_position( const Vector3f position ){
+  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( 0.0, 0.0, 0.0, 1.0 ),
+                                                        btVector3( position.x(), position.y(), position.z() ) ) );
+  return;
+}
+
 /** 
  * set_transform
  * sets the world-frame position and orientation of the collision object
  */
 void
 Collision_Object_Sphere::
-set_transform( Vector3f position,
-                Vector4f orientation ){
+set_transform( const Vector3f position,
+                const Vector4f orientation ){
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.w(), orientation.x(), orientation.y(), orientation.z() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;

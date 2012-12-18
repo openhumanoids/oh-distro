@@ -25,10 +25,12 @@ namespace collision_detection {
     Collision_Object( std::string id );
     Collision_Object( const Collision_Object& other );
     ~Collision_Object();
-
-    virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
   
-    bool matches_uid( unsigned int uid );
+    virtual void set_active( bool active );
+    virtual void set_position( const Eigen::Vector3f position );
+    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
+  
+    virtual Collision_Object* matches_uid( unsigned int uid );
 
     std::string id( void )const;
     virtual Eigen::Vector3f position( void )const;

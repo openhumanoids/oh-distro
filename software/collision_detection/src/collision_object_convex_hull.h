@@ -30,7 +30,7 @@ namespace collision_detection {
     ~Collision_Object_Convex_Hull();
 
     bool load_chull_obj( std::string chullObjFilename );
-    virtual void set_transform( Eigen::Vector3f position, Eigen::Vector4f orientation );
+    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
  
     std::string chull_obj_filename( void )const; 
     virtual Eigen::Vector3f position( void )const;

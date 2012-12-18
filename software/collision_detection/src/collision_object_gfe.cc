@@ -77,8 +77,8 @@ Collision_Object_GFE::
 }
 
 /** 
- * set_transform
- * sets the world-frame position and orientation of the collision object
+ * set
+ * sets the kinematics model to the robot state
  */
 void
 Collision_Object_GFE::
@@ -94,6 +94,23 @@ set( robot_state_t& robotState ){
     }
   }
   return;
+}
+
+/**
+ * matches_uid
+ */
+Collision_Object*
+Collision_Object_GFE::
+matches_uid( unsigned int uid ){
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    vector< btCollisionObject* > bt_collision_object_vector = _collision_objects[ i ]->bt_collision_objects();
+    for( unsigned int j = 0; j < bt_collision_object_vector.size(); j++ ){
+      if( bt_collision_object_vector[ j ]->getBroadphaseHandle()->getUid() == uid ){
+        return _collision_objects[ i ];
+      }
+    }
+  }
+  return NULL;
 }
 
 /**
@@ -169,7 +186,7 @@ _load_collision_objects( void ){
         model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
         model_filename.erase( model_filename.end() - 4, model_filename.end() );
         model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
-        _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );        
+        _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );       
       } 
     }
   }

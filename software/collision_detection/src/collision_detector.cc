@@ -34,10 +34,12 @@ Collision_Detector::
  */
 void
 Collision_Detector::
-add_collision_object( Collision_Object* collisionObject ){
+add_collision_object( Collision_Object* collisionObject,
+                      short int filterGroup,  
+                      short int filterMask ){
   vector< btCollisionObject* > bt_collision_objects = collisionObject->bt_collision_objects();
   for( unsigned int i = 0; i < bt_collision_objects.size(); i++ ){
-    _collision_world.addCollisionObject( bt_collision_objects[ i ] );
+    _collision_world.addCollisionObject( bt_collision_objects[ i ], filterGroup, filterMask );
   }
   _collision_objects.push_back( collisionObject );
   return;
@@ -70,9 +72,39 @@ num_collisions( void ){
   _collision_world.performDiscreteCollisionDetection();
   unsigned int num_collisions = 0;
   for( unsigned int i = 0; i < _collision_world.getDispatcher()->getNumManifolds(); i++ ){
-    num_collisions += _collision_world.getDispatcher()->getManifoldByIndexInternal( i )->getNumContacts();
+    btPersistentManifold * manifold = _collision_world.getDispatcher()->getManifoldByIndexInternal( i );
+    if( manifold->getNumContacts() > 0 ){
+      num_collisions += manifold->getNumContacts();
+    }
   }
   return num_collisions;
+}
+
+/** 
+ * get_collisions
+ * performs collision detection and returns a vector of collisions
+ */
+vector< Collision >
+Collision_Detector::
+get_collisions( void ){
+  vector< Collision > collisions;
+  _collision_world.performDiscreteCollisionDetection();
+  for( unsigned int i = 0; i < _collision_world.getDispatcher()->getNumManifolds(); i++ ){
+    btPersistentManifold * manifold = _collision_world.getDispatcher()->getManifoldByIndexInternal( i );
+    if( manifold->getNumContacts() > 0 ){
+      Collision_Object * first_collision_object = find_collision_object_by_uid( manifold->getBody0()->getBroadphaseHandle()->getUid() );
+      Collision_Object * second_collision_object = find_collision_object_by_uid( manifold->getBody1()->getBroadphaseHandle()->getUid() );
+      if( ( first_collision_object != NULL ) && ( second_collision_object != NULL ) ){ 
+        Collision collision( first_collision_object->id(), second_collision_object->id() );
+        for( unsigned int j = 0; j < manifold->getNumContacts(); j++ ){
+          btVector3 contact_point = manifold->getContactPoint( j ).getPositionWorldOnA();
+          collision.add_contact_point( Vector3f( contact_point.x(), contact_point.y(), contact_point.z() ) );
+        }
+        collisions.push_back( collision );
+      }
+    }
+  }
+  return collisions;
 }
 
 /**
@@ -93,15 +125,27 @@ ray_test( Vector3f from,
  
   collisionObject = NULL;
   if( result.hasHit() ){
-    for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-      if( _collision_objects[ i ]->matches_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() ) ){
-        collisionObject = _collision_objects[ i ];
-        break;
-      }
-    }
+    collisionObject = find_collision_object_by_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() );
   }
 
   return;
+}
+
+/**
+ * find_collision_object_by_uid
+ * searches through all of the uid's to determine the Collision_Object that it belongs to
+ */
+Collision_Object*
+Collision_Detector::
+find_collision_object_by_uid( int uid ){
+  Collision_Object * collision_object = NULL;
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    Collision_Object * tmp = _collision_objects[ i ]->matches_uid( uid );
+    if( tmp != NULL ){
+      collision_object = tmp;
+    }
+  }
+  return collision_object;
 }
 
 vector< Collision_Object* >

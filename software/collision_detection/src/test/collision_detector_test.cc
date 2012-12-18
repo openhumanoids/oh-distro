@@ -1,5 +1,6 @@
 #include <iostream>
 #include <Eigen/Dense>
+#include <collision_detection/collision.h>
 #include <collision_detection/collision_detector.h>
 #include <collision_detection/collision_object_box.h>
 
@@ -15,6 +16,7 @@ main( int argc,
 
   // create a collision detector class
   Collision_Detector collision_detector;
+  vector< Collision > collisions;
 
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
@@ -25,7 +27,11 @@ main( int argc,
 
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
-
+  collisions = collision_detector.get_collisions();
+  for( unsigned int i = 0; i < collisions.size(); i++ ){
+    cout << "  collisions[" << i << "]: " << collisions[ i ] << endl;
+  }  
+ 
   // add another collision object and add it to the collision detector class
   Collision_Object_Box collision_object_2( "box2", Vector3f( 0.5, 0.5, 0.5 ), Vector3f( 2.0, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
   collision_detector.add_collision_object( &collision_object_2 );
@@ -38,6 +44,10 @@ main( int argc,
  
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
+  collisions = collision_detector.get_collisions();
+  for( unsigned int i = 0; i < collisions.size(); i++ ){
+    cout << "  collisions[" << i << "]: " << collisions[ i ] << endl;
+  }
 
   // move the second collision object too close to the first collision object
   collision_object_2.set_transform( Vector3f( 0.25, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
@@ -45,6 +55,10 @@ main( int argc,
 
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be non-zero)" << endl;
+  collisions = collision_detector.get_collisions();
+  for( unsigned int i = 0; i < collisions.size(); i++ ){
+    cout << "  collisions[" << i << "]: " << collisions[ i ] << endl;
+  } 
 
   // check ray interaction (positive example)
   Collision_Object * intersected_object = NULL;
@@ -79,7 +93,11 @@ main( int argc,
   
   // check the number of collisions
   cout << "num_collisions: " << collision_detector.num_collisions() << " (should be zero)" << endl;
-
+  collisions = collision_detector.get_collisions();
+  for( unsigned int i = 0; i < collisions.size(); i++ ){
+    cout << "  collisions[" << i << "]: " << collisions[ i ] << endl;
+  } 
+  
   cout << endl << "end of collision-detector-test" << endl << endl;
   return 0;
 }

@@ -16,7 +16,7 @@ Collision_Object_Convex_Hull( string id ) : Collision_Object( id ),
                                             _bt_convex_hull_shape(),
                                             _chull_obj_filename( "N/A" ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-  _bt_convex_hull_shape.setMargin( 0.0 );
+  _bt_convex_hull_shape.setMargin( 0.01 );
 }
 
 /**
@@ -30,7 +30,7 @@ Collision_Object_Convex_Hull( string id,
                                                   _bt_convex_hull_shape(),
                                                   _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-  _bt_convex_hull_shape.setMargin( 0.0 );
+  _bt_convex_hull_shape.setMargin( 0.01 );
   _load_chull_obj();
 }
 
@@ -47,7 +47,7 @@ Collision_Object_Convex_Hull( string id,
                                                         _bt_convex_hull_shape(),
                                                         _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-  _bt_convex_hull_shape.setMargin( 0.0 );
+  _bt_convex_hull_shape.setMargin( 0.01 );
   set_transform( position, orientation );
   _load_chull_obj();
 }
@@ -62,7 +62,7 @@ Collision_Object_Convex_Hull( const Collision_Object_Convex_Hull& other ): Colli
                                                                             _bt_convex_hull_shape(),
                                                                             _chull_obj_filename( other._chull_obj_filename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-  _bt_convex_hull_shape.setMargin( 0.0 );
+  _bt_convex_hull_shape.setMargin( 0.01 );
   set_transform( other.position(), other.orientation() );
   _load_chull_obj();
 }   
@@ -93,8 +93,8 @@ load_chull_obj( std::string chullObjFilename ){
  */
 void
 Collision_Object_Convex_Hull::
-set_transform( Vector3f position,
-                Vector4f orientation ){
+set_transform( const Vector3f position,
+                const Vector4f orientation ){
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.x(), orientation.y(), orientation.z(), orientation.w() ),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;

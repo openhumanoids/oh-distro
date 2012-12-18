@@ -31,14 +31,26 @@ Collision_Object::
 
 }
 
+void
+Collision_Object::
+set_active( bool active ){
+  return;
+}
+
+void
+Collision_Object::
+set_position( const Vector3f position ){
+  return;
+}
+
 /**
  * set_transform
  * sets the world to object transform with a 3D vector and unit quaternion
  */
 void
 Collision_Object::
-set_transform( Vector3f position,
-                Vector4f orientation ){
+set_transform( const Vector3f position,
+                const Vector4f orientation ){
   return;
 }
 
@@ -47,16 +59,16 @@ set_transform( Vector3f position,
  * determines whether the function argument matches any of the uid's in each of
  *   the btCollisionObject classes contained by this Collision_Object class
  */
-bool
+Collision_Object*
 Collision_Object::
 matches_uid( unsigned int uid ){
   vector< btCollisionObject* > bt_collision_object_vector = bt_collision_objects();
   for( unsigned int i = 0; i < bt_collision_object_vector.size(); i++ ){
     if( bt_collision_object_vector[ i ]->getBroadphaseHandle()->getUid() == uid ){
-      return true;
+      return this;
     }   
   }
-  return false;
+  return NULL;
 }
 
 /**
@@ -122,16 +134,23 @@ namespace collision_detection {
   operator<<( ostream& out,
               const Collision_Object& other ){
     out << "id:{" << other.id().c_str() << "} ";
-    out << "bt_collision_objects[" << other.bt_collision_objects().size() << "]:{";
-    for( unsigned int i = 0; i < other.bt_collision_objects().size(); i++ ){
-      if( other.bt_collision_objects()[ i ]->getBroadphaseHandle() != NULL ){
-        out << other.bt_collision_objects()[ i ]->getBroadphaseHandle()->getUid();
-      } else {
-        out << "N/A";
-      }
-      out << ":{pos:(" << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().x() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().y() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().z() << "),(" << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getX() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getY() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getZ() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getW() << ")}";
-      if( i != ( other.bt_collision_objects().size() - 1 ) ){
-        out << ",";
+    vector< const btCollisionObject* > bt_collision_objects = other.bt_collision_objects();
+    out << "bt_collision_objects[" << bt_collision_objects.size() << "]:{";
+    for( unsigned int i = 0; i < bt_collision_objects.size(); i++ ){
+      if( bt_collision_objects[ i ] != NULL ){
+
+        if( bt_collision_objects[ i ]->getBroadphaseHandle() != NULL ){
+          out << bt_collision_objects[ i ]->getBroadphaseHandle()->getUid();
+        } else {
+          out << "N/A";
+        }
+
+        btTransform bt_transform = bt_collision_objects[ i ]->getWorldTransform();
+        out << ":{pos:(" << bt_transform.getOrigin().x() << "," << bt_transform.getOrigin().y() << "," << bt_transform.getOrigin().z() << "),(" << bt_transform.getRotation().getX() << "," << bt_transform.getRotation().getY() << "," << bt_transform.getRotation().getZ() << "," << bt_transform.getRotation().getW() << ")}";
+        if( i != ( bt_collision_objects.size() - 1 ) ){
+          out << ",";
+        }
+
       }
     }
     out << "}";
