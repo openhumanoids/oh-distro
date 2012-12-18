@@ -29,11 +29,11 @@
       <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <topicName>true_robot_state</topicName>
+      <synchronization>false</synchronization>
     </plugin>
-
   </gazebo>
 
- 
+
   <!-- imu -->
   <link name="imu_link">
     <inertial>
