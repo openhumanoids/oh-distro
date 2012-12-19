@@ -8,6 +8,7 @@ add_executable(collision-object-sphere-test collision_object_sphere_test.cc)
 add_executable(collision-object-convex-hull-test collision_object_convex_hull_test.cc)
 add_executable(collision-object-point-cloud-test collision_object_point_cloud_test.cc)
 add_executable(collision-object-gfe-test collision_object_gfe_test.cc)
+add_executable(collision-detector-point-cloud-filtering-test collision_detector_point_cloud_filtering_test.cc)
 
 # The test program uses the shared library, use the pkg-config file
 pods_use_pkg_config_packages(collision-detector-test collision_detection)
@@ -19,6 +20,7 @@ pods_use_pkg_config_packages(collision-object-sphere-test collision_detection)
 pods_use_pkg_config_packages(collision-object-convex-hull-test collision_detection)
 pods_use_pkg_config_packages(collision-object-point-cloud-test collision_detection)
 pods_use_pkg_config_packages(collision-object-gfe-test collision_detection)
+pods_use_pkg_config_packages(collision-detector-point-cloud-filtering-test collision_detection)
 
 # make executable public
 pods_install_executables(collision-detector-test)
@@ -30,3 +32,4 @@ pods_install_executables(collision-object-sphere-test)
 pods_install_executables(collision-object-convex-hull-test)
 pods_install_executables(collision-object-point-cloud-test)
 pods_install_executables(collision-object-gfe-test)
+pods_install_executables(collision-detector-point-cloud-filtering-test)

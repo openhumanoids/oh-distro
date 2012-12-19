@@ -58,11 +58,17 @@ Collision_Object_Point_Cloud::
 set( vector< Vector3f >& points ){
   _points = points;
   for( unsigned int i = 0; i < _points.size(); i++ ){
-    _collision_objects[ i ]->set_position( _points[ i ] );
-    _collision_objects[ i ]->set_active( true );
+    if( i < _collision_objects.size() ){
+      _collision_objects[ i ]->set_position( _points[ i ] );
+      _collision_objects[ i ]->set_active( true );
+    } else {
+      cout << "adding too many points to the point cloud collision object" << endl;
+    }
   }
   for( unsigned int i = _points.size(); i < _max_points; i++ ){
-    _collision_objects[ i ]->set_active( false );
+    if( i < _collision_objects.size() ){
+      _collision_objects[ i ]->set_active( false );
+    }
   }
   return;
 }
