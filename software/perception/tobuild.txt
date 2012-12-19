@@ -7,8 +7,8 @@ motion_estimate
 local_map
 #registeration
 map_store
-tld-tracker
 opencv-utils
+tld-tracker
 world_model
 
 #mfallon_sandbox

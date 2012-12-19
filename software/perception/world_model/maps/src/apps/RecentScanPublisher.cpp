@@ -102,8 +102,6 @@ public:
               << b2l.rot_quat[1] << " "
               << b2l.rot_quat[2] << " "
               << b2l.rot_quat[3] << ".pcd";
-          
-          
           pcl::io::savePCDFileASCII (fname.str(), *cloud);
           std::cerr << data.mTimestamp << " =========Clock\n";
           std::cerr << "Saved " << cloud->points.size () << " data points to " << fname.str() << std::endl;
