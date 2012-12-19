@@ -9,6 +9,8 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include <boost/assign/std/vector.hpp>
+
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
@@ -45,38 +47,6 @@ using namespace pcl::io;
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include <lcmtypes/pointcloud_tools.h>
 
-// Duplicates the list in collections renderer:
-static float vis_colors[] = {
-    51/255.0, 160/255.0, 44/255.0,  //0
-    166/255.0, 206/255.0, 227/255.0,
-    178/255.0, 223/255.0, 138/255.0,//6
-    31/255.0, 120/255.0, 180/255.0,
-    251/255.0, 154/255.0, 153/255.0,// 12
-    227/255.0, 26/255.0, 28/255.0,
-    253/255.0, 191/255.0, 111/255.0,// 18
-    106/255.0, 61/255.0, 154/255.0,
-    255/255.0, 127/255.0, 0/255.0, // 24
-    202/255.0, 178/255.0, 214/255.0,
-    1.0, 0.0, 0.0, // red // 30
-    0.0, 1.0, 0.0, // green
-    0.0, 0.0, 1.0, // blue// 36
-    1.0, 1.0, 0.0,
-    1.0, 0.0, 1.0, // 42
-    0.0, 1.0, 1.0,
-    0.5, 1.0, 0.0,
-    1.0, 0.5, 0.0,
-    0.5, 0.0, 1.0,
-    1.0, 0.0, 0.5,
-    0.0, 0.5, 1.0,
-    0.0, 1.0, 0.5,
-    1.0, 0.5, 0.5,
-    0.5, 1.0, 0.5,
-    0.5, 0.5, 1.0,
-    0.5, 0.5, 1.0,
-    0.5, 1.0, 0.5,
-    0.5, 0.5, 1.0
-};
-const int num_vis_colors = sizeof(vis_colors)/(3*sizeof(float));
 
 class pointcloud_vis {
   public:
@@ -114,6 +84,11 @@ class pointcloud_vis {
 
     std::vector <obj_cfg> obj_cfg_list;
     std::vector <ptcld_cfg> ptcld_cfg_list;
+    
+    // Duplicates the list in collections renderer:
+    // assumed to be 3xN colors
+    std::vector < float > colors;    
+    
   private:
     lcm_t *publish_lcm_;
 

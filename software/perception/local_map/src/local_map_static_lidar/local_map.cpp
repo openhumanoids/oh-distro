@@ -98,9 +98,9 @@ void local_map::newmap_handler(const drc_localize_reinitialize_cmd_t *msg){
   // Send the final version of the previous local map
   vector <float> colors_v;
   float colors_a[3];
-  colors_a[0] = vis_colors[3*(cloud_counter%num_vis_colors)];
-  colors_a[1] = vis_colors[3*(cloud_counter%num_vis_colors)+1];
-  colors_a[2] = vis_colors[3*(cloud_counter%num_vis_colors)+2];
+  colors_a[0] = pc_vis_->colors[3*cloud_counter];
+  colors_a[1] = pc_vis_->colors[3*cloud_counter+1];
+  colors_a[2] = pc_vis_->colors[3*cloud_counter+2];
   colors_v.assign(colors_a,colors_a+4*sizeof(float));
   stringstream ss;
   ss << "Cloud - Local Map " << cloud_counter;
@@ -121,6 +121,9 @@ void local_map::newmap_handler(const drc_localize_reinitialize_cmd_t *msg){
   cloud->is_dense = false;
   cloud->points.resize (0);
   cloud_counter++;
+  if(cloud_counter*3 >= pc_vis_->colors.size() ){
+    cloud_counter=0; 
+  }  
   cout << cloud_counter << " started | " << cloud->points.size() << " points\n";
 
   Eigen::Isometry3d local_pose = current_poseT.pose*body_to_lidar;

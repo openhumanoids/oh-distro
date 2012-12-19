@@ -8,6 +8,10 @@
 #include <ConciseArgs>
 #include <bot_lcmgl_client/lcmgl.h>
 
+
+#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pointcloud_tools/pointcloud_vis.hpp>
+
 using namespace std;
 
 struct State {
@@ -40,8 +44,12 @@ class DataConsumer {
 public:
   DataConsumer(State* iState) {
     mState = iState;
-    mPrevAngle = -1;
+    mPrevAngle_ = -1;
     mPrevTime = -1;
+    counter_ =0;
+
+    pc_vis_ = new pointcloud_vis(mState->mLcm->getUnderlyingLCM());
+    
   }
 
   void operator()() {
@@ -54,6 +62,10 @@ public:
         pointSet.mToLocal = data.mPose;
         mState->mPointDataBuffer->add(pointSet);
 
+        BotTrans b2l;
+        bot_frames_get_trans_with_utime(mState->mBotFrames, "body", "local",
+                                        data.mTimestamp, &b2l);
+        
         BotTrans transform;
         bot_frames_get_trans_with_utime(mState->mBotFrames, "ROTATING_SCAN", "head",
                                         data.mTimestamp, &transform);
@@ -61,15 +73,16 @@ public:
         if (currentAngle > M_PI) {
           currentAngle -= 2*M_PI;
         }
-        if (mPrevAngle*currentAngle < 0) {
-          std::cout << "Previous=" << (mPrevAngle*180/M_PI) <<
+        if (mPrevAngle_*currentAngle < 0) {
+          std::cout << "Previous=" << (mPrevAngle_*180/M_PI) <<
             ", Current=" << (currentAngle*180/M_PI) << std::endl;
 
           maptypes::PointCloud::Ptr cloud =
             mState->mPointDataBuffer->getAsCloud(mPrevTime, data.mTimestamp);
 
           bot_lcmgl_t* lcmgl = mState->mLcmGl;
-          bot_lcmgl_color3f(lcmgl, 0.0f, 0.5f, 0.0f);
+          
+          bot_lcmgl_color3f(lcmgl, pc_vis_->colors[counter_*3], pc_vis_->colors[counter_*3+1], pc_vis_->colors[counter_*3+2]);
           for (int i = 0; i < cloud->points.size(); ++i) {
             maptypes::PointCloud::PointType point = cloud->points[i];
             bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
@@ -80,17 +93,44 @@ public:
           
           std::cout << "Published " << cloud->points.size() << " points " << std::endl;
           mPrevTime = data.mTimestamp;
+          
+          ostringstream fname;
+          fname << "cloud " << b2l.trans_vec[0] << " "
+              << b2l.trans_vec[1] << " "
+              << b2l.trans_vec[2] << " "
+              << b2l.rot_quat[0] << " "
+              << b2l.rot_quat[1] << " "
+              << b2l.rot_quat[2] << " "
+              << b2l.rot_quat[3] << ".pcd";
+          
+          
+          pcl::io::savePCDFileASCII (fname.str(), *cloud);
+          std::cerr << data.mTimestamp << " =========Clock\n";
+          std::cerr << "Saved " << cloud->points.size () << " data points to " << fname.str() << std::endl;
+          counter_++;
+          if(counter_*3 >= pc_vis_->colors.size() ){
+           counter_=0; 
+          }
+         
+          //pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
+          
+          
         }
 
-        mPrevAngle = currentAngle;
+        mPrevAngle_ = currentAngle;
+        
+        
+        
       }
     }
   }
 
 protected:
   State* mState;
-  double mPrevAngle;
+  double mPrevAngle_;
   int64_t mPrevTime;
+  int counter_;
+  pointcloud_vis* pc_vis_;
 };
 
 

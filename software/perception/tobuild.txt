@@ -7,7 +7,7 @@ motion_estimate
 local_map
 #registeration
 map_store
-#tld-tracker
+tld-tracker
 opencv-utils
 world_model
 
