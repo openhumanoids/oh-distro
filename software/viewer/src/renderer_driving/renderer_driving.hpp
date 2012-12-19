@@ -19,8 +19,8 @@
 
 #define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
 
-
-void setup_renderer_driving(BotViewer *viewer, int render_priority, lcm_t* lcm);
+void setup_renderer_driving(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
+    BotFrames * frames);
 
 /**
  * @}

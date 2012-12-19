@@ -22,18 +22,26 @@
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
 
+#include <bot_param/param_client.h>
+#include <bot_param/param_util.h>
+#include <bot_frames/bot_frames.h>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
+
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 //#include <visualization/renderer_localize.h>
 
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
+#include <lcmtypes/perception_pointing_vector_t.h>
+
 
 #define RENDERER_NAME "Driving"
 #define PARAM_GOAL_SEND "[G]oal (timed)"
 #define PARAM_GOAL_TIMEOUT "Goal Lifespan"
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
-#define PARAM_REINITIALIZE "[R]einit"
+#define PARAM_VISUAL_GOAL_TYPE "VisGoalType"
+#define PARAM_VISUAL_GOAL      "Visual Goal"
 #define PARAM_NEW_MAP "New Map"
 #define PARAM_NEW_OCTOMAP "New OctoMap"
 #define PARAM_HEIGHTMAP_RES "Heightmap Res"
@@ -43,6 +51,10 @@
 typedef enum _heightmap_res_t {
   HEIGHTMAP_RES_HIGH, HEIGHTMAP_RES_LOW,
 } heightmap_res_t;
+
+typedef enum _visual_goal_type_t {
+  VISUAL_GOAL_GLOBAL, VISUAL_GOAL_RELATIVE
+} visual_goal_type_t;
 
 
 // Controlling Spinning Lidar:
@@ -182,6 +194,10 @@ double WrapPosNegPI(double fAng)
 typedef struct _RendererDriving {
   BotRenderer renderer;
   BotEventHandler ehandler;
+
+  BotParam *bot_param;
+  BotFrames *bot_frames;
+  bot::frames* bot_frames_cpp;    
   BotViewer *viewer;
   lcm_t *lc;
 
@@ -213,6 +229,19 @@ typedef struct _RendererDriving {
   Eigen::Isometry3d center_arc_right;
   double max_velocity;
   
+  //
+
+  
+  
+  visual_goal_type_t visual_goal_type;
+  // Local [use when visual navigation works]
+  Eigen::Vector4d local_pointpose_from;
+  Eigen::Vector4d local_pointpose_to;
+  // Body [use when visual navigation fails]
+  Eigen::Vector4d body_pointpose_from;
+  Eigen::Vector4d body_pointpose_to;
+  
+  
   // Frequency of rotating lidar in hz:
   double lidar_rate;
 
@@ -224,6 +253,26 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
   RendererDriving *self = (RendererDriving*) renderer;
   int64_t now = bot_timestamp_now();
 
+  
+  glLineWidth(2.0);
+  glPushMatrix();
+  if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
+    glColor3f(0,1,1); //cyan
+  }else{
+    glColor3f(0.65,0.16,0.16); //brown
+  }
+  glBegin(GL_LINE_STRIP);
+  glVertex3f(self->local_pointpose_from[0], self->local_pointpose_from[1],
+              self->local_pointpose_from[2] );
+  glVertex3f(self->local_pointpose_to[0], self->local_pointpose_to[1],
+              self->local_pointpose_to[2] );
+
+  glEnd();
+  glPopMatrix();
+  
+  
+  
+  
   // select xy (theta) point
   // convert to local space
   // determine if within feasable region
@@ -709,17 +758,62 @@ static void update_heightmap (RendererDriving *self) {
   bot_viewer_set_status_bar_message(self->viewer, "Sent HEIGHTMAP_PARAMS");
 }
 
+static void send_seek_goal_visual (RendererDriving *self) {
+  
+  drc_seek_goal_timed_t msgout;
+  msgout.utime = self->robot_utime; //bot_timestamp_now();
+  msgout.timeout = (int64_t) 1E6*self->goal_timeout; //self->goal_timeout;
+  msgout.robot_name = "wheeled_atlas"; // this should be set from robot state message
+  if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
+    msgout.type = DRC_SEEK_GOAL_TIMED_T_VISUAL_GLOBAL;
+    fprintf(stderr, "Sending SEEK_GOAL (Visual, Global)\n");
+    drc_seek_goal_timed_t_publish(self->lc, "SEEK_GOAL", &msgout); 
+    bot_viewer_set_status_bar_message(self->viewer, "Sent SEEK_GOAL (Visual, Global) ");
+  }else if (self->visual_goal_type == VISUAL_GOAL_RELATIVE){
+    msgout.type = DRC_SEEK_GOAL_TIMED_T_VISUAL_RELATIVE;
+    fprintf(stderr, "Sending SEEK_GOAL (Visual, Relative)\n");
+    drc_seek_goal_timed_t_publish(self->lc, "SEEK_GOAL", &msgout);       
+    bot_viewer_set_status_bar_message(self->viewer, "Sent SEEK_GOAL (Visual, Relative)");
+  }  
+
+  /*
+  // Set goal:
+  drc_nav_goal_timed_t msgout;
+  msgout.utime = self->robot_utime; //bot_timestamp_now();
+  msgout.timeout = (int64_t) 1E6*self->goal_timeout; //self->goal_timeout;
+  msgout.robot_name = "wheeled_atlas"; // this should be set from robot state message
+  msgout.goal_pos.translation.z = 0;
+  msgout.goal_pos.rotation.w = 1; // Null heading
+  msgout.goal_pos.rotation.x = 0;
+  msgout.goal_pos.rotation.y = 0;
+  msgout.goal_pos.rotation.z = 0;
+  if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
+    msgout.goal_pos.translation.x = self->local_pointpose_to[0];
+    msgout.goal_pos.translation.y = self->local_pointpose_to[1];
+    fprintf(stderr, "Sending NAV_GOAL_TIMED\n");
+    drc_nav_goal_timed_t_publish(self->lc, "NAV_GOAL_TIMED", &msgout); 
+    bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL_TIMED (Visual) ");
+  }else if (self->visual_goal_type == VISUAL_GOAL_RELATIVE){
+    msgout.goal_pos.translation.x = self->body_pointpose_to[0];
+    msgout.goal_pos.translation.y = self->body_pointpose_to[1];
+    fprintf(stderr, "Sending RELATIVE_NAV_GOAL_TIMED\n");
+    drc_nav_goal_timed_t_publish(self->lc, "RELATIVE_NAV_GOAL_TIMED", &msgout);       
+    bot_viewer_set_status_bar_message(self->viewer, "Sent RELATIVE_NAV_GOAL_TIMED (Visual) ");
+  }
+  */
+}
+
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererDriving *self = (RendererDriving*) user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
+  self->visual_goal_type =(visual_goal_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_VISUAL_GOAL_TYPE);
   
-  if(!strcmp(name, PARAM_REINITIALIZE)) {
-    fprintf(stderr,"\nClicked REINIT\n");
-    bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    activate(self, 1);
+  if(!strcmp(name, PARAM_VISUAL_GOAL)) {
+    send_seek_goal_visual(self);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
     bot_viewer_request_pick (self->viewer, &(self->ehandler));
@@ -750,6 +844,62 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
   
   self->robot_utime =msg->utime;
   
+  // Remove the pose roll and pitch:
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
+                                               msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  double ypr[3];
+  quat_to_euler(quat, ypr[0], ypr[1], ypr[2]);
+  ypr[1] =0; ypr[2] =0;
+  Eigen::Quaterniond quat_yaw_only = euler_to_quat(ypr[0], ypr[1], ypr[2]);
+  self->robot_pose.setIdentity();
+  self->robot_pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+  self->robot_pose.rotate(quat_yaw_only);    
+  self->robot_yaw = ypr[0]; // for convenece keep the yaw
+
+  // Determine the left and right max turning circles:
+  Eigen::Isometry3d offset;
+  offset.setIdentity();
+  offset.translation()  << 0, self->min_turn_radius,0;
+  self->center_arc_left = self->robot_pose * offset;
+  offset.translation()  << 0,- (self->min_turn_radius) ,0;
+  self->center_arc_right = self->robot_pose * offset;
+  bot_viewer_request_redraw(self->viewer);
+}
+
+
+static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel, 
+                               const perception_pointing_vector_t *msg, void *user){
+  RendererDriving *self = (RendererDriving*) user;
+  cout << "got pointing vector\n";
+  
+  // Convert vector into point very far away
+  double scale = 100.0;
+  double goal_pos[]={scale*msg->vec[0], scale*msg->vec[1],scale* msg->vec[2]};
+  
+  int status_local,status_body;
+  Eigen::Isometry3d cam_to_local;
+  Eigen::Isometry3d cam_to_body;
+  status_local = self->bot_frames_cpp->get_trans_with_utime( self->bot_frames , "CAMERA",  "local", msg->utime, cam_to_local);
+  status_body = self->bot_frames_cpp->get_trans_with_utime(  self->bot_frames , "CAMERA",  "body", msg->utime, cam_to_body);
+
+  if ((0 == status_local) ||(0 == status_body  )) {
+    std::cerr << "SensorDataReceiver: cannot get transform from CAMERA to frame" << std::endl;
+  }
+
+//  Eigen::Vector4d pos_vec1= Eigen::Vector4d(goal_pos[0], goal_pos[1], goal_pos[2], 1);
+  self->local_pointpose_to  =  cam_to_local* Eigen::Vector4d(goal_pos[0], goal_pos[1], goal_pos[2], 1);
+  self->local_pointpose_from=  cam_to_local* Eigen::Vector4d(0,0,0, 1);
+  
+  Eigen::Vector4d pos_vec= Eigen::Vector4d(goal_pos[0], goal_pos[1], goal_pos[2], 1);
+  self->body_pointpose_to  =  cam_to_body*pos_vec;
+  Eigen::Vector4d null_vec= Eigen::Vector4d(0,0,0, 1);
+  self->body_pointpose_from=  cam_to_body*null_vec;
+
+  cout << "bottom\n";
+  
+  
+  /*
+  self->robot_utime =msg->utime;
   
   // Remove the pose roll and pitch:
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
@@ -770,11 +920,10 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
   self->center_arc_left = self->robot_pose * offset;
   offset.translation()  << 0,- (self->min_turn_radius) ,0;
   self->center_arc_right = self->robot_pose * offset;
-  
-  bot_viewer_request_redraw(self->viewer);
-  
-  
+  bot_viewer_request_redraw(self->viewer);*/
 }
+
+
 
 static void
 _free (BotRenderer *renderer)
@@ -782,9 +931,10 @@ _free (BotRenderer *renderer)
   free (renderer);
 }
 
-BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t *lcm)
+BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param, BotFrames * frames)
 {
-  RendererDriving *self = (RendererDriving*) calloc (1, sizeof (RendererDriving));
+  RendererDriving *self = new RendererDriving();
+//  RendererDriving *self = (RendererDriving*) calloc (1, sizeof (RendererDriving));
   self->viewer = viewer;
   self->renderer.draw = _draw;
   self->renderer.destroy = _free;
@@ -806,7 +956,12 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
+  self->bot_param = param;
+  self->bot_frames = frames;  
   self->robot_pose.setIdentity();
+  
+  self->heightmap_res = HEIGHTMAP_RES_LOW;
+  self->visual_goal_type = VISUAL_GOAL_GLOBAL;
   
   self->goal_timeout =5.0;
   self->min_turn_radius =4.0; /// Assumed Example: http://www.atv.com/manufacturers/john-deere/2011-john-deere-gator-xuv-825i-4x4-review-1798.html
@@ -815,22 +970,26 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   self->center_arc_left.setIdentity();
   self->center_arc_right.setIdentity();
   
+  // TODO: set these to null at init:
+  // self->local_pointpose_from | self->local_pointpose_to
   
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
-
+  perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
+  
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_VISUAL_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, VISUAL_GOAL_GLOBAL, "Global", VISUAL_GOAL_GLOBAL, "Relative", VISUAL_GOAL_RELATIVE, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_VISUAL_GOAL, NULL);
 
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHTMAP_RES, BOT_GTK_PARAM_WIDGET_MENU, HEIGHTMAP_RES_LOW, "High", HEIGHTMAP_RES_HIGH, "Low", HEIGHTMAP_RES_LOW, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_HEIGHTMAP, NULL);
 
-  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 0.05, 0.25);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 1.0, 0.025, 0.25);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
@@ -841,8 +1000,9 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   return &self->renderer;
 }
 
-void setup_renderer_driving(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void setup_renderer_driving(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
+    BotFrames * frames)
 {
-  bot_viewer_add_renderer_on_side(viewer, renderer_driving_new(viewer, render_priority, lcm),
+  bot_viewer_add_renderer_on_side(viewer, renderer_driving_new(viewer, render_priority, lcm, param, frames),
       render_priority , 0);
 }
