@@ -45,7 +45,7 @@ class HokuyoSpinPlugin : public ModelPlugin
     
     // Initial default rotation rate of laser:
     // TODO: read from config:
-    this->target_velocity = M_PI/2;
+    this->target_velocity = 0.25;
       
     // LCM receive thread:
     this->callback_queue_thread_ = boost::thread(boost::bind(&HokuyoSpinPlugin::QueueThread, this));
@@ -93,7 +93,7 @@ class HokuyoSpinPlugin : public ModelPlugin
   // Called by the world update start event
   public: void OnUpdate(){
     //      this->head_hokuyo_joint_->SetForce(0, 0.02); // continually accelerating
-    this->head_hokuyo_joint_->SetVelocity(0,target_velocity );
+    this->head_hokuyo_joint_->SetVelocity(0,target_velocity*2*M_PI );
     this->head_hokuyo_joint_->SetMaxForce(0, 5.0); // from sisir's diff drive plugin 
 
     /*
