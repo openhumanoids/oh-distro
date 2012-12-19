@@ -24,6 +24,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace robot_plan_renderer;
 
 typedef struct _RendererRobotPlan
 {
@@ -84,15 +85,22 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   
   if (type == SPHERE)
     {
-  glPushMatrix();
+
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
-      glPointSize(radius);
-      //glColor3ub(0,1,0);
-      glBegin(GL_POINTS);
-      glVertex3f(radius, radius, radius);
-      glEnd();
-      glPopMatrix();
+      
+//        glPushMatrix();
+//      glPointSize(radius);
+//      //glColor3ub(0,1,0);
+//      glBegin(GL_POINTS);
+//      glVertex3f(radius, radius, radius);
+//      glEnd();
+//      glPopMatrix();
+
+       glPushMatrix();
+       glTranslatef(nextTf.tf.translation.x, nextTf.tf.translation.y, nextTf.tf.translation.z);
+	     drawSphere(6,  radius);
+       glPopMatrix();
     }
   else if  (type == BOX)
     {
