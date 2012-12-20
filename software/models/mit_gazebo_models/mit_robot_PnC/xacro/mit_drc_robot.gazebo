@@ -1,18 +1,21 @@
 <robot name="drc_skeleton">
   <gazebo>
     <!-- robot model offset -->
-    <pose>0 0 0.93 0 0 0</pose>
+    <pose>0 0 0.928 0 0 0</pose>
   </gazebo>
  <gazebo>
+ <!--
     <plugin filename="libMITRobotPlugin.so" name="mit_drc_robot_plugin">
       <mode>nominal</mode>
       <harnessed>false</harnessed>
     </plugin>
-<!--    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
-    </plugin> -->
-
+    </plugin> 
+ -->
+    <plugin filename="libDRCRobotPlugin.so" name="drc_robot_plugin"/>
+    
     <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
