@@ -26,6 +26,8 @@
 #define RENDERER_NAME "Humanoid"
 #define PARAM_PICKING "Enable Selection"
 #define PARAM_WIRE "Show BBoxs"  
+#define PARAM_COLOR_ALPHA "Alpha"
+
 
 using namespace std;
 using namespace boost;
@@ -48,6 +50,9 @@ typedef struct _RendererHumanoid
   Eigen::Vector3f ray_start;
   Eigen::Vector3f ray_end;
   std::string* selection;
+  
+  // transparency of the model:
+  double alpha;
 } RendererHumanoid;
 
 static void
@@ -209,87 +214,82 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
     glPopMatrix();
   
 
-  }
-  else if  (type == CYLINDER)
-    {
+  }else if  (type == CYLINDER){
+    shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
+    /*glPointSize(10.0f);
+    glColor3ub(0,1,0);
+    glBegin(GL_POINTS);
+    glVertex3f(nextTf.tf.translation.x,
+    nextTf.tf.translation.y,
+    nextTf.tf.translation.z);
+    glEnd();*/
 
 
 
-      shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
-      /*glPointSize(10.0f);
-      glColor3ub(0,1,0);
-      glBegin(GL_POINTS);
-      glVertex3f(nextTf.tf.translation.x,
-	       nextTf.tf.translation.y,
-	       nextTf.tf.translation.z);
-	       glEnd();*/
+    glPushMatrix();
+    double v[] = {0,0, -cyl->length/2.0};
+    double result[3];
+    bot_quat_rotate_to(quat,v,result);
 
+    // Translate tf origin to cylinder centre
+    glTranslatef(result[0],result[1],result[2]); 
 
+    glTranslatef(nextTf.tf.translation.x,
+      nextTf.tf.translation.y,
+      nextTf.tf.translation.z);
 
-     glPushMatrix();
-     double v[] = {0,0, -cyl->length/2.0};
-     double result[3];
-     bot_quat_rotate_to(quat,v,result);
+    glRotatef(theta * 180/3.141592654, 
+    axis[0], axis[1], axis[2]); 
 
-   // Translate tf origin to cylinder centre
-     glTranslatef(result[0],result[1],result[2]); 
+    gluCylinder(quadric,
+      cyl->radius,
+      cyl->radius,
+      (double) cyl->length,
+      36,
+      1);
 
-     glTranslatef(nextTf.tf.translation.x,
-		   nextTf.tf.translation.y,
-		   nextTf.tf.translation.z);
- 
-     glRotatef(theta * 180/3.141592654, 
-       		axis[0], axis[1], axis[2]); 
+    //gluDeleteQuadric(quadric);
+    glPopMatrix();
 
-       gluCylinder(quadric,
-		  cyl->radius,
-		  cyl->radius,
-		  (double) cyl->length,
-		  36,
-		  1);
+    // drawing two disks to make a SOLID cylinder
+    glPushMatrix();  
 
-  //gluDeleteQuadric(quadric);
-  glPopMatrix();
+    v[2] = -(cyl->length/2.0);
+    bot_quat_rotate_to(quat,v,result);
 
-// drawing two disks to make a SOLID cylinder
-  glPushMatrix();  
+    // Translate tf origin to cylinder centre
+    glTranslatef(result[0],result[1],result[2]); 
+    glTranslatef(nextTf.tf.translation.x,
+      nextTf.tf.translation.y,
+      nextTf.tf.translation.z);
+      glRotatef(theta * 180/3.141592654, 
+      axis[0], axis[1], axis[2]); 
+    gluDisk(quadric,
+      0,
+      cyl->radius,
+      36,
+      1);
+    glPopMatrix();
+    glPushMatrix(); 
 
-  v[2] = -(cyl->length/2.0);
-  bot_quat_rotate_to(quat,v,result);
+    v[2] = (cyl->length/2.0);
+    bot_quat_rotate_to(quat,v,result);
 
-   // Translate tf origin to cylinder centre
-     glTranslatef(result[0],result[1],result[2]); 
-     glTranslatef(nextTf.tf.translation.x,
-		   nextTf.tf.translation.y,
-		   nextTf.tf.translation.z);
-     glRotatef(theta * 180/3.141592654, 
-       		axis[0], axis[1], axis[2]); 
-     gluDisk(quadric,
-		  0,
-		  cyl->radius,
-		  36,
-		  1);
-  glPopMatrix();
-  glPushMatrix(); 
+    // Translate tf origin to cylinder centre
+    glTranslatef(result[0],result[1],result[2]); 
+    glTranslatef(nextTf.tf.translation.x,
+      nextTf.tf.translation.y,
+      nextTf.tf.translation.z);
+    glRotatef(theta * 180/3.141592654, 
+      axis[0], axis[1], axis[2]); 
+    gluDisk(quadric,
+      0,
+      cyl->radius,
+      36,
+      1);
+    glPopMatrix();
 
- v[2] = (cyl->length/2.0);
-  bot_quat_rotate_to(quat,v,result);
-
-   // Translate tf origin to cylinder centre
-     glTranslatef(result[0],result[1],result[2]); 
-     glTranslatef(nextTf.tf.translation.x,
-		   nextTf.tf.translation.y,
-		   nextTf.tf.translation.z);
-     glRotatef(theta * 180/3.141592654, 
-       		axis[0], axis[1], axis[2]); 
-     gluDisk(quadric,
-		  0,
-		  cyl->radius,
-		  36,
-		  1);
-  glPopMatrix();
-
-      //cout << "CYLINDER"<< endl;
+    //cout << "CYLINDER"<< endl;
     //cout << "radius : "<<  cyl->radius << endl;
     //cout << "length : "<<  cyl->length << endl;
     // drawBox(radius,length, it->second -> visual->origin);
@@ -395,20 +395,19 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
  
  double c[3] = {0.3,0.3,0.3};
- double alpha = 1;
   //glColor3f(c[0],c[1],c[2]);
-  glColor4f(c[0],c[1],c[2],alpha);
+  glColor4f(c[0],c[1],c[2],self->alpha);
   for(uint i = 0; i < link_tfs.size(); i++)
     {
       drc::link_transform_t nextTf = link_tfs[i];
       shared_ptr<urdf::Geometry> nextLink = link_shapes[i];
       string nextLinkname = link_names[i];
       if((self->picking)&&((*self->selection) == nextLinkname)) {
-        glColor4f(0.7,0.1,0.1,alpha);     
+        glColor4f(0.7,0.1,0.1,self->alpha);     
       }
       else
       {
-       glColor4f(c[0],c[1],c[2],alpha);
+       glColor4f(c[0],c[1],c[2],self->alpha);
       }
       draw(nextLink, nextTf,nextLinkname,super);
     }
@@ -422,25 +421,27 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
-	RendererHumanoid *self = (RendererHumanoid*) user;
-	if (! strcmp(name, PARAM_PICKING)) {
-		if (bot_gtk_param_widget_get_bool(pw, PARAM_PICKING)) {
-			bot_viewer_request_pick (self->viewer, &(self->ehandler));
-			self->picking = 1;
-		}
-		else
-			self->picking = 0;
-	}
-    else if(! strcmp(name, PARAM_WIRE)) {
-		if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
-			self->visualize_bbox= true;  
-		}
-		else{
-			self->visualize_bbox = false;
-		}
-    
+  RendererHumanoid *self = (RendererHumanoid*) user;
+  if (! strcmp(name, PARAM_PICKING)) {
+    if (bot_gtk_param_widget_get_bool(pw, PARAM_PICKING)) {
+      bot_viewer_request_pick (self->viewer, &(self->ehandler));
+      self->picking = 1;
+    }
+    else{
+      self->picking = 0;
+    }
   }
-	
+  else if(! strcmp(name, PARAM_WIRE)) {
+    if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
+      self->visualize_bbox= true;  
+    }
+    else{
+      self->visualize_bbox = false;
+    }
+  }else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
+    self->alpha = bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
+    bot_viewer_request_redraw(self->viewer);
+  }
 }
 
 void 
@@ -465,8 +466,11 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
-  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
+    
+    bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
+      
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->picking = 0;
     self->clicked=0;	
