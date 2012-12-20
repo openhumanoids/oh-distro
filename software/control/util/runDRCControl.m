@@ -32,8 +32,6 @@ if (getNumOutputs(controller)>0)
     cmd_publisher = ActuatorCmdPublisher(robot_name,cmd_names,cmd_channel);
 end
 
-global g_scope_enable; g_scope_enable = true;
-
 disp('Controller ready...');
 % just run as fast as possible
 t=options.tspan(1); tic;

@@ -107,7 +107,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
           j = m_joint_map.get("base_pitch");
           if (j!=null) {
             index = j.intValue();
-            fdata.val[index] = Math.asin(2*(x*z - w*y));
+            fdata.val[index] = -Math.asin(2*(x*z - w*y));
             if (fdata.val[index] > Math.PI)
               fdata.val[index] -= 2*Math.PI;
             fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
