@@ -33,8 +33,17 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
       pmsg.origin_cov = new drc.covariance_t();
 
-      pmsg.num_joints = joint_name.length;
-      pmsg.joint_name = joint_name;
+      int num_nonfloating_joints = 0;
+      for (int i=0; i<joint_name.length; i++)
+        if (!(joint_name[i].startsWith("base_"))) 
+          num_nonfloating_joints+=1;
+      String[] nonfloating_joint_name = new String[num_nonfloating_joints];
+      int j=0;
+      for (int i=0; i<joint_name.length; i++)
+        if (!(joint_name[i].startsWith("base_"))) 
+          nonfloating_joint_name[j++] = joint_name[i];
+      pmsg.num_joints = num_nonfloating_joints;
+      pmsg.joint_name = nonfloating_joint_name;
       pmsg.joint_position = new float[m_num_joints];
       pmsg.joint_velocity = new float[m_num_joints];
       pmsg.measured_effort = new float[m_num_joints];
