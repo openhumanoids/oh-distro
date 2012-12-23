@@ -186,8 +186,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
        glPushMatrix();
        glTranslatef(nextTf.tf.translation.x, nextTf.tf.translation.y, nextTf.tf.translation.z);
 	     drawSphere(6,  radius);
-    glPopMatrix();
-
+       glPopMatrix();
     
     }
   else if  (type == BOX)
@@ -472,6 +471,7 @@ setup_renderer_humanoid(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
       
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+  	self->alpha = 1.0;
   	self->picking = 0;
     self->clicked=0;	
   	self->selection = new std::string(" ");
