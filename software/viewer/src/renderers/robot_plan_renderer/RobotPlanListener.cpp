@@ -78,9 +78,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     // call a routine that calculates the transforms the robot_state_t* msg.
     map<string, double> jointpos_in;
     for (uint i=0; i< (uint) state_msg.num_joints; i++) { //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(state_msg.joint_name[i], state_msg.joint_position[i]));  
+      jointpos_in.insert(make_pair(state_msg.joint_name[i], state_msg.joint_position[i]));
     }
-    
+   
     map<string, drc::transform_t > cartpos_out;
     
 		  // Calculate forward position kinematics
@@ -102,25 +102,38 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
 	      if(it->second->visual)
 	        {
-	
+	         
 	          urdf::Pose visual_origin = it->second->visual->origin;
 	           
 	          KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_body, T_world_visual;
+	          
+	          
+            double norm_quarternion = sqrt(pow(state_msg.origin_position.rotation.x,2)+pow(state_msg.origin_position.rotation.y,2)+pow(state_msg.origin_position.rotation.z,2)+pow(state_msg.origin_position.rotation.w,2));
+	          	          
+	          if (norm_quarternion==1){
 
 	          T_world_body.p[0]= state_msg.origin_position.translation.x;
 	          T_world_body.p[1]= state_msg.origin_position.translation.y;
 	          T_world_body.p[2]= state_msg.origin_position.translation.z;		    
 	          T_world_body.M =  KDL::Rotation::Quaternion(state_msg.origin_position.rotation.x, state_msg.origin_position.rotation.y, state_msg.origin_position.rotation.z, state_msg.origin_position.rotation.w);
+	          }
+	          else{
+	           std::cout <<"ERROR: Improper body origin quaternion, norm is not 1. Using identity instead." <<std::endl;
+	          T_world_body.p[0]= 0;
+	          T_world_body.p[1]= 0;
+	          T_world_body.p[2]= 0;		    
+	          T_world_body.M =  KDL::Rotation::Quaternion(0,0,0,1);
+	          }
 	          
 	          map<string, drc::transform_t>::const_iterator transform_it;
-	          transform_it=cartpos_out.find(it->first);
+	          transform_it=cartpos_out.find(it->first);  
               
            // usually find fails if base_link has a visual element.
 	         // Kdl based FK ignores the root link which must be set to body pose
 	         // manually (TODO).
            if(transform_it!=cartpos_out.end())// fk cart pos exists
 	         {
-	        
+	            
 	            T_body_parentjoint.p[0]= transform_it->second.translation.x;
 	            T_body_parentjoint.p[1]= transform_it->second.translation.y;
 	            T_body_parentjoint.p[2]= transform_it->second.translation.z;	
@@ -133,6 +146,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	            T_parentjoint_visual.p[2]=visual_origin.position.z;
 	            T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
+
 	            T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
 	           
 	            T_world_visual = T_world_body*T_body_visual;
@@ -141,7 +155,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	            drc::link_transform_t state;	    
 
 	            state.link_name = transform_it->first;
-	
+
 	            // For Body Frame Viewing
 	            //state.tf.translation.x = T_body_visual.p[0];
 	            //state.tf.translation.y = T_body_visual.p[1];
@@ -152,8 +166,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	            state.tf.translation.y = T_world_visual.p[1];
 	            state.tf.translation.z = T_world_visual.p[2];
 	            T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-	              
-
+	            
 	            shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
 
 	            //---store
@@ -240,6 +253,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       shapes = _link_shapes;
       transforms = _link_tfs;
       
+      // for debugging
+      //printTransforms(_link_shapes,_link_tfs);
+      
       //todo: why does the code below seg fault?
       /*
       shapes.clear();
@@ -273,6 +289,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     for (uint i = 0; i < _link_tfs.size(); i++)
       {
 	drc::link_transform_t next = _link_tfs[i];
+	cout << "geom type (SPHERE-0, BOX-1, CYLINDER-2, MESH-3}) : \n" <<_link_shapes[i]->type<< endl;
 	cout << "translation  : " << endl;
 	cout << "\t .x  : " << next.tf.translation.x << endl;
 	cout << "\t .y  : " << next.tf.translation.y << endl;
