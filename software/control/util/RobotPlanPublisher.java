@@ -44,6 +44,7 @@ public class RobotPlanPublisher
         msg.plan[i].origin_position = new drc.position_3d_t();
         msg.plan[i].origin_position.translation = new drc.vector_3d_t();
         msg.plan[i].origin_position.rotation = new drc.quaternion_t();
+        msg.plan[i].origin_position.rotation.w = 1.0;
         msg.plan[i].origin_twist = new drc.twist_t();
         msg.plan[i].origin_twist.linear_velocity = new drc.vector_3d_t();
         msg.plan[i].origin_twist.angular_velocity = new drc.vector_3d_t();
