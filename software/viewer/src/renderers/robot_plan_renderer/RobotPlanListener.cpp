@@ -223,9 +223,23 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
    
    //---------parse the tree and stop listening for urdf messages
 
-   // Parse KDL tree
-    KDL::Tree tree;
-    if (!kdl_parser::treeFromString(_urdf_xml_string,tree))
+      // get root link
+      boost::shared_ptr<const urdf::Link> root_link=robot_model.getRoot();
+ 
+      if(!root_link->inertial){
+       cerr << "WARNING: root link has no inertia, Adding small inertia" << endl;
+       robot_model.root_link_->inertial.reset(new urdf::Inertial);
+       robot_model.root_link_->inertial->mass = 0.01;
+       robot_model.root_link_->inertial->ixx = 0.01;
+       robot_model.root_link_->inertial->iyy = 0.01;
+       robot_model.root_link_->inertial->izz = 0.01;
+      }
+        
+
+      // Parse KDL tree
+      KDL::Tree tree;
+      //if (!kdl_parser::treeFromString(_urdf_xml_string,tree))
+      if (!kdl_parser::treeFromUrdfModel(robot_model,tree))
       {
 	cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl; 
 	return;
@@ -240,13 +254,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _urdf_parsed = true;
 
     cout<< "Number of Joints: " << _joint_names_.size() <<endl;
-    
-            // get root link
-        boost::shared_ptr<const urdf::Link> root_link=robot_model.getRoot();
-   
-        if(!root_link->inertial){
-         cerr << "ERROR: root link has no inertia, KDL will not parse this urdf properly" << endl;
-        }
     
     }//  if(_urdf_parsed ==false) 
 

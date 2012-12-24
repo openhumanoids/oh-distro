@@ -394,10 +394,10 @@ namespace fk
         if(!root_link->inertial){
          cerr << "WARNING: root link has no inertia, Adding small inertia" << endl;
          robot_model.root_link_->inertial.reset(new urdf::Inertial);
-         robot_model.root_link_->inertial.mass = 0.01;
-         robot_model.root_link_->inertial.ixx = 0.01;
-         robot_model.root_link_->inertial.iyy = 0.01;
-         robot_model.root_link_->inertial.izz = 0.01;
+         robot_model.root_link_->inertial->mass = 0.01;
+         robot_model.root_link_->inertial->ixx = 0.01;
+         robot_model.root_link_->inertial->iyy = 0.01;
+         robot_model.root_link_->inertial->izz = 0.01;
         }
         
 
