@@ -241,6 +241,13 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
     cout<< "Number of Joints: " << _joint_names_.size() <<endl;
     
+            // get root link
+        boost::shared_ptr<const urdf::Link> root_link=robot_model.getRoot();
+   
+        if(!root_link->inertial){
+         cerr << "ERROR: root link has no inertia, KDL will not parse this urdf properly" << endl;
+        }
+    
     }//  if(_urdf_parsed ==false) 
 
   } 

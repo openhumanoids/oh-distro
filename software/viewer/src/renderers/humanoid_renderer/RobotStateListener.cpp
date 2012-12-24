@@ -313,6 +313,9 @@ namespace fk
       {
         cerr << "ERROR: Could not generate robot model" << endl;
       }
+      
+
+
 
       typedef map<string, shared_ptr<urdf::Joint> > joints_mapType;
       for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
@@ -401,8 +404,19 @@ namespace fk
       _urdf_parsed = true;
 
       cout<< "Number of Joints: " << _joint_names_.size() <<endl;
+      
+        // get root link
+        boost::shared_ptr<const urdf::Link> root_link=robot_model.getRoot();
+   
+        if(!root_link->inertial){
+         cerr << "ERROR: root link has no inertia, KDL will not parse this urdf properly" << endl;
+        }
 
-    }//  if(_urdf_parsed ==false)   
+
+    }//  if(_urdf_parsed ==false) 
+    
+    
+      
   } // end urdf handler
 
 //-------------------------------------------------------------------------------------      
