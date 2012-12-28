@@ -6,8 +6,8 @@ idx = B'*(1:r.getNumStates()/2)';
 Kp = Point(CoordinateFrame('q_d',length(idx),'d',{r.getStateFrame.coordinates{idx}}));
 Kd = Point(CoordinateFrame('q_d',length(idx),'d',{r.getStateFrame.coordinates{idx}}));
 
-big = 300;
-med = 150;
+big = 1000;
+med = 200;
 sml = 20;
 
 Kp.back_lbz = big;
@@ -39,9 +39,9 @@ Kp.r_leg_mhx = big;
 Kp.r_leg_uay = big;
 Kp.r_leg_uhz = med;
 
-big = 6;
-med = 3;
-sml = 1;
+big = 10;
+med = 2;
+sml = 0.5;
 
 Kd.back_lbz = big;
 Kd.back_mby = big;

@@ -10,7 +10,9 @@ nx = r.getNumStates();
 nq = nx/2;
 
 x0 = Point(r.getStateFrame);
-xstar = r.manip.resolveConstraints(double(x0));
+%xstar = r.manip.resolveConstraints(double(x0));
+x0.pelvis_z = 0.928;
+xstar = double(x0);
 
 c = COMController(r,xstar(1:nq));
 

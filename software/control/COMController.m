@@ -42,10 +42,10 @@ classdef COMController < DrakeSystem
         obj.Ieps = zeros(obj.nc*obj.dim,obj.nparams);
         obj.Ieps(:,obj.nq+obj.nu+obj.nc+obj.nc*obj.dim+(1:obj.nc*obj.dim)) = eye(obj.nc*obj.dim);
 
-        obj.lb = [-1e3*ones(1,obj.nq) p.manip.umin' zeros(1,obj.nf)   -.1*ones(1,obj.nc*obj.dim)]'; % acceleration/input/contact force/lambda/slack vars
-        obj.ub = [ 1e3*ones(1,obj.nq) p.manip.umax' 1e4*ones(1,obj.nf) .1*ones(1,obj.nc*obj.dim)]';
+        obj.lb = [-1e3*ones(1,obj.nq) p.manip.umin' zeros(1,obj.nf)   -.01*ones(1,obj.nc*obj.dim)]'; % acceleration/input/contact force/lambda/slack vars
+        obj.ub = [ 1e3*ones(1,obj.nq) p.manip.umax' 1e4*ones(1,obj.nf) .01*ones(1,obj.nc*obj.dim)]';
 
-        global alpha;
+        global alpha ;
         alpha = zeros(obj.nparams,1);
     end
     
@@ -58,120 +58,130 @@ classdef COMController < DrakeSystem
 
         x = u;
         p = obj.plant;
-        
-        global alpha;
+                
+        global alpha ;
+            q = x(1:obj.nq); 
+            qd = x(obj.nq+(1:obj.nq));
 
-        q = x(1:obj.nq); 
-        qd = x(obj.nq+(1:obj.nq));
+            [H,C,B] = p.manip.manipulatorDynamics(q,qd);
+            [foot_pos,Jp,dJp,phi,Jc,D_] = p.manip.contactPositionsAndConstraints(q);
+            % D_ is the parameterization of the polyhedral approximation of the 
+            %    friction cone, in joint coordinates (figure 1 from Stewart96)
+            %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
 
-        [H,C,B] = p.manip.manipulatorDynamics(q,qd);
-        [foot_pos,Jp,dJp,phi,Jc,D_] = p.manip.contactPositionsAndConstraints(q);
-        % D_ is the parameterization of the polyhedral approximation of the 
-        %    friction cone, in joint coordinates (figure 1 from Stewart96)
-        %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
-
-        % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for the kth
-        % contact point
-        D = cell(1,obj.nc);
-        for k=1:obj.nc
-            for i=1:obj.nd
-                D{k}(:,i) = D_{i}(k,:)'; 
+            % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for the kth
+            % contact point
+            D = cell(1,obj.nc);
+            for k=1:obj.nc
+                for i=1:obj.nd
+                    D{k}(:,i) = D_{i}(k,:)'; 
+                end
             end
-        end
-        Dbar = [D{:}];
-
-        if any(phi < -1e-6)
-          warning('contact point penetration...');
-        end
-        phi
-        
-        %[foot_pos,Jp,dJp] = p.manip.contactPositions(q);
-        %[~,~,~,mu] = p.manip.collisionDetect(pos);
-        mu = ones(obj.nc,1);
-
-        Aeq_ = cell(1,3+obj.nc);
-        beq_ = cell(1,3+obj.nc);
-        Ain_ = cell(1,obj.nc);
-        bin_ = cell(1,obj.nc);
-
-        % CT dynamics constraint
-        Aeq_{1} = H*obj.Iqdd - B*obj.Iu - Jc'*obj.Iz - Dbar*obj.Ibeta;
-        beq_{1} = -C;
-
-        % no-slip constraint
-        Jpdot = zeros(obj.nc*obj.dim,obj.nq);
-        for i=1:obj.nq
-            Jpdot(:,i) = dJp(:,(i-1)*obj.nq+(1:obj.nq))*qd;
-        end
-        Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
-        beq_{2} = -Jpdot*qd;
-
-        % complementarity constraints
-        phi(abs(phi)<1e-4) = 0; % epsilon is close enough
-        Aeq_{3} = phi'*obj.Iz;
-        beq_{3} = 0;
-
-        for i=1:obj.nc
-            Aeq_{3+i} = (D{i}'*qd)'*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-            beq_{3+i} = 0;
-            Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-            bin_{i} = 0;
-        end
-
-        % linear equality constraints: Aeq*alpha = beq
-        Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
-        beq = vertcat(beq_{:});
-
-        % linear inequality constraints: Ain*alpha <= bin
-        Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(obj.nparams),obj.nc,1));
-        bin = vertcat(bin_{:});
-
-        % set up objective function
-        min_xf = min(foot_pos(1,:));
-        max_xf = max(foot_pos(1,:));
-        if (obj.dim==2)
-            com_des = [mean([max_xf,min_xf]); 0.94];
-        else
-            min_yf = min(foot_pos(2,:));
-            max_yf = max(foot_pos(2,:));
-            com_des = [mean([max_xf,min_xf]); mean([max_yf,min_yf]); 0.94];
-        end
-
-        [cm,J,dJ] = p.manip.model.getCOM(q);
-        Jdot = zeros(obj.dim,obj.nq);
-        for i=1:obj.nq
-            Jdot(:,i) = dJ(:,(i-1)*obj.nq+(1:obj.nq))*qd;
-        end
-
-        % COM PD controller
-        Kp = 500*eye(obj.dim); 
-        %Kp = 0.5*eye(obj.dim) / norm(err); 
-        %Kp = max(0.1*eye(obj.dim),min(10*eye(obj.dim),Kp));
-        Kd = 55*eye(obj.dim);
-
-        Kp(obj.dim,obj.dim) = 0; % ignore z
-        Kd(obj.dim,obj.dim) = 0; % ignore z
-
-        err = com_des - cm;
-        cm_dot = J*qd;
-        cm_ddot_des = Kp*err - Kd*cm_dot;
-
-        % nominal pose PD controller
-        Kp_q = 15*eye(obj.nq);
-        Kd_q = 5*eye(obj.nq);
-        err_q = obj.qstar - q;
-        qdd_des = Kp_q*err_q - Kd_q*qd;
-
-        w_com = 1.0;
-        w_q = 0.3;
-
-        Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
-        Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0
-        fqp = horzcat(w_com*(Jdot*qd - cm_ddot_des)'*J*obj.Iqdd, -w_q*qdd_des'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
-
-        alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
+            Dbar = [D{:}];
             
-        y=0*alpha(obj.nq+(1:obj.nu));
+            if any(phi < -1e-5)
+              warning('COMController: Detected contact point penetration...');
+            end
+            
+            in_contact = phi(abs(phi)<1e-4); % epsilon is close enough
+
+
+            %[foot_pos,Jp,dJp] = p.manip.contactPositions(q);
+            %[~,~,~,mu] = p.manip.collisionDetect(pos);
+            mu = ones(obj.nc,1);
+            
+            Aeq_ = cell(1,3+obj.nc);
+            beq_ = cell(1,3+obj.nc);
+            Ain_ = cell(1,obj.nc);
+            bin_ = cell(1,obj.nc);
+            
+            % CT dynamics constraint
+            Aeq_{1} = H*obj.Iqdd - B*obj.Iu - Jc'*obj.Iz - Dbar*obj.Ibeta;
+            beq_{1} = -C;
+
+            % no-slip constraint
+            Jpdot = zeros(obj.nc*obj.dim,obj.nq);
+            for i=1:obj.nq
+                Jpdot(:,i) = dJp(:,(i-1)*obj.nq+(1:obj.nq))*qd;
+            end
+            Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
+            beq_{2} = -Jpdot*qd;
+
+            % complementarity constraints
+            %phi(abs(phi)<1e-4) = 0; % epsilon is close enough
+            %Aeq_{3} = phi'*obj.Iz;
+            %beq_{3} = 0;
+
+            for i=1:obj.nc
+                %Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+                %beq_{3+i} = 0;
+                Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+                bin_{i} = 0;
+            end
+
+            % linear equality constraints: Aeq*alpha = beq
+            %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
+            Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
+            beq = vertcat(beq_{:});
+
+            % linear inequality constraints: Ain*alpha <= bin
+            Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(obj.nparams),obj.nc,1));
+            bin = vertcat(bin_{:});
+
+            % set up objective function
+            min_xf = min(foot_pos(1,:));
+            max_xf = max(foot_pos(1,:));
+            if (obj.dim==2)
+                com_des = [mean([max_xf,min_xf]); 0.94];
+            else
+                min_yf = min(foot_pos(2,:));
+                max_yf = max(foot_pos(2,:));
+                com_des = [mean([max_xf,min_xf]); mean([max_yf,min_yf]); 0.94];
+            end
+
+            [cm,J,dJ] = p.manip.model.getCOM(q);
+            Jdot = zeros(obj.dim,obj.nq);
+            for i=1:obj.nq
+                Jdot(:,i) = dJ(:,(i-1)*obj.nq+(1:obj.nq))*qd;
+            end
+
+            % COM PD controller
+            Kp = 500*eye(obj.dim); 
+            %Kp = 0.5*eye(obj.dim) / norm(err); 
+            %Kp = max(0.1*eye(obj.dim),min(10*eye(obj.dim),Kp));
+            Kd = 55*eye(obj.dim);
+
+            Kp(obj.dim,obj.dim) = 0; % ignore z
+            Kd(obj.dim,obj.dim) = 0; % ignore z
+            
+            err = com_des - cm;
+            cm_dot = J*qd;
+            cm_ddot_des = Kp*err - Kd*cm_dot;
+
+            % nominal pose PD controller
+            Kp_q = 20*eye(obj.nq);
+            Kd_q = 5*eye(obj.nq);
+            Kp_q(1:6,1:6) = zeros(6); % ignore free body dofs
+            Kd_q(1:6,1:6) = zeros(6); % ignore free body dofs
+            err_q = obj.qstar - q;
+            qdd_des = Kp_q*err_q - Kd_q*qd;
+
+            
+
+            w_com = 0.0;
+            w_q = 1.0;
+
+            Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
+            Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0
+            fqp = horzcat(w_com*(Jdot*qd - cm_ddot_des)'*J*obj.Iqdd, -w_q*qdd_des'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
+            
+            alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
+            
+%             y=alpha(obj.nq+(1:obj.nu));
+%             t
+%             x'
+%             y'
+        y=alpha(obj.nq+(1:obj.nu));
            
     end
     end

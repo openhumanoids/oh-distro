@@ -35,7 +35,7 @@ disp('PD controller ready...');
 while (1)
   [x,ts] = getNextMessage(state_listener,1);
   if (~isempty(x))
-    t = ts/10
+    t = ts/10;
     u_ff = pdff.output(t,[],theta_des);
     u_fb = pdfb.output(t,[],x);
     u = u_ff + u_fb;
