@@ -1,5 +1,4 @@
 <robot name="drc_skeleton">
-    <!-- Pelvis must be first link for proper Drake parsing -->
     <link name="pelvis">
         <inertial>
             <mass value="14.2529" />
@@ -65,29 +64,29 @@
             </geometry>
         </visual>
         <collision>
-	  <origin rpy="0 0 0" xyz="0.18 -0.03 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="0.18 0.03 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="-0.07 0.056 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="-0.07 -0.056 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
+	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
+	  	  <geometry>
+	    	<sphere radius="0"/>
+	  	  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
     </link>
     <link name="l_hand">
         <inertial>
@@ -271,29 +270,29 @@
             </geometry>
         </visual>
         <collision>
-	  <origin rpy="0 0 0" xyz="0.18 -0.03 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="0.18 0.03 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="-0.07 0.056 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
-	<collision>
-	  <origin rpy="0 0 0" xyz="-0.07 -0.056 -0.08"/>
-	  <geometry>
-	    <sphere radius="0"/>
-	  </geometry>
-	</collision>
+	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
+	  	  <geometry>
+	    	<sphere radius="0"/>
+	  	  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
+		<collision>
+		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
+		  <geometry>
+			<sphere radius="0"/>
+		  </geometry>
+		</collision>
     </link>
     <link name="r_hand">
         <inertial>

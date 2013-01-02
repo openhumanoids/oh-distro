@@ -1,5 +1,4 @@
 <robot name="drc_skeleton">
-    <!-- Pelvis must be first link for proper Drake parsing -->
     <link name="pelvis">
         <inertial>
             <mass value="14.2529" />
