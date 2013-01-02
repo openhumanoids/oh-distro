@@ -150,11 +150,11 @@ int main(int argc, char *argv[]){
   pthread_join(threadHuboToLCM, NULL);
 
   // Report thread failures
-  if(rtnValL2RThread) {
-    std::cerr<<"ERROR in LCMToHuboThread, returned value: "<<rtnValL2RThread<<std::endl;
+  if(rtnValL2HThread) {
+    std::cerr<<"ERROR in LCMToHuboThread, returned value: "<<rtnValL2HThread<<std::endl;
   }
-  if(rtnValR2LThread) {
-    std::cerr<<"ERROR in HuboToLCMThread, returned value: "<<rtnValR2LThread<<std::endl;
+  if(rtnValH2LThread) {
+    std::cerr<<"ERROR in HuboToLCMThread, returned value: "<<rtnValH2LThread<<std::endl;
   }
 
   // Destroy LCM, although this may not happen because ctrl-c exit
@@ -175,7 +175,6 @@ void *lcmToHuboLooper(void *data){
 
   // Publish GPS Origin message
   HuboTranslator publish_gps_origin("#trash_string",LAT_ORIGIN, LON_ORIGIN,lcm);
-  publish_gps_origin.PublishGPSToLocal(LAT_ORIGIN, LON_ORIGIN);
   publish_gps_origin.~HuboTranslator();
   
   std::cout<<"Waiting for LCM posts... "<<"translating to port "<<huboPort<<" at "<<huboHost<<std::endl;

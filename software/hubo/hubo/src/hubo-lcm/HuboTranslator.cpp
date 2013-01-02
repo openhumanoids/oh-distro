@@ -48,7 +48,7 @@
 
 
 // Overloaded constructor, used for HUBO-to-LCM communications
-HuboTranslator::HuboTranslator(const string inputString, lcm_t *lcm_ptr){
+HuboTranslator::HuboTranslator(const string inputString,double lat, double lon, lcm_t *lcm_ptr){
   HuboTrans_verbose = 1;
 
   // std::cout<<"running HuboTranslator::HuboTranslator constructor\n";
@@ -100,20 +100,14 @@ int HuboTranslator::VerifyChecksum(string *msg)
 // ****************************************************************
 
 
-int HuboTranslator::ParseAndPublishRawString()
+int HuboTranslator::ParseAndPublishRawString(){
 
-  if(ParseAndPublishJointRefMsg(&rawString)) return 1;
+  if(ParseAndPublishStateMsg(&rawString)) return 1;
 
   return 0;  
 }
 
-int HuboTranslator::ParseAndPublishStateMsg(string *msg)
-{
-// publish hubo_state_t LCM message
-  int64_t utime;
-  int32_t hubo_joint_count;
-  
-}
+
 int HuboTranslator::ParseAndPublishStateMsg(string *msg)
 {
   //Take the string sReply and parse it to get vehicle state

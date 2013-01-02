@@ -68,7 +68,6 @@ class HuboTranslator {
 
   std::string rawString;
 
-  int PublishGPSToLocal(double, double);
   int VerifyChecksum(std::string *msg);
   std::string CalcAndAppendChecksum(std::string *msg);
   int ParseAndPublishRawString();
