@@ -121,6 +121,10 @@ void JointActuationPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
       ros::SubscribeOptions::create<atlas_gazebo_msgs::ActuatorCmd>(topicName, 1,
                                                           boost::bind(&JointActuationPlugin::actuationCmdCallback, this, _1),
                                                           ros::VoidPtr(), &queue_);
+  so.transport_hints = ros::TransportHints()
+        .unreliable()
+        .maxDatagramSize(1000)
+        .tcpNoDelay();
   sub_ = rosnode_->subscribe(so);
 
   // start custom queue for diff drive
@@ -206,7 +210,7 @@ void JointActuationPlugin::actuationCmdCallback(const atlas_gazebo_msgs::Actuato
 
 void JointActuationPlugin::QueueThread()
 {
-  static const double timeout = 0.01;
+  static const double timeout = 0.1;
 
   while (alive_ && rosnode_->ok())
   {
