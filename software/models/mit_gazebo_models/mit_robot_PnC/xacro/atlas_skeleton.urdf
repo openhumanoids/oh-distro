@@ -1,4 +1,23 @@
 <robot name="drc_skeleton">
+    <link name="pelvis">
+        <inertial>
+            <mass value="14.2529" />
+            <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
+            <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1" />
+            </geometry>
+        </collision>
+    </link>
     <link name="head">
         <inertial>
             <mass value="2.6" />
@@ -281,25 +300,6 @@
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
                 <mesh filename="package://mit_robot/meshes/mtorso.stl" scale="1 1 1" />
-            </geometry>
-        </collision>
-    </link>
-    <link name="pelvis">
-        <inertial>
-            <mass value="14.2529" />
-            <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
-            <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167" />
-        </inertial>
-        <visual>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
-            </geometry>
-        </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1" />
             </geometry>
         </collision>
     </link>

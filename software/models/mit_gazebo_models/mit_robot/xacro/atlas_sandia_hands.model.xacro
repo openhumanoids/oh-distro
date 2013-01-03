@@ -1,0 +1,20 @@
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="atlas" >
+  
+  <include filename="$(find atlas_utils)/urdf/atlas.urdf" />
+  <include filename="$(find sandia_hand_utils)/urdf/sandia_hand.urdf.xacro" />
+
+  <xacro:sandia_hand side="r" parent="r_hand">
+    <origin xyz="0 -0.1 -0.03" rpy="0 3.1416  1.57079"/>
+  </xacro:sandia_hand>
+  <xacro:sandia_hand side="l" parent="l_hand">
+    <origin xyz="0  0.1 -0.03" rpy="0 3.1416 -1.57079"/>
+  </xacro:sandia_hand>
+
+  <include filename="$(find atlas_utils)/urdf/atlas.gazebo" />
+  <include filename="$(find atlas_utils)/urdf/atlas.transmission" />
+  <include filename="$(find atlas_utils)/urdf/atlas.sensors" />
+</robot>
