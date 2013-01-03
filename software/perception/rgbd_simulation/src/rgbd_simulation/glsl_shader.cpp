@@ -158,7 +158,8 @@ GLenum pcl::simulation::gllib::getGLError ()
   while (error != GL_NO_ERROR)
   {
     last_error = error;
-    std::cout << "Error: OpenGL: " << gluErrorString(error) << std::endl;
+    std::cout << "Error: OpenGL: " << "gluErrorString(error) function mission" << std::endl;
+    //std::cout << "Error: OpenGL: " << gluErrorString(error) << std::endl;
     error = glGetError ();
   }
   return last_error;
