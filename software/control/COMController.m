@@ -16,17 +16,12 @@ classdef COMController < DrakeSystem
         obj = setInputFrame(obj,p.getStateFrame);
         obj = setOutputFrame(obj,p.getInputFrame);
 
-        if isa(p.manip,'PlanarRigidBodyManipulator')
-            obj.nd = 2;
-            obj.dim = 2;
-        else            
-            obj.nd = 4; % for friction cone approx, hard coded for now
-            obj.dim = 3;
-        end
+        obj.nd = 4; % for friction cone approx, hard coded for now
+        obj.dim = 3;
 
-        obj.nu = p.manip.getNumInputs();
-        obj.nq = p.manip.getNumStates()/2;
-        obj.nc = p.manip.num_contacts; 
+        obj.nu = p.getNumInputs();
+        obj.nq = p.getNumStates()/2;
+        obj.nc = p.num_contacts; 
         obj.nf = obj.nc+obj.nc*obj.nd;
         obj.nparams = obj.nq+obj.nu+obj.nf+obj.nc*obj.dim;
         
@@ -42,10 +37,11 @@ classdef COMController < DrakeSystem
         obj.Ieps = zeros(obj.nc*obj.dim,obj.nparams);
         obj.Ieps(:,obj.nq+obj.nu+obj.nc+obj.nc*obj.dim+(1:obj.nc*obj.dim)) = eye(obj.nc*obj.dim);
 
-        obj.lb = [-1e3*ones(1,obj.nq) p.manip.umin' zeros(1,obj.nf)   -.01*ones(1,obj.nc*obj.dim)]'; % acceleration/input/contact force/lambda/slack vars
-        obj.ub = [ 1e3*ones(1,obj.nq) p.manip.umax' 1e4*ones(1,obj.nf) .01*ones(1,obj.nc*obj.dim)]';
+        obj.lb = [-1e3*ones(1,obj.nq) p.umin' zeros(1,obj.nf)   -.1*ones(1,obj.nc*obj.dim)]'; % acceleration/input/contact force/lambda/slack vars
+        obj.ub = [ 1e3*ones(1,obj.nq) p.umax' 1e4*ones(1,obj.nf) .1*ones(1,obj.nc*obj.dim)]';
 
-        global alpha ;
+        global alpha t_prev;
+        t_prev = -1;
         alpha = zeros(obj.nparams,1);
     end
     
@@ -59,12 +55,12 @@ classdef COMController < DrakeSystem
         x = u;
         p = obj.plant;
                 
-        global alpha ;
+        global alpha;
             q = x(1:obj.nq); 
             qd = x(obj.nq+(1:obj.nq));
 
-            [H,C,B] = p.manip.manipulatorDynamics(q,qd);
-            [foot_pos,Jp,dJp,phi,Jc,D_] = p.manip.contactPositionsAndConstraints(q);
+            [H,C,B] = p.manipulatorDynamics(q,qd);
+            [foot_pos,Jp,dJp,phi,Jc,D_] = p.contactPositionsAndConstraints(q);
             % D_ is the parameterization of the polyhedral approximation of the 
             %    friction cone, in joint coordinates (figure 1 from Stewart96)
             %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
@@ -83,11 +79,11 @@ classdef COMController < DrakeSystem
               warning('COMController: Detected contact point penetration...');
             end
             
-            in_contact = phi(abs(phi)<1e-4); % epsilon is close enough
+            %in_contact = phi(abs(phi)<1e-4); % epsilon is close enough
 
 
-            %[foot_pos,Jp,dJp] = p.manip.contactPositions(q);
-            %[~,~,~,mu] = p.manip.collisionDetect(pos);
+            %[foot_pos,Jp,dJp] = p.contactPositions(q);
+            %[~,~,~,mu] = p.collisionDetect(pos);
             mu = ones(obj.nc,1);
             
             Aeq_ = cell(1,3+obj.nc);
@@ -107,21 +103,22 @@ classdef COMController < DrakeSystem
             Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
             beq_{2} = -Jpdot*qd;
 
+            %phi
             % complementarity constraints
-            %phi(abs(phi)<1e-4) = 0; % epsilon is close enough
-            %Aeq_{3} = phi'*obj.Iz;
-            %beq_{3} = 0;
+            phi(abs(phi)<1e-3) = 0; % epsilon is close enough
+            Aeq_{3} = phi'*obj.Iz;
+            beq_{3} = 0;
 
             for i=1:obj.nc
-                %Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-                %beq_{3+i} = 0;
+                Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+                beq_{3+i} = 0;
                 Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
                 bin_{i} = 0;
             end
 
             % linear equality constraints: Aeq*alpha = beq
-            %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
-            Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
+            Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
+            %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
             beq = vertcat(beq_{:});
 
             % linear inequality constraints: Ain*alpha <= bin
@@ -139,7 +136,7 @@ classdef COMController < DrakeSystem
                 com_des = [mean([max_xf,min_xf]); mean([max_yf,min_yf]); 0.94];
             end
 
-            [cm,J,dJ] = p.manip.model.getCOM(q);
+            [cm,J,dJ] = p.getCOM(q);
             Jdot = zeros(obj.dim,obj.nq);
             for i=1:obj.nq
                 Jdot(:,i) = dJ(:,(i-1)*obj.nq+(1:obj.nq))*qd;
@@ -159,14 +156,12 @@ classdef COMController < DrakeSystem
             cm_ddot_des = Kp*err - Kd*cm_dot;
 
             % nominal pose PD controller
-            Kp_q = 20*eye(obj.nq);
+            Kp_q = 15*eye(obj.nq);
             Kd_q = 5*eye(obj.nq);
             Kp_q(1:6,1:6) = zeros(6); % ignore free body dofs
             Kd_q(1:6,1:6) = zeros(6); % ignore free body dofs
             err_q = obj.qstar - q;
             qdd_des = Kp_q*err_q - Kd_q*qd;
-
-            
 
             w_com = 0.0;
             w_q = 1.0;
@@ -177,10 +172,6 @@ classdef COMController < DrakeSystem
             
             alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
             
-%             y=alpha(obj.nq+(1:obj.nu));
-%             t
-%             x'
-%             y'
         y=alpha(obj.nq+(1:obj.nu));
            
     end
