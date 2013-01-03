@@ -10,4 +10,4 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 # build two LCM test programs
-add_subdirectory(src/simulation)
+add_subdirectory(src/rgbd_simulation)
