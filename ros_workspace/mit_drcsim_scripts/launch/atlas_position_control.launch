@@ -28,7 +28,7 @@
   </node>
 
   <!-- Position Controllers -->
-  <rosparam file="$(find atlas)/ros/position_controllers.yaml" command="load" />
+  <rosparam file="$(find mit_drcsim_scripts)/models/mit_robot_PnC/control/position_controllers.yaml" command="load" />
 
   <!-- finger controllers omitted
   <rosparam file="$(find sandia_hand_left)/ros/position_controllers.yaml" command="load" />
