@@ -63,31 +63,83 @@
                 <mesh filename="package://mit_robot/meshes/l_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
+    </link>
+        <link name="l_foot_c1">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
 	  	  <geometry>
-	    	<sphere radius="0"/>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
 	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="l_foot_c2">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="l_foot_c3">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="l_foot_c4">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-    </link>
+	</link>
     <link name="l_hand">
         <inertial>
             <mass value="2.263" />
@@ -269,31 +321,83 @@
                 <mesh filename="package://mit_robot/meshes/r_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
+    </link>
+        <link name="r_foot_c1">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
 	  	  <geometry>
-	    	<sphere radius="0"/>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
 	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="r_foot_c2">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="r_foot_c3">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-		<collision>
-		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
-		  <geometry>
-			<sphere radius="0"/>
-		  </geometry>
+	</link>
+    <link name="r_foot_c4">   
+	    <inertial>
+            <mass value="0.001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+        <visual>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
+		</visual>
+        <collision>
+	  	  <origin rpy="0 0 0" xyz="0 0 0"/>
+	  	  <geometry>
+	    	<sphere radius="0.001"/>
+	  	  </geometry>
 		</collision>
-    </link>
+	</link>
     <link name="r_hand">
         <inertial>
             <mass value="2.263" />
@@ -675,5 +779,45 @@
         <dynamics damping="0.1" friction="0" />
         <limit effort="260" velocity="12" lower="-1.14" upper="0.32" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32" />
+    </joint>
+        <joint name="r_foot_j1" type="fixed">
+        <origin xyz="0.178 0.032 -0.080" rpy="0 0 0" />
+        <parent link="r_foot" />
+        <child link="r_foot_c1" />
+    </joint>
+    <joint name="r_foot_j2" type="fixed">
+        <origin xyz="0.178 -0.032 -0.080" rpy="0 0 0" />
+        <parent link="r_foot" />
+        <child link="r_foot_c2" />
+    </joint>
+    <joint name="r_foot_j3" type="fixed">
+        <origin xyz="-0.075 -0.047 -0.081" rpy="0 0 0" />
+        <parent link="r_foot" />
+        <child link="r_foot_c3" />
+    </joint>
+    <joint name="r_foot_j4" type="fixed">
+        <origin xyz="-0.075 0.048 -0.081" rpy="0 0 0" />
+        <parent link="r_foot" />
+        <child link="r_foot_c4" />
+    </joint>    
+    <joint name="l_foot_j1" type="fixed">
+        <origin xyz="0.178 0.032 -0.080" rpy="0 0 0" />
+        <parent link="l_foot" />
+        <child link="l_foot_c1" />
+    </joint>
+    <joint name="l_foot_j2" type="fixed">
+        <origin xyz="0.178 -0.032 -0.080" rpy="0 0 0" />
+        <parent link="l_foot" />
+        <child link="l_foot_c2" />
+    </joint>
+    <joint name="l_foot_j3" type="fixed">
+        <origin xyz="-0.075 -0.047 -0.081" rpy="0 0 0" />
+        <parent link="l_foot" />
+        <child link="l_foot_c3" />
+    </joint>
+    <joint name="l_foot_j4" type="fixed">
+        <origin xyz="-0.075 0.048 -0.081" rpy="0 0 0" />
+        <parent link="l_foot" />
+        <child link="l_foot_c4" />
     </joint>
 </robot>

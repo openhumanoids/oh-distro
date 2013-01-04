@@ -1089,27 +1089,26 @@
       </plugin>
     </sensor>
   </gazebo>
+  <!--  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas.gazebo" /> -->
   <gazebo>
     <!-- robot model offset -->
-    <pose>0 0 0.95 0 0 0</pose>
+    <pose>0 0 0.927 0 0 0</pose>
   </gazebo>
   <gazebo>
     <plugin filename="libAtlasPlugin.so" name="atlas_plugin"/>
-    <!--
     <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
     </plugin>
-    -->
     <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
     </plugin>
     <plugin filename="libgazebo_ros_pub_robot_state.so" name="gazebo_ros_pub_robot_controller">
       <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
+      <updateRate>100.0</updateRate>
       <topicName>true_robot_state</topicName>
-      <synchronization>true</synchronization>
+      <synchronization>false</synchronization>
     </plugin>
     <plugin filename="libjoint_actuation_plugin.so" name="joint_torque_controller">
       <alwaysOn>true</alwaysOn>

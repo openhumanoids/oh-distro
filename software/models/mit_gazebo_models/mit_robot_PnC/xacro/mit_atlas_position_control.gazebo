@@ -6,12 +6,10 @@
   <gazebo>
     <plugin name="atlas_plugin" filename="libAtlasPlugin.so"/>
 
-	<!--
-    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+	<plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
     </plugin>
-    -->
     
     <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
       <alwaysOn>true</alwaysOn>
@@ -20,9 +18,9 @@
 
     <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
       <alwaysOn>true</alwaysOn>
-      <updateRate>500.0</updateRate>
+      <updateRate>100.0</updateRate>
       <topicName>true_robot_state</topicName>
-      <synchronization>true</synchronization>
+      <synchronization>false</synchronization>
     </plugin>
     
     <plugin name="joint_torque_controller" filename="libjoint_actuation_plugin.so">
