@@ -100,25 +100,25 @@ classdef COMController < DrakeSystem
             for i=1:obj.nq
                 Jpdot(:,i) = dJp(:,(i-1)*obj.nq+(1:obj.nq))*qd;
             end
-            Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
-            beq_{2} = -Jpdot*qd;
+%             Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
+%             beq_{2} = -Jpdot*qd;
 
             %phi
             % complementarity constraints
-            phi(abs(phi)<1e-3) = 0; % epsilon is close enough
-            Aeq_{3} = phi'*obj.Iz;
-            beq_{3} = 0;
+%             phi(abs(phi)<1e-2) = 0; % epsilon is close enough
+%             Aeq_{3} = phi'*obj.Iz;
+%             beq_{3} = 0;
 
             for i=1:obj.nc
-                Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-                beq_{3+i} = 0;
+%                 Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+%                 beq_{3+i} = 0;
                 Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
                 bin_{i} = 0;
             end
 
             % linear equality constraints: Aeq*alpha = beq
-            Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
-            %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
+            %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
+            Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),1,1));
             beq = vertcat(beq_{:});
 
             % linear inequality constraints: Ain*alpha <= bin
@@ -163,8 +163,8 @@ classdef COMController < DrakeSystem
             err_q = obj.qstar - q;
             qdd_des = Kp_q*err_q - Kd_q*qd;
 
-            w_com = 0.0;
-            w_q = 1.0;
+            w_com = 1.0;
+            w_q = 0.3;
 
             Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
             Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0

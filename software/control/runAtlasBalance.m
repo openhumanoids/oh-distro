@@ -30,7 +30,7 @@ while (1)
   [x,ts] = getNextMessage(state_listener,1);
   if (~isempty(x))
     t = ts/10;
-    u = c.output(t,[],x);
+    u = 0*c.output(t,[],x);
 
 %     fprintf('time is %f\n',t);
 %     fprintf('state is %f\n',x);
