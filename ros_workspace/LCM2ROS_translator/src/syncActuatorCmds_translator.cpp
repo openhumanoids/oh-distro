@@ -37,11 +37,8 @@ class ActuatorCmdHandler{
 	
 	void actuator_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::actuator_cmd_t* msg)//what is rbuf and channel here?
 	{
-	
-	
-	
 		atlas_gazebo_msgs::ActuatorCmd actuator_cmd_msg;
-                long t = msg->utime*1000; // from usec to nsec
+        long t = msg->utime*1000; // from usec to nsec
 		actuator_cmd_msg.header.stamp.fromNSec(t);
 		actuator_cmd_msg.robot_name = msg->robot_name;
 		for(std::vector<int>::size_type i=0;i!=msg->actuator_name.size();i++){//So varaibles in lcm message are all in vector type

@@ -44,3 +44,8 @@ rosbuild_add_executable(syncActuatorCmds_translator src/syncActuatorCmds_transla
 
 pods_install_executables(syncActuatorCmds_translator)
 pods_use_pkg_config_packages(syncActuatorCmds_translator lcm lcmtypes_drc_lcmtypes bot2-core) 
+
+rosbuild_add_executable(positionCommandTranslator src/positionCommandTranslator.cpp)
+
+pods_install_executables(positionCommandTranslator)
+pods_use_pkg_config_packages(positionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
