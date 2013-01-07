@@ -70,22 +70,23 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     return;
   }
 
-  // This republishes the head_hokuyo_joint angle as a transform
-  // it assumes the delta pose = [0,0,0,0,0,0] ... 
-  // it is important this is true, if not change it here!
+  // This republishes "hokuyo_joint" as a transform 
+  // i.e. in the urdf: <joint name="hokuyo_joint" type="continuous">
+  // it assumes a fixed delta pose = [-0.0446,0,0.0880,0,0,0] ... 
+  // TODO: use the kinematics solver to solve for head -> hokuyo_link
   for (size_t i=0; i< msg->num_joints; i++){
-    if (   msg->joint_name[i].compare( "head_hokuyo_joint" ) == 0 ){
+    if (   msg->joint_name[i].compare( "hokuyo_joint" ) == 0 ){ // was head_hokuyo_link for DIY system previously
         bot_core::rigid_transform_t tf;
         tf.utime = msg->utime;
-        tf.trans[0] =0;
+        tf.trans[0] =-0.0446; // was zero previously
         tf.trans[1] =0;
-        tf.trans[2] =0;
+        tf.trans[2] =0.0880; // was zero previously
         Eigen::Quaterniond head_quat = euler_to_quat(0,0,msg->joint_position[i]);
         tf.quat[0] =head_quat.w();
         tf.quat[1] =head_quat.x();
         tf.quat[2] =head_quat.y();
         tf.quat[3] =head_quat.z();
-        lcm_->publish("HEAD_TO_HEAD_HOKUYO", &tf);      
+        lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);      
       
     }
   }

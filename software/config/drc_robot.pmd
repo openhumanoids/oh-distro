@@ -20,7 +20,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.sdf";
+        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "localhost";
     }
     cmd "estpub" {
@@ -39,7 +39,7 @@ group "core" {
 
 group "gazebo" {
     cmd "gazebo" {
-        exec = "roslaunch mit_drcsim_scripts mit_manipulation_task_pinned_robot.launch";
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
         host = "localhost";
     }
     cmd "dropleft" {
@@ -73,15 +73,21 @@ group "sensing" {
         exec = "drc-local-map";
         host = "localhost";
     }
-    cmd "lodom_old" {
+    cmd "moest_old" {
         exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
         host = "localhost";
     }
-    cmd "lodom_new" {
+    cmd "moest_new" {
         exec = "drc-motion-estimate-scanmatcher-righted-vertical   -l RIGHTED_SCAN -d -R 36 --pose CAMERA_STATE --mask -3.14,3.14";
         host = "localhost";
     }
+    cmd "moest_ypr" {
+        exec = "drc-motion-estimate-ypr";
+        host = "localhost";
+    }
 }
+
+
 
 group "misc" {
     cmd "spy" {

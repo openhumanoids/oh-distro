@@ -333,7 +333,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
             glCallList (mesh_map_it->second.displaylist);
              
             // (27th Nov- Steven and Sisir)
-            // THE DRC SDF defines the visual origin internally within the mesh vertices, which is wierd.
+            // THE DRC SDF defines the visual origin internally within the mesh vertices, which is weird.
             // The visual origin itself is set to 0,0,0
             // So if you are drawing a simple geometry you need to get the visual origin from the average of the extrema vertices
             //============================================

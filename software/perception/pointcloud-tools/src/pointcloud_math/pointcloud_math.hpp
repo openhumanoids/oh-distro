@@ -50,8 +50,32 @@ struct Isometry3dTime{
 
 
 
+// Convert number to jet colour coordinates
+// In: number between 0-->1
+// Out: rgb jet colours 0->1
+// http://metastine.com/2011/01/implementing-a-continuous-jet-colormap-function-in-glsl/
+static inline void jet_rgb(float value,float rgb[]){
+  float fourValue = (float) 4 * value;
+  rgb[0]   = std::min(fourValue - 1.5, -fourValue + 4.5);
+  rgb[1] = std::min(fourValue - 0.5, -fourValue + 3.5);
+  rgb[2]  = std::min(fourValue + 0.5, -fourValue + 2.5);
+  for (int i=0;i<3;i++){
+   if (rgb[i] <0) {
+     rgb[i] =0;
+   }else if (rgb[i] >1){
+     rgb[i] =1;
+   }
+  }
+}
 
-
+static inline void jet_rgb(float value,std::vector< float > &rgb){
+  float rgb_array[3];
+  jet_rgb(value,rgb_array);
+  rgb.resize(3);
+  rgb[0] = rgb_array[0];
+  rgb[1] = rgb_array[1];
+  rgb[2] = rgb_array[2];
+}
 
 // Simplification of slerp to give a fraction of a quaternion rotation
 // Reimplemented from Peter Cooke's toolbox and libbot2

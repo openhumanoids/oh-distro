@@ -1,5 +1,8 @@
-delete: 
+compilation script:
+rosrun xacro xacro.py atlas_sandia_hands.model.xacro  > ../model.urdf
 
+TODO:
+delete: 
 drc_robot.sensors
 drc_robot_sandia_hands.model.xacro
 drc_skeleton.urdf

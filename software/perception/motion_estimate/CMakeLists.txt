@@ -16,3 +16,5 @@ add_subdirectory(src/motion_estimate_scanmatcher_bolt_vertical)
 add_subdirectory(src/motion_estimate_scanmatcher_righted_vertical)
 add_subdirectory(src/motion_estimate_scanmatcher_rotating)
 
+add_subdirectory(src/motion_estimate_ypr_only)
+

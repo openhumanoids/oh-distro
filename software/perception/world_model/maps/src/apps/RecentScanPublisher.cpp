@@ -1,5 +1,14 @@
+// assume all returns facing latterally are wasted 
+// -> half the scans
+// assume that we cannot see back and that long ranges are useless due to resolution
+// -> 70 degrees per scans
+// 4 scans per degree.
+// 20*70*4 = 5600 measurements per second - regardless of frequency of spinning
+
 #include <iostream>
 #include <boost/thread.hpp>
+#include <boost/asio.hpp>
+
 #include <drc_utils/Clock.hpp>
 #include <maps/PointDataBuffer.hpp>
 #include <maps/SensorDataReceiver.hpp>
@@ -54,6 +63,14 @@ public:
 
   void operator()() {
     while(true) {
+      // wait for timer expiry
+     // boost::asio::io_service service;
+    //  boost::asio::deadline_timer timer(service);
+  //    timer.expires_from_now(boost::posix_time::
+//                             milliseconds(2*1000));
+    //  timer.wait();
+
+      
       SensorDataReceiver::PointCloudWithPose data;
       if (mState->mSensorDataReceiver->waitForData(data)) {
         PointDataBuffer::PointSet pointSet;
@@ -77,12 +94,16 @@ public:
           std::cout << "Previous=" << (mPrevAngle_*180/M_PI) <<
             ", Current=" << (currentAngle*180/M_PI) << std::endl;
 
+            mPrevTime =  data.mTimestamp - 2E6;
+            cout << mPrevTime << " mPrevTime" << "\n";
+            cout << data.mTimestamp << " data.mTimestamp" << "\n";
           maptypes::PointCloud::Ptr cloud =
             mState->mPointDataBuffer->getAsCloud(mPrevTime, data.mTimestamp);
 
           bot_lcmgl_t* lcmgl = mState->mLcmGl;
           
           bot_lcmgl_color3f(lcmgl, pc_vis_->colors[counter_*3], pc_vis_->colors[counter_*3+1], pc_vis_->colors[counter_*3+2]);
+          bot_lcmgl_point_size(lcmgl, 1.5f);
           for (int i = 0; i < cloud->points.size(); ++i) {
             maptypes::PointCloud::PointType point = cloud->points[i];
             bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
@@ -149,7 +170,7 @@ int main(const int iArgc, const char** iArgv) {
                laserChannel, "local");
 
   // set up remaining parameters
-  state.mSensorDataReceiver->setMaxBufferSize(100);
+  state.mSensorDataReceiver->setMaxBufferSize(1000);
 
   // start running data receiver
   state.mSensorDataReceiver->start();

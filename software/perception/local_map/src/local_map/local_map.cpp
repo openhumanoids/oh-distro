@@ -264,7 +264,6 @@ void local_map::send_newmap(){
   cloud->is_dense = false;
   cloud->points.resize (0);
   cloud_counter++;
-  cloud_counter++;
   if(cloud_counter*3 >= pc_vis_->colors.size() ){
     cloud_counter=0; 
   }  
