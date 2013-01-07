@@ -44,7 +44,9 @@ namespace collision_detection {
     ~Collision_Detector();
 
     void add_collision_object( Collision_Object * collisionObject, short int filterGroup = btBroadphaseProxy::DefaultFilter, short int filterMask = btBroadphaseProxy::AllFilter );
+    void clear_collision_object( Collision_Object* collisionObject );
     void clear_collision_objects( void );
+    
     void update_collision_objects( void );
       
     unsigned int num_collisions( void );

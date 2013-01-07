@@ -1,5 +1,6 @@
 #include "collision_detection/collision_detector.h"
 #include "collision_detection/collision_object_box.h"
+#include <algorithm> // using std::find
 
 using namespace std;
 using namespace Eigen;
@@ -44,6 +45,28 @@ add_collision_object( Collision_Object* collisionObject,
   _collision_objects.push_back( collisionObject );
   return;
 }
+
+/**
+ * clear_collision_object
+ * removes one collision object from the collision world
+ */
+void
+Collision_Detector::
+clear_collision_object(Collision_Object* collisionObject){
+  
+    vector< btCollisionObject* > bt_collision_objects = collisionObject->bt_collision_objects();
+    for( unsigned int j = 0; j < bt_collision_objects.size(); j++ ){
+      _collision_world.removeCollisionObject( bt_collision_objects[ j ] );
+    } 
+    
+    std::vector<Collision_Object* >::iterator found;
+    found = std::find(_collision_objects.begin(), _collision_objects.end(), collisionObject);
+    if(found!=_collision_objects.end()) {
+     _collision_objects.erase(found);
+    }
+  return;
+}
+
 
 /**
  * clear_collision_objects
