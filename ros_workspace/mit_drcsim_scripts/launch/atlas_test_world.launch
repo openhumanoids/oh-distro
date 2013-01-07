@@ -6,7 +6,7 @@
   <param name="/use_sim_time" type="bool" value="true"/>
 
   <!-- start gazebo with the DRC Robot -->
-  <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_manipulation_task_pinned_robot.world"/>
+  <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/atlas_test_world.world"/>
 <!--  <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(find mit_drcsim_scripts)/worlds/mit_driving_task_wheeled_robot.world"/> -->
 
   <!-- Robot Description -->
