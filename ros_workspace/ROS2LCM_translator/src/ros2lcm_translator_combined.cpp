@@ -89,8 +89,8 @@ private:
   void send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel );
 
   // Laser:
-  ros::Subscriber base_scan_sub_,rotating_scan_sub_,righted_scan_sub_;
-  void base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  ros::Subscriber horizontal_scan_sub_,rotating_scan_sub_,righted_scan_sub_;
+  void horizontal_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void righted_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
@@ -135,8 +135,8 @@ App::App(const std::string & stereo_in,
   
   // Laser:
 //  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // gfe
-  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // previously
-  rotating_scan_sub_ = node_.subscribe(string("/rotating_scan"), 10, &App::rotating_scan_cb,this);
+  horizontal_scan_sub_ = node_.subscribe(string("/horizontal_scan"), 10, &App::horizontal_scan_cb,this); // previously
+  rotating_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::rotating_scan_cb,this);
   righted_scan_sub_ = node_.subscribe(string("/righted_scan"), 10, &App::righted_scan_cb,this);
   
   // Robot State:
@@ -153,8 +153,8 @@ App::App(const std::string & stereo_in,
   RFootHeelOut_cstate_sub_ = node_.subscribe("/RFootHeelOut_bumper/state", 10, &App::RFootHeelOut_cstate_cb,this);*/
       
   // Mono-Cameras:
-  left_image_sub_ = node_.subscribe(string("/left_eye/image_raw"), 10, &App::left_image_cb,this);
-  right_image_sub_ = node_.subscribe(string("/right_eye/image_raw"), 10, &App::right_image_cb,this);
+  left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_raw"), 10, &App::left_image_cb,this);
+  right_image_sub_ = node_.subscribe(string("/multisense_sl/right/image_raw"), 10, &App::right_image_cb,this);
   //left_image_sub_ = node_.subscribe(string("/left_eye/image_rect_color"), 10, &App::left_image_cb,this);
   //right_image_sub_ = node_.subscribe(string("right_eye/image_rect_color"), 10, &App::right_image_cb,this);
 
@@ -177,11 +177,10 @@ App::App(const std::string & stereo_in,
     rim_string = stereo_in_ + "/right/image_raw";
     rin_string = stereo_in_ + "/right/camera_info";
   }else if(which_image==4){ // Raw on GFE:
-    // OSRF decided to despense with convention and use these channels:
-    lim_string = "/left_eye/image_raw";
-    lin_string = "/left_eye/camera_info";
-    rim_string = "/right_eye/image_raw";
-    rin_string = "/right_eye/camera_info";
+    lim_string = "/multisense_sl/left/image_raw";
+    lin_string = "/multisense_sl/left/camera_info";
+    rim_string = "/multisense_sl/right/image_raw";
+    rin_string = "/multisense_sl/right/camera_info";
   }else{
     cout << "Image choice not supported!\n";
     exit(-1); 
@@ -525,16 +524,16 @@ for (int i=0; i< robot_state_msg.contacts.num_contacts; i++){
 }
 
 
-int base_scan_counter=0;
-void App::base_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
-  base_scan_counter++;
-  if (base_scan_counter%30 ==0){
-    std::cout << base_scan_counter << " base scan\n";
-  }  
-  send_lidar(msg, "BASE_SCAN");
+void App::horizontal_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  send_lidar(msg, "HORIZONTAL_SCAN");
 }
 
+int scan_counter=0;
 void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  scan_counter++;
+  if (scan_counter%30 ==0){
+    std::cout << scan_counter << " /scan -> ROTATING_SCAN\n";
+  }  
   send_lidar(msg, "ROTATING_SCAN");
 }
 

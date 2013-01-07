@@ -1,0 +1,15 @@
+<package>
+  <description brief="trajectory_control_tutorial">
+
+     trajectory_control_tutorial
+
+  </description>
+  <author>Maurice Fallon</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/trajectory_control_tutorial</url>
+  <depend package="atlas_utils"/>
+
+</package>
+
+

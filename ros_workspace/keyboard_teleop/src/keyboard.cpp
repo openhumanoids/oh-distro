@@ -71,7 +71,7 @@ class ErraticKeyboardTeleopNode
     public:
         ErraticKeyboardTeleopNode()
         {
-            pub_ = n_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+            pub_ = n_.advertise<geometry_msgs::Twist>("/atlas/cmd_vel", 1);
             
             ros::NodeHandle n_private("~");
             n_private.param("walk_vel", walk_vel_, 0.5);
