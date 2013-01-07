@@ -349,6 +349,9 @@ void FourWheeledDiffDrivePlugin::publish_odometry()
   std::string base_footprint_frame = tf::resolve(tf_prefix_, "base_footprint");
 
   // getting data for base_footprint to odom transform
+  // *****
+  // ***** TODO: the line below is broken! need to get correct transform
+  // *****
   math::Pose pose; // = this->parent->GetState().GetPose();
 
   btQuaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
