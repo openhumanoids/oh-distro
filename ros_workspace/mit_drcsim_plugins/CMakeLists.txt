@@ -36,8 +36,8 @@ rosbuild_add_library(gazebo_ros_pub_robot_state src/gazebo_ros_pub_robot_state.c
 rosbuild_link_boost(gazebo_ros_pub_robot_state thread)
 
 # drives rolling robot's base
-rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
-rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
+#rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
+#rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
 
 rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
 rosbuild_link_boost(planar_hover_plugin thread)
