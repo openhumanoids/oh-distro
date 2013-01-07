@@ -31,10 +31,10 @@
 
 #include <paladin_drcsim_plugins/fourWheeled_diffdrive_plugin.h>
 
-#include <common/common.h>
-#include <math/gzmath.h>
-#include <physics/physics.h>
-#include <sdf/sdf.h>
+#include <common/common.hh>
+#include <math/gzmath.hh>
+#include <physics/physics.hh>
+#include <sdf/sdf.hh>
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -349,7 +349,7 @@ void FourWheeledDiffDrivePlugin::publish_odometry()
   std::string base_footprint_frame = tf::resolve(tf_prefix_, "base_footprint");
 
   // getting data for base_footprint to odom transform
-  math::Pose pose = this->parent->GetState().GetPose();
+  math::Pose pose; // = this->parent->GetState().GetPose();
 
   btQuaternion qt(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w);
   btVector3 vt(pose.pos.x, pose.pos.y, pose.pos.z);

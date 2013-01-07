@@ -30,8 +30,8 @@
 
 #include <map>
 
-#include <common/common.h>
-#include <physics/physics.h>
+#include <common/common.hh>
+#include <physics/physics.hh>
 
 // ROS
 #include <ros/ros.h>

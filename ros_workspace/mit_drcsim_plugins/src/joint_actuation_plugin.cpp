@@ -31,10 +31,10 @@
 
 #include <paladin_drcsim_plugins/joint_actuation_plugin.h>
 
-#include <common/common.h>
-#include <math/gzmath.h>
-#include <physics/physics.h>
-#include <sdf/sdf.h>
+#include <common/common.hh>
+#include <math/gzmath.hh>
+#include <physics/physics.hh>
+#include <sdf/sdf.hh>
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
