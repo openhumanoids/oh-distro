@@ -20,7 +20,7 @@ viewer
 
 # requires drcsim/gazebo1.2 and ubuntu 12.04:
 # currently no used in gazebo1.3
-#gazebo_plugins
+gazebo_plugins
 
 # disabled for now:
 #teleop

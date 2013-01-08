@@ -881,6 +881,7 @@
     <pose>0 0 0.93 0 0 0</pose>
   </gazebo>
   <gazebo>
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin" />
     <plugin filename="libAtlasPlugin.so" name="atlas_plugin"/>
     <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">

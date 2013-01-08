@@ -47,21 +47,21 @@ class OraclePlugin: public ModelPlugin{
       this->update_period_ = 0.0;   
     
     // Name of the model and link we wish to move relative to:
-    this->robot_name_ = "mit_drc_robot";
+    this->robot_name_ = "atlas";
     this->world_to_robot_link_ = "head";
     
-    model_map_["ground_plane"]=7000;  
-    model_map_["standpipe"]=7001; 
-    model_map_["sbox1"]=7002;
-    model_map_["sbox2"]=7003;  
-    model_map_["sbox3"]=7004;    
-    model_map_["sbox4"]=7005;      
-    model_map_["table"]=7006;
-    model_map_["coke_can"]=7007; 
-    model_map_["bowl"]=7008;
-    model_map_["car"]=7009;
-    model_map_["fire_hose"]=7010;
-    model_map_["saucepan"]=7011;  
+    model_map_["ground_plane"]=70000;  
+    model_map_["standpipe"]=70001; 
+    model_map_["sbox1"]=70002;
+    model_map_["sbox2"]=70003;  
+    model_map_["sbox3"]=70004;    
+    model_map_["sbox4"]=70005;      
+    model_map_["table"]=70006;
+    model_map_["coke_can"]=70007; 
+    model_map_["bowl"]=70008;
+    model_map_["car"]=70009;
+    model_map_["fire_hose"]=70010;
+    model_map_["saucepan"]=70011;  
     //model_map_["mit_drc_robot"]=7012; //dont send this
       
     // obj_cfg: id name type reset
@@ -80,7 +80,7 @@ class OraclePlugin: public ModelPlugin{
     common::Time sim_time = this->world->GetSimTime();
     if (sim_time - this->last_update_time_ >= this->update_period_){
 
-      std::list<physics::ModelPtr> all_models = this->world->GetModels();
+      std::vector<physics::ModelPtr> all_models = this->world->GetModels();
       
       BOOST_FOREACH( physics::ModelPtr model, all_models ){
         if (model){
