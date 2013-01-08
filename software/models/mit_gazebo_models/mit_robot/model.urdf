@@ -898,6 +898,10 @@
       <topicName>true_robot_state</topicName>
       <synchronization>false</synchronization>
     </plugin>
+    <plugin filename="libjoint_actuation_plugin.so" name="joint_torque_controller">
+      <alwaysOn>true</alwaysOn>
+      <topicName>actuator_cmd</topicName>
+    </plugin>
   </gazebo>
   <link name="imu_link">
     <inertial>
