@@ -24,9 +24,16 @@ main( int argc,
   robot_state.origin_position.rotation.y = 0.0;
   robot_state.origin_position.rotation.z = 0.0;
   robot_state.origin_position.rotation.w = 1.0;
-  robot_state.num_joints = collision_object_gfe.kinematics_model().tree().getNrOfJoints();
-  robot_state.joint_position.resize( collision_object_gfe.kinematics_model().tree().getNrOfJoints() );
-  for( unsigned int i = 0; i < collision_object_gfe.kinematics_model().tree().getNrOfJoints(); i++ ){
+  robot_state.num_joints = collision_object_gfe.kinematics_model().model().joints_.size();
+  robot_state.joint_name.resize( collision_object_gfe.kinematics_model().model().joints_.size() );
+  unsigned int index = 0;
+  for ( std::map< std::string, boost::shared_ptr< urdf::Joint > >::const_iterator it = collision_object_gfe.kinematics_model().model().joints_.begin(); it != collision_object_gfe.kinematics_model().model().joints_.end(); it++ ){
+    robot_state.joint_name[ index ] = it->first;
+    index++;
+  }
+
+  robot_state.joint_position.resize( collision_object_gfe.kinematics_model().model().joints_.size() );
+  for( unsigned int i = 0; i < collision_object_gfe.kinematics_model().model().joints_.size(); i++ ){
     robot_state.joint_position[ i ] = 0.0;
   }
 

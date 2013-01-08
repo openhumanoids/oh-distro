@@ -56,8 +56,8 @@ Collision_Object_GFE( string id,
  */
 Collision_Object_GFE::
 Collision_Object_GFE( const Collision_Object_GFE& other ): Collision_Object( other ),
-                                                            _collision_objects(),
-                                                            _kinematics_model() {
+                                                            _collision_objects( other._collision_objects ),
+                                                            _kinematics_model( other._kinematics_model ) {
   _load_collision_objects();
 }   
 
