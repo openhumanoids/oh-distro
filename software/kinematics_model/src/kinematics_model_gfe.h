@@ -24,16 +24,18 @@ namespace kinematics_model {
     std::string urdf_filename( void )const;
     const urdf::Model& model( void )const;
     const KDL::Tree& tree( void )const;
-    KDL::Frame link( std::string linkID )const;
+    KDL::Frame link( std::string linkName )const;
 
   protected:
+    void _update_joint( std::map< std::string, double >& jointAngles, KDL::Frame& parentFrame, const KDL::SegmentMap::const_iterator jointIterator );
+
     std::string _urdf_filename;
     urdf::Model _model;
     KDL::Tree   _tree;
     KDL::TreeFkSolverPos_recursive * _fk_solver;
     KDL::Frame    _world_to_body;
-    KDL::JntArray _joint_angles;
-
+    std::map< std::string, KDL::Frame > _joint_frames;
+  
   private:
   
   };
