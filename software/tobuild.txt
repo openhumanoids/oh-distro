@@ -3,6 +3,7 @@
 
 #externals
 drc_lcmtypes
+
 #hubo
 robot_model
 kinematics
@@ -10,9 +11,10 @@ kinematics_model
 sensing
 control
 object_template_model
-drc_utils
-perception
 collision_detection
+utils
+
+perception
 viewer
 
 #network
