@@ -1,0 +1,148 @@
+atlas_controller:
+  type: "robot_mechanism_controllers/JointTrajectoryActionController"
+  joints:
+    - l_leg_uhz
+    - l_leg_mhx
+    - l_leg_lhy
+    - l_leg_kny
+    - l_leg_uay
+    - l_leg_lax
+    - r_leg_uhz
+    - r_leg_mhx
+    - r_leg_lhy
+    - r_leg_kny
+    - r_leg_uay
+    - r_leg_lax
+    - l_arm_usy
+    - l_arm_shx
+    - l_arm_ely
+    - l_arm_elx
+    - l_arm_uwy
+    - l_arm_mwx
+    - r_arm_usy
+    - r_arm_shx
+    - r_arm_ely
+    - r_arm_elx
+    - r_arm_uwy
+    - r_arm_mwx
+    - neck_ay
+    - back_lbz
+    - back_mby
+    - back_ubx
+  gains:
+    l_leg_uhz: {p:   100.0, d:   1.0, i:   0.0, i_clamp:    0.0}
+    l_leg_mhx: {p:   100.0, d:   1.0, i:   0.0, i_clamp:    0.0}
+    l_leg_lhy: {p:  2000.0, d:  10.0, i:   0.0, i_clamp:    0.0}
+    l_leg_kny: {p:  1000.0, d:  10.0, i:   0.0, i_clamp:    0.0}
+    l_leg_uay: {p:   900.0, d:   8.0, i:   0.0, i_clamp:    0.0}
+    l_leg_lax: {p:   300.0, d:   2.0, i:   0.0, i_clamp:    0.0}
+    r_leg_uhz: {p:   100.0, d:   1.0, i:   0.0, i_clamp:    0.0}
+    r_leg_mhx: {p:   100.0, d:   1.0, i:   0.0, i_clamp:    0.0}
+    r_leg_lhy: {p:  2000.0, d:  10.0, i:   0.0, i_clamp:    0.0}
+    r_leg_kny: {p:  1000.0, d:  10.0, i:   0.0, i_clamp:    0.0}
+    r_leg_uay: {p:   900.0, d:   8.0, i:   0.0, i_clamp:    0.0}
+    r_leg_lax: {p:   300.0, d:   2.0, i:   0.0, i_clamp:    0.0}
+    l_arm_usy: {p:   500.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    l_arm_shx: {p:   200.0, d:  20.0, i:   0.0, i_clamp:    0.0}
+    l_arm_ely: {p:    50.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    l_arm_elx: {p:    50.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    l_arm_uwy: {p:     1.0, d:   0.1, i:   0.0, i_clamp:    0.0}
+    l_arm_mwx: {p:     2.0, d:   0.2, i:   0.0, i_clamp:    0.0}
+    r_arm_usy: {p:   500.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    r_arm_shx: {p:   200.0, d:  20.0, i:   0.0, i_clamp:    0.0}
+    r_arm_ely: {p:    50.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    r_arm_elx: {p:    50.0, d:   3.0, i:   0.0, i_clamp:    0.0}
+    r_arm_uwy: {p:     1.0, d:   0.1, i:   0.0, i_clamp:    0.0}
+    r_arm_mwx: {p:     2.0, d:   0.2, i:   0.0, i_clamp:    0.0}
+    neck_ay:   {p:    20.0, d:   1.0, i:   0.0, i_clamp:    0.0}
+    back_lbz:  {p:    20.0, d:   0.1, i:   0.0, i_clamp:    0.0}
+    back_mby:  {p:  2000.0, d:  02.0, i:   0.0, i_clamp:    0.0}
+    back_ubx:  {p:   800.0, d:  01.0, i:   0.0, i_clamp:    0.0}
+  joint_trajectory_action_node:
+    joints:
+      - l_leg_uhz
+      - l_leg_mhx
+      - l_leg_lhy
+      - l_leg_kny
+      - l_leg_uay
+      - l_leg_lax
+      - r_leg_uhz
+      - r_leg_mhx
+      - r_leg_lhy
+      - r_leg_kny
+      - r_leg_uay
+      - r_leg_lax
+      - l_arm_usy
+      - l_arm_shx
+      - l_arm_ely
+      - l_arm_elx
+      - l_arm_uwy
+      - l_arm_mwx
+      - r_arm_usy
+      - r_arm_shx
+      - r_arm_ely
+      - r_arm_elx
+      - r_arm_uwy
+      - r_arm_mwx
+      - neck_ay
+      - back_lbz
+      - back_mby
+      - back_ubx
+    constraints:
+      goal_time: 0.0
+      l_leg_uhz:
+        goal: 0.02
+      l_leg_mhx:
+        goal: 0.02
+      l_leg_lhy:
+        goal: 0.02
+      l_leg_kny:
+        goal: 0.02
+      l_leg_uay:
+        goal: 0.02
+      l_leg_lax:
+        goal: 0.02
+      r_leg_uhz:
+        goal: 0.02
+      r_leg_mhx:
+        goal: 0.02
+      r_leg_lhy:
+        goal: 0.02
+      r_leg_kny:
+        goal: 0.02
+      r_leg_uay:
+        goal: 0.02
+      r_leg_lax:
+        goal: 0.02
+      l_arm_usy:
+        goal: 0.02
+      l_arm_shx:
+        goal: 0.02
+      l_arm_ely:
+        goal: 0.02
+      l_arm_elx:
+        goal: 0.02
+      l_arm_uwy:
+        goal: 0.02
+      l_arm_mwx:
+        goal: 0.02
+      r_arm_usy:
+        goal: 0.02
+      r_arm_shx:
+        goal: 0.02
+      r_arm_ely:
+        goal: 0.02
+      r_arm_elx:
+        goal: 0.02
+      r_arm_uwy:
+        goal: 0.02
+      r_arm_mwx:
+        goal: 0.02
+      neck_ay:
+        goal: 0.02
+      back_lbz:
+        goal: 0.02
+      back_mby:
+        goal: 0.02
+      back_ubx:
+        goal: 0.02
