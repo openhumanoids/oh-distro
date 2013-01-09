@@ -1,5 +1,8 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
-drc_utils
-opengl_utils
+# mypod1
+opengl_camera
+opengl_object
+opengl_scene
+opengl_widget
