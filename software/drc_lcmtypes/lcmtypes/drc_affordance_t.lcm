@@ -14,7 +14,7 @@ struct affordance_t
   // informal label for the affordance:
   string name;
    
-  // geomtrical properties, 
+  // geometrical properties, 
   int32_t nparams;
   double params[nparams];
   string param_names[nparams];
@@ -28,5 +28,8 @@ struct affordance_t
   int32_t nptinds;
   int32_t ptinds[nptinds];
 
-  const int16_t CYLINDER=0, LEVER=1;
+  // This enum involves modifying the lcm type
+  // for every otdf addition. Remove otdf id?
+  // A label is sufficient?
+  const int16_t CYLINDER=0, LEVER=1; 
 }
