@@ -716,6 +716,7 @@ static void on_otdf_adjust_dofs_widget_changed(BotGtkParamWidget *pw, const char
 //   object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 //  
  //TODO: do something
+ // _otdf_instance->setJointState(joint->first, pos, vel);
 }
 
 static void spawn_adjust_params_popup (RendererOtdf *self){

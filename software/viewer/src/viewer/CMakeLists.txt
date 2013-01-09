@@ -8,8 +8,12 @@ pods_use_pkg_config_packages(drc-viewer
         path-util
         octomap-renderer
         renderer_heightmap
-        lcmtypes_drc_lcmtypes    
-        renderer_drc 
+        lcmtypes_drc_lcmtypes
+        renderer_robot_state
+        renderer_robot_plan
+        renderer_affordances
+        renderer_end_effector_goal
+        #renderer_drc 
         collections_renderer
         renderer_manipulation
         renderer_driving

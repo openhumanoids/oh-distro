@@ -27,10 +27,11 @@
 #include <renderer_drc/renderer_walking.hpp>
 
 // block of renderers
-#include <renderer_drc/renderer_humanoid.hpp>
-#include <renderer_drc/renderer_robot_plan.hpp>
+#include <renderer_robot_state/renderer_robot_state.hpp>
+#include <renderer_robot_plan/renderer_robot_plan.hpp>
+#include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
-#include <renderer_drc/otdf_renderer/renderer_otdf.hpp>
+
 
 #include "udp_util.h"
 
@@ -165,15 +166,16 @@ int main(int argc, char *argv[])
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  setup_renderer_humanoid(viewer, 0, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   collections_add_renderer_to_viewer(viewer, 1);
 
   // Block of Renderers:  
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
+  setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
+  setup_renderer_affordances(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
-  setup_renderer_otdf(viewer, 0, lcm);
+
 
   // Individual Renderers:
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);

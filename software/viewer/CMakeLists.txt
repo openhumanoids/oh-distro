@@ -13,8 +13,11 @@ include(cmake/pods.cmake)
 #include(cmake/lcmtypes.cmake)
 #lcmtypes_build()
 
-add_subdirectory(src/renderers)
-
+#add_subdirectory(src/renderers)
+add_subdirectory(src/renderer_robot_state)
+add_subdirectory(src/renderer_robot_plan)
+add_subdirectory(src/renderer_affordances)
+add_subdirectory(src/renderer_end_effector_goal)
 add_subdirectory(src/renderer_manipulation)
 add_subdirectory(src/renderer_walking)
 add_subdirectory(src/renderer_driving)
