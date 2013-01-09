@@ -22,7 +22,30 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <collision>
+      <origin  xyz="0 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
     </link> 
+    
+    <link name="${side}_f${idx}_knuckle_dummy_contact">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.1 0 0.05"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+
+    
     <link name="${side}_f${idx}_0">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -76,6 +99,12 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <collision>
+      <origin  xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
     </link> 
     <link name="${side}_f${idx}_2">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -107,14 +136,8 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
-     <visual>
-      <origin  xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <sphere radius="0.001"/>
-      </geometry>
-    </visual>     
       <collision>
-      <origin  xyz="0 0 0" rpy="0 0 0"/>
+      <origin  xyz="0 0 0.01" rpy="0 0 0"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -158,6 +181,15 @@
       <child link="${side}_f${idx}_fixed_accel"/>
       <origin xyz="-0.05 0 0" rpy="0 0 0"/>
     </joint>
+    
+        
+   <joint name="${side}_f${idx}_knuckle_dummy_contact" type="fixed">
+    <parent link="${side}_f${idx}_base"/>
+    <child link="${side}_f${idx}_knuckle_dummy_contact"/>
+    <origin rpy="0 0 0" xyz="-0.05 0 0"/>
+  </joint>
+  
+    
     <joint name="${side}_f${idx}_1_accel" type="fixed">
       <parent link="${side}_f${idx}_1"/>
       <child link="${side}_f${idx}_1_accel"/>
