@@ -37,7 +37,7 @@ namespace robot_tf_publisher {
 		// call a routine that calculates the transforms given the joint_angles_t* msg.
 		std::map<std::string, double> joint_positions;
     		for (unsigned int i=0; i< msg->num_joints; i++)
-      			joint_positions.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
+      			joint_positions.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));  
 
  		// publishes ROS style tf tree on JOINT_TRANSFORMS channel.  	        
   		tf_publisher_.publishTransforms(joint_positions, msg->utime, msg->robot_name);

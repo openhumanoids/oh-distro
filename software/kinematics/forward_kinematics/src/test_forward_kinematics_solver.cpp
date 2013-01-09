@@ -1,6 +1,6 @@
 // file: test_forward_kinematics_solver.cpp
 // This file links to treefksolverposfull_recursive.cpp thats provides a routine to solve forward kinematics 
-// upon receipt of a joint_angles_t message.
+// upon receipt of a robot_state_t message.
 // for the whole kinematic tree. KDL lib functions only provide an interface to query global position between
 // a specified root and a tip segment.
 
@@ -32,13 +32,16 @@ namespace test_forward_kinematics_solver {
 
         void handleMessage(const lcm::ReceiveBuffer* rbuf,
                 const std::string& chan, 
-                const drc::joint_angles_t* msg)
+                const drc::robot_state_t* msg)
         {
 
 		// call a routine that calculates the transforms the joint_state_t* msg.
 		std::map<std::string, double> jointpos_in;
-    		for (unsigned int i=0; i< msg->num_joints; i++)
-      			jointpos_in.insert(make_pair(msg->joint_name[i], msg->angular_position[i]));  
+    		for (unsigned int i=0; i< msg->num_joints; i++){
+    		    std::cout << "joint_name : " << msg->joint_name[i]<< "pos : " << msg->joint_position[i]<< std::endl;	
+      			jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));  
+      			
+      			}
 
 		 std::map<std::string, drc::transform_t > cartpos_out;
 		  
@@ -141,7 +144,8 @@ int main(int argc, char ** argv)
 
   // Subscribes to MEAS_JOINT_ANGLES and computes global transforms in global frame for each joint
   test_forward_kinematics_solver::JointAnglesHandler handlerObject(tree);
-  lcm.subscribe("MEAS_JOINT_ANGLES", &test_forward_kinematics_solver::JointAnglesHandler::handleMessage, &handlerObject);
+//  lcm.subscribe("MEAS_JOINT_ANGLES", &test_forward_kinematics_solver::JointAnglesHandler::handleMessage, &handlerObject);
+  lcm.subscribe("EST_ROBOT_STATE", &test_forward_kinematics_solver::JointAnglesHandler::handleMessage, &handlerObject);
   while(0 == lcm.handle());
 
 
