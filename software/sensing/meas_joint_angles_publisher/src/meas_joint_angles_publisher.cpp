@@ -107,7 +107,7 @@ int main(int argc, char ** argv)
            val = -30*3.14/180;
     if(robot->joint_names_[i] == "RElbowPitch")
            val = -30*3.14/180;*/
-      message.angular_position.push_back(val);
+      message.joint_position.push_back(val);
 
     }
 
@@ -115,7 +115,7 @@ int main(int argc, char ** argv)
     // Publishing joint angles.
     lcm.publish("MEAS_JOINT_ANGLES", &message);
     message.joint_name.clear();
-    message.angular_position.clear();
+    message.joint_position.clear();
     //TODO: better Timing.
     usleep(10000); // publish at 100 hz.
    } 

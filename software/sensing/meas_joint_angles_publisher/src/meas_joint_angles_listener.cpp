@@ -18,7 +18,7 @@ class Handler
 		std::cout << "Received joint_angles_t message for robot "<<msg->robot_name<<" on channel " << chan << std::endl;	     	 
 	    	for(std::vector<std::string>::size_type i = 0; i != msg->joint_name.size(); i++) 
 	  	{
-		  std::cout<< "  timestamp   = " << msg->utime << "  joint name  = " <<  msg->joint_name[i] << "  position    = " <<  msg->angular_position[i] <<std::endl;
+		  std::cout<< "  timestamp   = " << msg->utime << "  joint name  = " <<  msg->joint_name[i] << "  position    = " <<  msg->joint_position[i] <<std::endl;
 		}
 
         }
