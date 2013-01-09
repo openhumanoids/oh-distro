@@ -22,6 +22,18 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+       <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.055 "/>
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
     </link> 
     <link name="${side}_f${idx}_0">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -78,6 +90,18 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.01 "/>
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
     </link> 
     <link name="${side}_f${idx}_2">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -109,6 +133,18 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+     <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.01 "/>
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
     </link>
     <joint name="${side}_f${idx}_base" type="fixed">
       <parent link="${side}_palm"/>

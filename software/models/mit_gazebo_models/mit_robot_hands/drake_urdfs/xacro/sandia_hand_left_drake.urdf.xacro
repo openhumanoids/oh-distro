@@ -26,6 +26,6 @@
     </collision> -->
   </link>
   <xacro:sandia_hand side="left" parent="base">
-    <origin xyz="0 0 0.5" rpy="0 -1.57079 0"/>
+    <origin xyz="0 0 0.0" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>
