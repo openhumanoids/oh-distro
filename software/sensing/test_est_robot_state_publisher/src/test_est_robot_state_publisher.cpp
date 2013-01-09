@@ -35,7 +35,7 @@ void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const
   for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
   { 
 	  if(it->second->type!=6) // All joints that not of the type FIXED.
-               robot->joint_names_.push_back(it->first);//Joint names are sorted in alphabetical order within the urdf::Model structure.
+           robot->joint_names_.push_back(it->first);//Joint names are sorted in alphabetical order within the urdf::Model structure.
   }
  }//end onMessage
 
@@ -105,13 +105,12 @@ int main(int argc, char ** argv)
     j_cov.variance = 0;
 
     message.num_joints = robot->joint_names_.size();
-   
+
     for(std::vector<std::string>::size_type i = 0; i != robot->joint_names_.size(); i++) 
     {
       //std::cout<< robot->joint_names_[i] <<std::endl;
       message.joint_name.push_back(robot->joint_names_[i]); // Joint names available in alphabetical order.
-
-      message.joint_position.push_back(0);
+      message.joint_position.push_back(0.0);
       message.joint_velocity.push_back(0);
       message.measured_effort.push_back(0);
       message.joint_cov.push_back(j_cov);
