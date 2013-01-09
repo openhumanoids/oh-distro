@@ -1,50 +1,54 @@
 function runAtlasReachingExample
 
-r = RigidBodyManipulator('../../ros_workspace/deprecated/atlas_description/urdf/atlas_robot.urdf');
-r = setSimulinkParam(r,'MinStep','0.001');
-v = r.constructVisualizer;
-v.display_dt = .05;
+options.floating = true;
+dt = 0.001;
+r = TimeSteppingRigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',dt,options);
 
-x0 = Point(r.getStateFrame());
-xf = x0;
-xf.RShoulderYaw = .4;
-xf.RShoulderPitch = -.8;
-xf.RElbowPitch = -1.5;
+[Kp,Kd] = getPDGains(r.manip);
+sys = pdcontrol(r,Kp,Kd);
 
-x0 = double(x0);
-xf = double(xf);
-tf0 = 4;
+c = StandingAndReachingControl(sys,r);
+%c = StandingControl(sys,r);
 
-con.x0.lb = x0;
-con.x0.ub = x0;
-con.xf.lb = xf;
-con.xf.ub = xf;
-con.T.lb = 2;
-con.T.ub = 6;
+nx = r.getNumStates();
+nu = r.getNumInputs();
 
-options.method='dircol';
-      
-  function [g,dg] = cost(t,x,u);
-    R = 1;
-    g = sum((R*u).*u,1);
-    dg = [zeros(1,1+size(x,1)),2*u'*R];
+joint_names = r.getStateFrame.coordinates(1:nx/2);
+joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
+
+lcmcoder = JLCMCoder(RobotStateCoder('atlas', joint_names));
+state_listener = LCMCoordinateFrameWCoder('atlas',nx,r.getStateFrame().prefix,lcmcoder);
+state_listener.subscribe('EST_ROBOT_STATE');
+
+
+lcmcoder = JLCMCoder(EndEffectorGoalCoder('atlas', 'r_hand'));
+ep_listener = LCMCoordinateFrameWCoder('atlas',3,r.getStateFrame().prefix,lcmcoder);
+ep_listener.subscribe('R_HAND_GOAL');
+
+cmd_names = r.getInputFrame().coordinates;
+cmd_names = regexprep(cmd_names,'_motor','');     
+cmd_publisher = PositionCmdPublisher('atlas',cmd_names,'JOINT_POSITION_CMDS');
+
+disp('Reaching controller ready...');
+q_dn = zeros(nu,1);
+ep_des = [0.415; -0.11; 1.075]; %[0.4; -0.3; 1.1];
+while (1)
+  ep = getNextMessage(ep_listener,1);
+  if (~isempty(ep))
+    ep_des = ep;
   end
-      
-  function [h,dh] = finalcost(t,x)
-    h = t;
-    dh = [1,zeros(1,size(x,1))];
+  [x,ts] = getNextMessage(state_listener,1);
+  t = ts/10;
+  if (~isempty(x))
+    q_dn = c.update(t,ep_des,q_dn,x);
+    u = c.output(t,q_dn,x);
+%     fprintf('time is %f\n',t);
+%     fprintf('state is %f\n',x);
+%     fprintf('control is %f\n\n',u);
+    cmd_publisher.publish(u,t*1000000);
   end
-      
-utraj0 = PPTrajectory(foh(linspace(0,tf0,5),zeros(r.getNumInputs(),5)));
-tic
-%options.grad_test = true;
-options.MajorIterationsLimit = 5;
-options.MinorIterationsLimit = 5;
-[utraj,xtraj,info] = trajectoryOptimization(r,@cost,@finalcost,x0,utraj0,con,options);
-info
-toc
-
-
-v.playback(xtraj);
+end
 
 end
+
+
