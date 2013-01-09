@@ -187,21 +187,23 @@ repaint (state_t * s)
   wmove(w, s->height/2,0);
   
   color_set(COLOR_PLAIN, NULL);
-  wmove(w, 0, 0);
-  wprintw(w, "%f brake_pedal[W  S]",s->brake_pedal);
   wmove(w, 1, 0);
-  wprintw(w, "%f hand_brake [Q  A]",s->hand_brake);
+  wprintw(w, "        command     [ keys| range]",s->brake_pedal);
   wmove(w, 2, 0);
-  wprintw(w, "%f gas_pedal  [^ \\\/] 0 0.9",s->gas_pedal);
+  wprintw(w, "%f brake_pedal[W  S | 0   1]",s->brake_pedal);
   wmove(w, 3, 0);
-  wprintw(w, "%f hand_wheel [<  >]",s->hand_wheel);
+  wprintw(w, "%f hand_brake [Q  A | 0   1]",s->hand_brake);
+  wmove(w, 4, 0);
+  wprintw(w, "%f gas_pedal  [^ \\\/ | 0 0.9]",s->gas_pedal);
+  wmove(w, 5, 0);
+  wprintw(w, "%f hand_wheel [<  > | 0   7]",s->hand_wheel);
+  wmove(w, 7, 0);
+  wprintw(w, "%d direction  [234  |-1 0 1]",s->direction);
   wmove(w, 8, 0);
-  wprintw(w, "%d direction  [-  +]",s->direction);
-  wmove(w, 9, 0);
-  wprintw(w, "%d key        [i  o]",s->key);
+  wprintw(w, "%d key        [i  o | 0   1]",s->key);
   
-  wmove(w, 11, 0);
-  wprintw(w, " exit[k] enter[l]");
+  wmove(w, 10, 0);
+  wprintw(w, " exit[k] enter[l]    allbrakesoff[e]");
 
   color_set(COLOR_TITLE, NULL);
   wrefresh (w);
@@ -218,7 +220,7 @@ on_input (GIOChannel * source, GIOCondition cond, gpointer data)
     
   double d_hand_wheel =0.3;
   double d_hand_brake =0.05;
-  double d_gas_pedal =0.005;
+  double d_gas_pedal =0.001;
   double d_brake_pedal =0.05;
   switch (c)
   {
@@ -252,6 +254,12 @@ on_input (GIOChannel * source, GIOCondition cond, gpointer data)
       break;
     case 's':
       s->brake_pedal += d_brake_pedal ;
+      publish_brake_pedal(s);
+      break;
+    case 'e':
+      s->hand_brake= 0.0 ;
+      publish_hand_brake(s);
+      s->brake_pedal= 0.0 ;
       publish_brake_pedal(s);
       break;
     case '1':
