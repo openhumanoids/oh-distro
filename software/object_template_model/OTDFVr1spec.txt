@@ -66,7 +66,7 @@
       boost::shared_ptr<ModelInterface> object = parseOTDF(xml_string);
       std::map<std::string, double> params = object->params_map_; // all parameters defined in the object template
       // Modifying parameters at runtime and updating model.
-      object->setParam("X", 10);
+      object->setParam("x", 10);
       object->update();
       
       // convertion to URDF

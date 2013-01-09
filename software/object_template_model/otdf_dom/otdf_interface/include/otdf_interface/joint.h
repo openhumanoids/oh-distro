@@ -306,6 +306,10 @@ public:
   Joint() { this->clear(); };
 
   std::string name;
+  
+  // state (p,v) of the joint (new addition in otdf)
+  double position; 
+  double velocity;
   enum
   {
     UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED
@@ -360,6 +364,8 @@ public:
     this->calibration.reset(new JointCalibration);
     this->mimic.reset(new JointMimic);
     this->type = UNKNOWN;
+    this->position = 0;
+    this->velocity = 0;
   };
   
   void update()

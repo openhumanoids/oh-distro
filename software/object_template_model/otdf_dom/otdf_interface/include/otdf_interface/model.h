@@ -207,6 +207,31 @@ public:
       this->params_map_[name]= value;
   };
   
+  void getJointState(const std::string& name,  double &position, double &velocity) 
+  {
+    double value;
+    if (this->joints_.find(name) == this->joints_.end()){
+      position = 0;
+      velocity=0;
+      std::cerr << "ERROR: Could not find joint "<< name <<" in object model "<< this->name_ <<   std::endl;
+    }
+    else {
+      position = this->joints_.find(name)->second->position;
+      velocity = this->joints_.find(name)->second->velocity;
+      }
+  };
+  
+  void setJointState(const std::string& name, double position, double velocity) 
+  {
+    if (this->joints_.find(name) == this->joints_.end()){
+      std::cerr << "ERROR: Could not find joint "<< name <<" in object model "<< this->name_ << std::endl;
+    }
+    else{
+      this->joints_[name]->position= position;
+      this->joints_[name]->velocity= velocity;
+    }
+  };
+  
   
   bool initTree(std::map<std::string, std::string> &parent_entity_tree)
   {
