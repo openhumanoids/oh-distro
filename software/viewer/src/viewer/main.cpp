@@ -30,7 +30,7 @@
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
-#include <renderer_drc/end_effector_goal_renderer/renderer_end_effector_goal.hpp>
+#include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
 
 
 #include "udp_util.h"
