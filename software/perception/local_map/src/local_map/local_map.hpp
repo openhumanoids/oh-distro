@@ -8,6 +8,9 @@
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
 
+#include <bot_frames/bot_frames.h>
+#include <bot_param/param_client.h>
+
 
 ///////////////////////////////////////////////////////////////
 class local_map{
@@ -19,6 +22,8 @@ class local_map{
     
   private:
     lcm_t* publish_lcm_;
+    BotParam* botparam_;
+    BotFrames* botframes_;
 
     pointcloud_lcm* pc_lcm_;
     pointcloud_vis* pc_vis_;
@@ -70,15 +75,6 @@ class local_map{
       ((local_map *) user_data)->pose_handler(msg);
     }
     void pose_handler(const bot_core_pose_t *msg);
-
-    static void rigid_tf_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_rigid_transform_t* msg,
-                                void* user_data) {
-      ((local_map *) user_data)->rigid_tf_handler(msg);
-    }
-    void rigid_tf_handler(const bot_core_rigid_transform_t *msg);
-
 
 
     void send_newmap();

@@ -31,17 +31,11 @@ local_map::local_map(lcm_t* publish_lcm):
           null_poseT(0, Eigen::Isometry3d::Identity()),
           local_poseT(0, Eigen::Isometry3d::Identity()) {
 
+  
+  botparam_ = bot_param_new_from_server(publish_lcm_, 0);
+  botframes_= bot_frames_get_global(publish_lcm_, botparam_);
+
   current_pose_init = false;
-
-  // TODO read from config later:
-  // directly matches the frames in gazebo
-  Eigen::Quaterniond quat =euler_to_quat(0,0,M_PI/2); // ypr
-  Eigen::Isometry3d pose;
-  body_to_lidar.setIdentity();
-  // update for gfe in nov 2012:
-  body_to_lidar.translation()  << -0.0015, 0.0, 0.68;
-  body_to_lidar.rotate(quat);
-
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clf (new pcl::PointCloud<pcl::PointXYZRGB> ());
   cloud = cloud_clf;
@@ -52,7 +46,6 @@ local_map::local_map(lcm_t* publish_lcm):
 
   // Unpack Config:
   pc_lcm_ = new pointcloud_lcm(publish_lcm_);
-
 
   // Vis Config:
   pc_vis_ = new pointcloud_vis(publish_lcm_);
@@ -82,21 +75,11 @@ local_map::local_map(lcm_t* publish_lcm):
       local_map::pointcloud_handler_aux, this);
   bot_core_planar_lidar_t_subscribe(subscribe_lcm_, "ROTATING_SCAN",
       local_map::lidar_handler_aux, this);
-  bot_core_pose_t_subscribe(subscribe_lcm_, "POSE",
+  bot_core_pose_t_subscribe(subscribe_lcm_, "POSE_HEAD",
       local_map::pose_handler_aux, this);
 
-  bot_core_rigid_transform_t_subscribe(subscribe_lcm_, "BODY_TO_HEAD_HOKUYO",
-      local_map::rigid_tf_handler_aux, this);
-
 }
 
-void local_map::rigid_tf_handler(const bot_core_rigid_transform_t *msg){
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1],msg->quat[2],msg->quat[3]);
-  body_to_lidar.setIdentity();
-  body_to_lidar.translation()  << msg->trans[0], msg->trans[1], msg->trans[2];
-  body_to_lidar.rotate(quat);
-  //cout << "got body_to_lidar\n";
-}
 
 void local_map::newmap_handler(const drc_localize_reinitialize_cmd_t *msg){
   cout << "requested newmap\n";
@@ -190,8 +173,18 @@ void local_map::lidar_handler(const bot_core_planar_lidar_t *msg){
   //  print_Isometry3d(body_to_lidar, ss);
   //  cout << ss.str() << " body_to_lidar\n";
   
+  BotTrans transform;
+  bot_frames_get_trans_with_utime(botframes_, "ROTATING_SCAN", "local",
+                                        msg->utime, &transform);  
   
-  Eigen::Isometry3d lidar_pose = current_poseT.pose*body_to_lidar;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(transform.rot_quat[0], transform.rot_quat[1],transform.rot_quat[2],transform.rot_quat[3]);
+  body_to_lidar.setIdentity();
+  body_to_lidar.translation()  << transform.trans_vec[0], transform.trans_vec[1], transform.trans_vec[2];
+  body_to_lidar.rotate(quat);
+  
+  
+  
+  Eigen::Isometry3d lidar_pose = body_to_lidar;
   Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
   pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);
   pc_vis_->ptcld_to_lcm_from_list(601, *lidar_cloud, pose_id, pose_id);
