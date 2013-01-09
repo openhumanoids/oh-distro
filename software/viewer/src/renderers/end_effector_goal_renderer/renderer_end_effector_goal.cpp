@@ -418,7 +418,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 		// Build the message
 	drc::ee_goal_t goalmsg;
 
-    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+    	if(self->robotStateListener->_robot_name == "atlas")
 	{
 	    goalmsg.robot_name =self->robotStateListener->_robot_name;
 	    goalmsg.root_name = "utorso";
@@ -595,7 +595,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	
    	KDL::Frame  T_world_ee,T_body_world,T_root_ee,T_body_ee,T_body_root;
 	drc::ee_goal_t goalmsg;  
-    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+    	if(self->robotStateListener->_robot_name == "atlas")
 	{
 		goalmsg.robot_name =self->robotStateListener->_robot_name;
 		goalmsg.root_name = "utorso";
@@ -660,7 +660,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
    	 	drc::ee_goal_t goalmsg;   
 		goalmsg.utime = getTime_now();
 		
-	    	if(self->robotStateListener->_robot_name == "mit_drc_robot")
+	    	if(self->robotStateListener->_robot_name == "atlas")
 		{
 			goalmsg.robot_name =self->robotStateListener->_robot_name;
 			goalmsg.root_name = "utorso";
