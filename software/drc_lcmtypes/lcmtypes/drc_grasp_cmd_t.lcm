@@ -1,0 +1,8 @@
+package drc;
+
+struct grasp_cmd_t
+{
+    int64_t utime;
+    string robot_name;
+    boolean close_hand;
+}
