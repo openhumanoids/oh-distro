@@ -13,7 +13,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_robot_plan
         renderer_affordances
         renderer_end_effector_goal
-        renderer_drc 
+        #renderer_drc 
         collections_renderer
         renderer_manipulation
         renderer_driving
