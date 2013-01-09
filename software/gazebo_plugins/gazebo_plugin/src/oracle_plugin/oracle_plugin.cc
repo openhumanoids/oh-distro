@@ -59,7 +59,7 @@ class OraclePlugin: public ModelPlugin{
     model_map_["table"]=70006;
     model_map_["coke_can"]=70007; 
     model_map_["bowl"]=70008;
-    model_map_["car"]=70009;
+    model_map_["mit_golf_cart"]=70009;
     model_map_["fire_hose"]=70010;
     model_map_["saucepan"]=70011;  
     //model_map_["mit_drc_robot"]=7012; //dont send this
