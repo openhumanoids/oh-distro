@@ -8,7 +8,7 @@ struct traj_opt_constraint_t  // a constraint localized in space and time for tr
     // Constraining link poses. e.g. lhand_pose @ t=1 (or) body_root_link @ t=5
     int32_t num_links;
     string link_name [num_links];
-    position_3d_t link_origin_position [num_joints];
+    position_3d_t link_origin_position [num_links];
     int64_t link_timestamps [num_links];
     
     // Constraining posture e.g. lhand_joint_angles @ t=1; num_joints might be zero
