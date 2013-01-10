@@ -55,7 +55,7 @@ class PositionCommandHandler{
 			std_msgs::Float64 position_command_msg;
 			for (int i=0; i<msg->num_joints; i++) {
 			    // should we instead publish all joints at the same time?
-			    position_command_msg.data = msg->angular_position[i];
+			    position_command_msg.data = msg->joint_position[i];
 				if(ros::ok()) {
 					pub_map[msg->joint_name[i]].publish(position_command_msg);
 				}
