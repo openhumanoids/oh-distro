@@ -469,9 +469,13 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 	double x,y,z,w;
 	T_root_ee.M.GetQuaternion(x,y,z,w);
 
-	goalmsg.ee_goal_pos.translation.x = T_root_ee.p[0];
-	goalmsg.ee_goal_pos.translation.y = T_root_ee.p[1];
-	goalmsg.ee_goal_pos.translation.z = T_root_ee.p[2];
+	goalmsg.ee_goal_pos.translation.x = T_world_ee.p[0];
+	goalmsg.ee_goal_pos.translation.y = T_world_ee.p[1];
+	goalmsg.ee_goal_pos.translation.z = T_world_ee.p[2];
+
+//	goalmsg.ee_goal_pos.translation.x = T_root_ee.p[0];
+//	goalmsg.ee_goal_pos.translation.y = T_root_ee.p[1];
+//	goalmsg.ee_goal_pos.translation.z = T_root_ee.p[2];
 
 	goalmsg.ee_goal_pos.rotation.x = x;
 	goalmsg.ee_goal_pos.rotation.y = y;
