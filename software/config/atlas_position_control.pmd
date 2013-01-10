@@ -23,6 +23,11 @@ group "core" {
         exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
     }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+
 }
 
 group "gazebo" {
