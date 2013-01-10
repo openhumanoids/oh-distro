@@ -22,7 +22,7 @@ public class PositionCmdPublisher
         // TODO: generalize to subsets of joints
         LCM lcm = LCM.getSingleton();
         msg.utime = utime;
-        msg.angular_position = u;
+        msg.joint_position = u;
         lcm.publish(channel_name,msg);
     }
 }
