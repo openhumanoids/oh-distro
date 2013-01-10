@@ -20,7 +20,7 @@ joint_names = r.getStateFrame.coordinates(1:nx/2);
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
 lcmcoder = JLCMCoder(RobotStateCoder('atlas', joint_names));
-state_listener=LCMCoordinateFrameWCoder('atlas',nx,r.getStateFrame().prefix,lcmcoder);
+state_listener=LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
 state_listener.subscribe('EST_ROBOT_STATE');
 
 cmd_names = r.getInputFrame().coordinates;
