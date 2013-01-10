@@ -9,7 +9,7 @@ templates.  The policies and templates can be found at:
 ====
 
 Name:         teleop
-Maintainers:  Claudia Perez D'Arpino, Eric Bakan
+Maintainers:  Claudia Perez D'Arpino
 Summary:      pod for atlas teleoperation using the vicon system (Holodeck)
 Description:
   FILL-ME-IN
