@@ -1,0 +1,27 @@
+#cdarpino 01-10-2013
+
+Example of teleop:
+
+~/drc/software/config$ bot-procman-sheriff -l drc_robot_no_sensing_TELEOP.pmd
+
+-run "core" group
+
+-run "gazebo" group
+
+-press play in gazebo
+
+-You should have the robot in the drc viewer
+
+- run "vicon_teleop_ee_paladin_v1" (in the group teleop Paladin v1)
+
+- run "vicon_eegoals_publisher" (in the group teleop Paladin v1)
+
+- play the example logs:
+
+~/drc/software/teleop/example-lcmlogs$ lcm-logplayer-gui lcmlog-2012-12-01.01
+
+or:
+
+~/drc/software//teleop/example-lcmlogs$ lcm-logplayer-gui lcmlog-2012-12-01.03
+
+
