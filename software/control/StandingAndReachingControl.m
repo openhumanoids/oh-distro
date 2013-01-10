@@ -33,13 +33,23 @@ classdef StandingAndReachingControl < DrakeSystem
       % arm joint index matrices
       obj.I_right_arm = diag([zeros(1,22),ones(1,5),zeros(1,7)]);
       obj.I_left_arm = diag([zeros(1,10),ones(1,5),zeros(1,19)]);
+
+      epsilon = 0.01;
+      obj.q_d_max = obj.manip.joint_limit_max - epsilon;
+      obj.q_d_min = obj.manip.joint_limit_min + epsilon;
+      
+      obj.q_d_max(obj.q_d_max == inf) = 1e10;
+      obj.q_d_min(obj.q_d_min == -inf) = -1e10;
+
+      obj.q_d_max = r.manip.B' * obj.q_d_max;
+      obj.q_d_min = r.manip.B' * obj.q_d_min;
     end
     
     function q_d0 = getInitialState(obj)
       q_d0 = zeros(obj.manip.num_q,1);
     end
         
-    function q_dn = update(obj,t,ep_des,q_d,x)
+    function q_dn = update(obj,t,rep_des,lep_des,q_nom,q_d,x)
       nq = obj.manip.num_q;
       q = x(1:nq);
       dt = 0.01;  % should really call getSampleTime
@@ -47,7 +57,8 @@ classdef StandingAndReachingControl < DrakeSystem
       [gc,Jgc] = obj.manip.contactPositions(q);
       [cm,Jcm] = obj.manip.getCOM(q);
       kinsol = doKinematics(obj.manip,q); 
-      [ep,Jep] = forwardKin(obj.manip,kinsol,obj.rhand_ind,[0;0;0]);
+      [rep,Jrep] = forwardKin(obj.manip,kinsol,obj.rhand_ind,[0;0;0]);
+      [lep,Jlep] = forwardKin(obj.manip,kinsol,obj.lhand_ind,[0;0;0]);
 
       % compute desired COM projection
       P = diag([1 1 0]);
@@ -65,26 +76,32 @@ classdef StandingAndReachingControl < DrakeSystem
       % compute COM error 
       err_com = cm_des - P*cm;
       J_com = P*Jcm*Pq_qa;
-      k_com = 0.2;
+      k_com = 0.15;
       dq_com = k_com * pinv(J_com) * err_com;
  
       % COM nullspace projection matrix
       Ncom = eye(nq-6) - pinv(J_com)*J_com;
 
       % desired right endpoint position
-      err_ep = ep_des - ep;
-      k_ep = 0.35;
-      Jep = Jep*obj.I_right_arm*Pq_qa;
-      dq_ep = k_ep * pinv(Jep) * err_ep;
-      %[ep_des,ep]
-      normbound = 1.0; % norm bound to alleviate the effect of singularities.
-      if (norm(dq_ep)>normbound)
-        dq_ep = normbound*dq_ep/norm(dq_ep);
+      k_ep = 0.375;
+      err_rep = rep_des - rep;
+      Jrep = Jrep*obj.I_right_arm*Pq_qa;
+      Nrep = eye(nq-6) - pinv(Jrep)*Jrep;
+      dq_rep = k_ep * pinv(Jrep) * err_rep;
+
+      % desired left endpoint position
+      err_lep = lep_des - lep;
+      Jlep = Jlep*obj.I_left_arm*Pq_qa;
+      Nlep = eye(nq-6) - pinv(Jlep)*Jlep;
+      dq_lep = k_ep * pinv(Jlep) * err_lep;
+
+      normbound = 0.5; % norm bound to alleviate the effect of singularities.
+      if (norm(dq_rep)>normbound)
+        dq_rep = normbound*dq_rep/norm(dq_rep);
       end  
-
-
-      % endpoint nullspace projection matrix
-      Nep = eye(nq-6) - pinv(Jep)*Jep;
+      if (norm(dq_lep)>normbound)
+        dq_lep = normbound*dq_lep/norm(dq_lep);
+      end  
 
       % compute nominal position error
       err_nom = obj.q_nom - q(7:end);
@@ -92,10 +109,10 @@ classdef StandingAndReachingControl < DrakeSystem
       dq_nom = k_nom * err_nom;
       
       % do null space projections and map into input coordinates
-      if (t<5.0)% || t>15.75) 
+      if (t<2.0)% || t>15.75) 
         dq_des = Ngc * (dq_com + Ncom*dq_nom);
       else
-        dq_des = Ngc * (dq_com + Ncom*dq_ep + Ncom*Nep*dq_nom);
+        dq_des = Ngc * (dq_com + Ncom*(dq_rep + dq_lep) + Ncom*Nrep*Nlep*dq_nom);
       end
       
       % debug
@@ -105,6 +122,8 @@ classdef StandingAndReachingControl < DrakeSystem
       dq_des = obj.manip.B(7:end,:)' * dq_des;
 
       q_dn = q_d + dt*dq_des;
+      
+      q_dn = min(max(q_dn,obj.q_d_min),obj.q_d_max);
     end
     
     function y = output(obj,t,q_d,x)
@@ -119,5 +138,7 @@ classdef StandingAndReachingControl < DrakeSystem
     q_nom
     I_right_arm
     I_left_arm
+    q_d_max
+    q_d_min
   end
 end

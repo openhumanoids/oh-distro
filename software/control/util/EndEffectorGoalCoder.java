@@ -31,7 +31,7 @@ public class EndEffectorGoalCoder implements drake.util.LCMCoder
         
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
           fdata.val = new double[3];
-          fdata.t = (double)msg.utime / 100000.0;
+          fdata.t = (double)msg.utime / 1000000.0;
  
           fdata.val[0] = msg.ee_goal_pos.translation.x;
           fdata.val[1] = msg.ee_goal_pos.translation.y;
@@ -47,10 +47,10 @@ public class EndEffectorGoalCoder implements drake.util.LCMCoder
  
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
-      pmsg.utime = (long)(d.t*100000);
-      for (int i=0; i<3; i++) {
-        pmsg.ee_goal_pos.translation.x = (float) d.val[i];
-      }
+      pmsg.utime = (long)(d.t*1000000);
+      pmsg.ee_goal_pos.translation.x = (float) d.val[0];
+      pmsg.ee_goal_pos.translation.y = (float) d.val[1];
+      pmsg.ee_goal_pos.translation.z = (float) d.val[2];
       return pmsg;
     }
     

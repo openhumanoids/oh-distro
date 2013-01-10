@@ -27,9 +27,8 @@ cmd_publisher = ActuatorCmdPublisher('atlas',cmd_names,'ACTUATOR_CMDS');
 disp('Balancing controller ready...');
 % just run as fast as possible
 while (1)
-  [x,ts] = getNextMessage(state_listener,1);
+  [x,t] = getNextMessage(state_listener,1);
   if (~isempty(x))
-    t = ts/10;
     u = 0*c.output(t,[],x);
 
 %     fprintf('time is %f\n',t);

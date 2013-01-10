@@ -19,9 +19,8 @@ cmd_publisher = PositionCmdPublisher('atlas',cmd_names,'JOINT_POSITION_CMDS');
 
 disp('Position controller ready...');
 while (1)
-  [x,ts] = getNextMessage(state_listener,1);
+  [x,t] = getNextMessage(state_listener,1);
   if (~isempty(x))
-    t = ts/10;
     u = zeros(nu,1);
     u(strcmp('r_arm_elx', cmd_names)) = -1.57 + 0.4 * cos(t);
     u(strcmp('r_arm_ely', cmd_names)) = 0.4 + 0.4 * sin(t);

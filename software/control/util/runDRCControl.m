@@ -8,6 +8,8 @@ function runDRCControl(robot,controller,robot_name,state_channel,cmd_channel,opt
 % messages on.
 % @param cmd_channel LCM channel name on which to publish actuator_cmd_t messages (if controller has outputs)
 
+warning('using runDRCControl is depricated. Please use runLCM instead');
+
 if(~isfield(options,'tspan'))
     options.tspan = [0,inf];
 end

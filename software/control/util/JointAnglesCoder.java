@@ -37,7 +37,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
           
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
           fdata.val = new double[m_num_joints];
-          fdata.t = (double)msg.utime / 100000.0;
+          fdata.t = (double)msg.utime / 1000000.0;
           for (int i=0; i<msg.num_joints; i++) {
             j = m_joint_map.get(msg.joint_name[i]);
             if (j!=null) {
@@ -58,7 +58,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
     
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
-      msg.utime = (long)(d.t*100000);
+      msg.utime = (long)(d.t*1000000);
       for (int i=0; i<m_num_joints; i++) {
         msg.joint_position[i] = (float) d.val[i];
       }

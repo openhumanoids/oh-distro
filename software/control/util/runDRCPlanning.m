@@ -2,6 +2,9 @@ function runDRCPlanning(sys,planFun,robot_name,state_channel,navGoal_channel,pla
 % @param sys, a dynamical system, like Atlas
 % @param planFun, a function handle, takes the current state and navigation
 % goal as input, outputs the state and control profile
+
+warning('using runDRCPlanning is depricated. Please use runLCM instead');
+
 if(~isfield(options,'tspan'))
     options.tspan = [0,inf];
 end
