@@ -49,7 +49,7 @@ classdef StandingAndReachingControl < DrakeSystem
       q_d0 = zeros(obj.manip.num_q,1);
     end
         
-    function q_dn = update(obj,t,rep_des,lep_des,q_nom,q_d,x)
+    function q_dn = update(obj,t,rep_des,lep_des,q_d,x)
       nq = obj.manip.num_q;
       q = x(1:nq);
       dt = 0.01;  % should really call getSampleTime
