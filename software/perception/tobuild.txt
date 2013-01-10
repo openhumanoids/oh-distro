@@ -4,6 +4,7 @@ tf_solver
 pointcloud-tools
 perception_example
 motion_estimate
+lidar-passthough
 local_map
 #registeration
 map_store
