@@ -1,6 +1,10 @@
 #cdarpino 01-10-2013
 
 Example of teleop:
+- this example shows the vicon markers in the drc viewer and teleop the robot's arms (version up to December).
+- for January version the robot is not moving any more. You will see the markers but no robot motion. We are working in getting this functionality back,
+
+
 
 ~/drc/software/config$ bot-procman-sheriff -l drc_robot_no_sensing_TELEOP.pmd
 
