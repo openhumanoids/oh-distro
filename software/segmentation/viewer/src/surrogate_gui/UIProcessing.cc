@@ -1004,10 +1004,8 @@ namespace surrogate_gui
 		    _mWrapper->lock();
 		    if (_mWrapper->getMap() != NULL) 
 		      {
-			PointCloud<PointXYZ>::Ptr cloudXYZ = _mWrapper->getMap()->getAsPointCloud();
-			PointCloud<PointXYZRGB>::Ptr withRgb(new PointCloud<PointXYZRGB>);
-			PclSurrogateUtils::convertToRgb(cloudXYZ, withRgb);
-			getDisplayInfo()->cloud = withRgb;
+			PointCloud<PointXYZRGB>::Ptr cloudXYZRGB = _mWrapper->getMap()->getAsPointCloud();
+			getDisplayInfo()->cloud = cloudXYZRGB;
 			getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
 		      }
 
