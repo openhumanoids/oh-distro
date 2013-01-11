@@ -11,7 +11,6 @@ lcmtypes_build()
 
 #add_subdirectory(src/rgbd_vis)
 add_subdirectory(src/rgbd2file)
-add_subdirectory(src/lcmgl_example)
 add_subdirectory(src/est_robot_state_fake)
 
 add_subdirectory(src/image-compress)
@@ -28,5 +27,3 @@ add_subdirectory(src/image-passthrough)
 add_subdirectory(src/pcl_openni_grabber)
 add_subdirectory(src/pcl_pcd_grabber)
 
-# basic ncurses implementation: [compiles]
-add_subdirectory(src/ncurses_example)
