@@ -12,6 +12,7 @@ opencv-utils
 tld-tracker
 world_model
 
+tutorials
 plamena_sandbox
 #rgbd_simulation
 #mfallon_sandbox
