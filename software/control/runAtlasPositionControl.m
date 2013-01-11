@@ -1,7 +1,7 @@
 function runAtlasPositionControl
 
 options.floating = true;
-r = RigidBodyManipulator('/home/scottk/drc/software/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
 
 nx = r.getNumStates();
 nu = r.getNumInputs();
