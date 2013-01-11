@@ -22,8 +22,8 @@ while (1)
   [x,t] = getNextMessage(state_listener,1);
   if (~isempty(x))
     u = zeros(nu,1);
-    u(strcmp('r_arm_elx', cmd_names)) = -1.57 + 0.4 * cos(t);
-    u(strcmp('r_arm_ely', cmd_names)) = 0.4 + 0.4 * sin(t);
+    %u(strcmp('r_arm_elx', cmd_names)) = -1.57 + 0.4 * cos(t);
+    %u(strcmp('r_arm_ely', cmd_names)) = 0.4 + 0.4 * sin(t);
 %     fprintf('time is %f\n',t);
 %     fprintf('state is %f\n',x);
 %     fprintf('control is %f\n\n',u);
