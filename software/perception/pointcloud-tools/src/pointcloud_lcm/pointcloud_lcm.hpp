@@ -100,6 +100,37 @@ convertLidar(const float * ranges, int numPoints, double thetaStart,
 
 
 
+inline void
+convertLidar(std::vector< float > ranges, int numPoints, double thetaStart,
+        double thetaStep,
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
+        double maxRange = 1e10,
+        double validRangeStart = -1000, double validRangeEnd = 1000)
+{
+  int count = 0;
+  double theta = thetaStart;
+
+  cloud->width   = numPoints;
+  cloud->height   = 1;
+  cloud->points.resize (numPoints);
+
+
+    for (int i = 0; i < numPoints; i++) {
+        if (ranges[i] > .1 && ranges[i] < maxRange && theta > validRangeStart
+                && theta < validRangeEnd) { 
+            //hokuyo driver seems to report maxRanges as .001 :-/
+            //project to body centered coordinates
+            cloud->points[count].x = ranges[i] * cos(theta);
+            cloud->points[count].y = ranges[i] * sin(theta);
+            count++;
+        }
+        theta += thetaStep;
+    }
+  // Resize outgoing cloud
+  cloud->width   = count;
+  cloud->points.resize (count);
+}
+
 
 
 #endif
