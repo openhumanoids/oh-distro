@@ -92,6 +92,17 @@ namespace pcl
         }
         
         /**
+         * Set the near and far depth parameters (in metres)
+         */        
+        void
+        setCameraDepthLimits (float z_near_in,
+                                   float z_far_in)
+        {
+          z_near_ = z_near_in;
+          z_far_ = z_far_in;
+        }
+        
+        /**
          * Set the cost function to be used - one of 4 hard coded currently
          */
         void setCostFunction (int which_cost_function_in){  which_cost_function_ = which_cost_function_in;}

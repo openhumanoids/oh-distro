@@ -727,6 +727,7 @@ void get_MeshInBox(pcl::PolygonMesh::Ptr meshin_ptr,
 
 
 bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
+  cout << "DEPRECATED: CONSIDER USING VERSION IN DRC IMAGE PASSTHROUGH\n";
 
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
   pcl::fromROSMsg(meshA->cloud, cloudA);
@@ -910,7 +911,7 @@ bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointX
 // display_tic_toc: a helper function which accepts a set of 
 // timestamps and displays the elapsed time between them as 
 // a fraction and time used [for profiling]
-void display_tic_toc(vector<int64_t> &tic_toc,const string &fun_name){
+void display_tic_toc(std::vector<int64_t> &tic_toc,const string &fun_name){
   int tic_toc_size = tic_toc.size();
   
   double percent_tic_toc_last = 0;

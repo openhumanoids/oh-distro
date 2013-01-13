@@ -107,6 +107,10 @@ void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss);
 
 
 
+
+
+
+
 ////////////////////////////////////////////////////////////////////////
 // These are all depricated
 typedef struct _Ptcoll_cfg
