@@ -22,8 +22,6 @@ add_subdirectory(src/tld_lcmgl)
 add_subdirectory(src/plane_detector)
 add_subdirectory(src/terrain_classify)
 
-add_subdirectory(src/image-passthrough)
-
 add_subdirectory(src/pcl_openni_grabber)
 add_subdirectory(src/pcl_pcd_grabber)
 
