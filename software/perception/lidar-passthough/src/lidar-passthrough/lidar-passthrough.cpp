@@ -15,10 +15,10 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 
-#include <collision_detection/collision.h>
-#include <collision_detection/collision_detector.h>
-#include <collision_detection/collision_object_gfe.h>
-#include <collision_detection/collision_object_point_cloud.h>
+#include <collision/collision.h>
+#include <collision/collision_detector.h>
+#include <collision/collision_object_gfe.h>
+#include <collision/collision_object_point_cloud.h>
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
@@ -28,7 +28,7 @@
 using namespace std;
 using namespace drc;
 using namespace Eigen;
-using namespace collision_detection;
+using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
 
 
