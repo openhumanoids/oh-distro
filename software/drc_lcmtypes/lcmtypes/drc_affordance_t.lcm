@@ -31,5 +31,5 @@ struct affordance_t
   // This enum involves modifying the lcm type
   // for every otdf addition. Remove otdf id?
   // A label is sufficient?
-  const int16_t CYLINDER=0, LEVER=1; 
+  const int16_t CYLINDER=0, LEVER=1, SPHERE=2, BOX=3; 
 }
