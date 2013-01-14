@@ -8,11 +8,21 @@
 #include "AffordanceState.h"
 #include "boost/assign.hpp"
 
+using namespace affordance;
+using namespace Eigen;
 using namespace boost;
 using namespace std;
 
-namespace affordance
-{
+//--------set common name fields for drc::affordance_t
+
+string AffordanceState::X_NAME 		= "x";
+string AffordanceState::Y_NAME 		= "y";
+string AffordanceState::Z_NAME 		= "z";
+string AffordanceState::ROLL_NAME 	= "roll";
+string AffordanceState::PITCH_NAME 	= "pitch";
+string AffordanceState::YAW_NAME 	= "yaw";
+string AffordanceState::RADIUS_NAME = "radius";
+string AffordanceState::LENGTH_NAME = "length";
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg)
@@ -61,10 +71,14 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 	//this should really be static
 	//SOME WEIRD C++ issues require setting these to variables
-	int16_t c 		= drc::affordance_t::CYLINDER;
-	int16_t lev 	= drc::affordance_t ::LEVER;
-	idToEnum[c] 	= AffordanceState::CYLINDER;
-	idToEnum[lev]  	=  AffordanceState::LEVER;
+	int16_t c 		 = drc::affordance_t::CYLINDER;
+	int16_t lev 	 = drc::affordance_t ::LEVER;
+	int16_t box		 = drc::affordance_t::BOX;
+	int16_t sphere	 = drc::affordance_t::SPHERE;
+	idToEnum[c]  	 = AffordanceState::CYLINDER;
+	idToEnum[lev]  	 = AffordanceState::LEVER;
+	idToEnum[box] 	 = AffordanceState::BOX;
+	idToEnum[sphere] = AffordanceState::SPHERE;
 
 	//argument check
 	if (idToEnum.find(msg->otdf_id) == idToEnum.end())
@@ -86,7 +100,7 @@ AffordanceState::~AffordanceState()
 }
 
 //------methods-------
-
+/**convert this to a drc_affordacne_t lcm message*/
 void AffordanceState::toMsg(drc::affordance_t *msg) const
 {
 	msg->map_utime 	= _map_utime;
@@ -120,5 +134,54 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->ptinds.push_back(_ptinds[i]);
 }
 
+/**@return x,y,z or throws an exception if any of those are not present*/
+Vector3f AffordanceState::getXYZ() const
+{
+	//defensive checks
+	assertContainsKey(_params, X_NAME);
+	assertContainsKey(_params, Y_NAME);
+	assertContainsKey(_params, Z_NAME);
 
-} //namespace affordance
+	//using find method b/c operator[] isn't a const method
+	return Vector3f(_params.find(X_NAME)->second,
+					_params.find(Y_NAME)->second,
+					_params.find(Z_NAME)->second);
+}
+
+/**@return roll,pitch,yaw or throws an exception if any of those are not present*/
+Vector3f AffordanceState::getRPY() const
+{
+	assertContainsKey(_params, ROLL_NAME);
+	assertContainsKey(_params, PITCH_NAME);
+	assertContainsKey(_params, YAW_NAME);
+
+	//using find method b/c operator[] isn't a const method
+	return Vector3f(_params.find(ROLL_NAME)->second,
+					_params.find(PITCH_NAME)->second,
+					_params.find(YAW_NAME)->second);
+}
+
+/**@return radius or throws exception if not present*/
+double AffordanceState::radius() const
+{
+	assertContainsKey(_params, RADIUS_NAME);
+	return _params.find(RADIUS_NAME)->second;
+}
+
+/**@return length or throws exception if not present*/
+double AffordanceState::length() const
+{
+	assertContainsKey(_params, LENGTH_NAME);
+	return _params.find(LENGTH_NAME)->second;
+}
+
+void AffordanceState::assertContainsKey(const unordered_map<string, double> &map,
+					   	   	   	   	   	const string &key)
+{
+	if (map.find(key) == map.end())
+		throw KeyNotFoundException("Key = " + key + " not found");
+}
+
+
+
+

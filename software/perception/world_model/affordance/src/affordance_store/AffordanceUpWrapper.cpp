@@ -12,6 +12,8 @@ using namespace std;
 
 namespace affordance {
 
+/**We use the given lcm object to subscribe.  We assume some other part of the code needs to
+ * while(true)lcm->handle()*/
 AffordanceUpWrapper::AffordanceUpWrapper(const boost::shared_ptr<lcm::LCM> lcm)
 	: _lcm(lcm), _affordances(), _accessMutex()
 {
@@ -72,8 +74,5 @@ void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, co
 
 	_accessMutex.unlock(); //=======unlock
 }
-
-
-
 
 } /* namespace affordance */

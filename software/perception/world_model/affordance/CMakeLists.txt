@@ -8,15 +8,17 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-#---boost 
-find_package(Boost COMPONENTS thread date_time program_options filesystem system REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})			   
-
 #--include sub-directories
 include_directories(.)
 include_directories(./src)
 include_directories(./src/affordance_store)
 
+#---boost and eigen
+find_package(Boost COMPONENTS thread date_time program_options filesystem system REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})			   
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
 
 add_library(affordance SHARED 			
 			src/AffordanceState.cpp
@@ -27,8 +29,7 @@ set(REQUIRED_PACKAGES
     lcm
   	lcmtypes_drc_lcmtypes
 	)
-			  	
-			  	
+			  	  	
 pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})			  	
 			  	
 target_link_libraries(affordance ${Boost_LIBRARIES})
