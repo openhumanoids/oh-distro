@@ -13,6 +13,7 @@ kinematics_model
 sensing
 control
 
+gfe
 perception
 viewer
 
@@ -25,4 +26,3 @@ gazebo_plugins
 
 # disabled for now:
 #teleop
-gfe
