@@ -63,6 +63,8 @@ class OraclePlugin: public ModelPlugin{
     model_map_["fire_hose"]=70010;
     model_map_["saucepan"]=70011;  
     //model_map_["mit_drc_robot"]=7012; //dont send this
+    
+    storeAffordances();
       
     // obj_cfg: id name type reset
     // pts_cfg: id name type reset objcoll usergb rgb
@@ -74,6 +76,111 @@ class OraclePlugin: public ModelPlugin{
        pc_vis_->obj_cfg_list.push_back( obj_cfg( (*ii).second  ,name_out.str(),5,1) );
     }
   }
+  
+  public: void storeAffordances(){
+    
+    { 
+      drc::affordance_t a;
+      a.map_utime =0;
+      a.map_id =0;
+      a.object_id =0;
+      a.otdf_id =0;
+      a.name ="mit_golf_cart_steering_wheel";
+      a.nparams =9;
+
+      a.param_names.push_back("x");
+      a.params.push_back(0);
+      a.param_names.push_back("y");
+      a.params.push_back(0);
+      a.param_names.push_back("z");
+      a.params.push_back(0);
+
+      a.param_names.push_back("roll");
+      a.params.push_back( 0 );
+      a.param_names.push_back("pitch");
+      a.params.push_back( 0);
+      a.param_names.push_back("yaw");
+      a.params.push_back( 0 );
+
+      a.param_names.push_back("radius");
+      a.params.push_back(0.220000);
+      a.param_names.push_back("length");
+      a.params.push_back(0.020000);
+      a.param_names.push_back("mass");
+      a.params.push_back(1.0); // unknown
+      
+      a.nstates =0;
+      a.nptinds =0;
+      
+      aff_map_["mit_golf_cart_steering_wheel"]=a;
+    }
+    
+    
+    { 
+      drc::affordance_t a;
+      a.map_utime =0;
+      a.map_id =0;
+      a.object_id =0;
+      a.otdf_id =0;
+      a.name ="mit_golf_cart_hand_brake";
+      a.nparams =9;
+
+      a.param_names.push_back("x");
+      a.params.push_back(0);
+      a.param_names.push_back("y");
+      a.params.push_back(0);
+      a.param_names.push_back("z");
+      a.params.push_back(0);
+
+      a.param_names.push_back("roll");
+      a.params.push_back( 0 );
+      a.param_names.push_back("pitch");
+      a.params.push_back( 0);
+      a.param_names.push_back("yaw");
+      a.params.push_back( 0 );
+
+      a.param_names.push_back("radius");
+      a.params.push_back(0.020000);
+      a.param_names.push_back("length");
+      a.params.push_back(0.30000);
+      a.param_names.push_back("mass");
+      a.params.push_back(1.0); // unknown
+      
+      a.nstates =0;
+      a.nptinds =0;
+      
+      aff_map_["mit_golf_cart_hand_brake"]=a;
+    }    
+    
+  }
+  
+
+  public: drc::affordance_t getAffordance(
+        std::string name,
+        Eigen::Isometry3d pose){
+
+    // Find the affordance:
+    drc::affordance_t aff= aff_map_.find( name)->second;
+    // Update the xyzrpr:
+    Eigen::Quaterniond r(pose.rotation());
+    double yaw, pitch, roll;
+    quat_to_euler(r, yaw, pitch, roll);    
+    int ix = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "x"   ) );
+    aff.params[ix] = pose.translation().x() ;
+    int iy = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "y"   ) );
+    aff.params[iy] = pose.translation().y() ;
+    int iz = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "z"   ) );
+    aff.params[iz] = pose.translation().z() ;
+    int iroll = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "roll"   ) );
+    aff.params[iroll] = roll ;
+    int ipitch = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "pitch"   ) );
+    aff.params[ipitch] = pitch ;
+    int iyaw = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "yaw"   ) );
+    aff.params[iyaw] = yaw ;
+    
+    return aff;
+}  
+  
     
   // Called by the world update start event
   public: void OnUpdate(){
@@ -113,6 +220,14 @@ class OraclePlugin: public ModelPlugin{
       }
       
       int64_t curr_time = (int64_t) round(sim_time.Double()*1E6);
+      
+      drc::affordance_collection_t affcol;
+      affcol.name;    // name to display e.g. "kitchen" or "pump room"
+      affcol.map_utime=0; // utime of the local map we refer to
+      affcol.map_id=0; // id of the local map - duplication of the above?
+      affcol.naffs=1;
+    
+      
       BOOST_FOREACH( physics::ModelPtr model, all_models ){
         if (model){
           //gzerr << "which link: "<< model->GetName() <<"\n";
@@ -130,6 +245,8 @@ class OraclePlugin: public ModelPlugin{
             BOOST_FOREACH( physics::LinkPtr link, all_links ){
               if (link){
                 //gzerr << "which link: "<< link->GetName() <<"\n";
+                
+                
                 math::Pose pose;
                 pose = link->GetWorldPose();
                 Eigen::Isometry3d world_to_link;
@@ -137,6 +254,10 @@ class OraclePlugin: public ModelPlugin{
                 world_to_link.translation()  << pose.pos.x, pose.pos.y, pose.pos.z;
                 Eigen::Quaterniond quat = Eigen::Quaterniond( pose.rot.w, pose.rot.x , pose.rot.y , pose.rot.z);
                 world_to_link.rotate(quat);    
+                
+                //gzerr << model->GetName() << ", " << link->GetName() << " | "
+                //      << pose.pos.x << " " << pose.pos.y << " " << pose.pos.z << " | "
+                //      << pose.rot.w << " " << pose.rot.x << " " << pose.rot.y << " " << pose.rot.z << "\n";
                 
                 // These 3 lines transform the true link position into the estimated robot's frame, i.e:
                 // est_w2l =  est_w2h * (true_w2h_inv) * true_w2l
@@ -147,13 +268,29 @@ class OraclePlugin: public ModelPlugin{
                 Isometry3dTime world_to_linkT(curr_time+counter, world_to_link);
                 world_to_linksT.push_back(world_to_linkT);
                 counter++;
+                
+
+                std::string affname = model->GetName() + "_" +link->GetName();
+                if ( link->GetName().compare( "steering_wheel" ) == 0){
+                  gzerr<< "got steering_wheel\n"; 
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                }
+                if ( link->GetName().compare( "hand_brake" ) == 0){
+                  gzerr<< "got hand_brake\n"; 
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                }
+                
+                
               }
             }
             pc_vis_->pose_collection_to_lcm_from_list(model_id, world_to_linksT); // all links in world frame
           }
         }
-        
       }
+      
+      affcol.naffs = affcol.affs.size();
+      lcm_publish_.publish( ("AFFORDANCE_COLLECTION") , &affcol);        
+      
       this->last_update_time_ = sim_time;
     }
   }
@@ -208,6 +345,8 @@ class OraclePlugin: public ModelPlugin{
     
     std::string world_to_robot_link_;
     std::string robot_name_;
+    
+    std::map< std::string, drc::affordance_t > aff_map_;
 };
 
 // Register this plugin with the simulator
