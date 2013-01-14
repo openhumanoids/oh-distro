@@ -38,7 +38,7 @@ if(REQUIRED_PACKAGES_HUMANOID)
     return()
 endif(REQUIRED_PACKAGES_HUMANOID)
 
-set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detection eigen3) 
+set(REQUIRED_PACKAGES_HUMANOID urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detector collision_object eigen3) 
 
 pods_install_pkg_config_file(renderer_drc
     LIBS -lrenderer_drc -ljpeg 

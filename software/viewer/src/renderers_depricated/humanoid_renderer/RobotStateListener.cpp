@@ -372,7 +372,7 @@ namespace fk
             
             Eigen::Vector3f dims;
             dims<< mesh_struct.span_x,mesh_struct.span_y,mesh_struct.span_z;
-            collision_detection::Collision_Object_Box collision_object(it->first, dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
+            collision::Collision_Object_Box collision_object(it->first, dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
            
            // populate data structures
             _mesh_map.insert(make_pair(it->first, mesh_struct));

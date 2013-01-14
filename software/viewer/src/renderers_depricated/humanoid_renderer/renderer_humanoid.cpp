@@ -32,7 +32,7 @@
 using namespace std;
 using namespace boost;
 using namespace Eigen;
-using namespace collision_detection;
+using namespace collision;
 using namespace humanoid_renderer;
 
 typedef struct _RendererHumanoid 
@@ -121,7 +121,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
    //to << ray_dir[0], ray_dir[1], ray_dir[2];
  //std::cout  << "num_coll_objects: " << self->robotStateListener->_collision_object_map.size() <<  std::endl;
  //std::cout  << "num_colls: " << self->robotStateListener->_collision_detector.num_collisions() <<  std::endl;// segfaults
-  collision_detection::Collision_Object * intersected_object = NULL;
+  collision::Collision_Object * intersected_object = NULL;
   self->robotStateListener->_collision_detector.num_collisions();
   self->robotStateListener->_collision_detector.ray_test( from, to, intersected_object );
   if( intersected_object != NULL ){

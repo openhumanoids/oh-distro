@@ -12,7 +12,7 @@
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
-using namespace collision_detection;
+using namespace collision;
 using namespace renderer_affordances;
 using namespace renderer_affordances_gui_utils;
 
@@ -124,7 +124,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   std::cout  << "to " << to.transpose() << std::endl;
   
   
-  collision_detection::Collision_Object * intersected_object = NULL;
+  collision::Collision_Object * intersected_object = NULL;
   bool selection_made = false;
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
   for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)

@@ -14,8 +14,8 @@
 #include <path_util/path_util.h>
 
 #include <Eigen/Dense>
-#include <collision_detection/collision_detector.h>
-#include <collision_detection/collision_object_box.h>
+#include <collision/collision_detector.h>
+#include <collision/collision_object_box.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -35,7 +35,7 @@ namespace fk
     double offset_x; // vertices are not always defined in local link frame. In the drc robot sdf, the vertices are defined in parent joint coordinates.
     double offset_y;
     double offset_z; 
-    //collision_detection::Collision_Object_Box collision_object;   
+    //collision::Collision_Object_Box collision_object;   
   };
 
 
@@ -95,10 +95,10 @@ namespace fk
 				const std::vector<drc::link_transform_t> &_link_tfs);
 
     std::map<std::string, MeshStruct > _mesh_map;
-    std::map<std::string, collision_detection::Collision_Object_Box > _collision_object_map;
+    std::map<std::string, collision::Collision_Object_Box > _collision_object_map;
     
     // create a collision detector class
-    collision_detection::Collision_Detector _collision_detector;
+    collision::Collision_Detector _collision_detector;
     
   private:
  std::string evalMeshFilePath(std::string file_path_expression);

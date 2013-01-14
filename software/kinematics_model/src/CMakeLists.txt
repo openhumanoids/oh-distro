@@ -1,12 +1,10 @@
 # Create a shared library libhello.so with a single source file
 add_library(kinematics_model SHARED
-            kinematics_model.cc
-            kinematics_model_gfe.cc)
+            kinematics_model.cc)
 
 # make the header public
 # install it to include/hello
 pods_install_headers(kinematics_model.h
-                      kinematics_model_gfe.h 
                       DESTINATION kinematics_model)
 
 # make the library public

@@ -2,5 +2,7 @@
 # and lines starting with '#' are ignored
 
 drc_utils
-opengl_utils
+opengl
+qt4
+collision
 visualization_utils

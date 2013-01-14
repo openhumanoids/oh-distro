@@ -14,7 +14,7 @@ add_library(visualization-utils SHARED  src/GlKinematicBody.cpp src/Interactable
 # make the library public
 pods_install_libraries(visualization-utils)
 
-set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detection eigen3) 
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detector collision_object eigen3) 
 pods_use_pkg_config_packages(visualization-utils lcm lcmtypes_drc_lcmtypes bot2-core bot2-vis bot2-frames ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

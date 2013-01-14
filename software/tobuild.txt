@@ -3,16 +3,15 @@
 
 #externals
 drc_lcmtypes
-
-#hubo
 robot_model
 kinematics
+object_template_model
+utils
+
+#hubo
 kinematics_model
 sensing
 control
-object_template_model
-collision_detection
-utils
 
 perception
 viewer
@@ -26,3 +25,4 @@ gazebo_plugins
 
 # disabled for now:
 #teleop
+gfe

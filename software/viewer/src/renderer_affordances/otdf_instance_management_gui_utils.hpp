@@ -5,7 +5,7 @@
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
-using namespace collision_detection;
+using namespace collision;
 using namespace renderer_affordances;
 
 

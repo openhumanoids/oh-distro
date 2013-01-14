@@ -2,10 +2,10 @@
 #define INTERACTABLE_GL_KINEMATIC_BODY_HPP
 
 #include "GlKinematicBody.hpp"
-#include <collision_detection/collision_detector.h>
-#include <collision_detection/collision_object_sphere.h>
-#include <collision_detection/collision_object_cylinder.h>
-#include <collision_detection/collision_object_box.h>
+#include <collision/collision_detector.h>
+#include <collision/collision_object_sphere.h>
+#include <collision/collision_object_cylinder.h>
+#include <collision/collision_object_box.h>
 namespace visualization_utils {
 
  
@@ -14,11 +14,11 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
   public:
     std::string _unique_name;
-    std::map<std::string,   boost::shared_ptr<collision_detection::Collision_Object> > _collision_object_map;
+    std::map<std::string,   boost::shared_ptr<collision::Collision_Object> > _collision_object_map;
     
     // create a collision detector class
-    // collision_detection::Collision_Detector _collision_detector;
-    boost::shared_ptr<collision_detection::Collision_Detector> _collision_detector;
+    // collision::Collision_Detector _collision_detector;
+    boost::shared_ptr<collision::Collision_Detector> _collision_detector;
   private:   
    std::string selected_link;
    bool link_selection_enabled;
@@ -28,15 +28,15 @@ class InteractableGlKinematicBody: public GlKinematicBody
   //copy Constructors
   InteractableGlKinematicBody( const InteractableGlKinematicBody& other, std::string unique_name); 
   InteractableGlKinematicBody( const GlKinematicBody& other,
-                              boost::shared_ptr<collision_detection::Collision_Detector> col_detector, 
+                              boost::shared_ptr<collision::Collision_Detector> col_detector, 
                               bool enable_selection,
                               std::string unique_name);
  // Constructors (Reuses code from GLKinematicBody Constructor)
   InteractableGlKinematicBody(std::string urdf_xml_string,
-                              boost::shared_ptr<collision_detection::Collision_Detector> col_detector, 
+                              boost::shared_ptr<collision::Collision_Detector> col_detector, 
                               bool enable_selection, std::string unique_name);
   InteractableGlKinematicBody (boost::shared_ptr<otdf::ModelInterface> otdf_instance,
-                              boost::shared_ptr<collision_detection::Collision_Detector> col_detector,
+                              boost::shared_ptr<collision::Collision_Detector> col_detector,
                               bool enable_selection, std::string unique_name);
   ~InteractableGlKinematicBody();
    void init_urdf_collision_objects();

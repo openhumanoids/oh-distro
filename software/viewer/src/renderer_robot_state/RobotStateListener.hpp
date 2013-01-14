@@ -16,8 +16,8 @@
 #include <path_util/path_util.h>
 
 #include <Eigen/Dense>
-#include <collision_detection/collision_detector.h>
-#include <collision_detection/collision_object_box.h>
+#include <collision/collision_detector.h>
+#include <collision/collision_object_box.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -54,7 +54,7 @@ namespace renderer_robot_state
 		       BotViewer *viewer);
     ~RobotStateListener();
 
-    boost::shared_ptr<collision_detection::Collision_Detector> _collision_detector; 
+    boost::shared_ptr<collision::Collision_Detector> _collision_detector; 
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_robot;
     
     

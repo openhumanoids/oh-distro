@@ -6,7 +6,7 @@
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
-using namespace collision_detection;
+using namespace collision;
 
 namespace renderer_robot_state 
 {

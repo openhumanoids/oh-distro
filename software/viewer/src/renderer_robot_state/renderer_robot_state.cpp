@@ -29,7 +29,7 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 using namespace visualization_utils;
-using namespace collision_detection;
+using namespace collision;
 using namespace renderer_robot_state;
 
 
@@ -119,7 +119,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
    //to << ray_dir[0], ray_dir[1], ray_dir[2];
  //std::cout  << "num_coll_objects: " << self->robotStateListener->_collision_object_map.size() <<  std::endl;
  //std::cout  << "num_colls: " << self->robotStateListener->_collision_detector->num_collisions() <<  std::endl;// segfaults
-  collision_detection::Collision_Object * intersected_object = NULL;
+  collision::Collision_Object * intersected_object = NULL;
   if(self->robotStateListener->_gl_robot) // to make sure that _gl_robot is initialized 
   {
    self->robotStateListener->_gl_robot->_collision_detector->num_collisions();

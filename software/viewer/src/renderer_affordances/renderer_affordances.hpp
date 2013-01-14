@@ -79,7 +79,7 @@
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
-using namespace collision_detection;
+using namespace collision;
 
 namespace renderer_affordances{
 
@@ -118,7 +118,7 @@ typedef point3d_t vec3d_t;
 typedef struct _OtdfInstanceStruc {
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
-    boost::shared_ptr<collision_detection::Collision_Detector> _collision_detector; 
+    boost::shared_ptr<collision::Collision_Detector> _collision_detector; 
 //    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
 //    std::vector<boost::shared_ptr<otdf::Geometry> > _link_shapes;
 }OtdfInstanceStruc;   
