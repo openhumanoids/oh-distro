@@ -69,8 +69,9 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 	_name 		= msg->name;
 	_ptinds 	= msg->ptinds;
 
-	//this should really be static
-	//SOME WEIRD C++ issues require setting these to variables
+	//this should really be static.
+	//SOME WEIRD C++ issues require setting these to variables first
+	//before using as the key for the map.
 	int16_t c 		 = drc::affordance_t::CYLINDER;
 	int16_t lev 	 = drc::affordance_t ::LEVER;
 	int16_t box		 = drc::affordance_t::BOX;
@@ -146,6 +147,14 @@ Vector3f AffordanceState::getXYZ() const
 	return Vector3f(_params.find(X_NAME)->second,
 					_params.find(Y_NAME)->second,
 					_params.find(Z_NAME)->second);
+}
+
+/**@return true if we have roll/pitch/yaw parameters.  false otherwise*/
+bool AffordanceState::hasRPY() const
+{
+	return (_params.find(ROLL_NAME) != _params.end() &&
+			_params.find(PITCH_NAME) != _params.end() &&
+			_params.find(YAW_NAME) != _params.end());
 }
 
 /**@return roll,pitch,yaw or throws an exception if any of those are not present*/

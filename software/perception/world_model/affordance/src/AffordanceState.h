@@ -70,6 +70,7 @@ namespace affordance
 		//have these fields defined
 		Eigen::Vector3f getXYZ() const;
 		Eigen::Vector3f getRPY() const;
+		bool hasRPY() const;
 		double radius() const;
 		double length() const;
 
