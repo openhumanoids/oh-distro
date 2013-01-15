@@ -374,18 +374,18 @@ int main( int argc, char** argv ){
   bool verbose=FALSE;
   string vicon_channel="drc_vicon";
   string output_type="both";
-  string vicon_model="DRC_PALADIN_MODEL_v1";
+  string model="DRC_PALADIN_MODEL_v1";
   double scale=1.3;
   parser.add(verbose, "v", "verbose", "Verbosity");
-  parser.add(vicon_channel, "l", "vicon_channel", "Incoming LIDAR channel");
+  parser.add(vicon_channel, "l", "vicon_channel", "Incoming Vicorn channel");
   parser.add(output_type, "o", "output_type", "Command: left right both");
-  parser.add(vicon_model, "v", "vicon_model", "Name of Vicon Model");
+  parser.add(model, "m", "model", "Name of Vicon Model");
   parser.add(scale, "s", "scale", "Human to Robot Scale Factor");
   parser.parse();
   cout << verbose << " is verbose\n";
   cout << vicon_channel << " is vicon_channel\n";
   cout << output_type << " is output_type\n";
-  cout << vicon_model << " is vicon_model\n";
+  cout << model << " is model\n";
   cout << scale << " is scale\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -393,7 +393,7 @@ int main( int argc, char** argv ){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm, verbose, vicon_channel, output_type, vicon_model, scale);
+  Pass app(lcm, verbose, vicon_channel, output_type, model, scale);
   cout << "Ready to process incoming LCM" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
