@@ -17,8 +17,9 @@ namespace state {
     ~State_GFE();
     State_GFE( const State_GFE& other );
     State_GFE& operator=( const State_GFE& other );
-
-    bool from_urdf( std::string urdfFilename = "/mit_gazebo_models/mit_robot_PnC/model.urdf" );
+  
+    bool from_xml_string( std::string xmlString );
+    bool from_urdf( std::string urdfFilename = "/mit_gazebo_models/mit_robot/model.urdf" );
     bool from_lcm( const drc::robot_state_t& robotState );
     void to_lcm( drc::robot_state_t& robotState )const;
 

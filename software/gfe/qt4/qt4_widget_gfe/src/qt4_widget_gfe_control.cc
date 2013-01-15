@@ -16,6 +16,8 @@ Qt4_Widget_GFE_Control( QWidget * parent ) : QWidget( parent ),
                                               _values(){
   _state_gfe.from_urdf();
 
+  QVBoxLayout * left_hand_layout = new QVBoxLayout();
+  QVBoxLayout * right_hand_layout = new QVBoxLayout();
   QVBoxLayout * left_arm_layout = new QVBoxLayout();
   QVBoxLayout * right_arm_layout = new QVBoxLayout();
   QVBoxLayout * left_leg_layout = new QVBoxLayout();
@@ -33,7 +35,11 @@ Qt4_Widget_GFE_Control( QWidget * parent ) : QWidget( parent ),
     joint_layout->addWidget( joint_slider );
     joint_layout->addWidget( joint_value );
     joint_group_box->setLayout( joint_layout );
-    if( joint_name.contains( "l_arm" ) ){
+    if( joint_name.contains( "l_hand" ) ){
+      left_hand_layout->addWidget( joint_group_box );
+    } else if ( joint_name.contains( "r_hand" ) ){
+      right_hand_layout->addWidget( joint_group_box );
+    } else if ( joint_name.contains( "l_arm" ) ){
       left_arm_layout->addWidget( joint_group_box );
     } else if ( joint_name.contains( "r_arm" ) ){
       right_arm_layout->addWidget( joint_group_box );
@@ -51,6 +57,10 @@ Qt4_Widget_GFE_Control( QWidget * parent ) : QWidget( parent ),
     connect( joint_slider, SIGNAL( valueChanged( int ) ), this, SLOT( _update_joints( int ) ) ); 
   }
 
+  QGroupBox * left_hand_group_box = new QGroupBox( "left hand" );
+  left_hand_group_box->setLayout( left_hand_layout );
+  QGroupBox * right_hand_group_box = new QGroupBox( "right hand" );
+  right_hand_group_box->setLayout( right_hand_layout);
   QGroupBox * left_arm_group_box = new QGroupBox( "left arm" );
   left_arm_group_box->setLayout( left_arm_layout );
   QGroupBox * right_arm_group_box = new QGroupBox( "right arm" );
@@ -63,11 +73,13 @@ Qt4_Widget_GFE_Control( QWidget * parent ) : QWidget( parent ),
   other_group_box->setLayout( other_layout );
 
   QGridLayout * main_layout = new QGridLayout();
-  main_layout->addWidget( left_leg_group_box, 0, 0 );
-  main_layout->addWidget( left_arm_group_box, 0, 1 );
-  main_layout->addWidget( other_group_box, 0, 2 );
-  main_layout->addWidget( right_arm_group_box, 0, 3 );
-  main_layout->addWidget( right_leg_group_box, 0, 4 );
+  main_layout->addWidget( left_hand_group_box, 0, 0 );
+  main_layout->addWidget( left_leg_group_box, 0, 1 );
+  main_layout->addWidget( left_arm_group_box, 0, 2 );
+  main_layout->addWidget( other_group_box, 0, 3 );
+  main_layout->addWidget( right_arm_group_box, 0, 4 );
+  main_layout->addWidget( right_leg_group_box, 0, 5 );
+  main_layout->addWidget( right_hand_group_box, 0, 6 );
 
   if( parent == 0 ){
     setLayout( main_layout );

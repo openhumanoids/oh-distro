@@ -134,7 +134,8 @@ _load_opengl_objects( void ){
         shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
         std::string model_filename = mesh->filename;
         model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
-        model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename;
+        model_filename.erase( model_filename.end()-3, model_filename.end() );
+        model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "dae" );
         _opengl_objects.push_back( new OpenGL_Object_DAE( links[ i ]->name, model_filename ) );
       }
     }

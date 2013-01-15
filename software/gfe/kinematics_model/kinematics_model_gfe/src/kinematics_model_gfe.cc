@@ -19,30 +19,28 @@ using namespace kinematics_model;
  * class constructor
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE() : _urdf_filename( getModelsPath() + string( "/mit_gazebo_models/mit_robot_PnC/model.urdf" ) ),
-                          _model(),
+Kinematics_Model_GFE() : _model(),
                           _tree(),
                           _fk_solver( NULL ),
                           _world_to_body(),
                           _joint_frames(){
-  if( !load_urdf( _urdf_filename ) ){
+  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot/model.urdf" ) ) ){
     cout << "could not load urdf" << endl;
   }
 }
 
 /** 
  * Kinematics_Model
- * class constructor that takes the urdf filename
+ * class constructor that loads from an xml file
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE( std::string urdfFilename ) : _urdf_filename( urdfFilename ),
-                                                    _model(),
-                                                    _tree(),
-                                                    _fk_solver( NULL ),
-                                                    _world_to_body(),
-                                                    _joint_frames(){
-  if( !load_urdf( _urdf_filename ) ){
-    cout << "could not load urdf" << endl;
+Kinematics_Model_GFE( string xmlString ) : _model(),
+                                            _tree(),
+                                            _fk_solver( NULL ),
+                                            _world_to_body(),
+                                            _joint_frames(){
+  if( !load_xml_string( xmlString ) ){
+    cout << "could not load xml string" << endl;
   } 
 }
 
@@ -51,15 +49,11 @@ Kinematics_Model_GFE( std::string urdfFilename ) : _urdf_filename( urdfFilename 
  * copy constructor
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE( const Kinematics_Model_GFE& other ) : _urdf_filename( other._urdf_filename ),
-                                                            _model(),
-                                                            _tree(),
-                                                            _fk_solver( NULL ),
-                                                            _world_to_body(),
-                                                            _joint_frames(){
-  if( !load_urdf( _urdf_filename ) ){
-    cout << "could not load urdf" << endl;
-  }
+Kinematics_Model_GFE( const Kinematics_Model_GFE& other ) : _model( other._model ),
+                                                            _tree( other._tree),
+                                                            _fk_solver( new TreeFkSolverPos_recursive( _tree ) ),
+                                                            _world_to_body( other._world_to_body ),
+                                                            _joint_frames( other._joint_frames ){
 }
 
 /**
@@ -75,12 +69,31 @@ Kinematics_Model_GFE::
 }
 
 /**
+ * load_xml_string
+ * loads a model from a xml string
+ */
+bool
+Kinematics_Model_GFE::
+load_xml_string( string xmlString ){
+  if( !_model.initString( xmlString ) ){
+    return false;
+  }
+  if( !treeFromString( xmlString, _tree ) ){
+    return false;
+  }
+
+  _fk_solver = new TreeFkSolverPos_recursive( _tree );
+
+  return true;
+}
+
+/**
  * load_urdf
  * loads a model from a urdf file
  */
 bool
 Kinematics_Model_GFE::
-load_urdf( std::string urdfFilename ){
+load_urdf( string urdfFilename ){
   string xml_string;
   fstream xml_file( urdfFilename.c_str(), fstream::in );
   if( xml_file.is_open() ){
@@ -93,17 +106,8 @@ load_urdf( std::string urdfFilename ){
   } else {
     return false;
   }
-
-  if( !_model.initString( xml_string ) ){
-    return false;
-  }
-  if( !treeFromString( xml_string, _tree ) ){
-    return false;
-  }
   
-  _fk_solver = new TreeFkSolverPos_recursive( _tree );
-
-  return true;
+  return load_xml_string( xml_string );
 }
 
 /**
@@ -145,16 +149,6 @@ set( State_GFE& stateGFE ){
     it->second = _world_to_body * it->second;
   }
   return;
-}
-
-/**
- * urdf_filename
- * returns a copy of the urdf filename
- */
-string
-Kinematics_Model_GFE::
-urdf_filename( void )const{
-  return _urdf_filename;
 }
 
 /**

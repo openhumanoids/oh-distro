@@ -15,15 +15,15 @@ namespace kinematics_model {
   class Kinematics_Model_GFE {
   public:
     Kinematics_Model_GFE();
-    Kinematics_Model_GFE( std::string urdfFilename );
+    Kinematics_Model_GFE( std::string xmlString );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
-
+    
+    bool load_xml_string( std::string xmlString ); 
     bool load_urdf( std::string urdf );
     void set( drc::robot_state_t& robotState );  
     void set( state::State_GFE& stateGFE );
 
-    std::string urdf_filename( void )const;
     const urdf::Model& model( void )const;
     const KDL::Tree& tree( void )const;
     KDL::Frame link( std::string linkName )const;
@@ -31,7 +31,6 @@ namespace kinematics_model {
   protected:
     void _update_joint( std::map< std::string, double >& jointAngles, KDL::Frame& parentFrame, const KDL::SegmentMap::const_iterator jointIterator );
 
-    std::string _urdf_filename;
     urdf::Model _model;
     KDL::Tree   _tree;
     KDL::TreeFkSolverPos_recursive * _fk_solver;

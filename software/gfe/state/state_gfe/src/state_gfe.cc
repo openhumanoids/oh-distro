@@ -14,6 +14,11 @@ using namespace urdf;
 using namespace drc;
 using namespace state;
 
+
+/**
+ * State_GFE
+ * class constructor
+ */
 State_GFE::
 State_GFE() : _id( "gfe" ),
               _time( 0 ),
@@ -21,11 +26,19 @@ State_GFE() : _id( "gfe" ),
 
 }
 
+/**
+ * ~State_GFE
+ * class destructor
+ */
 State_GFE::
 ~State_GFE() {
 
 }
 
+/** 
+ * State_GFE
+ * class copy constructor
+ */
 State_GFE::
 State_GFE( const State_GFE& other ) : _id( other._id ),
                                       _time( other._time ),
@@ -33,6 +46,10 @@ State_GFE( const State_GFE& other ) : _id( other._id ),
   
 }
 
+/**
+ * operator=
+ * class assignment operator
+ */
 State_GFE&
 State_GFE::
 operator=( const State_GFE& other ){
@@ -42,6 +59,32 @@ operator=( const State_GFE& other ){
   return ( *this );
 }
 
+/**
+ * from_xml_string
+ * constructs the joints from an xml string representing the contents of a urdf file
+ */
+bool
+State_GFE::
+from_xml_string( string xmlString ){
+  Model model;
+  if( !model.initString( xmlString ) ){
+    cout << "could not initialize xml_string" << endl;
+    return false;
+  }
+ 
+  _joints.clear();
+  for ( std::map< std::string, boost::shared_ptr< urdf::Joint > >::const_iterator it = model.joints_.begin(); it != model.joints_.end(); it++ ){
+    State_GFE_Joint joint( it->first );
+    _joints.insert( make_pair( joint.id(), joint ) );
+  }
+
+  return true;
+}
+
+/**
+ * from_urdf
+ * constructs the joints from an urdf file
+ */
 bool
 State_GFE::
 from_urdf( string urdfFilename ){
@@ -59,22 +102,13 @@ from_urdf( string urdfFilename ){
     cout << "could not read urdf: " << urdfFilename.c_str() << endl;
     return false;
   }
-
-  Model model;
-  if( !model.initString( xml_string ) ){
-    cout << "could not initialize xml_string" << endl;
-    return false;
-  }
- 
-  _joints.clear();
-  for ( std::map< std::string, boost::shared_ptr< urdf::Joint > >::const_iterator it = model.joints_.begin(); it != model.joints_.end(); it++ ){
-    State_GFE_Joint joint( it->first );
-    _joints.insert( make_pair( joint.id(), joint ) );
-  }
- 
-  return true;
+  return from_xml_string( xml_string );
 }
 
+/**
+ * from_lcm
+ * constructs the joints from a drc::robot_state_t message
+ */
 bool
 State_GFE::
 from_lcm( const robot_state_t& robotState ){
@@ -95,6 +129,10 @@ from_lcm( const robot_state_t& robotState ){
   return true;
 }
 
+/**
+ * to_lcm
+ * constructs an drc::robot_state_t message from the contents of the State_GF#
+ */
 void
 State_GFE::
 to_lcm( robot_state_t& robotState )const{
@@ -105,6 +143,10 @@ to_lcm( robot_state_t& robotState )const{
   return;
 }
 
+/** 
+ * set_id
+ * sets the id of the state
+ */
 void
 State_GFE::
 set_id( string id ){
@@ -112,6 +154,10 @@ set_id( string id ){
   return;
 }
 
+/**
+ * set_time
+ * sets the time of the state 
+ */
 void
 State_GFE::
 set_time( unsigned long long time ){
@@ -122,6 +168,10 @@ set_time( unsigned long long time ){
   return;
 }
 
+/**
+ * set_pose
+ * sets the pose of the state
+ */
 void
 State_GFE::
 set_pose( const Frame& pose ){
@@ -129,30 +179,50 @@ set_pose( const Frame& pose ){
   return;
 }
 
+/** 
+ * id
+ * returns the id of the state 
+ */
 string
 State_GFE::
 id( void )const{
   return _id;
 }
 
+/**
+ * time
+ * returns the time of the state 
+ */
 unsigned long long
 State_GFE::
 time( void )const{
   return _time;
 }
 
+/**
+ * pose
+ * returns the pose of the state 
+ */
 Frame
 State_GFE::
 pose( void )const{
   return _pose;
 }
 
+/**
+ * joints
+ * returns a map of joints 
+ */
 map< string, State_GFE_Joint >
 State_GFE::
 joints( void )const{
   return _joints;
 }
 
+/**
+ * joint_angle
+ * returns a map of joint angles
+ */
 map< string, double >
 State_GFE::
 joint_angles( void )const{
@@ -163,6 +233,10 @@ joint_angles( void )const{
   return joint_angles;
 }
 
+/**
+ * joint
+ * returns a reference to a specific joint based on the id argument 
+ */
 State_GFE_Joint&
 State_GFE::
 joint( string id ){
@@ -170,6 +244,10 @@ joint( string id ){
   return  it->second;
 }
 
+/**
+ * joint
+ * returns a const reference to a specific joint based on the id argument
+ */
 const State_GFE_Joint&
 State_GFE::
 joint( string id )const{
@@ -177,6 +255,10 @@ joint( string id )const{
   return it->second;
 }
 
+/**
+ * operator<<
+ * ostream operator
+ */
 namespace state {
   ostream&
   operator<<( ostream& out,
@@ -204,7 +286,6 @@ namespace state {
       }
     }
     out << "}";
-
     return out;
   }
 }
