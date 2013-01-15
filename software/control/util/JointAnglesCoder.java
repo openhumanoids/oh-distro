@@ -7,7 +7,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
     String m_robot_name;
     java.util.TreeMap<String,Integer> m_joint_map;
     int m_num_joints;
-
+	
     drc.joint_angles_t msg;   
     
     public JointAnglesCoder(String robot_name, String[] joint_name)
