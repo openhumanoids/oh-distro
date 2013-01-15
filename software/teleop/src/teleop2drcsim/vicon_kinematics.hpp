@@ -220,8 +220,8 @@ typedef struct _fourMarkers {
 
      publish_eegoal_with_bias(T_body_Lendeffector,L_null_space_bias, "LWRISTROLL_LINK_GOAL");
      publish_eegoal_with_bias(T_body_Rendeffector,R_null_space_bias, "RWRISTROLL_LINK_GOAL");
-     //publish_eegoal(T_body_Lendeffector, "LWRISTROLL_LINK_GOAL");
-     //publish_eegoal(T_body_Lendeffector, "RWRISTROLL_LINK_GOAL");
+     //publish_eegoal(T_body_Lendeffector, "LWRISTROLL_LINK_GOAL","l_hand");
+     //publish_eegoal(T_body_Lendeffector, "RWRISTROLL_LINK_GOAL","l_hand");
     };
     
   void publish_ee_goals_given_four_vicon_markers(fourMarkers_t &vicon_markers) 
@@ -325,8 +325,9 @@ printf("inside publish_ee_goals_given_four_vicon_markers 2");
  //-0.254409 0.395028 -0.243219
  //publish_eegoal(T_body_Lendeffector, "LWRISTROLL_LINK_GOAL");
  //publish_eegoal(T_body_Rendeffector, "RWRISTROLL_LINK_GOAL");
- publish_eegoal(T_body_Lendeffector, "L_HAND_GOAL");
- publish_eegoal(T_body_Rendeffector, "R_HAND_GOAL");
+ publish_eegoal(T_body_Lendeffector, "L_HAND_GOAL","l_hand");
+
+// publish_eegoal(T_body_Rendeffector, "R_HAND_GOAL","l_hand");
 
  };
  //-----------
@@ -384,21 +385,23 @@ printf("inside publish_ee_goals_given_four_vicon_markers 2");
    
    
    //-----------
-   void publish_eegoal( KDL::Frame &T_body_ee, std::string channel)
+   void publish_eegoal( KDL::Frame &T_body_ee, std::string channel, std::string ee_name)
    {
 
-	   std::cout << "inside publish_eegoals"<<std::endl;
-    drc::ee_goal_t goalmsg;
-    
-    double x,y,z,w;
-      T_body_ee.M.GetQuaternion(x,y,z,w);
+     std::cout << "inside publish_eegoals"<<std::endl;
+     drc::ee_goal_t goalmsg;
+     goalmsg.robot_name = "atlas";
+     goalmsg.ee_name = ee_name;
+     goalmsg.root_name = "utorso";
+     double x,y,z,w;
+     T_body_ee.M.GetQuaternion(x,y,z,w);
 
-      goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-      goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-      goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+     goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
+     goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
+     goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
 
-      goalmsg.ee_goal_pos.rotation.x = x;
-      goalmsg.ee_goal_pos.rotation.y = y;
+     goalmsg.ee_goal_pos.rotation.x = x;
+     goalmsg.ee_goal_pos.rotation.y = y;
       goalmsg.ee_goal_pos.rotation.z = z;
       goalmsg.ee_goal_pos.rotation.w = w;
 
