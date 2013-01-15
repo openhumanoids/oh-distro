@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <QtOpenGL/QGLWidget>
+#include <kdl/frames.hpp>
 
 #include <opengl/opengl_scene.h>
 
@@ -27,6 +28,8 @@ namespace qt4 {
     virtual void mouseMoveEvent( QMouseEvent * event );
     virtual void mousePressEvent( QMouseEvent * event );
     virtual void mouseReleaseEvent( QMouseEvent * event );
+
+    virtual void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
 
     opengl::OpenGL_Scene _opengl_scene;
 

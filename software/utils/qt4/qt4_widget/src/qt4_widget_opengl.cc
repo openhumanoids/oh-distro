@@ -165,6 +165,7 @@ mousePressEvent( QMouseEvent * event ){
   default:  
     break;
   }
+  raycast( _opengl_scene.camera().eye_position(), _opengl_scene.camera().click_position( Vector2( event->x(), event->y() ), width(), height() ) );
   update();
   return;
 } 
@@ -190,6 +191,14 @@ mouseReleaseEvent( QMouseEvent * event ){
     break;
   }
   update();
+  return;
+}
+
+void
+Qt4_Widget_OpenGL::
+raycast( const Vector eyePosition,
+          const Vector clickPosition ){
+  cout << "calling raycast (eyePosition:" << eyePosition(0) << "," << eyePosition(1) << "," << eyePosition(2) << ",clickPosition:" << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
   return;
 }
 

@@ -86,16 +86,16 @@ apply_transform( int width,
  */
 void
 OpenGL_Camera::
-mouse_move( Vector2 pos,
+mouse_move( Vector2 mousePos,
             mouse_button_t mouseButton,
             int width,
             int height ){
   if( mouseButton == OPENGL_MOUSE_BUTTON_LEFT ){
-    Vector delta_mouse_pos( _mouse_press_pos(0) - pos(0), pos(1) - _mouse_press_pos(1), 0.0 );
+    Vector delta_mouse_pos( _mouse_press_pos(0) - mousePos(0), mousePos(1) - _mouse_press_pos(1), 0.0 );
     _eye_position = _prev_eye_position + _prev_eye_rotation.Inverse() * delta_mouse_pos * 0.01;
     _target_position = _prev_target_position + _prev_eye_rotation.Inverse() * delta_mouse_pos * 0.01; 
   } else if ( mouseButton == OPENGL_MOUSE_BUTTON_MIDDLE ){
-    Vector delta_mouse_pos( _mouse_press_pos(0) - pos(0), pos(1) - _mouse_press_pos(1), 0.0 );
+    Vector delta_mouse_pos( _mouse_press_pos(0) - mousePos(0), mousePos(1) - _mouse_press_pos(1), 0.0 );
     if( delta_mouse_pos.Norm() > 0.01 ){
       Vector eye_position_to_target_position = _prev_eye_position - _target_position;
       eye_position_to_target_position = _prev_eye_rotation * eye_position_to_target_position;
@@ -108,7 +108,7 @@ mouse_move( Vector2 pos,
     }
   } else if ( mouseButton == OPENGL_MOUSE_BUTTON_RIGHT ) {
     Vector zoom = _prev_eye_position - _target_position;
-    _eye_position = _target_position + zoom * ( 1.0 - ( pos(1) - _mouse_press_pos( 1 ) ) / 1000.0 );
+    _eye_position = _target_position + zoom * ( 1.0 - ( mousePos(1) - _mouse_press_pos( 1 ) ) / 1000.0 );
   }
   return;
 } 
@@ -119,11 +119,11 @@ mouse_move( Vector2 pos,
  */
 void
 OpenGL_Camera::
-mouse_press( Vector2 pos,
+mouse_press( Vector2 mousePos,
               mouse_button_t mouseButton,
               int width,
               int height ){
-  _mouse_press_pos = pos;
+  _mouse_press_pos = mousePos;
   _prev_eye_position = _eye_position;
   _prev_target_position = _target_position;
   _prev_eye_rotation = eye_rotation();
@@ -136,7 +136,7 @@ mouse_press( Vector2 pos,
  */
 void
 OpenGL_Camera::
-mouse_release( Vector2 pos,
+mouse_release( Vector2 mousePos,
                 mouse_button_t mouseButton,
                 int width,
                 int height ){
@@ -194,6 +194,35 @@ Vector
 OpenGL_Camera::
 target_position( void )const{
   return _target_position;
+}
+
+/**
+ * click_position
+ * returns the position of where the mouse has clicked
+ */
+Vector
+OpenGL_Camera::
+click_position( Vector2 mousePos, int width, int height ){
+  GLdouble modelview[16];
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelview );
+  GLdouble projection[16];
+  glGetDoublev(GL_PROJECTION_MATRIX, projection );
+  GLint viewport[4];
+  glGetIntegerv( GL_VIEWPORT, viewport );
+  
+  GLfloat window_x = mousePos(0);
+  GLfloat window_y = (double)(viewport[3]) - mousePos(1);
+  GLfloat window_z = 0.0;
+
+  GLdouble world_x = 0.0;
+  GLdouble world_y = 0.0;
+  GLdouble world_z = 0.0;
+
+  gluUnProject( window_x, window_y, window_z, modelview, projection, viewport, &world_x, &world_y, &world_z );
+  Vector world( world_x, world_y, world_z );
+  Vector eye_to_world = _eye_position - world;
+  Vector click_position = _eye_position + eye_to_world * ( -_eye_position(2) / eye_to_world(2) );
+  return click_position;
 }
 
 /**
