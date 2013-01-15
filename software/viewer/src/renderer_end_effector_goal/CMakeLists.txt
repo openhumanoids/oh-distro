@@ -28,7 +28,7 @@ if(REQUIRED_PACKAGES_EE_GOAL)
     return()
 endif(REQUIRED_PACKAGES_EE_GOAL)
 
-set(REQUIRED_PACKAGES_EE_GOAL lcm lcmtypes_drc_lcmtypes bot2-core bot2-vis bot2-frames urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detection visualization-utils eigen3 ) 
+set(REQUIRED_PACKAGES_EE_GOAL lcm lcmtypes_drc_lcmtypes bot2-core bot2-vis bot2-frames urdf orocos-kdl kdl-parser forward-kinematics otdf_dom collision_detector visualization-utils eigen3 ) 
 
 pods_install_pkg_config_file(renderer_end_effector_goal
     LIBS -lrenderer_end_effector_goal  -ljpeg 
