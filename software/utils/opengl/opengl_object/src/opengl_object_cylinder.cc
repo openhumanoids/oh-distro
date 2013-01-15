@@ -90,6 +90,30 @@ draw( void ){
 }
 
 /**
+ * draw
+ * draws the cylinder using opengl commands with a specific color
+ */
+void
+OpenGL_Object_Cylinder::
+draw( Vector3f color ){
+  if( visible() ){
+    glPushMatrix();
+    apply_transform();
+    glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
+    if( _quadric == NULL ){
+      _quadric = gluNewQuadric();
+    }
+    glTranslatef( 0.0, 0.0, -_dimensions( 1 ) / 2.0 );
+    gluCylinder( _quadric, _dimensions( 0 ), _dimensions( 0 ), _dimensions( 1 ), 16, 16 );
+    gluDisk( _quadric, 0.0, _dimensions( 0 ), 16, 16 );
+    glTranslatef( 0.0, 0.0, _dimensions( 1 ) );
+    gluDisk( _quadric, 0.0, _dimensions( 0 ), 16, 16 );
+    glPopMatrix();
+  }
+  return;
+}
+
+/**
  * dimensions
  * returns the dimensions of the cylinder
  */

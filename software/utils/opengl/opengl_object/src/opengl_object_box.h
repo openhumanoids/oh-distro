@@ -19,11 +19,13 @@ namespace opengl {
     void set( KDL::Frame transform, Eigen::Vector3f dimensions );
 
     virtual void draw( void );
+    virtual void draw( Eigen::Vector3f color );
 
     Eigen::Vector3f dimensions( void )const;
 
   protected:
     bool _generate_dl( void );
+    void _draw_box( Eigen::Vector3f color );
 
     Eigen::Vector3f _dimensions;
     GLuint _dl;

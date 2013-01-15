@@ -90,6 +90,17 @@ draw( void ){
 }
 
 /**
+ * draw
+ * draws the box using opengl commands with a specific color
+ */
+void
+OpenGL_Object_Box::
+draw( Eigen::Vector3f color ){
+  _draw_box( color );
+  return;
+}
+
+/**
  * dimensions
  * returns the dimensions of the box
  */
@@ -111,7 +122,15 @@ _generate_dl( void ){
   }
   _dl = glGenLists( 1 );
   glNewList( _dl, GL_COMPILE );
-  glColor4f( color()( 0 ), color()( 1 ), color()( 2 ), transparency() );
+  _draw_box( color() );
+  glEndList();
+  return true;
+}
+
+void
+OpenGL_Object_Box::
+_draw_box( Vector3f color ){
+  glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
   glBegin( GL_QUADS );
   glNormal3f( 0.0, 0.0, 1.0 );
   glVertex3f( _dimensions( 0 ) / 2.0, _dimensions( 1 ) / 2.0, _dimensions( 2 ) / 2.0 );
@@ -149,8 +168,7 @@ _generate_dl( void ){
   glVertex3f( -_dimensions( 0 ) / 2.0, -_dimensions( 1 ) / 2.0, -_dimensions( 2 ) / 2.0 );
   glVertex3f( _dimensions( 0 ) / 2.0, -_dimensions( 1 ) / 2.0, -_dimensions( 2 ) / 2.0 );
   glEnd();
-  glEndList();
-  return true;
+  return;
 }
  
 /**

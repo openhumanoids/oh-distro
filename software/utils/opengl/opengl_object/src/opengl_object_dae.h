@@ -22,6 +22,7 @@ namespace opengl {
     void set( KDL::Frame transform );
 
     virtual void draw( void );
+    virtual void draw( Eigen::Vector3f color );
 
     std::map< std::string, std::map< std::string, std::string > > geometry_data( void )const;
 

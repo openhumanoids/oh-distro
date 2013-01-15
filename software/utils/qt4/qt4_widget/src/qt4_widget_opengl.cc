@@ -1,9 +1,11 @@
 #include <QtGui/QMouseEvent>
+#include <kdl/tree.hpp>
 
 #include "opengl/opengl_camera.h"
 #include "qt4/qt4_widget_opengl.h"
 
 using namespace std;
+using namespace KDL;
 using namespace opengl;
 using namespace qt4;
 
@@ -128,13 +130,13 @@ Qt4_Widget_OpenGL::
 mouseMoveEvent( QMouseEvent * event ){
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
-    _opengl_scene.camera().mouse_move( event->x(), event->y(), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
+    _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
     break;
   case ( Qt::MidButton ):
-    _opengl_scene.camera().mouse_move( event->x(), event->y(), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
+    _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
     break;
   case ( Qt::RightButton ):
-    _opengl_scene.camera().mouse_move( event->x(), event->y(), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
+    _opengl_scene.camera().mouse_move( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
     break;
   default:
     break;
@@ -152,13 +154,13 @@ Qt4_Widget_OpenGL::
 mousePressEvent( QMouseEvent * event ){
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
-    _opengl_scene.camera().mouse_press( event->x(), event->y(), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
+    _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
     break;
   case ( Qt::MidButton ):
-    _opengl_scene.camera().mouse_press( event->x(), event->y(), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
+    _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
     break;
   case ( Qt::RightButton ):
-    _opengl_scene.camera().mouse_press( event->x(), event->y(), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
+    _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
     break;
   default:  
     break;
@@ -176,13 +178,13 @@ Qt4_Widget_OpenGL::
 mouseReleaseEvent( QMouseEvent * event ){
   switch( event->buttons() ){
   case ( Qt::LeftButton ):
-    _opengl_scene.camera().mouse_release( event->x(), event->y(), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
+    _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT, width(), height() );
     break;
   case ( Qt::MidButton ):
-    _opengl_scene.camera().mouse_release( event->x(), event->y(), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
+    _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE, width(), height() );
     break;
   case ( Qt::RightButton ):
-    _opengl_scene.camera().mouse_release( event->x(), event->y(), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
+    _opengl_scene.camera().mouse_release( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_RIGHT, width(), height() );
     break;
   default:
     break;

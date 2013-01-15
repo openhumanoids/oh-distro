@@ -89,6 +89,26 @@ draw( void ){
   return;
 }
 
+/** 
+ * draw
+ * draws the sphere using openg commands and a specific color
+ */
+void
+OpenGL_Object_Sphere::
+draw( Vector3f color ){
+  if( visible() ){
+    glPushMatrix();
+    apply_transform();
+    glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
+    if( _quadric == NULL ){
+      _quadric = gluNewQuadric();
+    }
+    gluSphere( _quadric, _dimensions, 16, 16 );
+    glPopMatrix();
+  }
+  return;
+}
+
 /**
  * dimensions
  * returns the dimensions of the sphere 

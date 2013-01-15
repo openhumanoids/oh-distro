@@ -10,7 +10,7 @@ pods_install_headers(opengl_camera.h DESTINATION opengl)
 pods_install_libraries(opengl_camera)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES eigen3 glu gl)
+set(REQUIRED_PACKAGES orocos-kdl kdl-parser glu gl)
 pods_use_pkg_config_packages(opengl_camera ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

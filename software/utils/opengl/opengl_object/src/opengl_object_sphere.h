@@ -19,6 +19,7 @@ namespace opengl {
     void set( KDL::Frame transform, double dimensions );
 
     virtual void draw( void );
+    virtual void draw( Eigen::Vector3f color );
 
     double dimensions( void )const;
 

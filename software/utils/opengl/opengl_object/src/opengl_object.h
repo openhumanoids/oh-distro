@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <kdl/tree.hpp>
+#include <kdl/frames.hpp>
 #include <Eigen/Dense>
 
 namespace opengl {
@@ -17,6 +17,7 @@ namespace opengl {
 
     void apply_transform( void );
     virtual void draw( void );
+    virtual void draw( Eigen::Vector3f color );
 
     void set_id( std::string id );
     void set_visible( bool visible );

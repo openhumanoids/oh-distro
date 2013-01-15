@@ -84,6 +84,16 @@ draw( void ){
 }
 
 /**
+ * draw
+ * a virtual function that performs the opengl drawing operation with a specific color
+ */
+void
+OpenGL_Object::
+draw( Vector3f color ){
+  return;
+}
+
+/**
  * set_id
  * sets the id for the opengl object
  */

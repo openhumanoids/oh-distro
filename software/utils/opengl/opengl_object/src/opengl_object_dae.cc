@@ -88,6 +88,77 @@ draw( void ){
   }
   return;
 }
+
+void
+OpenGL_Object_DAE::
+draw( Vector3f color ){
+  if( visible() ){
+    glPushMatrix();
+    apply_transform();
+    for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
+      vector< Vector3f > * vertex_data = NULL;
+      vector< Vector3f > * normal_data = NULL;
+      vector< unsigned int > * index_data = NULL;
+      for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
+        if( it2->first == "NORMAL" ){
+          map< string, vector< Vector3f > >::iterator normal_iterator = _v3_data.find( it2->second );
+          if( normal_iterator != _v3_data.end() ){
+            normal_data = &normal_iterator->second;
+          } else {
+            cout << "could not find NORMAL data (" << it2->second << ")" << endl;
+            return;
+          }
+        } else if ( it2->first == "VERTEX" ){
+          string vertex_name = "N/A";
+          map< string, string >::const_iterator vertex_name_iterator = it1->second.find( it2->second );
+          if( vertex_name_iterator != it1->second.end() ){
+            vertex_name = vertex_name_iterator->second;
+            map< string, vector< Vector3f > >::iterator vertex_iterator = _v3_data.find( vertex_name );
+            if( vertex_iterator != _v3_data.end() ){
+              vertex_data = &vertex_iterator->second;
+            } else {
+              cout << "could not find VERTEX data(" << vertex_name << ")" << endl;
+              return;
+            }
+          } else {
+            cout << "could not find VERTEX (" << it2->second << ")" << endl;
+            return;
+          }
+        }
+      }
+      map< string, vector< unsigned int > >::iterator index_iterator = _index_data.find( it1->first );
+      if( index_iterator != _index_data.end() ){
+        index_data = &index_iterator->second;
+      } else {
+        cout << "could not find INDEX data (" << it1->first << ")" << endl;
+        return;
+      }
+
+      if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
+        glBegin( GL_TRIANGLES );
+        for( unsigned int i = 0; i < ( index_data->size() / 4 ); i++ ){
+          unsigned int vertex_index = (*index_data)[ 4 * i + 0 ];
+          unsigned int normal_index = (*index_data)[ 4 * i + 1 ];
+          unsigned int color_index = (*index_data)[ 4 * i + 3 ];
+          glColor4f( color( 0 ),
+                      color( 1 ),
+                      color( 2 ),
+                      transparency() );
+          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
+                      (*normal_data)[ normal_index ]( 1 ),
+                      (*normal_data)[ normal_index ]( 2 ) );
+          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
+                      (*vertex_data)[ vertex_index ]( 1 ),
+                      (*vertex_data)[ vertex_index ]( 2 ) );
+        }
+        glEnd();
+      }
+    }
+    glPopMatrix();
+  }
+
+  return;
+}
   
 bool
 OpenGL_Object_DAE::

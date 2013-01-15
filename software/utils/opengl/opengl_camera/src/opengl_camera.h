@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include <Eigen/Dense>
+#include <kdl/frames.hpp>
 
 namespace opengl {
   typedef enum {
@@ -22,21 +22,29 @@ namespace opengl {
     OpenGL_Camera& operator=( const OpenGL_Camera& other );
 
     void apply_transform( int width, int height );
-    void mouse_move( int x, int y, mouse_button_t mouseButton, int width, int height );  
-    void mouse_press( int x, int y, mouse_button_t mouseButton, int width, int height );
-    void mouse_release( int x, int y, mouse_button_t mouseButton, int width, int height );
+    void mouse_move( KDL::Vector2 pos, mouse_button_t mouseButton, int width, int height );  
+    void mouse_press( KDL::Vector2 pos, mouse_button_t mouseButton, int width, int height );
+    void mouse_release( KDL::Vector2 pos, mouse_button_t mouseButton, int width, int height );
 
-    void set_eye_position( Eigen::Vector3f eyePosition );
-    void set_target_position( Eigen::Vector3f targetPosition );
+    void set_eye_position( KDL::Vector eyePosition );
+    void set_target_position( KDL::Vector targetPosition );
+    void set_field_of_view( double fieldOfView );
 
-    Eigen::Vector3f eye_position( void )const;
-    Eigen::Vector3f target_position( void )const;
-
+    KDL::Vector eye_position( void )const;
+    KDL::Vector target_position( void )const;
+    KDL::Rotation eye_rotation( void )const;
+    double field_of_view( void )const;
+  
   protected:
-    Eigen::Vector3f _eye_position;
-    Eigen::Vector3f _target_position;
 
-    Eigen::Vector2f _mouse_press_pos;
+    KDL::Vector _eye_position;
+    KDL::Vector _target_position;
+    double _field_of_view;
+
+    KDL::Vector2 _mouse_press_pos;
+    KDL::Vector _prev_eye_position;
+    KDL::Vector _prev_target_position;
+    KDL::Rotation _prev_eye_rotation;
 
   private:
 
