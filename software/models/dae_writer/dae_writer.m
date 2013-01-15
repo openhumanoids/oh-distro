@@ -6,12 +6,13 @@ s=terrain_simulator();
 s=verts2output(s);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fname = '../mit_gazebo_models/diy_box/meshes/diy_box.dae';
+fname = '../mit_gazebo_models/simple_plane/meshes/simple_plane.dae';
+%fname = '../mit_gazebo_models/diy_box/meshes/diy_box.dae';
 
 
 fid_out = fopen(fname,'w');
-tag_top=readf('snippets/tag_top.dae',fid_out)  ;
-tag0=readf('snippets/tag0.dae',fid_out)   ;
+tag_top=readf('snippets/tag_top.dae',fid_out);
+tag0=readf('snippets/tag0.dae',fid_out);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tag1a=readf('snippets/tag1a.dae',fid_out)  ;
