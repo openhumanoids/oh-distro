@@ -1,4 +1,4 @@
-function s=terrain_simulator()
+function s=terrain_simulator(image_path)
 close all
 
 
@@ -157,7 +157,7 @@ if do_plot==1
     end
 end
 disp('writing height map to image file')
-imwrite((flipud(h'/ (max(h(:))+1) )), 'texture_image.png')
+imwrite((flipud(h'/ (max(h(:))+1) )), [image_path '/simple_box.jpg'])
 
 
 

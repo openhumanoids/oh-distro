@@ -1,12 +1,14 @@
 function dae_writer()
 %s=single_tri()
 %s=random_tri();
-s=terrain_simulator();
+
+output_path = '../mit_gazebo_models/simple_plane/meshes/';
+s=terrain_simulator(output_path);
 
 s=verts2output(s);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fname = '../mit_gazebo_models/simple_plane/meshes/simple_plane.dae';
+fname = [ output_path 'simple_plane.dae'];
 %fname = '../mit_gazebo_models/diy_box/meshes/diy_box.dae';
 
 
