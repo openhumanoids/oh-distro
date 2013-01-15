@@ -5,10 +5,12 @@ cmake_minimum_required(VERSION 2.6.0)
 
 set(REQUIRED_PACKAGES lcmtypes_vicon-drc  lcmtypes_teleop orocos-kdl kdl-parser forward-kinematics)
 
-    
-add_executable(vicon_teleop_ee_paladin_v1 vicon_teleop_ee_paladin_v1.cpp)
-target_link_libraries(vicon_teleop_ee_paladin_v1 lcm)
-pods_use_pkg_config_packages(vicon_teleop_ee_paladin_v1 lcm lcmtypes_vicon-drc lcmtypes_drc_lcmtypes bot2-core bot2-vis bot2-frames ${REQUIRED_PACKAGES} bot2-lcmgl-client)    
-pods_install_executables(vicon_teleop_ee_paladin_v1)
+
+add_executable(drc-vicon-teleop vicon-teleop.cpp)
+target_link_libraries(drc-vicon-teleop lcm)
+pods_use_pkg_config_packages(drc-vicon-teleop lcm lcmtypes_vicon-drc 
+  lcmtypes_drc_lcmtypes bot2-core bot2-vis bot2-frames ${REQUIRED_PACKAGES} bot2-lcmgl-client
+  pointcloud_vis )    
+pods_install_executables(drc-vicon-teleop)
 
 
