@@ -26,8 +26,8 @@ namespace collision {
   class Collision_Object_GFE : public Collision_Object {
   public:
     Collision_Object_GFE( std::string id );
-    Collision_Object_GFE( std::string id, std::string urdfFilename );
-    Collision_Object_GFE( std::string id, std::string urdfFilename, drc::robot_state_t& robotState );
+    Collision_Object_GFE( std::string id, std::string xmlString );
+    Collision_Object_GFE( std::string id, std::string xmlString, drc::robot_state_t& robotState );
     Collision_Object_GFE( const Collision_Object_GFE& other );
     ~Collision_Object_GFE();
 

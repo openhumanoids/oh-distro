@@ -31,9 +31,9 @@ Collision_Object_GFE( string id ) : Collision_Object( id ),
  */
 Collision_Object_GFE::
 Collision_Object_GFE( string id,
-                      string urdfFilename ) : Collision_Object( id ),
+                      string xmlString ) : Collision_Object( id ),
                                               _collision_objects(),
-                                              _kinematics_model( urdfFilename ){
+                                              _kinematics_model( xmlString ){
   _load_collision_objects();
 } 
 
@@ -43,10 +43,10 @@ Collision_Object_GFE( string id,
  */
 Collision_Object_GFE::
 Collision_Object_GFE( string id,
-                      string urdfFilename,
+                      string xmlString,
                       robot_state_t& robotState ) : Collision_Object( id ),
                                                     _collision_objects(),
-                                                    _kinematics_model( urdfFilename ) {
+                                                    _kinematics_model( xmlString ) {
   _load_collision_objects();
 }
 

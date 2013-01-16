@@ -16,39 +16,65 @@ Qt4_Widget_GFE_Control( QWidget * parent ) : QWidget( parent ),
                                               _values(){
   _state_gfe.from_urdf();
 
-  QVBoxLayout * left_hand_layout = new QVBoxLayout();
-  QVBoxLayout * right_hand_layout = new QVBoxLayout();
-  QVBoxLayout * left_arm_layout = new QVBoxLayout();
-  QVBoxLayout * right_arm_layout = new QVBoxLayout();
-  QVBoxLayout * left_leg_layout = new QVBoxLayout();
-  QVBoxLayout * right_leg_layout = new QVBoxLayout();
-  QVBoxLayout * other_layout = new QVBoxLayout();
+  QGridLayout * left_hand_layout = new QGridLayout();
+  QGridLayout * right_hand_layout = new QGridLayout();
+  QGridLayout * left_arm_layout = new QGridLayout();
+  QGridLayout * right_arm_layout = new QGridLayout();
+  QGridLayout * left_leg_layout = new QGridLayout();
+  QGridLayout * right_leg_layout = new QGridLayout();
+  QGridLayout * other_layout = new QGridLayout();
+
+  unsigned int left_hand_index = 0;
+  unsigned int right_hand_index = 0;
+  unsigned int left_arm_index = 0;
+  unsigned int right_arm_index = 0;
+  unsigned int left_leg_index = 0;
+  unsigned int right_leg_index = 0;
+  unsigned int other_index = 0;
 
   map< string, State_GFE_Joint > joints = _state_gfe.joints();
   for( map< string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++ ){
     const State_GFE_Joint& state_gfe_joint = it->second;
     QString joint_name = QString::fromStdString( state_gfe_joint.id() );
-    QGroupBox * joint_group_box = new QGroupBox( joint_name );
+    QLabel * joint_label = new QLabel( QString::fromStdString( state_gfe_joint.id() ) );
     QSlider * joint_slider = new QSlider( Qt::Horizontal, this );
+    joint_slider->setFixedSize( 100, 20 );
     QLabel * joint_value = new QLabel( QString::number( state_gfe_joint.position(), 'f', 3 ), this );
-    QHBoxLayout * joint_layout = new QHBoxLayout();
-    joint_layout->addWidget( joint_slider );
-    joint_layout->addWidget( joint_value );
-    joint_group_box->setLayout( joint_layout );
     if( joint_name.contains( "l_hand" ) ){
-      left_hand_layout->addWidget( joint_group_box );
+      left_hand_layout->addWidget( joint_label, left_hand_index, 0 );
+      left_hand_layout->addWidget( joint_slider, left_hand_index, 1 );
+      left_hand_layout->addWidget( joint_value, left_hand_index, 2 );
+      left_hand_index++;
     } else if ( joint_name.contains( "r_hand" ) ){
-      right_hand_layout->addWidget( joint_group_box );
+      right_hand_layout->addWidget( joint_label, right_hand_index, 0 );
+      right_hand_layout->addWidget( joint_slider, right_hand_index, 1 );
+      right_hand_layout->addWidget( joint_value, right_hand_index, 2 );
+      right_hand_index++;
     } else if ( joint_name.contains( "l_arm" ) ){
-      left_arm_layout->addWidget( joint_group_box );
+      left_arm_layout->addWidget( joint_label, left_arm_index, 0 );
+      left_arm_layout->addWidget( joint_slider, left_arm_index, 1 );
+      left_arm_layout->addWidget( joint_value, left_arm_index, 2 );
+      left_arm_index++;
     } else if ( joint_name.contains( "r_arm" ) ){
-      right_arm_layout->addWidget( joint_group_box );
+      right_arm_layout->addWidget( joint_label, right_arm_index, 0 );
+      right_arm_layout->addWidget( joint_slider, right_arm_index, 1 );
+      right_arm_layout->addWidget( joint_value, right_arm_index, 2 );
+      right_arm_index++;
     } else if ( joint_name.contains( "l_leg" ) ){
-      left_leg_layout->addWidget( joint_group_box );
+      left_leg_layout->addWidget( joint_label, left_leg_index, 0 );
+      left_leg_layout->addWidget( joint_slider, left_leg_index, 1 );
+      left_leg_layout->addWidget( joint_value, left_leg_index, 2 );
+      left_leg_index++;
     } else if ( joint_name.contains( "r_leg" ) ){
-      right_leg_layout->addWidget( joint_group_box );
+      right_leg_layout->addWidget( joint_label, right_leg_index, 0 );
+      right_leg_layout->addWidget( joint_slider, right_leg_index, 1 );
+      right_leg_layout->addWidget( joint_value, right_leg_index, 2 );
+      right_leg_index++;
     } else {
-      other_layout->addWidget( joint_group_box );
+      other_layout->addWidget( joint_label, other_index, 0 );
+      other_layout->addWidget( joint_slider, other_index, 1 );
+      other_layout->addWidget( joint_value, other_index, 2 );
+      other_index++;
     }
     _sliders.insert( make_pair( joint_name.toStdString(), joint_slider ) );
     _values.insert( make_pair( joint_name.toStdString(), joint_value ) );
