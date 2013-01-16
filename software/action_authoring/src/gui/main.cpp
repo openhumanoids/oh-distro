@@ -17,6 +17,8 @@
 #include <QtGui/QApplication>
 #include "mainwindow.h"
 
+using namespace action_authoring;
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

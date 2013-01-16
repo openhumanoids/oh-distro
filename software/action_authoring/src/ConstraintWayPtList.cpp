@@ -1,10 +1,11 @@
-#include "Action.h"
-  
-Action::Action(std::string name) {
-	m_name = name;
-	return;
-}
+#include "ConstraintWayPtList.h"
 
+using namespace action_authoring;
+using namespace std;
+
+
+
+/*
 void Action::addConstraint(Constraint* constraint) {
 	m_constraints.push_back(constraint);
 	return;
@@ -18,3 +19,4 @@ void Action::removeConstraint(int index) {
 void Action::reorderConstraint(int old_index, int new_index) {
   return;
 }
+*/

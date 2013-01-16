@@ -30,10 +30,15 @@
 #include <collision/collision_object_gfe.h>
 
 // Local includes
-#include "../Constraint.h"
-#include "../Action.h"
+#include "../AtomicConstraint.h"
+#include "../ConstraintWayPtList.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
+
+
+namespace action_authoring
+{
+
 
 class MainWindow : public QWidget
 {
@@ -41,8 +46,8 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(QWidget *parent = 0);
-    TogglePanel* createWaypointGUI(Constraint* waypoint_constraint, 					   
-				 std::vector<std::string> joint_names);
+    TogglePanel* createWaypointGUI(AtomicConstraintPtr waypoint_constraint,
+				 	 	 	 	   std::vector<std::string> joint_names);
     std::vector<std::string> getJointNames(std::string urdf_xml_filename);
     void demoPopulate();
     ~MainWindow();
@@ -69,8 +74,8 @@ protected:
 
 //    opengl::OpenGL_Object_GFE _opengl_object_gfe;
 
-    std::vector<Affordance*> _all_affordances;
-    std::vector<Constraint*> _all_constraints;
+    std::vector<affordance::AffPtr> _all_affordances;
+    std::vector<AtomicConstraintPtr> _all_constraints;
 
 private slots:
     void updateJoint(int value);
@@ -83,5 +88,7 @@ private slots:
     void handleRobotLinkChange(QString waypointName);
     void setSelectedAction(QString waypointName);
 };
+
+} //namespace action_authoring
 
 #endif // MAINWINDOW_H

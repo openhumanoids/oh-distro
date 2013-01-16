@@ -1,38 +1,36 @@
 #include "mainwindow.h"
 
 #include <state/state_gfe.h>
+#include "affordance/AffordanceState.h"
 
 using namespace KDL;
 using namespace Eigen;
 using namespace opengl;
 using namespace state;
 using namespace collision;
+using namespace action_authoring;
+using namespace affordance;
+
 //using namespace collision_detection;
 
 /*
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-void 
-MainWindow::
-demoPopulate() 
+void MainWindow::demoPopulate()
 {
-    Affordance* rhand = new Affordance("Right Hand");
-    Affordance* lhand = new Affordance("Left Hand");
-    Affordance* rfoot = new Affordance("Right Foot");
-    Affordance* lfoot = new Affordance("Left Foot");
-    Affordance* wheel = new Affordance("Steering Wheel");
-    Affordance* gas   = new Affordance("Gas Pedal");
-    Affordance* brake = new Affordance("Brake Pedal");
+	AffPtr rhand = AffPtr(new AffordanceState("Right Hand"));
+    AffPtr lhand = AffPtr(new AffordanceState("Left Hand"));
+    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot"));
+    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot"));
+    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel"));
+    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal"));
+    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal"));
 
-    Affordance* sphere = new Affordance("Pink Sphere");
-    Affordance* box = new Affordance("Yellow Box");
-    Affordance* cylinder = new Affordance("Blue Cylinder");
+    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere"));
+    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box"));
+    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder"));
 
-//    _all_affordances.push_back(rhand);
-//    _all_affordances.push_back(lhand);
-//    _all_affordances.push_back(rfoot);
-//    _all_affordances.push_back(lfoot);
     _all_affordances.push_back(wheel);
     _all_affordances.push_back(gas);
     _all_affordances.push_back(brake);
@@ -41,10 +39,14 @@ demoPopulate()
     _all_affordances.push_back(box);
     _all_affordances.push_back(cylinder);
     
-    Constraint* rfoot_gas   = new Constraint("Gas Pedal Constraint", rfoot, gas, Constraint::NORMAL);
-    Constraint* lfoot_brake = new Constraint("Brake Pedal Constraint", lfoot, brake, Constraint::TANGENT);
-    Constraint* rhand_wheel = new Constraint("Right Hand Wheel Constraint", rhand, wheel, Constraint::TANGENT);
-    Constraint* lhand_wheel = new Constraint("Left Hand Wheel Constraint", lhand, wheel, Constraint::TANGENT);
+    AtomicConstraintPtr rfoot_gas   = AtomicConstraintPtr(new AtomicConstraint("Gas Pedal Constraint", rfoot, gas,
+    													  AtomicConstraint::NORMAL));
+    AtomicConstraintPtr lfoot_brake = AtomicConstraintPtr(new AtomicConstraint("Brake Pedal Constraint", lfoot, brake,
+    													  AtomicConstraint::TANGENT));
+    AtomicConstraintPtr rhand_wheel = AtomicConstraintPtr(new AtomicConstraint("Right Hand Wheel Constraint", rhand, wheel,
+    													AtomicConstraint::TANGENT));
+    AtomicConstraintPtr lhand_wheel = AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel,
+    													   AtomicConstraint::TANGENT));
     
     _all_constraints.push_back(rfoot_gas);
     _all_constraints.push_back(lfoot_brake);
@@ -56,9 +58,8 @@ demoPopulate()
 /*
  * Create a waypoint entry GUI element
  */
-TogglePanel*
-MainWindow::
-createWaypointGUI(Constraint* waypoint_constraint, std::vector<std::string> joint_names)
+TogglePanel* MainWindow::
+createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::string> joint_names)
 {
     QString waypointTitle = QString::fromStdString(waypoint_constraint->getName());
     TogglePanel* tp = new TogglePanel(this, waypointTitle);

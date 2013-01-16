@@ -18,8 +18,6 @@ lcmtypes_build()
 
 # make exeutables public
 #pods_install_executables(send_message listener)
-add_executable(runme src/Constraint.cpp src/Action.cpp src/test.cpp src/Affordance.cpp)
-
 find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 include(${QT_USE_FILE})
 
@@ -28,7 +26,7 @@ qt_wrap_cpp(action-authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h
 set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe qt4_widget collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf)
 
 add_executable(action-authoring-gui src/gui/main.cpp src/gui/mainwindow.cpp 
-				    src/Affordance.cpp src/Constraint.cpp
+				    src/AtomicConstraint.cpp
 				    src/gui/togglepanel.cpp
 				    src/opengl/ColorRobot.cpp
 				    src/opengl/SelectableOpenGLWidget.cpp
