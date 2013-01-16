@@ -563,7 +563,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       drc_nav_goal_timed_t msg;
       msg.utime = self->robot_utime; //bot_timestamp_now();
       msg.timeout = (int64_t) 1E6*self->goal_timeout;
-      msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
+      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
@@ -581,7 +581,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     }else if (self->active ==3){
       drc_nav_goal_t msg;
       msg.utime = self->robot_utime; // bot_timestamp_now();
-      msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
+      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
@@ -763,7 +763,7 @@ static void send_seek_goal_visual (RendererDriving *self) {
   drc_seek_goal_timed_t msgout;
   msgout.utime = self->robot_utime; //bot_timestamp_now();
   msgout.timeout = (int64_t) 1E6*self->goal_timeout; //self->goal_timeout;
-  msgout.robot_name = "wheeled_atlas"; // this should be set from robot state message
+  msgout.robot_name = "atlas"; // this should be set from robot state message
   if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
     msgout.type = DRC_SEEK_GOAL_TIMED_T_VISUAL_GLOBAL;
     fprintf(stderr, "Sending SEEK_GOAL (Visual, Global)\n");
@@ -781,7 +781,7 @@ static void send_seek_goal_visual (RendererDriving *self) {
   drc_nav_goal_timed_t msgout;
   msgout.utime = self->robot_utime; //bot_timestamp_now();
   msgout.timeout = (int64_t) 1E6*self->goal_timeout; //self->goal_timeout;
-  msgout.robot_name = "wheeled_atlas"; // this should be set from robot state message
+  msgout.robot_name = "atlas"; // this should be set from robot state message
   msgout.goal_pos.translation.z = 0;
   msgout.goal_pos.rotation.w = 1; // Null heading
   msgout.goal_pos.rotation.x = 0;

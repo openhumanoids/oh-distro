@@ -48,7 +48,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
   
    // double c[3] = {0.3,0.3,0.3};
    // double alpha = self->alpha;
-   void draw_body (double (&c)[3], double alpha)
+   void draw_body (float (&c)[3], float alpha)
    {
      
       glColor4f(c[0],c[1],c[2],alpha);

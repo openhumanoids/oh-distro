@@ -161,23 +161,22 @@ int main(int argc, char *argv[])
   ehandler->key_press = logplayer_remote_on_key_press;
   bot_viewer_add_event_handler(viewer, ehandler, 0);
 
-  // setup renderers
+  // core renderers
   bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   collections_add_renderer_to_viewer(viewer, 1);
 
   // Block of Renderers:  
-  add_octomap_renderer_to_viewer(viewer, 1, lcm);
   setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
 
-
   // Individual Renderers:
+  add_octomap_renderer_to_viewer(viewer, 1, lcm);
+  heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);

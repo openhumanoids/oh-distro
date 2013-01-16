@@ -5,6 +5,8 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
 
+#include "lcmtypes/drc_lcmtypes.h"
+
 #include <GL/gl.h>
 #include <bot_vis/bot_vis.h>
 #include <bot_core/rotations.h>
@@ -19,6 +21,8 @@
 #define PARAM_PICKING "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define DRAW_PERSIST_SEC 4
+
+#define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 
 using namespace std;
 using namespace boost;
@@ -39,6 +43,16 @@ typedef struct _RendererRobotPlan
   Eigen::Vector3f ray_start;
   Eigen::Vector3f ray_end;
   std::string* selection;
+  
+  // Our only source of a free running clock:
+  int64_t robot_utime;
+  
+  // Vicon seed planning collection settings:
+  int vicon_n_plan_samples;
+  double vicon_sample_period;
+  int8_t vicon_type;
+  
+  
 } RendererRobotPlan;
 
 static void
@@ -52,14 +66,34 @@ _renderer_free (BotRenderer *super)
 //=================================
 
 
+// Convert number to jet colour coordinates
+// In: number between 0-->1
+// Out: rgb jet colours 0->1
+// http://metastine.com/2011/01/implementing-a-continuous-jet-colormap-function-in-glsl/
+static inline void jet_rgb(float value,float rgb[]){
+  float fourValue = (float) 4 * value;
+  rgb[0]   = std::min(fourValue - 1.5, -fourValue + 4.5);
+  rgb[1] = std::min(fourValue - 0.5, -fourValue + 3.5);
+  rgb[2]  = std::min(fourValue + 0.5, -fourValue + 2.5);
+  for (int i=0;i<3;i++){
+   if (rgb[i] <0) {
+     rgb[i] =0;
+   }else if (rgb[i] >1){
+     rgb[i] =1;
+   }
+  }
+}
+
+
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
-  int64_t now = bot_timestamp_now();
-  self->max_draw_utime = self->robotPlanListener->_last_plan_msg_timestamp  + DRAW_PERSIST_SEC * 1000000;	
-  if(now > self->max_draw_utime)
-    return; // clear robot plan display
+  // Disabled for now:
+  //int64_t now = bot_timestamp_now();
+  //self->max_draw_utime = self->robotPlanListener->_last_plan_msg_timestamp  + DRAW_PERSIST_SEC * 1000000;	
+  //if(now > self->max_draw_utime)
+  //  return; // clear robot plan display
   
   glEnable(GL_DEPTH_TEST);
 
@@ -72,29 +106,32 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
   if((self->picking)&&(self->clicked)){
-        glLineWidth (3.0);
-        glPushMatrix();
-        glBegin(GL_LINES);
-        glVertex3f(self->ray_start[0], self->ray_start[1],self->ray_start[2]); // object coord
-        glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
-        glEnd();
-        glPopMatrix();
+    glLineWidth (3.0);
+    glPushMatrix();
+    glBegin(GL_LINES);
+    glVertex3f(self->ray_start[0], self->ray_start[1],self->ray_start[2]); // object coord
+    glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
+    glEnd();
+    glPopMatrix();
   }
   
- double c[3] = {0.3,0.3,0.6};
- double alpha = 0.2;
+  float c[3] = {0.3,0.3,0.6};
+  float alpha = 0.2;
   //glColor3f(c[0],c[1],c[2]);
-  glColor4f(c[0],c[1],c[2],alpha);
   
   for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
   { 
+    // Each model Jet: blue to red
+    float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
+    jet_rgb(j,c);
+    glColor4f(c[0],c[1],c[2], alpha);
+    
     self->robotPlanListener->_gl_robot_list[i]->show_bbox(self->visualize_bbox);
     self->robotPlanListener->_gl_robot_list[i]->enable_link_selection(self->picking);
     //if((*self->selection)!=" ")
-      self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
+    self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
     self->robotPlanListener->_gl_robot_list[i]->draw_body (c,alpha);
   }
-
 }
 
 
@@ -180,6 +217,12 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
 }
 
 
+static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_utime_t *msg, void *user){
+  RendererRobotPlan *self = (RendererRobotPlan*) user;
+  self->robot_utime = msg->utime;
+}
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -200,7 +243,18 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->visualize_bbox = false;
     }
   }
+  else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
+    drc::plan_collect_t msg;
+    msg.utime = self->robot_utime;//bot_timestamp_now();
+    msg.type = self->vicon_type;
+    msg.n_plan_samples = self->vicon_n_plan_samples;
+    msg.sample_period = self->vicon_sample_period;
+    self->lcm->publish("VICON_GET_PLAN", &msg);
+    bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec]",msg.n_plan_samples, msg.sample_period);    
+    
+  }
 }
+
 void 
 setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
@@ -220,12 +274,22 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     renderer->enabled = 1;
 
     self->viewer = viewer;
+    
+    // default Vicon plan sample values:
+    self->vicon_n_plan_samples = 20;
+    self->vicon_sample_period = 0.1;
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
     
+    // C-style subscribe:
+    drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
+
+    
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
-      
+
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
+    
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->picking = 0;
     self->clicked = 0;	

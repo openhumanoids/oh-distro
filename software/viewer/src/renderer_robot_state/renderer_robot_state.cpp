@@ -50,7 +50,7 @@ typedef struct _RobotStateRendererStruc
   std::string* selection;
   
   // transparency of the model:
-  double alpha;
+  float alpha;
 } RobotStateRendererStruc;
 
 static void
@@ -185,11 +185,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
         glPopMatrix();
   }
  
- double c[3] = {0.3,0.3,0.3};
+ float c[3] = {0.3,0.3,0.3};
   //glColor3f(c[0],c[1],c[2]);
   glColor4f(c[0],c[1],c[2],self->alpha);
   
-  double alpha = self->alpha;
+  float alpha = self->alpha;
   if(self->robotStateListener->_gl_robot)
   {
    self->robotStateListener->_gl_robot->show_bbox(self->visualize_bbox);
@@ -226,7 +226,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->visualize_bbox = false;
     }
   }else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
-    self->alpha = bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
+    self->alpha = (float) bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
     bot_viewer_request_redraw(self->viewer);
   }
 }

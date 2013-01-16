@@ -21,6 +21,6 @@ pods_use_pkg_config_packages(visualization-utils lcm lcmtypes_drc_lcmtypes bot2-
 # software to use.
 pods_install_pkg_config_file(visualization-utils
     CFLAGS
-    LIBS -lvisualization-utils
+    LIBS -lvisualization-utils bot2-vis
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)

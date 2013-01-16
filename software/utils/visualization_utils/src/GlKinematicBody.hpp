@@ -57,7 +57,7 @@ class GlKinematicBody
     std::vector<std::string > _link_names;
     std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
     std::vector<boost::shared_ptr<otdf::Geometry> > _otdf_link_shapes; //for affordance display we want to use otdf::Geometry
-    std::vector<drc::link_transform_t> _link_tfs;     
+    std::vector<drc::link_transform_t> _link_tfs;
     std::map<std::string, MeshStruct > _mesh_map; // associates link name with meshstruct
   //Avoids loading the same mesh multiple times.
     std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
@@ -127,9 +127,23 @@ class GlKinematicBody
       return val;
     };
 
+    std::vector<drc::link_transform_t> get_link_tfs()
+    {
+      return _link_tfs;
+    };
+    std::vector<std::string > get_link_names()
+    {
+      return _link_names;
+    };
     
-   protected:
-     std::string evalMeshFilePath(std::string file_path_expression);
+    std::map<std::string, boost::shared_ptr<urdf::Link> > get_links_map()
+    {
+      return _links_map;
+    };
+    
+    // Was protected: (mfallon changed this:
+    std::string evalMeshFilePath(std::string file_path_expression);
+  protected:
      std::string exec(std::string cmd);
      std::string evalROSMeshFilePath(std::string file_path_expression);
  };
