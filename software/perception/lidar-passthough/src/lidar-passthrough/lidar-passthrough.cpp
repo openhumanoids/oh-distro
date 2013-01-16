@@ -35,17 +35,18 @@ using namespace boost::assign; // bring 'operator+()' into scope
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, std::string urdf_fname_);
+         std::string lidar_channel_);
     
     ~Pass(){
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     bool verbose_;
-    std::string urdf_fname_, lidar_channel_;
+    std::string urdf_xml_string_, lidar_channel_;
     
-    void lidar_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
+    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
+    void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
+    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     
     Collision_Object_GFE* collision_object_gfe_;
     Collision_Object_Point_Cloud* collision_object_point_cloud_;
@@ -64,6 +65,9 @@ class Pass{
     int vis_counter_; // used for visualization
     int printf_counter_; // used for terminal feedback
     
+    bool urdf_parsed_;
+    bool urdf_subscription_on_;
+    lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
     // Last robot state: this is used as the collision gfe/robot
     drc::robot_state_t last_rstate_;
     bool init_rstate_;
@@ -75,15 +79,17 @@ class Pass{
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, std::string urdf_fname_):
+         std::string lidar_channel_):
     lcm_(lcm_), verbose_(verbose_), 
-    lidar_channel_(lidar_channel_), urdf_fname_(urdf_fname_){
+    lidar_channel_(lidar_channel_),urdf_parsed_(false){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
-  lcm_->subscribe( lidar_channel_ ,&Pass::lidar_handler,this);
-  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);
+  lcm_->subscribe( lidar_channel_ ,&Pass::lidarHandler,this);
+  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);
+  urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
+  urdf_subscription_on_ = true;
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
@@ -96,15 +102,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   vis_counter_ =0;  
   printf_counter_ =0;
   
-  // TODO: get the urdf model from LCM:
-  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", urdf_fname_ );
-  n_collision_points_ = 1000;
-  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
-  // create the collision detector
-  collision_detector_ = new Collision_Detector();
-  // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
-  collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
-  collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 ); 
   init_rstate_ =false;
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud_s2l__ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -200,7 +197,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
 
 
 
-void Pass::lidar_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg){
+void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg){
   if (!init_rstate_){
     cout << "have laser but no robot state, refusing to publish\n";
     return;
@@ -259,10 +256,40 @@ void Pass::lidar_handler(const lcm::ReceiveBuffer* rbuf, const std::string& chan
     cout << "Filtering: " << lidar_channel_ << " "  << msg->utime << "\n";
   }
   printf_counter_++;
-    
 }
 
-void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+
+void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
+  if(urdf_parsed_ ==false){
+    cout<< "URDF received"<< endl;
+    // Received robot urdf string. Store it internally and get all available joints.
+    urdf_xml_string_ = msg->urdf_xml_string;
+    
+    // TODO: get the urdf model from LCM:
+    cout << "c\n";
+    collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", urdf_xml_string_ );
+    cout << "d\n";
+    n_collision_points_ = 1000;
+    collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
+    // create the collision detector
+    collision_detector_ = new Collision_Detector();
+    // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
+    collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
+    collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 ); 
+    
+    lcm_->unsubscribe(urdf_subscription_); 
+    urdf_parsed_ = true;
+  } 
+}
+
+void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+  if (!urdf_parsed_){      return;    }
+  if(urdf_subscription_on_){
+    cout << "robotStateHandler: unsubscribing from urdf" << endl;
+    lcm_->unsubscribe(urdf_subscription_); //unsubscribe from urdf messages
+    urdf_subscription_on_ =  false;   
+  }  
+  
   last_rstate_= *msg;  
   init_rstate_=true;
 }
@@ -271,21 +298,18 @@ int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
   string lidar_channel="ROTATING_SCAN";
-  string urdf_fname="/home/mfallon/drc/software/build/models/mit_gazebo_models/mit_robot/model.urdf"; // replace by lcm based delivery of urdf string
   parser.add(verbose, "v", "verbose", "Verbosity");
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
-  parser.add(urdf_fname, "u", "urdf_fname", "URDF filename [temp]");
   parser.parse();
   cout << verbose << " is verbose\n";
   cout << lidar_channel << " is lidar_channel\n";
-  cout << urdf_fname << " is urdf_fname\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm,verbose,lidar_channel,urdf_fname);
+  Pass app(lcm,verbose,lidar_channel);
   cout << "Ready to filter lidar points" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
