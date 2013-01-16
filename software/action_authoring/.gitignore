@@ -1,0 +1,29 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# emacs things
+*~
+\#*
+.\#*
+
+build/*
+pod-build/*
+lcmtypes/c/*
+lcmtypes/java/*
+lcmtypes/cpp/*
+lcmtypes/python/*
+*.emacs*
+
+# qt
+moc_*.cpp
