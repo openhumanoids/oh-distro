@@ -441,7 +441,7 @@ int main( int argc, char** argv ){
   string model="DRC_PALADIN_MODEL_v1";
   double scale=1.3;
   parser.add(verbose, "v", "verbose", "Verbosity");
-  parser.add(vicon_channel, "l", "vicon_channel", "Incoming Vicorn channel");
+  parser.add(vicon_channel, "l", "vicon_channel", "Incoming Vicon channel");
   parser.add(output_type, "o", "output_type", "Command: left right both");
   parser.add(model, "m", "model", "Name of Vicon Model");
   parser.add(scale, "s", "scale", "Human to Robot Scale Factor");
