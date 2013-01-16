@@ -1,13 +1,13 @@
 #include "mainwindow.h"
 
 #include <state/state_gfe.h>
-#include <libxml/parser.h>
 
 using namespace KDL;
 using namespace Eigen;
 using namespace opengl;
-using namespace qt4;
 using namespace state;
+using namespace collision;
+//using namespace collision_detection;
 
 /*
  * Filler method to populate affordance and constraint lists until we get proper
@@ -95,7 +95,6 @@ createWaypointGUI(Constraint* waypoint_constraint, std::vector<std::string> join
     QVBoxLayout* vbox = new QVBoxLayout;
     vbox->addWidget(name);
     
-    
     QHBoxLayout* hbox = new QHBoxLayout;
     hbox->addWidget(new QLabel("robot"));
     hbox->addWidget(radio1);
@@ -128,25 +127,34 @@ createWaypointGUI(Constraint* waypoint_constraint, std::vector<std::string> join
 }
 
 MainWindow::
-MainWindow(QWidget* parent) : _qt4_widget_opengl(), 
+MainWindow(QWidget* parent) : _widget_opengl(), 
 			      _opengl_object_sphere(),
 			      _opengl_object_cylinder(),
 			      _opengl_object_box(),
-			      _colorRobot() //_opengl_object_gfe()
+			      _colorRobot()
 {
 
     // setup the OpenGL scene
     _opengl_object_box.set( Frame( Vector( 1.0, 0.0, 0.0 ) ), Vector3f( 0.25, 0.25, 0.25 ) );
     _opengl_object_box.set_color( Vector3f( 1.0, 1.0, 0.0 ) );
+    cout <<" box at " << _opengl_object_box << endl;
 
-    _opengl_object_cylinder.set( Frame( Vector( 0.0, 1.0, 0.0 ) ), Vector2f( 0.25, 0.25 ) );
-    _opengl_object_cylinder.set_color( Vector3f( 0.0, 1.0, 1.0 ) );
+    _opengl_object_cylinder.set( Frame( Vector( 0.0, 1.0, 0.0 )), Vector2f( 0.25, 0.25 ) );
+    _opengl_object_cylinder.set_color( Vector3f( 0.0, 1.0, 1.0 ));
+    cout <<" cylinder at " << _opengl_object_cylinder << endl;
 
-    _opengl_object_sphere.set( Frame( Vector( -0.5, -0.5, 0.0 ) ), 0.125 );
-    _opengl_object_sphere.set_color( Vector3f( 1.0, 0.0, 1.0 ) );
+    _opengl_object_sphere.set( Frame( Vector( -0.5, -0.5, 0.0 )), 0.125 );
+    _opengl_object_sphere.set_color( Vector3f( 1.0, 0.0, 1.0 ));
+    cout <<" sphere at " << _opengl_object_sphere << endl;
 
     _state_gfe.from_urdf();
     _colorRobot.set(_state_gfe);
+
+    // build collision objects
+    _collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    _collision_object_sphere = new Collision_Object_Sphere("sphere1", 0.125, Vector3f(-0.5, -0.5, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    //_collision_object_gfe("robot1");
 
     // read the joints from the robot state
     std::vector<std::string> joint_names;
@@ -156,10 +164,16 @@ MainWindow(QWidget* parent) : _qt4_widget_opengl(),
 	joint_names.push_back(state_gfe_joint.id());
     }
 
-    _qt4_widget_opengl.opengl_scene().add_object(_opengl_object_box);
-    _qt4_widget_opengl.opengl_scene().add_object(_opengl_object_cylinder);
-    _qt4_widget_opengl.opengl_scene().add_object(_opengl_object_sphere);
-    _qt4_widget_opengl.opengl_scene().add_object(_colorRobot);
+    _widget_opengl.opengl_scene().add_object(_opengl_object_box);
+    _widget_opengl.opengl_scene().add_object(_opengl_object_cylinder);
+    _widget_opengl.opengl_scene().add_object(_opengl_object_sphere);
+    _widget_opengl.opengl_scene().add_object(_colorRobot);
+
+    _widget_opengl.add_object_with_collision(_collision_object_box);
+    _widget_opengl.add_object_with_collision(_collision_object_cylinder);
+    _widget_opengl.add_object_with_collision(_collision_object_sphere);
+    //_widget_opengl.add_object_with_collision(_collision_object_gfe);
+
 
     _signalMapper = new QSignalMapper(this);
 
@@ -194,7 +208,7 @@ MainWindow(QWidget* parent) : _qt4_widget_opengl(),
     QVBoxLayout* rightsidelayout = new QVBoxLayout();
     QGroupBox* rightside = new QGroupBox();
     _jointSlider = new QSlider( Qt::Horizontal, this );
-    rightsidelayout->addWidget(&_qt4_widget_opengl );
+    rightsidelayout->addWidget(&_widget_opengl );
     rightsidelayout->addWidget(_jointSlider);
     rightside->setLayout(rightsidelayout);
 
@@ -277,7 +291,7 @@ updateJoint(int value) {
 	std::cout << "joint " << _selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
 	_state_gfe.joint(_selectedJointName).set_position( _jointSlider->value() / 100.0 );
 	_colorRobot.set(_state_gfe);
-	_qt4_widget_opengl.update(); //_opengl_widget.update();
+	_widget_opengl.update(); //_opengl_widget.update();
 	//update();
     }
 }
@@ -293,7 +307,7 @@ handleRobotLinkChange(QString waypointName) {
     // find the selected text
     _selectedJointName = selected_combo->currentText().toStdString();  //itemData(selected_combo->currentIndex());
     _colorRobot.setSelectedJoint(_selectedJointName);
-    _qt4_widget_opengl.update(); //_opengl_widget.update();
+    _widget_opengl.update(); //_opengl_widget.update();
 }
 
 void 

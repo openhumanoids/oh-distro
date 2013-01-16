@@ -27,3 +27,6 @@ lcmtypes/python/*
 
 # qt
 moc_*.cpp
+
+#svn
+.svn

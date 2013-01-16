@@ -25,11 +25,12 @@ include(${QT_USE_FILE})
 
 qt_wrap_cpp(action-authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h)
 
-set(REQUIRED_PACKAGES opengl_object_gfe state_gfe qt4_widget opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf)
+set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe qt4_widget collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf)
 
 add_executable(action-authoring-gui src/gui/main.cpp src/gui/mainwindow.cpp 
 				    src/Affordance.cpp src/Constraint.cpp
 				    src/gui/togglepanel.cpp
 				    src/opengl/ColorRobot.cpp
+				    src/opengl/SelectableOpenGLWidget.cpp
 				    ${MOC_SRCS})
 pods_use_pkg_config_packages(action-authoring-gui ${REQUIRED_PACKAGES})
