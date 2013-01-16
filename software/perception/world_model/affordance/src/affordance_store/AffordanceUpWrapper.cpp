@@ -6,6 +6,7 @@
  */
 
 #include "AffordanceUpWrapper.h"
+#include <iostream>
 
 using namespace boost;
 using namespace std;
@@ -57,7 +58,6 @@ void AffordanceUpWrapper::addOrReplace(const AffordanceState &aff)
 }
 
 
-
 /**receives affordance collection message from server -- which represents
  * all affordances on the server.*/
 void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
@@ -73,6 +73,32 @@ void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, co
 	}
 
 	_accessMutex.unlock(); //=======unlock
+}
+
+
+/**get a string representation of the server stat*/
+string AffordanceUpWrapper::toString()
+{
+	vector<AffPtr> affs;
+	getAllAffordances(affs);
+
+	if (affs.size() == 0)
+		return "Affordance Server Empty";
+
+	stringstream s;
+	s << "\n===================================================\n"
+			<< "============Affordance Server State=========\n"
+			<< "\tNumber of affordance s = " << affs.size() << "\n";
+	for (uint i = 0; i < affs.size(); i++)
+		s << *(affs[i]) << "\n";
+
+	return s.str();
+}
+
+ostream& operator<<(ostream& out, AffordanceUpWrapper& other )
+{
+	out << other.toString();
+	return out;
 }
 
 } /* namespace affordance */

@@ -56,10 +56,12 @@ namespace affordance
 	//-----------constructor/destructor
 	public:
 		AffordanceState(const drc::affordance_t *affordanceMsg);
+		AffordanceState();
 		AffordanceState(const AffordanceState &other);
 		AffordanceState& operator=( const AffordanceState& rhs );
 
 		void initHelper(const drc::affordance_t *msg);
+		void initIdEnumMap();
 		virtual ~AffordanceState();
 
 	//observers
@@ -78,8 +80,13 @@ namespace affordance
 	private:
 		static void assertContainsKey(const boost::unordered_map<std::string, double> &map,
 									  const std::string &key);
+	public:
+		static std::string toStr(boost::unordered_map<std::string,double> m);
+		static std::string toStr(double d);
 
 	};
+
+	std::ostream& operator<<( std::ostream& out, const AffordanceState& other );
 
 } //namespace affordance
 

@@ -7,11 +7,13 @@
 
 #include "AffordanceState.h"
 #include "boost/assign.hpp"
+#include <iostream>
 
 using namespace affordance;
 using namespace Eigen;
 using namespace boost;
 using namespace std;
+
 
 //--------set common name fields for drc::affordance_t
 
@@ -27,15 +29,25 @@ string AffordanceState::LENGTH_NAME = "length";
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg)
 {
+	initIdEnumMap(); //todo : should be static
+
 	initHelper(msg);
 }
 
 /**copy constructor by using toMsg and then the constructor*/
 AffordanceState::AffordanceState(const AffordanceState &other)
 {
-	drc::affordance_t *msg;
-	other.toMsg(msg);
-	initHelper(msg);
+	initIdEnumMap(); //todo : should be static
+
+	drc::affordance_t msg;
+	other.toMsg(&msg);
+	initHelper(&msg);
+}
+
+/**Constructs an affordance with emtpy state*/
+AffordanceState::AffordanceState()
+{
+	initIdEnumMap(); //todo : should be static
 }
 
 AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
@@ -49,9 +61,9 @@ AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
 	_ptinds.clear();
 
 	//convert to message and then run init
-	drc::affordance_t *msg;
-	rhs.toMsg(msg);
-	initHelper(msg);
+	drc::affordance_t msg;
+	rhs.toMsg(&msg);
+	initHelper(&msg);
 
 	return *this;
 }
@@ -69,17 +81,6 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 	_name 		= msg->name;
 	_ptinds 	= msg->ptinds;
 
-	//this should really be static.
-	//SOME WEIRD C++ issues require setting these to variables first
-	//before using as the key for the map.
-	int16_t c 		 = drc::affordance_t::CYLINDER;
-	int16_t lev 	 = drc::affordance_t ::LEVER;
-	int16_t box		 = drc::affordance_t::BOX;
-	int16_t sphere	 = drc::affordance_t::SPHERE;
-	idToEnum[c]  	 = AffordanceState::CYLINDER;
-	idToEnum[lev]  	 = AffordanceState::LEVER;
-	idToEnum[box] 	 = AffordanceState::BOX;
-	idToEnum[sphere] = AffordanceState::SPHERE;
 
 	//argument check
 	if (idToEnum.find(msg->otdf_id) == idToEnum.end())
@@ -94,6 +95,21 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 		_params[msg->param_names[i]] = msg->params[i];
 }
 
+/**initialize the idEnumMap*/
+void AffordanceState::initIdEnumMap()
+{
+	//this should really be static.
+	//SOME WEIRD C++ issues require setting these to variables first
+	//before using as the key for the map.
+	int16_t c 		 = drc::affordance_t::CYLINDER;
+	int16_t lev 	 = drc::affordance_t ::LEVER;
+	int16_t box		 = drc::affordance_t::BOX;
+	int16_t sphere	 = drc::affordance_t::SPHERE;
+	idToEnum[c]  	 = AffordanceState::CYLINDER;
+	idToEnum[lev]  	 = AffordanceState::LEVER;
+	idToEnum[box] 	 = AffordanceState::BOX;
+	idToEnum[sphere] = AffordanceState::SPHERE;
+}
 
 AffordanceState::~AffordanceState()
 {
@@ -191,6 +207,30 @@ void AffordanceState::assertContainsKey(const unordered_map<string, double> &map
 		throw KeyNotFoundException("Key = " + key + " not found");
 }
 
+string AffordanceState::toStr(unordered_map<string,double> m)
+{
+	stringstream s;
+	for(unordered_map<string,double>::const_iterator it = m.begin();
+	    it != m.end(); ++it)
+	{
+		s << "(" << it->first << ", "
+ 		  << it->second << ")\n";
+	}
+	return s.str();
+}
 
 
+namespace affordance
+{
+	/**operator << */
+	ostream& operator<<(ostream& out, const AffordanceState& other )
+	{
+		out << "=====Affordance " << other._name << "========" << endl;
+		out << "(mapId, objectId, otdfId) = (" << other._map_id << ", "
+			  << other._object_id << ", " << other._otdf_id << ")\n";
+		out << "---params: \n" << AffordanceState::toStr(other._params) << endl;;
+		out << "--states: \n" << AffordanceState::toStr(other._states) << endl;
+		return out;
+	}
+} //namespace affordance
 

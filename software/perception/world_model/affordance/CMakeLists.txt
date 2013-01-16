@@ -8,53 +8,50 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-#--include sub-directories
-include_directories(.)
-include_directories(./src)
-include_directories(./src/affordance_store)
 
-#---boost and eigen
+#========boost and eigen
 find_package(Boost COMPONENTS thread date_time program_options filesystem system REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})			   
+include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 
+include_directories(./src/affordance_store)
+include_directories(./src/test)
+include_directories(./src)
+include_directories(.)
+
 add_library(affordance SHARED 			
 			src/AffordanceState.cpp
-			src/affordance_store/AffordanceServer.cpp
-			src/affordance_store/AffordanceUpWrapper.cpp)		
-			  				  	  	
-set(REQUIRED_PACKAGES
-    lcm
-  	lcmtypes_drc_lcmtypes
-	)
-			  	  	
-pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})			  	
-			  	
-target_link_libraries(affordance ${Boost_LIBRARIES})
-			  	
-			  				  			  	
+			src/OpenGL_Affordance.cpp
+			src/affordance_store/AffordanceServer.cpp	
+			src/affordance_store/AffordanceUpWrapper.cpp)
+
 pods_install_headers(src/AffordanceState.h
+					 src/OpenGL_Affordance.h
 					 src/affordance_store/AffordanceServer.h
  					 src/affordance_store/AffordanceUpWrapper.h
 					 DESTINATION affordance)
-
+			  				  	  	
 pods_install_libraries(affordance)			  	
 
+target_link_libraries(affordance ${Boost_LIBRARIES})			  	
+
+set(REQUIRED_PACKAGES lcm lcmtypes_drc_lcmtypes opengl_object)
+	  	  	
+pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})			  	
 
 
 pods_install_pkg_config_file(affordance
-						     LIBS -laffordance -lboost_thread -lboost_system)
+						     LIBS -laffordance
+						     REQUIRES ${REQUIRED_PACKAGES})			  	
 
-add_executable(affordance_server src/affordance_store/main.cpp )
-			   
-pods_install_pkg_config_file(affordance_server
- 							affordance
-						     LIBS -laffordance -lboost_thread -lboost_system)
+add_executable(affordance_server src/affordance_store/main.cpp )		   
 			   
 pods_install_executables(affordance_server)
 
 target_link_libraries(affordance_server affordance ${REQUIRED_PACKAGES})
-	
-						     
+
+#------test
+add_executable(server_test src/test/server_test.cpp )		   
+target_link_libraries(server_test affordance ${REQUIRED_PACKAGES})

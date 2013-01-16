@@ -18,7 +18,7 @@ class AffordanceUpWrapper
 //--------fields
 private:
 	/**shared lcm object */
-	boost::shared_ptr<lcm::LCM> _lcm;
+	const boost::shared_ptr<lcm::LCM> _lcm;
 
 	/**affordances in the server*/
 	std::vector<AffPtr> _affordances;
@@ -34,6 +34,9 @@ public:
 	//-----------accessors
 	void getAllAffordances(std::vector<AffPtr> &affs);
 
+	//--observers
+	std::string toString();
+
 	//-----------mutators
 	void addOrReplace(const AffordanceState &aff);
 
@@ -42,6 +45,8 @@ private:
 							 const drc::affordance_collection_t *collection);
 
 };
+
+std::ostream& operator<<( std::ostream& out, AffordanceUpWrapper& other );
 
 } /* namespace affordance */
 #endif /* AFFORDANCEUPWRAPPER_H_ */
