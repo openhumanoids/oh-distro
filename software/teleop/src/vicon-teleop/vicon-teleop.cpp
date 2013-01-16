@@ -17,6 +17,9 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include <lcmtypes/vicon_drc.hpp>
 
+
+
+//#include <drc_utils/Clock.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
@@ -37,6 +40,8 @@ class Pass{
     bool verbose_;
     std::string output_type_, vicon_channel_, vicon_model_;
     
+    void sendRobotPlan( );
+    void collectPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::plan_collect_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     void publishEndEffectorGoal(Isometry3dTime waist_to_segment, std::string channel, std::string ee_name);
     void visualizeIncomingData(const viconstructs::vicon_t *msg);
@@ -55,6 +60,16 @@ class Pass{
     Eigen::Isometry3d world_to_robot_waist_;    
     
     Eigen::Vector3d human_to_robot_scale_;
+    
+    
+    // A vector of robot plans (intentionally using drc type)
+    std::vector< drc::robot_state_t > robot_plan_;
+    // Number of states for a full plan - keep to about 20-30 for now
+    int n_plan_samples_;
+    // Time between plan samples (This is the time simulated by gazebo)
+    double plan_sample_period_; 
+    int64_t last_plan_utime_;
+    bool collect_plan_; // has the user told us to collect a plan?
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
@@ -64,8 +79,11 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
     output_type_(output_type_), vicon_model_(vicon_model_){
   
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "teleop-4markers");
+  lcm_->subscribe("VICON_GET_PLAN",&Pass::collectPlanHandler,this);  
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe( vicon_channel_ ,&Pass::viconHandler,this);
+  //drc::Clock::instance()->setLcm(lcm_);
+
 
   float colors_a[] ={1.0,0.0,0.0};
   vector <float> colors_v;
@@ -97,8 +115,16 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
 
   first_rstate_received_=false;
   
+  // Nominal values:
+  plan_sample_period_ = 0.2;
+  n_plan_samples_ = 10;
+  // Last time we stored a plan
+  last_plan_utime_=0;
+  
   dummy_utime_=0;
+  collect_plan_= false;
   cout << "Finished setting up\n";
+  
 }
 
 void Pass::visualizeIncomingData(const viconstructs::vicon_t *msg){
@@ -232,10 +258,7 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     return; 
   }
   // Occasionally say we are still alive:
-  if (printf_counter_%100 ==0){
-    cout << "Vicon: " << vicon_channel_ << " "  << msg->nummodels << " nummodels\n";
-  }
-  printf_counter_++;    
+  if (printf_counter_%100 ==0){    cout << "Vicon: " << vicon_channel_ << " "  << msg->nummodels << " nummodels\n";  }
   visualizeIncomingData(msg);
   
   // 1. Check there is one model in the message and that it is the one we expect:
@@ -249,6 +272,10 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     return;
   }
 
+  if (printf_counter_%100 ==0){    cout << "Vicon: " << model.name << " is model name\n";  }
+  printf_counter_++;    
+  
+  
   // 2 Extract the segments - and specifically the waist
   std::vector< Isometry3dTime > world_to_segmentTs;
   std::vector< std::string > seg_names;
@@ -300,8 +327,8 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     robotworld_to_segmentT.pose = world_to_robot_waist_*robotworld_to_segmentT.pose;
     robotworld_to_segmentTs_scaled.push_back(robotworld_to_segmentT );
   }
-  pc_vis_->pose_collection_to_lcm_from_list(70006, robotworld_to_segmentTs_scaled); // all joints in world frame
   pc_vis_->text_collection_to_lcm(70007, 70006, "Robot World to Segment Scaled [Labels]", seg_names, seg_utimes );    
+  pc_vis_->pose_collection_to_lcm_from_list(70006, robotworld_to_segmentTs_scaled); // all joints in world frame
   
   
 
@@ -354,20 +381,57 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
 }
 
+
+void Pass::sendRobotPlan( ){
+  drc::robot_plan_t plan_msg;
+  plan_msg.utime = robot_plan_[  robot_plan_.size() -1 ].utime ;//drc::Clock::instance()->getCurrentTime();
+  plan_msg.robot_name =   robot_plan_[0].robot_name;
+  plan_msg.num_states = robot_plan_.size();
+  plan_msg.plan = robot_plan_;
+  lcm_->publish("CANDIDATE_ROBOT_PLAN", &plan_msg);
+  robot_plan_.clear(); // clear it out
+  collect_plan_ = false;
+  cout << "Sent CANDIDATE_ROBOT_PLAN msg\n";
+}
+
+
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (first_rstate_received_==false){
     cout << "got first Robot State @ " << msg->utime << "\n";
     first_rstate_received_=true;
   }
-
+  
   // Extract World to Body TF:
   world_to_robot_waist_.setIdentity();
   world_to_robot_waist_.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
                                                msg->origin_position.rotation.y, msg->origin_position.rotation.z);
   world_to_robot_waist_.rotate(quat);
+  
+  if (collect_plan_){
+    if (  msg->utime - (plan_sample_period_ *1E6) > last_plan_utime_ ){
+      last_plan_utime_ = msg->utime;
+      if ( robot_plan_.size() < n_plan_samples_ ){
+        drc::robot_state_t msgcopy = *msg;
+        robot_plan_.push_back( msgcopy);
+     }
+      if (robot_plan_.size() == n_plan_samples_ ){
+        sendRobotPlan();
+      }
+    }
+  }
 }
 
+// External command telling this program to save a history of states:
+void Pass::collectPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::plan_collect_t* msg){
+  n_plan_samples_ = msg->n_plan_samples;
+  plan_sample_period_ = msg->sample_period;
+  // TODO: insert type here
+  
+  // Start collecting:
+  collect_plan_ = true;
+  std::cout << "Starting to collect plan...\n";
+}
 
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
