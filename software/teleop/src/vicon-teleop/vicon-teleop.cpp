@@ -102,6 +102,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Markers (World)"           ,1,0, 1000,1, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Markers (Waist)"           ,1,0, 1000,1, colors_v ));
 
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Waist - Manual",5,0) );
+
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1003,"Left Goal  (Waist)",4,0) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1004,"Left Goal  (World)",4,0) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1005,"Right Goal (Waist)",4,0) );
@@ -112,7 +114,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
 
   // Currently the human_to_robot_scale is a single number in x,y,z:  
   human_to_robot_scale_= Eigen::Vector3d(human_to_robot_scale_factor,human_to_robot_scale_factor,human_to_robot_scale_factor);
-
+  world_to_robot_waist_.setIdentity();
+  
   first_rstate_received_=false;
   
   // Nominal values:
@@ -137,9 +140,9 @@ void Pass::visualizeIncomingData(const viconstructs::vicon_t *msg){
   int i;
   for (i=0; i < msg->models[0].nummarkers; ++i) {
     double xyz[3];
-    xyz[0] = msg->models[0].markers[i].xyz.x/1000.0;
-    xyz[1] = msg->models[0].markers[i].xyz.y/1000.0;
-    xyz[2] = msg->models[0].markers[i].xyz.z/1000.0;
+    xyz[0] = msg->models[0].markers[i].xyz[0]/1000.0;
+    xyz[1] = msg->models[0].markers[i].xyz[1]/1000.0;
+    xyz[2] = msg->models[0].markers[i].xyz[2]/1000.0;
 //    std::cout << xyz[0] <<"|"<< xyz[1] <<"|"<< xyz[2] <<"\n";
     bot_lcmgl_vertex3f(lcmgl_, xyz[0], xyz[1], xyz[2]);
   }
@@ -154,9 +157,9 @@ void Pass::visualizeIncomingData(const viconstructs::vicon_t *msg){
 
   for (i=0; i < msg->models[0].numsegments; ++i) {
     double xyz_segments[3];
-    xyz_segments[0] = msg->models[0].segments[i].T.x/1000.0;
-    xyz_segments[1] = msg->models[0].segments[i].T.y/1000.0;
-    xyz_segments[2] = msg->models[0].segments[i].T.z/1000.0;
+    xyz_segments[0] = msg->models[0].segments[i].T[0]/1000.0;
+    xyz_segments[1] = msg->models[0].segments[i].T[1]/1000.0;
+    xyz_segments[2] = msg->models[0].segments[i].T[2]/1000.0;
     //cout << xyz[0] <<"|"<< xyz[1] <<"|"<< xyz[2] <<"\n";
     bot_lcmgl_vertex3f(lcmgl_, xyz_segments[0], xyz_segments[1], xyz_segments[2]);
   }
@@ -240,25 +243,26 @@ void getSegmentPose(viconstructs::segment_t  &segment, Eigen::Isometry3d &pose){
   pose.setIdentity();
   Eigen::Matrix3d m;
   //std::cout << segment.A.x << " " << segment.A.y << " " << segment.A.z <<"\n";
-  m = Eigen::AngleAxisd(  segment.A.z  , Eigen::Vector3d::UnitZ())
-      * Eigen::AngleAxisd( segment.A.y , Eigen::Vector3d::UnitY())
-      * Eigen::AngleAxisd( segment.A.x , Eigen::Vector3d::UnitZ());    
+  m = Eigen::AngleAxisd(  segment.A[2]  , Eigen::Vector3d::UnitZ())
+      * Eigen::AngleAxisd( segment.A[1] , Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd( segment.A[0] , Eigen::Vector3d::UnitZ());    
 
   pose *=m;
-  Eigen::Vector3d v( segment.T.x/1000.0 , segment.T.y/1000.0 , segment.T.z/1000.0 );
+  Eigen::Vector3d v( segment.T[0]/1000.0 , segment.T[1]/1000.0 , segment.T[2]/1000.0 );
   pose.translation() = v;   
 }
 
 void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  viconstructs::vicon_t* msg){
   dummy_utime_=dummy_utime_+100 ; // replace this with timestamp in message - when i add it
-  dummy_utime_ = dummy_utime_%100;
+  dummy_utime_ = dummy_utime_%2000;
 
-  if (!first_rstate_received_){
-    cout << "No Robot State yet. ignoring vicon data\n";
-    return; 
-  }
+  //if (!first_rstate_received_){
+  //  cout << "No Robot State yet. ignoring vicon data\n";
+  //  return; 
+  //}
+  
   // Occasionally say we are still alive:
-  if (printf_counter_%100 ==0){    cout << "Vicon: " << vicon_channel_ << " "  << msg->nummodels << " nummodels\n";  }
+  if (printf_counter_%300 ==0){    cout << "Vicon: " << vicon_channel_ << " "  << msg->nummodels << " nummodels\n";  }
   visualizeIncomingData(msg);
   
   // 1. Check there is one model in the message and that it is the one we expect:
@@ -272,7 +276,7 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     return;
   }
 
-  if (printf_counter_%100 ==0){    cout << "Vicon: " << model.name << " is model name\n";  }
+  if (printf_counter_%300 ==0){    cout << "Vicon: " << model.name << " is model name\n";  }
   printf_counter_++;    
   
   
@@ -296,6 +300,17 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   pc_vis_->pose_collection_to_lcm_from_list(70000, world_to_segmentTs); // all joints in world frame
   pc_vis_->text_collection_to_lcm(70001, 70000, "World Rel [Labels]", seg_names, seg_utimes );    
+
+  // Fix the waist orientation to the direction the user is facing in the Holodeck
+  // NB: this needs to be done in a better manner in future ... command line argument
+  Eigen::Isometry3d world_to_waist_temp;
+  world_to_waist_temp.setIdentity();
+  world_to_waist_temp.translation() << world_to_waist.translation().x() , world_to_waist.translation().y() , world_to_waist.translation().z();
+  Eigen::Quaterniond fix_r = euler_to_quat(114.0*M_PI/180.0, 0.0*M_PI/180.0 , 0.0*M_PI/180.0);
+  world_to_waist_temp.rotate(fix_r);    
+  world_to_waist = world_to_waist_temp;
+  Isometry3dTime world_to_waistT = Isometry3dTime( dummy_utime_ , world_to_waist);
+  pc_vis_->pose_to_lcm_from_list(2000, world_to_waistT);  
   
   
   // 3 Find segments relative to the person waist
@@ -336,9 +351,9 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr world_marker_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   for(int j = 0; j < model.nummarkers; j++){
     PointXYZRGB pt;
-    pt.x = model.markers[j].xyz.x / 1000.0; 
-    pt.y = model.markers[j].xyz.y / 1000.0; 
-    pt.z = model.markers[j].xyz.z / 1000.0; 
+    pt.x = model.markers[j].xyz[0] / 1000.0; 
+    pt.y = model.markers[j].xyz[1] / 1000.0; 
+    pt.z = model.markers[j].xyz[2] / 1000.0; 
     world_marker_cloud->points.push_back(pt);
   }
   Eigen::Isometry3d null_pose;
@@ -346,6 +361,7 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   Isometry3dTime null_poseT = Isometry3dTime(dummy_utime_, null_pose);
   pc_vis_->pose_to_lcm_from_list(1000, null_poseT);  
   pc_vis_->ptcld_to_lcm_from_list(1001, *world_marker_cloud, dummy_utime_, dummy_utime_);
+  
   // 6b .... and now relative to the waist
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr waist_relative_marker_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   Eigen::Isometry3f world_to_waist_f = Isometry_d2f( world_to_waist.inverse()  );
@@ -438,7 +454,7 @@ int main( int argc, char** argv ){
   bool verbose=FALSE;
   string vicon_channel="drc_vicon";
   string output_type="both";
-  string model="DRC_PALADIN_MODEL_v1";
+  string model="DRC_PALADIN_rigid";
   double scale=1.3;
   parser.add(verbose, "v", "verbose", "Verbosity");
   parser.add(vicon_channel, "l", "vicon_channel", "Incoming Vicon channel");
