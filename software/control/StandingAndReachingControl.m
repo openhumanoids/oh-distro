@@ -76,14 +76,14 @@ classdef StandingAndReachingControl < DrakeSystem
       % compute COM error 
       err_com = cm_des - P*cm;
       J_com = P*Jcm*Pq_qa;
-      k_com = 0.15;
+      k_com = 0.1;
       dq_com = k_com * pinv(J_com) * err_com;
  
       % COM nullspace projection matrix
       Ncom = eye(nq-6) - pinv(J_com)*J_com;
 
       % desired right endpoint position
-      k_ep = 0.375;
+      k_ep = 0.35;
       err_rep = rep_des - rep;
       Jrep = Jrep*obj.I_right_arm*Pq_qa;
       Nrep = eye(nq-6) - pinv(Jrep)*Jrep;
@@ -109,7 +109,7 @@ classdef StandingAndReachingControl < DrakeSystem
       dq_nom = k_nom * err_nom;
       
       % do null space projections and map into input coordinates
-      if (t<2.0)% || t>15.75) 
+      if (t<5.0)% || t>15.75) 
         dq_des = Ngc * (dq_com + Ncom*dq_nom);
       else
         dq_des = Ngc * (dq_com + Ncom*(dq_rep + dq_lep) + Ncom*Nrep*Nlep*dq_nom);

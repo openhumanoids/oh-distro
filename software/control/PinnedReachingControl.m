@@ -54,11 +54,11 @@ classdef PinnedReachingControl < DrakeSystem
       dt = 0.01;  % should really call getSampleTime
 
       kinsol = doKinematics(obj.manip,q); 
-      [rep,Jrep] = forwardKin(obj.manip,kinsol,obj.rhand_ind,[0;0;0]);
-      [lep,Jlep] = forwardKin(obj.manip,kinsol,obj.lhand_ind,[0;0;0]);
+      [rep,Jrep] = forwardKin(obj.manip,kinsol,obj.rhand_ind,[0;-0.1;0]);
+      [lep,Jlep] = forwardKin(obj.manip,kinsol,obj.lhand_ind,[0;0.1;0]);
 
       % desired right endpoint position
-      k_ep = 0.85;
+      k_ep = 1.5; % mfallon: multpiler on error
       err_rep = rep_des - rep;
       Jrep = Jrep*obj.I_arms;
       Nrep = eye(nq) - pinv(Jrep)*Jrep;
@@ -72,7 +72,7 @@ classdef PinnedReachingControl < DrakeSystem
       
       [err_lep,err_rep]
      
-      normbound = 10.0; % norm bound to alleviate the effect of singularities.
+      normbound = 1.0; % mfallon: norm bound to alleviate the effect of singularities.
       if (norm(dq_rep)>normbound)
         dq_rep = normbound*dq_rep/norm(dq_rep);
       end  

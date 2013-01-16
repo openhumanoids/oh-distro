@@ -34,8 +34,8 @@ cmd_publisher = PositionCmdPublisher('atlas',cmd_names,'JOINT_POSITION_CMDS');
 
 disp('Reaching controller ready...');
 q_dn = zeros(nu,1);
-rep_des = [0.415; -0.11; 1.075];
-lep_des = [0.415; 0.11; 1.075];
+rep_des = [0.25; -0.2; 1.2];
+lep_des = [0.25; 0.2; 1.2];
 while (1)
   rep = getNextMessage(rep_listener,1);
   if (~isempty(rep))
