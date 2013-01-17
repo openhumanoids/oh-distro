@@ -34,6 +34,7 @@ namespace renderer_ee_goal
 				       &renderer_ee_goal::RobotStateListener::handleRobotUrdfMsg,
 				       this);    
     _urdf_subscription_on = true;
+    _urdf_parsed = false;
 
     // Subscribe to Robot_state. 
     lcm->subscribe("EST_ROBOT_STATE", &renderer_ee_goal::RobotStateListener::handleRobotStateMsg, this); 
