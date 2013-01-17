@@ -14,7 +14,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/thread.hpp>
 
-#include "src/AffordanceState.h"
+#include "affordance/AffordanceState.h"
 
 namespace affordance
 {

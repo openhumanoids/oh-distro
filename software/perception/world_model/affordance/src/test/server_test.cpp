@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <lcm/lcm-cpp.hpp>
 #include <boost/shared_ptr.hpp>
-#include "AffordanceServer.h"
-#include "AffordanceUpWrapper.h"
-#include "AffordanceState.h"
-#include "OpenGL_Affordance.h"
+#include "affordance/AffordanceServer.h"
+#include "affordance/AffordanceUpWrapper.h"
+#include "affordance/AffordanceState.h"
+#include "affordance/OpenGL_Affordance.h"
 #include <iostream>
 
 using namespace boost;

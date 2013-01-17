@@ -8,7 +8,7 @@
 #ifndef AFFORDANCEUPWRAPPER_H_
 #define AFFORDANCEUPWRAPPER_H_
 
-#include "AffordanceServer.h"
+#include "affordance/AffordanceServer.h"
 #include <vector>
 
 namespace affordance {
