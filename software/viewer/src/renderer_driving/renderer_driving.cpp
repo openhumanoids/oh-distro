@@ -971,8 +971,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   self->visual_goal_type = VISUAL_GOAL_GLOBAL;
   
   self->goal_timeout =5.0;
-  self->min_turn_radius =4.0; /// Assumed Example: http://www.atv.com/manufacturers/john-deere/2011-john-deere-gator-xuv-825i-4x4-review-1798.html
-  self->wheel_separation = 1.5; // metres
+  self->min_turn_radius =3.8; /// Assumed Example: http://www.utvguide.net/polaris_ev_lsv.htm
+  self->wheel_separation = 1.829; // metres
   self->max_velocity = 2.0; // m/s  - about 5m/s
   self->center_arc_left.setIdentity();
   self->center_arc_right.setIdentity();
