@@ -2,6 +2,7 @@
 
 #include <state/state_gfe.h>
 #include "affordance/AffordanceState.h"
+#include "affordance/OpenGL_Affordance.h"
 #include <vector>
 using namespace std;
 using namespace KDL;
@@ -56,7 +57,12 @@ createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::stri
 
     
     vector<AffPtr> affordances;
-    _worldState.affordances.getAllAffordances(affordances);
+    while(affordances.size() == 0)
+    {
+    	_worldState.affordances.getAllAffordances(affordances);
+    	cout << "\n waiting for affordances to be non-zero" << endl;
+    	boost::this_thread::sleep(posix_time::seconds(1));
+    }
 
     for (int i = 0; i < affordances.size(); i++)
       {
@@ -134,9 +140,36 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     // read the joints from the robot state
     std::vector<std::string> joint_names;
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
-    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++) {
-	const State_GFE_Joint& state_gfe_joint = it->second;
-	joint_names.push_back(state_gfe_joint.id());
+    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
+    {
+    	const State_GFE_Joint& state_gfe_joint = it->second;
+    	joint_names.push_back(state_gfe_joint.id());
+    }
+
+
+    vector<AffPtr> affordances;
+    _worldState.affordances.getAllAffordances(affordances);
+
+    while(affordances.size() == 0)
+    {
+    	_worldState.affordances.getAllAffordances(affordances);
+    	cout << "\n waiting for affordances to be non-zero" << endl;
+    	boost::this_thread::sleep(posix_time::seconds(1));
+    }
+
+
+    cout << "\n\n got " << affordances.size() << " affordances " << endl;
+
+    for(uint i = 0; i < affordances.size(); i++)
+    {
+    	AffPtr next = affordances[i];
+    	if (next->_otdf_id == AffordanceState::CYLINDER ||
+    		next->_otdf_id == AffordanceState::BOX ||
+    		next->_otdf_id == AffordanceState::SPHERE)
+    	{
+    		OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); //todo : get rid of this memory leak
+    		_widget_opengl.opengl_scene().add_object(*asGlAff);
+    	}
     }
 
     /*todo

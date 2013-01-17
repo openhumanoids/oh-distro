@@ -59,7 +59,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 	wrapper.addOrReplace(AffordanceState("Right Foot",      uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Left Foot",       uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Steering Wheel",  uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Gas Pedal", 	uniqueObjId++, mapId));
+	wrapper.addOrReplace(AffordanceState("Gas Pedal", 		uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Brake Pedal", 	uniqueObjId++, mapId));
 
 	int j = 0;
@@ -67,7 +67,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 	while(true)
 	{
 		//cout << "\n\n===" << j << endl;
-		//cout << wrapper << endl;
+		cout << wrapper << endl;
 		boost::this_thread::sleep(sleepTime); //======sleep
 
 		//======modify server
