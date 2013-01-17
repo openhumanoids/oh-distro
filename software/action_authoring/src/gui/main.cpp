@@ -18,9 +18,11 @@
 #include "mainwindow.h"
 #include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
-
+#include <iostream>
+#include <vector>
 using namespace action_authoring;
 using namespace boost;
+using namespace std;
 
 void runLcmHandleLoop(const shared_ptr<lcm::LCM> theLcm)
 {

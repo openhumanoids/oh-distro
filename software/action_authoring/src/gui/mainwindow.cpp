@@ -2,7 +2,8 @@
 
 #include <state/state_gfe.h>
 #include "affordance/AffordanceState.h"
-
+#include <vector>
+using namespace std;
 using namespace KDL;
 using namespace Eigen;
 using namespace opengl;

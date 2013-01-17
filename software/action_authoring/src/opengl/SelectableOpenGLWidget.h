@@ -10,24 +10,26 @@
 #include <collision/collision_detector.h>
 #include <collision/collision_object_box.h>
 
-using namespace std;
-using namespace Eigen;
-using namespace collision;
 
-using namespace std;
-using namespace KDL;
-using namespace opengl;
-using namespace qt4;
 
-namespace robot_opengl {
-    class SelectableOpenGLWidget : public qt4::Qt4_Widget_OpenGL {
-	void raycast( const Vector eyePosition, const Vector clickPosition );
+namespace robot_opengl
+{
 
-    public:
-	void add_object_with_collision(Collision_Object* collisionObject);
+class SelectableOpenGLWidget : public qt4::Qt4_Widget_OpenGL
+{
+	//------fields
+protected:
+	const boost::shared_ptr<collision::Collision_Detector> _collisionDetector;
 
-    protected:
-	Collision_Detector* _collisionDetector;
+
+	//------constructor
+public:
+	SelectableOpenGLWidget();
+
+
+	//--------methods
+	void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
+   	void add_object_with_collision(const boost::shared_ptr<collision::Collision_Object> collisionObject);
 	
     };
 }

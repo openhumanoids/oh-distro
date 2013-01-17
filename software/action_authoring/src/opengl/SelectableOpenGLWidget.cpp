@@ -1,6 +1,20 @@
 #include "SelectableOpenGLWidget.h"
 
+
+using namespace collision;
+using namespace Eigen;
+using namespace KDL;
+using namespace opengl;
+using namespace qt4;
 using namespace robot_opengl;
+using namespace boost;
+using namespace std;
+
+
+SelectableOpenGLWidget::SelectableOpenGLWidget()
+	: _collisionDetector(shared_ptr<Collision_Detector>(new Collision_Detector()))
+{
+}
 
 void
 SelectableOpenGLWidget::
@@ -11,6 +25,8 @@ raycast(const Vector eyePosition,
 	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
 
     Collision_Object * intersected_object = NULL;
+    return;
+
     _collisionDetector->ray_test( Vector3f( eyePosition(0), eyePosition(1), eyePosition(2)), 
 				 Vector3f( clickPosition(0), clickPosition(1), clickPosition(2)),
 				 intersected_object);
@@ -25,14 +41,10 @@ raycast(const Vector eyePosition,
     return;
 }
 
-void 
-SelectableOpenGLWidget::
-add_object_with_collision(Collision_Object* collisionObject) {
-    if (_collisionDetector == NULL) {
-	cout << "collision detector initialized" << endl;
-	_collisionDetector = new Collision_Detector();
-    }
-    _collisionDetector->add_collision_object(collisionObject);
+void SelectableOpenGLWidget::add_object_with_collision(const shared_ptr<Collision_Object> collisionObject)
+{
+
+    _collisionDetector->add_collision_object(collisionObject.get());
     
     //  Collision_Object_Box* collision_object_2 = new Collision_Object_Box("box2", Vector3f( 0.5, 0.5, 0.5 ), Vector3f( 2.0, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0)); 
     //_collisionDetector->add_collision_object(collision_object_2);
