@@ -29,12 +29,15 @@ void OpenGL_Affordance::draw()
 	KDL::Frame frame;
 	_affordance.getFrame(frame);
 
+
+	cout << "\n getting opengl affordance for \n" << _affordance << endl;
+
 	switch(_affordance._otdf_id)
 	{
 		case AffordanceState::CYLINDER:
 			_cylinder.set(frame, Vector2f(_affordance.radius(),
 										  _affordance.length()));
-			_cylinder.set_color(Vector3f(1.0,1.0,1.0)); //todo
+			_cylinder.set_color(_affordance.getColor());
 			_cylinder.draw();
 			break;
 
@@ -43,12 +46,15 @@ void OpenGL_Affordance::draw()
 		break;
 
 		case AffordanceState::BOX:
-			throw runtime_error("not handling box right now");
+			_box.set(frame, Vector3f(_affordance.length(),
+									_affordance.width(),
+									_affordance.height()));
+			_box.set_color(_affordance.getColor());
 			break;
 
 		case AffordanceState::SPHERE:
 			_sphere.set(frame, _affordance.radius());
-			_sphere.set_color(Vector3f(10.0, 0.0, 1.0));
+			_sphere.set_color(_affordance.getColor());
 			_sphere.draw();
 			break;
 

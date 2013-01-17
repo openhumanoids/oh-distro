@@ -32,7 +32,7 @@ string AffordanceState::G_COLOR_NAME  	= "g_color";
 string AffordanceState::B_COLOR_NAME  	= "b_color";
 
 /**Constructs an AffordanceState from an lcm message.*/
-AffordanceState::AffordanceState(const drc::affordance_t *msg)
+AffordanceState::AffordanceState(const drc::affordance_t *msg) 
 {
 	initIdEnumMap(); //todo : should be static
 
@@ -60,7 +60,7 @@ AffordanceState::AffordanceState(const string &name,
 				 const int &objId, const int &mapId,
 				 const KDL::Frame &frame,
 				 const Eigen::Vector3f &color)
-  : _name(name), _object_id(objId), _map_id(mapId)
+  : _name(name), _object_id(objId), _map_id(mapId), _otdf_id(UNKNOWN)
 {
 	initIdEnumMap(); //todo : should be static
 
@@ -132,14 +132,19 @@ void AffordanceState::initIdEnumMap()
 	//this should really be static.
 	//SOME WEIRD C++ issues require setting these to variables first
 	//before using as the key for the map.
-	int16_t c 		 = drc::affordance_t::CYLINDER;
+        int16_t c 	 = drc::affordance_t::CYLINDER;
 	int16_t lev 	 = drc::affordance_t ::LEVER;
-	int16_t box		 = drc::affordance_t::BOX;
+	int16_t box	 = drc::affordance_t::BOX;
 	int16_t sphere	 = drc::affordance_t::SPHERE;
 	idToEnum[c]  	 = AffordanceState::CYLINDER;
 	idToEnum[lev]  	 = AffordanceState::LEVER;
 	idToEnum[box] 	 = AffordanceState::BOX;
 	idToEnum[sphere] = AffordanceState::SPHERE;
+       
+	int unknown = box + 1;
+	if (idToEnum.find(unknown) != idToEnum.end())
+	  throw ArgumentException("initToIdEnumMap : investigate");
+	idToEnum[unknown] = AffordanceState::UNKNOWN;
 }
 
 AffordanceState::~AffordanceState()
@@ -237,6 +242,13 @@ void AffordanceState::getFrame(KDL::Frame &frame) const
                        KDL::Vector(xyz[0], xyz[1], xyz[2]));
 }
 
+Vector3f AffordanceState::getColor() const
+{
+	return Vector3f(_params.find(R_COLOR_NAME)->second,
+					_params.find(G_COLOR_NAME)->second,
+					_params.find(B_COLOR_NAME)->second);
+}
+
 /**@return radius or throws exception if not present*/
 double AffordanceState::radius() const
 {
@@ -250,6 +262,22 @@ double AffordanceState::length() const
 	assertContainsKey(_params, LENGTH_NAME);
 	return _params.find(LENGTH_NAME)->second;
 }
+
+/**@return width or throws exception if not present*/
+double AffordanceState::width() const
+{
+	assertContainsKey(_params, WIDTH_NAME);
+	return _params.find(WIDTH_NAME)->second;
+}
+
+
+/**@return height or throws exception if not present*/
+double AffordanceState::height() const
+{
+	assertContainsKey(_params, HEIGHT_NAME);
+	return _params.find(HEIGHT_NAME)->second;
+}
+
 
 void AffordanceState::assertContainsKey(const unordered_map<string, double> &map,
 					   	   	   	   	   	const string &key)

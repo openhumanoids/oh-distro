@@ -26,9 +26,10 @@ namespace affordance
 	//------------fields
 	public:
 		enum OTDF_TYPE  {CYLINDER 	= drc::affordance_t::CYLINDER,
-						LEVER 	 	= drc::affordance_t::LEVER,
-						SPHERE 		= drc::affordance_t::SPHERE,
-						BOX 		= drc::affordance_t::BOX};
+				 LEVER 	 	= drc::affordance_t::LEVER,
+				 SPHERE		= drc::affordance_t::SPHERE,
+				 BOX 		= drc::affordance_t::BOX,
+		                 UNKNOWN};
 
 		/**standardizing the naming for common fields in drc::affordance_t. 
 		   These should be used as keys in the _params map*/
@@ -81,10 +82,14 @@ namespace affordance
 		Eigen::Vector3f getXYZ() const;
 		Eigen::Vector3f getRPY() const;
 		void getFrame(KDL::Frame &frame) const;
+		Eigen::Vector3f getColor() const;
 
 		bool hasRPY() const;
 		double radius() const;
 		double length() const;
+		double width() const;
+		double height() const;
+
 
 	//helpers
 	private:
