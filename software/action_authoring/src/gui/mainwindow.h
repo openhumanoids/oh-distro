@@ -31,7 +31,7 @@
 
 // Local includes
 #include "../AtomicConstraint.h"
-#include "../ConstraintWayPtList.h"
+#include "../ConstraintSequence.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
 

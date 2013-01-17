@@ -8,7 +8,7 @@ namespace action_authoring
 {
 
 /**sequence of atomic constriants*/
-class ConstraintWayPtList
+class ConstraintSequence
 {
 	//-------fields
 public:
@@ -19,7 +19,7 @@ private:
   
   //----constructor
 public:
-  ConstraintWayPtList(const std::string &name);
+  ConstraintSequence(const std::string &name);
 
   //------mutators
   void addConstraint(const AtomicConstraintPtr &constraint);

@@ -1,4 +1,4 @@
-#include "ConstraintWayPtList.h"
+#include "ConstraintSequence.h"
 
 using namespace action_authoring;
 using namespace std;
