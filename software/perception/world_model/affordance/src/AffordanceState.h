@@ -30,9 +30,10 @@ namespace affordance
 						SPHERE 		= drc::affordance_t::SPHERE,
 						BOX 		= drc::affordance_t::BOX};
 
-		/**standardizing the naming for common fields in drc::affordance_t*/
+		/**standardizing the naming for common fields in drc::affordance_t. 
+		   These should be used as keys in the _params map*/
 		static std::string  X_NAME, Y_NAME, Z_NAME, ROLL_NAME, PITCH_NAME, YAW_NAME,
-						    RADIUS_NAME, LENGTH_NAME;
+		  RADIUS_NAME, LENGTH_NAME, WIDTH_NAME, HEIGHT_NAME,  R_COLOR_NAME, G_COLOR_NAME, B_COLOR_NAME;
 
 	private:
 		boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
@@ -60,8 +61,9 @@ namespace affordance
 	public:
 		AffordanceState(const drc::affordance_t *affordanceMsg);
 		AffordanceState(const std::string &name,
-						const int &objId = 0, const int &mapId = 0,
-					    const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)));
+				const int &objId = 0, const int &mapId = 0,
+				const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+				const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
 		AffordanceState(const AffordanceState &other);
 		AffordanceState& operator=( const AffordanceState& rhs );
 

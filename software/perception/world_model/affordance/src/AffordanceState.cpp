@@ -23,8 +23,13 @@ string AffordanceState::Z_NAME 		= "z";
 string AffordanceState::ROLL_NAME 	= "roll";
 string AffordanceState::PITCH_NAME 	= "pitch";
 string AffordanceState::YAW_NAME 	= "yaw";
-string AffordanceState::RADIUS_NAME = "radius";
-string AffordanceState::LENGTH_NAME = "length";
+string AffordanceState::RADIUS_NAME     = "radius";
+string AffordanceState::LENGTH_NAME     = "length";
+string AffordanceState::WIDTH_NAME      = "width";
+string AffordanceState::HEIGHT_NAME     = "height";
+string AffordanceState::R_COLOR_NAME  	= "r_color";
+string AffordanceState::G_COLOR_NAME  	= "g_color";
+string AffordanceState::B_COLOR_NAME  	= "b_color";
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg)
@@ -44,10 +49,17 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 	initHelper(&msg);
 }
 
-/**Constructs an affordance with emtpy state*/
+/**Constructs an affordance and sets the name, objId,mapid, frame, and color as specified
+@param name affordance name
+@param unique object id.  must be unique for the map
+@param mapId
+@param frame transformation in the map
+@param rgb color values from [0,1]
+*/
 AffordanceState::AffordanceState(const string &name,
-								 const int &objId, const int &mapId,
-								 const KDL::Frame &frame)
+				 const int &objId, const int &mapId,
+				 const KDL::Frame &frame,
+				 const Eigen::Vector3f &color)
   : _name(name), _object_id(objId), _map_id(mapId)
 {
 	initIdEnumMap(); //todo : should be static
@@ -62,6 +74,11 @@ AffordanceState::AffordanceState(const string &name,
 	_params[ROLL_NAME] 	= roll;
 	_params[PITCH_NAME] = pitch;
 	_params[YAW_NAME] 	= yaw;
+
+	//------set the color
+	_params[R_COLOR_NAME] = color[0];
+	_params[G_COLOR_NAME] = color[1];
+	_params[B_COLOR_NAME] = color[2];
 }
 
 AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
@@ -247,7 +264,7 @@ string AffordanceState::toStr(unordered_map<string,double> m)
 	for(unordered_map<string,double>::const_iterator it = m.begin();
 	    it != m.end(); ++it)
 	{
-		s << "(" << it->first << ", "
+		s << "\t(" << it->first << ", "
  		  << it->second << ")\n";
 	}
 	return s.str();
@@ -262,8 +279,8 @@ namespace affordance
 		out << "=====Affordance " << other._name << "========" << endl;
 		out << "(mapId, objectId, otdfId) = (" << other._map_id << ", "
 			  << other._object_id << ", " << other._otdf_id << ")\n";
-		out << "---params: \n" << AffordanceState::toStr(other._params) << endl;;
-		out << "--states: \n" << AffordanceState::toStr(other._states) << endl;
+		out << "------params: \n" << AffordanceState::toStr(other._params) << endl;;
+		out << "------states: \n" << AffordanceState::toStr(other._states) << endl;
 		return out;
 	}
 } //namespace affordance
