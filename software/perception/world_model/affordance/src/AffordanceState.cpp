@@ -45,7 +45,10 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 }
 
 /**Constructs an affordance with emtpy state*/
-AffordanceState::AffordanceState(const string &name) : _name(name)
+AffordanceState::AffordanceState(const string &name,
+				 const int &objId, 
+				 const int &mapId) 
+  : _name(name), _object_id(objId), _map_id(mapId)
 {
 	initIdEnumMap(); //todo : should be static
 }

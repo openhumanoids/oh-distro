@@ -58,7 +58,7 @@ namespace affordance
 	//-----------constructor/destructor
 	public:
 		AffordanceState(const drc::affordance_t *affordanceMsg);
-		AffordanceState(const std::string &name);
+		AffordanceState(const std::string &name, const int &objId = 0, const int &mapId = 0);
 		AffordanceState(const AffordanceState &other);
 		AffordanceState& operator=( const AffordanceState& rhs );
 
