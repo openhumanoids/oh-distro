@@ -45,7 +45,7 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 }
 
 /**Constructs an affordance with emtpy state*/
-AffordanceState::AffordanceState()
+AffordanceState::AffordanceState(const string &name) : _name(name)
 {
 	initIdEnumMap(); //todo : should be static
 }
@@ -150,6 +150,12 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	for(int i = 0; i < _ptinds.size(); i++)
 		msg->ptinds.push_back(_ptinds[i]);
 }
+
+string AffordanceState:: getName() const
+{
+  return _name;
+}
+
 
 /**@return x,y,z or throws an exception if any of those are not present*/
 Vector3f AffordanceState::getXYZ() const

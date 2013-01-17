@@ -14,6 +14,8 @@
 
 namespace affordance
 {
+
+
 	class ArgumentException : public std::runtime_error {public: ArgumentException(const std::string &msg) : std::runtime_error(msg){}};
 	class InvalidOtdfID : public std::runtime_error { public: InvalidOtdfID(const std::string &msg) : std::runtime_error(msg){}};
 	class KeyNotFoundException : public std::runtime_error { public: KeyNotFoundException(const std::string &msg) : std::runtime_error(msg){}};
@@ -56,7 +58,7 @@ namespace affordance
 	//-----------constructor/destructor
 	public:
 		AffordanceState(const drc::affordance_t *affordanceMsg);
-		AffordanceState();
+		AffordanceState(const std::string &name);
 		AffordanceState(const AffordanceState &other);
 		AffordanceState& operator=( const AffordanceState& rhs );
 
@@ -67,6 +69,7 @@ namespace affordance
 	//observers
 	public:
 		void toMsg(drc::affordance_t *affordanceMsg) const;
+		std::string getName() const;
 
 		//--these methods throw exceptions if we don't
 		//have these fields defined
@@ -87,6 +90,8 @@ namespace affordance
 	};
 
 	std::ostream& operator<<( std::ostream& out, const AffordanceState& other );
+
+	typedef boost::shared_ptr<AffordanceState> AffPtr;
 
 } //namespace affordance
 

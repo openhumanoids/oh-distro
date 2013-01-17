@@ -19,8 +19,6 @@
 namespace affordance
 {
 
-typedef boost::shared_ptr<AffordanceState> AffPtr;
-
 //maps from : affordance.objectId --> that affordance
 typedef boost::shared_ptr<boost::unordered_map<int32_t, AffPtr> > AffIdMap;
 
