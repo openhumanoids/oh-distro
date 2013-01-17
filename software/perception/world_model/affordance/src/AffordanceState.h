@@ -11,6 +11,7 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <boost/unordered_map.hpp>
 #include <Eigen/Core>
+#include <kdl/frames.hpp>
 
 namespace affordance
 {
@@ -58,7 +59,9 @@ namespace affordance
 	//-----------constructor/destructor
 	public:
 		AffordanceState(const drc::affordance_t *affordanceMsg);
-		AffordanceState(const std::string &name, const int &objId = 0, const int &mapId = 0);
+		AffordanceState(const std::string &name,
+						const int &objId = 0, const int &mapId = 0,
+					    const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)));
 		AffordanceState(const AffordanceState &other);
 		AffordanceState& operator=( const AffordanceState& rhs );
 
@@ -75,6 +78,8 @@ namespace affordance
 		//have these fields defined
 		Eigen::Vector3f getXYZ() const;
 		Eigen::Vector3f getRPY() const;
+		void getFrame(KDL::Frame &frame) const;
+
 		bool hasRPY() const;
 		double radius() const;
 		double length() const;

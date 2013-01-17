@@ -46,11 +46,22 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 
 /**Constructs an affordance with emtpy state*/
 AffordanceState::AffordanceState(const string &name,
-				 const int &objId, 
-				 const int &mapId) 
+								 const int &objId, const int &mapId,
+								 const KDL::Frame &frame)
   : _name(name), _object_id(objId), _map_id(mapId)
 {
 	initIdEnumMap(); //todo : should be static
+
+	//---set xyz roll pitch yaw from the frame
+	_params[X_NAME] = frame.p[0];
+	_params[Y_NAME] = frame.p[1];
+	_params[Z_NAME] = frame.p[2];
+
+	double roll,pitch,yaw;
+	frame.M.GetRPY(roll,pitch,yaw);
+	_params[ROLL_NAME] 	= roll;
+	_params[PITCH_NAME] = pitch;
+	_params[YAW_NAME] 	= yaw;
 }
 
 AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
@@ -193,6 +204,20 @@ Vector3f AffordanceState::getRPY() const
 	return Vector3f(_params.find(ROLL_NAME)->second,
 					_params.find(PITCH_NAME)->second,
 					_params.find(YAW_NAME)->second);
+}
+
+/**@param frame to get form this.getXYZ() and possible getRPY()*/
+void AffordanceState::getFrame(KDL::Frame &frame) const
+{
+	//everything should have xyz
+    Vector3f xyz = getXYZ();
+
+    //somethings, like a sphere, don't have rpy
+    Vector3f rpy = hasRPY() ? getRPY() : Vector3f(0,0,0);
+
+    //frame will be used by everything -- only compute once
+    frame = KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
+                       KDL::Vector(xyz[0], xyz[1], xyz[2]));
 }
 
 /**@return radius or throws exception if not present*/
