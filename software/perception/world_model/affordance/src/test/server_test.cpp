@@ -73,8 +73,6 @@ int main(int argc, char ** argv)
 
     //create the server
     AffordanceServer s(theLcm);
-    std::ostream& operator<<( std::ostream& out, AffordanceUpWrapper& other );
-
 
     //thread will modify the server state and listen for changes via
     //the wrapper
