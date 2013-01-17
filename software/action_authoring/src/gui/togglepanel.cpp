@@ -83,8 +83,14 @@ void TogglePanel::addLayout(QLayout *layout)
     _widgetLayout->addLayout(layout);
 }
 
+void TogglePanel::setTitle(QString title) {
+    _headerText = title;
+    _headerTextLabel->setText(_headerText);
+}
+
 TogglePanel::
 ~TogglePanel()
 {
     
 }
+

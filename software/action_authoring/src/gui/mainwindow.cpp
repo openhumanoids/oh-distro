@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 
 #include <state/state_gfe.h>
-#include "affordance/AffordanceState.h"
 #include "affordance/OpenGL_Affordance.h"
 #include <vector>
 using namespace std;
@@ -22,32 +21,49 @@ using namespace boost;
  */ 
 void MainWindow::demoPopulateConstraints()
 {
- /*    TODO : read from server
-    AtomicConstraintPtr rfoot_gas   = AtomicConstraintPtr(new AtomicConstraint("Gas Pedal Constraint", rfoot, gas,
-    													  AtomicConstraint::NORMAL));
-    AtomicConstraintPtr lfoot_brake = AtomicConstraintPtr(new AtomicConstraint("Brake Pedal Constraint", lfoot, brake,
-    													  AtomicConstraint::TANGENT));
-    AtomicConstraintPtr rhand_wheel = AtomicConstraintPtr(new AtomicConstraint("Right Hand Wheel Constraint", rhand, wheel,
-    													AtomicConstraint::TANGENT));
-    AtomicConstraintPtr lhand_wheel = AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel,
-    													   AtomicConstraint::TANGENT));
+    AffPtr rhand = AffPtr(new AffordanceState("Right Hand"));
+    AffPtr lhand = AffPtr(new AffordanceState("Left Hand"));
+    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot"));
+    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot"));
+    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel"));
+    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal"));
+    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal"));
 
-    _authoringState._all_constraints.push_back(rfoot_gas);
-    _authoringState._all_constraints.push_back(lfoot_brake);
-    _authoringState._all_constraints.push_back(rhand_wheel);
-    _authoringState._all_constraints.push_back(lhand_wheel);
-    */
+    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere"));
+    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box"));
+    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder"));
+
+    _all_affordances.push_back(wheel);
+    _all_affordances.push_back(gas);
+    _all_affordances.push_back(brake);
+
+    _all_affordances.push_back(sphere);
+    _all_affordances.push_back(box);
+    _all_affordances.push_back(cylinder);
+    
+    /*    TODO : read from server */
+    Qt4ConstraintPtr rfoot_gas   = Qt4ConstraintPtr(new Qt4Constraint(
+							AtomicConstraintPtr(new AtomicConstraint("Gas Pedal Constraint", rfoot, gas, AtomicConstraint::NORMAL))));
+    Qt4ConstraintPtr lfoot_brake = Qt4ConstraintPtr(new Qt4Constraint(
+							AtomicConstraintPtr(new AtomicConstraint("Brake Pedal Constraint", lfoot, brake, AtomicConstraint::TANGENT))));
+    Qt4ConstraintPtr rhand_wheel = Qt4ConstraintPtr(new Qt4Constraint(
+							AtomicConstraintPtr(new AtomicConstraint("Right Hand Wheel Constraint", rhand, wheel, AtomicConstraint::TANGENT))));
+    Qt4ConstraintPtr lhand_wheel = Qt4ConstraintPtr(new Qt4Constraint(
+							AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel, AtomicConstraint::TANGENT))));
+//    _authoringState._all_constraints.push_back(rfoot_gas);
+//    _authoringState._all_constraints.push_back(lfoot_brake);
+//    _authoringState._all_constraints.push_back(rhand_wheel);
+//    _authoringState._all_constraints.push_back(lhand_wheel);
+
 }
 
 /*
  * Create a waypoint entry GUI element
  */
-TogglePanel* MainWindow::
-createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::string> joint_names)
+boost::shared_ptr<TogglePanel> MainWindow::
+createWaypointGUI(Qt4ConstraintPtr waypoint_constraint, std::vector<std::string> joint_names)
 {
-    QString waypointTitle = QString::fromStdString(waypoint_constraint->getName());
-    TogglePanel* tp = new TogglePanel(this, waypointTitle);
-
+/*
     QGroupBox* groupBox = new QGroupBox();
     QLineEdit* name = new QLineEdit(waypointTitle);
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
@@ -120,6 +136,7 @@ createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::stri
     groupBox->setLayout(vbox);
     tp->addWidget(groupBox);
     return tp;
+*/
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -212,16 +229,72 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     demoPopulateConstraints();
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_constraints.size(); i++) {
-	TogglePanel* tp = createWaypointGUI(_authoringState._all_constraints[i], joint_names);
+	TogglePanel* tp = new TogglePanel(this, "hi");
+	_all_constraints[i]->setJointNames(joint_names);
+	_all_constraints[i]->setAffordances(_all_affordances);
+	tp->setTitle("hi there");
+	_all_constraints[i]->makePanel(tp);
 	vbox->addWidget(tp);
     }
-    
+
+    QGroupBox* mediaControls = new QGroupBox();
+    QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
+    QPushButton* fbwd = new QPushButton();
+    QPushButton* bwd = new QPushButton();
+    QPushButton* play = new QPushButton();
+    QPushButton* fwd = new QPushButton();
+    QPushButton* ffwd = new QPushButton();
+
+    // see http://www.qtcentre.org/wiki/index.php?title=Embedded_resources
+    QPixmap pixmap1(":/trolltech/styles/commonstyle/images/media-skip-backward-32.png");
+    fbwd->setIcon(QIcon(pixmap1));
+    fbwd->setIconSize(pixmap1.rect().size());
+
+    QPixmap pixmap2(":/trolltech/styles/commonstyle/images/media-seek-backward-32.png");
+    bwd->setIcon(QIcon(pixmap2));
+    bwd->setIconSize(pixmap2.rect().size());
+
+    QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
+    play->setIcon(QIcon(pixmap3));
+    play->setIconSize(pixmap3.rect().size());
+
+    QPixmap pixmap4(":/trolltech/styles/commonstyle/images/media-seek-forward-32.png");
+    fwd->setIcon(QIcon(pixmap4));
+    fwd->setIconSize(pixmap4.rect().size());
+
+    QPixmap pixmap5(":/trolltech/styles/commonstyle/images/media-skip-forward-32.png");
+    ffwd->setIcon(QIcon(pixmap5));
+    ffwd->setIconSize(pixmap5.rect().size());
+
+    mediaControlsLayout->addSpacerItem(new QSpacerItem(100, 0));
+    mediaControlsLayout->addWidget(fbwd);
+    mediaControlsLayout->addWidget(bwd);
+    mediaControlsLayout->addWidget(play);
+    mediaControlsLayout->addWidget(fwd);
+    mediaControlsLayout->addWidget(ffwd);
+    mediaControlsLayout->addSpacerItem(new QSpacerItem(100, 0));
+    mediaControls->setLayout(mediaControlsLayout);
+    play->resize(play->width() * 2, play->height());
+
+    QGroupBox* widgetWrapper = new QGroupBox();
+    widgetWrapper->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 0px; padding: 0px; margin: 0px; background-color: black; }");
+    QVBoxLayout* widgetWrapperLayout = new QVBoxLayout();
+    widgetWrapperLayout->setSpacing(0);
+    widgetWrapperLayout->setMargin(0);
+    widgetWrapperLayout->addWidget(&_widget_opengl);
+    widgetWrapperLayout->addWidget(mediaControls);
+    widgetWrapper->setLayout(widgetWrapperLayout);
 
     QVBoxLayout* rightsidelayout = new QVBoxLayout();
     QGroupBox* rightside = new QGroupBox();
     _jointSlider = new QSlider( Qt::Horizontal, this );
-    rightsidelayout->addWidget(&_widget_opengl );
+    _jointNameLabel = new QLabel();
+    DefaultValueSlider* scrubber = new DefaultValueSlider( Qt::Horizontal, this );
+    rightsidelayout->addWidget(_jointNameLabel);
     rightsidelayout->addWidget(_jointSlider);
+    rightsidelayout->addWidget(widgetWrapper);
+    rightsidelayout->addWidget(scrubber );
+//    rightside->setStyleSheet("QGroupBox { border: 1px solid black; border-radius: 3px; padding: 0px; background-color: black; } ");
     rightside->setLayout(rightsidelayout);
 
     splitter->addWidget( leftside);
@@ -315,16 +388,20 @@ void
 MainWindow::
 handleRobotLinkChange(QString waypointName) {
     // start by getting the name of the link currently selected
+/*
     QComboBox* selected_combo = _all_robot_link_combos.find(waypointName.toStdString())->second;
     // find the selected text
     _selectedJointName = selected_combo->currentText().toStdString();  //itemData(selected_combo->currentIndex());
     _worldState.colorRobot.setSelectedJoint(_selectedJointName);
     _widget_opengl.update(); //_opengl_widget.update();
+    _jointNameLabel->setText(QString::fromStdString(_selectedJointName));
+*/
 }
 
 void 
 MainWindow::
 setSelectedAction(QString waypointName) {
+/*
     TogglePanel* selected_panel = _all_panels.find(waypointName.toStdString())->second;
     std::map<std::string, TogglePanel*>::iterator iter;
     for (iter = _all_panels.begin(); iter != _all_panels.end(); iter++) {
@@ -332,4 +409,5 @@ setSelectedAction(QString waypointName) {
 	other_panel->setSelected(false);
     }
     selected_panel->setSelected(true);
+*/
 }

@@ -19,10 +19,7 @@
 
 build/*
 pod-build/*
-lcmtypes/c/*
-lcmtypes/java/*
-lcmtypes/cpp/*
-lcmtypes/python/*
+lcmtypes/*
 *.emacs*
 
 # qt

@@ -6,14 +6,10 @@
 #include <QWidget>
 #include <QApplication>
 #include <QSplitter>
-#include <QTreeView>
-#include <QListView>
-#include <QTableView>
-#include <QtGui>
-#include <QStandardItemModel>
-
-// Custom QT widget
+// Custom QT widgets
 #include "togglepanel.h"
+#include "customslider.h"
+#include "Qt4Constraint.h"
 
 // OpenGL includes
 #include "opengl/opengl_object_box.h"
@@ -22,6 +18,7 @@
 
 // The following are now subclassed
 //#include "qt4/qt4_widget_opengl.h"
+//#include "opengl/opengl_object_gfe.h"
 
 // Collision stuff
 #include <collision/collision_object_box.h>
@@ -29,10 +26,9 @@
 #include <collision/collision_object_cylinder.h>
 #include <collision/collision_object_gfe.h>
 
-// affordances
+// Affordances
 #include "affordance/AffordanceState.h"
 #include "affordance/AffordanceUpWrapper.h"
-
 
 // Local includes
 #include "../AtomicConstraint.h"
@@ -70,6 +66,7 @@ struct WorldStateView
 
 };
 
+
 /**represents the state of the authoring gui*/
 typedef struct
 {
@@ -77,31 +74,31 @@ typedef struct
 	std::vector<AtomicConstraintPtr> _all_constraints;
 } AuthoringState;
 
-
-
-/**Main GUI Window*/
 class MainWindow : public QWidget
 {
     Q_OBJECT
 
 public:
-    //--------------constructor
     explicit MainWindow(const boost::shared_ptr<lcm::LCM> &theLcm, QWidget *parent = 0);
-    TogglePanel* createWaypointGUI(AtomicConstraintPtr waypoint_constraint,
-				 	 	 	 	   std::vector<std::string> joint_names);
+    boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintPtr waypoint_constraint,
+				   std::vector<std::string> joint_names);
+    std::vector<std::string> getJointNames(std::string urdf_xml_filename);
+    void demoPopulate();
     ~MainWindow();
 
-    //------------qt stuff
 protected:
-    std::map<std::string, TogglePanel*> _all_panels;
-    std::map<std::string, QComboBox*> _all_robot_link_combos;
+//    std::map<std::string, TogglePanel*> _all_panels;
+//    std::map<std::string, QComboBox*> _all_robot_link_combos;
     std::string _selectedJointName;
     QSlider* _jointSlider;
-
+    QLabel * _jointNameLabel;
+    state::State_GFE _state_gfe;
     QSignalMapper* _signalMapper;
+//qt4::Qt4_Widget_OpenGL _qt4_widget_opengl;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
 
-    //qt4::Qt4_Widget_OpenGL _qt4_widget_opengl;
+    std::vector<affordance::AffPtr> _all_affordances;
+    std::vector<Qt4ConstraintPtr> _all_constraints;
 
     //================world state and authoring state
 private:
@@ -114,8 +111,6 @@ private:
 private:
     void demoPopulateConstraints(); //todo : remove this
 
-
-//================slots
 private slots:
     void updateJoint(int value);
     void handleLoadAction();

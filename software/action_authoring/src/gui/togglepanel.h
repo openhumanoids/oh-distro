@@ -2,6 +2,7 @@
 #define TOGGLEPANEL_H
 
 #include <QtGui>
+#include <boost/shared_ptr.hpp>
 
 class TogglePanel : public QWidget
 {
@@ -23,6 +24,7 @@ public:
     void addWidget(QWidget *widget);
     void addLayout(QLayout *layout);
     void setSelected(bool selected);
+    void setTitle(QString title);
     enum { OPEN, CLOSED };
 
 private slots:
