@@ -10,6 +10,7 @@ using namespace state;
 using namespace collision;
 using namespace action_authoring;
 using namespace affordance;
+using namespace boost;
 
 //using namespace collision_detection;
 
@@ -17,28 +18,9 @@ using namespace affordance;
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-void MainWindow::demoPopulate()
+void MainWindow::demoPopulateConstraints()
 {
-	AffPtr rhand = AffPtr(new AffordanceState("Right Hand"));
-    AffPtr lhand = AffPtr(new AffordanceState("Left Hand"));
-    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot"));
-    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot"));
-    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel"));
-    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal"));
-    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal"));
-
-    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere"));
-    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box"));
-    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder"));
-
-    _all_affordances.push_back(wheel);
-    _all_affordances.push_back(gas);
-    _all_affordances.push_back(brake);
-
-    _all_affordances.push_back(sphere);
-    _all_affordances.push_back(box);
-    _all_affordances.push_back(cylinder);
-    
+ /*    TODO : read from server
     AtomicConstraintPtr rfoot_gas   = AtomicConstraintPtr(new AtomicConstraint("Gas Pedal Constraint", rfoot, gas,
     													  AtomicConstraint::NORMAL));
     AtomicConstraintPtr lfoot_brake = AtomicConstraintPtr(new AtomicConstraint("Brake Pedal Constraint", lfoot, brake,
@@ -47,12 +29,12 @@ void MainWindow::demoPopulate()
     													AtomicConstraint::TANGENT));
     AtomicConstraintPtr lhand_wheel = AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel,
     													   AtomicConstraint::TANGENT));
-    
-    _all_constraints.push_back(rfoot_gas);
-    _all_constraints.push_back(lfoot_brake);
-    _all_constraints.push_back(rhand_wheel);
-    _all_constraints.push_back(lhand_wheel);
 
+    _authoringState._all_constraints.push_back(rfoot_gas);
+    _authoringState._all_constraints.push_back(lfoot_brake);
+    _authoringState._all_constraints.push_back(rhand_wheel);
+    _authoringState._all_constraints.push_back(lhand_wheel);
+    */
 }
 
 /*
@@ -71,11 +53,17 @@ createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::stri
     QComboBox* radio2 = new QComboBox();
     QComboBox* radio3 = new QComboBox();
 
-    for (int i = 0; i < _all_affordances.size(); i++) {
-        radio3->insertItem(0, QString::fromStdString(_all_affordances[i]->getName()));
-    }
+    
+    vector<AffPtr> affordances;
+    _worldState.affordances.getAllAffordances(affordances);
 
-    for (int i = 0; i < joint_names.size(); i++) {
+    for (int i = 0; i < affordances.size(); i++)
+      {
+        radio3->insertItem(0, QString::fromStdString(affordances[i]->getName()));
+      }
+    
+    for (int i = 0; i < joint_names.size(); i++) 
+      {
         radio1->insertItem(0, QString::fromStdString(joint_names[i]));
     }
 
@@ -127,52 +115,41 @@ createWaypointGUI(AtomicConstraintPtr waypoint_constraint, std::vector<std::stri
     return tp;
 }
 
-MainWindow::
-MainWindow(QWidget* parent) : _widget_opengl(), 
-			      _opengl_object_sphere(),
-			      _opengl_object_cylinder(),
-			      _opengl_object_box(),
-			      _colorRobot()
+MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
+	: _widget_opengl(),
+	  _worldState(theLcm)
 {
-
-    // setup the OpenGL scene
-    _opengl_object_box.set( Frame( Vector( 1.0, 0.0, 0.0 ) ), Vector3f( 0.25, 0.25, 0.25 ) );
-    _opengl_object_box.set_color( Vector3f( 1.0, 1.0, 0.0 ) );
-    cout <<" box at " << _opengl_object_box << endl;
-
-    _opengl_object_cylinder.set( Frame( Vector( 0.0, 1.0, 0.0 )), Vector2f( 0.25, 0.25 ) );
-    _opengl_object_cylinder.set_color( Vector3f( 0.0, 1.0, 1.0 ));
-    cout <<" cylinder at " << _opengl_object_cylinder << endl;
-
-    _opengl_object_sphere.set( Frame( Vector( -0.5, -0.5, 0.0 )), 0.125 );
-    _opengl_object_sphere.set_color( Vector3f( 1.0, 0.0, 1.0 ));
-    cout <<" sphere at " << _opengl_object_sphere << endl;
-
-    _state_gfe.from_urdf();
-    _colorRobot.set(_state_gfe);
+    // setup the OpenGL 6scene
+	_worldState.state_gfe.from_urdf();
+	_worldState.colorRobot.set(_worldState.state_gfe);
 
     // build collision objects
-    _collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+	/*todo  construct collision objects from the affordances
+	_collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
     _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
     _collision_object_sphere = new Collision_Object_Sphere("sphere1", 0.125, Vector3f(-0.5, -0.5, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
     //_collision_object_gfe("robot1");
-
+*/
     // read the joints from the robot state
     std::vector<std::string> joint_names;
-    std::map< std::string, State_GFE_Joint > joints = _state_gfe.joints();
+    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
     for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++) {
 	const State_GFE_Joint& state_gfe_joint = it->second;
 	joint_names.push_back(state_gfe_joint.id());
     }
 
+    /*todo
     _widget_opengl.opengl_scene().add_object(_opengl_object_box);
     _widget_opengl.opengl_scene().add_object(_opengl_object_cylinder);
     _widget_opengl.opengl_scene().add_object(_opengl_object_sphere);
-    _widget_opengl.opengl_scene().add_object(_colorRobot);
+*/
+    _widget_opengl.opengl_scene().add_object(_worldState.colorRobot);
 
+    /*todo
     _widget_opengl.add_object_with_collision(_collision_object_box);
     _widget_opengl.add_object_with_collision(_collision_object_cylinder);
     _widget_opengl.add_object_with_collision(_collision_object_sphere);
+    	*/
     //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
 
@@ -199,9 +176,9 @@ MainWindow(QWidget* parent) : _widget_opengl(),
 
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
 
-    demoPopulate();
-    for(std::vector<int>::size_type i = 0; i != _all_constraints.size(); i++) {
-	TogglePanel* tp = createWaypointGUI(_all_constraints[i], joint_names);
+    demoPopulateConstraints();
+    for(std::vector<int>::size_type i = 0; i != _authoringState._all_constraints.size(); i++) {
+	TogglePanel* tp = createWaypointGUI(_authoringState._all_constraints[i], joint_names);
 	vbox->addWidget(tp);
     }
     
@@ -290,8 +267,8 @@ MainWindow::
 updateJoint(int value) {
     if (_selectedJointName != "") {
 	std::cout << "joint " << _selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
-	_state_gfe.joint(_selectedJointName).set_position( _jointSlider->value() / 100.0 );
-	_colorRobot.set(_state_gfe);
+	_worldState.state_gfe.joint(_selectedJointName).set_position( _jointSlider->value() / 100.0 );
+	_worldState.colorRobot.set(_worldState.state_gfe);
 	_widget_opengl.update(); //_opengl_widget.update();
 	//update();
     }
@@ -307,7 +284,7 @@ handleRobotLinkChange(QString waypointName) {
     QComboBox* selected_combo = _all_robot_link_combos.find(waypointName.toStdString())->second;
     // find the selected text
     _selectedJointName = selected_combo->currentText().toStdString();  //itemData(selected_combo->currentIndex());
-    _colorRobot.setSelectedJoint(_selectedJointName);
+    _worldState.colorRobot.setSelectedJoint(_selectedJointName);
     _widget_opengl.update(); //_opengl_widget.update();
 }
 

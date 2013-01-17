@@ -34,3 +34,8 @@ add_executable(action-authoring-gui src/gui/main.cpp src/gui/mainwindow.cpp
 target_link_libraries(action-authoring-gui ${Boost_LIBRARIES})
 
 pods_use_pkg_config_packages(action-authoring-gui ${REQUIRED_PACKAGES})
+
+
+#demo populate
+add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server.cpp)
+target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance)
