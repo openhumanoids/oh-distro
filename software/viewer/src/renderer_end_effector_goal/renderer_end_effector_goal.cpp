@@ -328,7 +328,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   glEnable(GL_BLEND);
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
  	glShadeModel(GL_SMOOTH);
- double alpha = 0.6;
+ double alpha = 0.3;
 	glColor4f(1.0, 0.647059, 0.00,alpha);
 	drawSphere(6, SPHERE_RADIUS);
 	glPopMatrix();

@@ -46,6 +46,7 @@
 #define PARAM_NEW_OCTOMAP "New OctoMap"
 #define PARAM_HEIGHTMAP_RES "Heightmap Res"
 #define PARAM_UPDATE_HEIGHTMAP "Update Heightmap"
+#define PARAM_ENABLE "Enable"
 
 
 typedef enum _heightmap_res_t {
@@ -251,8 +252,11 @@ static void
 _draw (BotViewer *viewer, BotRenderer *renderer)
 {
   RendererDriving *self = (RendererDriving*) renderer;
-  int64_t now = bot_timestamp_now();
-
+  
+  // Alternatively this could be controlled using the input dropdown..
+  if (!bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE)) {
+   return; 
+  }
   
   glLineWidth(2.0);
   glPushMatrix();
@@ -277,6 +281,16 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
   // convert to local space
   // determine if within feasable region
   // draw
+  
+  
+  
+  // Determine the left and right max turning circles:
+  Eigen::Isometry3d offset;
+  offset.setIdentity();
+  offset.translation()  << 0, self->min_turn_radius,0;
+  self->center_arc_left  = self->robot_pose * offset;
+  offset.translation()  << 0,- (self->min_turn_radius) ,0;
+  self->center_arc_right = self->robot_pose * offset;  
   
   // Circles representing the left and right wheels at the limits:
   glLineWidth(2.0);
@@ -856,13 +870,6 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
   self->robot_pose.rotate(quat_yaw_only);    
   self->robot_yaw = ypr[0]; // for convenece keep the yaw
 
-  // Determine the left and right max turning circles:
-  Eigen::Isometry3d offset;
-  offset.setIdentity();
-  offset.translation()  << 0, self->min_turn_radius,0;
-  self->center_arc_left = self->robot_pose * offset;
-  offset.translation()  << 0,- (self->min_turn_radius) ,0;
-  self->center_arc_right = self->robot_pose * offset;
   bot_viewer_request_redraw(self->viewer);
 }
 
@@ -977,6 +984,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
   
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE, 0, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   
