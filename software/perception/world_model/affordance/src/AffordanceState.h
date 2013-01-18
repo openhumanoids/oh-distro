@@ -109,6 +109,7 @@ namespace affordance
   std::ostream& operator<<( std::ostream& out, const AffordanceState& other );
   
   typedef boost::shared_ptr<AffordanceState> AffPtr;
+  typedef boost::shared_ptr<const AffordanceState> AffConstPtr;
   
 } //namespace affordance
 
