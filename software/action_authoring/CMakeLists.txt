@@ -10,6 +10,15 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 
+set(REQUIRED_PACKAGES libxml-2.0)
+add_executable(runme src/Constraint.cpp
+					 src/Affordance.cpp
+					 src/AffordanceRelation.cpp
+					 src/DatabaseManager.cpp
+					 src/test_database_manager.cpp)
+
+pods_use_pkg_config_packages(runme ${REQUIRED_PACKAGES})
+
 #QT includes
 find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 include(${QT_USE_FILE})
