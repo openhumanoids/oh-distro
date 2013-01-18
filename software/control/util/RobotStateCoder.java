@@ -5,55 +5,61 @@ import lcm.lcm.*;
 public class RobotStateCoder implements drake.util.LCMCoder
 {
     String m_robot_name;
-    java.util.TreeMap<String,Integer> m_joint_map;
     int m_num_joints;
-    drc.robot_state_t pmsg;
+    int m_num_floating_joints;
+    java.util.TreeMap<String,Integer> m_joint_map;
+    java.util.TreeMap<String,Integer> m_floating_joint_map;
+    drc.robot_state_t msg;
 
     public RobotStateCoder(String robot_name, String[] joint_name)
     {
-      m_num_joints = joint_name.length;
       m_robot_name = robot_name;
       m_joint_map = new java.util.TreeMap<String,Integer>();
+      m_floating_joint_map = new java.util.TreeMap<String,Integer>();
       
-      for (int i=0; i<m_num_joints; i++) {
-        m_joint_map.put(joint_name[i],i);
+      m_num_joints = 0;
+      m_num_floating_joints = 0;
+      for (int i=0; i<joint_name.length; i++) {
+        if (joint_name[i].startsWith("base_")) {  
+          m_floating_joint_map.put(joint_name[i],i);
+          m_num_floating_joints+=1;
+        }
+        else {
+          m_joint_map.put(joint_name[i],i);
+          m_num_joints+=1;
+        }
       }
       
-      pmsg = new drc.robot_state_t();
-      pmsg.robot_name = robot_name;
+      msg = new drc.robot_state_t();
+      msg.robot_name = robot_name;
 
-      pmsg.origin_position = new drc.position_3d_t();
-      pmsg.origin_position.translation = new drc.vector_3d_t();
-      pmsg.origin_position.rotation = new drc.quaternion_t();
-      pmsg.origin_position.rotation.w = 1.0;
+      msg.origin_position = new drc.position_3d_t();
+      msg.origin_position.translation = new drc.vector_3d_t();
+      msg.origin_position.rotation = new drc.quaternion_t();
 
-      pmsg.origin_twist = new drc.twist_t();
-      pmsg.origin_twist.linear_velocity = new drc.vector_3d_t();
-      pmsg.origin_twist.angular_velocity = new drc.vector_3d_t();
+      msg.origin_twist = new drc.twist_t();
+      msg.origin_twist.linear_velocity = new drc.vector_3d_t();
+      msg.origin_twist.angular_velocity = new drc.vector_3d_t();
 
-      pmsg.origin_cov = new drc.covariance_t();
+      msg.origin_cov = new drc.covariance_t();
 
-      int num_nonfloating_joints = 0;
-      for (int i=0; i<joint_name.length; i++)
-        if (!(joint_name[i].startsWith("base_"))) 
-          num_nonfloating_joints+=1;
-      String[] nonfloating_joint_name = new String[num_nonfloating_joints];
+      msg.num_joints = m_num_joints;
+      msg.joint_name = new String[m_num_joints];
       int j=0;
-      for (int i=0; i<joint_name.length; i++)
-        if (!(joint_name[i].startsWith("base_"))) 
-          nonfloating_joint_name[j++] = joint_name[i];
-      pmsg.num_joints = num_nonfloating_joints;
-      pmsg.joint_name = nonfloating_joint_name;
-      pmsg.joint_position = new float[m_num_joints];
-      pmsg.joint_velocity = new float[m_num_joints];
-      pmsg.measured_effort = new float[m_num_joints];
+      for (int i=0; i<joint_name.length; i++) {
+        if (!(joint_name[i].startsWith("base_")))  
+          msg.joint_name[j++] = joint_name[i];
+      }     
+      msg.joint_position = new float[m_num_joints];
+      msg.joint_velocity = new float[m_num_joints];
+      msg.measured_effort = new float[m_num_joints];
 	
-      pmsg.joint_cov = new drc.joint_covariance_t[m_num_joints];
+      msg.joint_cov = new drc.joint_covariance_t[m_num_joints];
       for (int i=0; i<m_num_joints; i++)
-        pmsg.joint_cov[i] = new drc.joint_covariance_t();
+        msg.joint_cov[i] = new drc.joint_covariance_t();
 
-      pmsg.contacts = new drc.contact_state_t();
-      pmsg.contacts.num_contacts = 0;
+      msg.contacts = new drc.contact_state_t();
+      msg.contacts.num_contacts = 0;
     }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
@@ -65,71 +71,81 @@ public class RobotStateCoder implements drake.util.LCMCoder
           int index;
           
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-          fdata.val = new double[2*m_num_joints];
+          fdata.val = new double[2*(m_num_joints+m_num_floating_joints)];
           fdata.t = (double)msg.utime / 1000000.0;
           for (int i=0; i<msg.num_joints; i++) {
             j = m_joint_map.get(msg.joint_name[i]);
             if (j!=null) {
               index = j.intValue();
               fdata.val[index] = msg.joint_position[i];
-              if (fdata.val[index] > Math.PI)
+              while (fdata.val[index] > Math.PI)
                 fdata.val[index] -= 2*Math.PI;
-              fdata.val[index + m_num_joints] = msg.joint_velocity[i];
+              fdata.val[index+m_num_joints+m_num_floating_joints] = msg.joint_velocity[i];
             }
           }
           
-          // get body position and orientation
-          j = m_joint_map.get("base_x");
+          // get floating joint body position and orientation
+          // TODO: should be generalized eventually
+          j = m_floating_joint_map.get("base_x");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.origin_position.translation.x;
-            fdata.val[index + m_num_joints] = msg.origin_twist.linear_velocity.x;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.linear_velocity.x;
           }
-          j = m_joint_map.get("base_y");
+          j = m_floating_joint_map.get("base_y");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.origin_position.translation.y;
-            fdata.val[index + m_num_joints] = msg.origin_twist.linear_velocity.y;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.linear_velocity.y;
           }
-          j = m_joint_map.get("base_z");
+          j = m_floating_joint_map.get("base_z");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.origin_position.translation.z;
-            fdata.val[index + m_num_joints] = msg.origin_twist.linear_velocity.z;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.linear_velocity.z;
           }
-          
+                        
           // convert quaternion to euler
-          double x = msg.origin_position.rotation.x;
-          double y = msg.origin_position.rotation.y;
-          double z = msg.origin_position.rotation.z;
-          double w = msg.origin_position.rotation.w;
+          // note: drake uses XYZ convention
+          double[] q = new double[4];
+          q[0] = msg.origin_position.rotation.w;
+          q[1] = msg.origin_position.rotation.x;
+          q[2] = msg.origin_position.rotation.y;
+          q[3] = msg.origin_position.rotation.z;
+
+          q = quatnormalize(q);
+          double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
+                                    q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
+                                    2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
+                                    q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
           
-          j = m_joint_map.get("base_roll");
+          j = m_floating_joint_map.get("base_roll");
           if (j!=null) {
             index = j.intValue();
-            fdata.val[index] = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
-            if (fdata.val[index] > Math.PI)
+            fdata.val[index] = rpy[0];
+            while (fdata.val[index] > Math.PI)
               fdata.val[index] -= 2*Math.PI;
-            fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.x;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.x;
           }
           
-          j = m_joint_map.get("base_pitch");
+          j = m_floating_joint_map.get("base_pitch");
           if (j!=null) {
             index = j.intValue();
-            fdata.val[index] = -Math.asin(2*(x*z - w*y));
-            if (fdata.val[index] > Math.PI)
+            fdata.val[index] = rpy[1];
+            while (fdata.val[index] > Math.PI)
               fdata.val[index] -= 2*Math.PI;
-            fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.y;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.y;
           }
           
-          j = m_joint_map.get("base_yaw");
+          j = m_floating_joint_map.get("base_yaw");
           if (j!=null) {
             index = j.intValue();
-            fdata.val[index] = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
-            if (fdata.val[index] > Math.PI)
+            fdata.val[index] = rpy[2];
+            while (fdata.val[index] > Math.PI)
               fdata.val[index] -= 2*Math.PI;
-            fdata.val[index + m_num_joints] = msg.origin_twist.angular_velocity.z;
+            fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.z;
           }
+          
           return fdata;
         }
       } catch (IOException ex) {
@@ -140,12 +156,84 @@ public class RobotStateCoder implements drake.util.LCMCoder
  
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
-      pmsg.utime = (long)(d.t*1000000);
+      msg.utime = (long)(d.t*1000000);
+      Integer j;
+      int index;
+
       for (int i=0; i<m_num_joints; i++) {
-        pmsg.joint_position[i] = (float) d.val[i];
-        pmsg.joint_velocity[i] = (float) d.val[i+m_num_joints];
+        j = m_joint_map.get(msg.joint_name[i]);
+        if (j!=null) {
+          index = j.intValue();
+          msg.joint_position[i] = (float) d.val[index];
+          msg.joint_velocity[i] = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        }
       }
-      return pmsg;
+
+      // TODO: should be generalized eventually
+      j = m_floating_joint_map.get("base_x");
+      if (j!=null) {
+        index = j.intValue();
+        msg.origin_position.translation.x = (float) d.val[index];
+        msg.origin_twist.linear_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
+      }
+      j = m_floating_joint_map.get("base_y");
+      if (j!=null) {
+        index = j.intValue();
+        msg.origin_position.translation.y = (float) d.val[index];
+        msg.origin_twist.linear_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints];
+      }
+      j = m_floating_joint_map.get("base_z");
+      if (j!=null) {
+        index = j.intValue();
+        msg.origin_position.translation.z = (float) d.val[index];
+        msg.origin_twist.linear_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+      }
+
+      float roll, pitch, yaw;
+      index = m_floating_joint_map.get("base_roll").intValue();
+      roll = (float) d.val[index];
+      msg.origin_twist.angular_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
+      
+      index = m_floating_joint_map.get("base_pitch").intValue();
+      pitch = (float) d.val[index];
+      msg.origin_twist.angular_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints]; 
+      
+      index = m_floating_joint_map.get("base_yaw").intValue();
+      yaw = (float) d.val[index];
+      msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+
+      
+      // covert rpy to quaternion 
+      // note: drake uses XYZ convention
+      // use xyz
+      double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+      double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
+      double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
+      double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
+      
+      msg.origin_position.rotation.x = (float) x;
+      msg.origin_position.rotation.y = (float) y;
+      msg.origin_position.rotation.z = (float) z;
+      msg.origin_position.rotation.w = (float) w;
+
+      return msg;
+    }
+    
+    private double[] threeaxisrot(double r11, double r12, double r21, double r31, double r32) { 
+      // find angles for rotations about X, Y, and Z axes
+      double[] r = new double[3];
+      r[0] = Math.atan2(r11, r12);
+      r[1] = Math.asin(r21);
+      r[2] = Math.atan2(r31, r32);
+      return r;
+    }
+    
+    private double[] quatnormalize(double[] q) {
+      double norm = Math.sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
+      double[] qout = new double[4];
+      for (int i=0; i<4; i++)
+        qout[i] = q[i]/norm;
+      return qout;
     }
     
     public String timestampName()
