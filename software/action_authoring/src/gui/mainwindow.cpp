@@ -128,13 +128,21 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     layout->setMargin(0);
 
     QSplitter* splitter = new QSplitter();
-    QGroupBox* leftside = new QGroupBox();
+    QWidget* leftside = new QWidget();
     QVBoxLayout* vbox = new QVBoxLayout();
 
     QWidget* topmenugroup = new QWidget();
     QHBoxLayout* topmenu = new QHBoxLayout();
     topmenu->addWidget(new QLabel("Action: "));
     topmenu->addWidget(new QLineEdit("Ingress"));
+    QLabel* actionTypeLabel = new QLabel("acts on: ");
+    topmenu->addWidget(actionTypeLabel);
+    QComboBox* actionType = new QComboBox();
+    actionType->insertItem(0, "Vehicle");
+    actionType->insertItem(0, "Door");
+    actionType->insertItem(0, "Ladder");
+    actionType->insertItem(0, "Table");
+    topmenu->addWidget(actionType);
     QPushButton* savebutton = new QPushButton("Save");
     topmenu->addWidget(savebutton);
     topmenu->addSpacerItem(new QSpacerItem(100, 0));
@@ -146,6 +154,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
 
     demoPopulateConstraints();
+
+    // Get the toggle panels from the Qt4Constraint objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
 	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
@@ -209,7 +219,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     widgetWrapper->setLayout(widgetWrapperLayout);
 
     QVBoxLayout* rightsidelayout = new QVBoxLayout();
-    QGroupBox* rightside = new QGroupBox();
+    QWidget* rightside = new QWidget();
     _jointSlider = new QSlider( Qt::Horizontal, this );
     _jointNameLabel = new QLabel();
     DefaultValueSlider* scrubber = new DefaultValueSlider( Qt::Horizontal, this );
@@ -286,22 +296,23 @@ handleMoveDown() {
 
 }
 
-void
+std::string 
 MainWindow::
-handleToggleExpandContract() {
-
+getSelectedJointName() {
+    if (_authoringState._selected_gui_constraint != NULL)
+	return _authoringState._selected_gui_constraint->getSelectedLinkName(); 
+    return "";
 }
 
 void 
 MainWindow::
 updateJoint(int value) {
-    std::string selectedJointName = _authoringState._selected_gui_constraint->getSelectedLinkName(); 
+    std::string selectedJointName = getSelectedJointName();
     if (selectedJointName != "") {
 	std::cout << "joint " << selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
 	_worldState.state_gfe.joint(selectedJointName).set_position( _jointSlider->value() / 100.0 );
 	_worldState.colorRobot.set(_worldState.state_gfe);
-	_widget_opengl.update(); //_opengl_widget.update();
-	//update();
+	_widget_opengl.update();
     }
 }
 
@@ -311,9 +322,9 @@ updateJoint(int value) {
 void 
 MainWindow::
 handleRobotLinkChange() {
-    std::string selectedJointName = _authoringState._selected_gui_constraint->getSelectedLinkName(); 
+    std::string selectedJointName = getSelectedJointName();
     _worldState.colorRobot.setSelectedJoint(selectedJointName);
-    _widget_opengl.update(); //_opengl_widget.update();
+    _widget_opengl.update();
     _jointNameLabel->setText(QString::fromStdString(selectedJointName));
 }
 

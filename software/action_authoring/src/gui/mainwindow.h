@@ -106,6 +106,7 @@ private:
 
 private:
     void demoPopulateConstraints(); //todo : remove this
+    std::string getSelectedJointName();
 
 private slots:
     void updateJoint(int value);
@@ -114,7 +115,6 @@ private slots:
     void handleDeleteWaypoint();
     void handleMoveUp();
     void handleMoveDown();
-    void handleToggleExpandContract();
     void handleRobotLinkChange();
     void setSelectedAction(QString activator);
 };

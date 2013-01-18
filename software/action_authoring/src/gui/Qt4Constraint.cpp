@@ -27,7 +27,6 @@ Qt4Constraint::
 getPanel() {
     QString waypointTitle = QString::fromStdString(_constraint->getName());
     std::cout << "title is " << _constraint->getName() << std::endl;
-    _gui_panel->setTitle(waypointTitle);
 
     QGroupBox* groupBox = new QGroupBox();
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
@@ -45,7 +44,6 @@ getPanel() {
     _gui_constraintType->insertItem(0, "grasps");
 
     QVBoxLayout* vbox = new QVBoxLayout;
-    _gui_name->setText(QString::fromStdString(_constraint->getName()));
     vbox->addWidget(_gui_name);
     
     QHBoxLayout* hbox = new QHBoxLayout;
@@ -60,24 +58,19 @@ getPanel() {
     QWidget* boxcontainer = new QWidget();
     boxcontainer->setLayout(hbox);
     vbox->addWidget(boxcontainer);
+    groupBox->setLayout(vbox);
     
     _signalMapper->setMapping(_gui_robotJointType, waypointTitle);
     _signalMapper->setMapping(editButton, waypointTitle);
 
-    connect(_gui_name, SIGNAL(textChanged(QString)), this, SLOT(updateStateFromElements()));    
+    connect(_gui_name, SIGNAL(textChanged(QString)), this, SLOT(updateStateFromElements()));
     connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
     connect(_gui_constraintType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
     connect(_gui_affordanceType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
-
     connect(editButton, SIGNAL(released()), this, SLOT(setActive()));
 
-//    connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), _signalMapper, SLOT (map()));
-//    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(handleRobotLinkChange(QString)));
+    updateElementsFromState();
 
-//    connect(editButton, SIGNAL(released()), _signalMapper, SLOT (map()));
-//    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(setSelectedAction(QString)));
-
-    groupBox->setLayout(vbox);
     _gui_panel->addWidget(groupBox);
     return _gui_panel;
 }
@@ -87,10 +80,7 @@ Qt4Constraint::
 setAffordances(std::vector<affordance::AffPtr> &allAffordances) {
     // set the protected member
     _allAffordances = allAffordances;
-    // update the combo box
-    for (int i = 0; i < _allAffordances.size(); i++) {
-        _gui_affordanceType->insertItem(0, QString::fromStdString(_allAffordances[i]->getName()));
-    }
+    updateElementsFromState();
 }
 
 void
@@ -98,10 +88,7 @@ Qt4Constraint::
 setJointNames(std::vector<std::string> &allJointNames) {
     // set the protected member
     _allJointNames = allJointNames;
-
-    for (int i = 0; i < _allJointNames.size(); i++) {
-        _gui_robotJointType->insertItem(0, QString::fromStdString(_allJointNames[i]));
-    }
+    updateElementsFromState();
 }
 
 AtomicConstraintPtr
@@ -148,4 +135,38 @@ void
 Qt4Constraint::
 setSelected(bool selected) {
     _gui_panel->setSelected(selected);
+}
+
+void
+Qt4Constraint::
+updateElementsFromState() {
+    // update the affordance list
+    _gui_name->setText(QString::fromStdString(_constraint->getName()));
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+
+    // update the joint names
+    _gui_robotJointType->clear();
+    int selectionIndex = 0;
+    for (int i = 0; i < _allJointNames.size(); i++) {
+        _gui_robotJointType->insertItem(0, QString::fromStdString(_allJointNames[i]));
+	if (_constraint->getAffordance1()->getName().compare(_allJointNames[i]) == 0) {
+	    selectionIndex = i;
+	}
+    }
+    // select the correct joint name
+    _gui_robotJointType->setCurrentIndex(selectionIndex);
+
+    // update the affordances combo box
+    _gui_affordanceType->clear();
+    int selectionIndex2 = 0;
+    for (int i = 0; i < _allAffordances.size(); i++) {
+        _gui_affordanceType->insertItem(0, QString::fromStdString(_allAffordances[i]->getName()));
+	if (_constraint->getAffordance1() == _allAffordances[i]) {
+	    selectionIndex2 = i;
+	}
+    }
+
+    // select the affordance 
+    _gui_affordanceType->setCurrentIndex(selectionIndex2);
+    
 }

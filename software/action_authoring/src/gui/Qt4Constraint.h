@@ -21,7 +21,7 @@ namespace action_authoring
 	Qt4Constraint(AtomicConstraintPtr atomicConstraint);
         TogglePanel* getPanel(); 
 	// read the state from the gui elements already referenced
-	void readState();
+	void updateElementsFromState();
 	void setSelected(bool selected);
 
 	void setAffordances(std::vector<affordance::AffPtr> &allAffordances);
