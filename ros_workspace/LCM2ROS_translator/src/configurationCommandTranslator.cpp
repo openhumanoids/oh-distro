@@ -66,13 +66,21 @@ class ConfigurationCommandHandler{
 			setpoint_map.insert(std::make_pair("back_mby",config_command_node.advertise<std_msgs::Float64>("/back_mby_position_controller/command",10)));
 			setpoint_map.insert(std::make_pair("back_ubx",config_command_node.advertise<std_msgs::Float64>("/back_ubx_position_controller/command",10)));
 	
-			pausePhysics = false;
+			pausePhysics = true;
 			client = config_command_node.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
 		}
 		~ConfigurationCommandHandler() {}
 	
 		void configuration_command_callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::robot_state_t* msg)
 		{
+			// pause gazebo
+			if(pausePhysics && ros::ok()) {
+		  		std_srvs::Empty srv;
+		  		if (!client.call(srv)) {
+					ROS_ERROR("Failed to pause gazebo.");
+		  		}	
+			}
+
 			// set robot pose		
 			geometry_msgs::Pose pose_msg;
 			pose_msg.position = geometry_msgs::Point();
@@ -108,13 +116,6 @@ class ConfigurationCommandHandler{
 				}
 			}
 			
-			// pause gazebo
-			if(pausePhysics && ros::ok()) {
-		  		std_srvs::Empty srv;
-		  		if (!client.call(srv)) {
-					ROS_ERROR("Failed to pause gazebo.");
-		  		}	
-			}
 		}
 };	
 
