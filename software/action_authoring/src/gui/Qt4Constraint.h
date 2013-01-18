@@ -22,10 +22,12 @@ namespace action_authoring
         TogglePanel* getPanel(); 
 	// read the state from the gui elements already referenced
 	void readState();
+	void setSelected(bool selected);
 
 	void setAffordances(std::vector<affordance::AffPtr> &allAffordances);
 	void setJointNames(std::vector<std::string> &allJointNames);
-	void getConstraint(AtomicConstraintPtr &constraint);
+	AtomicConstraintPtr getConstraint();
+	std::string getSelectedLinkName();
 	
     protected:
 	TogglePanel* _gui_panel;
@@ -34,15 +36,18 @@ namespace action_authoring
         QComboBox* _gui_constraintType;
         QComboBox* _gui_affordanceType;
 	QSignalMapper* _signalMapper;
-
         AtomicConstraintPtr _constraint;
 
         // should be static
         std::vector<affordance::AffPtr> _allAffordances;
         std::vector<std::string> _allJointNames;
 
+    signals:
+	void activatedSignal();
+
     private slots:
         void updateStateFromElements();
+        void setActive();
     
     };
 

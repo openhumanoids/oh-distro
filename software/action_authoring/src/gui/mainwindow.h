@@ -72,6 +72,7 @@ typedef struct
 {
 	/**sorted sequence of actomic constraints being authored*/
         std::vector<Qt4ConstraintPtr> _all_gui_constraints;
+        Qt4ConstraintPtr _selected_gui_constraint;
 } AuthoringState;
 
 class MainWindow : public QWidget
@@ -87,18 +88,13 @@ public:
     ~MainWindow();
 
 protected:
-//    std::map<std::string, TogglePanel*> _all_panels;
-//    std::map<std::string, QComboBox*> _all_robot_link_combos;
-    std::string _selectedJointName;
     QSlider* _jointSlider;
     QLabel * _jointNameLabel;
     state::State_GFE _state_gfe;
     QSignalMapper* _signalMapper;
-//qt4::Qt4_Widget_OpenGL _qt4_widget_opengl;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
 
     std::vector<affordance::AffPtr> _all_affordances;
-    std::vector<Qt4ConstraintPtr> _all_constraints;
 
     //================world state and authoring state
 private:
@@ -119,8 +115,8 @@ private slots:
     void handleMoveUp();
     void handleMoveDown();
     void handleToggleExpandContract();
-    void handleRobotLinkChange(QString waypointName);
-    void setSelectedAction(QString waypointName);
+    void handleRobotLinkChange();
+    void setSelectedAction(QString activator);
 };
 
 } //namespace action_authoring

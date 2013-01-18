@@ -16,10 +16,15 @@ Qt4Constraint(AtomicConstraintPtr constraint) : _gui_name(new QLineEdit()),
     _constraint = constraint;
 }
 
+std::string
+Qt4Constraint::
+getSelectedLinkName() {
+    return _gui_robotJointType->currentText().toStdString();
+}
+
 TogglePanel* 
 Qt4Constraint::
 getPanel() {
-
     QString waypointTitle = QString::fromStdString(_constraint->getName());
     std::cout << "title is " << _constraint->getName() << std::endl;
     _gui_panel->setTitle(waypointTitle);
@@ -58,8 +63,13 @@ getPanel() {
     
     _signalMapper->setMapping(_gui_robotJointType, waypointTitle);
     _signalMapper->setMapping(editButton, waypointTitle);
-    
+
+    connect(_gui_name, SIGNAL(textChanged(QString)), this, SLOT(updateStateFromElements()));    
     connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
+    connect(_gui_constraintType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
+    connect(_gui_affordanceType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
+
+    connect(editButton, SIGNAL(released()), this, SLOT(setActive()));
 
 //    connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), _signalMapper, SLOT (map()));
 //    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(handleRobotLinkChange(QString)));
@@ -94,15 +104,48 @@ setJointNames(std::vector<std::string> &allJointNames) {
     }
 }
 
-void
+AtomicConstraintPtr
 Qt4Constraint::
-getConstraint(AtomicConstraintPtr &constraint) {
-    constraint = _constraint;
+getConstraint() {
+    return _constraint;
 }
 
+// todo; very primitive; need affordance UID type
 void
 Qt4Constraint::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+
+    // find the robot joint affordance by ID and update the constraint appropriately
+    std::string currentJointName = getSelectedLinkName();
+    for (int i = 0; i < _allJointNames.size(); i++) {
+	if (_allJointNames[i].compare(currentJointName) == 0) {
+	    std::cout << "found joint name " << _allJointNames[i] << std::endl;
+	    //_constraint->setAffordance1(_allAffordances[i]);
+	    break;
+	}
+    }
+
+    // find the robot joint affordance by ID and update the constraint appropriately
+    std::string currentAffordanceName = _gui_affordanceType->currentText().toStdString();
+    for (int i = 0; i < _allAffordances.size(); i++) {
+	if (_allAffordances[i]->getName().compare(currentAffordanceName)) {
+	    _constraint->setAffordance2(_allAffordances[i]);
+	    break;
+	}
+    }
+    setActive();
+}
+
+void 
+Qt4Constraint::
+setActive() {
+    emit activatedSignal();
+}
+
+void 
+Qt4Constraint::
+setSelected(bool selected) {
+    _gui_panel->setSelected(selected);
 }

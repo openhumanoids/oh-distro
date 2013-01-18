@@ -149,7 +149,14 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
 	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
+
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
+	// todo: currently using constraint name as UID
+	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
+				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraint()->getName()));
+	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
+	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
+
 	vbox->addWidget(tp);
     }
 
@@ -288,9 +295,10 @@ handleToggleExpandContract() {
 void 
 MainWindow::
 updateJoint(int value) {
-    if (_selectedJointName != "") {
-	std::cout << "joint " << _selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
-	_worldState.state_gfe.joint(_selectedJointName).set_position( _jointSlider->value() / 100.0 );
+    std::string selectedJointName = _authoringState._selected_gui_constraint->getSelectedLinkName(); 
+    if (selectedJointName != "") {
+	std::cout << "joint " << selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
+	_worldState.state_gfe.joint(selectedJointName).set_position( _jointSlider->value() / 100.0 );
 	_worldState.colorRobot.set(_worldState.state_gfe);
 	_widget_opengl.update(); //_opengl_widget.update();
 	//update();
@@ -302,28 +310,24 @@ updateJoint(int value) {
  */
 void 
 MainWindow::
-handleRobotLinkChange(QString waypointName) {
-    // start by getting the name of the link currently selected
-/*
-    QComboBox* selected_combo = _all_robot_link_combos.find(waypointName.toStdString())->second;
-    // find the selected text
-    _selectedJointName = selected_combo->currentText().toStdString();  //itemData(selected_combo->currentIndex());
-    _worldState.colorRobot.setSelectedJoint(_selectedJointName);
+handleRobotLinkChange() {
+    std::string selectedJointName = _authoringState._selected_gui_constraint->getSelectedLinkName(); 
+    _worldState.colorRobot.setSelectedJoint(selectedJointName);
     _widget_opengl.update(); //_opengl_widget.update();
-    _jointNameLabel->setText(QString::fromStdString(_selectedJointName));
-*/
+    _jointNameLabel->setText(QString::fromStdString(selectedJointName));
 }
 
 void 
 MainWindow::
-setSelectedAction(QString waypointName){ 
-/*
-    TogglePanel* selected_panel = _all_panels.find(waypointName.toStdString())->second;
-    std::map<std::string, TogglePanel*>::iterator iter;
-    for (iter = _all_panels.begin(); iter != _all_panels.end(); iter++) {
-        TogglePanel* other_panel = iter->second;
-	other_panel->setSelected(false);
-    }
-    selected_panel->setSelected(true);
-*/
+setSelectedAction(QString activator){ 
+    std::string activator_str = activator.toStdString();
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraint()->getName()) == 0) {
+	    _authoringState._all_gui_constraints[i]->setSelected(true);
+	    _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
+	} else {
+	    _authoringState._all_gui_constraints[i]->setSelected(false);
+	}
+    } 
+    handleRobotLinkChange();
 }
