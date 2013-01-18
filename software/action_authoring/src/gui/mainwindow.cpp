@@ -147,12 +147,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     demoPopulateConstraints();
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	TogglePanel* tp; // = new TogglePanel(this, "hi");
 	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
 	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
-	//tp->setTitle("hi there");
-	tp = _authoringState._all_gui_constraints[i]->getPanel();
-	vbox->addWidget(tp);
+	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
+	std::cout << "panel gen'd" << tp << std::endl;
+//	vbox->addWidget(tp);
     }
 
     QGroupBox* mediaControls = new QGroupBox();
