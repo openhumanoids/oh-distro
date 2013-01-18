@@ -71,7 +71,7 @@ struct WorldStateView
 typedef struct
 {
 	/**sorted sequence of actomic constraints being authored*/
-	std::vector<AtomicConstraintPtr> _all_constraints;
+        std::vector<Qt4ConstraintPtr> _all_gui_constraints;
 } AuthoringState;
 
 class MainWindow : public QWidget

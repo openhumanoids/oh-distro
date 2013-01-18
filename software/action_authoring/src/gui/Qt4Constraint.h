@@ -19,7 +19,7 @@ namespace action_authoring
 
     public:
 	Qt4Constraint(AtomicConstraintPtr atomicConstraint);
-        void makePanel(TogglePanel* panel);
+        TogglePanel* getPanel(); 
 	// read the state from the gui elements already referenced
 	void readState();
 
@@ -28,7 +28,7 @@ namespace action_authoring
 	void getConstraint(AtomicConstraintPtr &constraint);
 	
     protected:
-	//boost::shared_ptr<TogglePanel> _gui_panel;
+	TogglePanel* _gui_panel;
         QLineEdit* _gui_name;
         QComboBox* _gui_robotJointType;
         QComboBox* _gui_constraintType;

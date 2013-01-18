@@ -9,19 +9,20 @@ Qt4Constraint(AtomicConstraintPtr constraint) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
-				     _signalMapper(new QSignalMapper())
+				     _signalMapper(new QSignalMapper()),
+				     _gui_panel(new TogglePanel(this, "test"))
 {
     // constructor
     _constraint = constraint;
 }
 
-void 
+TogglePanel* 
 Qt4Constraint::
-makePanel(TogglePanel* outputPanel) {
+getPanel() {
 
     QString waypointTitle = QString::fromStdString(_constraint->getName());
     std::cout << "title is " << _constraint->getName() << std::endl;
-    outputPanel->setTitle(waypointTitle);
+    _gui_panel->setTitle(waypointTitle);
 
     QGroupBox* groupBox = new QGroupBox();
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
@@ -39,6 +40,7 @@ makePanel(TogglePanel* outputPanel) {
     _gui_constraintType->insertItem(0, "grasps");
 
     QVBoxLayout* vbox = new QVBoxLayout;
+    _gui_name->setText(QString::fromStdString(_constraint->getName()));
     vbox->addWidget(_gui_name);
     
     QHBoxLayout* hbox = new QHBoxLayout;
@@ -66,7 +68,7 @@ makePanel(TogglePanel* outputPanel) {
 //    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(setSelectedAction(QString)));
 
     groupBox->setLayout(vbox);
-    outputPanel->addWidget(groupBox);
+    _gui_panel->addWidget(groupBox);
 }
 
 void
@@ -100,5 +102,6 @@ getConstraint(AtomicConstraintPtr &constraint) {
 void
 Qt4Constraint::
 updateStateFromElements() {
-    
+    _constraint->setName(_gui_name->text().toStdString());
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
 }

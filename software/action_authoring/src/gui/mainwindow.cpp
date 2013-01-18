@@ -50,93 +50,11 @@ void MainWindow::demoPopulateConstraints()
 							AtomicConstraintPtr(new AtomicConstraint("Right Hand Wheel Constraint", rhand, wheel, AtomicConstraint::TANGENT))));
     Qt4ConstraintPtr lhand_wheel = Qt4ConstraintPtr(new Qt4Constraint(
 							AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel, AtomicConstraint::TANGENT))));
-//    _authoringState._all_constraints.push_back(rfoot_gas);
-//    _authoringState._all_constraints.push_back(lfoot_brake);
-//    _authoringState._all_constraints.push_back(rhand_wheel);
-//    _authoringState._all_constraints.push_back(lhand_wheel);
+    _authoringState._all_gui_constraints.push_back(rfoot_gas);
+    _authoringState._all_gui_constraints.push_back(lfoot_brake);
+    _authoringState._all_gui_constraints.push_back(rhand_wheel);
+    _authoringState._all_gui_constraints.push_back(lhand_wheel);
 
-}
-
-/*
- * Create a waypoint entry GUI element
- */
-boost::shared_ptr<TogglePanel> MainWindow::
-createWaypointGUI(Qt4ConstraintPtr waypoint_constraint, std::vector<std::string> joint_names)
-{
-/*
-    QGroupBox* groupBox = new QGroupBox();
-    QLineEdit* name = new QLineEdit(waypointTitle);
-    QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
-    QComboBox* radio1 = new QComboBox();
-    QComboBox* radio2 = new QComboBox();
-    QComboBox* radio3 = new QComboBox();
-
-    
-    vector<AffPtr> affordances;
-    while(affordances.size() == 0)
-    {
-    	_worldState.affordances.getAllAffordances(affordances);
-    	cout << "\n waiting for affordances to be non-zero" << endl;
-    	boost::this_thread::sleep(posix_time::seconds(1));
-    }
-
-    for (int i = 0; i < affordances.size(); i++)
-      {
-        radio3->insertItem(0, QString::fromStdString(affordances[i]->getName()));
-      }
-    
-    for (int i = 0; i < joint_names.size(); i++) 
-      {
-        radio1->insertItem(0, QString::fromStdString(joint_names[i]));
-    }
-
-    // update the global maps
-    _all_panels[waypoint_constraint->getName()] = tp;
-    _all_robot_link_combos[waypoint_constraint->getName()] = radio1;
-
-    radio2->insertItem(0, "3D Offset");
-    radio2->insertItem(0, "tangent to");
-    radio2->insertItem(0, "normal to");
-    radio2->insertItem(0, "near");
-    radio2->insertItem(0, "point touches");
-    radio2->insertItem(0, "surface touches");
-    radio2->insertItem(0, "grasps");
-
-    //radio1->setChecked(true);
-
-    QVBoxLayout* vbox = new QVBoxLayout;
-    vbox->addWidget(name);
-    
-    QHBoxLayout* hbox = new QHBoxLayout;
-    hbox->addWidget(new QLabel("robot"));
-    hbox->addWidget(radio1);
-    hbox->addWidget(new QLabel("relation"));
-    hbox->addWidget(radio2);
-    hbox->addWidget(new QLabel("affordance"));
-    hbox->addWidget(radio3);
-    hbox->addWidget(editButton);
-    hbox->addStretch(1);
-    QWidget* boxcontainer = new QWidget();
-    boxcontainer->setLayout(hbox);
-    vbox->addWidget(boxcontainer);
-    
-//    _signalMapper->setMapping(name, waypointTitle);
-    _signalMapper->setMapping(radio1, waypointTitle);
-    _signalMapper->setMapping(editButton, waypointTitle);
-    
-//    connect(name, SIGNAL(textChanged(QString)), this, SLOT(map()));
-//    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(updateWaypointName(QString)));
-
-    connect(radio1, SIGNAL(currentIndexChanged(int)), _signalMapper, SLOT (map()));
-    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(handleRobotLinkChange(QString)));
-
-    connect(editButton, SIGNAL(released()), _signalMapper, SLOT (map()));
-    connect(_signalMapper, SIGNAL(mapped(QString)), SLOT(setSelectedAction(QString)));
-
-    groupBox->setLayout(vbox);
-    tp->addWidget(groupBox);
-    return tp;
-*/
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -228,12 +146,12 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
 
     demoPopulateConstraints();
-    for(std::vector<int>::size_type i = 0; i != _authoringState._all_constraints.size(); i++) {
-	TogglePanel* tp = new TogglePanel(this, "hi");
-	_all_constraints[i]->setJointNames(joint_names);
-	_all_constraints[i]->setAffordances(_all_affordances);
-	tp->setTitle("hi there");
-	_all_constraints[i]->makePanel(tp);
+    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+	TogglePanel* tp; // = new TogglePanel(this, "hi");
+	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
+	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
+	//tp->setTitle("hi there");
+	tp = _authoringState._all_gui_constraints[i]->getPanel();
 	vbox->addWidget(tp);
     }
 
@@ -400,7 +318,7 @@ handleRobotLinkChange(QString waypointName) {
 
 void 
 MainWindow::
-setSelectedAction(QString waypointName) {
+setSelectedAction(QString waypointName){ 
 /*
     TogglePanel* selected_panel = _all_panels.find(waypointName.toStdString())->second;
     std::map<std::string, TogglePanel*>::iterator iter;

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'mainwindow.h'
 **
-** Created: Fri Jan 11 12:43:46 2013
+** Created: Fri Jan 18 11:46:21 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -17,65 +17,99 @@
 #endif
 
 QT_BEGIN_MOC_NAMESPACE
-static const uint qt_meta_data_MainWindow[] = {
+static const uint qt_meta_data_action_authoring__MainWindow[] = {
 
  // content:
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       0,    0, // methods
+       9,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
        0,       // signalCount
 
+ // slots: signature, parameters, type, tag, flags
+      36,   30,   29,   29, 0x08,
+      53,   29,   29,   29, 0x08,
+      72,   29,   29,   29, 0x08,
+      91,   29,   29,   29, 0x08,
+     114,   29,   29,   29, 0x08,
+     129,   29,   29,   29, 0x08,
+     146,   29,   29,   29, 0x08,
+     188,  175,   29,   29, 0x08,
+     219,  175,   29,   29, 0x08,
+
        0        // eod
 };
 
-static const char qt_meta_stringdata_MainWindow[] = {
-    "MainWindow\0"
+static const char qt_meta_stringdata_action_authoring__MainWindow[] = {
+    "action_authoring::MainWindow\0\0value\0"
+    "updateJoint(int)\0handleLoadAction()\0"
+    "handleSaveAction()\0handleDeleteWaypoint()\0"
+    "handleMoveUp()\0handleMoveDown()\0"
+    "handleToggleExpandContract()\0waypointName\0"
+    "handleRobotLinkChange(QString)\0"
+    "setSelectedAction(QString)\0"
 };
 
-void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+void action_authoring::MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
-    Q_UNUSED(_o);
-    Q_UNUSED(_id);
-    Q_UNUSED(_c);
-    Q_UNUSED(_a);
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        Q_ASSERT(staticMetaObject.cast(_o));
+        MainWindow *_t = static_cast<MainWindow *>(_o);
+        switch (_id) {
+        case 0: _t->updateJoint((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 1: _t->handleLoadAction(); break;
+        case 2: _t->handleSaveAction(); break;
+        case 3: _t->handleDeleteWaypoint(); break;
+        case 4: _t->handleMoveUp(); break;
+        case 5: _t->handleMoveDown(); break;
+        case 6: _t->handleToggleExpandContract(); break;
+        case 7: _t->handleRobotLinkChange((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 8: _t->setSelectedAction((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        default: ;
+        }
+    }
 }
 
-const QMetaObjectExtraData MainWindow::staticMetaObjectExtraData = {
+const QMetaObjectExtraData action_authoring::MainWindow::staticMetaObjectExtraData = {
     0,  qt_static_metacall 
 };
 
-const QMetaObject MainWindow::staticMetaObject = {
-    { &QWidget::staticMetaObject, qt_meta_stringdata_MainWindow,
-      qt_meta_data_MainWindow, &staticMetaObjectExtraData }
+const QMetaObject action_authoring::MainWindow::staticMetaObject = {
+    { &QWidget::staticMetaObject, qt_meta_stringdata_action_authoring__MainWindow,
+      qt_meta_data_action_authoring__MainWindow, &staticMetaObjectExtraData }
 };
 
 #ifdef Q_NO_DATA_RELOCATION
-const QMetaObject &MainWindow::getStaticMetaObject() { return staticMetaObject; }
+const QMetaObject &action_authoring::MainWindow::getStaticMetaObject() { return staticMetaObject; }
 #endif //Q_NO_DATA_RELOCATION
 
-const QMetaObject *MainWindow::metaObject() const
+const QMetaObject *action_authoring::MainWindow::metaObject() const
 {
     return QObject::d_ptr->metaObject ? QObject::d_ptr->metaObject : &staticMetaObject;
 }
 
-void *MainWindow::qt_metacast(const char *_clname)
+void *action_authoring::MainWindow::qt_metacast(const char *_clname)
 {
     if (!_clname) return 0;
-    if (!strcmp(_clname, qt_meta_stringdata_MainWindow))
+    if (!strcmp(_clname, qt_meta_stringdata_action_authoring__MainWindow))
         return static_cast<void*>(const_cast< MainWindow*>(this));
     return QWidget::qt_metacast(_clname);
 }
 
-int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+int action_authoring::MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QWidget::qt_metacall(_c, _id, _a);
     if (_id < 0)
         return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 9)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 9;
+    }
     return _id;
 }
 QT_END_MOC_NAMESPACE
