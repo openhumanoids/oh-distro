@@ -39,7 +39,6 @@ rosbuild_add_executable(ActuatorCmds_translator src/ActuatorCmds_translator.cpp)
 pods_install_executables(ActuatorCmds_translator)
 pods_use_pkg_config_packages(ActuatorCmds_translator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
-
 rosbuild_add_executable(syncActuatorCmds_translator src/syncActuatorCmds_translator.cpp)
 
 pods_install_executables(syncActuatorCmds_translator)
@@ -49,3 +48,8 @@ rosbuild_add_executable(positionCommandTranslator src/positionCommandTranslator.
 
 pods_install_executables(positionCommandTranslator)
 pods_use_pkg_config_packages(positionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
+
+rosbuild_add_executable(configurationCommandTranslator src/configurationCommandTranslator.cpp)
+
+pods_install_executables(configurationCommandTranslator)
+pods_use_pkg_config_packages(configurationCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
