@@ -19,7 +19,7 @@ using namespace boost;
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-void MainWindow::demoPopulateConstraints()
+vector<AffPtr> MainWindow::demoPopulateConstraints()
 {
     AffPtr rhand = AffPtr(new AffordanceState("Right Hand", 235, 38252));
     AffPtr lhand = AffPtr(new AffordanceState("Left Hand",  852365807, 3723));
@@ -33,8 +33,7 @@ void MainWindow::demoPopulateConstraints()
     AffPtr box 		= AffPtr(new AffordanceState("Yellow Box", 3280235, 3828));
     AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder", 23802, 83));
 
-
-
+    vector<AffPtr> _all_affordances;
     _all_affordances.push_back(rhand);
     _all_affordances.push_back(lhand);
     _all_affordances.push_back(rfoot);
@@ -60,7 +59,7 @@ void MainWindow::demoPopulateConstraints()
     _authoringState._all_gui_constraints.push_back(lfoot_brake);
     _authoringState._all_gui_constraints.push_back(rhand_wheel);
     _authoringState._all_gui_constraints.push_back(lhand_wheel);
-
+    return _all_affordances;
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -89,19 +88,19 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
 
     vector<AffPtr> affordances;
-    _worldState.affordances.getAllAffordances(affordances);
+    //_worldState.affordances.getAllAffordances(affordances);
 
-    while(affordances.size() == 0)
+    while(_worldState.affordances.size() == 0)
     {
-    	_worldState.affordances.getAllAffordances(affordances);
+//    	_worldState.affordances(affordances);
     	cout << "\n waiting for affordances to be non-zero" << endl;
     	boost::this_thread::sleep(posix_time::seconds(1));
     }
 
 
-    cout << "\n\n got " << affordances.size() << " affordances " << endl;
+    cout << "\n\n got " << _worldState.affordances.size() << " affordances " << endl;
 
-    for(uint i = 0; i < affordances.size(); i++)
+    for(uint i = 0; i < _worldState.affordances.size(); i++)
     {
     	AffPtr next = affordances[i];
     	if (next->_otdf_id == AffordanceState::CYLINDER ||
@@ -159,7 +158,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
 
-    demoPopulateConstraints();
+    std::vector<AffPtr> _all_affordances = demoPopulateConstraints();
 
     // Get the toggle panels from the Qt4Constraint objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
@@ -245,6 +244,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     toolbarButtonsLayout->addSpacing(200);
     toolbarButtonsLayout->addWidget(new QPushButton("move up"));
     toolbarButtonsLayout->addWidget(new QPushButton("move down"));
+    toolbarButtonsLayout->addSpacing(100);
+    toolbarButtonsLayout->addWidget(new QPushButton("+ add constraint"));
     toolbarButtons->setLayout(toolbarButtonsLayout);
     vbox->addWidget(toolbarButtons);
     vbox->addStretch(1);

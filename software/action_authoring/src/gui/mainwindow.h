@@ -37,7 +37,7 @@
 namespace action_authoring
 {
 
-xo/**Represents the read-only state of the world and objects used for rendering that state*/
+/**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
 
@@ -91,7 +91,7 @@ private:
     std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
-    void demoPopulateConstraints(); //todo : remove this
+    std::vector<affordance::AffPtr> demoPopulateConstraints(); //todo : remove this
     std::string getSelectedJointName();
 
 private slots:
