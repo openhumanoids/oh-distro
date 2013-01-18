@@ -26,6 +26,8 @@ class ActuatorCmdHandler{
     ros::Publisher actuator_cmd_pub;
     ros::Publisher body_twist_cmd_pub;
     ros::Publisher rot_scan_cmd_pub;
+    ros::Publisher gas_pedal_pub;
+    ros::Publisher brake_pedal_pub;
 
     ros::NodeHandle actuator_cmd_node;
   public:
@@ -35,6 +37,8 @@ class ActuatorCmdHandler{
    body_twist_cmd_pub = actuator_cmd_node.advertise<geometry_msgs::Twist>("cmd_vel",10);
 
    rot_scan_cmd_pub = actuator_cmd_node.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
+   gas_pedal_pub = actuator_cmd_node.advertise<std_msgs::Float64>("mit_golf_cart/gas_pedal/cmd", 1000);
+   brake_pedal_pub = actuator_cmd_node.advertise<std_msgs::Float64>("mit_golf_cart/brake_pedal/cmd", 1000);
   }
   ~ActuatorCmdHandler() {}
   
@@ -76,19 +80,29 @@ class ActuatorCmdHandler{
     }
 
   }
+
+  void estop_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg)//what is rbuf and channel here?
+  {
+    if(ros::ok()){
+      std_msgs::Float64 msg;
+      msg.data = 1.0;
+      brake_pedal_pub.publish(msg);
+      
+      std_msgs::Float64 gasmsg;
+      gasmsg.data = 0.0;
+      gas_pedal_pub.publish(gasmsg);
+    }
+  }
   
 
+  // Only here to Demo Estop:
   void rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg)
   {
     std_msgs::Float64 rot_scan_cmd_msg;
     rot_scan_cmd_msg.data = msg->angular_velocity.x;
-    
-    if(ros::ok())
-    {
+    if(ros::ok()){
       rot_scan_cmd_pub.publish(rot_scan_cmd_msg);
-      //ros::spinOnce(); // required?
     }
-
   }
   
 };
@@ -108,7 +122,11 @@ int main(int argc,char** argv)
   listener.subscribe("NAV_CMDS",&ActuatorCmdHandler::body_twist_cmd_Callback,&handlerObject);
 
   listener.subscribe("ROTATING_SCAN_RATE_CMD",&ActuatorCmdHandler::rot_scan_rate_cmd_Callback,&handlerObject);
-
+  
+  // Only here to Demo Estop:
+  listener.subscribe("NAV_GOAL_ESTOP",&ActuatorCmdHandler::estop_Callback,&handlerObject);
+  
+  
   while(0 == listener.handle());
   return 0;
 }
