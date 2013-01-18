@@ -12,9 +12,7 @@
 #include "Qt4Constraint.h"
 
 // OpenGL includes
-#include "opengl/opengl_object_box.h"
-#include "opengl/opengl_object_cylinder.h"
-#include "opengl/opengl_object_sphere.h"
+#include "opengl/opengl_object.h"
 
 // The following are now subclassed
 //#include "qt4/qt4_widget_opengl.h"
@@ -43,27 +41,17 @@ namespace action_authoring
 /**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
-	//----------world state fields
-	/**used for reading affordances from the affordance server*/
-	affordance::AffordanceUpWrapper affordances;
+
+  affordance::AffordanceUpWrapper affordances;  //used for reading affordances from the affordance server
+  state::State_GFE state_gfe; //robot state
+  robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
+  //std::vector<collision::Collision_Object> collisionObjs;
   
-    /**robot state*/
-    state::State_GFE state_gfe;
-
-    /**used for coloring the robot*/
-    robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE
+  /**initializes all the fields in the struct*/
+WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
+   : affordances(theLcm), colorRobot()
+  { }
   
-  /*
-    collision::Collision_Object_Sphere* _collision_object_sphere;
-    collision::Collision_Object_GFE* _collision_object_gfe;
-  */
-
-    //-------------
-    /**initializes all the fields in the struct*/
-    WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
-  	  : affordances(theLcm), colorRobot()
-    { }
-
 };
 
 
