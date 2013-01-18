@@ -30,6 +30,17 @@ group "core" {
 
 }
 
+group "teleop" {
+    cmd "client" {
+        exec = "vicon-client";
+        host = "localhost";
+    }
+    cmd "teleop" {
+        exec = "drc-teleop-vicon";
+        host = "localhost";
+    }
+}
+
 group "gazebo" {
     cmd "gfe" {
         exec = "roslaunch mit_drcsim_scripts atlas_position_control_vicon.launch";
@@ -41,6 +52,7 @@ group "gazebo" {
 
 script "startup simulation" {
     start group "core";
+    start group "teleop";
     wait ms 1000;
     start cmd "gfe";
 }
