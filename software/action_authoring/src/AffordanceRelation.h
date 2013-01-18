@@ -1,7 +1,10 @@
 #pragma once
-#include "Affordance.h"
+#include "affordance/AffordanceState.h"
 
+/**todo: add comment*/
 class AffordanceRelation{
+  
+  //----------Enumerations
  public:
     typedef enum {
       UNDEFINED,
@@ -10,17 +13,20 @@ class AffordanceRelation{
       NORMAL
     } RelationType;
 
+
+    //------------fields
  protected:
-  Affordance* m_affordance1;
-  Affordance* m_affordance2;
-  RelationType m_relationType;
+    const AffConstPtr m_affordance1;
+    const AffConstPtr m_affordance2;
+    const RelationType m_relationType;
 
+    //------------Constructor--------
  public:
-  // Constructor
-  AffordanceRelation(Affordance* affordance1, Affordance* affordance2, AffordanceRelation::RelationType relationType);
+  AffordanceRelation(AffConstPtr affordance1, AffConstPtr affordance2, 
+		     const AffordanceRelation::RelationType &relationType);
 
-  //Accessors
-  Affordance* getAffordance1() { return m_affordance1; };
-  Affordance* getAffordance2() { return m_affordance2; };
-  RelationType getRelationType() { return m_relationType; };
+  //---------------Accessors
+  AffConstPtr getAffordance1() const { return m_affordance1; };
+  AffConstPtr getAffordance2() const { return m_affordance2; };
+  RelationType getRelationType() const { return m_relationType; };
 };
