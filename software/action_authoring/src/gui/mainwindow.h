@@ -38,7 +38,7 @@
 namespace action_authoring
 {
 
-/**Represents the read-only state of the world and objects used for rendering that state*/
+xo/**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
 
@@ -50,7 +50,7 @@ struct WorldStateView
   
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
- : affordances(theLcm), colorRobot()
+ : affServerWrapper(theLcm), colorRobot()
   { }
   
 };
