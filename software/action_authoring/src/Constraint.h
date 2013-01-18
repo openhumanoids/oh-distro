@@ -8,36 +8,44 @@
 namespace action_authoring {
 
   class InvalidMethodCallForContraintTypeException : public std::runtime_error {
-      public: InvalidMethodCallForContraintTypeException(const std::string &msg) : std::runtime_error(msg){};
-    };
-  
-  class Constraint {
-   public:
-    typedef enum {
-      ATOMIC,
-      SEQUENTIAL,
-      UNORDERED} ConstraintType;
-
-   protected:
-    char* m_name;
-    std::vector<Constraint*> m_constraints;
-    ConstraintType m_constraintType;
-    AffordanceRelation* m_affordanceRelation;
-
-   public:
-    // Constructors
-    Constraint(char* name, ConstraintType constraintType);
-    Constraint(char* name, AffordanceRelation* affordanceRelation);
-
-    //Accessors
-    char* getName() { return m_name; };
-    ConstraintType getConstraintType() { return m_constraintType; };
-
-    //Available for non ATOMIC constraints only
-    std::vector<Constraint*> getConstraints();
-    void addConstraint(Constraint* constraint);
-
-    //Available for ATOMIC constraints only
-    AffordanceRelation* getAffordanceRelation();
+  public: InvalidMethodCallForContraintTypeException(const std::string &msg) : std::runtime_error(msg){};
   };
-}
+  
+  /**todo: add comment / description*/
+  class Constraint 
+  {
+    
+    //----------enumerations
+  public:
+    typedef enum 
+    {
+      ATOMIC, //todo: add small comment
+      SEQUENTIAL, //to each of 
+      UNORDERED} //these lines.
+    ConstraintType;
+    
+  //------------fields--------
+  protected:
+    std::string m_name;
+    std::vector<boost::shared_ptr<Constraint> > m_constraints;
+    ConstraintType m_constraintType;
+    AffRelationConstPtr m_affordanceRelation;
+  
+  public:
+    // Constructors
+    Constraint(const std::string &name, const ConstraintType &constraintType);
+    Constraint(const std::string &name, AffRelationConstPtr affordanceRelation);
+    
+    //Accessors
+    std::string getName() const { return m_name; };
+    ConstraintType getConstraintType() const { return m_constraintType; };
+    
+    //Available for non ATOMIC constraints only
+    std::vector<boost::shared_ptr<Constraint> > getConstraints() const;
+    void addConstraint(boost::shared_ptr<const Constraint> constraint);
+    
+    //Available for ATOMIC constraints only
+    AfforRelationConstPr getAffordance_Relation() const;
+  }; //class Constraint
+
+} //namespace action_authoring

@@ -1,8 +1,12 @@
 #pragma once
 #include "affordance/AffordanceState.h"
 
+namespace action_authoring
+{
+
 /**todo: add comment*/
-class AffordanceRelation{
+class AffordanceRelation
+{
   
   //----------Enumerations
  public:
@@ -29,4 +33,9 @@ class AffordanceRelation{
   AffConstPtr getAffordance1() const { return m_affordance1; };
   AffConstPtr getAffordance2() const { return m_affordance2; };
   RelationType getRelationType() const { return m_relationType; };
-};
+};  //class AffordanceRelation
+ 
+ typedef boost::shared_ptr<AffordanceRelation> AffRelationPtr;
+ typedef boost::shared_ptr<const AffordanceRelation> AffRelationConstPtr;
+
+} //namespace action_authroing

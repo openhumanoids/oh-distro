@@ -42,18 +42,19 @@ namespace action_authoring
 struct WorldStateView
 {
 
-  affordance::AffordanceUpWrapper affordances;  //used for reading affordances from the affordance server
+  affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
+  std::vector<affordance::AffPtr> all_affordances; //latest affordances read from the wrapper
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
   //std::vector<collision::Collision_Object> collisionObjs;
   
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
-   : affordances(theLcm), colorRobot()
+ : affordances(theLcm), colorRobot()
   { }
   
 };
-
+ 
 
 /**represents the state of the authoring gui*/
 typedef struct
@@ -81,8 +82,6 @@ protected:
     state::State_GFE _state_gfe;
     QSignalMapper* _signalMapper;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
-
-    std::vector<affordance::AffPtr> _all_affordances;
 
     //================world state and authoring state
 private:
