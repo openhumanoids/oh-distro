@@ -21,8 +21,8 @@ namespace affordance
   class ArgumentException : public std::runtime_error {public: ArgumentException(const std::string &msg) : std::runtime_error(msg){}};
   class InvalidOtdfID : public std::runtime_error { public: InvalidOtdfID(const std::string &msg) : std::runtime_error(msg){}};
   class KeyNotFoundException : public std::runtime_error { public: KeyNotFoundException(const std::string &msg) : std::runtime_error(msg){}};
-  
-  typedef boost::tuple<const int32_t, const int32_t> GlobalUID;
+
+  typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
   class AffordanceState
   {
