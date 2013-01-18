@@ -1,8 +1,5 @@
 // Module to use raw Vicon data to produce end effector goals for the DRC robot 
 // cpda, mfallon, jan 2013
-//
-// TODO: correct incoming data to be in metres
-// TODO: make sure data has utimes
 #include <stdio.h>
 #include <GL/gl.h>
 #include <iostream>
