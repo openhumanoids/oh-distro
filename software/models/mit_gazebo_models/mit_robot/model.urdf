@@ -1164,12 +1164,14 @@
     </sensor>
   </gazebo>
 
+  
+  
   <!-- head imu -->
   <link name="head_imu_link">
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
     </inertial>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1184,11 +1186,15 @@
       </geometry>
     </visual>
   </link>
-  <joint name="head_imu_joint" type="fixed">
+  <!-- use a zero limit revolute joint rather than fixed to prevent lumping -->
+  <joint name="head_imu_joint" type="revolute">
     <parent link="head"/>
     <child link="head_imu_link"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-  </joint>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <limit effort="0" lower="0" upper="0" velocity="0"/>
+    <safety_controller k_position="0" k_velocity="0" soft_lower_limit="0" soft_upper_limit="0"/>
+    <axis xyz="0 0 1"/>
+  </joint>  
   <gazebo>
     <plugin filename="libgazebo_ros_imu.so" name="drc_robot_imu_head">
       <alwaysOn>true</alwaysOn>

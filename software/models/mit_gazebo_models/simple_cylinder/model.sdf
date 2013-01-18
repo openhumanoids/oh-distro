@@ -1,0 +1,36 @@
+<?xml version='1.0'?>
+<gazebo version='1.2'>
+  <model name="simple_cylinder">
+    <link name='link'>
+      <pose>0 0 0 0 0 0</pose>
+      <collision name='collision'>
+        <geometry>
+          <cylinder>
+            <radius>0.070000</radius>
+            <length>0.320000</length>
+          </cylinder>
+        </geometry>
+      </collision>
+<visual name='visual'>
+  <geometry>
+          <cylinder>
+            <radius>0.070000</radius>
+            <length>0.320000</length>
+          </cylinder>
+  </geometry>
+        <material>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/CeilingTiled</name>
+          </script>
+          <ambient>0.2 0.2 0.2 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+          <emissive>0.5 0.5 0.5 1</emissive>
+        </material>
+</visual>
+  </link>     
+  </model>
+</gazebo>
+
+

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<model>
+  <name>Simple Cylinder</name>
+  <version>1.0</version>
+  <sdf>model.sdf</sdf>
+
+  <description>
+    The Simple Cylinder
+  </description>
+</model>
