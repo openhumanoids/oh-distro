@@ -9,7 +9,6 @@ Qt4Constraint(AtomicConstraintPtr constraint) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
-				     _signalMapper(new QSignalMapper()),
 				     _gui_panel(new TogglePanel(this, "test"))
 {
     // constructor
@@ -60,9 +59,6 @@ getPanel() {
     vbox->addWidget(boxcontainer);
     groupBox->setLayout(vbox);
     
-    _signalMapper->setMapping(_gui_robotJointType, waypointTitle);
-    _signalMapper->setMapping(editButton, waypointTitle);
-
     connect(_gui_name, SIGNAL(textChanged(QString)), this, SLOT(updateStateFromElements()));
     connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
     connect(_gui_constraintType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
@@ -103,6 +99,7 @@ Qt4Constraint::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+    return;
 
     // find the robot joint affordance by ID and update the constraint appropriately
     std::string currentJointName = getSelectedLinkName();
@@ -140,7 +137,6 @@ setSelected(bool selected) {
 void
 Qt4Constraint::
 updateElementsFromState() {
-    // update the affordance list
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
 

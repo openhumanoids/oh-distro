@@ -35,7 +35,6 @@ namespace action_authoring
         QComboBox* _gui_robotJointType;
         QComboBox* _gui_constraintType;
         QComboBox* _gui_affordanceType;
-	QSignalMapper* _signalMapper;
         AtomicConstraintPtr _constraint;
 
         // should be static
