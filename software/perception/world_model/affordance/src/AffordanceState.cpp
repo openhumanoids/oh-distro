@@ -187,6 +187,11 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->ptinds.push_back(_ptinds[i]);
 }
 
+GlobalUID AffordanceState::getGlobalUniqueId() const
+{
+  return GlobalUID(_map_id, _object_id);
+}
+
 string AffordanceState:: getName() const
 {
   return _name;
