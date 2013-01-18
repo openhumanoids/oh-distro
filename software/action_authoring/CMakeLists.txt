@@ -33,7 +33,6 @@ set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe qt4_widget
 
 add_executable(action-authoring-gui src/gui/main.cpp src/gui/mainwindow.cpp 
 				    src/AtomicConstraint.cpp
-				    src/ConstraintSequence.cpp
 				    src/gui/togglepanel.cpp
 				    src/gui/Qt4Constraint.cpp
 				    src/opengl/ColorRobot.cpp
