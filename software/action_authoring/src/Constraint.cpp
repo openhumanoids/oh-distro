@@ -2,14 +2,17 @@
 #include <cstdlib>
 
 using namespace action_authoring;
-
-Constraint::Constraint(char* name, ConstraintType constraintType) {
-  m_constraintType = constraintType;
-  m_name = name;
-  m_affordanceRelation = NULL;
+using namespace std;
+Constraint::Constraint(const string &name, const ConstraintType &constraintType) 
+  :  m_constraintType(constraintType),
+     m_name(name)
+     m_affordanceRelation(NULL)
+{
 }
 
-Constraint::Constraint(char* name, AffordanceRelation* affordanceRelation) {
+Constraint::Constraint(const string &name, const AffordanceRelation* affordanceRelation) 
+{
+  //todo : user constructor initialier list as in above constructor
   m_constraintType = Constraint::ATOMIC;
   m_name = name;
   m_affordanceRelation = affordanceRelation;

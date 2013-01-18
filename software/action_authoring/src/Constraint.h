@@ -30,9 +30,9 @@ namespace action_authoring {
     std::vector<boost::shared_ptr<Constraint> > m_constraints;
     ConstraintType m_constraintType;
     AffRelationConstPtr m_affordanceRelation;
-  
+
+    //-------Constructors--
   public:
-    // Constructors
     Constraint(const std::string &name, const ConstraintType &constraintType);
     Constraint(const std::string &name, AffRelationConstPtr affordanceRelation);
     
@@ -40,7 +40,7 @@ namespace action_authoring {
     std::string getName() const { return m_name; };
     ConstraintType getConstraintType() const { return m_constraintType; };
     
-    //Available for non ATOMIC constraints only
+    //Available for non-ATOMIC constraints only
     std::vector<boost::shared_ptr<Constraint> > getConstraints() const;
     void addConstraint(boost::shared_ptr<const Constraint> constraint);
     

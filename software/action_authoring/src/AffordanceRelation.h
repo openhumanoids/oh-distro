@@ -13,7 +13,7 @@ class AffordanceRelation
     typedef enum {
       UNDEFINED,
       TANGENT,
-      OFFSET,
+      OFFSET, //todo: small comment here
       NORMAL
     } RelationType;
 
