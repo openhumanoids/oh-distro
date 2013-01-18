@@ -973,7 +973,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   self->goal_timeout =5.0;
   self->min_turn_radius =3.8; /// Assumed Example: http://www.utvguide.net/polaris_ev_lsv.htm
   self->wheel_separation = 1.829; // metres
-  self->max_velocity = 2.0; // m/s  - about 5m/s
+  self->max_velocity = 2.0; // m/s  - about 4.5MPH or 7.2km/hr
   self->center_arc_left.setIdentity();
   self->center_arc_right.setIdentity();
   

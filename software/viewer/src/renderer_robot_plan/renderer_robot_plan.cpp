@@ -20,6 +20,8 @@
 #define RENDERER_NAME "Robot Plan Display"
 #define PARAM_PICKING "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
+#define PARAM_HIDE "Hide Plan"  
+#define PARAM_PLAN_PART "Part of Plan"  
 #define DRAW_PERSIST_SEC 4
 
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
@@ -86,14 +88,30 @@ static inline void jet_rgb(float value,float rgb[]){
 
 
 static void 
+draw_state(BotViewer *viewer, BotRenderer *super, uint i){
+  float c[3] = {0.3,0.3,0.6}; // light blue
+  float alpha = 0.2;
+  RendererRobotPlan *self = (RendererRobotPlan*) super->user;
+  // Each model Jet: blue to red
+  float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
+  jet_rgb(j,c);
+  glColor4f(c[0],c[1],c[2], alpha);
+  
+  self->robotPlanListener->_gl_robot_list[i]->show_bbox(self->visualize_bbox);
+  self->robotPlanListener->_gl_robot_list[i]->enable_link_selection(self->picking);
+  //if((*self->selection)!=" ")
+  self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
+  self->robotPlanListener->_gl_robot_list[i]->draw_body (c,alpha);  
+}
+
+static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
-  // Disabled for now:
-  //int64_t now = bot_timestamp_now();
-  //self->max_draw_utime = self->robotPlanListener->_last_plan_msg_timestamp  + DRAW_PERSIST_SEC * 1000000;	
-  //if(now > self->max_draw_utime)
-  //  return; // clear robot plan display
+  // if hide is enabled - then dont draw the plan:
+  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_HIDE)) {
+     return;
+  }
   
   glEnable(GL_DEPTH_TEST);
 
@@ -115,22 +133,28 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glPopMatrix();
   }
   
-  float c[3] = {0.3,0.3,0.6};
-  float alpha = 0.2;
+  
+  int plan_size =   self->robotPlanListener->_gl_robot_list.size();
+  if (plan_size ==0) // nothing to renderer
+    return;
+  
+  
+  
   //glColor3f(c[0],c[1],c[2]);
   
-  for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-  { 
-    // Each model Jet: blue to red
-    float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
-    jet_rgb(j,c);
-    glColor4f(c[0],c[1],c[2], alpha);
-    
-    self->robotPlanListener->_gl_robot_list[i]->show_bbox(self->visualize_bbox);
-    self->robotPlanListener->_gl_robot_list[i]->enable_link_selection(self->picking);
-    //if((*self->selection)!=" ")
-    self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
-    self->robotPlanListener->_gl_robot_list[i]->draw_body (c,alpha);
+  double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
+  
+  if (plan_part==1){
+    //printf("Show it all\n");
+  
+    for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
+    { 
+      draw_state(viewer,super,i);
+    }
+  }else{
+    uint w_plan = (uint) round(plan_part* (plan_size -1));
+    //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
+    draw_state(viewer,super,w_plan);
   }
 }
 
@@ -250,9 +274,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.n_plan_samples = self->vicon_n_plan_samples;
     msg.sample_period = self->vicon_sample_period;
     self->lcm->publish("VICON_GET_PLAN", &msg);
-    bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec]",msg.n_plan_samples, msg.sample_period);    
+    bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec] @ %lld",msg.n_plan_samples, msg.sample_period, msg.utime);    
     
   }
+
+  bot_viewer_request_redraw(self->viewer);
+  
 }
 
 void 
@@ -277,7 +304,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     
     // default Vicon plan sample values:
     self->vicon_n_plan_samples = 20;
-    self->vicon_sample_period = 0.1;
+    self->vicon_sample_period = 0.5;
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
     
@@ -289,6 +316,11 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
+    
+    bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER,
+                                   0, 1, 0.01, 1);    
     
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->picking = 0;
