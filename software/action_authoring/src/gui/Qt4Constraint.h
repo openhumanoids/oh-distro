@@ -24,12 +24,15 @@ namespace action_authoring
 	void updateElementsFromState();
 	void setSelected(bool selected);
 
-	void setAffordances(std::vector<affordance::AffPtr> &allAffordances);
-	void setJointNames(std::vector<std::string> &allJointNames);
+	void setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
+			    std::vector<affordance::AffPtr> &rightSideAffordances);
 	AtomicConstraintPtr getConstraint();
 	std::string getSelectedLinkName();
 	
     protected:
+	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
+	std::map<affordance::GlobalUID, int> _affordance2IndexMap;
+	
 	TogglePanel* _gui_panel;
         QLineEdit* _gui_name;
         QComboBox* _gui_robotJointType;
@@ -38,8 +41,8 @@ namespace action_authoring
         AtomicConstraintPtr _constraint;
 
         // should be static
-        std::vector<affordance::AffPtr> _allAffordances;
-        std::vector<std::string> _allJointNames;
+        std::vector<affordance::AffPtr> _leftSideAffordances;
+        std::vector<affordance::AffPtr> _rightSideAffordances;
 
     signals:
 	void activatedSignal();

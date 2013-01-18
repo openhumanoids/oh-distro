@@ -73,17 +73,11 @@ getPanel() {
 
 void
 Qt4Constraint::
-setAffordances(std::vector<affordance::AffPtr> &allAffordances) {
+setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
+	       std::vector<affordance::AffPtr> &rightSideAffordances) {
     // set the protected member
-    _allAffordances = allAffordances;
-    updateElementsFromState();
-}
-
-void
-Qt4Constraint::
-setJointNames(std::vector<std::string> &allJointNames) {
-    // set the protected member
-    _allJointNames = allJointNames;
+    _leftSideAffordances = leftSideAffordances;
+    _rightSideAffordances = rightSideAffordances;
     updateElementsFromState();
 }
 
@@ -99,26 +93,15 @@ Qt4Constraint::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
-    return;
 
-    // find the robot joint affordance by ID and update the constraint appropriately
-    std::string currentJointName = getSelectedLinkName();
-    for (int i = 0; i < _allJointNames.size(); i++) {
-	if (_allJointNames[i].compare(currentJointName) == 0) {
-	    std::cout << "found joint name " << _allJointNames[i] << std::endl;
-	    //_constraint->setAffordance1(_allAffordances[i]);
-	    break;
-	}
-    }
+    //std::cout << "left affordance: " << _gui_robotJointType->currentIndex() << std::endl;
+    //std::cout << "right affordance: " << _gui_affordanceType->currentIndex() << std::endl;
+    if (_gui_robotJointType->currentIndex() >= 0)
+	_constraint->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
 
-    // find the robot joint affordance by ID and update the constraint appropriately
-    std::string currentAffordanceName = _gui_affordanceType->currentText().toStdString();
-    for (int i = 0; i < _allAffordances.size(); i++) {
-	if (_allAffordances[i]->getName().compare(currentAffordanceName)) {
-	    _constraint->setAffordance2(_allAffordances[i]);
-	    break;
-	}
-    }
+    if (_gui_affordanceType->currentIndex() >= 0)
+	_constraint->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
+
     setActive();
 }
 
@@ -139,30 +122,47 @@ Qt4Constraint::
 updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
-
-    // update the joint names
     _gui_robotJointType->clear();
     int selectionIndex = 0;
-    for (int i = 0; i < _allJointNames.size(); i++) {
-        _gui_robotJointType->insertItem(0, QString::fromStdString(_allJointNames[i]));
-	if (_constraint->getAffordance1()->getName().compare(_allJointNames[i]) == 0) {
-	    selectionIndex = i;
-	}
+
+    // update the left side combo box
+    _gui_robotJointType->clear();
+    for (int i = 0; i < _leftSideAffordances.size(); i++) {
+        _gui_robotJointType->insertItem(0, QString::fromStdString(_leftSideAffordances[i]->getName()));
+	_affordance1IndexMap[_leftSideAffordances[i]->getGlobalUniqueId()] = i;
     }
+
     // select the correct joint name
-    _gui_robotJointType->setCurrentIndex(selectionIndex);
-
-    // update the affordances combo box
-    _gui_affordanceType->clear();
-    int selectionIndex2 = 0;
-    for (int i = 0; i < _allAffordances.size(); i++) {
-        _gui_affordanceType->insertItem(0, QString::fromStdString(_allAffordances[i]->getName()));
-	if (_constraint->getAffordance1() == _allAffordances[i]) {
-	    selectionIndex2 = i;
-	}
+    std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
+	_constraint->getAffordance1()->getGlobalUniqueId());
+    if (it!=_affordance1IndexMap.end()) {
+	_gui_robotJointType->setCurrentIndex(it->second);
+	std::cout << "found LH affordance iterator: " << it->second << std::endl;
+    } else {
+	std::cout << "failed to find LH affordance (guid: " 
+		  << 	_constraint->getAffordance1()->getGlobalUniqueId().first 
+		  << _constraint->getAffordance1()->getGlobalUniqueId().second << std::endl;
     }
 
-    // select the affordance 
-    _gui_affordanceType->setCurrentIndex(selectionIndex2);
+    // update the right side combo box
+    _gui_affordanceType->clear();
+    for (int i = 0; i < _rightSideAffordances.size(); i++) {
+        _gui_affordanceType->insertItem(0, QString::fromStdString(_rightSideAffordances[i]->getName()));
+	_affordance2IndexMap[_rightSideAffordances[i]->getGlobalUniqueId()] = i;
+	std::cout << i << " : " << _rightSideAffordances[i]->getGlobalUniqueId().first << ", " <<
+	    _rightSideAffordances[i]->getGlobalUniqueId().second << std::endl;
+    }
+
+    // select the current affordance
+    std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
+	_constraint->getAffordance2()->getGlobalUniqueId());
+    if (it2 != _affordance2IndexMap.end()) {
+	_gui_affordanceType->setCurrentIndex(it2->second);
+	std::cout << "found RH affordance iterator: " << it2->second << std::endl;
+    } else {
+	std::cout << "failed to find RH affordance (guid: " 
+		  << 	_constraint->getAffordance2()->getGlobalUniqueId().first 
+		  << _constraint->getAffordance2()->getGlobalUniqueId().second << std::endl;
+    }
     
 }

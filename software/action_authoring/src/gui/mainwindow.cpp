@@ -157,8 +157,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     // Get the toggle panels from the Qt4Constraint objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
-	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
+	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances, _all_affordances);
 
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
 	// todo: currently using constraint name as UID
@@ -331,7 +330,7 @@ handleRobotLinkChange() {
 void 
 MainWindow::
 setSelectedAction(QString activator){ 
-    std::string activator_str = activator.toStdString();
+/*    std::string activator_str = activator.toStdString();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraint()->getName()) == 0) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
@@ -341,4 +340,5 @@ setSelectedAction(QString activator){
 	}
     } 
     handleRobotLinkChange();
+*/
 }
