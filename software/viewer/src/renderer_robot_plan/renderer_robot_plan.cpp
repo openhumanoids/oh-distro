@@ -90,7 +90,7 @@ static inline void jet_rgb(float value,float rgb[]){
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float c[3] = {0.3,0.3,0.6}; // light blue
-  float alpha = 0.2;
+  float alpha = 0.4;
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
   // Each model Jet: blue to red
   float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
