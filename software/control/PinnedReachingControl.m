@@ -35,13 +35,14 @@ classdef PinnedReachingControl < DrakeSystem
       obj.I_arms([5:9,16,17:21,28]) = ones(12,1);
       obj.I_arms = diag(obj.I_arms);
       
+      B = obj.manip.getB();
       epsilon = 0.02;
       obj.q_d_max = obj.manip.joint_limit_max - epsilon;
       obj.q_d_min = obj.manip.joint_limit_min + epsilon;
       obj.q_d_max(obj.q_d_max == inf) = 1e10;
       obj.q_d_min(obj.q_d_min == -inf) = -1e10;
-      obj.q_d_max = obj.manip.B' * obj.q_d_max;
-      obj.q_d_min = obj.manip.B' * obj.q_d_min;
+      obj.q_d_max = B' * obj.q_d_max;
+      obj.q_d_min = B' * obj.q_d_min;
     end
     
     function q_d0 = getInitialState(obj)
@@ -88,7 +89,7 @@ classdef PinnedReachingControl < DrakeSystem
       dq_des = dq_rep + dq_lep + Nrep*Nlep*dq_nom;
       
       % map to input frame
-      dq_des = obj.manip.B' * dq_des;
+      dq_des = obj.manip.getB()' * dq_des;
       q_dn = q_d + dt*dq_des;
       q_dn = min(max(q_dn,obj.q_d_min),obj.q_d_max);
     end

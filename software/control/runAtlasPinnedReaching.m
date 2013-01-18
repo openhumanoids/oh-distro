@@ -19,11 +19,11 @@ state_listener = LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
 state_listener.subscribe('EST_ROBOT_STATE');
 
 lcmcoder = JLCMCoder(EndEffectorGoalCoder('atlas', 'r_hand'));
-rep_listener = LCMCoordinateFrameWCoder('atlas',3,'x',lcmcoder);
+rep_listener = LCMCoordinateFrameWCoder('atlas',4,'x',lcmcoder);
 rep_listener.subscribe('R_HAND_GOAL');
 
 lcmcoder = JLCMCoder(EndEffectorGoalCoder('atlas', 'l_hand'));
-lep_listener = LCMCoordinateFrameWCoder('atlas',3,'x',lcmcoder);
+lep_listener = LCMCoordinateFrameWCoder('atlas',4,'x',lcmcoder);
 lep_listener.subscribe('L_HAND_GOAL');
 
 cmd_names = r.getInputFrame().coordinates;
@@ -39,11 +39,11 @@ lep_des = [0.2; 0.3; 0.1];
 while (1)
   rep = getNextMessage(rep_listener,1);
   if (~isempty(rep))
-    rep_des = rep;
+    rep_des = rep(2:4);
   end
   lep = getNextMessage(lep_listener,1);
   if (~isempty(lep))
-    lep_des = lep;
+    lep_des = lep(2:4);
   end
   [x,t] = getNextMessage(state_listener,1);
   if (~isempty(x))
