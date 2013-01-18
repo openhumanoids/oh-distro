@@ -21,18 +21,24 @@ using namespace boost;
  */ 
 void MainWindow::demoPopulateConstraints()
 {
-    AffPtr rhand = AffPtr(new AffordanceState("Right Hand"));
-    AffPtr lhand = AffPtr(new AffordanceState("Left Hand"));
-    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot"));
-    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot"));
-    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel"));
-    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal"));
-    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal"));
+    AffPtr rhand = AffPtr(new AffordanceState("Right Hand", 235, 38252));
+    AffPtr lhand = AffPtr(new AffordanceState("Left Hand",  852365807, 3723));
+    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot", 2, 51));
+    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot", 32872, 380));
+    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel", 3287, 273));
+    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal", 3202, 328720));
+    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal", 32802, 23093));
 
-    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere"));
-    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box"));
-    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder"));
+    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere", 3280, 328));
+    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box", 3280235, 3828));
+    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder", 23802, 83));
 
+
+
+    _all_affordances.push_back(rhand);
+    _all_affordances.push_back(lhand);
+    _all_affordances.push_back(rfoot);
+    _all_affordances.push_back(lfoot);
     _all_affordances.push_back(wheel);
     _all_affordances.push_back(gas);
     _all_affordances.push_back(brake);
@@ -330,7 +336,7 @@ handleRobotLinkChange() {
 void 
 MainWindow::
 setSelectedAction(QString activator){ 
-/*    std::string activator_str = activator.toStdString();
+    std::string activator_str = activator.toStdString();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraint()->getName()) == 0) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
@@ -339,6 +345,7 @@ setSelectedAction(QString activator){
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
     } 
+/*
     handleRobotLinkChange();
 */
 }
