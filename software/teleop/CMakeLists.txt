@@ -12,3 +12,7 @@ lcmtypes_build()
 add_subdirectory(src/teleop2drcsim)
 add_subdirectory(src/vicon-teleop)
 
+
+
+add_subdirectory(src/imu2handpose)
+

@@ -115,7 +115,7 @@ void ObstacleApp::PublishPoseToLCM(int id, Eigen::Isometry3d poseout,int64_t uti
   quat_to_euler(r_x, yaw,pitch,roll);
   cout << pitch*180/M_PI << " | " << roll*180/M_PI << "\n";
 
-   string joint_names[] ={ "back_lbz",
+/*   string joint_names[] ={ "back_lbz",
        "back_mby", "back_ubx", "neck_ay", "l_leg_uhz", 
        "l_leg_mhx", "l_leg_lhy", "l_leg_kny", "l_leg_uay", "l_leg_lax",
        "r_leg_uhz", "r_leg_mhx", "r_leg_lhy", "r_leg_kny", "r_leg_uay",
@@ -128,8 +128,11 @@ void ObstacleApp::PublishPoseToLCM(int id, Eigen::Isometry3d poseout,int64_t uti
        0,0,0,0,0,
        0,0,0,0,0,
        0,0,0,0,0,
-       0,0,0  };
+       0,0,0  }; */
   
+   string joint_names[] ={ "r_arm_mwx", "r_arm_uwy"};
+   double joint_position[2];
+       
   if (roll > 1.2){
     roll =1.2;
   }else if (roll < -1.2){
@@ -141,13 +144,13 @@ void ObstacleApp::PublishPoseToLCM(int id, Eigen::Isometry3d poseout,int64_t uti
     pitch =-1.2;
   }
 
-  joint_position[27] = -roll;
-  joint_position[24] = pitch;
+  joint_position[0] = pitch;
+  joint_position[1] = -roll;
 
   drc_joint_angles_t angles_msg;
   angles_msg.utime=utime;
   angles_msg.robot_name="atlas";
-  angles_msg.num_joints=28;
+  angles_msg.num_joints=2;
   angles_msg.joint_name=(char**)joint_names;
   angles_msg.joint_position=joint_position;
   drc_joint_angles_t_publish(lcm_, "JOINT_POSITION_CMDS", &angles_msg);      
