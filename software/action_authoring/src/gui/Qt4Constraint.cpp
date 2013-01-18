@@ -69,6 +69,7 @@ getPanel() {
 
     groupBox->setLayout(vbox);
     _gui_panel->addWidget(groupBox);
+    return _gui_panel;
 }
 
 void

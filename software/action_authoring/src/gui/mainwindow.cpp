@@ -150,8 +150,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	_authoringState._all_gui_constraints[i]->setJointNames(joint_names);
 	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances);
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
-	std::cout << "panel gen'd" << tp << std::endl;
-//	vbox->addWidget(tp);
+	vbox->addWidget(tp);
     }
 
     QGroupBox* mediaControls = new QGroupBox();
