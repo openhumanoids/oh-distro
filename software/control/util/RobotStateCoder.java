@@ -36,7 +36,12 @@ public class RobotStateCoder implements drake.util.LCMCoder
       msg.origin_position = new drc.position_3d_t();
       msg.origin_position.translation = new drc.vector_3d_t();
       msg.origin_position.rotation = new drc.quaternion_t();
-
+      
+      if (m_num_floating_joints == 0) {
+        // Atlas specific stuff
+        msg.origin_position.rotation.w = 1.0;
+        msg.origin_position.translation.z = 0.927;
+      }
       msg.origin_twist = new drc.twist_t();
       msg.origin_twist.linear_velocity = new drc.vector_3d_t();
       msg.origin_twist.angular_velocity = new drc.vector_3d_t();
@@ -169,53 +174,55 @@ public class RobotStateCoder implements drake.util.LCMCoder
         }
       }
 
-      // TODO: should be generalized eventually
-      j = m_floating_joint_map.get("base_x");
-      if (j!=null) {
-        index = j.intValue();
-        msg.origin_position.translation.x = (float) d.val[index];
-        msg.origin_twist.linear_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
-      }
-      j = m_floating_joint_map.get("base_y");
-      if (j!=null) {
-        index = j.intValue();
-        msg.origin_position.translation.y = (float) d.val[index];
-        msg.origin_twist.linear_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints];
-      }
-      j = m_floating_joint_map.get("base_z");
-      if (j!=null) {
-        index = j.intValue();
-        msg.origin_position.translation.z = (float) d.val[index];
-        msg.origin_twist.linear_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
-      }
+      if (m_num_floating_joints != 0) {
+        // TODO: should be generalized eventually
+        j = m_floating_joint_map.get("base_x");
+        if (j!=null) {
+          index = j.intValue();
+          msg.origin_position.translation.x = (float) d.val[index];
+          msg.origin_twist.linear_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        }
+        j = m_floating_joint_map.get("base_y");
+        if (j!=null) {
+          index = j.intValue();
+          msg.origin_position.translation.y = (float) d.val[index];
+          msg.origin_twist.linear_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        }
+        j = m_floating_joint_map.get("base_z");
+        if (j!=null) {
+          index = j.intValue();
+          msg.origin_position.translation.z = (float) d.val[index];
+          msg.origin_twist.linear_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        }
 
-      float roll, pitch, yaw;
-      index = m_floating_joint_map.get("base_roll").intValue();
-      roll = (float) d.val[index];
-      msg.origin_twist.angular_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
-      
-      index = m_floating_joint_map.get("base_pitch").intValue();
-      pitch = (float) d.val[index];
-      msg.origin_twist.angular_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints]; 
-      
-      index = m_floating_joint_map.get("base_yaw").intValue();
-      yaw = (float) d.val[index];
-      msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        float roll, pitch, yaw;
+        index = m_floating_joint_map.get("base_roll").intValue();
+        roll = (float) d.val[index];
+        msg.origin_twist.angular_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
 
-      
-      // covert rpy to quaternion 
-      // note: drake uses XYZ convention
-      // use xyz
-      double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-      double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-      double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-      double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
-      
-      msg.origin_position.rotation.x = (float) x;
-      msg.origin_position.rotation.y = (float) y;
-      msg.origin_position.rotation.z = (float) z;
-      msg.origin_position.rotation.w = (float) w;
+        index = m_floating_joint_map.get("base_pitch").intValue();
+        pitch = (float) d.val[index];
+        msg.origin_twist.angular_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints]; 
 
+        index = m_floating_joint_map.get("base_yaw").intValue();
+        yaw = (float) d.val[index];
+        msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+
+
+        // covert rpy to quaternion 
+        // note: drake uses XYZ convention
+        // use xyz
+        double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+        double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
+        double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
+        double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
+
+        msg.origin_position.rotation.x = (float) x;
+        msg.origin_position.rotation.y = (float) y;
+        msg.origin_position.rotation.z = (float) z;
+        msg.origin_position.rotation.w = (float) w;
+      }
+      
       return msg;
     }
     
