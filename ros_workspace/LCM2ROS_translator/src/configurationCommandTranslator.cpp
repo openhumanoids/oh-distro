@@ -100,22 +100,20 @@ class ConfigurationCommandHandler{
 			    joint_msg.name.push_back(msg->joint_name[i]);
 			    joint_msg.position.push_back(msg->joint_position[i]);
 			}
-			
+
 			if(ros::ok()) {
 				joint_pub.publish(joint_msg);			
 				pose_pub.publish(pose_msg);			
 			}			
-			
 			// set PID goals
 			std_msgs::Float64 position_command_msg;
 			for (int i=0; i<msg->num_joints; i++) {
-			    // should we instead publish all joints at the same time?
 			    position_command_msg.data = msg->joint_position[i];
 				if(ros::ok()) {
 					setpoint_map[msg->joint_name[i]].publish(position_command_msg);
 				}
 			}
-			
+		    ros::spinOnce();
 		}
 };	
 
