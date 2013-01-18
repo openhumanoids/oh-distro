@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6.0)
 # pull in the pods macros. See cmake/pods.cmake for documentation
 #set(POD_NAME teleop)
 
-set(REQUIRED_PACKAGES lcmtypes_vicon-drc  lcmtypes_teleop orocos-kdl kdl-parser forward-kinematics)
+#set(REQUIRED_PACKAGES lcmtypes_teleop orocos-kdl kdl-parser forward-kinematics)
 
 
 add_executable(drc-vicon-teleop vicon-teleop.cpp)
