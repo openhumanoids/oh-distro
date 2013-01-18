@@ -25,42 +25,42 @@ OpenGL_Affordance::~OpenGL_Affordance()
 /**sets the state of the object we want to draw and then draws*/
 void OpenGL_Affordance::draw()
 {
-	//frame will be used by everything -- only compute once
-	KDL::Frame frame;
-	_affordance.getFrame(frame);
+  //frame will be used by everything -- only compute once
+  KDL::Frame frame;
+  _affordance.getFrame(frame);
 
-
-	cout << "\n getting opengl affordance for \n" << _affordance << endl;
-
-	switch(_affordance._otdf_id)
-	{
-		case AffordanceState::CYLINDER:
-			_cylinder.set(frame, Vector2f(_affordance.radius(),
-										  _affordance.length()));
-			_cylinder.set_color(_affordance.getColor());
-			_cylinder.draw();
-			break;
-
-		case AffordanceState::LEVER:
-			throw runtime_error("not handling lever right now");
-		break;
-
-		case AffordanceState::BOX:
-			_box.set(frame, Vector3f(_affordance.length(),
-									_affordance.width(),
-									_affordance.height()));
-			_box.set_color(_affordance.getColor());
-			break;
-
-		case AffordanceState::SPHERE:
-			_sphere.set(frame, _affordance.radius());
-			_sphere.set_color(_affordance.getColor());
-			_sphere.draw();
-			break;
-
-		default:
-			throw runtime_error("unhandled affordance state");
-	}
+  OpenGL_Object *obj; 
+  switch(_affordance._otdf_id)
+    {
+      
+    case AffordanceState::CYLINDER:
+      _cylinder.set(frame, Vector2f(_affordance.radius(),
+				    _affordance.length()));
+      obj = &_cylinder;
+      break;
+      
+    case AffordanceState::LEVER:
+      throw runtime_error("not handling lever right now");
+      break;
+      
+    case AffordanceState::BOX:
+      _box.set(frame, Vector3f(_affordance.length(),
+			       _affordance.width(),
+			       _affordance.height()));
+      obj = &_box;
+      break;
+      
+    case AffordanceState::SPHERE:
+      _sphere.set(frame, _affordance.radius());
+      obj = &_sphere;
+      break;
+      
+    default:
+      throw runtime_error("unhandled affordance state");
+    }
+  
+  obj->set_color(_affordance.getColor());
+  obj->draw();
 }
 
 
