@@ -191,9 +191,11 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     return;
   }
   
-  // Visualise the human's fixed waist position
-  Isometry3dTime human_world_to_waistT = Isometry3dTime( msg->utime , human_world_to_waist_ );
-  pc_vis_->pose_to_lcm_from_list(70006, human_world_to_waistT);    
+  if (verbose_){
+    // Visualise the human's fixed waist position
+    Isometry3dTime human_world_to_waistT = Isometry3dTime( msg->utime , human_world_to_waist_ );
+    pc_vis_->pose_to_lcm_from_list(70006, human_world_to_waistT);    
+  }
   
   Eigen::Isometry3d pose;
   pose.setIdentity();
@@ -213,9 +215,11 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   // We will only transmit ANYTHING when a valide right hand marker is detected
   // TODO: refactor to transmit individual marks, if required:
-  pc_vis_->pose_to_lcm_from_list(70000, human_world_to_leftT_);
-  pc_vis_->pose_to_lcm_from_list(70001, human_world_to_rightT_);
 
+  if (verbose_){
+    pc_vis_->pose_to_lcm_from_list(70000, human_world_to_leftT_);
+	  pc_vis_->pose_to_lcm_from_list(70001, human_world_to_rightT_);
+  }
   
   // 1. Find segments relative to the person's waist
   human_world_to_leftT_.pose = human_world_to_waist_.inverse() * human_world_to_leftT_.pose ;
@@ -230,8 +234,10 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   human_world_to_rightT_.pose.translation().y() *= human_to_robot_scale_(1);
   human_world_to_rightT_.pose.translation().z() *= human_to_robot_scale_(2);
   
-  pc_vis_->pose_to_lcm_from_list(70002, human_world_to_leftT_);
-  pc_vis_->pose_to_lcm_from_list(70003, human_world_to_rightT_);    
+  if (verbose_){
+    pc_vis_->pose_to_lcm_from_list(70002, human_world_to_leftT_);
+    pc_vis_->pose_to_lcm_from_list(70003, human_world_to_rightT_);    
+  }
   
   if (!first_rstate_received_){
     cout << "No Robot State yet. will not publish End Effector Goal\n";
