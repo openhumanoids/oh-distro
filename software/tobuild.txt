@@ -15,7 +15,8 @@ control
 
 gfe
 perception
-action_authoring
+# disabled for now as its breaking build
+#action_authoring
 viewer
 
 #network
