@@ -16,7 +16,9 @@ namespace action_authoring
   class DatabaseManager 
   {
   private:
+
     //member variables
+    //todo : could you have boost::unordered_map instead of map?  (which would be more efficient)
     std::string _filename;
     int _guidCounter;
     std::map<affordance::AffConstPtr, int> _affordanceToGUID; //todo: comment like "maps from { } --> {}
@@ -36,7 +38,8 @@ namespace action_authoring
     int getGUID(affordance::AffConstPtr affordance);
     
     //reading from file helper functions
-    //todo : could you have boost::unordered_map instead of map?  (which would be more efficient)
+    //todo: add comments in the cpp file for parseTreeHelper and parseTree
+    //doxygen style.  describe the arguments and functionality of each method
     void parseTreeHelper(xmlDocPtr doc, xmlNode *xmlnode, 
 			 std::map<int,  affordance::AffConstPtr> *affordances,
 			 std::map<int, ConstraintConstPtr> *constraints);
