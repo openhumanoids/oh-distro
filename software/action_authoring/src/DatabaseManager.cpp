@@ -54,9 +54,7 @@ std::string DatabaseManager::intToString(const int &i)
 {
   std::stringstream ss;
   ss << i;
-  std::string result = ss.str();
-  //printf("converting int %i to string %s\n", i, result.c_str());
-  return result;
+  return ss.str();
 }
 
 //Looks up the guid of an affordance or assigns one if none exists
@@ -65,11 +63,9 @@ int DatabaseManager::getGUID(AffConstPtr affordance)
   int guid = _affordanceToGUID[affordance];
   if (guid <=  0) 
     {
-      guid = _guidCounter;
-      _guidCounter += 1;
+      guid = _guidCounter++;
       _affordanceToGUID[affordance] = guid;
     }
-  //printf("guid for %s is %i\n", affordance->getName().c_str(), guid);
   return guid;
 }
 
@@ -77,11 +73,9 @@ int DatabaseManager::getGUID(AffConstPtr affordance)
 int DatabaseManager::getGUID(ConstraintConstPtr constraint){
   int guid = _constraintToGUID[constraint];
   if (guid <= 0) {
-    guid = _guidCounter;
-    _guidCounter += 1;
+    guid = _guidCounter++;
     _constraintToGUID[constraint] = guid;
   }
-  //printf("guid for %s is %i\n", constraint->getName(), guid);
   return guid;
 }
 
@@ -128,9 +122,11 @@ void DatabaseManager::addConstraintToNode(ConstraintConstPtr constraint, xmlNode
 
     std::string uidStr = intToString(getGUID(constraint));
     xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
-    xmlNewChild(constraintNode, NULL, BAD_CAST "name", BAD_CAST constraint->getName());
+    xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
+		BAD_CAST constraint->getName().c_str());
 
-    std::vector <ConstraintConstPtr>constraintList = constraint->getConstraints();
+    std::vector <ConstraintConstPtr>constraintList;
+    constraint->getConstraints(constraintList);
     
     std::string childUidStr;
     for ( int i = 0; i < constraintList.size(); i++ ) {
@@ -139,15 +135,19 @@ void DatabaseManager::addConstraintToNode(ConstraintConstPtr constraint, xmlNode
     }
   }
   else {
-    printf("Don't know how to parse constraint '%s'. Ignoring.\n", constraint->getName()); 
+    printf("Don't know how to parse constraint '%s'. Ignoring.\n", 
+	   constraint->getName().c_str()); 
   }
 }
 
 //TODO
 //Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
-void DatabaseManager::postOrderAddConstraintToQueue(ConstraintConstPtr constraint, std::queue<ConstraintConstPtr>* q, std::set<ConstraintConstPtr>* done) {
+void DatabaseManager::postOrderAddConstraintToQueue(ConstraintConstPtr constraint, 
+						    std::queue<ConstraintConstPtr> *q, 
+						    std::set<ConstraintConstPtr> *done) {
     if (constraint->getConstraintType() != Constraint::ATOMIC) {
-      std::vector<ConstraintConstPtr> constraintList = constraint->getConstraints();
+      std::vector<ConstraintConstPtr> constraintList;
+      constraint->getConstraints(constraintList);
       for( int i = 0; i < constraintList.size(); i++ ) {
         postOrderAddConstraintToQueue(constraintList[i], q, done);
       }
@@ -159,7 +159,7 @@ void DatabaseManager::postOrderAddConstraintToQueue(ConstraintConstPtr constrain
 }
 
 //main API call for storing all objects
-void DatabaseManager::store(std::vector<AffConstPtr> affordanceList, std::vector<ConstraintConstPtr> constraintList) {
+void DatabaseManager::store(const std::vector<AffConstPtr> &affordanceList, const std::vector<ConstraintConstPtr> &constraintList) {
 	//printf("beginning to store\n");
   xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
@@ -192,7 +192,7 @@ void DatabaseManager::store(std::vector<AffConstPtr> affordanceList, std::vector
 	}
 
   //finally, save the file
-	xmlSaveFormatFileEnc(_filename, doc, "UTF-8", 1);
+	xmlSaveFormatFileEnc(_filename.c_str(), doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
 }
@@ -222,7 +222,8 @@ void printAffordanceMap(std::map<int, AffConstPtr>* affordances) {
 }
 
 //Creates an Affordance object from an XML node and stores it in a map of uids to affordances
-AffConstPtr serializeAffordance(xmlDocPtr doc, xmlNode* node, std::map<int, AffConstPtr>* affordances) {
+AffConstPtr serializeAffordance(xmlDocPtr doc, xmlNode* node, 
+				std::map<int, AffConstPtr>* affordances) {
   //printf("\nserializing affordance\n");
   xmlNode* current_node = NULL;
   char* name;
@@ -242,11 +243,8 @@ AffConstPtr serializeAffordance(xmlDocPtr doc, xmlNode* node, std::map<int, AffC
     }
   }
 
-/*
-  printf("\tname: %s\n", name);
-  printf("\tuid: %i\n", uid);
-*/
-  AffConstPtr affordance = new Affordance(name);
+
+  AffConstPtr affordance(new AffordanceState(name));
   (*affordances)[uid] = affordance;
   return affordance;
 }
@@ -287,7 +285,7 @@ ConstraintConstPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::
   printf("\taff2uid: %i\n", aff2uid);
 */
 
-  Affordanc* aff1 = (*affordances).find(aff1uid)->second;
+  AffConstPtr aff1 = (*affordances).find(aff1uid)->second;
   AffConstPtr aff2 = (*affordances).find(aff2uid)->second;
 
   //printAffordanceMap(affordances);
@@ -295,16 +293,18 @@ ConstraintConstPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::
 
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
   //I SHOULD NOT BE Constraint::TANGENT!!!!!!!!!!!!!
-  AffordanceRelation* affordanceRelation = new AffordanceRelation(aff1, aff2, AffordanceRelation::TANGENT);
-  ConstraintConstPtr constraint = new Constraint(name, affordanceRelation);
+  AffRelationConstPtr affordanceRelation(new AffordanceRelation(aff1, aff2, AffordanceRelation::TANGENT));
+  ConstraintConstPtr constraint(new Constraint(name, affordanceRelation));
 
   (*constraints)[uid] = constraint;
   return constraint;
 }
 
 //Creates a Sequential Constraint object from an XML node and stores in an a map of uids to constraints
-ConstraintConstPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, AffConstPtr>* affordances, std::map<int, ConstraintConstPtr>* constraints) {
-  //printf("\nserializing sequential constraint\n");
+ConstraintConstPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, 
+						 std::map<int, AffConstPtr>* affordances, 
+						 std::map<int, ConstraintConstPtr>* constraints) 
+{
   xmlNode* current_node = NULL;
   char* name;
   int uid;
@@ -333,17 +333,10 @@ ConstraintConstPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, s
     }
   }
 
-/*
-  printf("\tname: %s\n", name);
-  printf("\tuid: %i\n", uid);
-  for (int i = 0; i < childuids.size(); i++ ) {
-      printf("\tchild %i: %i\n", i, childuids[i]);
-  }
-*/
 
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
   //I SHOULD NOT BE Constraint::SEQUENTIAL!!!!!!!!!!!!!
-  ConstraintConstPtr constraint = new Constraint(name, Constraint::SEQUENTIAL);
+  ConstraintPtr constraint(new Constraint(name, Constraint::SEQUENTIAL));
   for (int i = 0; i < childConstraints.size(); i++ ) {
     constraint->addConstraint(childConstraints[i]);
   }
@@ -382,26 +375,6 @@ void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
   std::map<int, AffConstPtr>* affordances = new std::map<int, AffConstPtr>();
   parseTreeHelper(doc, root, affordances, constraints);
   
-  /*
-  printf("affordance map has %lu entries\n", affordances->size());
-  printf("constraint map has %lu entries\n", constraints->size());
-
- for(std::map<int,ConstraintConstPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
-    printf("name: %s\n", (*ii).second->getName());
-  }
-
-  for(std::map<int,AffConstPtr>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
-    printf("name: %s\n", (*ii).second->getName().c_str());
-  }
-
-  for(std::map<int, ConstraintConstPtr>::iterator iter = constraints->begin(); iter != constraints->end(); ++iter)
-  {
-    printf("key: %i, name:%s\n", iter->first, iter->second->getName());
-  }
-
-  printf("affordance map has %i entries\n", affordances->size());
-  printf("constraint map has %i entries\n", constraints->size());
- */
 
   //Clear and update the affordance and constraint lists
   _affordanceList.clear();
@@ -419,9 +392,9 @@ void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
 //Wrapper call that kicks off the parsing of the file specified my _filename
 void DatabaseManager::parseFile(){
   xmlDocPtr readDoc;
-  readDoc = xmlReadFile(_filename, NULL, 0);
+  readDoc = xmlReadFile(_filename.c_str(), NULL, 0);
   if (readDoc == NULL) {
-    fprintf(stderr, "Failed to parse %s\n", _filename);
+    fprintf(stderr, "Failed to parse %s\n", _filename.c_str());
     exit(1);
   }
 

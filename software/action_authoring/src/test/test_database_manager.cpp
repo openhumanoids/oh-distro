@@ -3,8 +3,8 @@
 #include <queue>
 #include <set>
 #include <map>
-#include "Constraint.h"
-#include "DatabaseManager.h"
+#include "action_authoring/Constraint.h"
+#include "action_authoring/DatabaseManager.h"
 
 using namespace action_authoring;
 using namespace std;

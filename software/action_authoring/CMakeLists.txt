@@ -30,11 +30,13 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h
 add_library(action_authoring SHARED 
   src/AtomicConstraint.cpp
   src/AffordanceRelation.cpp
-  src/Constraint.cpp)
+  src/Constraint.cpp
+  src/DatabaseManager.cpp)
 
 pods_install_headers(src/AtomicConstraint.h 
-  src/AffordanceRelation.cpp
+  src/AffordanceRelation.h
   src/Constraint.h
+  src/DatabaseManager.h
   DESTINATION action_authoring)
 
 pods_install_libraries(action_authoring)
@@ -62,8 +64,8 @@ add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server
 target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance)
 
 #=====action database 
-#add_executable(runme
-#  src/DatabaseManager.cpp
-#  src/test_database_manager.cpp)
-#target_link_libraries(runme ${Boost_LIBRARIES} lcm affordance action_authoring)
-#pods_use_pkg_config_packages(runme ${REQUIRED_PACKAGES})
+add_executable(database_test
+  src/test/test_database_manager.cpp
+  src/DatabaseManager.cpp)
+target_link_libraries(database_test ${Boost_LIBRARIES} lcm affordance action_authoring)
+pods_use_pkg_config_packages(database_test ${REQUIRED_PACKAGES})
