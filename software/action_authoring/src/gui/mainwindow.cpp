@@ -87,22 +87,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     }
 
 
-    vector<AffPtr> affordances;
-    //_worldState.affordances.getAllAffordances(affordances);
-
-    while(_worldState.affordances.size() == 0)
-    {
-//    	_worldState.affordances(affordances);
-    	cout << "\n waiting for affordances to be non-zero" << endl;
-    	boost::this_thread::sleep(posix_time::seconds(1));
-    }
-
-
-    cout << "\n\n got " << _worldState.affordances.size() << " affordances " << endl;
-
     for(uint i = 0; i < _worldState.affordances.size(); i++)
-    {
-    	AffPtr next = affordances[i];
+      {
+    	AffPtr next = _worldState.affordances[i];
     	if (next->_otdf_id == AffordanceState::CYLINDER ||
     		next->_otdf_id == AffordanceState::BOX ||
     		next->_otdf_id == AffordanceState::SPHERE)
