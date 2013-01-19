@@ -7,6 +7,9 @@
 #include "DatabaseManager.h"
 
 using namespace action_authoring;
+using namespace std;
+using namespace boost;
+using namespace affordance;
 
 void tabprintf(std::string string, int num_tabs) {
   for ( int i = 0; i < num_tabs; i++ ) {
@@ -15,7 +18,7 @@ void tabprintf(std::string string, int num_tabs) {
   printf("%s\n", string.c_str());
 }
 
-void printConstraint(Constraint* constraint, int num_tabs=0) {
+void printConstraint(ConstraintConstPtr constraint, int num_tabs=0) {
   std::string constraintString;
   switch (constraint->getConstraintType()) {
   case Constraint::ATOMIC:
@@ -50,7 +53,8 @@ void printConstraint(Constraint* constraint, int num_tabs=0) {
     tabprintf(constraint->getAffordanceRelation()->getAffordance2()->getName(), num_tabs + 1);
   }
   else {
-    std::vector<Constraint*> constraints = constraint->getConstraints();
+    vector<ConstraintConstPtr> constraints;
+    constraint->getConstraints(constraints);
     for (int i = 0; i < constraints.size(); i++ ) {
       printConstraint(constraints[i], num_tabs + 1);
     }
@@ -59,14 +63,14 @@ void printConstraint(Constraint* constraint, int num_tabs=0) {
 
 int main() {
 
-  Affordance* rhand = new Affordance("Right Hand");
-  Affordance* lhand = new Affordance("Left Hand");
-  Affordance* rfoot = new Affordance("Right Foot");
-  Affordance* lfoot = new Affordance("Left Foot");
-  Affordance* wheel = new Affordance("Steering Wheel");
-  Affordance* gas   = new Affordance("Gas Pedal");
-  Affordance* brake = new Affordance("Brake Pedal");
-  std::vector<Affordance*> affordanceList;
+  AffConstPtr rhand  (new AffordanceState("Right Hand"));
+  AffConstPtr lhand  (new AffordanceState("Left Hand"));
+  AffConstPtr rfoot (new AffordanceState("Right Foot"));
+  AffConstPtr lfoot (new AffordanceState("Left Foot"));
+  AffConstPtr wheel (new AffordanceState("Steering Wheel"));
+  AffConstPtr gas   (new AffordanceState("Gas Pedal"));
+  AffConstPtr brake (new AffordanceState("Brake Pedal"));
+  std::vector<AffConstPtr> affordanceList;
   affordanceList.push_back(rhand);
   affordanceList.push_back(lhand);
   affordanceList.push_back(rfoot);
@@ -76,25 +80,24 @@ int main() {
   affordanceList.push_back(brake);
 
 
-  AffordanceRelation* rfoot_gas_relation = new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL);
-  AffordanceRelation* lfoot_brake_relation = new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT);
-  AffordanceRelation* rhand_wheel_relation = new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT);
-  AffordanceRelation* lhand_wheel_relation = new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT);
+  AffRelationConstPtr rfoot_gas_relation (new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL));
+  AffRelationConstPtr lfoot_brake_relation(new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT));
+  AffRelationConstPtr rhand_wheel_relation(new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT));
+  AffRelationConstPtr lhand_wheel_relation(new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT));
 
-  Constraint* rfoot_gas   = new Constraint((char*)"Right Foot to Gas Pedal", rfoot_gas_relation);
-  Constraint* lfoot_brake = new Constraint((char*)"Left Foot to Brake Pedal", lfoot_brake_relation);                                                                                            
-  Constraint* rhand_wheel = new Constraint((char*)"Right Hand To Wheel", rhand_wheel_relation);
-  Constraint* lhand_wheel = new Constraint((char*)"Left Hand To Wheel", lhand_wheel_relation);
-  std::vector<Constraint*> constraintList;
+  ConstraintConstPtr rfoot_gas  (new Constraint("Right Foot to Gas Pedal", rfoot_gas_relation));
+  ConstraintConstPtr lfoot_brake (new Constraint("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
+  ConstraintConstPtr rhand_wheel (new Constraint("Right Hand To Wheel", rhand_wheel_relation));
+  ConstraintConstPtr lhand_wheel (new Constraint("Left Hand To Wheel", lhand_wheel_relation));
+  std::vector<ConstraintConstPtr> constraintList;
   constraintList.push_back(rfoot_gas);
   constraintList.push_back(lfoot_brake);
   constraintList.push_back(rhand_wheel);
   constraintList.push_back(lhand_wheel);
 
-  Constraint* pedals  = new Constraint((char*)"Pedals", Constraint::SEQUENTIAL);
-  Constraint* hands   = new Constraint((char*)"Hands", Constraint::SEQUENTIAL);
-
-  Constraint* ingress = new Constraint((char*)"Ingress", Constraint::SEQUENTIAL);
+  ConstraintPtr pedals  (new Constraint("Pedals", Constraint::SEQUENTIAL));
+  ConstraintPtr hands   (new Constraint("Hands", Constraint::SEQUENTIAL));
+  ConstraintPtr ingress (new Constraint("Ingress", Constraint::SEQUENTIAL));
   
   pedals->addConstraint(rfoot_gas);
   pedals->addConstraint(lfoot_brake);
@@ -114,7 +117,7 @@ int main() {
 
 
   //To instantiate the databse manager, you must give it a file name
-  DatabaseManager* db = new DatabaseManager("constraints.xml");
+  shared_ptr<DatabaseManager> db (new DatabaseManager("constraints.xml"));
   
   //to change the file name later, use the setFilename method
   //db->setFilename("someotherfilename.xml");
@@ -128,8 +131,10 @@ int main() {
   db->parseFile();
 
   //to get the objects back, use db->get<YourTypeHere>()
-  std::vector<Affordance*> revivedAffordances = db->getAffordances();
-  std::vector<Constraint*> revivedConstraints = db->getConstraints();
+  std::vector<AffConstPtr> revivedAffordances;
+  db->getAffordances(revivedAffordances);
+  std::vector<ConstraintConstPtr> revivedConstraints;
+  db->getConstraints(revivedConstraints);
 
   //this is an example of how to iterate an print the names of the retrieved data items
   /*

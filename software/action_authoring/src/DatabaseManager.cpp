@@ -29,10 +29,14 @@ std::vector<Constraint*> revivedConstraints = db->getConstraints();
 #include <sstream>
 
 using namespace action_authoring;
+using namespace affordance;
+using namespace std;
 
-DatabaseManager::DatabaseManager(const char* filename) {
-	m_filename = filename;
-  m_guidCounter = 1;
+DatabaseManager::DatabaseManager(const string &filename) 
+{
+  //todo : use initializer list
+  _filename = filename;
+  _guidCounter = 1;
 }
 
 /***********************************
@@ -40,12 +44,14 @@ DatabaseManager::DatabaseManager(const char* filename) {
 ************************************/
 
 /*sets the name of the xml file that that constraint store will be written to*/
-void DatabaseManager::setFilename(const char* filename) {
-	m_filename = filename;
+void DatabaseManager::setFilename(const std::string &filename) 
+{
+	_filename = filename;
 }
 
 //Converts an integer uid into a string for writing to a file
-std::string DatabaseManager::intToString(int i) {
+std::string DatabaseManager::intToString(const int &i)
+{
   std::stringstream ss;
   ss << i;
   std::string result = ss.str();
@@ -54,24 +60,26 @@ std::string DatabaseManager::intToString(int i) {
 }
 
 //Looks up the guid of an affordance or assigns one if none exists
-int DatabaseManager::getGUID(Affordance* affordance){
-  int guid = m_affordanceToGUID[affordance];
-  if (guid <=  0) {
-    guid = m_guidCounter;
-    m_guidCounter += 1;
-    m_affordanceToGUID[affordance] = guid;
-  }
+int DatabaseManager::getGUID(AffConstPtr affordance)
+{
+  int guid = _affordanceToGUID[affordance];
+  if (guid <=  0) 
+    {
+      guid = _guidCounter;
+      _guidCounter += 1;
+      _affordanceToGUID[affordance] = guid;
+    }
   //printf("guid for %s is %i\n", affordance->getName().c_str(), guid);
   return guid;
 }
 
 //Looks up the guid of an affordance or assigns one if none exists
-int DatabaseManager::getGUID(Constraint* constraint){
-  int guid = m_constraintToGUID[constraint];
+int DatabaseManager::getGUID(ConstraintConstPtr constraint){
+  int guid = _constraintToGUID[constraint];
   if (guid <= 0) {
-    guid = m_guidCounter;
-    m_guidCounter += 1;
-    m_constraintToGUID[constraint] = guid;
+    guid = _guidCounter;
+    _guidCounter += 1;
+    _constraintToGUID[constraint] = guid;
   }
   //printf("guid for %s is %i\n", constraint->getName(), guid);
   return guid;
@@ -84,7 +92,7 @@ int DatabaseManager::getGUID(Constraint* constraint){
 ************************************/
 
 //Converts an affordance into an XML Node, and adds it as a child to another node
-void DatabaseManager::addAffordanceToNode(Affordance* affordance, xmlNodePtr node) {
+void DatabaseManager::addAffordanceToNode(AffConstPtr affordance, xmlNodePtr node) {
   //printf("storing affordance %s\n", affordance->getName().c_str());
   xmlNodePtr affordanceNode = xmlNewChild(node, NULL, BAD_CAST "affordance", NULL);
   std::string uidStr = intToString(getGUID(affordance));
@@ -93,7 +101,7 @@ void DatabaseManager::addAffordanceToNode(Affordance* affordance, xmlNodePtr nod
 }
 
 //Converts a constraint into an XML Node, and adds it as a child to another node
-void DatabaseManager::addConstraintToNode(Constraint* constraint, xmlNodePtr node) {
+void DatabaseManager::addConstraintToNode(ConstraintConstPtr constraint, xmlNodePtr node) {
   //Atomic Constraint conversion
 
   if (constraint->getConstraintType() == Constraint::ATOMIC) {
@@ -103,7 +111,8 @@ void DatabaseManager::addConstraintToNode(Constraint* constraint, xmlNodePtr nod
     //Atomic Constraint Info
     std::string uidStr = intToString(getGUID(constraint));
     xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
-    xmlNewChild(constraintNode, NULL, BAD_CAST "name", BAD_CAST constraint->getName());
+    xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
+		BAD_CAST constraint->getName().c_str());
 
     //Affordance 1 Reference
     std::string aff1UidStr = intToString(getGUID(constraint->getAffordanceRelation()->getAffordance1()));
@@ -121,7 +130,7 @@ void DatabaseManager::addConstraintToNode(Constraint* constraint, xmlNodePtr nod
     xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
     xmlNewChild(constraintNode, NULL, BAD_CAST "name", BAD_CAST constraint->getName());
 
-    std::vector <Constraint*>constraintList = constraint->getConstraints();
+    std::vector <ConstraintConstPtr>constraintList = constraint->getConstraints();
     
     std::string childUidStr;
     for ( int i = 0; i < constraintList.size(); i++ ) {
@@ -136,9 +145,9 @@ void DatabaseManager::addConstraintToNode(Constraint* constraint, xmlNodePtr nod
 
 //TODO
 //Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
-void DatabaseManager::postOrderAddConstraintToQueue(Constraint* constraint, std::queue<Constraint*>* q, std::set<Constraint*>* done) {
+void DatabaseManager::postOrderAddConstraintToQueue(ConstraintConstPtr constraint, std::queue<ConstraintConstPtr>* q, std::set<ConstraintConstPtr>* done) {
     if (constraint->getConstraintType() != Constraint::ATOMIC) {
-      std::vector<Constraint*> constraintList = constraint->getConstraints();
+      std::vector<ConstraintConstPtr> constraintList = constraint->getConstraints();
       for( int i = 0; i < constraintList.size(); i++ ) {
         postOrderAddConstraintToQueue(constraintList[i], q, done);
       }
@@ -150,7 +159,7 @@ void DatabaseManager::postOrderAddConstraintToQueue(Constraint* constraint, std:
 }
 
 //main API call for storing all objects
-void DatabaseManager::store(std::vector<Affordance*> affordanceList, std::vector<Constraint*> constraintList) {
+void DatabaseManager::store(std::vector<AffConstPtr> affordanceList, std::vector<ConstraintConstPtr> constraintList) {
 	//printf("beginning to store\n");
   xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
@@ -167,8 +176,8 @@ void DatabaseManager::store(std::vector<Affordance*> affordanceList, std::vector
 	}
 
   //printf("done storing affordances \n");
-	std::queue<Constraint*>* constraintQueue = new std::queue<Constraint*>();
-	std::set<Constraint*>* processedConstraints = new std::set<Constraint*>();
+	std::queue<ConstraintConstPtr>* constraintQueue = new std::queue<ConstraintConstPtr>();
+	std::set<ConstraintConstPtr>* processedConstraints = new std::set<ConstraintConstPtr>();
 
   //Use a postorder traversal of the constraint trees to ensure child constraints
   //are stored before the constraints that depend on them
@@ -183,7 +192,7 @@ void DatabaseManager::store(std::vector<Affordance*> affordanceList, std::vector
 	}
 
   //finally, save the file
-	xmlSaveFormatFileEnc(m_filename, doc, "UTF-8", 1);
+	xmlSaveFormatFileEnc(_filename, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
 }
@@ -204,16 +213,16 @@ char* value(xmlDocPtr doc, xmlNode* node) {
   return (char*)xmlNodeListGetString(doc, node->xmlChildrenNode, 1);
 }
 
-void printAffordanceMap(std::map<int, Affordance*>* affordances) {
+void printAffordanceMap(std::map<int, AffConstPtr>* affordances) {
   printf("Affordance Map:\n");
-  for(std::map<int, Affordance*>::iterator iter = affordances->begin(); iter != affordances->end(); ++iter)
+  for(std::map<int, AffConstPtr>::iterator iter = affordances->begin(); iter != affordances->end(); ++iter)
   {
     printf("key: %i, name:%s\n", iter->first, iter->second->getName().c_str());
   }
 }
 
 //Creates an Affordance object from an XML node and stores it in a map of uids to affordances
-Affordance* serializeAffordance(xmlDocPtr doc, xmlNode* node, std::map<int, Affordance*>* affordances) {
+AffConstPtr serializeAffordance(xmlDocPtr doc, xmlNode* node, std::map<int, AffConstPtr>* affordances) {
   //printf("\nserializing affordance\n");
   xmlNode* current_node = NULL;
   char* name;
@@ -237,13 +246,13 @@ Affordance* serializeAffordance(xmlDocPtr doc, xmlNode* node, std::map<int, Affo
   printf("\tname: %s\n", name);
   printf("\tuid: %i\n", uid);
 */
-  Affordance* affordance = new Affordance(name);
+  AffConstPtr affordance = new Affordance(name);
   (*affordances)[uid] = affordance;
   return affordance;
 }
 
 //Creates an Atomic Constraint object from an XML node and stores it in a map of uids to constraints
-Constraint* serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, Affordance*>* affordances, std::map<int, Constraint*>* constraints) {
+ConstraintConstPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, AffConstPtr>* affordances, std::map<int, ConstraintConstPtr>* constraints) {
   //printf("\nserializing atomic constraint\n");
   xmlNode* current_node = NULL;
   char* name;
@@ -278,8 +287,8 @@ Constraint* serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<int
   printf("\taff2uid: %i\n", aff2uid);
 */
 
-  Affordance* aff1 = (*affordances).find(aff1uid)->second;
-  Affordance* aff2 = (*affordances).find(aff2uid)->second;
+  Affordanc* aff1 = (*affordances).find(aff1uid)->second;
+  AffConstPtr aff2 = (*affordances).find(aff2uid)->second;
 
   //printAffordanceMap(affordances);
   //printf("aff1name: %s\n", aff1->getName().c_str());
@@ -287,19 +296,19 @@ Constraint* serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<int
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
   //I SHOULD NOT BE Constraint::TANGENT!!!!!!!!!!!!!
   AffordanceRelation* affordanceRelation = new AffordanceRelation(aff1, aff2, AffordanceRelation::TANGENT);
-  Constraint* constraint = new Constraint(name, affordanceRelation);
+  ConstraintConstPtr constraint = new Constraint(name, affordanceRelation);
 
   (*constraints)[uid] = constraint;
   return constraint;
 }
 
 //Creates a Sequential Constraint object from an XML node and stores in an a map of uids to constraints
-Constraint* serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, Affordance*>* affordances, std::map<int, Constraint*>* constraints) {
+ConstraintConstPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, AffConstPtr>* affordances, std::map<int, ConstraintConstPtr>* constraints) {
   //printf("\nserializing sequential constraint\n");
   xmlNode* current_node = NULL;
   char* name;
   int uid;
-  std::vector<Constraint*> childConstraints;
+  std::vector<ConstraintConstPtr> childConstraints;
   std::vector<int> childuids;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {
@@ -308,7 +317,7 @@ Constraint* serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map
         //get the child uid
         int childuid = atoi(value(doc, current_node));
         //look up the corresponding constraint in the map
-        Constraint* childConstraint = (*constraints).find(childuid)->second;
+        ConstraintConstPtr childConstraint = (*constraints).find(childuid)->second;
         childConstraints.push_back(childConstraint);
         childuids.push_back(childuid);
       }
@@ -334,7 +343,7 @@ Constraint* serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map
 
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
   //I SHOULD NOT BE Constraint::SEQUENTIAL!!!!!!!!!!!!!
-  Constraint* constraint = new Constraint(name, Constraint::SEQUENTIAL);
+  ConstraintConstPtr constraint = new Constraint(name, Constraint::SEQUENTIAL);
   for (int i = 0; i < childConstraints.size(); i++ ) {
     constraint->addConstraint(childConstraints[i]);
   }
@@ -344,7 +353,7 @@ Constraint* serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, std::map
 }
 
 //Dispatch the proper methods to create objects from XML nodes based on node name
-void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<int,  Affordance*>* affordances, std::map<int, Constraint*>* constraints) {
+void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<int,  AffConstPtr>* affordances, std::map<int, ConstraintConstPtr>* constraints) {
   xmlNode* current_node = NULL;
 
   for (current_node = xmlnode; current_node; current_node = current_node->next) {
@@ -369,23 +378,23 @@ void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<
 //Nice wrapper API call to parse the entire xml tree from a root node into Constraints and Affordances 
 void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
   //printf("calling helper\n");
-  std::map<int, Constraint*>* constraints = new std::map<int, Constraint*>();
-  std::map<int, Affordance*>* affordances = new std::map<int, Affordance*>();
+  std::map<int, ConstraintConstPtr>* constraints = new std::map<int, ConstraintConstPtr>();
+  std::map<int, AffConstPtr>* affordances = new std::map<int, AffConstPtr>();
   parseTreeHelper(doc, root, affordances, constraints);
   
   /*
   printf("affordance map has %lu entries\n", affordances->size());
   printf("constraint map has %lu entries\n", constraints->size());
 
- for(std::map<int,Constraint*>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
+ for(std::map<int,ConstraintConstPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
     printf("name: %s\n", (*ii).second->getName());
   }
 
-  for(std::map<int,Affordance*>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
+  for(std::map<int,AffConstPtr>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
     printf("name: %s\n", (*ii).second->getName().c_str());
   }
 
-  for(std::map<int, Constraint*>::iterator iter = constraints->begin(); iter != constraints->end(); ++iter)
+  for(std::map<int, ConstraintConstPtr>::iterator iter = constraints->begin(); iter != constraints->end(); ++iter)
   {
     printf("key: %i, name:%s\n", iter->first, iter->second->getName());
   }
@@ -395,24 +404,24 @@ void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
  */
 
   //Clear and update the affordance and constraint lists
-  m_affordanceList.clear();
-  m_constraintList.clear();
+  _affordanceList.clear();
+  _constraintList.clear();
   
-  for(std::map<int,Affordance*>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
-    m_affordanceList.push_back((*ii).second);
+  for(std::map<int,AffConstPtr>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
+    _affordanceList.push_back((*ii).second);
   }
 
-  for(std::map<int,Constraint*>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
-    m_constraintList.push_back((*ii).second);
+  for(std::map<int,ConstraintConstPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
+    _constraintList.push_back((*ii).second);
   }
 }
 
-//Wrapper call that kicks off the parsing of the file specified my m_filename
+//Wrapper call that kicks off the parsing of the file specified my _filename
 void DatabaseManager::parseFile(){
   xmlDocPtr readDoc;
-  readDoc = xmlReadFile(m_filename, NULL, 0);
+  readDoc = xmlReadFile(_filename, NULL, 0);
   if (readDoc == NULL) {
-    fprintf(stderr, "Failed to parse %s\n", m_filename);
+    fprintf(stderr, "Failed to parse %s\n", _filename);
     exit(1);
   }
 
@@ -429,10 +438,18 @@ void DatabaseManager::parseFile(){
 
 
 //Accessor methods
-std::vector<Affordance*> DatabaseManager::getAffordances() {
-	return m_affordanceList;
+void DatabaseManager::getAffordances(vector<AffConstPtr> &affordances) const
+{
+  affordances.clear();
+  affordances.insert(affordances.end(),
+		     _affordanceList.begin(),
+		     _affordanceList.end());
 }
 
-std::vector<Constraint*> DatabaseManager::getConstraints() {
-	return m_constraintList;
+void DatabaseManager::getConstraints(vector<ConstraintConstPtr> &constraints) const
+{
+  constraints.clear();
+  constraints.insert(constraints.end(),
+		     _constraintList.begin(),
+		     _constraintList.end());
 }

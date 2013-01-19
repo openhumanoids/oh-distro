@@ -1,9 +1,12 @@
-#pragma once
+#ifndef CONSTRAINT_H
+#define CONSTRAINT_H
+
 #include <string>
 #include <vector>  
+#include <boost/unordered_map.hpp>
+
 #include "Constraint.h"
 #include "AffordanceRelation.h"
-#include <boost/unordered_map.hpp>
 
 namespace action_authoring {
 
@@ -26,26 +29,33 @@ namespace action_authoring {
     
   //------------fields--------
   protected:
-    std::string m_name;
-    std::vector<boost::shared_ptr<Constraint> > m_constraints;
-    ConstraintType m_constraintType;
-    AffRelationConstPtr m_affordanceRelation;
+    std::string _name;
+    std::vector<boost::shared_ptr<const Constraint> > _constraints;
+    ConstraintType _constraintType;
+    AffRelationConstPtr _affordanceRelation;
 
     //-------Constructors--
   public:
     Constraint(const std::string &name, const ConstraintType &constraintType);
-    Constraint(const std::string &name, AffRelationConstPtr affordanceRelation);
+    Constraint(const std::string &name, const AffRelationConstPtr affordanceRelation);
     
     //Accessors
-    std::string getName() const { return m_name; };
-    ConstraintType getConstraintType() const { return m_constraintType; };
+    std::string getName() const { return _name; };
+    ConstraintType getConstraintType() const { return _constraintType; };
     
     //Available for non-ATOMIC constraints only
-    std::vector<boost::shared_ptr<Constraint> > getConstraints() const;
+    void getConstraints(std::vector<
+			boost::shared_ptr<const Constraint> > &constraints) const;
+
     void addConstraint(boost::shared_ptr<const Constraint> constraint);
     
     //Available for ATOMIC constraints only
-    AfforRelationConstPr getAffordance_Relation() const;
+    AffRelationConstPtr getAffordanceRelation() const;
   }; //class Constraint
 
+  typedef boost::shared_ptr<Constraint> ConstraintPtr;
+  typedef boost::shared_ptr<const Constraint> ConstraintConstPtr;
 } //namespace action_authoring
+
+
+#endif //CONSTRAINT_H

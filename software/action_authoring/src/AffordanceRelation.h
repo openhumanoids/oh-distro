@@ -1,4 +1,7 @@
-#pragma once
+#ifndef AFFORDANCE_RELATION_H
+#define AFFORDANCE_RELATION_H
+
+#include "boost/shared_ptr.hpp"
 #include "affordance/AffordanceState.h"
 
 namespace action_authoring
@@ -20,22 +23,25 @@ class AffordanceRelation
 
     //------------fields
  protected:
-    const AffConstPtr m_affordance1;
-    const AffConstPtr m_affordance2;
-    const RelationType m_relationType;
+    const affordance::AffConstPtr _affordance1;
+    const affordance::AffConstPtr _affordance2;
+    const RelationType _relationType;
 
     //------------Constructor--------
  public:
-  AffordanceRelation(AffConstPtr affordance1, AffConstPtr affordance2, 
+    AffordanceRelation(affordance::AffConstPtr affordance1, affordance::AffConstPtr affordance2, 
 		     const AffordanceRelation::RelationType &relationType);
 
   //---------------Accessors
-  AffConstPtr getAffordance1() const { return m_affordance1; };
-  AffConstPtr getAffordance2() const { return m_affordance2; };
-  RelationType getRelationType() const { return m_relationType; };
+  affordance::AffConstPtr getAffordance1() const { return _affordance1; };
+  affordance::AffConstPtr getAffordance2() const { return _affordance2; };
+  RelationType getRelationType() const { return _relationType; };
 };  //class AffordanceRelation
  
  typedef boost::shared_ptr<AffordanceRelation> AffRelationPtr;
  typedef boost::shared_ptr<const AffordanceRelation> AffRelationConstPtr;
 
 } //namespace action_authroing
+
+
+#endif //AFFORDANCE_RELATION_H

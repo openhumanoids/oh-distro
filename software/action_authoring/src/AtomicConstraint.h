@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ATOMIC_CONSTRAINT_H
+#define ATOMIC_CONSTRAINT_H
 
 #include <string>
 #include "affordance/AffordanceState.h"
@@ -49,3 +50,5 @@ protected:
 	typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;
 
 } //namespace action_authoring
+
+#endif //ATOMIC_CONSTRAINT_H

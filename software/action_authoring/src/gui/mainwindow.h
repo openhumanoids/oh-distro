@@ -29,7 +29,7 @@
 #include "affordance/AffordanceUpWrapper.h"
 
 // Local includes
-#include "../AtomicConstraint.h"
+#include "action_authoring/AtomicConstraint.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
 

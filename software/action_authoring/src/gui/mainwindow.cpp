@@ -34,17 +34,17 @@ vector<AffPtr> MainWindow::demoPopulateConstraints()
     AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder", 23802, 83));
 
     vector<AffPtr> _all_affordances;
-    _all_affordances.push_back(rhand);
-    _all_affordances.push_back(lhand);
-    _all_affordances.push_back(rfoot);
-    _all_affordances.push_back(lfoot);
-    _all_affordances.push_back(wheel);
-    _all_affordances.push_back(gas);
-    _all_affordances.push_back(brake);
+    _worldState.affordances.push_back(rhand);
+    _worldState.affordances.push_back(lhand);
+    _worldState.affordances.push_back(rfoot);
+    _worldState.affordances.push_back(lfoot);
+    _worldState.affordances.push_back(wheel);
+    _worldState.affordances.push_back(gas);
+    _worldState.affordances.push_back(brake);
 
-    _all_affordances.push_back(sphere);
-    _all_affordances.push_back(box);
-    _all_affordances.push_back(cylinder);
+    _worldState.affordances.push_back(sphere);
+    _worldState.affordances.push_back(box);
+    _worldState.affordances.push_back(cylinder);
     
     /*    TODO : read from server */
     Qt4ConstraintPtr rfoot_gas   = Qt4ConstraintPtr(new Qt4Constraint(
@@ -162,7 +162,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     // Get the toggle panels from the Qt4Constraint objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	_authoringState._all_gui_constraints[i]->setAffordances(_all_affordances, _all_affordances);
+	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
 
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
 	// todo: currently using constraint name as UID

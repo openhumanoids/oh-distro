@@ -1,4 +1,5 @@
-#pragma once
+#ifndef QT4CONSTRAINT_H
+#define QT4CONSTRAINT_H
 
 // QT includes
 #include <QtGui>
@@ -7,7 +8,7 @@
 // Custom QT widget
 #include "togglepanel.h"
 
-#include "../AtomicConstraint.h"
+#include "action_authoring/AtomicConstraint.h"
 
 namespace action_authoring
 {
@@ -55,3 +56,5 @@ namespace action_authoring
 
     typedef boost::shared_ptr<Qt4Constraint> Qt4ConstraintPtr;
 }
+
+#endif //QT4CONSTRAINT_H
