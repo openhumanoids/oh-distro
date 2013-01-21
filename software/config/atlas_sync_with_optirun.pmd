@@ -19,6 +19,10 @@ group "core" {
         exec = "rosrun LCM2ROS_translator syncActuatorCmds_translator";
         host = "localhost";
     }
+    cmd "l2r_config" {
+        exec = "rosrun LCM2ROS_translator configurationCommandTranslator";
+        host = "localhost";
+    }
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
@@ -27,7 +31,7 @@ group "core" {
 
 group "gazebo" {
     cmd "gfe" {
-        exec = "optirun roslaunch mit_drcsim_scripts mit_robot_PnC.launch";
+        exec = "optirun roslaunch mit_drcsim_scripts atlas_control.launch";
         host = "localhost";
     }
 
