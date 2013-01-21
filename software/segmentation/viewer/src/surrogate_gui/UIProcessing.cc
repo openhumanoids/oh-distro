@@ -228,6 +228,19 @@ namespace surrogate_gui
 			return;
 		}
 
+		// Handle selected geometric primitive TODO
+		switch(getGeometricPrimitive()){
+		case CYLINDER: break;
+		case SPHERE: break;
+		case PLANE: break;
+		case LINE: break;
+		case TORUS: break;
+		case CUBE: break;
+		default: 
+		  _surrogate_renderer.setWarningText("Unexpected geometric primitive selected.");
+		  break;
+		};
+
 		vector<PointIndices::Ptr> planes = Segmentation::segment(_surrogate_renderer._display_info.cloud,
 									 currObj->indices);
 		if (planes.size() == 0)
