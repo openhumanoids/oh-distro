@@ -40,7 +40,7 @@ namespace action_authoring
 {
 
   //===============WORLD STATE
-
+  class InvalidStateException : public std::runtime_error {public: InvalidStateException(const std::string &msg) : std::runtime_error(msg){}};
 
 /**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
@@ -50,9 +50,8 @@ struct WorldStateView
   std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
-  std::vector<opengl::OpenGL_Object*> glObjects;
-
-  //std::vector<collision::Collision_Object> collisionObjs;
+  std::vector<opengl::OpenGL_Object*> glObjects; //objects for rendering
+  std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
  
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)

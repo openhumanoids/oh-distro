@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'mainwindow.h'
 **
-** Created: Fri Jan 18 11:46:21 2013
+** Created: Mon Jan 21 17:43:52 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -31,26 +31,26 @@ static const uint qt_meta_data_action_authoring__MainWindow[] = {
        0,       // signalCount
 
  // slots: signature, parameters, type, tag, flags
-      36,   30,   29,   29, 0x08,
-      53,   29,   29,   29, 0x08,
-      72,   29,   29,   29, 0x08,
-      91,   29,   29,   29, 0x08,
-     114,   29,   29,   29, 0x08,
-     129,   29,   29,   29, 0x08,
-     146,   29,   29,   29, 0x08,
-     188,  175,   29,   29, 0x08,
-     219,  175,   29,   29, 0x08,
+      30,   29,   29,   29, 0x08,
+      60,   54,   29,   29, 0x08,
+      77,   29,   29,   29, 0x08,
+      96,   29,   29,   29, 0x08,
+     115,   29,   29,   29, 0x08,
+     138,   29,   29,   29, 0x08,
+     153,   29,   29,   29, 0x08,
+     170,   29,   29,   29, 0x08,
+     204,  194,   29,   29, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_action_authoring__MainWindow[] = {
-    "action_authoring::MainWindow\0\0value\0"
+    "action_authoring::MainWindow\0\0"
+    "affordanceUpdateCheck()\0value\0"
     "updateJoint(int)\0handleLoadAction()\0"
     "handleSaveAction()\0handleDeleteWaypoint()\0"
     "handleMoveUp()\0handleMoveDown()\0"
-    "handleToggleExpandContract()\0waypointName\0"
-    "handleRobotLinkChange(QString)\0"
+    "handleRobotLinkChange()\0activator\0"
     "setSelectedAction(QString)\0"
 };
 
@@ -60,14 +60,14 @@ void action_authoring::MainWindow::qt_static_metacall(QObject *_o, QMetaObject::
         Q_ASSERT(staticMetaObject.cast(_o));
         MainWindow *_t = static_cast<MainWindow *>(_o);
         switch (_id) {
-        case 0: _t->updateJoint((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 1: _t->handleLoadAction(); break;
-        case 2: _t->handleSaveAction(); break;
-        case 3: _t->handleDeleteWaypoint(); break;
-        case 4: _t->handleMoveUp(); break;
-        case 5: _t->handleMoveDown(); break;
-        case 6: _t->handleToggleExpandContract(); break;
-        case 7: _t->handleRobotLinkChange((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 0: _t->affordanceUpdateCheck(); break;
+        case 1: _t->updateJoint((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->handleLoadAction(); break;
+        case 3: _t->handleSaveAction(); break;
+        case 4: _t->handleDeleteWaypoint(); break;
+        case 5: _t->handleMoveUp(); break;
+        case 6: _t->handleMoveDown(); break;
+        case 7: _t->handleRobotLinkChange(); break;
         case 8: _t->setSelectedAction((*reinterpret_cast< QString(*)>(_a[1]))); break;
         default: ;
         }

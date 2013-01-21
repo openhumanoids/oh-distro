@@ -21,12 +21,20 @@ using namespace boost;
  */ 
 void MainWindow::handleAffordancesChanged()
 {
-  //-------------redraw
-  _widget_opengl.opengl_scene().clear_objects();
+  //------------------------REDRAW
+  //clear the scene
+  if (_worldState.glObjects.size() != _worldState.collisionObjs.size())
+    throw InvalidStateException("glObjects and collisionObjs should have the same size");
+
+  _widget_opengl.opengl_scene().clear_objects();  
   for(uint i = 0; i < _worldState.glObjects.size(); i++)
-    delete _worldState.glObjects[i];
+    {
+      delete _worldState.glObjects[i];
+      delete _worldState.collisionObjs[i];
+    }
+      
   _worldState.glObjects.clear();
-  
+  _worldState.collisionObjs.clear();
 
   for(uint i = 0; i < _worldState.affordances.size(); i++)
     {
@@ -38,11 +46,27 @@ void MainWindow::handleAffordancesChanged()
 	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
+	  //todo: Create collision object, add to scene, and add to _worldState.glObjects
+	  //like : _widget_opengl.add_object_with_collision(_collision_object_box);  //todo
     	}
     }
 
   
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
+  //_widget_opengl.add_object_with_collision(_collision_object_gfe);
+
+  //=========collision objects
+
+  /*todo
+
+  // build collision objects
+	/*todo  construct collision objects from the affordances
+	_collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    _collision_object_sphere = new Collision_Object_Sphere("sphere1", 0.125, Vector3f(-0.5, -0.5, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
+    //_collision_object_gfe("robot1");
+*/
+
 
   //----------handle constraint macros 
  
@@ -96,30 +120,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	  this, SLOT(affordanceUpdateCheck()));
   timer->start(1000); //1Hz  
 
-  //connect to 
-
-  //wait until we see some demo affordances populate
-  //todo : remove this
-  /*vector<AffConstPtr> affs;
-  _worldState.affServerWrapper.getAllAffordances(affs);
-  while(affs.size() == 0)
-    {
-      _worldState.affServerWrapper.getAllAffordances(affs);
-      cout << "\nWaiting for affordances to be non-empty" << endl;
-      boost::this_thread::sleep(boost::posix_time::seconds(1));
-    }
-  */
-  
-
-
-
-  // build collision objects
-	/*todo  construct collision objects from the affordances
-	_collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    _collision_object_sphere = new Collision_Object_Sphere("sphere1", 0.125, Vector3f(-0.5, -0.5, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    //_collision_object_gfe("robot1");
-*/
     // read the joints from the robot state
     std::vector<std::string> joint_names;
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
@@ -129,15 +129,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     	joint_names.push_back(state_gfe_joint.id());
     }
   
-
-    /*todo
-    _widget_opengl.add_object_with_collision(_collision_object_box);
-    _widget_opengl.add_object_with_collision(_collision_object_cylinder);
-    _widget_opengl.add_object_with_collision(_collision_object_sphere);
-    	*/
-    //_widget_opengl.add_object_with_collision(_collision_object_gfe);
-
-
     _signalMapper = new QSignalMapper(this);
 
     QVBoxLayout* layout = new QVBoxLayout();
