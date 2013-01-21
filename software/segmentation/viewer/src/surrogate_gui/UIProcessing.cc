@@ -228,19 +228,6 @@ namespace surrogate_gui
 			return;
 		}
 
-		// Handle selected geometric primitive TODO
-		switch(getGeometricPrimitive()){
-		case CYLINDER: break;
-		case SPHERE: break;
-		case PLANE: break;
-		case LINE: break;
-		case TORUS: break;
-		case CUBE: break;
-		default: 
-		  _surrogate_renderer.setWarningText("Unexpected geometric primitive selected.");
-		  break;
-		};
-
 		vector<PointIndices::Ptr> planes = Segmentation::segment(_surrogate_renderer._display_info.cloud,
 									 currObj->indices);
 		if (planes.size() == 0)
@@ -833,14 +820,34 @@ namespace surrogate_gui
 		_surrogate_renderer.getTrackInfo()->displayTrackingCloud 	= true;
 	}
 
-	void UIProcessing::handleAffordancePubButton()
+  void UIProcessing::handleAffordancePubButton()
+  {
+	  // Handle selected geometric primitive TODO
+	  switch(getGeometricPrimitive()){
+	  case CYLINDER: handleAffordancePubButtonCylinder(); break;
+	  case SPHERE:   handleAffordancePubButtonSphere(); break;
+	  case PLANE:    handleAffordancePubButtonPlane(); break;
+	  case LINE:     handleAffordancePubButtonLine(); break;
+	  case TORUS:    handleAffordancePubButtonTorus(); break;
+	  case CUBE:     handleAffordancePubButtonCube(); break;
+	  default: 
+	    _surrogate_renderer.setWarningText("Unexpected geometric primitive selected.");
+	    break;
+	  };
+	  	  
+    
+
+  }
+  
+
+	void UIProcessing::handleAffordancePubButtonCylinder()
 	{
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_t affordanceMsg;
 	  	  
 	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER;
 	  affordanceMsg.name = "cylinder";
-	  	  
+
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
@@ -899,6 +906,32 @@ namespace surrogate_gui
 	  
 	  return;
 	}
+
+	void UIProcessing::handleAffordancePubButtonSphere()
+	{
+	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	}
+
+	void UIProcessing::handleAffordancePubButtonPlane()
+	{
+	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	}
+
+	void UIProcessing::handleAffordancePubButtonLine()
+	{
+	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	}
+
+	void UIProcessing::handleAffordancePubButtonTorus()
+	{
+	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	}
+
+	void UIProcessing::handleAffordancePubButtonCube()
+	{
+	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	}
+
   
 	void UIProcessing::handleFullResetButton(BotGtkParamWidget *pw)
 	{
