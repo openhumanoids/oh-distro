@@ -23,19 +23,23 @@ class AffordanceRelation
 
     //------------fields
  protected:
-    const affordance::AffConstPtr _affordance1;
-    const affordance::AffConstPtr _affordance2;
-    const RelationType _relationType;
+    affordance::AffPtr _affordance1;
+    affordance::AffPtr _affordance2;
+    RelationType _relationType;
 
     //------------Constructor--------
  public:
-    AffordanceRelation(affordance::AffConstPtr affordance1, affordance::AffConstPtr affordance2, 
-		     const AffordanceRelation::RelationType &relationType);
+    AffordanceRelation(affordance::AffPtr affordance1, affordance::AffPtr affordance2, 
+		       AffordanceRelation::RelationType relationType);
+
+  //---------------Setters
+  void setAffordance1(affordance::AffPtr a1) { _affordance1 = a1; };
+  void setAffordance2(affordance::AffPtr a2) { _affordance2 = a2; };   
 
   //---------------Accessors
-  affordance::AffConstPtr getAffordance1() const { return _affordance1; };
-  affordance::AffConstPtr getAffordance2() const { return _affordance2; };
-  RelationType getRelationType() const { return _relationType; };
+  affordance::AffPtr getAffordance1() { return _affordance1; };
+  affordance::AffPtr getAffordance2() { return _affordance2; };
+  RelationType getRelationType() { return _relationType; };
 };  //class AffordanceRelation
  
  typedef boost::shared_ptr<AffordanceRelation> AffRelationPtr;

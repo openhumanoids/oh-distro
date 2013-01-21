@@ -19,7 +19,7 @@ using namespace boost;
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-vector<AffPtr> MainWindow::demoPopulateConstraints()
+void MainWindow::demoPopulateConstraints()
 {
     AffPtr rhand = AffPtr(new AffordanceState("Right Hand", 235, 38252));
     AffPtr lhand = AffPtr(new AffordanceState("Left Hand",  852365807, 3723));
@@ -33,7 +33,6 @@ vector<AffPtr> MainWindow::demoPopulateConstraints()
     AffPtr box 		= AffPtr(new AffordanceState("Yellow Box", 3280235, 3828));
     AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder", 23802, 83));
 
-    vector<AffPtr> _all_affordances;
     _worldState.affordances.push_back(rhand);
     _worldState.affordances.push_back(lhand);
     _worldState.affordances.push_back(rfoot);
@@ -46,20 +45,20 @@ vector<AffPtr> MainWindow::demoPopulateConstraints()
     _worldState.affordances.push_back(box);
     _worldState.affordances.push_back(cylinder);
     
-    /*    TODO : read from server */
-    Qt4ConstraintPtr rfoot_gas   = Qt4ConstraintPtr(new Qt4Constraint(
-							AtomicConstraintPtr(new AtomicConstraint("Gas Pedal Constraint", rfoot, gas, AtomicConstraint::NORMAL))));
-    Qt4ConstraintPtr lfoot_brake = Qt4ConstraintPtr(new Qt4Constraint(
-							AtomicConstraintPtr(new AtomicConstraint("Brake Pedal Constraint", lfoot, brake, AtomicConstraint::TANGENT))));
-    Qt4ConstraintPtr rhand_wheel = Qt4ConstraintPtr(new Qt4Constraint(
-							AtomicConstraintPtr(new AtomicConstraint("Right Hand Wheel Constraint", rhand, wheel, AtomicConstraint::TANGENT))));
-    Qt4ConstraintPtr lhand_wheel = Qt4ConstraintPtr(new Qt4Constraint(
-							AtomicConstraintPtr(new AtomicConstraint("Left Hand Wheel Constraint", lhand, wheel, AtomicConstraint::TANGENT))));
-    _authoringState._all_gui_constraints.push_back(rfoot_gas);
-    _authoringState._all_gui_constraints.push_back(lfoot_brake);
-    _authoringState._all_gui_constraints.push_back(rhand_wheel);
-    _authoringState._all_gui_constraints.push_back(lhand_wheel);
-    return _all_affordances;
+    AffRelationPtr rfoot_gas_relation (new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL));
+    AffRelationPtr lfoot_brake_relation(new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT));
+    AffRelationPtr rhand_wheel_relation(new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT));
+    AffRelationPtr lhand_wheel_relation(new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT));
+
+    ConstraintPtr rfoot_gas  (new Constraint("Right Foot to Gas Pedal", rfoot_gas_relation));
+    ConstraintPtr lfoot_brake (new Constraint("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
+    ConstraintPtr rhand_wheel (new Constraint("Right Hand To Wheel", rhand_wheel_relation));
+    ConstraintPtr lhand_wheel (new Constraint("Left Hand To Wheel", lhand_wheel_relation));
+
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(rfoot_gas));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(lfoot_brake));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(rhand_wheel));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(lhand_wheel));
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -144,22 +143,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     vbox->addWidget(topmenugroup);
 
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
-
-    std::vector<AffPtr> _all_affordances = demoPopulateConstraints();
-
-    // Get the toggle panels from the Qt4Constraint objects and populate the gui
-    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
-
-	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
-	// todo: currently using constraint name as UID
-	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
-				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraint()->getName()));
-	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
-	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
-
-	vbox->addWidget(tp);
-    }
+    // load the constraints
+    //std::vector<AffPtr> _all_affordances =
+    _constraint_vbox = vbox;
+    demoPopulateConstraints();
+    makeGUIFromConstraints();
 
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
@@ -262,6 +250,23 @@ MainWindow::
 handleLoadAction() {
  QString fileName = QFileDialog::getOpenFileName(this,
      tr("Open Action"), "", tr("Action XML Files (*.xml)"));
+
+ DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
+ dbm->parseFile();
+
+  std::vector<ConstraintPtr> revivedConstraints;
+  dbm->getConstraints(revivedConstraints);
+
+//  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
+//      delete _authoringState._all_gui_constraints[i].get();
+//  }
+
+  _authoringState._all_gui_constraints.clear();
+  for (int i = 0; i < revivedConstraints.size(); i++) {
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(revivedConstraints[i]));
+  }
+  makeGUIFromConstraints();
+
 }
 
 void
@@ -269,6 +274,15 @@ MainWindow::
 handleSaveAction() {
  QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Action"), "", tr("Action XML Files (*.xml)"));  
+
+ vector<ConstraintPtr> all_constraints;
+ for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
+     all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraint());
+ }
+
+ DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
+ dbm->store(_worldState.affordances, all_constraints);
+ 
 }
 
 void
@@ -336,4 +350,22 @@ setSelectedAction(QString activator){
 /*
     handleRobotLinkChange();
 */
+}
+
+void
+MainWindow::
+makeGUIFromConstraints() {
+    // Get the toggle panels from the Qt4Constraint objects and populate the gui
+    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
+
+	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
+	// todo: currently using constraint name as UID
+	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
+				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraint()->getName()));
+	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
+	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
+
+	_constraint_vbox->addWidget(tp);
+    }
 }

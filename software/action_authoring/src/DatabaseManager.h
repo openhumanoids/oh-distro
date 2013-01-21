@@ -23,17 +23,17 @@ namespace action_authoring
     int _guidCounter;
     std::map<affordance::AffConstPtr, int> _affordanceToGUID; //todo: comment like "maps from { } --> {}
     std::map<ConstraintConstPtr, int> _constraintToGUID; //todo : see above
-    std::vector<affordance::AffConstPtr> _affordanceList; 
-    std::vector<ConstraintConstPtr> _constraintList;
+    std::vector<affordance::AffPtr> _affordanceList; 
+    std::vector<ConstraintPtr> _constraintList;
     
     //writing to file helper function
     //todo : in the cpp file, add doxygen comments for each of these methods
     static std::string intToString(const int &i);
-    void addAffordanceToNode(affordance::AffConstPtr affordance, xmlNodePtr node);
-    void addConstraintToNode(ConstraintConstPtr constraint, xmlNodePtr node);
-    void postOrderAddConstraintToQueue(ConstraintConstPtr constraint, 
-				       std::queue<ConstraintConstPtr>* q, 
-				       std::set<ConstraintConstPtr>* done);
+    void addAffordanceToNode(affordance::AffPtr affordance, xmlNodePtr node);
+    void addConstraintToNode(ConstraintPtr constraint, xmlNodePtr node);
+    void postOrderAddConstraintToQueue(ConstraintPtr constraint, 
+				       std::queue<ConstraintPtr>* q, 
+				       std::set<ConstraintPtr>* done);
     int getGUID(ConstraintConstPtr constraint);
     int getGUID(affordance::AffConstPtr affordance);
     
@@ -41,8 +41,8 @@ namespace action_authoring
     //todo: add comments in the cpp file for parseTreeHelper and parseTree
     //doxygen style.  describe the arguments and functionality of each method
     void parseTreeHelper(xmlDocPtr doc, xmlNode *xmlnode, 
-			 std::map<int,  affordance::AffConstPtr> *affordances,
-			 std::map<int, ConstraintConstPtr> *constraints);
+			 std::map<int,  affordance::AffPtr> *affordances,
+			 std::map<int, ConstraintPtr> *constraints);
     void parseTree(xmlDocPtr doc, xmlNode *root);
     
   public:
@@ -54,14 +54,14 @@ namespace action_authoring
     
     //Writing data to a file
     //todo : add (in the cpp file) doxygen style comments 
-    void store(const std::vector<affordance::AffConstPtr> &affordanceList, 
-	       const std::vector<ConstraintConstPtr> &constrainList);
+    void store(const std::vector<affordance::AffPtr> &affordanceList, 
+	       const std::vector<ConstraintPtr> &constrainList);
     
     //Reading data from a file
     //todo : add (in the cpp file) doxygen style comments
     void parseFile();
-    void getAffordances(std::vector<affordance::AffConstPtr> &affordacnes) const;
-    void getConstraints(std::vector<ConstraintConstPtr> &constraints) const;
+    void getAffordances(std::vector<affordance::AffPtr> &affordacnes);
+    void getConstraints(std::vector<ConstraintPtr> &constraints);
   }; //class DatabaseManager
 } //namespace action_authoring
 

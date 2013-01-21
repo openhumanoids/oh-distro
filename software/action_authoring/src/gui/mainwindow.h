@@ -29,10 +29,12 @@
 #include "affordance/AffordanceUpWrapper.h"
 
 // Local includes
-#include "action_authoring/AtomicConstraint.h"
+//#include "action_authoring/AtomicConstraint.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
-
+#include "action_authoring/AffordanceRelation.h"
+#include "action_authoring/Constraint.h"
+#include "action_authoring/DatabaseManager.h"
 
 namespace action_authoring
 {
@@ -81,18 +83,19 @@ protected:
     state::State_GFE _state_gfe;
     QSignalMapper* _signalMapper;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
+    QVBoxLayout* _constraint_vbox;
 
     //================world state and authoring state
 private:
     WorldStateView _worldState; //view of the world state
     AuthoringState _authoringState; //state of authoring
-
     //todo: move this into another class
     std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
-    std::vector<affordance::AffPtr> demoPopulateConstraints(); //todo : remove this
+    void demoPopulateConstraints(); //todo : remove this
     std::string getSelectedJointName();
+    void makeGUIFromConstraints();
 
 private slots:
     void updateJoint(int value);

@@ -7,8 +7,8 @@
 #include <QApplication>
 // Custom QT widget
 #include "togglepanel.h"
-
-#include "action_authoring/AtomicConstraint.h"
+#include "action_authoring/AffordanceRelation.h"
+#include "action_authoring/Constraint.h"
 
 namespace action_authoring
 {
@@ -19,15 +19,16 @@ namespace action_authoring
     Q_OBJECT
 
     public:
-	Qt4Constraint(AtomicConstraintPtr atomicConstraint);
-        TogglePanel* getPanel(); 
+	Qt4Constraint(ConstraintPtr atomicConstraint);
+	~Qt4Constraint();
+        TogglePanel* getPanel();
 	// read the state from the gui elements already referenced
 	void updateElementsFromState();
 	void setSelected(bool selected);
 
 	void setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
 			    std::vector<affordance::AffPtr> &rightSideAffordances);
-	AtomicConstraintPtr getConstraint();
+	ConstraintPtr getConstraint();
 	std::string getSelectedLinkName();
 	
     protected:
@@ -39,7 +40,7 @@ namespace action_authoring
         QComboBox* _gui_robotJointType;
         QComboBox* _gui_constraintType;
         QComboBox* _gui_affordanceType;
-        AtomicConstraintPtr _constraint;
+        ConstraintPtr _constraint;
 
         // should be static
         std::vector<affordance::AffPtr> _leftSideAffordances;

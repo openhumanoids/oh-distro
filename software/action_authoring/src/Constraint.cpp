@@ -3,14 +3,14 @@
 
 using namespace action_authoring;
 using namespace std;
-Constraint::Constraint(const string &name, const ConstraintType &constraintType) 
+Constraint::Constraint(const string &name, ConstraintType constraintType) 
   :  _constraintType(constraintType),
      _name(name),
      _affordanceRelation()
 {
 }
 
-Constraint::Constraint(const string &name, const AffRelationConstPtr affordanceRelation) 
+Constraint::Constraint(const string &name, AffRelationPtr affordanceRelation) 
 {
   //todo : user constructor initialier list as in above constructor
   _constraintType = Constraint::ATOMIC;
@@ -18,7 +18,7 @@ Constraint::Constraint(const string &name, const AffRelationConstPtr affordanceR
   _affordanceRelation = affordanceRelation;
 }
 
-void Constraint::addConstraint(ConstraintConstPtr constraint) {
+void Constraint::addConstraint(ConstraintPtr constraint) {
   if (_constraintType == Constraint::ATOMIC)
     {
       throw InvalidMethodCallForContraintTypeException("Cannot add a constraint to an atomic constraint.");
@@ -27,7 +27,7 @@ void Constraint::addConstraint(ConstraintConstPtr constraint) {
   _constraints.push_back(constraint);
 }
 
-void Constraint::getConstraints(vector<ConstraintConstPtr> &constraints) const 
+void Constraint::getConstraints(vector<ConstraintPtr> &constraints) 
 {
   if (_constraintType == Constraint::ATOMIC) 
     {
@@ -39,7 +39,7 @@ void Constraint::getConstraints(vector<ConstraintConstPtr> &constraints) const
 		     _constraints.end());
 }
 
-AffRelationConstPtr Constraint::getAffordanceRelation() const {
+AffRelationPtr Constraint::getAffordanceRelation() {
   if (_constraintType != Constraint::ATOMIC) {
    throw InvalidMethodCallForContraintTypeException("Cannot get affordance relation for non-atomic constraint.");
   }
@@ -47,3 +47,9 @@ AffRelationConstPtr Constraint::getAffordanceRelation() const {
 }
 
 
+void Constraint::setAffordanceRelation(AffRelationPtr affordanceRelation) {
+  if (_constraintType != Constraint::ATOMIC) {
+   throw InvalidMethodCallForContraintTypeException("Cannot get affordance relation for non-atomic constraint.");
+  }
+  _affordanceRelation = affordanceRelation;
+}

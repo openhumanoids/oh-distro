@@ -18,7 +18,7 @@ void tabprintf(std::string string, int num_tabs) {
   printf("%s\n", string.c_str());
 }
 
-void printConstraint(ConstraintConstPtr constraint, int num_tabs=0) {
+void printConstraint(ConstraintPtr constraint, int num_tabs=0) {
   std::string constraintString;
   switch (constraint->getConstraintType()) {
   case Constraint::ATOMIC:
@@ -53,7 +53,7 @@ void printConstraint(ConstraintConstPtr constraint, int num_tabs=0) {
     tabprintf(constraint->getAffordanceRelation()->getAffordance2()->getName(), num_tabs + 1);
   }
   else {
-    vector<ConstraintConstPtr> constraints;
+    vector<ConstraintPtr> constraints;
     constraint->getConstraints(constraints);
     for (int i = 0; i < constraints.size(); i++ ) {
       printConstraint(constraints[i], num_tabs + 1);
@@ -63,14 +63,14 @@ void printConstraint(ConstraintConstPtr constraint, int num_tabs=0) {
 
 int main() {
 
-  AffConstPtr rhand  (new AffordanceState("Right Hand"));
-  AffConstPtr lhand  (new AffordanceState("Left Hand"));
-  AffConstPtr rfoot (new AffordanceState("Right Foot"));
-  AffConstPtr lfoot (new AffordanceState("Left Foot"));
-  AffConstPtr wheel (new AffordanceState("Steering Wheel"));
-  AffConstPtr gas   (new AffordanceState("Gas Pedal"));
-  AffConstPtr brake (new AffordanceState("Brake Pedal"));
-  std::vector<AffConstPtr> affordanceList;
+  AffPtr rhand  (new AffordanceState("Right Hand"));
+  AffPtr lhand  (new AffordanceState("Left Hand"));
+  AffPtr rfoot (new AffordanceState("Right Foot"));
+  AffPtr lfoot (new AffordanceState("Left Foot"));
+  AffPtr wheel (new AffordanceState("Steering Wheel"));
+  AffPtr gas   (new AffordanceState("Gas Pedal"));
+  AffPtr brake (new AffordanceState("Brake Pedal"));
+  std::vector<AffPtr> affordanceList;
   affordanceList.push_back(rhand);
   affordanceList.push_back(lhand);
   affordanceList.push_back(rfoot);
@@ -79,17 +79,16 @@ int main() {
   affordanceList.push_back(gas);
   affordanceList.push_back(brake);
 
+  AffRelationPtr rfoot_gas_relation (new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL));
+  AffRelationPtr lfoot_brake_relation(new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT));
+  AffRelationPtr rhand_wheel_relation(new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT));
+  AffRelationPtr lhand_wheel_relation(new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT));
 
-  AffRelationConstPtr rfoot_gas_relation (new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL));
-  AffRelationConstPtr lfoot_brake_relation(new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT));
-  AffRelationConstPtr rhand_wheel_relation(new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT));
-  AffRelationConstPtr lhand_wheel_relation(new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT));
-
-  ConstraintConstPtr rfoot_gas  (new Constraint("Right Foot to Gas Pedal", rfoot_gas_relation));
-  ConstraintConstPtr lfoot_brake (new Constraint("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
-  ConstraintConstPtr rhand_wheel (new Constraint("Right Hand To Wheel", rhand_wheel_relation));
-  ConstraintConstPtr lhand_wheel (new Constraint("Left Hand To Wheel", lhand_wheel_relation));
-  std::vector<ConstraintConstPtr> constraintList;
+  ConstraintPtr rfoot_gas  (new Constraint("Right Foot to Gas Pedal", rfoot_gas_relation));
+  ConstraintPtr lfoot_brake (new Constraint("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
+  ConstraintPtr rhand_wheel (new Constraint("Right Hand To Wheel", rhand_wheel_relation));
+  ConstraintPtr lhand_wheel (new Constraint("Left Hand To Wheel", lhand_wheel_relation));
+  std::vector<ConstraintPtr> constraintList;
   constraintList.push_back(rfoot_gas);
   constraintList.push_back(lfoot_brake);
   constraintList.push_back(rhand_wheel);
@@ -131,9 +130,9 @@ int main() {
   db->parseFile();
 
   //to get the objects back, use db->get<YourTypeHere>()
-  std::vector<AffConstPtr> revivedAffordances;
+  std::vector<AffPtr> revivedAffordances;
   db->getAffordances(revivedAffordances);
-  std::vector<ConstraintConstPtr> revivedConstraints;
+  std::vector<ConstraintPtr> revivedConstraints;
   db->getConstraints(revivedConstraints);
 
   //this is an example of how to iterate an print the names of the retrieved data items

@@ -5,7 +5,7 @@
 using namespace action_authoring;
 
 Qt4Constraint::
-Qt4Constraint(AtomicConstraintPtr constraint) : _gui_name(new QLineEdit()),
+Qt4Constraint(ConstraintPtr constraint) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
@@ -13,6 +13,13 @@ Qt4Constraint(AtomicConstraintPtr constraint) : _gui_name(new QLineEdit()),
 {
     // constructor
     _constraint = constraint;
+}
+
+Qt4Constraint::
+~Qt4Constraint() {
+    //TODO; hack
+    std::cout << "destructive destructor destructing" << std::endl;
+    _gui_panel->setParent(NULL);
 }
 
 std::string
@@ -82,7 +89,7 @@ setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances,
     updateElementsFromState();
 }
 
-AtomicConstraintPtr
+ConstraintPtr
 Qt4Constraint::
 getConstraint() {
     return _constraint;
@@ -98,12 +105,12 @@ updateStateFromElements() {
     //std::cout << "left affordance: " << _gui_robotJointType->currentIndex() << std::endl;
     //std::cout << "right affordance: " << _gui_affordanceType->currentIndex() << std::endl;
     if (_gui_robotJointType->currentIndex() >= 0) {
-	_constraint->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
+	_constraint->getAffordanceRelation()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
 	std::cout << "((" << _gui_robotJointType->currentIndex() << ")) LH affordance set to " << _leftSideAffordances[_gui_robotJointType->currentIndex()]->getName() << std::endl;
     }
 
     if (_gui_affordanceType->currentIndex() >= 0) {
-	_constraint->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
+	_constraint->getAffordanceRelation()->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
 	std::cout << "RH affordance set to " << _rightSideAffordances[_gui_affordanceType->currentIndex()]->getName() << std::endl;
     }
 
@@ -142,7 +149,7 @@ updateElementsFromState() {
 
     // select the correct joint name
     std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
-	_constraint->getAffordance1()->getGlobalUniqueId());
+	_constraint->getAffordanceRelation()->getAffordance1()->getGlobalUniqueId());
     if (it!=_affordance1IndexMap.end()) {
 	_gui_robotJointType->setCurrentIndex(it->second);
 //	std::cout << "found LH affordance iterator: " << it->second << std::endl;
@@ -163,7 +170,7 @@ updateElementsFromState() {
 
     // select the current affordance
     std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
-	_constraint->getAffordance2()->getGlobalUniqueId());
+	_constraint->getAffordanceRelation()->getAffordance2()->getGlobalUniqueId());
     if (it2 != _affordance2IndexMap.end()) {
 	_gui_affordanceType->setCurrentIndex(it2->second);
 //	std::cout << "found RH affordance iterator ((" << it2->second << ")): " << " " <<

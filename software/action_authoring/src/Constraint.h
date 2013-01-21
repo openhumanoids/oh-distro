@@ -30,27 +30,29 @@ namespace action_authoring {
   //------------fields--------
   protected:
     std::string _name;
-    std::vector<boost::shared_ptr<const Constraint> > _constraints;
+    std::vector<boost::shared_ptr<Constraint> > _constraints;
     ConstraintType _constraintType;
-    AffRelationConstPtr _affordanceRelation;
+    AffRelationPtr _affordanceRelation;
 
     //-------Constructors--
   public:
-    Constraint(const std::string &name, const ConstraintType &constraintType);
-    Constraint(const std::string &name, const AffRelationConstPtr affordanceRelation);
+    Constraint(const std::string &name, ConstraintType constraintType);
+    Constraint(const std::string &name, AffRelationPtr affordanceRelation);
     
     //Accessors
-    std::string getName() const { return _name; };
-    ConstraintType getConstraintType() const { return _constraintType; };
+    std::string getName() { return _name; };
+    void setName(std::string name) { _name = name; };
+    ConstraintType getConstraintType() { return _constraintType; };
     
     //Available for non-ATOMIC constraints only
     void getConstraints(std::vector<
-			boost::shared_ptr<const Constraint> > &constraints) const;
+			boost::shared_ptr<Constraint> > &constraints);
 
-    void addConstraint(boost::shared_ptr<const Constraint> constraint);
+    void addConstraint(boost::shared_ptr<Constraint> constraint);
     
     //Available for ATOMIC constraints only
-    AffRelationConstPtr getAffordanceRelation() const;
+    AffRelationPtr getAffordanceRelation();
+    void setAffordanceRelation(AffRelationPtr affordanceRelation);
   }; //class Constraint
 
   typedef boost::shared_ptr<Constraint> ConstraintPtr;
