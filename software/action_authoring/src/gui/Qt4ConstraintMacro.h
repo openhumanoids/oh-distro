@@ -31,7 +31,7 @@ namespace action_authoring
 	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
 	
-    protected:
+    private:
 	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
 	std::map<affordance::GlobalUID, int> _affordance2IndexMap;
 	

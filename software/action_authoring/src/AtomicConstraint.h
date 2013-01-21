@@ -22,7 +22,7 @@ class AtomicConstraint
 
 
     //------------fields
- protected:
+ private:
     affordance::AffPtr _affordance1;
     affordance::AffPtr _affordance2;
     RelationType _relationType;

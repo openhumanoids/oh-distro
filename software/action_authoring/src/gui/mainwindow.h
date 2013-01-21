@@ -77,7 +77,7 @@ public:
     void demoPopulate();
     ~MainWindow();
 
-protected:
+ private: 
     QSlider* _jointSlider;
     QLabel * _jointNameLabel;
     state::State_GFE _state_gfe;
@@ -96,6 +96,9 @@ private:
     void demoPopulateConstraintMacros(); //todo : remove this
     std::string getSelectedJointName();
     void makeGUIFromConstraintMacros();
+
+    //private signals:
+    //    void 
 
 private slots:
     void updateJoint(int value);

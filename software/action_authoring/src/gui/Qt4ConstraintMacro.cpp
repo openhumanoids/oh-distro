@@ -83,7 +83,7 @@ void
 Qt4ConstraintMacro::
 setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
 	       std::vector<affordance::AffPtr> &rightSideAffordances) {
-    // set the protected member
+    // set the private field
     _leftSideAffordances = leftSideAffordances;
     _rightSideAffordances = rightSideAffordances;
     updateElementsFromState();

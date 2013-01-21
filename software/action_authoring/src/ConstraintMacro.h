@@ -28,7 +28,7 @@ namespace action_authoring {
     ConstraintMacroType;
     
   //------------fields--------
-  protected:
+  private:
     std::string _name;
     std::vector<boost::shared_ptr<ConstraintMacro> > _constraints;
     ConstraintMacroType _constraintType;
