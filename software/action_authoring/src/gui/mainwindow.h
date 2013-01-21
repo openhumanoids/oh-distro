@@ -77,10 +77,10 @@ public:
     void demoPopulate();
     ~MainWindow();
 
+    //=================gui state
  private: 
     QSlider* _jointSlider;
     QLabel * _jointNameLabel;
-    state::State_GFE _state_gfe;
     QSignalMapper* _signalMapper;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QVBoxLayout* _constraint_vbox;
