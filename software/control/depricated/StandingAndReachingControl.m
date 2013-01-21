@@ -31,8 +31,8 @@ classdef StandingAndReachingControl < DrakeSystem
       obj.q_nom = x0(7:obj.manip.num_q);
       
       % arm joint index matrices
-      obj.I_right_arm = diag([zeros(1,22),ones(1,5),zeros(1,7)]);
-      obj.I_left_arm = diag([zeros(1,10),ones(1,5),zeros(1,19)]);
+      obj.I_right_arm = diag(~cellfun(@isempty,strfind({r.manip.body(2:end).jointname},'r_arm')));
+      obj.I_left_arm = diag(~cellfun(@isempty,strfind({r.manip.body(2:end).jointname},'l_arm')));
 
       epsilon = 0.01;
       obj.q_d_max = obj.manip.joint_limit_max - epsilon;
@@ -76,26 +76,28 @@ classdef StandingAndReachingControl < DrakeSystem
       % compute COM error 
       err_com = cm_des - P*cm;
       J_com = P*Jcm*Pq_qa;
-      k_com = 0.1;
+      k_com = 0.125;
       dq_com = k_com * pinv(J_com) * err_com;
  
       % COM nullspace projection matrix
       Ncom = eye(nq-6) - pinv(J_com)*J_com;
 
       % desired right endpoint position
-      k_ep = 0.35;
+      k_ep = 0.6;
       err_rep = rep_des - rep;
-      Jrep = Jrep*obj.I_right_arm*Pq_qa;
+      Jrep = Jrep*Pq_qa;
       Nrep = eye(nq-6) - pinv(Jrep)*Jrep;
+      %dq_rep = k_ep * obj.I_right_arm(7:end,7:end) * pinv(Jrep) * err_rep;
       dq_rep = k_ep * pinv(Jrep) * err_rep;
 
       % desired left endpoint position
       err_lep = lep_des - lep;
-      Jlep = Jlep*obj.I_left_arm*Pq_qa;
+      Jlep = Jlep*Pq_qa;
       Nlep = eye(nq-6) - pinv(Jlep)*Jlep;
+      %dq_lep = k_ep * obj.I_left_arm(7:end,7:end) * pinv(Jlep) * err_lep;
       dq_lep = k_ep * pinv(Jlep) * err_lep;
 
-      normbound = 0.5; % norm bound to alleviate the effect of singularities.
+      normbound = 10.0; % norm bound to alleviate the effect of singularities.
       if (norm(dq_rep)>normbound)
         dq_rep = normbound*dq_rep/norm(dq_rep);
       end  
@@ -109,7 +111,7 @@ classdef StandingAndReachingControl < DrakeSystem
       dq_nom = k_nom * err_nom;
       
       % do null space projections and map into input coordinates
-      if (t<5.0)% || t>15.75) 
+      if (t<2.0)% || t>15.75) 
         dq_des = Ngc * (dq_com + Ncom*dq_nom);
       else
         dq_des = Ngc * (dq_com + Ncom*(dq_rep + dq_lep) + Ncom*Nrep*Nlep*dq_nom);
