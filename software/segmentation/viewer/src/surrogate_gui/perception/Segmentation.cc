@@ -318,9 +318,9 @@ namespace surrogate_gui
     SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
     seg.setOptimizeCoefficients(true); //optional
     seg.setModelType(SACMODEL_CYLINDER); //pcl::SACMODEL_CYLINDER);
-    seg.setMethodType(SAC_RANSAC);
-    seg.setDistanceThreshold(0.05);
-    seg.setRadiusLimits(0.05, 0.2);
+    seg.setMethodType(SAC_MLESAC); 
+    seg.setDistanceThreshold(0.09); //0.05);
+    seg.setRadiusLimits(0.01, 2); //0.05, 0.2);
        
     //set input
     seg.setInputCloud(subcloud);
