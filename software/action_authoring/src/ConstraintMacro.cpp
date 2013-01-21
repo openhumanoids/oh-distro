@@ -3,19 +3,22 @@
 
 using namespace action_authoring;
 using namespace std;
-ConstraintMacro::ConstraintMacro(const string &name, ConstraintMacroType constraintType) 
-  :  _constraintType(constraintType),
-     _name(name),
-     _atomicConstraint()
+ConstraintMacro::ConstraintMacro(const string &name, const ConstraintMacroType &constraintType) 
+  :
+   _name(name),
+   _constraints(),
+   _constraintType(constraintType),
+   _atomicConstraint()
 {
 }
 
-ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintPtr atomicConstraint) 
+ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintPtr atomicConstraint) : 
+  _name(name),
+  _constraints(),
+  _constraintType(ConstraintMacro::ATOMIC),
+  _atomicConstraint(atomicConstraint)
 {
-  //todo : user constructor initialier list as in above constructor
-  _constraintType = ConstraintMacro::ATOMIC;
-  _name = name;
-  _atomicConstraint = atomicConstraint;
+  //todo : note constructor initialier list 
 }
 
 void ConstraintMacro::addConstraintMacro(ConstraintMacroPtr constraint) {
@@ -39,17 +42,10 @@ void ConstraintMacro::getConstraintMacros(vector<ConstraintMacroPtr> &constraint
 		     _constraints.end());
 }
 
-AtomicConstraintPtr ConstraintMacro::getAtomicConstraint() {
+AtomicConstraintPtr ConstraintMacro::getAtomicConstraint() const {
   if (_constraintType != ConstraintMacro::ATOMIC) {
    throw InvalidMethodCallForContraintTypeException("Cannot get affordance relation for non-atomic constraint.");
   }
   return _atomicConstraint;
 }
 
-
-void ConstraintMacro::setAtomicConstraint(AtomicConstraintPtr atomicConstraint) {
-  if (_constraintType != ConstraintMacro::ATOMIC) {
-   throw InvalidMethodCallForContraintTypeException("Cannot get affordance relation for non-atomic constraint.");
-  }
-  _atomicConstraint = atomicConstraint;
-}

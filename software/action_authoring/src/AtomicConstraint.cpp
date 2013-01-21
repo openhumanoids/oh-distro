@@ -8,8 +8,8 @@ using namespace affordance;
    @param affordance2
    @param relationType*/
 AtomicConstraint::AtomicConstraint(AffPtr affordance1, 
-				       AffPtr affordance2, 
-				       AtomicConstraint::RelationType relationType)
+				   AffPtr affordance2, 
+				   const AtomicConstraint::RelationType &relationType)
   : _affordance1(affordance1), 
     _affordance2(affordance2), _relationType(relationType)
 {
