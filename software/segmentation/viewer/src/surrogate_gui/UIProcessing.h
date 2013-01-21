@@ -83,6 +83,7 @@ namespace surrogate_gui
 		//=====observers
 		public:
 			MouseMode getMouseMode() const; //rectangle or camera move
+			GeometricPrimitive getGeometricPrimitive() const; //rectangle or camera move
 			std::string getCurrentObjectSelectedName() const;
 			ObjectPointsPtr getCurrentObjectSelected(); //object currently being segmented
 			SurrogateDisplayInfo *getDisplayInfo();

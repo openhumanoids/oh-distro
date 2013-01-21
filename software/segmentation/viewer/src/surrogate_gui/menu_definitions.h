@@ -21,6 +21,10 @@ namespace surrogate_gui
 	#define PARAM_NAME_MOUSE_MODE "Mouse Mode"
 	enum MouseMode{CAMERA_MOVE, RECTANGLE_SELECT};
 
+	//======geometric primitive
+	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "Geometric Primitive"
+	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE};
+
 	//=============pause
 	#define PARAM_NAME_CLOUD_PAUSE "Pause Cloud Updates"
 	//#define PARAM_NAME_SHOW_CLOUD "Show Cloud Updates"

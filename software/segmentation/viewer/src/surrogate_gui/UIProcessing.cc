@@ -51,6 +51,16 @@ namespace surrogate_gui
 									  NULL);
 		//self->mouse_mode = CAMERA_MOVE;
 
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, BOT_GTK_PARAM_WIDGET_MENU,
+					      0, // initial value
+					      "Cylinder", CYLINDER,
+					      "Sphere", SPHERE,
+					      "Plane", PLANE,
+					      "Line", LINE,
+					      "Torus", TORUS,
+					      "Cube", CUBE,
+					      NULL);
+
 		//pause
 		bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
 		//self->paused = 0;
@@ -1060,6 +1070,11 @@ namespace surrogate_gui
 		return (MouseMode) mouse_mode;
 	}
 
+	GeometricPrimitive UIProcessing::getGeometricPrimitive() const //rectangle or camera move
+	{
+		int geometric_primitive = bot_gtk_param_widget_get_enum(_surrogate_renderer._pw, PARAM_NAME_GEOMETRIC_PRIMITIVE);
+		return (GeometricPrimitive) geometric_primitive;
+	}
 
 	string UIProcessing::getCurrentObjectSelectedName() const
 	{
