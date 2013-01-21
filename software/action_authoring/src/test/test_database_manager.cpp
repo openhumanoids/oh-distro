@@ -70,7 +70,7 @@ int main() {
   AffPtr wheel (new AffordanceState("Steering Wheel"));
   AffPtr gas   (new AffordanceState("Gas Pedal"));
   AffPtr brake (new AffordanceState("Brake Pedal"));
-  std::vector<AffPtr> affordanceList;
+  std::vector<AffConstPtr> affordanceList;
   affordanceList.push_back(rhand);
   affordanceList.push_back(lhand);
   affordanceList.push_back(rfoot);
@@ -88,7 +88,7 @@ int main() {
   ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
   ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
   ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
-  std::vector<ConstraintMacroPtr> constraintList;
+  std::vector<ConstraintMacroConstPtr> constraintList;
   constraintList.push_back(rfoot_gas);
   constraintList.push_back(lfoot_brake);
   constraintList.push_back(rhand_wheel);

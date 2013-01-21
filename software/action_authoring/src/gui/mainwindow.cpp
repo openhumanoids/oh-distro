@@ -88,7 +88,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     for(uint i = 0; i < _worldState.affordances.size(); i++)
       {
-    	AffPtr next = _worldState.affordances[i];
+    	AffConstPtr next = _worldState.affordances[i];
     	if (next->_otdf_id == AffordanceState::CYLINDER ||
     		next->_otdf_id == AffordanceState::BOX ||
     		next->_otdf_id == AffordanceState::SPHERE)
@@ -278,7 +278,7 @@ handleSaveAction() {
  QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Action"), "", tr("Action XML Files (*.xml)"));  
 
- vector<ConstraintMacroPtr> all_constraints;
+ vector<ConstraintMacroConstPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
@@ -359,16 +359,17 @@ void
 MainWindow::
 makeGUIFromConstraintMacros() {
     // Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
-    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) 
+      {
 	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
-
+	
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
 	// todo: currently using constraint name as UID
 	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
 				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()));
 	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
 	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
-
+	
 	_constraint_vbox->addWidget(tp);
     }
 }

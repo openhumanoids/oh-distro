@@ -44,7 +44,7 @@ pods_install_pkg_config_file(action_authoring
   LIBS -laction_authoring
   REQUIRES ${REQUIRED_PACKAGES})
 
-#======action authoring executable
+#======action authoring gui executable
 add_executable(action_authoring_gui src/gui/main.cpp src/gui/mainwindow.cpp 
   src/gui/togglepanel.cpp
   src/gui/Qt4ConstraintMacro.cpp

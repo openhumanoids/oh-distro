@@ -26,8 +26,8 @@ namespace action_authoring
 	void updateElementsFromState();
 	void setSelected(bool selected);
 
-	void setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
-			    std::vector<affordance::AffPtr> &rightSideAffordances);
+	void setAffordances(std::vector<affordance::AffConstPtr> &leftSideAffordances, 
+			    std::vector<affordance::AffConstPtr> &rightSideAffordances);
 	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
 	
@@ -43,8 +43,8 @@ namespace action_authoring
         ConstraintMacroPtr _constraint;
 
         // should be static
-        std::vector<affordance::AffPtr> _leftSideAffordances;
-        std::vector<affordance::AffPtr> _rightSideAffordances;
+        std::vector<affordance::AffConstPtr> _leftSideAffordances;
+        std::vector<affordance::AffConstPtr> _rightSideAffordances;
 
     signals:
 	void activatedSignal();

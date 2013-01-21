@@ -44,7 +44,7 @@ struct WorldStateView
 {
 
   affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
-  std::vector<affordance::AffPtr> affordances; //latest affordances read from the wrapper
+  std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
   //std::vector<collision::Collision_Object> collisionObjs;

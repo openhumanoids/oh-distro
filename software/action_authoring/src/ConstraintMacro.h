@@ -40,14 +40,14 @@ namespace action_authoring {
     ConstraintMacro(const std::string &name, AtomicConstraintPtr atomicConstraint);
     
     //Accessors
-    std::string getName() { return _name; };
+    std::string getName() const { return _name; };
     void setName(std::string name) { _name = name; };
-    ConstraintMacroType getConstraintMacroType() { return _constraintType; };
+    ConstraintMacroType getConstraintMacroType() const { return _constraintType; };
     
     //Available for non-ATOMIC constraints only
     void getConstraintMacros(std::vector<
-			boost::shared_ptr<ConstraintMacro> > &constraints);
-
+			     boost::shared_ptr<ConstraintMacro> > &constraints) const;
+    
     void addConstraintMacro(boost::shared_ptr<ConstraintMacro> constraint);
     
     //Available for ATOMIC constraints only

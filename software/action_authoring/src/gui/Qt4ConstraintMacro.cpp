@@ -81,8 +81,8 @@ getPanel() {
 
 void
 Qt4ConstraintMacro::
-setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
-	       std::vector<affordance::AffPtr> &rightSideAffordances) {
+setAffordances(std::vector<affordance::AffConstPtr> &leftSideAffordances, 
+	       std::vector<affordance::AffConstPtr> &rightSideAffordances) {
     // set the private field
     _leftSideAffordances = leftSideAffordances;
     _rightSideAffordances = rightSideAffordances;
@@ -102,17 +102,16 @@ updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
 
-    //std::cout << "left affordance: " << _gui_robotJointType->currentIndex() << std::endl;
-    //std::cout << "right affordance: " << _gui_affordanceType->currentIndex() << std::endl;
-    if (_gui_robotJointType->currentIndex() >= 0) {
-	_constraint->getAtomicConstraint()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
-	std::cout << "((" << _gui_robotJointType->currentIndex() << ")) LH affordance set to " << _leftSideAffordances[_gui_robotJointType->currentIndex()]->getName() << std::endl;
-    }
+    if (_gui_robotJointType->currentIndex() >= 0) 
+      {
+	
+      _constraint->getAtomicConstraint()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
+      }
 
-    if (_gui_affordanceType->currentIndex() >= 0) {
+    if (_gui_affordanceType->currentIndex() >= 0) 
+      {
 	_constraint->getAtomicConstraint()->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
-	std::cout << "RH affordance set to " << _rightSideAffordances[_gui_affordanceType->currentIndex()]->getName() << std::endl;
-    }
+      }
 
     setActive();
 }

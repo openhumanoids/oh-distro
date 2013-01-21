@@ -1,4 +1,4 @@
-#ifndef DATABASE_MANAGER_H
+ #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 
 #include "ConstraintMacro.h"
@@ -29,11 +29,11 @@ namespace action_authoring
     //writing to file helper function
     //todo : in the cpp file, add doxygen comments for each of these methods
     static std::string intToString(const int &i);
-    void addAffordanceToNode(affordance::AffPtr affordance, xmlNodePtr node);
-    void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node);
-    void postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
-				       std::queue<ConstraintMacroPtr>* q, 
-				       std::set<ConstraintMacroPtr>* done);
+    void addAffordanceToNode(affordance::AffConstPtr affordance, xmlNodePtr node);
+    void addConstraintMacroToNode(ConstraintMacroConstPtr constraint, xmlNodePtr node);
+    void postOrderAddConstraintMacroToQueue(ConstraintMacroConstPtr constraint, 
+				       std::queue<ConstraintMacroConstPtr>* q, 
+				       std::set<ConstraintMacroConstPtr>* done);
     int getGUID(ConstraintMacroConstPtr constraint);
     int getGUID(affordance::AffConstPtr affordance);
     
@@ -54,8 +54,8 @@ namespace action_authoring
     
     //Writing data to a file
     //todo : add (in the cpp file) doxygen style comments 
-    void store(const std::vector<affordance::AffPtr> &affordanceList, 
-	       const std::vector<ConstraintMacroPtr> &constrainList);
+    void store(const std::vector<affordance::AffConstPtr> &affordanceList, 
+	       const std::vector<ConstraintMacroConstPtr> &constrainList);
     
     //Reading data from a file
     //todo : add (in the cpp file) doxygen style comments

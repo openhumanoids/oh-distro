@@ -23,23 +23,24 @@ class AtomicConstraint
 
     //------------fields
  private:
-    affordance::AffPtr _affordance1;
-    affordance::AffPtr _affordance2;
+    affordance::AffConstPtr _affordance1;
+    affordance::AffConstPtr _affordance2;
     RelationType _relationType;
 
     //------------Constructor--------
  public:
-    AtomicConstraint(affordance::AffPtr affordance1, affordance::AffPtr affordance2, 
+    AtomicConstraint(affordance::AffConstPtr affordance1, affordance::AffConstPtr affordance2, 
 		     const AtomicConstraint::RelationType &relationType);
-
-  //---------------Setters
-  void setAffordance1(affordance::AffPtr a1) { _affordance1 = a1; };
-  void setAffordance2(affordance::AffPtr a2) { _affordance2 = a2; };   
 
   //---------------Accessors
   affordance::AffConstPtr getAffordance1() const { return _affordance1; };
   affordance::AffConstPtr getAffordance2() const { return _affordance2; };
   RelationType getRelationType() const { return _relationType; };
+
+  //mutators
+  void setAffordance1(affordance::AffConstPtr affordance) {_affordance1 = affordance;}
+  void setAffordance2(affordance::AffConstPtr affordance) {_affordance2 = affordance;}
+  
 };  //class AtomicConstraint
  
  typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;

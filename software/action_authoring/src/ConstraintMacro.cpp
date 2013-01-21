@@ -30,7 +30,7 @@ void ConstraintMacro::addConstraintMacro(ConstraintMacroPtr constraint) {
   _constraints.push_back(constraint);
 }
 
-void ConstraintMacro::getConstraintMacros(vector<ConstraintMacroPtr> &constraints) 
+void ConstraintMacro::getConstraintMacros(vector<ConstraintMacroPtr> &constraints) const
 {
   if (_constraintType == ConstraintMacro::ATOMIC) 
     {

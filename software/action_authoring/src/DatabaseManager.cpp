@@ -86,7 +86,7 @@ int DatabaseManager::getGUID(ConstraintMacroConstPtr constraint){
 ************************************/
 
 //Converts an affordance into an XML Node, and adds it as a child to another node
-void DatabaseManager::addAffordanceToNode(AffPtr affordance, xmlNodePtr node) {
+void DatabaseManager::addAffordanceToNode(AffConstPtr affordance, xmlNodePtr node) {
   //printf("storing affordance %s\n", affordance->getName().c_str());
   xmlNodePtr affordanceNode = xmlNewChild(node, NULL, BAD_CAST "affordance", NULL);
   std::string uidStr = intToString(getGUID(affordance));
@@ -95,7 +95,7 @@ void DatabaseManager::addAffordanceToNode(AffPtr affordance, xmlNodePtr node) {
 }
 
 //Converts a constraint into an XML Node, and adds it as a child to another node
-void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node) {
+void DatabaseManager::addConstraintMacroToNode(ConstraintMacroConstPtr constraint, xmlNodePtr node) {
   //Atomic ConstraintMacro conversion
 
   if (constraint->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
@@ -142,24 +142,27 @@ void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xm
 
 //TODO
 //Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
-void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
-						    std::queue<ConstraintMacroPtr> *q, 
-						    std::set<ConstraintMacroPtr> *done) {
-    if (constraint->getConstraintMacroType() != ConstraintMacro::ATOMIC) {
+void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroConstPtr constraint, 
+							 std::queue<ConstraintMacroConstPtr> *q, 
+							 std::set<ConstraintMacroConstPtr> *done) {
+  if (constraint->getConstraintMacroType() != ConstraintMacro::ATOMIC) 
+    {
       std::vector<ConstraintMacroPtr> constraintList;
       constraint->getConstraintMacros(constraintList);
-      for( int i = 0; i < constraintList.size(); i++ ) {
-        postOrderAddConstraintMacroToQueue(constraintList[i], q, done);
-      }
+      for( int i = 0; i < constraintList.size(); i++ ) 
+	  {
+	    postOrderAddConstraintMacroToQueue(constraintList[i], q, done);
+	  }
     }
-    if (done->count(constraint) == 0) {
+  if (done->count(constraint) == 0) 
+    {
       q->push(constraint);
       done->insert(constraint);
     }
 }
 
 //main API call for storing all objects
-void DatabaseManager::store(const std::vector<AffPtr> &affordanceList, const std::vector<ConstraintMacroPtr> &constraintList) {
+void DatabaseManager::store(const std::vector<AffConstPtr> &affordanceList, const std::vector<ConstraintMacroConstPtr> &constraintList) {
 	//printf("beginning to store\n");
   xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
@@ -176,8 +179,8 @@ void DatabaseManager::store(const std::vector<AffPtr> &affordanceList, const std
 	}
 
   //printf("done storing affordances \n");
-	std::queue<ConstraintMacroPtr>* constraintQueue = new std::queue<ConstraintMacroPtr>();
-	std::set<ConstraintMacroPtr>* processedConstraintMacros = new std::set<ConstraintMacroPtr>();
+	std::queue<ConstraintMacroConstPtr>* constraintQueue = new std::queue<ConstraintMacroConstPtr>();
+	std::set<ConstraintMacroConstPtr>* processedConstraintMacros = new std::set<ConstraintMacroConstPtr>();
 
   //Use a postorder traversal of the constraint trees to ensure child constraints
   //are stored before the constraints that depend on them
