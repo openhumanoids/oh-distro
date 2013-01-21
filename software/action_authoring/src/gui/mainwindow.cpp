@@ -145,7 +145,10 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
     // load the constraints
     //std::vector<AffPtr> _all_affordances =
-    _constraint_vbox = vbox;
+    _constraint_vbox = new QVBoxLayout(); 
+    QWidget* constraintWrapper = new QWidget();
+    constraintWrapper->setLayout(_constraint_vbox);
+    vbox->addWidget(constraintWrapper);
     demoPopulateConstraints();
     makeGUIFromConstraints();
 
@@ -337,7 +340,7 @@ handleRobotLinkChange() {
 
 void 
 MainWindow::
-setSelectedAction(QString activator){ 
+setSelectedAction(QString activator) { 
     std::string activator_str = activator.toStdString();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraint()->getName()) == 0) {
@@ -346,7 +349,7 @@ setSelectedAction(QString activator){
 	} else {
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
-    } 
+    }
 /*
     handleRobotLinkChange();
 */
