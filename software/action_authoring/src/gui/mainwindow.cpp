@@ -22,7 +22,8 @@ using namespace boost;
 void MainWindow::handleAffordancesChanged()
 {
   //------------------------REDRAW
-  //clear the scene
+  //clear the scene.  todo : is there a better way to handle 
+  //memory management thru boost pointers?  opengl_scene doesn't use boost
   if (_worldState.glObjects.size() != _worldState.collisionObjs.size())
     throw InvalidStateException("glObjects and collisionObjs should have the same size");
 
@@ -46,8 +47,8 @@ void MainWindow::handleAffordancesChanged()
 	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
-	  //todo: Create collision object, add to scene, and add to _worldState.glObjects
-	  //like : _widget_opengl.add_object_with_collision(_collision_object_box);  //todo
+	  //todo: Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
+	  //like : _widget_opengl.add_object_with_collision(_collision_object_affordance);  //todo
     	}
     }
 
