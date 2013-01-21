@@ -12,7 +12,7 @@ namespace opengl {
   class OpenGL_Object_Sphere: public OpenGL_Object {
   public:
     OpenGL_Object_Sphere();
-    ~OpenGL_Object_Sphere();
+    virtual ~OpenGL_Object_Sphere();
     OpenGL_Object_Sphere( const OpenGL_Object_Sphere& other );
     OpenGL_Object_Sphere& operator=( const OpenGL_Object_Sphere& other );
     

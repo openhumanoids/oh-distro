@@ -11,7 +11,7 @@ namespace opengl {
   class OpenGL_Object {
   public:
     OpenGL_Object( std::string id = "N/A" );
-    ~OpenGL_Object();
+    virtual ~OpenGL_Object();
     OpenGL_Object( const OpenGL_Object& other );
     OpenGL_Object& operator=( const OpenGL_Object& other );
 

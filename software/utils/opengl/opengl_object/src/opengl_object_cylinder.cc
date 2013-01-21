@@ -22,8 +22,11 @@ OpenGL_Object_Cylinder() : OpenGL_Object(),
  * class destructor
  */
 OpenGL_Object_Cylinder::
-~OpenGL_Object_Cylinder() {
-
+~OpenGL_Object_Cylinder() 
+{
+  if( _quadric == NULL ){
+    gluDeleteQuadric(_quadric);
+  }
 }
 
 /** 

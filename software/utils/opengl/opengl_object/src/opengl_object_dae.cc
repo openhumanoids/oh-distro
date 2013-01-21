@@ -34,8 +34,12 @@ OpenGL_Object_DAE( string id,
 }
 
 OpenGL_Object_DAE::
-~OpenGL_Object_DAE() {
-
+~OpenGL_Object_DAE() 
+{
+  if( glIsList( _dl ) == GL_TRUE )
+    {
+      glDeleteLists( _dl, 0 );
+    }
 }
 
 OpenGL_Object_DAE::

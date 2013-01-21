@@ -23,7 +23,9 @@ OpenGL_Object_Sphere() : OpenGL_Object(),
  */
 OpenGL_Object_Sphere::
 ~OpenGL_Object_Sphere() {
-
+  if( _quadric == NULL ){
+    gluDeleteQuadric(_quadric);
+  }
 }
 
 /** 

@@ -12,7 +12,7 @@ namespace opengl {
   class OpenGL_Object_Box: public OpenGL_Object {
   public:
     OpenGL_Object_Box();
-    ~OpenGL_Object_Box();
+    virtual ~OpenGL_Object_Box();
     OpenGL_Object_Box( const OpenGL_Object_Box& other );
     OpenGL_Object_Box& operator=( const OpenGL_Object_Box& other );
 
