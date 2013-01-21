@@ -19,57 +19,101 @@ using namespace boost;
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-void MainWindow::demoPopulateConstraintMacros()
+void MainWindow::handleAffordancesChanged()
 {
-    AffPtr rhand = AffPtr(new AffordanceState("Right Hand", 235, 38252));
-    AffPtr lhand = AffPtr(new AffordanceState("Left Hand",  852365807, 3723));
-    AffPtr rfoot = AffPtr(new AffordanceState("Right Foot", 2, 51));
-    AffPtr lfoot = AffPtr(new AffordanceState("Left Foot", 32872, 380));
-    AffPtr wheel = AffPtr(new AffordanceState("Steering Wheel", 3287, 273));
-    AffPtr gas   = AffPtr(new AffordanceState("Gas Pedal", 3202, 328720));
-    AffPtr brake = AffPtr(new AffordanceState("Brake Pedal", 32802, 23093));
+  //-------------redraw
+  _widget_opengl.opengl_scene().clear_objects();
+  for(uint i = 0; i < _worldState.glObjects.size(); i++)
+    delete _worldState.glObjects[i];
+  _worldState.glObjects.clear();
+  
 
-    AffPtr sphere 	= AffPtr(new AffordanceState("Pink Sphere", 3280, 328));
-    AffPtr box 		= AffPtr(new AffordanceState("Yellow Box", 3280235, 3828));
-    AffPtr cylinder = AffPtr(new AffordanceState("Blue Cylinder", 23802, 83));
+  for(uint i = 0; i < _worldState.affordances.size(); i++)
+    {
+      AffConstPtr next = _worldState.affordances[i];
+      if (next->_otdf_id == AffordanceState::CYLINDER ||
+	  next->_otdf_id == AffordanceState::BOX ||
+	  next->_otdf_id == AffordanceState::SPHERE)
+    	{
+	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
+	  _widget_opengl.opengl_scene().add_object(*asGlAff);
+	  _worldState.glObjects.push_back(asGlAff);
+    	}
+    }
 
-    _worldState.affordances.push_back(rhand);
-    _worldState.affordances.push_back(lhand);
-    _worldState.affordances.push_back(rfoot);
-    _worldState.affordances.push_back(lfoot);
-    _worldState.affordances.push_back(wheel);
-    _worldState.affordances.push_back(gas);
-    _worldState.affordances.push_back(brake);
+  
+  _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-    _worldState.affordances.push_back(sphere);
-    _worldState.affordances.push_back(box);
-    _worldState.affordances.push_back(cylinder);
-    
-    AtomicConstraintPtr rfoot_gas_relation (new AtomicConstraint(rfoot, gas, AtomicConstraint::NORMAL));
-    AtomicConstraintPtr lfoot_brake_relation(new AtomicConstraint(lfoot, brake, AtomicConstraint::TANGENT));
-    AtomicConstraintPtr rhand_wheel_relation(new AtomicConstraint(rhand, wheel, AtomicConstraint::TANGENT));
-    AtomicConstraintPtr lhand_wheel_relation(new AtomicConstraint(lhand, wheel, AtomicConstraint::TANGENT));
+  //----------handle constraint macros 
+ 
+  unordered_map<string, AffConstPtr> nameToAffMap;
+  for(vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
+      iter != _worldState.affordances.end();
+      ++iter)
+    {
+      nameToAffMap[(*iter)->getName()] = *iter;
+    }
+ 
+  //todo: this is just demo code
+  AffConstPtr rfoot = nameToAffMap["Right Foot"];
+  AffConstPtr lfoot = nameToAffMap["Left Foot"];
+  AffConstPtr rhand = nameToAffMap["Right Hand"];
+  AffConstPtr lhand = nameToAffMap["Left Hand"];
 
-    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
-    ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
-    ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
-    ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
+  AffConstPtr gas = nameToAffMap["Gas Pedal"];
+  AffConstPtr brake = nameToAffMap["Brake Pedal"];
+  AffConstPtr wheel = nameToAffMap["Steering Wheel"];
 
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
+  AtomicConstraintPtr rfoot_gas_relation (new AtomicConstraint(rfoot, gas, AtomicConstraint::NORMAL));
+  AtomicConstraintPtr lfoot_brake_relation(new AtomicConstraint(lfoot, brake, AtomicConstraint::TANGENT));
+  AtomicConstraintPtr rhand_wheel_relation(new AtomicConstraint(rhand, wheel, AtomicConstraint::TANGENT));
+  AtomicConstraintPtr lhand_wheel_relation(new AtomicConstraint(lhand, wheel, AtomicConstraint::TANGENT));
+  
+  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
+  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
+  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
+  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
+  
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
+
+  makeGUIFromConstraintMacros();
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	: _widget_opengl(),
 	  _worldState(theLcm)
 {
-    // setup the OpenGL 6scene
-	_worldState.state_gfe.from_urdf();
-	_worldState.colorRobot.set(_worldState.state_gfe);
+  // setup the OpenGL scene
+  _worldState.state_gfe.from_urdf();
+  _worldState.colorRobot.set(_worldState.state_gfe);
+  
+  //setup timer to look for affordance changes
+  QTimer *timer = new QTimer;
+  connect(timer, SIGNAL(timeout()), 
+	  this, SLOT(affordanceUpdateCheck()));
+  timer->start(1000); //1Hz  
 
-    // build collision objects
+  //connect to 
+
+  //wait until we see some demo affordances populate
+  //todo : remove this
+  /*vector<AffConstPtr> affs;
+  _worldState.affServerWrapper.getAllAffordances(affs);
+  while(affs.size() == 0)
+    {
+      _worldState.affServerWrapper.getAllAffordances(affs);
+      cout << "\nWaiting for affordances to be non-empty" << endl;
+      boost::this_thread::sleep(boost::posix_time::seconds(1));
+    }
+  */
+  
+
+
+
+  // build collision objects
 	/*todo  construct collision objects from the affordances
 	_collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
     _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
@@ -84,26 +128,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     	const State_GFE_Joint& state_gfe_joint = it->second;
     	joint_names.push_back(state_gfe_joint.id());
     }
-
-
-    for(uint i = 0; i < _worldState.affordances.size(); i++)
-      {
-    	AffConstPtr next = _worldState.affordances[i];
-    	if (next->_otdf_id == AffordanceState::CYLINDER ||
-    		next->_otdf_id == AffordanceState::BOX ||
-    		next->_otdf_id == AffordanceState::SPHERE)
-    	{
-    		OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); //todo : get rid of this memory leak
-    		_widget_opengl.opengl_scene().add_object(*asGlAff);
-    	}
-    }
-
-    /*todo
-    _widget_opengl.opengl_scene().add_object(_opengl_object_box);
-    _widget_opengl.opengl_scene().add_object(_opengl_object_cylinder);
-    _widget_opengl.opengl_scene().add_object(_opengl_object_sphere);
-*/
-    _widget_opengl.opengl_scene().add_object(_worldState.colorRobot);
+  
 
     /*todo
     _widget_opengl.add_object_with_collision(_collision_object_box);
@@ -149,8 +174,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QWidget* constraintWrapper = new QWidget();
     constraintWrapper->setLayout(_constraint_vbox);
     vbox->addWidget(constraintWrapper);
-    demoPopulateConstraintMacros();
-    makeGUIFromConstraintMacros();
+
+
 
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
@@ -248,28 +273,28 @@ MainWindow::~MainWindow()
 
 }
 
-void
-MainWindow::
-handleLoadAction() {
- QString fileName = QFileDialog::getOpenFileName(this,
-     tr("Open Action"), "", tr("Action XML Files (*.xml)"));
-
- DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
- dbm->parseFile();
-
+void MainWindow::handleLoadAction() 
+{
+  QString fileName = QFileDialog::getOpenFileName(this,
+						  tr("Open Action"), "", tr("Action XML Files (*.xml)"));
+  
+  DatabaseManager* dbm = new DatabaseManager(fileName.toStdString()); //todo : Memory leak
+  dbm->parseFile();
+  
   std::vector<ConstraintMacroPtr> revivedConstraintMacros;
   dbm->getConstraintMacros(revivedConstraintMacros);
-
-//  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
-//      delete _authoringState._all_gui_constraints[i].get();
-//  }
-
+  
+  //  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
+  //      delete _authoringState._all_gui_constraints[i].get();
+  //  }
+  
   _authoringState._all_gui_constraints.clear();
-  for (int i = 0; i < revivedConstraintMacros.size(); i++) {
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i]));
-  }
+  for (int i = 0; i < revivedConstraintMacros.size(); i++) 
+    {
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i])); 
+    }
   makeGUIFromConstraintMacros();
-
+  
 }
 
 void
@@ -372,4 +397,17 @@ makeGUIFromConstraintMacros() {
 	
 	_constraint_vbox->addWidget(tp);
     }
+}
+
+
+//===========world state affordance updating
+void MainWindow::affordanceUpdateCheck()
+{
+  int origSize = _worldState.affordances.size();
+  _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
+  if (_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordane if the sizes are equal )
+    return;
+  
+  cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
+  handleAffordancesChanged(); 
 }

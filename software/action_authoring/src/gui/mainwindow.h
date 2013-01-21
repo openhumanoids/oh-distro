@@ -39,6 +39,9 @@
 namespace action_authoring
 {
 
+  //===============WORLD STATE
+
+
 /**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
@@ -47,14 +50,20 @@ struct WorldStateView
   std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
+  std::vector<opengl::OpenGL_Object*> glObjects;
+
   //std::vector<collision::Collision_Object> collisionObjs;
-  
+ 
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
  : affServerWrapper(theLcm), colorRobot()
   { }
   
 };
+
+
+
+//==========AUTHORING STATE
  
 
 /**represents the state of the authoring gui*/
@@ -65,6 +74,11 @@ typedef struct
         Qt4ConstraintMacroPtr _selected_gui_constraint;
 } AuthoringState;
 
+
+
+
+//===========MAIN WINDOW
+
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -74,7 +88,6 @@ public:
     boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintMacroPtr waypoint_constraint,
 				   std::vector<std::string> joint_names);
     std::vector<std::string> getJointNames(std::string urdf_xml_filename);
-    void demoPopulate();
     ~MainWindow();
 
     //=================gui state
@@ -93,14 +106,13 @@ private:
     std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
-    void demoPopulateConstraintMacros(); //todo : remove this
     std::string getSelectedJointName();
     void makeGUIFromConstraintMacros();
-
-    //private signals:
-    //    void 
+    void handleAffordancesChanged(); //only called if the affordances have changed
 
 private slots:
+    void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
+
     void updateJoint(int value);
     void handleLoadAction();
     void handleSaveAction();

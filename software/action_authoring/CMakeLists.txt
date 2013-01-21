@@ -56,6 +56,7 @@ target_link_libraries(action_authoring_gui ${Boost_LIBRARIES} action_authoring)
 
 pods_use_pkg_config_packages(action_authoring_gui ${REQUIRED_PACKAGES})
 
+pods_install_executables(action_authoring_gui)
 
 #=====demo populate executable
 add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server.cpp)
