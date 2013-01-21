@@ -21,7 +21,7 @@ private:
 	const boost::shared_ptr<lcm::LCM> _lcm;
 
 	/**affordances in the server*/
-	std::vector<AffPtr> _affordances;
+	std::vector<AffConstPtr> _affordances;
 
 	/**mutex for accessing _affordances*/
 	boost::mutex _accessMutex;
@@ -32,7 +32,7 @@ public:
 	virtual ~AffordanceUpWrapper();
 
 	//-----------accessors
-	void getAllAffordances(std::vector<AffPtr> &affs);
+	void getAllAffordances(std::vector<AffConstPtr> &affs);
 
 	//--observers
 	std::string toString();

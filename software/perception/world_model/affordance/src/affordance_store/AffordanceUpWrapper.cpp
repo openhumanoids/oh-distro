@@ -31,7 +31,7 @@ AffordanceUpWrapper::~AffordanceUpWrapper()
 
 //============accessors
 /**@return all affordances stored on the server*/
-void AffordanceUpWrapper::getAllAffordances(std::vector<AffPtr> &affs)
+void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 {
 	_accessMutex.lock(); //==========lock
 	affs = _affordances; //assignment operator
@@ -68,7 +68,7 @@ void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, co
 	_affordances.clear();
 	for(uint i = 0; i < collection->affs.size(); i++)
 	{
-		AffPtr next(new AffordanceState(&collection->affs[i]));
+		AffConstPtr next(new AffordanceState(&collection->affs[i]));
 		_affordances.push_back(next);
 	}
 
@@ -79,7 +79,7 @@ void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, co
 /**get a string representation of the server stat*/
 string AffordanceUpWrapper::toString()
 {
-	vector<AffPtr> affs;
+	vector<AffConstPtr> affs;
 	getAllAffordances(affs);
 
 	if (affs.size() == 0)

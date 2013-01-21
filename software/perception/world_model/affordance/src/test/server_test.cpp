@@ -31,7 +31,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		boost::this_thread::sleep(sleepTime); //======sleep
 
 		//draw
-		vector<AffPtr> affordances;
+		vector<AffConstPtr> affordances;
 		wrapper.getAllAffordances(affordances);
 		for (uint i = 0; i < affordances.size(); i++)
 		{
