@@ -24,11 +24,13 @@ include_directories(.)
 add_library(affordance SHARED 			
 			src/AffordanceState.cpp
 			src/OpenGL_Affordance.cpp
+			src/CollisionObject_Affordance.cpp
 			src/affordance_store/AffordanceServer.cpp	
 			src/affordance_store/AffordanceUpWrapper.cpp)
 
 pods_install_headers(src/AffordanceState.h
 					 src/OpenGL_Affordance.h
+					 src/CollisionObject_Affordance.h
 					 src/affordance_store/AffordanceServer.h
  					 src/affordance_store/AffordanceUpWrapper.h
 					 DESTINATION affordance)
@@ -37,7 +39,7 @@ pods_install_libraries(affordance)
 
 target_link_libraries(affordance ${Boost_LIBRARIES})			  	
 
-set(REQUIRED_PACKAGES lcm lcmtypes_drc_lcmtypes opengl_object)
+set(REQUIRED_PACKAGES lcm lcmtypes_drc_lcmtypes opengl_object collision_object)
 	  	  	
 pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})			  	
 
