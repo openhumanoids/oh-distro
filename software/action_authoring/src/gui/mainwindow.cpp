@@ -19,7 +19,7 @@ using namespace boost;
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
  */ 
-void MainWindow::demoPopulateConstraints()
+void MainWindow::demoPopulateConstraintMacros()
 {
     AffPtr rhand = AffPtr(new AffordanceState("Right Hand", 235, 38252));
     AffPtr lhand = AffPtr(new AffordanceState("Left Hand",  852365807, 3723));
@@ -45,20 +45,20 @@ void MainWindow::demoPopulateConstraints()
     _worldState.affordances.push_back(box);
     _worldState.affordances.push_back(cylinder);
     
-    AffRelationPtr rfoot_gas_relation (new AffordanceRelation(rfoot, gas, AffordanceRelation::NORMAL));
-    AffRelationPtr lfoot_brake_relation(new AffordanceRelation(lfoot, brake, AffordanceRelation::TANGENT));
-    AffRelationPtr rhand_wheel_relation(new AffordanceRelation(rhand, wheel, AffordanceRelation::TANGENT));
-    AffRelationPtr lhand_wheel_relation(new AffordanceRelation(lhand, wheel, AffordanceRelation::TANGENT));
+    AtomicConstraintPtr rfoot_gas_relation (new AtomicConstraint(rfoot, gas, AtomicConstraint::NORMAL));
+    AtomicConstraintPtr lfoot_brake_relation(new AtomicConstraint(lfoot, brake, AtomicConstraint::TANGENT));
+    AtomicConstraintPtr rhand_wheel_relation(new AtomicConstraint(rhand, wheel, AtomicConstraint::TANGENT));
+    AtomicConstraintPtr lhand_wheel_relation(new AtomicConstraint(lhand, wheel, AtomicConstraint::TANGENT));
 
-    ConstraintPtr rfoot_gas  (new Constraint("Right Foot to Gas Pedal", rfoot_gas_relation));
-    ConstraintPtr lfoot_brake (new Constraint("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
-    ConstraintPtr rhand_wheel (new Constraint("Right Hand To Wheel", rhand_wheel_relation));
-    ConstraintPtr lhand_wheel (new Constraint("Left Hand To Wheel", lhand_wheel_relation));
+    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
+    ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
+    ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
+    ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
 
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(rfoot_gas));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(lfoot_brake));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(rhand_wheel));
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(lhand_wheel));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -149,8 +149,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QWidget* constraintWrapper = new QWidget();
     constraintWrapper->setLayout(_constraint_vbox);
     vbox->addWidget(constraintWrapper);
-    demoPopulateConstraints();
-    makeGUIFromConstraints();
+    demoPopulateConstraintMacros();
+    makeGUIFromConstraintMacros();
 
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
@@ -257,18 +257,18 @@ handleLoadAction() {
  DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
  dbm->parseFile();
 
-  std::vector<ConstraintPtr> revivedConstraints;
-  dbm->getConstraints(revivedConstraints);
+  std::vector<ConstraintMacroPtr> revivedConstraintMacros;
+  dbm->getConstraintMacros(revivedConstraintMacros);
 
 //  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
 //      delete _authoringState._all_gui_constraints[i].get();
 //  }
 
   _authoringState._all_gui_constraints.clear();
-  for (int i = 0; i < revivedConstraints.size(); i++) {
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintPtr)new Qt4Constraint(revivedConstraints[i]));
+  for (int i = 0; i < revivedConstraintMacros.size(); i++) {
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i]));
   }
-  makeGUIFromConstraints();
+  makeGUIFromConstraintMacros();
 
 }
 
@@ -278,9 +278,9 @@ handleSaveAction() {
  QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Action"), "", tr("Action XML Files (*.xml)"));  
 
- vector<ConstraintPtr> all_constraints;
+ vector<ConstraintMacroPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
-     all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraint());
+     all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
 
  DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
@@ -343,7 +343,7 @@ MainWindow::
 setSelectedAction(QString activator) { 
     std::string activator_str = activator.toStdString();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraint()->getName()) == 0) {
+	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()) == 0) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
 	    _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
 	} else {
@@ -357,15 +357,15 @@ setSelectedAction(QString activator) {
 
 void
 MainWindow::
-makeGUIFromConstraints() {
-    // Get the toggle panels from the Qt4Constraint objects and populate the gui
+makeGUIFromConstraintMacros() {
+    // Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
 
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
 	// todo: currently using constraint name as UID
 	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
-				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraint()->getName()));
+				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()));
 	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
 	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
 

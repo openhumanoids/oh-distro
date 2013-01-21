@@ -1,7 +1,7 @@
 #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 
-#include "Constraint.h"
+#include "ConstraintMacro.h"
 #include "affordance/AffordanceState.h"
 #include <vector>
 #include <queue>
@@ -22,19 +22,19 @@ namespace action_authoring
     std::string _filename;
     int _guidCounter;
     std::map<affordance::AffConstPtr, int> _affordanceToGUID; //todo: comment like "maps from { } --> {}
-    std::map<ConstraintConstPtr, int> _constraintToGUID; //todo : see above
+    std::map<ConstraintMacroConstPtr, int> _constraintToGUID; //todo : see above
     std::vector<affordance::AffPtr> _affordanceList; 
-    std::vector<ConstraintPtr> _constraintList;
+    std::vector<ConstraintMacroPtr> _constraintList;
     
     //writing to file helper function
     //todo : in the cpp file, add doxygen comments for each of these methods
     static std::string intToString(const int &i);
     void addAffordanceToNode(affordance::AffPtr affordance, xmlNodePtr node);
-    void addConstraintToNode(ConstraintPtr constraint, xmlNodePtr node);
-    void postOrderAddConstraintToQueue(ConstraintPtr constraint, 
-				       std::queue<ConstraintPtr>* q, 
-				       std::set<ConstraintPtr>* done);
-    int getGUID(ConstraintConstPtr constraint);
+    void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node);
+    void postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
+				       std::queue<ConstraintMacroPtr>* q, 
+				       std::set<ConstraintMacroPtr>* done);
+    int getGUID(ConstraintMacroConstPtr constraint);
     int getGUID(affordance::AffConstPtr affordance);
     
     //reading from file helper functions
@@ -42,7 +42,7 @@ namespace action_authoring
     //doxygen style.  describe the arguments and functionality of each method
     void parseTreeHelper(xmlDocPtr doc, xmlNode *xmlnode, 
 			 std::map<int,  affordance::AffPtr> *affordances,
-			 std::map<int, ConstraintPtr> *constraints);
+			 std::map<int, ConstraintMacroPtr> *constraints);
     void parseTree(xmlDocPtr doc, xmlNode *root);
     
   public:
@@ -55,13 +55,13 @@ namespace action_authoring
     //Writing data to a file
     //todo : add (in the cpp file) doxygen style comments 
     void store(const std::vector<affordance::AffPtr> &affordanceList, 
-	       const std::vector<ConstraintPtr> &constrainList);
+	       const std::vector<ConstraintMacroPtr> &constrainList);
     
     //Reading data from a file
     //todo : add (in the cpp file) doxygen style comments
     void parseFile();
     void getAffordances(std::vector<affordance::AffPtr> &affordacnes);
-    void getConstraints(std::vector<ConstraintPtr> &constraints);
+    void getConstraintMacros(std::vector<ConstraintMacroPtr> &constraints);
   }; //class DatabaseManager
 } //namespace action_authoring
 

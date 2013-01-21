@@ -24,18 +24,16 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 #QT wrap
-qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4Constraint.h)
+qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h)
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
   src/AtomicConstraint.cpp
-  src/AffordanceRelation.cpp
-  src/Constraint.cpp
+  src/ConstraintMacro.cpp
   src/DatabaseManager.cpp)
 
 pods_install_headers(src/AtomicConstraint.h 
-  src/AffordanceRelation.h
-  src/Constraint.h
+  src/ConstraintMacro.h
   src/DatabaseManager.h
   DESTINATION action_authoring)
 
@@ -49,7 +47,7 @@ pods_install_pkg_config_file(action_authoring
 #======action authoring executable
 add_executable(action_authoring_gui src/gui/main.cpp src/gui/mainwindow.cpp 
   src/gui/togglepanel.cpp
-  src/gui/Qt4Constraint.cpp
+  src/gui/Qt4ConstraintMacro.cpp
   src/opengl/ColorRobot.cpp
   src/opengl/SelectableOpenGLWidget.cpp
   ${MOC_SRCS})

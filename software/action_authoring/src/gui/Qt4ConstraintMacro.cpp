@@ -1,11 +1,11 @@
-#include "Qt4Constraint.h"
+#include "Qt4ConstraintMacro.h"
 
 #include <iostream>
 
 using namespace action_authoring;
 
-Qt4Constraint::
-Qt4Constraint(ConstraintPtr constraint) : _gui_name(new QLineEdit()),
+Qt4ConstraintMacro::
+Qt4ConstraintMacro(ConstraintMacroPtr constraint) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
@@ -15,21 +15,21 @@ Qt4Constraint(ConstraintPtr constraint) : _gui_name(new QLineEdit()),
     _constraint = constraint;
 }
 
-Qt4Constraint::
-~Qt4Constraint() {
+Qt4ConstraintMacro::
+~Qt4ConstraintMacro() {
     //TODO; hack
     std::cout << "destructive destructor destructing" << std::endl;
     _gui_panel->setParent(NULL);
 }
 
 std::string
-Qt4Constraint::
+Qt4ConstraintMacro::
 getSelectedLinkName() {
     return _gui_robotJointType->currentText().toStdString();
 }
 
 TogglePanel* 
-Qt4Constraint::
+Qt4ConstraintMacro::
 getPanel() {
     QString waypointTitle = QString::fromStdString(_constraint->getName());
     std::cout << "title is " << _constraint->getName() << std::endl;
@@ -80,7 +80,7 @@ getPanel() {
 }
 
 void
-Qt4Constraint::
+Qt4ConstraintMacro::
 setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
 	       std::vector<affordance::AffPtr> &rightSideAffordances) {
     // set the protected member
@@ -89,15 +89,15 @@ setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances,
     updateElementsFromState();
 }
 
-ConstraintPtr
-Qt4Constraint::
-getConstraint() {
+ConstraintMacroPtr
+Qt4ConstraintMacro::
+getConstraintMacro() {
     return _constraint;
 }
 
 // todo; very primitive; need affordance UID type
 void
-Qt4Constraint::
+Qt4ConstraintMacro::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
@@ -105,12 +105,12 @@ updateStateFromElements() {
     //std::cout << "left affordance: " << _gui_robotJointType->currentIndex() << std::endl;
     //std::cout << "right affordance: " << _gui_affordanceType->currentIndex() << std::endl;
     if (_gui_robotJointType->currentIndex() >= 0) {
-	_constraint->getAffordanceRelation()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
+	_constraint->getAtomicConstraint()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
 	std::cout << "((" << _gui_robotJointType->currentIndex() << ")) LH affordance set to " << _leftSideAffordances[_gui_robotJointType->currentIndex()]->getName() << std::endl;
     }
 
     if (_gui_affordanceType->currentIndex() >= 0) {
-	_constraint->getAffordanceRelation()->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
+	_constraint->getAtomicConstraint()->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
 	std::cout << "RH affordance set to " << _rightSideAffordances[_gui_affordanceType->currentIndex()]->getName() << std::endl;
     }
 
@@ -118,19 +118,19 @@ updateStateFromElements() {
 }
 
 void 
-Qt4Constraint::
+Qt4ConstraintMacro::
 setActive() {
     emit activatedSignal();
 }
 
 void 
-Qt4Constraint::
+Qt4ConstraintMacro::
 setSelected(bool selected) {
     _gui_panel->setSelected(selected);
 }
 
 void
-Qt4Constraint::
+Qt4ConstraintMacro::
 updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
@@ -149,7 +149,7 @@ updateElementsFromState() {
 
     // select the correct joint name
     std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
-	_constraint->getAffordanceRelation()->getAffordance1()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getAffordance1()->getGlobalUniqueId());
     if (it!=_affordance1IndexMap.end()) {
 	_gui_robotJointType->setCurrentIndex(it->second);
 //	std::cout << "found LH affordance iterator: " << it->second << std::endl;
@@ -170,7 +170,7 @@ updateElementsFromState() {
 
     // select the current affordance
     std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
-	_constraint->getAffordanceRelation()->getAffordance2()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getAffordance2()->getGlobalUniqueId());
     if (it2 != _affordance2IndexMap.end()) {
 	_gui_affordanceType->setCurrentIndex(it2->second);
 //	std::cout << "found RH affordance iterator ((" << it2->second << ")): " << " " <<

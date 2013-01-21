@@ -21,11 +21,11 @@ db->parseFile();
 
 //then to get the objects back, use db->get<YourTypeHere>()
 std::vector<Affordance*> revivedAffordances = db->getAffordances();
-std::vector<Constraint*> revivedConstraints = db->getConstraints();
+std::vector<ConstraintMacro*> revivedConstraintMacros = db->getConstraintMacros();
 */
 
 #include "DatabaseManager.h"
-#include "AffordanceRelation.h"
+#include "AtomicConstraint.h"
 #include <sstream>
 
 using namespace action_authoring;
@@ -70,7 +70,7 @@ int DatabaseManager::getGUID(AffConstPtr affordance)
 }
 
 //Looks up the guid of an affordance or assigns one if none exists
-int DatabaseManager::getGUID(ConstraintConstPtr constraint){
+int DatabaseManager::getGUID(ConstraintMacroConstPtr constraint){
   int guid = _constraintToGUID[constraint];
   if (guid <= 0) {
     guid = _guidCounter++;
@@ -95,29 +95,29 @@ void DatabaseManager::addAffordanceToNode(AffPtr affordance, xmlNodePtr node) {
 }
 
 //Converts a constraint into an XML Node, and adds it as a child to another node
-void DatabaseManager::addConstraintToNode(ConstraintPtr constraint, xmlNodePtr node) {
-  //Atomic Constraint conversion
+void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node) {
+  //Atomic ConstraintMacro conversion
 
-  if (constraint->getConstraintType() == Constraint::ATOMIC) {
-    //ATOMIC Constraint tag
+  if (constraint->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
+    //ATOMIC ConstraintMacro tag
     xmlNodePtr constraintNode = xmlNewChild(node, NULL, BAD_CAST "atomic", NULL);
 
-    //Atomic Constraint Info
+    //Atomic ConstraintMacro Info
     std::string uidStr = intToString(getGUID(constraint));
     xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
     xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
 		BAD_CAST constraint->getName().c_str());
 
     //Affordance 1 Reference
-    std::string aff1UidStr = intToString(getGUID(constraint->getAffordanceRelation()->getAffordance1()));
+    std::string aff1UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getAffordance1()));
     xmlNewChild(constraintNode, NULL, BAD_CAST "aff1", BAD_CAST aff1UidStr.c_str());
 
     //Affordance 2 Reference
-    std::string aff2UidStr = intToString(getGUID(constraint->getAffordanceRelation()->getAffordance2()));
+    std::string aff2UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getAffordance2()));
     xmlNewChild(constraintNode, NULL, BAD_CAST "aff2", BAD_CAST aff2UidStr.c_str());
   }
-  //Seqeuntial Constraint conversion
-  else if ( constraint->getConstraintType() == Constraint::SEQUENTIAL ) {
+  //Seqeuntial ConstraintMacro conversion
+  else if ( constraint->getConstraintMacroType() == ConstraintMacro::SEQUENTIAL ) {
     xmlNodePtr constraintNode = xmlNewChild(node, NULL, BAD_CAST "sequential", NULL);
 
     std::string uidStr = intToString(getGUID(constraint));
@@ -125,8 +125,8 @@ void DatabaseManager::addConstraintToNode(ConstraintPtr constraint, xmlNodePtr n
     xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
 		BAD_CAST constraint->getName().c_str());
 
-    std::vector <ConstraintPtr>constraintList;
-    constraint->getConstraints(constraintList);
+    std::vector <ConstraintMacroPtr>constraintList;
+    constraint->getConstraintMacros(constraintList);
     
     std::string childUidStr;
     for ( int i = 0; i < constraintList.size(); i++ ) {
@@ -142,14 +142,14 @@ void DatabaseManager::addConstraintToNode(ConstraintPtr constraint, xmlNodePtr n
 
 //TODO
 //Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
-void DatabaseManager::postOrderAddConstraintToQueue(ConstraintPtr constraint, 
-						    std::queue<ConstraintPtr> *q, 
-						    std::set<ConstraintPtr> *done) {
-    if (constraint->getConstraintType() != Constraint::ATOMIC) {
-      std::vector<ConstraintPtr> constraintList;
-      constraint->getConstraints(constraintList);
+void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
+						    std::queue<ConstraintMacroPtr> *q, 
+						    std::set<ConstraintMacroPtr> *done) {
+    if (constraint->getConstraintMacroType() != ConstraintMacro::ATOMIC) {
+      std::vector<ConstraintMacroPtr> constraintList;
+      constraint->getConstraintMacros(constraintList);
       for( int i = 0; i < constraintList.size(); i++ ) {
-        postOrderAddConstraintToQueue(constraintList[i], q, done);
+        postOrderAddConstraintMacroToQueue(constraintList[i], q, done);
       }
     }
     if (done->count(constraint) == 0) {
@@ -159,7 +159,7 @@ void DatabaseManager::postOrderAddConstraintToQueue(ConstraintPtr constraint,
 }
 
 //main API call for storing all objects
-void DatabaseManager::store(const std::vector<AffPtr> &affordanceList, const std::vector<ConstraintPtr> &constraintList) {
+void DatabaseManager::store(const std::vector<AffPtr> &affordanceList, const std::vector<ConstraintMacroPtr> &constraintList) {
 	//printf("beginning to store\n");
   xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
@@ -176,18 +176,18 @@ void DatabaseManager::store(const std::vector<AffPtr> &affordanceList, const std
 	}
 
   //printf("done storing affordances \n");
-	std::queue<ConstraintPtr>* constraintQueue = new std::queue<ConstraintPtr>();
-	std::set<ConstraintPtr>* processedConstraints = new std::set<ConstraintPtr>();
+	std::queue<ConstraintMacroPtr>* constraintQueue = new std::queue<ConstraintMacroPtr>();
+	std::set<ConstraintMacroPtr>* processedConstraintMacros = new std::set<ConstraintMacroPtr>();
 
   //Use a postorder traversal of the constraint trees to ensure child constraints
   //are stored before the constraints that depend on them
 	for(int i = 0; i < constraintList.size(); i++) {
-		postOrderAddConstraintToQueue(constraintList[i], constraintQueue, processedConstraints);
+		postOrderAddConstraintMacroToQueue(constraintList[i], constraintQueue, processedConstraintMacros);
 	}	
 
   //add each constraint to the xml tree
 	while (!constraintQueue->empty()){
-	  addConstraintToNode(constraintQueue->front(), node);
+	  addConstraintMacroToNode(constraintQueue->front(), node);
 	  constraintQueue->pop();
 	}
 
@@ -249,8 +249,8 @@ AffPtr serializeAffordance(xmlDocPtr doc, xmlNode* node,
   return affordance;
 }
 
-//Creates an Atomic Constraint object from an XML node and stores it in a map of uids to constraints
-ConstraintPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<int, AffPtr>* affordances, std::map<int, ConstraintPtr>* constraints) {
+//Creates an Atomic ConstraintMacro object from an XML node and stores it in a map of uids to constraints
+ConstraintMacroPtr serializeAtomicConstraintMacro(xmlDocPtr doc, xmlNode* node, std::map<int, AffPtr>* affordances, std::map<int, ConstraintMacroPtr>* constraints) {
   //printf("\nserializing atomic constraint\n");
   xmlNode* current_node = NULL;
   char* name;
@@ -273,7 +273,7 @@ ConstraintPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<i
         name = value(doc, current_node);
       }
       else {
-        printf("WARNING: Ignored unknown entry '%s' while parsing Atomic Constraint.\n", current_node->name);
+        printf("WARNING: Ignored unknown entry '%s' while parsing Atomic ConstraintMacro.\n", current_node->name);
       }
     }
   }
@@ -292,23 +292,23 @@ ConstraintPtr serializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, std::map<i
   //printf("aff1name: %s\n", aff1->getName().c_str());
 
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
-  //I SHOULD NOT BE Constraint::TANGENT!!!!!!!!!!!!!
-  AffRelationPtr affordanceRelation(new AffordanceRelation(aff1, aff2, AffordanceRelation::TANGENT));
-  ConstraintPtr constraint(new Constraint(name, affordanceRelation));
+  //I SHOULD NOT BE ConstraintMacro::TANGENT!!!!!!!!!!!!!
+  AtomicConstraintPtr atomicConstraint(new AtomicConstraint(aff1, aff2, AtomicConstraint::TANGENT));
+  ConstraintMacroPtr constraint(new ConstraintMacro(name, atomicConstraint));
 
   (*constraints)[uid] = constraint;
   return constraint;
 }
 
-//Creates a Sequential Constraint object from an XML node and stores in an a map of uids to constraints
-ConstraintPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node, 
+//Creates a Sequential ConstraintMacro object from an XML node and stores in an a map of uids to constraints
+ConstraintMacroPtr serializeSequentialConstraintMacro(xmlDocPtr doc, xmlNode* node, 
 						 std::map<int, AffPtr>* affordances, 
-						 std::map<int, ConstraintPtr>* constraints) 
+						 std::map<int, ConstraintMacroPtr>* constraints) 
 {
   xmlNode* current_node = NULL;
   char* name;
   int uid;
-  std::vector<ConstraintPtr> childConstraints;
+  std::vector<ConstraintMacroPtr> childConstraintMacros;
   std::vector<int> childuids;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {
@@ -317,8 +317,8 @@ ConstraintPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node,
         //get the child uid
         int childuid = atoi(value(doc, current_node));
         //look up the corresponding constraint in the map
-        ConstraintPtr childConstraint = (*constraints).find(childuid)->second;
-        childConstraints.push_back(childConstraint);
+        ConstraintMacroPtr childConstraintMacro = (*constraints).find(childuid)->second;
+        childConstraintMacros.push_back(childConstraintMacro);
         childuids.push_back(childuid);
       }
       else if (nodeNameIs(current_node, "uid")) {
@@ -328,17 +328,17 @@ ConstraintPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node,
         name = value(doc, current_node);
       }
       else {
-        printf("WARNING: Ignored unknown entry '%s' while parsing Constraint.\n", current_node->name);
+        printf("WARNING: Ignored unknown entry '%s' while parsing ConstraintMacro.\n", current_node->name);
       }
     }
   }
 
 
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
-  //I SHOULD NOT BE Constraint::SEQUENTIAL!!!!!!!!!!!!!
-  ConstraintPtr constraint(new Constraint(name, Constraint::SEQUENTIAL));
-  for (int i = 0; i < childConstraints.size(); i++ ) {
-    constraint->addConstraint(childConstraints[i]);
+  //I SHOULD NOT BE ConstraintMacro::SEQUENTIAL!!!!!!!!!!!!!
+  ConstraintMacroPtr constraint(new ConstraintMacro(name, ConstraintMacro::SEQUENTIAL));
+  for (int i = 0; i < childConstraintMacros.size(); i++ ) {
+    constraint->addConstraintMacro(childConstraintMacros[i]);
   }
 
   (*constraints)[uid] = constraint;
@@ -346,7 +346,7 @@ ConstraintPtr serializeSequentialConstraint(xmlDocPtr doc, xmlNode* node,
 }
 
 //Dispatch the proper methods to create objects from XML nodes based on node name
-void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<int,  AffPtr>* affordances, std::map<int, ConstraintPtr>* constraints) {
+void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<int,  AffPtr>* affordances, std::map<int, ConstraintMacroPtr>* constraints) {
   xmlNode* current_node = NULL;
 
   for (current_node = xmlnode; current_node; current_node = current_node->next) {
@@ -355,10 +355,10 @@ void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<
           serializeAffordance(doc, current_node, affordances);
         }
         else if (nodeNameIs(current_node, "atomic")) {
-          serializeAtomicConstraint(doc, current_node, affordances, constraints);
+          serializeAtomicConstraintMacro(doc, current_node, affordances, constraints);
         }
         else if (nodeNameIs(current_node, "sequential")){
-          serializeSequentialConstraint(doc, current_node, affordances, constraints);
+          serializeSequentialConstraintMacro(doc, current_node, affordances, constraints);
         }
         else {
           //parse the child nodes
@@ -368,10 +368,10 @@ void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<
   }
 }
 
-//Nice wrapper API call to parse the entire xml tree from a root node into Constraints and Affordances 
+//Nice wrapper API call to parse the entire xml tree from a root node into ConstraintMacros and Affordances 
 void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
   //printf("calling helper\n");
-  std::map<int, ConstraintPtr>* constraints = new std::map<int, ConstraintPtr>();
+  std::map<int, ConstraintMacroPtr>* constraints = new std::map<int, ConstraintMacroPtr>();
   std::map<int, AffPtr>* affordances = new std::map<int, AffPtr>();
   parseTreeHelper(doc, root, affordances, constraints);
   
@@ -384,7 +384,7 @@ void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
     _affordanceList.push_back((*ii).second);
   }
 
-  for(std::map<int,ConstraintPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
+  for(std::map<int,ConstraintMacroPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
     _constraintList.push_back((*ii).second);
   }
 }
@@ -419,7 +419,7 @@ void DatabaseManager::getAffordances(vector<AffPtr> &affordances)
 		     _affordanceList.end());
 }
 
-void DatabaseManager::getConstraints(vector<ConstraintPtr> &constraints) 
+void DatabaseManager::getConstraintMacros(vector<ConstraintMacroPtr> &constraints) 
 {
   constraints.clear();
   constraints.insert(constraints.end(),

@@ -9,7 +9,7 @@
 // Custom QT widgets
 #include "togglepanel.h"
 #include "customslider.h"
-#include "Qt4Constraint.h"
+#include "Qt4ConstraintMacro.h"
 
 // OpenGL includes
 #include "opengl/opengl_object.h"
@@ -29,11 +29,11 @@
 #include "affordance/AffordanceUpWrapper.h"
 
 // Local includes
-//#include "action_authoring/AtomicConstraint.h"
+//#include "action_authoring/AtomicConstraintMacro.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
-#include "action_authoring/AffordanceRelation.h"
-#include "action_authoring/Constraint.h"
+#include "action_authoring/AtomicConstraint.h"
+#include "action_authoring/ConstraintMacro.h"
 #include "action_authoring/DatabaseManager.h"
 
 namespace action_authoring
@@ -61,8 +61,8 @@ WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
 typedef struct
 {
 	/**sorted sequence of actomic constraints being authored*/
-        std::vector<Qt4ConstraintPtr> _all_gui_constraints;
-        Qt4ConstraintPtr _selected_gui_constraint;
+        std::vector<Qt4ConstraintMacroPtr> _all_gui_constraints;
+        Qt4ConstraintMacroPtr _selected_gui_constraint;
 } AuthoringState;
 
 class MainWindow : public QWidget
@@ -71,7 +71,7 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(const boost::shared_ptr<lcm::LCM> &theLcm, QWidget *parent = 0);
-    boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintPtr waypoint_constraint,
+    boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintMacroPtr waypoint_constraint,
 				   std::vector<std::string> joint_names);
     std::vector<std::string> getJointNames(std::string urdf_xml_filename);
     void demoPopulate();
@@ -93,9 +93,9 @@ private:
     std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
-    void demoPopulateConstraints(); //todo : remove this
+    void demoPopulateConstraintMacros(); //todo : remove this
     std::string getSelectedJointName();
-    void makeGUIFromConstraints();
+    void makeGUIFromConstraintMacros();
 
 private slots:
     void updateJoint(int value);

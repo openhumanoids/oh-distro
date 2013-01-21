@@ -7,20 +7,20 @@
 #include <QApplication>
 // Custom QT widget
 #include "togglepanel.h"
-#include "action_authoring/AffordanceRelation.h"
-#include "action_authoring/Constraint.h"
+#include "action_authoring/AtomicConstraint.h"
+#include "action_authoring/ConstraintMacro.h"
 
 namespace action_authoring
 {
 
     // Qt4 gui objects corresponding to the members of the superclass
-    class Qt4Constraint : public QWidget {
+    class Qt4ConstraintMacro : public QWidget {
     
     Q_OBJECT
 
     public:
-	Qt4Constraint(ConstraintPtr atomicConstraint);
-	~Qt4Constraint();
+	Qt4ConstraintMacro(ConstraintMacroPtr atomicConstraintMacro);
+	~Qt4ConstraintMacro();
         TogglePanel* getPanel();
 	// read the state from the gui elements already referenced
 	void updateElementsFromState();
@@ -28,7 +28,7 @@ namespace action_authoring
 
 	void setAffordances(std::vector<affordance::AffPtr> &leftSideAffordances, 
 			    std::vector<affordance::AffPtr> &rightSideAffordances);
-	ConstraintPtr getConstraint();
+	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
 	
     protected:
@@ -40,7 +40,7 @@ namespace action_authoring
         QComboBox* _gui_robotJointType;
         QComboBox* _gui_constraintType;
         QComboBox* _gui_affordanceType;
-        ConstraintPtr _constraint;
+        ConstraintMacroPtr _constraint;
 
         // should be static
         std::vector<affordance::AffPtr> _leftSideAffordances;
@@ -55,7 +55,7 @@ namespace action_authoring
     
     };
 
-    typedef boost::shared_ptr<Qt4Constraint> Qt4ConstraintPtr;
+    typedef boost::shared_ptr<Qt4ConstraintMacro> Qt4ConstraintMacroPtr;
 }
 
 #endif //QT4CONSTRAINT_H
