@@ -11,7 +11,7 @@ map_store
 opencv-utils
 tld-tracker
 world_model
-
+stereo-bm
 #tutorials
 plamena_sandbox
 #rgbd_simulation
