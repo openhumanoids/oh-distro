@@ -20,7 +20,7 @@ class SelectableOpenGLWidget : public qt4::Qt4_Widget_OpenGL
 	//------fields
 protected:
 	const boost::shared_ptr<collision::Collision_Detector> _collisionDetector;
-
+	void (* _callback)(std::string affordance_id);
 
 	//------constructor
 public:
@@ -28,9 +28,10 @@ public:
 
 
 	//--------methods
+	void set_raycast_callback(void(*callback)(std::string affordance_id));
 	void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
    	void add_collision_object(const boost::shared_ptr<collision::Collision_Object> collisionObject);
-	
+
     };
 }
 

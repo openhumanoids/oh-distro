@@ -47,6 +47,7 @@ void MainWindow::handleAffordancesChanged()
 	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
+	  std::cout << "pushed " << i << std::endl; 
 
 	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
 	  boost::shared_ptr<Collision_Object> collision_object_affordance;
@@ -57,19 +58,19 @@ void MainWindow::handleAffordancesChanged()
 	  	  
 	  if (next->_otdf_id == AffordanceState::BOX) {
 	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Box("box", 
+		  new Collision_Object_Box(next->getName(), 
 		     Vector3f(next->length(), next->width(), next->height()), 
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::CYLINDER) {
 	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Cylinder("cylinder", 
+		  new Collision_Object_Cylinder(next->getName(), 
 	             next->radius(), next->length(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::SPHERE) {
 	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Sphere("sphere", 
+		  new Collision_Object_Sphere(next->getName(),
 		     next->radius(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
@@ -78,8 +79,9 @@ void MainWindow::handleAffordancesChanged()
     	}
     }
 
-  
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
+
+  _widget_opengl.set_raycast_callback((void (*)(std::string))(&MainWindow::selectedOpenGLObjectChanged));
 
 //  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", "drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/no_wheels.dae"); //mit_golf_cart/meshes/model.dae");
 //  _worldState.colorVehicle = new OpenGL_Object_DAE( "object-object-dae", 
@@ -436,4 +438,24 @@ void MainWindow::affordanceUpdateCheck()
   
   cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
   handleAffordancesChanged(); 
+}
+
+void
+MainWindow::
+selectedOpenGLObjectChanged(std::string affordanceName) {
+    std::cout << "intersected affordance: " << affordanceName << std::endl;
+
+    for(uint i = 0; i < _worldState.affordances.size(); i++)
+    {
+	AffConstPtr next = _worldState.affordances[i];
+	std::cout << "affordances" << next->getName() << std::endl;
+	if (next->getName().compare(affordanceName) != 0) {
+	    // select the openGL object corresponding to this affordance by highlighting it
+	    std::cout << "found it!" << i << std::endl;
+	    _worldState.glObjects[i]->set_color(Vector3f(1.0, 0.0, 0.0));
+	    break;
+	}
+    }
+    _widget_opengl.update();
+    return;
 }

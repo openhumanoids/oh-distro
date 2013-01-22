@@ -110,6 +110,7 @@ private:
     std::string getSelectedJointName();
     void makeGUIFromConstraintMacros();
     void handleAffordancesChanged(); //only called if the affordances have changed
+    void selectedOpenGLObjectChanged(std::string affordanceName);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
