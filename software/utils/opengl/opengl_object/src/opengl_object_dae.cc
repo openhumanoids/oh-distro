@@ -102,15 +102,14 @@ draw( Vector3f color ){
     for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
       vector< Vector3f > * vertex_data = NULL;
       vector< Vector3f > * normal_data = NULL;
+      vector< Vector2f > * texcoord_data = NULL;
+      vector< Vector4f > * color_data = NULL;
       vector< unsigned int > * index_data = NULL;
       for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
         if( it2->first == "NORMAL" ){
           map< string, vector< Vector3f > >::iterator normal_iterator = _v3_data.find( it2->second );
           if( normal_iterator != _v3_data.end() ){
             normal_data = &normal_iterator->second;
-          } else {
-            cout << "could not find NORMAL data (" << it2->second << ")" << endl;
-            return;
           }
         } else if ( it2->first == "VERTEX" ){
           string vertex_name = "N/A";
@@ -120,22 +119,23 @@ draw( Vector3f color ){
             map< string, vector< Vector3f > >::iterator vertex_iterator = _v3_data.find( vertex_name );
             if( vertex_iterator != _v3_data.end() ){
               vertex_data = &vertex_iterator->second;
-            } else {
-              cout << "could not find VERTEX data(" << vertex_name << ")" << endl;
-              return;
             }
-          } else {
-            cout << "could not find VERTEX (" << it2->second << ")" << endl;
-            return;
+          }
+        }  else if ( it2->first == "TEXCOORD" ){
+          map< string, vector< Vector2f > >::iterator texcoord_iterator = _v2_data.find( it2->second );
+          if( texcoord_iterator != _v2_data.end() ){
+            texcoord_data = &texcoord_iterator->second;
+          }
+        } else if ( it2->first == "COLOR" ){
+          map< string, vector< Vector4f > >::iterator color_iterator = _v4_data.find( it2->second );
+          if( color_iterator != _v4_data.end() ){
+            color_data = &color_iterator->second;
           }
         }
       }
       map< string, vector< unsigned int > >::iterator index_iterator = _index_data.find( it1->first );
       if( index_iterator != _index_data.end() ){
         index_data = &index_iterator->second;
-      } else {
-        cout << "could not find INDEX data (" << it1->first << ")" << endl;
-        return;
       }
 
       if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
@@ -148,6 +148,34 @@ draw( Vector3f color ){
                       color( 1 ),
                       color( 2 ),
                       transparency() );
+          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
+                      (*normal_data)[ normal_index ]( 1 ),
+                      (*normal_data)[ normal_index ]( 2 ) );
+          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
+                      (*vertex_data)[ vertex_index ]( 1 ),
+                      (*vertex_data)[ vertex_index ]( 2 ) );
+        }
+        glEnd();
+      } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( texcoord_data != NULL ) && ( index_data != NULL ) ){
+        glBegin( GL_TRIANGLES );
+        for( unsigned int i = 0; i < ( index_data->size() / 3 ); i++ ){
+          unsigned int vertex_index = (*index_data)[ 3 * i + 0 ];
+          unsigned int normal_index = (*index_data)[ 3 * i + 1 ];
+          glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
+          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
+                      (*normal_data)[ normal_index ]( 1 ),
+                      (*normal_data)[ normal_index ]( 2 ) );
+          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
+                      (*vertex_data)[ vertex_index ]( 1 ),
+                      (*vertex_data)[ vertex_index ]( 2 ) );
+        }
+        glEnd();
+      } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
+        glBegin( GL_TRIANGLES );
+        for( unsigned int i = 0; i < ( index_data->size() / 2 ); i++ ){
+          unsigned int vertex_index = (*index_data)[ 2 * i + 0 ];
+          unsigned int normal_index = (*index_data)[ 2 * i + 1 ];
+          glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
           glNormal3f( (*normal_data)[ normal_index ]( 0 ),
                       (*normal_data)[ normal_index ]( 1 ),
                       (*normal_data)[ normal_index ]( 2 ) );
@@ -175,6 +203,7 @@ _generate_dl( void ){
   for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
     vector< Vector3f > * vertex_data = NULL;
     vector< Vector3f > * normal_data = NULL;
+    vector< Vector2f > * texcoord_data = NULL;
     vector< Vector4f > * color_data = NULL;
     vector< unsigned int > * index_data = NULL;
     for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
@@ -182,9 +211,6 @@ _generate_dl( void ){
         map< string, vector< Vector3f > >::iterator normal_iterator = _v3_data.find( it2->second );
         if( normal_iterator != _v3_data.end() ){
           normal_data = &normal_iterator->second;
-        } else {
-          cout << "could not find NORMAL data (" << it2->second << ")" << endl;
-          return false;
         }
       } else if ( it2->first == "VERTEX" ){
         string vertex_name = "N/A";
@@ -194,33 +220,26 @@ _generate_dl( void ){
           map< string, vector< Vector3f > >::iterator vertex_iterator = _v3_data.find( vertex_name );
           if( vertex_iterator != _v3_data.end() ){
             vertex_data = &vertex_iterator->second;
-          } else {
-            cout << "could not find VERTEX data(" << vertex_name << ")" << endl;
-            return false;
           }
-        } else {
-          cout << "could not find VERTEX (" << it2->second << ")" << endl;
-          return false;
+        }
+      } else if ( it2->first == "TEXCOORD" ){
+        map< string, vector< Vector2f > >::iterator texcoord_iterator = _v2_data.find( it2->second );
+        if( texcoord_iterator != _v2_data.end() ){
+          texcoord_data = &texcoord_iterator->second;
         }
       } else if ( it2->first == "COLOR" ){
         map< string, vector< Vector4f > >::iterator color_iterator = _v4_data.find( it2->second );
         if( color_iterator != _v4_data.end() ){
           color_data = &color_iterator->second;
-        } else {
-          cout << "could not find COLOR data (" << it2->second << ")" << endl;
-          return false;
         }
       }
     }
     map< string, vector< unsigned int > >::iterator index_iterator = _index_data.find( it1->first );
     if( index_iterator != _index_data.end() ){
       index_data = &index_iterator->second;
-    } else {
-      cout << "could not find INDEX data (" << it1->first << ")" << endl;
-      return false;
     }
 
-    if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( color_data != NULL ) && ( index_data != NULL ) ){
+    if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( texcoord_data != NULL ) && ( color_data != NULL ) && ( index_data != NULL ) ){
       glBegin( GL_TRIANGLES );
       for( unsigned int i = 0; i < ( index_data->size() / 4 ); i++ ){
         unsigned int vertex_index = (*index_data)[ 4 * i + 0 ];
@@ -238,7 +257,35 @@ _generate_dl( void ){
                     (*vertex_data)[ vertex_index ]( 2 ) );
       }
       glEnd();
-    }
+    } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( texcoord_data != NULL ) && ( index_data != NULL ) ){
+      glBegin( GL_TRIANGLES );
+      for( unsigned int i = 0; i < ( index_data->size() / 3 ); i++ ){
+        unsigned int vertex_index = (*index_data)[ 3 * i + 0 ];
+        unsigned int normal_index = (*index_data)[ 3 * i + 1 ];
+        glColor4f( _color( 0 ), _color( 1 ), _color( 2 ), transparency() );
+        glNormal3f( (*normal_data)[ normal_index ]( 0 ),
+                    (*normal_data)[ normal_index ]( 1 ),
+                    (*normal_data)[ normal_index ]( 2 ) );
+        glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
+                    (*vertex_data)[ vertex_index ]( 1 ),
+                    (*vertex_data)[ vertex_index ]( 2 ) );
+      }
+      glEnd();
+    } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
+      glBegin( GL_TRIANGLES );
+      for( unsigned int i = 0; i < ( index_data->size() / 2 ); i++ ){
+        unsigned int vertex_index = (*index_data)[ 2 * i + 0 ];
+        unsigned int normal_index = (*index_data)[ 2 * i + 1 ];
+        glColor4f( _color( 0 ), _color( 1 ), _color( 2 ), transparency() );
+        glNormal3f( (*normal_data)[ normal_index ]( 0 ),
+                    (*normal_data)[ normal_index ]( 1 ),
+                    (*normal_data)[ normal_index ]( 2 ) );
+        glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
+                    (*vertex_data)[ vertex_index ]( 1 ),
+                    (*vertex_data)[ vertex_index ]( 2 ) );
+      }
+      glEnd();
+    } 
   }
   glEndList();
   return true;

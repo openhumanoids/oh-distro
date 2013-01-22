@@ -11,7 +11,7 @@
 namespace opengl {
   class OpenGL_Object_Cylinder: public OpenGL_Object {
   public:
-    OpenGL_Object_Cylinder();
+    OpenGL_Object_Cylinder( std::string id = "N/A", Eigen::Vector2f dimensions = Eigen::Vector2f( 1.0, 1.0 ) );
     virtual ~OpenGL_Object_Cylinder();
     OpenGL_Object_Cylinder( const OpenGL_Object_Cylinder& other );
     OpenGL_Object_Cylinder& operator=( const OpenGL_Object_Cylinder& other );

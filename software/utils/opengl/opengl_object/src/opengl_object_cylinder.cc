@@ -10,8 +10,9 @@ using namespace opengl;
  * class constructor
  */
 OpenGL_Object_Cylinder::
-OpenGL_Object_Cylinder() : OpenGL_Object(),
-                            _dimensions( 1.0, 1.0 ),
+OpenGL_Object_Cylinder( string id,
+                        Vector2f dimensions ) : OpenGL_Object( id ),
+                            _dimensions( dimensions ),
                             _quadric( NULL ),
                             _dl( 0 ){
 

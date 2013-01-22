@@ -37,9 +37,10 @@ main( int argc,
   opengl_object_sphere.set_color( Vector3f( 1.0, 0.0, 1.0 ) );
   qt4_widget_opengl.opengl_scene().add_object( opengl_object_sphere );
 
-  OpenGL_Object_DAE opengl_object_dae( "object-object-dae", getModelsPath() + string( "/mit_gazebo_models/mit_robot/meshes/utorso.dae" ) );
+  OpenGL_Object_DAE opengl_object_dae( "object-object-dae", getModelsPath() + string( "/mit_gazebo_models/mit_golf_cart/meshes/new_golf_cart.dae" ) );
   opengl_object_dae.set( Frame( Vector( -1.0, 0.0, 0.0 ) ) );
   qt4_widget_opengl.opengl_scene().add_object( opengl_object_dae );
+  cout << opengl_object_dae << endl;
 
   qt4_widget_opengl.show();
   

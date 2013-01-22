@@ -82,7 +82,7 @@ initializeGL(){
   glEnable( GL_MULTISAMPLE );
   glEnable( GL_COLOR_MATERIAL );
   glEnable( GL_NORMALIZE );
-  glEnable( GL_CULL_FACE );
+//  glEnable( GL_CULL_FACE );
   glEnable( GL_LINE_SMOOTH );
   glEnable( GL_BLEND );
 
@@ -194,6 +194,10 @@ mouseReleaseEvent( QMouseEvent * event ){
   return;
 }
 
+/**
+ * raycast
+ * a function that is called on a click that has the eye and click (projected onto z=0) positions
+ */
 void
 Qt4_Widget_OpenGL::
 raycast( const Vector eyePosition,
