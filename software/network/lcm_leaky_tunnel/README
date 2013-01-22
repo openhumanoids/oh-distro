@@ -15,4 +15,4 @@ Procedure for running leaky tunnel:
 7) Send 100 100kb messages
    window4: ./send_message 100 100000
 8) Make sure to turn filter off when done
-   window5: ./neten_filter_off.sh
+   window5: ./netem_filter_off.sh
