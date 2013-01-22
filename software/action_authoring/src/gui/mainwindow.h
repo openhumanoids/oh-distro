@@ -13,6 +13,7 @@
 
 // OpenGL includes
 #include "opengl/opengl_object.h"
+#include "opengl/opengl_object_dae.h"
 
 // The following are now subclassed
 //#include "qt4/qt4_widget_opengl.h"
@@ -50,9 +51,10 @@ struct WorldStateView
   std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
+  opengl::OpenGL_Object_DAE* colorVehicle; // TODO : special case for demo
   std::vector<opengl::OpenGL_Object*> glObjects; //objects for rendering
-  std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
- 
+  std::vector<boost::shared_ptr<collision::Collision_Object> > collisionObjs; //collision objects corresponding to glObjects
+
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
  : affServerWrapper(theLcm), colorRobot()
@@ -118,7 +120,7 @@ private slots:
     void handleDeleteWaypoint();
     void handleMoveUp();
     void handleMoveDown();
-    void handleRobotLinkChange();
+    void handleSelectedAffordanceChange();
     void setSelectedAction(QString activator);
 };
 

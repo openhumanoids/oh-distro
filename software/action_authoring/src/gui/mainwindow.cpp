@@ -31,7 +31,7 @@ void MainWindow::handleAffordancesChanged()
   for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
       delete _worldState.glObjects[i];
-      delete _worldState.collisionObjs[i];
+      delete _worldState.collisionObjs[i].get(); // todo probably redundant
     }
       
   _worldState.glObjects.clear();
@@ -47,13 +47,47 @@ void MainWindow::handleAffordancesChanged()
 	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
-	  //todo: Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
-	  //like : _widget_opengl.add_object_with_collision(_collision_object_affordance);  //todo
+
+	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
+	  boost::shared_ptr<Collision_Object> collision_object_affordance;
+	  KDL::Frame f;
+	  next->getFrame(f);
+	  double q1, q2, q3, q4;
+	  f.M.GetQuaternion(q1, q2, q3, q4);
+	  	  
+	  if (next->_otdf_id == AffordanceState::BOX) {
+	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
+		  new Collision_Object_Box("box", 
+		     Vector3f(next->length(), next->width(), next->height()), 
+		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
+	  }
+	  if (next->_otdf_id == AffordanceState::CYLINDER) {
+	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
+		  new Collision_Object_Cylinder("cylinder", 
+	             next->radius(), next->length(),
+		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
+	  }
+	  if (next->_otdf_id == AffordanceState::SPHERE) {
+	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
+		  new Collision_Object_Sphere("sphere", 
+		     next->radius(),
+		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
+	  }
+	  _widget_opengl.add_collision_object(collision_object_affordance);  //todo
+	  _worldState.collisionObjs.push_back(collision_object_affordance);
     	}
     }
 
   
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
+
+//  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", "drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/no_wheels.dae"); //mit_golf_cart/meshes/model.dae");
+//  _worldState.colorVehicle = new OpenGL_Object_DAE( "object-object-dae", 
+//    "/usr/local/share/drcsim-1.3/models/golf_cart/meshes/no_wheels.dae");
+//	"/home/drc/drc/software/models/mit_gazebo_models/mit_wheeled_robot/meshes/head.dae"); //mit_robot/meshes/utorso.dae"); //mit_golf_cart/meshes/no_wheels.dae");
+//  _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
+
+  _widget_opengl.update();
   //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
   //=========collision objects
@@ -348,7 +382,7 @@ updateJoint(int value) {
  */
 void 
 MainWindow::
-handleRobotLinkChange() {
+handleSelectedAffordanceChange() {
     std::string selectedJointName = getSelectedJointName();
     _worldState.colorRobot.setSelectedJoint(selectedJointName);
     _widget_opengl.update();
