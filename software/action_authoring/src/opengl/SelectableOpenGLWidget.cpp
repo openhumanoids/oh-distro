@@ -20,9 +20,9 @@ void
 SelectableOpenGLWidget::
 raycast(const Vector eyePosition,
 	const Vector clickPosition) {
-    cout << "ine calling raycast (eyePosition:" << eyePosition(0) << "," 
-	 << eyePosition(1) << "," << eyePosition(2) << ",clickPosition:" 
-	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
+//    cout << "ine calling raycast (eyePosition:" << eyePosition(0) << "," 
+//	 << eyePosition(1) << "," << eyePosition(2) << ",clickPosition:" 
+//	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
 
     Collision_Object * intersected_object = NULL;
     _collisionDetector->ray_test( Vector3f( eyePosition(0), eyePosition(1), eyePosition(2)), 
@@ -35,10 +35,7 @@ raycast(const Vector eyePosition,
     } else {
 //	cout << "did not intersect with any objects ";
     }
-
-
-
-    cout << endl;
+//    cout << endl;
 
     return;
 }

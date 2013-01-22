@@ -31,8 +31,8 @@ getSelectedLinkName() {
 TogglePanel* 
 Qt4ConstraintMacro::
 getPanel() {
-    QString waypointTitle = QString::fromStdString(_constraint->getName());
-    std::cout << "title is " << _constraint->getName() << std::endl;
+//    QString waypointTitle = QString::fromStdString(_constraint->getName());
+//    std::cout << "title is " << _constraint->getName() << std::endl;
 
     QGroupBox* groupBox = new QGroupBox();
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
@@ -50,7 +50,12 @@ getPanel() {
     _gui_constraintType->insertItem(0, "grasps");
 
     QVBoxLayout* vbox = new QVBoxLayout;
-    vbox->addWidget(_gui_name);
+    QHBoxLayout* top_line_hbox = new QHBoxLayout();
+    QWidget* top_line_container = new QWidget();
+    top_line_hbox->addWidget(_gui_name);
+    top_line_hbox->addWidget(new QPushButton("click to bind"));
+    top_line_container->setLayout(top_line_hbox);
+    vbox->addWidget(top_line_container);
     
     QHBoxLayout* hbox = new QHBoxLayout;
     hbox->addWidget(new QLabel("robot"));
@@ -64,6 +69,27 @@ getPanel() {
     QWidget* boxcontainer = new QWidget();
     boxcontainer->setLayout(hbox);
     vbox->addWidget(boxcontainer);
+
+    // previous constraints checkboxes
+    TogglePanel* checkboxGroup = new TogglePanel(_gui_panel, "constraints still in effect");
+    QGroupBox* checkboxGroupBox = new QGroupBox();
+    QHBoxLayout* checkboxGroupLayout = new QHBoxLayout();
+    QCheckBox* q1 = new QCheckBox("previous constraint #1");
+    q1->setChecked(true);
+    checkboxGroupLayout->addWidget(q1);
+    QCheckBox* q2 = new QCheckBox("previous constraint #2");
+    q2->setChecked(true);
+    checkboxGroupLayout->addWidget(q2);
+    QCheckBox* q3 = new QCheckBox("previous constraint #3");
+    q3->setChecked(true);
+    checkboxGroupLayout->addWidget(q3);
+    QCheckBox* q4 = new QCheckBox("previous constraint #4");
+    q4->setChecked(true);
+    checkboxGroupLayout->addWidget(q4);
+    checkboxGroupBox->setLayout(checkboxGroupLayout);
+    checkboxGroup->addWidget(checkboxGroupBox);
+    vbox->addWidget(checkboxGroup);
+
     groupBox->setLayout(vbox);
 
     // MUST go before the QT connections have been made 
@@ -100,7 +126,7 @@ void
 Qt4ConstraintMacro::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()) + " (UNBOUND)" );
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
@@ -132,7 +158,7 @@ void
 Qt4ConstraintMacro::
 updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()) + " (UNBOUND)");
     _gui_robotJointType->clear();
 
     // re-initialize the maps
