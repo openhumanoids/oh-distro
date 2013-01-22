@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<robot name="steering_assembly">
+
+<param name="mass" default_value="5.0"/>
+
+  <link name="world">
+  </link>
+  <link name="steering_base">
+    <inertial>
+      <mass value="500"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost.dae" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost.dae" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+  <link name="steering_wheel">
+    <inertial>
+      <mass value="1"/>
+      <origin rpy="0 0 0" xyz="-0.22 0 -0.22"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="1.0" iyz="0" izz="0.1"/>                                                 
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.22 0 -0.22"/>
+      <geometry>
+	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_2.dae" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.22 0 -0.2"/>
+      <geometry>
+	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_2.dae" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_to_steering" type="revolute">
+    <origin rpy="0 0 0" xyz="0.1524 0 1.0668 "/>
+    <axis xyz="0 1 0"/>
+    <parent link="steering_base"/>
+    <child link="steering_wheel"/>
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="15"/>
+  </joint>
+
+  <joint name="grounded" type="fixed">
+    <parent link="world"/>
+    <child link="steering_base"/>
+  </joint>
+  
+
+</robot>
+      
+  

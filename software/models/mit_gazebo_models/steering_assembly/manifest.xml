@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<model>
+  <name>Steering Wheel Assembly</name>
+  <version>1.0</version>
+  <sdf>model.sdf</sdf>
+  <author>
+    <name>Steven Jorgensen</name>
+  </author>
+  <description> A simple steering wheel and post assembly to interact with </description>
+</model>
