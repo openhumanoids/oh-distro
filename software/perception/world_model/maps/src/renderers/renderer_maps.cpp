@@ -733,8 +733,8 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   g_signal_connect (G_OBJECT (viewer), "save-preferences",
                     G_CALLBACK (on_save_preferences), self);
 
-  self->mLcm->subscribe("MAP_OCTREES", &RendererMaps::onOctree, self);
-  self->mLcm->subscribe("MAP_CLOUDS", &RendererMaps::onCloud, self);
+  self->mLcm->subscribe("MAP_OCTREE", &RendererMaps::onOctree, self);
+  self->mLcm->subscribe("MAP_CLOUD", &RendererMaps::onCloud, self);
 
   std::cout << "Finished Setting Up Maps Renderer" << std::endl;
 

@@ -96,7 +96,7 @@ struct Worker {
         octMsg.transform.rotation.x = q.x();
         octMsg.transform.rotation.y = q.y();
         octMsg.transform.rotation.z = q.z();
-        mLcm->publish("MAP_OCTREES", &octMsg);
+        mLcm->publish("MAP_OCTREE", &octMsg);
         std::cout << "Sent octree at " << octMsg.num_bytes << " bytes" << std::endl;
       }
 
@@ -168,7 +168,7 @@ struct Worker {
             msgCloud.transform[i][j] = xformInv(i,j);
           }
         }
-        mLcm->publish("MAP_CLOUDS", &msgCloud);
+        mLcm->publish("MAP_CLOUD", &msgCloud);
       }
     }
     mActive = false;
