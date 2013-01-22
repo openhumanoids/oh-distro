@@ -24,6 +24,7 @@ namespace affordance
 
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
+  /**Mutable class representing the state of an affordance*/
   class AffordanceState
   {
     //------------fields
