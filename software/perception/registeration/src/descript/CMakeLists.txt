@@ -7,7 +7,7 @@ cmake_minimum_required ( VERSION 2.8 )
 project( drc-descript )
 
 set( CMAKE_INSTALL_PREFIX /usr/local )
-set( CMAKE_CXX_COMPILER "g++-4.4" )
+#set( CMAKE_CXX_COMPILER "g++-4.4" )
 set( CMAKE_CXX_FLAGS "-L /usr/local/lib" )
 
 include_directories( .

@@ -4,10 +4,10 @@
 #include "opencv2/highgui/highgui.hpp"
 
 // For SURF
-//#include "opencv2/nonfree/features2d.hpp"
+#include "opencv2/nonfree/features2d.hpp"
 
 // For common feature2D
-//#include "opencv2/nonfree/features2d.hpp"
+#include "opencv2/nonfree/features2d.hpp"
 
 
 // Functions declaration
