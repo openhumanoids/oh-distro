@@ -1,21 +1,20 @@
-#ifndef _PointDataBuffer_hpp_
-#define _PointDataBuffer_hpp_
+#ifndef _maps_PointDataBuffer_hpp_
+#define _maps_PointDataBuffer_hpp_
 
 #include <unordered_map>
 #include <set>
 #include <Eigen/Geometry>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <pcl/common/transforms.h>
 
-#include "MapTypes.hpp"
+#include "Types.hpp"
+
+namespace maps {
 
 class PointDataBuffer {
-public:
-  struct PointSet {
-    int64_t mTimestamp;
-    maptypes::PointCloud::Ptr mPoints;
-    Eigen::Isometry3d mToLocal;
-  };
 
+protected:
   typedef std::unordered_map<int64_t, PointSet> PointSetGroup;
   typedef std::set<int64_t> TimeGroup;
 
@@ -28,20 +27,19 @@ public:
 
   void clear();
   void add(const PointSet& iData);
-  bool update(const int64_t iTimestamp, const Eigen::Isometry3d& iToLocal);
 
   PointSet get(const int64_t iTimestamp);
   std::vector<PointSet> get(const int64_t iTimestamp1,
                             const int64_t iTimestamp2);
+  std::vector<PointSet> getAll();
 
-  maptypes::PointCloud::Ptr getAsCloud(const int64_t iTimestamp1,
-                                       const int64_t iTimestamp2);
+  int64_t getTimeMin() const;
+  int64_t getTimeMax() const;
 
-  bool lock();
-  bool unlock();
+  maps::PointCloud::Ptr getAsCloud(const int64_t iTimestamp1,
+                                   const int64_t iTimestamp2);
 
-  PointSetGroup::const_iterator begin() const;
-  PointSetGroup::const_iterator end() const;
+  boost::shared_ptr<PointDataBuffer> clone();
 
 protected:
   int mMaxLength;
@@ -50,5 +48,7 @@ protected:
 
   boost::mutex mMutex;
 };
+
+}
 
 #endif

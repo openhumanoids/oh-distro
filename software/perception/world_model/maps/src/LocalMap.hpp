@@ -1,75 +1,101 @@
-#ifndef _LocalMap_hpp_
-#define _LocalMap_hpp_
+#ifndef _maps_LocalMap_hpp_
+#define _maps_LocalMap_hpp_
 
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 
-#include "MapTypes.hpp"
+#include "Types.hpp"
 
 namespace octomap {
   class OcTree;
 }
 
+namespace maps {
+
+class PointDataBuffer;
+
 class LocalMap {
 public:
   typedef boost::shared_ptr<LocalMap> Ptr;
-  typedef octomap::OcTree Octree;
-  typedef boost::shared_ptr<Octree> OctreePtr;
 
-public:
-  // TODO: abstract this later
-  struct HeightMap {
-    int mWidth;
-    int mHeight;
-    float mMinZ;
-    float mMaxZ;
-    std::vector<float> mData;
-    Eigen::Affine3d mTransformToLocal;
+  // structure for specifying map params
+  struct Spec {
+    int64_t mId;
+    Eigen::Vector3f mBoundMin;
+    Eigen::Vector3f mBoundMax;
+    int mPointBufferSize;
+    bool mActive;
+    float mOctreeResolution;
+    Eigen::Isometry3f mOctreeTransform;  // from reference to octree coords
+
+    Spec() {
+      mId = -1;
+      mBoundMin = Eigen::Vector3f(-1e10, -1e10, -1e10);
+      mBoundMax = Eigen::Vector3f(1e10, 1e10, 1e10);
+      mPointBufferSize = 1000;
+      mActive = true;
+      mOctreeResolution = 0.1;
+      mOctreeTransform = Eigen::Isometry3f::Identity();
+    }
   };
 
-  struct DepthMap {
-    int mWidth;
-    int mHeight;
-    std::vector<float> mData;
-    Eigen::Projective3d mTransform;  // local to image
+
+  // structure for specifying data volume in space and time
+  struct SpaceTimeBounds {
+    std::vector<Eigen::Vector4f> mPlanes;
+    int64_t mMinTime;
+    int64_t mMaxTime;
+
+  public:
+    SpaceTimeBounds();
+    SpaceTimeBounds(const std::vector<Eigen::Vector4f>& iPlanes,
+                    const int64_t iMinTime=-1, const int64_t iMaxTime=-1);
+
+    void set(const std::vector<Eigen::Vector4f>& iPlanes,
+             const int64_t iMinTime=-1, const int64_t iMaxTime=-1);
   };
 
+  struct Octree {
+    boost::shared_ptr<octomap::OcTree> mTree;
+    Eigen::Isometry3f mTransform;
+  };
+
+  
 public:
-  LocalMap();
+  LocalMap(const Spec& iSpec);
   virtual ~LocalMap();
 
-  // clear all state
+  // clear all data
   void clear();
 
-  // set/get internal id
-  void setId(const int64_t iId);
   int64_t getId() const;
+  int getMaxPointDataBufferSize() const;
+  Eigen::Vector3f getBoundMin() const;
+  Eigen::Vector3f getBoundMax() const;
+  std::vector<Eigen::Vector4f> getBoundPlanes() const;  // TODO: may not need
+  Spec getSpec() const;
 
-  // set/get internal state id
-  void setStateId(const int64_t iId);
-  int64_t getStateId() const;
+  // set/get whether this map should reject additional data
+  void setActive(const bool iVal);
+  bool isActive() const;
 
-  // set/get transform to local frame
-  void setTransformToLocal(const Eigen::Isometry3d& iTransform);
-  Eigen::Isometry3d getTransformToLocal() const;
+  // transform points to reference frame, crop against bounds, and add
+  bool addData(const maps::PointSet& iPointSet);
 
-  // set/get 3d bounds for this volume (in map coord frame)
-  bool setBounds(const Eigen::Vector3d& iMin, const Eigen::Vector3d& iMax);
-  Eigen::Vector3d getBoundMin() const;
-  Eigen::Vector3d getBoundMax() const;
-
-  // set/get resolution of smallest octree voxels
-  void setResolution(const double iResolution);
-  double getResolution() const;
-
-  // transform to local frame, add to current map
-  bool add(const maptypes::PointCloud::Ptr& iPoints,
-           const Eigen::Isometry3d& iToLocal,
-           const bool iRayTraceFromOrigin=false);
+  // get point data buffer
+  const boost::shared_ptr<PointDataBuffer> getPointData() const;
 
   // export this entire representation as an ordinary point cloud
-  maptypes::PointCloud::Ptr getAsPointCloud() const;
+  maps::PointCloud::Ptr
+  getAsPointCloud(const float iResolution=0,
+                  const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
+  // export this entire representation as an octree
+  Octree getAsOctree(const float iResolution, const bool iTraceRays=false,
+                     const Eigen::Vector3f& iShift=Eigen::Vector3f(0,0,0),
+                     const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
+
+  /*
   // export this representation as height map
   HeightMap getAsHeightMap(const int iDownSample=1,
                            const float iMaxHeight=1e20) const;
@@ -77,32 +103,16 @@ public:
   // export this representation as depth map
   DepthMap getAsDepthMap(const Eigen::Projective3d& iLocalToImage,
                          const int iWidth, const int iHeight) const;
-
-  // export raw underlying octree bytes 
-  void getAsRaw(std::vector<uint8_t>& oBytes) const;
-
-  // for change detection
-  void resetChangeReference();
-  void getChanges(maptypes::PointCloud::Ptr& oAdded,
-                  maptypes::PointCloud::Ptr& oRemoved);
-  void applyChanges(const maptypes::PointCloud::Ptr& iAdded,
-                    const maptypes::PointCloud::Ptr& iRemoved);
-
-  // serialize to bytes
-  void serialize(std::vector<char>& oBytes) const;
-
-  // deserialize from bytes
-  void deserialize(const std::vector<char>& iBytes);
+  */
 
 
 protected:
-  int64_t mId;
-  int64_t mStateId;
-  double mResolution;
-  Eigen::Isometry3d mTransformToLocal;
-  Eigen::Vector3d mBoundMin;
-  Eigen::Vector3d mBoundMax;
-  OctreePtr mOctree;
+  Spec mSpec;
+  bool mIsFrozen;
+  boost::shared_ptr<PointDataBuffer> mPointData;
+  Octree mOctree;
 };
+
+}
 
 #endif

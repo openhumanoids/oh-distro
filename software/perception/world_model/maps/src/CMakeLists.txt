@@ -1,30 +1,34 @@
 # Create a shared library
 add_library(maps SHARED
-    MapManager.cpp
-    LocalMap.cpp
-    PointDataBuffer.cpp
-    SpatialQuery.cpp
-    SensorDataReceiver.cpp
-    DeltaPublisher.cpp
-    DeltaReceiver.cpp
-    MapWrapper.cpp
-    SpatialQueryWrapper.cpp
+  DataBlob.cpp
+  Utils.cpp
+  PointDataBuffer.cpp
+  SensorDataReceiver.cpp
+  LocalMap.cpp
+  MapManager.cpp
+#    SpatialQuery.cpp
+#    DeltaPublisher.cpp
+#    DeltaReceiver.cpp
+#    MapWrapper.cpp
+#    SpatialQueryWrapper.cpp
 )
 
 # make the header public
 # install it to include/maps
 pods_install_headers(
-  MapTypes.hpp
-  MapManager.hpp
-  LocalMap.hpp
-  PointDataBuffer.hpp
-  SpatialQuery.hpp
+  DataBlob.hpp
+  Types.hpp
   ThreadSafeQueue.hpp
+  Utils.hpp
+  PointDataBuffer.hpp
   SensorDataReceiver.hpp
-  DeltaPublisher.hpp
-  DeltaReceiver.hpp
-  MapWrapper.hpp
-  SpatialQueryWrapper.hpp
+  LocalMap.hpp
+  MapManager.hpp
+#  SpatialQuery.hpp
+#  DeltaPublisher.hpp
+#  DeltaReceiver.hpp
+#  MapWrapper.hpp
+#  SpatialQueryWrapper.hpp
   DESTINATION maps
 )
 
@@ -41,6 +45,7 @@ set(REQUIRED_PACKAGES
   glib-2.0
   bot2-frames
   lcm
+  zlib
   drc-utils
 )
 pods_use_pkg_config_packages(maps ${REQUIRED_PACKAGES})

@@ -1,8 +1,12 @@
 #include "PointDataBuffer.hpp"
 
+#include "Utils.hpp"
+
 #include <pcl/io/io.h>
 
 // TODO: may want to add internal queue to immediately handle "add" calls
+
+using namespace maps;
 
 PointDataBuffer::
 PointDataBuffer() {
@@ -15,8 +19,8 @@ PointDataBuffer::
 
 void PointDataBuffer::
 setMaxLength(const int iLength) {
-  mMaxLength = iLength;
   boost::mutex::scoped_lock lock(mMutex);
+  mMaxLength = iLength;
   if (mMaxLength >= 0) {
     while (mTimes.size() > mMaxLength) {
       TimeGroup::iterator iter = mTimes.begin();
@@ -52,35 +56,23 @@ add(const PointSet& iData) {
   }
 }
 
-bool PointDataBuffer::
-update(const int64_t iTimestamp, const Eigen::Isometry3d& iToLocal) {
-  boost::mutex::scoped_lock lock(mMutex);
-  PointSetGroup::iterator item = mData.find(iTimestamp);
-  if (item == mData.end()) {
-    return false;
-  }
-  item->second.mToLocal = iToLocal;
-  return true;
-}
-
-PointDataBuffer::PointSet PointDataBuffer::
+maps::PointSet PointDataBuffer::
 get(const int64_t iTimestamp) {
   boost::mutex::scoped_lock lock(mMutex);
   PointSetGroup::const_iterator item = mData.find(iTimestamp);
-  PointSet pointSet;
+  maps::PointSet pointSet;
   if (item == mData.end()) {
     pointSet.mTimestamp = 0;
     return pointSet;
   }
   pointSet = item->second;
-  pcl::copyPointCloud(*(item->second.mPoints), *pointSet.mPoints);
   return pointSet;
 }
 
-std::vector<PointDataBuffer::PointSet> PointDataBuffer::
+std::vector<maps::PointSet> PointDataBuffer::
 get(const int64_t iTimestamp1, const int64_t iTimestamp2) {
   boost::mutex::scoped_lock lock(mMutex);
-  std::vector<PointSet> pointSets;
+  std::vector<maps::PointSet> pointSets;
   TimeGroup::const_iterator iter1 = (iTimestamp1 < 0) ? mTimes.begin() :
     mTimes.lower_bound(iTimestamp1);
   TimeGroup::const_iterator iter2 = (iTimestamp2 < 0) ? mTimes.end() :
@@ -94,27 +86,42 @@ get(const int64_t iTimestamp1, const int64_t iTimestamp2) {
     PointSetGroup::const_iterator item = mData.find(*iter);
     if (item != mData.end()) {
       PointSet curSet = item->second;
-      pcl::copyPointCloud(*(item->second.mPoints), *curSet.mPoints);
       pointSets.push_back(curSet);
     }
   }
   return pointSets;
 }
 
-maptypes::PointCloud::Ptr PointDataBuffer::
+std::vector<maps::PointSet> PointDataBuffer::
+getAll() {
+  return get(-1, -1);
+}
+
+int64_t PointDataBuffer::
+getTimeMin() const {
+  if (mTimes.size() == 0) {
+    return -1;
+  }
+  return *mTimes.begin();
+}
+
+int64_t PointDataBuffer::
+getTimeMax() const {
+  if (mTimes.size() == 0) {
+    return -1;
+  }
+  return *mTimes.end();
+}
+
+maps::PointCloud::Ptr PointDataBuffer::
 getAsCloud(const int64_t iTimestamp1, const int64_t iTimestamp2) {
-  std::vector<PointSet> pointSets = get(iTimestamp1, iTimestamp2);
-  maptypes::PointCloud::Ptr cloud(new maptypes::PointCloud());
+  std::vector<maps::PointSet> pointSets = get(iTimestamp1, iTimestamp2);
+  maps::PointCloud::Ptr cloud(new maps::PointCloud());
   for (int i = 0; i < pointSets.size(); ++i) {
-    Eigen::Isometry3d xform = pointSets[i].mToLocal;
-    for (int j = 0; j < pointSets[i].mPoints->points.size(); ++j) {
-      maptypes::PointCloud::PointType point = pointSets[i].mPoints->points[j];
-      Eigen::Vector3d p = xform*Eigen::Vector3d(point.x, point.y, point.z);
-      point.x = p(0);
-      point.y = p(1);
-      point.z = p(2);
-      cloud->points.push_back(point);
-    }
+    Eigen::Affine3f xform = Utils::getPoseMatrix(*pointSets[i].mCloud);
+    maps::PointCloud curCloud;
+    pcl::transformPointCloud(*pointSets[i].mCloud, curCloud, xform);
+    *cloud += curCloud;
   }
   cloud->width = cloud->points.size();
   cloud->height = 1;
@@ -122,28 +129,12 @@ getAsCloud(const int64_t iTimestamp1, const int64_t iTimestamp2) {
   return cloud;
 }
 
-
-bool PointDataBuffer::
-lock() {
-  mMutex.lock();
-  return true;
-}
-
-bool PointDataBuffer::
-unlock() {
-  mMutex.unlock();
-  return true;
-}
-  
-
-// TODO: not threadsafe
-PointDataBuffer::PointSetGroup::const_iterator PointDataBuffer::
-begin() const {
-  return mData.begin();
-}
-
-
-PointDataBuffer::PointSetGroup::const_iterator PointDataBuffer::
-end() const {
-  return mData.end();
+boost::shared_ptr<PointDataBuffer> PointDataBuffer::
+clone() {
+  boost::mutex::scoped_lock lock(mMutex);
+  boost::shared_ptr<PointDataBuffer> buf(new PointDataBuffer());
+  buf->mMaxLength = mMaxLength;
+  buf->mData = mData;
+  buf->mTimes = mTimes;
+  return buf;
 }

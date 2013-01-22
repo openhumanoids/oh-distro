@@ -3,51 +3,24 @@
 #include "PointDataBuffer.hpp"
 #include "LocalMap.hpp"
 
-using namespace maptypes;
+using namespace maps;
 
 MapManager::
 MapManager() {
-  mPointDataBuffer.reset(new PointDataBuffer());
-  setMapResolution(0.01);
-  setMapDimensions(Eigen::Vector3d(10,10,10));
-  setDataBufferLength(1000);
-  setVerbose(false);
+  mVerbose = false;
   mNextMapId = 1;
-  std::cout << "MapManager: constructed" << std::endl;
+  mPointData.reset(new PointDataBuffer());
+  mPointData->setMaxLength(1000);  // TODO: could make this a parameter
 }
 
 MapManager::
 ~MapManager() {
-  std::cout << "MapManager: destructed" << std::endl;
 }
 
 void MapManager::
 clear() {
-  mActiveMap.reset();
   mMaps.clear();
-  mPointDataBuffer->clear();
   std::cout << "MapManager: cleared all state" << std::endl;
-}
-
-void MapManager::
-setMapResolution(const double iResolution) {
-  mMapResolution = iResolution;
-  std::cout << "MapManager: map resolution set to " << iResolution <<
-    std::endl;
-}
-
-void MapManager::
-setMapDimensions(const Eigen::Vector3d iDims) {
-  mMapDimensions = iDims;
-  std::cout << "MapManager: map dimensions set to (" <<
-    iDims[0] << "," << iDims[1] << "," << iDims[2] << ")" << std::endl;
-}
-
-void MapManager::
-setDataBufferLength(const int iLength) {
-  mDataBufferLength = iLength;
-  std::cout << "MapManager: point cloud buffer length set to " <<
-    iLength << std::endl;
 }
 
 void MapManager::
@@ -57,111 +30,125 @@ setVerbose(const bool iVal) {
   mVerbose = iVal;
 }
 
-
-bool MapManager::
-createMap(const Eigen::Isometry3d& iToLocal, const int iId) {
-  LocalMap::Ptr localMap(new LocalMap());
-  if (iId < 0) {
-    localMap->setId(mNextMapId);
-    ++mNextMapId;
+int64_t MapManager::
+createMap(const LocalMap::Spec& iSpec) {
+  LocalMap::Spec spec = iSpec;
+  if ((spec.mId < 0) || hasMap(spec.mId)) {
+    spec.mId = mNextMapId;
   }
-  else {
-    localMap->setId(iId);
-    mNextMapId = std::max(mNextMapId, iId+1);
-  }
-  localMap->setTransformToLocal(iToLocal);
-  localMap->setBounds(-mMapDimensions/2, mMapDimensions/2);
-  localMap->setResolution(mMapResolution);
-  mMaps[localMap->getId()] = localMap;
-  mActiveMap = localMap;
-
-  std::cout << "MapManager: added new map, id=" << localMap->getId() <<
-    std::endl;
-
-  return true;
+  LocalMap::Ptr localMap(new LocalMap(spec));
+  mNextMapId = spec.mId+1;
+  mMaps[spec.mId] = localMap;
+  std::cout << "MapManager: created map id=" << spec.mId << std::endl;
+  return spec.mId;
 }
 
 bool MapManager::
-hasMap(const int64_t iId) {
+hasMap(const int64_t iId) const {
   return (mMaps.find(iId) != mMaps.end());
 }
 
-bool MapManager::
-useMap(const int64_t iId) {
-  MapCollection::iterator item = mMaps.find(iId);
-  if (item == mMaps.end()) {
-    std::cout << "MapManager: could not find requested map with id=" << iId <<
-      std::endl;
-    return false;
-  }
-  mActiveMap = item->second;
-  std::cout << "MapManager: switched to map " << item->second->getId() <<
-    std::endl;
-  return true;
-}
-
 LocalMap::Ptr MapManager::
-getActiveMap() const {
-  return mActiveMap;
-}
-
-bool MapManager::
-addToBuffer(const int64_t iTime, const PointCloud::Ptr& iPoints,
-            const Eigen::Isometry3d& iToLocal) {
-  PointDataBuffer::PointSet pointSet;
-  pointSet.mTimestamp = iTime;
-  pointSet.mPoints = iPoints;
-  pointSet.mToLocal = iToLocal;
-  mPointDataBuffer->add(pointSet);
-  if (mVerbose) {
-    std::cout << "MapManager: added " << iPoints->size() <<
-      " points to buffer" << std::endl;
+getMap(const int64_t iId) const {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
+    return LocalMap::Ptr();
   }
+  return item->second;
 }
 
 bool MapManager::
-updatePose(const int64_t iTime, const Eigen::Isometry3d& iToLocal) {
-  return mPointDataBuffer->update(iTime, iToLocal);
-}
-
-bool MapManager::
-fuseAll() {
-  if (mActiveMap == NULL) {
+startUpdatingMap(const int64_t iId) {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
     return false;
   }
-
-  mActiveMap->clear();
-  PointDataBuffer::PointSetGroup::const_iterator iter;
-  mPointDataBuffer->lock();
-  for (iter = mPointDataBuffer->begin();
-       iter != mPointDataBuffer->end(); ++iter) {
-    const PointDataBuffer::PointSet& pointSet = iter->second;
-    mActiveMap->add(pointSet.mPoints, pointSet.mToLocal);
-  }
-  mPointDataBuffer->unlock();
-
+  item->second->setActive(true);
+  std::cout << "MapManager: start updating map id=" << iId << std::endl;
   return true;
 }
 
 bool MapManager::
-computeDelta(MapDelta& oDelta) {
-  if (mActiveMap == NULL) {
+stopUpdatingMap(const int64_t iId) {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
     return false;
   }
-  oDelta.mAdded.reset(new PointCloud());
-  oDelta.mRemoved.reset(new PointCloud());
-  mActiveMap->getChanges(oDelta.mAdded, oDelta.mRemoved);
-  std::cout << "MapManager: found delta: " << oDelta.mAdded->size() <<
-    " added, " << oDelta.mRemoved->size() << " removed" << std::endl;
+  item->second->setActive(false);
+  std::cout << "MapManager: stop updating map id=" << iId << std::endl;
   return true;
 }
 
 bool MapManager::
-resetDeltaBase() {
-  if (mActiveMap == NULL) {
+clearMap(const int64_t iId) {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
     return false;
   }
-  mActiveMap->resetChangeReference();
-  std::cout << "MapManager: reset delta base" << std::endl;
+  item->second->clear();
+  std::cout << "MapManager: cleared map id=" << iId << std::endl;
   return true;
 }
+
+bool MapManager::
+deleteMap(const int64_t iId) {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
+    return false;
+  }
+  mMaps.erase(item);
+  std::cout << "MapManager: deleted map id=" << iId << std::endl;
+  return true;
+}
+
+int64_t MapManager::
+snapshotMap(const int64_t iId) {
+  return snapshotMap(iId, -1, -1);
+}
+
+int64_t MapManager::
+snapshotMap(const int64_t iId,
+            const int64_t iStartTime, const int64_t iEndTime) {
+  MapCollection::const_iterator item = mMaps.find(iId);
+  if (item == mMaps.end()) {
+    return -1;
+  }
+
+  // create new map with matching spec
+  LocalMap::Ptr localMap = item->second;
+  LocalMap::Spec spec = localMap->getSpec();
+  spec.mActive = false;
+  int64_t idNew = createMap(spec);
+
+  // populate data
+  std::vector<maps::PointSet> pointSets =
+    localMap->getPointData()->get(iStartTime, iEndTime);
+  LocalMap::Ptr localMapNew = mMaps[idNew];
+  boost::shared_ptr<PointDataBuffer> pointData = localMapNew->getPointData();
+  pointData->clear();
+  for (int i = 0; i < pointSets.size(); ++i) {
+    pointData->add(pointSets[i]);
+  }
+
+  std::cout << "MapManager: snapshot map id=" << iId << std::endl;
+  return idNew;
+}
+
+bool MapManager::
+addData(const maps::PointSet& iPointSet) {
+  // add to internal point buffer
+  mPointData->add(iPointSet);
+
+  // add to maps
+  MapCollection::iterator iter;
+  for (iter = mMaps.begin(); iter != mMaps.end(); ++iter) {
+    LocalMap::Ptr localMap = iter->second;
+    if (!localMap->isActive()) {
+      continue;
+    }
+    localMap->addData(iPointSet);
+  }
+  return true;
+}
+
+

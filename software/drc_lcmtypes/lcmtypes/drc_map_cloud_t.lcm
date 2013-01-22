@@ -1,0 +1,19 @@
+package drc;
+
+struct map_cloud_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // id of map
+  int64_t map_id;
+
+  // id of view
+  int64_t view_id;
+
+  // transform from map to reference coords
+  float transform[4][4];
+
+  // the actual data
+  map_blob_t blob;
+}

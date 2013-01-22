@@ -82,6 +82,24 @@ public:
     return true;
   }
 
+  // API functions to add
+  // multiresolution capability (set num levels)
+  //   or have pyramid sitting above; this could just be basic accessor
+  // castRay or equivalent
+  // insertRay or equivalent
+  // intersect ray with volume to find start and end points (or none)
+  // efficient bresenham walking of voxels along ray (templated?)
+  //   integer math
+  //   
+  // splatPoint(val) - occupied or unoccupied
+  // (decide on what the values mean)
+  // serialization (can pack bits if just occupancy is desired)
+  //   = factor of 4 or 8 depending on whether unobserved values need to be stored
+  //               (or, can encode just occupied cells as (short,short,short) triples with byte value (or no value if just occupancy))
+  // change detection
+  // depth projection onto plane
+  // depth projection onto cardinal planes
+
 protected:
   Eigen::Vector3i mDimensions;
   int mPlaneStrideBytes;

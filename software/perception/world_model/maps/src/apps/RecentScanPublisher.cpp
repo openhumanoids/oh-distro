@@ -22,6 +22,7 @@
 #include <pointcloud_tools/pointcloud_vis.hpp>
 
 using namespace std;
+using namespace maps;
 
 struct State {
   boost::shared_ptr<lcm::LCM> mLcm;
@@ -71,13 +72,9 @@ public:
     //  timer.wait();
 
       
-      SensorDataReceiver::PointCloudWithPose data;
+      maps::PointSet data;
       if (mState->mSensorDataReceiver->waitForData(data)) {
-        PointDataBuffer::PointSet pointSet;
-        pointSet.mTimestamp = data.mTimestamp;
-        pointSet.mPoints = data.mPointCloud;
-        pointSet.mToLocal = data.mPose;
-        mState->mPointDataBuffer->add(pointSet);
+        mState->mPointDataBuffer->add(data);
 
         BotTrans b2l;
         bot_frames_get_trans_with_utime(mState->mBotFrames, "body", "local",
@@ -97,7 +94,7 @@ public:
             mPrevTime =  data.mTimestamp - 2E6;
             cout << mPrevTime << " mPrevTime" << "\n";
             cout << data.mTimestamp << " data.mTimestamp" << "\n";
-          maptypes::PointCloud::Ptr cloud =
+          maps::PointCloud::Ptr cloud =
             mState->mPointDataBuffer->getAsCloud(mPrevTime, data.mTimestamp);
 
           bot_lcmgl_t* lcmgl = mState->mLcmGl;
@@ -105,7 +102,7 @@ public:
           bot_lcmgl_color3f(lcmgl, pc_vis_->colors[counter_*3], pc_vis_->colors[counter_*3+1], pc_vis_->colors[counter_*3+2]);
           bot_lcmgl_point_size(lcmgl, 1.5f);
           for (int i = 0; i < cloud->points.size(); ++i) {
-            maptypes::PointCloud::PointType point = cloud->points[i];
+            maps::PointCloud::PointType point = cloud->points[i];
             bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
             bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
             bot_lcmgl_end(lcmgl);

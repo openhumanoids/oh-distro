@@ -4,7 +4,7 @@
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_util.h>
 
-using namespace maptypes;
+using namespace maps;
 
 SensorDataReceiver::
 SensorDataReceiver() {
@@ -92,12 +92,12 @@ setMaxBufferSize(const int iSize) {
 }
 
 bool SensorDataReceiver::
-pop(PointCloudWithPose& oData) {
+pop(maps::PointSet& oData) {
   return mDataBuffer.pop(oData);
 }
 
 bool SensorDataReceiver::
-waitForData(PointCloudWithPose& oData) {
+waitForData(maps::PointSet& oData) {
   return mDataBuffer.waitForData(oData);
 }
 
@@ -121,22 +121,22 @@ stop() {
 
 bool SensorDataReceiver::
 getPose(const std::string& iChannel, const int64_t iTimestamp,
-        Eigen::Isometry3d& oPose) {
+        Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation) {
   BotFrames* frames = bot_frames_get_global(mLcm->getUnderlyingLCM(),
                                             mBotParam);
-  double matx[16];
   boost::mutex::scoped_lock lock(mSubscriptionsMutex);
   SubscriptionMap::const_iterator item = mSubscriptions.find(iChannel);
   if (item == mSubscriptions.end()) {
     false;
   }
+  BotTrans trans;
   int status =
-    bot_frames_get_trans_mat_4x4_with_utime(
+    bot_frames_get_trans_with_utime(
         frames,
         item->second.mTransformFrom.c_str(),
         item->second.mTransformTo.c_str(),
         iTimestamp,
-        matx);
+        &trans);
   if (0 == status) {
     std::cerr << "SensorDataReceiver: cannot get transform from " <<
       item->second.mTransformFrom << " to " << item->second.mTransformTo <<
@@ -144,11 +144,10 @@ getPose(const std::string& iChannel, const int64_t iTimestamp,
     return false;
   }
 
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      oPose(i,j) = matx[i*4+j];
-    }
-  }
+  oPosition = Eigen::Vector4f(trans.trans_vec[0], trans.trans_vec[1],
+                              trans.trans_vec[2], 1);
+  oOrientation = Eigen::Quaternionf(trans.rot_quat[0], trans.rot_quat[1],
+                                    trans.rot_quat[2], trans.rot_quat[3]);
   return true;
 }
 
@@ -165,20 +164,21 @@ onPointCloud(const lcm::ReceiveBuffer* iBuf,
   pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
   pointCloud.width = iMessage->width;
   pointCloud.height = iMessage->height;
-  pointCloud.points.resize(iMessage->width * iMessage->height);
+  pointCloud.resize(iMessage->width * iMessage->height);
   pointCloud.is_dense = false;
-  uint8_t* cloudData = reinterpret_cast<uint8_t*>(&pointCloud.points[0]);
-  const uint8_t* messageData =
-    reinterpret_cast<const uint8_t*>(&iMessage->data[0]);
+  uint8_t* cloudData = (uint8_t*)(&pointCloud[0]);
+  const uint8_t* messageData = (uint8_t*)(&iMessage->data[0]);
   memcpy(cloudData, messageData, iMessage->data_nbytes);
-  PointCloud::Ptr newCloud(new PointCloud());
+  maps::PointCloud::Ptr newCloud(new maps::PointCloud());
   pcl::copyPointCloud(pointCloud, *newCloud);
 
-  Eigen::Isometry3d pose;
-  if (!getPose(iChannel, iMessage->utime, pose)) {
+  if (!getPose(iChannel, iMessage->utime, newCloud->sensor_origin_,
+               newCloud->sensor_orientation_)) {
     return;
   }
-  PointCloudWithPose data(iMessage->utime, newCloud, pose);
+  maps::PointSet data;
+  data.mTimestamp = iMessage->utime;
+  data.mCloud = newCloud;
   mDataBuffer.push(data);
 }
 
@@ -209,15 +209,18 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
   }
   free(lidarName);
 
-  PointCloud::Ptr cloud(new PointCloud());
+  maps::PointCloud::Ptr cloud(new maps::PointCloud());
   cloud->height = 1;
   cloud->is_dense = false;
   cloud->points.reserve(iMessage->nranges);
   for (int i = 0; i < iMessage->nranges; ++i) {
     double theta = iMessage->rad0 + i*iMessage->radstep;
     double range = iMessage->ranges[i];
-    if ((range < rangeMin) || (range > rangeMax)) {
-      continue;
+    if (range < rangeMin) {
+      range = 0;
+    }
+    else if (range > rangeMax) {
+      range = 1000;
     }
     PointType pt;
     pt.x = cos(theta)*range;
@@ -227,10 +230,12 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
   }
   cloud->width = cloud->points.size();
 
-  Eigen::Isometry3d pose;
-  if (!getPose(iChannel, iMessage->utime, pose)) {
+  if (!getPose(iChannel, iMessage->utime, cloud->sensor_origin_,
+               cloud->sensor_orientation_)) {
     return;
   }
-  PointCloudWithPose data(iMessage->utime, cloud, pose);
+  maps::PointSet data;
+  data.mTimestamp = iMessage->utime;
+  data.mCloud = cloud;
   mDataBuffer.push(data);
 }

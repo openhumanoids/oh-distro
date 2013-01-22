@@ -11,29 +11,16 @@
 #include <lcmtypes/drc/pointcloud2_t.hpp>
 #include <bot_param/param_client.h>
 
-#include "MapTypes.hpp"
+#include "Types.hpp"
 #include "ThreadSafeQueue.hpp"
+
+namespace maps {
 
 class SensorDataReceiver {
 public:
   enum SensorType {
     SensorTypePlanarLidar,
     SensorTypePointCloud
-  };
-
-  struct PointCloudWithPose {
-    int64_t mTimestamp;
-    maptypes::PointCloud::Ptr mPointCloud;
-    Eigen::Isometry3d mPose;
-
-    PointCloudWithPose() {}
-    PointCloudWithPose(const int64_t iTime,
-                       const maptypes::PointCloud::Ptr& iCloud,
-                       const Eigen::Isometry3d& iPose) {
-      mTimestamp = iTime;
-      mPointCloud = iCloud;
-      mPose = iPose;
-    }
   };
 
 protected:
@@ -61,8 +48,8 @@ public:
   bool removeChannel(const std::string& iSensorChannel);
 
   void setMaxBufferSize(const int iSize);
-  bool pop(PointCloudWithPose& oData);
-  bool waitForData(PointCloudWithPose& oData);
+  bool pop(maps::PointSet& oData);
+  bool waitForData(maps::PointSet& oData);
 
   bool start();
   bool stop();
@@ -70,7 +57,7 @@ public:
 protected:
 
   bool getPose(const std::string& iChannel, const int64_t iTimestamp,
-               Eigen::Isometry3d& oPose);
+               Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation);
 
 
   // message handlers
@@ -87,10 +74,12 @@ protected:
   SubscriptionMap mSubscriptions;
   bool mIsRunning;
 
-  ThreadSafeQueue<PointCloudWithPose> mDataBuffer;
+  ThreadSafeQueue<maps::PointSet> mDataBuffer;
   boost::mutex mBufferMutex;
   boost::mutex mSubscriptionsMutex;
   boost::condition_variable mBufferCondition;
 };
+
+}
 
 #endif

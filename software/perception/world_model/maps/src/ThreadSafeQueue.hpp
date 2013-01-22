@@ -1,5 +1,5 @@
-#ifndef _ThreadSafeQueue_hpp_
-#define _ThreadSafeQueue_hpp_
+#ifndef _maps_ThreadSafeQueue_hpp_
+#define _maps_ThreadSafeQueue_hpp_
 
 #include <deque>
 #include <boost/thread/mutex.hpp>

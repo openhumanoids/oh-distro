@@ -19,6 +19,7 @@
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_heightmap/renderer_heightmap.hpp>
+#include <renderer_maps/renderer_maps.hpp>
 
 // Individual Renderers:
 #include <renderer_drc/renderer_scrollingplots.h>
@@ -177,6 +178,7 @@ int main(int argc, char *argv[])
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);

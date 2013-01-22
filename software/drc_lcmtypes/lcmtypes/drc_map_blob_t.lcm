@@ -1,0 +1,37 @@
+package drc;
+
+struct map_blob_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // number of dimensions
+  int8_t num_dims;
+
+  // dimensions
+  int32_t dimensions[num_dims];
+
+  // stride of each dimension in bytes
+  int32_t stride_bytes[num_dims];
+
+  // compression type
+  int8_t compression;
+
+  // underlying data type
+  int8_t data_type;
+  
+  // size of data
+  int32_t num_bytes;
+
+  // raw data
+  byte data[num_bytes];
+
+  // enums for compression type
+  const int8_t UNCOMPRESSED = 0;
+  const int8_t ZLIB = 1;
+
+  // enums for data type
+  const int8_t UINT8 = 0;
+  const int8_t UINT16 = 1;
+  const int8_t FLOAT32 = 2;
+}

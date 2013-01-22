@@ -1,84 +1,75 @@
-#ifndef _MapManager_hpp_
-#define _MapManager_hpp_
+#ifndef _maps_MapManager_hpp_
+#define _maps_MapManager_hpp_
 
 #include <unordered_map>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 
-#include "MapTypes.hpp"
+#include "Types.hpp"
+#include "LocalMap.hpp"
+
+
+namespace maps {
 
 class PointDataBuffer;
-class LocalMap;
 
 class MapManager {
-public:
-  typedef boost::shared_ptr<LocalMap> MapPtr;
-
-  struct MapDelta {
-    maptypes::PointCloud::Ptr mAdded;
-    maptypes::PointCloud::Ptr mRemoved;
-  };
 
 protected:
-  typedef std::unordered_map<int64_t, MapPtr> MapCollection;
+  typedef std::unordered_map<int64_t, LocalMap::Ptr> MapCollection;
 
 
 public:
   // constructor/destructor
   MapManager();
-  ~MapManager();
+  virtual ~MapManager();
 
   // completely clear the state
   void clear();
 
   // setters for map properties
-  void setMapResolution(const double iResolution);
-  void setMapDimensions(const Eigen::Vector3d iDims);
-  void setDataBufferLength(const int iLength);
   void setVerbose(const bool iVal);
 
-  // create new map and make it the active one
-  bool createMap(const Eigen::Isometry3d& iToLocal =
-                 Eigen::Isometry3d::Identity(),
-                 const int iId=-1);
+  // create new map, return id if successful or -1 if not
+  int64_t createMap(const LocalMap::Spec& iSpec);
 
   // whether map with given id exists
-  bool hasMap(const int64_t iId);
+  bool hasMap(const int64_t iId) const;
 
-  // switch to use map with given id
-  bool useMap(const int64_t iId);
+  // get map with specified id, or null if not found
+  LocalMap::Ptr getMap(const int64_t iId) const;
 
-  // get current active map, or null if there is no current map
-  MapPtr getActiveMap() const;
+  // start forwarding data to particular map
+  bool startUpdatingMap(const int64_t iId);
 
-  // add data to internal buffer but not to map
-  bool addToBuffer(const int64_t iTime,
-                   const maptypes::PointCloud::Ptr& iPoints,
-                   const Eigen::Isometry3d& iToLocal);
+  // stop forwarding data to particular map
+  bool stopUpdatingMap(const int64_t iId);
 
-  // correct pose of buffered points
-  bool updatePose(const int64_t iTime, const Eigen::Isometry3d& iToLocal);
+  // clear point data from specified map
+  bool clearMap(const int64_t iId);
 
-  // fuse all current buffered points to rebuild current map
-  bool fuseAll();
+  // permanently remove specified map
+  bool deleteMap(const int64_t iId);
 
-  // compute delta between current and previous version of current map
-  bool computeDelta(MapDelta& oDelta);
+  // clone specified map, return new id if successful or -1 if not
+  int64_t snapshotMap(const int64_t iId);
+  int64_t snapshotMap(const int64_t iId,
+                      const int64_t iStartTime, const int64_t iEndTime);
 
-  // make previous version of map same as current for deltas
-  bool resetDeltaBase();
+  // add data to all active maps
+  bool addData(const maps::PointSet& iPointSet);
+
+  // get underlying point data (TODO: experimental)
+  const boost::shared_ptr<PointDataBuffer> getPointData() const;
 
 protected:
-  MapPtr mActiveMap;
   MapCollection mMaps;
-  boost::shared_ptr<PointDataBuffer> mPointDataBuffer;
-
-  double mMapResolution;
-  Eigen::Vector3d mMapDimensions;
-  int mDataBufferLength;
-  bool mVerbose;
-
   int mNextMapId;
+  boost::shared_ptr<PointDataBuffer> mPointData;
+
+  bool mVerbose;
 };
+
+}
 
 #endif
