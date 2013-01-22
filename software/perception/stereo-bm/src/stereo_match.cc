@@ -26,6 +26,19 @@
 
 using namespace std;
 
+static const char* FILTER_NAME = "Stereo Block-Matcher";
+static const char* PARAM_PRE_FILTER_SIZE = "Pre-Filter Size";
+static const char* PARAM_PRE_FILTER_CAP = "Pre-Filter Cap";
+static const char* PARAM_CORRELATION_WINDOW_SIZE = "Correlation Window Size";
+static const char* PARAM_MIN_DISPARITY = "Min. Disparity";
+static const char* PARAM_NO_DISPARITIES = "Num. of Disparities";
+static const char* PARAM_DISPARITY_RANGE = "Disparity Range";
+static const char* PARAM_UNIQUENESS_RATIO = "Uniqueness Ratio";
+static const char* PARAM_TEXTURE_THRESHOLD = "Texture Threshold";
+static const char* PARAM_SPECKLE_WINDOW_SIZE = "Speckle Window Size";
+static const char* PARAM_SPECKLE_RANGE = "Speckle Range";
+
+
 struct CameraParams { 
     cv::Mat_<double> K; 
     cv::Mat_<double> D; 
@@ -56,12 +69,9 @@ struct state_t {
     BotParam   *param;
     BotFrames *frames;
     bot_lcmgl_t *lcmgl;
+    // BotGtkParamWidget* pw;
 };
 state_t* state = NULL;
-
-// Stereo related variables
-cv::Mat left_stereo, right_stereo;
-std::string channel_left, channel_right;
 
 // Enums
 enum { STEREO_BM=0, STEREO_SGBM=1, STEREO_HH=2, STEREO_VAR=3 };
@@ -70,11 +80,29 @@ enum { STEREO_BM=0, STEREO_SGBM=1, STEREO_HH=2, STEREO_VAR=3 };
 int alg = STEREO_HH;
 int SADWindowSize = 0, numberOfDisparities = 0;
 bool no_display = false;
-float scale = .25f;
 
 cv::StereoBM bm;
 cv::StereoSGBM sgbm;
 cv::StereoVar var;
+
+
+// Stereo BM params
+// Variable Parameters
+std::string vCHANNEL_LEFT, vCHANNEL_RIGHT;
+float vSCALE = .25f;
+bool vDEBUG = false;
+
+int vPRE_FILTER_SIZE = 9; // 5-255
+int vPRE_FILTER_CAP = 63; // 1-63
+int vCORRELATION_WINDOW_SIZE = 3; // 5-255
+int vMIN_DISPARITY = 0; // (-128)-128
+// int vNO_DISPARITIES; // 
+int vDISPARITY_RANGE = 64; // 32-128
+int vUNIQUENESS_RATIO = 15; // 0-100
+int vTEXTURE_THRESHOLD = 10; // 0-100
+int vSPECKLE_WINDOW_SIZE = 100; // 0-1000
+int vSPECKLE_RANGE = 4; // 0-31
+
 
 void
 publish_opencv_image(lcm_t* lcm, const char* str, const cv::Mat& _img, double utime = 0) { 
@@ -86,18 +114,27 @@ publish_opencv_image(lcm_t* lcm, const char* str, const cv::Mat& _img, double ut
     else 
         img = _img.clone();
 
-  bot_core_image_t bot_img;
-  bot_img.utime = utime; 
-  bot_img.width = img.cols; 
-  bot_img.height = img.rows;
-  bot_img.row_stride = img.cols * ch; 
-  bot_img.pixelformat = (ch==3) ? BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB : BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
-  bot_img.size = img.rows * img.cols * ch;
-  bot_img.data = (uint8_t*) img.data;
-  bot_img.nmetadata = 0;
-  bot_img.metadata = NULL;
+    // std::cerr << str << " " << img.type() << " " << CV_16S << std::endl;
 
-  bot_core_image_t_publish(lcm, str, &bot_img);
+    bot_core_image_t bot_img;
+    bot_img.utime = utime; 
+    bot_img.width = img.cols; 
+    bot_img.height = img.rows;
+    bot_img.row_stride = img.cols * ch; 
+    if ((ch == 1) && (img.type() == CV_16S)) {
+        bot_img.pixelformat = BOT_CORE_IMAGE_T_PIXEL_FORMAT_LE_GRAY16;
+        bot_img.row_stride = img.cols * ch * sizeof(uint16_t); 
+        bot_img.size = img.rows * img.cols * ch * sizeof(uint16_t);
+    } else { 
+        bot_img.pixelformat = (ch==3) ? BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB : BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
+        bot_img.row_stride = img.cols * ch; 
+        bot_img.size = img.rows * img.cols * ch;
+    }
+    bot_img.data = (uint8_t*) img.data;
+    bot_img.nmetadata = 0;
+    bot_img.metadata = NULL;
+
+    bot_core_image_t_publish(lcm, str, &bot_img);
 
   return;
 }
@@ -130,24 +167,27 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
 }
 
 
+// Stereo related variables
+cv::Mat left_stereo, right_stereo;
+
 void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
     const bot_core_image_t *msg, void *user_data)
 {
     // Comp *self = (Comp*) user_data;
     state_t* self = (state_t*) user_data;
   
-    if (strcmp(channel_left.c_str(), channel) == 0) { 
+    if (strcmp(vCHANNEL_LEFT.c_str(), channel) == 0) { 
         decode_image(msg, left_stereo);
-        if( scale != 1.f ) {
-            int method = scale < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
-            cv::resize(left_stereo, left_stereo, cv::Size(), scale, scale, method);
+        if( vSCALE != 1.f ) {
+            int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
+            cv::resize(left_stereo, left_stereo, cv::Size(), vSCALE, vSCALE, method);
         }
         cv::cvtColor(left_stereo, left_stereo, CV_RGB2BGR);
-    }  else if (strcmp(channel_right.c_str(), channel) == 0) { 
+    }  else if (strcmp(vCHANNEL_RIGHT.c_str(), channel) == 0) { 
         decode_image(msg, right_stereo);
-        if( scale != 1.f ) {
-            int method = scale < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
-            cv::resize(right_stereo, right_stereo, cv::Size(), scale, scale, method);
+        if( vSCALE != 1.f ) {
+            int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
+            cv::resize(right_stereo, right_stereo, cv::Size(), vSCALE, vSCALE, method);
         }
         cv::cvtColor(right_stereo, right_stereo, CV_RGB2BGR);
     }
@@ -173,9 +213,9 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
 
   cv::Mat_<double> Mleft = left_camera_params.getK(), Mright = right_camera_params.getK(); 
   cv::Mat_<double> Dleft = left_camera_params.getD(), Dright = right_camera_params.getD(); 
-  if( scale != 1.f ) {
-      Mleft(0,2) *= scale, Mleft(1,2) *= scale;
-      Mright(0,2) *= scale, Mright(1,2) *= scale;
+  if( vSCALE != 1.f ) {
+      Mleft(0,2) *= vSCALE, Mleft(1,2) *= vSCALE;
+      Mright(0,2) *= vSCALE, Mright(1,2) *= vSCALE;
   }
   
   cv::stereoRectify(Mleft, Dleft, Mright, Dright, 
@@ -193,37 +233,37 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   cv::Mat left = left_stereo.clone();
   cv::Mat right = right_stereo.clone();
 
-  publish_opencv_image(self->lcm, "CAMERALEFT_RECTIFIED", left, msg->utime);
-  publish_opencv_image(self->lcm, "CAMERARIGHT_RECTIFIED", right, msg->utime);
+  // publish_opencv_image(self->lcm, "CAMERALEFT_RECTIFIED", left, msg->utime);
+  // publish_opencv_image(self->lcm, "CAMERARIGHT_RECTIFIED", right, msg->utime);
 
   numberOfDisparities = numberOfDisparities > 0 ? numberOfDisparities : ((left.size().width/8) + 15) & -16;
 
   // Block matching
   bm.state->roi1 = roi_left;
   bm.state->roi2 = roi_right;
-  bm.state->preFilterCap = 31;
-  bm.state->SADWindowSize = SADWindowSize > 0 ? SADWindowSize : 9;
-  bm.state->minDisparity = 0;
+  bm.state->preFilterCap = vPRE_FILTER_CAP;
+  bm.state->SADWindowSize = vCORRELATION_WINDOW_SIZE;
+  bm.state->minDisparity = vMIN_DISPARITY;
   bm.state->numberOfDisparities = numberOfDisparities;
-  bm.state->textureThreshold = 10;
-  bm.state->uniquenessRatio = 15;
-  bm.state->speckleWindowSize = 100;
-  bm.state->speckleRange = 32;
+  bm.state->textureThreshold = vTEXTURE_THRESHOLD;
+  bm.state->uniquenessRatio = vUNIQUENESS_RATIO;
+  bm.state->speckleWindowSize = vSPECKLE_WINDOW_SIZE;
+  bm.state->speckleRange = vSPECKLE_RANGE;
   bm.state->disp12MaxDiff = 1;
 
-  sgbm.preFilterCap = 63;
-  sgbm.SADWindowSize = SADWindowSize > 0 ? SADWindowSize : 3;
+  sgbm.preFilterCap = vPRE_FILTER_CAP; // 63
+  sgbm.SADWindowSize = vCORRELATION_WINDOW_SIZE; // 3
 
   // Channels
   int cn = left.channels();
 
   sgbm.P1 = 8*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
   sgbm.P2 = 32*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
-  sgbm.minDisparity = 0;
+  sgbm.minDisparity = vMIN_DISPARITY;
   sgbm.numberOfDisparities = numberOfDisparities;
-  sgbm.uniquenessRatio = 10;
-  sgbm.speckleWindowSize = bm.state->speckleWindowSize;
-  sgbm.speckleRange = bm.state->speckleRange;
+  sgbm.uniquenessRatio = vUNIQUENESS_RATIO;
+  sgbm.speckleWindowSize = vSPECKLE_WINDOW_SIZE;
+  sgbm.speckleRange = vSPECKLE_RANGE;
   sgbm.disp12MaxDiff = 1;
   sgbm.fullDP = alg == STEREO_HH;
 
@@ -255,9 +295,9 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   tm = cv::getTickCount() - tm;
   printf("Time elapsed: %f ms\n", tm*1000/cv::getTickFrequency());
 
-  if( scale != 1.f ) {
-      int method =scale < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
-      cv::resize(disp, disp, cv::Size(), 1.f/scale, 1.f/scale, method);
+  if( vSCALE != 1.f ) {
+      int method =vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
+      cv::resize(disp, disp, cv::Size(), 1.f/vSCALE, 1.f/vSCALE, method);
   }
 
   //disp = dispp.colRange(numberOfDisparities, img1p.cols);
@@ -269,23 +309,40 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   if (disp.empty())
       return;
   
-  publish_opencv_image(self->lcm, "CAMERADEPTH", disp8);
+  if (vDEBUG)
+      publish_opencv_image(self->lcm, "CAMERADEPTH8", disp8);
+  publish_opencv_image(self->lcm, "CAMERADEPTH", disp);
 
   return;
 }
 
 int main(int argc, char ** argv) {
-    channel_left = std::string("CAMERALEFT");
-    channel_right = std::string("CAMERARIGHT");
+    vCHANNEL_LEFT = std::string("CAMERALEFT");
+    vCHANNEL_RIGHT = std::string("CAMERARIGHT");
     ConciseArgs opt(argc, (char**)argv);
-    opt.add(scale, "s", "scale", "Block-Matching Scale");
-    opt.add(channel_left, "cl", "channel-left", "Left camera subscribe channel");
-    opt.add(channel_right, "cr", "channel-right", "Right camera subscribe channel");
+    opt.add(vSCALE, "s", "scale", "Block-Matching Scale");
+    opt.add(vCHANNEL_LEFT, "cl", "channel-left", "Left camera subscribe channel");
+    opt.add(vCHANNEL_RIGHT, "cr", "channel-right", "Right camera subscribe channel");
+
+    // stereo bm params
+    opt.add(vPRE_FILTER_SIZE, "pfs", "pre-filter-size", PARAM_PRE_FILTER_SIZE);
+    opt.add(vPRE_FILTER_CAP, "pfc", "pre-filter-cap", PARAM_PRE_FILTER_CAP);
+    opt.add(vCORRELATION_WINDOW_SIZE, "w", "correlation-window-size", PARAM_CORRELATION_WINDOW_SIZE);
+    opt.add(vMIN_DISPARITY, "md", "min-disparity", PARAM_MIN_DISPARITY);
+    opt.add(vDISPARITY_RANGE, "dr", "disparity-range", PARAM_DISPARITY_RANGE);
+    opt.add(vUNIQUENESS_RATIO, "ur", "uniqueness-ratio", PARAM_UNIQUENESS_RATIO);
+    opt.add(vTEXTURE_THRESHOLD, "tt", "texture-threshold", PARAM_TEXTURE_THRESHOLD);
+    opt.add(vSPECKLE_WINDOW_SIZE, "sws", "speckle-window-size", PARAM_SPECKLE_WINDOW_SIZE);
+    opt.add(vSPECKLE_RANGE, "sr", "speckle-range", PARAM_SPECKLE_RANGE);
+
+    opt.add(vDEBUG, "d", "debug", "Debug mode");
     opt.parse();
+
     std::cerr << "===========  Stereo Block Matcher ============" << std::endl;
-    std::cerr << "=> LEFT Channel: " << channel_left << std::endl
-              << "=> RIGHT Channel: " << channel_right << std::endl
-              << "=> SCALE : " << scale << std::endl;
+    std::cerr << "=> LEFT Channel: " << vCHANNEL_LEFT << std::endl
+              << "=> RIGHT Channel: " << vCHANNEL_RIGHT << std::endl
+              << "=> SCALE : " << vSCALE << std::endl
+              << "=> DEBUG : " << vDEBUG << std::endl;
     std::cerr << "**********************************************" << std::endl;
 
     state_t *state = new state_t;
@@ -295,9 +352,9 @@ int main(int argc, char ** argv) {
     state->param = bot_param_new_from_server(state->lcm, 1);
     state->frames = bot_frames_get_global (state->lcm, state->param);
     state->lcmgl = bot_lcmgl_init(state->lcm,"stereo-bm");
+    // state->pw = BOT_GTK_PARAM_WIDGET (bot_gtk_param_widget_new ());
 
-
-    std::string key_prefix_str = "cameras."+channel_left+".intrinsic_cal";
+    std::string key_prefix_str = "cameras."+vCHANNEL_LEFT+".intrinsic_cal";
     left_camera_params.width = bot_param_get_int_or_fail(state->param, (key_prefix_str+".width").c_str());
     left_camera_params.height = bot_param_get_int_or_fail(state->param,(key_prefix_str+".height").c_str());
     left_camera_params.fx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fx").c_str());
@@ -310,7 +367,7 @@ int main(int argc, char ** argv) {
     left_camera_params.p1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p1").c_str());
     left_camera_params.p2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p2").c_str());
 
-    key_prefix_str = "cameras."+channel_right+".intrinsic_cal";
+    key_prefix_str = "cameras."+vCHANNEL_RIGHT+".intrinsic_cal";
     right_camera_params.width = bot_param_get_int_or_fail(state->param, (key_prefix_str+".width").c_str());
     right_camera_params.height = bot_param_get_int_or_fail(state->param,(key_prefix_str+".height").c_str());
     right_camera_params.fx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fx").c_str());
@@ -330,9 +387,9 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
-    bot_core_image_t_subscription_t * sub_left =  bot_core_image_t_subscribe(state->lcm, channel_left.c_str(), 
+    bot_core_image_t_subscription_t * sub_left =  bot_core_image_t_subscribe(state->lcm, vCHANNEL_LEFT.c_str(), 
                                                                              on_image_frame, state);
-    bot_core_image_t_subscription_t * sub_right =  bot_core_image_t_subscribe(state->lcm, channel_right.c_str(), 
+    bot_core_image_t_subscription_t * sub_right =  bot_core_image_t_subscribe(state->lcm, vCHANNEL_RIGHT.c_str(), 
                                                                               on_image_frame, state);
 
     //add lcm to mainloop 
