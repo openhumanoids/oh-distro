@@ -38,6 +38,13 @@ namespace surrogate_gui
 								  double &roll, double &pitch, double &yaw, 
 								  double &radius,
 								  double &height);
+			
+			static pcl::PointIndices::Ptr fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+								  boost::shared_ptr<std::set<int> > subcloudIndices,
+								  double &x, double &y, double &z,
+								  double &radius);
+
+
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);

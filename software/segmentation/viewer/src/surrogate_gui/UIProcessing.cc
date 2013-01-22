@@ -909,7 +909,54 @@ namespace surrogate_gui
 
 	void UIProcessing::handleAffordancePubButtonSphere()
 	{
-	  handleAffordancePubButtonCylinder(); //placeholder TODO
+	  //todo: map_utime, map_id, object_id
+	  drc::affordance_t affordanceMsg;
+	  	  
+	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER; // FIXEME: extend daffordance_t for SPHERE;
+	  affordanceMsg.name = "sphere";
+
+          //geometrical properties
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
+	  affordanceMsg.nparams = 4; //8; //xyz,radius
+	  double x,y,z,radius;
+	  PointIndices::Ptr sphereIndices 
+	    = Segmentation::fitSphere(_surrogate_renderer._display_info.cloud,
+					 currObj->indices,
+					x,y,z,
+					radius);
+	      
+	  affordanceMsg.params.push_back(x);
+	  affordanceMsg.param_names.push_back("x");
+	  
+	  affordanceMsg.params.push_back(y);
+	  affordanceMsg.param_names.push_back("y");
+
+	  affordanceMsg.params.push_back(z);
+	  affordanceMsg.param_names.push_back("z");
+
+	  affordanceMsg.params.push_back(radius);
+	  affordanceMsg.param_names.push_back("radius");
+
+	  //point cloud indices
+	  affordanceMsg.nptinds = sphereIndices->indices.size();
+	  affordanceMsg.ptinds = vector<int>(sphereIndices->indices.begin(),
+	  				     sphereIndices->indices.end());
+
+	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
+	       << affordanceMsg.ptinds.size() << endl;
+
+	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.param_names.size() << endl;
+
+	  //todo : Set these
+	  //states: todo? is this used? states/state_names
+	  affordanceMsg.nstates = 0;
+	  
+	  cout << "\n about to publish" << endl;
+	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  cout << "\n ***published \n" << endl;
+	  
+	  return;
 	}
 
 	void UIProcessing::handleAffordancePubButtonPlane()

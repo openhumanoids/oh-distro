@@ -20,6 +20,7 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/common/impl/centroid.hpp> //for computing centroid
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/io/pcd_io.h>
 
 using namespace std;
 using namespace pcl;
@@ -296,6 +297,7 @@ namespace surrogate_gui
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
 
+    pcl::PCDWriter writer;
 
     //debugging
     Eigen::Vector4f centroid4f;
@@ -320,7 +322,7 @@ namespace surrogate_gui
     seg.setModelType(SACMODEL_CYLINDER); //pcl::SACMODEL_CYLINDER);
     seg.setMethodType(SAC_MLESAC); 
     seg.setDistanceThreshold(0.09); //0.05);
-    seg.setRadiusLimits(0.01, 2); //0.05, 0.2);
+    seg.setRadiusLimits(0.01, 0.25); //0.05, 0.2);
        
     //set input
     seg.setInputCloud(subcloud);
@@ -338,6 +340,11 @@ namespace surrogate_gui
     z = coefficients->values[2];    
     radius = coefficients->values[6];
     
+  // Obtain the cylinder inliers and coefficients
+  
+  writer.write ("table_objects.pcd", *subcloud, false);
+
+
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
 
     //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
@@ -345,6 +352,69 @@ namespace surrogate_gui
     z = centroid.z;
 
     return cylinderIndices;
+  }
+
+  //==============sphere
+    PointIndices::Ptr Segmentation::fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					      boost::shared_ptr<set<int> >  subcloudIndices,
+					      double &x, double &y, double &z,
+					      double &radius)
+  {
+    cout << "\n in fit sphere.  num indices = " << subcloudIndices->size() << endl;
+    cout << "\n cloud size = " << cloud->points.size() << endl;
+
+    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+
+
+
+    //debugging
+    Eigen::Vector4f centroid4f;
+    compute3DCentroid(*subcloud, centroid4f);
+    PointXYZ centroid(centroid4f[0], centroid4f[1], centroid4f[2]);
+    
+    cout << "\n subcloud centroid = " << centroid << endl;
+    //end debugging
+
+    //---normals
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
+    NormalEstimation<PointXYZRGB, pcl::Normal> ne;
+    ne.setSearchMethod (tree);
+    ne.setInputCloud (subcloud);
+    ne.setKSearch (50);
+    PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
+    ne.compute (*subcloud_normals);
+
+    //create the segmentation object
+    SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
+    seg.setOptimizeCoefficients(true); //optional
+    seg.setModelType(SACMODEL_SPHERE); //pcl::SACMODEL_CYLINDER);
+    seg.setMethodType(SAC_MLESAC); 
+    seg.setDistanceThreshold(0.09); //0.05);
+    seg.setRadiusLimits(0.01, 0.25); //0.05, 0.2);
+       
+    //set input
+    seg.setInputCloud(subcloud);
+    seg.setInputNormals(subcloud_normals);
+
+    //segment
+    ModelCoefficients::Ptr coefficients(new ModelCoefficients);
+    PointIndices::Ptr sphereIndices (new PointIndices);
+    seg.segment(*sphereIndices, *coefficients);
+    
+    //todo: xyz / rpyaw  / radius, length
+    //model_coefficientsthe coefficients of the sphere (center, sphere_radius_R)
+    x = coefficients->values[0];
+    y = coefficients->values[1];
+    z = coefficients->values[2];    
+    radius = coefficients->values[6];
+    
+    cout << "\n segmentation coefficients:\n" << *coefficients << endl;
+
+    //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
+    //is oriented vertically)
+    z = centroid.z;
+
+    return sphereIndices;
   }
 
 
