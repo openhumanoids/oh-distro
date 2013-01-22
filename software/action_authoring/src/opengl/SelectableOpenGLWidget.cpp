@@ -31,7 +31,8 @@ raycast(const Vector eyePosition,
 //    _collisionDetector->ray_test( Vector3f( 10.0, 0.0, 0.0 ), Vector3f( 0.0, 0.0, 0.0 ), intersected_object );
     if( intersected_object != NULL ){
 //	cout << "intersected " << intersected_object->id().c_str() << " ";
-	_callback(intersected_object->id());
+	emit raycastCallback(intersected_object->id());
+//	_callback(intersected_object->id());
     } else {
 //	cout << "did not intersect with any objects ";
     }
@@ -56,10 +57,4 @@ void SelectableOpenGLWidget::add_collision_object(const shared_ptr<Collision_Obj
     }
     cout << "(should intersect with box2)" << endl;
 */
-}
-
-void
-SelectableOpenGLWidget::
-set_raycast_callback(void(*callback)(std::string affordance_id)) {
-    _callback = callback;
 }

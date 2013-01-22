@@ -54,7 +54,7 @@ void MainWindow::handleAffordancesChanged()
 	  next->getFrame(f);
 	  double q1, q2, q3, q4;
 	  f.M.GetQuaternion(q1, q2, q3, q4);
-	  	  
+
 	  if (next->_otdf_id == AffordanceState::BOX) {
 	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
 		  new Collision_Object_Box(next->getName(), 
@@ -80,7 +80,9 @@ void MainWindow::handleAffordancesChanged()
 
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-  _widget_opengl.set_raycast_callback((void (*)(std::string))(&MainWindow::selectedOpenGLObjectChanged));
+  connect(&_widget_opengl, SIGNAL(raycastCallback(std::string)),
+	  this, SLOT(selectedOpenGLObjectChanged(std::string)));
+//  _widget_opengl.set_raycast_callback((void (*)(std::string))(&MainWindow::selectedOpenGLObjectChanged));
 
 //  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", "drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/no_wheels.dae"); //mit_golf_cart/meshes/model.dae");
 //  _worldState.colorVehicle = new OpenGL_Object_DAE( "object-object-dae", 
@@ -414,17 +416,10 @@ makeGUIFromConstraintMacros() {
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) 
       {
 	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
-	
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
-	// old code: currently using constraint name as UID
-//	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
-//				  //QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()));
-//	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
-//	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
 	connect(_authoringState._all_gui_constraints[i].get(),
 		SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
 		this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
-	
 	_constraint_vbox->addWidget(tp);
     }
 }
@@ -446,6 +441,7 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(std::string affordanceName) {
     std::cout << "intersected affordance: " << affordanceName << std::endl;
+//    _widget_opengl.update();
     return;
     for(uint i = 0; i < _worldState.affordances.size(); i++)
     {

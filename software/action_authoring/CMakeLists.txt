@@ -24,7 +24,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 #QT wrap
-qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h)
+qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h src/opengl/SelectableOpenGLWidget.h)
 
 #========libary action_authoring
 add_library(action_authoring SHARED 

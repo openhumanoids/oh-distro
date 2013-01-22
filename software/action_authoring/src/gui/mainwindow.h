@@ -110,7 +110,6 @@ private:
     std::string getSelectedJointName();
     void makeGUIFromConstraintMacros();
     void handleAffordancesChanged(); //only called if the affordances have changed
-    void selectedOpenGLObjectChanged(std::string affordanceName);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
@@ -123,6 +122,8 @@ private slots:
     void handleMoveDown();
     void handleSelectedAffordanceChange();
     void setSelectedAction(Qt4ConstraintMacro* activator);
+    void selectedOpenGLObjectChanged(std::string affordanceName);
+
 };
 
 } //namespace action_authoring
