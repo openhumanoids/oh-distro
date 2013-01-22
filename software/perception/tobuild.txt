@@ -2,7 +2,6 @@
 # and lines starting with '#' are ignored
 tf_solver
 pointcloud-tools
-perception_example
 motion_estimate
 lidar-passthough
 local_map
@@ -12,7 +11,10 @@ opencv-utils
 tld-tracker
 world_model
 stereo-bm
-#tutorials
+# some quick start examples:
+tutorials
+
+
 plamena_sandbox
 #rgbd_simulation
 #mfallon_sandbox
