@@ -12,6 +12,9 @@
 
 namespace action_authoring 
 {
+
+  //TODO: (1) make all methods static
+  // TODO: (2) get rid of dynamic memory alloc: the "new" keywoard doesn't need to be used
   /**todo comment*/
   class DatabaseManager 
   {
