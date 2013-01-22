@@ -47,7 +47,6 @@ void MainWindow::handleAffordancesChanged()
 	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
-	  std::cout << "pushed " << i << std::endl; 
 
 	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
 	  boost::shared_ptr<Collision_Object> collision_object_affordance;
@@ -393,10 +392,10 @@ handleSelectedAffordanceChange() {
 
 void 
 MainWindow::
-setSelectedAction(QString activator) { 
-    std::string activator_str = activator.toStdString();
+setSelectedAction(Qt4ConstraintMacro* activator) { 
+//    std::cout << "activated !!! " << std::endl;
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	if (activator_str.compare(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()) == 0) {
+	if (activator == _authoringState._all_gui_constraints[i].get()) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
 	    _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
 	} else {
@@ -417,11 +416,14 @@ makeGUIFromConstraintMacros() {
 	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
 	
 	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
-	// todo: currently using constraint name as UID
-	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
-				  QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()));
-	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
-	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
+	// old code: currently using constraint name as UID
+//	_signalMapper->setMapping(_authoringState._all_gui_constraints[i].get(), 
+//				  //QString::fromStdString(_authoringState._all_gui_constraints[i]->getConstraintMacro()->getName()));
+//	connect(_authoringState._all_gui_constraints[i].get(), SIGNAL(activatedSignal()), _signalMapper, SLOT(map()));
+//	connect(_signalMapper, SIGNAL(mapped(QString)), this, SLOT(setSelectedAction(QString)));
+	connect(_authoringState._all_gui_constraints[i].get(),
+		SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
+		this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
 	
 	_constraint_vbox->addWidget(tp);
     }
@@ -444,7 +446,7 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(std::string affordanceName) {
     std::cout << "intersected affordance: " << affordanceName << std::endl;
-
+    return;
     for(uint i = 0; i < _worldState.affordances.size(); i++)
     {
 	AffConstPtr next = _worldState.affordances[i];

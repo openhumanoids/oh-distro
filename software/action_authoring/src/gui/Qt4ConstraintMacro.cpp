@@ -126,7 +126,7 @@ void
 Qt4ConstraintMacro::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()) + " (UNBOUND)" );
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
@@ -145,7 +145,7 @@ updateStateFromElements() {
 void 
 Qt4ConstraintMacro::
 setActive() {
-    emit activatedSignal();
+    emit activatedSignal(this);
 }
 
 void 
@@ -158,7 +158,7 @@ void
 Qt4ConstraintMacro::
 updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()) + " (UNBOUND)");
+    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
     _gui_robotJointType->clear();
 
     // re-initialize the maps

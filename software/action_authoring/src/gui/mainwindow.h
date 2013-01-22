@@ -122,7 +122,7 @@ private slots:
     void handleMoveUp();
     void handleMoveDown();
     void handleSelectedAffordanceChange();
-    void setSelectedAction(QString activator);
+    void setSelectedAction(Qt4ConstraintMacro* activator);
 };
 
 } //namespace action_authoring

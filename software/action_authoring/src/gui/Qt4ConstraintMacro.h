@@ -47,7 +47,7 @@ namespace action_authoring
         std::vector<affordance::AffConstPtr> _rightSideAffordances;
 
     signals:
-	void activatedSignal();
+	void activatedSignal(Qt4ConstraintMacro*);
 
     private slots:
         void updateStateFromElements();

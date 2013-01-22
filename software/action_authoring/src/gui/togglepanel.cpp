@@ -16,6 +16,7 @@ TogglePanel(QObject *parent, QString headerText)
 
     icon = new QPushButton(QString::fromUtf8("\u25B8"));
     icon->setMaximumSize(15, 15);
+
     //icon->setPixmap(_collapseIcon);
     connect(icon, SIGNAL(clicked()), this, SLOT(changeState()));
 
@@ -39,6 +40,11 @@ TogglePanel(QObject *parent, QString headerText)
     mainLayout->setMargin(0);
     mainLayout->setSpacing(0);
     mainLayout->addWidget(_headerArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
+    _headerArea->setStyleSheet("QPushButton { border: 0px solid gray; border-radius: 0px; "
+			       "padding: 0px; margin: 0px; background-color: transparent; } "
+			       "QPushButton:focus { background-color: none; }");
+
+
     mainLayout->addWidget(_widgetArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 
     setLayout(mainLayout);
