@@ -13,8 +13,10 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 //--------------constructor/destructor
-OpenGL_Affordance::OpenGL_Affordance(const AffordanceState &affordance)
-	: _affordance(affordance)
+OpenGL_Affordance::OpenGL_Affordance(const affordance::AffordanceState &affordance, 
+			  bool isHighlighted,
+			  Eigen::Vector3f highlightedColor)
+    : _affordance(affordance), _highlightColor(highlightedColor), _isHighlighted(isHighlighted)
 {
 }
 
@@ -58,9 +60,15 @@ void OpenGL_Affordance::draw()
     default:
       throw runtime_error("unhandled affordance state");
     }
-  
-  obj->set_color(_affordance.getColor());
-  obj->draw();
+  if (_isHighlighted) 
+  {
+      obj->draw(_highlightColor);
+  }
+  else
+  {
+      obj->set_color(_affordance.getColor());
+      obj->draw();
+  }
 }
 
 
@@ -73,3 +81,7 @@ void OpenGL_Affordance::setState(const affordance::AffordanceState &state)
 	_affordance = state;
 }
 
+void OpenGL_Affordance::setHighlighted(bool highlight)
+{
+    _isHighlighted = highlight;
+}

@@ -22,8 +22,9 @@ class OpenGL_Affordance: public opengl::OpenGL_Object
 	//------------------fields
 private:
 	/**underlying affordance state*/
-	affordance::AffordanceState _affordance;
 
+	bool _isHighlighted;
+	const Eigen::Vector3f _highlightColor;
 	//---we're drawing 1 of these
 	opengl::OpenGL_Object_Box _box;
 	opengl::OpenGL_Object_Cylinder _cylinder;
@@ -31,14 +32,18 @@ private:
 
 	//-----------------constructors
 public:
-	OpenGL_Affordance(const affordance::AffordanceState &affordance);
+	affordance::AffordanceState _affordance; // TODO Mike fixme
+	OpenGL_Affordance(const affordance::AffordanceState &affordance, 
+			  bool isHighlighted = false, 
+			  Eigen::Vector3f highlightedColor = Eigen::Vector3f(1.0, 0.0, 0.0));
 	virtual ~OpenGL_Affordance();
 
 	//-------drawing
 	virtual void draw();
-
+	
 	//--------mutators
 	void setState(const affordance::AffordanceState &state);
+	void setHighlighted(bool);
 };
 
 } /* namespace affordance */
