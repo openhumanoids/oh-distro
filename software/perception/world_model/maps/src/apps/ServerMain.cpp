@@ -170,10 +170,6 @@ struct Worker {
         }
         mLcm->publish("MAP_CLOUDS", &msgCloud);
       }
-
-      if (mRequest.mFrequency == 0) {
-        // TODO break;
-      }
     }
     mActive = false;
   }
