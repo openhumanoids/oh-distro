@@ -5,17 +5,17 @@ function runQPLCM()
 
 options.floating = true;
 options.dt = 0.001;
-r = Atlas('urdf/atlas_minimal_contact.urdf',options);
+r = Atlas('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
 
-v = r.constructVisualizer;
-v.display_dt = 0.01;
-
-nx = r.getNumStates();
-nq = nx/2;
-
+% set initial state to fixed point
 load('data/atlas_fp.mat');
+r = r.setInitialState(xstar);
 
-c = QPController(r,xstar(1:nq));
+% set initial conditions in gazebo
+state_frame = r.getStateFrame();
+state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
+
+c = QPController(r,xstar(1:r.getNumStates()/2));
 
 options.timekeeper = 'drake/lcmTimeKeeper'; 
 runLCM(c,[],options);

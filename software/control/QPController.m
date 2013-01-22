@@ -16,14 +16,9 @@ classdef QPController < DrakeSystem
     obj = setInputFrame(obj,p.getStateFrame);
     obj = setOutputFrame(obj,p.getInputFrame);
 
-    if p.twoD
-      obj.nd = 2;
-      obj.dim = 2;
-    else            
-      obj.nd = 4; % for friction cone approx, hard coded for now
-      obj.dim = 3;
-    end
-
+    obj.nd = 4; % for friction cone approx, hard coded for now
+    obj.dim = 3;
+    
     obj.nu = p.getNumInputs();
     obj.nq = p.getNumStates()/2;
     obj.nc = p.getNumContacts(); 
@@ -60,11 +55,7 @@ classdef QPController < DrakeSystem
     x = u;
     p = obj.plant;
 
-    freq = 1000; %Hz
-
-    global alpha t_prev;
-    if ((t == 0.01 || (t>0 && mod(t*freq,1)==0)) && t~=t_prev)
-      tic;
+    global alpha;
       q = x(1:obj.nq); 
       qd = x(obj.nq+(1:obj.nq));
 
@@ -88,7 +79,7 @@ classdef QPController < DrakeSystem
       Dbar = [D{:}];
 
       if any(phi < -1e-5)
-        warning('COMController: Detected contact point penetration...');
+        warning('QPController: Detected contact point penetration...');
       end
 
       % TEMP: assume mu=1
@@ -132,17 +123,10 @@ classdef QPController < DrakeSystem
       Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(obj.nparams),obj.nc,1));
       bin = vertcat(bin_{:});
 
-      % set up objective function
-      min_xf = min(foot_pos(1,:));
-      max_xf = max(foot_pos(1,:));
-      if (obj.dim==2)
-          com_des = [mean([max_xf,min_xf]); 0.94];
-      else
-          min_yf = min(foot_pos(2,:));
-          max_yf = max(foot_pos(2,:));
-          com_des = [mean([max_xf,min_xf]); mean([max_yf,min_yf]); 0.94];
-      end
-
+      % get desired COM pos
+      ch = convhull(foot_pos(1:2,:)');
+      com_des = [mean(foot_pos(1:2,ch),2);0];
+      
       [cm,J,dJ] = p.getCOM(q);
       Jdot = zeros(obj.dim,obj.nq);
       for i=1:obj.nq
@@ -151,16 +135,12 @@ classdef QPController < DrakeSystem
 
       % COM PD controller
       Kp = 500*eye(obj.dim); 
-      %Kp = 0.5*eye(obj.dim) / norm(err); 
-      %Kp = max(0.1*eye(obj.dim),min(10*eye(obj.dim),Kp));
       Kd = 120*eye(obj.dim);
-
-      Kp(obj.dim,obj.dim) = 0; % ignore z
-      Kd(obj.dim,obj.dim) = 0; % ignore z
-
+      
+      P = diag([1 1 0]); % ignore z
       err = com_des - cm;
       cm_dot = J*qd;
-      cm_ddot_des = Kp*err - Kd*cm_dot;
+      cm_ddot_des = Kp*P*err - Kd*P*cm_dot;
 
       % nominal pose PD controller
       Kp_q = 15*eye(obj.nq);
@@ -170,7 +150,7 @@ classdef QPController < DrakeSystem
       err_q = obj.qstar - q;
       qdd_des = Kp_q*err_q - Kd_q*qd;
 
-      w_com = 1.0;
+      w_com = 0.0;
       w_q = 0.05;
 
       Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
@@ -179,11 +159,8 @@ classdef QPController < DrakeSystem
 
       alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
 
-      toc
-    end
     y=alpha(obj.nq+(1:obj.nu));
-    t_prev = t;
-
+   
   end
   end
 
