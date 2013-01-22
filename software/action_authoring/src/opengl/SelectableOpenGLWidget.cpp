@@ -41,9 +41,9 @@ raycast(const Vector eyePosition,
     return;
 }
 
-void SelectableOpenGLWidget::add_collision_object(const shared_ptr<Collision_Object> collisionObject)
+void SelectableOpenGLWidget::add_collision_object(Collision_Object* collisionObject)
 {
-    _collisionDetector->add_collision_object(collisionObject.get());
+    _collisionDetector->add_collision_object(collisionObject);
     /*  
       Collision_Object_Box* collision_object_2 = new Collision_Object_Box("box2", Vector3f( 0.5, 0.5, 0.5 ), Vector3f( 2.0, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0)); 
     _collisionDetector->add_collision_object(collision_object_2);

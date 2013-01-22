@@ -30,7 +30,7 @@ public:
 
 	//--------methods
 	void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
-   	void add_collision_object(const boost::shared_ptr<collision::Collision_Object> collisionObject);
+   	void add_collision_object(collision::Collision_Object* collisionObject);
 
 signals:
 	void raycastCallback(std::string affordance_id);

@@ -24,7 +24,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 #QT wrap
-qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h src/opengl/SelectableOpenGLWidget.h)
+qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h src/opengl/SelectableOpenGLWidget.h src/gui/extendedlabel.h)
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
@@ -47,6 +47,7 @@ pods_install_pkg_config_file(action_authoring
 #======action authoring gui executable
 add_executable(action_authoring_gui src/gui/main.cpp src/gui/mainwindow.cpp 
   src/gui/togglepanel.cpp
+  src/gui/extendedlabel.cpp
   src/gui/Qt4ConstraintMacro.cpp
   src/opengl/ColorRobot.cpp
   src/opengl/SelectableOpenGLWidget.cpp

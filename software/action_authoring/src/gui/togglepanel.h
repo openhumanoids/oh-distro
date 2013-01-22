@@ -3,6 +3,7 @@
 
 #include <QtGui>
 #include <boost/shared_ptr.hpp>
+#include "extendedlabel.h"
 
 class TogglePanel : public QWidget
 {
@@ -13,7 +14,7 @@ private:
     QString _headerText;
     QWidget* _widgetArea;
     QPushButton* icon;
-    QLabel* _headerTextLabel;
+    ExtendedQLabel* _headerTextLabel;
     QVBoxLayout* _widgetLayout;
     int _state;
     QObject* _parent;

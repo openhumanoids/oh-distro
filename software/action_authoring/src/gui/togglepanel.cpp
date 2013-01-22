@@ -20,7 +20,7 @@ TogglePanel(QObject *parent, QString headerText)
     //icon->setPixmap(_collapseIcon);
     connect(icon, SIGNAL(clicked()), this, SLOT(changeState()));
 
-    _headerTextLabel = new QLabel;
+    _headerTextLabel = new ExtendedQLabel;
     _headerTextLabel->setText(_headerText);
 
     connect(_headerTextLabel, SIGNAL(clicked()), this, SLOT(changeState()));

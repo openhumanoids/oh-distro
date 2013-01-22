@@ -53,7 +53,7 @@ struct WorldStateView
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
   opengl::OpenGL_Object_DAE* colorVehicle; // TODO : special case for demo
   std::vector<opengl::OpenGL_Object*> glObjects; //objects for rendering
-  std::vector<boost::shared_ptr<collision::Collision_Object> > collisionObjs; //collision objects corresponding to glObjects
+  std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
 
   /**initializes all the fields in the struct*/
 WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)

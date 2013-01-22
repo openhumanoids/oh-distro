@@ -31,7 +31,7 @@ void MainWindow::handleAffordancesChanged()
   for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
       delete _worldState.glObjects[i];
-      delete _worldState.collisionObjs[i].get(); // todo probably redundant
+      delete _worldState.collisionObjs[i];
     }
       
   _worldState.glObjects.clear();
@@ -49,31 +49,28 @@ void MainWindow::handleAffordancesChanged()
 	  _worldState.glObjects.push_back(asGlAff);
 
 	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
-	  boost::shared_ptr<Collision_Object> collision_object_affordance;
+	  Collision_Object* collision_object_affordance;
 	  KDL::Frame f;
 	  next->getFrame(f);
 	  double q1, q2, q3, q4;
 	  f.M.GetQuaternion(q1, q2, q3, q4);
 
 	  if (next->_otdf_id == AffordanceState::BOX) {
-	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Box(next->getName(), 
+	      collision_object_affordance = new Collision_Object_Box(next->getName(), 
 		     Vector3f(next->length(), next->width(), next->height()), 
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::CYLINDER) {
-	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Cylinder(next->getName(), 
+	      collision_object_affordance = new Collision_Object_Cylinder(next->getName(), 
 	             next->radius(), next->length(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::SPHERE) {
-	      collision_object_affordance = (boost::shared_ptr<Collision_Object>)
-		  new Collision_Object_Sphere(next->getName(),
+	      collision_object_affordance = new Collision_Object_Sphere(next->getName(),
 		     next->radius(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
-	  _widget_opengl.add_collision_object(collision_object_affordance);  //todo
+	  _widget_opengl.add_collision_object(collision_object_affordance);
 	  _worldState.collisionObjs.push_back(collision_object_affordance);
     	}
     }
@@ -412,6 +409,7 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 void
 MainWindow::
 makeGUIFromConstraintMacros() {
+    std::cout << "making GUI..." << std::endl;
     // Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
     for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) 
       {
@@ -423,7 +421,6 @@ makeGUIFromConstraintMacros() {
 	_constraint_vbox->addWidget(tp);
     }
 }
-
 
 //===========world state affordance updating
 void MainWindow::affordanceUpdateCheck()
@@ -441,18 +438,12 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(std::string affordanceName) {
     std::cout << "intersected affordance: " << affordanceName << std::endl;
-//    _widget_opengl.update();
-    return;
-    for(uint i = 0; i < _worldState.affordances.size(); i++)
+    for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	AffConstPtr next = _worldState.affordances[i];
-	std::cout << "affordances" << next->getName() << std::endl;
-	if (next->getName().compare(affordanceName) != 0) {
-	    // select the openGL object corresponding to this affordance by highlighting it
-	    std::cout << "found it!" << i << std::endl;
-	    _worldState.glObjects[i]->set_color(Vector3f(1.0, 0.0, 0.0));
-	    break;
-	}
+	AffordanceState& selectedAff = ((OpenGL_Affordance*)_worldState.glObjects[i])->_affordance;
+//	std::cout << "affordances" << selectedAff.getName() << (selectedAff.getName().compare(affordanceName) != 0) << std::endl;
+	// select the openGL object corresponding to this affordance by highlighting it
+	((OpenGL_Affordance*)_worldState.glObjects[i])->setHighlighted(selectedAff.getName().compare(affordanceName) == 0);
     }
     _widget_opengl.update();
     return;
