@@ -41,10 +41,10 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
 {
   Comp *self = (Comp*) user_data;
   
-  int compressed_size =  self->width*self->height*3;//image_buf_size;
+  int compressed_size =  msg->width*msg->height*3;//image_buf_size;
   //cout << msg->width << " and " << msg->height << "\n";
   //cout << msg->size << "\n";
-  int compression_status = jpeg_compress_8u_rgb (msg->data, self->width, self->height, self->width*3,
+  int compression_status = jpeg_compress_8u_rgb (msg->data, msg->width, msg->height, msg->width*3,
                                                      self->image_buf, &compressed_size, self->jpeg_quality);
   if (0 != compression_status) {
     fprintf(stderr, "JPEG compression failed. Not compressing...\n");
@@ -83,8 +83,8 @@ int main(int argc, char ** argv) {
   
   //
   Comp *self = (Comp*) calloc (1, sizeof (Comp));
-  self->width = 320;
-  self->height = 240;
+  self->width = 1024;
+  self->height = 544;
   self->jpeg_quality = jpeg_quality;
   self->image_buf_size = self->width * self->height * 10;
   if (0 != posix_memalign((void**) &self->image_buf, 16, self->image_buf_size)) {
