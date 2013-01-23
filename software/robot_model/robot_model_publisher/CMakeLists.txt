@@ -18,3 +18,6 @@ pods_use_pkg_config_packages(robot_model_listener urdf lcm lcmtypes_drc_lcmtypes
 
 # make exeutables public
 pods_install_executables(robot_model_publisher robot_model_listener)
+
+
+add_subdirectory(src/model_client)
