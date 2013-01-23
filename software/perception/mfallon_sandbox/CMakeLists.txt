@@ -16,8 +16,6 @@ add_subdirectory(src/point-head)
 add_subdirectory(src/rgbd2file)
 add_subdirectory(src/est_robot_state_fake)
 
-add_subdirectory(src/image-compress)
-
 
 add_subdirectory(src/heightmap_lcmgl)
 add_subdirectory(src/tld_lcmgl)
