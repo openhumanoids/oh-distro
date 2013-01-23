@@ -1,7 +1,6 @@
 #include "Clock.hpp"
 
 #include <iostream>
-#include <bot_core/timestamp.h>
 #include <lcmtypes/drc/utime_t.hpp>
 
 using namespace drc;

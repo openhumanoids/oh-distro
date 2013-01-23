@@ -6,3 +6,6 @@ opengl
 qt4
 collision
 visualization_utils
+
+urdf_dom
+urdf

@@ -5,6 +5,7 @@
 #include <string>
 #include <lcm/lcm-cpp.hpp>
 #include <boost/shared_ptr.hpp>
+#include <bot_core/timestamp.h>
 
 namespace drc {
  
