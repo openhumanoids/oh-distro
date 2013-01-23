@@ -75,36 +75,21 @@ void MainWindow::handleAffordancesChanged()
     	}
     }
 
+
+  //----------add robot and vehicle
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
   connect(&_widget_opengl, SIGNAL(raycastCallback(std::string)),
 	  this, SLOT(selectedOpenGLObjectChanged(std::string)));
-//  _widget_opengl.set_raycast_callback((void (*)(std::string))(&MainWindow::selectedOpenGLObjectChanged));
 
-//  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", "drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/no_wheels.dae"); //mit_golf_cart/meshes/model.dae");
-//  _worldState.colorVehicle = new OpenGL_Object_DAE( "object-object-dae", 
-//    "/usr/local/share/drcsim-1.3/models/golf_cart/meshes/no_wheels.dae");
-//	"/home/drc/drc/software/models/mit_gazebo_models/mit_wheeled_robot/meshes/head.dae"); //mit_robot/meshes/utorso.dae"); //mit_golf_cart/meshes/no_wheels.dae");
-//  _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
+  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
+    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+  _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
   _widget_opengl.update();
   //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
-  //=========collision objects
-
-  /*todo
-
-  // build collision objects
-	/*todo  construct collision objects from the affordances
-	_collision_object_box = new Collision_Object_Box("box1", Vector3f(0.25, 0.25, 0.25), Vector3f(1.0, 0.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    _collision_object_cylinder = new Collision_Object_Cylinder("cylinder1", 0.25, 0.25, Vector3f(0.0, 1.0, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    _collision_object_sphere = new Collision_Object_Sphere("sphere1", 0.125, Vector3f(-0.5, -0.5, 0.0), Vector4f(1.0, 0.0, 0.0, 0.0));
-    //_collision_object_gfe("robot1");
-*/
-
-
   //----------handle constraint macros 
- 
   unordered_map<string, AffConstPtr> nameToAffMap;
   for(vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
       iter != _worldState.affordances.end();
@@ -138,12 +123,14 @@ void MainWindow::handleAffordancesChanged()
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
 
-  makeGUIFromConstraintMacros();
+  rebuildGUIFromState(_authoringState, _worldState);
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	: _widget_opengl(),
-	  _worldState(theLcm)
+	  _worldState(theLcm),
+	  _constraint_container(new QWidget()),
+	  _constraint_vbox(new QVBoxLayout())
 {
   // setup the OpenGL scene
   _worldState.state_gfe.from_urdf();
@@ -164,8 +151,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     	joint_names.push_back(state_gfe_joint.id());
     }
   
-    _signalMapper = new QSignalMapper(this);
-
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setMargin(0);
 
@@ -193,15 +178,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     topmenugroup->setLayout(topmenu);
     vbox->addWidget(topmenugroup);
 
-    //joint_names = getJointNames("/home/drc/drc/software/models/mit_gazebo_models/mit_robot/model.urdf");
-    // load the constraints
-    //std::vector<AffPtr> _all_affordances =
-    _constraint_vbox = new QVBoxLayout(); 
-    QWidget* constraintWrapper = new QWidget();
-    constraintWrapper->setLayout(_constraint_vbox);
-    vbox->addWidget(constraintWrapper);
-
-
+    _constraint_container->setLayout(_constraint_vbox);
+    vbox->addWidget(_constraint_container);
 
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
@@ -302,24 +280,31 @@ MainWindow::~MainWindow()
 void MainWindow::handleLoadAction() 
 {
   QString fileName = QFileDialog::getOpenFileName(this,
-						  tr("Open Action"), "", tr("Action XML Files (*.xml)"));
+      tr("Open Action"), "", tr("Action XML Files (*.xml)"));
   
+  if (fileName.toStdString() == "") 
+      return;
+
+  std::cout << "database manager" << std::endl;
   DatabaseManager* dbm = new DatabaseManager(fileName.toStdString()); //todo : Memory leak
   dbm->parseFile();
-  
+  std::cout << "file parsed successfully" << std::endl;
   std::vector<ConstraintMacroPtr> revivedConstraintMacros;
   dbm->getConstraintMacros(revivedConstraintMacros);
-  
+  std::cout << "constraint macros parsed successfully" << std::endl;
+
   //  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
   //      delete _authoringState._all_gui_constraints[i].get();
   //  }
   
+  // delete the children of the constraint box
+
   _authoringState._all_gui_constraints.clear();
   for (int i = 0; i < revivedConstraintMacros.size(); i++) 
-    {
+  {
       _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i])); 
-    }
-  makeGUIFromConstraintMacros();
+  }
+  rebuildGUIFromState(_authoringState, _worldState);
   
 }
 
@@ -328,6 +313,9 @@ MainWindow::
 handleSaveAction() {
  QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Action"), "", tr("Action XML Files (*.xml)"));  
+
+ if (fileName.toStdString() == "") 
+     return;
 
  vector<ConstraintMacroConstPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
@@ -357,24 +345,17 @@ handleMoveDown() {
 
 }
 
-std::string 
-MainWindow::
-getSelectedJointName() {
-    if (_authoringState._selected_gui_constraint != NULL)
-	return _authoringState._selected_gui_constraint->getSelectedLinkName(); 
-    return "";
-}
-
 void 
 MainWindow::
 updateJoint(int value) {
-    std::string selectedJointName = getSelectedJointName();
+/*    std::string selectedJointName = getSelectedJointName();
     if (selectedJointName != "") {
 	std::cout << "joint " << selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
 	_worldState.state_gfe.joint(selectedJointName).set_position( _jointSlider->value() / 100.0 );
 	_worldState.colorRobot.set(_worldState.state_gfe);
 	_widget_opengl.update();
     }
+*/
 }
 
 /*
@@ -383,10 +364,12 @@ updateJoint(int value) {
 void 
 MainWindow::
 handleSelectedAffordanceChange() {
+/*
     std::string selectedJointName = getSelectedJointName();
     _worldState.colorRobot.setSelectedJoint(selectedJointName);
     _widget_opengl.update();
     _jointNameLabel->setText(QString::fromStdString(selectedJointName));
+*/
 }
 
 void 
@@ -408,14 +391,16 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 
 void
 MainWindow::
-makeGUIFromConstraintMacros() {
-    std::cout << "making GUI..." << std::endl;
+rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
     // Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
-    for(std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) 
-      {
-	_authoringState._all_gui_constraints[i]->setAffordances(_worldState.affordances, _worldState.affordances);
-	TogglePanel* tp = _authoringState._all_gui_constraints[i]->getPanel();
-	connect(_authoringState._all_gui_constraints[i].get(),
+    // _constraint_container
+    qDeleteAll(_constraint_container->findChildren<QWidget*>());
+
+    for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
+    {
+	state._all_gui_constraints[i]->setAffordances(worldState.affordances, worldState.affordances);
+	TogglePanel* tp = state._all_gui_constraints[i]->getPanel();
+	connect(state._all_gui_constraints[i].get(),
 		SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
 		this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
 	_constraint_vbox->addWidget(tp);
@@ -434,6 +419,10 @@ void MainWindow::affordanceUpdateCheck()
   handleAffordancesChanged(); 
 }
 
+/* 
+ * select the OpenGL object corresponding to this affordance by highlighting it
+ * in the GUI. Connected to the raycastCallbick signal from the OpenGL widget pane.
+ */
 void
 MainWindow::
 selectedOpenGLObjectChanged(std::string affordanceName) {
@@ -442,7 +431,6 @@ selectedOpenGLObjectChanged(std::string affordanceName) {
     {
 	AffordanceState& selectedAff = ((OpenGL_Affordance*)_worldState.glObjects[i])->_affordance;
 //	std::cout << "affordances" << selectedAff.getName() << (selectedAff.getName().compare(affordanceName) != 0) << std::endl;
-	// select the openGL object corresponding to this affordance by highlighting it
 	((OpenGL_Affordance*)_worldState.glObjects[i])->setHighlighted(selectedAff.getName().compare(affordanceName) == 0);
     }
     _widget_opengl.update();

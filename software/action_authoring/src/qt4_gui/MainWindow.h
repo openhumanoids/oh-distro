@@ -95,8 +95,8 @@ public:
  private: 
     QSlider* _jointSlider;
     QLabel * _jointNameLabel;
-    QSignalMapper* _signalMapper;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
+    QWidget* _constraint_container;
     QVBoxLayout* _constraint_vbox;
 
     //================world state and authoring state
@@ -107,8 +107,7 @@ private:
     std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
-    std::string getSelectedJointName();
-    void makeGUIFromConstraintMacros();
+    void rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState);
     void handleAffordancesChanged(); //only called if the affordances have changed
 
 private slots:
