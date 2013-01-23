@@ -14,6 +14,7 @@
 
 
 #include "joints2frames.hpp"
+#include <ConciseArgs>
 
 using namespace std;
 using namespace boost;
@@ -167,10 +168,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     counter++;
   }
   
- 
-  
-  
-  
   
   //std::cout << body_to_jointTs.size() << " jts\n";
   //pc_vis_->pose_collection_to_lcm_from_list(6000, body_to_jointTs); // all joints releative to body - publish if necessary
@@ -227,9 +224,24 @@ void joints2frames::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::stri
 
 
 int
-main(int argc, char ** argv)
-{
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+main(int argc, char ** argv){
+  string role = "robot";
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(role, "r", "role","Role - robot or base");
+  opt.parse();
+  std::cout << "role: " << role << "\n";
+
+  string lcm_url="";
+  if(role.compare("robot") == 0){
+     lcm_url = "";
+  }else if(role.compare("base") == 0){
+     lcm_url = "udpm://239.255.12.68:1268?ttl=1";
+  }else{
+    std::cout << "DRC Viewer role not understood, choose: robot or base\n";
+    return 1;
+  }  
+  
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM(lcm_url) );
   if(!lcm->good())
     return 1;  
   

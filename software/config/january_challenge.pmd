@@ -20,7 +20,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "localhost";
     }
     cmd "estpub" {
@@ -67,6 +67,10 @@ group "base" {
     }
     cmd "surrogate_viewer" {
         exec = "surrogate_viewer";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "localhost";
     }
 }

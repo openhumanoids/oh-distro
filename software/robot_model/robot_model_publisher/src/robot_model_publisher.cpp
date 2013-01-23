@@ -10,23 +10,34 @@
 #include "urdf/model.h"
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+#include <ConciseArgs>
 
-
+using namespace std;
 
 int main(int argc, char ** argv)
 {
+  string urdf_file = "path_to_your.urdf";
+  string role = "robot";
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(urdf_file, "u", "urdf_file","Robot URDF file");
+  opt.add(role, "r", "role","Role - robot or base");
+  opt.parse();
+  std::cout << "urdf_file: " << urdf_file << "\n";
+  std::cout << "role: " << role << "\n";
 
-  if (argc < 2){
-    std::cerr << "A URDF xml file is expected as an argument. USAGE: \"./robot_model_publisher xxxxx.urdf\"" << std::endl;
-    return -1;
+  string lcm_url="";
+  if(role.compare("robot") == 0){
+     lcm_url = "";
+  }else if(role.compare("base") == 0){
+     lcm_url = "udpm://239.255.12.68:1268?ttl=1";
+  }else{
+    std::cout << "DRC Viewer role not understood, choose: robot or base\n";
+    return 1;
   }
-
-  std::string filename;
-  filename = argv[1];
 
   // get the entire file
   std::string xml_string;
-  std::fstream xml_file(filename.c_str(), std::fstream::in);
+  std::fstream xml_file(urdf_file.c_str(), std::fstream::in);
   if (xml_file.is_open())
   {
     while ( xml_file.good() )
@@ -36,22 +47,22 @@ int main(int argc, char ** argv)
       xml_string += (line + "\n");
     }
     xml_file.close();
-    std::cout << "File ["<< filename << "]  parsed successfully.\n";    
+    std::cout << "File ["<< urdf_file << "]  parsed successfully.\n";    
   }
   else
   {
-    std::cout << "ERROR: Could not open file ["<< filename << "] for parsing.\n";
+    std::cout << "ERROR: Could not open file ["<< urdf_file << "] for parsing.\n";
     return false;
   }
   
   
   urdf::Model robot;
-  if (!robot.initFile(filename)){
+  if (!robot.initFile(urdf_file)){
     std::cerr << "ERROR: Model Parsing the xml failed" << std::endl;
     return -1;
   }
 
-    lcm::LCM lcm;
+    lcm::LCM lcm(lcm_url);
     if(!lcm.good())
         return 1;
     
