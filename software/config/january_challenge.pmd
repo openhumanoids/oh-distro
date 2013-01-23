@@ -24,7 +24,7 @@ group "core" {
         host = "localhost";
     }
     cmd "estpub" {
-        exec = "est_robot_state_publisher";
+        exec = "est_robot_state_publisher_no_sensing";
         host = "localhost";
     }
     cmd "l2r" {
