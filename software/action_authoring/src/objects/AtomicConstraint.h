@@ -1,5 +1,5 @@
-#ifndef AFFORDANCE_RELATION_H
-#define AFFORDANCE_RELATION_H
+#ifndef ATOMIC_CONSTRAINT_H
+#define ATOMIC_CONSTRAINT_H
 
 #include "boost/shared_ptr.hpp"
 #include "affordance/AffordanceState.h"
@@ -49,4 +49,4 @@ class AtomicConstraint
 } //namespace action_authroing
 
 
-#endif //AFFORDANCE_RELATION_H
+#endif //ATOMIC_CONSTRAINT_H

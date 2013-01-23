@@ -1,5 +1,5 @@
-#ifndef CONSTRAINT_H
-#define CONSTRAINT_H
+#ifndef CONSTRAINT_MACRO_H
+#define CONSTRAINT_MACRO_H
 
 #include <string>
 #include <vector>  
@@ -59,4 +59,4 @@ namespace action_authoring {
 } //namespace action_authoring
 
 
-#endif //CONSTRAINT_H
+#endif //CONSTRAINT_MACRO_H
