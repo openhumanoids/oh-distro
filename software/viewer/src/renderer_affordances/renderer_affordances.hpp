@@ -413,10 +413,11 @@ typedef struct _RendererAffordances {
 
   
   
-  std::cout << "\n nray " <<nray.transpose() << std::endl;
-  std::cout << "dot_prod " <<dot_prod << std::endl;
-  std::cout << "cross_prod " <<cross_prod.transpose() << std::endl;
-   std::cout << "cross_prod in z " <<cross_prod[2] << std::endl;
+//  std::cout << "\n nray " <<nray.transpose() << std::endl;
+//  std::cout << "dot_prod " <<dot_prod << std::endl;
+//  std::cout << "cross_prod " <<cross_prod.transpose() << std::endl;
+//   std::cout << "cross_prod in z " <<cross_prod[2] << std::endl;
+   
 //  std::cout << "axis(x,y,z):  "  << axis[0] << " "<< axis[1]<< " " <<axis[2] << std::endl;
 //  std::cout << "quat(x,y,z,w):  " << q[1]<< " " <<q[2]<< " "  << q[3]<< " "  << q[0]  << std::endl;
 //  
@@ -455,8 +456,8 @@ typedef struct _RendererAffordances {
    T_objectgeometry_hand.M =  KDL::Rotation::Quaternion(q[1], q[2], q[3], q[0]);
    T_objectgeometry_hand.M =  KDL::Rotation::Quaternion(quat[1], quat[2], quat[3], quat[0]);
    
-   std::cout << "quat(x,y,z,w):  " << q[1]<< " " <<q[2]<< " "  << q[3]<< " "  << q[0]  << std::endl;
-   std::cout << "quat(x,y,z,w):  " << quat[1]<< " " <<quat[2]<< " "  << quat[3]<< " "  << quat[0]  << std::endl;
+//   std::cout << "quat(x,y,z,w):  " << q[1]<< " " <<q[2]<< " "  << q[3]<< " "  << q[0]  << std::endl;
+//   std::cout << "quat(x,y,z,w):  " << quat[1]<< " " <<quat[2]<< " "  << quat[3]<< " "  << quat[0]  << std::endl;
    
    
   // hand pos is calculated in positive x hemisphere only.
