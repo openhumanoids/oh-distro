@@ -27,6 +27,7 @@ class ModelClient
     void drc_robot_urdf_handler(const char* channel, const drc_robot_urdf_t *msg);        
     
     std::string getURDFString(){ return urdf_xml_string_; }
+    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> getSolver(){ return fksolver_; }
 
   private:
     lcm_t* lcm_;
