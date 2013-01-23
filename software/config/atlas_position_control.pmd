@@ -36,7 +36,7 @@ group "core" {
 
 group "gazebo" {
     cmd "gfe" {
-        exec = "roslaunch mit_drcsim_scripts atlas_position_control.launch";
+        exec = "optirun roslaunch mit_drcsim_scripts atlas_position_control.launch";
         host = "localhost";
     }
 
