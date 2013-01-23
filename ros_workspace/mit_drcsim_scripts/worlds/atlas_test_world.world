@@ -46,6 +46,8 @@
     <!-- green and yellow path -->
     <include><name>diybox</name><uri>model://diy_box</uri><pose>7.5 -20.75 0 0 0 3.142</pose></include>
 
+<!--    <include><name>simple_plane</name><uri>model://simple_plane</uri><pose>47.5 60.75 0 0 0 3.142</pose></include> -->
+
     <!-- 2 rows of boxes to the front of the robot - retained for now -->
     <include><name>simple_box_l2</name><uri>model://simple_box</uri><pose>5 4 1 0 0 0</pose></include>
     <include><name>simple_box_l3</name><uri>model://simple_box</uri><pose>10 4 1 0 0 0</pose></include>
@@ -59,15 +61,17 @@
     <include><name>box_type2</name><uri>model://box_type2</uri><pose>-35 -8.5 1 0 0 0</pose></include>
 
     <!-- Table stuff -->
-    <include><uri>model://table</uri><pose>1.5 0.6 0.0 0 0 1.571</pose></include>
-    <include><uri>model://coke_can</uri><pose>1.6 0.4 1.05 0 0 0</pose></include>
-    <include><uri>model://bowl</uri><pose>1.6 0.1 1.10 0 0 0</pose></include>
-    <include><uri>model://saucepan</uri><pose>1.6 0.6 1.10 0 0 0</pose></include>
+    <include><uri>model://table</uri><pose>    1.5  1.8 0.0 0 0 1.571</pose></include>
+    <include><uri>model://coke_can</uri><pose> 1.6  1.6 1.05 0 0 0</pose></include>
+    <include><uri>model://bowl</uri><pose>     1.6  1.3 1.10 0 0 0</pose></include>
+    <include><uri>model://saucepan</uri><pose> 1.6  1.8 1.10 0 0 0</pose></include>
+    <include><uri>model://fire_hose</uri><pose>0.6  0.2 1.10 0 0 1.171</pose></include>
+    <include><uri>model://standpipe</uri><pose>1.25 2.4 1.1 0 0 0</pose></include>
+
+    <include><uri>model://steering_assembly</uri><pose>0.0 0.0 0.0 0.0 0. 0.0</pose></include>
 
     <!-- DRC specific components -->
-    <include><uri>model://fire_hose</uri><pose>0.6 -1.0 1.10 0 0 1.171</pose></include>
-    <include><uri>model://standpipe</uri><pose>1.25 1.2 1.1 0 0 0</pose></include>
-    <include><uri>model://mit_robot</uri><pose>0 0 1 0 0 0</pose></include>
+    <include><uri>model://mit_robot</uri><pose>-1.0 0 1 0 0 0</pose></include>
     <include><uri>model://mit_golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
