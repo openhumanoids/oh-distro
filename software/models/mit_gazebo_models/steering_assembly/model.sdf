@@ -12,15 +12,15 @@
       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
     </inertial>
     <visual>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.570 0 0" xyz="0 0 0"/>
       <geometry>
-	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost.dae" scale="0.001 0.001 0.001"/>
+	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.570 0 0" xyz="0 0 0"/>
       <geometry>
-	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost.dae" scale="0.001 0.001 0.001"/>
+	<mesh filename="package://steering_assembly/meshes/SteeringWheelPost_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -34,19 +34,19 @@
     <visual>
       <origin rpy="0 0 0" xyz="-0.22 0 -0.22"/>
       <geometry>
-	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_2.dae" scale="0.001 0.001 0.001"/>
+	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="-0.22 0 -0.2"/>
       <geometry>
-	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_2.dae" scale="0.001 0.001 0.001"/>
+	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
 
   <joint name="base_to_steering" type="revolute">
-    <origin rpy="0 0 0" xyz="0.1524 0 1.0668 "/>
+    <origin rpy="0 0 0" xyz="0.1524 0 1.3208 "/>
     <axis xyz="0 1 0"/>
     <parent link="steering_base"/>
     <child link="steering_wheel"/>
