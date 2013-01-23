@@ -14,16 +14,16 @@ namespace affordance
 {
 
   /**Represents that state of a manipulator*/
-  class ManipulatorState : public ModelState
+  class ManipulatorState : public ModelState<ManipulatorState>
   {
     //-------------fields----
   private: 
 
     //-----------constructor/destructor
   public:
-    virtual ManipulatorState(const ManipulatorState &other) = 0;
-    virtual ManipulatorState& operator=( const ManipulatorState& rhs ) = 0;
-    virtual ~ManipulatorState() = 0;
+    ManipulatorState(const ManipulatorState &other);
+    ManipulatorState& operator=( const ManipulatorState& rhs );
+    virtual ~ManipulatorState();
     
     //-------------------observers
   public:
