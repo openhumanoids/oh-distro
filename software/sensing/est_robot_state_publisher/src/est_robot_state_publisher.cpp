@@ -23,7 +23,6 @@ class RobotStateListener //JointAnglesHandler
 private:
   std::string _robot_name;
   std::string _urdf_xml_string;
-  std::string _head_link_name;
   std::vector<std::string> _joint_names_;
   std::map<std::string, boost::shared_ptr<urdf::Link> > _links_map;
   boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
@@ -33,6 +32,7 @@ private:
   boost::shared_ptr<lcm::LCM> _lcm;
 
   std::vector<drc::link_transform_t> _link_tfs;
+
 
   KDL::Frame  T_world_head;
 
@@ -53,7 +53,6 @@ public:
     // create subscriptions to contact sensors.
 
     T_world_head = KDL::Frame::Identity();
-    _head_link_name= "head";
   }; // end constructor
 
   ~RobotStateListener() {};
@@ -106,7 +105,7 @@ private:
 
     KDL::Frame  T_body_head,T_head_body,T_world_body;
 
-    transform_it=cartpos_out.find(_head_link_name);
+    transform_it=cartpos_out.find("head");
 
     T_body_head = KDL::Frame::Identity();
     if(transform_it!=cartpos_out.end())// fk cart pos exists
@@ -119,7 +118,7 @@ private:
 
     }
     else{
-      std::cout<< _head_link_name <<"not the head link? specify the correct head link" <<std::endl;
+      std::cout<< "fk position does not exist" <<std::endl;
     }
     
     T_head_body = T_body_head.Inverse();
@@ -163,6 +162,7 @@ private:
     _lcm->publish("POSE_BODY", &pose_msg); 
 
 
+    
 
   };
 
