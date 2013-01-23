@@ -15,6 +15,8 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 
+#include <model-client/model-client.hpp>
+
 #include <collision/collision.h>
 #include <collision/collision_detector.h>
 #include <collision/collision_object_gfe.h>
@@ -41,8 +43,9 @@ class Pass{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    boost::shared_ptr<ModelClient> model_;
     bool verbose_;
-    std::string urdf_xml_string_, lidar_channel_;
+    std::string lidar_channel_;
     
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
@@ -85,11 +88,22 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  
+  // TODO: get the urdf model from LCM:
+  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString() );
+  n_collision_points_ = 1000;
+  collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
+  // create the collision detector
+  collision_detector_ = new Collision_Detector();
+  // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
+  collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
+  collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 );   
+  
+  
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
   lcm_->subscribe( lidar_channel_ ,&Pass::lidarHandler,this);
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);
-  urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
-  urdf_subscription_on_ = true;
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
@@ -195,8 +209,6 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
 }
 
 
-
-
 void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg){
   if (!init_rstate_){
     cout << "have laser but no robot state, refusing to publish\n";
@@ -230,7 +242,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   Eigen::Quaternionf pose_quat(pose_f.rotation());
   pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l_,
       pose_f.translation(), pose_quat);  
-  
+
   if (verbose_){  
     // Plot original scan in sensor frame:
     Isometry3dTime scan_to_localT = Isometry3dTime(pose_id, scan_to_local);
@@ -250,7 +262,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
               << "\nincrease detector size to match\n";
     exit(-1);
   }
-  
+
   DoCollisionCheck(msg->utime);
   if (printf_counter_%80 ==0){
     cout << "Filtering: " << lidar_channel_ << " "  << msg->utime << "\n";
@@ -259,37 +271,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
 }
 
 
-void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
-  if(urdf_parsed_ ==false){
-    cout<< "URDF received"<< endl;
-    // Received robot urdf string. Store it internally and get all available joints.
-    urdf_xml_string_ = msg->urdf_xml_string;
-    
-    // TODO: get the urdf model from LCM:
-    cout << "c\n";
-    collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", urdf_xml_string_ );
-    cout << "d\n";
-    n_collision_points_ = 1000;
-    collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
-    // create the collision detector
-    collision_detector_ = new Collision_Detector();
-    // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
-    collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
-    collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 ); 
-    
-    lcm_->unsubscribe(urdf_subscription_); 
-    urdf_parsed_ = true;
-  } 
-}
-
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  if (!urdf_parsed_){      return;    }
-  if(urdf_subscription_on_){
-    cout << "robotStateHandler: unsubscribing from urdf" << endl;
-    lcm_->unsubscribe(urdf_subscription_); //unsubscribe from urdf messages
-    urdf_subscription_on_ =  false;   
-  }  
-  
   last_rstate_= *msg;  
   init_rstate_=true;
 }
