@@ -215,11 +215,14 @@ void get_descriptors(cv::Mat &image, cv::Mat &descriptors, std::vector<bool> &va
   cv::BriefDescriptorExtractor extractor(32); // size of descriptor in bytes
 
   // Downsample
+  cout << "a\n";
   cv::Mat image_small;
+  cout << "b\n";
   cv::resize(image, image_small, cv::Size(60, 60));
 
   // Compute descriptor
 
+  cout << "c\n";
   std::vector<cv::KeyPoint> keypoints;
   keypoints.push_back(cv::KeyPoint(cv::Point2f(30,30), 1.0));
   extractor.compute(image_small, keypoints, descriptors);
@@ -232,11 +235,11 @@ void registeration::go(){
   cout << "going...\n";
   Mat image0,image0_right; // image is left
   Mat image1,image1_right; // image is left
-  image0 = imread("/home/mfallon/data/drc/registeration/0/left.png",CV_LOAD_IMAGE_GRAYSCALE);
-  image0_right = imread("/home/mfallon/data/drc/registeration/0/right.png",CV_LOAD_IMAGE_GRAYSCALE);
+  image0 = imread("/home/mfallon/data/drc/registeration/pr2/0/left.png",CV_LOAD_IMAGE_GRAYSCALE);
+  image0_right = imread("/home/mfallon/data/drc/registeration/pr2/0/right.png",CV_LOAD_IMAGE_GRAYSCALE);
 
-  image1 = imread("/home/mfallon/data/drc/registeration/1/left.png",CV_LOAD_IMAGE_GRAYSCALE);
-  image1_right = imread("/home/mfallon/data/drc/registeration/1/right.png",CV_LOAD_IMAGE_GRAYSCALE);
+  image1 = imread("/home/mfallon/data/drc/registeration/pr2/1/left.png",CV_LOAD_IMAGE_GRAYSCALE);
+  image1_right = imread("/home/mfallon/data/drc/registeration/pr2/1/right.png",CV_LOAD_IMAGE_GRAYSCALE);
 
 
   imshow("Left", image0);

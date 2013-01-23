@@ -14,7 +14,7 @@ set_target_properties(pointcloud_vis PROPERTIES SOVERSION 1)
 pods_install_libraries(pointcloud_vis)
 pods_install_headers(pointcloud_vis.hpp DESTINATION pointcloud_tools)
 pods_install_pkg_config_file(pointcloud_vis
-    LIBS -lpointcloud_vis
+    LIBS -lpointcloud_vis 
     REQUIRES bot2-vis pcl_io-1.6 lcmtypes_visualization pointcloud_math
     VERSION 0.0.1)
 
