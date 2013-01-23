@@ -183,8 +183,8 @@ on_bw_stats(const lcm_recv_buf_t * buf, const char *channel, const drc_bandwidth
   bot_gl_scrollplot2d_add_point (self->bandwidth_plot, "32KB",  
                                  msg->utime * 1.0e-6, 
                                  32.0);  
-  printf("got bw_stats msg\n");
-  printf("%f and %f \n", bw_base2robot, bw_robot2base);
+  //printf("got bw_stats msg\n");
+  //printf("%f and %f \n", bw_base2robot, bw_robot2base);
 }
 
 static void
