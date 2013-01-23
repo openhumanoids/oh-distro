@@ -26,7 +26,7 @@ class RelationState
 
     //------------Constructor--------
  public:
-    AtomicConstraint(const RelationState::RelationType &relationType);
+    RelationState(const RelationState::RelationType &relationType);
 
   //---------------Accessors
   RelationType getRelationType() const { return _relationType; };
@@ -41,4 +41,4 @@ class RelationState
 } //namespace action_authoring
 
 
-#endif //AFFORDANCE_RELATION_H
+#endif //RELATION_STATE_H
