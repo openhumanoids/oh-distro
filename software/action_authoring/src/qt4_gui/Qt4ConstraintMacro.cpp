@@ -53,6 +53,12 @@ getPanel() {
     QHBoxLayout* top_line_hbox = new QHBoxLayout();
     QWidget* top_line_container = new QWidget();
     top_line_hbox->addWidget(_gui_name);
+    top_line_hbox->addWidget(new QLabel("lower bound (sec): "));
+    QDoubleSpinBox* time_lower_bound = new QDoubleSpinBox();
+    QDoubleSpinBox* time_upper_bound = new QDoubleSpinBox();
+    top_line_hbox->addWidget(time_lower_bound);
+    top_line_hbox->addWidget(new QLabel("upper bound (sec): "));
+    top_line_hbox->addWidget(time_upper_bound);
     top_line_hbox->addWidget(new QPushButton("click to bind"));
     top_line_container->setLayout(top_line_hbox);
     vbox->addWidget(top_line_container);

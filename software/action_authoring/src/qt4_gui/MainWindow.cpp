@@ -144,12 +144,16 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
   timer->start(1000); //1Hz  
 
     // read the joints from the robot state
+    // create the manipulators from the robot's joints
+
     std::vector<std::string> joint_names;
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
     for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
     {
     	const State_GFE_Joint& state_gfe_joint = it->second;
     	joint_names.push_back(state_gfe_joint.id());
+	
+	_worldState.manipulators.push_back((ManipulatorStateConstPtr)new ManipulatorState(state_gfe_joint.id()));
     }
   
     QVBoxLayout* layout = new QVBoxLayout();

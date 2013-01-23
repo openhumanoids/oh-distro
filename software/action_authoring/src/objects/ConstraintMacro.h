@@ -33,6 +33,8 @@ namespace action_authoring {
     std::vector<boost::shared_ptr<ConstraintMacro> > _constraints;
     const ConstraintMacroType _constraintType;
     const AtomicConstraintPtr _atomicConstraint;
+    double _timeLowerBound;
+    double _timeUpperBound;
 
     //-------Constructors--
   public:
@@ -42,6 +44,11 @@ namespace action_authoring {
     //Accessors
     std::string getName() const { return _name; };
     void setName(std::string name) { _name = name; };
+    double getTimeLowerBound() { return _timeLowerBound; }
+    double getTimeUpperBound() { return _timeUpperBound; }
+    double setTimeLowerBound(double t) { _timeLowerBound = t; }
+    double setTimeUpperBound(double t) { _timeUpperBound = t; }
+
     ConstraintMacroType getConstraintMacroType() const { return _constraintType; };
     
     //Available for non-ATOMIC constraints only
