@@ -9,8 +9,11 @@
 namespace action_authoring {
     class ManipulationRelation {
 
+    //----------Constructor
     public:
 	MainipulationRelation(AffPtr affordance, ManPtr manipulator, RelationStatePtr relationState);
+
+    //----------Accessors
 	AffPtr GetAffordance();
 	ManPtr GetManipulator();
 	RelationStatePtr GetRelationState();
@@ -19,12 +22,16 @@ namespace action_authoring {
 	void SetManipulator(ManPtr manipulator);
 	void SetRelationState(RelationStatePtr relationState);
 
-    protected:
+    //------------Fields
+    private:
 	AffPtr _affordance;
 	ManPtr _manipulator;
 	RelationStatePtr _relationState;
 
-    }
-}
+    }; // class ManipulationRelation
+    typedef boost::shared_ptr<ManipulationRelation> ManRelPtr;
+    typedef boost::shared_ptr<const ManipulationRelation> ManRelConstPtr;
+
+} //namespace action_authoring
 
 #endif //MANIPULATION_RELATION_H
