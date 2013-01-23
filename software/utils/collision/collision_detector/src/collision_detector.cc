@@ -155,6 +155,35 @@ ray_test( Vector3f from,
 }
 
 /**
+ * ray_test
+ * performs a ray intersection test between two points and returns a pointer
+ *   to the Collision_Object intersected and the point of intersection
+ */
+void
+Collision_Detector::
+ray_test( Vector3f from,
+          Vector3f to,
+          Collision_Object*& collisionObject,
+          Vector3f &hit_pt ){
+  btVector3 bt_from( from.x(), from.y(), from.z() );
+  btVector3 bt_to( to.x(), to.y(), to.z() );
+  btCollisionWorld::ClosestRayResultCallback result( bt_from, bt_to );
+  _collision_world.updateAabbs();
+  _collision_world.rayTest( bt_from, bt_to, result );
+
+   
+  collisionObject = NULL;
+  if( result.hasHit() ){
+    collisionObject = find_collision_object_by_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() );
+   hit_pt[0]=result.m_hitPointWorld[0];
+   hit_pt[1]=result.m_hitPointWorld[1];
+   hit_pt[2]=result.m_hitPointWorld[2];
+  }
+
+  return;
+}
+
+/**
  * find_collision_object_by_uid
  * searches through all of the uid's to determine the Collision_Object that it belongs to
  */
