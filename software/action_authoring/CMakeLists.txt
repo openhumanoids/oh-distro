@@ -24,17 +24,22 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 
 #QT wrap
-qt_wrap_cpp(action_authoring MOC_SRCS src/gui/mainwindow.h src/gui/togglepanel.h src/gui/customslider.h src/gui/Qt4ConstraintMacro.h src/opengl/SelectableOpenGLWidget.h src/gui/extendedlabel.h)
+qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
+			     src/qt4_widgets/TogglePanel.h
+			     src/qt4_widgets/CustomSlider.h 
+			     src/qt4_gui/Qt4ConstraintMacro.h
+			     src/opengl/SelectableOpenGLWidget.h
+			     src/qt4_widgets/ExtendedLabel.h)
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
-  src/AtomicConstraint.cpp
-  src/ConstraintMacro.cpp
-  src/DatabaseManager.cpp)
+  src/objects/AtomicConstraint.cpp
+  src/objects/ConstraintMacro.cpp
+  src/storage/DatabaseManager.cpp)
 
-pods_install_headers(src/AtomicConstraint.h 
-  src/ConstraintMacro.h
-  src/DatabaseManager.h
+pods_install_headers(src/objects/AtomicConstraint.h 
+  src/objects/ConstraintMacro.h
+  src/storage/DatabaseManager.h
   DESTINATION action_authoring)
 
 pods_install_libraries(action_authoring)
@@ -45,10 +50,10 @@ pods_install_pkg_config_file(action_authoring
   REQUIRES ${REQUIRED_PACKAGES})
 
 #======action authoring gui executable
-add_executable(action_authoring_gui src/gui/main.cpp src/gui/mainwindow.cpp 
-  src/gui/togglepanel.cpp
-  src/gui/extendedlabel.cpp
-  src/gui/Qt4ConstraintMacro.cpp
+add_executable(action_authoring_gui src/qt4_gui/Main.cpp src/qt4_gui/MainWindow.cpp 
+  src/qt4_widgets/TogglePanel.cpp
+  src/qt4_widgets/ExtendedLabel.cpp
+  src/qt4_gui/Qt4ConstraintMacro.cpp
   src/opengl/ColorRobot.cpp
   src/opengl/SelectableOpenGLWidget.cpp
   ${MOC_SRCS})
@@ -66,6 +71,6 @@ target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance
 #=====action database 
 add_executable(test_database_manager
   src/test/test_database_manager.cpp
-  src/DatabaseManager.cpp)
+  src/storage/DatabaseManager.cpp)
 target_link_libraries(test_database_manager ${Boost_LIBRARIES} lcm affordance action_authoring)
 pods_use_pkg_config_packages(test_database_manager ${REQUIRED_PACKAGES})
