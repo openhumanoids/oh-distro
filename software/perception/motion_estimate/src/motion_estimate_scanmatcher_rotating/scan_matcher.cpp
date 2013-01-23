@@ -1,3 +1,7 @@
+// Scanmatcher which only uses the scans when the laser is close to horizontal
+// it filters them out using a head imu and the head-to-laser transform
+// Pose is the fusion of the imu Pitch and ROll and the XYTheta from the laser
+//
 // 40 rpm works well
 // Changing this line of ScanMatcher.cpp from this 
 //    double sigma = .0675 / metersPerPixel; //sigma is in pixels
