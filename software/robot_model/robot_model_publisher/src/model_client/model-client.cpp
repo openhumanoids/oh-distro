@@ -133,21 +133,20 @@ void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_ur
     if(it->second->type!=6) // All joints that not of the type FIXED.
       joint_names_.push_back(it->first);
   }
-
   links_map_ =  robot_model.links_;
 
   //---------parse the tree and stop listening for urdf messages
 
   // Parse KDL tree
-  KDL::Tree tree;
-  if (!kdl_parser::treeFromString(urdf_xml_string_,tree))
-  {
-    std::cerr << "ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
-    return;
-  }
+//  KDL::Tree tree;
+//  if (!kdl_parser::treeFromString(urdf_xml_string_,tree))
+//  {
+//    std::cerr << "ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
+//    return;
+//  }
 
   //
-  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+//  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
 
   std::cout<< "Number of Joints: " << joint_names_.size() <<std::endl;  
   

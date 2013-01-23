@@ -2,9 +2,9 @@
 #include <boost/shared_ptr.hpp>
 
 #include "urdf/model.h"
-#include "kdl/tree.hpp"
-#include "kdl_parser/kdl_parser.hpp"
-#include "forward_kinematics/treefksolverposfull_recursive.hpp"
+//#include "kdl/tree.hpp"
+//#include "kdl_parser/kdl_parser.hpp"
+//#include "forward_kinematics/treefksolverposfull_recursive.hpp"
 
 #include <lcm/lcm.h>
 #include "lcmtypes/drc_lcmtypes.h"
@@ -27,7 +27,7 @@ class ModelClient
     void drc_robot_urdf_handler(const char* channel, const drc_robot_urdf_t *msg);        
     
     std::string getURDFString(){ return urdf_xml_string_; }
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> getSolver(){ return fksolver_; }
+//    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> getSolver(){ return fksolver_; }
 
   private:
     lcm_t* lcm_;
@@ -38,7 +38,7 @@ class ModelClient
     std::string urdf_xml_string_;
     std::vector<std::string> joint_names_;    
     std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+//    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 
     int keep_updated_;
 

@@ -2,8 +2,6 @@
 # and lines starting with '#' are ignored
 
 drc_utils
-urdf_dom
-urdf
 opengl
 qt4
 collision

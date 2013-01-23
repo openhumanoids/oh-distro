@@ -1,7 +1,6 @@
 ################
 add_library(model-client  SHARED model-client.cpp)
-pods_use_pkg_config_packages(model-client lcmtypes_drc_lcmtypes
-  urdf orocos-kdl kdl-parser forward-kinematics)
+pods_use_pkg_config_packages(model-client lcmtypes_drc_lcmtypes)
 
 
 target_link_libraries (model-client )
