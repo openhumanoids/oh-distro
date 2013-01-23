@@ -233,6 +233,7 @@ Vector3f AffordanceState::getRPY() const
 					_params.find(YAW_NAME)->second);
 }
 
+
 /**@param frame to get form this.getXYZ() and possible getRPY()*/
 void AffordanceState::getFrame(KDL::Frame &frame) const
 {

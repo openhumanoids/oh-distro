@@ -31,6 +31,7 @@ add_library(affordance SHARED
 pods_install_headers(
   src/ModelState.h
   src/AffordanceState.h
+  src/ManipulatorState.h
   src/OpenGL_Affordance.h
   src/CollisionObject_Affordance.h
   src/affordance_store/AffordanceServer.h

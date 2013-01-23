@@ -8,12 +8,9 @@
 #ifndef AFFORDANCESTATE_H_
 #define AFFORDANCESTATE_H_
 
+#include "affordance/ModelState.h"
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <boost/unordered_map.hpp>
-#include <Eigen/Core>
-#include <kdl/frames.hpp>
-#include <boost/tuple/tuple.hpp>
-#include "affordance/ModelState.h"
 
 namespace affordance
 {
@@ -80,13 +77,15 @@ namespace affordance
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
     virtual std::string getName() const;
-    virtual void getFrame(KDL::Frame &frame) const;
     virtual Eigen::Vector3f getColor() const;
+    virtual void getFrame(KDL::Frame &frame) const;
+
+    //todo move this to ModelState
+    virtual Eigen::Vector3f getRPY() const;
+    virtual Eigen::Vector3f getXYZ() const;
 
     //--these methods throw exceptions if we don't
     //have these fields defined
-    Eigen::Vector3f getXYZ() const;
-    Eigen::Vector3f getRPY() const;
     
     bool hasRPY() const;
     double radius() const;

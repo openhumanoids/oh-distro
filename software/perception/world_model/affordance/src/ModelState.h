@@ -20,7 +20,7 @@ namespace affordance
   class ArgumentException : public std::runtime_error {public: ArgumentException(const std::string &msg) : std::runtime_error(msg){}};
   class InvalidOtdfID : public std::runtime_error { public: InvalidOtdfID(const std::string &msg) : std::runtime_error(msg){}};
   class KeyNotFoundException : public std::runtime_error { public: KeyNotFoundException(const std::string &msg) : std::runtime_error(msg){}};
-
+  class NotImplementedException : public std::runtime_error { public: NotImplementedException(const std::string &msg) : std::runtime_error(msg){}};
 
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
@@ -45,13 +45,10 @@ namespace affordance
     //interface
     virtual GlobalUID getGlobalUniqueId() const = 0;
     virtual std::string getName() const = 0;
-    virtual void getFrame(KDL::Frame &frame) const = 0;
     virtual Eigen::Vector3f getColor() const = 0;
+    virtual void getFrame(KDL::Frame &frame) const = 0;
 
     //derived properties
-    Eigen::Vector3f getXYZ() const; 
-    Eigen::Vector3f getRPY() const; 
-    Eigen::Vector4f getQuaternion() const;
   };
   
   std::ostream& operator<<( std::ostream& out, const ModelState& other );
