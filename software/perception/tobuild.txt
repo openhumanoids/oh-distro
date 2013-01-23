@@ -3,7 +3,7 @@
 tf_solver
 pointcloud-tools
 motion_estimate
-lidar-passthough
+lidar-passthrough
 image-passthrough
 image-compress
 local_map
