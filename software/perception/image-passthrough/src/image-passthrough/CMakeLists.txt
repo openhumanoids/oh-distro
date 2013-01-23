@@ -33,7 +33,7 @@ pods_install_pkg_config_file(image-passthrough
 add_executable(drc-image-passthrough image-passthrough-app.cpp)
 target_link_libraries(drc-image-passthrough boost_system   
            ${REQUIRED_LIBS})
-pods_use_pkg_config_packages(drc-image-passthrough collision_detection
+pods_use_pkg_config_packages(drc-image-passthrough collision_object_gfe
   bot2-vis visualization-utils
   pointcloud_vis
   lcm bot2-lcmgl-client image-passthrough  ${PKG_CONFIG_DEPS} )

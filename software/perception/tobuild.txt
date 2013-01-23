@@ -4,6 +4,7 @@ tf_solver
 pointcloud-tools
 motion_estimate
 lidar-passthrough
+rgbd_simulation
 image-passthrough
 image-compress
 local_map
@@ -18,5 +19,4 @@ tutorials
 
 
 plamena_sandbox
-#rgbd_simulation
 #mfallon_sandbox
