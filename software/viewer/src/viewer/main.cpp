@@ -178,7 +178,8 @@ int main(int argc, char *argv[])
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  // disabled for now:
+  //maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
