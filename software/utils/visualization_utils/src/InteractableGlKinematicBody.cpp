@@ -245,7 +245,14 @@ void InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
 {
     GlKinematicBody::set_state(msg);  //code re-use
     update_urdf_collision_objects();
-} // end InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
+} // end InteractableGlKinematicBody::set_state(const drc::robot_state_t)
+
+
+void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
+{
+    GlKinematicBody::set_state(T_world_body,msg);  //code re-use
+    update_urdf_collision_objects();
+} // end InteractableGlKinematicBody::set_state(const KDL::Frame, const drc::joint_angles_t)
 
 void InteractableGlKinematicBody::update_urdf_collision_objects(void)
 {
@@ -453,12 +460,19 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
     }//end for
 
 }
- 
+
+bool InteractableGlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T_world_link)
+{
+   if(GlKinematicBody::get_link_frame(link_name,T_world_link))
+      return true;
+   else
+      return false;
+}  
 
 //==================================================================================================== 	  
 // drawing utils
 
-void InteractableGlKinematicBody::draw_interactable_markers(const drc::link_transform_t &link_tf, boost::shared_ptr<otdf::Geometry> &_link_shape)
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf)
 {
   double pos[3] = {link_tf.tf.translation.x,link_tf.tf.translation.y,link_tf.tf.translation.z};
 
@@ -512,7 +526,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(const drc::link_tran
    
      
    
-void InteractableGlKinematicBody::draw_interactable_markers(const drc::link_transform_t &link_tf, boost::shared_ptr<urdf::Geometry> &_link_shape)
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf)
 {
   double pos[3] = {link_tf.tf.translation.x,link_tf.tf.translation.y,link_tf.tf.translation.z};
 

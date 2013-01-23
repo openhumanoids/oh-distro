@@ -42,6 +42,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void init_urdf_collision_objects();
    void init_otdf_collision_objects();
    void set_state(const drc::robot_state_t &msg); 
+   void set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg); 
    void set_state(boost::shared_ptr<otdf::ModelInterface> _otdf_instance);
    void update_urdf_collision_objects(void);
    void update_otdf_collision_objects(void);
@@ -54,15 +55,15 @@ class InteractableGlKinematicBody: public GlKinematicBody
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
-        drc::link_transform_t nextTf = _link_tfs[i];
+        drc::link_transform_t nextTf=_link_tfs[i];
         std::stringstream oss;
-        oss << _unique_name << "_"<< nextTf.link_name; 
+        oss << _unique_name << "_"<< _link_tfs[i].link_name; 
         if((link_selection_enabled)&&(selected_link == oss.str())) {
           
           if((link_adjustment_enabled)&&(is_otdf_instance))
-            draw_interactable_markers(_link_tfs[i],_otdf_link_shapes[i]); // draws shapes and adds them to _collision_detector 
+            draw_interactable_markers(_otdf_link_shapes[i],_link_tfs[i]); // draws shapes and adds them to _collision_detector 
           else if((link_adjustment_enabled)&&(!is_otdf_instance)) 
-            draw_interactable_markers(_link_tfs[i],_link_shapes[i]);   
+            draw_interactable_markers(_link_shapes[i],_link_tfs[i]);   
             
           glColor4f(0.7,0.1,0.1,alpha);         
         }
@@ -84,11 +85,57 @@ class InteractableGlKinematicBody: public GlKinematicBody
         }
       }
    };
-   void draw_interactable_markers(const drc::link_transform_t &link_tf, boost::shared_ptr<otdf::Geometry> &_link_shape);
-   void draw_interactable_markers(const drc::link_transform_t &link_tf, boost::shared_ptr<urdf::Geometry> &_link_shape);
-   void draw_markers(double (&pos)[3], double (&dim)[3], double markersize); 
+   
+   
+   void draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_newWorldFrame_currentWorldFrame)
+   {
+     
+      glColor4f(c[0],c[1],c[2],alpha);
+      for(uint i = 0; i < _link_tfs.size(); i++)
+      {
+        KDL::Frame T_currentWorldFrame_link,T_newWorldFrame_link;
+        drc::link_transform_t nextTf=_link_tfs[i];
+        
+        GlKinematicBody::drc_link_transform_t_to_kdl_frame(_link_tfs[i],T_currentWorldFrame_link);
+        T_newWorldFrame_link = T_newWorldFrame_currentWorldFrame*T_currentWorldFrame_link;
+        GlKinematicBody::kdl_frame_to_drc_link_transform_t(T_newWorldFrame_link,nextTf);
+        nextTf.link_name = _link_tfs[i].link_name;
+        
+        std::stringstream oss;
+        oss << _unique_name << "_"<< nextTf.link_name; 
+        if((link_selection_enabled)&&(selected_link == oss.str())) {
+          
+          if((link_adjustment_enabled)&&(is_otdf_instance))
+            draw_interactable_markers(_otdf_link_shapes[i],nextTf); // draws shapes and adds them to _collision_detector 
+          else if((link_adjustment_enabled)&&(!is_otdf_instance)) 
+            draw_interactable_markers(_link_shapes[i],nextTf);   
+            
+          glColor4f(0.7,0.1,0.1,alpha);         
+        }
+        else
+           glColor4f(c[0],c[1],c[2],alpha);
 
-    
+        if((whole_body_selection_enabled)&&(selected_link != " ")) {
+          glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
+        }   
+        if(is_otdf_instance)
+        {
+         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[i];
+         GlKinematicBody::draw_link(nextLink,nextTf);
+        }
+        else
+        {     
+         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[i];
+         GlKinematicBody::draw_link(nextLink,nextTf);
+        }
+      }
+   };
+   
+   void draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape, const drc::link_transform_t &link_tf);
+   void draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf);
+   void draw_markers(double (&pos)[3], double (&dim)[3], double markersize); 
+   bool get_link_frame(const std::string &link_name, KDL::Frame &T_world_link);
+
    
    void enable_link_selection(bool value)
    {
