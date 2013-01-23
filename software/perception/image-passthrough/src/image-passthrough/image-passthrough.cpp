@@ -3,7 +3,7 @@
 
 using namespace boost::assign; // bring 'operator+=()' into scope
 
-#define DO_TIMING_PROFILE FALSE
+#define DO_TIMING_PROFILE TRUE
 
 SimExample::SimExample(int argc, char** argv,
 	int height,int width, boost::shared_ptr<lcm::LCM> &lcm_):
@@ -281,9 +281,12 @@ SimExample::createScene (std::string folder_name, std::vector<std::string> objec
 
   scene_->clear();
   
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+    
   pcl::PolygonMesh combined_mesh;
   pcl::PolygonMesh::Ptr combined_mesh_ptr(new pcl::PolygonMesh(combined_mesh));
-
   for (size_t i=0; i < object_names.size() ; i++ ) { 
     //std::cout << object_names[i] << " is to be transformed now\n";
     
@@ -348,9 +351,9 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
   int n = 1;
   poses.push_back (pose_in);
   // additional views:
-  poses.push_back (pose_in);
-  poses.push_back (pose_in);
-  poses.push_back (pose_in);
+  //poses.push_back (pose_in);
+  //poses.push_back (pose_in);
+  //poses.push_back (pose_in);
   rl_->computeLikelihoods (reference, poses, scores);
   std::cout << "camera: " << camera_->getX ()
        << " " << camera_->getY ()
@@ -477,7 +480,7 @@ SimExample::write_depth_image(const float* depth_buffer, std::string fname)
     }
   }
 
-  std::string channel = "MASK_DEPTH";
+  std::string channel = fname + "_DEPTH";
   int n_colors = 3;
   int isize =rl_->getWidth()*rl_->getHeight();
   
@@ -580,40 +583,53 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
 void
 SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
 {
-  
   bool do_timing=true;
   std::vector<int64_t> tic_toc;
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
   }
   
-  
   int npixels = rl_->getWidth() * rl_->getHeight();
-  uint8_t* rgb_img = new uint8_t[npixels * 3];
-
-  if (do_timing==1){
-    tic_toc.push_back(_timestamp_now());
-  }
-  
-  
-  for (int y = 0; y <  rl_->getHeight(); ++y)
-  {
-    for (int x = 0; x < rl_->getWidth(); ++x)
+  int n_colors;
+  int8_t pixelformat;
+  uint8_t* img_buff;
+  if (1==0){
+    n_colors = 3;
+    img_buff = new uint8_t[npixels * n_colors];
+    for (int y = 0; y <  rl_->getHeight(); ++y)
     {
-      int px= y*rl_->getWidth() + x ;
-      int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
-      rgb_img [3* (px) +0] = rgb_buffer[3*px_in+0];
-      rgb_img [3* (px) +1] = rgb_buffer[3*px_in+1];
-      rgb_img [3* (px) +2] = rgb_buffer[3*px_in+2];      
+      for (int x = 0; x < rl_->getWidth(); ++x)
+      {
+        int px= y*rl_->getWidth() + x ;
+        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
+        img_buff [3* (px) +0] = rgb_buffer[3*px_in+0];
+        img_buff [3* (px) +1] = rgb_buffer[3*px_in+1];
+        img_buff [3* (px) +2] = rgb_buffer[3*px_in+2];      
+      }
     }
-  }  
+  }else{
+    n_colors=1;
+    img_buff = new uint8_t[npixels * n_colors];
+    for (int y = 0; y <  rl_->getHeight(); ++y)
+    {
+      for (int x = 0; x < rl_->getWidth(); ++x)
+      {
+        int px= y*rl_->getWidth() + x ;
+        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
+        img_buff [1* (px) +0] = rgb_buffer[3*px_in+0]; // only use the red value
+      }
+    }
+  }
+  
+  
+  
+  
   
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
   }
   
-  std::string channel = "MASK_COLOUR"; // yeah with a 'u', deal with it!
-  int n_colors = 3;
+  std::string channel = fname + "_COLOR"; // yeah with a 'u', deal with it!
   int isize =rl_->getWidth()*rl_->getHeight();
 
   if (1==1){ 
@@ -622,9 +638,13 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
     image.width =rl_->getWidth();
     image.height=rl_->getHeight();
     image.row_stride =n_colors*rl_->getWidth();
-    image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
+    if (n_colors==1){
+      image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
+    }else{
+      image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
+    }
     image.size =n_colors*isize;
-    image.data = rgb_img;
+    image.data = img_buff;
     image.nmetadata =0;
     image.metadata = NULL;
     bot_core_image_t_publish( lcm_->getUnderlyingLCM(), channel.c_str(), &image);  
@@ -636,12 +656,16 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
     lcm_img.height =rl_->getHeight();
     lcm_img.nmetadata =0;
     lcm_img.row_stride=n_colors*rl_->getWidth();
-    lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    if (n_colors==1){
+      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    }else{
+      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    }
     lcm_img.size =n_colors*isize;
     //copy(msg->data.begin(), msg->data.end(), singleimage_data);
     //lcm_img.data = *depth_img;//.assign(singleimage_data, singleimage_data + ( n_colors*isize));
 
-    lcm_img.data.assign(rgb_img, rgb_img + ( n_colors*isize));
+    lcm_img.data.assign(img_buff, img_buff + ( n_colors*isize));
     lcm_->publish(channel.c_str(), &lcm_img);
   }
 
@@ -655,10 +679,10 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
   // Write to file: (with rgb flipped)
   //IplImage *cv_ipl = cvCreateImage( cvSize(rl_->getWidth() ,rl_->getHeight()), 8, 3);
   //cv::Mat cv_mat(cv_ipl);
-  //cv_mat.data = rgb_img ;
+  //cv_mat.data = img_buff ;
   //cv::imwrite(fname, cv_mat);     
   
-  delete [] rgb_img;
+  delete [] img_buff;
 }
 
 

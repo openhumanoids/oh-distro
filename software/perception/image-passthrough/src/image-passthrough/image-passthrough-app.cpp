@@ -1,19 +1,29 @@
+// TODO: Can significantly reduce the latency by transmitting the image timestamp directly 
+// to this program - which will be quicker than waiting for the message to show up alone.
+// TODO: - Improve mergePolygonMesh() code avoiding mutliple conversions and keeping the polygon list
+//       - Improve scene.draw() by giving it directly what it need - to avoid conversion.
+//       - One of these can vastly increase the rendering speed:
+// BENCHMARK as of jan 2013:
+// - with convex hull models: (about 20Hz)
+//   component solve fk  , createScene  render  , sendOuput
+//   fraction: 0.00564941, 0.0688681  , 0.185647, 0.739836, 
+//   time sec: 0.00031   , 0.003779   , 0.010187, 0.040597,
+// - with original models: (including complex head model) (about 5Hz)
+//   component solve fk  , createScene  render  , sendOuput
+//   fraction: 0.0086486 , 0.799919   , 0.072785, 0.118647, 
+//   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243, 
+// - These numbers are for RGB. Outputing Gray reduces sendOutput by half
+//   so sending convex works at about 35Hz
+
 #include <iostream>
 #include <Eigen/Dense>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
 
-#include <collision_detection/collision.h>
-#include <collision_detection/collision_detector.h>
-#include <collision_detection/collision_object_gfe.h>
-#include <collision_detection/collision_object_point_cloud.h>
-
-
 #include "image-passthrough.hpp"
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/GlKinematicBody.hpp>
-
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
@@ -21,6 +31,7 @@
 #include <bot_lcmgl_client/lcmgl.h>
 
 #define DO_TIMING_PROFILE TRUE
+#include <ConciseArgs>
 
 
 using namespace std;
@@ -31,15 +42,17 @@ using namespace boost::assign; // bring 'operator+()' into scope
 
 class Pass{
   public:
-    Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm);
+    Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, std::string camera_channel_);
     
     ~Pass(){
     }
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
+    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
+    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
+    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    std::string camera_channel_;
 
     bot_lcmgl_t* lcmgl_;
     pointcloud_vis* pc_vis_;
@@ -48,6 +61,10 @@ class Pass{
     // OpenGL:
     void sendOutput(int64_t utime);
     SimExample::Ptr simexample;
+    
+    // Last robot state: this is used to extract link positions:
+    drc::robot_state_t last_rstate_;
+    bool init_rstate_;    
 
     // New Stuff:
     boost::shared_ptr<visualization_utils::GlKinematicBody> gl_robot_;
@@ -62,12 +79,13 @@ class Pass{
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 };
 
-Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_):          
-    lcm_(lcm_),urdf_parsed_(false){
+Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_):          
+    lcm_(lcm_),urdf_parsed_(false), camera_channel_(camera_channel_){
 
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
-  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);  
-  urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdf_handler,this);    
+  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
+  lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
+  urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
   
   // Vis Config:
@@ -113,12 +131,12 @@ void Pass::sendOutput(int64_t utime){
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
   }
-  simexample->write_rgb_image (simexample->rl_->getColorBuffer (), string ( "_rgb.png") );  
+  simexample->write_rgb_image (simexample->rl_->getColorBuffer (), camera_channel_ );  
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
   }
   
-  //simexample->write_depth_image (simexample->rl_->getDepthBuffer (), string ("_depth.png") );  
+  //simexample->write_depth_image (simexample->rl_->getDepthBuffer (), camera_channel_ );  
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"sendOutput");
@@ -150,7 +168,7 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 
 
 
-void Pass::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
+void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg){
   if(urdf_parsed_ ==false){
     cout<< "URDF handler"<< endl;
     // Received robot urdf string. Store it internally and get all available joints.
@@ -247,28 +265,38 @@ void Pass::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   model_ptr = mesh_ptr;  
 
 */
-void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  cout << "got rstate: " << msg->utime << "\n";
+void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (!urdf_parsed_){      return;    }
   if(urdf_subscription_on_){
-    cout << "robot_state_handler: unsubscribing from urdf" << endl;
+    cout << "robotStateHandler: unsubscribing from urdf" << endl;
     lcm_->unsubscribe(urdf_subscription_); //unsubscribe from urdf messages
     urdf_subscription_on_ =  false;   
   }  
   
+  last_rstate_= *msg;  
+  init_rstate_=true; // both urdf parsed and robot state handled... ready to handle data
+}  
+  
+
+// Initially we will transmit a mask 1-for-1 with the image
+
+void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
+  if (!init_rstate_){
+    std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
+    return;
+  }
   
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
     tic_toc.push_back(_timestamp_now());
   #endif
   
-  
   // 0. Extract World to Body TF:  
   Eigen::Isometry3d world_to_body;
   world_to_body.setIdentity();
-  world_to_body.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-                                               msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  world_to_body.translation()  << last_rstate_.origin_position.translation.x, last_rstate_.origin_position.translation.y, last_rstate_.origin_position.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(last_rstate_.origin_position.rotation.w, last_rstate_.origin_position.rotation.x, 
+                                               last_rstate_.origin_position.rotation.y, last_rstate_.origin_position.rotation.z);
   world_to_body.rotate(quat);    
 
   
@@ -276,8 +304,8 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   // 1a. Solve for Forward Kinematics
   // TODO: use gl_robot routine instead of replicating this here:
   map<string, double> jointpos_in;
-  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+  for (uint i=0; i< (uint) last_rstate_.num_joints; i++) //cast to uint to suppress compiler warning
+    jointpos_in.insert(make_pair(last_rstate_.joint_name[i], last_rstate_.joint_position[i]));
 
   // Calculate forward position kinematics
   map<string, drc::transform_t > cartpos_out;
@@ -305,7 +333,7 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   }
   
   // 2. Determine all Body-to-Link transforms for Visual elements:
-  gl_robot_->set_state(*msg);
+  gl_robot_->set_state( last_rstate_);
   std::vector<drc::link_transform_t> link_tfs= gl_robot_->get_link_tfs();
   
   
@@ -392,20 +420,25 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"robot_state_handler");
+    display_tic_toc(tic_toc,"imageHandler");
   #endif  
 }
 
 int 
-main( int argc, 
-      char** argv )
-{
+main( int argc, char** argv ){
+  ConciseArgs parser(argc, argv, "lidar-passthrough");
+  string camera_channel="CAMERALEFT";
+  parser.add(camera_channel, "c", "camera_channel", "Camera channel");
+  parser.parse();
+  cout << camera_channel << " is camera_channel\n"; 
+  
+  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(argc,argv, lcm);
+  Pass app(argc,argv, lcm, camera_channel);
   cout << "image-passthrough ready" << endl << endl;
   while(0 == lcm->handle());
   return 0;

@@ -4,7 +4,7 @@ tf_solver
 pointcloud-tools
 motion_estimate
 lidar-passthough
-image-passthough
+image-passthrough
 image-compress
 local_map
 #registeration
