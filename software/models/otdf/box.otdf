@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<object name="cylinder">
+<object name="box">
 
 
 
@@ -16,8 +16,9 @@
 <param name="yaw" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
 
 <!-- Size of the outer most bounding volume -->
-<param name="radius" default_value="0.05" inc="0.01" min="0" max="100"/> 
-<param name="length" default_value="0.5" inc="0.01" min="0" max="100"/>
+<param name="lX" default_value="0.1" inc="0.01" min="0" max="100"/> 
+<param name="lY" default_value="0.1" inc="0.01" min="0" max="100"/> 
+<param name="lZ" default_value="1" inc="0.01" min="0" max="100"/>
 <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
 <param name="mass" default_value="1.0" inc="0.01" min="0" max="100"/>
 
@@ -45,7 +46,7 @@
 <!--	</collision>-->
 <!--</link>-->
 
-<link name="cylinder">
+<link name="box">
 <inertial>
    <mass value="${mass}" />
    <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"
@@ -55,20 +56,20 @@
 	<visual>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<cylinder radius="${radius}" length="${length}"/> 
+			<box  size="${lX} ${lY} ${lZ}"/> 
 		</geometry>
 	</visual>
 	<collision>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
 		<geometry>
-			<cylinder radius="${radius}" length="${length}"/> 
+			<box  size="${lX} ${lY} ${lZ}"/> 
 		</geometry>
 	</collision>
 </link>
 
 <joint name="base_joint" type="fixed">
 	<parent link="base_link" type="link"/>
-	<child link="cylinder" type="link"/>
+	<child link="box" type="link"/>
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 	<axis xyz="0 0 1"/>
 </joint>
