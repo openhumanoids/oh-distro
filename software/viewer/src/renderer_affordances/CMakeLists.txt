@@ -12,6 +12,9 @@ add_library(renderer_affordances SHARED
   renderer_affordances.cpp
   RobotStateListener.cpp
   AffordanceCollectionListener.cpp
+  CandidateGraspSeedListener.cpp
+  InitGraspOptPublisher.cpp
+  GraspOptStatusListener.cpp
   )
   
 set_target_properties(renderer_affordances  PROPERTIES SOVERSION 1)
@@ -20,6 +23,9 @@ pods_install_libraries(renderer_affordances )
 pods_install_headers(renderer_affordances.hpp
   RobotStateListener.hpp
   AffordanceCollectionListener.hpp
+  CandidateGraspSeedListener.hpp
+  InitGraspOptPublisher.hpp
+  GraspOptStatusListener.hpp
   DESTINATION renderer_affordances )
 
 

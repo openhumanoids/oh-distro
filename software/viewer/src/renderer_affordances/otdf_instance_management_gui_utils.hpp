@@ -71,11 +71,11 @@ namespace renderer_affordances_gui_utils
 
   static void on_adjust_dofs_popup_close (BotGtkParamWidget *pw, void *user)
   {
-  //     RendererAffordances *self = (RendererAffordances*) user;
+  //   RendererAffordances *self = (RendererAffordances*) user;
   //   std::string instance_name=  (*self->instance_selection_ptr);
   //   typedef std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > object_instance_map_type_;
   //   object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-  // TODO: Send publish affordance command msg
+  //   TODO: Send publish affordance command msg
   }
 
   static void on_otdf_adjust_dofs_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
@@ -84,8 +84,7 @@ namespace renderer_affordances_gui_utils
   //   std::string instance_name=  (*self->instance_selection_ptr);
   //   typedef std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > object_instance_map_type_;
   //   object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-  //  
-  //TODO: do something
+  //   TODO: do something
   }
 
   static void spawn_adjust_params_popup (RendererAffordances *self)
@@ -306,12 +305,20 @@ namespace renderer_affordances_gui_utils
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
       self->instantiated_objects.erase(it);
+      
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      for(sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
+      {
+        if(hand_it->second.object_name == std::string(instance_name))
+           self->sticky_hands.erase(hand_it);
+      }
       bot_viewer_request_redraw(self->viewer);
     }
     else if(!strcmp(name,PARAM_OTDF_INSTANCE_CLEAR_ALL)) {
       fprintf(stderr,"\nClearing Instantiated Objects\n");
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       self->instantiated_objects.clear();
+      self->sticky_hands.clear();
       for( std::map<std::string,int >::iterator it = self->instance_cnt.begin(); it!=self->instance_cnt.end(); it++)
       { 
        it->second = 0;

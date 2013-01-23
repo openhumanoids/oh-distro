@@ -11,6 +11,7 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "lcmtypes/bot_core.hpp"
 #include <bot_vis/bot_vis.h>
+#include "renderer_affordances.hpp" // has definition of RendererAffordances struc
 
 namespace renderer_affordances
 {
@@ -22,17 +23,18 @@ namespace renderer_affordances
   private:
     std::string _robot_name;
     boost::shared_ptr<lcm::LCM> _lcm;    
-
-    //get rid of this
-    BotViewer *_viewer;
+    RendererAffordances* _parent_renderer; 
+    
+    //BotViewer *_viewer;
 
     //----------------constructor/destructor
   public:
-    RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm,
-		       BotViewer *viewer);
+   // RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
+		RobotStateListener(RendererAffordances* parent_renderer);
     ~RobotStateListener();
     
     KDL::Frame T_body_world; // current body origin in world frame
+    long last_state_msg_timestamp;
     
     //-------------message callback
   private:

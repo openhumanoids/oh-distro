@@ -61,7 +61,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
        
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
-          // cout <<"updated_otdf_object_instance: "<< aff.name << endl;
+          cout <<"updated_otdf_object_instance: "<< aff.name << endl;
           update_object_instance(aff);
        }      
        else {
