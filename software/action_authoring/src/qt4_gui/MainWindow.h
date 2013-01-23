@@ -116,7 +116,8 @@ private slots:
     void updateJoint(int value);
     void handleLoadAction();
     void handleSaveAction();
-    void handleDeleteWaypoint();
+    void handleDeleteConstraint();
+    void handleAddConstraint();
     void handleMoveUp();
     void handleMoveDown();
     void handleSelectedAffordanceChange();

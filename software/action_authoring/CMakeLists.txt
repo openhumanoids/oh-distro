@@ -33,11 +33,16 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
+  src/objects/ManipulationRelation.cpp
+#  src/objects/RelationState.cpp
   src/objects/AtomicConstraint.cpp
   src/objects/ConstraintMacro.cpp
   src/storage/DatabaseManager.cpp)
 
-pods_install_headers(src/objects/AtomicConstraint.h 
+pods_install_headers(
+  src/objects/ManipulationRelation.h 
+  src/objects/RelationState.h 
+  src/objects/AtomicConstraint.h 
   src/objects/ConstraintMacro.h
   src/storage/DatabaseManager.h
   DESTINATION action_authoring)
@@ -50,7 +55,9 @@ pods_install_pkg_config_file(action_authoring
   REQUIRES ${REQUIRED_PACKAGES})
 
 #======action authoring gui executable
-add_executable(action_authoring_gui src/qt4_gui/Main.cpp src/qt4_gui/MainWindow.cpp 
+add_executable(action_authoring_gui 
+  src/qt4_gui/Main.cpp
+  src/qt4_gui/MainWindow.cpp 
   src/qt4_widgets/TogglePanel.cpp
   src/qt4_widgets/ExtendedLabel.cpp
   src/qt4_gui/Qt4ConstraintMacro.cpp

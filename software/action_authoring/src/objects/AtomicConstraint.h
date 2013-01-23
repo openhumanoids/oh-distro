@@ -1,8 +1,9 @@
 #ifndef ATOMIC_CONSTRAINT_H
 #define ATOMIC_CONSTRAINT_H
 
-#include "boost/shared_ptr.hpp"
-#include "affordance/AffordanceState.h"
+#include <boost/shared_ptr.hpp>
+#include <affordance/AffordanceState.h>
+#include "ManipulationRelation.h"
 
 namespace action_authoring
 {
@@ -11,35 +12,19 @@ namespace action_authoring
 class AtomicConstraint
 {
   
-  //----------Enumerations
- public:
-    typedef enum {
-      UNDEFINED,
-      TANGENT,
-      OFFSET, //todo: small comment here
-      NORMAL
-    } RelationType;
-
-
     //------------fields
  private:
-    affordance::AffConstPtr _affordance1;
-    affordance::AffConstPtr _affordance2;
-    RelationType _relationType;
+    ManRelPtr _relation;
 
     //------------Constructor--------
  public:
-    AtomicConstraint(affordance::AffConstPtr affordance1, affordance::AffConstPtr affordance2, 
-		     const AtomicConstraint::RelationType &relationType);
+    AtomicConstraint(ManRelPtr relation);
 
-  //---------------Accessors
-  affordance::AffConstPtr getAffordance1() const { return _affordance1; };
-  affordance::AffConstPtr getAffordance2() const { return _affordance2; };
-  RelationType getRelationType() const { return _relationType; };
+    //---------------Accessors
+    ManRelPtr getRelation() { return _relation; }
 
-  //mutators
-  void setAffordance1(affordance::AffConstPtr affordance) {_affordance1 = affordance;}
-  void setAffordance2(affordance::AffConstPtr affordance) {_affordance2 = affordance;}
+    //mutators
+    void setRelation(ManRelPtr relation) { _relation = relation; }
   
 };  //class AtomicConstraint
  

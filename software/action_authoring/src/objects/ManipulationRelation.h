@@ -1,31 +1,32 @@
 #ifndef MANIPULATION_RELATION_H
 #define MANIPULATION_RELATION_H
 
-#include "boost/shared_ptr.hpp"
-#include "affordance/AffordanceState.h"
+#include <boost/shared_ptr.hpp>
+#include <affordance/AffordanceState.h>
+#include <affordance/ManipulatorState.h>
 #include "RelationState.h"
-#include "ManipulatorState.h"
+
 
 namespace action_authoring {
     class ManipulationRelation {
 
     //----------Constructor
     public:
-	MainipulationRelation(AffPtr affordance, ManPtr manipulator, RelationStatePtr relationState);
+        ManipulationRelation(affordance::AffPtr affordance, affordance::ManipulatorStatePtr manipulator, RelationStatePtr relationState);
 
     //----------Accessors
-	AffPtr GetAffordance();
-	ManPtr GetManipulator();
-	RelationStatePtr GetRelationState();
+        affordance::AffPtr getAffordance() { return _affordance; }
+        affordance::ManipulatorStatePtr getManipulator() { return _manipulator; }
+	RelationStatePtr getRelationState() { return _relationState; }
 
-	void SetAffordance(AffPtr affordance);
-	void SetManipulator(ManPtr manipulator);
-	void SetRelationState(RelationStatePtr relationState);
+        void setAffordance(affordance::AffPtr affordance) { _affordance = affordance; }
+        void setManipulator(affordance::ManipulatorStatePtr manipulator) { _manipulator = manipulator; }
+	void setRelationState(RelationStatePtr relationState) { _relationState = relationState; }
 
     //------------Fields
     private:
-	AffPtr _affordance;
-	ManPtr _manipulator;
+        affordance::AffPtr _affordance;
+        affordance::ManipulatorStatePtr _manipulator;
 	RelationStatePtr _relationState;
 
     }; // class ManipulationRelation

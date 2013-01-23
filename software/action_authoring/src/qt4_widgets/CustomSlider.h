@@ -8,29 +8,30 @@ class DefaultValueSlider : public QSlider {
  public:
   DefaultValueSlider(Qt::Orientation orientation, QWidget *parent = NULL)
     : QSlider(orientation, parent),
-      default_value_(-1) {
+      _tick_positions() {
     connect(this, SIGNAL(valueChanged(int)), SLOT(VerifyDefaultValue(int)));
   }
 
  protected:
   void paintEvent(QPaintEvent *ev) {
-    int position = QStyle::sliderPositionFromValue(minimum(),
-                                                   maximum(),
-                                                   default_value_,
-                                                   width());
     QPainter painter(this);
-    painter.drawLine(position, 0, position, height());
+    for (int i = 0; _tick_positions.size(); i++) {
+	int position = QStyle::sliderPositionFromValue(
+	    minimum(), maximum(), _tick_positions[i], width());
+	painter.drawLine(position, 0, position, height());
+    }
     QSlider::paintEvent(ev);
   }
 
  private slots:
   void VerifyDefaultValue(int value){
-    if (default_value_ == -1) {
-      default_value_ = value;
+    if (_default_value == -1) {
+      _default_value = value;
       update();
     }
   }
 
  private:
-  int default_value_;
+  int _default_value;
+  vector<double> _tick_positions; // from 0.0 to 1.0
 };

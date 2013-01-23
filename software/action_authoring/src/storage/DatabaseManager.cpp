@@ -109,11 +109,11 @@ void DatabaseManager::addConstraintMacroToNode(ConstraintMacroConstPtr constrain
 		BAD_CAST constraint->getName().c_str());
 
     //Affordance 1 Reference
-    std::string aff1UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getAffordance1()));
+    std::string aff1UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getRelation()->getManipulator()));
     xmlNewChild(constraintNode, NULL, BAD_CAST "aff1", BAD_CAST aff1UidStr.c_str());
 
     //Affordance 2 Reference
-    std::string aff2UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getAffordance2()));
+    std::string aff2UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getRelation()->getAffordance()));
     xmlNewChild(constraintNode, NULL, BAD_CAST "aff2", BAD_CAST aff2UidStr.c_str());
   }
   //Seqeuntial ConstraintMacro conversion

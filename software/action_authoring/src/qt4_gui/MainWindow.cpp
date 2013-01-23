@@ -327,22 +327,65 @@ handleSaveAction() {
  
 }
 
+int getSelectedGUIConstraintIndex() {
+    if (_authoringState.selected_gui_constraint == NULL)
+	return -1;
+
+    std::vector<Qt4ConstraintMacro> &constraints = _authoringState._all_gui_constraints;
+    std::vector<Qt4ConstraintMacro>::iterator it = std::find(
+	constraints.begin(), constraints.end(), 
+	_authoringState.selected_gui_constraint);
+    if (it != constraints.end()) {
+	int i = it - constraints.begin();
+	return i;
+    } else {
+	return -1;
+    }
+}
+
 void
 MainWindow::
-handleDeleteWaypoint() {
+handleDeleteConstraint() {
+    int i = getSelectedGUIConstraintIndex();
+    if (i > 0) {
+	// delete the qt4 widget
+	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints[i]);
+	rebuildGUIFromState(_authoringState, _worldState);
+    } 
+}
 
+void
+MainWindow::
+handleAddConstraint() {
+    AffConstPtr brake = nameToAffMap["Brake Pedal"];
+    AffConstPtr wheel = nameToAffMap["Steering Wheel"];
+
+    AtomicConstraintPtr new_relation(new AtomicConstraint(brake, wheel, AtomicConstraint::NORMAL));
+    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled", new_relation));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
+
+    _authoringState._all_gui_constraints.push_back(new Qt4ConstraintMacro(
+    rebuildGUIFromState(_authoringState, _worldState);
+}
+
+void moveQt4Constraint(bool up) {
+    int i = getSelectedGUIConstraintIndex();
+    if (up && i > 0 || down && i < constraints.size() - 1) {
+	std::swap(constraints.begin() + i, constraints.begin() + i + (up ? -1 : 1));
+	rebuildGUIFromState(_authoringState, _worldState);
+    }
 }
 
 void
 MainWindow::
 handleMoveUp() {
-
+    moveQt4Constraint(true);
 }
 
 void
 MainWindow::
 handleMoveDown() {
-
+    moveQt4Constraint(false);
 }
 
 void 
@@ -389,11 +432,13 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 */
 }
 
+/* 
+ * Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
+ */
 void
 MainWindow::
 rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
-    // Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
-    // _constraint_container
+    // delete all of the current constraint's toggle panel widgets
     qDeleteAll(_constraint_container->findChildren<QWidget*>());
 
     for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
