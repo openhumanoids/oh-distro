@@ -258,16 +258,24 @@ class JointStatePublisherGui(wx.Frame):
         return joint['min'] + (joint['max']-joint['min']) * pctvalue
 
 
-print 'traj_gui.py [joint|traj]'
-print 'publisher of joint angles or a single trajectory ROS msg'
+print 'traj_gui.py [mode: joint|traj]'
+print 'Publisher of joint angles or a single trajectory ROS msg'
 print 'Argument List:', str(sys.argv)
-print sys.argv[0]
-if (sys.argv>1):
+#print sys.argv[0]
+if len(sys.argv)>1:
   mode = sys.argv[1]
 else:
-  mode = "joint"
+  print 'No mode specified - assuming joint angles'
+  mode='joint'
 
 
+if (mode=='traj'): 
+  print "valid mode:",mode
+elif(mode=='joint'): 
+  print "valid mode:",mode
+else:
+  print "mode must be either traj or joint - not",mode
+  sys.exit(0)
 
 
 if __name__ == '__main__':
