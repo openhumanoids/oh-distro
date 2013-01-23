@@ -36,7 +36,7 @@
 #include <action_authoring/ManipulationRelation.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
-#include <action_authoring/DatabaseManager.h>
+//#include <action_authoring/DatabaseManager.h>
 
 
 namespace action_authoring
@@ -97,6 +97,7 @@ public:
     //=================gui state
  private: 
     QSlider* _jointSlider;
+    DefaultValueSlider* _scrubber;
     QLabel * _jointNameLabel;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget* _constraint_container;
@@ -114,6 +115,7 @@ private:
     void handleAffordancesChanged(); //only called if the affordances have changed
     int getSelectedGUIConstraintIndex();
     void moveQt4Constraint(bool up);
+    void updateScrubber();
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances

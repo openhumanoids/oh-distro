@@ -9,10 +9,14 @@ Qt4ConstraintMacro(ConstraintMacroPtr constraint) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
-				     _gui_panel(new TogglePanel(this, "test"))
+				     _gui_panel(new TogglePanel(this, "test")),
+				     _gui_time_lower_bound(new QDoubleSpinBox()),
+				     _gui_time_upper_bound(new QDoubleSpinBox())
 {
     // constructor
     _constraint = constraint;
+    _gui_time_lower_bound->setSuffix(" sec");
+    _gui_time_upper_bound->setSuffix(" sec");
 }
 
 Qt4ConstraintMacro::
@@ -54,11 +58,9 @@ getPanel() {
     QWidget* top_line_container = new QWidget();
     top_line_hbox->addWidget(_gui_name);
     top_line_hbox->addWidget(new QLabel("lower bound (sec): "));
-    QDoubleSpinBox* time_lower_bound = new QDoubleSpinBox();
-    QDoubleSpinBox* time_upper_bound = new QDoubleSpinBox();
-    top_line_hbox->addWidget(time_lower_bound);
+    top_line_hbox->addWidget(_gui_time_lower_bound);
     top_line_hbox->addWidget(new QLabel("upper bound (sec): "));
-    top_line_hbox->addWidget(time_upper_bound);
+    top_line_hbox->addWidget(_gui_time_upper_bound);
     top_line_hbox->addWidget(new QPushButton("click to bind"));
     top_line_container->setLayout(top_line_hbox);
     vbox->addWidget(top_line_container);
@@ -101,6 +103,9 @@ getPanel() {
     // MUST go before the QT connections have been made 
     updateElementsFromState();
     
+    connect(_gui_time_lower_bound, SIGNAL(valueChanged(double)), this, SLOT(updateStateFromElements()));
+    connect(_gui_time_upper_bound, SIGNAL(valueChanged(double)), this, SLOT(updateStateFromElements()));
+
     connect(_gui_name, SIGNAL(textChanged(QString)), this, SLOT(updateStateFromElements()));
     connect(_gui_robotJointType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
     connect(_gui_constraintType, SIGNAL(currentIndexChanged(int)), this, SLOT(updateStateFromElements()));
@@ -133,6 +138,9 @@ updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
 
+    _constraint->setTimeLowerBound(_gui_time_lower_bound->value());
+    _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
+
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
 // TODO	  _constraint->getAtomicConstraint()->getRelation()->setManipulator()(_models[_gui_robotJointType->currentIndex()]);
@@ -164,6 +172,9 @@ updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
     _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
     _gui_robotJointType->clear();
+
+    _gui_time_lower_bound->setValue(_constraint->getTimeLowerBound());
+    _gui_time_upper_bound->setValue(_constraint->getTimeUpperBound());
 
     // re-initialize the maps
     _affordance1IndexMap.clear();

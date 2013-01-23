@@ -152,8 +152,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     {
     	const State_GFE_Joint& state_gfe_joint = it->second;
     	joint_names.push_back(state_gfe_joint.id());
-	
-	_worldState.manipulators.push_back((ManipulatorStateConstPtr)new ManipulatorState(state_gfe_joint.id()));
+	std::string id = state_gfe_joint.id();
+	_worldState.manipulators.push_back((ManipulatorStateConstPtr)new ManipulatorState(id));
     }
   
     QVBoxLayout* layout = new QVBoxLayout();
@@ -238,14 +238,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QWidget* rightside = new QWidget();
     _jointSlider = new QSlider( Qt::Horizontal, this );
     _jointNameLabel = new QLabel();
-    DefaultValueSlider* scrubber = new DefaultValueSlider( Qt::Horizontal, this );
-    scrubber->addTick(0.1); scrubber->addTick(0.2); scrubber->addTick(0.3); 
-    scrubber->addTick(0.4); scrubber->addTick(0.5); scrubber->addTick(0.6); 
-    scrubber->addTick(0.9); scrubber->addTick(1.0);
+    _scrubber = new DefaultValueSlider( Qt::Horizontal, this );
     rightsidelayout->addWidget(_jointNameLabel);
     rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(widgetWrapper);
-    rightsidelayout->addWidget(scrubber );
+    rightsidelayout->addWidget(_scrubber);
 //    rightside->setStyleSheet("QGroupBox { border: 1px solid black; border-radius: 3px; padding: 0px; background-color: black; } ");
     rightside->setLayout(rightsidelayout);
 
@@ -450,6 +447,23 @@ handleSelectedAffordanceChange() {
 
 void 
 MainWindow::
+updateScrubber() {
+    // update the scrubber
+    double sum = 0;
+    vector<double> lengths;
+    _scrubber->clearTicks();
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+	double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
+	lengths.push_back(max);
+	sum += max;
+    }
+    for (int i = 0; i < lengths.size(); i++) {
+	_scrubber->addTick(lengths[i] / sum);
+    }
+}
+
+void 
+MainWindow::
 setSelectedAction(Qt4ConstraintMacro* activator) { 
 //    std::cout << "activated !!! " << std::endl;
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
@@ -460,6 +474,7 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
     }
+    updateScrubber();
 /*
     handleRobotLinkChange();
 */
@@ -483,6 +498,7 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
 		this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
 	_constraint_vbox->addWidget(tp);
     }
+    
 }
 
 //===========world state affordance updating

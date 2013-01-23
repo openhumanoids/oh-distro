@@ -34,7 +34,9 @@ namespace action_authoring
     private:
 	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
 	std::map<affordance::GlobalUID, int> _affordance2IndexMap;
-	
+
+	QDoubleSpinBox* _gui_time_lower_bound;
+	QDoubleSpinBox* _gui_time_upper_bound;
 	TogglePanel* _gui_panel;
         QLineEdit* _gui_name;
         QComboBox* _gui_robotJointType;

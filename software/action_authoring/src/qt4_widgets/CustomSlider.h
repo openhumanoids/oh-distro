@@ -14,6 +14,9 @@ class DefaultValueSlider : public QSlider {
   void addTick(double tick_value) {
       _tick_positions.push_back(tick_value);
   }
+  void clearTicks() {
+      _tick_positions.clear();
+  }
 
  protected:
   void paintEvent(QPaintEvent *ev) {
