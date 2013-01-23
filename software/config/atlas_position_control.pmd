@@ -4,7 +4,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "pub" {
@@ -36,7 +36,7 @@ group "core" {
 
 group "gazebo" {
     cmd "gfe" {
-        exec = "optirun roslaunch mit_drcsim_scripts atlas_position_control.launch";
+        exec = "roslaunch mit_drcsim_scripts atlas_position_control.launch";
         host = "localhost";
     }
 

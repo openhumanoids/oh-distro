@@ -12,7 +12,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modpub" {
-        exec = "robot_model_publisher ../models/mit_gazebo_models/mit_robot_PnC/model.sdf";
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.sdf";
         host = "localhost";
     }
     cmd "pub" {

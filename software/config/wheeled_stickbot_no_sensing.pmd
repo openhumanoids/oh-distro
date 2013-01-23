@@ -12,7 +12,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modpub" {
-        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_wheeled_stick_torso/model.sdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_wheeled_stick_torso/model.sdf";
         host = "localhost";
     }
     cmd "pub" {
