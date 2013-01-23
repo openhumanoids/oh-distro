@@ -33,9 +33,11 @@
 //#include "action_authoring/AtomicConstraintMacro.h"
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
-#include "action_authoring/AtomicConstraint.h"
-#include "action_authoring/ConstraintMacro.h"
-#include "action_authoring/DatabaseManager.h"
+#include <action_authoring/ManipulationRelation.h>
+#include <action_authoring/AtomicConstraint.h>
+#include <action_authoring/ConstraintMacro.h>
+#include <action_authoring/DatabaseManager.h>
+
 
 namespace action_authoring
 {
@@ -49,6 +51,7 @@ struct WorldStateView
 
   affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
   std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
+  std::vector<affordance::ManipulatorStateConstPtr> manipulators; //robot manipulators
   state::State_GFE state_gfe; //robot state
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
   opengl::OpenGL_Object_DAE* colorVehicle; // TODO : special case for demo
@@ -109,6 +112,8 @@ private:
 private:
     void rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState);
     void handleAffordancesChanged(); //only called if the affordances have changed
+    int getSelectedGUIConstraintIndex();
+    void moveQt4Constraint(bool up);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances

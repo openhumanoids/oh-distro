@@ -4,7 +4,7 @@ using namespace action_authoring;
 using namespace affordance;
 
 ManipulationRelation::
-ManipulationRelation(AffPtr affordance, affordance::ManipulatorStatePtr manipulator, 
+ManipulationRelation(AffConstPtr affordance, affordance::ManipulatorStateConstPtr manipulator, 
 		      RelationStatePtr relationState) {
     _affordance = affordance;
     _manipulator = manipulator;

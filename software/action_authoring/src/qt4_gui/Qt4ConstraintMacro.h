@@ -26,8 +26,8 @@ namespace action_authoring
 	void updateElementsFromState();
 	void setSelected(bool selected);
 
-	void setAffordances(std::vector<affordance::AffConstPtr> &leftSideAffordances, 
-			    std::vector<affordance::AffConstPtr> &rightSideAffordances);
+	void setModelObjects(std::vector<affordance::AffConstPtr> &affordances,
+			     std::vector<affordance::ManipulatorStateConstPtr> &manipulators);
 	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
 	
@@ -43,8 +43,8 @@ namespace action_authoring
         ConstraintMacroPtr _constraint;
 
         // should be static
-        std::vector<affordance::AffConstPtr> _leftSideAffordances;
-        std::vector<affordance::AffConstPtr> _rightSideAffordances;
+	std::vector<affordance::AffConstPtr> _affordances;
+	std::vector<affordance::ManipulatorStateConstPtr> _manipulators;
 
     signals:
 	void activatedSignal(Qt4ConstraintMacro*);

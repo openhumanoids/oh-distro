@@ -99,6 +99,7 @@ void MainWindow::handleAffordancesChanged()
     }
  
   //todo: this is just demo code
+/*
   AffConstPtr rfoot = nameToAffMap["Right Foot"];
   AffConstPtr lfoot = nameToAffMap["Left Foot"];
   AffConstPtr rhand = nameToAffMap["Right Hand"];
@@ -122,7 +123,7 @@ void MainWindow::handleAffordancesChanged()
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake));
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
-
+*/
   rebuildGUIFromState(_authoringState, _worldState);
 }
 
@@ -234,6 +235,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _jointSlider = new QSlider( Qt::Horizontal, this );
     _jointNameLabel = new QLabel();
     DefaultValueSlider* scrubber = new DefaultValueSlider( Qt::Horizontal, this );
+    scrubber->addTick(0.1); scrubber->addTick(0.2); scrubber->addTick(0.3); 
+    scrubber->addTick(0.4); scrubber->addTick(0.5); scrubber->addTick(0.6); 
+    scrubber->addTick(0.9); scrubber->addTick(1.0);
     rightsidelayout->addWidget(_jointNameLabel);
     rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(widgetWrapper);
@@ -247,12 +251,16 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     layout->addWidget(splitter);
     QGroupBox* toolbarButtons = new QGroupBox(""); //controls
     QHBoxLayout* toolbarButtonsLayout = new QHBoxLayout();
-    toolbarButtonsLayout->addWidget(new QPushButton("delete"));
+    QPushButton* deletebutton = new QPushButton("delete");
+    QPushButton* moveupbutton = new QPushButton("move up");
+    QPushButton* movedownbutton = new QPushButton("move down");
+    QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
+    toolbarButtonsLayout->addWidget(deletebutton);
     toolbarButtonsLayout->addSpacing(200);
-    toolbarButtonsLayout->addWidget(new QPushButton("move up"));
-    toolbarButtonsLayout->addWidget(new QPushButton("move down"));
+    toolbarButtonsLayout->addWidget(moveupbutton);
+    toolbarButtonsLayout->addWidget(movedownbutton);
     toolbarButtonsLayout->addSpacing(100);
-    toolbarButtonsLayout->addWidget(new QPushButton("+ add constraint"));
+    toolbarButtonsLayout->addWidget(addconstraintbutton);
     toolbarButtons->setLayout(toolbarButtonsLayout);
     vbox->addWidget(toolbarButtons);
     vbox->addStretch(1);
@@ -267,6 +275,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     this->setLayout(layout);
 
     // wire up the buttons
+    connect(deletebutton, SIGNAL(released()), this, SLOT(handleDeleteConstraint()));
+    connect(moveupbutton, SIGNAL(released()), this, SLOT(handleMoveUp()));
+    connect(movedownbutton, SIGNAL(released()), this, SLOT(handleMoveDown()));
+    connect(addconstraintbutton, SIGNAL(released()), this, SLOT(handleAddConstraint()));
+
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
     connect(_jointSlider, SIGNAL(valueChanged(int)), this, SLOT(updateJoint(int)));
@@ -285,6 +298,7 @@ void MainWindow::handleLoadAction()
   if (fileName.toStdString() == "") 
       return;
 
+/*
   std::cout << "database manager" << std::endl;
   DatabaseManager* dbm = new DatabaseManager(fileName.toStdString()); //todo : Memory leak
   dbm->parseFile();
@@ -305,7 +319,7 @@ void MainWindow::handleLoadAction()
       _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i])); 
   }
   rebuildGUIFromState(_authoringState, _worldState);
-  
+*/
 }
 
 void
@@ -316,7 +330,7 @@ handleSaveAction() {
 
  if (fileName.toStdString() == "") 
      return;
-
+/*
  vector<ConstraintMacroConstPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
@@ -324,17 +338,19 @@ handleSaveAction() {
 
  DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
  dbm->store(_worldState.affordances, all_constraints);
- 
+*/ 
 }
 
-int getSelectedGUIConstraintIndex() {
-    if (_authoringState.selected_gui_constraint == NULL)
+int
+MainWindow::
+getSelectedGUIConstraintIndex() {
+    if (_authoringState._selected_gui_constraint == NULL)
 	return -1;
 
-    std::vector<Qt4ConstraintMacro> &constraints = _authoringState._all_gui_constraints;
-    std::vector<Qt4ConstraintMacro>::iterator it = std::find(
+    std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
+    std::vector<Qt4ConstraintMacroPtr>::iterator it = std::find(
 	constraints.begin(), constraints.end(), 
-	_authoringState.selected_gui_constraint);
+	_authoringState._selected_gui_constraint);
     if (it != constraints.end()) {
 	int i = it - constraints.begin();
 	return i;
@@ -349,7 +365,8 @@ handleDeleteConstraint() {
     int i = getSelectedGUIConstraintIndex();
     if (i > 0) {
 	// delete the qt4 widget
-	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints[i]);
+	// TODO re-enable
+	//_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints[i]);
 	rebuildGUIFromState(_authoringState, _worldState);
     } 
 }
@@ -357,21 +374,33 @@ handleDeleteConstraint() {
 void
 MainWindow::
 handleAddConstraint() {
-    AffConstPtr brake = nameToAffMap["Brake Pedal"];
-    AffConstPtr wheel = nameToAffMap["Steering Wheel"];
+    if (_worldState.affordances.size() == 0 || _worldState.manipulators.size() == 0) {
+	QMessageBox msgBox;
+	msgBox.setText("Need at least one affordance and manipulator to add a constraint");
+	msgBox.exec();
+	return;
+    }
 
-    AtomicConstraintPtr new_relation(new AtomicConstraint(brake, wheel, AtomicConstraint::NORMAL));
-    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled", new_relation));
+    AffConstPtr left = _worldState.affordances[0];
+    ManipulatorStateConstPtr manip = _worldState.manipulators[0];
+
+    RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
+    ManRelPtr new_relation(new ManipulationRelation(left, manip, relstate));
+
+    AtomicConstraintPtr new_constraint(new AtomicConstraint(new_relation));
+    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled", new_constraint));
+
     _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
-
-    _authoringState._all_gui_constraints.push_back(new Qt4ConstraintMacro(
     rebuildGUIFromState(_authoringState, _worldState);
 }
 
-void moveQt4Constraint(bool up) {
+void
+MainWindow::
+moveQt4Constraint(bool up) {
     int i = getSelectedGUIConstraintIndex();
-    if (up && i > 0 || down && i < constraints.size() - 1) {
-	std::swap(constraints.begin() + i, constraints.begin() + i + (up ? -1 : 1));
+    std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
+    if (up && i > 0 || (! up) && i < constraints.size() - 1) {
+	std::swap(constraints[i], constraints[i + (up ? -1 : 1)]);
 	rebuildGUIFromState(_authoringState, _worldState);
     }
 }
@@ -443,7 +472,7 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
 
     for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
     {
-	state._all_gui_constraints[i]->setAffordances(worldState.affordances, worldState.affordances);
+	state._all_gui_constraints[i]->setModelObjects(worldState.affordances, worldState.manipulators);
 	TogglePanel* tp = state._all_gui_constraints[i]->getPanel();
 	connect(state._all_gui_constraints[i].get(),
 		SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 

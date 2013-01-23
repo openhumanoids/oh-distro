@@ -107,11 +107,10 @@ getPanel() {
 
 void
 Qt4ConstraintMacro::
-setAffordances(std::vector<affordance::AffConstPtr> &leftSideAffordances, 
-	       std::vector<affordance::AffConstPtr> &rightSideAffordances) {
-    // set the private field
-    _leftSideAffordances = leftSideAffordances;
-    _rightSideAffordances = rightSideAffordances;
+setModelObjects(std::vector<affordance::AffConstPtr> &affordances,
+		std::vector<affordance::ManipulatorStateConstPtr> &manipulators) {
+    _affordances = affordances;
+    _manipulators = manipulators;
     updateElementsFromState();
 }
 
@@ -130,13 +129,12 @@ updateStateFromElements() {
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
-	
-      _constraint->getAtomicConstraint()->setAffordance1(_leftSideAffordances[_gui_robotJointType->currentIndex()]);
+// TODO	  _constraint->getAtomicConstraint()->getRelation()->setManipulator()(_models[_gui_robotJointType->currentIndex()]);
       }
 
     if (_gui_affordanceType->currentIndex() >= 0) 
       {
-	_constraint->getAtomicConstraint()->setAffordance2(_rightSideAffordances[_gui_affordanceType->currentIndex()]);
+// TODO	  _constraint->getAtomicConstraint()->getRelation()->setAffordance(_models[_gui_affordanceType->currentIndex()]);
       }
 
     setActive();
@@ -167,14 +165,14 @@ updateElementsFromState() {
 
     // update the left side combo box
     _gui_robotJointType->clear();
-    for (int i = 0; i < _leftSideAffordances.size(); i++) {
-        _gui_robotJointType->insertItem(i, QString::fromStdString(_leftSideAffordances[i]->getName()));
-	_affordance1IndexMap[_leftSideAffordances[i]->getGlobalUniqueId()] = i;
+    for (int i = 0; i < _manipulators.size(); i++) {
+	    _gui_robotJointType->insertItem(i, QString::fromStdString(_manipulators[i]->getName()));
+	    _affordance1IndexMap[_manipulators[i]->getGlobalUniqueId()] = i;
     }
 
     // select the correct joint name
     std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
-	_constraint->getAtomicConstraint()->getAffordance1()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getRelation()->getManipulator()->getGlobalUniqueId());
     if (it!=_affordance1IndexMap.end()) {
 	_gui_robotJointType->setCurrentIndex(it->second);
 //	std::cout << "found LH affordance iterator: " << it->second << std::endl;
@@ -186,16 +184,14 @@ updateElementsFromState() {
 
     // update the right side combo box
     _gui_affordanceType->clear();
-    for (int i = 0; i < _rightSideAffordances.size(); i++) {
-        _gui_affordanceType->insertItem(i, QString::fromStdString(_rightSideAffordances[i]->getName()));
-	_affordance2IndexMap[_rightSideAffordances[i]->getGlobalUniqueId()] = i;
-//	std::cout << i << " : " << _rightSideAffordances[i]->getName() << " : " << _rightSideAffordances[i]->getGlobalUniqueId().first << ", " <<
-//	    _rightSideAffordances[i]->getGlobalUniqueId().second << std::endl;
+    for (int i = 0; i < _affordances.size(); i++) {
+        _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
+	_affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
     }
 
     // select the current affordance
     std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
-	_constraint->getAtomicConstraint()->getAffordance2()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getRelation()->getAffordance()->getGlobalUniqueId());
     if (it2 != _affordance2IndexMap.end()) {
 	_gui_affordanceType->setCurrentIndex(it2->second);
 //	std::cout << "found RH affordance iterator ((" << it2->second << ")): " << " " <<

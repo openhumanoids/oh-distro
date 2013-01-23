@@ -12,21 +12,21 @@ namespace action_authoring {
 
     //----------Constructor
     public:
-        ManipulationRelation(affordance::AffPtr affordance, affordance::ManipulatorStatePtr manipulator, RelationStatePtr relationState);
+        ManipulationRelation(affordance::AffConstPtr affordance, affordance::ManipulatorStateConstPtr manipulator, RelationStatePtr relationState);
 
     //----------Accessors
-        affordance::AffPtr getAffordance() { return _affordance; }
-        affordance::ManipulatorStatePtr getManipulator() { return _manipulator; }
+        affordance::AffConstPtr getAffordance() { return _affordance; }
+        affordance::ManipulatorStateConstPtr getManipulator() { return _manipulator; }
 	RelationStatePtr getRelationState() { return _relationState; }
 
-        void setAffordance(affordance::AffPtr affordance) { _affordance = affordance; }
-        void setManipulator(affordance::ManipulatorStatePtr manipulator) { _manipulator = manipulator; }
+        void setAffordance(affordance::AffConstPtr affordance) { _affordance = affordance; }
+        void setManipulator(affordance::ManipulatorStateConstPtr manipulator) { _manipulator = manipulator; }
 	void setRelationState(RelationStatePtr relationState) { _relationState = relationState; }
 
     //------------Fields
     private:
-        affordance::AffPtr _affordance;
-        affordance::ManipulatorStatePtr _manipulator;
+        affordance::AffConstPtr _affordance;
+        affordance::ManipulatorStateConstPtr _manipulator;
 	RelationStatePtr _relationState;
 
     }; // class ManipulationRelation

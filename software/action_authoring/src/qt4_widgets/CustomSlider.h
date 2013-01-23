@@ -11,13 +11,16 @@ class DefaultValueSlider : public QSlider {
       _tick_positions() {
     connect(this, SIGNAL(valueChanged(int)), SLOT(VerifyDefaultValue(int)));
   }
+  void addTick(double tick_value) {
+      _tick_positions.push_back(tick_value);
+  }
 
  protected:
   void paintEvent(QPaintEvent *ev) {
     QPainter painter(this);
-    for (int i = 0; _tick_positions.size(); i++) {
+    for (int i = 0; i < _tick_positions.size(); i++) {
 	int position = QStyle::sliderPositionFromValue(
-	    minimum(), maximum(), _tick_positions[i], width());
+	    minimum(), maximum(), _tick_positions[i]*(maximum() - minimum()), width());
 	painter.drawLine(position, 0, position, height());
     }
     QSlider::paintEvent(ev);
@@ -33,5 +36,5 @@ class DefaultValueSlider : public QSlider {
 
  private:
   int _default_value;
-  vector<double> _tick_positions; // from 0.0 to 1.0
+  std::vector<double> _tick_positions; // from 0.0 to 1.0
 };
