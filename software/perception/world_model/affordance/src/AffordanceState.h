@@ -13,19 +13,15 @@
 #include <Eigen/Core>
 #include <kdl/frames.hpp>
 #include <boost/tuple/tuple.hpp>
+#include "affordance/ModelState.h"
 
 namespace affordance
 {
 
-
-  class ArgumentException : public std::runtime_error {public: ArgumentException(const std::string &msg) : std::runtime_error(msg){}};
-  class InvalidOtdfID : public std::runtime_error { public: InvalidOtdfID(const std::string &msg) : std::runtime_error(msg){}};
-  class KeyNotFoundException : public std::runtime_error { public: KeyNotFoundException(const std::string &msg) : std::runtime_error(msg){}};
-
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
   /**Mutable class representing the state of an affordance*/
-  class AffordanceState
+  class AffordanceState : public ModelState
   {
     //------------fields
   public:
@@ -79,23 +75,24 @@ namespace affordance
     //observers
   public:
     void toMsg(drc::affordance_t *affordanceMsg) const;
-    GlobalUID getGlobalUniqueId() const;
     
-    std::string getName() const;
     
+    //ModelState interface 
+    virtual GlobalUID getGlobalUniqueId() const;
+    virtual std::string getName() const;
+    virtual void getFrame(KDL::Frame &frame) const;
+    virtual Eigen::Vector3f getColor() const;
+
     //--these methods throw exceptions if we don't
     //have these fields defined
     Eigen::Vector3f getXYZ() const;
     Eigen::Vector3f getRPY() const;
-    void getFrame(KDL::Frame &frame) const;
-    Eigen::Vector3f getColor() const;
     
     bool hasRPY() const;
     double radius() const;
     double length() const;
     double width() const;
     double height() const;
-    
     
     //helpers
   private:
