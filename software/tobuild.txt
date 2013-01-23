@@ -4,9 +4,9 @@
 #externals
 drc_lcmtypes
 object_template_model
-robot_model
-kinematics
 utils
+kinematics
+robot_model
 
 #hubo
 kinematics_model
