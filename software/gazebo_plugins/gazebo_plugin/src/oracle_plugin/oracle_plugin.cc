@@ -48,7 +48,7 @@ class OraclePlugin: public ModelPlugin{
     
     // Name of the model and link we wish to move relative to:
     this->robot_name_ = "atlas";
-    this->world_to_robot_link_ = "head";
+    this->world_to_robot_link_ = "pelvis";
     
     model_map_["ground_plane"]=70000;  
     model_map_["standpipe"]=70001; 
@@ -62,6 +62,7 @@ class OraclePlugin: public ModelPlugin{
     model_map_["mit_golf_cart"]=70009;
     model_map_["fire_hose"]=70010;
     model_map_["saucepan"]=70011;  
+    model_map_["simple_cylinder"]=70012;  
     //model_map_["mit_drc_robot"]=7012; //dont send this
     
     storeAffordances();
@@ -151,6 +152,43 @@ class OraclePlugin: public ModelPlugin{
       
       aff_map_["mit_golf_cart_hand_brake"]=a;
     }    
+    
+    
+    { 
+      drc::affordance_t a;
+      a.map_utime =0;
+      a.map_id =0;
+      a.object_id =0;
+      a.otdf_id =0;
+      a.name ="simple_cylinder_link";
+      a.nparams =9;
+
+      a.param_names.push_back("x");
+      a.params.push_back(0);
+      a.param_names.push_back("y");
+      a.params.push_back(0);
+      a.param_names.push_back("z");
+      a.params.push_back(0);
+
+      a.param_names.push_back("roll");
+      a.params.push_back( 0 );
+      a.param_names.push_back("pitch");
+      a.params.push_back( 0);
+      a.param_names.push_back("yaw");
+      a.params.push_back( 0 );
+
+      a.param_names.push_back("radius");
+      a.params.push_back(0.07000);
+      a.param_names.push_back("length");
+      a.params.push_back(0.32000);
+      a.param_names.push_back("mass");
+      a.params.push_back(1.0); // unknown
+      
+      a.nstates =0;
+      a.nptinds =0;
+      
+      aff_map_["simple_cylinder_link"]=a;
+    }        
     
   }
   
@@ -279,6 +317,12 @@ class OraclePlugin: public ModelPlugin{
                   gzerr<< "got hand_brake\n"; 
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
+                if ( model->GetName().compare( "simple_cylinder" ) == 0){
+                  if ( link->GetName().compare( "link" ) == 0){
+                    gzerr<< "got simple_cylinder_link\n"; 
+                    affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  }
+                }
                 
                 
               }
@@ -302,7 +346,7 @@ class OraclePlugin: public ModelPlugin{
       gzerr <<"ERROR: lcm_subscribe_ is not good()\n";
     }
   
-    lcm_subscribe_.subscribe("POSE_HEAD", &OraclePlugin::on_pose_head, this);
+    lcm_subscribe_.subscribe("POSE_BODY", &OraclePlugin::on_pose_head, this);
     gzerr << "Launching Oracle LCM handler\n";
     while (0 == lcm_subscribe_.handle());
   }    
