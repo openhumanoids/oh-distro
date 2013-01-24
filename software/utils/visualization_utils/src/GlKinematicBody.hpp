@@ -44,6 +44,11 @@ struct MeshStruct
   double offset_z; 
 };
 
+struct  LinkFrameStruct
+{
+    std::string name;
+    KDL::Frame frame;
+}; 
   
 class GlKinematicBody
 {
@@ -57,7 +62,7 @@ class GlKinematicBody
     std::vector<std::string > _link_names;
     std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
     std::vector<boost::shared_ptr<otdf::Geometry> > _otdf_link_shapes; //for affordance display we want to use otdf::Geometry
-    std::vector<drc::link_transform_t> _link_tfs;     
+    std::vector<LinkFrameStruct> _link_tfs;     
     std::map<std::string, MeshStruct > _mesh_map; // associates link name with meshstruct
   //Avoids loading the same mesh multiple times.
     std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
@@ -91,8 +96,8 @@ class GlKinematicBody
     // reparsing xml file from drc::affortance_t to generate otdf_instance can be slow.
      
     
-    void draw_link(boost::shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf);
-    void draw_link(boost::shared_ptr<otdf::Geometry> link, const drc::link_transform_t &nextTf);
+    void draw_link(boost::shared_ptr<urdf::Geometry> link, const LinkFrameStruct &nextTf);
+    void draw_link(boost::shared_ptr<otdf::Geometry> link, const LinkFrameStruct &nextTf);
     
     void draw_body (float (&c)[3], float alpha)
     {
@@ -100,7 +105,7 @@ class GlKinematicBody
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
-        drc::link_transform_t nextTf = _link_tfs[i];
+        LinkFrameStruct nextTf = _link_tfs[i];
         if(is_otdf_instance)
         {
           boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[i];
@@ -123,11 +128,12 @@ class GlKinematicBody
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
         KDL::Frame T_currentWorldFrame_link,T_newWorldFrame_link;
-        drc::link_transform_t nextTf;
+        LinkFrameStruct nextTf;
         
-        drc_link_transform_t_to_kdl_frame(_link_tfs[i],T_currentWorldFrame_link);
+        nextTf = _link_tfs[i];
+        T_currentWorldFrame_link = _link_tfs[i].frame;
         T_newWorldFrame_link = T_newWorldFrame_currentWorldFrame*T_currentWorldFrame_link;
-        kdl_frame_to_drc_link_transform_t(T_newWorldFrame_link,nextTf);
+        nextTf.frame = T_newWorldFrame_link;
         
         if(is_otdf_instance)
         {
@@ -154,7 +160,7 @@ class GlKinematicBody
       return val;
     };
 
-    std::vector<drc::link_transform_t> get_link_tfs()
+    std::vector<LinkFrameStruct> get_link_tfs()
     {
       return _link_tfs;
     };
@@ -177,9 +183,7 @@ class GlKinematicBody
     std::string evalMeshFilePath(std::string file_path_expression);
   protected:
      std::string exec(std::string cmd);
-     std::string evalROSMeshFilePath(std::string file_path_expression);
-    void drc_link_transform_t_to_kdl_frame( const drc::link_transform_t& transform, KDL::Frame& frame );
-    void kdl_frame_to_drc_link_transform_t( const KDL::Frame& frame, drc::link_transform_t& transform );     
+     std::string evalROSMeshFilePath(std::string file_path_expression);  
  };
  
 } // end namespace 

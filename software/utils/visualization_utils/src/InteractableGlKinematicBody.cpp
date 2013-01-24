@@ -265,7 +265,7 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
       if(it->second->visual)
       {
           KDL::Frame  T_world_visual;
-          drc::link_transform_t state;	    
+          LinkFrameStruct state;	    
 
          // retrieve T_world_visual from store
          // #include <algorithm>
@@ -274,10 +274,7 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
           if (found != _link_names.end()) {
             unsigned int index = found - _link_names.begin();
             state=_link_tfs[index];  
-            T_world_visual.p[0] = state.tf.translation.x;
-            T_world_visual.p[1] = state.tf.translation.y;
-            T_world_visual.p[2] = state.tf.translation.z;
-            T_world_visual.M=  KDL::Rotation::Quaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+            T_world_visual = state.frame;
           } 
           else 
           {  
@@ -289,11 +286,13 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
           enum {SPHERE, BOX, CYLINDER, MESH}; 
           
           Eigen::Vector3f p;
-          p[0] = state.tf.translation.x;
-          p[1] = state.tf.translation.y;
-          p[2] = state.tf.translation.z;
+          p[0] = state.frame.p[0];
+          p[1] = state.frame.p[1];
+          p[2] = state.frame.p[2];
+            double x,y,z,w;
+          state.frame.M.GetQuaternion(x,y,z,w);
           Eigen::Vector4f q;
-          q << state.tf.rotation.x, state.tf.rotation.y, state.tf.rotation.z, state.tf.rotation.w ;
+          q << x, y, z, w;
           if  (type == SPHERE)
           {
             shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
@@ -325,17 +324,16 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
             /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
             T_world_objorigin = T_world_visual*T_visual_objorigin;
 
-            state.tf.translation.x = T_world_objorigin.p[0];
-            state.tf.translation.y = T_world_objorigin.p[1];
-            state.tf.translation.z = T_world_objorigin.p[2];
-            T_world_objorigin.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);     
+            state.frame = T_world_objorigin; 
 
             Eigen::Vector3f p;
-            p[0] = state.tf.translation.x;
-            p[1] = state.tf.translation.y;
-            p[2] = state.tf.translation.z;
+            p[0] = state.frame.p[0];
+            p[1] = state.frame.p[1];
+            p[2] = state.frame.p[2];
+            double x,y,z,w;
+            state.frame.M.GetQuaternion(x,y,z,w);
             Eigen::Vector4f q;
-            q << state.tf.rotation.x, state.tf.rotation.y, state.tf.rotation.z, state.tf.rotation.w ;
+            q << x, y, z, w;
 
             shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
             downcasted_object->set_transform(p,q); 
@@ -371,7 +369,7 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
       if(it->second->visual)
       {
           KDL::Frame  T_world_visual;
-          drc::link_transform_t state;	    
+          LinkFrameStruct state;	    
 
          // retrieve T_world_visual from store
          // #include <algorithm>
@@ -379,11 +377,8 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
           found = std::find (_link_names.begin(), _link_names.end(), it->first);
           if (found != _link_names.end()) {
             unsigned int index = found - _link_names.begin();
-            state=_link_tfs[index];  
-            T_world_visual.p[0] = state.tf.translation.x;
-            T_world_visual.p[1] = state.tf.translation.y;
-            T_world_visual.p[2] = state.tf.translation.z;
-            T_world_visual.M=  KDL::Rotation::Quaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+            state=_link_tfs[index]; 
+            T_world_visual = state.frame;
           } 
           else 
           {  
@@ -394,11 +389,13 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
           int type = it->second->visual->geometry->type;
           enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
           Eigen::Vector3f p;
-          p[0] = state.tf.translation.x;
-          p[1] = state.tf.translation.y;
-          p[2] = state.tf.translation.z;
+          p[0] = state.frame.p[0];
+          p[1] = state.frame.p[1];
+          p[2] = state.frame.p[2];
+          double x,y,z,w;
+          state.frame.M.GetQuaternion(x,y,z,w);
           Eigen::Vector4f q;
-          q << state.tf.rotation.x, state.tf.rotation.y, state.tf.rotation.z, state.tf.rotation.w ;
+          q << x, y, z, w;
           if  (type == SPHERE)
           {
             shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
@@ -436,17 +433,16 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
             /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
             T_world_objorigin = T_world_visual*T_visual_objorigin;
 
-            state.tf.translation.x = T_world_objorigin.p[0];
-            state.tf.translation.y = T_world_objorigin.p[1];
-            state.tf.translation.z = T_world_objorigin.p[2];
-            T_world_objorigin.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);     
+            state.frame = T_world_objorigin;
 
             Eigen::Vector3f p;
-            p[0] = state.tf.translation.x;
-            p[1] = state.tf.translation.y;
-            p[2] = state.tf.translation.z;
+            p[0] = state.frame.p[0];
+            p[1] = state.frame.p[1];
+            p[2] = state.frame.p[2];
+            double x,y,z,w;
+            state.frame.M.GetQuaternion(x,y,z,w);
             Eigen::Vector4f q;
-            q << state.tf.rotation.x, state.tf.rotation.y, state.tf.rotation.z, state.tf.rotation.w ;
+            q << x, y, z, w;
             
             //shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
             shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
@@ -472,9 +468,9 @@ bool InteractableGlKinematicBody::get_link_frame(const std::string &link_name, K
 //==================================================================================================== 	  
 // drawing utils
 
-void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf)
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
 {
-  double pos[3] = {link_tf.tf.translation.x,link_tf.tf.translation.y,link_tf.tf.translation.z};
+  double pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
 
   double markersize = 0.15;
   int type = _link_shape->type ;
@@ -501,7 +497,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
   else if  (type == MESH)
   {
     std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-    mesh_map_it=_mesh_map.find(link_tf.link_name);
+    mesh_map_it=_mesh_map.find(link_tf.name);
     if(mesh_map_it!=_mesh_map.end()) // exists in cache
     { 
       // get the vertices for mesh_map_it->second
@@ -526,9 +522,9 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
    
      
    
-void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf)
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
 {
-  double pos[3] = {link_tf.tf.translation.x,link_tf.tf.translation.y,link_tf.tf.translation.z};
+  double pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
 
   double markersize = 0.15;
   int type = _link_shape->type ;
@@ -555,7 +551,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ur
   else if  (type == MESH)
   {
     std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-    mesh_map_it=_mesh_map.find(link_tf.link_name);
+    mesh_map_it=_mesh_map.find(link_tf.name);
     if(mesh_map_it!=_mesh_map.end()) // exists in cache
     { 
       // get the vertices for mesh_map_it->second

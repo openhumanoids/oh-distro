@@ -55,9 +55,9 @@ class InteractableGlKinematicBody: public GlKinematicBody
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
-        drc::link_transform_t nextTf=_link_tfs[i];
+        LinkFrameStruct nextTf=_link_tfs[i];
         std::stringstream oss;
-        oss << _unique_name << "_"<< _link_tfs[i].link_name; 
+        oss << _unique_name << "_"<< _link_tfs[i].name; 
         if((link_selection_enabled)&&(selected_link == oss.str())) {
           
           if((link_adjustment_enabled)&&(is_otdf_instance))
@@ -94,15 +94,15 @@ class InteractableGlKinematicBody: public GlKinematicBody
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
         KDL::Frame T_currentWorldFrame_link,T_newWorldFrame_link;
-        drc::link_transform_t nextTf=_link_tfs[i];
+        LinkFrameStruct nextTf=_link_tfs[i];
         
-        GlKinematicBody::drc_link_transform_t_to_kdl_frame(_link_tfs[i],T_currentWorldFrame_link);
+        T_currentWorldFrame_link = nextTf.frame;
         T_newWorldFrame_link = T_newWorldFrame_currentWorldFrame*T_currentWorldFrame_link;
-        GlKinematicBody::kdl_frame_to_drc_link_transform_t(T_newWorldFrame_link,nextTf);
-        nextTf.link_name = _link_tfs[i].link_name;
+        nextTf.frame = T_newWorldFrame_link;
+
         
         std::stringstream oss;
-        oss << _unique_name << "_"<< nextTf.link_name; 
+        oss << _unique_name << "_"<< nextTf.name; 
         if((link_selection_enabled)&&(selected_link == oss.str())) {
           
           if((link_adjustment_enabled)&&(is_otdf_instance))
@@ -131,8 +131,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
       }
    };
    
-   void draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape, const drc::link_transform_t &link_tf);
-   void draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const drc::link_transform_t &link_tf);
+   void draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape, const LinkFrameStruct &link_tf);
+   void draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf);
    void draw_markers(double (&pos)[3], double (&dim)[3], double markersize); 
    bool get_link_frame(const std::string &link_name, KDL::Frame &T_world_link);
 

@@ -393,27 +393,11 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
           T_world_visual = T_world_body*T_body_visual;
            //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
 
-          drc::link_transform_t state;	    
+          LinkFrameStruct state;	    
 
-          state.link_name = transform_it->first;
+          state.name = transform_it->first;
+          state.frame = T_world_visual;
 
-          // For Body Frame Viewing
-          //state.tf.translation.x = T_body_visual.p[0];
-          //state.tf.translation.y = T_body_visual.p[1];
-          //state.tf.translation.z = T_body_visual.p[2];
-          //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-
-          state.tf.translation.x = T_world_visual.p[0];
-          state.tf.translation.y = T_world_visual.p[1];
-          state.tf.translation.z = T_world_visual.p[2];
-          T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-
-
-          //state.tf.translation = transform_it->second.translation;
-          //state.tf.rotation = transform_it->second.rotation;
-
-          //cout << "\nlink_name : " << it->first << endl; 
-          //cout << "timestamp  : " << msg.utime << endl; 
   
           shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
           //---store
@@ -446,20 +430,11 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
             T_world_visual = T_world_body*T_body_visual;
 
             shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
-            drc::link_transform_t state;
+            
+            LinkFrameStruct state;	    
 
-            state.link_name = it->first;
-
-            // For Body Frame Viewing
-            //state.tf.translation.x = T_body_visual.p[0];
-            //state.tf.translation.y = T_body_visual.p[1];
-            //state.tf.translation.z = T_body_visual.p[2];
-            //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-
-            state.tf.translation.x = T_world_visual.p[0];
-            state.tf.translation.y = T_world_visual.p[1];
-            state.tf.translation.z = T_world_visual.p[2];
-            T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+            state.name = it->first;
+            state.frame = T_world_visual;
 
             //---store
             _link_names.push_back(it->first);
@@ -538,20 +513,10 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
           T_world_visual = T_world_body*T_body_visual;
            //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
 
-          drc::link_transform_t state;	    
+          LinkFrameStruct state;	    
 
-          state.link_name = transform_it->first;
-
-          // For Body Frame Viewing
-          //state.tf.translation.x = T_body_visual.p[0];
-          //state.tf.translation.y = T_body_visual.p[1];
-          //state.tf.translation.z = T_body_visual.p[2];
-          //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-
-          state.tf.translation.x = T_world_visual.p[0];
-          state.tf.translation.y = T_world_visual.p[1];
-          state.tf.translation.z = T_world_visual.p[2];
-          T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+          state.name = transform_it->first;
+          state.frame = T_world_visual;
 
 
           shared_ptr<otdf::Geometry> geom =  it->second->visual->geometry;
@@ -574,20 +539,10 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
 
             shared_ptr<otdf::Geometry> geom =  it->second->visual->geometry;
-            drc::link_transform_t state;
+          LinkFrameStruct state;	    
 
-            state.link_name = it->first;
-
-            // For Body Frame Viewing
-            //state.tf.translation.x = T_body_visual.p[0];
-            //state.tf.translation.y = T_body_visual.p[1];
-            //state.tf.translation.z = T_body_visual.p[2];
-            //T_body_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
-
-            state.tf.translation.x = T_world_visual.p[0];
-            state.tf.translation.y = T_world_visual.p[1];
-            state.tf.translation.z = T_world_visual.p[2];
-            T_world_visual.M.GetQuaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+          state.name = it->first;
+          state.frame = T_world_visual;
 
             //---store
             _link_names.push_back(it->first);
@@ -608,18 +563,15 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
 bool GlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T_world_link)
 {
-      drc::link_transform_t state;	    
+      LinkFrameStruct state;	    
 
      // retrieve T_world_link from store
       std::vector<std::string>::const_iterator found;
       found = std::find (_link_names.begin(), _link_names.end(), link_name);
       if (found != _link_names.end()) {
         unsigned int index = found - _link_names.begin();
-        state=_link_tfs[index];  
-        T_world_link.p[0] = state.tf.translation.x;
-        T_world_link.p[1] = state.tf.translation.y;
-        T_world_link.p[2] = state.tf.translation.z;
-        T_world_link.M=  KDL::Rotation::Quaternion(state.tf.rotation.x,state.tf.rotation.y,state.tf.rotation.z,state.tf.rotation.w);
+        state = _link_tfs[index];  
+        T_world_link= state.frame;       
         return true;
       } 
       else 
@@ -672,16 +624,15 @@ bool GlKinematicBody::get_mesh_struct(const std::string &link_name, MeshStruct &
 //===============================================================================================
 // DRAWING METHODS
 //
-void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &nextTf)
+void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const LinkFrameStruct &nextTf)
 {
 
   //--get rotation in angle/axis form
   double theta;
   double axis[3];
-  double quat[4] = {nextTf.tf.rotation.w,
-		    nextTf.tf.rotation.x,
-		    nextTf.tf.rotation.y,
-		    nextTf.tf.rotation.z};
+  double x,y,z,w;
+  nextTf.frame.M.GetQuaternion(x,y,z,w);
+  double quat[4] = {w,x,y,z};
   bot_quat_to_angle_axis(quat, &theta, axis);
   
  GLUquadricObj* quadric = gluNewQuadric();
@@ -696,7 +647,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
        glPushMatrix();
-       glTranslatef(nextTf.tf.translation.x, nextTf.tf.translation.y, nextTf.tf.translation.z);
+       glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
 	     drawSphere(6,  radius);
        glPopMatrix();
     
@@ -713,9 +664,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
     
         // move base up so that bottom face is at origin
      // glTranslatef(0,0.5,0.0); 
-     glTranslatef(nextTf.tf.translation.x,
- 	 	nextTf.tf.translation.y,
-  		nextTf.tf.translation.z);
+     glTranslatef(nextTf.frame.p[0],nextTf.frame.p[1],nextTf.frame.p[2]);
 
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
@@ -736,9 +685,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
+    glTranslatef(nextTf.frame.p[0],nextTf.frame.p[1],nextTf.frame.p[2]);
 
     glRotatef(theta * 180/3.141592654, 
     axis[0], axis[1], axis[2]); 
@@ -761,9 +708,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
 
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
+    glTranslatef(nextTf.frame.p[0],nextTf.frame.p[1],nextTf.frame.p[2]);
       glRotatef(theta * 180/3.141592654, 
       axis[0], axis[1], axis[2]); 
     gluDisk(quadric,
@@ -779,9 +724,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
 
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
+    glTranslatef(nextTf.frame.p[0],nextTf.frame.p[1],nextTf.frame.p[2]);
     glRotatef(theta * 180/3.141592654, 
       axis[0], axis[1], axis[2]); 
     gluDisk(quadric,
@@ -807,16 +750,14 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
       {*/
         glPushMatrix();
         
-        glTranslatef(nextTf.tf.translation.x,
-        nextTf.tf.translation.y,
-        nextTf.tf.translation.z);
+        glTranslatef(nextTf.frame.p[0],nextTf.frame.p[1],nextTf.frame.p[2]);
         
         glRotatef(theta * 180/3.141592654, 
         axis[0], axis[1], axis[2]); 
 
 
         std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-        mesh_map_it=_mesh_map.find(nextTf.link_name);
+        mesh_map_it=_mesh_map.find(nextTf.name);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
           if(!visualize_bbox)
@@ -859,16 +800,15 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const drc::link
 }
 // ======================================================================================================
 // overloaded draw_link method for otdf geometries
-void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link_transform_t &nextTf)
+void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrameStruct &nextTf)
 {
 
   //--get rotation in angle/axis form
   double theta;
   double axis[3];
-  double quat[4] = {nextTf.tf.rotation.w,
-		    nextTf.tf.rotation.x,
-		    nextTf.tf.rotation.y,
-		    nextTf.tf.rotation.z};
+  double x,y,z,w;
+  nextTf.frame.M.GetQuaternion(x,y,z,w);
+  double quat[4] = {w,x,y,z};
   bot_quat_to_angle_axis(quat, &theta, axis);
 
   
@@ -885,7 +825,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
       shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link));	
       double radius = sphere->radius;
        glPushMatrix();
-       glTranslatef(nextTf.tf.translation.x, nextTf.tf.translation.y, nextTf.tf.translation.z);
+       glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
 	     drawSphere(6,  radius);
        glPopMatrix();
     
@@ -902,9 +842,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
     
         // move base up so that bottom face is at origin
      // glTranslatef(0,0.5,0.0); 
-     glTranslatef(nextTf.tf.translation.x,
- 	 	nextTf.tf.translation.y,
-  		nextTf.tf.translation.z);
+     glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
 
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
@@ -925,9 +863,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
+    glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
 
     glRotatef(theta * 180/3.141592654, 
     axis[0], axis[1], axis[2]); 
@@ -950,10 +886,8 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
 
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
-      glRotatef(theta * 180/3.141592654, 
+    glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
+    glRotatef(theta * 180/3.141592654, 
       axis[0], axis[1], axis[2]); 
     gluDisk(quadric,
       0,
@@ -968,9 +902,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
 
     // Translate tf origin to cylinder centre
     glTranslatef(result[0],result[1],result[2]); 
-    glTranslatef(nextTf.tf.translation.x,
-      nextTf.tf.translation.y,
-      nextTf.tf.translation.z);
+    glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
     glRotatef(theta * 180/3.141592654, 
       axis[0], axis[1], axis[2]); 
     gluDisk(quadric,
@@ -996,16 +928,14 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
       {*/
         glPushMatrix();
         
-        glTranslatef(nextTf.tf.translation.x,
-        nextTf.tf.translation.y,
-        nextTf.tf.translation.z);
+        glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
         
         glRotatef(theta * 180/3.141592654, 
         axis[0], axis[1], axis[2]); 
 
 
         std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-        mesh_map_it=_mesh_map.find(nextTf.link_name);
+        mesh_map_it=_mesh_map.find(nextTf.name);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
           if(!visualize_bbox)
@@ -1051,12 +981,10 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
         //size cuboid
     
       // move base up so that bottom face is at origin
-     glTranslatef(nextTf.tf.translation.x,
- 	 	nextTf.tf.translation.y,
-  		nextTf.tf.translation.z);
-     glRotatef(theta * 180/3.141592654, 
+    glTranslatef(nextTf.frame.p[0], nextTf.frame.p[1], nextTf.frame.p[2]);
+    glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
-      glutSolidTorus(innerRadius,outerRadius,36,36); 
+    glutSolidTorus(innerRadius,outerRadius,36,36); 
     // glutWireTorus(innerRadius,outerRadius,8,8); 
  
     glPopMatrix();
@@ -1135,20 +1063,4 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const drc::link
   }
   
 //-------------------------------------------------------------------------------------  
-  void GlKinematicBody::drc_link_transform_t_to_kdl_frame( const drc::link_transform_t& transform, KDL::Frame& frame )
-  {
-    frame.p[0] = transform.tf.translation.x;
-    frame.p[1] = transform.tf.translation.y;
-    frame.p[2] = transform.tf.translation.z;
-    frame.M = KDL::Rotation::Quaternion( transform.tf.rotation.x, transform.tf.rotation.y, transform.tf.rotation.z, transform.tf.rotation.w );
-    return;
-  }
-//-------------------------------------------------------------------------------------
-  void GlKinematicBody::kdl_frame_to_drc_link_transform_t( const KDL::Frame& frame, drc::link_transform_t& transform )
-  {
-    transform.tf.translation.x = frame.p[0];
-    transform.tf.translation.y = frame.p[1];
-    transform.tf.translation.z = frame.p[2];
-    frame.M.GetQuaternion( transform.tf.rotation.x, transform.tf.rotation.y, transform.tf.rotation.z, transform.tf.rotation.w );
-    return;
-  }
+ 
