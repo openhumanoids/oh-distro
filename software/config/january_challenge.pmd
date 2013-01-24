@@ -35,6 +35,10 @@ group "core" {
         exec = "drc-joints2frames";
         host = "localhost";
     }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
+        host = "localhost";
+    }
 }
 
 group "gazebo" {
