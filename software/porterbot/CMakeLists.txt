@@ -10,4 +10,4 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 # build two LCM test programs
-add_subdirectory(src/joint2frames)
+add_subdirectory(src/joints2frames)
