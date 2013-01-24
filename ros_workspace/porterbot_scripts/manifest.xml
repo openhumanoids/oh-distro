@@ -13,6 +13,6 @@
   <depend package="xacro"/>
   <depend package="rviz"/>
   <depend package="robot_mechanism_controllers"/>
-  <depend package="drc_robot_utils"/>
+  <depend package="atlas_utils"/>
 
 </package>
