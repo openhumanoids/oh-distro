@@ -9,7 +9,7 @@
     <inertial>
       <mass value="500"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+      <inertia ixx="10" ixy="0" ixz="0" iyy="10" iyz="0" izz="10"/>
     </inertial>
     <visual>
       <origin rpy="1.570 0 0" xyz="0 0 0"/>
@@ -27,30 +27,31 @@
   
   <link name="steering_wheel">
     <inertial>
-      <mass value="1"/>
-      <origin rpy="0 0 0" xyz="-0.22 0 -0.22"/>
-      <inertia ixx="0.1" ixy="0" ixz="0" iyy="1.0" iyz="0" izz="0.1"/>                                                 
+      <mass value="5"/>
+      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0" ixz="0" iyy="10.0" iyz="0" izz="1.0"/>                                                 
     </inertial>
     <visual>
-      <origin rpy="0 0 0" xyz="-0.22 0 -0.22"/>
+      <origin rpy="0 03.14 0" xyz=".22 0 .220"/>
       <geometry>
 	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="-0.22 0 -0.2"/>
+      <origin rpy="0 3.14 0" xyz=".22 0 .220"/>
       <geometry>
 	<mesh filename="package://steering_assembly/meshes/SimpleSteeringWheel_3.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
 
-  <joint name="base_to_steering" type="revolute">
+  <joint name="base_to_steering" type="continuous">
     <origin rpy="0 0 0" xyz="0.1524 0 1.3208 "/>
     <axis xyz="0 1 0"/>
     <parent link="steering_base"/>
     <child link="steering_wheel"/>
-    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="15"/>
+    <limit effort="5" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
   </joint>
 
   <joint name="grounded" type="fixed">
