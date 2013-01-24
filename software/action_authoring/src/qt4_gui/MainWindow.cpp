@@ -512,22 +512,28 @@ void MainWindow::affordanceUpdateCheck()
   handleAffordancesChanged(); 
 }
 
-/* 
- * select the OpenGL object corresponding to this affordance by highlighting it
+/* select the OpenGL object corresponding to this affordance by highlighting it
  * in the GUI. Connected to the raycastCallbick signal from the OpenGL widget pane.
  */
-void
-MainWindow::
-selectedOpenGLObjectChanged(std::string affordanceName) {
+void MainWindow::selectedOpenGLObjectChanged(const std::string &modelName) 
+{
     std::cout << "intersected affordance: " << affordanceName << std::endl;
 
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-      OpenGL_Affordance *glAff = ((OpenGL_Affordance*)_worldState.glObjects[i]);
-      AffConstPtr selectedAff = glAff->getAffordance();
-      //std::cout << "affordances" << selectedAff.getName() << (selectedAff.getName().compare(affordanceName) != 0) << std::endl;
-      glAff->setHighlighted(selectedAff->getName() == affordanceName);
-    }
+      if (_worldState.glObjects[i].id() == modelName)
+	_worldState.glObjects[i].setHighlighted(true);
+
+      /*
+      //see if the next object is an affordance
+      OpenGL_Object *nextObj = _worldState.glObjects[i];
+      if (dynamic_cast<OpenGL_Affordance*>(nextObj) == NULL)
+	continue;
+      
+      OpenGL_Affordance *glAff = (OpenGL_Affordance*) nextObj;
+      glAff->setHighlighted(glAff->getAffordance()->getName() == affordanceName);
+      }*/
+
     _widget_opengl.update();
     return;
 }

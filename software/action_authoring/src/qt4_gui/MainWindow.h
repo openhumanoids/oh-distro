@@ -129,7 +129,7 @@ private slots:
     void handleMoveDown();
     void handleSelectedAffordanceChange();
     void setSelectedAction(Qt4ConstraintMacro* activator);
-    void selectedOpenGLObjectChanged(std::string affordanceName);
+    void selectedOpenGLObjectChanged(const std::string &modelName);
 
 };
 
