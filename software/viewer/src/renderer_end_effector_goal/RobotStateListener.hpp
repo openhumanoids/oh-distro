@@ -37,7 +37,7 @@ namespace renderer_ee_goal
     bool _urdf_parsed;
     bool _urdf_subscription_on;
 
-    std::map<std::string, drc::transform_t > cartpos_out;
+    std::map<std::string, KDL::Frame > cartpos_out;
     int64_t cartpos_out_utime;
 
     //----------------constructor/destructor

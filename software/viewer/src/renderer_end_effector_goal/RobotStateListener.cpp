@@ -151,12 +151,11 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       return 0;
     }
 
-    std::map<std::string, drc::transform_t>::const_iterator it;
+    std::map<std::string, KDL::Frame>::const_iterator it;
     it ==cartpos_out.find(link_name);
     if(it!=cartpos_out.end())// cart pos exists
     {
-     drc::transform_t link_tf = cartpos_out.find( link_name)->second;
-     TransformLCMToKDLFrame(link_tf,T_body_link);
+       T_body_link = cartpos_out.find( link_name)->second;
         /*drc::transform_t link_tf_old =cartpos_out.find( link_name)->second;
         link_tf.utime =cartpos_out_utime;
         link_tf.trans[0]  = link_tf_old.translation.x;
