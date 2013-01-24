@@ -29,6 +29,9 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Imu.h>
+
+
+
 #include <atlas_gazebo_msgs/RobotState.h>
 
 #include <rosgraph_msgs/Clock.h>
@@ -63,6 +66,7 @@ private:
   // Clock:
   ros::Subscriber clock_sub_;
   void clock_cb(const rosgraph_msgs::ClockConstPtr& msg);
+
   
   // Robot State:
   ros::Subscriber rstate_sub_;
@@ -89,11 +93,15 @@ private:
   void send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel );
 
   // Laser:
+  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
   ros::Subscriber horizontal_scan_sub_,rotating_scan_sub_,righted_scan_sub_;
   void horizontal_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
   void righted_scan_cb(const sensor_msgs::LaserScanConstPtr& msg);
-  void send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
+  // porterbot:
+  ros::Subscriber scan_left_sub_,scan_right_sub_; // porterbot
+  void scan_left_cb(const sensor_msgs::LaserScanConstPtr& msg);
+  void scan_right_cb(const sensor_msgs::LaserScanConstPtr& msg);
 
   // Left and Right Images Seperately:
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
@@ -134,11 +142,15 @@ App::App(const std::string & stereo_in,
   head_imu_sub_ = node_.subscribe(string("/head_imu"), 10, &App::head_imu_cb,this);
   
   // Laser:
-//  base_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::base_scan_cb,this); // gfe
-  horizontal_scan_sub_ = node_.subscribe(string("/horizontal_scan"), 10, &App::horizontal_scan_cb,this); // previously
+  // Gazebo:
+  horizontal_scan_sub_ = node_.subscribe(string("/horizontal_scan"), 10, &App::horizontal_scan_cb,this);
   rotating_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::rotating_scan_cb,this);
   righted_scan_sub_ = node_.subscribe(string("/righted_scan"), 10, &App::righted_scan_cb,this);
-  
+
+  // Porterbot
+  scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
+  scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
+
   // Robot State:
   rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
   
@@ -199,7 +211,7 @@ App::~App()  {
 
 void App::send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ){
   drc::imu_t imu_msg;
-  imu_msg.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);  
+  imu_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);  
   //imu_msg.frame_id = msg->header->frame_id;
   imu_msg.orientation[0] = msg->orientation.w; // NB: order here is wxyz
   imu_msg.orientation[1] = msg->orientation.x;
@@ -220,7 +232,7 @@ void App::send_imu(const sensor_msgs::ImuConstPtr& msg,string channel ){
 }
 void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
   bot_core::pose_t pose_msg;
-  pose_msg.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);  
+  pose_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);  
   pose_msg.pos[0] = 0;
   pose_msg.pos[1] = 0;
   pose_msg.pos[2] = 0;
@@ -243,7 +255,7 @@ void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
   drc::utime_t utime_msg;
-  utime_msg.utime = (int64_t) floor(msg->clock.toSec()  * 1E6);
+  utime_msg.utime = (int64_t) floor(msg->clock.toNSec()/1000);
   lcm_publish_.publish("ROBOT_UTIME", &utime_msg);
 }
 
@@ -253,8 +265,7 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::ImageConstPtr& r_image,
     const sensor_msgs::CameraInfoConstPtr& r_cam_info)
 {
-  ros::Time current_time = l_image->header.stamp;
-  int64_t current_utime = (int64_t) floor(l_image->header.stamp.toSec()  * 1E6);
+  int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
 
   stereo_counter++;
   if (stereo_counter%10 ==0){
@@ -347,8 +358,7 @@ void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
 //       look into openni_utils/openni_ros2rgb for code
 // TODO: pre-allocate image_data and retain for speed - when size is known
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
-  ros::Time current_time = msg->header.stamp;
-  int64_t current_utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   /*cout << msg->width << " " << msg->height << " | "
        << msg->encoding << " is encoding | "
        << current_utime << " | "<< channel << "\n";*/
@@ -438,7 +448,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   Mat imageRGBmat(imageRGB);
 
   bot_core_image_t img;
-  img.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  img.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   img.width = msg->width;
   img.height =msg->height;
   img.row_stride = 3*msg->width; // check this
@@ -462,10 +472,12 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 }
 
 
+
+
 void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
 
   drc::robot_state_t robot_state_msg;
-  robot_state_msg.utime = msg->header.stamp.toNSec()/1000; // from nsec to usec
+  robot_state_msg.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   robot_state_msg.robot_name = msg->robot_name;
   robot_state_msg.origin_position.translation.x = msg->body_pose.position.x;
   robot_state_msg.origin_position.translation.y = msg->body_pose.position.y;
@@ -540,6 +552,16 @@ void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
 void App::righted_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
   send_lidar(msg, "RIGHTED_SCAN");
 }
+
+// Porterbot:
+void App::scan_left_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  send_lidar(msg, "SCAN_LEFT");
+}
+void App::scan_right_cb(const sensor_msgs::LaserScanConstPtr& msg){
+  send_lidar(msg, "SCAN_RIGHT");
+}
+
+
 void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   bot_core::planar_lidar_t scan_out;
 
@@ -548,7 +570,7 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
     scan_out.ranges.push_back( msg->ranges[i] );
     //range_line[i] = msg->ranges[i];
   }
-  scan_out.utime = (int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  scan_out.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   scan_out.nranges =msg->ranges.size();
   //  scan_out.ranges=range_line;
   scan_out.nintensities=0;

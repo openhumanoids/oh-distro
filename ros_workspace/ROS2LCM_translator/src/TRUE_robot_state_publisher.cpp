@@ -14,6 +14,8 @@
 
 #include <atlas_gazebo_msgs/RobotState.h>
 
+#include <rosgraph_msgs/Clock.h>
+
 #include <lcm/lcm-cpp.hpp>
 //#include <lcmtypes/bot_core.h>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -25,6 +27,15 @@
 //    gettimeofday (&tv, NULL);
 //    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; 
 //}
+
+void clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
+  drc::utime_t utime_msg;
+  utime_msg.utime = (int64_t) floor(msg->clock.toNSec()/1000);
+  lcm::LCM lcm;
+  if(lcm.good())
+    lcm.publish("ROBOT_UTIME", &utime_msg);
+  
+}
 
 void true_robot_state_Callback(const atlas_gazebo_msgs::RobotState::ConstPtr& msg)
 {
@@ -101,6 +112,8 @@ int main(int argc, char **argv)
   ros::Subscriber sub = n.subscribe("true_robot_state", 1000, true_robot_state_Callback,ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   // create subscriptions to contact sensors.
 
+  ros::Subscriber sub2 = n.subscribe("/clock", 1000, clock_cb);
+  
     //ros::spin();
    while (ros::ok())
    {
