@@ -24,14 +24,12 @@ class OpenGL_Affordance: public opengl::OpenGL_Object
 	//------------------fields
 private:
 	/**underlying affordance state*/
+	const AffConstPtr _affordance; 
 
-	bool _isHighlighted;
-	const Eigen::Vector3f _highlightColor;
 	//---we're drawing 1 of these
 	opengl::OpenGL_Object_Box _box;
 	opengl::OpenGL_Object_Cylinder _cylinder;
 	opengl::OpenGL_Object_Sphere _sphere;
-	const AffConstPtr _affordance; 
 
 	//-----------------constructors
 public:
@@ -42,9 +40,6 @@ public:
 
 	//-------drawing
 	virtual void draw();
-	
-	//--------mutators
-	void setHighlighted(bool);
 
 	//observers
 	AffConstPtr getAffordance() const;

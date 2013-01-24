@@ -82,9 +82,9 @@ namespace affordance
     virtual std::string getName() const;
 
     virtual Eigen::Vector3f getColor() const;
+    virtual Eigen::Vector3f getXYZ() const;    
+    virtual Eigen::Vector3f getRPY() const;    
 
-    virtual void getFrame(KDL::Frame &frame) const;
-    
     virtual bool isAffordance() const;
     virtual bool isManipulator() const;
     virtual bool hasChildren() const; //any
@@ -93,18 +93,15 @@ namespace affordance
     virtual void getParents(std::vector<boost::shared_ptr<const AffordanceState> > &children) const;
     virtual void getCopy(AffordanceState &copy) const;
 
-    //todo move this to ModelState
-    virtual Eigen::Vector3f getRPY() const;
-    virtual Eigen::Vector3f getXYZ() const;
-
     //--these methods throw exceptions if we don't
     //have these fields defined
-    
-    bool hasRPY() const;
     double radius() const;
     double length() const;
     double width() const;
     double height() const;
+
+    //useful
+    bool hasRPY() const;
     
     //helpers
   private:

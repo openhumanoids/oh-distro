@@ -211,17 +211,15 @@ bool AffordanceState::hasRPY() const
 			_params.find(YAW_NAME) != _params.end());
 }
 
-/**@return roll,pitch,yaw or throws an exception if any of those are not present*/
+/**@return roll,pitch,yaw or 0,0,0 none of those are not present*/
 Vector3f AffordanceState::getRPY() const
 {
-	assertContainsKey(_params, ROLL_NAME);
-	assertContainsKey(_params, PITCH_NAME);
-	assertContainsKey(_params, YAW_NAME);
-
-	//using find method b/c operator[] isn't a const method
-	return Vector3f(_params.find(ROLL_NAME)->second,
-					_params.find(PITCH_NAME)->second,
-					_params.find(YAW_NAME)->second);
+  //using find method b/c operator[] isn't a const method
+  return hasRPY()
+    ? Vector3f(_params.find(ROLL_NAME)->second,
+	       _params.find(PITCH_NAME)->second,
+	       _params.find(YAW_NAME)->second)
+    : Vector3f(0,0,0);
 }
 
 
@@ -310,26 +308,11 @@ string AffordanceState:: getName() const
 
 Vector3f AffordanceState::getColor() const
 {
-	return Vector3f(_params.find(R_COLOR_NAME)->second,
-					_params.find(G_COLOR_NAME)->second,
-					_params.find(B_COLOR_NAME)->second);
+  return Vector3f(_params.find(R_COLOR_NAME)->second,
+		  _params.find(G_COLOR_NAME)->second,
+		  _params.find(B_COLOR_NAME)->second);
 }
-
-
-/**@param frame to get form this.getXYZ() and possible getRPY()*/
-void AffordanceState::getFrame(KDL::Frame &frame) const
-{
-	//everything should have xyz
-    Vector3f xyz = getXYZ();
-
-    //somethings, like a sphere, don't have rpy
-    Vector3f rpy = hasRPY() ? getRPY() : Vector3f(0,0,0);
-
-    //frame will be used by everything -- only compute once
-    frame = KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
-                       KDL::Vector(xyz[0], xyz[1], xyz[2]));
-}
-
+  
 
 bool AffordanceState::isAffordance() const 
 {  return true; }

@@ -8,11 +8,12 @@
 #ifndef MODEL_STATE_H
 #define MODEL_STATE_H
 
-#include <lcmtypes/drc_lcmtypes.hpp>
-#include <boost/unordered_map.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
 #include <kdl/frames.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <stdexcept>
+#include <vector>
 
 namespace affordance
 {
@@ -49,7 +50,8 @@ namespace affordance
     
     //location and appearance
     virtual Eigen::Vector3f getColor() const = 0;
-    virtual void getFrame(KDL::Frame &frame) const = 0;
+    virtual Eigen::Vector3f getXYZ() const = 0;
+    virtual Eigen::Vector3f getRPY() const = 0; 
 
     //type
     virtual bool isAffordance() const = 0;
@@ -63,6 +65,19 @@ namespace affordance
 
     //copying
     virtual void getCopy(T &copy) const = 0;
+
+
+    //==========derived properties
+    //can't put this in a separate cpp file: http://www.parashift.com/c++-faq-lite/separate-template-fn-defn-from-decl.html
+    virtual KDL::Frame getFrame() const //derived method
+    {
+      Eigen::Vector3f xyz = getXYZ();
+      Eigen::Vector3f rpy = getRPY();
+  
+      //frame will be used by everything -- only compute once
+      return KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
+			KDL::Vector(xyz[0], xyz[1], xyz[2]));
+    }
   };
   
   template <class T> std::ostream& operator<<( std::ostream& out, const ModelState<T>& other );  

@@ -15,8 +15,9 @@ using namespace Eigen;
 //--------------constructor/destructor
 OpenGL_Affordance::OpenGL_Affordance(AffConstPtr affordance, 
 				     bool isHighlighted,
-				     Eigen::Vector3f highlightedColor)
-  : _affordance(affordance), _highlightColor(highlightedColor), _isHighlighted(isHighlighted)
+				     Eigen::Vector3f highlightColor)
+  : OpenGL_Object(affordance->getName(), isHighlighted, highlightColor),
+    _affordance(affordance)
 {
 }
 
@@ -28,8 +29,7 @@ OpenGL_Affordance::~OpenGL_Affordance()
 void OpenGL_Affordance::draw()
 {
   //frame will be used by everything -- only compute once
-  KDL::Frame frame;
-  _affordance->getFrame(frame);
+  KDL::Frame frame = _affordance->getFrame();
 
   OpenGL_Object *obj; 
   switch(_affordance->_otdf_id)
@@ -71,12 +71,6 @@ void OpenGL_Affordance::draw()
   }
 }
 
-
-//-----mutators
-void OpenGL_Affordance::setHighlighted(bool highlight)
-{
-    _isHighlighted = highlight;
-}
 
 //------observers
 AffConstPtr OpenGL_Affordance::getAffordance() const
