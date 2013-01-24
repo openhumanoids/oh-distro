@@ -227,7 +227,7 @@ void Handler::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
       jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
 
-    map<string, drc::transform_t > cartpos_out;
+    map<string, KDL::Frame > cartpos_out;
 
     // Calculate forward position kinematics
     bool kinematics_status;
@@ -244,7 +244,7 @@ void Handler::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     }
 
     // PRINTS THE VISUAL PROPERTIES OF ALL LINKS THAT HAVE A VISUAL ELEMENT DEFINED IN THE URDF FILE
-    map<string, drc::transform_t>::const_iterator transform_it;
+    map<string, KDL::Frame>::const_iterator transform_it;
 
     KDL::Frame  T_body_head,T_head_body;
 
@@ -254,11 +254,7 @@ void Handler::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
     if(transform_it!=cartpos_out.end())// fk cart pos exists
     {
 
-      T_body_head.p[0]= transform_it->second.translation.x;
-      T_body_head.p[1]= transform_it->second.translation.y;
-      T_body_head.p[2]= transform_it->second.translation.z;
-      T_body_head.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
-
+      T_body_head= transform_it->second;
     }
     else{
       std::cout<< "fk position does not exist" <<std::endl;
