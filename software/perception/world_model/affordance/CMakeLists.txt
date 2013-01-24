@@ -34,6 +34,7 @@ pods_install_headers(
 
 add_library(affordance SHARED 			
   src/AffordanceState.cpp
+  src/ManipulatorState.cpp
   src/OpenGL_Affordance.cpp
   src/OpenGL_Manipulator.cpp
   src/CollisionObject_Affordance.cpp
