@@ -8,7 +8,6 @@ rgbd_simulation
 image-passthrough
 image-compress
 local_map
-#registeration
 map_store
 opencv-utils
 tld-tracker
@@ -18,5 +17,6 @@ stereo-bm
 tutorials
 
 
-plamena_sandbox
+# maurice's stuff:
+#registeration
 #mfallon_sandbox
