@@ -19,7 +19,7 @@ namespace action_authoring
     Q_OBJECT
 
     public:
-	Qt4ConstraintMacro(ConstraintMacroPtr atomicConstraintMacro);
+        Qt4ConstraintMacro(ConstraintMacroPtr atomicConstraintMacro, int constraintIndex);
 	~Qt4ConstraintMacro();
         TogglePanel* getPanel();
 	// read the state from the gui elements already referenced
@@ -31,12 +31,17 @@ namespace action_authoring
 	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
 	bool isInitialized();
-	
+	void setConstraintIndex(int constraintIndex);
+	int getConstraintIndex() { return _constraintIndex; }
+	void setActiveExternal();
+
     private:
 	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
 	std::map<affordance::GlobalUID, int> _affordance2IndexMap;
 
+	int _constraintIndex;
 	bool _initialized;
+
 	QDoubleSpinBox* _gui_time_lower_bound;
 	QDoubleSpinBox* _gui_time_upper_bound;
 	TogglePanel* _gui_panel;

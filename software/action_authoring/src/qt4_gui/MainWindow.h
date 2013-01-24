@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QApplication>
 #include <QSplitter>
+#include <QToolBar>
 // Custom QT widgets
 #include "../qt4_widgets/TogglePanel.h"
 #include "../qt4_widgets/CustomSlider.h"
@@ -26,11 +27,12 @@
 #include <collision/collision_object_gfe.h>
 
 // Affordances
-#include "affordance/AffordanceState.h"
-#include "affordance/AffordanceUpWrapper.h"
+#include <affordance/AffordanceState.h>
+#include <affordance/AffordanceUpWrapper.h>
+#include <affordance/OpenGL_Affordance.h>
 
 // Local includes
-//#include "action_authoring/AtomicConstraintMacro.h"
+//#include <action_authoring/AtomicConstraintMacro.h>
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
 #include <action_authoring/ManipulationRelation.h>
@@ -102,6 +104,14 @@ public:
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget* _constraint_container;
     QVBoxLayout* _constraint_vbox;
+    QPushButton* _moveUpButton;
+    QPushButton* _moveDownButton;
+    QPushButton* _ffwd;
+    QPushButton* _fwd;
+    QPushButton* _play;
+    bool _isPlaying;
+    QPushButton* _bwd;
+    QPushButton* _fbwd;
 
     //================world state and authoring state
 private:
@@ -130,7 +140,9 @@ private slots:
     void handleSelectedAffordanceChange();
     void setSelectedAction(Qt4ConstraintMacro* activator);
     void selectedOpenGLObjectChanged(const std::string &modelName);
-
+    void mediaFastForward();
+    void mediaFastBackward();
+    void mediaPlay();
 };
 
 } //namespace action_authoring

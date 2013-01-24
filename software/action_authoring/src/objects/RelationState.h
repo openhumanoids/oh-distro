@@ -1,7 +1,10 @@
 #ifndef RELATION_STATE_H
 #define RELATION_STATE_H
 
-#include "boost/shared_ptr.hpp"
+#include <boost/shared_ptr.hpp>
+#include <algorithm>
+#include <vector>
+#include <string>
 
 namespace action_authoring
 {
@@ -12,6 +15,10 @@ class RelationState
   
   //----------Enumerations
  public:
+//------------------------------------------------------------------------
+// WARNING
+// if you edit this enum, edit the string definitions in the constructor
+//------------------------------------------------------------------------
     typedef enum {
       UNDEFINED,
       GRASP,
@@ -19,6 +26,9 @@ class RelationState
       OFFSET
     } RelationType;
 
+// TODO make const
+    std::vector<std::string> RelationTypeNames;
+    RelationType RelationTypeFromName(std::string);
 
     //------------fields
  private:

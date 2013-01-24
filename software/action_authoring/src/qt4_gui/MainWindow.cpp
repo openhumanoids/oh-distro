@@ -1,8 +1,5 @@
 #include "MainWindow.h"
 
-#include <state/state_gfe.h>
-#include "affordance/OpenGL_Affordance.h"
-#include <vector>
 using namespace std;
 using namespace KDL;
 using namespace Eigen;
@@ -121,10 +118,10 @@ void MainWindow::handleAffordancesChanged()
   ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(rhand_wheel_relation)));
   ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(lhand_wheel_relation)));
   
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
+  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
 
   rebuildGUIFromState(_authoringState, _worldState);
 }
@@ -157,7 +154,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	std::string id = state_gfe_joint.id();
 	_worldState.manipulators.push_back((ManipulatorStateConstPtr)new ManipulatorState(id));
     }
-  
+
+    this->setWindowTitle("Action Authoring Interface");
+
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setMargin(0);
 
@@ -165,40 +164,26 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QWidget* leftside = new QWidget();
     QVBoxLayout* vbox = new QVBoxLayout();
 
-    QWidget* topmenugroup = new QWidget();
-    QHBoxLayout* topmenu = new QHBoxLayout();
-    topmenu->addWidget(new QLabel("Action: "));
-    topmenu->addWidget(new QLineEdit("Ingress"));
-    QLabel* actionTypeLabel = new QLabel("acts on: ");
-    topmenu->addWidget(actionTypeLabel);
+    QToolBar *toolbar = new QToolBar("main toolbar");
+    toolbar->addWidget(new QLabel("Action: "));
+    toolbar->addWidget(new QLineEdit("Ingress"));
+    QLabel* actionTypeLabel = new QLabel(" acts on: ");
+    toolbar->addWidget(actionTypeLabel);
     QComboBox* actionType = new QComboBox();
     actionType->insertItem(0, "Vehicle");
     actionType->insertItem(0, "Door");
     actionType->insertItem(0, "Ladder");
     actionType->insertItem(0, "Table");
-    topmenu->addWidget(actionType);
-    QPushButton* savebutton = new QPushButton("Save");
-    topmenu->addWidget(savebutton);
-    topmenu->addSpacerItem(new QSpacerItem(100, 0));
-    QPushButton* loaddiff = new QPushButton("load a different action");
-    topmenu->addWidget(loaddiff);
-    topmenugroup->setLayout(topmenu);
-    vbox->addWidget(topmenugroup);
+    toolbar->addWidget(actionType);
+    toolbar->addSeparator();
+    QPushButton* savebutton = new QPushButton("Save Action");
+    toolbar->addWidget(savebutton);
+    QPushButton* loaddiff = new QPushButton("Load Action");
+    toolbar->addWidget(loaddiff);
 
-    QGroupBox* toolbarButtons = new QGroupBox(""); //controls
-    QHBoxLayout* toolbarButtonsLayout = new QHBoxLayout();
-    QPushButton* deletebutton = new QPushButton("delete");
-    QPushButton* moveupbutton = new QPushButton("move up");
-    QPushButton* movedownbutton = new QPushButton("move down");
-    QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
-    toolbarButtonsLayout->addWidget(deletebutton);
-    toolbarButtonsLayout->addStretch(1);
-    toolbarButtonsLayout->addWidget(moveupbutton);
-    toolbarButtonsLayout->addWidget(movedownbutton);
-    toolbarButtonsLayout->addStretch(1);
-    toolbarButtonsLayout->addWidget(addconstraintbutton);
-    toolbarButtons->setLayout(toolbarButtonsLayout);
-    vbox->addWidget(toolbarButtons);
+
+
+    vbox->addWidget(toolbar);
 
 //    _constraint_vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
 //    _constraint_vbox->setMargin(0);
@@ -209,49 +194,66 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 //    area->setBackgroundRole(QPalette::Dark);
     area->setWidgetResizable(true);
     area->setWidget(_constraint_container);
-    area->setMinimumSize( QSize( 300, 600 ) );
+    area->setMinimumSize( QSize(900, 700 ) );
     area->setAlignment(Qt::AlignTop);
 //    vbox->addWidget(_constraint_container);
     vbox->addWidget(area);
 
+
+    QToolBar *constraint_toolbar = new QToolBar("main toolbar");
+    QPushButton* deletebutton = new QPushButton("delete");
+    _moveUpButton = new QPushButton("move up");
+    _moveDownButton = new QPushButton("move down");
+    QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
+    constraint_toolbar->addWidget(deletebutton);
+    constraint_toolbar->addSeparator();
+    constraint_toolbar->addWidget(_moveUpButton);
+    constraint_toolbar->addWidget(_moveDownButton);
+    constraint_toolbar->addSeparator();
+    constraint_toolbar->addWidget(addconstraintbutton);
+    vbox->addStretch(1);
+    vbox->addWidget(constraint_toolbar);
+
+
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
-    QPushButton* fbwd = new QPushButton();
-    QPushButton* bwd = new QPushButton();
-    QPushButton* play = new QPushButton();
-    QPushButton* fwd = new QPushButton();
-    QPushButton* ffwd = new QPushButton();
+    _fbwd = new QPushButton();
+    _bwd = new QPushButton();
+    _play = new QPushButton();
+    _fwd = new QPushButton();
+    _ffwd = new QPushButton();
 
     // see http://www.qtcentre.org/wiki/index.php?title=Embedded_resources
     QPixmap pixmap1(":/trolltech/styles/commonstyle/images/media-skip-backward-32.png");
-    fbwd->setIcon(QIcon(pixmap1));
-    fbwd->setIconSize(pixmap1.rect().size());
+    _fbwd->setIcon(QIcon(pixmap1));
+    _fbwd->setIconSize(pixmap1.rect().size());
 
     QPixmap pixmap2(":/trolltech/styles/commonstyle/images/media-seek-backward-32.png");
-    bwd->setIcon(QIcon(pixmap2));
-    bwd->setIconSize(pixmap2.rect().size());
+    _bwd->setIcon(QIcon(pixmap2));
+    _bwd->setIconSize(pixmap2.rect().size());
 
-    QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
-    play->setIcon(QIcon(pixmap3));
-    play->setIconSize(pixmap3.rect().size());
+    QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-play-32.png");
+    _play->setIcon(QIcon(pixmap3));
+    _play->setIconSize(pixmap3.rect().size());
+    _isPlaying = true;
 
     QPixmap pixmap4(":/trolltech/styles/commonstyle/images/media-seek-forward-32.png");
-    fwd->setIcon(QIcon(pixmap4));
-    fwd->setIconSize(pixmap4.rect().size());
+    _fwd->setIcon(QIcon(pixmap4));
+    _fwd->setIconSize(pixmap4.rect().size());
 
     QPixmap pixmap5(":/trolltech/styles/commonstyle/images/media-skip-forward-32.png");
-    ffwd->setIcon(QIcon(pixmap5));
-    ffwd->setIconSize(pixmap5.rect().size());
+    _ffwd->setIcon(QIcon(pixmap5));
+    _ffwd->setIconSize(pixmap5.rect().size());
 
     mediaControlsLayout->addSpacerItem(new QSpacerItem(100, 0));
-    mediaControlsLayout->addWidget(fbwd);
-    mediaControlsLayout->addWidget(bwd);
-    mediaControlsLayout->addWidget(play);
-    mediaControlsLayout->addWidget(fwd);
-    mediaControlsLayout->addWidget(ffwd);
+    mediaControlsLayout->addWidget(_fbwd);
+    mediaControlsLayout->addWidget(_bwd);
+    mediaControlsLayout->addWidget(_play);
+    mediaControlsLayout->addWidget(_fwd);
+    mediaControlsLayout->addWidget(_ffwd);
     mediaControlsLayout->addSpacerItem(new QSpacerItem(100, 0));
     mediaControls->setLayout(mediaControlsLayout);
-    play->resize(play->width() * 2, play->height());
+    _play->resize(_play->width() * 2, _play->height());
 
     QGroupBox* widgetWrapper = new QGroupBox();
     widgetWrapper->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 0px; padding: 0px; margin: 0px; background-color: black; }");
@@ -290,9 +292,13 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     this->setLayout(layout);
 
     // wire up the buttons
+    connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
+    connect(_ffwd, SIGNAL(released()), this, SLOT(mediaFastForward()));
+    connect(_fbwd, SIGNAL(released()), this, SLOT(mediaFastBackward()));
+
     connect(deletebutton, SIGNAL(released()), this, SLOT(handleDeleteConstraint()));
-    connect(moveupbutton, SIGNAL(released()), this, SLOT(handleMoveUp()));
-    connect(movedownbutton, SIGNAL(released()), this, SLOT(handleMoveDown()));
+    connect(_moveUpButton, SIGNAL(released()), this, SLOT(handleMoveUp()));
+    connect(_moveDownButton, SIGNAL(released()), this, SLOT(handleMoveDown()));
     connect(addconstraintbutton, SIGNAL(released()), this, SLOT(handleAddConstraint()));
 
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
@@ -378,8 +384,7 @@ void
 MainWindow::
 handleDeleteConstraint() {
     int i = getSelectedGUIConstraintIndex();
-    if (i > 0) {
-	// delete the qt4 widget
+    if (i >= 0) {
 	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints.begin() + i);
 	rebuildGUIFromState(_authoringState, _worldState);
     } 
@@ -415,7 +420,9 @@ handleAddConstraint() {
     AtomicConstraintPtr new_constraint(new AtomicConstraint(new_relation));
     ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
 
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas));
+    // compute the number
+    int index = _authoringState._all_gui_constraints.size();
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, index));
     rebuildGUIFromState(_authoringState, _worldState);
 }
 
@@ -425,9 +432,10 @@ moveQt4Constraint(bool up) {
     int i = getSelectedGUIConstraintIndex();
     std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
     if (up && i > 0 || (! up) && i < constraints.size() - 1) {
-	std::cout << "swapping " << i << " with " << (up ? i - 1 : i + 1) << std::endl;
-	std::swap(constraints[i], constraints[i + (up ? i - 1 : i + 1)]);
-	rebuildGUIFromState(_authoringState, _worldState);
+	int j = i + (up ? -1 : 1);
+	std::cout << "swapping " << i << " with " << j << std::endl;
+	//std::swap(constraints[i], constraints[i + (up ? i - 1 : i + 1)]);
+	//rebuildGUIFromState(_authoringState, _worldState);
     }
 }
 
@@ -474,31 +482,40 @@ void
 MainWindow::
 updateScrubber() {
     // update the scrubber
-    double sum = 0;
+    double sum = 0.0;
     vector<double> lengths;
     _scrubber->clearTicks();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
-	lengths.push_back(max);
+	lengths.push_back(sum + max);
 	sum += max;
     }
     for (int i = 0; i < lengths.size(); i++) {
 	_scrubber->addTick(lengths[i] / sum);
     }
+    _scrubber->setSelectedRangeIndex(getSelectedGUIConstraintIndex());
+    _scrubber->update();
 }
 
 void 
 MainWindow::
 setSelectedAction(Qt4ConstraintMacro* activator) { 
 //    std::cout << "activated !!! " << std::endl;
+    int selected_index = -1;
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator == _authoringState._all_gui_constraints[i].get()) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
 	    _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
+	    selected_index = i;
 	} else {
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
     }
+    _moveUpButton->setEnabled(selected_index != 0);
+    _moveDownButton->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
+    _fbwd->setEnabled(selected_index != 0);
+    _ffwd->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
+
     updateScrubber();
 }
 
@@ -523,14 +540,20 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
 	    connect(state._all_gui_constraints[i].get(),
 		    SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
 		    this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
+//		    Qt::UniqueConnection);
+
 	    std::cout << "adding constraint #" << i << std::endl;
 	    _constraint_vbox->addWidget(tp);
 	}
     }
 }
 
-//===========world state affordance updating
-void MainWindow::affordanceUpdateCheck()
+/*
+ * world state affordance updating
+ */
+void
+MainWindow::
+affordanceUpdateCheck()
 {
   int origSize = _worldState.affordances.size();
   _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
@@ -541,31 +564,52 @@ void MainWindow::affordanceUpdateCheck()
   handleAffordancesChanged(); 
 }
 
-/* select the OpenGL object corresponding to this affordance by highlighting it
+/*
+ * Select the OpenGL object corresponding to this affordance by highlighting it
  * in the GUI. Connected to the raycastCallbick signal from the OpenGL widget pane.
  */
-void MainWindow::selectedOpenGLObjectChanged(const std::string &modelName) 
+void
+MainWindow::
+selectedOpenGLObjectChanged(const std::string &modelName) 
 {
     std::cout << "intersected affordance: " << modelName << std::endl;
 
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	
-	if (_worldState.affordances[i]->getName() == modelName)
-	  _worldState.glObjects[i]->setHighlighted(true);
+	if (_worldState.glObjects[i]->id() == modelName)
+	    _worldState.glObjects[i]->setHighlighted(true);
 	else 
-	  _worldState.glObjects[i]->setHighlighted(false);
+	    _worldState.glObjects[i]->setHighlighted(false);
     }
-      /*
-      //see if the next object is an affordance
-      OpenGL_Object *nextObj = _worldState.glObjects[i];
-      if (dynamic_cast<OpenGL_Affordance*>(nextObj) == NULL)
-	continue;
-      
-      OpenGL_Affordance *glAff = (OpenGL_Affordance*) nextObj;
-      glAff->setHighlighted(glAff->getAffordance()->getName() == affordanceName);
-      }*/
-
     _widget_opengl.update();
     return;
+}
+
+
+void
+MainWindow::
+mediaFastForward() {
+    int i = getSelectedGUIConstraintIndex();
+    _authoringState._all_gui_constraints[i + 1]->setActiveExternal();
+}
+
+void
+MainWindow::
+mediaFastBackward() {
+    int i = getSelectedGUIConstraintIndex();
+    _authoringState._all_gui_constraints[i - 1]->setActiveExternal();
+}
+
+void
+MainWindow::mediaPlay() {
+    if (_isPlaying) {
+	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
+	_play->setIcon(QIcon(pixmap3));
+	_play->setIconSize(pixmap3.rect().size());
+    } else {
+	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-play-32.png");
+	_play->setIcon(QIcon(pixmap3));
+	_play->setIconSize(pixmap3.rect().size());
+    }
+    _isPlaying = ! _isPlaying;
 }

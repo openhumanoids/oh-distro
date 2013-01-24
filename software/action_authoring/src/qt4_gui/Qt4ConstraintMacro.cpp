@@ -5,7 +5,7 @@
 using namespace action_authoring;
 
 Qt4ConstraintMacro::
-Qt4ConstraintMacro(ConstraintMacroPtr constraint) : _gui_name(new QLineEdit()),
+Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) : _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
@@ -18,6 +18,7 @@ Qt4ConstraintMacro(ConstraintMacroPtr constraint) : _gui_name(new QLineEdit()),
     _gui_time_lower_bound->setSuffix(" sec");
     _gui_time_upper_bound->setSuffix(" sec");
     _initialized = false;
+    _constraintIndex = constraintIndex;
 }
 
 Qt4ConstraintMacro::
@@ -32,6 +33,13 @@ std::string
 Qt4ConstraintMacro::
 getSelectedLinkName() {
     return _gui_robotJointType->currentText().toStdString();
+}
+
+void
+Qt4ConstraintMacro::
+setConstraintIndex(int constraintIndex) {
+    _constraintIndex = constraintIndex;
+    updateElementsFromState();
 }
 
 bool
@@ -148,7 +156,7 @@ void
 Qt4ConstraintMacro::
 updateStateFromElements() {
     _constraint->setName(_gui_name->text().toStdString());
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+    _gui_panel->setTitle(QString("[%1] ").arg(_constraintIndex) + QString::fromStdString(_constraint->getName()));
 
     _constraint->setTimeLowerBound(_gui_time_lower_bound->value());
     _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
@@ -166,6 +174,14 @@ updateStateFromElements() {
     setActive();
 }
 
+
+void 
+Qt4ConstraintMacro::
+setActiveExternal() {
+    setActive();
+}
+
+
 void 
 Qt4ConstraintMacro::
 setActive() {
@@ -182,7 +198,8 @@ void
 Qt4ConstraintMacro::
 updateElementsFromState() {
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
-    _gui_panel->setTitle(QString::fromStdString(_constraint->getName()));
+    _gui_panel->setTitle(QString("[%1] ").arg(_constraintIndex) + QString::fromStdString(_constraint->getName()));
+
     _gui_robotJointType->clear();
 
     _gui_time_lower_bound->setValue(_constraint->getTimeLowerBound());

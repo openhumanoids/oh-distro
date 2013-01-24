@@ -78,6 +78,7 @@ void TogglePanel::changeState()
         //_headerTextLabel->setText("Open");
         _widgetArea->show();
     }
+    icon->clearFocus();
 }
 
 void TogglePanel::addWidget(QWidget * widget)
