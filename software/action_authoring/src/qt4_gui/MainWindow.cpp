@@ -192,23 +192,25 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QPushButton* movedownbutton = new QPushButton("move down");
     QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
     toolbarButtonsLayout->addWidget(deletebutton);
-    toolbarButtonsLayout->addSpacing(200);
+    toolbarButtonsLayout->addStretch(1);
     toolbarButtonsLayout->addWidget(moveupbutton);
     toolbarButtonsLayout->addWidget(movedownbutton);
-    toolbarButtonsLayout->addSpacing(100);
+    toolbarButtonsLayout->addStretch(1);
     toolbarButtonsLayout->addWidget(addconstraintbutton);
     toolbarButtons->setLayout(toolbarButtonsLayout);
     vbox->addWidget(toolbarButtons);
 
-
 //    _constraint_vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
+//    _constraint_vbox->setMargin(0);
     _constraint_vbox->setAlignment(Qt::AlignTop);
 //_constraint_container->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
     _constraint_container->setLayout(_constraint_vbox);
     QScrollArea *area = new QScrollArea();
+//    area->setBackgroundRole(QPalette::Dark);
     area->setWidgetResizable(true);
     area->setWidget(_constraint_container);
     area->setMinimumSize( QSize( 300, 600 ) );
+    area->setAlignment(Qt::AlignTop);
 //    vbox->addWidget(_constraint_container);
     vbox->addWidget(area);
 

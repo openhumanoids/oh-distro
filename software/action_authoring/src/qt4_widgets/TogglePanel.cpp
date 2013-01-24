@@ -49,7 +49,7 @@ TogglePanel(QObject *parent, QString headerText)
     mainLayout->addWidget(_widgetArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 
     setLayout(mainLayout);
-    show();
+//    show();
 }
 
 void TogglePanel::setSelected(bool selected) {
@@ -93,6 +93,16 @@ void TogglePanel::addLayout(QLayout *layout)
 void TogglePanel::setTitle(QString title) {
     _headerText = title;
     _headerTextLabel->setText(_headerText);
+}
+
+QSize
+TogglePanel::
+sizeHint() { 
+    if (_state == OPEN) {
+	return QSize(_widgetArea->sizeHint().width(), _widgetArea->sizeHint().height() + _headerArea->sizeHint().height());
+    } else {
+	return QSize(_headerArea->sizeHint().width(), _headerArea->sizeHint().height());
+    }
 }
 
 TogglePanel::
