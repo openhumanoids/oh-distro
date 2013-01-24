@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<model>
+  <name>Gazebo Steering Wheel</name>
+  <version>1.0</version>
+  <sdf>model.sdf</sdf>
+  <author>
+    <name>Steven Jorgensen</name>
+  </author>
+  <description> A simple steering wheel and post made out of gazebo native elements </description>
+</model>
