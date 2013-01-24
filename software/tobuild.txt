@@ -29,3 +29,6 @@ gazebo_plugins
 # disabled for now:
 #teleop
 plan
+
+# porterbot utils:
+porterbot
