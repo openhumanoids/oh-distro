@@ -17,6 +17,7 @@ Qt4ConstraintMacro(ConstraintMacroPtr constraint) : _gui_name(new QLineEdit()),
     _constraint = constraint;
     _gui_time_lower_bound->setSuffix(" sec");
     _gui_time_upper_bound->setSuffix(" sec");
+    _initialized = false;
 }
 
 Qt4ConstraintMacro::
@@ -24,6 +25,7 @@ Qt4ConstraintMacro::
     //TODO; hack
     std::cout << "destructive destructor destructing" << std::endl;
     _gui_panel->setParent(NULL);
+    //delete _gui_panel;
 }
 
 std::string
@@ -32,11 +34,20 @@ getSelectedLinkName() {
     return _gui_robotJointType->currentText().toStdString();
 }
 
+bool
+Qt4ConstraintMacro::
+isInitialized() {
+    return _initialized;
+}
+
 TogglePanel* 
 Qt4ConstraintMacro::
 getPanel() {
 //    QString waypointTitle = QString::fromStdString(_constraint->getName());
 //    std::cout << "title is " << _constraint->getName() << std::endl;
+    if (_initialized) {
+	return _gui_panel;
+    }
 
     QGroupBox* groupBox = new QGroupBox();
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
@@ -113,6 +124,7 @@ getPanel() {
     connect(editButton, SIGNAL(released()), this, SLOT(setActive()));
 
     _gui_panel->addWidget(groupBox);
+    _initialized = true;
     return _gui_panel;
 }
 

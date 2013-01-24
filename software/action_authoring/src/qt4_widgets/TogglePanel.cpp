@@ -12,7 +12,8 @@ TogglePanel(QObject *parent, QString headerText)
     _headerArea->setMaximumHeight(20);
     _widgetArea->setMaximumHeight(1000);
     this->setMaximumHeight(1000);
-    this->setMinimumHeight(20);
+//    this->setMinimumHeight(this->sizeHint().height());
+//    this->setMinimumWidth(this->sizeHint().width());
 
     icon = new QPushButton(QString::fromUtf8("\u25B8"));
     icon->setMaximumSize(15, 15);

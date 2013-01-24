@@ -26,6 +26,8 @@ public:
     void addLayout(QLayout *layout);
     void setSelected(bool selected);
     void setTitle(QString title);
+    QSize sizeHint() const { return QSize(_widgetArea->sizeHint().width(), _widgetArea->sizeHint().height() + _headerArea->sizeHint().height()); }
+
     enum { OPEN, CLOSED };
 
 private slots:

@@ -30,11 +30,13 @@ namespace action_authoring
 			     std::vector<affordance::ManipulatorStateConstPtr> &manipulators);
 	ConstraintMacroPtr getConstraintMacro();
 	std::string getSelectedLinkName();
+	bool isInitialized();
 	
     private:
 	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
 	std::map<affordance::GlobalUID, int> _affordance2IndexMap;
 
+	bool _initialized;
 	QDoubleSpinBox* _gui_time_lower_bound;
 	QDoubleSpinBox* _gui_time_upper_bound;
 	TogglePanel* _gui_panel;
