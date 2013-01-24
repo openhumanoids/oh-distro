@@ -55,7 +55,7 @@ namespace action_authoring {
     void getConstraintMacros(std::vector<
 			     boost::shared_ptr<ConstraintMacro> > &constraints) const;
     
-    void addConstraintMacro(boost::shared_ptr<ConstraintMacro> constraint);
+    void appendConstraintMacro(boost::shared_ptr<ConstraintMacro> constraint);
     
     //Available for ATOMIC constraints only
     AtomicConstraintPtr getAtomicConstraint() const;

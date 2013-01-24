@@ -21,7 +21,7 @@ ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintPtr atomicC
   //todo : note constructor initialier list 
 }
 
-void ConstraintMacro::addConstraintMacro(ConstraintMacroPtr constraint) {
+void ConstraintMacro::appendConstraintMacro(ConstraintMacroPtr constraint) {
   if (_constraintType == ConstraintMacro::ATOMIC)
     {
       throw InvalidMethodCallForContraintTypeException("Cannot add a constraint to an atomic constraint.");
