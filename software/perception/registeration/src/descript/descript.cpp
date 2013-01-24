@@ -10,8 +10,7 @@
 #include "opencv2/nonfree/features2d.hpp"
 
 
-// Functions declaration
-void readme();
+
 
 // main
 int main( int argc, char** argv ) {
@@ -22,7 +21,7 @@ int main( int argc, char** argv ) {
          { return -1; }
 
      //-- Step 1: Detect the keypoints and generate their descriptors using SURF
-     int minHessian = 400;
+     int minHessian = 3550;//400;
      cv::SURF surf( minHessian );
 
      std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
@@ -37,6 +36,8 @@ int main( int argc, char** argv ) {
      std::vector< cv::DMatch > matches;
      matcher.match( descriptors_1, descriptors_2, matches );
 
+std::cout << matches.size() << " matches found\n";
+
      //-- Draw matches
      cv::Mat img_matches;
      cv::drawMatches( img_1, keypoints_1, img_2, keypoints_2, matches, img_matches );
@@ -48,7 +49,3 @@ int main( int argc, char** argv ) {
 
     return 0;
     }
-
-    // function readme
-    void readme()
-    { std::cout << " Usage: ./SURF_descriptor <img1> <img2>" << std::endl; }

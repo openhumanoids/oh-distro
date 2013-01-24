@@ -20,7 +20,8 @@ add_subdirectory(src/est_robot_state_fake)
 add_subdirectory(src/heightmap_lcmgl)
 add_subdirectory(src/tld_lcmgl)
 
-add_subdirectory(src/plane_detector)
+#add_subdirectory(src/plane_detector)
+
 add_subdirectory(src/terrain_classify)
 
 add_subdirectory(src/pcl_openni_grabber)
