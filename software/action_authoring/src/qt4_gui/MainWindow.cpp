@@ -486,7 +486,10 @@ void
 MainWindow::
 rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
     // delete all of the current constraint's toggle panel widgets
+    std::cout << "deleting rendered children " << std::endl;
     qDeleteAll(_constraint_container->findChildren<QWidget*>());
+
+    std::cout << "starting loop " << std::endl;
 
     for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
     {
@@ -495,6 +498,7 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
 	connect(state._all_gui_constraints[i].get(),
 		SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
 		this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
+	std::cout << "adding constraint #" << i << std::endl;
 	_constraint_vbox->addWidget(tp);
     }
     
@@ -517,12 +521,12 @@ void MainWindow::affordanceUpdateCheck()
  */
 void MainWindow::selectedOpenGLObjectChanged(const std::string &modelName) 
 {
-    std::cout << "intersected affordance: " << affordanceName << std::endl;
+    std::cout << "intersected affordance: " << modelName << std::endl;
 
-    for(uint i = 0; i < _worldState.glObjects.size(); i++)
-    {
-      if (_worldState.glObjects[i].id() == modelName)
-	_worldState.glObjects[i].setHighlighted(true);
+//    for(uint i = 0; i < _worldState.glObjects.size(); i++)
+//    {
+//      if (_worldState.glObjects[i].id() == modelName)
+//	_worldState.glObjects[i].setHighlighted(true);
 
       /*
       //see if the next object is an affordance
