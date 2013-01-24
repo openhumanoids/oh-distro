@@ -6,21 +6,23 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
 
 <!--   
-    It seems like this infos do not affect gazebo:
-    <dynamics damping="1.0" friction="0"/>
-    <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
+It seems like this infos do not affect gazebo:
+<dynamics damping="1.0" friction="0"/>
+<limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
 -->
 
-  <link name="base">
+
+<!-- base -->
+  <link name="base_link">
     <inertial>
-    <mass value="56" />
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-    <inertia ixx="6.47" ixy="0" ixz="0" iyy="8.59" iyz="0" izz="11.70" /> 
+    <mass value="50" />
+      <origin rpy="0 0 0" xyz="0 0 0.15"/>
+    <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" /> 
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://porterbot/meshes/base_link.stl" />
+        <mesh filename="package://porterbot/meshes/base_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
@@ -29,14 +31,40 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://porterbot/meshes/base_link.stl" />
+        <mesh filename="package://porterbot/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
 
+  <link name="porterbot_cart">
+    <inertial>
+    <mass value="50" />
+      <origin rpy="0 0 0" xyz="0 0 -0.5"/>
+    <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" /> 
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 -0.5"/>
+      <geometry>
+        <box size="1.4 1.4 0.5"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 -0.5"/>
+      <geometry>
+        <box size="1.4 1.4 0.5"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="porterbot_cart_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link"/>
+    <child link="porterbot_cart"/>
+  </joint>
+
   <link name="torso_link">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.25" rpy="0 0 0" />
       <mass value="30" />
       <inertia ixx="4.06" ixy="0.12" ixz="2.84" iyy="7.02" iyz="0.11" izz="0.97" />
     </inertial>
@@ -59,7 +87,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <joint name="torso_joint" type="revolute">
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="torso_link" />
     <axis xyz="0 0 -1" />
     <dynamics damping="1.0" friction="0"/>
@@ -68,9 +96,9 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <link name="velodyne_link">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.05" rpy="0 0 0" />
       <mass value="2" />
-      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0" />
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.01" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -98,14 +126,12 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
      <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/>
   </joint>
 
-
-
 <!-- left arm -->
   <link name="l_link1">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="3.6" />
-      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.0076" iyz="0" izz="0.021" />
+      <origin xyz="0 0.1 0" rpy="0 0 0" />
+      <mass value="5.5" />
+      <inertia ixx="0.06" ixy="0" ixz="0" iyy="0.025" iyz="0" izz="0.06" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -130,7 +156,8 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <joint name="l_j1" type="revolute">
     <origin xyz="0.476177638729297 0.21171929915304 0.522533108830361" 
-	    rpy="2.50336447101917E-11 -4.22158854177918E-11 -0.476942219838041" />
+	    rpy="2.50336447101917E-11 0.27114 -0.476942219838041" />
+	<!--    rpy="2.50336447101917E-11 -4.22158854177918E-11 -0.476942219838041" />  -->
     <parent link="torso_link" />
     <child link="l_link1" />
     <axis xyz="0 0.996223658421194 -0.086824088834218" />
@@ -138,12 +165,11 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     <limit effort="1000" lower="-3.141" upper="3.141" velocity="0.05"/> 
   </joint>
 
- <link
-    name="l_link2">
+ <link name="l_link2">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="3.6" />
-      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.021" iyz="0" izz="-0.0076" />
+      <origin xyz="0 0 0.1" rpy="0 0 0" />
+      <mass value="5.5" />
+      <inertia ixx="0.06" ixy="0" ixz="0" iyy="0.06" iyz="0" izz="0.025" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -163,20 +189,20 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="l_j2" type="revolute">
-    <origin xyz="0.0105667650367604 0.257554514674348 0.0470134602802149"
-      rpy="-0.0879361240244671 0.150956408635412 -0.0132575780229298" />
+    <origin xyz="0.010567 0.25755 0.047013"
+      rpy="-3.0537 -0.15096 3.1283" />
     <parent link="l_link1" />
     <child link="l_link2" />
-    <axis xyz="0 0 -1" />
+    <axis xyz="0 0 1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
   </joint>
 
   <link name="l_link3">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="2" />
-      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.008" />
+      <origin xyz="0 0.1 0" rpy="0 0 0" />
+      <mass value="3.5" />
+      <inertia ixx="0.024" ixy="0" ixz="0" iyy="0.012" iyz="0" izz="0.024" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -196,8 +222,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="l_j3" type="revolute">
-    <origin xyz="0 0.11 -0.0700000000000001"
-      rpy="-1.38777878078145E-17 0 -5.55111512312578E-17" />
+    <origin xyz="0 0.11 0.07" rpy="3.1416 0 3.1416" />
     <parent link="l_link2" />
     <child link="l_link3" />
     <axis xyz="0 1 0" />
@@ -207,9 +232,9 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <link name="l_link4">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="2" />
-      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.008" iyz="0" izz="-0.003" />
+      <origin xyz="0 0 0.1" rpy="0 0 0" />
+      <mass value="3.5" />
+      <inertia ixx="0.024" ixy="0" ixz="0" iyy="0.024" iyz="0" izz="0.009" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -228,20 +253,22 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     </collision>
   </link>
 
+
   <joint name="l_j4" type="revolute">
-    <origin xyz="0 0.218 0.0590000000000002" rpy="5.55111512312578E-17 8.32667268468867E-17 0" />
+    <origin xyz="0 0.218 0.059" rpy="3.1416 0 -3.1416" />
     <parent link="l_link3" />
     <child link="l_link4" />
-    <axis xyz="0 0 -1" />
+    <axis xyz="0 0 1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="200" lower="-1.920" upper="1.920" velocity="0.01"/>
   </joint>
 
+
   <link name="l_link5">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-       <mass value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+      <origin xyz="0 0.05 0" rpy="0 0 0" />
+       <mass value="2.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.009" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -261,7 +288,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="l_j5" type="revolute">
-    <origin xyz="0 0.1 -0.0590000000000002" rpy="1.38777878078145E-17 -2.77555756156289E-17 0" />
+    <origin xyz="0 0.1 0.059" rpy="3.1416 0 -3.1416" />
     <parent link="l_link4" />
     <child link="l_link5" />
     <axis xyz="0 1 0" />
@@ -271,10 +298,10 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <link name="l_link6">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.05" rpy="0 0 0" />
        <mass
-        value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="-0.001" />
+        value="2.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.009" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -294,20 +321,20 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="l_j6" type="revolute">
-    <origin xyz="0 0.1765 0.0482499999999998"
-            rpy="6.93889390390723E-17 -5.55111512312578E-17 5.55111512312578E-17" />
+    <origin xyz="0 0.1765 0.04825"
+            rpy="3.14159265358979 -2.4980018054066E-16 3.14159265358979" />
     <parent link="l_link5" />
     <child link="l_link6" />
-    <axis xyz="0 0 -1" />
+    <axis xyz="0 0 1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-1.745" upper="1.745" velocity="0.05"/>
   </joint>
 
   <link name="l_link7">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-       <mass value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+      <origin xyz="0 0.05 0" rpy="0 0 0" />
+       <mass value="1.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.009" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -327,7 +354,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="l_j7" type="revolute">
-    <origin xyz="0 0.0800000000000001 -0.0482499999999964" rpy="-1.38777878078145E-17 0 0" />
+    <origin xyz="0 0.08 0.04825" rpy="3.1416 0 -3.1416" />
     <parent link="l_link6" />
     <child link="l_link7" />
     <axis xyz="0 -1 0" />
@@ -336,11 +363,11 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </joint>
 
 
-  <link name="gripper_link">
+  <link name="l_gripper_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="2.6" />
-      <inertia ixx="0.007" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.007" />
+      <mass value="3.5" />
+      <inertia ixx="0.014" ixy="0" ixz="0" iyy="0.014" iyz="0" izz="0.014" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -359,165 +386,106 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     </collision>
   </link>
 
-  <joint name="gripper_joint" type="fixed">
+  <joint name="l_gripper_joint" type="fixed">
     <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
     <parent link="l_link7" />
-    <child link="gripper_link" />
+    <child link="l_gripper_link" />
     <axis xyz="0 -1 0" />
     <limit lower="0" upper="0" effort="0" velocity="0" />
   </joint>
 
   <link name="l_lidar_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="1" />
-      <inertia
-        ixx="0.001"
-        ixy="0"
-        ixz="0"
-        iyy="0.001"
-        iyz="0"
-        izz="0.001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="1" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_lidar_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_lidar_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_lidar_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_lidar_link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="l_lidar_joint" type="fixed">
-    <origin
-      xyz="1.19400000040126E-05 0.146390829929814 0.117130657911702"
-      rpy="-1.38777878078145E-17 0 0" />
-    <parent
-      link="gripper_link" />
-    <child
-      link="l_lidar_link" />
-    <axis
-      xyz="1 0 0" />
+
+  <joint name="l_lidar_joint" type="fixed">
+    <origin xyz="1.19400000040126E-05 0.1464 0.11713" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="l_gripper_link" />
+    <child link="l_lidar_link" />
+    <axis xyz="1 0 0" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-0.65" upper="0.08" velocity="0.05"/>
   </joint>
+
   <link name="l_finger1_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="0.1" />
-      <inertia
-        ixx="0.0001"
-        ixy="0"
-        ixz="0"
-        iyy="0.0001"
-        iyz="0"
-        izz="0.0001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.2" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger1_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger1_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger1_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger1_link.STL" />
       </geometry>
     </collision>
   </link>
+
   <joint name="l_finger1_joint" type="fixed">
-    <origin
-      xyz="0 0 0"
-      rpy="-1.38777878078145E-17 0 0" />
-    <parent
-      link="gripper_link" />
-    <child
-      link="l_finger1_link" />
-    <axis
-      xyz="1 0 0" />
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="l_gripper_link" />
+    <child link="l_finger1_link" />
+    <axis xyz="1 0 0" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
   </joint>
+
   <link name="l_finger2_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-
-        rpy="0 0 0" />
-      <mass
-        value="0.1" />
-      <inertia
-        ixx="0.0001"
-
-        ixy="0"
-        ixz="0"
-        iyy="0.0001"
-        iyz="0"
-        izz="0.0001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.2" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger2_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger2_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger2_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger2_link.STL" />
       </geometry>
     </collision>
   </link>
+
   <joint name="l_finger2_joint" type="fixed">
-    <origin
-      xyz="0 0 0"
-      rpy="-1.38777878078145E-17 0 0" />
-    <parent
-      link="gripper_link" />
-    <child
-      link="l_finger2_link" />
-    <axis
-      xyz="-1 0 0" />
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="l_gripper_link" />
+    <child link="l_finger2_link" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
   </joint>
@@ -525,9 +493,9 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 <!-- right arm -->
   <link name="r_link1">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="3.6" />
-      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.0076" iyz="0" izz="0.021" />
+      <origin xyz="0 0.1 0" rpy="0 0 0" />
+      <mass value="5.5" />
+      <inertia ixx="0.06" ixy="0" ixz="0" iyy="0.025" iyz="0" izz="0.06" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -540,20 +508,17 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_link1.STL" />
+        <mesh filename="package://porterbot/meshes/l_link1.STL" />
       </geometry>
     </collision>
   </link>
 
-<!--      rpy="2.34760359534957E-11 4.31015090802447E-11 -2.5845441632246" /> -->
   <joint name="r_j1" type="revolute">
     <origin xyz="0.491592546598285 -0.172936327556441 0.522533108830358" 
-            rpy="2.34760359534957E-11 -0.298867098 -2.61059139" />
+            rpy="2.34760359534957E-11 -0.57 -2.61059139" />
+          <!--  rpy="2.34760359534957E-11 -0.298867098 -2.61059139" /> -->
     <parent link="torso_link" />
     <child link="r_link1" />
     <axis xyz="0 -0.99622365842133 0.086824088832664" />
@@ -564,9 +529,9 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
  <link
     name="r_link2">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="3.6" />
-      <inertia ixx="0.021" ixy="0" ixz="0" iyy="0.021" iyz="0" izz="-0.0076" />
+      <origin xyz="0 0 0.1" rpy="0 0 0" />
+      <mass value="5.5" />
+      <inertia ixx="0.06" ixy="0" ixz="0" iyy="0.06" iyz="0" izz="0.025" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -586,20 +551,19 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j2" type="revolute">
-    <origin xyz="0.0105667650367604 0.257554514674348 0.0470134602802149"
-      rpy="-0.0879361240244671 0.150956408635412 -0.0132575780229298" />
+    <origin xyz="0.010567 0.25755 0.047013" rpy="-3.0537 -0.15096 3.1283" />
     <parent link="r_link1" />
     <child link="r_link2" />
-    <axis xyz="0 0 1" />
+    <axis xyz="0 0 -1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-1.571" upper="1.571" velocity="0.05"/>
   </joint>
 
   <link name="r_link3">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="2" />
-      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.008" />
+      <origin xyz="0 0 0.1" rpy="0 0 0" />
+      <mass value="3.5" />
+      <inertia ixx="0.024" ixy="0" ixz="0" iyy="0.012" iyz="0" izz="0.024" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -619,8 +583,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j3" type="revolute">
-    <origin xyz="0 0.11 -0.0700000000000001"
-      rpy="-1.38777878078145E-17 0 -5.55111512312578E-17" />
+    <origin xyz="0 0.11 0.07" rpy="3.1416 0 3.1416" />
     <parent link="r_link2" />
     <child link="r_link3" />
     <axis xyz="0 -1 0" />
@@ -631,8 +594,8 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   <link name="r_link4">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="2" />
-      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.008" iyz="0" izz="-0.003" />
+      <mass value="3.5" />
+      <inertia ixx="0.04" ixy="0" ixz="0" iyy="0.024" iyz="0" izz="0.09" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -652,19 +615,19 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j4" type="revolute">
-    <origin xyz="0 0.218 0.0590000000000002" rpy="5.55111512312578E-17 8.32667268468867E-17 0" />
+    <origin xyz="0 0.218 0.059" rpy="3.1416 0 -3.1416" />
     <parent link="r_link3" />
     <child link="r_link4" />
-    <axis xyz="0 0 1" />
+    <axis xyz="0 0 -1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="200" lower="-1.920" upper="1.920" velocity="0.01"/>
   </joint>
 
   <link name="r_link5">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-       <mass value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+      <origin xyz="0 0.05 0" rpy="0 0 0" />
+       <mass value="2.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.009" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -684,7 +647,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j5" type="revolute">
-    <origin xyz="0 0.1 -0.0590000000000002" rpy="1.38777878078145E-17 -2.77555756156289E-17 0" />
+    <origin xyz="0 0.1 0.059" rpy="3.1416 0 -3.1416" />
     <parent link="r_link4" />
     <child link="r_link5" />
     <axis xyz="0 -1 0" />
@@ -694,10 +657,9 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 
   <link name="r_link6">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-       <mass
-        value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="-0.001" />
+      <origin xyz="0 0 0.05" rpy="0 0 0" />
+       <mass value="2.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.009" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -717,20 +679,19 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j6" type="revolute">
-    <origin xyz="0 0.1765 0.0482499999999998"
-            rpy="6.93889390390723E-17 -5.55111512312578E-17 5.55111512312578E-17" />
+    <origin xyz="0 0.1765 0.04825" rpy="3.1416 -2.4980018054066E-16 3.1416" />
     <parent link="r_link5" />
     <child link="r_link6" />
-    <axis xyz="0 0 1" />
+    <axis xyz="0 0 -1" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-1.745" upper="1.745" velocity="0.05"/>
   </joint>
 
   <link name="r_link7">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-       <mass value="1.2" />
-      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.003" />
+      <origin xyz="0 0.05 0" rpy="0 0 0" />
+       <mass value="1.5" />
+      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.009" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -750,7 +711,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   </link>
 
   <joint name="r_j7" type="revolute">
-    <origin xyz="0 0.0800000000000001 -0.0482499999999964" rpy="-1.38777878078145E-17 0 0" />
+    <origin xyz="0 0.08 0.04825" rpy="3.1416 0 -3.1416" />
     <parent link="r_link6" />
     <child link="r_link7" />
     <axis xyz="0 -1 0" />
@@ -758,142 +719,89 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     <limit effort="200" lower="-3.141" upper="3.141" velocity="0.01"/> 
   </joint>
 
-
   <link name="r_gripper_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="2.6" />
-      <inertia
-        ixx="0.007"
-        ixy="0"
-        ixz="0"
-        iyy="0.007"
-        iyz="0"
-        izz="0.007" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="3.5" />
+      <inertia ixx="0.014" ixy="0" ixz="0" iyy="0.014" iyz="0" izz="0.014" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/gripper_link.STL" />
+        <mesh filename="package://porterbot/meshes/gripper_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/gripper_link.STL" />
+        <mesh filename="package://porterbot/meshes/gripper_link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="r_gripper_joint"
-    type="fixed">
-    <origin
-      xyz="0 0 0"
-      rpy="-1.38777878078145E-17 0 0" />
-    <parent
-      link="r_link7" />
-    <child
-      link="r_gripper_link" />
-    <axis
-      xyz="0 -1 0" />
+
+  <joint name="r_gripper_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.38777878078145E-17 0 0" />
+    <parent link="r_link7" />
+    <child link="r_gripper_link" />
+    <axis xyz="0 -1 0" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="206.843" lower="-1.2" upper="1.28" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2" soft_upper_limit="11.28"/>
   </joint>
+
   <link name="r_lidar_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="1" />
-      <inertia
-        ixx="0.001"
-        ixy="0"
-        ixz="0"
-        iyy="0.001"
-        iyz="0"
-        izz="0.001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="1" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_lidar_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_lidar_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_lidar_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_lidar_link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="r_lidar_joint" type="fixed">
-    <origin xyz="1.19400000040126E-05 0.146390829929814 0.117130657911702"
-      rpy="-1.38777878078145E-17 0 0" />
+
+  <joint name="r_lidar_joint" type="fixed">
+    <origin xyz="1.19400000040126E-05 0.14639083 0.11713" rpy="0 0 0" />
     <parent link="r_gripper_link" />
     <child link="r_lidar_link" />
-    <axis
-      xyz="1 0 0" />
+    <axis xyz="1 0 0" />
     <dynamics damping="1.0" friction="0"/>
     <limit effort="1000" lower="-0.65" upper="0.08" velocity="0.05"/>
   </joint>
   <link name="r_finger1_link">
     <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="0.1" />
-      <inertia
-        ixx="0.0001"
-        ixy="0"
-        ixz="0"
-        iyy="0.0001"
-        iyz="0"
-        izz="0.0001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.2" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger1_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger1_link.STL" />
       </geometry>
       <material name="metall">
         <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="package://porterbot/meshes/l_finger1_link.STL" />
+        <mesh filename="package://porterbot/meshes/l_finger1_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -910,9 +818,8 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   <link name="r_finger2_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="0.1" />
-      <inertia ixx="0.0001" ixy="0"
-        ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+      <mass value="0.2" />
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -940,68 +847,11 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     <limit effort="1000" lower="0" upper="0.035" velocity="0.05"/>
   </joint>
 
- 
-  <gazebo>
-    <!-- robot model offset -->
-    <pose>0 0 0.93 0 0 0</pose>
-  </gazebo>
-
-  <gazebo>
-
-
-    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
-    </plugin>
-  </gazebo>
-
-
+<!-- transmission. For joinst position look in ros/position_controller.yaml -->
 
 <transmission name="torso_joint_trans" type="pr2_mechanism_model/SimpleTransmission">
     <actuator name="torso.joint_motor"/>
     <joint name="torso_joint"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j1_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j1_motor"/>
-    <joint name="r_j1"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j2_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j2_motor"/>
-    <joint name="r_j2"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j3_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j3_motor"/>
-    <joint name="r_j3"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j4_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j4_motor"/>
-    <joint name="r_j4"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j5_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j5_motor"/>
-    <joint name="r_j5"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j6_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j6_motor"/>
-    <joint name="r_j6"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-<transmission name="r.j7_trans" type="pr2_mechanism_model/SimpleTransmission">
-    <actuator name="r.j7_motor"/>
-    <joint name="r_j7"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
@@ -1046,4 +896,181 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
     <joint name="l_j7"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+
+
+<transmission name="r.j1_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j1_motor"/>
+    <joint name="r_j1"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j2_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j2_motor"/>
+    <joint name="r_j2"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j3_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j3_motor"/>
+    <joint name="r_j3"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j4_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j4_motor"/>
+    <joint name="r_j4"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j5_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j5_motor"/>
+    <joint name="r_j5"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j6_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j6_motor"/>
+    <joint name="r_j6"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<transmission name="r.j7_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r.j7_motor"/>
+    <joint name="r_j7"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+<!-- gazebo plugins -->
+ <!-- joint trajectory -->
+  <gazebo>
+    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+      <topicName>joint_trajectory</topicName>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+ <!-- controller -->
+    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+ <!-- state pulisher. Important for visualiser. Becomes translated to LCM through the ROS2LCM translator. -->
+    <plugin filename="libgazebo_ros_pub_robot_state.so" name="gazebo_ros_pub_robot_controller">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <topicName>true_robot_state</topicName>
+    </plugin>
+  </gazebo>
+
+<!-- lasers -->
+ <!-- r_hokuyo -->
+  <link name="r_hokuyo" type="laser">
+    <!-- inertial already in r_lidar_link defined -->
+    <inertial>
+      <mass value="0.0001"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0" ixy="0" ixz="0" iyy="0.0" iyz="0" izz="0.0"/>
+    </inertial>
+  <!--  <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
+      </geometry>
+    </visual> -->
+  </link>
+
+<joint name="r_hokuyo_joint" type="revolute">
+    <origin rpy="0 0.3 1.57079633" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="r_lidar_link"/>
+    <child link="r_hokuyo"/>
+    <limit effort="5" velocity="12"/>
+    <safety_controller k_position="100.0" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
+    <dynamics damping="0.1" friction="0"/>
+  </joint>
+
+  <gazebo reference="r_hokuyo">
+    <sensor name="r_hokuyo_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>640</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.57</min_angle>
+            <max_angle>1.57</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.08</min>
+          <max>40.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller">
+        <gaussianNoise>0.005</gaussianNoise>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>40</updateRate>
+        <topicName>/rotating_scan</topicName>
+      <!--  <frameName>head_hokuyo</frameName>-->
+      </plugin>
+    </sensor>
+  </gazebo>
+
+ <!-- l_hokuyo -->
+  <link name="l_hokuyo" type="laser">
+    <!-- inertial already in l_lidar_link defined -->
+    <inertial>
+      <mass value="0.001"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0" ixy="0" ixz="0" iyy="0.0" iyz="0" izz="0.0"/>
+    </inertial>
+  <!--  <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
+      </geometry>
+    </visual> -->
+  </link>
+
+<joint name="l_hokuyo_joint" type="revolute">
+    <origin rpy="0 0.3 1.57079633" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="l_lidar_link"/>
+    <child link="l_hokuyo"/>
+    <limit effort="5" velocity="12"/>
+    <safety_controller k_position="100.0" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
+    <dynamics damping="0.1" friction="0"/>
+  </joint>
+
+  <gazebo reference="l_hokuyo">
+    <sensor name="l_hokuyo_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>640</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.57</min_angle>
+            <max_angle>1.57</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.08</min>
+          <max>40.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller">
+        <gaussianNoise>0.005</gaussianNoise>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>40</updateRate>
+        <topicName>/righted_scan</topicName>
+      <!--  <frameName>head_hokuyo</frameName>-->
+      </plugin>
+    </sensor>
+  </gazebo>
+
 </robot>
