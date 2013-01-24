@@ -5,6 +5,7 @@
 
   <include filename="$(find sandia_hand_utils)/urdf/sandia_hand.gazebo.xacro" />
   <include filename="$(find sandia_hand_utils)/urdf/sandia_hand.transmission.xacro" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/xacro/sandia_hand_floating_base.xacro"/>
 
   <xacro:macro name="finger" params="idx x y z r p yaw side">
     <link name="${side}_f${idx}_base">
@@ -239,6 +240,7 @@
     <xacro:finger side="${side}" idx="1" x="0.115" y="0.03122" z="0" r="0" p="0" yaw="0.3"/>
     <xacro:finger side="${side}" idx="2" x="0.090" y="0.06245" z="0" r="0" p="0" yaw="0.3"/>
     <xacro:finger side="${side}" idx="3" x="0.03995" y="-0.04383" z="0.014" r="0" p="-1.57079" yaw="-2.3562"/>
+    <xacro:base_links side ="${side}"/>
 
     <!-- not needed unless simulating the hand by itself
     <xacro:sandia_hand_gazebo side="${side}" />
