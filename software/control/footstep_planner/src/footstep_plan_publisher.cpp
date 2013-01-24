@@ -125,20 +125,20 @@ class Handler
 			left_foot_goals.utime = msg->utime;
 			left_foot_goals.robot_name = msg->robot_name;
 			left_foot_goals.num_goals = num_steps;
-
+			double left_foot_radius;
+			double right_foot_radius;
+			if (R > 0) {
+				right_foot_radius = R - step_width_m / 2;
+				left_foot_radius = R + step_width_m / 2;
+			} else {
+				right_foot_radius = R + step_width_m / 2;
+				left_foot_radius = R - step_width_m / 2;
+			}
+			printf("right foot rad = %f, left foot rad = %f\n", right_foot_radius, left_foot_radius);
 
 			for (int i=0; i < num_steps; i++) {
 				double right_foot_angle = step_arc_size_rad * (i + 0.5);
 				double left_foot_angle = step_arc_size_rad * (i + 1);
-				double left_foot_radius;
-				double right_foot_radius;
-				if (R > 0) {
-					right_foot_radius = R - step_width_m / 2;
-					left_foot_radius = R + step_width_m / 2;
-				} else {
-					right_foot_radius = R + step_width_m / 2;
-					left_foot_radius = R - step_width_m / 2;
-				}
 				drc::ee_goal_t ee_goal;
 				ee_goal.utime = msg->utime + i * step_dt_s;
 				ee_goal.robot_name = msg->robot_name;
@@ -147,14 +147,16 @@ class Handler
 				drc::position_3d_t step_pos;
 				step_pos.rotation = rotation;
 				step_pos.translation.x = translation.x + right_foot_radius * sin(right_foot_angle);
-				step_pos.translation.y = translation.y + right_foot_radius * (1 - cos(right_foot_angle));
+				// printf("right trans x = %f\n", step_pos.translation.x);
+				step_pos.translation.y = translation.y + R  - right_foot_radius * cos(right_foot_angle);
 				step_pos.translation.z = 0;
 				ee_goal.ee_goal_pos = step_pos;
 				right_foot_goals.goals.push_back(ee_goal);
 
 				step_pos.rotation = rotation;
 				step_pos.translation.x = translation.x + left_foot_radius * sin(left_foot_angle);
-				step_pos.translation.y = translation.y + left_foot_radius * (1 - cos(left_foot_angle));
+				// printf("left trans x = %f\n", step_pos.translation.x);
+				step_pos.translation.y = translation.y + R - left_foot_radius * cos(left_foot_angle);
 				step_pos.translation.z = 0;
 				ee_goal.ee_goal_pos = step_pos;
 				ee_goal.ee_name = "LbackWheel";
