@@ -340,7 +340,7 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     _link_shapes.clear();    
 
 
-    std::map<std::string, drc::transform_t > cartpos_out;
+    std::map<std::string, KDL::Frame > cartpos_out;
 
     // Calculate forward position kinematics
     bool kinematics_status;
@@ -367,7 +367,7 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
         KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual;
 
 
-        map<string, drc::transform_t>::const_iterator transform_it;
+        map<string, KDL::Frame>::const_iterator transform_it;
         transform_it=cartpos_out.find(it->first);
 
         // usually find fails if base_link has a visual element.
@@ -376,11 +376,8 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
         if(transform_it!=cartpos_out.end())// fk cart pos exists
         {
 
-          T_body_parentjoint.p[0]= transform_it->second.translation.x;
-          T_body_parentjoint.p[1]= transform_it->second.translation.y;
-          T_body_parentjoint.p[2]= transform_it->second.translation.z;	
+          T_body_parentjoint= transform_it->second;
 
-          T_body_parentjoint.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
 
 
           T_parentjoint_visual.p[0]=visual_origin.position.x;
@@ -460,7 +457,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     _otdf_link_shapes.clear();    
 
 
-    std::map<std::string, drc::transform_t > cartpos_out;
+    std::map<std::string, KDL::Frame > cartpos_out;
 
     // Calculate forward position kinematics
     bool kinematics_status;
@@ -487,7 +484,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
         KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual;
 
 
-        map<string, drc::transform_t>::const_iterator transform_it;
+        map<string, KDL::Frame>::const_iterator transform_it;
         transform_it=cartpos_out.find(it->first);
 
         // usually find fails if base_link has a visual element.
@@ -495,13 +492,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
         // manually.
         if(transform_it!=cartpos_out.end())// fk cart pos exists
         {
-
-          T_body_parentjoint.p[0]= transform_it->second.translation.x;
-          T_body_parentjoint.p[1]= transform_it->second.translation.y;
-          T_body_parentjoint.p[2]= transform_it->second.translation.z;	
-
-          T_body_parentjoint.M =  KDL::Rotation::Quaternion(transform_it->second.rotation.x, transform_it->second.rotation.y, transform_it->second.rotation.z, transform_it->second.rotation.w);
-
+          T_body_parentjoint = transform_it->second;
 
           T_parentjoint_visual.p[0]=visual_origin.position.x;
           T_parentjoint_visual.p[1]=visual_origin.position.y;
