@@ -10,6 +10,16 @@ ManipulatorState::ManipulatorState(std::string name)
     _name = name;
 }
 
+ManipulatorState::ManipulatorState(const ManipulatorState &other) {
+}
+
+ManipulatorState& ManipulatorState::operator=( const ManipulatorState& rhs ) {
+}
+
+ManipulatorState::~ManipulatorState() {
+
+}
+
 GlobalUID ManipulatorState::getGlobalUniqueId() const
 {
  throw NotImplementedException("manip state");

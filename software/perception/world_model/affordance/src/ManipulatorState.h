@@ -44,7 +44,6 @@ namespace affordance
     virtual bool hasParent() const; //1 or more
     virtual void getChildren(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
     virtual void getParents(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
-    virtual void getParents(std::vector<boost::shared_ptr<const ModelState> > &children) const;
     virtual void getCopy(ManipulatorState &copy) const;
 
   };
