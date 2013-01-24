@@ -29,7 +29,49 @@
     </include>
     <include>
       <uri>model://porterbot</uri>
-      <pose>0 0 1 0 0 -3.14</pose>
+      <pose>0 0 0.8 0 0 -3.14</pose>
     </include>
+  <!--   <include>
+ The Porterbot moves slowly on this platform, so that after half an hour it falls down. I think this is caused, cause there is no friction set.     <uri>model://porterbot_cart</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include> -->
+    <include>
+      <name>table1</name>
+      <uri>model://porterbot_table</uri>
+      <pose>-2 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>table2</name>
+      <uri>model://porterbot_table</uri>
+      <pose>-1.80 -1 0 0 0 -1.57</pose>
+    </include>
+
+    <include>
+      <name>coke_can1</name>
+      <uri>model://coke_can</uri>
+      <pose>-1.8 0.8 0.7 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>coke_can2</name>
+      <uri>model://coke_can</uri>
+      <pose>-1.9 1.2 0.7 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>coke_can3</name>
+      <uri>model://coke_can</uri>
+      <pose>-2 -1.18 0.7 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>coke_can5</name>
+      <uri>model://coke_can</uri>
+      <pose>-1.9 -0.82 0.7 0 0 0</pose>
+    </include>
+
+
+
+
   </world>
 </gazebo>
