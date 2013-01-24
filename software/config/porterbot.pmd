@@ -1,7 +1,7 @@
 group "1.ROS" {
 
     cmd "modelpub" {
-        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/porterbot/model.sdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/porterbot/model.sdf";
         host = "localhost";
     }
 
@@ -51,6 +51,9 @@ group "3.Gazebo" {
         exec = "roslaunch porterbot_scripts porterbot.launch";
         host = "localhost";
     }
+}
+
+group "4.Gazebo Scripts" {
     cmd "1.scan right" {
         exec = "rosrun porterbot_scripts scan_right.py";
         host = "localhost";
@@ -67,9 +70,13 @@ group "3.Gazebo" {
         exec = "rosrun porterbot_scripts homeposition.py";
         host = "localhost";
     }
+    cmd "4.manual_control" {
+        exec = "python ${HOME}/drc/ros_workspace/trajectory_control_tutorial/traj_gui.py joint";
+        host = "localhost";
+    }
 }
 
-group "4.Real Robot" {
+group "5.Real Robot" {
     cmd "bring up laser left" {
         exec = "er-hokuyo -a -c SCAN_LEFT";
         host = "localhost";

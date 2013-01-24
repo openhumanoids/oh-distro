@@ -982,7 +982,7 @@ It seems like this infos do not affect gazebo:
     <axis xyz="0 1 0"/>
     <parent link="r_lidar_link"/>
     <child link="r_hokuyo"/>
-    <limit effort="5" velocity="12"/>
+    <limit effort="5" velocity="12" lower="0" upper="0"/>
     <safety_controller k_position="100.0" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
     <dynamics damping="0.1" friction="0"/>
   </joint>
@@ -1011,7 +1011,7 @@ It seems like this infos do not affect gazebo:
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40</updateRate>
-        <topicName>/rotating_scan</topicName>
+        <topicName>/scan_right</topicName>
       <!--  <frameName>head_hokuyo</frameName>-->
       </plugin>
     </sensor>
@@ -1038,7 +1038,7 @@ It seems like this infos do not affect gazebo:
     <axis xyz="0 1 0"/>
     <parent link="l_lidar_link"/>
     <child link="l_hokuyo"/>
-    <limit effort="5" velocity="12"/>
+    <limit effort="5" velocity="12"  lower="0" upper="0"/>
     <safety_controller k_position="100.0" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
     <dynamics damping="0.1" friction="0"/>
   </joint>
@@ -1067,7 +1067,7 @@ It seems like this infos do not affect gazebo:
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40</updateRate>
-        <topicName>/righted_scan</topicName>
+        <topicName>/scan_left</topicName>
       <!--  <frameName>head_hokuyo</frameName>-->
       </plugin>
     </sensor>
