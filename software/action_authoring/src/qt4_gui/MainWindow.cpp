@@ -44,14 +44,13 @@ void MainWindow::handleAffordancesChanged()
 	  next->_otdf_id == AffordanceState::BOX ||
 	  next->_otdf_id == AffordanceState::SPHERE)
     	{
-	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(*next); 
+	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next); 
 	  _widget_opengl.opengl_scene().add_object(*asGlAff);
 	  _worldState.glObjects.push_back(asGlAff);
 
 	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
 	  Collision_Object* collision_object_affordance;
-	  KDL::Frame f;
-	  next->getFrame(f);
+	  KDL::Frame f = next->getFrame();
 	  double q1, q2, q3, q4;
 	  f.M.GetQuaternion(q1, q2, q3, q4);
 
@@ -521,11 +520,13 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(std::string affordanceName) {
     std::cout << "intersected affordance: " << affordanceName << std::endl;
+
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	AffordanceState& selectedAff = ((OpenGL_Affordance*)_worldState.glObjects[i])->_affordance;
-//	std::cout << "affordances" << selectedAff.getName() << (selectedAff.getName().compare(affordanceName) != 0) << std::endl;
-	((OpenGL_Affordance*)_worldState.glObjects[i])->setHighlighted(selectedAff.getName().compare(affordanceName) == 0);
+      OpenGL_Affordance *glAff = ((OpenGL_Affordance*)_worldState.glObjects[i]);
+      AffConstPtr selectedAff = glAff->getAffordance();
+      //std::cout << "affordances" << selectedAff.getName() << (selectedAff.getName().compare(affordanceName) != 0) << std::endl;
+      glAff->setHighlighted(selectedAff->getName() == affordanceName);
     }
     _widget_opengl.update();
     return;
