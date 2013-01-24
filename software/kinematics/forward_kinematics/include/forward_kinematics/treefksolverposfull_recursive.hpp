@@ -35,14 +35,24 @@ public:
   TreeFkSolverPosFull_recursive(const Tree& _tree);
   ~TreeFkSolverPosFull_recursive();
 
-  int JntToCart(const std::map<std::string, double>& q_in, std::map<std::string, drc::transform_t>& p_out, bool flatten_tree=true);
-
+  int JntToCart(const std::map<std::string, double>& q_in, std::map<std::string, KDL::Frame>& p_out, bool flatten_tree=true);
+  int JntToCart(const std::map<std::string, double>& q_in, std::map<std::string, drc::transform_t>& p_out, bool flatten_tree=true); // To Be Deprecated
+ 
 private:
+   
+  void addFrameToMap(const std::map<std::string, double>& q_in, 
+	     std::map<std::string, KDL::Frame >& p_out,
+	     const KDL::Frame& previous_frame,
+	     const SegmentMap::const_iterator this_segment,
+	     bool flatten_tree);
+
+// To Be Deprecated
   void addFrameToMap(const std::map<std::string, double>& q_in, 
 		     std::map<std::string, drc::transform_t  >& p_out,
 		     const KDL::Frame& previous_frame,
 		     const SegmentMap::const_iterator this_segment,
 		     bool flatten_tree);
+	     
   
   void TransformKDLToLCMFrame(const KDL::Frame &k, drc::transform_t &t)
   {
