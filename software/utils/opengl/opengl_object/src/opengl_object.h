@@ -10,7 +10,9 @@
 namespace opengl {
   class OpenGL_Object {
   public:
-    OpenGL_Object( std::string id = "N/A" );
+    OpenGL_Object(const std::string &id = "N/A",
+		   bool isHighlighted = false, 
+		   Eigen::Vector3f highlightColor = Eigen::Vector3f(0,0,0));
     virtual ~OpenGL_Object();
     OpenGL_Object( const OpenGL_Object& other );
     OpenGL_Object& operator=( const OpenGL_Object& other );
@@ -22,6 +24,7 @@ namespace opengl {
     void set_id( std::string id );
     void set_visible( bool visible );
     void set_color( Eigen::Vector3f color );
+    void setHighlighted(bool); 
     void set_transparency( double transparency );
     void set_transform( KDL::Frame transform );
 
@@ -34,9 +37,10 @@ namespace opengl {
   protected:
     std::string _id;
     bool _visible;
-    Eigen::Vector3f _color;
+    Eigen::Vector3f _color, _highlightColor;    
     double _transparency;
-    KDL::Frame _transform;
+    KDL::Frame _transform;    
+    bool _isHighlighted;
 
   private:
 
