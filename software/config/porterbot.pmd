@@ -26,7 +26,7 @@ group "2.LCM" {
         host = "localhost";
     }
     cmd "j2f" {
-        exec = "drc-joints2frames";
+        exec = "porterbot-joints2frames";
         host = "localhost";
     }
     cmd "r2l" {
