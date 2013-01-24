@@ -5,8 +5,8 @@
  *      Author: mfleder
  */
 
-#ifndef AFFORDANCESTATE_H_
-#define AFFORDANCESTATE_H_
+#ifndef AFFORDANCE_STATE_H
+#define AFFORDANCE_STATE_H
 
 #include "affordance/ModelState.h"
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -18,14 +18,15 @@ namespace affordance
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
   /**Mutable class representing the state of an affordance*/
-  class AffordanceState : public ModelState
+  class AffordanceState : public ModelState<AffordanceState>
   {
-    //------------fields
+
+    //------enums and typedefs
   public:
     enum OTDF_TYPE  {CYLINDER 	= drc::affordance_t::CYLINDER,
-		     LEVER 	 	= drc::affordance_t::LEVER,
-		     SPHERE		= drc::affordance_t::SPHERE,
-		     BOX 		= drc::affordance_t::BOX,
+		     LEVER 	= drc::affordance_t::LEVER,
+		     SPHERE	= drc::affordance_t::SPHERE,
+		     BOX 	= drc::affordance_t::BOX,
 		     UNKNOWN};
     
     /**standardizing the naming for common fields in drc::affordance_t. 
@@ -33,6 +34,8 @@ namespace affordance
     static std::string  X_NAME, Y_NAME, Z_NAME, ROLL_NAME, PITCH_NAME, YAW_NAME,
       RADIUS_NAME, LENGTH_NAME, WIDTH_NAME, HEIGHT_NAME,  R_COLOR_NAME, G_COLOR_NAME, B_COLOR_NAME;
     
+    //------------fields
+
   private:
     boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
     
@@ -77,8 +80,18 @@ namespace affordance
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
     virtual std::string getName() const;
+
     virtual Eigen::Vector3f getColor() const;
+
     virtual void getFrame(KDL::Frame &frame) const;
+    
+    virtual bool isAffordance() const;
+    virtual bool isManipulator() const;
+    virtual bool hasChildren() const; //any
+    virtual bool hasParent() const; //1 or more
+    virtual void getChildren(std::vector<boost::shared_ptr<const AffordanceState> > &children) const;
+    virtual void getParents(std::vector<boost::shared_ptr<const AffordanceState> > &children) const;
+    virtual void getCopy(AffordanceState &copy) const;
 
     //todo move this to ModelState
     virtual Eigen::Vector3f getRPY() const;
@@ -106,8 +119,8 @@ namespace affordance
   std::ostream& operator<<( std::ostream& out, const AffordanceState& other );
   
   typedef boost::shared_ptr<AffordanceState> AffPtr;
-  typedef boost::shared_ptr<const AffordanceState> AffConstPtr;
-  
+  typedef boost::shared_ptr<const AffordanceState> AffConstPtr;  
+
 } //namespace affordance
 
-#endif /* AFFORDANCESTATE_H_ */
+#endif /* AFFORDANCE_STATE_H */

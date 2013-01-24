@@ -187,16 +187,6 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->ptinds.push_back(_ptinds[i]);
 }
 
-GlobalUID AffordanceState::getGlobalUniqueId() const
-{
-  return GlobalUID(_map_id, _object_id);
-}
-
-string AffordanceState:: getName() const
-{
-  return _name;
-}
-
 
 /**@return x,y,z or throws an exception if any of those are not present*/
 Vector3f AffordanceState::getXYZ() const
@@ -211,6 +201,7 @@ Vector3f AffordanceState::getXYZ() const
 					_params.find(Y_NAME)->second,
 					_params.find(Z_NAME)->second);
 }
+
 
 /**@return true if we have roll/pitch/yaw parameters.  false otherwise*/
 bool AffordanceState::hasRPY() const
@@ -233,27 +224,6 @@ Vector3f AffordanceState::getRPY() const
 					_params.find(YAW_NAME)->second);
 }
 
-
-/**@param frame to get form this.getXYZ() and possible getRPY()*/
-void AffordanceState::getFrame(KDL::Frame &frame) const
-{
-	//everything should have xyz
-    Vector3f xyz = getXYZ();
-
-    //somethings, like a sphere, don't have rpy
-    Vector3f rpy = hasRPY() ? getRPY() : Vector3f(0,0,0);
-
-    //frame will be used by everything -- only compute once
-    frame = KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
-                       KDL::Vector(xyz[0], xyz[1], xyz[2]));
-}
-
-Vector3f AffordanceState::getColor() const
-{
-	return Vector3f(_params.find(R_COLOR_NAME)->second,
-					_params.find(G_COLOR_NAME)->second,
-					_params.find(B_COLOR_NAME)->second);
-}
 
 /**@return radius or throws exception if not present*/
 double AffordanceState::radius() const
@@ -317,5 +287,83 @@ namespace affordance
 		out << "------states: \n" << AffordanceState::toStr(other._states) << endl;
 		return out;
 	}
+
+
+
+//=============================================
+//=============================================
+//=============================================
+//=============================================
+//================Model State API==============
+//=============================================
+//=============================================
+//=============================================
+GlobalUID AffordanceState::getGlobalUniqueId() const
+{
+  return GlobalUID(_map_id, _object_id);
+}
+
+string AffordanceState:: getName() const
+{
+  return _name;
+}
+
+Vector3f AffordanceState::getColor() const
+{
+	return Vector3f(_params.find(R_COLOR_NAME)->second,
+					_params.find(G_COLOR_NAME)->second,
+					_params.find(B_COLOR_NAME)->second);
+}
+
+
+/**@param frame to get form this.getXYZ() and possible getRPY()*/
+void AffordanceState::getFrame(KDL::Frame &frame) const
+{
+	//everything should have xyz
+    Vector3f xyz = getXYZ();
+
+    //somethings, like a sphere, don't have rpy
+    Vector3f rpy = hasRPY() ? getRPY() : Vector3f(0,0,0);
+
+    //frame will be used by everything -- only compute once
+    frame = KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
+                       KDL::Vector(xyz[0], xyz[1], xyz[2]));
+}
+
+
+bool AffordanceState::isAffordance() const 
+{  return true; }
+
+bool AffordanceState::isManipulator() const 
+{  return false; }
+
+bool AffordanceState::hasChildren() const 
+{
+  throw NotImplementedException("aff state");
+  return true; 
+}
+
+bool AffordanceState::hasParent() const 
+{
+  throw NotImplementedException("aff state");
+  return true; 
+}
+
+void AffordanceState::getChildren(vector<AffConstPtr> &children) const 
+{
+  throw NotImplementedException("aff state");
+}
+
+void AffordanceState::getParents(vector<AffConstPtr> &parents) const 
+{
+  throw NotImplementedException("aff state");
+}
+
+void AffordanceState::getCopy(AffordanceState &copy) const 
+{
+  throw NotImplementedException("aff state");
+}
+
+
 } //namespace affordance
 

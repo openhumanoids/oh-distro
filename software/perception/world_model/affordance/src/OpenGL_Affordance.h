@@ -5,14 +5,16 @@
  *      Author: mfleder
  */
 
-#ifndef OPENGLAFFORDANCE_H_
-#define OPENGLAFFORDANCE_H_
+#ifndef OPENGL_AFFORDANCE_H
+#define OPENGL_AFFORDANCE_H
 
+#include "ModelState.h"
+#include "AffordanceState.h"
 #include "opengl/opengl_object.h"
-#include "affordance/AffordanceState.h"
 #include "opengl/opengl_object_cylinder.h"
 #include "opengl/opengl_object_sphere.h"
 #include "opengl/opengl_object_box.h"
+#include "boost/shared_ptr.hpp"
 
 namespace affordance
 {
@@ -29,11 +31,11 @@ private:
 	opengl::OpenGL_Object_Box _box;
 	opengl::OpenGL_Object_Cylinder _cylinder;
 	opengl::OpenGL_Object_Sphere _sphere;
+	const AffConstPtr _affordance; 
 
 	//-----------------constructors
 public:
-	affordance::AffordanceState _affordance; // TODO Mike fixme
-	OpenGL_Affordance(const affordance::AffordanceState &affordance, 
+	OpenGL_Affordance(AffConstPtr affordance, 
 			  bool isHighlighted = false, 
 			  Eigen::Vector3f highlightedColor = Eigen::Vector3f(1.0, 0.0, 0.0));
 	virtual ~OpenGL_Affordance();
@@ -42,9 +44,11 @@ public:
 	virtual void draw();
 	
 	//--------mutators
-	void setState(const affordance::AffordanceState &state);
 	void setHighlighted(bool);
+
+	//observers
+	AffConstPtr getAffordance() const;
 };
 
 } /* namespace affordance */
-#endif /* OPENGLAFFORDANCE_H_ */
+#endif /* OPENGL_AFFORDANCE_H */

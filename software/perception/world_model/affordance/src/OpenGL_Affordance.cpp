@@ -13,10 +13,10 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 //--------------constructor/destructor
-OpenGL_Affordance::OpenGL_Affordance(const affordance::AffordanceState &affordance, 
-			  bool isHighlighted,
-			  Eigen::Vector3f highlightedColor)
-    : _affordance(affordance), _highlightColor(highlightedColor), _isHighlighted(isHighlighted)
+OpenGL_Affordance::OpenGL_Affordance(AffConstPtr affordance, 
+				     bool isHighlighted,
+				     Eigen::Vector3f highlightedColor)
+  : _affordance(affordance), _highlightColor(highlightedColor), _isHighlighted(isHighlighted)
 {
 }
 
@@ -29,15 +29,15 @@ void OpenGL_Affordance::draw()
 {
   //frame will be used by everything -- only compute once
   KDL::Frame frame;
-  _affordance.getFrame(frame);
+  _affordance->getFrame(frame);
 
   OpenGL_Object *obj; 
-  switch(_affordance._otdf_id)
+  switch(_affordance->_otdf_id)
     {
       
     case AffordanceState::CYLINDER:
-      _cylinder.set(frame, Vector2f(_affordance.radius(),
-				    _affordance.length()));
+      _cylinder.set(frame, Vector2f(_affordance->radius(),
+				    _affordance->length()));
       obj = &_cylinder;
       break;
       
@@ -46,14 +46,14 @@ void OpenGL_Affordance::draw()
       break;
       
     case AffordanceState::BOX:
-      _box.set(frame, Vector3f(_affordance.length(),
-			       _affordance.width(),
-			       _affordance.height()));
+      _box.set(frame, Vector3f(_affordance->length(),
+			       _affordance->width(),
+			       _affordance->height()));
       obj = &_box;
       break;
       
     case AffordanceState::SPHERE:
-      _sphere.set(frame, _affordance.radius());
+      _sphere.set(frame, _affordance->radius());
       obj = &_sphere;
       break;
       
@@ -66,22 +66,21 @@ void OpenGL_Affordance::draw()
   }
   else
   {
-      obj->set_color(_affordance.getColor());
+      obj->set_color(_affordance->getColor());
       obj->draw();
   }
 }
 
 
-//-------drawing
-
 //-----mutators
-/**set the affordance state and update the _drawable object*/
-void OpenGL_Affordance::setState(const affordance::AffordanceState &state)
-{
-	_affordance = state;
-}
-
 void OpenGL_Affordance::setHighlighted(bool highlight)
 {
     _isHighlighted = highlight;
 }
+
+//------observers
+AffConstPtr OpenGL_Affordance::getAffordance() const
+{
+  return _affordance;
+}
+

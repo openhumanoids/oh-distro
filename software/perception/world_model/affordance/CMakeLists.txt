@@ -21,13 +21,6 @@ include_directories(./src/test)
 include_directories(./src)
 include_directories(.)
 
-add_library(affordance SHARED 			
-  src/AffordanceState.cpp
-  src/OpenGL_Affordance.cpp
-  src/CollisionObject_Affordance.cpp
-  src/affordance_store/AffordanceServer.cpp	
-  src/affordance_store/AffordanceUpWrapper.cpp)
-
 pods_install_headers(
   src/ModelState.h
   src/AffordanceState.h
@@ -37,6 +30,13 @@ pods_install_headers(
   src/affordance_store/AffordanceServer.h
   src/affordance_store/AffordanceUpWrapper.h
   DESTINATION affordance)
+
+add_library(affordance SHARED 			
+  src/AffordanceState.cpp
+  src/OpenGL_Affordance.cpp
+  src/CollisionObject_Affordance.cpp
+  src/affordance_store/AffordanceServer.cpp	
+  src/affordance_store/AffordanceUpWrapper.cpp)
 			  				  	  	
 pods_install_libraries(affordance)			  	
 

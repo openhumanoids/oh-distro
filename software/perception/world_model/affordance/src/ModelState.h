@@ -25,8 +25,9 @@ namespace affordance
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
   /**Base Class representing the state of a some modeled object 
-     like an affordance or a manipulator.
-     All ModelStates have a position and orientation*/
+     like an affordance or a manipulator.  The derived class is of type T.
+     All ModelStates have a position and orientation.*/
+  template <class T>
   class ModelState
   {
 
@@ -36,26 +37,35 @@ namespace affordance
 
     //-----------constructor/destructor
   public:
-    //virtual ModelState(const ModelState &other) = 0;
-    //virtual ModelState& operator=( const ModelState& rhs ) = 0;
-    //virtual ~ModelState() = 0;
+    //none
     
     //-------------------observers
   public:
-    //interface
+
+    //--interface
+    //identification
     virtual GlobalUID getGlobalUniqueId() const = 0;
     virtual std::string getName() const = 0;
+    
+    //location and appearance
     virtual Eigen::Vector3f getColor() const = 0;
     virtual void getFrame(KDL::Frame &frame) const = 0;
 
-    //derived properties
+    //type
+    virtual bool isAffordance() const = 0;
+    virtual bool isManipulator() const = 0;
+
+    //structure
+    virtual bool hasChildren() const = 0; //any
+    virtual bool hasParent() const = 0; //1 or more
+    virtual void getChildren(std::vector<boost::shared_ptr<const T> > &children) const = 0;
+    virtual void getParents(std::vector<boost::shared_ptr<const T> > &children) const = 0; 
+
+    //copying
+    virtual void getCopy(T &copy) const = 0;
   };
   
-  std::ostream& operator<<( std::ostream& out, const ModelState& other );
-  
-  typedef boost::shared_ptr<ModelState> ModelStatePtr;
-  typedef boost::shared_ptr<const ModelState> ModelStateConstPtr;
-  
+  template <class T> std::ostream& operator<<( std::ostream& out, const ModelState<T>& other );  
 } //namespace affordance
 
 #endif /* MODEL_STATE_H */

@@ -11,7 +11,7 @@
 #include "affordance/AffordanceServer.h"
 #include "affordance/AffordanceUpWrapper.h"
 #include "affordance/AffordanceState.h"
-#include "affordance/OpenGL_Affordance.h"
+//#include "affordance/OpenGL_Affordance.h"
 #include <iostream>
 
 using namespace boost;
@@ -35,7 +35,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		wrapper.getAllAffordances(affordances);
 		for (uint i = 0; i < affordances.size(); i++)
 		{
-			OpenGL_Affordance nextGlAff(*affordances[i]);
+		  //OpenGL_Affordance nextGlAff(affordances[i]);
 			//add to scene, .draw()
 		}
 

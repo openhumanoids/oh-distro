@@ -30,8 +30,20 @@ namespace affordance
     //interface
     virtual GlobalUID getGlobalUniqueId() const;
     virtual std::string getName() const;
+
     virtual Eigen::Vector3f getColor() const;
+
     virtual void getFrame(KDL::Frame &frame) const;
+
+    virtual Eigen::Vector3f getColor() const;
+    virtual void getFrame(KDL::Frame &frame) const ;
+    virtual bool isAffordance() const ;
+    virtual bool isManipulator() const;
+    virtual bool hasChildren() const; //any
+    virtual bool hasParent() const; //1 or more
+    virtual bool getChildren(std::vector<boost::shared_ptr<const ModelState> > &children) const;
+    virtual bool getParents(std::vector<boost::shared_ptr<const ModelState> > &children) const;
+    virtual void getCopy(T &copy) const;
 
   };
   
