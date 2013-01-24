@@ -334,7 +334,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   // 2. Determine all Body-to-Link transforms for Visual elements:
   gl_robot_->set_state( last_rstate_);
-  std::vector<drc::link_transform_t> link_tfs= gl_robot_->get_link_tfs();
+  std::vector<visualization_utils::LinkFrameStruct> link_tfs= gl_robot_->get_link_tfs();
   
   
   // Loop through joints and extract world positions:
@@ -346,13 +346,15 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   for (size_t i=0; i < link_tfs.size() ; i++){
     Eigen::Isometry3d body_to_joint;
     body_to_joint.setIdentity();
-    body_to_joint.translation() << link_tfs[i].tf.translation.x , link_tfs[i].tf.translation.y ,link_tfs[i].tf.translation.z; // 0.297173
+    body_to_joint.translation() << link_tfs[i].frame.p[0] , link_tfs[i].frame.p[1] ,link_tfs[i].frame.p[2]; // 0.297173
+    double x,y,z,w;
+    link_tfs[i].frame.M.GetQuaternion(x,y,z,w);    
     Eigen::Quaterniond m;
-    m  = Eigen::Quaterniond(  link_tfs[i].tf.rotation.w , link_tfs[i].tf.rotation.x , link_tfs[i].tf.rotation.y , link_tfs[i].tf.rotation.z);
+    m  = Eigen::Quaterniond(w,x,y,z);
     body_to_joint.rotate(m);
     
-    link_names.push_back( link_tfs[i].link_name  );
-    link_tfs_e.push_back( body_to_joint );
+    link_names.push_back( link_tfs[i].name  );
+    link_tfs_e.push_back( body_to_joint);
     
     // For visualization only:
     world_to_joint_utimes.push_back( counter);
@@ -366,9 +368,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   if (verbose_){
     cout << "link_tfs size: " << link_tfs.size() <<"\n";
     for (size_t i=0; i < link_tfs.size() ; i ++){
-      cout << i << ": " <<link_tfs[i].link_name << ": " 
-        << link_tfs[i].tf.translation.x << " " << link_tfs[i].tf.translation.y << " " << link_tfs[i].tf.translation.z
-        << " | " << link_tfs[i].tf.rotation.w << " " << link_tfs[i].tf.rotation.x << " " << link_tfs[i].tf.rotation.y << " " << link_tfs[i].tf.rotation.z << "\n";
+      double x,y,z,w;
+      link_tfs[i].frame.M.GetQuaternion(x,y,z,w);    
+      cout << i << ": " <<link_tfs[i].name << ": " 
+        << link_tfs[i].frame.p[0]<< " " << link_tfs[i].frame.p[1] << " " << link_tfs[i].frame.p[2]
+        << " | " << w << " " << x << " " << y << " " << z << "\n";
     }
     for (size_t i=0; i < link_tfs_e.size() ; i ++){
       std::stringstream ss;
