@@ -4,6 +4,7 @@ struct traj_opt_constraint_t  // a constraint localized in space and time for tr
 {
     int64_t utime;
     string robot_name;
+    // TODO: Add affordance id
     
     // Constraining link poses. e.g. lhand_pose @ t=1 (or) body_root_link @ t=5
     int32_t num_links;
