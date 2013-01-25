@@ -530,7 +530,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   recompute_2d_goal_pose(self);
 
   bot_viewer_request_redraw(self->viewer);
-  return 0;
+  return 1;
 }
 
 
@@ -635,7 +635,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
   recompute_2d_goal_pose(self);
 
   bot_viewer_request_redraw(self->viewer);
-  return 0;
+  return 1;
 }
 
 void activate(RendererDriving *self, int type)
@@ -679,7 +679,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     //bot_viewer_set_status_bar_message(self->viewer, "");
   }
 
-  return 0;
+  return 1;
 }
 
 

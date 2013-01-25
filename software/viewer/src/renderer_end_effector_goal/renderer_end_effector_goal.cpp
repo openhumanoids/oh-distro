@@ -364,6 +364,10 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RendererEndEffectorGoal *self = (RendererEndEffectorGoal*) ehandler->user;
+  
+   if((self->active==0)){
+     return -1.0;
+  }  
 
 	point3d_t ray_s = {ray_start[0], ray_start[1], ray_start[2]};
 	point3d_t ray_d = {ray_dir[0], ray_dir[1], ray_dir[2]};
