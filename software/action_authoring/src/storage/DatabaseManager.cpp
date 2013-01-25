@@ -5,133 +5,181 @@ The Database Manager class is responsible for handling all file i/o
 that stores persistent state in the action authoring gui.
 This includes platonic affordancesm, atomic constraints, and higher level plans
 
-Example usage:
-
-//Instantiation
-DatabaseManager* db = new DatabaseManager("constraints.xml");
-  
-//changing the file name
-db->setFilename("someotherfilename.xml");
-
-//storing state state, pass in all the data at once
-db->store(affordanceList, constraintList);
-
-//to retrieve the data, you must first call parseFile()!
-db->parseFile();
-
-//then to get the objects back, use db->get<YourTypeHere>()
-std::vector<Affordance*> revivedAffordances = db->getAffordances();
-std::vector<ConstraintMacro*> revivedConstraintMacros = db->getConstraintMacros();
 */
 
 #include "DatabaseManager.h"
 #include "action_authoring/AtomicConstraint.h"
 #include <sstream>
+#include <iostream>
+#include <time.h>
 
 using namespace action_authoring;
 using namespace affordance;
 using namespace std;
 
-DatabaseManager::DatabaseManager(const string &filename) 
-{
-  //todo : use initializer list
-  _filename = filename;
-  _guidCounter = 1;
-}
-
 /***********************************
             Utility Methods
 ************************************/
 
-/*sets the name of the xml file that that constraint store will be written to*/
-void DatabaseManager::setFilename(const std::string &filename) 
-{
-	_filename = filename;
-}
-
-//Converts an integer uid into a string for writing to a file
-std::string DatabaseManager::intToString(const int &i)
-{
-  std::stringstream ss;
-  ss << i;
-  return ss.str();
+string generateRandomIdString() {
+  string result;
+  int len = 16;
+  char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  for (int i = 0; i < len; ++i) {
+    result += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return result;
 }
 
 //Looks up the guid of an affordance or assigns one if none exists
-int DatabaseManager::getGUID(AffConstPtr affordance)
-{
-  int guid = _affordanceToGUID[affordance];
-  if (guid <=  0) 
-    {
-      guid = _guidCounter++;
-      _affordanceToGUID[affordance] = guid;
-    }
-  return guid;
-}
-
-//Looks up the guid of an affordance or assigns one if none exists
-int DatabaseManager::getGUID(ConstraintMacroConstPtr constraint){
-  int guid = _constraintToGUID[constraint];
-  if (guid <= 0) {
-    guid = _guidCounter++;
-    _constraintToGUID[constraint] = guid;
+string DatabaseManager::getGUID(AffConstPtr affordance, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.affordanceToGUID.find(affordance) != mappings.affordanceToGUID.end()) {
+      guid = mappings.affordanceToGUID[affordance];
+  }
+  else {
+      guid = generateRandomIdString();
+      mappings.affordanceToGUID[affordance] = guid;
   }
   return guid;
 }
 
+string DatabaseManager::getGUID(RelationStateConstPtr relationState, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.relationStateToGUID.find(relationState) != mappings.relationStateToGUID.end()) {
+    guid = mappings.relationStateToGUID[relationState];
+  }
+  else {
+    guid = generateRandomIdString();
+    mappings.relationStateToGUID[relationState] = guid;
+  }
+  return guid;
+}
 
+//Looks up the guid of an affordance or assigns one if none exists
+string DatabaseManager::getGUID(ConstraintMacroPtr constraint, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.constraintMacroToGUID.find(constraint) != mappings.constraintMacroToGUID.end()) {
+    guid = mappings.constraintMacroToGUID[constraint];
+  }
+  else {
+    guid = generateRandomIdString();
+    mappings.constraintMacroToGUID[constraint] = guid;
+  }
+  return guid;
+}
+
+string DatabaseManager::getGUID(ManRelPtr manipulationRelation, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.manipulationRelationToGUID.find(manipulationRelation) != mappings.manipulationRelationToGUID.end()) {
+    guid = mappings.manipulationRelationToGUID[manipulationRelation];
+  }
+  else {
+    guid = generateRandomIdString();
+    mappings.manipulationRelationToGUID[manipulationRelation] = guid;
+  }
+  return guid;
+}
+
+string DatabaseManager::getGUID(ManipulatorStateConstPtr manipulator, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.manipulatorStateToGUID.find(manipulator) != mappings.manipulatorStateToGUID.end()) {
+    guid = mappings.manipulatorStateToGUID[manipulator];
+  }
+  else {
+    guid = generateRandomIdString();
+    mappings.manipulatorStateToGUID[manipulator] = guid;
+  }
+  return guid;
+}
+
+string DatabaseManager::getGUID(AtomicConstraintConstPtr atomicConstraint, ObjectToGUIDMappings &mappings) {
+  string guid;
+  if (mappings.atomicConstraintToGUID.find(atomicConstraint) != mappings.atomicConstraintToGUID.end()) {
+    guid = mappings.atomicConstraintToGUID[atomicConstraint];
+  }
+  else {
+    guid = generateRandomIdString();
+    mappings.atomicConstraintToGUID[atomicConstraint] = guid;
+  }
+  return guid;
+}
+
+xmlNodePtr makeChild(xmlNodePtr parent, const string &name, const string &content) {
+  return xmlNewChild(parent, NULL, BAD_CAST name.c_str(), BAD_CAST content.c_str());
+}
+
+xmlNodePtr makeChild(xmlNodePtr parent, const string &name) {
+  return xmlNewChild(parent, NULL, BAD_CAST name.c_str(), NULL);
+}
 
 /***********************************
             Writing To File
 ************************************/
 
 //Converts an affordance into an XML Node, and adds it as a child to another node
-void DatabaseManager::addAffordanceToNode(AffConstPtr affordance, xmlNodePtr node) {
-  //printf("storing affordance %s\n", affordance->getName().c_str());
-  xmlNodePtr affordanceNode = xmlNewChild(node, NULL, BAD_CAST "affordance", NULL);
-  std::string uidStr = intToString(getGUID(affordance));
-  xmlNewChild(affordanceNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
-  xmlNewChild(affordanceNode, NULL, BAD_CAST "name", BAD_CAST affordance->getName().c_str());
+void DatabaseManager::addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  xmlNodePtr affordanceNode = makeChild(node, "affordance-state");
+  makeChild(affordanceNode,"uid", getGUID(affordance, mappings));
+  makeChild(affordanceNode, "name", affordance->getName());
+  makeChild(affordanceNode, "contents", "LCM serialized affordance");
+}
+
+void DatabaseManager::addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  xmlNodePtr manipulatorNode = makeChild(node, "manipulator-state");
+  makeChild(manipulatorNode, "name", manipulator->getName());
+  makeChild(manipulatorNode, "uid", getGUID(manipulator, mappings));
+}
+
+void DatabaseManager::addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  xmlNodePtr relationStateNode = makeChild(node, "relation-state");
+  makeChild(relationStateNode, "uid", getGUID(relationState, mappings));
+  makeChild(relationStateNode, "type", "foo bar");//relationState->getRelationType())
+}
+
+void DatabaseManager::addManipulationRelationToNode(ManRelPtr relation, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  addManipulatorStateToNode(relation->getManipulator(), node, mappings);
+  addRelationStateToNode(relation->getRelationState(), node, mappings);
+
+  xmlNodePtr relationNode = makeChild(node, "manipulation-relation");
+  makeChild(relationNode, "uid", getGUID(relation, mappings));
+  makeChild(relationNode, "affordance-state-uid", getGUID(relation->getAffordance(), mappings));
+  makeChild(relationNode, "manipulator-state-uid", getGUID(relation->getManipulator(), mappings));
+  makeChild(relationNode, "relation-state-uid", getGUID(relation->getRelationState(), mappings));
+}
+
+void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  addManipulationRelationToNode(atomicConstraint->getRelation(), node, mappings);
+
+  xmlNodePtr atomicConstraintNode = makeChild(node, "atomic-constraint");
+  makeChild(atomicConstraintNode, "uid", getGUID(atomicConstraint, mappings));
+  makeChild(atomicConstraintNode, "manipulation-relation-uid", getGUID(atomicConstraint->getRelation(), mappings));
 }
 
 //Converts a constraint into an XML Node, and adds it as a child to another node
-void DatabaseManager::addConstraintMacroToNode(ConstraintMacroConstPtr constraint, xmlNodePtr node) {
+void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
   //Atomic ConstraintMacro conversion
 
   if (constraint->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
-    //ATOMIC ConstraintMacro tag
-    xmlNodePtr constraintNode = xmlNewChild(node, NULL, BAD_CAST "atomic", NULL);
+    addAtomicConstraintToNode(constraint->getAtomicConstraint(), node, mappings);
 
-    //Atomic ConstraintMacro Info
-    std::string uidStr = intToString(getGUID(constraint));
-    xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
-    xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
-		BAD_CAST constraint->getName().c_str());
-
-    //Affordance 1 Reference
-    std::string aff1UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getRelation()->getManipulator()));
-    xmlNewChild(constraintNode, NULL, BAD_CAST "aff1", BAD_CAST aff1UidStr.c_str());
-
-    //Affordance 2 Reference
-    std::string aff2UidStr = intToString(getGUID(constraint->getAtomicConstraint()->getRelation()->getAffordance()));
-    xmlNewChild(constraintNode, NULL, BAD_CAST "aff2", BAD_CAST aff2UidStr.c_str());
+    xmlNodePtr constraintNode = makeChild(node, "atomic-constraint-macro");
+    makeChild(constraintNode, "uid", getGUID(constraint, mappings));
+    makeChild(constraintNode, "name", constraint->getName());
+    makeChild(constraintNode, "constraint", getGUID(constraint->getAtomicConstraint(), mappings));
   }
   //Seqeuntial ConstraintMacro conversion
   else if ( constraint->getConstraintMacroType() == ConstraintMacro::SEQUENTIAL ) {
-    xmlNodePtr constraintNode = xmlNewChild(node, NULL, BAD_CAST "sequential", NULL);
+    xmlNodePtr constraintNode = makeChild(node, "sequential-constraint-macro");
+    makeChild(constraintNode, "uid", getGUID(constraint, mappings));
+    makeChild(constraintNode, "name", constraint->getName());
 
-    std::string uidStr = intToString(getGUID(constraint));
-    xmlNewChild(constraintNode, NULL, BAD_CAST "uid", BAD_CAST uidStr.c_str());
-    xmlNewChild(constraintNode, NULL, BAD_CAST "name", 
-		BAD_CAST constraint->getName().c_str());
-
-    std::vector <ConstraintMacroPtr>constraintList;
+    std::vector<ConstraintMacroPtr> constraintList;
     constraint->getConstraintMacros(constraintList);
-    
-    std::string childUidStr;
+
     for ( int i = 0; i < constraintList.size(); i++ ) {
-      childUidStr = intToString(getGUID(constraintList[i]));
-      xmlNewChild(constraintNode, NULL, BAD_CAST "child", BAD_CAST childUidStr.c_str());
+      string guid = getGUID(constraintList[i], mappings);
+      makeChild(constraintNode, "child", guid);
     }
   }
   else {
@@ -142,28 +190,29 @@ void DatabaseManager::addConstraintMacroToNode(ConstraintMacroConstPtr constrain
 
 //TODO
 //Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
-void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroConstPtr constraint, 
-							 std::queue<ConstraintMacroConstPtr> *q, 
-							 std::set<ConstraintMacroConstPtr> *done) {
-  if (constraint->getConstraintMacroType() != ConstraintMacro::ATOMIC) 
-    {
-      std::vector<ConstraintMacroPtr> constraintList;
-      constraint->getConstraintMacros(constraintList);
-      for( int i = 0; i < constraintList.size(); i++ ) 
-	  {
-	    postOrderAddConstraintMacroToQueue(constraintList[i], q, done);
-	  }
+void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
+							                                           std::queue<ConstraintMacroPtr> &q, 
+							                                           std::set<ConstraintMacroPtr> &done) {
+  if (constraint->getConstraintMacroType() != ConstraintMacro::ATOMIC) {
+    std::vector<ConstraintMacroPtr> constraintList;
+    constraint->getConstraintMacros(constraintList);
+    for( int i = 0; i < constraintList.size(); i++ ) {
+      postOrderAddConstraintMacroToQueue(constraintList[i], q, done);
     }
-  if (done->count(constraint) == 0) 
-    {
-      q->push(constraint);
-      done->insert(constraint);
+  }
+  if (done.count(constraint) == 0) {
+      q.push(constraint);
+      done.insert(constraint);
     }
 }
 
+
 //main API call for storing all objects
-void DatabaseManager::store(const std::vector<AffConstPtr> &affordanceList, const std::vector<ConstraintMacroConstPtr> &constraintList) {
+void DatabaseManager::store(const std::string &filename, std::vector<AffConstPtr> &affordanceList, std::vector<ConstraintMacroPtr> &constraintList) {
 	//printf("beginning to store\n");
+
+  srand(time(0));
+
   xmlDocPtr doc = NULL;
 	xmlNodePtr node = NULL;
 
@@ -172,35 +221,38 @@ void DatabaseManager::store(const std::vector<AffConstPtr> &affordanceList, cons
 	node = xmlNewNode(NULL, BAD_CAST "constraintstore");
 	xmlDocSetRootElement(doc, node);
 
+  ObjectToGUIDMappings mappings;
+
   //printf("got root, beginning to store affordance list\n");
   //add each affordance to the xml tree
 	for(int i = 0; i < affordanceList.size(); i++) {
-	  	addAffordanceToNode(affordanceList[i], node);
+	  	addAffordanceStateToNode(affordanceList[i], node, mappings);
 	}
 
-  //printf("done storing affordances \n");
-	std::queue<ConstraintMacroConstPtr>* constraintQueue = new std::queue<ConstraintMacroConstPtr>();
-	std::set<ConstraintMacroConstPtr>* processedConstraintMacros = new std::set<ConstraintMacroConstPtr>();
+  // printf("done storing affordances \n");
+
+	std::queue<ConstraintMacroPtr> constraintQueue;
+	std::set<ConstraintMacroPtr> processedConstraintMacros;
+  // printf("constraintList has %i items\n", (int)constraintList.size());
 
   //Use a postorder traversal of the constraint trees to ensure child constraints
   //are stored before the constraints that depend on them
 	for(int i = 0; i < constraintList.size(); i++) {
 		postOrderAddConstraintMacroToQueue(constraintList[i], constraintQueue, processedConstraintMacros);
 	}	
+  // printf("constraintQueue has %i items\n", (int)constraintQueue.size());
 
   //add each constraint to the xml tree
-	while (!constraintQueue->empty()){
-	  addConstraintMacroToNode(constraintQueue->front(), node);
-	  constraintQueue->pop();
+	while (!constraintQueue.empty()) {
+	  addConstraintMacroToNode(constraintQueue.front(), node, mappings);
+	  constraintQueue.pop();
 	}
 
   //finally, save the file
-	xmlSaveFormatFileEnc(_filename.c_str(), doc, "UTF-8", 1);
+	xmlSaveFormatFileEnc(filename.c_str(), doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
 }
-
-
 
 /***********************************
           Reading From File
@@ -216,216 +268,320 @@ char* value(xmlDocPtr doc, xmlNode* node) {
   return (char*)xmlNodeListGetString(doc, node->xmlChildrenNode, 1);
 }
 
-void printAffordanceMap(std::map<int, AffConstPtr>* affordances) {
+void printAffordanceMap(map<string, AffConstPtr> &affordances) {
   printf("Affordance Map:\n");
-  for(std::map<int, AffConstPtr>::iterator iter = affordances->begin(); iter != affordances->end(); ++iter)
+  for(map<string, AffConstPtr>::iterator iter = affordances.begin(); iter != affordances.end(); ++iter)
   {
-    printf("key: %i, name:%s\n", iter->first, iter->second->getName().c_str());
+    printf("key: %s, name:%s\n", iter->first.c_str(), iter->second->getName().c_str());
+  }
+}
+
+void printManipulatorStateMap(GUIDToObjectMappings mappings) {
+  map<string, ManipulatorStateConstPtr> &manipulatorStates = mappings.GUIDToManipulatorState;
+  printf("Manipulator Map:\n");
+  for(map<string, ManipulatorStateConstPtr>::iterator iter = manipulatorStates.begin(); iter != manipulatorStates.end(); ++iter)
+  {
+    printf("key: %s, name:%s\n", iter->first.c_str(), iter->second->getName().c_str());
   }
 }
 
 //Creates an Affordance object from an XML node and stores it in a map of uids to affordances
-AffPtr serializeAffordance(xmlDocPtr doc, xmlNode* node, 
-				std::map<int, AffPtr>* affordances) {
+void deserializeAffordanceState(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
   //printf("\nserializing affordance\n");
   xmlNode* current_node = NULL;
-  char* name;
-  int uid;
+  string name;
+  string guid;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {
     if (current_node->type == XML_ELEMENT_NODE) {
       if(nodeNameIs(current_node, "uid")) {
-        uid = atoi(value(doc, current_node));
+        guid = value(doc, current_node);
       }
       else if(nodeNameIs(current_node, "name")) {
         name = value(doc, current_node);
       }
       else {
-        printf("WARNING: Ignored unknown entry '%s' while parsing Affordance.\n", current_node->name);
+        printf("WARNING: Ignored unknown entry '%s' while deserializing Affordance.\n", current_node->name);
+      }
+    }
+  }
+  AffConstPtr affordance (new AffordanceState(name));
+  mappings.GUIDToAffordance[guid] = affordance;
+}
+
+void deserializeManipulatorState(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
+  //printf("\nserializing affordance\n");
+  xmlNode* current_node = NULL;
+  string name;
+  string guid;
+
+  for (current_node = node->children; current_node; current_node = current_node->next) {
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if(nodeNameIs(current_node, "uid")) {
+        guid = value(doc, current_node);
+      }
+      else if(nodeNameIs(current_node, "name")) {
+        name = value(doc, current_node);
+      }
+      else {
+        printf("WARNING: Ignored unknown entry '%s' while deserializing ManipulatorState.\n", current_node->name);
+      }
+    }
+  }
+  ManipulatorStateConstPtr manipulator (new ManipulatorState(name));
+  mappings.GUIDToManipulatorState[guid] = manipulator;
+}
+
+void deserializeRelationState(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
+  xmlNode* current_node = NULL;
+  string name;
+  string guid;
+
+  for (current_node = node->children; current_node; current_node = current_node->next) {
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if(nodeNameIs(current_node, "uid")) {
+        guid = value(doc, current_node);
+      }
+      else if(nodeNameIs(current_node, "type")) {
+        printf("deserializeRelationState TODO: deserialize type\n");
+      }
+      else {
+        printf("WARNING: Ignored unknown entry '%s' while deserializing RelationState.\n", current_node->name);
+      }
+    }
+  }
+  
+  //TODO deserialize type
+  RelationStatePtr relationState (new RelationState(RelationState::UNDEFINED));
+  mappings.GUIDToRelationState[guid] = relationState;
+}
+
+void deserializeManipulationRelation(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
+  //printf("\nserializing affordance\n");
+  xmlNode* current_node = NULL;
+  string name;
+  string guid;
+  string affordanceStateGUID;
+  string manipulatorStateGUID;
+  string relationStateGUID;
+
+  for (current_node = node->children; current_node; current_node = current_node->next) {
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if(nodeNameIs(current_node, "uid")) {
+        guid = value(doc, current_node);
+      }
+      else if (nodeNameIs(current_node, "affordance-state-uid")) {
+        affordanceStateGUID = value(doc, current_node);
+      }
+      else if (nodeNameIs(current_node, "manipulator-state-uid")) {
+        manipulatorStateGUID = value(doc, current_node);
+      }
+      else if (nodeNameIs(current_node, "relation-state-uid")) {
+        relationStateGUID = value(doc, current_node);
+      }
+      else {
+        printf("WARNING: Ignored unknown entry '%s' while deserializing ManipulationRelation\n", current_node->name);
       }
     }
   }
 
+  AffConstPtr affordance  = mappings.GUIDToAffordance[affordanceStateGUID];
+  ManipulatorStateConstPtr manipulatorState = mappings.GUIDToManipulatorState[manipulatorStateGUID];
+  RelationStateConstPtr relationState = mappings.GUIDToRelationState[relationStateGUID];
 
-  AffPtr affordance(new AffordanceState(name));
-  (*affordances)[uid] = affordance;
-  return affordance;
+  ManRelPtr manipulationRelation (new ManipulationRelation(affordance, manipulatorState, relationState));
+  mappings.GUIDToManipulationRelation[guid] = manipulationRelation;
 }
 
-//Creates an Atomic ConstraintMacro object from an XML node and stores it in a map of uids to constraints
-ConstraintMacroPtr serializeAtomicConstraintMacro(xmlDocPtr doc, xmlNode* node, std::map<int, AffPtr>* affordances, std::map<int, ConstraintMacroPtr>* constraints) {
-  //printf("\nserializing atomic constraint\n");
+void deserializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
+  //printf("\nserializing affordance\n");
   xmlNode* current_node = NULL;
-  char* name;
-  int uid;
-  int aff1uid;
-  int aff2uid;
+  string name;
+  string guid;
+  string manipulationRelationGUID;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {
     if (current_node->type == XML_ELEMENT_NODE) {
-      if (nodeNameIs(current_node, "aff1")) {
-        aff1uid = atoi(value(doc, current_node));
+      if(nodeNameIs(current_node, "uid")) {
+        guid = value(doc, current_node);
       }
-      else if(nodeNameIs(current_node, "aff2")) {
-        aff2uid = atoi(value(doc, current_node));
+      else if (nodeNameIs(current_node, "manipulation-relation-uid")) {
+        manipulationRelationGUID = value(doc, current_node);
       }
-      else if (nodeNameIs(current_node, "uid")) {
-        uid = atoi(value(doc, current_node));
+      else {
+        printf("WARNING: Ignored unknown entry '%s' while deserializing AtomicConstraint\n", current_node->name);
+      }
+    }
+  }
+
+  ManRelPtr manipulationRelation  = mappings.GUIDToManipulationRelation[manipulationRelationGUID];
+  
+  AtomicConstraintPtr atomicConstraint (new AtomicConstraint(manipulationRelation));
+
+  mappings.GUIDToAtomicConstraint[guid] = atomicConstraint;
+}
+
+//Creates an Atomic ConstraintMacro object from an XML node and stores it in a map of uids to constraints
+void deserializeAtomicConstraintMacro(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
+  xmlNode* current_node = NULL;
+  string guid;
+  string name;
+  string atomicConstraintGUID;
+
+  for (current_node = node->children; current_node; current_node = current_node->next) {
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if (nodeNameIs(current_node, "uid")) {
+        guid = value(doc, current_node);
       }
       else if (nodeNameIs(current_node, "name")) {
         name = value(doc, current_node);
       }
+      else if (nodeNameIs(current_node, "constraint")) {
+        atomicConstraintGUID = value(doc, current_node);
+      }
       else {
-        printf("WARNING: Ignored unknown entry '%s' while parsing Atomic ConstraintMacro.\n", current_node->name);
+        printf("WARNING: Ignored unknown entry '%s' while parsing AtomicConstraintMacro.\n", current_node->name);
       }
     }
   }
 
-/*
-  printf("\tname: %s\n", name);
-  printf("\tuid: %i\n", uid);
-  printf("\taff1uid: %i\n", aff1uid);
-  printf("\taff2uid: %i\n", aff2uid);
-*/
+  AtomicConstraintConstPtr atomicConstraint = mappings.GUIDToAtomicConstraint[atomicConstraintGUID];
 
-  AffPtr aff1 = (*affordances).find(aff1uid)->second;
-  AffPtr aff2 = (*affordances).find(aff2uid)->second;
-
-  //printAffordanceMap(affordances);
-  //printf("aff1name: %s\n", aff1->getName().c_str());
-
-  ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
-  //I SHOULD NOT BE ConstraintMacro::TANGENT!!!!!!!!!!!!!
-  AtomicConstraintPtr atomicConstraint(new AtomicConstraint(aff1, aff2, AtomicConstraint::TANGENT));
-  ConstraintMacroPtr constraint(new ConstraintMacro(name, atomicConstraint));
-
-  (*constraints)[uid] = constraint;
-  return constraint;
+  ConstraintMacroPtr constraintMacro (new ConstraintMacro(name, atomicConstraint));
+  mappings.GUIDToConstraintMacro[guid] = constraintMacro;
 }
 
 //Creates a Sequential ConstraintMacro object from an XML node and stores in an a map of uids to constraints
-ConstraintMacroPtr serializeSequentialConstraintMacro(xmlDocPtr doc, xmlNode* node, 
-						 std::map<int, AffPtr>* affordances, 
-						 std::map<int, ConstraintMacroPtr>* constraints) 
-{
+void deserializeSequentialConstraintMacro(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappings &mappings) {
   xmlNode* current_node = NULL;
-  char* name;
-  int uid;
+  string name;
+  string guid;
   std::vector<ConstraintMacroPtr> childConstraintMacros;
-  std::vector<int> childuids;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {
     if (current_node->type == XML_ELEMENT_NODE) {
       if (nodeNameIs(current_node, "child")) {
-        //get the child uid
-        int childuid = atoi(value(doc, current_node));
-        //look up the corresponding constraint in the map
-        ConstraintMacroPtr childConstraintMacro = (*constraints).find(childuid)->second;
+        string childGUID = value(doc, current_node);
+        ConstraintMacroPtr childConstraintMacro = mappings.GUIDToConstraintMacro[childGUID];
         childConstraintMacros.push_back(childConstraintMacro);
-        childuids.push_back(childuid);
       }
       else if (nodeNameIs(current_node, "uid")) {
-        uid = atoi(value(doc, current_node));
+        guid = value(doc, current_node);
       }
       else if (nodeNameIs(current_node, "name")) {
         name = value(doc, current_node);
       }
       else {
-        printf("WARNING: Ignored unknown entry '%s' while parsing ConstraintMacro.\n", current_node->name);
+        printf("WARNING: Ignored unknown entry '%s' while parsing SequentialConstraintMacro.\n", current_node->name);
       }
     }
   }
 
-
   ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
   //I SHOULD NOT BE ConstraintMacro::SEQUENTIAL!!!!!!!!!!!!!
-  ConstraintMacroPtr constraint(new ConstraintMacro(name, ConstraintMacro::SEQUENTIAL));
+  printf("deserializeSequentialConstraintMacro TODO: deserialized type.\n");
+  ConstraintMacroPtr constraintMacro (new ConstraintMacro(name, ConstraintMacro::SEQUENTIAL));
   for (int i = 0; i < childConstraintMacros.size(); i++ ) {
-    constraint->addConstraintMacro(childConstraintMacros[i]);
+    constraintMacro->appendConstraintMacro(childConstraintMacros[i]);
   }
-
-  (*constraints)[uid] = constraint;
-  return constraint;
+  mappings.GUIDToConstraintMacro[guid] = constraintMacro;
 }
 
 //Dispatch the proper methods to create objects from XML nodes based on node name
-void DatabaseManager::parseTreeHelper(xmlDocPtr doc, xmlNode* xmlnode, std::map<int,  AffPtr>* affordances, std::map<int, ConstraintMacroPtr>* constraints) {
+void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* xmlnode, GUIDToObjectMappings &mappings) {
+  
   xmlNode* current_node = NULL;
 
   for (current_node = xmlnode; current_node; current_node = current_node->next) {
-      if (current_node->type == XML_ELEMENT_NODE) {
-        if(nodeNameIs(current_node, "affordance")) {
-          serializeAffordance(doc, current_node, affordances);
-        }
-        else if (nodeNameIs(current_node, "atomic")) {
-          serializeAtomicConstraintMacro(doc, current_node, affordances, constraints);
-        }
-        else if (nodeNameIs(current_node, "sequential")){
-          serializeSequentialConstraintMacro(doc, current_node, affordances, constraints);
-        }
-        else {
-          //parse the child nodes
-          parseTreeHelper(doc, current_node->children, affordances, constraints);
-        }
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if(nodeNameIs(current_node, "affordance-state")) {
+        //printf("deserialize affordance-state called\n");
+        deserializeAffordanceState(doc, current_node, mappings);
       }
+      else if (nodeNameIs(current_node, "atomic-constraint")) {
+        //printf("deserialize atomic constraint called\n");
+        deserializeAtomicConstraint(doc, current_node, mappings);
+      }
+      else if (nodeNameIs(current_node, "atomic-constraint-macro")) {
+        //printf("deserialize atomic constraint macro called\n");
+        deserializeAtomicConstraintMacro(doc, current_node, mappings);
+      }
+      else if (nodeNameIs(current_node, "sequential-constraint-macro")){
+        //printf("deserialize sequential called\n");
+        deserializeSequentialConstraintMacro(doc, current_node, mappings);
+      }
+      else if (nodeNameIs(current_node, "manipulator-state")) {
+        //printf("deserialize manipulator-state called\n");
+        deserializeManipulatorState(doc, current_node, mappings);
+      }
+      else if (nodeNameIs(current_node, "relation-state")) {
+        //printf("deserialize relation-state called\n");
+        deserializeRelationState(doc, current_node, mappings);
+      }
+      else if (nodeNameIs(current_node, "manipulation-relation")) {
+        //printf("deserialize manipulation-relation called\n");
+        deserializeManipulationRelation(doc, current_node, mappings);
+      }
+      else {
+        //parse the child nodes
+        printf("Dont's know how to parse node '%s'. Ignoring.\n", current_node->name);          
+      }
+    }
   }
 }
 
-//Nice wrapper API call to parse the entire xml tree from a root node into ConstraintMacros and Affordances 
-void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode* root) {
-  //printf("calling helper\n");
-  std::map<int, ConstraintMacroPtr>* constraints = new std::map<int, ConstraintMacroPtr>();
-  std::map<int, AffPtr>* affordances = new std::map<int, AffPtr>();
-  parseTreeHelper(doc, root, affordances, constraints);
-  
+//Accessor methods
+void DatabaseManager::retrieve(const string &filename, vector<AffConstPtr> &affordanceList, vector<ConstraintMacroPtr> &constraintList) {
+  // printf("Called retrieve\n");
 
-  //Clear and update the affordance and constraint lists
-  _affordanceList.clear();
-  _constraintList.clear();
-  
-  for(std::map<int,AffPtr>::iterator ii=affordances->begin(); ii!=affordances->end(); ++ii) {
-    _affordanceList.push_back((*ii).second);
-  }
-
-  for(std::map<int,ConstraintMacroPtr>::iterator ii=constraints->begin(); ii!=constraints->end(); ++ii) {
-    _constraintList.push_back((*ii).second);
-  }
-}
-
-//Wrapper call that kicks off the parsing of the file specified my _filename
-void DatabaseManager::parseFile(){
-  xmlDocPtr readDoc;
-  readDoc = xmlReadFile(_filename.c_str(), NULL, 0);
-  if (readDoc == NULL) {
-    fprintf(stderr, "Failed to parse %s\n", _filename.c_str());
+  xmlDocPtr doc;
+  doc = xmlReadFile(filename.c_str(), NULL, 0);
+  if (doc == NULL) {
+    fprintf(stderr, "Failed to parse %s\n", filename.c_str());
     exit(1);
   }
 
-  //printf("done reading file. Parsing...\n");
+  // printf("done reading file. Parsing...\n");
 
-  xmlNode* root_element = NULL;
-  root_element = xmlDocGetRootElement(readDoc);
-  parseTree(readDoc, root_element);
+  xmlNode* root = NULL;
+  root = xmlDocGetRootElement(doc);
 
-  xmlFreeDoc(readDoc);
+  xmlNode* current_node;
+  for (current_node = root; current_node; current_node = current_node->next) {
+    if (current_node->type == XML_ELEMENT_NODE) {
+      if (!nodeNameIs(current_node, "constraintstore")) {
+        printf("xml file of type '%s' is not valid. Must be 'constraintstore' to parse.\n", current_node->name);
+        return;
+      }
+    }  
+  }
+
+  //Root element is "constraintstore" type check goes here
+
+  GUIDToObjectMappings mappings;
+
+  parseTree(doc, root->children, mappings);
+
+  // printAffordanceMap(mappings.GUIDToAffordance);
+  // printManipulatorStateMap(mappings);
+  // printf("There are %i affordanceState items.\n", (int) mappings.GUIDToAffordance.size());  
+  // printf("There are %i manipulationState items.\n", (int) mappings.GUIDToManipulatorState.size());  
+  // printf("There are %i relationState items.\n", (int) mappings.GUIDToRelationState.size());
+  // printf("There are %i manipulationRelation items.\n", (int) mappings.GUIDToManipulationRelation.size());  
+  // printf("There are %i atomicConstraint items.\n", (int) mappings.GUIDToAtomicConstraint.size());  
+  // printf("There are %i ConstraintMacro items.\n", (int) mappings.GUIDToConstraintMacro.size());  
+
+  for(map<string, AffConstPtr>::iterator iter = mappings.GUIDToAffordance.begin(); iter != mappings.GUIDToAffordance.end(); ++iter)
+  {
+    affordanceList.push_back(iter->second);
+  }
+
+  for(map<string, ConstraintMacroPtr>::iterator iter = mappings.GUIDToConstraintMacro.begin(); iter != mappings.GUIDToConstraintMacro.end(); ++iter)
+  {
+    constraintList.push_back(iter->second);
+  }
+
+  xmlFreeDoc(doc);
   xmlCleanupParser();
 }
 
-
-
-//Accessor methods
-void DatabaseManager::getAffordances(vector<AffPtr> &affordances) 
-{
-  affordances.clear();
-  affordances.insert(affordances.end(),
-		     _affordanceList.begin(),
-		     _affordanceList.end());
-}
-
-void DatabaseManager::getConstraintMacros(vector<ConstraintMacroPtr> &constraints) 
-{
-  constraints.clear();
-  constraints.insert(constraints.end(),
-		     _constraintList.begin(),
-		     _constraintList.end());
-}

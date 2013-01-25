@@ -10,58 +10,62 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+using namespace affordance;
+using namespace std;
+
 namespace action_authoring 
 {
+    struct ObjectToGUIDMappings
+    {
+        map<AffConstPtr, string> affordanceToGUID;
+        map<ConstraintMacroPtr, string> constraintMacroToGUID;
+        map<ManipulatorStateConstPtr, string> manipulatorStateToGUID;
+        map<RelationStateConstPtr, string> relationStateToGUID;
+        map<ManRelPtr, string> manipulationRelationToGUID;
+        map<AtomicConstraintConstPtr, string> atomicConstraintToGUID;
+    };
+
+    struct GUIDToObjectMappings
+    {
+        map<string, AffConstPtr> GUIDToAffordance;
+        map<string, ConstraintMacroPtr> GUIDToConstraintMacro;
+        map<string, ManipulatorStateConstPtr> GUIDToManipulatorState;
+        map<string, RelationStateConstPtr> GUIDToRelationState;
+        map<string, ManRelPtr> GUIDToManipulationRelation;
+        map<string, AtomicConstraintConstPtr> GUIDToAtomicConstraint;
+    };
+
   /**todo comment*/
   class DatabaseManager 
   {
   private:
+    static string getGUID(AffConstPtr affordance, ObjectToGUIDMappings &mappings);
+    static string getGUID(ConstraintMacroPtr constraint, ObjectToGUIDMappings &mappings);
+    static string getGUID(RelationStateConstPtr relationState, ObjectToGUIDMappings &mappings);
+    static string getGUID(ManRelPtr manipulationRelation, ObjectToGUIDMappings &mappings);
+    static string getGUID(ManipulatorStateConstPtr manipulator, ObjectToGUIDMappings &mappings);
+    static string getGUID(AtomicConstraintConstPtr atomicConstraint, ObjectToGUIDMappings &mappings);
 
-    //member variables
-    //todo : could you have boost::unordered_map instead of map?  (which would be more efficient)
-    std::string _filename;
-    int _guidCounter;
-    std::map<affordance::AffConstPtr, int> _affordanceToGUID; //todo: comment like "maps from { } --> {}
-    std::map<ConstraintMacroConstPtr, int> _constraintToGUID; //todo : see above
-    std::vector<affordance::AffPtr> _affordanceList; 
-    std::vector<ConstraintMacroPtr> _constraintList;
-    
-    //writing to file helper function
     //todo : in the cpp file, add doxygen comments for each of these methods
-    static std::string intToString(const int &i);
-    void addAffordanceToNode(affordance::AffConstPtr affordance, xmlNodePtr node);
-    void addConstraintMacroToNode(ConstraintMacroConstPtr constraint, xmlNodePtr node);
-    void postOrderAddConstraintMacroToQueue(ConstraintMacroConstPtr constraint, 
-				       std::queue<ConstraintMacroConstPtr>* q, 
-				       std::set<ConstraintMacroConstPtr>* done);
-    int getGUID(ConstraintMacroConstPtr constraint);
-    int getGUID(affordance::AffConstPtr affordance);
+    static void addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addManipulationRelationToNode(ManRelPtr relation, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, queue<ConstraintMacroPtr> &q, set<ConstraintMacroPtr> &done);
     
-    //reading from file helper functions
-    //todo: add comments in the cpp file for parseTreeHelper and parseTree
-    //doxygen style.  describe the arguments and functionality of each method
-    void parseTreeHelper(xmlDocPtr doc, xmlNode *xmlnode, 
-			 std::map<int,  affordance::AffPtr> *affordances,
-			 std::map<int, ConstraintMacroPtr> *constraints);
-    void parseTree(xmlDocPtr doc, xmlNode *root);
-    
+    static void parseTree(xmlDocPtr doc, xmlNode* xmlnode, GUIDToObjectMappings &mappings);
+
   public:
-    //constructor
-    DatabaseManager(const std::string &filename);
-    
-    //mutators
-    void setFilename(const std::string & filename);
-    
     //Writing data to a file
     //todo : add (in the cpp file) doxygen style comments 
-    void store(const std::vector<affordance::AffConstPtr> &affordanceList, 
-	       const std::vector<ConstraintMacroConstPtr> &constrainList);
+    static void store(const string &filename, vector<AffConstPtr> &affordanceList, vector<ConstraintMacroPtr> &constraintList);
     
     //Reading data from a file
     //todo : add (in the cpp file) doxygen style comments
-    void parseFile();
-    void getAffordances(std::vector<affordance::AffPtr> &affordacnes);
-    void getConstraintMacros(std::vector<ConstraintMacroPtr> &constraints);
+    static void retrieve(const string &filename, vector<AffConstPtr> &affordanceList, vector<ConstraintMacroPtr> &constraintList);
+
   }; //class DatabaseManager
 } //namespace action_authoring
 

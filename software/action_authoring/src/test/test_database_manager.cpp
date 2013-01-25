@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 #include <sstream>
 #include <queue>
 #include <set>
@@ -18,6 +19,18 @@ void tabprintf(std::string string, int num_tabs) {
   printf("%s\n", string.c_str());
 }
 
+void printManipulationRelation(ManRelPtr manipulationRelation, int num_tabs) {
+    std::string relationStateString;
+    if (manipulationRelation->getRelationState()->getRelationType() == RelationState::UNDEFINED )
+      relationStateString = "Undefined Type";
+    else {
+      relationStateString = "could not find match for relation type";
+    }
+    tabprintf("Manipulation Relation - " + relationStateString, num_tabs);
+    tabprintf(manipulationRelation->getManipulator()->getName(), num_tabs);
+    tabprintf(manipulationRelation->getAffordance()->getName(), num_tabs);
+}
+
 void printConstraintMacro(ConstraintMacroPtr constraint, int num_tabs=0) {
   std::string constraintString;
   switch (constraint->getConstraintMacroType()) {
@@ -35,22 +48,7 @@ void printConstraintMacro(ConstraintMacroPtr constraint, int num_tabs=0) {
   tabprintf(constraintString += constraint->getName(), num_tabs);
 
   if (constraint->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
-    std::string atomicConstraintString;
-    switch (constraint->getAtomicConstraint()->getRelationType()) {
-    case AtomicConstraint::TANGENT:
-      atomicConstraintString = "TANGENT";
-      break;
-    case AtomicConstraint::NORMAL:
-      atomicConstraintString = "NORMAL";
-      break;
-    default:
-      atomicConstraintString = "UNKNOWN";
-      break;
-    }
-    
-    tabprintf(atomicConstraintString, num_tabs + 1);
-    tabprintf(constraint->getAtomicConstraint()->getAffordance1()->getName(), num_tabs + 1);
-    tabprintf(constraint->getAtomicConstraint()->getAffordance2()->getName(), num_tabs + 1);
+    printManipulationRelation(constraint->getAtomicConstraint()->getRelation(), num_tabs + 1);
   }
   else {
     vector<ConstraintMacroPtr> constraints;
@@ -63,92 +61,71 @@ void printConstraintMacro(ConstraintMacroPtr constraint, int num_tabs=0) {
 
 int main() {
 
-  AffPtr rhand  (new AffordanceState("Right Hand"));
-  AffPtr lhand  (new AffordanceState("Left Hand"));
-  AffPtr rfoot (new AffordanceState("Right Foot"));
-  AffPtr lfoot (new AffordanceState("Left Foot"));
-  AffPtr wheel (new AffordanceState("Steering Wheel"));
-  AffPtr gas   (new AffordanceState("Gas Pedal"));
-  AffPtr brake (new AffordanceState("Brake Pedal"));
-  std::vector<AffConstPtr> affordanceList;
-  affordanceList.push_back(rhand);
-  affordanceList.push_back(lhand);
-  affordanceList.push_back(rfoot);
-  affordanceList.push_back(lfoot);
+  ManipulatorStateConstPtr rhand (new ManipulatorState("Right Hand"));
+  ManipulatorStateConstPtr lhand (new ManipulatorState("Left Hand"));
+  ManipulatorStateConstPtr rfoot (new ManipulatorState("Right Foot"));
+  ManipulatorStateConstPtr lfoot (new ManipulatorState("Left Foot"));
+
+  AffConstPtr wheel (new AffordanceState("Steering Wheel"));
+  AffConstPtr gas   (new AffordanceState("Gas Pedal"));
+  AffConstPtr brake (new AffordanceState("Brake Pedal"));
+
+  vector<AffConstPtr> affordanceList;
   affordanceList.push_back(wheel);
   affordanceList.push_back(gas);
   affordanceList.push_back(brake);
 
-  AtomicConstraintPtr rfoot_gas_relation (new AtomicConstraint(rfoot, gas, AtomicConstraint::NORMAL));
-  AtomicConstraintPtr lfoot_brake_relation(new AtomicConstraint(lfoot, brake, AtomicConstraint::TANGENT));
-  AtomicConstraintPtr rhand_wheel_relation(new AtomicConstraint(rhand, wheel, AtomicConstraint::TANGENT));
-  AtomicConstraintPtr lhand_wheel_relation(new AtomicConstraint(lhand, wheel, AtomicConstraint::TANGENT));
+  RelationStatePtr relstate (new RelationState(RelationState::UNDEFINED));
 
-  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
-  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));                                                                                            
-  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
-  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
-  std::vector<ConstraintMacroConstPtr> constraintList;
-  constraintList.push_back(rfoot_gas);
-  constraintList.push_back(lfoot_brake);
-  constraintList.push_back(rhand_wheel);
-  constraintList.push_back(lhand_wheel);
-
-  ConstraintMacroPtr pedals  (new ConstraintMacro("Pedals", ConstraintMacro::SEQUENTIAL));
-  ConstraintMacroPtr hands   (new ConstraintMacro("Hands", ConstraintMacro::SEQUENTIAL));
-  ConstraintMacroPtr ingress (new ConstraintMacro("Ingress", ConstraintMacro::SEQUENTIAL));
+  ManRelPtr rfoot_gas_relation (new ManipulationRelation(gas, rfoot, relstate));
+  ManRelPtr lfoot_brake_relation(new ManipulationRelation(brake, lfoot, relstate));
+  ManRelPtr rhand_wheel_relation(new ManipulationRelation(wheel, rhand, relstate));
+  ManRelPtr lhand_wheel_relation(new ManipulationRelation(wheel, lhand, relstate));
   
-  pedals->addConstraintMacro(rfoot_gas);
-  pedals->addConstraintMacro(lfoot_brake);
-  hands->addConstraintMacro(rhand_wheel);
-  hands->addConstraintMacro(lhand_wheel);
+  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", (AtomicConstraintPtr)new AtomicConstraint(rfoot_gas_relation)));
+  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", (AtomicConstraintPtr)new AtomicConstraint(lfoot_brake_relation))); 
+  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(rhand_wheel_relation)));
+  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(lhand_wheel_relation)));
 
-  ingress->addConstraintMacro(pedals);
-  ingress->addConstraintMacro(hands);
+  ConstraintMacroPtr hands (new ConstraintMacro("Hands", ConstraintMacro::SEQUENTIAL));
+  hands->appendConstraintMacro(rhand_wheel);
+  hands->appendConstraintMacro(lhand_wheel);
 
-  constraintList.push_back(pedals);
-  constraintList.push_back(hands);
+  ConstraintMacroPtr feet (new ConstraintMacro("Feet", ConstraintMacro::SEQUENTIAL));
+  feet->appendConstraintMacro(rfoot_gas);
+  feet->appendConstraintMacro(lfoot_brake);
+
+  ConstraintMacroPtr ingress (new ConstraintMacro("Ingress", ConstraintMacro::SEQUENTIAL));
+  ingress->appendConstraintMacro(hands);
+  ingress->appendConstraintMacro(feet);
+
+  std::vector<ConstraintMacroPtr> constraintList;
   constraintList.push_back(ingress);
+
 
   //print the top level constraint
   printf("\nThis is a constraint created in the function\n");
   printConstraintMacro(ingress);
 
-
-  //To instantiate the databse manager, you must give it a file name
-  shared_ptr<DatabaseManager> db (new DatabaseManager("constraints.xml"));
-  
-  //to change the file name later, use the setFilename method
-  //db->setFilename("someotherfilename.xml");
-
   //to store state, use the db->store method and pass in all the data at once
-  db->store(affordanceList, constraintList);
+  DatabaseManager::store("constraints.xml", affordanceList, constraintList);
 
-  //to retrieve the data, you must first call parseFile()!
-  //this parses the current filename that the db has been given
-  //at initialization or by the setFilename method
-  db->parseFile();
+  printf("\nDone storing.\n");
+  printf("\nRetrieving from file.\n\n");
 
-  //to get the objects back, use db->get<YourTypeHere>()
-  std::vector<AffPtr> revivedAffordances;
-  db->getAffordances(revivedAffordances);
-  std::vector<ConstraintMacroPtr> revivedConstraintMacros;
-  db->getConstraintMacros(revivedConstraintMacros);
+  vector<AffConstPtr> revivedAffordances;
+  vector<ConstraintMacroPtr> revivedConstraintMacros;
+  DatabaseManager::retrieve("constraints.xml", revivedAffordances, revivedConstraintMacros);
 
-  //this is an example of how to iterate an print the names of the retrieved data items
-  /*
-  for (int i = 0; i < revivedAffordances.size(); i++ ){
-    printf("name: %s\n", revivedAffordances[i]->getName().c_str());
-  }
-
-  for (int i = 0; i < revivedConstraintMacros.size(); i++ ){
-    printf("name: %s\n", revivedConstraintMacros[i]->getName());
-  }
-  */
+  printf("\nDone retrieving.\n");
 
   //print the same constraint as created before, but this time using the data from the file 
   printf("\nThis is the same constraint, written to and then reconstructed from a file:\n");
-  printConstraintMacro(revivedConstraintMacros[6]);
 
+  for (int i = 0; i < revivedConstraintMacros.size(); i++ ){
+    if (revivedConstraintMacros[i]->getName() == "Ingress") {
+      printConstraintMacro(revivedConstraintMacros[i]);
+    }
+  }
   return(0);
 }
