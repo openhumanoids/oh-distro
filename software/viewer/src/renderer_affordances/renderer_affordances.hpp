@@ -65,7 +65,7 @@
 #define PARAM_OTDF_REACH_OBJECT_R "Reach Object w Right Arm"
 #define PARAM_INSTANTIATE "Instantiate/Fit"
 #define PARAM_CLEAR "Clear All Instances"
-#define PARAM_PICKING "Enable Selection"
+#define PARAM_SELECTION "Enable Selection"
 #define PARAM_OPT_POOL_READY "OptPool Ready"
 #define PARAM_LHAND_URDF_SELECT "LHand"
 #define PARAM_RHAND_URDF_SELECT "RHand"
@@ -148,7 +148,7 @@ typedef struct _RendererAffordances {
 
   BotGtkParamWidget *pw;
 
-  bool picking;
+  bool selection_enabled;
   bool clicked;
   bool visualize_bbox;
   Eigen::Vector3f ray_start;

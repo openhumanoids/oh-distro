@@ -18,9 +18,10 @@
 
 
 #define RENDERER_NAME "Robot Plan Display"
-#define PARAM_PICKING "Enable Selection"
+#define PARAM_SELECTION "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define PARAM_HIDE "Hide Plan"  
+#define PARAM_USE_COLORMAP "Use Colormap"
 #define PARAM_PLAN_PART "Part of Plan"  
 #define DRAW_PERSIST_SEC 4
 
@@ -39,9 +40,10 @@ typedef struct _RendererRobotPlan
   boost::shared_ptr<lcm::LCM> lcm;
   int64_t max_draw_utime;
   BotEventHandler ehandler;
-  bool picking;
+  bool selection_enabled;
   bool clicked;
   bool visualize_bbox;
+  bool use_colormap;
   Eigen::Vector3f ray_start;
   Eigen::Vector3f ray_end;
   std::string* selection;
@@ -92,13 +94,16 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float c[3] = {0.3,0.3,0.6}; // light blue
   float alpha = 0.4;
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
+  if(self->use_colormap) {
   // Each model Jet: blue to red
   float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
   jet_rgb(j,c);
+  }
   glColor4f(c[0],c[1],c[2], alpha);
   
+  
   self->robotPlanListener->_gl_robot_list[i]->show_bbox(self->visualize_bbox);
-  self->robotPlanListener->_gl_robot_list[i]->enable_link_selection(self->picking);
+  self->robotPlanListener->_gl_robot_list[i]->enable_link_selection(self->selection_enabled);
   //if((*self->selection)!=" ")
   self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
   self->robotPlanListener->_gl_robot_list[i]->draw_body (c,alpha);  
@@ -123,7 +128,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   glEnable(GL_BLEND);
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-  if((self->picking)&&(self->clicked)){
+  if((self->selection_enabled)&&(self->clicked)){
     glLineWidth (3.0);
     glPushMatrix();
     glBegin(GL_LINES);
@@ -158,22 +163,77 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
 }
 
+//========================= Event Handling ================
 
-static int 
-mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], 
-    const double ray_dir[3], const GdkEventButton *event)
+static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
-  if(self->picking==0){
+  if((self->selection_enabled==0)||(bot_gtk_param_widget_get_bool(self->pw, PARAM_HIDE))){
+    return -1.0;
+  }
+  //fprintf(stderr, "RobotStateRenderer Pick Query Active\n");
+  Eigen::Vector3f from,to;
+  from << ray_start[0], ray_start[1], ray_start[2];
+
+  Eigen::Vector3f plane_normal,plane_pt;
+  plane_normal << 0,0,1;
+  plane_pt << 0,0,0;
+  double lambda1 = ray_dir[0] * plane_normal[0]+
+                   ray_dir[1] * plane_normal[1] +
+                   ray_dir[2] * plane_normal[2];
+   // check for degenerate case where ray is (more or less) parallel to plane
+    if (fabs (lambda1) < 1e-9) return -1.0;
+
+   double lambda2 = (plane_pt[0] - ray_start[0]) * plane_normal[0] +
+       (plane_pt[1] - ray_start[1]) * plane_normal[1] +
+       (plane_pt[2] - ray_start[2]) * plane_normal[2];
+   double t = lambda2 / lambda1;// =1;
+  
+  to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+ 
+  self->ray_start = from;
+  self->ray_end = to;
+
+  Eigen::Vector3f hit_pt;
+  collision::Collision_Object * intersected_object = NULL;
+  double shortest_distance = -1;
+   for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
+  { 
+    if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
+    {
+     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
+     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
+    }
+    
+    if( intersected_object != NULL ){
+      Eigen::Vector3f diff = (from-hit_pt);
+      double distance = diff.norm();
+      if(shortest_distance>0) {
+        if (distance < shortest_distance)
+          shortest_distance = distance;
+      }
+      else
+        shortest_distance = distance;
+      intersected_object = NULL; 
+    }
+    
+  }//end for
+
+  //std::cout  << "RobotStateRenderer distance " << -1.0 << std::endl;
+  return shortest_distance;
+}
+
+static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
+{
+  RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
+  if((ehandler->picking==0)||(self->selection_enabled==0)){
     //fprintf(stderr, "Ehandler Not active\n");
+   (*self->selection)  = " ";
     return 0;
   }
+ // fprintf(stderr, "RobotPlanRenderer Ehandler Activated\n");
   self->clicked = 1;
-//  if(event->button==3)
-//   fprintf(stderr, "Right Click (event->button): %d\n",event->button);
-  fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
-  
-  
+  //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
 
   Eigen::Vector3f from,to;
   from << ray_start[0], ray_start[1], ray_start[2];
@@ -194,14 +254,9 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   
   to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
  
-    self->ray_start = from;
-  self->ray_end = to;
-  std::cout  << "from " << from.transpose() << std::endl;
-  std::cout  << "to " << to.transpose() << std::endl;
-  
-   //to << ray_dir[0], ray_dir[1], ray_dir[2];
- //std::cout  << "num_coll_objects: " << self->robotStateListener->_collision_object_map.size() <<  std::endl;
- //std::cout  << "num_colls: " << self->robotStateListener->_collision_detector->num_collisions() <<  std::endl;// segfaults
+  self->ray_start = from;
+  self->ray_end = to; 
+
   collision::Collision_Object * intersected_object = NULL;
   for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
   { 
@@ -216,14 +271,15 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
       (*self->selection)  = std::string(intersected_object->id().c_str());
       self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
     }
-   else
-   (*self->selection)  = " ";
+//   else
+//   (*self->selection)  = " ";
   }
 
   bot_viewer_request_redraw(self->viewer);
 
-  return 1;
+  return 0;
 }
+
 
 static int 
 mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], 
@@ -231,13 +287,14 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
 {
   RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
   self->clicked = 0;
-  if(self->picking==0){
+  if((ehandler->picking==0)||(self->selection_enabled==0)){
     //fprintf(stderr, "Ehandler Not active\n");
     return 0;
   }
-  
+  if (ehandler->picking==1)
+    ehandler->picking=0; //release picking(IMPORTANT)
   bot_viewer_request_redraw(self->viewer);
-  return 1;
+  return 0;
 }
 
 
@@ -250,13 +307,13 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
-  if (! strcmp(name, PARAM_PICKING)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_PICKING)) {
-      bot_viewer_request_pick (self->viewer, &(self->ehandler));
-      self->picking = 1;
+  if (! strcmp(name, PARAM_SELECTION)) {
+    if (bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION)) {
+      //bot_viewer_request_pick (self->viewer, &(self->ehandler));
+      self->selection_enabled = 1;
     }
     else{
-      self->picking = 0;
+      self->selection_enabled = 0;
     }
   }
   else if(! strcmp(name, PARAM_WIRE)) {
@@ -265,6 +322,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
     else{
       self->visualize_bbox = false;
+    }
+  }
+  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
+      if (bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP)){
+      self->use_colormap= true;  
+    }
+    else{
+      self->use_colormap = false;
+      
     }
   }
   else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
@@ -312,18 +378,21 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
 
     
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PICKING, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
-    
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER,
                                    0, 1, 0.01, 1);    
-    
+   
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  	self->picking = 0;
+  	self->selection_enabled = 1;
+  	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
+  	self->use_colormap = 1;
+  	bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
     self->clicked = 0;	
   	self->selection = new std::string(" ");
     self->visualize_bbox = false;
@@ -334,7 +403,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;
     ehandler->enabled = 1;
-    ehandler->pick_query = NULL;
+    ehandler->pick_query = pick_query;
     ehandler->hover_query = NULL;
     ehandler->mouse_press = mouse_press;
     ehandler->mouse_release = mouse_release;

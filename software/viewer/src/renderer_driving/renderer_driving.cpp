@@ -504,17 +504,13 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
 
   self->dragging = 0;
 
-  if(ehandler->picking==0){
-    //fprintf(stderr, "Ehandler Not active\n");
-    return 0;
-  }
   if(self->active==0){
-    fprintf(stderr, "Not Active\n");
+   // fprintf(stderr, "Not Active\n");
     return 0;
   }
 
   if(event->button != 1){
-    fprintf(stderr,"Wrong Button\n");
+    //fprintf(stderr,"Wrong Button\n");
     return 0;
   }
 
@@ -534,7 +530,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   recompute_2d_goal_pose(self);
 
   bot_viewer_request_redraw(self->viewer);
-  return 1;
+  return 0;
 }
 
 
@@ -614,11 +610,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     self->last_active = self->active;
     self->active = 0;
 
-    ehandler->picking = 0;
-    return 1;
+    //ehandler->picking = 0;
+    return 0;
   }
-  else
-    ehandler->picking = 0;
 
   return 0;
 }
@@ -641,7 +635,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
   recompute_2d_goal_pose(self);
 
   bot_viewer_request_redraw(self->viewer);
-  return 1;
+  return 0;
 }
 
 void activate(RendererDriving *self, int type)
@@ -674,18 +668,14 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
   if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
     printf("\n[R]einit key registered\n");
     activate(self,1);
-    bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'g' || event->keyval == 'G') && self->active==0) {
     printf("\n[G]oal (timed) key registered\n");
     activate(self,2);
-    bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'l' || event->keyval == 'L') && self->active==0) {
     printf("\n[L]eft arm key registered\n");
     activate(self,3);
-    bot_viewer_request_pick (viewer, ehandler);
   } else if(event->keyval == GDK_Escape) {
     //self->active = 0;
-    //ehandler->picking = 0;
     //bot_viewer_set_status_bar_message(self->viewer, "");
   }
 
@@ -830,15 +820,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     send_seek_goal_visual(self);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
-    bot_viewer_request_pick (self->viewer, &(self->ehandler));
+    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 2);
   }else if(!strcmp(name, PARAM_GOAL_SEND_LEFT_HAND)) {
     fprintf(stderr,"\nClicked NAV_GOAL_LEFT_HAND\n");
-    bot_viewer_request_pick (self->viewer, &(self->ehandler));
+    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 3);
   }else if(!strcmp(name, PARAM_LIDAR_RATE_SEND)) {
     fprintf(stderr,"\nClicked LIDAR_RATE_SEND\n");
-    bot_viewer_request_pick (self->viewer, &(self->ehandler));
+    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     send_new_lidar_rate(self);
   }else if (! strcmp (name, PARAM_NEW_MAP)) {
     send_new_map(self);

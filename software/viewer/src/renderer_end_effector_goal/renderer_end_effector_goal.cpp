@@ -358,10 +358,38 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 //	}
 //}
 
+
+//========================= Event Handling ================
+
+static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
+{
+  RendererEndEffectorGoal *self = (RendererEndEffectorGoal*) ehandler->user;
+
+	point3d_t ray_s = {ray_start[0], ray_start[1], ray_start[2]};
+	point3d_t ray_d = {ray_dir[0], ray_dir[1], ray_dir[2]};
+  point3d_t ray_sphere_intersect;
+	if (geom_ray_intersect_sphere(&ray_s, &ray_d,ray_sphere_intersect, self,SPHERE_RADIUS) > 0) {
+	   
+    double distance =  sqrt(pow(ray_s.x-ray_sphere_intersect.x,2) + pow(ray_s.y-ray_sphere_intersect.y,2)+pow(ray_s.z-ray_sphere_intersect.z,2));
+    return distance;
+	}
+  return -1.0;
+}
+
+
 static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
 {
 	RendererEndEffectorGoal *self = (RendererEndEffectorGoal*) ehandler->user;
-
+  if(ehandler->picking==0){
+   // fprintf(stderr, "RendererEndEffectorGoal Ehandler Not active\n");
+    return 0;
+  }
+  
+	if(event->button != 1){
+		fprintf(stderr,"Wrong Button\n");
+		return 0;
+	}
+	
 	point3d_t ray_s = {ray_start[0], ray_start[1], ray_start[2]};
 	point3d_t ray_d = {ray_dir[0], ray_dir[1], ray_dir[2]};
   point3d_t ray_sphere_intersect;
@@ -378,16 +406,6 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 		//printf("Intersected sphere - moving\n");
 	}
 
-	if(ehandler->picking==0){
-		//fprintf(stderr, "Ehandler Not active\n");
-		return 0;
-	}
-
-	if(event->button != 1){
-		fprintf(stderr,"Wrong Button\n");
-		return 0;
-	}
-
 //	point3d_t drag_pt_xy;
 //	if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start), POINT3D(ray_dir), 0, &drag_pt_xy)) {
 //		return 0;
@@ -397,7 +415,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
 
 	bot_viewer_request_redraw(self->viewer);
-	return 1;
+	return 0;
 }
 
 static double getTime_now()
@@ -412,114 +430,110 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
 		const GdkEventButton *event)
 {
   RendererEndEffectorGoal *self = (RendererEndEffectorGoal*) ehandler->user;
-
-  if (self->active != 0) {
-
+  if((ehandler->picking==0)||(self->active==0)){
+     return 0;
+  }
+  if (self->active != 0) 
+  {
 		// Build the message
-	drc::ee_goal_t goalmsg;
+	  drc::ee_goal_t goalmsg;
 
-    	if(self->robotStateListener->_robot_name == "atlas")
-	{
-	    goalmsg.robot_name =self->robotStateListener->_robot_name;
-	    goalmsg.root_name = "utorso";
-	    if(self->arm==0)
-	    	goalmsg.ee_name = "l_hand";
-	    else
-		goalmsg.ee_name = "r_hand";
+    if(self->robotStateListener->_robot_name == "atlas")
+	  {
+      goalmsg.robot_name =self->robotStateListener->_robot_name;
+      goalmsg.root_name = "utorso";
+      if(self->arm==0)
+	      goalmsg.ee_name = "l_hand";
+      else
+        goalmsg.ee_name = "r_hand";
 
-	}
-    	else if(self->robotStateListener->_robot_name == "wheeled_atlas")
-	{
-	    goalmsg.robot_name =self->robotStateListener->_robot_name;
-	    goalmsg.root_name = "base";
-	    if(self->arm==0)
-	    	goalmsg.ee_name = "LWristRoll_link";
-	    else
-		goalmsg.ee_name = "RWristRoll_link";  
+	  }
+    else if(self->robotStateListener->_robot_name == "wheeled_atlas")
+	  {
+      goalmsg.robot_name =self->robotStateListener->_robot_name;
+      goalmsg.root_name = "base";
+      if(self->arm==0)
+        goalmsg.ee_name = "LWristRoll_link";
+      else
+        goalmsg.ee_name = "RWristRoll_link";  
 		
-	}
-	else
-	{
-            // unknown robot
-          std::cout << "Unknown robot in end effector goal renderer" << std::endl;
-	}
+	  }
+	  else
+	  {
+     // unknown robot
+     std::cout << "Unknown robot in end effector goal renderer" << std::endl;
+	  }
 
-	goalmsg.utime = getTime_now();
+	  goalmsg.utime = getTime_now();
 
 
-	// TODO: add a check to see if this goal is reachable and only publish if it is within (dx and dy) of the robot
-	KDL::Frame  T_world_ee, T_body_world, T_body_ee, T_body_root, T_root_ee;
+	  // TODO: add a check to see if this goal is reachable and only publish if it is within (dx and dy) of the robot
+	  KDL::Frame  T_world_ee, T_body_world, T_body_ee, T_body_root, T_root_ee;
 
-	T_world_ee.p[0]= self->center.x;
-	T_world_ee.p[1]= self->center.y;
-	T_world_ee.p[2]= self->center.z;		    
-	T_world_ee.M =  KDL::Rotation::RPY(0*(M_PI/180),0*(M_PI/180),0.0);//  KDL::Rotation::Quaternion(0,0,0,1);
-	T_body_world= self->robotStateListener->T_body_world;
-	T_body_ee = T_body_world*T_world_ee;
+	  T_world_ee.p[0]= self->center.x;
+	  T_world_ee.p[1]= self->center.y;
+	  T_world_ee.p[2]= self->center.z;		    
+	  T_world_ee.M =  KDL::Rotation::RPY(0*(M_PI/180),0*(M_PI/180),0.0);//  KDL::Rotation::Quaternion(0,0,0,1);
+	  T_body_world= self->robotStateListener->T_body_world;
+	  T_body_ee = T_body_world*T_world_ee;
 
-        if(self->robotStateListener->getLinkTf(goalmsg.root_name, T_body_root))
-	{
-          T_root_ee  = T_body_root.Inverse()*T_body_ee;
-	}
-	else {
-          std::cout << "root link : " << goalmsg.root_name <<" not found in FK" << std::endl;
-          T_root_ee =T_body_ee;
-	}
+    if(self->robotStateListener->getLinkTf(goalmsg.root_name, T_body_root))
+    {
+      T_root_ee  = T_body_root.Inverse()*T_body_ee;
+    }
+    else {
+      std::cout << "root link : " << goalmsg.root_name <<" not found in FK" << std::endl;
+      T_root_ee =T_body_ee;
+    }
 
-	double x,y,z,w;
-	T_root_ee.M.GetQuaternion(x,y,z,w);
+	  double x,y,z,w;
+	  T_root_ee.M.GetQuaternion(x,y,z,w);
 
-	goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-	goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-	goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+	  goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
+	  goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
+	  goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
 
-//	goalmsg.ee_goal_pos.translation.x = T_root_ee.p[0];
-//	goalmsg.ee_goal_pos.translation.y = T_root_ee.p[1];
-//	goalmsg.ee_goal_pos.translation.z = T_root_ee.p[2];
+  //	goalmsg.ee_goal_pos.translation.x = T_root_ee.p[0];
+  //	goalmsg.ee_goal_pos.translation.y = T_root_ee.p[1];
+  //	goalmsg.ee_goal_pos.translation.z = T_root_ee.p[2];
 
-	goalmsg.ee_goal_pos.rotation.x = x;
-	goalmsg.ee_goal_pos.rotation.y = y;
-	goalmsg.ee_goal_pos.rotation.z = z;
-	goalmsg.ee_goal_pos.rotation.w = w;
+	  goalmsg.ee_goal_pos.rotation.x = x;
+	  goalmsg.ee_goal_pos.rotation.y = y;
+	  goalmsg.ee_goal_pos.rotation.z = z;
+	  goalmsg.ee_goal_pos.rotation.w = w;
 
-	goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
-	goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
-	goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
-	goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
-	goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
-	goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
-	goalmsg.num_chain_joints  = 6;
+	  goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
+	  goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
+	  goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
+	  goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
+	  goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
+	  goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
+	  goalmsg.num_chain_joints  = 6;
 
-	// No specified posture bias
-	goalmsg.use_posture_bias  = false;
-	goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
-	goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
-	for(int i = 0; i < goalmsg.num_chain_joints; i++){
-		goalmsg.joint_posture_bias[i]=0;
-		goalmsg.chain_joint_names[i]= "dummy_joint_names";
-			// goalmsg.joint_posture_bias.push_back(0);
-			// std::string dummy = "dummy_joint_names";
-			//goalmsg.chain_joint_names.push_back(dummy);
-	}
+	  // No specified posture bias
+	  goalmsg.use_posture_bias  = false;
+	  goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
+	  goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
+	  for(int i = 0; i < goalmsg.num_chain_joints; i++){
+		  goalmsg.joint_posture_bias[i]=0;
+		  goalmsg.chain_joint_names[i]= "dummy_joint_names";
+			  // goalmsg.joint_posture_bias.push_back(0);
+			  // std::string dummy = "dummy_joint_names";
+			  //goalmsg.chain_joint_names.push_back(dummy);
+	  }
 
-	// Publish the message
-	goalmsg.halt_ee_controller = false;
-	//self->_goal = goalmsg; // seg faults;
+	  // Publish the message
+    goalmsg.halt_ee_controller = false;
+    //self->_goal = goalmsg; // seg faults;
 
-        //drc_ee_goal_t_publish(self->lcm, "LWRISTROLL_LINK_GOAL", &goalmsg);
-        std::string channel = boost::to_upper_copy(goalmsg.ee_name)+"_GOAL";
-	self->_lcm->publish(channel, &goalmsg);
-    
-	ehandler->picking = 0;
-	bot_viewer_request_redraw(self->viewer);
-	self->moving = 0;
-
-	return 1;
-  }
-  else {
-	ehandler->picking = 0;
-	bot_viewer_request_redraw(self->viewer);
-  }
+    //drc_ee_goal_t_publish(self->lcm, "LWRISTROLL_LINK_GOAL", &goalmsg);
+    std::string channel = boost::to_upper_copy(goalmsg.ee_name)+"_GOAL";
+	  self->_lcm->publish(channel, &goalmsg);
+	  self->moving = 0;
+  } // end if (self->active != 0) 
+  if (ehandler->picking==1)
+    ehandler->picking=0; //release picking(IMPORTANT)
+  bot_viewer_request_redraw(self->viewer);
 	return 0;
 }
 
@@ -626,7 +640,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	}
 
 // TODO:: adjust initial position relative to root link	
-
 	   if(!self->robotStateListener->getLinkTf(goalmsg.root_name, T_body_root))
 	   {
              std::cout << "root link : " << goalmsg.root_name <<" not found in FK" << std::endl;
@@ -655,7 +668,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 		self->center = {T_world_ee.p[0], T_world_ee.p[1],T_world_ee.p[2]};
 		//self->center = {0.0, 0.0, 0.0};
 		//self->center = {0.47, 0.15, 1.0};
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 2);
 	}
         else if (!strcmp(name, PARAM_CLEAR)) {
@@ -716,33 +729,33 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         	std::string channel = boost::to_upper_copy(goalmsg.ee_name)+"_GOAL";
 		self->_lcm->publish(channel, &goalmsg);
 		
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 0);
 	}
 	else if (! strcmp(name, PARAM_ADJUST_X)) {
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		self->translate = 1;
 		activate(self, 1);
 	}
 	else if (! strcmp(name, PARAM_ADJUST_Y)) {
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 2);
 		self->translate = 2;
 	}
 	else if (! strcmp(name, PARAM_ADJUST_Z)) {
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 3);
 		self->translate = 3;
 	}
 	else if (! strcmp(name, PARAM_ADJUST_XY)) {
-		bot_viewer_request_pick (self->viewer, &(self->ehandler));
+		//bot_viewer_request_pick (self->viewer, &(self->ehandler));
 		activate(self, 4);
 		self->translate = 4;
 	}
 	else if (! strcmp(name, PARAM_L)) {
 		if (bot_gtk_param_widget_get_bool(pw, PARAM_L) > -1) {
 			//fprintf(stderr, "Clicked translate X. \n");
-			bot_viewer_request_pick(self->viewer, &(self->ehandler));
+			//bot_viewer_request_pick(self->viewer, &(self->ehandler));
 			bot_gtk_param_widget_set_bool(pw, PARAM_R, 0);
 			self->arm = 0;
 			
@@ -754,7 +767,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 	else if (! strcmp(name, PARAM_R)) {
 		if (bot_gtk_param_widget_get_bool(pw, PARAM_R) > -1) {
 			//fprintf(stderr, "Clicked translate X. \n");
-			bot_viewer_request_pick(self->viewer, &(self->ehandler));
+			//bot_viewer_request_pick(self->viewer, &(self->ehandler));
 			bot_gtk_param_widget_set_bool(pw, PARAM_L, 0);
 			self->arm = 1;
 		}
@@ -762,40 +775,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 		  self->arm = 0;
 		}
 	}
-// 	else if (! strcmp(name, PARAM_TRANSLATE_X)) {
-// 		if (bot_gtk_param_widget_get_bool(pw, PARAM_TRANSLATE_X) > -1) {
-// 			//fprintf(stderr, "Clicked translate X. \n");
-// 			bot_viewer_request_pick(self->viewer, &(self->ehandler));
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_Y, 0);
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_Z, 0);
-// 			self->translate = 1;
-// 			activate(self, 1);
-// 		} else {
-// 			self->translate = 0;
-// 		}
-// 	} else if (! strcmp(name, PARAM_TRANSLATE_Y)) {
-// 		if (bot_gtk_param_widget_get_bool(pw, PARAM_TRANSLATE_Y) > -1) {
-// 			//fprintf(stderr, "Clicked translate Y. \n");
-// 			bot_viewer_request_pick(self->viewer, &(self->ehandler));
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_X, 0);
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_Z, 0);
-// 			self->translate = 2;
-// 			activate(self, 1);
-// 		} else {
-// 			self->translate = 0;
-// 		}
-// 	} else if (! strcmp(name, PARAM_TRANSLATE_Z)) {
-// 		if (bot_gtk_param_widget_get_bool(pw, PARAM_TRANSLATE_Z) > -1) {
-// 			//fprintf(stderr, "Clicked translate Z.\n");
-// 			bot_viewer_request_pick(self->viewer, &(self->ehandler));
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_X, 0);
-// 			bot_gtk_param_widget_set_bool(pw, PARAM_TRANSLATE_Y, 0);
-// 			self->translate = 3;
-// 			activate(self, 1);
-// 		} else {
-// 			self->translate = 0;
-// 		}
-// 	}
 	
 }
 
@@ -825,7 +804,7 @@ BotRenderer *renderer_end_effector_goal_new (BotViewer *viewer, int render_prior
 	BotEventHandler *ehandler = &self->ehandler;
 	ehandler->name = (char*) RENDERER_NAME;
 	ehandler->enabled = 1;
-	ehandler->pick_query = NULL;
+	ehandler->pick_query = pick_query;
 	ehandler->hover_query = NULL;
 	ehandler->mouse_press = mouse_press;
 	ehandler->mouse_release = mouse_release;
@@ -845,7 +824,7 @@ BotRenderer *renderer_end_effector_goal_new (BotViewer *viewer, int render_prior
 	bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_X, NULL);
 	bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_Y, NULL);
  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_L, 0, NULL);
-  	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_R, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_R, 0, NULL);
 // 	bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_TRANSLATE_Z, 0, NULL);
 	bot_gtk_param_widget_set_bool(self->pw, PARAM_L, 1); // seg faults
 	self->arm=0;
