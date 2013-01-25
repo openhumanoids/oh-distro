@@ -51,7 +51,7 @@ unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::initIdEnumMa
   m[unknown] = AffordanceState::UNKNOWN;
 }
 
-unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::idToEnum = initIdEnumMap();
+const unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::idToEnum = initIdEnumMap();
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg) 
@@ -133,7 +133,7 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 	if (idToEnum.find(msg->otdf_id) == idToEnum.end())
 		throw InvalidOtdfID("not recognized");
 
-	_otdf_id = idToEnum[msg->otdf_id];
+	_otdf_id = idToEnum.find(msg->otdf_id)->second;
 
 	for(uint i = 0; i < msg->nstates; i++)
 		_states[msg->state_names[i]] = msg->states[i];

@@ -37,7 +37,7 @@ namespace affordance
     //------------fields
 
   private:
-    static boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
+    static const boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
     static boost::unordered_map<int16_t, OTDF_TYPE> initIdEnumMap(); //to initialiaze idToEnum
 
     
