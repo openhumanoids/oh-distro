@@ -1,0 +1,64 @@
+right_f0_j0_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f0_j0
+  pid: &right_f0_j0_gains
+    p: 10.0
+    d: 0.1
+    i: 0.0
+    i_clamp: 0.0
+
+right_f0_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f0_j1
+  pid: *right_f0_j0_gains
+
+right_f0_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f0_j2
+  pid: *right_f0_j0_gains
+
+right_f1_j0_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f1_j0
+  pid: *right_f0_j0_gains
+
+right_f1_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f1_j1
+  pid: *right_f0_j0_gains
+
+right_f1_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f1_j2
+  pid: *right_f0_j0_gains
+
+right_f2_j0_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f2_j0
+  pid: *right_f0_j0_gains
+
+right_f2_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f2_j1
+  pid: *right_f0_j0_gains
+
+right_f2_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f2_j2
+  pid: *right_f0_j0_gains
+
+right_f3_j0_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f3_j0
+  pid: *right_f0_j0_gains
+
+right_f3_j1_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f3_j1
+  pid: *right_f0_j0_gains
+
+right_f3_j2_position_controller:
+  type: robot_mechanism_controllers/JointPositionController
+  joint: right_f3_j2
+  pid: *right_f0_j0_gains
+
