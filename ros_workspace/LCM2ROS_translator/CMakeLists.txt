@@ -39,6 +39,11 @@ rosbuild_add_executable(ActuatorCmds_translator src/ActuatorCmds_translator.cpp)
 pods_install_executables(ActuatorCmds_translator)
 pods_use_pkg_config_packages(ActuatorCmds_translator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
+rosbuild_add_executable(sandiaPositionCommandTranslator src/ActuatorCmds_translator.cpp)
+
+pods_install_executables(sandiaPositionCommandTranslator)
+pods_use_pkg_config_packages(sandiaPositionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
+
 rosbuild_add_executable(syncActuatorCmds_translator src/syncActuatorCmds_translator.cpp)
 
 pods_install_executables(syncActuatorCmds_translator)
