@@ -12,10 +12,10 @@ setenv('DRC','/home/ceci91/drc/software/models/mit_gazebo_models/')
 3) Add ~/drc/software/control/simple_grasp to your MATLAB path
 
 2) cd ~/drc/software/models/mit_gazebo_models/mit_robot_hands/drake_urdfs/xacro
-   rosrun xacro xacro.py sandia_hand_right_drake.urdf.xacro > ../model.sdf
+   rosrun xacro xacro.py sandia_hand_right_floating_drake.urdf.xacro > ../model.sdf
 
 3) cd ~/drc/software/models/mit_gazebo_models/mit_robot_hands/xacro
-   rosrun xacro xacro.py sandia_hand_right.urdf.xacro > ../model.sdf
+   rosrun xacro xacro.py sandia_hand_right_floating.urdf.xacro > ../model.sdf
 
 4) In MATLAB: runGraspCmdLCM.m
 
