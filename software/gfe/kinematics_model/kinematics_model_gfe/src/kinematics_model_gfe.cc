@@ -34,14 +34,14 @@ Kinematics_Model_GFE() : _model(),
  * class constructor that loads from an xml file
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE( string xmlString ) : _model(),
+Kinematics_Model_GFE( string urdfFilename ) : _model(),
                                             _tree(),
                                             _fk_solver( NULL ),
                                             _world_to_body(),
                                             _joint_frames(){
-  if( !load_xml_string( xmlString ) ){
-    cout << "could not load xml string" << endl;
-  } 
+  if( !load_urdf( getModelsPath() + urdfFilename ) ) {
+    cout << "could not load urdf " << endl;
+  }
 }
 
 /** 

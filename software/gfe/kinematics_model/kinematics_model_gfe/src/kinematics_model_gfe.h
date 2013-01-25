@@ -15,7 +15,7 @@ namespace kinematics_model {
   class Kinematics_Model_GFE {
   public:
     Kinematics_Model_GFE();
-    Kinematics_Model_GFE( std::string xmlString );
+    Kinematics_Model_GFE( std::string urdfFilename );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
     
