@@ -4,7 +4,7 @@
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        name="sandia_hand_right" >
   
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/xacro/sandia_hand_drake.xacro" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/xacro/sandia_hand_drake_floating.xacro" />
 
 <!--  <link name="base">
     <inertial>
