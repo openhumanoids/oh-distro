@@ -109,8 +109,8 @@ namespace affordance
     static void assertContainsKey(const boost::unordered_map<std::string, double> &map,
 				  const std::string &key);
   public:
-    static std::string toStr(boost::unordered_map<std::string,double> m);
-    static std::string toStr(double d);
+    static std::string toStrFromMap(boost::unordered_map<std::string,double> m);
+    template <class T> static std::string toStr(T t);
     
   };
   

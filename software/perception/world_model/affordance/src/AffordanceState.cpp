@@ -131,7 +131,8 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 	//argument check
 	if (idToEnum.find(msg->otdf_id) == idToEnum.end())
-		throw InvalidOtdfID("not recognized");
+	  throw InvalidOtdfID(string("not recognized: ") + toStr<short>(msg->otdf_id) 
+			      + string("  : name =  ") + msg->name );
 
 	_otdf_id = idToEnum.find(msg->otdf_id)->second;
 
@@ -255,7 +256,14 @@ void AffordanceState::assertContainsKey(const unordered_map<string, double> &map
 		throw KeyNotFoundException("Key = " + key + " not found");
 }
 
-string AffordanceState::toStr(unordered_map<string,double> m)
+template <class T> string AffordanceState::toStr(T t)
+{
+  stringstream s;
+  s << t;
+  return s.str();
+}
+
+string AffordanceState::toStrFromMap(unordered_map<string,double> m)
 {
 	stringstream s;
 	for(unordered_map<string,double>::const_iterator it = m.begin();
@@ -276,8 +284,8 @@ namespace affordance
 		out << "=====Affordance " << other._name << "========" << endl;
 		out << "(mapId, objectId, otdfId) = (" << other._map_id << ", "
 			  << other._object_id << ", " << other._otdf_id << ")\n";
-		out << "------params: \n" << AffordanceState::toStr(other._params) << endl;;
-		out << "------states: \n" << AffordanceState::toStr(other._states) << endl;
+		out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
+		out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
 		return out;
 	}
 
