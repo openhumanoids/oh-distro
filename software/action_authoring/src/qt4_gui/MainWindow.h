@@ -61,8 +61,8 @@ struct WorldStateView
   std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
 
   /**initializes all the fields in the struct*/
-WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm)
- : affServerWrapper(theLcm), colorRobot()
+WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
+ : affServerWrapper(theLcm), colorRobot(urdf_filename)
   { }
   
 };

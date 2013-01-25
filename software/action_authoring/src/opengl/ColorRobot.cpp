@@ -11,6 +11,7 @@ using namespace kinematics_model;
 using namespace opengl;
 using namespace robot_opengl;
 
+
 void
 ColorRobot::
 draw(void) {
@@ -33,6 +34,21 @@ draw(void) {
 void 
 ColorRobot::
 setSelectedJoint(std::string jointName) {
+
+}
+
+CollisionGroupPtr
+ColorRobot::
+getCollisionGroupsForLink(std::string link_name) {
     urdf::Model m = _kinematics_model.model();
-    _selected_link_name = m.getJoint(jointName)->child_link_name;
+    boost::shared_ptr<const urdf::Link> t = m.getLink(link_name);
+    boost::shared_ptr<std::vector<boost::shared_ptr<Collision > > > cols = t->getCollisions("default");
+    return cols;
+}
+
+boost::shared_ptr<const urdf::Link>
+ColorRobot::
+getLinkFromJointName(std::string joint_name) {
+    urdf::Model m = _kinematics_model.model();
+    return m.getLink(m.getJoint(joint_name)->child_link_name);
 }

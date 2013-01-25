@@ -163,12 +163,12 @@ updateStateFromElements() {
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
-// TODO	  _constraint->getAtomicConstraint()->getRelation()->setManipulator()(_models[_gui_robotJointType->currentIndex()]);
+	  _constraint->getAtomicConstraint()->getRelation()->setManipulator(_manipulators[_gui_robotJointType->currentIndex()]);
       }
 
     if (_gui_affordanceType->currentIndex() >= 0) 
       {
-// TODO	  _constraint->getAtomicConstraint()->getRelation()->setAffordance(_models[_gui_affordanceType->currentIndex()]);
+	  _constraint->getAtomicConstraint()->getRelation()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
       }
 
     setActive();

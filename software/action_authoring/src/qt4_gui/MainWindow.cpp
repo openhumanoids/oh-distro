@@ -128,19 +128,20 @@ void MainWindow::handleAffordancesChanged()
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	: _widget_opengl(),
-	  _worldState(theLcm),
+	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf"),
 	  _constraint_container(new QWidget()),
 	  _constraint_vbox(new QVBoxLayout())
 {
-  // setup the OpenGL scene
-  _worldState.state_gfe.from_urdf();
-  _worldState.colorRobot.set(_worldState.state_gfe);
+    // setup the OpenGL scene
+//  _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf");
+    _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
+    _worldState.colorRobot.set(_worldState.state_gfe);
   
-  //setup timer to look for affordance changes
-  QTimer *timer = new QTimer;
-  connect(timer, SIGNAL(timeout()), 
-	  this, SLOT(affordanceUpdateCheck()));
-  timer->start(1000); //1Hz  
+    //setup timer to look for affordance changes
+    QTimer *timer = new QTimer;
+    connect(timer, SIGNAL(timeout()), 
+	    this, SLOT(affordanceUpdateCheck()));
+    timer->start(1000); //1Hz  
 
     // read the joints from the robot state
     // create the manipulators from the robot's joints
@@ -152,7 +153,33 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     	const State_GFE_Joint& state_gfe_joint = it->second;
     	joint_names.push_back(state_gfe_joint.id());
 	std::string id = state_gfe_joint.id();
-	_worldState.manipulators.push_back((ManipulatorStateConstPtr)new ManipulatorState(id));
+//	std::string linkName = _worldState.colorRobot.getLinkNameFromJointName(id);
+	boost::shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+
+//	ManipulatorStateConstPtr man (new ManipulatorState(link));
+//	_worldState.manipulators.push_back(man);
+
+/*
+	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(man); 
+	_widget_opengl.opengl_scene().add_object(*asGlMan);
+	_worldState.glObjects.push_back(asGlMan);
+*/
+	// update the selected manipulator
+	//std::string manName = _authoringState._selected_gui_constraint->
+	//getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
+
+	robot_opengl::CollisionGroupPtr colgroup = _worldState.colorRobot.getCollisionGroupsForLink(link->name);
+	if (colgroup != NULL && colgroup->size() > 0) {
+	    // add collision contact widgets!
+	    for (int i = 0; i < colgroup->size(); i++) {
+		std::cout << "adding widget " << std::endl;
+//		urdf::Pose org = colgroup[i].origin;
+
+//		OpenGL_Object_Sphere* s = new OpenGL_Object_Sphere();
+		
+	    }
+	}
+
     }
 
     this->setWindowTitle("Action Authoring Interface");
