@@ -31,19 +31,37 @@ string AffordanceState::R_COLOR_NAME  	= "r_color";
 string AffordanceState::G_COLOR_NAME  	= "g_color";
 string AffordanceState::B_COLOR_NAME  	= "b_color";
 
+
+/**initialize the idEnumMap*/
+unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::initIdEnumMap()
+{
+  unordered_map<int16_t, OTDF_TYPE> m;
+  int16_t c 	   = drc::affordance_t::CYLINDER;
+  int16_t lev 	   = drc::affordance_t ::LEVER;
+  int16_t box	   = drc::affordance_t::BOX;
+  int16_t sphere   = drc::affordance_t::SPHERE;
+  m[c]  	   = AffordanceState::CYLINDER;
+  m[lev]           = AffordanceState::LEVER;
+  m[box]	   = AffordanceState::BOX;
+  m[sphere]        = AffordanceState::SPHERE;
+  
+  int unknown = box + 1;
+  if (m.find(unknown) != idToEnum.end())
+    throw ArgumentException("initToIdEnumMap : investigate");
+  m[unknown] = AffordanceState::UNKNOWN;
+}
+
+unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::idToEnum = initIdEnumMap();
+
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg) 
 {
-	initIdEnumMap(); //todo : should be static
-
 	initHelper(msg);
 }
 
 /**copy constructor by using toMsg and then the constructor*/
 AffordanceState::AffordanceState(const AffordanceState &other)
 {
-	initIdEnumMap(); //todo : should be static
-
 	drc::affordance_t msg;
 	other.toMsg(&msg);
 	initHelper(&msg);
@@ -62,8 +80,6 @@ AffordanceState::AffordanceState(const string &name,
 				 const Eigen::Vector3f &color)
   : _name(name), _object_id(objId), _map_id(mapId), _otdf_id(UNKNOWN)
 {
-	initIdEnumMap(); //todo : should be static
-
 	//---set xyz roll pitch yaw from the frame
 	_params[X_NAME] = frame.p[0];
 	_params[Y_NAME] = frame.p[1];
@@ -124,27 +140,6 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 	for (uint i = 0; i < msg->nparams; i++)
 		_params[msg->param_names[i]] = msg->params[i];
-}
-
-/**initialize the idEnumMap*/
-void AffordanceState::initIdEnumMap()
-{
-	//this should really be static.
-	//SOME WEIRD C++ issues require setting these to variables first
-	//before using as the key for the map.
-        int16_t c 	 = drc::affordance_t::CYLINDER;
-	int16_t lev 	 = drc::affordance_t ::LEVER;
-	int16_t box	 = drc::affordance_t::BOX;
-	int16_t sphere	 = drc::affordance_t::SPHERE;
-	idToEnum[c]  	 = AffordanceState::CYLINDER;
-	idToEnum[lev]  	 = AffordanceState::LEVER;
-	idToEnum[box] 	 = AffordanceState::BOX;
-	idToEnum[sphere] = AffordanceState::SPHERE;
-       
-	int unknown = box + 1;
-	if (idToEnum.find(unknown) != idToEnum.end())
-	  throw ArgumentException("initToIdEnumMap : investigate");
-	idToEnum[unknown] = AffordanceState::UNKNOWN;
 }
 
 AffordanceState::~AffordanceState()

@@ -37,7 +37,9 @@ namespace affordance
     //------------fields
 
   private:
-    boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
+    static boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
+    static boost::unordered_map<int16_t, OTDF_TYPE> initIdEnumMap(); //to initialiaze idToEnum
+
     
   public: //should make get / private set methods for these
     //mimicking lcm
@@ -69,7 +71,6 @@ namespace affordance
     AffordanceState& operator=( const AffordanceState& rhs );
     
     void initHelper(const drc::affordance_t *msg);
-    void initIdEnumMap();
     virtual ~AffordanceState();
     
     //observers
