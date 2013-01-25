@@ -32,14 +32,14 @@ namespace action_authoring {
     std::string _name;
     std::vector<boost::shared_ptr<ConstraintMacro> > _constraints;
     const ConstraintMacroType _constraintType;
-    const AtomicConstraintPtr _atomicConstraint;
+    const AtomicConstraintConstPtr _atomicConstraint;
     double _timeLowerBound;
     double _timeUpperBound;
 
     //-------Constructors--
   public:
     ConstraintMacro(const std::string &name, const ConstraintMacroType &constraintType);
-    ConstraintMacro(const std::string &name, AtomicConstraintPtr atomicConstraint);
+    ConstraintMacro(const std::string &name, AtomicConstraintConstPtr atomicConstraint);
     
     //Accessors
     std::string getName() const { return _name; };
@@ -58,7 +58,7 @@ namespace action_authoring {
     void appendConstraintMacro(boost::shared_ptr<ConstraintMacro> constraint);
     
     //Available for ATOMIC constraints only
-    AtomicConstraintPtr getAtomicConstraint() const;
+    AtomicConstraintConstPtr getAtomicConstraint() const;
   }; //class ConstraintMacro
 
   typedef boost::shared_ptr<ConstraintMacro> ConstraintMacroPtr;

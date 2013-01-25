@@ -14,14 +14,14 @@ class AtomicConstraint
   
     //------------fields
  private:
-    ManRelPtr _relation;
+    ManRelConstPtr _relation;
 
     //------------Constructor--------
  public:
-    AtomicConstraint(ManRelPtr relation);
+    AtomicConstraint(ManRelConstPtr relation);
 
     //---------------Accessors
-    ManRelPtr getRelation() { return _relation; }
+    ManRelConstPtr getRelation() const { return _relation; }
 
     //mutators
     void setRelation(ManRelPtr relation) { _relation = relation; }

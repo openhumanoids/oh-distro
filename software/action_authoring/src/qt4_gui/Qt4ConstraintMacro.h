@@ -7,7 +7,6 @@
 #include <QApplication>
 // Custom QT widget
 #include "../qt4_widgets/TogglePanel.h"
-#include "action_authoring/AtomicConstraint.h"
 #include "action_authoring/ConstraintMacro.h"
 
 namespace action_authoring

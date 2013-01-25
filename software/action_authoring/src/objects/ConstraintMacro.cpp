@@ -14,13 +14,13 @@ ConstraintMacro::ConstraintMacro(const string &name, const ConstraintMacroType &
     _timeLowerBound = 0;
 }
 
-ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintPtr atomicConstraint) : 
+ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintConstPtr atomicConstraint) : 
   _name(name),
   _constraints(),
   _constraintType(ConstraintMacro::ATOMIC),
   _atomicConstraint(atomicConstraint)
 {
-  //todo : note constructor initialier list 
+
 }
 
 void ConstraintMacro::appendConstraintMacro(ConstraintMacroPtr constraint) {
@@ -44,7 +44,7 @@ void ConstraintMacro::getConstraintMacros(vector<ConstraintMacroPtr> &constraint
 		     _constraints.end());
 }
 
-AtomicConstraintPtr ConstraintMacro::getAtomicConstraint() const {
+AtomicConstraintConstPtr ConstraintMacro::getAtomicConstraint() const {
   if (_constraintType != ConstraintMacro::ATOMIC) {
    throw InvalidMethodCallForContraintTypeException("Cannot get affordance relation for non-atomic constraint.");
   }
