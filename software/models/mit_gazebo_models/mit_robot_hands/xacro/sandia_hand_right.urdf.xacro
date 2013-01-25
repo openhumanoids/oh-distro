@@ -4,15 +4,15 @@
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        name="sandia_hand" >
   
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/xacro/sandia_hand.xacro" />
+  <include filename="$(find sandia_hand_utils)/urdf/sandia_hand.urdf.xacro" />
 
- <!-- <link name="base">
+  <link name="base">
     <inertial>
         <mass value="0.1" />
         <origin xyz="0 0 0.25" rpy="0 0 0" />
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
     </inertial>
-    <visual>
+ <!--   <visual>
         <origin xyz="0 0 0.25" rpy="0 0 0" />
         <geometry>
             <box size="0.5 0.5 0.5" />
@@ -23,9 +23,9 @@
         <geometry>
             <box size="0.5 0.5 0.5" />
         </geometry>
-    </collision>
-  </link>-->
-  <xacro:sandia_hand side="right" parent="right_base_yaw">
+    </collision> -->
+  </link>
+  <xacro:sandia_hand side="right" parent="base">
     <origin xyz="0 0 0" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>
