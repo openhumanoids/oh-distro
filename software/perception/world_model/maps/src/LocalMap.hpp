@@ -69,6 +69,7 @@ public:
   void clear();
 
   int64_t getId() const;
+  int64_t getStateId() const;
   int getMaxPointDataBufferSize() const;
   Eigen::Vector3f getBoundMin() const;
   Eigen::Vector3f getBoundMax() const;
@@ -107,6 +108,7 @@ public:
 
 
 protected:
+  int64_t mStateId;
   Spec mSpec;
   bool mIsFrozen;
   boost::shared_ptr<PointDataBuffer> mPointData;

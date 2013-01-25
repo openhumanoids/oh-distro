@@ -1,25 +1,3 @@
-/*
-design notes:
-
-controls on right panel:
- xyz size of local map
- button for creating new local map
-
- button for creating new view / request octree
-
- mouse control modes:
-   pass-through (do nothing)
-   select xy rect from current view
-   select rect extents
-
- method to change modes:
-   key press activates/deactivates
-   
- 
- can draw phantom cube around all vois (who keeps track?)
-
- */
-
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -116,7 +94,6 @@ struct RendererMaps {
   typedef std::unordered_map<int64_t,CloudData> DataMap;
   DataMap mClouds;
 
-  bool mEditing;
   InputMode mInputMode;
   bool mDragging;
   Eigen::Vector2f mDragPoint1;
@@ -198,6 +175,7 @@ struct RendererMaps {
     }    
 
     // transform and add
+    // TODO: separate some of this out
     pcl::transformPointCloud(*cloud, *cloud, matx);
     DataMap::iterator item = mClouds.find(iMessage->view_id);
     if (item == mClouds.end()) {
@@ -270,7 +248,7 @@ struct RendererMaps {
   }
 
   static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
-                                   const char *iName, 
+                                   const char *iName,
                                    RendererMaps *self) {
     self->mInputMode = (InputMode)
       bot_gtk_param_widget_get_enum(iWidget, PARAM_INPUT_MODE);
@@ -281,9 +259,9 @@ struct RendererMaps {
     self->mRequestResolution = (float)
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_RES);
 
-    if(!strcmp(iName, PARAM_DATA_REQUEST)) {
+    if (!strcmp(iName, PARAM_DATA_REQUEST) && (self->mBoxValid)) {
       drc::map_request_t request;
-      request.map_id = 1;  // TODO: change this
+      request.map_id = 0;
       request.view_id = ((int64_t)rand() << 31) + rand();
       switch(self->mRequestType) {
       case REQUEST_TYPE_OCTREE:
@@ -310,6 +288,14 @@ struct RendererMaps {
       self->mLcm->publish("MAP_REQUEST", &request);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_NONE);
+      CloudData data;
+      data.mId = request.view_id;
+      data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
+                                    (double)rand()/RAND_MAX,
+                                    (double)rand()/RAND_MAX);
+      data.mFrustum = self->mFrustum;
+      self->mClouds[data.mId] = data;
+      self->mBoxValid = false;
     }
   
     bot_viewer_request_redraw(self->mViewer);
@@ -341,6 +327,9 @@ struct RendererMaps {
     for (DataMap::const_iterator iter = self->mClouds.begin();
          iter != self->mClouds.end(); ++iter) {
       const CloudData& data = iter->second;
+      if ((data.mCloud == NULL) || (data.mCloud->size() == 0)) {
+        continue;
+      }
       const PointCloudType& cloud = *data.mCloud;
       glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
       glPointSize(3);
@@ -350,6 +339,9 @@ struct RendererMaps {
         glVertex3f(pt.x, pt.y, pt.z);
       }
       glEnd();
+      if (data.mFrustum.mPlanes.size() > 0) {
+        self->drawFrustum(data.mFrustum, data.mColor);
+      }
     }
 
 
@@ -382,33 +374,7 @@ struct RendererMaps {
 
     if (self->mBoxValid) {
       self->updateFrontAndBackPlanes(self->mFrustum);
-      // intersect each ray with front and back plane
-      std::vector<Eigen::Vector3f> points(8);
-      points[0] = intersect(self->mFrustum.mPos, self->mFrustum.mRay1,
-                            self->mFrustum.mPlanes[4]);
-      points[1] = intersect(self->mFrustum.mPos, self->mFrustum.mRay2,
-                            self->mFrustum.mPlanes[4]);
-      points[2] = intersect(self->mFrustum.mPos, self->mFrustum.mRay3,
-                            self->mFrustum.mPlanes[4]);
-      points[3] = intersect(self->mFrustum.mPos, self->mFrustum.mRay4,
-                            self->mFrustum.mPlanes[4]);
-      points[4] = intersect(self->mFrustum.mPos, self->mFrustum.mRay1,
-                            self->mFrustum.mPlanes[5]);
-      points[5] = intersect(self->mFrustum.mPos, self->mFrustum.mRay2,
-                            self->mFrustum.mPlanes[5]);
-      points[6] = intersect(self->mFrustum.mPos, self->mFrustum.mRay3,
-                            self->mFrustum.mPlanes[5]);
-      points[7] = intersect(self->mFrustum.mPos, self->mFrustum.mRay4,
-                            self->mFrustum.mPlanes[5]);
-      glColor3f(0,0,1);
-      for (int i = 0; i < 6; ++i) {
-        glBegin(GL_LINE_LOOP);
-        for (int j = 0; j < 4; ++j) {
-          glVertex3f(points[kBoxQuads[i][j]][0], points[kBoxQuads[i][j]][1],
-                     points[kBoxQuads[i][j]][2]);
-        }
-        glEnd();
-      }
+      self->drawFrustum(self->mFrustum, Eigen::Vector3f(0,0,1));
     }
 
     // restore state
@@ -420,11 +386,27 @@ struct RendererMaps {
     glPopAttrib();
   }
 
-  static void pushIndices(std::vector<uint32_t>& ioInds,
-                          const int iA, const int iB, const int iC) {
-    ioInds.push_back(iA);
-    ioInds.push_back(iB);
-    ioInds.push_back(iC);
+  static void drawFrustum(const Frustum& iFrustum,
+                          const Eigen::Vector3f& iColor) {
+    // intersect each ray with front and back plane
+    std::vector<Eigen::Vector3f> p(8);
+    p[0] = intersect(iFrustum.mPos, iFrustum.mRay1, iFrustum.mPlanes[4]);
+    p[1] = intersect(iFrustum.mPos, iFrustum.mRay2, iFrustum.mPlanes[4]);
+    p[2] = intersect(iFrustum.mPos, iFrustum.mRay3, iFrustum.mPlanes[4]);
+    p[3] = intersect(iFrustum.mPos, iFrustum.mRay4, iFrustum.mPlanes[4]);
+    p[4] = intersect(iFrustum.mPos, iFrustum.mRay1, iFrustum.mPlanes[5]);
+    p[5] = intersect(iFrustum.mPos, iFrustum.mRay2, iFrustum.mPlanes[5]);
+    p[6] = intersect(iFrustum.mPos, iFrustum.mRay3, iFrustum.mPlanes[5]);
+    p[7] = intersect(iFrustum.mPos, iFrustum.mRay4, iFrustum.mPlanes[5]);
+    glColor3f(iColor[0], iColor[1], iColor[2]);
+    for (int i = 0; i < 6; ++i) {
+      glBegin(GL_LINE_LOOP);
+      for (int j = 0; j < 4; ++j) {
+        glVertex3f(p[kBoxQuads[i][j]][0], p[kBoxQuads[i][j]][1],
+                   p[kBoxQuads[i][j]][2]);
+      }
+      glEnd();
+    }
   }
 
   static Eigen::Vector4f computePlane(Eigen::Vector3f& p1, Eigen::Vector3f& p2,
@@ -481,6 +463,7 @@ struct RendererMaps {
                         const double iRayOrg[3], const double iRayDir[3],
                         const GdkEventButton* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
+
     if (self->mInputMode == INPUT_MODE_NONE) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
@@ -507,7 +490,6 @@ struct RendererMaps {
           return 1;
         }
         else {}
-        return 0;
       }
     }
     else {}
@@ -518,11 +500,16 @@ struct RendererMaps {
                           const double iRayOrg[3], const double iRayDir[3],
                           const GdkEventButton* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
+
     if (self->mInputMode == INPUT_MODE_NONE) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
       if (iEvent->button == 1) {
         self->mDragging = false;
+
+        if ((self->mDragPoint2-self->mDragPoint1).norm() < 1) {
+          return 0;
+        }
         
         // get view info
         GLdouble modelViewGl[16];
@@ -571,8 +558,6 @@ struct RendererMaps {
         self->mFrustum.mRay3.normalize();
         self->mFrustum.mRay4.normalize();
 
-        // TODO: lcmgl
-
         self->mFrustum.mNear = 5;
         self->mFrustum.mFar = 10;
 
@@ -603,6 +588,7 @@ struct RendererMaps {
                          const double iRayOrg[3], const double iRayDir[3],
                          const GdkEventMotion* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
+
     if (self->mInputMode == INPUT_MODE_NONE) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
@@ -617,7 +603,7 @@ struct RendererMaps {
       if (self->mBoxValid && self->mDragging) {
         self->mDragPoint2[0] = iEvent->x;
         self->mDragPoint2[1] = iEvent->y;
-        float dist = self->mDragPoint1[1]-self->mDragPoint2[1];
+        float dist = self->mDragPoint2[1]-self->mDragPoint1[1];
         float scaledDist = dist/100;
         if (self->mWhichButton == 1) {
           self->mFrustum.mNear = std::max(0.0f, self->mBaseValue+scaledDist);
@@ -628,7 +614,6 @@ struct RendererMaps {
           return 1;
         }
         else {}
-        return 0;
       }
       else {}
     }
@@ -686,8 +671,9 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   BotEventHandler* handler = &self->mEventHandler;
   handler->name = (char*)RENDERER_NAME;
   handler->enabled = 1;
+  handler->picking = 0;
   handler->pick_query = NULL;
-  handler->key_press = NULL; // TODO: RendererMaps::keyPress;
+  handler->key_press = RendererMaps::keyPress;
   handler->hover_query = NULL;
   handler->mouse_press = RendererMaps::mousePress;
   handler->mouse_release = RendererMaps::mouseRelease;

@@ -39,6 +39,9 @@ public:
   // get map with specified id, or null if not found
   LocalMap::Ptr getMap(const int64_t iId) const;
 
+  // get all registered map ids
+  std::vector<int64_t> getAllMapIds(const bool iActiveOnly=false) const;
+
   // start forwarding data to particular map
   bool startUpdatingMap(const int64_t iId);
 

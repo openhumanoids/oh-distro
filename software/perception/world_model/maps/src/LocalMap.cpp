@@ -39,6 +39,7 @@ LocalMap(const LocalMap::Spec& iSpec) {
   mPointData->setMaxLength(mSpec.mPointBufferSize);
   mOctree.mTree.reset(new octomap::OcTree(mSpec.mOctreeResolution));
   mOctree.mTransform = mSpec.mOctreeTransform;
+  mStateId = 0;
 }
 
 LocalMap::
@@ -53,6 +54,11 @@ clear() {
 int64_t LocalMap::
 getId() const {
   return mSpec.mId;
+}
+
+int64_t LocalMap::
+getStateId() const {
+  return mStateId;
 }
 
 int LocalMap::
@@ -160,14 +166,15 @@ addData(const maps::PointSet& iPointSet) {
     // add point to internal point set
     outCloud->push_back(refCloud[i]);
   }
-  mOctree.mTree->updateInnerOccupancy();
   
-  // add surviving points to buffer
+  // if any points survived, add them to buffer and update state count
   if (outCloud->size() > 0) {
     maps::PointSet pointSet;
     pointSet.mTimestamp = iPointSet.mTimestamp;
     pointSet.mCloud = outCloud;
     mPointData->add(pointSet);
+    mOctree.mTree->updateInnerOccupancy();
+    ++mStateId;
   }
 
   return true;

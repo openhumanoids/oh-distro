@@ -57,6 +57,19 @@ getMap(const int64_t iId) const {
   return item->second;
 }
 
+std::vector<int64_t> MapManager::
+getAllMapIds(const bool iActiveOnly) const {
+  std::vector<int64_t> ids;
+  for (MapCollection::const_iterator iter = mMaps.begin();
+       iter != mMaps.end(); ++iter) {
+    if (!iActiveOnly || iter->second->isActive()) {
+      ids.push_back(iter->first);
+    }
+  }
+  std::sort(ids.begin(), ids.end());
+  return ids;
+}
+
 bool MapManager::
 startUpdatingMap(const int64_t iId) {
   MapCollection::const_iterator item = mMaps.find(iId);
@@ -150,5 +163,3 @@ addData(const maps::PointSet& iPointSet) {
   }
   return true;
 }
-
-

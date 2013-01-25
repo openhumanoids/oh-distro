@@ -1,32 +1,23 @@
-#include <maps/MapManager.hpp>
-#include <maps/LocalMap.hpp>
-#include <maps/SensorDataReceiver.hpp>
-#include <maps/PointDataBuffer.hpp>
+#include <unordered_map>
 
-#include <lcm/lcm-cpp.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
-#include <lcmtypes/drc/map_params_t.hpp>
-#include <lcmtypes/drc/local_map_t.hpp>
-#include <lcmtypes/octomap/raw_t.hpp>
-
-#include <drc_utils/Clock.hpp>
-
-#include <pcl/common/transforms.h>
-
-#include <ConciseArgs>
-
-// TODO: temp stuff
-#include <pcl/io/pcd_io.h>
-#include <bot_core/timestamp.h>
-#include <maps/DataBlob.hpp>
-#include <octomap/octomap.h>
-#include <lcmtypes/octomap/raw_t.hpp>
+#include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
-#include <unordered_map>
+
+#include <maps/MapManager.hpp>
+#include <maps/LocalMap.hpp>
+#include <maps/SensorDataReceiver.hpp>
+#include <maps/DataBlob.hpp>
+
+
+#include <drc_utils/Clock.hpp>
+#include <pcl/common/transforms.h>
+#include <ConciseArgs>
+#include <octomap/octomap.h>
 
 
 using namespace std;
@@ -52,7 +43,16 @@ struct Worker {
       std::cout << "Timer expired for view " << mRequest.view_id << std::endl;
 
       // get map
-      LocalMap::Ptr localMap = mManager->getMap(mRequest.map_id);
+      LocalMap::Ptr localMap;
+      if (mRequest.map_id == 0) {
+        vector<int64_t> ids = mManager->getAllMapIds(true);
+        if (ids.size() > 0) {
+          localMap = mManager->getMap(ids.back());
+        }
+      }
+      else {
+        localMap = mManager->getMap(mRequest.map_id);
+      }
       if (localMap == NULL) {
         continue;
       }
@@ -170,6 +170,11 @@ struct Worker {
         }
         mLcm->publish("MAP_CLOUD", &msgCloud);
       }
+
+      // one-shot request has 0 frequency
+      if (fabs(mRequest.frequency) < 1e-6) {
+        break;
+      }
     }
     mActive = false;
   }
@@ -184,11 +189,6 @@ public:
   boost::shared_ptr<lcm::LCM> mLcm;
   WorkerMap mWorkers;
 
-  // TODO: maybe won't publish regularly but on request
-  // TODO: clean up
-  bool mShouldPublishMap;
-  bool mShouldPublishOctomap;
-  int mPublishPeriod;
   lcm::Subscription* mRequestSubscription;
 
   State() {
@@ -197,11 +197,6 @@ public:
     mLcm.reset(new lcm::LCM());
     drc::Clock::instance()->setLcm(mLcm);
     mSensorDataReceiver->setLcm(mLcm);
-
-    // defaults; should be set by command line args in main()
-    mShouldPublishMap = false;
-    mShouldPublishOctomap = false;
-    mPublishPeriod = 3000;
     mRequestSubscription = NULL;
   }
 
@@ -216,18 +211,22 @@ public:
   }
 
   void addWorker(const drc::map_request_t& iRequest) {
-    if (mWorkers.find(iRequest.view_id) != mWorkers.end()) {
-      return;
+    WorkerMap::const_iterator item = mWorkers.find(iRequest.view_id);
+    if (item != mWorkers.end()) {
+      if (!item->second->mActive) {
+        boost::thread thread(*item->second);
+      }
     }
-    Worker::Ptr worker(new Worker());
-    worker->mActive = false;  // TODO: can make this a condition variable?
-    worker->mLcm = mLcm;
-    worker->mManager = mManager;
-    worker->mRequest = iRequest;
-    mWorkers[iRequest.view_id] = worker;
-    boost::thread thread(*worker);
+    else {
+      Worker::Ptr worker(new Worker());
+      worker->mActive = false;
+      worker->mLcm = mLcm;
+      worker->mManager = mManager;
+      worker->mRequest = iRequest;
+      mWorkers[iRequest.view_id] = worker;
+      boost::thread thread(*worker);
+    }
   }
-  
 };
 
 class DataConsumer {
@@ -256,15 +255,15 @@ int main(const int iArgc, const char** iArgv) {
 
   // parse arguments
   string laserChannel = "ROTATING_SCAN";
+  float publishPeriod = 3;
+  float defaultResolution = 0.1;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
-  opt.add(state.mPublishPeriod, "p", "publish_period",
-          "interval between update publications, in ms");
-  opt.add(state.mShouldPublishMap, "m", "map_publish",
-          "whether to publish local map messages");
-  opt.add(state.mShouldPublishOctomap, "o", "octomap_publish",
-          "whether to publish octomap messages");
+  opt.add(publishPeriod, "p", "publish_period",
+          "interval between map publications, in s");
+  opt.add(defaultResolution, "r", "resolution",
+          "resolution of default contextual map, in m");
   opt.parse();
   state.mSensorDataReceiver->
     addChannel(laserChannel,
@@ -297,8 +296,8 @@ int main(const int iArgc, const char** iArgv) {
   request.map_id = 1;
   request.view_id = 1;
   request.type = drc::map_request_t::OCTREE;
-  request.resolution = 0.1;
-  request.frequency = 1.0/2;
+  request.resolution = defaultResolution;
+  request.frequency = 1.0/publishPeriod;
   request.time_min = -1;
   request.time_max = -1;
   request.num_clip_planes = 0;
