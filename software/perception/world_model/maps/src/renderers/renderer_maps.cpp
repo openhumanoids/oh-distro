@@ -454,7 +454,7 @@ struct RendererMaps {
         (iEvent->keyval == GDK_Escape)) {
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_NONE);
-      return 1;
+      return 0;  // return 1;
     }
     return 0;
   }
@@ -473,7 +473,7 @@ struct RendererMaps {
         self->mDragPoint1[0] = iEvent->x;
         self->mDragPoint1[1] = iEvent->y;
         self->mDragPoint2 = self->mDragPoint1;
-        return 1;
+        return 0; // return 1;
       }
       else {}
     }
@@ -487,7 +487,7 @@ struct RendererMaps {
           self->mDragPoint2 = self->mDragPoint1;
           self->mBaseValue = (iEvent->button == 1) ? self->mFrustum.mNear :
             self->mFrustum.mFar;
-          return 1;
+          return 0; // return 1;
         }
         else {}
       }
@@ -573,7 +573,7 @@ struct RendererMaps {
 
         self->mBoxValid = true;
 
-        return 1;
+        return 0; // return 1;
       }
       else {}
     }
@@ -595,7 +595,7 @@ struct RendererMaps {
       if (self->mDragging) {
         self->mDragPoint2[0] = iEvent->x;
         self->mDragPoint2[1] = iEvent->y;
-        return 1;
+        return 0; // return 1;
       }
       else {}
     }
@@ -607,11 +607,11 @@ struct RendererMaps {
         float scaledDist = dist/100;
         if (self->mWhichButton == 1) {
           self->mFrustum.mNear = std::max(0.0f, self->mBaseValue+scaledDist);
-          return 1;
+          return 0; // return 1;
         }
         else if (self->mWhichButton == 3) {
           self->mFrustum.mFar = std::max(0.0f, self->mBaseValue+scaledDist);
-          return 1;
+          return 0; // return 1;
         }
         else {}
       }
