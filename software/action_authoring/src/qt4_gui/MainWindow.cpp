@@ -78,8 +78,9 @@ void MainWindow::handleAffordancesChanged()
   connect(&_widget_opengl, SIGNAL(raycastCallback(std::string)),
 	  this, SLOT(selectedOpenGLObjectChanged(std::string)));
 
+  // TODO resolve path
   _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
-    "~/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
   _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
   _widget_opengl.update();
@@ -146,39 +147,37 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     // read the joints from the robot state
     // create the manipulators from the robot's joints
 
-    std::vector<std::string> joint_names;
+    std::vector<std::string> link_names;
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
     for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
     {
     	const State_GFE_Joint& state_gfe_joint = it->second;
-    	joint_names.push_back(state_gfe_joint.id());
 	std::string id = state_gfe_joint.id();
-//	std::string linkName = _worldState.colorRobot.getLinkNameFromJointName(id);
 	boost::shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+    	link_names.push_back(link->name);
 
-//	ManipulatorStateConstPtr man (new ManipulatorState(link));
-//	_worldState.manipulators.push_back(man);
+	// TODO: constructor that works on link
+	ManipulatorStateConstPtr man (new ManipulatorState(link->name));
+	_worldState.manipulators.push_back(man);
 
-/*
-	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(man); 
-	_widget_opengl.opengl_scene().add_object(*asGlMan);
-	_worldState.glObjects.push_back(asGlMan);
-*/
+//	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(man); 
+//	_widget_opengl.opengl_scene().add_object(*asGlMan);
+//	_worldState.glObjects.push_back(asGlMan);
+
 	// update the selected manipulator
-	//std::string manName = _authoringState._selected_gui_constraint->
-	//getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
-
+//	std::string manName = _authoringState._selected_gui_constraint->
+//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
+/*
 	robot_opengl::CollisionGroupPtr colgroup = _worldState.colorRobot.getCollisionGroupsForLink(link->name);
 	if (colgroup != NULL && colgroup->size() > 0) {
 	    // add collision contact widgets!
 	    for (int i = 0; i < colgroup->size(); i++) {
 		std::cout << "adding widget " << std::endl;
-//		urdf::Pose org = colgroup[i].origin;
-
-//		OpenGL_Object_Sphere* s = new OpenGL_Object_Sphere();
-		
+		urdf::Pose org = (*colgroup)[i]->origin;
+		OpenGL_Object_Sphere* s = new OpenGL_Object_Sphere();
 	    }
 	}
+    */
 
     }
 

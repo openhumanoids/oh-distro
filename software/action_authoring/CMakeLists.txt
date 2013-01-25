@@ -9,6 +9,9 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+# to enable debug flags: cd pod-build; cmake -DCMAKE_BUILD_TYPE=Debug ..; cd ..
+
+SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g")
 
 set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe qt4_widget
   collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf
