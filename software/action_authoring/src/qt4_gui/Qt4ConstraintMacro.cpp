@@ -163,10 +163,8 @@ updateStateFromElements() {
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
-	ManRelConstPtr mr = _constraint->getAtomicConstraint()->getRelation();
-	//	affordance::ManipulatorStateConstPtr manipState = _manipulators[_gui_robotJointType->currentIndex()];
-	affordance::ManipulatorStatePtr manipState;
-
+	ManRelPtr mr = _constraint->getAtomicConstraint()->getRelation();
+	affordance::ManipulatorStateConstPtr manipState = _manipulators[_gui_robotJointType->currentIndex()];
 	mr->setManipulator(manipState);
       }
 

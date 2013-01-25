@@ -8,20 +8,21 @@
 namespace action_authoring
 {
 
-/**todo: add comment*/
+/**todo: add comment
+todo: make some pure virtual methods*/
 class AtomicConstraint
 {
   
     //------------fields
  private:
-    ManRelConstPtr _relation;
+    ManRelPtr _relation;
 
     //------------Constructor--------
  public:
-    AtomicConstraint(ManRelConstPtr relation);
+    AtomicConstraint(ManRelPtr relation);
 
     //---------------Accessors
-    ManRelConstPtr getRelation() const { return _relation; }
+    ManRelPtr getRelation() const { return _relation; }
 
     //mutators
     void setRelation(ManRelPtr relation) { _relation = relation; }
