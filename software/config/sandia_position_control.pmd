@@ -1,0 +1,49 @@
+group "core" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher $HOME/drc/software/models/mit_gazebo_models/mit_robot_hands/model.sdf";
+        host = "localhost";
+    }
+    cmd "pub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
+        host = "localhost";
+    } 
+    cmd "l2r_pos" {
+        exec = "rosrun LCM2ROS_translator sandiaPositionCommandTranslator";
+        host = "localhost";
+    }
+
+}
+
+group "keyPressed" {
+    cmd "key" {
+        exec = "java -jar drc_hand.jar";
+        host = "localhost";
+    }
+    cmd "spy" {
+        exec = "lcm-spy";
+        host = "localhost";
+    }
+}
+
+group "gazebo" {
+    cmd "gfe" {
+        exec = "roslaunch mit_drcsim_scripts sandia_position_control.launch";
+        host = "localhost";
+    }
+
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start cmd "gfe";
+}
