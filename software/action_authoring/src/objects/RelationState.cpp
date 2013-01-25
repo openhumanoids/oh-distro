@@ -1,20 +1,35 @@
 #include "RelationState.h"
-
 using namespace action_authoring;
+using namespace boost;
+using namespace std;
 
-RelationState::RelationState(const RelationState::RelationType &relationType) {
-    _relationType = relationType;
+unordered_map<string, RelationState::RelationType> RelationState::makeRNameMap()
+{
+  unordered_map<string, RelationState::RelationType> m;
+  m["UNDEFINED"]         = UNDEFINED;
+  m["GRASP"]             = GRASP;
+  m["FORCE_CLOSURE"]     = FORCE_CLOSURE;
+  m["OFFSET"]            = OFFSET;
 
-    // todo make const
-    RelationTypeNames.push_back("UNDEFINED");
-    RelationTypeNames.push_back("GRASP");
-    RelationTypeNames.push_back("FORCE_CLOSURE");
-    RelationTypeNames.push_back("OFFSET");
+  return m;
 }
 
-RelationState::RelationType RelationState::RelationTypeFromName(std::string name) {
-    std::vector<std::string>::iterator it = std::find(RelationTypeNames.begin(), RelationTypeNames.end(), name);
-    if (it != RelationTypeNames.end()) {
-	return (RelationType)(it - RelationTypeNames.begin());
-    }
+
+const unordered_map<string, RelationState::RelationType> rNameToValue = RelationState::makeRNameMap();
+
+RelationState::RelationState(const RelationState::RelationType &relationType) 
+  : _relationType(relationType)
+{
+}
+
+RelationState::RelationType RelationState::getRelationType() const
+{
+  return _relationType;
+}
+
+
+ostream& operator<<(ostream &out, const RelationState &other)
+{
+  out << other.getRelationType();
+  return out;
 }

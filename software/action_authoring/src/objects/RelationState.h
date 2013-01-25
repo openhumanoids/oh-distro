@@ -1,6 +1,7 @@
 #ifndef RELATION_STATE_H
 #define RELATION_STATE_H
 
+#include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <algorithm>
 #include <vector>
@@ -9,7 +10,8 @@
 namespace action_authoring
 {
 
-/**todo: add comment*/
+/**todo: add comment
+ Immutable class*/
 class RelationState
 {
   
@@ -26,28 +28,30 @@ class RelationState
       OFFSET
     } RelationType;
 
-// TODO make const
-    std::vector<std::string> RelationTypeNames;
-    RelationType RelationTypeFromName(std::string);
+    //static init helpers
+    static boost::unordered_map<std::string, RelationType> makeRNameMap();
 
+    /**maps from string name for RelationType to the value*/
+    const static boost::unordered_map<std::string, RelationType> rNameToValue;
+    
     //------------fields
  private:
-    RelationType _relationType;
+    const RelationType _relationType;
 
     //------------Constructor--------
  public:
     RelationState(const RelationState::RelationType &relationType);
 
   //---------------Accessors
-  RelationType getRelationType() const { return _relationType; };
+    RelationType getRelationType() const;
 
-  //mutators
-  
 }; //class RelationState
+
+ std::ostream& operator<<(std::ostream& out, const RelationState& other);
  
  typedef boost::shared_ptr<RelationState> RelationStatePtr;
  typedef boost::shared_ptr<const RelationState> RelationStateConstPtr;
-
+ 
 } //namespace action_authoring
 
 

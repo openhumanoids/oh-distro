@@ -79,7 +79,7 @@ void MainWindow::handleAffordancesChanged()
 	  this, SLOT(selectedOpenGLObjectChanged(std::string)));
 
   _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
-    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    "~/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
   _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
   _widget_opengl.update();

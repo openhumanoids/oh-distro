@@ -1,6 +1,3 @@
-This is a default README file, please replace its contents with information
-relevant to your project.
-
 This software is constructed according to the Pods software policies and
 templates.  The policies and templates can be found at:
 
@@ -9,7 +6,8 @@ templates.  The policies and templates can be found at:
 ====
 
 Name:         action-authoring
-Maintainers:  Christopher Dolan (cdolan@mit.edu), Isaac Evans (ine@mit.edu)
+Maintainers:  Christopher Dolan (cdolan@mit.edu), Isaac Evans (ine@mit.edu), 
+	      Michael Fleder (mfleder@mit.edu)
 Summary:      action authoring code for the MIT DRC project
 Description:
   FILL-ME-IN
