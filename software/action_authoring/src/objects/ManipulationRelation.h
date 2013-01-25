@@ -12,7 +12,9 @@ namespace action_authoring {
 
     //----------Constructor
     public:
-        ManipulationRelation(affordance::AffConstPtr affordance, affordance::ManipulatorStateConstPtr manipulator, RelationStatePtr relationState);
+        ManipulationRelation(affordance::AffConstPtr affordance, 
+			     affordance::ManipulatorStateConstPtr manipulator, 
+			     RelationStateConstPtr relationState);
 
     //----------Accessors
         affordance::AffConstPtr getAffordance() const { return _affordance; }
