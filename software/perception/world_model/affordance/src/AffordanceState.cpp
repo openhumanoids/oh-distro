@@ -33,25 +33,28 @@ string AffordanceState::B_COLOR_NAME  	= "b_color";
 
 
 /**initialize the idEnumMap*/
-unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::initIdEnumMap()
+unordered_map<int16_t, AffordanceState::OTDF_TYPE> *AffordanceState::initIdEnumMap()
 {
-  unordered_map<int16_t, OTDF_TYPE> m;
+
+  unordered_map<int16_t, OTDF_TYPE> *m = new unordered_map<int16_t, OTDF_TYPE>;
   int16_t c 	   = drc::affordance_t::CYLINDER;
   int16_t lev 	   = drc::affordance_t ::LEVER;
   int16_t box	   = drc::affordance_t::BOX;
   int16_t sphere   = drc::affordance_t::SPHERE;
-  m[c]  	   = AffordanceState::CYLINDER;
-  m[lev]           = AffordanceState::LEVER;
-  m[box]	   = AffordanceState::BOX;
-  m[sphere]        = AffordanceState::SPHERE;
+  (*m)[c]  	   = AffordanceState::CYLINDER;
+  (*m)[lev]           = AffordanceState::LEVER;
+  (*m)[box]	   = AffordanceState::BOX;
+  (*m)[sphere]        = AffordanceState::SPHERE;
   
   int unknown = box + 1;
-  if (m.find(unknown) != idToEnum.end())
+  if (m->find(unknown) != m->end())
     throw ArgumentException("initToIdEnumMap : investigate");
-  m[unknown] = AffordanceState::UNKNOWN;
+  (*m)[unknown] = AffordanceState::UNKNOWN;
+
+  return m;
 }
 
-const unordered_map<int16_t, AffordanceState::OTDF_TYPE> AffordanceState::idToEnum = initIdEnumMap();
+const unordered_map<int16_t, AffordanceState::OTDF_TYPE> *AffordanceState::idToEnum = initIdEnumMap();
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg) 
@@ -130,11 +133,15 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 
 	//argument check
-	if (idToEnum.find(msg->otdf_id) == idToEnum.end())
-	  throw InvalidOtdfID(string("not recognized: ") + toStr<short>(msg->otdf_id) 
-			      + string("  : name =  ") + msg->name );
+	if (idToEnum->find(msg->otdf_id) == idToEnum->end())
+	  {
+	    printIdToEnumMap();
+	    throw InvalidOtdfID(string("not recognized: ") + toStr<short>(msg->otdf_id) 
+				+ string("  : name =  ") + msg->name );
+	    
+	  }
 
-	_otdf_id = idToEnum.find(msg->otdf_id)->second;
+	_otdf_id = idToEnum->find(msg->otdf_id)->second;
 
 	for(uint i = 0; i < msg->nstates; i++)
 		_states[msg->state_names[i]] = msg->states[i];
@@ -146,6 +153,14 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 AffordanceState::~AffordanceState()
 {
 	//
+}
+
+void AffordanceState::printIdToEnumMap()
+{
+  cout << "\n map size = " << idToEnum->size() << endl;
+  for(unordered_map<int16_t, OTDF_TYPE>::const_iterator i = idToEnum->begin();
+      i != idToEnum->end(); ++i)
+    cout << "\n next mapping = ( " << i->first << ", " << i->second << ")" << endl;
 }
 
 //------methods-------

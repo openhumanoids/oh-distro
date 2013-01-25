@@ -37,8 +37,8 @@ namespace affordance
     //------------fields
 
   private:
-    static const boost::unordered_map<int16_t, OTDF_TYPE> idToEnum;
-    static boost::unordered_map<int16_t, OTDF_TYPE> initIdEnumMap(); //to initialiaze idToEnum
+    static const boost::unordered_map<int16_t, OTDF_TYPE> *idToEnum;
+    static boost::unordered_map<int16_t, OTDF_TYPE> *initIdEnumMap(); //to initialiaze idToEnum
 
     
   public: //should make get / private set methods for these
@@ -111,6 +111,8 @@ namespace affordance
   public:
     static std::string toStrFromMap(boost::unordered_map<std::string,double> m);
     template <class T> static std::string toStr(T t);
+
+    static void printIdToEnumMap();
     
   };
   
