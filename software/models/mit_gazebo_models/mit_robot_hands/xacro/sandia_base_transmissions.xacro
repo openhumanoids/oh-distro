@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<robot name="sandia_hand"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <transmission name="real_base_x" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_x"/>
+    <actuator name="real_base_x_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="real_base_y" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_y"/>
+    <actuator name="real_base_y_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="real_base_z" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_z"/>
+    <actuator name="real_base_z_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="real_base_roll" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_roll"/>
+    <actuator name="real_base_roll_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="real_base_pitcj" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_pitch"/>
+    <actuator name="real_base_pitch_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="real_base_yaw" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="real_base_yaw"/>
+    <actuator name="real_base_yaw_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+</robot>

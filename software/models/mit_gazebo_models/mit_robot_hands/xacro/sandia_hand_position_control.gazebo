@@ -1,0 +1,128 @@
+<robot name="drc_skeleton">
+  <gazebo>
+    <!-- robot model offset -->
+    <pose>0 0 0 0 0 0</pose>
+  </gazebo>
+  <gazebo>
+   <!-- <plugin name="sandia_plugin" filename="libAtlasPlugin.so"/> -->
+
+	<plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+      <topicName>joint_trajectory</topicName>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+    
+    <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+    </plugin>
+
+    <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <topicName>true_robot_state</topicName>
+      <synchronization>false</synchronization>
+    </plugin>
+    
+    <plugin name="joint_torque_controller" filename="libjoint_actuation_plugin.so">
+      <alwaysOn>true</alwaysOn>
+      <topicName>actuator_cmd</topicName>
+    </plugin> 
+    
+    <!--
+    <plugin filename="libMITRobotPlugin.so" name="mit_drc_robot_plugin">
+      <mode>nominal</mode>
+      <harnessed>false</harnessed>
+    </plugin>
+	-->
+ 
+  </gazebo>
+  <!-- imu -->
+  <!-- <link name="imu_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link> -->
+  <!-- use a zero limit revolute joint rather than fixed to prevent lumping -->
+ <!-- <joint name="imu_joint" type="revolute">
+    <parent link="pelvis"/>
+    <child link="imu_link"/>
+    <origin xyz="0.05991527603 0 -0.01415" rpy="0 0 0"/>
+    <limit effort="0" lower="0" upper="0" velocity="0"/>
+    <safety_controller k_position="0" k_velocity="0" soft_lower_limit="0" soft_upper_limit="0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <gazebo>
+    <plugin filename="libgazebo_ros_imu.so" name="sandia_imu">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <bodyName>imu_link</bodyName>
+      <topicName>imu</topicName>
+      <gaussianNoise>0.0</gaussianNoise>
+      <xyzOffsets>0 0 0</xyzOffsets>
+      <rpyOffsets>0 0 0</rpyOffsets>
+    </plugin>
+  </gazebo> -->
+ <!-- <gazebo reference="l_arm_mwx">
+    <provideFeedback>1</provideFeedback>
+  </gazebo>
+  <gazebo reference="r_arm_mwx">
+    <provideFeedback>1</provideFeedback>
+  </gazebo>
+  <gazebo reference="l_leg_lax">
+    <provideFeedback>1</provideFeedback>
+  </gazebo>
+  <gazebo reference="r_leg_lax">
+    <provideFeedback>1</provideFeedback>
+  </gazebo>
+  <gazebo reference="r_foot">
+    <mu1>10.0</mu1>
+    <mu2>10.0</mu2>
+    <fdir1>1 0 0</fdir1>
+    <maxVel>0.0</maxVel>
+    <minDepth>0.001</minDepth>
+  </gazebo>
+  <gazebo reference="l_foot">
+    <mu1>10.0</mu1>
+    <mu2>10.0</mu2>
+    <fdir1>1 0 0</fdir1>
+    <maxVel>0.0</maxVel>
+    <minDepth>0.001</minDepth>
+  </gazebo> -->
+  
+  <!-- contact sensor -->
+  <!--<gazebo reference="r_foot">
+    <sensor type="contact" name="r_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>r_foot_collision</collision>
+        <topic>/r_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+  <gazebo reference="l_foot">
+    <sensor type="contact" name="l_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>l_foot_collision</collision>
+        <topic>/l_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo> -->
+</robot>
+
