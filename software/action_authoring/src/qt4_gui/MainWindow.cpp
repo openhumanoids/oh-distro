@@ -12,6 +12,17 @@ using namespace boost;
 
 //using namespace collision_detection;
 
+string RandomString(int len)
+{
+   string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+   int pos;
+   while(str.size() != len) {
+    pos = ((rand() % (str.size() - 1)));
+    str.erase (pos, 1);
+   }
+   return str;
+}
+
 /*
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
@@ -80,7 +91,7 @@ void MainWindow::handleAffordancesChanged()
 
   // TODO resolve path
   _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
-    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    "~/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
   _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
   _widget_opengl.update();
@@ -167,17 +178,31 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	// update the selected manipulator
 //	std::string manName = _authoringState._selected_gui_constraint->
 //	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
-/*
+
 	robot_opengl::CollisionGroupPtr colgroup = _worldState.colorRobot.getCollisionGroupsForLink(link->name);
 	if (colgroup != NULL && colgroup->size() > 0) {
 	    // add collision contact widgets!
 	    for (int i = 0; i < colgroup->size(); i++) {
 		std::cout << "adding widget " << std::endl;
-		urdf::Pose org = (*colgroup)[i]->origin;
+		urdf::Pose dot = (*colgroup)[i]->origin;
+		KDL::Frame f;
+		f.p = KDL::Vector(dot.position.x, dot.position.y, dot.position.y);
+
+/*		
 		OpenGL_Object_Sphere* s = new OpenGL_Object_Sphere();
+		s->set(f, 0.05);
+		_widget_opengl.opengl_scene().add_object(*s);
+		_worldState.glObjects.push_back(s);
+		
+		// make a collision object
+		Collision_Object* collision_object_manipulator;
+		collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
+		    0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
+		_widget_opengl.add_collision_object(collision_object_manipulator);
+		_worldState.collisionObjs.push_back(collision_object_manipulator);
+*/
 	    }
 	}
-    */
 
     }
 
@@ -414,17 +439,6 @@ handleDeleteConstraint() {
 	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints.begin() + i);
 	rebuildGUIFromState(_authoringState, _worldState);
     } 
-}
-
-string RandomString(int len)
-{
-   string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-   int pos;
-   while(str.size() != len) {
-    pos = ((rand() % (str.size() - 1)));
-    str.erase (pos, 1);
-   }
-   return str;
 }
 
 void
