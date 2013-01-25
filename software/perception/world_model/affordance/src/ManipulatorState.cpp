@@ -5,9 +5,12 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 
-ManipulatorState::ManipulatorState(std::string name) 
+ManipulatorState::ManipulatorState(std::string name)
 {
     _name = name;
+    // todo actually unique id
+    _id1 = rand();
+    _id2 = rand();
 }
 
 ManipulatorState::ManipulatorState(const ManipulatorState &other) {
@@ -22,7 +25,7 @@ ManipulatorState::~ManipulatorState() {
 
 GlobalUID ManipulatorState::getGlobalUniqueId() const
 {
- throw NotImplementedException("manip state");
+    return GlobalUID(_id1, _id2);
 }
 
 string ManipulatorState::getName() const
@@ -44,20 +47,21 @@ Vector3f ManipulatorState::getXYZ() const
 Vector3f ManipulatorState::getRPY() const
 {
  throw NotImplementedException("manip state");
-} 
+}
+ 
 bool ManipulatorState::isAffordance() const
 {
-	return false;
+    return false;
 }
  
 bool ManipulatorState::isManipulator() const
 {
-	return true;
+    return true;
 }
 
 bool ManipulatorState::hasChildren() const
 {
- throw NotImplementedException("manip state");
+    throw NotImplementedException("manip state");
 }
  
 bool ManipulatorState::hasParent() const

@@ -19,6 +19,8 @@ namespace affordance
     //-------------fields----
   private: 
     std::string _name;
+    int _id1;
+    int _id2;
 
     //-----------constructor/destructor
   public:
