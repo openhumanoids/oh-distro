@@ -17,7 +17,8 @@ using namespace collision;
 using namespace renderer_affordances;
 using namespace renderer_affordances_gui_utils;
 
-
+// =================================================================================
+// DRAWING
 
 static void _draw (BotViewer *viewer, BotRenderer *renderer)
 {
@@ -40,6 +41,30 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
         glEnd();
         glPopMatrix();
+        
+        if(self->dragging)
+        {
+         Eigen::Vector3f diff = self->ray_hit_drag - self->ray_hit;
+         double length =diff.norm();
+         double head_width = 0.03; double head_length = 0.03;double body_width = 0.01;
+         glColor4f(0,0,0,1);
+         glPushMatrix();
+         glTranslatef(self->ray_hit[0], self->ray_hit[1],self->ray_hit[2]);
+         //--get rotation in angle/axis form
+         double theta;
+         Eigen::Vector3f axis;// = self->ray_hit-self->ray_start;
+         axis.normalize();
+         diff.normalize();
+         Eigen::Vector3f uz,ux;   uz << 0 , 0 , 1;ux << 1 , 0 , 0;
+         axis = ux.cross(diff);
+         theta = acos(ux.dot(diff));
+   
+         glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+         glTranslatef(length/2, 0,0);
+         bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+         glPopMatrix();
+        }
+        
   }
 
   float c[3] = {0.3,0.3,0.6};
@@ -74,8 +99,9 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   }
 
 }
-
-
+// =================================================================================
+// EVENT HANDLING
+// ----------------------------------------------------------------------------
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RendererAffordances *self = (RendererAffordances*) ehandler->user;
@@ -107,7 +133,9 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
   self->ray_start = from;
   self->ray_end = to;
-  
+  self->ray_hit_t = t;
+  self->ray_hit_drag = to;
+  self->ray_hit = to;
   collision::Collision_Object * intersected_object = NULL;
   Eigen::Vector3f hit_pt;
   double shortest_distance = -1;
@@ -122,6 +150,8 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
       it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
       // Highlight all objects that intersect with ray
       if(intersected_object != NULL ){
+            self->ray_hit = hit_pt;
+            self->ray_hit_t = (hit_pt - self->ray_start).norm();
             Eigen::Vector3f diff = (from-hit_pt);
             double distance = diff.norm();
             if(shortest_distance>0) {
@@ -179,7 +209,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   return shortest_distance;
 }
 
-
+// ----------------------------------------------------------------------------
 static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
 {
   RendererAffordances *self = (RendererAffordances*) ehandler->user;
@@ -245,11 +275,13 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
  
   self->ray_start = from;
   self->ray_end = to;
+  self->ray_hit_t = t;
+  self->ray_hit_drag = to;
 //  cout  << "from " << from.transpose() << endl;
 //  cout  << "to " << to.transpose() << endl;
   
 
-  KDL::Frame T_graspgeometry_handinitpos = KDL::Frame::Identity();
+ // KDL::Frame T_graspgeometry_handinitpos = KDL::Frame::Identity();
 
   collision::Collision_Object * intersected_object = NULL;
   Eigen::Vector3f hit_pt;
@@ -265,6 +297,9 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
       // Highlight all objects that intersect with ray
       if(intersected_object != NULL ){
+        self->ray_hit = hit_pt;
+        self->ray_hit_drag = hit_pt;
+        self->ray_hit_t = (hit_pt - self->ray_start).norm();
         cout << "prev selection :" << (*self->link_selection)  <<  endl;
         cout << "intersected :" << intersected_object->id().c_str() << " at: "<< hit_pt.transpose() << endl;
         cout << "object_type :" << it->second._otdf_instance->name_<<  endl;
@@ -272,34 +307,12 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         (*self->object_selection)  =  it->first;
         (*self->link_selection)  = string(intersected_object->id().c_str());        
         it->second._gl_object->highlight_link((*self->link_selection)); 
-        
-        string object_geometry_name = (*self->link_selection); 
-        string object_name_token  = it->first + "_";
-        size_t found = object_geometry_name.find(object_name_token);  
-        string geometry_name =object_geometry_name.substr(found+object_name_token.size());
-        KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
-        self->T_graspgeometry_handinitpos = KDL::Frame::Identity();
-        
-        //Get initial position of hand relative to object geometry.
-        typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator obj_it = self->instantiated_objects.find((*self->object_selection));
-        if(!obj_it->second._gl_object->get_link_frame(geometry_name,T_world_graspgeometry))
-            cerr << " failed to retrieve " << geometry_name<<" in object " << it->first <<endl;
-        else {
-            KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
-            KDL::Vector temp,temp2;
-            //convert to geometry frame.
-            temp[0]=from[0];temp[1]=from[1];temp[2]=from[2];
-            temp = T_graspgeometry_world*temp;         
-            temp2[0]=hit_pt[0];temp2[1]=hit_pt[1];temp2[2]=hit_pt[2];
-            temp2 = T_graspgeometry_world*temp2;
-            Eigen::Vector3d from_geomframe(temp.data),hit_pt_geomframe(temp2.data); 
-            boost::shared_ptr<otdf::Geometry> link_geom;
-            obj_it->second._gl_object->get_link_geometry(geometry_name,link_geom); 
-            get_approach_frame(from_geomframe,hit_pt_geomframe,link_geom,T_graspgeometry_handinitpos); 
-            self->T_graspgeometry_handinitpos = T_graspgeometry_handinitpos;
-        }
         intersected_object = NULL;
+      }
+      else {
+      // clear previous selections
+       string no_selection = " ";
+       it->second._gl_object->highlight_link(no_selection); 
       }
 
     }
@@ -345,6 +358,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
               it->second._gl_hand->highlight_link(sticky_hand_name); 
               intersected_object = NULL;
             }
+            else {
+              string no_selection = " ";
+              it->second._gl_hand->highlight_link(no_selection);
+            }
 
        }// end if
   
@@ -353,7 +370,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
  //(event->button==3) -- Right Click
   //cout << "current selection:" << (*self->link_selection)  <<  endl;
   if(((*self->link_selection)  != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){
-    spawn_object_geometry_dblclk_popup(self);
+    //spawn_object_geometry_dblclk_popup(self);
+    // draw circle for angle specification around the axis.
+    self->dragging = 1;
+    self->show_popup_onrelease = 1;
     bot_viewer_request_redraw(self->viewer);
     std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
     return 1;// consumed if pop up comes up.
@@ -365,24 +385,47 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 }
 
 
-
-static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
-    const double ray_start[3], const double ray_dir[3],
-    const GdkEventButton *event)
+// ----------------------------------------------------------------------------
+static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3],  const GdkEventButton *event)
 {
   RendererAffordances *self = (RendererAffordances*) ehandler->user;
   self->clicked = 0;
+
   if((ehandler->picking==0)||(self->selection_enabled==0)){
     return 0;
+  }  
+  if(self->show_popup_onrelease){
+      spawn_object_geometry_dblclk_popup(self); // DblClk POPUP!
+      self->show_popup_onrelease = 0;
+  } 
+  if (self->dragging) {
+    self->dragging = 0;
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //if picking release picking (Important)
   bot_viewer_request_redraw(self->viewer);
-  return 0;
+  return 1;
+}
+
+// ----------------------------------------------------------------------------
+static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const double ray_start[3], const double ray_dir[3],   const GdkEventMotion *event)
+{
+  RendererAffordances *self = (RendererAffordances*) ehandler->user;
+  
+  if((!self->dragging)||(ehandler->picking==0)||(self->selection_enabled==0)){
+    return 0;
+  }
+  if(self->show_popup_onrelease){
+    double t = self->ray_hit_t;
+    self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+    std::cout << "motion!!! set sticky hand orientation"  <<  std::endl;
+  }
+  bot_viewer_request_redraw(self->viewer);
+  return 1;
 }
 
 // =================================================================================
-
+// WIDGET MANAGEMENT AND RENDERER CONSTRUCTION
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
@@ -464,7 +507,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   ehandler->hover_query = NULL;
   ehandler->mouse_press = mouse_press;
   ehandler->mouse_release = mouse_release;
-  ehandler->mouse_motion = NULL;
+  ehandler->mouse_motion = mouse_motion;
   ehandler->user = self;
 
   string otdf_models_path = string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/models/
@@ -548,6 +591,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 	bool optpoolready = self->graspOptStatusListener->isOptPoolReady();
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
   self->clicked = 0;	
+  self->dragging = 0;
+  self->show_popup_onrelease = 0;
 	self->link_selection = new string(" ");
   self->object_selection = new string(" ");
 

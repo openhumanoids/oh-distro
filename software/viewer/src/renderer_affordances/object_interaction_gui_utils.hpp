@@ -127,7 +127,7 @@ namespace renderer_affordances_gui_utils
 
   static void spawn_object_geometry_dblclk_popup (RendererAffordances *self)
   {
-
+    set_hand_init_position(self); 
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;
 
