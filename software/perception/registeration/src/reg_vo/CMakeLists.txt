@@ -21,6 +21,7 @@ pods_use_pkg_config_packages(drc-reg-vo
     lcmtypes_bot2-core
     lcmtypes_microstrain_comm
     opencv
+    pointcloud_vis 
     )
 
 # link against the LCM types defined in ../lcmtypes/

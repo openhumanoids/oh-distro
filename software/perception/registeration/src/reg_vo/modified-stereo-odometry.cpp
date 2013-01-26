@@ -223,7 +223,7 @@ StereoOdometry::publish_motion_estimation()
     bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
                             &pose_msg);
     // mfallon: Added this for Sisir, aug 2012
-    bot_core_pose_t_publish(_publish_lcm, "CAMERA_STATE",
+    bot_core_pose_t_publish(_publish_lcm, "POSE_HEAD", /// actually worng... needs to be transfomred
                             &pose_msg);
     //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
   }
@@ -327,9 +327,10 @@ void features_to_keypoints(const std::vector<ImageFeature> & features, std::vect
 }
 
 
-void StereoOdometry::write_images_and_features(std::vector<ImageFeature> features){
+void StereoOdometry::write_images(){
   //cv::Mat img;
 
+  cout << "images written to file @ " << _utime_cur << "\n";
   stringstream ss;
   ss << _utime_cur;
   Mat img = Mat::zeros(_stereo_params.right_parameters.height,_stereo_params.right_parameters.width,CV_8UC1);
@@ -338,18 +339,24 @@ void StereoOdometry::write_images_and_features(std::vector<ImageFeature> feature
 
   img.data = _image_right_buf;
   imwrite( (ss.str() + "_right.png"), img);
+}
 
+
+void StereoOdometry::write_features(std::vector<ImageFeature> features){
+  stringstream ss;
+  ss << _utime_ref;
 
   std::fstream feat_file;
   string fname = string(ss.str() + ".feat");
   feat_file.open(  (ss.str() + ".feat").c_str() , std::fstream::out);
+  cout << "nmatches written to file: "<< features.size() << " @ " << _utime_ref << "\n";
   feat_file << "#i,track_id,uv,base_uv,uvd,xyz,xyzw,color\n";
   for (size_t i = 0; i < features.size(); i++) {
     ImageFeature f = features[i];
     ostringstream temp2;
     temp2 << i << ","
         << f.track_id << ","
-        << f.uv[0] << "," << f.uv[1] << ","
+        << f.uv[0] << "," << f.uv[1] << "," // actual pixel locations of features
         << f.base_uv[0] << "," << f.base_uv[1] << ","
         << f.uvd[0] << "," << f.uvd[1] << "," << f.uvd[2] << ","
         << f.xyz[0] << "," << f.xyz[1] << "," << f.xyz[2] << ","
@@ -358,6 +365,9 @@ void StereoOdometry::write_images_and_features(std::vector<ImageFeature> feature
     feat_file << temp2.str() ;
   }
   feat_file.close();
+  
+  
+  
 
 }
 
@@ -384,16 +394,16 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
   _odom->processFrame(_image_left_buf, _depth_producer);
   tictoc("processFrame");
 
-  // Rotate incremental motion so that look vector is +X, and up is +Z
   Eigen::Isometry3d delta_cam_to_local = _odom->getMotionEstimate();
-  Eigen::Matrix3d M;
-  M <<  0,  0, 1,
-       -1,  0, 0,
-        0, -1, 0;
-  delta_cam_to_local = M * delta_cam_to_local;
+  // Rotate incremental motion so that look vector is +X, and up is +Z
+//  Eigen::Matrix3d M;
+//  M <<  0,  0, 1,
+//       -1,  0, 0,
+//        0, -1, 0;
+//  delta_cam_to_local = M * delta_cam_to_local; 
   Eigen::Vector3d translation(delta_cam_to_local.translation());
   Eigen::Quaterniond rotation(delta_cam_to_local.rotation());
-  rotation = rotation * M.transpose();
+//  rotation = rotation * M.transpose(); // this is paired with the matrix multiply above
 
   // Apply update to pose estimate
   Eigen::Isometry3d delta_pose;
@@ -404,9 +414,16 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
 
   publish_motion_estimation();
 
+  // Send vo pose:
+  Isometry3dTime poseT = Isometry3dTime(msg->utime, pose);
+  pc_vis_->pose_to_lcm_from_list(60000, poseT);
+  
+  
 
   int image_width = msg->width;
   int image_height = msg->height/2;
+  
+  
 
 
   ////////////////// Features: ////////////////////////////////////////////
@@ -452,7 +469,8 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
     if (isnan(dA)) dA = m.ref_keypoint->xyz(2); // stereo disparity is 1-to-1
     //if (isnan(dB)) dB = compute_disparity_(m.target_keypoint->xyz(2));
 
-    if (1==1){//(dA>=0.0 && dB>=0.0) {
+    //if (1==1){//was
+    if(m.inlier){
       fA.track_id = fB.track_id = m.track_id;
 
       /*
@@ -518,12 +536,6 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
     cout << "ref_odom_frame_ null\n";
   }
 
-  if (_odom->getChangeReferenceFrames()){
-   cout << "changed Ref frame\n";
-    // If this is true, _cur_frame will be _ref_frame
-    // on next call of processFrame.
-    // TODO better name.
-  }
 
 
   int status=0;
@@ -532,12 +544,36 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
     ref_odom_frame_ = ref_odom_frame;
   } else if (ref_odom_frame != ref_odom_frame_) {
     ref_odom_frame_ = ref_odom_frame;
-    cout << "changing refframe object;\n";
+    cout << "tracking from " << _utime_prev << " at " << msg->utime <<"\n";
     status=1;
 
     // Write the images and features
-    write_images_and_features(featuresA);
+    write_features(featuresA);
+    
+    
+  }else {
+    cout << "other\n";  
   }
+
+  
+  
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    for (size_t i = 0; i < featuresA.size(); i++) {
+      ImageFeature f = featuresA[i];
+      pcl::PointXYZRGB pt;
+      pt.x = f.xyz[0];
+      pt.y = f.xyz[1];
+      pt.z = f.xyz[2];
+      if (status==0){
+        pt.r = 0; pt.g = 0; pt.b = 255.0; //blue
+      }else{ // status 1 when changing key frames:
+        pt.r = 255; pt.g = 0; pt.b = 0.0; // red
+      }
+      scan_cloud->points.push_back(pt);
+    }
+    pc_vis_->ptcld_to_lcm_from_list(60001, *scan_cloud, msg->utime, msg->utime);  
+  
+  
 
   #ifdef USE_LCMGL
     if(_draw_lcmgl) { _visualization->draw_reg(_odom, featuresA, status); }
@@ -559,11 +595,25 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
   ////////////////// DESCRIPTORS ///////////////////////////////////////////
 */
 
+  
 
   tictoc("image_handler");
 #ifdef USE_LCMGL
-  if(_draw_lcmgl) { _visualization->draw(_odom); }
+  if(_draw_lcmgl) { _visualization->draw(_odom, _utime_cur, _utime_ref); }
 #endif
+
+
+  if (_odom->getChangeReferenceFrames()){
+   cout << "changed Ref frame at: "<< msg->utime<<"\n";
+   _utime_ref = msg->utime;
+    write_images();
+   
+    // If this is true, _cur_frame will be _ref_frame
+    // on next call of processFrame.
+    // TODO better name.
+  }
+
+  
 }
 
 void
@@ -709,6 +759,7 @@ StereoOdometry::StereoOdometry() :
     _publish_tictoc(false),
     _utime_cur(0),
     _utime_prev(0),
+    _utime_ref(0), //mfallon
     _image_left_buf(NULL),
     _image_right_buf(NULL),
     _images_buf(NULL),
@@ -848,7 +899,28 @@ StereoOdometry::initialize(int argc, char **argv)
   microstrain_ins_t_subscribe(_subscribe_lcm, "MICROSTRAIN_INS",
                              StereoOdometry::imu_handler_aux, this);
   pose.setIdentity();
-
+  Eigen::Matrix3d m;
+  m = Eigen::AngleAxisd ( 0, Eigen::Vector3d::UnitZ ())
+    * Eigen::AngleAxisd ( 90*M_PI/180 , Eigen::Vector3d::UnitY ())
+    * Eigen::AngleAxisd ( 0 , Eigen::Vector3d::UnitX ());
+  //ypr
+  pose.setIdentity ();
+  pose *= m;
+  
+//  pose.translation().x() =10;
+  
+  
+  // Vis Config:
+  pc_vis_ = new pointcloud_vis( _publish_lcm );
+  float colors_b[] ={0.0,1.0,0.0};
+  vector <float> colors_v;
+  colors_v.assign(colors_b,colors_b+4*sizeof(float));
+  // obj: id name type reset
+  // pts: id name type reset objcoll usergb rgb
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,0) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60001,"Cloud - Laser"         ,1,0, 60000,0, colors_v ));
+  
+  
   return 0;
 }
 

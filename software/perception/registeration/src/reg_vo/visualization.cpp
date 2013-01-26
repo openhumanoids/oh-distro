@@ -98,7 +98,7 @@ Visualization::draw_reg(const VisualOdometry* odom,std::vector<ImageFeature> fea
 
 
 void
-Visualization::draw(const VisualOdometry* odom)
+Visualization::draw(const VisualOdometry* odom, int64_t utime_cur, int64_t utime_ref)
 {
   const OdometryFrame* target_frame = odom->getTargetFrame();
   int num_levels = target_frame->getNumLevels();
@@ -114,7 +114,7 @@ Visualization::draw(const VisualOdometry* odom)
     x_offset += (2*base_width >> i) + 10;
     bot_lcmgl_push_matrix(_lcmgl);
     bot_lcmgl_translated(_lcmgl, x_offset, 0, 0);
-    draw_pyramid_level_matches(odom, i);
+    draw_pyramid_level_matches(odom, i, utime_cur, utime_ref);
     bot_lcmgl_pop_matrix(_lcmgl);
   }
 
@@ -269,7 +269,7 @@ Visualization::draw_pyramid_level_flow(const VisualOdometry* odom, int level_num
 }
 
 void
-Visualization::draw_pyramid_level_matches(const VisualOdometry* odom, int level_num)
+Visualization::draw_pyramid_level_matches(const VisualOdometry* odom, int level_num, int64_t utime_cur, int64_t utime_ref)
 {
   const OdometryFrame* ref_frame = odom->getReferenceFrame();
   const OdometryFrame* target_frame = odom->getTargetFrame();
@@ -298,6 +298,16 @@ Visualization::draw_pyramid_level_matches(const VisualOdometry* odom, int level_
       0, height, 0,
       width, height, 0,
       width, 0, 0);
+  
+  bot_lcmgl_color3f(_lcmgl, 1, 1, 1);
+  double cur_xyz[] = { -150, 0, 0 };
+  char txtl[500];
+  int num_inliers = estimator->getNumInliers();
+  snprintf(txtl, 80, "time: %lld | ni: %d | nk: %d | nm: %d\n", utime_ref, 
+           num_inliers,
+           ref_level->getNumKeypoints(), num_matches);
+  bot_lcmgl_text(_lcmgl, cur_xyz, txtl);
+  
 
   // draw features in reference frame
   bot_lcmgl_color3f(_lcmgl, 1, 0, 1);
@@ -323,6 +333,13 @@ Visualization::draw_pyramid_level_matches(const VisualOdometry* odom, int level_
       width, height, 0,
       width, 0, 0);
 
+  bot_lcmgl_color3f(_lcmgl, 1, 1, 1);
+  char txtl2[500];
+  snprintf(txtl2, 80, "time: %lld | ni: %d | nk: %d | nm: %d\n", utime_cur, 
+           num_inliers,
+           target_level->getNumKeypoints(), num_matches);
+  bot_lcmgl_text(_lcmgl, cur_xyz, txtl2);
+  
   // draw features
   bot_lcmgl_color3f(_lcmgl, 0, 1, 0);
   bot_lcmgl_point_size(_lcmgl, 3.0f);
@@ -350,7 +367,7 @@ Visualization::draw_pyramid_level_matches(const VisualOdometry* odom, int level_
   bot_lcmgl_end(_lcmgl);
 
   // draw inliers
-  bot_lcmgl_color3f(_lcmgl, 0, 0, 1);
+  bot_lcmgl_color3f(_lcmgl, 0, 0, 1); // vertical lines
   bot_lcmgl_line_width(_lcmgl, 2.0);
   bot_lcmgl_begin(_lcmgl, GL_LINES);
   for(int i=0; i<num_matches; i++) {

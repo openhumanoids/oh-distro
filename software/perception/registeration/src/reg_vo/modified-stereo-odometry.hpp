@@ -26,6 +26,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
 struct ImageFeature
 {
@@ -152,10 +153,12 @@ private:
 
   const fovis::OdometryFrame* ref_odom_frame_;
   const fovis::OdometryFrame* target_odom_frame_;
+  int64_t _utime_ref;
 
 
-
-  void write_images_and_features(std::vector<ImageFeature> features);
+  pointcloud_vis* pc_vis_;
+  void write_images();
+  void write_features(std::vector<ImageFeature> features);
 
 #ifdef USE_LCMGL
   bool _draw_lcmgl;

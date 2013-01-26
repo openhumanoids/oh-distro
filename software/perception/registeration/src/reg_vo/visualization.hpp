@@ -26,9 +26,9 @@ public:
       std::vector<ImageFeature> features,
       int status);
 
-  void draw(const VisualOdometry* odom);
+  void draw(const VisualOdometry* odom, int64_t utime_cur, int64_t utime_ref);
   void draw_pyramid_level_flow(const VisualOdometry* odom, int level_num);
-  void draw_pyramid_level_matches(const VisualOdometry* odom, int level_num);
+  void draw_pyramid_level_matches(const VisualOdometry* odom, int level_num, int64_t utime_cur, int64_t utime_ref);
 
 private:
   Visualization (const Visualization& other);
