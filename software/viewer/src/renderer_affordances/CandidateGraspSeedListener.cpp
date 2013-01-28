@@ -153,13 +153,21 @@ namespace renderer_affordances
         sticky_hand_struc.uid = uid; 
         sticky_hand_struc.opt_status = _optimization_status;
         sticky_hand_struc._collision_detector.reset();
-        sticky_hand_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector()); // Each hand has its own collision detector as eventually we want to be able shift select multiple hands send them to TO.
+        // should we have a global collision detector and add and remove objects to it as we create and delete objects and hands. We would have to manually add and remove multiple links to the collision detector.??
+        // Each hand has its own collision detector for now.
+        sticky_hand_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector()); 
         sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody    (_urdf_xml_string,sticky_hand_struc._collision_detector,true,unique_hand_name));
         sticky_hand_struc._gl_hand->set_state(T_world_hand, posture_msg);
+        sticky_hand_struc.hand_type = _grasp_type;
+        sticky_hand_struc.T_geometry_hand = T_world_hand;
+        sticky_hand_struc.joint_name = posture_msg.joint_name;
+        sticky_hand_struc.joint_position = posture_msg.joint_position;
         _parent_renderer->sticky_hands.insert(make_pair(unique_hand_name, sticky_hand_struc));
       }
       else {
         it->second._gl_hand->set_state(T_world_hand, posture_msg);
+        it->second.T_geometry_hand = T_world_hand;
+        it->second.joint_position = posture_msg.joint_position;
       }
   }
   

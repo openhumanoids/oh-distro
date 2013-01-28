@@ -228,7 +228,7 @@ namespace renderer_affordances_gui_utils
 
 
 
-  static void publish_eegoal(boost::shared_ptr<lcm::LCM> &_lcm, OtdfInstanceStruc &instance_struc, std::string channel, KDL::Frame &T_body_world)
+  static void publish_eegoal_to_object_center(boost::shared_ptr<lcm::LCM> &_lcm, OtdfInstanceStruc &instance_struc, std::string channel, KDL::Frame &T_body_world)
   {
     drc::ee_goal_t goalmsg;
 
@@ -330,14 +330,14 @@ namespace renderer_affordances_gui_utils
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
       KDL::Frame T_body_world = self->robotStateListener->T_body_world;
-      publish_eegoal( self->lcm, it->second, "LWRISTROLL_LINK_GOAL",T_body_world);
+      publish_eegoal_to_object_center( self->lcm, it->second, "LWRISTROLL_LINK_GOAL",T_body_world);
     }
     else if(!strcmp(name,PARAM_OTDF_REACH_OBJECT_R)) {
       fprintf(stderr,"\nReaching centroid of selected Object\n");
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
       KDL::Frame T_body_world = self->robotStateListener->T_body_world;
-      publish_eegoal( self->lcm, it->second, "RWRISTROLL_LINK_GOAL",T_body_world);    
+      publish_eegoal_to_object_center( self->lcm, it->second, "RWRISTROLL_LINK_GOAL",T_body_world);    
     }
   }
 

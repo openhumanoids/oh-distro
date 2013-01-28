@@ -122,7 +122,9 @@ typedef point3d_t vec3d_t;
 typedef struct _OtdfInstanceStruc {
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
-    boost::shared_ptr<collision::Collision_Detector> _collision_detector; 
+    boost::shared_ptr<collision::Collision_Detector> _collision_detector;  
+    // Each object has its own collision detector for now. 
+    // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.   
 }OtdfInstanceStruc;   
 
 typedef struct _StickyHandStruc {
@@ -130,6 +132,10 @@ typedef struct _StickyHandStruc {
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     std::string object_name;
     std::string geometry_name; 
+    int hand_type; //SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
+    KDL::Frame T_geometry_hand; // this is stored in obj frame
+    std::vector<std::string> joint_name;
+    std::vector<double> joint_position;
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
 }StickyHandStruc;   
@@ -160,7 +166,7 @@ typedef struct _RendererAffordances {
   double ray_hit_t;
   std::string* link_selection;
   std::string* object_selection;
-
+  std::string* stickyhand_selection;
   int otdf_id;
 
   int num_otdfs;
@@ -197,6 +203,7 @@ typedef struct _RendererAffordances {
   boost::shared_ptr<CandidateGraspSeedListener> candidateGraspSeedListener;
   boost::shared_ptr<InitGraspOptPublisher> initGraspOptPublisher;
   boost::shared_ptr<GraspOptStatusListener> graspOptStatusListener;
+
  
   long last_state_msg_timestamp;
   std::string* robot_name_ptr;
@@ -232,6 +239,7 @@ typedef struct _RendererAffordances {
     oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second;  
 
     instance_struc._collision_detector.reset();
+     // Each object has its own collision detector for now.      
     instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
     instance_struc._gl_object->set_state(instance_struc._otdf_instance);
@@ -331,6 +339,14 @@ typedef struct _RendererAffordances {
      out[0] =  temp[0]; out[1] =  temp[1]; out[2] = temp[2];
   }
   
+  inline static void rotate_eigen_vector_given_kdl_frame(const Eigen::Vector3f &in,const KDL::Frame &T_out_in,Eigen::Vector3f &out)
+  {
+     KDL::Vector temp;
+     temp[0] =  in[0]; temp[1] =  in[1]; temp[2] = in[2];
+     temp =  T_out_in*temp;
+     out[0] =  (float) temp[0]; out[1] =  (float) temp[1]; out[2] = (float) temp[2];
+  }
+  
    //-------------------------------------------------------------------------------
   inline static void get_min_dimension(boost::shared_ptr<otdf::Geometry> &link_geom, std::string &min_dimension_tag)
   {
@@ -382,7 +398,8 @@ typedef struct _RendererAffordances {
    uz << 0 , 0 , 1;
   
    Eigen::Vector3d nray = -(to - from);
-  
+   nray.normalize();  // normalize
+   
      // back-track from the hit pt in the approach dir by 100*t cm
    double t = 0.1;
    Eigen::Vector3d p;
@@ -439,12 +456,17 @@ typedef struct _RendererAffordances {
    objectframe_finger_dir.normalize(); // finger dir in object frame.
  
    Eigen::Vector3d desired_finger_dir;
-   rotate_eigen_vector_given_kdl_frame(objectframe_finger_dir,T_objectgeometry_hand.Inverse(),desired_finger_dir);
    
+   KDL::Frame temp_frame = T_objectgeometry_hand.Inverse();
+   temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
+   rotate_eigen_vector_given_kdl_frame(objectframe_finger_dir,temp_frame,desired_finger_dir);
+  
    double theta = atan2(desired_finger_dir[2],desired_finger_dir[1]);
-   std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
+
+   //std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
    T_rotatedhand_hand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
    T_objectgeometry_hand = T_objectgeometry_hand *(T_rotatedhand_hand.Inverse());//gets T_objectgeometry_rotatedhand 
+   
   }
   
    //-------------------------------------------------------------------------------
@@ -622,11 +644,19 @@ typedef struct _RendererAffordances {
         if ((self->dragging)&&(length>1e-3)){
          Eigen::Vector3f diff = self->ray_hit_drag - self->ray_hit; // finger direction in world frame
          Eigen::Vector3d fingerdir_geomframe;//(temp.data);// finger direction in geometry frame
-         rotate_eigen_vector_given_kdl_frame(diff,T_graspgeometry_world,fingerdir_geomframe);
+         diff.normalize();
+         KDL::Frame temp_frame = T_graspgeometry_world;
+         temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
+         rotate_eigen_vector_given_kdl_frame(diff,temp_frame,fingerdir_geomframe);//something wrong here.
+         fingerdir_geomframe.normalize();
          get_user_specified_hand_approach(self,fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_handinitpos);
         }
         else
          get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_handinitpos); 
+         
+        std::cout << "T_objectgeometry_hand.p: " << self->T_graspgeometry_handinitpos.p[0] 
+                                          << " " << self->T_graspgeometry_handinitpos.p[1] 
+                                          << " " << self->T_graspgeometry_handinitpos.p[2] << " " << std::endl;
         
     }
   }
