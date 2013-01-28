@@ -38,7 +38,7 @@
 #include <action_authoring/ManipulationRelation.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
-//#include <action_authoring/DatabaseManager.h>
+#include <action_authoring/DatabaseManager.h>
 
 
 namespace action_authoring

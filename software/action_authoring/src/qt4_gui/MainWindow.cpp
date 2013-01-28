@@ -370,28 +370,26 @@ void MainWindow::handleLoadAction()
   if (fileName.toStdString() == "") 
       return;
 
-/*
-  std::cout << "database manager" << std::endl;
-  DatabaseManager* dbm = new DatabaseManager(fileName.toStdString()); //todo : Memory leak
-  dbm->parseFile();
-  std::cout << "file parsed successfully" << std::endl;
   std::vector<ConstraintMacroPtr> revivedConstraintMacros;
-  dbm->getConstraintMacros(revivedConstraintMacros);
-  std::cout << "constraint macros parsed successfully" << std::endl;
+  std::vector<AffConstPtr> revivedAffordances;
 
-  //  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
-  //      delete _authoringState._all_gui_constraints[i].get();
-  //  }
-  
-  // delete the children of the constraint box
+  DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
+
+  _worldState.affordances.clear();
+
+  for (int i = 0; i < revivedAffordances.size(); i++ ) {
+    _worldState.affordances.push_back(revivedAffordances[i]);
+  }
 
   _authoringState._all_gui_constraints.clear();
+
   for (int i = 0; i < revivedConstraintMacros.size(); i++) 
   {
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i])); 
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i], i)); 
   }
+
   rebuildGUIFromState(_authoringState, _worldState);
-*/
+
 }
 
 void
@@ -402,15 +400,14 @@ handleSaveAction() {
 
  if (fileName.toStdString() == "") 
      return;
-/*
- vector<ConstraintMacroConstPtr> all_constraints;
+
+ vector<ConstraintMacroPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
 
- DatabaseManager* dbm = new DatabaseManager(fileName.toStdString());
- dbm->store(_worldState.affordances, all_constraints);
-*/ 
+ DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
+
 }
 
 int
