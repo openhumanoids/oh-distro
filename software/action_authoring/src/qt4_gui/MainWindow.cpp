@@ -11,6 +11,7 @@ using namespace action_authoring;
 using namespace affordance;
 using namespace boost;
 
+
 //using namespace collision_detection;
 
 string RandomString(int len)
@@ -363,6 +364,7 @@ void MainWindow::handleLoadAction()
   std::vector<ConstraintMacroPtr> revivedConstraintMacros;
   std::vector<AffConstPtr> revivedAffordances;
 
+#ifdef DATABASE
   DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
 
   _worldState.affordances.clear();
@@ -380,6 +382,7 @@ void MainWindow::handleLoadAction()
 
   rebuildGUIFromState(_authoringState, _worldState);
 
+#endif
 }
 
 void
@@ -391,14 +394,20 @@ handleSaveAction() {
  if (fileName.toStdString() == "") 
      return;
 
+
+#ifdef DATABASE
  vector<ConstraintMacroPtr> all_constraints;
  for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
 
+
  DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
 
+
+#endif //DATABASE
 }
+
 
 int
 MainWindow::

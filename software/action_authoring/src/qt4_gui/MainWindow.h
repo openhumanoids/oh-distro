@@ -38,8 +38,12 @@
 #include <action_authoring/ManipulationRelation.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
-#include <action_authoring/DatabaseManager.h>
 
+//TODO : CHANGE TO ADD LOAD FUNCTIONALITY
+//#define DATABASE 1
+#ifdef DATABASE
+#include <action_authoring/DatabaseManager.h>
+#endif
 
 namespace action_authoring
 {
