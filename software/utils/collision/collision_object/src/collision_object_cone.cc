@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <collision/collision_object_cone.h>
 
 using namespace std;
@@ -65,6 +66,28 @@ set_transform( const Vector3f position,
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
 }
+
+
+
+/**position 
+   get the world-frame position of the collision objects*/ 
+Vector3f Collision_Object_Cone::position() const
+{
+  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
+  return position;
+}
+
+
+/**orientation
+   get the world-frame orientation of the collision objects*/ 
+Vector4f Collision_Object_Cone::orientation() const
+{
+  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+}
+
+
 
 /** 
  * bt_collision_objects 

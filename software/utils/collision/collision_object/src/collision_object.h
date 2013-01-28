@@ -22,24 +22,25 @@
 namespace collision {
   class Collision_Object {
   public:
-    Collision_Object( std::string id );
+    Collision_Object( std::string id, bool active = true );
     Collision_Object( const Collision_Object& other );
-    ~Collision_Object();
+    virtual ~Collision_Object();
   
     virtual void set_active( bool active );
     virtual void set_position( const Eigen::Vector3f position );
-    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
+    virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation ) = 0;
   
     virtual Collision_Object* matches_uid( unsigned int uid );
 
     std::string id( void )const;
-    virtual Eigen::Vector3f position( void )const;
-    virtual Eigen::Vector4f orientation( void )const;
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
+    virtual Eigen::Vector3f position( void )const = 0;
+    virtual Eigen::Vector4f orientation( void )const = 0;
+    virtual std::vector< btCollisionObject* > bt_collision_objects( void ) = 0;    
+    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const = 0;
 
   protected:
     std::string _id;
+    bool _active;
   private:
 
   };

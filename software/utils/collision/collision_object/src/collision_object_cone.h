@@ -31,6 +31,9 @@ namespace collision {
 
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
 
+    virtual Eigen::Vector3f position( void )const;
+    virtual Eigen::Vector4f orientation( void )const;
+
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
     virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 

@@ -1,5 +1,4 @@
 # Create an executable program hello-test
-add_executable(collision-object-test collision_object_test.cc)
 add_executable(collision-object-box-test collision_object_box_test.cc)
 add_executable(collision-object-cone-test collision_object_cone_test.cc)
 add_executable(collision-object-cylinder-test collision_object_cylinder_test.cc)
@@ -8,7 +7,6 @@ add_executable(collision-object-convex-hull-test collision_object_convex_hull_te
 add_executable(collision-object-point-cloud-test collision_object_point_cloud_test.cc)
 
 # The test program uses the shared library, use the pkg-config file
-pods_use_pkg_config_packages(collision-object-test collision_object)
 pods_use_pkg_config_packages(collision-object-box-test collision_object)
 pods_use_pkg_config_packages(collision-object-cone-test collision_object)
 pods_use_pkg_config_packages(collision-object-cylinder-test collision_object)
@@ -17,7 +15,6 @@ pods_use_pkg_config_packages(collision-object-convex-hull-test collision_object)
 pods_use_pkg_config_packages(collision-object-point-cloud-test collision_object)
 
 # make executable public
-pods_install_executables(collision-object-test)
 pods_install_executables(collision-object-box-test)
 pods_install_executables(collision-object-cone-test)
 pods_install_executables(collision-object-cylinder-test)

@@ -9,7 +9,7 @@ using namespace collision;
  * class constructor
  */
 Collision_Object::
-Collision_Object( string id ) : _id( id ){
+Collision_Object( string id, bool active ) : _id( id ), _active(active){
 
 }
 
@@ -31,28 +31,19 @@ Collision_Object::
 
 }
 
-void
-Collision_Object::
-set_active( bool active ){
-  return;
+
+/**set position using pure virtual set_transform method*/
+void Collision_Object::set_position(const Vector3f position)
+{
+  set_transform(position, orientation());
 }
 
-void
-Collision_Object::
-set_position( const Vector3f position ){
-  return;
+
+void Collision_Object::set_active( bool active )
+{
+  _active = active;
 }
 
-/**
- * set_transform
- * sets the world to object transform with a 3D vector and unit quaternion
- */
-void
-Collision_Object::
-set_transform( const Vector3f position,
-                const Vector4f orientation ){
-  return;
-}
 
 /**
  * matches_uid
@@ -82,48 +73,27 @@ id( void )const{
 }
 
 /**
- * position
- * returns the position of the object
- */
-Vector3f
-Collision_Object::
-position( void )const{
-  Vector3f position;
-  return position;
-}
-
-/**
- * orientation
- * returns the orientation of the collision object
- */
-Vector4f 
-Collision_Object::
-orientation( void )const{
-  Vector4f orientation;
-  return orientation;
-}
-
-/**
  * bt_collision_objects
  * returns a std::vector of btCollisionObject pointers
- */
+ 
 vector< btCollisionObject* >
 Collision_Object::
 bt_collision_objects( void ){
   vector< btCollisionObject* > bt_collision_objects;
   return bt_collision_objects;
 }
-
+*/
 /**
  * bt_collision_object
  * returns a std::vectorm of const btCollisionObject pointers
- */
+ 
 vector< const btCollisionObject* >
 Collision_Object::
 bt_collision_objects( void )const{
   vector< const btCollisionObject* > bt_collision_objects;
   return bt_collision_objects;
 }
+*/
 
 /**
  * operator<<

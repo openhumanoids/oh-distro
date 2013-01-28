@@ -29,6 +29,9 @@ namespace collision {
     Collision_Object_Cylinder( std::string id, double radius, double height, Eigen::Vector3f position, Eigen::Vector4f orientation );
     ~Collision_Object_Cylinder();
 
+
+    virtual Eigen::Vector3f position( void )const ;
+    virtual Eigen::Vector4f orientation( void )const;
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
 
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    

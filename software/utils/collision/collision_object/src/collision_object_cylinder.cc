@@ -53,6 +53,39 @@ Collision_Object_Cylinder::
 
 }
 
+
+
+
+/**
+ * position
+ * returns the position of the collision object
+ */
+Vector3f
+Collision_Object_Cylinder::
+position( void )const{
+  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
+                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
+  return position;
+}
+
+/**
+ * orientation
+ * returns the orientation of the collision object
+ */
+Vector4f
+Collision_Object_Cylinder::
+orientation( void )const{
+  Vector4f orientation( _bt_collision_object.getWorldTransform().getRotation().getX(),
+                        _bt_collision_object.getWorldTransform().getRotation().getY(),
+                        _bt_collision_object.getWorldTransform().getRotation().getZ(),
+                        _bt_collision_object.getWorldTransform().getRotation().getW() );
+  return orientation;
+}
+
+
+
+
 /** 
  * set_transform
  * sets the world-frame position and orientation of the collision object

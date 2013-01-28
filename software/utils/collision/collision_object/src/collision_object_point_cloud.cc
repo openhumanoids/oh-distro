@@ -1,8 +1,10 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdexcept>
 
 #include <collision/collision_object_sphere.h>
 #include <collision/collision_object_point_cloud.h>
+
 
 using namespace std;
 using namespace Eigen;
@@ -20,6 +22,41 @@ Collision_Object_Point_Cloud( string id,
                                                           _collision_objects() {
   _load_collision_objects();
 }
+
+
+
+/**orientation
+   get the world-frame orientation of the collision objects*/ 
+Vector4f Collision_Object_Point_Cloud::orientation() const
+{
+  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+}
+
+/**position
+   get the world-frame orientation of the collision objects*/ 
+Vector3f Collision_Object_Point_Cloud::position() const
+{
+  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+}
+
+
+
+/** 
+ * set_transform
+ * sets the world-frame position and orientation of the collision object
+ */
+void
+Collision_Object_Point_Cloud::
+set_transform( const Vector3f position,
+                const Vector4f orientation )
+{
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
+}
+
+
+
+
+
 
 /**
  * Collision_Object_Point_Cloud
