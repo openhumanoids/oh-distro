@@ -1,0 +1,25 @@
+package drc;
+// info we have: affordance, robot link, type of contact (offset, touch, force closure), [offset position/orientation], expected beginning time, expected end time, sequence of actions, type of ordering (hard, simultaneous, no ordering, priority), whether constraint has been relaxed
+
+
+struct contact_goal_t
+{
+	int64_t utime;
+	string object_1_name;
+	string object_1_contact_grp;
+
+	string object_2_name; // not used for ON_GROUND_PLANE
+	string object_2_contact_grp; // not used for ON_GROUND_PLANE
+
+	const int32_t ON_GROUND_PLANE=0, TOUCH=1, FORCE_CLOSURE=2;
+	int32_t contact_type;
+
+	vector_3d_t ground_plane_pt; // only used for ON_GROUND_PLANE
+	double ground_plane_pt_radius; // only used for ON_GROUND_PLANE
+	// int32_t num_robot_contact_pts;
+	// vector_3d_t robot_contact_pts[num_robot_contact_pts]; // in the frame of link_name
+	// vector_3d_t ground_plane_pts[num_robot_contact_pts];
+	// double ground_plane_radii[num_robot_contact_pts];
+}
+
+
