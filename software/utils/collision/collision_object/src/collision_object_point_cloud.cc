@@ -29,14 +29,14 @@ Collision_Object_Point_Cloud( string id,
    get the world-frame orientation of the collision objects*/ 
 Vector4f Collision_Object_Point_Cloud::orientation() const
 {
-  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> orientation()");
 }
 
 /**position
    get the world-frame orientation of the collision objects*/ 
 Vector3f Collision_Object_Point_Cloud::position() const
 {
-  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> orientation()");
 }
 
 
