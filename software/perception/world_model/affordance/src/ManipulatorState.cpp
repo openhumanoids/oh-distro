@@ -43,18 +43,18 @@ string ManipulatorState::getName() const
 
 Vector3f ManipulatorState::getColor() const
 {
- throw NotImplementedException("manip state");
+  return Vector3f(1,0,0);
 }
  
 
 Vector3f ManipulatorState::getXYZ() const
 {
- throw NotImplementedException("manip state");
+  throw NotImplementedException("getXYZ");
 }
  
 Vector3f ManipulatorState::getRPY() const
 {
- throw NotImplementedException("manip state");
+  throw NotImplementedException("getRPY");
 }
  
 bool ManipulatorState::isAffordance() const
@@ -69,22 +69,22 @@ bool ManipulatorState::isManipulator() const
 
 bool ManipulatorState::hasChildren() const
 {
-    throw NotImplementedException("manip state");
+  throw NotImplementedException("hasChildren");
 }
  
 bool ManipulatorState::hasParent() const
 {
- throw NotImplementedException("manip state");
+  throw NotImplementedException("hasParent");
 }
  
 void ManipulatorState::getChildren(vector<shared_ptr<const ManipulatorState> > &children) const 
 {
- throw NotImplementedException("manip state");
+  throw NotImplementedException("getChildren");
 }
  
 void ManipulatorState::getParents(vector<shared_ptr<const ManipulatorState> > &children) const 
 {
- throw NotImplementedException("manip state");
+  throw NotImplementedException("getParents");
 }
 
  void ManipulatorState::getCopy(ManipulatorState &copy) const 

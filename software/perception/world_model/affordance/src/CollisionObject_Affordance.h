@@ -1,5 +1,5 @@
 /*
- * OpenGLAffordance.h
+ * CollisionObject_Affordance.h
  *
  *  Created on: Jan 14, 2013
  *      Author: mfleder
@@ -23,21 +23,26 @@ namespace affordance
 	//------------------fields
 private:
 	/**underlying affordance state*/
-	affordance::AffordanceState _affordance;
+	affordance::AffConstPtr _affordance;
 
 	//---we're drawing 1 of these
-	collision::Collision_Object *_object; //box, cylinder, sphere
+	collision::Collision_Object *_obj;
 
-	//-----------------constructors
+	//-----------------constructor/destructor
 public:
-	CollisionObject_Affordance(const affordance::AffordanceState &affordance,
+	CollisionObject_Affordance(affordance::AffConstPtr affordance,
 				   const std::string &id);
 	virtual ~CollisionObject_Affordance();
 
 	//--------todo : implement the collision object interface
 	//by calling the appropriate method on whichever field we are using
 
+	
+	//---------useful methods
+ public:
+	static bool isSupported(affordance::AffConstPtr affordance); //check if we support collision objects for this type of affordance
+
 };
 
 } /* namespace affordance */
-#endif /* COLLISION_OBJECT_AFFORDANCE_H_ */
+#endif /* COLLISION_OBJECT_AFFORDANCE_H */
