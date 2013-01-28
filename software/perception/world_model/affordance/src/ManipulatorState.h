@@ -9,6 +9,7 @@
 #define MANIPULATOR_STATE_H
 
 #include "affordance/ModelState.h"
+#include "urdf/model.h"
 
 namespace affordance
 {
@@ -18,20 +19,23 @@ namespace affordance
   {
     //-------------fields----
   private: 
-    std::string _name;
-    int _id1;
-    int _id2;
+    const std::string _name;
+    const GlobalUID _guid;
+    const boost::shared_ptr<const urdf::Link> _link;
 
     //-----------constructor/destructor
   public:
-    ManipulatorState(std::string name);
-    ManipulatorState(const ManipulatorState &other);
-    ManipulatorState& operator=( const ManipulatorState& rhs );
+    ManipulatorState(boost::shared_ptr<const urdf::Link> link, 
+		     const GlobalUID &uid);
+    ManipulatorState(const std::string &s, const GlobalUID &uid);
+
+    //ManipulatorState(const ManipulatorState &other); //todo
+    //ManipulatorState& operator=( const ManipulatorState& rhs ); //todo
     virtual ~ManipulatorState();
     
     //-------------------observers
   public:
-    //interface
+    //ModelState interface
     virtual GlobalUID getGlobalUniqueId() const;
     virtual std::string getName() const;
 
@@ -47,7 +51,10 @@ namespace affordance
     virtual void getChildren(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
     virtual void getParents(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
     virtual void getCopy(ManipulatorState &copy) const;
-
+    
+    //specific to this class
+  public:
+    boost::shared_ptr<const urdf::Link> getLink() const;
   };
   
   std::ostream& operator<<( std::ostream& out, const ManipulatorState& other );

@@ -5,19 +5,27 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 
-ManipulatorState::ManipulatorState(std::string name)
+ManipulatorState::ManipulatorState(const std::string &name,
+				   const GlobalUID &guid)
+  : _name(name), _guid(guid), _link()     
 {
-    _name = name;
-    // todo actually unique id
-    _id1 = rand();
-    _id2 = rand();
 }
 
-ManipulatorState::ManipulatorState(const ManipulatorState &other) {
+ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link, 
+				   const GlobalUID &guid)
+  : _name(link->name), _guid(guid), _link(link)
+{
 }
 
-ManipulatorState& ManipulatorState::operator=( const ManipulatorState& rhs ) {
-}
+
+
+
+/*ManipulatorState::ManipulatorState(const ManipulatorState &other) {
+  }*/
+
+
+/*ManipulatorState& ManipulatorState::operator=( const ManipulatorState& rhs ) {
+  }*/
 
 ManipulatorState::~ManipulatorState() {
 
@@ -25,7 +33,7 @@ ManipulatorState::~ManipulatorState() {
 
 GlobalUID ManipulatorState::getGlobalUniqueId() const
 {
-    return GlobalUID(_id1, _id2);
+  return _guid;
 }
 
 string ManipulatorState::getName() const
@@ -83,3 +91,11 @@ void ManipulatorState::getParents(vector<shared_ptr<const ManipulatorState> > &c
  {
  throw NotImplementedException("manip state");
  }
+
+
+
+//=========specific to this class
+shared_ptr<const urdf::Link> ManipulatorState::getLink() const 
+{
+  return _link;
+}

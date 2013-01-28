@@ -6,9 +6,10 @@
  */
 
 #include "OpenGL_Manipulator.h"
+#include "opengl/opengl_object_sphere.h"
 
+using namespace opengl;
 using namespace affordance;
-//using namespace opengl;
 using namespace std;
 using namespace boost;
 using namespace Eigen;
@@ -28,24 +29,31 @@ OpenGL_Manipulator::~OpenGL_Manipulator()
 /**sets the state of the object we want to draw and then draws*/
 void OpenGL_Manipulator::draw()
 {
-  //frame will be used by everything -- only compute once
-  KDL::Frame frame = _manipulator->getFrame();
-  OpenGL_Object *obj;
-
-  throw NotImplementedException("todo: draw opengl manipulator");
-
-  if (_isHighlighted) 
-  {
-      obj->draw(_highlightColor);
-  }
-  else
-  {
-      obj->set_color(_manipulator->getColor());
-      obj->draw();
-  }
+  //------------drawing the 
+  CollisionGroupPtr colgroup = _manipulator->getLink()->getCollisions("default");
+  if (colgroup != NULL && colgroup->size() > 0) 
+    {
+      // add collision contact widgets!
+      OpenGL_Object_Sphere s;
+      for (int i = 0; i < colgroup->size(); i++) 
+	{
+	  urdf::Pose dot = (*colgroup)[i]->origin;
+	  KDL::Frame f;
+	  f.p = KDL::Vector(dot.position.x, dot.position.y, dot.position.y);
+	  s.set(f, 0.05); //todo : pick a radius
+	  
+	  if (_isHighlighted) 
+	    {
+	      s.draw(_highlightColor);
+	    }
+	  else
+	    {
+	      s.set_color(_manipulator->getColor());
+	      s.draw();
+	    }
+	}
+    } 
 }
-
-
 //------observers
 ManipulatorStateConstPtr OpenGL_Manipulator::getManipulator() const
 {

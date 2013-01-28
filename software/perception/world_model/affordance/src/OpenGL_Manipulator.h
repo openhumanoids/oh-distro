@@ -26,11 +26,6 @@ private:
 	/**underlying manipulator state*/
 	const ManipulatorStateConstPtr _manipulator; 
 
-	//---we're drawing 1 of these
-	opengl::OpenGL_Object_Box _box;
-	opengl::OpenGL_Object_Cylinder _cylinder;
-	opengl::OpenGL_Object_Sphere _sphere;
-
 	//-----------------constructors
 public:
 	OpenGL_Manipulator(ManipulatorStateConstPtr manipulator, 
@@ -43,6 +38,9 @@ public:
 
 	//observers
 	ManipulatorStateConstPtr getManipulator() const;
+
+ private:
+	typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  
 };
 
 } /* namespace affordance */
