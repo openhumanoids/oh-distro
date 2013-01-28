@@ -9,14 +9,12 @@ l_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/san
 options=struct();
 options.ground =true;
 options.floating = true;
-m_l = RigidBodyModel(l_filename,options);
-m_r = RigidBodyModel(r_filename,options);
+m_l = RigidBodyManipulator(l_filename,options);
+m_r = RigidBodyManipulator(r_filename,options);
 
 dt = 0.001;
 r_l = TimeSteppingRigidBodyManipulator(m_l,dt);
-r_l = setSimulinkParam(r_l,'MinStep','0.0001');
 r_r = TimeSteppingRigidBodyManipulator(m_r,dt);
-r_r = setSimulinkParam(r_r,'MinStep','0.0001');
 
 lcmcoder = JLCMCoder(GraspSeedOptCoder('atlas'));
 nx=22; % this changes?
