@@ -191,6 +191,13 @@ setSelected(bool selected) {
 void
 Qt4ConstraintMacro::
 updateElementsFromState() {
+    // if we don't block signals, we willl overwrite state when we are
+    // rebuilding the GUI elements because the values will change and
+    // automatically trigger state updates
+    _gui_robotJointType->blockSignals(true);
+    _gui_affordanceType->blockSignals(true);
+    _gui_constraintType->blockSignals(true);
+
     _gui_name->setText(QString::fromStdString(_constraint->getName()));
     _gui_panel->setTitle(QString("[%1] ").arg(_constraintIndex) + QString::fromStdString(_constraint->getName()));
 
@@ -227,6 +234,7 @@ updateElementsFromState() {
     for (int i = 0; i < _affordances.size(); i++) {
         _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
 	_affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
+//	std::cout << ">>>>>> " << _affordances[i]->getGUIDAsString() << " : " << i << std::endl;
     }
 
     // select the current affordance
@@ -234,11 +242,14 @@ updateElementsFromState() {
 	_constraint->getAtomicConstraint()->getAffordance()->getGlobalUniqueId());
     if (it2 != _affordance2IndexMap.end()) {
 	_gui_affordanceType->setCurrentIndex(it2->second);
-//	std::cout << "found RH affordance iterator ((" << it2->second << ")): " << " " <<
-//	    _constraint->getAffordance2()->getGlobalUniqueId().first << ", "
-//		  << _constraint->getAffordance2()->getGlobalUniqueId().second << std::endl;
+//	std::cout << "found RH index ((" << it2->second << ")): " << " for GUID " <<
+//	    _constraint->getAtomicConstraint()->getAffordance()->getGUIDAsString() << std::endl;
     } else {
 
     }
-    
+
+    _gui_robotJointType->blockSignals(false);
+    _gui_affordanceType->blockSignals(false);
+    _gui_constraintType->blockSignals(false);
+
 }

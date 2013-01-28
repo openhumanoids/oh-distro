@@ -84,6 +84,47 @@ void MainWindow::handleAffordancesChanged()
     	}
     }
 
+    // read the joints from the robot state
+    // create the manipulators from the robot's joints
+    std::vector<std::string> link_names;
+    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
+    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
+    {
+    	const State_GFE_Joint& state_gfe_joint = it->second;
+	std::string id = state_gfe_joint.id();
+	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+    	link_names.push_back(link->name);
+
+	// TODO: constructor that works on link not on the link name
+	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
+								  // todo: mike (need accessor for the _kinematics_model in the subclass too
+								  //_worldState.colorRobot._kinematics_model.link(link->getName()),
+								  GlobalUID(rand(), rand()))); //todo guid
+	_worldState.manipulators.push_back(manipulator);
+
+	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
+	_widget_opengl.opengl_scene().add_object(*asGlMan);
+	_worldState.glObjects.push_back(asGlMan);
+	_worldState.collisionObjs.push_back(new Collision_Object_Sphere("todo: fix this name",
+									0.01,
+									Vector3f(0,0,0),
+									Vector4f(0,0,0,1)));
+	// update the selected manipulator
+	//	std::string manName = _authoringState._selected_gui_constraint->
+	//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
+	
+	//todo Mike start todo
+	
+	//todo: make a collision object
+	/*	Collision_Object* collision_object_manipulator;
+	collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
+								   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
+	_widget_opengl.add_collision_object(collision_object_manipulator);
+		_worldState.collisionObjs.push_back(collision_object_manipulator);
+		// todo : end of move to manipulator state
+		*/
+    }
+    
 
   //----------add robot and vehicle
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
@@ -160,46 +201,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	    this, SLOT(affordanceUpdateCheck()));
     timer->start(1000); //1Hz  
 
-    // read the joints from the robot state
-    // create the manipulators from the robot's joints
-
-    std::vector<std::string> link_names;
-    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
-    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
-    {
-    	const State_GFE_Joint& state_gfe_joint = it->second;
-	std::string id = state_gfe_joint.id();
-	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
-    	link_names.push_back(link->name);
-
-	// TODO: constructor that works on link not on the link name
-	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
-								  GlobalUID(rand(), rand()))); //todo guid
-	_worldState.manipulators.push_back(manipulator);
-
-	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
-	_widget_opengl.opengl_scene().add_object(*asGlMan);
-	_worldState.glObjects.push_back(asGlMan);
-	_worldState.collisionObjs.push_back(new Collision_Object_Sphere("todo: fix this name",
-									0.01,
-									Vector3f(0,0,0),
-									Vector4f(0,0,0,1)));
-	// update the selected manipulator
-	//	std::string manName = _authoringState._selected_gui_constraint->
-	//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
-	
-	//todo Mike start todo
-	
-	//todo: make a collision object
-	/*	Collision_Object* collision_object_manipulator;
-	collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
-								   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
-	_widget_opengl.add_collision_object(collision_object_manipulator);
-		_worldState.collisionObjs.push_back(collision_object_manipulator);
-		// todo : end of move to manipulator state
-		*/
-    }
-    
     this->setWindowTitle("Action Authoring Interface");
 
     QVBoxLayout* layout = new QVBoxLayout();
@@ -555,6 +556,8 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
     _ffwd->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
 
     updateScrubber();
+    selectedOpenGLObjectChanged(_authoringState._selected_gui_constraint->getConstraintMacro()
+				->getAtomicConstraint()->getAffordance()->getGUIDAsString());
 }
 
 /* 
@@ -604,16 +607,16 @@ affordanceUpdateCheck()
 
 /*
  * Select the OpenGL object corresponding to this affordance by highlighting it
- * in the GUI. Connected to the raycastCallbick signal from the OpenGL widget pane.
+ * in the GUI. Connected to the raycastCallback signal from the OpenGL widget pane.
  */
 void
 MainWindow::
-selectedOpenGLObjectChanged(const std::string &modelName) 
+selectedOpenGLObjectChanged(const std::string &modelGUID) 
 {
     // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	if (_worldState.glObjects[i]->id() == modelName) {
+	if (_worldState.glObjects[i]->id() == modelGUID) {
 	    _worldState.glObjects[i]->setHighlighted(true);
 	}
 	else {
@@ -622,9 +625,30 @@ selectedOpenGLObjectChanged(const std::string &modelName)
     }
     _widget_opengl.update();
 
+    if (_authoringState._selected_gui_constraint == NULL) 
+	return;
+
     // set the selected manipulator or affordance in the currently selected constraint pane
     // begin by getting the ModelState object from the selected openGL object
-    std::cout << "intersected affordance: " << modelName << std::endl;
+    // TODO: slow; use map objectsToModels
+    for (int i = 0; i < _worldState.affordances.size(); i++) {
+	if (_worldState.affordances[i]->getGUIDAsString() == modelGUID) {
+	    std::cout << " setting affordance" << std::endl;
+	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
+	    _authoringState._selected_gui_constraint->updateElementsFromState();
+	    break;
+	}
+    }
+
+    for (int i = 0; i < _worldState.manipulators.size(); i++) {
+	if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
+	    std::cout << " setting manipulator" << std::endl;
+	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
+	    _authoringState._selected_gui_constraint->updateElementsFromState();
+	    break;
+	}
+    }
+    //std::cout << "intersected affordance: " << modelGUID << std::endl;
 
     return;
 }

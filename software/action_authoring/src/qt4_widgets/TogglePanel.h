@@ -9,6 +9,13 @@ class TogglePanel : public QWidget
 {
     Q_OBJECT
 
+    typedef enum {
+	PLANNER_OK,
+	PLANNER_UNKNOWN,
+	PLANNER_NOT_OK,
+	PLANNER_WARNING
+    } PlannerStatus;
+
 private:
     QWidget* _headerArea;
     QString _headerText;
@@ -27,6 +34,7 @@ public:
     void addLayout(QLayout *layout);
     void setSelected(bool selected);
     void setTitle(QString title);
+    void setPlannerStatus(PlannerStatus p);
     QSize sizeHint();
 
     enum { OPEN, CLOSED };

@@ -9,7 +9,7 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 
     _headerArea = new QWidget;
     _widgetArea = new QWidget;
-    _headerArea->setMaximumHeight(20);
+    _headerArea->setMaximumHeight(25);
     _widgetArea->setMaximumHeight(1000);
     this->setMaximumHeight(1000);
 //    this->setMinimumHeight(this->sizeHint().height());
@@ -38,8 +38,8 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 
     // see http://qt-project.org/doc/qt-4.8/qstyle.html#standardIcon
     if (hasStatus) {
-	_plannerButton = new QPushButton("planner: NOT OK");    
-	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxCritical));
+	_plannerButton = new QPushButton("");
+	setPlannerStatus(PLANNER_OK);
 	//_plannerButton->setIconSize();
 	headerLayout->addWidget(_plannerButton);
     }
@@ -59,6 +59,22 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 
     setLayout(mainLayout);
 //    show();
+}
+
+void TogglePanel::setPlannerStatus(PlannerStatus planner) {
+    if (planner == PLANNER_OK) {
+	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOkButton));
+	_plannerButton->setText("planner: ok");
+    } else if (planner == PLANNER_UNKNOWN) {
+	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxQuestion));
+	_plannerButton->setText("planner: unknown");
+    } else if (planner == PLANNER_NOT_OK) {
+	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxCritical));
+	_plannerButton->setText("planner: failure");
+    } else if (planner == PLANNER_WARNING) {
+	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxWarning));
+	_plannerButton->setText("planner: warning");
+    }
 }
 
 void TogglePanel::setSelected(bool selected) {
