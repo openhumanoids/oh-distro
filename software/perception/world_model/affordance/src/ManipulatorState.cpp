@@ -43,7 +43,7 @@ string ManipulatorState::getName() const
 
 Vector3f ManipulatorState::getColor() const
 {
-  return Vector3f(1,0,0);
+  return Vector3f(1,0,0); //todo
 }
  
 
