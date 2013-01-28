@@ -1,5 +1,5 @@
 #include "Qt4ConstraintMacro.h"
-
+#include <action_authoring/ManipulationRelation.h>
 #include <iostream>
 
 using namespace action_authoring;
@@ -56,7 +56,7 @@ getPanel() {
     if (_initialized) {
 	return _gui_panel;
     }
-
+    
     QGroupBox* groupBox = new QGroupBox();
     QPushButton* editButton = new QPushButton(QString::fromUtf8("edit"));
 
@@ -163,14 +163,13 @@ updateStateFromElements() {
 
     if (_gui_robotJointType->currentIndex() >= 0) 
       {
-	ManRelPtr mr = _constraint->getAtomicConstraint()->getRelation();
 	affordance::ManipulatorStateConstPtr manipState = _manipulators[_gui_robotJointType->currentIndex()];
-	mr->setManipulator(manipState);
+	_constraint->getAtomicConstraint()->setManipulator(manipState);
       }
 
     if (_gui_affordanceType->currentIndex() >= 0) 
       {
-	  _constraint->getAtomicConstraint()->getRelation()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
+	  _constraint->getAtomicConstraint()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
       }
 
     setActive();
@@ -220,7 +219,7 @@ updateElementsFromState() {
 
     // select the correct joint name
     std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
-	_constraint->getAtomicConstraint()->getRelation()->getManipulator()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getManipulator()->getGlobalUniqueId());
     if (it!=_affordance1IndexMap.end()) {
 	_gui_robotJointType->setCurrentIndex(it->second);
 //	std::cout << "found LH affordance iterator: " << it->second << std::endl;
@@ -239,7 +238,7 @@ updateElementsFromState() {
 
     // select the current affordance
     std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
-	_constraint->getAtomicConstraint()->getRelation()->getAffordance()->getGlobalUniqueId());
+	_constraint->getAtomicConstraint()->getAffordance()->getGlobalUniqueId());
     if (it2 != _affordance2IndexMap.end()) {
 	_gui_affordanceType->setCurrentIndex(it2->second);
 //	std::cout << "found RH affordance iterator ((" << it2->second << ")): " << " " <<

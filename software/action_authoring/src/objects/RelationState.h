@@ -11,7 +11,7 @@ namespace action_authoring
 {
 
 /**todo: add comment
- Immutable class*/
+ Immutable class indicating how 2 objects are relatined*/
 class RelationState
 {
   

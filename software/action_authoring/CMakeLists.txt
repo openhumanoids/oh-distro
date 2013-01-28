@@ -38,9 +38,8 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
 add_library(action_authoring SHARED 
   src/objects/ManipulationRelation.cpp
   src/objects/RelationState.cpp
-  src/objects/AtomicConstraint.cpp
   src/objects/ConstraintMacro.cpp
-  src/storage/DatabaseManager.cpp
+  #src/storage/DatabaseManager.cpp
    )
 
 pods_install_headers(
@@ -80,8 +79,8 @@ add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server
 target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance)
 
 #=====action database 
-add_executable(test_database_manager
-  src/test/test_database_manager.cpp
-  src/storage/DatabaseManager.cpp)
-target_link_libraries(test_database_manager ${Boost_LIBRARIES} lcm affordance action_authoring)
-pods_use_pkg_config_packages(test_database_manager ${REQUIRED_PACKAGES})
+#add_executable(test_database_manager
+#  src/test/test_database_manager.cpp
+#  src/storage/DatabaseManager.cpp)
+#target_link_libraries(test_database_manager ${Boost_LIBRARIES} lcm affordance action_authoring)
+#pods_use_pkg_config_packages(test_database_manager ${REQUIRED_PACKAGES})

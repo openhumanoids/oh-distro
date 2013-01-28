@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include <affordance/OpenGL_Manipulator.h>
 
 using namespace std;
 using namespace KDL;
@@ -120,15 +121,15 @@ void MainWindow::handleAffordancesChanged()
   ManipulatorStateConstPtr manip = _worldState.manipulators[0];
   RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
 
-  ManRelPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
-  ManRelPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip, relstate));
-  ManRelPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip, relstate));
-  ManRelPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip, relstate));
+  AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
+  AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip, relstate));
+  AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip, relstate));
+  AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip, relstate));
   
-  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", (AtomicConstraintPtr)new AtomicConstraint(rfoot_gas_relation)));
-  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", (AtomicConstraintPtr)new AtomicConstraint(lfoot_brake_relation))); 
-  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(rhand_wheel_relation)));
-  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", (AtomicConstraintPtr)new AtomicConstraint(lhand_wheel_relation)));
+  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
+  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation)); 
+  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
+  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
   
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
   _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
@@ -164,48 +165,37 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     {
     	const State_GFE_Joint& state_gfe_joint = it->second;
 	std::string id = state_gfe_joint.id();
-	boost::shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
     	link_names.push_back(link->name);
 
-	// TODO: constructor that works on link
-	ManipulatorStateConstPtr man (new ManipulatorState(link->name));
-	_worldState.manipulators.push_back(man);
+	// TODO: constructor that works on link not on the link name
+	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
+								  GlobalUID(rand(), rand()))); //todo guid
+	_worldState.manipulators.push_back(manipulator);
 
-//	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(man); 
-//	_widget_opengl.opengl_scene().add_object(*asGlMan);
-//	_worldState.glObjects.push_back(asGlMan);
-
+	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
+	_widget_opengl.opengl_scene().add_object(*asGlMan);
+	_worldState.glObjects.push_back(asGlMan);
+	_worldState.collisionObjs.push_back(new Collision_Object_Sphere("todo: fix this name",
+									0.01,
+									Vector3f(0,0,0),
+									Vector4f(0,0,0,1)));
 	// update the selected manipulator
-//	std::string manName = _authoringState._selected_gui_constraint->
-//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
-
-	robot_opengl::CollisionGroupPtr colgroup = _worldState.colorRobot.getCollisionGroupsForLink(link->name);
-	if (colgroup != NULL && colgroup->size() > 0) {
-	    // add collision contact widgets!
-	    for (int i = 0; i < colgroup->size(); i++) {
-		std::cout << "adding widget " << std::endl;
-		urdf::Pose dot = (*colgroup)[i]->origin;
-		KDL::Frame f;
-		f.p = KDL::Vector(dot.position.x, dot.position.y, dot.position.y);
-
-/*		
-		OpenGL_Object_Sphere* s = new OpenGL_Object_Sphere();
-		s->set(f, 0.05);
-		_widget_opengl.opengl_scene().add_object(*s);
-		_worldState.glObjects.push_back(s);
-		
-		// make a collision object
-		Collision_Object* collision_object_manipulator;
-		collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
-		    0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
-		_widget_opengl.add_collision_object(collision_object_manipulator);
+	//	std::string manName = _authoringState._selected_gui_constraint->
+	//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
+	
+	//todo Mike start todo
+	
+	//todo: make a collision object
+	/*	Collision_Object* collision_object_manipulator;
+	collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
+								   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
+	_widget_opengl.add_collision_object(collision_object_manipulator);
 		_worldState.collisionObjs.push_back(collision_object_manipulator);
-*/
-	    }
-	}
-
+		// todo : end of move to manipulator state
+		*/
     }
-
+    
     this->setWindowTitle("Action Authoring Interface");
 
     QVBoxLayout* layout = new QVBoxLayout();
@@ -452,9 +442,8 @@ handleAddConstraint() {
     ManipulatorStateConstPtr manip = _worldState.manipulators[0];
 
     RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
-    ManRelPtr new_relation(new ManipulationRelation(left, manip, relstate));
+    AtomicConstraintPtr new_constraint(new ManipulationRelation(left, manip, relstate));
 
-    AtomicConstraintPtr new_constraint(new AtomicConstraint(new_relation));
     ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
 
     // compute the number

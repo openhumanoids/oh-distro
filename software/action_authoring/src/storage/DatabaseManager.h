@@ -2,6 +2,7 @@
 #define DATABASE_MANAGER_H
 
 #include "action_authoring/ConstraintMacro.h"
+#include "action_authoring/ManipulationRelation.h"
 #include "affordance/AffordanceState.h"
 #include <vector>
 #include <queue>
@@ -51,7 +52,6 @@ namespace action_authoring
     static void addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToGUIDMappings &mappings);
     static void addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToGUIDMappings &mappings);
     static void addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
-    static void addManipulationRelationToNode(ManRelPtr relation, xmlNodePtr node, ObjectToGUIDMappings &mappings);
     static void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
     static void postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, queue<ConstraintMacroPtr> &q, set<ConstraintMacroPtr> &done);
     

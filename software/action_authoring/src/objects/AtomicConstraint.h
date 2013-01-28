@@ -3,31 +3,28 @@
 
 #include <boost/shared_ptr.hpp>
 #include <affordance/AffordanceState.h>
-#include "ManipulationRelation.h"
+#include <affordance/ManipulatorState.h>
 
 namespace action_authoring
 {
 
 /**todo: add comment
 todo: make some pure virtual methods*/
+
 class AtomicConstraint
 {
   
-    //------------fields
- private:
-    ManRelPtr _relation;
-
-    //------------Constructor--------
+  //---------------Accessors
  public:
-    AtomicConstraint(ManRelPtr relation);
+  virtual affordance::AffConstPtr getAffordance() const  = 0; //should throw exception if doesn't apply
+  virtual affordance::ManipulatorStateConstPtr getManipulator() const = 0; //should throw exception if doesn't apply
 
-    //---------------Accessors
-    ManRelPtr getRelation() const { return _relation; }
-
-    //mutators
-    void setRelation(ManRelPtr relation) { _relation = relation; }
+  //mutators
+ public:
+  virtual void setAffordance(affordance::AffConstPtr affordance) = 0;
+  virtual void setManipulator(affordance::ManipulatorStateConstPtr manipulator) = 0;
   
-};  //class AtomicConstraint
+ };  //class AtomicConstraint
  
  typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;
  typedef boost::shared_ptr<const AtomicConstraint> AtomicConstraintConstPtr;

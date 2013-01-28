@@ -5,10 +5,12 @@
 #include <affordance/AffordanceState.h>
 #include <affordance/ManipulatorState.h>
 #include "RelationState.h"
+#include "AtomicConstraint.h"
 
-
-namespace action_authoring {
-    class ManipulationRelation {
+namespace action_authoring 
+{
+  class ManipulationRelation : public AtomicConstraint
+    {
 
     //----------Constructor
     public:
@@ -20,7 +22,7 @@ namespace action_authoring {
         affordance::AffConstPtr getAffordance() const { return _affordance; }
         affordance::ManipulatorStateConstPtr getManipulator() const { return _manipulator; }
 	RelationStateConstPtr getRelationState() const { return _relationState; }
-
+	
         void setAffordance(affordance::AffConstPtr affordance) { _affordance = affordance; }
         void setManipulator(affordance::ManipulatorStateConstPtr manipulator) { _manipulator = manipulator; }
 	void setRelationState(RelationStateConstPtr relationState) { _relationState = relationState; }

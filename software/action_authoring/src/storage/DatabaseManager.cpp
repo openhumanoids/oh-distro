@@ -137,23 +137,20 @@ void DatabaseManager::addRelationStateToNode(RelationStateConstPtr relationState
   makeChild(relationStateNode, "type", "foo bar");//relationState->getRelationType())
 }
 
-void DatabaseManager::addManipulationRelationToNode(ManRelPtr relation, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
-  addManipulatorStateToNode(relation->getManipulator(), node, mappings);
-  addRelationStateToNode(relation->getRelationState(), node, mappings);
+void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atom, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
+  addManipulatorStateToNode(atom->getManipulator(), node, mappings);
+
+  const ManipulationRelation *underlying = dynamic_cast<const ManipulationRelation*>(atom.get());
+  if (underlying == NULL)
+    throw NotImplementedException("todo: handle atomic constraints that aren't manipulation relations");
+
+  addRelationStateToNode(underlying->getRelationState(), node, mappings);
 
   xmlNodePtr relationNode = makeChild(node, "manipulation-relation");
-  makeChild(relationNode, "uid", getGUID(relation, mappings));
-  makeChild(relationNode, "affordance-state-uid", getGUID(relation->getAffordance(), mappings));
-  makeChild(relationNode, "manipulator-state-uid", getGUID(relation->getManipulator(), mappings));
-  makeChild(relationNode, "relation-state-uid", getGUID(relation->getRelationState(), mappings));
-}
-
-void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToGUIDMappings &mappings) {
-  addManipulationRelationToNode(atomicConstraint->getRelation(), node, mappings);
-
-  xmlNodePtr atomicConstraintNode = makeChild(node, "atomic-constraint");
-  makeChild(atomicConstraintNode, "uid", getGUID(atomicConstraint, mappings));
-  makeChild(atomicConstraintNode, "manipulation-relation-uid", getGUID(atomicConstraint->getRelation(), mappings));
+  makeChild(relationNode, "uid", getGUID(atom, mappings));
+  makeChild(relationNode, "affordance-state-uid", getGUID(atom->getAffordance(), mappings));
+  makeChild(relationNode, "manipulator-state-uid", getGUID(atom->getManipulator(), mappings));
+  makeChild(relationNode, "relation-state-uid", getGUID(underlying->getRelationState(), mappings));
 }
 
 //Converts a constraint into an XML Node, and adds it as a child to another node
@@ -416,7 +413,7 @@ void deserializeAtomicConstraint(xmlDocPtr doc, xmlNode* node, GUIDToObjectMappi
 
   ManRelPtr manipulationRelation  = mappings.GUIDToManipulationRelation[manipulationRelationGUID];
   
-  AtomicConstraintPtr atomicConstraint (new AtomicConstraint(manipulationRelation));
+  AtomicConstraintPtr atomicConstraint (manipulationRelation);
 
   mappings.GUIDToAtomicConstraint[guid] = atomicConstraint;
 }
