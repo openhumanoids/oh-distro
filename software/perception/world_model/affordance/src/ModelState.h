@@ -28,7 +28,6 @@ namespace affordance
   /**Base Class representing the state of a some modeled object 
      like an affordance or a manipulator.  The derived class is of type T.
      All ModelStates have a position and orientation.*/
-  template <class T>
   class ModelState
   {
 
@@ -60,11 +59,11 @@ namespace affordance
     //structure
     virtual bool hasChildren() const = 0; //any
     virtual bool hasParent() const = 0; //1 or more
-    virtual void getChildren(std::vector<boost::shared_ptr<const T> > &children) const = 0;
-    virtual void getParents(std::vector<boost::shared_ptr<const T> > &children) const = 0; 
+    virtual void getChildren(std::vector<boost::shared_ptr<const ModelState> > &children) const = 0;
+    virtual void getParents(std::vector<boost::shared_ptr<const ModelState> > &parents) const = 0; 
 
     //copying
-    virtual void getCopy(T &copy) const = 0;
+    virtual void getCopy(ModelState &copy) const = 0;
 
 
     //==========derived properties
@@ -80,7 +79,9 @@ namespace affordance
     }
   };
   
-  template <class T> std::ostream& operator<<( std::ostream& out, const ModelState<T>& other );  
+  std::ostream& operator<<( std::ostream& out, const ModelState& other );  
+  typedef boost::shared_ptr<ModelState> ModelStatePtr;
+  typedef boost::shared_ptr<const ModelState> ModelStateConstPtr;  
 } //namespace affordance
 
 #endif /* MODEL_STATE_H */

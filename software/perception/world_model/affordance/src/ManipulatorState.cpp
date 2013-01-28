@@ -82,19 +82,19 @@ bool ManipulatorState::hasParent() const
   throw NotImplementedException("hasParent");
 }
  
-void ManipulatorState::getChildren(vector<shared_ptr<const ManipulatorState> > &children) const 
+void ManipulatorState::getChildren(vector<ModelStateConstPtr> &children) const 
 {
   throw NotImplementedException("getChildren");
 }
  
-void ManipulatorState::getParents(vector<shared_ptr<const ManipulatorState> > &children) const 
+void ManipulatorState::getParents(vector<ModelStateConstPtr> &parents) const 
 {
   throw NotImplementedException("getParents");
 }
 
- void ManipulatorState::getCopy(ManipulatorState &copy) const 
+ void ManipulatorState::getCopy(ModelState &copy) const 
  {
- throw NotImplementedException("manip state");
+ throw NotImplementedException("getCopy");
  }
 
 

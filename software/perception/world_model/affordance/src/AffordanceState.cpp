@@ -355,17 +355,17 @@ bool AffordanceState::hasParent() const
   return true; 
 }
 
-void AffordanceState::getChildren(vector<AffConstPtr> &children) const 
+void AffordanceState::getChildren(vector<ModelStateConstPtr> &children) const 
 {
   throw NotImplementedException("aff state");
 }
 
-void AffordanceState::getParents(vector<AffConstPtr> &parents) const 
+void AffordanceState::getParents(vector<ModelStateConstPtr> &parents) const 
 {
   throw NotImplementedException("aff state");
 }
 
-void AffordanceState::getCopy(AffordanceState &copy) const 
+void AffordanceState::getCopy(ModelState &copy) const 
 {
   throw NotImplementedException("aff state");
 }

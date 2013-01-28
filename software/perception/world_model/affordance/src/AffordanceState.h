@@ -18,7 +18,7 @@ namespace affordance
   typedef std::pair<const int32_t, const int32_t> GlobalUID;
   
   /**Mutable class representing the state of an affordance*/
-  class AffordanceState : public ModelState<AffordanceState>
+  class AffordanceState : public ModelState
   {
 
     //------enums and typedefs
@@ -90,9 +90,9 @@ namespace affordance
     virtual bool isManipulator() const;
     virtual bool hasChildren() const; //any
     virtual bool hasParent() const; //1 or more
-    virtual void getChildren(std::vector<boost::shared_ptr<const AffordanceState> > &children) const;
-    virtual void getParents(std::vector<boost::shared_ptr<const AffordanceState> > &children) const;
-    virtual void getCopy(AffordanceState &copy) const;
+    virtual void getChildren(std::vector<ModelStateConstPtr> &children) const;
+    virtual void getParents(std::vector<ModelStateConstPtr> &parents) const; 
+    virtual void getCopy(ModelState &copy) const;
 
     //--these methods throw exceptions if we don't
     //have these fields defined

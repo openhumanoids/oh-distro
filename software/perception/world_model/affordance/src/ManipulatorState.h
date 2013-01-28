@@ -15,7 +15,7 @@ namespace affordance
 {
 
   /**Represents that state of a manipulator*/
-  class ManipulatorState : public ModelState<ManipulatorState>
+  class ManipulatorState : public ModelState
   {
     //-------------fields----
   private: 
@@ -48,9 +48,9 @@ namespace affordance
     virtual bool isManipulator() const;
     virtual bool hasChildren() const; //any
     virtual bool hasParent() const; //1 or more
-    virtual void getChildren(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
-    virtual void getParents(std::vector<boost::shared_ptr<const ManipulatorState> > &children) const;
-    virtual void getCopy(ManipulatorState &copy) const;
+    virtual void getChildren(std::vector<ModelStateConstPtr> &children) const;
+    virtual void getParents(std::vector<ModelStateConstPtr> &parents) const; 
+    virtual void getCopy(ModelState &copy) const;
     
     //specific to this class
   public:
