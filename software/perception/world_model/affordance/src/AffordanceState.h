@@ -110,6 +110,7 @@ namespace affordance
 				  const std::string &key);
   public:
     static std::string toStrFromMap(boost::unordered_map<std::string,double> m);
+    std::string getGUIDAsString() const;
     template <class T> static std::string toStr(T t);
 
     static void printIdToEnumMap();

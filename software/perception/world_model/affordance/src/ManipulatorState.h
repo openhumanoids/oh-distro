@@ -55,6 +55,8 @@ namespace affordance
     //specific to this class
   public:
     boost::shared_ptr<const urdf::Link> getLink() const;
+    std::string getGUIDAsString()  const;
+
   };
   
   std::ostream& operator<<( std::ostream& out, const ManipulatorState& other );

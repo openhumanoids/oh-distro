@@ -1,4 +1,5 @@
 #include "ManipulatorState.h"
+#include "AffordanceState.h"
 
 using namespace affordance;
 using namespace std;
@@ -18,8 +19,6 @@ ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link,
 }
 
 
-
-
 /*ManipulatorState::ManipulatorState(const ManipulatorState &other) {
   }*/
 
@@ -35,6 +34,12 @@ GlobalUID ManipulatorState::getGlobalUniqueId() const
 {
   return _guid;
 }
+
+string ManipulatorState::getGUIDAsString()  const 
+{
+    return AffordanceState::toStr(getGlobalUniqueId().first) + "," +  AffordanceState::toStr(getGlobalUniqueId().second);
+}
+
 
 string ManipulatorState::getName() const
 {
