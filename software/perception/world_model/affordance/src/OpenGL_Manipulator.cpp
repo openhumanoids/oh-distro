@@ -17,7 +17,7 @@ using namespace Eigen;
 OpenGL_Manipulator::OpenGL_Manipulator(ManipulatorStateConstPtr manipulator, 
 				       bool isHighlighted,
 				       Eigen::Vector3f highlightColor)
-  : OpenGL_Object(manipulator->getName(), isHighlighted, highlightColor),
+  : OpenGL_Object(manipulator->getGUIDAsString(), isHighlighted, highlightColor),
     _manipulator(manipulator)
 {
 }
