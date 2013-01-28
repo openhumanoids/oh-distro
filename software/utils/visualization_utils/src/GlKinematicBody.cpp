@@ -24,11 +24,11 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 //  boost::shared_ptr<urdf::Model> model_ptr(new urdf::Model); 
 //  model_ptr->initString(urdf_xml_string)
   
-  enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
+  //enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
   typedef map<string, shared_ptr<urdf::Joint> > joints_mapType;
   for( joints_mapType::const_iterator it = model.joints_.begin(); it!= model.joints_.end(); it++)
   { 
-  if(it->second->type!=6) // All joints that not of the type FIXED.
+    if(it->second->type!=urdf::Joint::FIXED) // All joints that not of the type FIXED.
     _joint_names_.push_back(it->first);
   }
   
@@ -65,9 +65,9 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
       cout << it->first << endl;
       int type = it->second->visual->geometry->type;
 
-      enum {SPHERE, BOX, CYLINDER, MESH}; 
+      //enum {SPHERE, BOX, CYLINDER, MESH}; 
 
-      if  (type == MESH)
+      if  (type == urdf::Geometry::MESH)
       {
          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
 
@@ -183,9 +183,9 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
       //cout << it->first << endl;
       int type = it->second->visual->geometry->type;
 
-      enum {SPHERE, BOX, CYLINDER, MESH}; 
+      //enum {SPHERE, BOX, CYLINDER, MESH}; 
 
-      if  (type == MESH)
+      if  (type == otdf::Geometry::MESH)
       {
          shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(it->second->visual->geometry));
 
@@ -241,12 +241,12 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
     re_init(otdf_instance); // for otdf the morphology can change, so we must reinitialize
 
     std::map<std::string, double> jointpos_in;
-    enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
+    //enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
   
    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
    for (joints_mapType::iterator joint = otdf_instance->joints_.begin();joint != otdf_instance->joints_.end(); joint++)
    {
-      if(joint->second->type!=(int) FIXED) { // All joints that not of the type FIXED.
+     if(joint->second->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
           double dof_current_pos = 0; // TODO: need object's initial dof state from fitting
           //double pos, vel; 
           //otdf_instance->getJointState(joint->first, pos, vel); 
@@ -263,7 +263,7 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
       for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
       {
 
-          if(jp_it->second->joint_set[i]->type!=(int) FIXED) { // All joints that not of the type FIXED.
+	if(jp_it->second->joint_set[i]->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
 	       double dof_current_pos = 0; //TODO: need object's initial dof state from fitting
               jointpos_in.insert(make_pair(jp_it->second->joint_set[i]->name, dof_current_pos)); 
          } // end if
@@ -631,9 +631,9 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const LinkFrame
  gluQuadricNormals(quadric, GLU_SMOOTH);
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
-  int type = link->type ;
-  enum {SPHERE, BOX, CYLINDER, MESH}; 
-  if (type == SPHERE)
+ int type = link->type ;
+  //enum {SPHERE, BOX, CYLINDER, MESH}; 
+  if (type == urdf::Geometry::SPHERE)
     {
       shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
@@ -643,7 +643,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const LinkFrame
        glPopMatrix();
     
     }
-  else if  (type == BOX)
+  else if  (type == urdf::Geometry::BOX)
     {
     shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(link));
     double xDim = box->dim.x;
@@ -665,7 +665,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const LinkFrame
     glPopMatrix();
   
 
-  }else if  (type == CYLINDER){
+  }else if  (type == urdf::Geometry::CYLINDER){
     shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
 
     glPushMatrix();
@@ -730,7 +730,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const LinkFrame
     //cout << "length : "<<  cyl->length << endl;
     // drawBox(radius,length, it->second -> visual->origin);
   }
-  else if  (type == MESH)
+  else if  (type == urdf::Geometry::MESH)
     {
     //cout << "MESH: " << nextTf.link_name << endl;
     //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(link));
@@ -809,9 +809,9 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrame
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
 
-  int type = link->type ;
-  enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
-  if (type == SPHERE)
+ int type = link->type ;
+ //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
+  if (type == otdf::Geometry::SPHERE)
     {
       shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link));	
       double radius = sphere->radius;
@@ -821,7 +821,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrame
        glPopMatrix();
     
     }
-  else if  (type == BOX)
+  else if  (type == otdf::Geometry::BOX)
     {
     shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link));
     double xDim = box->dim.x;
@@ -843,7 +843,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrame
     glPopMatrix();
   
 
-  }else if  (type == CYLINDER){
+  }else if  (type == otdf::Geometry::CYLINDER){
     shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link));
 
     glPushMatrix();
@@ -908,7 +908,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrame
     //cout << "length : "<<  cyl->length << endl;
     // drawBox(radius,length, it->second -> visual->origin);
   }
-  else if  (type == MESH)
+  else if  (type == otdf::Geometry::MESH)
     {
     //cout << "MESH: " << nextTf.link_name << endl;
     //shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(link));
@@ -961,7 +961,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link, const LinkFrame
 
    // }// end if (found1!=std::string::npos)
   }
-  else if  (type == TORUS)
+  else if  (type == otdf::Geometry::TORUS)
   {
     boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
     double innerRadius = torus->tube_radius;
