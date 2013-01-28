@@ -36,7 +36,7 @@ Vector4f Collision_Object_Point_Cloud::orientation() const
    get the world-frame orientation of the collision objects*/ 
 Vector3f Collision_Object_Point_Cloud::position() const
 {
-  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> orientation()");
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> position()");
 }
 
 

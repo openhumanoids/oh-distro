@@ -84,7 +84,7 @@ Vector3f Collision_Object_Cone::position() const
    get the world-frame orientation of the collision objects*/ 
 Vector4f Collision_Object_Cone::orientation() const
 {
-  throw std::runtime_error("Not Implemented: collision_object_cone.cc --> orientation()");
+  throw std::runtime_error("Not Impelmented: collision_object_cone.cc --> orientation()");
 }
 
 
