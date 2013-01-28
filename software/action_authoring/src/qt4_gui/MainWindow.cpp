@@ -65,17 +65,17 @@ void MainWindow::handleAffordancesChanged()
 	  f.M.GetQuaternion(q1, q2, q3, q4);
 
 	  if (next->_otdf_id == AffordanceState::BOX) {
-	      collision_object_affordance = new Collision_Object_Box(next->getName(), 
+	      collision_object_affordance = new Collision_Object_Box(next->getGUIDAsString(), 
 		     Vector3f(next->length(), next->width(), next->height()), 
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::CYLINDER) {
-	      collision_object_affordance = new Collision_Object_Cylinder(next->getName(), 
+	      collision_object_affordance = new Collision_Object_Cylinder(next->getGUIDAsString(),
 	             next->radius(), next->length(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
 	  if (next->_otdf_id == AffordanceState::SPHERE) {
-	      collision_object_affordance = new Collision_Object_Sphere(next->getName(),
+	      collision_object_affordance = new Collision_Object_Sphere(next->getGUIDAsString(),
 		     next->radius(),
 		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
 	  }
@@ -93,7 +93,7 @@ void MainWindow::handleAffordancesChanged()
 
   // TODO resolve path
   _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
-    "~/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
   _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
   _widget_opengl.update();
@@ -120,12 +120,15 @@ void MainWindow::handleAffordancesChanged()
   AffConstPtr wheel = nameToAffMap["Steering Wheel"];
 
   ManipulatorStateConstPtr manip = _worldState.manipulators[0];
+  ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
+  ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
+  ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
   RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
 
   AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
-  AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip, relstate));
-  AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip, relstate));
-  AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip, relstate));
+  AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
+  AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
+  AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
   
   ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
   ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation)); 
@@ -236,7 +239,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 //    area->setBackgroundRole(QPalette::Dark);
     area->setWidgetResizable(true);
     area->setWidget(_constraint_container);
-    area->setMinimumSize( QSize(900, 700 ) );
+    area->setMinimumSize( QSize(800, 700 ) );
     area->setAlignment(Qt::AlignTop);
 //    vbox->addWidget(_constraint_container);
     vbox->addWidget(area);
@@ -607,16 +610,22 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(const std::string &modelName) 
 {
-    std::cout << "intersected affordance: " << modelName << std::endl;
-
+    // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	if (_worldState.glObjects[i]->id() == modelName)
+	if (_worldState.glObjects[i]->id() == modelName) {
 	    _worldState.glObjects[i]->setHighlighted(true);
-	else 
+	}
+	else {
 	    _worldState.glObjects[i]->setHighlighted(false);
+	}
     }
     _widget_opengl.update();
+
+    // set the selected manipulator or affordance in the currently selected constraint pane
+    // begin by getting the ModelState object from the selected openGL object
+    std::cout << "intersected affordance: " << modelName << std::endl;
+
     return;
 }
 

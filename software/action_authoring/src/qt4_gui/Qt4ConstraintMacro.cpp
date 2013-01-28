@@ -9,7 +9,7 @@ Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) : _gui_na
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
-				     _gui_panel(new TogglePanel(this, "test")),
+				     _gui_panel(new TogglePanel(this, "test", true)),
 				     _gui_time_lower_bound(new QDoubleSpinBox()),
 				     _gui_time_upper_bound(new QDoubleSpinBox())
 {
@@ -76,9 +76,9 @@ getPanel() {
     QHBoxLayout* top_line_hbox = new QHBoxLayout();
     QWidget* top_line_container = new QWidget();
     top_line_hbox->addWidget(_gui_name);
-    top_line_hbox->addWidget(new QLabel("lower bound (sec): "));
+    top_line_hbox->addWidget(new QLabel("lower bound: "));
     top_line_hbox->addWidget(_gui_time_lower_bound);
-    top_line_hbox->addWidget(new QLabel("upper bound (sec): "));
+    top_line_hbox->addWidget(new QLabel("upper bound: "));
     top_line_hbox->addWidget(_gui_time_upper_bound);
     top_line_hbox->addWidget(new QPushButton("click to bind"));
     top_line_container->setLayout(top_line_hbox);
@@ -98,21 +98,14 @@ getPanel() {
     vbox->addWidget(boxcontainer);
 
     // previous constraints checkboxes
-    TogglePanel* checkboxGroup = new TogglePanel(_gui_panel, "constraints still in effect");
+    TogglePanel* checkboxGroup = new TogglePanel(_gui_panel, "constraints still in effect", false);
     QGroupBox* checkboxGroupBox = new QGroupBox();
     QHBoxLayout* checkboxGroupLayout = new QHBoxLayout();
-    QCheckBox* q1 = new QCheckBox("previous constraint #1");
-    q1->setChecked(true);
-    checkboxGroupLayout->addWidget(q1);
-    QCheckBox* q2 = new QCheckBox("previous constraint #2");
-    q2->setChecked(true);
-    checkboxGroupLayout->addWidget(q2);
-    QCheckBox* q3 = new QCheckBox("previous constraint #3");
-    q3->setChecked(true);
-    checkboxGroupLayout->addWidget(q3);
-    QCheckBox* q4 = new QCheckBox("previous constraint #4");
-    q4->setChecked(true);
-    checkboxGroupLayout->addWidget(q4);
+    for (int i = 0; i < _constraintIndex; i++) {
+	QCheckBox* q1 = new QCheckBox(QString("previous constraint %1").arg(i));
+	q1->setChecked(true);
+	checkboxGroupLayout->addWidget(q1);
+    }
     checkboxGroupBox->setLayout(checkboxGroupLayout);
     checkboxGroup->addWidget(checkboxGroupBox);
     vbox->addWidget(checkboxGroup);

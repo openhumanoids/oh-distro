@@ -13,7 +13,8 @@ private:
     QWidget* _headerArea;
     QString _headerText;
     QWidget* _widgetArea;
-    QPushButton* icon;
+    QPushButton* icon;    
+    QPushButton* _plannerButton;
     ExtendedQLabel* _headerTextLabel;
     QVBoxLayout* _widgetLayout;
     int _state;
@@ -21,7 +22,7 @@ private:
 
 public:
     ~TogglePanel();
-    TogglePanel(QObject *parent, QString headerText);
+    TogglePanel(QObject *parent, QString headerText, bool hasStatus);
     void addWidget(QWidget *widget);
     void addLayout(QLayout *layout);
     void setSelected(bool selected);

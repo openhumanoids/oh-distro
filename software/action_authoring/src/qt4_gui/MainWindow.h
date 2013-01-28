@@ -30,6 +30,7 @@
 #include <affordance/AffordanceState.h>
 #include <affordance/AffordanceUpWrapper.h>
 #include <affordance/OpenGL_Affordance.h>
+#include <affordance/ModelState.h>
 
 // Local includes
 //#include <action_authoring/AtomicConstraintMacro.h>
@@ -62,6 +63,8 @@ struct WorldStateView
   robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
   opengl::OpenGL_Object_DAE* colorVehicle; // TODO : special case for demo
   std::vector<opengl::OpenGL_Object*> glObjects; //objects for rendering
+
+  std::map<opengl::OpenGL_Object*,affordance::ModelStateConstPtr> objectsToModels; //map to identify clicked objects
   std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
 
   /**initializes all the fields in the struct*/

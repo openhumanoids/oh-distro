@@ -1,7 +1,7 @@
 #include "TogglePanel.h"
 
 TogglePanel::
-TogglePanel(QObject *parent, QString headerText) 
+TogglePanel(QObject *parent, QString headerText, bool hasStatus) 
 {
     _headerText = headerText;
     _parent = parent;
@@ -35,6 +35,15 @@ TogglePanel(QObject *parent, QString headerText)
     headerLayout->setMargin(0);
     headerLayout->addWidget(icon); /*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
     headerLayout->addWidget(_headerTextLabel); /*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
+
+    // see http://qt-project.org/doc/qt-4.8/qstyle.html#standardIcon
+    if (hasStatus) {
+	_plannerButton = new QPushButton("planner: NOT OK");    
+	_plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxCritical));
+	//_plannerButton->setIconSize();
+	headerLayout->addWidget(_plannerButton);
+    }
+
     _headerArea->setLayout(headerLayout);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
