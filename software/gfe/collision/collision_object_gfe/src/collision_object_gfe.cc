@@ -192,3 +192,27 @@ _load_collision_objects( void ){
   }
   return;
 }
+
+
+
+
+/**orientation
+   get the world-frame orientation of the collision objects*/ 
+Vector4f Collision_Object_GFE::orientation() const
+{
+  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> orientation()");
+}
+
+/**orientation
+   get the world-frame orientation of the collision objects*/ 
+Vector3f Collision_Object_GFE::position() const
+{
+  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> position");
+}
+
+void Collision_Object_GFE::set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation ) 
+{
+  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> set_transform");
+}
+
+
