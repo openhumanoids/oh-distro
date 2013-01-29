@@ -2,6 +2,7 @@
 #define ROBOT_LINK_H
 
 #include <opengl/opengl_object_gfe.h>
+#include <kinematics_model/kinematics_model_gfe.h>
 #include <urdf/model.h>
 
 namespace robot_opengl {
@@ -12,6 +13,7 @@ namespace robot_opengl {
     public:
         ColorRobot() : OpenGL_Object_GFE() { }
         ColorRobot(std::string urdfFilename) : OpenGL_Object_GFE(urdfFilename) { }
+        kinematics_model::Kinematics_Model_GFE getKinematicsModel() { return _kinematics_model; }
 
 	virtual void draw( void );
 	void setSelectedLink(std::string link_name);

@@ -50,7 +50,6 @@ void MainWindow::handleAffordancesChanged()
   for(uint i = 0; i < _worldState.affordances.size(); i++)
     {
       AffConstPtr next = _worldState.affordances[i];
-      
 
       if (!Collision_Object_Affordance::isSupported(next))
 	{
@@ -89,7 +88,7 @@ void MainWindow::handleAffordancesChanged()
 	// TODO: constructor that works on link not on the link name
 	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
 								  // todo: mike (need accessor for the _kinematics_model in the subclass too
-								  //_worldState.colorRobot._kinematics_model.link(link->getName()),
+								  _worldState.colorRobot.getKinematicsModel().link(link->name),
 								  GlobalUID(rand(), rand()))); //todo guid
 	_worldState.manipulators.push_back(manipulator);
 
@@ -143,38 +142,39 @@ void MainWindow::handleAffordancesChanged()
     }
  
   //todo: this is just demo code
+  if (_worldState.manipulators.size() > 4) {
+      AffConstPtr rfoot = nameToAffMap["Right Foot"];
+      AffConstPtr lfoot = nameToAffMap["Left Foot"];
+      AffConstPtr rhand = nameToAffMap["Right Hand"];
+      AffConstPtr lhand = nameToAffMap["Left Hand"];
 
-  AffConstPtr rfoot = nameToAffMap["Right Foot"];
-  AffConstPtr lfoot = nameToAffMap["Left Foot"];
-  AffConstPtr rhand = nameToAffMap["Right Hand"];
-  AffConstPtr lhand = nameToAffMap["Left Hand"];
+      AffConstPtr gas = nameToAffMap["Gas Pedal"];
+      AffConstPtr brake = nameToAffMap["Brake Pedal"];
+      AffConstPtr wheel = nameToAffMap["Steering Wheel"];
 
-  AffConstPtr gas = nameToAffMap["Gas Pedal"];
-  AffConstPtr brake = nameToAffMap["Brake Pedal"];
-  AffConstPtr wheel = nameToAffMap["Steering Wheel"];
+      ManipulatorStateConstPtr manip = _worldState.manipulators[0];
+      ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
+      ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
+      ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
+      PointContactRelationPtr relstate(new PointContactRelation());
 
-  ManipulatorStateConstPtr manip = _worldState.manipulators[0];
-  ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
-  ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
-  ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
-  PointContactRelationPtr relstate(new PointContactRelation());
-
-  AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
-  AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
-  AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
-  AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
+      AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
+      AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
+      AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
+      AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
   
-  ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
-  ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation)); 
-  ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
-  ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
+      ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
+      ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation)); 
+      ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
+      ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
   
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
-  _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
+      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
 
-  rebuildGUIFromState(_authoringState, _worldState);
+      rebuildGUIFromState(_authoringState, _worldState);
+  }
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
@@ -643,16 +643,14 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
     cout << " hit at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
     if (_authoringState._selected_gui_constraint != NULL) {
 	// set the contact point for the relation
-//	RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
-//	if (rel->getRelationType() == RelationState::POINT_CONTACT) {
-//	    PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
-/*
+	RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+	if (rel->getRelationType() == RelationState::POINT_CONTACT) {
+	    PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
 	    if (wasAffordance) 
 		pc->setPoint2(hitPoint);
 	    else 
 		pc->setPoint1(hitPoint);
-*/
-//	}
+	}
     }
 
     // prompt to set relation state
