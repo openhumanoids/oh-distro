@@ -54,7 +54,7 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
  
       try {
         drc.grasp_opt_control_t msg = new drc.grasp_opt_control_t(data);
-        if (msg.robot_name.equals(m_robot_name)) {
+        //if (msg.robot_name.equals(m_robot_name)) {
           m_object_name = msg.object_name;
           m_geometry_name =  msg.geometry_name; 
           Integer j;
@@ -114,7 +114,7 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
           //fdata.val[6] = yaw;
 
           return fdata;
-        }
+        //}
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
       }
