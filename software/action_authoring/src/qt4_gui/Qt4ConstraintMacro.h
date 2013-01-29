@@ -7,7 +7,7 @@
 #include <QApplication>
 // Custom QT widget
 #include "../qt4_widgets/TogglePanel.h"
-#include "action_authoring/ConstraintMacro.h"
+#include <action_authoring/ConstraintMacro.h>
 
 namespace action_authoring
 {
@@ -33,6 +33,7 @@ namespace action_authoring
 	void setConstraintIndex(int constraintIndex);
 	int getConstraintIndex() { return _constraintIndex; }
 	void setActiveExternal();
+	std::string getModePrompt();
 
     private:
 	std::map<affordance::GlobalUID, int> _affordance1IndexMap;
@@ -40,7 +41,7 @@ namespace action_authoring
 
 	int _constraintIndex;
 	bool _initialized;
-
+	bool _updatingElementsFromState;
 	QDoubleSpinBox* _gui_time_lower_bound;
 	QDoubleSpinBox* _gui_time_upper_bound;
 	TogglePanel* _gui_panel;

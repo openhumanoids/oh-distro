@@ -11,7 +11,7 @@ namespace action_authoring
 {
 
 /**todo: add comment
- Immutable class indicating how 2 objects are relatined*/
+ Immutable class indicating how 2 objects are related */
 class RelationState
 {
   
@@ -25,6 +25,7 @@ class RelationState
       UNDEFINED,
       GRASP,
       FORCE_CLOSURE,
+      POINT_CONTACT,
       OFFSET
     } RelationType;
 
@@ -44,6 +45,8 @@ class RelationState
 
   //---------------Accessors
     RelationType getRelationType() const;
+    virtual std::string getState() const = 0; // returns a user-friendly string that explains the state of relation
+    virtual std::string getPrompt() const = 0; // prompts the user for the next field to set to complete the relation
 
 }; //class RelationState
 

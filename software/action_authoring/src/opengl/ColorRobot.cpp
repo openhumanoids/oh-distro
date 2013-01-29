@@ -33,8 +33,8 @@ draw(void) {
 
 void 
 ColorRobot::
-setSelectedJoint(std::string jointName) {
-
+setSelectedLink(std::string link_name) {
+    _selected_link_name = link_name;
 }
 
 CollisionGroupPtr

@@ -155,7 +155,7 @@ void MainWindow::handleAffordancesChanged()
   ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
   ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
   ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
-  RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
+  PointContactRelationPtr relstate(new PointContactRelation());
 
   AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
   AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
@@ -191,6 +191,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     connect(timer, SIGNAL(timeout()), 
 	    this, SLOT(affordanceUpdateCheck()));
     timer->start(1000); //1Hz  
+
+    _scrubberTimer = new QTimer;
+    connect(_scrubberTimer, SIGNAL(timeout()), this, SLOT(nextKeyFrame()));
 
     this->setWindowTitle("Action Authoring Interface");
 
@@ -304,13 +307,14 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     QVBoxLayout* rightsidelayout = new QVBoxLayout();
     QWidget* rightside = new QWidget();
     _jointSlider = new QSlider( Qt::Horizontal, this );
-    _jointNameLabel = new QLabel();
+    _actionDescLabel = new QLabel();
+    _actionDescLabel->setTextFormat(Qt::RichText);
     _scrubber = new DefaultValueSlider( Qt::Horizontal, this );
-    rightsidelayout->addWidget(_jointNameLabel);
+    _scrubber->setRange(0, 1000);
+    rightsidelayout->addWidget(_actionDescLabel);
     rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(widgetWrapper);
     rightsidelayout->addWidget(_scrubber);
-//    rightside->setStyleSheet("QGroupBox { border: 1px solid black; border-radius: 3px; padding: 0px; background-color: black; } ");
     rightside->setLayout(rightsidelayout);
 
     splitter->addWidget( leftside);
@@ -340,7 +344,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
-    connect(_jointSlider, SIGNAL(valueChanged(int)), this, SLOT(updateJoint(int)));
 }
 
 MainWindow::~MainWindow()
@@ -445,7 +448,7 @@ handleAddConstraint() {
     AffConstPtr left = _worldState.affordances[0];
     ManipulatorStateConstPtr manip = _worldState.manipulators[0];
 
-    RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
+    PointContactRelationPtr relstate(new PointContactRelation());
     AtomicConstraintPtr new_constraint(new ManipulationRelation(left, manip, relstate));
 
     ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
@@ -483,33 +486,6 @@ handleMoveDown() {
 
 void 
 MainWindow::
-updateJoint(int value) {
-/*    std::string selectedJointName = getSelectedJointName();
-    if (selectedJointName != "") {
-	std::cout << "joint " << selectedJointName << " set to " <<  _jointSlider->value() / 100.0 << std::endl;
-	_worldState.state_gfe.joint(selectedJointName).set_position( _jointSlider->value() / 100.0 );
-	_worldState.colorRobot.set(_worldState.state_gfe);
-	_widget_opengl.update();
-    }
-*/
-}
-
-/*
- * change the functionality of the slider to actuate currently selected link
- */
-void 
-MainWindow::
-handleSelectedAffordanceChange() {
-/*
-    std::string selectedJointName = getSelectedJointName();
-    _worldState.colorRobot.setSelectedJoint(selectedJointName);
-    _widget_opengl.update();
-    _jointNameLabel->setText(QString::fromStdString(selectedJointName));
-*/
-}
-
-void 
-MainWindow::
 updateScrubber() {
     // update the scrubber
     double sum = 0.0;
@@ -527,10 +503,14 @@ updateScrubber() {
     _scrubber->update();
 }
 
+/*
+ * This function is connected to the activated() signal of all of the
+ * Qt4ConstraintMacros. It is called whenever a piece of constraint state
+ * is modified in the GUI.
+ */
 void 
 MainWindow::
 setSelectedAction(Qt4ConstraintMacro* activator) { 
-//    std::cout << "activated !!! " << std::endl;
     int selected_index = -1;
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator == _authoringState._all_gui_constraints[i].get()) {
@@ -541,14 +521,24 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
     }
+
+    // enable or disable media/move buttons
     _moveUpButton->setEnabled(selected_index != 0);
     _moveDownButton->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
     _fbwd->setEnabled(selected_index != 0);
     _ffwd->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
 
     updateScrubber();
+    // highlight the affordance
     selectedOpenGLObjectChanged(_authoringState._selected_gui_constraint->getConstraintMacro()
 				->getAtomicConstraint()->getAffordance()->getGUIDAsString());
+    // highlight the manipulator
+    _worldState.colorRobot.setSelectedLink(_authoringState._selected_gui_constraint->getConstraintMacro()
+				->getAtomicConstraint()->getManipulator()->getName());
+   
+    // prompt to set relation state
+    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+
 }
 
 /* 
@@ -573,8 +563,7 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
 		    SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
 		    this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
 //		    Qt::UniqueConnection);
-
-	    std::cout << "adding constraint #" << i << std::endl;
+//	    std::cout << "adding constraint #" << i << std::endl;
 	    _constraint_vbox->addWidget(tp);
 	}
     }
@@ -602,7 +591,7 @@ affordanceUpdateCheck()
  */
 void
 MainWindow::
-selectedOpenGLObjectChanged(const std::string &modelGUID) 
+selectedOpenGLObjectChanged(const std::string &modelGUID)
 {
     // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
@@ -624,7 +613,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID)
     // TODO: slow; use map objectsToModels
     for (int i = 0; i < _worldState.affordances.size(); i++) {
 	if (_worldState.affordances[i]->getGUIDAsString() == modelGUID) {
-	    std::cout << " setting affordance" << std::endl;
+	    //std::cout << " setting affordance" << std::endl;
 	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
 	    _authoringState._selected_gui_constraint->updateElementsFromState();
 	    break;
@@ -633,7 +622,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID)
 
     for (int i = 0; i < _worldState.manipulators.size(); i++) {
 	if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
-	    std::cout << " setting manipulator" << std::endl;
+	    //std::cout << " setting manipulator" << std::endl;
 	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
 	    _authoringState._selected_gui_constraint->updateElementsFromState();
 	    break;
@@ -660,15 +649,28 @@ mediaFastBackward() {
 }
 
 void
-MainWindow::mediaPlay() {
+MainWindow::
+mediaPlay() {
     if (_isPlaying) {
 	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
 	_play->setIcon(QIcon(pixmap3));
 	_play->setIconSize(pixmap3.rect().size());
+	_scrubberTimer->start(50); // 20 HZ
     } else {
 	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-play-32.png");
 	_play->setIcon(QIcon(pixmap3));
 	_play->setIconSize(pixmap3.rect().size());
+	_scrubberTimer->stop();
     }
     _isPlaying = ! _isPlaying;
+}
+
+void
+MainWindow::
+nextKeyFrame() {
+    if (_scrubber->value() == _scrubber->maximum()) {
+	_scrubberTimer->stop();
+    } else { 
+	_scrubber->setValue(_scrubber->value() + 1);
+    }
 }

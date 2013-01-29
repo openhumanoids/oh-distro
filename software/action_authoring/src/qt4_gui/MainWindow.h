@@ -39,6 +39,7 @@
 #include <action_authoring/ManipulationRelation.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
+#include <action_authoring/PointContactRelation.h>
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
 //#define DATABASE 1
@@ -100,14 +101,14 @@ public:
     explicit MainWindow(const boost::shared_ptr<lcm::LCM> &theLcm, QWidget *parent = 0);
     boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintMacroPtr waypoint_constraint,
 				   std::vector<std::string> joint_names);
-    std::vector<std::string> getJointNames(std::string urdf_xml_filename);
     ~MainWindow();
 
     //=================gui state
  private: 
     QSlider* _jointSlider;
+    QTimer* _scrubberTimer;
     DefaultValueSlider* _scrubber;
-    QLabel * _jointNameLabel;
+    QLabel * _actionDescLabel;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget* _constraint_container;
     QVBoxLayout* _constraint_vbox;
@@ -124,8 +125,6 @@ public:
 private:
     WorldStateView _worldState; //view of the world state
     AuthoringState _authoringState; //state of authoring
-    //todo: move this into another class
-    std::vector<std::string> getJointNames(std::string urdf_xml_filename) const;
 
 private:
     void rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState);
@@ -137,19 +136,18 @@ private:
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
 
-    void updateJoint(int value);
     void handleLoadAction();
     void handleSaveAction();
     void handleDeleteConstraint();
     void handleAddConstraint();
     void handleMoveUp();
     void handleMoveDown();
-    void handleSelectedAffordanceChange();
     void setSelectedAction(Qt4ConstraintMacro* activator);
     void selectedOpenGLObjectChanged(const std::string &modelName);
     void mediaFastForward();
     void mediaFastBackward();
     void mediaPlay();
+    void nextKeyFrame();
 };
 
 } //namespace action_authoring

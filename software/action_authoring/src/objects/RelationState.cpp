@@ -10,7 +10,7 @@ unordered_map<string, RelationState::RelationType> RelationState::makeRNameMap()
   m["GRASP"]             = GRASP;
   m["FORCE_CLOSURE"]     = FORCE_CLOSURE;
   m["OFFSET"]            = OFFSET;
-
+  m["POINT_CONTACT"]     = POINT_CONTACT;
   return m;
 }
 

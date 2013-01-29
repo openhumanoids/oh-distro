@@ -1,6 +1,7 @@
 #include "Qt4ConstraintMacro.h"
 #include <action_authoring/ManipulationRelation.h>
 #include <iostream>
+#include <sstream>
 
 using namespace action_authoring;
 
@@ -19,6 +20,7 @@ Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) : _gui_na
     _gui_time_upper_bound->setSuffix(" sec");
     _initialized = false;
     _constraintIndex = constraintIndex;
+    _updatingElementsFromState = false;
 }
 
 Qt4ConstraintMacro::
@@ -64,11 +66,11 @@ getPanel() {
     //_all_panels[waypoint_constraint->getName()] = outputPanel;
     //_all_robot_link_combos[waypoint_constraint->getName()] = radio1;
 
+    _gui_constraintType->insertItem(0, "point to point");
     _gui_constraintType->insertItem(0, "3D Offset");
     _gui_constraintType->insertItem(0, "tangent to");
     _gui_constraintType->insertItem(0, "normal to");
     _gui_constraintType->insertItem(0, "near");
-    _gui_constraintType->insertItem(0, "point touches");
     _gui_constraintType->insertItem(0, "surface touches");
     _gui_constraintType->insertItem(0, "grasps");
 
@@ -148,6 +150,9 @@ getConstraintMacro() {
 void
 Qt4ConstraintMacro::
 updateStateFromElements() {
+    if (_updatingElementsFromState)  
+	return;
+
     _constraint->setName(_gui_name->text().toStdString());
     _gui_panel->setTitle(QString("[%1] ").arg(_constraintIndex) + QString::fromStdString(_constraint->getName()));
 
@@ -155,15 +160,10 @@ updateStateFromElements() {
     _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
 
     if (_gui_robotJointType->currentIndex() >= 0) 
-      {
-	affordance::ManipulatorStateConstPtr manipState = _manipulators[_gui_robotJointType->currentIndex()];
-	_constraint->getAtomicConstraint()->setManipulator(manipState);
-      }
+	_constraint->getAtomicConstraint()->setManipulator(_manipulators[_gui_robotJointType->currentIndex()]);
 
     if (_gui_affordanceType->currentIndex() >= 0) 
-      {
-	  _constraint->getAtomicConstraint()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
-      }
+	_constraint->getAtomicConstraint()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
 
     setActive();
 }
@@ -194,6 +194,7 @@ updateElementsFromState() {
     // if we don't block signals, we willl overwrite state when we are
     // rebuilding the GUI elements because the values will change and
     // automatically trigger state updates
+    _updatingElementsFromState = true;
     _gui_robotJointType->blockSignals(true);
     _gui_affordanceType->blockSignals(true);
     _gui_constraintType->blockSignals(true);
@@ -210,46 +211,54 @@ updateElementsFromState() {
     _affordance1IndexMap.clear();
     _affordance2IndexMap.clear();
 
-    // update the left side combo box
-    _gui_robotJointType->clear();
-    for (int i = 0; i < _manipulators.size(); i++) {
+    if (_manipulators.size() > 0) {
+	// update the left side combo box
+	_gui_robotJointType->clear();
+	for (int i = 0; i < _manipulators.size(); i++) {
 	    _gui_robotJointType->insertItem(i, QString::fromStdString(_manipulators[i]->getName()));
 	    _affordance1IndexMap[_manipulators[i]->getGlobalUniqueId()] = i;
+	}
+
+	// select the correct joint name
+	std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
+	    _constraint->getAtomicConstraint()->getManipulator()->getGlobalUniqueId());
+	if (it!=_affordance1IndexMap.end()) {
+	    _gui_robotJointType->setCurrentIndex(it->second);
+	    //std::cout << "found LH affordance iterator: " << it->second << std::endl;
+	}
     }
 
-    // select the correct joint name
-    std::map<affordance::GlobalUID, int>::const_iterator it = _affordance1IndexMap.find(
-	_constraint->getAtomicConstraint()->getManipulator()->getGlobalUniqueId());
-    if (it!=_affordance1IndexMap.end()) {
-	_gui_robotJointType->setCurrentIndex(it->second);
-//	std::cout << "found LH affordance iterator: " << it->second << std::endl;
-    } else {
-//	std::cout << "failed to find LH affordance (guid: " 
-//		  << 	_constraint->getAffordance1()->getGlobalUniqueId().first << ","
-//		  << _constraint->getAffordance1()->getGlobalUniqueId().second << std::endl;
-    }
+    if (_affordances.size() > 0) {
+	// update the right side combo box
+	_gui_affordanceType->clear();
+	for (int i = 0; i < _affordances.size(); i++) {
+	    _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
+	    _affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
+	}
 
-    // update the right side combo box
-    _gui_affordanceType->clear();
-    for (int i = 0; i < _affordances.size(); i++) {
-        _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
-	_affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
-//	std::cout << ">>>>>> " << _affordances[i]->getGUIDAsString() << " : " << i << std::endl;
-    }
-
-    // select the current affordance
-    std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
-	_constraint->getAtomicConstraint()->getAffordance()->getGlobalUniqueId());
-    if (it2 != _affordance2IndexMap.end()) {
-	_gui_affordanceType->setCurrentIndex(it2->second);
-//	std::cout << "found RH index ((" << it2->second << ")): " << " for GUID " <<
-//	    _constraint->getAtomicConstraint()->getAffordance()->getGUIDAsString() << std::endl;
-    } else {
-
+	// select the current affordance
+	std::map<affordance::GlobalUID, int>::const_iterator it2 = _affordance2IndexMap.find(
+	    _constraint->getAtomicConstraint()->getAffordance()->getGlobalUniqueId());
+	if (it2 != _affordance2IndexMap.end()) {
+	    _gui_affordanceType->setCurrentIndex(it2->second);
+//	    std::cout << "found RH index ((" << it2->second << ")): " << " for GUID " <<
+//		_constraint->getAtomicConstraint()->getAffordance()->getGUIDAsString() << std::endl;
+	}
     }
 
     _gui_robotJointType->blockSignals(false);
     _gui_affordanceType->blockSignals(false);
     _gui_constraintType->blockSignals(false);
+    _updatingElementsFromState = false;
+}
 
+std::string
+Qt4ConstraintMacro::
+getModePrompt() {
+    std::stringstream ss;
+    ss << "hi there"; /*"<b>constraint " << _constraintIndex << "</b> | " <<
+	_constraint->getAtomicConstraint()->getRelationState()->getState() << 
+	"<br/><b>prompt: </b>" << _constraint->getAtomicConstraint()->getRelationState()->getPrompt();
+		     */
+    return ss.str();
 }

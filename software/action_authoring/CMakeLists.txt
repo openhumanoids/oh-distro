@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 2.6.0)
 
+# maximum error checking
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
+
 # pull in the pods macros. See cmake/pods.cmake for documentation
 set(POD_NAME action_authoring)
 include(cmake/pods.cmake)
@@ -38,6 +44,7 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
 add_library(action_authoring SHARED 
   src/objects/ManipulationRelation.cpp
   src/objects/RelationState.cpp
+  src/objects/PointContactRelation.cpp
   src/objects/ConstraintMacro.cpp
   #src/storage/DatabaseManager.cpp
    )
@@ -45,6 +52,9 @@ add_library(action_authoring SHARED
 pods_install_headers(
   src/objects/ManipulationRelation.h 
   src/objects/RelationState.h 
+  src/objects/GraspRelation.h 
+  src/objects/OffsetRelation.h 
+  src/objects/PointContactRelation.h 
   src/objects/AtomicConstraint.h 
   src/objects/ConstraintMacro.h
   src/storage/DatabaseManager.h

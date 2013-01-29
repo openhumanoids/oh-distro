@@ -14,7 +14,7 @@ namespace robot_opengl {
         ColorRobot(std::string urdfFilename) : OpenGL_Object_GFE(urdfFilename) { }
 
 	virtual void draw( void );
-	void setSelectedJoint(std::string jointName);
+	void setSelectedLink(std::string link_name);
 	CollisionGroupPtr getCollisionGroupsForLink(std::string link_name);
 	boost::shared_ptr<const urdf::Link> getLinkFromJointName(std::string joint_name);
 

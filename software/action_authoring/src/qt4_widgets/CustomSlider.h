@@ -26,7 +26,7 @@ class DefaultValueSlider : public QSlider {
   int getSliderPosition(int index) {
       if (index < 0)
 	  return 0;
-      if (index >= _tick_positions.size())
+      if (index >= (int)_tick_positions.size())
 	  return width();
 
       return QStyle::sliderPositionFromValue(

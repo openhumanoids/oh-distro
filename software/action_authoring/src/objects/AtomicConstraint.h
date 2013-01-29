@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <affordance/AffordanceState.h>
 #include <affordance/ManipulatorState.h>
+#include <action_authoring/RelationState.h>
 
 namespace action_authoring
 {
@@ -18,12 +19,13 @@ class AtomicConstraint
  public:
   virtual affordance::AffConstPtr getAffordance() const  = 0; //should throw exception if doesn't apply
   virtual affordance::ManipulatorStateConstPtr getManipulator() const = 0; //should throw exception if doesn't apply
+  virtual RelationStateConstPtr getRelationState() const = 0; //todo should throw exception if doesn't apply
 
   //mutators
  public:
   virtual void setAffordance(affordance::AffConstPtr affordance) = 0;
   virtual void setManipulator(affordance::ManipulatorStateConstPtr manipulator) = 0;
-  
+  virtual void setRelationState(RelationStateConstPtr relationState) = 0;
  };  //class AtomicConstraint
  
  typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;

@@ -7,7 +7,7 @@ namespace action_authoring
 {
 
 /**todo: add comment*/
-class GraspRelation::RelationState
+class GraspRelation : RelationState
 {
     //------------fields
  private:
@@ -17,6 +17,8 @@ class GraspRelation::RelationState
     GraspRelation();
 
   //---------------Accessors
+    virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
+    virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
   //mutators
   
