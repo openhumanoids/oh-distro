@@ -22,10 +22,12 @@ namespace affordance
     const std::string _name;
     const GlobalUID _guid;
     const boost::shared_ptr<const urdf::Link> _link;
+    KDL::Frame _link_frame;
 
     //-----------constructor/destructor
   public:
     ManipulatorState(boost::shared_ptr<const urdf::Link> link, 
+		     KDL::Frame link_frame,
 		     const GlobalUID &uid);
     ManipulatorState(const std::string &s, const GlobalUID &uid);
 
@@ -51,11 +53,12 @@ namespace affordance
     virtual void getChildren(std::vector<ModelStateConstPtr> &children) const;
     virtual void getParents(std::vector<ModelStateConstPtr> &parents) const; 
     virtual void getCopy(ModelState &copy) const;
-    
+     
     //specific to this class
   public:
     boost::shared_ptr<const urdf::Link> getLink() const;
     std::string getGUIDAsString()  const;
+    KDL::Frame getLinkFrame() const { return _link_frame; }
   };
   
   std::ostream& operator<<( std::ostream& out, const ManipulatorState& other );

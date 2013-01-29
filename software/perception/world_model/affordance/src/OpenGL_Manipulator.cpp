@@ -38,8 +38,13 @@ void OpenGL_Manipulator::draw()
       for (uint i = 0; i < colgroup->size(); i++) 
 	{
 	  urdf::Pose dot = (*colgroup)[i]->origin;
-	  KDL::Frame f;
-	  f.p = KDL::Vector(dot.position.x, dot.position.y, dot.position.y);
+	  double q1, q2, q3, q4;
+	  dot.rotation.getQuaternion(q1, q2, q3, q4);
+	  KDL::Frame col_in_link(KDL::Rotation::Quaternion(q1, q2, q3, q4), 
+				 KDL::Vector(dot.position.x, dot.position.y, dot.position.y));
+	  KDL::Frame link_in_world(_manipulator->getLinkFrame());
+	  KDL::Frame f(col_in_link * link_in_world);
+
 	  s.set(f, 0.05); //todo : pick a radius
 	  
 	  if (_isHighlighted) 

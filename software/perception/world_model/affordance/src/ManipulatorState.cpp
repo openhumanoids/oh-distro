@@ -12,8 +12,9 @@ ManipulatorState::ManipulatorState(const std::string &name,
 }
 
 ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link, 
+				   KDL::Frame link_frame,
 				   const GlobalUID &guid)
-  : _name(link->name), _guid(guid), _link(link)
+    : _name(link->name), _guid(guid), _link(link), _link_frame(link_frame)
 {
 }
 
