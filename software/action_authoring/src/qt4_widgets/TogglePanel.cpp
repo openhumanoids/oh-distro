@@ -48,12 +48,11 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->setMargin(0);
-    mainLayout->setSpacing(0);
+    mainLayout->setSpacing(5);
     mainLayout->addWidget(_headerArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
     _headerArea->setStyleSheet("QPushButton { border: 0px solid gray; border-radius: 0px; "
 			       "padding: 0px; margin: 0px; background-color: transparent; } "
 			       "QPushButton:focus { background-color: none; }");
-
 
     mainLayout->addWidget(_widgetArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 

@@ -233,8 +233,13 @@ updateElementsFromState() {
 	// update the right side combo box
 	_gui_affordanceType->clear();
 	for (int i = 0; i < (int)_affordances.size(); i++) {
-	    _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
-	    _affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
+	    if (_affordances[i] != NULL) {
+		_gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
+		_affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
+	    } else {
+		std::cout << "affordance " << i << " was NULL" << std::endl;
+		// todo: throw exception
+	    }
 	}
 
 	// select the current affordance

@@ -374,11 +374,10 @@ void MainWindow::handleLoadAction()
   printf("done clearing world state affordances.\n");
 
   for (int i = 0; i < (int)revivedAffordances.size(); i++ ) {
-    _worldState.affordances.push_back(revivedAffordances[i]);
+      _worldState.affordances.push_back(revivedAffordances[i]);
   }
 
   _authoringState._all_gui_constraints.clear();
-
   printf("done clearing authoring state gui constraints.\n");
 
   for (int i = 0; i < (int)revivedConstraintMacros.size(); i++) 
