@@ -45,8 +45,8 @@ class RelationState
 
   //---------------Accessors
     RelationType getRelationType() const;
-    virtual std::string getState() const = 0; // returns a user-friendly string that explains the state of relation
-    virtual std::string getPrompt() const = 0; // prompts the user for the next field to set to complete the relation
+    virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
+    virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
 }; //class RelationState
 

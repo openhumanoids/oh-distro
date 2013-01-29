@@ -39,6 +39,7 @@
 #include <action_authoring/ManipulationRelation.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
+#include <action_authoring/RelationState.h>
 #include <action_authoring/PointContactRelation.h>
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
@@ -83,13 +84,10 @@ WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filen
 /**represents the state of the authoring gui*/
 typedef struct
 {
-	/**sorted sequence of actomic constraints being authored*/
-        std::vector<Qt4ConstraintMacroPtr> _all_gui_constraints;
-        Qt4ConstraintMacroPtr _selected_gui_constraint;
+    /**sorted sequence of actomic constraints being authored*/
+    std::vector<Qt4ConstraintMacroPtr> _all_gui_constraints;
+    Qt4ConstraintMacroPtr _selected_gui_constraint;
 } AuthoringState;
-
-
-
 
 //===========MAIN WINDOW
 
@@ -105,7 +103,6 @@ public:
 
     //=================gui state
  private: 
-    QSlider* _jointSlider;
     QTimer* _scrubberTimer;
     DefaultValueSlider* _scrubber;
     QLabel * _actionDescLabel;
@@ -143,11 +140,13 @@ private slots:
     void handleMoveUp();
     void handleMoveDown();
     void setSelectedAction(Qt4ConstraintMacro* activator);
-    void selectedOpenGLObjectChanged(const std::string &modelName);
+    void selectedOpenGLObjectChanged(const std::string &modelGUID);
+    void selectedOpenGLObjectChanged(const std::string &modelName, Eigen::Vector3f hitPoint);
     void mediaFastForward();
     void mediaFastBackward();
     void mediaPlay();
     void nextKeyFrame();
+
 };
 
 } //namespace action_authoring

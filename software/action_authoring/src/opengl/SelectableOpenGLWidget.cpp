@@ -25,14 +25,14 @@ raycast(const Vector eyePosition,
 //	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
 
     Collision_Object * intersected_object = NULL;
+    Eigen::Vector3f hitPoint;
     _collisionDetector->ray_test( Vector3f( eyePosition(0), eyePosition(1), eyePosition(2)), 
 				 Vector3f( clickPosition(0), clickPosition(1), clickPosition(2)),
-				 intersected_object);
+				  intersected_object, hitPoint);
 //    _collisionDetector->ray_test( Vector3f( 10.0, 0.0, 0.0 ), Vector3f( 0.0, 0.0, 0.0 ), intersected_object );
     if( intersected_object != NULL ){
 //	cout << "intersected " << intersected_object->id().c_str() << " ";
-	emit raycastCallback(intersected_object->id());
-//	_callback(intersected_object->id());
+	emit raycastCallback(intersected_object->id(), hitPoint);
     } else {
 //	cout << "did not intersect with any objects ";
     }

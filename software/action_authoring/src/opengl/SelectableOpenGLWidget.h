@@ -31,9 +31,9 @@ public:
 	//--------methods
 	void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
    	void add_collision_object(collision::Collision_Object* collisionObject);
-
+	
 signals:
-	void raycastCallback(std::string affordance_id);
+	void raycastCallback(std::string affordance_id, Eigen::Vector3f);
     };
 }
 

@@ -16,22 +16,22 @@ namespace action_authoring
     public:
         ManipulationRelation(affordance::AffConstPtr affordance, 
 			     affordance::ManipulatorStateConstPtr manipulator, 
-			     RelationStateConstPtr relationState);
+			     RelationStatePtr relationState);
 
     //----------Accessors
         affordance::AffConstPtr getAffordance() const { return _affordance; }
         affordance::ManipulatorStateConstPtr getManipulator() const { return _manipulator; }
-	RelationStateConstPtr getRelationState() const { return _relationState; }
+	RelationStatePtr getRelationState() const { return _relationState; }
 	
         void setAffordance(affordance::AffConstPtr affordance) { _affordance = affordance; }
         void setManipulator(affordance::ManipulatorStateConstPtr manipulator) { _manipulator = manipulator; }
-	void setRelationState(RelationStateConstPtr relationState) { _relationState = relationState; }
+	void setRelationState(RelationStatePtr relationState) { _relationState = relationState; }
 
     //------------Fields
     private:
         affordance::AffConstPtr _affordance;
         affordance::ManipulatorStateConstPtr _manipulator;
-	RelationStateConstPtr _relationState;
+	RelationStatePtr _relationState;
 
     }; // class ManipulationRelation
     typedef boost::shared_ptr<ManipulationRelation> ManRelPtr;

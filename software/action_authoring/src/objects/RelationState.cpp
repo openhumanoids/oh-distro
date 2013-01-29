@@ -33,3 +33,11 @@ ostream& operator<<(ostream &out, const RelationState &other)
   out << other.getRelationType();
   return out;
 }
+
+std::string RelationState::getState() const {
+    return "";
+}
+
+std::string RelationState::getPrompt() const {
+    return "";
+}

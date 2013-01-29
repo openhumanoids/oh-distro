@@ -120,8 +120,10 @@ void MainWindow::handleAffordancesChanged()
   //----------add robot and vehicle
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-  connect(&_widget_opengl, SIGNAL(raycastCallback(std::string)),
-	  this, SLOT(selectedOpenGLObjectChanged(std::string)));
+  connect(&_widget_opengl, SIGNAL(raycastCallback(std::string, Eigen::Vector3f)),
+	  this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
+//  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
+//	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
 
   // TODO resolve path
   _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
@@ -307,13 +309,12 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     QVBoxLayout* rightsidelayout = new QVBoxLayout();
     QWidget* rightside = new QWidget();
-    _jointSlider = new QSlider( Qt::Horizontal, this );
     _actionDescLabel = new QLabel();
     _actionDescLabel->setTextFormat(Qt::RichText);
     _scrubber = new DefaultValueSlider( Qt::Horizontal, this );
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
-    rightsidelayout->addWidget(_jointSlider);
+//    rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(widgetWrapper);
     rightsidelayout->addWidget(_scrubber);
     rightside->setLayout(rightsidelayout);
@@ -551,7 +552,6 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
     // delete all of the current constraint's toggle panel widgets
 //    std::cout << "deleting rendered children " << std::endl;
 //    qDeleteAll(_constraint_container->findChildren<QWidget*>());
-    std::cout << "starting loop " << std::endl;
 
     for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
     {
@@ -579,12 +579,19 @@ affordanceUpdateCheck()
 {
   int origSize = _worldState.affordances.size();
   _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
-  if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordane if the sizes are equal )
+  if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordance if the sizes are equal )
     return;
   
   cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
   handleAffordancesChanged(); 
 }
+
+void
+MainWindow::
+selectedOpenGLObjectChanged(const std::string &modelGUID) {
+    selectedOpenGLObjectChanged(modelGUID, Eigen::Vector3f(0, 0, 0));
+}
+
 
 /*
  * Select the OpenGL object corresponding to this affordance by highlighting it
@@ -592,7 +599,7 @@ affordanceUpdateCheck()
  */
 void
 MainWindow::
-selectedOpenGLObjectChanged(const std::string &modelGUID)
+selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoint)
 {
     // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
@@ -612,24 +619,44 @@ selectedOpenGLObjectChanged(const std::string &modelGUID)
     // set the selected manipulator or affordance in the currently selected constraint pane
     // begin by getting the ModelState object from the selected openGL object
     // TODO: slow; use map objectsToModels
+    bool wasAffordance = false;
     for (int i = 0; i < (int)_worldState.affordances.size(); i++) {
 	if (_worldState.affordances[i]->getGUIDAsString() == modelGUID) {
 	    //std::cout << " setting affordance" << std::endl;
 	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
 	    _authoringState._selected_gui_constraint->updateElementsFromState();
+	    wasAffordance = true;
 	    break;
+	}
+    }
+    if (! wasAffordance) {
+	for (int i = 0; i < (int)_worldState.manipulators.size(); i++) {
+	    if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
+		//std::cout << " setting manipulator" << std::endl;
+		_authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
+		_authoringState._selected_gui_constraint->updateElementsFromState();
+		break;
+	    }
 	}
     }
 
-    for (int i = 0; i < (int)_worldState.manipulators.size(); i++) {
-	if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
-	    //std::cout << " setting manipulator" << std::endl;
-	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
-	    _authoringState._selected_gui_constraint->updateElementsFromState();
-	    break;
-	}
+    cout << " hit at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
+    if (_authoringState._selected_gui_constraint != NULL) {
+	// set the contact point for the relation
+//	RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+//	if (rel->getRelationType() == RelationState::POINT_CONTACT) {
+//	    PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
+/*
+	    if (wasAffordance) 
+		pc->setPoint2(hitPoint);
+	    else 
+		pc->setPoint1(hitPoint);
+*/
+//	}
     }
-    //std::cout << "intersected affordance: " << modelGUID << std::endl;
+
+    // prompt to set relation state
+    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
     return;
 }
