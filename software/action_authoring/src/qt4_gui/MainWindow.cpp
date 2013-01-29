@@ -1,6 +1,6 @@
 #include "MainWindow.h"
 #include <affordance/OpenGL_Manipulator.h>
-
+#include <affordance/Collision_Object_Affordance.h>
 using namespace std;
 using namespace KDL;
 using namespace Eigen;
@@ -50,38 +50,29 @@ void MainWindow::handleAffordancesChanged()
   for(uint i = 0; i < _worldState.affordances.size(); i++)
     {
       AffConstPtr next = _worldState.affordances[i];
-      if (next->_otdf_id == AffordanceState::CYLINDER ||
-	  next->_otdf_id == AffordanceState::BOX ||
-	  next->_otdf_id == AffordanceState::SPHERE)
-    	{
-	  OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next); 
-	  _widget_opengl.opengl_scene().add_object(*asGlAff);
-	  _worldState.glObjects.push_back(asGlAff);
+      
 
-	  // Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
-	  Collision_Object* collision_object_affordance;
-	  KDL::Frame f = next->getFrame();
-	  double q1, q2, q3, q4;
-	  f.M.GetQuaternion(q1, q2, q3, q4);
-
-	  if (next->_otdf_id == AffordanceState::BOX) {
-	      collision_object_affordance = new Collision_Object_Box(next->getGUIDAsString(), 
-		     Vector3f(next->length(), next->width(), next->height()), 
-		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
-	  }
-	  if (next->_otdf_id == AffordanceState::CYLINDER) {
-	      collision_object_affordance = new Collision_Object_Cylinder(next->getGUIDAsString(),
-	             next->radius(), next->length(),
-		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
-	  }
-	  if (next->_otdf_id == AffordanceState::SPHERE) {
-	      collision_object_affordance = new Collision_Object_Sphere(next->getGUIDAsString(),
-		     next->radius(),
-		     Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(q1, q2, q3, q4));
-	  }
-	  _widget_opengl.add_collision_object(collision_object_affordance);
-	  _worldState.collisionObjs.push_back(collision_object_affordance);
-    	}
+      if (!Collision_Object_Affordance::isSupported(next))
+	{
+	  cout << "\n Collision_Object_Affordance doesn't support " << next->getName() << endl;
+	  continue;
+	}
+      
+      if (!OpenGL_Affordance::isSupported(next))
+	{
+	  cout << "\n OpenGL_Affordance doesn't support " << next->getName() << endl;
+	  continue;
+	}
+      
+      //opengl 
+      OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next); 
+      _widget_opengl.opengl_scene().add_object(*asGlAff);
+      _worldState.glObjects.push_back(asGlAff);
+      
+      //collisions:  Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
+      Collision_Object* collision_object_affordance = new Collision_Object_Affordance(next);
+      _widget_opengl.add_collision_object(collision_object_affordance);
+      _worldState.collisionObjs.push_back(collision_object_affordance);
     }
 
     // read the joints from the robot state
