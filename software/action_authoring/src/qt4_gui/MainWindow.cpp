@@ -95,24 +95,32 @@ void MainWindow::handleAffordancesChanged()
 	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
 	_widget_opengl.opengl_scene().add_object(*asGlMan);
 	_worldState.glObjects.push_back(asGlMan);
-	_worldState.collisionObjs.push_back(new Collision_Object_Sphere("todo: fix this name",
-									0.01,
-									Vector3f(0,0,0),
-									Vector4f(0,0,0,1)));
-	// update the selected manipulator
-	//	std::string manName = _authoringState._selected_gui_constraint->
-	//	getConstraintMacro()->getAtomicConstraint()->getRelation()->getManipulator()->getName();
-	
-	//todo Mike start todo
-	
-	//todo: make a collision object
-	/*	Collision_Object* collision_object_manipulator;
-	collision_object_manipulator = new Collision_Object_Sphere(RandomString(10),
-								   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
-	_widget_opengl.add_collision_object(collision_object_manipulator);
+
+	//todo Mike: extract to a manipulator collision object?
+	robot_opengl::CollisionGroupPtr colgroup = manipulator->getLink()->getCollisions("default");
+	if (colgroup != NULL && colgroup->size() > 0) 
+	{
+	    // add collision contact widgets!
+	    OpenGL_Object_Sphere s;
+	    for (uint i = 0; i < colgroup->size(); i++) 
+	    {
+		urdf::Pose ctPtPose = (*colgroup)[i]->origin; //contact point pose in link frame
+		double q1, q2, q3, q4;
+		ctPtPose.rotation.getQuaternion(q1, q2, q3, q4);
+		KDL::Frame cPtAsFrame(KDL::Rotation::Quaternion(q1, q2, q3, q4),  //expressed as a frame
+				      KDL::Vector(ctPtPose.position.x, 
+						  ctPtPose.position.y, 
+						  ctPtPose.position.z));
+		KDL::Frame f = cPtAsFrame * manipulator->getLinkFrame(); //manipulator is in robot-oriented frame?
+
+		Collision_Object* collision_object_manipulator;
+		collision_object_manipulator = new Collision_Object_Sphere(manipulator->getGUIDAsString(),
+									   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
+		cout << "added sphere col obj " << i << endl;
+		_widget_opengl.add_collision_object(collision_object_manipulator);
 		_worldState.collisionObjs.push_back(collision_object_manipulator);
-		// todo : end of move to manipulator state
-		*/
+	    }
+	}
     }
     
 
