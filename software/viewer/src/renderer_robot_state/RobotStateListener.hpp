@@ -45,6 +45,8 @@ namespace renderer_robot_state
     BotViewer *_viewer;
     
     bool _urdf_parsed;
+    
+  public:  
     bool _urdf_subscription_on;
 
    

@@ -65,7 +65,7 @@ _renderer_free (BotRenderer *super)
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RobotStateRendererStruc *self = (RobotStateRendererStruc*) ehandler->user;
-  if(self->selection_enabled==0){
+  if((self->selection_enabled==0)||(self->robotStateListener->_urdf_subscription_on)){
     return -1.0;
   }
   //fprintf(stderr, "RobotStateRenderer Pick Query Active\n");

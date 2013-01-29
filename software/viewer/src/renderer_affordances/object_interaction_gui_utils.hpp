@@ -44,18 +44,20 @@ namespace renderer_affordances_gui_utils
       self->free_running_sticky_hand_cnt++;
       int uid = self->free_running_sticky_hand_cnt;
       std::string channel;
-       if(self->graspOptStatusListener->isOptPoolReady())
+      if(self->graspOptStatusListener->isOptPoolReady())
        {
           int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
+         
           if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
           {
+           //int id =  1;
             std::stringstream oss;
             oss << "INIT_GRASP_SEED_OPT_" << id; 
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
             self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
           }             
-       }
+      }
  
     }
     else if (! strcmp(name, PARAM_SEED_RH)) {
@@ -75,18 +77,19 @@ namespace renderer_affordances_gui_utils
       self->free_running_sticky_hand_cnt++;
       int uid = self->free_running_sticky_hand_cnt;
        std::string channel;
-       if(self->graspOptStatusListener->isOptPoolReady())
+      if(self->graspOptStatusListener->isOptPoolReady())
        {
           int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
           if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
           {
+           //int id =  1;
             std::stringstream oss;
             oss << "INIT_GRASP_SEED_OPT_" << id; 
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
             self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid);
-          }             
-       } 
+           }             
+       }
     }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
