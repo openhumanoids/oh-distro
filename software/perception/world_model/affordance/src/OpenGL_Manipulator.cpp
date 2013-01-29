@@ -13,6 +13,8 @@ using namespace affordance;
 using namespace std;
 using namespace boost;
 using namespace Eigen;
+
+
 //--------------constructor/destructor
 OpenGL_Manipulator::OpenGL_Manipulator(ManipulatorStateConstPtr manipulator, 
 				       bool isHighlighted,
@@ -37,16 +39,22 @@ void OpenGL_Manipulator::draw()
       OpenGL_Object_Sphere s;
       for (uint i = 0; i < colgroup->size(); i++) 
 	{
-	  urdf::Pose dot = (*colgroup)[i]->origin;
+	  urdf::Pose ctPtPose = (*colgroup)[i]->origin; //contact point pose in link frame
 	  double q1, q2, q3, q4;
-	  dot.rotation.getQuaternion(q1, q2, q3, q4);
-	  KDL::Frame col_in_link(KDL::Rotation::Quaternion(q1, q2, q3, q4), 
-				 KDL::Vector(dot.position.x, dot.position.y, dot.position.y));
-	  KDL::Frame link_in_world(_manipulator->getLinkFrame());
-	  KDL::Frame f(col_in_link * link_in_world);
-
+	  ctPtPose.rotation.getQuaternion(q1, q2, q3, q4);
+	  KDL::Frame cPtAsFrame(KDL::Rotation::Quaternion(q1, q2, q3, q4),  //expressed as a frame
+				KDL::Vector(ctPtPose.position.x, 
+					    ctPtPose.position.y, 
+					    ctPtPose.position.z));
+	  KDL::Frame f = cPtAsFrame * _manipulator->getLinkFrame(); //manipulator is in robot-oriented frame?
 	  s.set(f, 0.05); //todo : pick a radius
-	  
+
+
+	  /*	  cout << "\n cPtAsFrame = " << cPtAsFrame << endl;
+	  cout << "\n link frame in world = " << _manipulator->getLinkFrame() << endl;
+	  cout << "cPtAsFrame * manipulator->getLinkFrame() = " << f << endl;
+	  cout << "manipulator->getLinkFrame() * cPtAsFrame = " << _manipulator->getLinkFrame() * cPtAsFrame << endl;*/
+
 	  if (_isHighlighted) 
 	    {
 	      s.draw(_highlightColor);
