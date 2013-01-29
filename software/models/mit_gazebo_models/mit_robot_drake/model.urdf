@@ -14,13 +14,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/pelvis.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/pelvis.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -33,13 +33,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/head.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/head.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/head.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/head.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -52,13 +52,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_clav.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -71,13 +71,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_farm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -90,13 +90,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_foot.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_foot.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_foot.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_foot.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -109,13 +109,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_hand.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_hand.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_hand.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -128,13 +128,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_larm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_larm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_larm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -147,13 +147,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -166,13 +166,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -185,13 +185,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_scap.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_scap.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_scap.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -204,13 +204,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_talus.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_talus.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_talus.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_talus.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -223,13 +223,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uarm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uarm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uarm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -242,13 +242,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -261,13 +261,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -280,13 +280,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/ltorso.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/ltorso.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/ltorso.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/ltorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -299,13 +299,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/mtorso.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/mtorso.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/mtorso.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/mtorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -318,13 +318,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_clav.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_clav.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -337,13 +337,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_farm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_farm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -356,13 +356,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_foot.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_foot.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_foot.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_foot.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -375,13 +375,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_hand.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_hand.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_hand.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_hand.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -394,13 +394,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_larm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_larm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_larm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_larm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -413,13 +413,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -432,13 +432,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -451,13 +451,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_scap.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_scap.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_scap.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_scap.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -470,13 +470,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_talus.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_talus.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_talus.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_talus.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -489,13 +489,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uarm.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -508,13 +508,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -527,13 +527,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -546,13 +546,13 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso.wrl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/scottk/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso.stl" scale="1 1 1"/>
+        <mesh filename="/home/ceci91/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>

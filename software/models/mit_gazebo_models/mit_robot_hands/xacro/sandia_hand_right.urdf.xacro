@@ -2,7 +2,7 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       name="sandia_hand" >
+       name="humanoid" >
   
   <include filename="$(find sandia_hand_utils)/urdf/sandia_hand.urdf.xacro" />
 
@@ -26,6 +26,6 @@
     </collision> -->
   </link>
   <xacro:sandia_hand side="right" parent="base">
-    <origin xyz="0 0 0" rpy="0 -1.57079 0"/>
+    <origin xyz="0 0 0.5" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>
