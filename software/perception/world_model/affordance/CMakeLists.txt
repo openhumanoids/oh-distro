@@ -27,7 +27,7 @@ pods_install_headers(
   src/ManipulatorState.h
   src/OpenGL_Affordance.h
   src/OpenGL_Manipulator.h
-#  src/CollisionObject_Affordance.h
+  src/Collision_Object_Affordance.h
   src/affordance_store/AffordanceServer.h
   src/affordance_store/AffordanceUpWrapper.h
   DESTINATION affordance)
@@ -37,7 +37,7 @@ add_library(affordance SHARED
   src/ManipulatorState.cpp
   src/OpenGL_Affordance.cpp
   src/OpenGL_Manipulator.cpp
- # src/CollisionObject_Affordance.cpp
+  src/Collision_Object_Affordance.cpp
   src/affordance_store/AffordanceServer.cpp	
   src/affordance_store/AffordanceUpWrapper.cpp)
 			  				  	  	
@@ -51,8 +51,8 @@ pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})
 
 
 pods_install_pkg_config_file(affordance
-						     LIBS -laffordance
-						     REQUIRES ${REQUIRED_PACKAGES})			  	
+  LIBS -laffordance
+  REQUIRES ${REQUIRED_PACKAGES})			  	
 
 add_executable(affordance_server src/affordance_store/main.cpp )		   
 			   

@@ -78,3 +78,10 @@ AffConstPtr OpenGL_Affordance::getAffordance() const
   return _affordance;
 }
 
+bool OpenGL_Affordance::isSupported(affordance::AffConstPtr affordance)
+{
+  return affordance->_otdf_id == AffordanceState::CYLINDER ||
+    affordance->_otdf_id == AffordanceState::LEVER ||
+    affordance->_otdf_id == AffordanceState::BOX ||
+    affordance->_otdf_id == AffordanceState::SPHERE;
+}

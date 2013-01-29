@@ -43,7 +43,9 @@ public:
 
 	//observers
 	AffConstPtr getAffordance() const;
-};
+
+	static bool isSupported(affordance::AffConstPtr affordance); //check if we support drawing a given type of affordance
+ };
 
 } /* namespace affordance */
 #endif /* OPENGL_AFFORDANCE_H */

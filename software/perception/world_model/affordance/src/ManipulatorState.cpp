@@ -1,5 +1,4 @@
 #include "ManipulatorState.h"
-#include "AffordanceState.h"
 
 using namespace affordance;
 using namespace std;
@@ -37,7 +36,7 @@ GlobalUID ManipulatorState::getGlobalUniqueId() const
 
 string ManipulatorState::getGUIDAsString()  const 
 {
-    return AffordanceState::toStr(getGlobalUniqueId().first) + "," +  AffordanceState::toStr(getGlobalUniqueId().second);
+    return ModelState::toStr(getGlobalUniqueId().first) + "," + ModelState::toStr(getGlobalUniqueId().second);
 }
 
 

@@ -271,13 +271,6 @@ void AffordanceState::assertContainsKey(const unordered_map<string, double> &map
 		throw KeyNotFoundException("Key = " + key + " not found");
 }
 
-template <class T> string AffordanceState::toStr(T t)
-{
-  stringstream s;
-  s << t;
-  return s.str();
-}
-
 string AffordanceState::toStrFromMap(unordered_map<string,double> m)
 {
 	stringstream s;
@@ -321,7 +314,8 @@ GlobalUID AffordanceState::getGlobalUniqueId() const
 
 string AffordanceState::getGUIDAsString()  const 
 {
-    return toStr(getGlobalUniqueId().first) + "," +  toStr(getGlobalUniqueId().second);
+  return ModelState::toStr(getGlobalUniqueId().first) + "," 
+    +  ModelState::toStr(getGlobalUniqueId().second);
 }
 
 string AffordanceState:: getName() const

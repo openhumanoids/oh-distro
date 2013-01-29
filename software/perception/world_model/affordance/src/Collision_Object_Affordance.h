@@ -1,5 +1,5 @@
 /*
- * CollisionObject_Affordance.h
+ * Collision_Object_Affordance.h
  *
  *  Created on: Jan 14, 2013
  *      Author: mfleder
@@ -18,7 +18,7 @@
 namespace affordance
 {
 
-  class CollisionObject_Affordance: public collision::Collision_Object
+  class Collision_Object_Affordance: public collision::Collision_Object
 {
 	//------------------fields
 private:
@@ -30,14 +30,17 @@ private:
 
 	//-----------------constructor/destructor
 public:
-	CollisionObject_Affordance(affordance::AffConstPtr affordance,
-				   const std::string &id);
-	virtual ~CollisionObject_Affordance();
+	Collision_Object_Affordance(affordance::AffConstPtr affordance);
+	virtual ~Collision_Object_Affordance();
 
-	//--------todo : implement the collision object interface
-	//by calling the appropriate method on whichever field we are using
-
+	//Collision_Object interface
+	virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
+	virtual Eigen::Vector3f position( void ) const;
+	virtual Eigen::Vector4f orientation( void ) const;
+    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
+    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 	
+
 	//---------useful methods
  public:
 	static bool isSupported(affordance::AffConstPtr affordance); //check if we support collision objects for this type of affordance

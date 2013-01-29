@@ -77,6 +77,26 @@ namespace affordance
       return KDL::Frame(KDL::Rotation::RPY(rpy[0],rpy[1],rpy[2]),
 			KDL::Vector(xyz[0], xyz[1], xyz[2]));
     }
+
+    virtual KDL::Rotation getRotation() const
+      {
+	Eigen::Vector3f rpy = getRPY();
+	return KDL::Rotation::RPY(rpy[0], rpy[1], rpy[2]);
+      }
+
+    virtual Eigen::Vector4f getQuaternion() const
+      {
+	double x,y,z,w;
+	getRotation().GetQuaternion(x,y,z,w);
+	return Eigen::Vector4f(x,y,z,w);
+      }
+
+    //useful methods
+    template <class T> static std::string toStr(T t){
+      std::stringstream s;
+      s << t;
+      return s.str();
+    }
   };
   
   std::ostream& operator<<( std::ostream& out, const ModelState& other );  
