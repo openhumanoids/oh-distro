@@ -415,7 +415,17 @@ handleSaveAction() {
  for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
-
+ 
+// todo: hack
+ for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++) {
+     cout << "gui constraint i " << i << endl;
+     for (int j = 0; j < (int)_worldState.affordances.size(); j++) {
+	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
+	     cout << "matched i, j " << i << ", " << j << endl;
+	     all_constraints[i]->getAtomicConstraint()->setAffordance(_worldState.affordances[j]);
+	 }
+     }
+ }
 
  DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
 
