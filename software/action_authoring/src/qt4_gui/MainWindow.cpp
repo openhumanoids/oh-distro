@@ -367,19 +367,27 @@ void MainWindow::handleLoadAction()
 #ifdef DATABASE
   DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
 
+  printf("done retrieving.\n");
   _worldState.affordances.clear();
 
-  for (int i = 0; i < revivedAffordances.size(); i++ ) {
+
+  printf("done clearing world state affordances.\n");
+
+  for (int i = 0; i < (int)revivedAffordances.size(); i++ ) {
     _worldState.affordances.push_back(revivedAffordances[i]);
   }
 
   _authoringState._all_gui_constraints.clear();
 
-  for (int i = 0; i < revivedConstraintMacros.size(); i++) 
+  printf("done clearing authoring state gui constraints.\n");
+
+  for (int i = 0; i < (int)revivedConstraintMacros.size(); i++) 
   {
+      printf("making Qt4ConstraintMacroPtr %i\n", i);
       _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i], i)); 
   }
 
+  printf("Now calling rebuild gui from state.");
   rebuildGUIFromState(_authoringState, _worldState);
 
 #endif
@@ -397,7 +405,7 @@ handleSaveAction() {
 
 #ifdef DATABASE
  vector<ConstraintMacroPtr> all_constraints;
- for (int i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
+ for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++) {
      all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
  }
 

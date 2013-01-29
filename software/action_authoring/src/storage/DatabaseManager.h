@@ -16,46 +16,46 @@ using namespace std;
 
 namespace action_authoring 
 {
-    struct ObjectToGUIDMappings
+    struct ObjectToStorageUIDMappings
     {
-        map<AffConstPtr, string> affordanceToGUID;
-        map<ConstraintMacroPtr, string> constraintMacroToGUID;
-        map<ManipulatorStateConstPtr, string> manipulatorStateToGUID;
-        map<RelationStateConstPtr, string> relationStateToGUID;
-        map<ManRelPtr, string> manipulationRelationToGUID;
-        map<AtomicConstraintConstPtr, string> atomicConstraintToGUID;
+        map<AffConstPtr, string> affordanceToStorageUID;
+        map<ConstraintMacroPtr, string> constraintMacroToStorageUID;
+        map<ManipulatorStateConstPtr, string> manipulatorStateToStorageUID;
+        map<RelationStateConstPtr, string> relationStateToStorageUID;
+        map<ManRelPtr, string> manipulationRelationToStorageUID;
+        map<AtomicConstraintConstPtr, string> atomicConstraintToStorageUID;
     };
 
-    struct GUIDToObjectMappings
+    struct StorageUIDToObjectMappings
     {
-        map<string, AffConstPtr> GUIDToAffordance;
-        map<string, ConstraintMacroPtr> GUIDToConstraintMacro;
-        map<string, ManipulatorStateConstPtr> GUIDToManipulatorState;
-        map<string, RelationStateConstPtr> GUIDToRelationState;
-        map<string, ManRelPtr> GUIDToManipulationRelation;
-        map<string, AtomicConstraintConstPtr> GUIDToAtomicConstraint;
+        map<string, AffConstPtr> StorageUIDToAffordance;
+        map<string, ConstraintMacroPtr> StorageUIDToConstraintMacro;
+        map<string, ManipulatorStateConstPtr> StorageUIDToManipulatorState;
+        map<string, RelationStatePtr> StorageUIDToRelationState;
+        map<string, ManRelPtr> StorageUIDToManipulationRelation;
+        map<string, AtomicConstraintPtr> StorageUIDToAtomicConstraint;
     };
 
   /**todo comment*/
   class DatabaseManager 
   {
   private:
-    static string getGUID(AffConstPtr affordance, ObjectToGUIDMappings &mappings);
-    static string getGUID(ConstraintMacroPtr constraint, ObjectToGUIDMappings &mappings);
-    static string getGUID(RelationStateConstPtr relationState, ObjectToGUIDMappings &mappings);
-    static string getGUID(ManRelPtr manipulationRelation, ObjectToGUIDMappings &mappings);
-    static string getGUID(ManipulatorStateConstPtr manipulator, ObjectToGUIDMappings &mappings);
-    static string getGUID(AtomicConstraintConstPtr atomicConstraint, ObjectToGUIDMappings &mappings);
+    static string getStorageUID(AffConstPtr affordance, ObjectToStorageUIDMappings &mappings);
+    static string getStorageUID(ConstraintMacroPtr constraint, ObjectToStorageUIDMappings &mappings);
+    static string getStorageUID(RelationStateConstPtr relationState, ObjectToStorageUIDMappings &mappings);
+    static string getStorageUID(ManRelPtr manipulationRelation, ObjectToStorageUIDMappings &mappings);
+    static string getStorageUID(ManipulatorStateConstPtr manipulator, ObjectToStorageUIDMappings &mappings);
+    static string getStorageUID(AtomicConstraintConstPtr atomicConstraint, ObjectToStorageUIDMappings &mappings);
 
     //todo : in the cpp file, add doxygen comments for each of these methods
-    static void addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToGUIDMappings &mappings);
-    static void addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToGUIDMappings &mappings);
-    static void addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToGUIDMappings &mappings);
-    static void addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
-    static void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToGUIDMappings &mappings);
+    static void addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
+    static void addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
+    static void addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
+    static void addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
+    static void addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
     static void postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, queue<ConstraintMacroPtr> &q, set<ConstraintMacroPtr> &done);
     
-    static void parseTree(xmlDocPtr doc, xmlNode* xmlnode, GUIDToObjectMappings &mappings);
+    static void parseTree(xmlDocPtr doc, xmlNode* xmlnode, StorageUIDToObjectMappings &mappings);
 
   public:
     //Writing data to a file

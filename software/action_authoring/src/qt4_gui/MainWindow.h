@@ -43,7 +43,7 @@
 #include <action_authoring/PointContactRelation.h>
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
-//#define DATABASE 1
+#define DATABASE 1
 #ifdef DATABASE
 #include <action_authoring/DatabaseManager.h>
 #endif
