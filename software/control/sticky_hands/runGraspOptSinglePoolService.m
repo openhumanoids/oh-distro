@@ -1,4 +1,9 @@
 function runGraspOptSinglePoolService(no_of_workers)
+if(no_of_workers>1)
+    matlabpool_id = labindex;
+else
+    matlabpool_id = 1;
+end
 
 drc_path= getenv('DRC_PATH');% set this in startup.m
 %filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake.sdf'];
@@ -17,16 +22,17 @@ r_l = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_l,dt);
 r_r = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_r,dt);
 
 lcmcoder = JLCMCoder(GraspSeedOptCoder('atlas'));
-nx=22; % this changes?
-%channel = ['INIT_GRASP_SEED_OPT'];
-channel = ['INIT_GRASP_SEED_OPT' '_' num2str(labindex)];
+nx=22; 
+
+channel = ['INIT_GRASP_SEED_OPT' '_' num2str(matlabpool_id)];
 disp(channel);
 grasp_opt_listener=LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
+setDefaultChannel(grasp_opt_listener,channel);
 grasp_opt_listener.subscribe(channel);
-
+%defaultChannel(grasp_opt_listener)
 grasp_opt_status_publisher = GraspOptStatusPublisher(no_of_workers,'GRASP_OPT_STATUS');
 %systime = datenum(clock)/1000;
-grasp_opt_status_publisher.publish(0,labindex,true); % No simtime available here.
+grasp_opt_status_publisher.publish(0,matlabpool_id,true); % No simtime available here.
 cnt=0;
 while(1)
     rho =0.1;
@@ -36,8 +42,8 @@ while(1)
     
     [x,ts] = getNextMessage(grasp_opt_listener,1);%getNextMessage(obj,timeout)
     if (~isempty(x))
-        grasp_opt_status_publisher.publish(ts,labindex,false);
-        fprintf('received messagage at time %f\n',ts);
+        grasp_opt_status_publisher.publish(ts,matlabpool_id,false);
+        fprintf('received message at time %f\n',ts);
         %     fprintf('state is %f\n',x);
         %      disp(grasp_opt_listener.lcmcoder.jcoder.getObjectName())
         %      disp(grasp_opt_listener.lcmcoder.jcoder.getGeometryName())
@@ -59,6 +65,7 @@ while(1)
         end
         
         if(msg.grasp_type ==msg.SANDIA_LEFT)
+            
             r_l = setManipulandParams(r_l,manipuland_params);
             hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
@@ -68,15 +75,16 @@ while(1)
             
             % CandidateGraspPublisher(String robot_name, String object_name, String geometry_name,int unique_id, short grasp_type, String[] l_joint_name, String[] r_joint_name, String channel)
             candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,0,ljoint_names,[' '],'CANDIDATE_GRASP_SEED');
-            
             x0 = Point(r_l.getStateFrame);
-            x0 = resolveConstraints(r_l,double(x0));
+            x0 =double(x0);% resolveConstraints(r_l,double(x0)); % resolve constraints is slow
+   
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1);
             q2 = hand_rot(2);
             q3 = hand_rot(3);
             qw = hand_rot(4);
             [x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+          
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
             
             [xstar] = iterativeGraspSearch(r_l,double(x0));
@@ -94,7 +102,7 @@ while(1)
             candidate_grasp_publisher = CandidateGraspPublisher(msg.robot_name,msg.object_name,msg.geometry_name,msg.unique_id,1,[' '],rjoint_names,'CANDIDATE_GRASP_SEED');
             
             x0 = Point(r_r.getStateFrame);
-            x0 = resolveConstraints(r_r,double(x0));
+            x0 =double(x0);%resolveConstraints(r_r,double(x0));
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1);
             q2 = hand_rot(2);
@@ -108,7 +116,7 @@ while(1)
             %[xstar,zstar] = iterativeGraspSearch2(r_r,double(xstar));
         end
         if(~reset_optimization)
-            grasp_opt_status_publisher.publish(ts,labindex,true);
+            grasp_opt_status_publisher.publish(ts,matlabpool_id,true);
         end
     end
     
@@ -129,7 +137,7 @@ while(1)
             [xstar] = iterativeGraspSearch(r_r,double(x0));
         end
         if(~reset_optimization)
-            grasp_opt_status_publisher.publish(ts,labindex,true);
+            grasp_opt_status_publisher.publish(ts,matlabpool_id,true);
         end
     end
     
@@ -141,7 +149,7 @@ while(1)
         else
             stamp =0;
         end
-        grasp_opt_status_publisher.publish(stamp,labindex,true); % No simtime available here.
+        grasp_opt_status_publisher.publish(stamp,matlabpool_id,true); % No simtime available here.
     end
     
 end %end while

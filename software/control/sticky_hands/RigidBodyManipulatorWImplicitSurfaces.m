@@ -26,6 +26,9 @@ classdef RigidBodyManipulatorWImplicitSurfaces < RigidBodyManipulator
       % find the closest point on superellipsoid and its normal.
       
       %[pos,normal]=closestPointsOnZAlignedSuperEllipsoid(contact_pos,params);
+      xc =obj.params.xc;
+      a = obj.params.a;
+      epsilon = obj.params.epsilon;
       [pos,normal]=closestPointsOnZAlignedSuperEllipsoid_NumericalNormals(obj,contact_pos);
       
       
@@ -43,10 +46,9 @@ classdef RigidBodyManipulatorWImplicitSurfaces < RigidBodyManipulator
     
     function [ps,normals]=closestPointsOnZAlignedSuperEllipsoid_NumericalNormals(obj,p)
      
-      params = obj.params;
-      xc =params.xc;
-      a = params.a;
-      epsilon = params.epsilon;
+      xc =obj.params.xc;
+      a = obj.params.a;
+      epsilon = obj.params.epsilon;
       n=size(p,2);
       for ind =1:n,
         q = p(:,ind)-xc(:);
@@ -79,10 +81,9 @@ classdef RigidBodyManipulatorWImplicitSurfaces < RigidBodyManipulator
     end
     function [phi] = closestpointfun_superellipsoid(obj,p)
 
-      params = obj.params;
-      xc =params.xc;
-      a = params.a;
-      epsilon = params.epsilon;
+      xc =obj.params.xc;
+      a = obj.params.a;
+      epsilon = obj.params.epsilon;
       q=approxClosestPoint_zsuperellipsoid(obj,p);
       %   p'
       %   q'
@@ -107,9 +108,8 @@ classdef RigidBodyManipulatorWImplicitSurfaces < RigidBodyManipulator
       
     end
     function [q]=approxClosestPoint_zsuperellipsoid(obj,p)
-      params = obj.params;
-      epsilon= params.epsilon;
-      a = params.a;
+      a = obj.params.a;
+      epsilon = obj.params.epsilon;
       q = p(:);
       if(epsilon(2)==epsilon(1))&&(epsilon(2)~=1) %if box
         % if outside box.
