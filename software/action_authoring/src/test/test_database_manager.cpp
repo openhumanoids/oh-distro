@@ -104,30 +104,31 @@ int main() {
   constraintList.push_back(ingress);
 
   //print the top level constraint
-  printf("\nThis is a constraint created in the function\n");
-  printConstraintMacro(ingress);
+  //printf("\nThis is a constraint created in the function\n");
+  //printConstraintMacro(ingress);
 
 
   //to store state, use the db->store method and pass in all the data at once
-  DatabaseManager::store("constraints.xml", affordanceList, constraintList);
+  //DatabaseManager::store("constraints.xml", affordanceList, constraintList);
 
-  printf("\nDone storing.\n");
+  // printf("\nDone storing.\n");
   printf("\nRetrieving from file.\n\n");
 
   vector<AffConstPtr> revivedAffordances;
   vector<ConstraintMacroPtr> revivedConstraintMacros;
-  DatabaseManager::retrieve("constraints.xml", revivedAffordances, revivedConstraintMacros);
+  DatabaseManager::retrieve("foo.xml", revivedAffordances, revivedConstraintMacros);
 
   printf("\nDone retrieving.\n");
-
+  
   //print the same constraint as created before, but this time using the data from the file 
+  /*
   printf("\nThis is the same constraint, written to and then reconstructed from a file:\n");
-
   for (int i = 0; i < (int)revivedConstraintMacros.size(); i++ ){
     if (revivedConstraintMacros[i]->getName() == "Ingress") {
       printConstraintMacro(revivedConstraintMacros[i]);
     }
   }
 
+  */
   return(0); 
 }

@@ -297,7 +297,8 @@ void printManipulatorStateMap(StorageUIDToObjectMappings mappings) {
 
 //Creates an Affordance object from an XML node and stores it in a map of uids to affordances
 void deserializeAffordanceState(xmlDocPtr doc, xmlNode* node, StorageUIDToObjectMappings &mappings) {
-  //printf("\nserializing affordance\n");
+  printf("\nserializing affordance\n");
+  printAffordanceMap(mappings.StorageUIDToAffordance);
   xmlNode* current_node = NULL;
   string name;
   string uid;
@@ -316,7 +317,12 @@ void deserializeAffordanceState(xmlDocPtr doc, xmlNode* node, StorageUIDToObject
     }
   }
   AffConstPtr affordance (new AffordanceState(name));
+  printf("deserialized affordance '%s'\n", name.c_str());
+  if (affordance == NULL){
+    printf("but its NULL!\n");
+  }
   mappings.StorageUIDToAffordance[uid] = affordance;
+  printAffordanceMap(mappings.StorageUIDToAffordance);
 }
 
 void deserializeManipulatorState(xmlDocPtr doc, xmlNode* node, StorageUIDToObjectMappings &mappings) {
@@ -572,8 +578,6 @@ void DatabaseManager::retrieve(const string &filename, vector<AffConstPtr> &affo
     }  
   }
 
-  //Root element is "constraintstore" type check goes here
-
   StorageUIDToObjectMappings mappings;
 
   parseTree(doc, root->children, mappings);
@@ -589,11 +593,22 @@ void DatabaseManager::retrieve(const string &filename, vector<AffConstPtr> &affo
 
   for(map<string, AffConstPtr>::iterator iter = mappings.StorageUIDToAffordance.begin(); iter != mappings.StorageUIDToAffordance.end(); ++iter)
   {
+    if (iter->second == NULL) {
+      printf("NULL\n");
+    }
+    else {
+      printf("%s\n", iter->second->getName().c_str());
+    }
     affordanceList.push_back(iter->second);
   }
 
+  printAffordanceMap(mappings.StorageUIDToAffordance);
+
   for(map<string, ConstraintMacroPtr>::iterator iter = mappings.StorageUIDToConstraintMacro.begin(); iter != mappings.StorageUIDToConstraintMacro.end(); ++iter)
   {
+    if (iter->second == NULL) {
+      printf("NULL constraint!\n");
+    }
     constraintList.push_back(iter->second);
   }
 
