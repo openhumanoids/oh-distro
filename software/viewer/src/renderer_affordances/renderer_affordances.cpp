@@ -97,6 +97,13 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
       }
     
   }
+  
+  // Maintain heartbeat with Drake
+  int64_t now = bot_timestamp_now();
+  if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
+    bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
+  }
+  
 
 }
 // =================================================================================
@@ -388,6 +395,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
      { 
        it->second = 0;
      }
+     (*self->link_selection) = " ";
+     (*self->object_selection) = " ";
+     (*self->stickyhand_selection) = " ";
      bot_viewer_request_redraw(self->viewer);
   }
   else if (! strcmp(name, PARAM_SELECTION)) {
@@ -421,32 +431,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   RendererAffordances *self = (RendererAffordances*) calloc (1, sizeof (RendererAffordances));
   self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
   self->robot_name_ptr  = new string(" ");
-  self->affordanceMsgHandler = boost::shared_ptr<AffordanceCollectionListener>(new AffordanceCollectionListener(self));
-  self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self));
-  self->candidateGraspSeedListener = boost::shared_ptr<CandidateGraspSeedListener>(new CandidateGraspSeedListener(self));
-  self->initGraspOptPublisher  = boost::shared_ptr<InitGraspOptPublisher>(new InitGraspOptPublisher(self));
-  self->graspOptStatusListener= boost::shared_ptr<GraspOptStatusListener>(new GraspOptStatusListener(self));
-  self->free_running_sticky_hand_cnt = 0;
-  self->T_graspgeometry_handinitpos= KDL::Frame::Identity(); 
   
-  self->viewer = viewer;
-  self->renderer.draw = _draw;
-  self->renderer.destroy = _free;
-  self->renderer.name = (char*) RENDERER_NAME;
-  self->renderer.user = self;
-  self->renderer.enabled = 1;
-
-  BotEventHandler *ehandler = &self->ehandler;
-  ehandler->name = (char*) RENDERER_NAME;
-  ehandler->enabled = 1;
-  ehandler->pick_query = pick_query;
-  ehandler->key_press = NULL;
-  ehandler->hover_query = NULL;
-  ehandler->mouse_press = mouse_press;
-  ehandler->mouse_release = mouse_release;
-  ehandler->mouse_motion = mouse_motion;
-  ehandler->user = self;
-
+  
   string otdf_models_path = string(getModelsPath()) + "/otdf/"; // getModelsPath gives /drc/software/build/models/
   self->otdf_dir_name_ptr = new string(otdf_models_path);
   cout << "searching for otdf files in: "<< (*self->otdf_dir_name_ptr) << endl;
@@ -486,6 +472,35 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
    self->urdf_nums[i] =i;
   }
 
+  
+  
+  self->affordanceMsgHandler = boost::shared_ptr<AffordanceCollectionListener>(new AffordanceCollectionListener(self));
+  self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self));
+  self->candidateGraspSeedListener = boost::shared_ptr<CandidateGraspSeedListener>(new CandidateGraspSeedListener(self));
+  self->initGraspOptPublisher  = boost::shared_ptr<InitGraspOptPublisher>(new InitGraspOptPublisher(self));
+  self->graspOptStatusListener= boost::shared_ptr<GraspOptStatusListener>(new GraspOptStatusListener(self));
+  self->free_running_sticky_hand_cnt = 0;
+  self->T_graspgeometry_handinitpos= KDL::Frame::Identity(); 
+  
+  self->viewer = viewer;
+  self->renderer.draw = _draw;
+  self->renderer.destroy = _free;
+  self->renderer.name = (char*) RENDERER_NAME;
+  self->renderer.user = self;
+  self->renderer.enabled = 1;
+
+  BotEventHandler *ehandler = &self->ehandler;
+  ehandler->name = (char*) RENDERER_NAME;
+  ehandler->enabled = 1;
+  ehandler->pick_query = pick_query;
+  ehandler->key_press = NULL;
+  ehandler->hover_query = NULL;
+  ehandler->mouse_press = mouse_press;
+  ehandler->mouse_release = mouse_release;
+  ehandler->mouse_motion = mouse_motion;
+  ehandler->user = self;
+
+  
 
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 

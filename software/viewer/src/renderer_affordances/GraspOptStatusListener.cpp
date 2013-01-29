@@ -42,6 +42,7 @@ namespace renderer_affordances
 						 const string& chan, 
 						 const drc::grasp_opt_status_t* msg)						 
   {
+    _last_statusmsg_stamp =  bot_timestamp_now();//msg->utime; use system time hear to maintain heart beat from drake
     _worker_pool_ready = msg->matlab_pool_ready;
     _num_workers= msg->num_matlab_workers;
     if(_worker_availability.size()==0){
@@ -59,7 +60,7 @@ namespace renderer_affordances
  	   if(msg->worker_available==false)
  	    _worker_reservation[msg->worker_id-1] =false; // unreserve as it is engaged
 
-	bot_gtk_param_widget_set_bool(_parent_renderer->pw,PARAM_OPT_POOL_READY,_worker_pool_ready);
+	  bot_gtk_param_widget_set_bool(_parent_renderer->pw,PARAM_OPT_POOL_READY,_worker_pool_ready); // TODO: need a time-out
 
   } // end handleMessage
 

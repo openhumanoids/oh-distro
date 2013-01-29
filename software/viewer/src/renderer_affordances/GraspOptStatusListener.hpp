@@ -55,8 +55,10 @@ namespace renderer_affordances
  	   std::vector<bool> _worker_reservation;  // set by user. There can be lag between reservation and status actually changing.
  	   std::vector<int>  _worker_associated_handuid; // Associated hand_uid on reserved channel.
  	   int _num_workers;
- 	   bool _worker_pool_ready;  		      
-			      
+ 	   bool _worker_pool_ready;
+ 	
+ 	public:     		      
+		 int64_t  _last_statusmsg_stamp;	      
 
   }; //class GraspOptStatusListener
 

@@ -29,12 +29,26 @@ namespace renderer_affordances
       cerr << "\nLCM Not Good: Robot State Handler" << endl;
       return;
     }
+    
+    
+    drc::desired_grasp_state_t msg;
+    _handtype_id_map.clear();
+    _handtype_id_map[msg.SANDIA_LEFT]=0; // maps handtype to id of glhand list
+    _handtype_id_map[msg.SANDIA_RIGHT]=1;
+     // load and pre-parse base_gl_hands for left and right hand
+    shared_ptr<GlKinematicBody> new_hand;
+    for (map<int,int>::iterator it=_handtype_id_map.begin(); it!=_handtype_id_map.end(); ++it)
+    { 
+     load_hand_urdf(it->first);
+     new_hand =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string));
+      _gl_hand_list.push_back(new_hand);
+    }
 
     //Subscribe to CANDIDATE_GRASP_SEED 
     _lcm->subscribe("CANDIDATE_GRASP_SEED", &CandidateGraspSeedListener::handleDesiredGraspStateMsg, this); 
 
   }
-
+ 
   CandidateGraspSeedListener::~CandidateGraspSeedListener() {
     // _collision_detector->clear_collision_objects(); 
   }
@@ -141,12 +155,12 @@ namespace renderer_affordances
 
   void CandidateGraspSeedListener::add_or_update_sticky_hand(int uid, string& unique_hand_name, KDL::Frame &T_world_hand, drc::joint_angles_t &posture_msg)		
   {
-
+    
       typedef std::map<std::string,StickyHandStruc> sticky_hands_map_type;
       sticky_hands_map_type::iterator it = _parent_renderer->sticky_hands.find(unique_hand_name);
       if(it ==_parent_renderer->sticky_hands.end() ) // not in cache
       {
-        load_hand_urdf(_grasp_type); // gets the urdf string from file
+       
         StickyHandStruc sticky_hand_struc;
         sticky_hand_struc.object_name = _object_name ;
         sticky_hand_struc.geometry_name = _geometry_name;
@@ -156,18 +170,28 @@ namespace renderer_affordances
         // should we have a global collision detector and add and remove objects to it as we create and delete objects and hands. We would have to manually add and remove multiple links to the collision detector.??
         // Each hand has its own collision detector for now.
         sticky_hand_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector()); 
-        sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody    (_urdf_xml_string,sticky_hand_struc._collision_detector,true,unique_hand_name));
+          
+       map<int,int>::iterator hand_it = _handtype_id_map.find(_grasp_type);
+       if(hand_it!=_handtype_id_map.end())//exists in cache
+        {
+          sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_gl_hand_list[hand_it->second]),sticky_hand_struc._collision_detector,true,unique_hand_name));
+        }
+        else {
+          load_hand_urdf(_grasp_type); // gets the urdf string from file
+          sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_urdf_xml_string,sticky_hand_struc._collision_detector,true,unique_hand_name)); 
+      }
+        
         sticky_hand_struc._gl_hand->set_state(T_world_hand, posture_msg);
         sticky_hand_struc.hand_type = _grasp_type;
         sticky_hand_struc.T_geometry_hand = T_world_hand;
-        sticky_hand_struc.joint_name = posture_msg.joint_name;
-        sticky_hand_struc.joint_position = posture_msg.joint_position;
+      //  sticky_hand_struc.joint_name = posture_msg.joint_name;
+       // sticky_hand_struc.joint_position = posture_msg.joint_position;
         _parent_renderer->sticky_hands.insert(make_pair(unique_hand_name, sticky_hand_struc));
       }
       else {
         it->second._gl_hand->set_state(T_world_hand, posture_msg);
         it->second.T_geometry_hand = T_world_hand;
-        it->second.joint_position = posture_msg.joint_position;
+        //it->second.joint_position = posture_msg.joint_position;
       }
   }
   
@@ -191,6 +215,8 @@ namespace renderer_affordances
     }
     found = std::find(_parent_renderer->urdf_filenames.begin(), _parent_renderer->urdf_filenames.end(), filename);
     if (found != _parent_renderer->urdf_filenames.end()) {
+      cout << "\npre-loading hand urdf: " << filename << " for sticky hands rendering" << endl;
+      cout << "--------------------------------------------------------------------" << endl;
       unsigned int index = found - _parent_renderer->urdf_filenames.begin();
       std::string filename=_parent_renderer->urdf_filenames[index];  
       oss << (*_parent_renderer->urdf_dir_name_ptr)  << filename << ext;

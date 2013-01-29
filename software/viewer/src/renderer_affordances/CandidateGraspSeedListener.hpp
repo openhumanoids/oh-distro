@@ -68,6 +68,8 @@ namespace renderer_affordances
 		std::string _geometry_name;
 		int _grasp_type;
 		int _optimization_status;// RUNNING=0, SUCCESS=1, FAILURE=2;
+		std::vector< boost::shared_ptr<visualization_utils::GlKinematicBody> >  _gl_hand_list;
+		std::map<int,int> _handtype_id_map;
   }; //class CandidateGraspSeedListener
 
 
