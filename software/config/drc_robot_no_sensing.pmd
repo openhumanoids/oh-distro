@@ -41,9 +41,15 @@ group "gazebo" {
 
 }
 
-
+group "drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesis4PoolServer;\"";
+       host = "localhost";
+    }
+}
 script "startup simulation" {
     start group "core";
+    start group "drake";
     wait ms 1000;
     start cmd "gfe";
 }

@@ -34,6 +34,14 @@ group "core" {
 
 }
 
+group "drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesis4PoolServer;\"";
+       host = "localhost";
+    }
+}
+
+
 group "gazebo" {
     cmd "gfe" {
         exec = "roslaunch mit_drcsim_scripts atlas_position_control.launch";
