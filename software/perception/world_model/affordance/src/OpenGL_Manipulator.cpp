@@ -35,7 +35,7 @@ void OpenGL_Manipulator::draw()
     {
       // add collision contact widgets!
       OpenGL_Object_Sphere s;
-      for (int i = 0; i < colgroup->size(); i++) 
+      for (uint i = 0; i < colgroup->size(); i++) 
 	{
 	  urdf::Pose dot = (*colgroup)[i]->origin;
 	  KDL::Frame f;

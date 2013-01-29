@@ -81,7 +81,7 @@ AffordanceState::AffordanceState(const string &name,
 				 const int &objId, const int &mapId,
 				 const KDL::Frame &frame,
 				 const Eigen::Vector3f &color)
-  : _name(name), _object_id(objId), _map_id(mapId), _otdf_id(UNKNOWN)
+  : _map_id(mapId), _object_id(objId), _otdf_id(UNKNOWN), _name(name)
 {
 	//---set xyz roll pitch yaw from the frame
 	_params[X_NAME] = frame.p[0];
@@ -143,10 +143,10 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 	_otdf_id = idToEnum->find(msg->otdf_id)->second;
 
-	for(uint i = 0; i < msg->nstates; i++)
+	for(int i = 0; i < msg->nstates; i++)
 		_states[msg->state_names[i]] = msg->states[i];
 
-	for (uint i = 0; i < msg->nparams; i++)
+	for (int i = 0; i < msg->nparams; i++)
 		_params[msg->param_names[i]] = msg->params[i];
 }
 
@@ -194,7 +194,7 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 
 	//ptinds
 	msg->nptinds = _ptinds.size();
-	for(int i = 0; i < _ptinds.size(); i++)
+	for(uint i = 0; i < _ptinds.size(); i++)
 		msg->ptinds.push_back(_ptinds[i]);
 }
 

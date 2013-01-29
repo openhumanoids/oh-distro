@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 2.6.0)
 
+# maximum error checking
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
+
 # pull in the pods macros. See cmake/pods.cmake for documentation
 set(POD_NAME affordance)
 include(cmake/pods.cmake)
