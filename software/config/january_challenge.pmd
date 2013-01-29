@@ -41,6 +41,13 @@ group "core" {
     }
 }
 
+group "drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesis4PoolServer;\"";
+       host = "localhost";
+    }
+}
+
 group "gazebo" {
     cmd "gazebo" {
         exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
@@ -99,6 +106,7 @@ group "misc" {
 
 script "startup simulation" {
     start group "core";
+    start group "drake";
     wait ms 1000;
     start group "gazebo";
     wait ms 5000;
