@@ -18,7 +18,7 @@ string RandomString(int len)
 {
    string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
    int pos;
-   while(str.size() != len) {
+   while((int)str.size() != len) {
     pos = ((rand() % (str.size() - 1)));
     str.erase (pos, 1);
    }
@@ -177,9 +177,10 @@ void MainWindow::handleAffordancesChanged()
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	: _widget_opengl(),
-	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf"),
 	  _constraint_container(new QWidget()),
-	  _constraint_vbox(new QVBoxLayout())
+	  _constraint_vbox(new QVBoxLayout()),
+	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
+
 {
     // setup the OpenGL scene
 //  _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf");
@@ -464,7 +465,7 @@ MainWindow::
 moveQt4Constraint(bool up) {
     int i = getSelectedGUIConstraintIndex();
     std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
-    if (up && i > 0 || (! up) && i < constraints.size() - 1) {
+    if ((up && i > 0) || ((! up) && (i < (int)constraints.size() - 1))) {
 	int j = i + (up ? -1 : 1);
 	std::cout << "swapping " << i << " with " << j << std::endl;
 	//std::swap(constraints[i], constraints[i + (up ? i - 1 : i + 1)]);
@@ -496,7 +497,7 @@ updateScrubber() {
 	lengths.push_back(sum + max);
 	sum += max;
     }
-    for (int i = 0; i < lengths.size(); i++) {
+    for (int i = 0; i < (int)lengths.size(); i++) {
 	_scrubber->addTick(lengths[i] / sum);
     }
     _scrubber->setSelectedRangeIndex(getSelectedGUIConstraintIndex());
@@ -524,9 +525,9 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 
     // enable or disable media/move buttons
     _moveUpButton->setEnabled(selected_index != 0);
-    _moveDownButton->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
+    _moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
     _fbwd->setEnabled(selected_index != 0);
-    _ffwd->setEnabled(selected_index != _authoringState._all_gui_constraints.size() - 1);
+    _ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
 
     updateScrubber();
     // highlight the affordance
@@ -578,7 +579,7 @@ affordanceUpdateCheck()
 {
   int origSize = _worldState.affordances.size();
   _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
-  if (_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordane if the sizes are equal )
+  if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordane if the sizes are equal )
     return;
   
   cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
@@ -611,7 +612,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID)
     // set the selected manipulator or affordance in the currently selected constraint pane
     // begin by getting the ModelState object from the selected openGL object
     // TODO: slow; use map objectsToModels
-    for (int i = 0; i < _worldState.affordances.size(); i++) {
+    for (int i = 0; i < (int)_worldState.affordances.size(); i++) {
 	if (_worldState.affordances[i]->getGUIDAsString() == modelGUID) {
 	    //std::cout << " setting affordance" << std::endl;
 	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
@@ -620,7 +621,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID)
 	}
     }
 
-    for (int i = 0; i < _worldState.manipulators.size(); i++) {
+    for (int i = 0; i < (int)_worldState.manipulators.size(); i++) {
 	if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
 	    //std::cout << " setting manipulator" << std::endl;
 	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);

@@ -6,11 +6,12 @@
 using namespace action_authoring;
 
 Qt4ConstraintMacro::
-Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) : _gui_name(new QLineEdit()),
+Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) : 
+				     _gui_panel(new TogglePanel(this, "test", true)),
+				     _gui_name(new QLineEdit()),
 				     _gui_robotJointType(new QComboBox()),
 				     _gui_constraintType(new QComboBox()),
 				     _gui_affordanceType(new QComboBox()),
-				     _gui_panel(new TogglePanel(this, "test", true)),
 				     _gui_time_lower_bound(new QDoubleSpinBox()),
 				     _gui_time_upper_bound(new QDoubleSpinBox())
 {
@@ -214,7 +215,7 @@ updateElementsFromState() {
     if (_manipulators.size() > 0) {
 	// update the left side combo box
 	_gui_robotJointType->clear();
-	for (int i = 0; i < _manipulators.size(); i++) {
+	for (int i = 0; i < (int)_manipulators.size(); i++) {
 	    _gui_robotJointType->insertItem(i, QString::fromStdString(_manipulators[i]->getName()));
 	    _affordance1IndexMap[_manipulators[i]->getGlobalUniqueId()] = i;
 	}
@@ -231,7 +232,7 @@ updateElementsFromState() {
     if (_affordances.size() > 0) {
 	// update the right side combo box
 	_gui_affordanceType->clear();
-	for (int i = 0; i < _affordances.size(); i++) {
+	for (int i = 0; i < (int)_affordances.size(); i++) {
 	    _gui_affordanceType->insertItem(i, QString::fromStdString(_affordances[i]->getName()));
 	    _affordance2IndexMap[_affordances[i]->getGlobalUniqueId()] = i;
 	}

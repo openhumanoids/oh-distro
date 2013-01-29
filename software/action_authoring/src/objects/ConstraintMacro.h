@@ -46,8 +46,8 @@ namespace action_authoring {
     void setName(std::string name) { _name = name; };
     double getTimeLowerBound() { return _timeLowerBound; }
     double getTimeUpperBound() { return _timeUpperBound; }
-    double setTimeLowerBound(double t) { _timeLowerBound = t; }
-    double setTimeUpperBound(double t) { _timeUpperBound = t; }
+    void setTimeLowerBound(double t) { _timeLowerBound = t; }
+    void setTimeUpperBound(double t) { _timeUpperBound = t; }
 
     ConstraintMacroType getConstraintMacroType() const { return _constraintType; };
     

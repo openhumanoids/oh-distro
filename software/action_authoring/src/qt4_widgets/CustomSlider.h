@@ -40,7 +40,7 @@ class DefaultValueSlider : public QSlider {
 	int pos2 = getSliderPosition(_selected_range);
 	painter.fillRect(pos1, 0, pos2 - pos1, height(), QColor("#90EE90"));
     }
-    for (int i = 0; i < _tick_positions.size(); i++) {
+    for (int i = 0; i < (int)_tick_positions.size(); i++) {
 	int position = getSliderPosition(i);
 	painter.drawLine(position, 0, position, height());
     }

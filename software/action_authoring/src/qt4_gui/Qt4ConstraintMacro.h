@@ -42,13 +42,13 @@ namespace action_authoring
 	int _constraintIndex;
 	bool _initialized;
 	bool _updatingElementsFromState;
-	QDoubleSpinBox* _gui_time_lower_bound;
-	QDoubleSpinBox* _gui_time_upper_bound;
 	TogglePanel* _gui_panel;
         QLineEdit* _gui_name;
         QComboBox* _gui_robotJointType;
         QComboBox* _gui_constraintType;
         QComboBox* _gui_affordanceType;
+	QDoubleSpinBox* _gui_time_lower_bound;
+	QDoubleSpinBox* _gui_time_upper_bound;
         ConstraintMacroPtr _constraint;
 
         // should be static
