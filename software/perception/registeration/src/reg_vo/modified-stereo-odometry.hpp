@@ -16,6 +16,9 @@
 #include <lcmtypes/bot_core.h>
 #include <lcmtypes/microstrain_ins_t.h>
 
+#include <lcmtypes/reg_feature_t.h>
+#include <lcmtypes/reg_features_t.h>
+
 #ifdef USE_LCMGL
 #include <bot_lcmgl_client/lcmgl.h>
 #endif
@@ -153,12 +156,21 @@ private:
 
   const fovis::OdometryFrame* ref_odom_frame_;
   const fovis::OdometryFrame* target_odom_frame_;
-  int64_t _utime_ref;
+  int64_t _ref_utime;
+  Eigen::Isometry3d _ref_pose;
+
+  // Copy of images to write upon the next frame:
+  uint8_t* _image_left_buf_copy;
+  uint8_t* _image_right_buf_copy;
+  int _output_counter;
 
 
   pointcloud_vis* pc_vis_;
   void write_images();
-  void write_features(std::vector<ImageFeature> features);
+  void write_ref_images();
+  void writeFeatures(std::vector<ImageFeature> features);
+  void sendFeatures(std::vector<ImageFeature> features);
+  void sendFeaturesAsCollection(std::vector<ImageFeature> features, int vs_id);
 
 #ifdef USE_LCMGL
   bool _draw_lcmgl;

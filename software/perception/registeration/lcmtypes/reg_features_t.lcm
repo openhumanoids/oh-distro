@@ -1,0 +1,12 @@
+package reg;
+
+// an individual image feature
+// corresponds to definition in code
+// i,track_id,uv,base_uv,uvd,xyz,xyzw,color
+
+struct features_t
+{
+  int64_t utime;
+  int32_t nfeatures;
+  reg.feature_t features[nfeatures];
+}

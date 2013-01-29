@@ -155,14 +155,14 @@ void send_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeat
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0 (new pcl::PointCloud<pcl::PointXYZRGB> ());
   features2cloud(features0,cloud0);
-  pc_vis_->ptcld_to_lcm_from_list(1001, *cloud0, utime0, utime0);
+  pc_vis_->ptcld_to_lcm_from_list(1002, *cloud0, utime0, utime0);
 
   Isometry3dTime pose1T = Isometry3dTime(utime1, pose1);
   pc_vis_->pose_to_lcm_from_list(2000, pose1T);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGB> ());
   features2cloud(features1,cloud1);
-  pc_vis_->ptcld_to_lcm_from_list(2001, *cloud1, utime1, utime1);
+  pc_vis_->ptcld_to_lcm_from_list(2002, *cloud1, utime1, utime1);
 
 }
 
@@ -212,7 +212,7 @@ void send_both_reg_inliers(std::vector<ImageFeature> features0,    std::vector<I
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0 (new pcl::PointCloud<pcl::PointXYZRGB> ());
   features2cloud(features0,cloud0,feature_inliers0);
-  pc_vis_->ptcld_to_lcm_from_list(1002, *cloud0, utime0, utime0);
+  pc_vis_->ptcld_to_lcm_from_list(1001, *cloud0, utime0, utime0);
 
 
   Isometry3dTime pose1T = Isometry3dTime(utime1, pose1);
@@ -220,7 +220,7 @@ void send_both_reg_inliers(std::vector<ImageFeature> features0,    std::vector<I
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGB> ());
   features2cloud(features1,cloud1,feature_inliers1);
-  pc_vis_->ptcld_to_lcm_from_list(2002, *cloud1, utime1, utime1);
+  pc_vis_->ptcld_to_lcm_from_list(2001, *cloud1, utime1, utime1);
 
 }
 
@@ -258,7 +258,7 @@ void compute_descriptors(cv::Mat &image, vector<ImageFeature> & features, std::s
 void read_features(std::string fname,
     std::vector<ImageFeature>& features ){
 
-  printf( "About to read\n%s\n",fname.c_str());
+  printf( "About to read: %s - ",fname.c_str());
   int counter=0;
   string line0;
   std::ifstream myfile (fname.c_str());
@@ -376,7 +376,27 @@ Eigen::Isometry3d pose_estimate(FrameMatchPtr match,
   return motion;
 }
 
-FrameMatchPtr align_images(cv::Mat &img0, cv::Mat &img1, 
+
+void send_lcm_image(cv::Mat &img, std::string channel ){
+  int n_colors=3;
+
+  bot_core_image_t image;
+  image.utime =0;
+  image.width = img.cols;
+  image.height= img.rows;
+  image.row_stride =n_colors*img.cols;
+  image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
+  image.size =n_colors*img.cols*img.rows;
+  image.data = img.data;
+  image.nmetadata =0;
+  image.metadata = NULL;
+  bot_core_image_t_publish(_bot_param_lcm, channel.c_str(), &image);    
+  
+}
+
+
+//FrameMatchPtr
+void align_images(cv::Mat &img0, cv::Mat &img1, 
                            std::vector<ImageFeature> &features0, std::vector<ImageFeature> &features1,
                            int64_t utime0, int64_t utime1){
     /// 2. Extract Image Descriptors:
@@ -485,7 +505,6 @@ FrameMatchPtr align_images(cv::Mat &img0, cv::Mat &img1,
                          0, 835.78,  397.901, 0,
                          0,   0,   1, 0;
         
-    cout << "about to pose_estimate\n";
     delta = pose_estimate(match, inliers, motion, covariance,
         projection_matrix);
 
@@ -503,7 +522,6 @@ FrameMatchPtr align_images(cv::Mat &img0, cv::Mat &img1,
     nullpose.setIdentity();
     //    draw_both_reg(features0, features1,nullpose0,delta);
     draw_both_reg(features0, features1,nullpose,delta);
-    send_both_reg(features0, features1,delta,nullpose, utime0, utime1);
 
     size_t j = 0;
     for (size_t i = 0; i < inliers.size(); ++i){
@@ -516,24 +534,30 @@ FrameMatchPtr align_images(cv::Mat &img0, cv::Mat &img1,
     match->featuresA_indices.resize(j);
     match->featuresB_indices.resize(j);
     cout << j << " inliers found\n";
-    if (j > 15){
+    if (j > 8){ // used 15 earlier... ask Hordur
       cout <<"suitable match found\n";
 
-    send_both_reg_inliers(features0, features1,nullpose,delta, 
-                          match->featuresA_indices, match->featuresB_indices,
-                         utime0, utime1);
+      // all the feature:
+      send_both_reg(features0, features1,delta,nullpose, utime0, utime1);
+      
+      // just the inliers:
+      send_both_reg_inliers(features0, features1,nullpose,delta, 
+                        match->featuresA_indices, match->featuresB_indices,
+                        utime0, utime1);
 
-    // Draw the inlier set:
-    cv::Mat img_copy = img_matches_inter ;
-    draw_inliers(img_copy,features0, features1,match->featuresA_indices, match->featuresB_indices);
-//    imshow("Matches Inliers", img_copy);
+      // Draw the inlier set:
+      cv::Mat img_copy = img_matches_inter ;
+      draw_inliers(img_copy,features0, features1,match->featuresA_indices, match->featuresB_indices);
+      //    imshow("Matches Inliers", img_copy);
+      
+      send_lcm_image(img_copy, "CAMLCM_LEFT_RECTIFIED" );
 
-    match->estimation_status = SUCCESS;
+      match->estimation_status = SUCCESS;
     }else{
       match->estimation_status = INSUFFICIENT_INLIERS;
     }
   } else {
-    // tODO: this should have a different code:
+    // TODO: this should have a different code e.g. insufficient matches:
     match->estimation_status = INSUFFICIENT_INLIERS;
     num_inliers = 0;
   }
@@ -547,6 +571,9 @@ int main( int argc, char** argv ) {
   _bot_param_lcm = lcm_create(NULL);
   _lcmgl = bot_lcmgl_init(_bot_param_lcm, "descript-brief");
 
+  
+  int reset =0;
+  
   // Vis Config:
   pc_vis_ = new pointcloud_vis(_bot_param_lcm);
   float colors_0f[] ={1.0,0.0,0.0};
@@ -555,61 +582,76 @@ int main( int argc, char** argv ) {
   float colors_1f[] ={0.0,0.0,1.0};
   vector <float> colors_1;
   colors_1.assign(colors_1f,colors_1f+4*sizeof(float));
+
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose A",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud A"     ,1,1, 1000,1,colors_0));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud A - inliers"     ,1,1, 1000,1,colors_0));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose A",5,reset) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud A"     ,1,reset, 1000,1,colors_0));
+  colors_0[0] = 0.7;
+  colors_0[1] = 0.7;
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud A - inliers"     ,1,reset, 1000,1,colors_0));
 
-
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose B",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B"     ,1,1, 2000,1,colors_1));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud B - inliers"     ,1,1, 2000,1,colors_1));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose B",5,reset) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud B"     ,1,reset, 2000,1,colors_1));
+  colors_1[1] = 0.7;
+  colors_1[2] = 0.7;
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B - inliers"     ,1,reset, 2000,1,colors_1));
 
   
-std::vector<string> futimes;
+  std::vector<string> futimes;
+  std::vector<string> utimes_strings;
   
   
   DIR *dir;
-struct dirent *ent;
-if ((dir = opendir (".")) != NULL) {
-  /* print all the files and directories within directory */
-  while ((ent = readdir (dir)) != NULL) {
-    string fname = ent->d_name;
-    if(fname.size() > 5){
-      if (fname.compare(fname.size()-4,4,"feat") == 0){ 
-        printf ("%s\n", ent->d_name);
-        futimes.push_back( fname.substr(0,16) );
+  struct dirent *ent;
+  if ((dir = opendir (".")) != NULL) {
+    /* print all the files and directories within directory */
+    while ((ent = readdir (dir)) != NULL) {
+      string fname = ent->d_name;
+      if(fname.size() > 5){
+        if (fname.compare(fname.size()-4,4,"feat") == 0){ 
+          printf ("%s\n", ent->d_name);
+          futimes.push_back( fname.substr(0,21) );
+          utimes_strings.push_back( fname.substr(5,16) );
+        }
       }
     }
+    closedir (dir);
+  } else {
+    /* could not open directory */
+    perror ("");
+    return EXIT_FAILURE;
   }
-  closedir (dir);
-} else {
-  /* could not open directory */
-  perror ("");
-  return EXIT_FAILURE;
-}
   
+  istringstream temp_buffer( argv[1] );
+  string main_fname;
+  temp_buffer >> main_fname; 
   
-
-  //std::vector< int64_t > utimes; 
-  //utimes.push_back( 1349291129353484 );
-  //utimes.push_back( 1349291129886863 );
-  //utimes.push_back( 1349291130553503 );
-
-  int64_t main_utime = 1349291129353484;
+  string temp = main_fname.substr(5,16);
+  istringstream temp_buffer2( temp);
+  int64_t main_utime;
+  temp_buffer2 >> main_utime ; 
+  
+  cout << main_fname << " fname\n";
+  cout << main_utime << " utime\n";
   
   stringstream ifile0, featfile0;
-  ifile0 << main_utime << "_left.png";
-  featfile0 << main_utime << ".feat";
+  ifile0 << main_fname << "_left.png";
+  featfile0 << main_fname << ".feat";
   cv::Mat img0 = cv::imread( ifile0.str(), CV_LOAD_IMAGE_GRAYSCALE );
   std::vector<ImageFeature> features0;
   read_features(featfile0.str(), features0);
   
   
   for (size_t i= 0 ; i<  futimes.size(); i++){
-    cout << "doing: " << i << " - "<<futimes[i] <<"\n";
+    istringstream buffer(utimes_strings[i]);
+    int64_t utime;
+    buffer >> utime; 
 
+    cout << i << " count\n";
+    cout << "doing: " << i << " - "<<futimes[i] <<"\n";
+    cout << " and   " << utimes_strings[i] <<"\n";
+    cout << " utime " << utime << "\n";
     stringstream ifile1, featfile1;
     ifile1 << futimes[i] << "_left.png";
     featfile1 << futimes[i] << ".feat";
@@ -620,16 +662,12 @@ if ((dir = opendir (".")) != NULL) {
     std::vector<ImageFeature> features1;
     read_features(featfile1.str(), features1);
     
-    
-    istringstream buffer(futimes[i]);
-    int64_t utime;
-    buffer >> utime; 
+    //FrameMatchPtr match =  
+    align_images(img0, img1, features0, features1, main_utime, utime );
 
-  
-    FrameMatchPtr match =  align_images(img0, img1, features0, features1, main_utime, utime );
     
-   int incoming;
-   cin >> incoming;
+    int incoming;
+    cin >> incoming;
     cout << "end\n";
   }
 
