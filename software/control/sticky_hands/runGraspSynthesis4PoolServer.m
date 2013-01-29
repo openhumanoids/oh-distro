@@ -1,6 +1,9 @@
 function runGraspSynthesis4PoolServer()
+%profile on;
 no_of_workers =  4;
-matlabpool(no_of_workers) 
+if(matlabpool('size')==0)
+matlabpool(no_of_workers)
+end
 %
 spmd
     runGraspOptSinglePoolService(no_of_workers);    
@@ -8,7 +11,7 @@ end % end spmd
 
 % end
 matlabpool close
-
+%profile viewer;
 end
 
 

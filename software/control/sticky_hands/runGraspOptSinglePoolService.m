@@ -13,8 +13,8 @@ m_l = RigidBodyManipulatorWImplicitSurfaces(l_filename,options);
 m_r = RigidBodyManipulatorWImplicitSurfaces(r_filename,options);
 
 dt = 0.001;
-r_l = TimeSteppingRigidBodyManipulator(m_l,dt);
-r_r = TimeSteppingRigidBodyManipulator(m_r,dt);
+r_l = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_l,dt);
+r_r = TimeSteppingRigidBodyManipulatorWImplicitSurfaces(m_r,dt);
 
 lcmcoder = JLCMCoder(GraspSeedOptCoder('atlas'));
 nx=22; % this changes?
@@ -30,7 +30,7 @@ grasp_opt_status_publisher.publish(0,labindex,true); % No simtime available here
 cnt=0;
 while(1)
     rho =0.1;
-    manipuland_params.xc = [0 0 0];
+    manipuland_params.xc = [0;0;0];
     usefingermask = false;
     reset_optimization = false;
     
@@ -59,7 +59,7 @@ while(1)
         end
         
         if(msg.grasp_type ==msg.SANDIA_LEFT)
-            m_l = setManipulandParams(m_l,manipuland_params);
+            r_l = setManipulandParams(r_l,manipuland_params);
             hand_trans = [msg.l_hand_init_pose.translation.x,msg.l_hand_init_pose.translation.y,msg.l_hand_init_pose.translation.z];
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
             size_x = size(r_l.getStateFrame.coordinates,1);
@@ -83,7 +83,7 @@ while(1)
             %[xstar,zstar] = iterativeGraspSearch2(r_l,double(xstar));
             
         elseif (msg.grasp_type ==msg.SANDIA_RIGHT)
-            m_r = setManipulandParams(m_r,manipuland_params);
+            r_r = setManipulandParams(r_r,manipuland_params);
             hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
             hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
             size_x = size(r_r.getStateFrame.coordinates,1);
@@ -266,8 +266,8 @@ end %end while
             
             % Modified Rigid Body Manipulator to pass in a function pointer to
             % custom collision detection code.
-            [phiC,JC] = manip.contactConstraints(q,[],@mycollisionDetect);
-            [p,J,dJ] = manip.contactPositions(q);
+            [phiC,JC] = obj.contactConstraints(q);
+            [p,J,dJ] = obj.contactPositions(q);
             
             
             % ignore friction constraints for now
