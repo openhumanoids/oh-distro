@@ -89,7 +89,7 @@ void
 Collision_Object_Sphere::
 set_transform( const Vector3f position,
                 const Vector4f orientation ){
-  _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.w(), orientation.x(), orientation.y(), orientation.z() ),
+  _bt_collision_object.setWorldTransform( btTransform( btQuaternion(orientation.x(), orientation.y(), orientation.z(), orientation.w()),
                                                         btVector3( position.x(), position.y(), position.z() ) ) );
   return;
 }

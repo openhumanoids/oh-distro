@@ -24,7 +24,7 @@ Collision_Object_Cylinder( string id,
                             double radius,
                             double height ) : Collision_Object( id ),
                                               _bt_collision_object(),
-                                              _bt_cylinder_shape( btVector3( radius, 0.0, height ) ){
+                                              _bt_cylinder_shape( btVector3( radius, 0.0, height / 2.0) ){
   _bt_collision_object.setCollisionShape( &_bt_cylinder_shape );
 }
 
@@ -39,7 +39,7 @@ Collision_Object_Cylinder( string id,
                             Vector3f position,
                             Vector4f orientation ) : Collision_Object( id ),
                                                     _bt_collision_object(),
-                                                    _bt_cylinder_shape( btVector3( radius, 0.0, height ) ){
+                                                    _bt_cylinder_shape( btVector3( radius, 0.0, height / 2.0) ){
   set_transform( position, orientation );
   _bt_collision_object.setCollisionShape( &_bt_cylinder_shape );
 }
