@@ -1,21 +1,19 @@
 #ifndef registeration_HPP_
 #define registeration_HPP_
 
-#include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <bot_lcmgl_client/lcmgl.h>
+
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
-#include <lcmtypes/drc_lcmtypes.h>
 
 
-/**
- * Represent a single image feature.
- */
-struct ImageFeature
-{
+struct ImageFeature{
   int track_id;
   Eigen::Vector2d uv; ///< unrectified, distorted, orig. coords
   Eigen::Vector2d base_uv; ///< unrectified, distorted, base level
@@ -28,79 +26,57 @@ struct ImageFeature
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+enum{SUCCESS, INSUFFICIENT_INLIERS};
 
-///////////////////////////////////////////////////////////////
-class registeration{
+struct FrameMatch{
+  std::vector<int> featuresA_indices;
+  std::vector<int> featuresB_indices;
+
+  std::vector<ImageFeature> featuresA;
+  std::vector<ImageFeature> featuresB;
+  
+  int estimation_status; // 0 = sucess, 0 = too few matches, 1 = too few inliers
+  Eigen::Isometry3d delta; // A->B transform : where is B relative to A
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+typedef boost::shared_ptr<FrameMatch> FrameMatchPtr;
+
+
+class Reg
+{
   public:
-    registeration(lcm_t* publish_lcm);
-
-    void go();
-
+    typedef boost::shared_ptr<Reg> Ptr;
+    typedef boost::shared_ptr<const Reg> ConstPtr;
     
-    ~registeration(){
-    }
+    Reg (boost::shared_ptr<lcm::LCM> &lcm_);
     
+    void align_images(cv::Mat &img0, cv::Mat &img1, 
+                           std::vector<ImageFeature> &features0, std::vector<ImageFeature> &features1,
+                           int64_t utime0, int64_t utime1);
+    
+    
+    void draw_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+                           Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1);
+    void draw_reg(std::vector<ImageFeature> features,    int status, Eigen::Isometry3d pose);
+    
+    void send_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+        Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1,
+        int64_t utime0, int64_t utime1           );
+    
+    void send_both_reg_inliers(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+        Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1,
+        std::vector<int> feature_inliers0,    std::vector<int> feature_inliers1 ,
+        int64_t utime0, int64_t utime1);
+    
+    void send_lcm_image(cv::Mat &img, std::string channel );
+
   private:
-    lcm_t* publish_lcm_;
+    boost::shared_ptr<lcm::LCM> lcm_;
+    bot_lcmgl_t* lcmgl_;
 
-    pointcloud_lcm* pc_lcm_;
     pointcloud_vis* pc_vis_;
-
-    Isometry3dTime current_poseT;
-    bool current_pose_init; // have we started
-    Isometry3dTime null_poseT;
-    Isometry3dTime local_poseT; // LIDAR pose where we started the most recent local map
-
-    // Fixed transform [initally hardcoded]:
-    Eigen::Isometry3d camera_to_lidar;
-
-    // Current submap clouds
-    pcl::PointCloud<PointXYZRGB>::Ptr cloud;
-    int cloud_counter;
-
-
-    // Pair 0:
-    cv::Mat descriptors0, descriptors1;
-    std::vector<bool> valid0,valid1; // validity of descriptors? not sure for what
-
-    std::vector<ImageFeature> features0,features1;
-
-    /// Minimum number of inliers needed.
-    int min_inliers_;
-
-    static void newmap_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const drc_localize_reinitialize_cmd_t* msg,
-                                void* user_data){
-      ((registeration *) user_data)->newmap_handler(msg);
-    }
-    void newmap_handler(const drc_localize_reinitialize_cmd_t *msg);
-
-    static void pointcloud_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const drc_pointcloud2_t* msg,
-                                void* user_data) {
-      ((registeration *) user_data)->pointcloud_handler(msg);
-    }
-    void pointcloud_handler(const drc_pointcloud2_t *msg);
-
-    static void lidar_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_planar_lidar_t* msg,
-                                void* user_data) {
-      ((registeration *) user_data)->lidar_handler(msg);
-    }
-    void lidar_handler(const bot_core_planar_lidar_t *msg);
-
-
-    static void pose_handler_aux(const lcm_recv_buf_t* rbuf,
-                                const char* channel,
-                                const bot_core_pose_t* msg,
-                                void* user_data) {
-      ((registeration *) user_data)->pose_handler(msg);
-    }
-    void pose_handler(const bot_core_pose_t *msg);
-
-};    
+    
+};
 
 #endif

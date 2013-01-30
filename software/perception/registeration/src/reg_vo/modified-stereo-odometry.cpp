@@ -612,7 +612,7 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
     // Write the images and features
     if (_ref_utime > 0){ // skip the first null image
       if(featuresA.size() > 50){ // if less than 50 features - dont bother writing
-        //write_ref_images();
+        write_ref_images();
         writeFeatures(featuresA);
         sendFeatures(featuresA);
         

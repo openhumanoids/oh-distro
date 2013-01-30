@@ -1,4 +1,9 @@
-//drc-descript-brief 1225720333142477 1225720333192471
+//drc-descript-brief 0016_1349291130753495
+// - read in 0016* files
+// match to all others in that directory
+//
+// this was finished in jan 2012.
+// next step is to create an application which uses this as part of an lcm stream
 
 #include <stdio.h>
 #include <iostream>
@@ -185,13 +190,8 @@ void draw_inliers(cv::Mat &imgs, std::vector<ImageFeature> features0,    std::ve
     p1.x = features1[i1].base_uv[0] + imgs.cols/2; // offset by half the double image with
     p1.y = features1[i1].base_uv[1];
     cv::circle( imgs, p1, 5, color_out, 0 ); 
-    
-    
     cv::line(imgs, p0, p1, color_out, 2);
   }
-  
-
-
 }
 
 

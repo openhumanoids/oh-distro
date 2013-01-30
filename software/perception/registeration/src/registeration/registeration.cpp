@@ -1,276 +1,573 @@
-// LCM example program for interacting  with PCL data
-// In this case it pushes the data back out to LCM in
-// a different message type for which the "collections"
-// renderer can view it in the LCM viewer
-// mfallon aug 2012
+//drc-descript-brief 0016_1349291130753495
+// - read in 0016* files
+// match to all others in that directory
+//
+// this was finished in jan 2012.
+// next step is to create an application which uses this as part of an lcm stream
+
 #include <stdio.h>
-#include <inttypes.h>
-#include <lcm/lcm.h>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
 
+#include <dirent.h>
 
-#include <lcmtypes/drc_lcmtypes.h>
-#include <lcmtypes/visualization.h>
+#include <GL/gl.h>
 
-#include <lcmtypes/drc_lcmtypes.h>
+#include <boost/foreach.hpp>
+#include <boost/shared_ptr.hpp>
 
+#include <Eigen/Dense>
+
+#include <opencv2/opencv.hpp>
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/nonfree/features2d.hpp"
+#include "opencv2/nonfree/features2d.hpp"
+
+#include <bot_lcmgl_client/lcmgl.h>
+
+#include <estimate-pose/pose_estimator.hpp>
 
 #include "registeration.hpp"
 
+
+#include <pointcloud_tools/pointcloud_vis.hpp>
+
 using namespace std;
-using namespace pcl;
+
+//lcm_t* _bot_param_lcm;
+//pointcloud_vis* pc_vis_;
 
 
 
-using namespace cv;
 
-/////////////////////////////////////
-
-registeration::registeration(lcm_t* publish_lcm):
-      publish_lcm_(publish_lcm),
-      current_poseT(0, Eigen::Isometry3d::Identity()),
-      null_poseT(0, Eigen::Isometry3d::Identity()),
-      local_poseT(0, Eigen::Isometry3d::Identity()) {
-
-  current_pose_init = false;
-
-  // camera-to-lidar tf
-  // TODO read from config later:
-  // directly matches the frames in gazebo
-  Eigen::Quaterniond quat =euler_to_quat(0,0,M_PI/2); // ypr
-  Eigen::Isometry3d pose;
-  camera_to_lidar.setIdentity();
-  camera_to_lidar.translation()  << 0.275, 0.0, 0.252;
-  camera_to_lidar.rotate(quat);
+Reg::Reg(boost::shared_ptr<lcm::LCM> &lcm_):
+        lcm_(lcm_){
+          
+  lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "registeration");
 
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clf (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  cloud = cloud_clf;
-  cloud_counter =0;
-
-  // Unpack Config:
-  pc_lcm_ = new pointcloud_lcm(publish_lcm_);
-
-
+  int reset =0;
   // Vis Config:
-  pc_vis_ = new pointcloud_vis(publish_lcm_);
+  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  float colors_0f[] ={1.0,0.0,0.0};
+  vector <float> colors_0;
+  colors_0.assign(colors_0f,colors_0f+4*sizeof(float));
+  float colors_1f[] ={0.0,0.0,1.0};
+  vector <float> colors_1;
+  colors_1.assign(colors_1f,colors_1f+4*sizeof(float));
+
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(600,"Pose - Laser",5,0) );
-  float colors_a[] ={1.0,0.0,0.0};
-  vector <float> colors_v;
-  colors_v.assign(colors_a,colors_a+4*sizeof(float));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(601,"Cloud - Laser"         ,1,0, 600,1,colors_v));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose A",5,reset) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud A"     ,1,reset, 1000,1,colors_0));
+  colors_0[0] = 0.7;
+  colors_0[1] = 0.7;
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud A - inliers"     ,1,reset, 1000,1,colors_0));
 
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(400,"Pose - Camera",5,0) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(401,"Cloud - Current Camera",1,1, 400,0,colors_v));
-
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose - Null",5,0) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(800,"Pose - Laser Map Init",5,0) );
-  float colors_b[] ={0.0,0.0,1.0};
-  colors_v.assign(colors_b,colors_b+4*sizeof(float));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(801,"Cloud - Laser Map"     ,1,1, 1000,1,colors_v));
-
-  // LCM:
-  lcm_t* subscribe_lcm_ = publish_lcm_;
-  drc_localize_reinitialize_cmd_t_subscribe(subscribe_lcm_, "LOCALIZE_NEW_MAP",
-                             newmap_handler_aux, this);
-  drc_pointcloud2_t_subscribe(subscribe_lcm_, "WIDE_STEREO_POINTS",
-                             registeration::pointcloud_handler_aux, this);
-  bot_core_planar_lidar_t_subscribe(subscribe_lcm_, "BASE_SCAN",
-                             registeration::lidar_handler_aux, this);
-  bot_core_pose_t_subscribe(subscribe_lcm_, "POSE",
-      registeration::pose_handler_aux, this);
-
-
-  min_inliers_ = 30;
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose B",5,reset) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud B"     ,1,reset, 2000,1,colors_1));
+  colors_1[1] = 0.7;
+  colors_1[2] = 0.7;
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B - inliers"     ,1,reset, 2000,1,colors_1));
+            
 
 }
 
+void Reg::draw_reg(std::vector<ImageFeature> features,    int status, Eigen::Isometry3d pose)
+{
+  // reorder as:
+  // z, -x, -y (or 2,-0,-1)
+
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_rotated(lcmgl_, -90, 0, 0, 1);
+  bot_lcmgl_rotated(lcmgl_, -90, 1, 0, 0);
 
 
-void registeration::newmap_handler(const drc_localize_reinitialize_cmd_t *msg){
-  // Send the final version of the previous local map
-  vector <float> colors_v;
-  float colors_a[3];
+//  bot_lcmgl_translated(_lcmgl, 0, pose.translation().y(), 0);
 
-  int num_vis_colors = pc_vis_->colors.size();
-  colors_a[0] = pc_vis_->colors[3*(cloud_counter%num_vis_colors)];
-  colors_a[1] = pc_vis_->colors[3*(cloud_counter%num_vis_colors)+1];
-  colors_a[2] = pc_vis_->colors[3*(cloud_counter%num_vis_colors)+2];
 
-  colors_v.assign(colors_a,colors_a+4*sizeof(float));
-  stringstream ss;
-  ss << "Cloud - Local Map " << cloud_counter;
-  int map_coll_id = cloud_counter + 1000 + 1; // so that first is 1001 and null is 1000
-  ptcld_cfg pcfg = ptcld_cfg(map_coll_id,    ss.str()     ,1,1, 1000,1,colors_v);
-  pc_vis_->ptcld_to_lcm(pcfg, *cloud, null_poseT.utime, null_poseT.utime );
+  bot_lcmgl_color3f(lcmgl_, 0, 1, 1);
+  bot_lcmgl_point_size(lcmgl_, 1.5f);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);
 
-  pcl::PCDWriter writer;
-  stringstream ss2;
-  ss2 << "cloud" << cloud_counter << ".pcd";
-  writer.write (ss2.str(), *cloud, false);
+  if (status==0){
+    bot_lcmgl_color3f(lcmgl_, 0, 0, 1);
+  }else{ // status 1 when changing key frames:
+    bot_lcmgl_color3f(lcmgl_, 1, 0, 0);
+  }
+  for (size_t i=0; i < features.size(); ++i) {
+    ImageFeature f = features[i];
 
-  cout << cloud_counter << " finished | " << cloud->points.size() << " points\n";
+    bot_lcmgl_vertex3f(lcmgl_, f.xyz[0],  f.xyz[1], f.xyz[2]);
+//    bot_lcmgl_vertex3f(lcmgl_, f.xyz[2],  -f.xyz[0],-f.xyz[1]);
+  }
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
 
-  // Start a new local map:
-  cloud->width    = 0;
+  // disabling this allows draw_reg to daisy chain onto draw()
+  //bot_lcmgl_switch_buffer(lcmgl_);
+}
+
+void Reg::draw_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+    Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1){
+  draw_reg(features0,    0,  pose0);
+  draw_reg(features1,    1, pose1);
+  bot_lcmgl_switch_buffer(lcmgl_);
+}
+
+
+void features2cloud(std::vector<ImageFeature> features, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  cloud->width   = features.size();
   cloud->height   = 1;
-  cloud->is_dense = false;
-  cloud->points.resize (0);
-  cloud_counter++;
-  cout << cloud_counter << " started | " << cloud->points.size() << " points\n";
-
-  Eigen::Isometry3d local_pose = current_poseT.pose*camera_to_lidar;
-  local_poseT = Isometry3dTime(msg->utime, local_pose);
-  pc_vis_->pose_to_lcm_from_list(800, local_poseT);
-}
-
-
-void registeration::pose_handler(const bot_core_pose_t *msg){
-  current_poseT.pose.setIdentity();
-  current_poseT.pose.translation() << msg->pos[0], msg->pos[1], msg->pos[2];
-  Eigen::Quaterniond m;
-  m  = Eigen::Quaterniond(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
-  current_poseT.pose.rotate(m);
-  current_poseT.utime = msg->utime;
-
-  if (!current_pose_init){
-    current_pose_init = true;
-
-    Eigen::Isometry3d local_pose = current_poseT.pose*camera_to_lidar;
-    local_poseT = Isometry3dTime(msg->utime, local_pose);
-    pc_vis_->pose_to_lcm_from_list(800, local_poseT);
-
-    //c Null Pose
-    Eigen::Isometry3d lidar_pose;
-    lidar_pose.setIdentity();
-    null_poseT = Isometry3dTime(msg->utime, lidar_pose);
-    pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
-//    vcfg->PublishPoseToLCMFromList(3001,null_pose,cloud_utime_);
+  cloud->points.resize (cloud->width  *cloud->height);
+  for (size_t i=0;i<features.size(); i++){
+    cloud->points[i].x = features[i].xyz[0];
+    cloud->points[i].y = features[i].xyz[1];
+    cloud->points[i].z = features[i].xyz[2];
+    cloud->points[i].r = 1;
+    cloud->points[i].g = 1;
+    cloud->points[i].b = 1;
   }
 }
 
-void registeration::lidar_handler(const bot_core_planar_lidar_t *msg){
-  if (!current_pose_init){     return;  }
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  double maxRange = 9.9;//29.7;
-  //double validBeamAngles[] ={-2.5,2.5}; // all of it both sides
-  double validBeamAngles[] ={-M_PI/2,2.5}; //  nothing beyond directly down  | all returns up
-  convertLidar(msg->ranges, msg->nranges, msg->rad0,
-        msg->radstep, lidar_cloud, maxRange,
-        validBeamAngles[0], validBeamAngles[1]);
-
-  // 3. Transmit data to viewer at null pose:
-  // 3a. Transmit Pose:
-  int pose_id=msg->utime;
-  int lidar_obj_collection= 600;
-
-  // Use the current VO pose without interpolation or tf:
-  //Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, current_poseT.pose);
-
-  // Transform the VO pose via the inter sensor config:
-  Eigen::Isometry3d lidar_pose = current_poseT.pose*camera_to_lidar;
-  Isometry3dTime lidar_poseT = Isometry3dTime(pose_id, lidar_pose);
-  pc_vis_->pose_to_lcm_from_list(lidar_obj_collection, lidar_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(601, *lidar_cloud, pose_id, pose_id);
-
-
-  Eigen::Isometry3f pose_f = Isometry_d2f(lidar_poseT.pose);
-  Eigen::Quaternionf pose_quat(pose_f.rotation());
-  pcl::transformPointCloud (*lidar_cloud, *lidar_cloud,
-      pose_f.translation(), pose_quat); // !! modifies lidar_cloud
-
-  (*cloud) += (*lidar_cloud);
-  pc_vis_->ptcld_to_lcm_from_list(801, *cloud, null_poseT.utime, null_poseT.utime);
-  pc_vis_->pose_to_lcm_from_list(1000, null_poseT); // remove this?
-
-}
-
-
-void registeration::pointcloud_handler(const drc_pointcloud2_t *msg){
-  if (!current_pose_init){     return;  }
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pc_lcm_->unpack_pointcloud2( (const ptools_pointcloud2_t*)   msg, cloud);
-  //pc_lcm_->unpack_pointcloud2(  msg, cloud);
-
-  // 3a. Transmit Pose:
-  int pose_id=msg->utime;
-  int camera_obj_collection= 400;
-
-  // Use the current VO pose without interpolation or tf:
-  Isometry3dTime camera_poseT = Isometry3dTime(pose_id, current_poseT.pose);
-  pc_vis_->pose_to_lcm_from_list(camera_obj_collection, camera_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(401, *cloud, pose_id, pose_id);
+// Send a subset of the feature set:
+void features2cloud(std::vector<ImageFeature> features, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
+    std::vector<int> features_indices){
+  cloud->width   = features_indices.size();
+  cloud->height   = 1;
+  cloud->points.resize (cloud->width  *cloud->height);
+  for (size_t j=0;j<features_indices.size(); j++){
+    int i = features_indices[j];
+    cloud->points[j].x = features[i].xyz[0];
+    cloud->points[j].y = features[i].xyz[1];
+    cloud->points[j].z = features[i].xyz[2];
+    cloud->points[j].r = 1;
+    cloud->points[j].g = 1;
+    cloud->points[j].b = 1;
+  }
 }
 
 
 
+void Reg::send_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+    Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1,
+    int64_t utime0, int64_t utime1           ){
+
+  Eigen::Matrix3d M;
+  M <<  0,  0, 1,
+       -1,  0, 0,
+        0, -1, 0;
+  pose0 = M * pose0;
+  pose1 = M * pose1;
+
+  Isometry3dTime pose0T = Isometry3dTime(utime0, pose0);
+  pc_vis_->pose_to_lcm_from_list(1000, pose0T);
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  features2cloud(features0,cloud0);
+  pc_vis_->ptcld_to_lcm_from_list(1002, *cloud0, utime0, utime0);
+
+  Isometry3dTime pose1T = Isometry3dTime(utime1, pose1);
+  pc_vis_->pose_to_lcm_from_list(2000, pose1T);
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  features2cloud(features1,cloud1);
+  pc_vis_->ptcld_to_lcm_from_list(2002, *cloud1, utime1, utime1);
+
+}
 
 
-void get_descriptors(cv::Mat &image, cv::Mat &descriptors, std::vector<bool> &valid){
-  // 1. Extract Descriptors:
+void draw_inliers(cv::Mat &imgs, std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+    std::vector<int> feature_inliers0,    std::vector<int> feature_inliers1){
+
+  cv::Point p;
+  p.x =3; p.y = 10;
+  CvScalar color_out = CV_RGB(255,0,0);
+  for (size_t j=0;j< feature_inliers0.size(); j++){
+    int i0 = feature_inliers0[j];
+    cv::Point p0;
+    p0.x = features0[i0].base_uv[0];
+    p0.y = features0[i0].base_uv[1];
+    cv::circle( imgs, p0, 5, color_out, 0 ); 
+
+    int i1 = feature_inliers1[j];
+    cv::Point p1;
+    p1.x = features1[i1].base_uv[0] + imgs.cols/2; // offset by half the double image with
+    p1.y = features1[i1].base_uv[1];
+    cv::circle( imgs, p1, 5, color_out, 0 ); 
+    cv::line(imgs, p0, p1, color_out, 2);
+  }
+}
+
+
+void Reg::send_both_reg_inliers(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
+    Eigen::Isometry3d pose0,   Eigen::Isometry3d pose1,
+    std::vector<int> feature_inliers0,    std::vector<int> feature_inliers1 ,
+    int64_t utime0, int64_t utime1){
+
+  Eigen::Matrix3d M;
+  M <<  0,  0, 1,
+       -1,  0, 0,
+        0, -1, 0;
+  pose0 = M * pose0;
+  pose1 = M * pose1;
+
+  Isometry3dTime pose0T = Isometry3dTime(utime0, pose0);
+  pc_vis_->pose_to_lcm_from_list(1000, pose0T);
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  features2cloud(features0,cloud0,feature_inliers0);
+  pc_vis_->ptcld_to_lcm_from_list(1001, *cloud0, utime0, utime0);
+
+
+  Isometry3dTime pose1T = Isometry3dTime(utime1, pose1);
+  pc_vis_->pose_to_lcm_from_list(2000, pose1T);
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  features2cloud(features1,cloud1,feature_inliers1);
+  pc_vis_->ptcld_to_lcm_from_list(2001, *cloud1, utime1, utime1);
+
+}
+
+
+
+
+
+
+
+
+// 'lexicographic' comparison
+static bool DMatch_lt(const cv::DMatch& a, const cv::DMatch& b) {
+  //return ( (a.trainIdx < b.trainIdx) || (a.queryIdx < b.queryIdx) );
+  if (a.trainIdx != b.trainIdx) { return a.trainIdx < b.trainIdx; }
+  return a.queryIdx < b.queryIdx;
+}
+
+void features_to_keypoints(const std::vector<ImageFeature> & features, std::vector<cv::KeyPoint> & kpts) {
+  kpts.clear();
+  for(std::vector<ImageFeature>::const_iterator it=features.begin(); it != features.end(); ++it) {
+    const ImageFeature & f = *it;
+    // @todo use Mei's true scale here
+    //    kpts.push_back(cv::KeyPoint(f.uvd(0), f.uvd(1), 1.0));
+    kpts.push_back(cv::KeyPoint(f.base_uv(0), f.base_uv(1), 20.0)); // was in hordur's code
+  }
+}
+
+void compute_descriptors(cv::Mat &image, vector<ImageFeature> & features, std::string & name, cv::DescriptorExtractor & extractor,
+    cv::Mat &descriptors, std::vector<cv::KeyPoint>& keypoints){
+  features_to_keypoints(features, keypoints);
+  extractor.compute(image, keypoints, descriptors);
+}
+
+
+void read_features(std::string fname,
+    std::vector<ImageFeature>& features ){
+
+  printf( "About to read: %s - ",fname.c_str());
+  int counter=0;
+  string line0;
+  std::ifstream myfile (fname.c_str());
+  if (myfile.is_open()){
+
+    getline (myfile,line0);
+    //cout << line0 << " is first line\n";
+
+    counter =0;
+    while ( myfile.good() ){
+      string line;
+      getline (myfile,line);
+      if (line.size() > 4){
+        ImageFeature f;
+        int i,track_id;
+        double v[15];
+        int d[3];
+        int res = sscanf(line.c_str(), "%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d",&i,
+            &(v[0]), &(v[1]), &(v[2]), &(v[3]), &(v[4]), // id, uv, base_uv
+            &(v[5]), &(v[6]), &(v[7]),  &(v[8]), &(v[9]), &(v[10]),// uvd xyz
+            &(v[11]), &(v[12]), &(v[13]), &(v[14]), // xyzd
+            &(d[0]), &(d[1]), &(d[2])        );
+
+        f.track_id=v[0]; f.uv[0]=v[1];f.uv[1]=v[2];
+        f.base_uv[0]=v[3];f.base_uv[1]=v[4];
+        f.uvd[0]=v[5];f.uvd[1]=v[6];f.uvd[2]=v[7];
+        f.xyz[0]=v[8];f.xyz[1]=v[9];f.xyz[2]=v[10];
+        f.xyzw[0]=v[11];f.xyzw[1]=v[12];f.xyzw[2]=v[13];f.xyzw[3]=v[14];
+        f.color[0] = d[0];f.color[1] = d[1];f.color[2] = d[2];
+
+        /*
+
+        cout << line << " is line\n";
+        cout << "i: " << i <<"\n";
+        cout << "f.track_id: " << f.track_id <<"\n";
+        cout << "f.uv: " << f.uv[0] << " "<< f.uv[1] <<"\n";
+        cout << "f.base_uv: " << f.base_uv[0] << " "<< f.base_uv[1] <<"\n";
+        cout << "f.uvd: " << f.uvd[0] << " "<< f.uvd[1]<< " "<< f.uvd[2]<<"\n";
+        cout << "f.xyz: " << f.xyz[0] << " "<< f.xyz[1]<< " "<< f.xyz[2]<<"\n";
+        cout << "f.xyzw: " << f.xyzw[0] << " "<< f.xyzw[1]<< " "<< f.xyzw[2]<< " "<< f.xyzw[3]<<"\n";
+        cout << "f.color: " << (int)f.color[0] << " "<< (int)f.color[1] << " "<< (int)f.color[2] <<"\n";
+         */
+        features.push_back(f);
+      }
+    }
+    myfile.close();
+  } else{
+    printf( "Unable to open features file\n%s",fname.c_str());
+    return;
+  }
+  cout << "read " << features.size() << " features\n";
+}
+
+
+Eigen::Isometry3d pose_estimate(FrameMatchPtr match,
+    std::vector<char> & inliers,
+    Eigen::Isometry3d & motion,
+    Eigen::MatrixXd & motion_covariance,
+    Eigen::Matrix<double, 3, 4> & proj_matrix) {
+  using namespace pose_estimator;
+
+  PoseEstimator pe(proj_matrix);
+
+  if ((match->featuresA_indices.size()!=match->featuresB_indices.size()))
+    cout <<    "Number of features doesn't match\n";
+
+  size_t num_matches = match->featuresA_indices.size();
+
+  if(num_matches < 3)
+    cout << "Need at least three matches to estimate pose";
+
+  motion.setIdentity();
+  motion_covariance.setIdentity();
+
+  Eigen::Matrix<double, 4, Eigen::Dynamic, Eigen::ColMajor> src_xyzw(4, num_matches);
+  Eigen::Matrix<double, 4, Eigen::Dynamic, Eigen::ColMajor>dst_xyzw(4, num_matches);
+  for (size_t i=0; i < num_matches; ++i) {
+
+    //    const ImageFeature& featureA(int i) const {
+    //      assert (frameA);
+    //    int ix = featuresA_indices.at(i);
+    //      return frameA->features().at(ix);
+    //    }
+    //src_xyzw.col(i) = match->featureA(i).xyzw;
+    //dst_xyzw.col(i) = match->featureB(i).xyzw;
+
+    int ixA = match->featuresA_indices.at(i);
+    int ixB = match->featuresB_indices.at(i);
+    //cout << ixA << " | " << ixB << "\n";
+    //cout << match->featuresA.size() << " fA size\n";
+    //cout <<  match->featuresA[ixA].xyzw[0] << "\n";
+    //cout <<  match->featuresA[ixA].xyzw[0] << "\n";
+
+    src_xyzw.col(i) = match->featuresA[ixA].xyzw;
+    dst_xyzw.col(i) = match->featuresB[ixB].xyzw;
+  }
+
+  // PoseEstimateStatus status = pe.estimate(src_xyzw, dst_xyzw, &inliers, &motion, &motion_covariance);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> motion_covariance_col_major;
+
+  PoseEstimateStatus status = pe.estimate(src_xyzw, dst_xyzw, &inliers, &motion, &motion_covariance_col_major); //&motion_covariance);
+  motion_covariance = motion_covariance_col_major;
+
+  /*
+  int num_inliers = std::accumulate(inliers.begin(), inliers.end(), 0);
+  const char* str_status = PoseEstimateStatusStrings[status];
+  std::cerr << "Motion: " << str_status << " feats: " << match->featuresA_indices.size()
+            << " inliers: " << num_inliers
+            << " Pose: " << motion
+            << " Delta: " << match->delta
+            //<< " Cov:\n" << motion_covariance << "\n"
+            << " " << match->timeA << " " << match->timeB << std::endl;
+   */
+
+  return motion;
+}
+
+
+void Reg::send_lcm_image(cv::Mat &img, std::string channel ){
+  int n_colors=3;
+
+  bot_core_image_t image;
+  image.utime =0;
+  image.width = img.cols;
+  image.height= img.rows;
+  image.row_stride =n_colors*img.cols;
+  image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
+  image.size =n_colors*img.cols*img.rows;
+  image.data = img.data;
+  image.nmetadata =0;
+  image.metadata = NULL;
+  bot_core_image_t_publish( lcm_->getUnderlyingLCM() , channel.c_str(), &image);    
+  
+}
+
+
+//FrameMatchPtr
+void Reg::align_images(cv::Mat &img0, cv::Mat &img1, 
+                           std::vector<ImageFeature> &features0, std::vector<ImageFeature> &features1,
+                           int64_t utime0, int64_t utime1){
+    /// 2. Extract Image Descriptors:
+  std::vector<cv::KeyPoint> keypoints0, keypoints1;
+  cv::Mat descriptors0, descriptors1;
   cv::BriefDescriptorExtractor extractor(32); // size of descriptor in bytes
+  std::string desc_name= "brief";
+  compute_descriptors(img0, features0, desc_name, extractor,descriptors0,keypoints0);
+  cout << descriptors0.rows << "descripters in 0\n";
+  compute_descriptors(img1, features1, desc_name, extractor,descriptors1,keypoints1);
+  cout << descriptors1.rows << "descripters in 1\n";
 
-  // Downsample
-  cout << "a\n";
-  cv::Mat image_small;
-  cout << "b\n";
-  cv::resize(image, image_small, cv::Size(60, 60));
 
-  // Compute descriptor
+  /// 3: Matching descriptor vectors with a brute force matcher
+  cv::BFMatcher matcher(cv::NORM_HAMMING); // used by hordur
+  std::vector< cv::DMatch > matches0in1,matches1in0;
+  matcher.match(descriptors0, descriptors1, matches0in1); // each feature in 0 found in 1
+  matcher.match(descriptors1, descriptors0, matches1in0); // each feature in 1 found in 0
+  BOOST_FOREACH (cv::DMatch& match, matches1in0) {
+    std::swap(match.trainIdx, match.queryIdx);
+  }
 
-  cout << "c\n";
-  std::vector<cv::KeyPoint> keypoints;
-  keypoints.push_back(cv::KeyPoint(cv::Point2f(30,30), 1.0));
-  extractor.compute(image_small, keypoints, descriptors);
+  /// 3b keep intersection, aka the mutual best matches.
+  std::sort(matches0in1.begin(), matches0in1.end(), DMatch_lt);
+  std::sort(matches1in0.begin(), matches1in0.end(), DMatch_lt);
+  std::vector<cv::DMatch> matches;
+  std::set_intersection(matches0in1.begin(), matches0in1.end(),
+      matches1in0.begin(), matches1in0.end(),
+      std::back_inserter(matches),
+      DMatch_lt);
+  std::cout << matches0in1.size() << " matches0in1 found\n";
+  std::cout << matches1in0.size() << " matches1in0 found\n";
+  std::cout << matches.size() << " intersect matches found\n";
 
-  valid.resize(descriptors.size().height);
-  std::fill(valid.begin(), valid.end(), true);
+  /// 3c Draw descriptor matches
+  cv::Mat img_matches0in1, img_matches1in0;
+  cv::drawMatches( img0, keypoints0, img1, keypoints1, matches0in1, img_matches0in1 );
+//  imshow("Matches0in1", img_matches0in1 );
+
+  cv::drawMatches( img0, keypoints0, img1, keypoints1, matches1in0, img_matches1in0  );
+ // imshow("Matches1in0 [matches1in0 reordered]", img_matches1in0 );
+
+  cv::Mat img_matches_inter;
+  cv::drawMatches( img0, keypoints0, img1, keypoints1, matches, img_matches_inter );
+ // imshow("Matches Intersection", img_matches_inter );
+
+  
+  /// 4 Get delta pose estimate:
+  std::vector<int> idxA;
+  std::vector<int> idxB;
+  for (size_t i = 0; i < descriptors0.rows; ++i){
+    //if (1==1){//(desc_A->valid[i]) {
+    //descriptors0.row(i).copyTo(descriptors0.row(validA));
+    idxA.push_back(i);
+    //validA++;
+    //}
+  }
+  for (size_t i = 0; i < descriptors1.rows; ++i){
+    //if (desc_B->valid[i]) {
+    //descriptorsB.row(validB) = desc_B->descriptors.row(i);
+    //desc_B->descriptors.row(i).copyTo(descriptorsB.row(validB));
+    idxB.push_back(i);
+    //validB++;
+    //}
+  }
+
+  std::vector<char> inliers;
+  int num_inliers = 0;
+  Eigen::Isometry3d motion;
+  FrameMatchPtr match(new FrameMatch());
+  BOOST_FOREACH (const cv::DMatch& dmatch, matches) {
+    //match->featuresA_indices.push_back(idxA[dmatch.queryIdx]);
+    //match->featuresB_indices.push_back(idxB[dmatch.trainIdx]);
+    match->featuresA_indices.push_back(dmatch.queryIdx);
+    match->featuresB_indices.push_back(dmatch.trainIdx);
+  }
+  BOOST_FOREACH (const ImageFeature& feature, features0) {
+    match->featuresA.push_back(feature);
+  }
+  BOOST_FOREACH (const ImageFeature& feature, features1) {
+    match->featuresB.push_back(feature);
+  }
+
+
+
+  BOOST_FOREACH (cv::DMatch& dmatch, matches) {
+    //dmatch.queryIdx = idxA[dmatch.queryIdx];
+    //dmatch.trainIdx = idxB[dmatch.trainIdx];
+  }
+  if (matches.size() >= 3) {
+    Eigen::Isometry3d delta;
+    delta.setIdentity();
+    Eigen::MatrixXd covariance;
+
+    Eigen::Matrix<double, 3, 4> projection_matrix;
+    // fx 0  cx 0
+    // 0  fy cy 0
+    // 0  0  0  0
+    // from newcollege_stereo config: (left)
+    //projection_matrix << 389.956085,  0, 254.903519, 0,
+    //                     0, 389.956085,  201.899490, 0,
+    //                     0,   0,   1, 0;
+
+    // bumblebee left:
+    projection_matrix << 836.466,  0, 513.198, 0,
+                         0, 835.78,  397.901, 0,
+                         0,   0,   1, 0;
+        
+    delta = pose_estimate(match, inliers, motion, covariance,
+        projection_matrix);
+
+    Eigen::Quaterniond delta_quat = Eigen::Quaterniond(delta.rotation());
+    cout << delta.translation().x() << " "
+        << delta.translation().y() << " "
+        << delta.translation().z() << " | "
+        << delta_quat.w() << " "
+        << delta_quat.x() << " "
+        << delta_quat.y() << " "
+        << delta_quat.z() << "\n";
+  
+
+    Eigen::Isometry3d nullpose;
+    nullpose.setIdentity();
+    //    draw_both_reg(features0, features1,nullpose0,delta);
+    draw_both_reg(features0, features1,nullpose,delta);
+
+    size_t j = 0;
+    for (size_t i = 0; i < inliers.size(); ++i){
+      if (inliers[i]) {
+        match->featuresA_indices[j] = match->featuresA_indices[i];
+        match->featuresB_indices[j] = match->featuresB_indices[i];
+        j++;
+      }
+    }
+    match->featuresA_indices.resize(j);
+    match->featuresB_indices.resize(j);
+    cout << j << " inliers found\n";
+    if (j > 8){ // used 15 earlier... ask Hordur
+      cout <<"suitable match found\n";
+
+      // all the feature:
+      send_both_reg(features0, features1,delta,nullpose, utime0, utime1);
+      
+      // just the inliers:
+      send_both_reg_inliers(features0, features1,nullpose,delta, 
+                        match->featuresA_indices, match->featuresB_indices,
+                        utime0, utime1);
+
+      // Draw the inlier set:
+      cv::Mat img_copy = img_matches_inter ;
+      draw_inliers(img_copy,features0, features1,match->featuresA_indices, match->featuresB_indices);
+      //    imshow("Matches Inliers", img_copy);
+      
+      send_lcm_image(img_copy, "CAMLCM_LEFT_RECTIFIED" );
+
+      match->estimation_status = SUCCESS;
+    }else{
+      match->estimation_status = INSUFFICIENT_INLIERS;
+    }
+  } else {
+    // TODO: this should have a different code e.g. insufficient matches:
+    match->estimation_status = INSUFFICIENT_INLIERS;
+    num_inliers = 0;
+  }
+
 }
-
-void registeration::go(){
-  cout << "going...\n";
-  Mat image0,image0_right; // image is left
-  Mat image1,image1_right; // image is left
-  image0 = imread("/home/mfallon/data/drc/registeration/pr2/0/left.png",CV_LOAD_IMAGE_GRAYSCALE);
-  image0_right = imread("/home/mfallon/data/drc/registeration/pr2/0/right.png",CV_LOAD_IMAGE_GRAYSCALE);
-
-  image1 = imread("/home/mfallon/data/drc/registeration/pr2/1/left.png",CV_LOAD_IMAGE_GRAYSCALE);
-  image1_right = imread("/home/mfallon/data/drc/registeration/pr2/1/right.png",CV_LOAD_IMAGE_GRAYSCALE);
-
-
-  imshow("Left", image0);
-  imshow("Right", image0_right);
-  waitKey(0);                                          // Wait for a keystroke in the window
-
-
-  get_descriptors(image0, descriptors0, valid0);
-  get_descriptors(image1, descriptors1, valid1);
-
-
-//  if (  ref->features().size() < min_inliers_ || target->features().size() < min_inliers_ )
-//  {
-
-
-
-}
-
-int
-main(int argc, char ** argv)
-{
-  lcm_t * lcm;
-  lcm = lcm_create(NULL);
-  registeration app(lcm);
-
-  app.go();
-
-//  while(1)
-//    lcm_handle(lcm);
-
-//  lcm_destroy(lcm);
-  return 0;
-}
-
