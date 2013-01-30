@@ -1,6 +1,7 @@
 //#include "SharedPtrHash.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include <map>
 #include <string>
 #include <iostream>
@@ -29,7 +30,8 @@ int main()
 
 
     
-  std::map<shared_ptr<int>, string> m;  
+  std::map<shared_ptr<int>, string> m;    //comment this out and uncomment the next line to try unordered_map
+  //boost::unordered_map<shared_ptr<int>, string> m;  
 
   m[aptr] = "a";
   m[bptr] = "b";
