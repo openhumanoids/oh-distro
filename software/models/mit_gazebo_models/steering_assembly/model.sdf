@@ -45,12 +45,12 @@
     </collision>
   </link>
 
-  <joint name="base_to_steering" type="continuous">
+  <joint name="base_to_steering" type="revolute">
     <origin rpy="0 0 0" xyz="0.1524 0 1.3208 "/>
     <axis xyz="0 1 0"/>
     <parent link="steering_base"/>
     <child link="steering_wheel"/>
-    <limit effort="5" velocity="12"/>
+    <limit effort="5" lower="-7.853" upper="7.853" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100.0" soft_lower_limit="-9.2146" soft_upper_limit="10.7854"/>
   </joint>
 
