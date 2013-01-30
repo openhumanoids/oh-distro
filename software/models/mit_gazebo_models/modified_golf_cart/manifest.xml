@@ -1,0 +1,13 @@
+<?xml version='1.0'?>
+<model>
+  <name>Modified MIT Golf cart</name>
+  <version>0.1.0</version>
+  <sdf>model3.sdf</sdf>
+  <author>
+    <name>John Hsu</name>
+    <email>hsu@osrfoundation.org</email>
+  </author>
+  <description>
+    This model approximates a golf cart.
+  </description>
+</model>
