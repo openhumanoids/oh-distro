@@ -196,6 +196,8 @@ target_position( void )const{
   return _target_position;
 }
 
+
+
 /**
  * click_position
  * returns the position of where the mouse has clicked
@@ -221,7 +223,7 @@ click_position( Vector2 mousePos, int width, int height ){
   gluUnProject( window_x, window_y, window_z, modelview, projection, viewport, &world_x, &world_y, &world_z );
   Vector world( world_x, world_y, world_z );
   Vector eye_to_world = _eye_position - world;
-  Vector click_position = _eye_position + eye_to_world * ( -_eye_position(2) / eye_to_world(2) );
+  Vector click_position = _eye_position - eye_to_world * 10000; //( -_eye_position(2) / eye_to_world(2) );
   return click_position;
 }
 
