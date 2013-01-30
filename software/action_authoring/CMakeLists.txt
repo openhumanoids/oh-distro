@@ -50,6 +50,7 @@ add_library(action_authoring SHARED
    )
 
 pods_install_headers(
+  src/objects/OrderedMap.h
   src/objects/ManipulationRelation.h 
   src/objects/RelationState.h 
   src/objects/GraspRelation.h 

@@ -1,8 +1,9 @@
- #ifndef DATABASE_MANAGER_H
+#ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 
 #include "action_authoring/ConstraintMacro.h"
 #include "action_authoring/ManipulationRelation.h"
+#include "action_authoring/OrderedMap.h"
 #include "affordance/AffordanceState.h"
 #include <vector>
 #include <queue>
@@ -18,22 +19,22 @@ namespace action_authoring
 {
     struct ObjectToStorageUIDMappings
     {
-        map<AffConstPtr, string> affordanceToStorageUID;
-        map<ConstraintMacroPtr, string> constraintMacroToStorageUID;
-        map<ManipulatorStateConstPtr, string> manipulatorStateToStorageUID;
-        map<RelationStateConstPtr, string> relationStateToStorageUID;
-        map<ManRelPtr, string> manipulationRelationToStorageUID;
-        map<AtomicConstraintConstPtr, string> atomicConstraintToStorageUID;
+        OrderedMap<AffConstPtr, string> affordanceToStorageUID;
+        OrderedMap<ConstraintMacroPtr, string> constraintMacroToStorageUID;
+        OrderedMap<ManipulatorStateConstPtr, string> manipulatorStateToStorageUID;
+        OrderedMap<RelationStateConstPtr, string> relationStateToStorageUID;
+        OrderedMap<ManRelPtr, string> manipulationRelationToStorageUID;
+        OrderedMap<AtomicConstraintConstPtr, string> atomicConstraintToStorageUID;
     };
 
     struct StorageUIDToObjectMappings
     {
-        map<string, AffConstPtr> StorageUIDToAffordance;
-        map<string, ConstraintMacroPtr> StorageUIDToConstraintMacro;
-        map<string, ManipulatorStateConstPtr> StorageUIDToManipulatorState;
-        map<string, RelationStatePtr> StorageUIDToRelationState;
-        map<string, ManRelPtr> StorageUIDToManipulationRelation;
-        map<string, AtomicConstraintPtr> StorageUIDToAtomicConstraint;
+        OrderedMap<string, AffConstPtr> StorageUIDToAffordance;
+        OrderedMap<string, ConstraintMacroPtr> StorageUIDToConstraintMacro;
+        OrderedMap<string, ManipulatorStateConstPtr> StorageUIDToManipulatorState;
+        OrderedMap<string, RelationStatePtr> StorageUIDToRelationState;
+        OrderedMap<string, ManRelPtr> StorageUIDToManipulationRelation;
+        OrderedMap<string, AtomicConstraintPtr> StorageUIDToAtomicConstraint;
     };
 
   /**todo comment*/

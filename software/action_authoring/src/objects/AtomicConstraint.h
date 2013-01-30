@@ -31,7 +31,7 @@ class AtomicConstraint
  typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;
  typedef boost::shared_ptr<const AtomicConstraint> AtomicConstraintConstPtr;
 
-} //namespace action_authroing
+} //namespace action_authoring
 
 
 #endif //ATOMIC_CONSTRAINT_H

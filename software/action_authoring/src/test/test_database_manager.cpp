@@ -6,6 +6,7 @@
 #include <map>
 #include "action_authoring/ConstraintMacro.h"
 #include "action_authoring/DatabaseManager.h"
+#include "action_authoring/OrderedMap.h"
 
 using namespace action_authoring;
 using namespace std;
@@ -104,24 +105,27 @@ int main() {
   constraintList.push_back(ingress);
 
   //print the top level constraint
-  //printf("\nThis is a constraint created in the function\n");
-  //printConstraintMacro(ingress);
+  printf("\nThis is a constraint created in the function\n");
+  printConstraintMacro(ingress);
 
 
+  printf("Storing.\n");
   //to store state, use the db->store method and pass in all the data at once
-  //DatabaseManager::store("constraints.xml", affordanceList, constraintList);
+  DatabaseManager::store("constraints.xml", affordanceList, constraintList);
 
-  // printf("\nDone storing.\n");
+  printf("\nDone storing.\n");
+  
   printf("\nRetrieving from file.\n\n");
 
   vector<AffConstPtr> revivedAffordances;
   vector<ConstraintMacroPtr> revivedConstraintMacros;
-  DatabaseManager::retrieve("foo.xml", revivedAffordances, revivedConstraintMacros);
+  DatabaseManager::retrieve("constraints.xml", revivedAffordances, revivedConstraintMacros);
 
   printf("\nDone retrieving.\n");
-  
+
+
   //print the same constraint as created before, but this time using the data from the file 
-  /*
+  
   printf("\nThis is the same constraint, written to and then reconstructed from a file:\n");
   for (int i = 0; i < (int)revivedConstraintMacros.size(); i++ ){
     if (revivedConstraintMacros[i]->getName() == "Ingress") {
@@ -129,6 +133,22 @@ int main() {
     }
   }
 
-  */
+  OrderedMap<string, AffConstPtr> StorageUIDToAffordance;
+  StorageUIDToAffordance["id1"] = wheel;
+  StorageUIDToAffordance["id3"] = gas;
+  StorageUIDToAffordance["id2"] = brake;
+  StorageUIDToAffordance["id3"] = brake;
+
+
+  vector<string> ids = StorageUIDToAffordance.getOrderedKeys();
+  for (int i = 0; i < (int)ids.size(); i++) {
+    printf("%s\n", ids[i].c_str());
+  }
+
+  vector<AffConstPtr> affordances = StorageUIDToAffordance.getOrderedValues();
+  for (int i = 0; i < (int)affordances.size(); i++) {
+    printf("%s\n", affordances[i]->getName().c_str());
+  }
+
   return(0); 
 }
