@@ -301,7 +301,39 @@ void addParentJoint(boost::shared_ptr<const BaseEntity> entity, boost::shared_pt
     downcasted_child->parent_joint->parent_to_joint_origin_transform.rotation.getRPY(r,p,y);
 	stm << r << " " << p << " " << y << " ";
 	origin->SetAttribute("rpy", stm.str()); 
+    
+  if(type!=FIXED) {  
+    TiXmlElement * axis = new TiXmlElement( "axis" );
+    joint_element->LinkEndChild(axis);
+    stm.clear();
+	  stm.str("");
+    stm << downcasted_child->parent_joint->axis.x << " "
+      << downcasted_child->parent_joint->axis.y << " "
+      << downcasted_child->parent_joint->axis.z << " ";
+    axis->SetAttribute("xyz", stm.str());
+   }
+   
+   if((type!=FIXED)&&(type!=CONTINUOUS)) {  
+    TiXmlElement * limit = new TiXmlElement( "limit" );
+    joint_element->LinkEndChild(limit);
+    stm.clear(); stm.str("");
+    stm << downcasted_child->parent_joint->limits->effort;
+    limit->SetAttribute("effort", stm.str());
+    stm.clear(); stm.str("");
+    stm << downcasted_child->parent_joint->limits->lower;
+    limit->SetAttribute("lower", stm.str());
+    stm.clear(); stm.str("");
+    stm << downcasted_child->parent_joint->limits->upper;
+    limit->SetAttribute("upper", stm.str());
+    stm.clear(); stm.str("");
+    stm << downcasted_child->parent_joint->limits->velocity;
+    limit->SetAttribute("velocity", stm.str());
+   }
+
     robot->LinkEndChild( joint_element );
+    
+    
+    
   }
   else if ((child)->getEntityType() == "Bounding_volume") {
     boost::shared_ptr<const Bounding_volume> downcasted_child(boost::shared_dynamic_cast<const Bounding_volume>((child))); 
