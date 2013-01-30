@@ -96,7 +96,12 @@ draw( void ){
 void
 OpenGL_Object_Box::
 draw( Eigen::Vector3f color ){
-  _draw_box( color );
+  if (visible()){
+    glPushMatrix();
+    apply_transform();
+    _draw_box( color );
+    glPopMatrix();
+  }
   return;
 }
 
