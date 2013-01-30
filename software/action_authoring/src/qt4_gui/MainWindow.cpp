@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include <affordance/OpenGL_Manipulator.h>
 #include <affordance/Collision_Object_Affordance.h>
+#include <affordance/Collision_Object_Manipulator.h>
 using namespace std;
 using namespace KDL;
 using namespace Eigen;
@@ -76,16 +77,13 @@ void MainWindow::handleAffordancesChanged()
 
     // read the joints from the robot state
     // create the manipulators from the robot's joints
-    std::vector<std::string> link_names;
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
     for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
     {
     	const State_GFE_Joint& state_gfe_joint = it->second;
 	std::string id = state_gfe_joint.id();
 	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
-    	link_names.push_back(link->name);
 
-	// TODO: constructor that works on link not on the link name
 	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
 								  // todo: mike (need accessor for the _kinematics_model in the subclass too
 								  _worldState.colorRobot.getKinematicsModel().link(link->name),
@@ -96,34 +94,14 @@ void MainWindow::handleAffordancesChanged()
 	_widget_opengl.opengl_scene().add_object(*asGlMan);
 	_worldState.glObjects.push_back(asGlMan);
 
-	//todo Mike: extract to a manipulator collision object?
-	robot_opengl::CollisionGroupPtr colgroup = manipulator->getLink()->getCollisions("default");
-	if (colgroup != NULL && colgroup->size() > 0) 
-	{
-	    // add collision contact widgets!
-	    OpenGL_Object_Sphere s;
-	    for (uint i = 0; i < colgroup->size(); i++) 
-	    {
-		urdf::Pose ctPtPose = (*colgroup)[i]->origin; //contact point pose in link frame
-		double q1, q2, q3, q4;
-		ctPtPose.rotation.getQuaternion(q1, q2, q3, q4);
-		KDL::Frame cPtAsFrame(KDL::Rotation::Quaternion(q1, q2, q3, q4),  //expressed as a frame
-				      KDL::Vector(ctPtPose.position.x, 
-						  ctPtPose.position.y, 
-						  ctPtPose.position.z));
-		KDL::Frame f = cPtAsFrame * manipulator->getLinkFrame(); //manipulator is in robot-oriented frame?
 
-		Collision_Object* collision_object_manipulator;
-		collision_object_manipulator = new Collision_Object_Sphere(manipulator->getGUIDAsString(),
-									   0.05, Vector3f(f.p.x(), f.p.y(), f.p.z()), Vector4f(0, 0, 0, 0));
-		cout << "added sphere col obj " << i << endl;
-		_widget_opengl.add_collision_object(collision_object_manipulator);
-		_worldState.collisionObjs.push_back(collision_object_manipulator);
-	    }
-	}
+	Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
+	_worldState.collisionObjs.push_back(cObjManip);
+	_widget_opengl.add_collision_object(cObjManip);
+	_worldState.collisionObjs.push_back(cObjManip);
     }
-    
 
+    
   //----------add robot and vehicle
   _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
