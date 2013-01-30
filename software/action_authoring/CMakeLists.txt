@@ -95,3 +95,7 @@ add_executable(test_database_manager
 )
 target_link_libraries(test_database_manager ${Boost_LIBRARIES} lcm affordance action_authoring)
 pods_use_pkg_config_packages(test_database_manager ${REQUIRED_PACKAGES})
+
+#======more testing
+add_executable(test_shared_ptr_stuff
+  src/test/test_shared_ptr_stuff.cpp)
