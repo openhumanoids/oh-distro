@@ -60,15 +60,12 @@ void OpenGL_Affordance::draw()
     default:
       throw runtime_error("unhandled affordance state");
     }
+
+  
   if (_isHighlighted) 
-  {
-      obj->draw(_highlightColor);
-  }
+    obj->draw(_highlightColor);
   else
-  {
-      obj->set_color(_affordance->getColor());
-      obj->draw();
-  }
+    obj->draw(_affordance->getColor());
 }
 
 
