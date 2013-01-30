@@ -134,8 +134,8 @@ typedef struct _StickyHandStruc {
     std::string geometry_name; 
     int hand_type; //SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
     KDL::Frame T_geometry_hand; // this is stored in obj frame
-   // std::vector<std::string> joint_name;
-   // std::vector<double> joint_position;
+    std::vector<std::string> joint_name;
+    std::vector<double> joint_position;
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
 }StickyHandStruc;   

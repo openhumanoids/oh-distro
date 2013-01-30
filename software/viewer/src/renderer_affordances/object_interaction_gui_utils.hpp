@@ -228,59 +228,59 @@ namespace renderer_affordances_gui_utils
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
-//  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry)
-//  {
-//    drc::ee_goal_t goalmsg;
-//    goalmsg.robot_name = "atlas";
-//    goalmsg.root_name = "pelvis";
-//    goalmsg.ee_name = ee_name;
+  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry)
+  {
+    drc::ee_goal_t goalmsg;
+    goalmsg.robot_name = "atlas";
+    goalmsg.root_name = "pelvis";
+    goalmsg.ee_name = ee_name;
 
-//    double x,y,z,w;
+    double x,y,z,w;
 
-//    // desired ee position in world frame
-//    KDL::Frame T_world_ee,T_body_ee,T_geometry_hand;
-//    T_geometry_hand = sticky_hand_struc.T_geometry_hand;
-//    T_world_ee = T_world_geometry*T_geometry_hand;
-//          
-//    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
+    // desired ee position in world frame
+    KDL::Frame T_world_ee,T_body_ee,T_geometry_hand;
+    T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+    T_world_ee = T_world_geometry*T_geometry_hand;
+          
+    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 
-//    // desired ee position wrt to robot body.
-//    //T_body_ee = T_body_world*T_world_ee;
-//    T_body_ee = T_world_ee; // send them in world frame for now.
+    // desired ee position wrt to robot body.
+    //T_body_ee = T_body_world*T_world_ee;
+    T_body_ee = T_world_ee; // send them in world frame for now.
 
-//    T_body_ee.M.GetQuaternion(x,y,z,w);
+    T_body_ee.M.GetQuaternion(x,y,z,w);
 
-//    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-//    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-//    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
+    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
+    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
 
-//    goalmsg.ee_goal_pos.rotation.x = x;
-//    goalmsg.ee_goal_pos.rotation.y = y;
-//    goalmsg.ee_goal_pos.rotation.z = z;
-//    goalmsg.ee_goal_pos.rotation.w = w;
+    goalmsg.ee_goal_pos.rotation.x = x;
+    goalmsg.ee_goal_pos.rotation.y = y;
+    goalmsg.ee_goal_pos.rotation.z = z;
+    goalmsg.ee_goal_pos.rotation.w = w;
 
-//    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
-//    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
-//    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
-//    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
-//    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
-//    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
 
-//    goalmsg.num_chain_joints  = sticky_hand_struc.joint_name.size();
-//    // No specified posture bias
-//    goalmsg.use_posture_bias  = false;
-//    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
-//    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
-//    for(int i = 0; i < goalmsg.num_chain_joints; i++){
-//    goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
-//    goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
-//    }
+    goalmsg.num_chain_joints  = sticky_hand_struc.joint_name.size();
+    // No specified posture bias
+    goalmsg.use_posture_bias  = false;
+    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
+    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
+    for(int i = 0; i < goalmsg.num_chain_joints; i++){
+    goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
+    goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
+    }
 
-//    // Publish the message
-//    goalmsg.halt_ee_controller = false;
+    // Publish the message
+    goalmsg.halt_ee_controller = false;
 
-//    _lcm->publish(channel, &goalmsg);
-//  }
+    _lcm->publish(channel, &goalmsg);
+  }
   
   static void on_sticky_hand_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
@@ -315,10 +315,10 @@ namespace renderer_affordances_gui_utils
         int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
         
         //publish ee goal msg.
-//        if(grasp_type == msg.SANDIA_LEFT)
-//          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_hand","L_HAND_GOAL",T_world_graspgeometry);
-//        else if(grasp_type== msg.SANDIA_RIGHT)
-//          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_hand","R_HAND_GOAL",T_world_graspgeometry);
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_hand","L_HAND_GOAL",T_world_graspgeometry);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_hand","R_HAND_GOAL",T_world_graspgeometry);
       }
  
     }
