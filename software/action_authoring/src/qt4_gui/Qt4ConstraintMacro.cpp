@@ -83,7 +83,7 @@ getPanel() {
     top_line_hbox->addWidget(_gui_time_lower_bound);
     top_line_hbox->addWidget(new QLabel("upper bound: "));
     top_line_hbox->addWidget(_gui_time_upper_bound);
-    top_line_hbox->addWidget(new QPushButton("click to bind"));
+//    top_line_hbox->addWidget(new QPushButton("click to bind"));
     top_line_container->setLayout(top_line_hbox);
     vbox->addWidget(top_line_container);
     

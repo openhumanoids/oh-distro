@@ -54,10 +54,10 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 
 	//=============
 	//add a bunch of affordances w/ just names + ids
-	wrapper.addOrReplace(AffordanceState("Right Hand",      uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Left Hand",       uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Right Foot",      uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Left Foot",       uniqueObjId++, mapId));
+	wrapper.addOrReplace(AffordanceState("4-Rung Ladder",      uniqueObjId++, mapId));
+	wrapper.addOrReplace(AffordanceState("6-Rung Ladder",       uniqueObjId++, mapId));
+	wrapper.addOrReplace(AffordanceState("Lever",      uniqueObjId++, mapId));
+	wrapper.addOrReplace(AffordanceState("Table",       uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Steering Wheel",  uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Gas Pedal", 		uniqueObjId++, mapId));
 	wrapper.addOrReplace(AffordanceState("Brake Pedal", 	uniqueObjId++, mapId));

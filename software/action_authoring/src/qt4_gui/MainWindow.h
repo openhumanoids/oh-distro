@@ -104,6 +104,7 @@ public:
     //=================gui state
  private: 
     QTimer* _scrubberTimer;
+    QLineEdit* _actionName;
     DefaultValueSlider* _scrubber;
     QLabel * _actionDescLabel;
     robot_opengl::SelectableOpenGLWidget _widget_opengl;

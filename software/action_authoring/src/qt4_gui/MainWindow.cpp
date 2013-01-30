@@ -85,20 +85,18 @@ void MainWindow::handleAffordancesChanged()
 	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
 
 	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
-								  // todo: mike (need accessor for the _kinematics_model in the subclass too
-								  _worldState.colorRobot.getKinematicsModel().link(link->name),
-								  GlobalUID(rand(), rand()))); //todo guid
+	    _worldState.colorRobot.getKinematicsModel().link(link->name),
+	    GlobalUID(rand(), rand()))); //todo guid
+
 	_worldState.manipulators.push_back(manipulator);
 
 	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
 	_widget_opengl.opengl_scene().add_object(*asGlMan);
 	_worldState.glObjects.push_back(asGlMan);
 
-
 	Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
 	_worldState.collisionObjs.push_back(cObjManip);
 	_widget_opengl.add_collision_object(cObjManip);
-	_worldState.collisionObjs.push_back(cObjManip);
     }
 
     
@@ -129,10 +127,10 @@ void MainWindow::handleAffordancesChanged()
  
   //todo: this is just demo code
   if (_worldState.manipulators.size() > 4) {
-      AffConstPtr rfoot = nameToAffMap["Right Foot"];
-      AffConstPtr lfoot = nameToAffMap["Left Foot"];
-      AffConstPtr rhand = nameToAffMap["Right Hand"];
-      AffConstPtr lhand = nameToAffMap["Left Hand"];
+      AffConstPtr rfoot = nameToAffMap["4-Rung Ladder"];
+      AffConstPtr lfoot = nameToAffMap["6-Rung Ladder"];
+      AffConstPtr rhand = nameToAffMap["Lever"];
+      AffConstPtr lhand = nameToAffMap["Table"];
 
       AffConstPtr gas = nameToAffMap["Gas Pedal"];
       AffConstPtr brake = nameToAffMap["Brake Pedal"];
@@ -195,7 +193,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     QToolBar *toolbar = new QToolBar("main toolbar");
     toolbar->addWidget(new QLabel("Action: "));
-    toolbar->addWidget(new QLineEdit("Ingress"));
+    _actionName = new QLineEdit("Ingress");
+    toolbar->addWidget(_actionName);
     QLabel* actionTypeLabel = new QLabel(" acts on: ");
     toolbar->addWidget(actionTypeLabel);
     QComboBox* actionType = new QComboBox();
@@ -382,11 +381,10 @@ void
 MainWindow::
 handleSaveAction() {
  QString fileName = QFileDialog::getSaveFileName(this,
-     tr("Save Action"), "", tr("Action XML Files (*.xml)"));  
+     tr("Save Action"), _actionName->text() + ".xml", tr("Action XML Files (*.xml)"));  
 
  if (fileName.toStdString() == "") 
      return;
-
 
 #ifdef DATABASE
  vector<ConstraintMacroPtr> all_constraints;
@@ -395,15 +393,23 @@ handleSaveAction() {
  }
  
 // todo: hack
- for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++) {
-     cout << "gui constraint i " << i << endl;
-     for (int j = 0; j < (int)_worldState.affordances.size(); j++) {
-	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
+ for (uint i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
+     cout << "gui constraint i " << all_constraints[i]->getAtomicConstraint()->getAffordance().get() << endl;
+     for (uint j = 0; j < _worldState.affordances.size(); j++) {
+	 cout << "......vs affordance j " << _worldState.affordances[j].get() << endl;
+	 if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance()) {
+//	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
 	     cout << "matched i, j " << i << ", " << j << endl;
 	     all_constraints[i]->getAtomicConstraint()->setAffordance(_worldState.affordances[j]);
 	 }
      }
  }
+
+/* for (uint j = 0; j < _worldState.affordances.size(); j++) {
+     cout << "......vs affordance j " << j << " : " << (*_worldState.affordances[j] << endl;
+     //if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance()) {
+ }
+*/
 
  DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
 
@@ -604,6 +610,9 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoint)
 {
+
+    cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
+
     // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
     {
@@ -643,7 +652,6 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
 	}
     }
 
-    cout << " hit at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
     if (_authoringState._selected_gui_constraint != NULL) {
 	// set the contact point for the relation
 	RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();

@@ -42,6 +42,7 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 	setPlannerStatus(PLANNER_OK);
 	//_plannerButton->setIconSize();
 	headerLayout->addWidget(_plannerButton);
+	headerLayout->addWidget(new QPushButton("unbound : click here to bind"));
     }
 
     _headerArea->setLayout(headerLayout);
