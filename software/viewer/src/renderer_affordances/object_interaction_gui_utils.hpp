@@ -5,6 +5,7 @@
 #define PARAM_SEED_RH "Seed RHand"
 #define PARAM_SEED_LF "Seed LFoot"
 #define PARAM_SEED_RF "Seed RFoot"
+#define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
 #define PARAM_COMMIT "Publish eegoal"
@@ -91,6 +92,24 @@ namespace renderer_affordances_gui_utils
            }             
        }
     }
+    
+    else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
+    
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+         if (hand_it->second.object_name == (*self->object_selection))
+         {
+            if((*self->stickyhand_selection)==hand_it->first)
+               (*self->stickyhand_selection) = " ";
+            self->sticky_hands.erase(hand_it++);
+         }
+         else
+            hand_it++;
+      } 
+    
+    }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
       KDL::Frame T_geom_rhandpose = KDL::Frame::Identity();
@@ -171,6 +190,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
     
     
