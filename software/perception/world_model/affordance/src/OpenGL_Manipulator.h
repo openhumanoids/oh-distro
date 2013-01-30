@@ -38,9 +38,6 @@ public:
 
 	//observers
 	ManipulatorStateConstPtr getManipulator() const;
-
- private:
-	typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  
 };
 
 } /* namespace affordance */

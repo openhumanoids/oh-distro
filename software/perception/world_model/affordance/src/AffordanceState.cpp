@@ -312,12 +312,6 @@ GlobalUID AffordanceState::getGlobalUniqueId() const
   return GlobalUID(_map_id, _object_id);
 }
 
-string AffordanceState::getGUIDAsString()  const 
-{
-  return ModelState::toStr(getGlobalUniqueId().first) + "," 
-    +  ModelState::toStr(getGlobalUniqueId().second);
-}
-
 string AffordanceState:: getName() const
 {
   return _name;

@@ -8,13 +8,8 @@
 #ifndef COLLISION_OBJECT_AFFORDANCE_H
 #define COLLISION_OBJECT_AFFORDANCE_H
 
-#include "opengl/opengl_object.h"
-#include "affordance/AffordanceState.h"
-#include "collision/collision_object_cylinder.h"
-#include "collision/collision_object_sphere.h"
-#include "collision/collision_object_box.h"
-//todo : cone, hull, point cloud, gfe
-
+#include <affordance/AffordanceState.h>
+#include <collision/collision_object.h>
 namespace affordance
 {
 
@@ -25,7 +20,7 @@ private:
 	/**underlying affordance state*/
 	affordance::AffConstPtr _affordance;
 
-	//---we're drawing 1 of these
+	//---will be set to some primitive collision object
 	collision::Collision_Object *_obj;
 
 	//-----------------constructor/destructor

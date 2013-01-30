@@ -59,6 +59,10 @@ namespace affordance
     boost::shared_ptr<const urdf::Link> getLink() const;
     std::string getGUIDAsString()  const;
     KDL::Frame getLinkFrame() const { return _link_frame; }
+    void getCollisionContactPoints(std::vector<KDL::Frame> &pts) const;
+
+ private:
+    typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  
   };
   
   std::ostream& operator<<( std::ostream& out, const ManipulatorState& other );

@@ -34,6 +34,7 @@ pods_install_headers(
   src/OpenGL_Affordance.h
   src/OpenGL_Manipulator.h
   src/Collision_Object_Affordance.h
+  src/Collision_Object_Manipulator.h
   src/affordance_store/AffordanceServer.h
   src/affordance_store/AffordanceUpWrapper.h
   DESTINATION affordance)
@@ -44,6 +45,7 @@ add_library(affordance SHARED
   src/OpenGL_Affordance.cpp
   src/OpenGL_Manipulator.cpp
   src/Collision_Object_Affordance.cpp
+  src/Collision_Object_Manipulator.cpp
   src/affordance_store/AffordanceServer.cpp	
   src/affordance_store/AffordanceUpWrapper.cpp)
 			  				  	  	

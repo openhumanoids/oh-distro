@@ -45,6 +45,11 @@ namespace affordance
     //--interface
     //identification
     virtual GlobalUID getGlobalUniqueId() const = 0;
+    std::string getGUIDAsString() const
+      {
+	return toStr(getGlobalUniqueId().first) + "," 
+	     + toStr(getGlobalUniqueId().second);
+      };
     virtual std::string getName() const = 0;
     
     //location and appearance
@@ -92,6 +97,20 @@ namespace affordance
       }
 
     //useful methods
+    static Eigen::Vector4f extractQuaternion(const KDL::Frame &f) 
+    {
+      	double x,y,z,w;
+	f.M.GetQuaternion(x,y,z,w);
+	return Eigen::Vector4f(x,y,z,w);
+    }
+
+    static Eigen::Vector3f extractXYZ(const KDL::Frame &f) 
+    {
+      return Eigen::Vector3f(f.p.x(),
+			     f.p.y(),
+			     f.p.z());
+    }
+
     template <class T> static std::string toStr(T t){
       std::stringstream s;
       s << t;
