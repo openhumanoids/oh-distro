@@ -25,7 +25,7 @@ public class NavGoalCoder implements drake.util.LCMCoder
 			if (msg.robot_name.equals(m_robot_name))
 			{
 				drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-				fdata.val = new double[7];
+				fdata.val = new double[8];
 				fdata.t = (double)msg.utime / 1000000.0;
 
 				fdata.val[0] = msg.goal_pos.translation.x;
