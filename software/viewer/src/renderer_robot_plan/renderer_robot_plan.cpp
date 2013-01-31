@@ -24,7 +24,7 @@
 #define PARAM_USE_COLORMAP "Use Colormap"
 #define PARAM_PLAN_PART "Part of Plan"  
 #define DRAW_PERSIST_SEC 4
-
+#define PARAM_START_PLAN "Start Planning"
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 
 using namespace std;
@@ -162,6 +162,52 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     draw_state(viewer,super,w_plan);
   }
 }
+
+
+// temporary method: will be replaced later
+  static void publish_eegoal_to_start_planning(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel)
+  {
+    drc::ee_goal_t goalmsg;
+    goalmsg.robot_name = "atlas";
+    goalmsg.root_name = "pelvis";
+    goalmsg.ee_name = " ";
+    
+    double x,y,z,w;
+    // desired ee position in world frame
+    KDL::Frame T_body_ee;
+    T_body_ee = KDL::Frame::Identity();; // send them in world frame for now.
+
+    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
+    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
+    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
+
+    goalmsg.ee_goal_pos.rotation.x = 0;
+    goalmsg.ee_goal_pos.rotation.y = 0;
+    goalmsg.ee_goal_pos.rotation.z = 0;
+    goalmsg.ee_goal_pos.rotation.w = 1;
+
+    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
+    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
+
+    goalmsg.num_chain_joints  =0;
+    // No specified posture bias
+    goalmsg.use_posture_bias  = false;
+    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
+    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
+    for(int i = 0; i < goalmsg.num_chain_joints; i++){
+    goalmsg.joint_posture_bias[i]=0;
+    goalmsg.chain_joint_names[i]= " ";
+    }
+
+    // Publish the message
+    goalmsg.halt_ee_controller = false;
+
+    _lcm->publish(channel, &goalmsg);
+  }
 
 //========================= Event Handling ================
 
@@ -333,6 +379,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       
     }
   }
+  else if(!strcmp(name,PARAM_START_PLAN)){
+   publish_eegoal_to_start_planning(self->lcm,"START_EE_GOAL_PLAN");
+  }
   else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
     msg.utime = self->robot_utime;//bot_timestamp_now();
@@ -382,6 +431,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
