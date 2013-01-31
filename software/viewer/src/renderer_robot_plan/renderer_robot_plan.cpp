@@ -170,7 +170,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     drc::ee_goal_t goalmsg;
     goalmsg.robot_name = "atlas";
     goalmsg.root_name = "pelvis";
-    goalmsg.ee_name = " ";
+    goalmsg.ee_name = "ee_plan_start";
     
     double x,y,z,w;
     // desired ee position in world frame
@@ -380,7 +380,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
   }
   else if(!strcmp(name,PARAM_START_PLAN)){
-   publish_eegoal_to_start_planning(self->lcm,"START_EE_GOAL_PLAN");
+   publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }
   else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
