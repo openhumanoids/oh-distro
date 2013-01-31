@@ -1,12 +1,12 @@
 Path 4.7.03: Matlab Link
-1 row/cols, 1 non-zeros, 100.00% dense.
+2 row/cols, 2 non-zeros, 50.00% dense.
 
 Could not open options file: path.opt
 Using defaults.
 Path 4.7.03 (Mon Feb 27 19:48:03 2012)
 Written by Todd Munson, Steven Dirkse, and Michael Ferris
 
-MCPR: One:    0 Two:    0 Thr:    0 Qua:    0 WBd:    0 Fix:    1 IFx:    0
+MCPR: One:    0 Two:    0 Thr:    0 Qua:    0 WBd:    0 Fix:    2 IFx:    0
 
  ** EXIT - solution found.
 
@@ -20,4 +20,4 @@ Gradient Evaluations. . 0
 Basis Time. . . . . . . 0.000000
 Total Time. . . . . . . 0.000000
 Residual. . . . . . . . 0.000000e+00
-Postsolved residual: 0.0000e+00
+Postsolved residual: 3.3881e-21

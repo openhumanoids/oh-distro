@@ -1,7 +1,6 @@
 classdef SandiaPositionRef < LCMCoordinateFrameWCoder & Singleton
     methods
         function obj = SandiaPositionRef(r)
-            typecheck(r,'TimeSteppingRigidBodyManipulator');
             nq = r.getNumStates/2;
             joint_names = r.getStateFrame.coordinates(1:nq);
 %             joint_names = regexprep(joint_names,'_motor',''); % remove motor suffix 

@@ -2,7 +2,7 @@ function runGraspCmdLCM()
 
 megaclear
 r = createSandiaManip();
-c=ClosedGraspController(r);
+c=ClosedGraspControllerInProg(r);
 runLCM(c)
 
 end
