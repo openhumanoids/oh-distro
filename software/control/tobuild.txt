@@ -6,5 +6,3 @@ pd_chain_control
 reactive_navigation_2d
 gaze_control
 drc_controller_manager
-
-
