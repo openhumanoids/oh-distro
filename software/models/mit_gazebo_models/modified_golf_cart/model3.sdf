@@ -581,7 +581,7 @@
       </axis>
     </joint>
     <joint name='steering_joint' type='revolute'>
-      <parent>chassis</parent>
+      <parent>world</parent>
       <child>steering_wheel</child>
       <axis>
         <xyz> 0.0000 4.286262 1.000000</xyz>
