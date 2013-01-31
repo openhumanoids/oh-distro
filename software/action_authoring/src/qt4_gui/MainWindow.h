@@ -107,6 +107,7 @@ public:
     QLineEdit* _actionName;
     DefaultValueSlider* _scrubber;
     QLabel * _actionDescLabel;
+    double _timeSum; // total length of time for all robot actions to complete. sum of all upperTimeBounds
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget* _constraint_container;
     QVBoxLayout* _constraint_vbox;

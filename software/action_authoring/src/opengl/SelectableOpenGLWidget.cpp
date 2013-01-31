@@ -20,9 +20,9 @@ void
 SelectableOpenGLWidget::
 raycast(const Vector eyePosition,
 	const Vector clickPosition) {
-//    cout << " raycast (eyePosition:" << eyePosition(0) << "," 
-//	 << eyePosition(1) << "," << eyePosition(2) << ", clickPosition:" 
-//	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
+    cout << " raycast (eyePosition:" << eyePosition(0) << "," 
+	 << eyePosition(1) << "," << eyePosition(2) << ", clickPosition:" 
+	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
 
     Collision_Object * intersected_object = NULL;
     Eigen::Vector3f hitPoint;
@@ -30,6 +30,7 @@ raycast(const Vector eyePosition,
 				 Vector3f( clickPosition(0), clickPosition(1), clickPosition(2)),
 				  intersected_object, hitPoint);
 //    _collisionDetector->ray_test( Vector3f( 10.0, 0.0, 0.0 ), Vector3f( 0.0, 0.0, 0.0 ), intersected_object );
+    cout << "\t\tnumber of objects: " << _collisionDetector->collision_objects().size() << endl;
     if( intersected_object != NULL ){
 //	cout << "intersected " << intersected_object->id().c_str() << " ";
 	emit raycastCallback(intersected_object->id(), hitPoint);
@@ -44,6 +45,8 @@ raycast(const Vector eyePosition,
 void SelectableOpenGLWidget::add_collision_object(Collision_Object* collisionObject)
 {
     _collisionDetector->add_collision_object(collisionObject);
+    cout << "added objects: " << collisionObject->id() << endl;
+    cout << "\t\tnumber of objects: " << _collisionDetector->collision_objects().size() << endl;
     /*  
       Collision_Object_Box* collision_object_2 = new Collision_Object_Box("box2", Vector3f( 0.5, 0.5, 0.5 ), Vector3f( 2.0, 0.0, 0.0 ), Vector4f( 0.0, 0.0, 0.0, 1.0)); 
     _collisionDetector->add_collision_object(collision_object_2);

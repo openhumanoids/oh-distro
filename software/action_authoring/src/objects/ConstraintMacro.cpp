@@ -20,7 +20,8 @@ ConstraintMacro::ConstraintMacro(const string &name, AtomicConstraintPtr atomicC
   _constraintType(ConstraintMacro::ATOMIC),
   _atomicConstraint(atomicConstraint)
 {
-
+    _timeUpperBound = 2.0;
+    _timeLowerBound = 0;
 }
 
 void ConstraintMacro::appendConstraintMacro(ConstraintMacroPtr constraint) {

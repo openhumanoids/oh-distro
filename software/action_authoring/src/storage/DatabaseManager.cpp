@@ -482,8 +482,8 @@ void deserializeAtomicConstraintMacro(xmlDocPtr doc, xmlNode* node, StorageUIDTo
   xmlNode* current_node = NULL;
   string uid;
   string name;
-  double timeLowerBound;
-  double timeUpperBound;
+  double timeLowerBound = 0.0;
+  double timeUpperBound = 0.0;
   string atomicConstraintUID;
 
   for (current_node = node->children; current_node; current_node = current_node->next) {

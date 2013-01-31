@@ -75,6 +75,15 @@ void MainWindow::handleAffordancesChanged()
       _worldState.collisionObjs.push_back(collision_object_affordance);
     }
 
+  //----------handle constraint macros 
+  unordered_map<string, AffConstPtr> nameToAffMap;
+  for(vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
+      iter != _worldState.affordances.end();
+      ++iter)
+  {
+      nameToAffMap[(*iter)->getName()] = *iter;
+  }
+
     // read the joints from the robot state
     // create the manipulators from the robot's joints
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
@@ -95,9 +104,11 @@ void MainWindow::handleAffordancesChanged()
 	_worldState.glObjects.push_back(asGlMan);
 
 	Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
-	_worldState.collisionObjs.push_back(cObjManip);
-	_widget_opengl.add_collision_object(cObjManip);
-    }
+	if (cObjManip->isSupported(manipulator)) {
+	    _widget_opengl.add_collision_object(cObjManip);
+	    _worldState.collisionObjs.push_back(cObjManip);
+	}
+     }
 
     
   //----------add robot and vehicle
@@ -116,14 +127,7 @@ void MainWindow::handleAffordancesChanged()
   _widget_opengl.update();
   //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
-  //----------handle constraint macros 
-  unordered_map<string, AffConstPtr> nameToAffMap;
-  for(vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
-      iter != _worldState.affordances.end();
-      ++iter)
-    {
-      nameToAffMap[(*iter)->getName()] = *iter;
-    }
+
  
   //todo: this is just demo code
   if (_worldState.manipulators.size() > 4) {
@@ -253,6 +257,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     // see http://www.qtcentre.org/wiki/index.php?title=Embedded_resources
     QPixmap pixmap1(":/trolltech/styles/commonstyle/images/media-skip-backward-32.png");
+    _fbwd->setEnabled(false);
     _fbwd->setIcon(QIcon(pixmap1));
     _fbwd->setIconSize(pixmap1.rect().size());
 
@@ -270,6 +275,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _fwd->setIconSize(pixmap4.rect().size());
 
     QPixmap pixmap5(":/trolltech/styles/commonstyle/images/media-skip-forward-32.png");
+    _ffwd->setEnabled(false);
     _ffwd->setIcon(QIcon(pixmap5));
     _ffwd->setIconSize(pixmap5.rect().size());
 
@@ -499,16 +505,16 @@ void
 MainWindow::
 updateScrubber() {
     // update the scrubber
-    double sum = 0.0;
+    _timeSum = 0.0;
     vector<double> lengths;
     _scrubber->clearTicks();
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
-	lengths.push_back(sum + max);
-	sum += max;
+	lengths.push_back(_timeSum + max);
+	_timeSum += max;
     }
     for (int i = 0; i < (int)lengths.size(); i++) {
-	_scrubber->addTick(lengths[i] / sum);
+	_scrubber->addTick(lengths[i] / _timeSum);
     }
     _scrubber->setSelectedRangeIndex(getSelectedGUIConstraintIndex());
     _scrubber->update();
@@ -523,29 +529,38 @@ void
 MainWindow::
 setSelectedAction(Qt4ConstraintMacro* activator) { 
     int selected_index = -1;
+    bool noChange = false;
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
 	if (activator == _authoringState._all_gui_constraints[i].get()) {
 	    _authoringState._all_gui_constraints[i]->setSelected(true);
-	    _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
+	    if (_authoringState._selected_gui_constraint == _authoringState._all_gui_constraints[i]) {
+		noChange = true;
+	    } else {
+		_authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
+	    }
 	    selected_index = i;
 	} else {
 	    _authoringState._all_gui_constraints[i]->setSelected(false);
 	}
     }
 
-    // enable or disable media/move buttons
-    _moveUpButton->setEnabled(selected_index != 0);
-    _moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
-    _fbwd->setEnabled(selected_index != 0);
-    _ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
+    if (! noChange) {
+	// enable or disable media/move buttons
+	_moveUpButton->setEnabled(selected_index != 0);
+	_moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
+	_fbwd->setEnabled(selected_index != 0);
+	_ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
+	
+	updateScrubber();
+    }
 
-    updateScrubber();
     // highlight the affordance
     selectedOpenGLObjectChanged(_authoringState._selected_gui_constraint->getConstraintMacro()
 				->getAtomicConstraint()->getAffordance()->getGUIDAsString());
+
     // highlight the manipulator
     _worldState.colorRobot.setSelectedLink(_authoringState._selected_gui_constraint->getConstraintMacro()
-				->getAtomicConstraint()->getManipulator()->getName());
+					   ->getAtomicConstraint()->getManipulator()->getName());
    
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
@@ -610,8 +625,7 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoint)
 {
-
-    cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
+    //cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
 
     // highlight the object in the GUI
     for(uint i = 0; i < _worldState.glObjects.size(); i++)
@@ -710,4 +724,15 @@ nextKeyFrame() {
     } else { 
 	_scrubber->setValue(_scrubber->value() + 1);
     }
+
+    double fraction = (double)_scrubber->value() / (double)_scrubber->maximum();
+    double acc = 0.0;
+    // round fraction to the nearest constraint and select it
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
+	acc += _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
+	if ((acc / _timeSum) > fraction) {
+	    setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
+	    break;
+	}
+    }    
 }
