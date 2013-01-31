@@ -28,6 +28,7 @@ include_directories(./src)
 include_directories(.)
 
 pods_install_headers(
+  src/ToString.h
   src/ModelState.h
   src/AffordanceState.h
   src/ManipulatorState.h

@@ -136,7 +136,7 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 	if (idToEnum->find(msg->otdf_id) == idToEnum->end())
 	  {
 	    printIdToEnumMap();
-	    throw InvalidOtdfID(string("not recognized: ") + toStr<short>(msg->otdf_id) 
+	    throw InvalidOtdfID(string("not recognized: ") + ToString::toStr<short>(msg->otdf_id) 
 				+ string("  : name =  ") + msg->name );
 	    
 	  }

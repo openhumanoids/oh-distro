@@ -1,4 +1,5 @@
 #include "ManipulatorState.h"
+#include <affordance/ToString.h>
 
 using namespace affordance;
 using namespace std;
@@ -37,7 +38,8 @@ GlobalUID ManipulatorState::getGlobalUniqueId() const
 
 string ManipulatorState::getGUIDAsString()  const 
 {
-    return ModelState::toStr(getGlobalUniqueId().first) + "," + ModelState::toStr(getGlobalUniqueId().second);
+  return ToString::toStr(getGlobalUniqueId().first) + "," 
+    + ToString::toStr(getGlobalUniqueId().second);
 }
 
 
@@ -107,50 +109,7 @@ shared_ptr<const urdf::Link> ManipulatorState::getLink() const
 
 
 
-string toStr(const KDL::Vector &v)
-{
-  return string("(") + ModelState::toStr(v.x()) + string(", ") 
-    + ModelState::toStr(v.y()) + string(", ") 
-    + ModelState::toStr(v.z()) + string(")");
-}
 
-
-string toStr(const KDL::Rotation &r)
-{
-  double q1,q2,q3,q4;
-  r.GetQuaternion(q1,q2,q3,q4);
-  return string("(") + ModelState::toStr(q1) + string(", ") 
-    + ModelState::toStr(q2) + string(", ") 
-    + ModelState::toStr(q3)
-    + string(", ")
-    + ModelState::toStr(q4) + string(")");
-}
-
-
-string toStr(const KDL::Frame &frame)
-{
-  return string("Position = ") + toStr(frame.p)
-    + string("\t Rotation = ") + toStr(frame.M);
-}
-
-
-std::ostream& operator << (std::ostream &out, const KDL::Rotation &r)
-{
-  out << toStr(r);
-  return out;
-}
-
-std::ostream& operator << (std::ostream &out, const KDL::Vector &v)
-{
-  out << toStr(v);
-  return out;
-}
-
-std::ostream& operator <<(std::ostream& out, const KDL::Frame &frame)
-{
-  out << "Position = " << frame.p << "\t Rotation = " << frame.M << endl;
-  return out;
-}
 
 /**get the collision contact points for this manipulator.*/
 void ManipulatorState::getCollisionContactPoints(vector<KDL::Frame> &pts) const

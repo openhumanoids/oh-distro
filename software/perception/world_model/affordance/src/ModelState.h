@@ -14,6 +14,7 @@
 #include <kdl/frames.hpp>
 #include <stdexcept>
 #include <vector>
+#include <affordance/ToString.h>
 
 namespace affordance
 {
@@ -47,8 +48,8 @@ namespace affordance
     virtual GlobalUID getGlobalUniqueId() const = 0;
     std::string getGUIDAsString() const
       {
-	return toStr(getGlobalUniqueId().first) + "," 
-	     + toStr(getGlobalUniqueId().second);
+	return ToString::toStr(getGlobalUniqueId().first) + "," 
+	  + ToString::toStr(getGlobalUniqueId().second);
       };
     virtual std::string getName() const = 0;
     
@@ -109,12 +110,6 @@ namespace affordance
       return Eigen::Vector3f(f.p.x(),
 			     f.p.y(),
 			     f.p.z());
-    }
-
-    template <class T> static std::string toStr(T t){
-      std::stringstream s;
-      s << t;
-      return s.str();
     }
   };
   

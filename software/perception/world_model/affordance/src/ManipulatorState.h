@@ -8,7 +8,8 @@
 #ifndef MANIPULATOR_STATE_H
 #define MANIPULATOR_STATE_H
 
-#include "affordance/ModelState.h"
+#include <affordance/ToString.h>
+#include <affordance/ModelState.h>
 #include "urdf/model.h"
 
 namespace affordance
