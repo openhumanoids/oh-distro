@@ -7,7 +7,7 @@ robot_model
 object_template_model
 kinematics
 utils
-camunits
+#camunits
 
 #hubo
 kinematics_model
