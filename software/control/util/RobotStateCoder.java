@@ -208,10 +208,8 @@ public class RobotStateCoder implements drake.util.LCMCoder
         yaw = (float) d.val[index];
         msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
 
-
         // covert rpy to quaternion 
         // note: drake uses XYZ convention
-        // use xyz
         double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
         double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
         double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);

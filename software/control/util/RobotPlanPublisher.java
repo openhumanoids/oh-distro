@@ -18,7 +18,7 @@ public class RobotPlanPublisher
       has_floating_base = floating_base;
       
       nonfloating_joint_start_ndx = 0;
-      System.out.println(has_floating_base);
+      //System.out.println(has_floating_base);
       if (has_floating_base)
         nonfloating_joint_start_ndx = 6;
       int num_nonfloating_joints = joint_name.length - nonfloating_joint_start_ndx;
