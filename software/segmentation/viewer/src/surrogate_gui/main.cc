@@ -18,8 +18,10 @@
 #include "UIProcessing.h"
 #include "LinearAlgebra.h"
 #include "perception/PclSurrogateUtils.h"
-#include <otdf_renderer/renderer_otdf.hpp>
+#include <renderer_robot_plan/renderer_robot_plan.hpp>
 
+//#include <otdf_renderer/renderer_otdf.hpp>
+#include <renderer_affordances/renderer_affordances.hpp>
 
 
 using namespace surrogate_gui;
@@ -71,8 +73,8 @@ int main(int argc, char *argv[])
     bot_glib_mainloop_attach_lcm(app.lcm);
 
     //otdf
-    setup_renderer_otdf(viewer, 0, lcmCpp);
-
+    // older: setup_renderer_otdf(viewer, 0, lcmCpp);
+    setup_renderer_affordances(viewer, 0, lcmCpp->getUnderlyingLCM());
 
     // setup renderers
     bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
