@@ -19,6 +19,7 @@ perception
 # disabled for now as its breaking build
 #action_authoring
 viewer
+segmentation
 
 #network
 #interface
