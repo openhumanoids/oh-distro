@@ -6,6 +6,9 @@ classdef SplineFootstepPlanner
     step_time
     state_listener
     nav_goal_listener
+    xstar
+    v
+    plan_publisher
   end
   
   methods
@@ -19,6 +22,9 @@ classdef SplineFootstepPlanner
       typecheck(step_time, 'double');
 
       obj.manip = r;
+      obj.manip = enableIdealizedPositionControl(r, true);
+      obj.manip = compile(obj.manip);
+
       obj.step_length = step_length;
       obj.step_time = step_time;
 
@@ -30,6 +36,11 @@ classdef SplineFootstepPlanner
       obj.state_listener.subscribe('EST_ROBOT_STATE');
 
       obj.nav_goal_listener = RobotNavGoalListener(robot_name, 'NAV_GOAL_TIMED');
+      obj.v = obj.manip.constructVisualizer();
+      load('data/atlas_fp.mat');
+      obj.xstar = xstar;
+
+      obj.plan_publisher = RobotPlanPublisher(robot_name, joint_names, true, 'CANDIDATE_ROBOT_PLAN');
     end
 
     function run(obj)
@@ -43,8 +54,64 @@ classdef SplineFootstepPlanner
         g = obj.nav_goal_listener.getNextMessage(0);
         if ~isempty(g) && ~isempty(x0)
           x0(1:6)
+          % q0 = x0(1:end/2);
+          q0 = obj.xstar(1:end/2);
           g
-          [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, x0(1:(end/2)), g, obj.step_length, obj.step_time);
+
+          [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, g, obj.step_length, obj.step_time);
+
+          %% covert ZMP plan into COM plan using LIMP model
+          addpath(fullfile(getDrakePath,'examples','ZMP'));
+          [com,Jcom] = getCOM(obj.manip,q0);
+          comdot = Jcom*obj.xstar(getNumDOF(obj.manip)+(1:getNumDOF(obj.manip)));
+          limp = LinearInvertedPendulum(com(3,1));
+
+          comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZMP)); ...
+            ConstantTrajectory(com(3,1)) ];
+
+          %% compute joint positions with inverse kinematics
+
+          ind = getActuatedJoints(obj.manip);
+          rfoot_body = obj.manip.findLink('r_foot');
+          lfoot_body = obj.manip.findLink('l_foot');
+
+          cost = Point(obj.manip.getStateFrame,1);
+          cost.pelvis_x = 0;
+          cost.pelvis_y = 0;
+          cost.pelvis_z = 0;
+          cost.pelvis_roll = 1000;
+          cost.pelvis_pitch = 1000;
+          cost.pelvis_yaw = 0;
+          cost.back_mby = 100;
+          cost.back_ubx = 100;
+          cost = double(cost);
+          options = struct();
+          options.Q = diag(cost(1:obj.manip.getNumDOF));
+          options.q_nom = q0;
+
+          disp('computing ik...')
+          for i=1:length(ts)
+            t = ts(i);
+            if (i>1)
+              q(:,i) = inverseKin(obj.manip,q(:,i-1),0,comtraj.eval(t),rfoot_body,rfoottraj.eval(t),lfoot_body,lfoottraj.eval(t),options);
+            else
+              q = q0;
+            end
+            q_d(:,i) = q(ind,i);
+            obj.v.draw(t,q(:,i));
+          end
+
+          if (1)
+            %% to view the motion plan:
+            xtraj = setOutputFrame(PPTrajectory(spline(ts,[q;0*q])),getOutputFrame(obj.manip));
+            obj.plan_publisher.publish(ts, xtraj.eval(ts));
+            % playback(v,xtraj,struct('slider',true));
+
+            % continue;
+          end
+
+
+
         end
       end
     end

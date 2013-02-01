@@ -1,4 +1,4 @@
-function [zmptraj,lfoottraj,rfoottraj,ts] = planZMPandFootTrajectory(r,q0, goal_pos, step_length,step_time)
+function [zmptraj,lfoottraj,rfoottraj,step_times] = planZMPandFootTrajectory(r,q0, goal_pos, step_length,step_time)
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -44,6 +44,7 @@ end
 
 
 ts = [0, .5];
+step_times = [0];
 rfootpos = [rfoot0, rfoot0];
 lfootpos = [lfoot0, lfoot0];
 zmp = [com0(1:2), feetCenter(rfootpos(:,2), lfootpos(:,2))];
@@ -93,6 +94,7 @@ while 1
   lfootpos = [lfootpos, lf, lf(:,end)];
   zmp = [zmp, stepzmp, stepzmp(:,end)];
   ts = [ts, tstep];
+  step_times = [step_times, ts(end)];
   bRightStep = ~bRightStep;
   if istep_l == length(Xleft(1,:)) && istep_r == length(Xright(1,:))
     break

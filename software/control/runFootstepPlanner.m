@@ -13,8 +13,8 @@ load('data/atlas_fp.mat');
 r = r.setInitialState(xstar);
 
 % set initial conditions in gazebo
-% state_frame = r.getStateFrame();
-% state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
+state_frame = r.getStateFrame();
+state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
 
 p = SplineFootstepPlanner(r, step_length, step_time);
 p.run()
