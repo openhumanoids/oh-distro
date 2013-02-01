@@ -39,6 +39,10 @@ group "core" {
         exec = "drc-lidar-passthrough";
         host = "localhost";
     }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "localhost";
+    }
 }
 
 group "drake" {
@@ -73,15 +77,19 @@ group "base" {
         host = "localhost";
     }
     cmd "viewer_remote" {
-        exec = "drc-viewer  -r base -c drc_robot.cfg";
+        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "localhost";
     }
     cmd "surrogate_viewer" {
-        exec = "surrogate_viewer";
+        exec = "surrogate_viewer -r base";
         host = "localhost";
     }
     cmd "modelpub" {
         exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
         host = "localhost";
     }
 }
