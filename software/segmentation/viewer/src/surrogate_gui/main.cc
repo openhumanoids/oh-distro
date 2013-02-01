@@ -43,10 +43,13 @@ int main(int argc, char *argv[])
   std::cout << "role: " << role << "\n";
   
   string lcm_url ="";
+  string vis_config_file="";
   if(role.compare("robot") == 0){
      lcm_url = ""; // put robot url if needed
+     vis_config_file = ".bot-plugin-robot-segmentation-viewer";
   }else if(role.compare("base") == 0){  
      lcm_url = "udpm://239.255.12.68:1268?ttl=1";
+     vis_config_file = ".bot-plugin-base-segmentation-viewer";
   }else{
     std::cout << "DRC Viewer role not understood, choose: robot or base\n";
     return 1;
@@ -104,7 +107,7 @@ int main(int argc, char *argv[])
     std::cout << "Listening to data from channel: " << channel_name << "\n";
 
     // load saved preferences
-    char *fname = g_build_filename(g_get_user_config_dir(), ".surrogate_guirc", NULL);
+    char *fname = g_build_filename(g_get_user_config_dir(), vis_config_file.c_str() , NULL);
     bot_viewer_load_preferences(viewer, fname);
 
     printf("\n\n\n========USAGE:\n");
