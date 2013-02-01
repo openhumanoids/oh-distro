@@ -15,6 +15,7 @@ public:
   }
 
   ~ThreadSafeQueue() {
+    unblock();
   }
 
   void setMaxSize(const int iSize) {
@@ -53,11 +54,15 @@ public:
     return true;
   }
 
+  void clear() {
+    boost::mutex::scoped_lock lock(mMutex);
+    mData.clear();
+    unblock();
+  }
+
   bool waitForData(T& oData) {
     boost::mutex::scoped_lock lock(mMutex);
-    while (mData.empty()) {
-      mCondition.wait(lock);
-    }
+    mCondition.wait(lock);
     if (!mData.empty()) {
       oData = mData.front();
       mData.pop_front();

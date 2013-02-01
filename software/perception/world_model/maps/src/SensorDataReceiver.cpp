@@ -178,6 +178,7 @@ onPointCloud(const lcm::ReceiveBuffer* iBuf,
   }
   maps::PointSet data;
   data.mTimestamp = iMessage->utime;
+  data.mMaxRange = 1e10;
   data.mCloud = newCloud;
   mDataBuffer.push(data);
 }
@@ -236,6 +237,7 @@ onLidar(const lcm::ReceiveBuffer* iBuf,
   }
   maps::PointSet data;
   data.mTimestamp = iMessage->utime;
+  data.mMaxRange = rangeMax;
   data.mCloud = cloud;
   mDataBuffer.push(data);
 }

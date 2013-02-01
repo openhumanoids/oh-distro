@@ -1,18 +1,20 @@
-#ifndef _DenseGrid3d_hpp_
-#define _DenseGrid3d_hpp_
+#ifndef _maps_VoxelGrid_hpp_
+#define _maps_VoxelGrid_hpp_
 
 #include <vector>
 #include <Eigen/Geometry>
 
-class DenseGrid3d {
+namespace maps {
+
+class VoxelGrid {
 public:
-  DenseGrid3d();
+  VoxelGrid();
 
   void setDimensions(const int iX, const int iY, const int iZ);
   Eigen::Vector3i getDimensions() const { return mDimensions; }
 
-  void setToLocal(const Eigen::Affine3d& iTransform);
-  Eigen::Affine3d getToLocal() const { return mToLocalTransform; }
+  void setTransform(const Eigen::Affine3f& iTransform);
+  Eigen::Affine3f getTransform() const { return mTransform; }
 
   int64_t toIndex(const int iX, const int iY, const int iZ) const {
     return iZ*mPlaneStrideBytes + iY*mRowStrideBytes + iX;
@@ -34,21 +36,21 @@ public:
   int8_t& operator()(const int64_t iIndex) {
     return mData[iIndex];
   }
-  int8_t operator()(const int64_t iIndex) const {
+  const int8_t operator()(const int64_t iIndex) const {
     return mData[iIndex];
   }
 
   int8_t& operator()(const int iX, const int iY, const int iZ) {
     return mData[toIndex(iX, iY, iZ)];
   }
-  int8_t operator()(const int iX, const int iY, const int iZ) const {
+  const int8_t operator()(const int iX, const int iY, const int iZ) const {
     return mData[toIndex(iX, iY, iZ)];
   }
 
   int8_t& operator()(const Eigen::Vector3i& iPoint) {
     return mData[toIndex(iPoint[0], iPoint[1], iPoint[2])];
   }
-  int8_t operator()(const Eigen::Vector3i& iPoint) const {
+  const int8_t operator()(const Eigen::Vector3i& iPoint) const {
     return mData[toIndex(iPoint[0], iPoint[1], iPoint[2])];
   }
 
@@ -62,8 +64,8 @@ public:
     return checkBounds(iPoint[0], iPoint[1], iPoint[2]);
   }
 
-  bool addPoint(const Eigen::Vector3d& iPoint) {
-    Eigen::Vector3d transformed = mFromLocalTransform*iPoint;
+  bool addPoint(const Eigen::Vector3f& iPoint) {
+    Eigen::Vector3f transformed = mTransformInv*iPoint;
     Eigen::Vector3i pt = transformed.cast<int>();
     if (!checkBounds(pt)) {
       return false;
@@ -72,8 +74,8 @@ public:
     return true;
   }
 
-  bool removePoint(const Eigen::Vector3d& iPoint) {
-    Eigen::Vector3d transformed = mFromLocalTransform*iPoint;
+  bool removePoint(const Eigen::Vector3f& iPoint) {
+    Eigen::Vector3f transformed = mTransformInv*iPoint;
     Eigen::Vector3i pt = transformed.cast<int>();
     if (!checkBounds(pt)) {
       return false;
@@ -81,6 +83,10 @@ public:
     (*this)(pt) = -1;
     return true;
   }
+
+  bool traceRay(const Eigen::Vector3f& iOrigin,
+                const Eigen::Vector3f& iDirection,
+                std::vector<int64_t>& oIndices);
 
   // API functions to add
   // multiresolution capability (set num levels)
@@ -104,9 +110,11 @@ protected:
   Eigen::Vector3i mDimensions;
   int mPlaneStrideBytes;
   int mRowStrideBytes;
-  Eigen::Affine3d mToLocalTransform;
-  Eigen::Affine3d mFromLocalTransform;
+  Eigen::Affine3f mTransform;
+  Eigen::Affine3f mTransformInv;
   std::vector<int8_t> mData;
 };
+
+}
 
 #endif

@@ -38,7 +38,8 @@ LocalMap(const LocalMap::Spec& iSpec) {
   mPointData.reset(new PointDataBuffer());
   mPointData->setMaxLength(mSpec.mPointBufferSize);
   mOctree.mTree.reset(new octomap::OcTree(mSpec.mOctreeResolution));
-  mOctree.mTransform = mSpec.mOctreeTransform;
+  mOctree.mTransform = Eigen::Isometry3f::Identity();
+  mOctree.mTransform.translation() = 0.5f*(mSpec.mBoundMax + mSpec.mBoundMin);
   mStateId = 0;
 }
 
@@ -78,14 +79,7 @@ getBoundMax() const {
 
 std::vector<Eigen::Vector4f> LocalMap::
 getBoundPlanes() const {
-  std::vector<Eigen::Vector4f> planes(6);
-  planes[0] = Eigen::Vector4f( 1, 0, 0, -mSpec.mBoundMin[0]);
-  planes[1] = Eigen::Vector4f(-1, 0, 0,  mSpec.mBoundMax[0]);
-  planes[2] = Eigen::Vector4f( 0, 1, 0, -mSpec.mBoundMin[1]);
-  planes[3] = Eigen::Vector4f( 0,-1, 0,  mSpec.mBoundMax[1]);
-  planes[4] = Eigen::Vector4f( 0, 0, 1, -mSpec.mBoundMin[2]);
-  planes[5] = Eigen::Vector4f( 0, 0,-1,  mSpec.mBoundMax[2]);
-  return planes;
+  return Utils::planesFromBox(mSpec.mBoundMin, mSpec.mBoundMax);
 }
 
 LocalMap::Spec LocalMap::
@@ -156,12 +150,21 @@ addData(const maps::PointSet& iPointSet) {
       mOctree.mTree->deleteNode(octPt2);
     }
 
+    float range2 = (refPt-refOrigin).squaredNorm();
+    float thresh2 = iPointSet.mMaxRange*iPointSet.mMaxRange;
+    if (range2 >= thresh2) {
+      continue;
+    }
+
     // check to see whether the point is within bounds
+    /* TODO: need? we probably want the points outside the bound
+       if their rays intersect the bound, to construct free space properly
     if ((refPt[0] < mSpec.mBoundMin[0]) || (refPt[0] > mSpec.mBoundMax[0]) ||
         (refPt[1] < mSpec.mBoundMin[1]) || (refPt[1] > mSpec.mBoundMax[1]) ||
         (refPt[2] < mSpec.mBoundMin[2]) || (refPt[2] > mSpec.mBoundMax[2])) {
       continue;
     }
+    */
 
     // add point to internal point set
     outCloud->push_back(refCloud[i]);
@@ -169,8 +172,7 @@ addData(const maps::PointSet& iPointSet) {
   
   // if any points survived, add them to buffer and update state count
   if (outCloud->size() > 0) {
-    maps::PointSet pointSet;
-    pointSet.mTimestamp = iPointSet.mTimestamp;
+    maps::PointSet pointSet = iPointSet;
     pointSet.mCloud = outCloud;
     mPointData->add(pointSet);
     mOctree.mTree->updateInnerOccupancy();
@@ -191,6 +193,7 @@ getAsPointCloud(const float iResolution,
   // grab point cloud and crop to space-time bounds
   maps::PointCloud::Ptr cloud =
     mPointData->getAsCloud(iBounds.mMinTime, iBounds.mMaxTime);
+  Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
   Utils::crop(*cloud, *cloud, iBounds.mPlanes);
 
   maps::PointCloud::Ptr cloudFinal(new maps::PointCloud());
@@ -207,7 +210,7 @@ getAsPointCloud(const float iResolution,
   return cloudFinal;
 }
 
-LocalMap::Octree LocalMap::
+maps::Octree LocalMap::
 getAsOctree(const float iResolution, const bool iTraceRays,
             const Eigen::Vector3f& iShift,
             const SpaceTimeBounds& iBounds) const {
@@ -236,7 +239,8 @@ getAsOctree(const float iResolution, const bool iTraceRays,
   for (int i = 0; i < pointSets.size(); ++i) {
     maps::PointCloud::Ptr inCloud = pointSets[i].mCloud;
     maps::PointCloud::Ptr outCloud(new maps::PointCloud());
-    Utils::crop(*inCloud, *outCloud, iBounds.mPlanes);
+    Utils::crop(*inCloud, *outCloud, mSpec.mBoundMin, mSpec.mBoundMax);
+    Utils::crop(*outCloud, *outCloud, iBounds.mPlanes);
     if (iTraceRays) {
       octomap::Pointcloud octCloud;    
       for (int j = 0; j < outCloud->points.size(); ++j) {

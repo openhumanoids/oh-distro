@@ -14,35 +14,31 @@ class FilterColorize {
 public:
 
   template<typename PointTypeIn, typename PointTypeOut>
-  static bool colorize(const typename pcl::PointCloud<PointTypeIn>::Ptr& iCloud,
+  static bool colorize(const typename pcl::PointCloud<PointTypeIn>& iCloud,
                        const Eigen::Affine3d& iCloudToCamera,
                        const bot_core::image_t& iImage,
                        const BotCamTrans* iCamTrans,
-                       typename pcl::PointCloud<PointTypeOut>::Ptr& oCloud) {
-    if (oCloud == NULL) {
-      oCloud.reset(new pcl::PointCloud<PointTypeOut>());
-    }
-    pcl::copyPointCloud(*iCloud, *oCloud);
+                       typename pcl::PointCloud<PointTypeOut>& oCloud) {
+    pcl::copyPointCloud(iCloud, oCloud);
 
-    int numPoints = iCloud->points.size();
+    int numPoints = iCloud.size();
     for (int i = 0; i < numPoints; ++i) {
-      Eigen::Vector3d pt(iCloud->points[i].x, iCloud->points[i].y,
-                         iCloud->points[i].z);
+      Eigen::Vector3d pt(iCloud[i].x, iCloud[i].y, iCloud[i].z);
       pt = iCloudToCamera*pt;
       double p[3] = {pt(0),pt(1),pt(2)};
       double pix[3];
       bot_camtrans_project_point(iCamTrans, p, pix);
+      oCloud[i].r = oCloud[i].g = oCloud[i].b = 0;
       if (pix[2] < 0) {
         continue;
       }
 
-      uint8_t r,g,b;
-      if (!interpolate(pix[0], pix[1], iImage, r, g, b)) {
-        continue;
+      uint8_t r, g, b;
+      if (interpolate(pix[0], pix[1], iImage, r, g, b)) {
+        oCloud[i].r = r;
+        oCloud[i].g = g;
+        oCloud[i].b = b;
       }
-      oCloud->points[i].r = r;
-      oCloud->points[i].g = g;
-      oCloud->points[i].b = b;
     }
 
     return true;

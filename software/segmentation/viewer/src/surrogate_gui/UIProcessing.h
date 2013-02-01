@@ -36,8 +36,8 @@
 #include "ObjectTracker.h"
 
 //-------pulling maps
-#include <maps/LocalMap.hpp>
-#include <maps/MapWrapper.hpp>
+#include <maps/ViewClient.hpp>
+#include <maps/MapView.hpp>
 #include <boost/thread.hpp>
 
 
@@ -72,7 +72,7 @@ namespace surrogate_gui
 
 			boost::shared_ptr<ObjectTracker> _objTracker;
 			
-			boost::shared_ptr<MapWrapper> _mWrapper; //map pulling
+			boost::shared_ptr<maps::ViewClient> _mViewClient; //map pulling
 
 		//=====constructor/destructor
 		public:

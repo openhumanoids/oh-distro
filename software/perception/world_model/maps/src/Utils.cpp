@@ -110,6 +110,20 @@ clipRay(const Eigen::Vector3f& iOrigin, const Eigen::Vector3f& iEndPoint,
   return true;
 }
 
+std::vector<Eigen::Vector4f> Utils::
+planesFromBox(const Eigen::Vector3f& iBoundMin,
+              const Eigen::Vector3f& iBoundMax) {
+  std::vector<Eigen::Vector4f> planes(6);
+  planes[0] = Eigen::Vector4f( 1, 0, 0, -iBoundMin[0]);
+  planes[1] = Eigen::Vector4f(-1, 0, 0,  iBoundMax[0]);
+  planes[2] = Eigen::Vector4f( 0, 1, 0, -iBoundMin[1]);
+  planes[3] = Eigen::Vector4f( 0,-1, 0,  iBoundMax[1]);
+  planes[4] = Eigen::Vector4f( 0, 0, 1, -iBoundMin[2]);
+  planes[5] = Eigen::Vector4f( 0, 0,-1,  iBoundMax[2]);
+  return planes;
+}
+
+
 int64_t Utils::
 rand64() {
   return (rand() << 31) + rand();

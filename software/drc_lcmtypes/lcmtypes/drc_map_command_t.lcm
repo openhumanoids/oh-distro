@@ -1,0 +1,19 @@
+package drc;
+
+struct map_command_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // which map id to operate on
+  int64_t map_id;
+
+  // command to apply to map
+  int8_t command;
+
+  // command types
+  const int8_t CLEAR = 1;
+  const int8_t STOP = 3;
+  const int8_t START = 2;
+
+}

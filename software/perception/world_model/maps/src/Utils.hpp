@@ -18,8 +18,6 @@ public:
     xform.linear() = iCloud.sensor_orientation_.matrix();
     Eigen::Vector4f position = iCloud.sensor_origin_;
     xform.translation() = position.head<3>();
-    // TODO: the line below doesn't work?
-    // xform.translation() = iCloud.sensor_origin_.head<3>();
     return xform;
   }
 
@@ -133,6 +131,10 @@ public:
                       Eigen::Vector3f& oOrigin,
                       Eigen::Vector3f& oEndPoint,
                       float& oMinT, float& oMaxT);
+
+  static std::vector<Eigen::Vector4f>
+  planesFromBox(const Eigen::Vector3f& iBoundMin,
+                const Eigen::Vector3f& iBoundMax);
 
   static int64_t rand64();
 };

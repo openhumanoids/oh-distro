@@ -31,12 +31,11 @@ namespace surrogate_gui
 		_gui_state(SEGMENTING),
 		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
 		_objTracker(),
-		_mWrapper(new MapWrapper())
+		_mViewClient(new maps::ViewClient())
 	{
 	       //--setup map wrapper
-	       _mWrapper->setLcm(lcm);
-	       _mWrapper->setMapChannel("LOCAL_MAP");
-	       _mWrapper->start();
+	       _mViewClient->setLcm(lcm);
+	       _mViewClient->start();
 	  
 		//===========================================
 		//===========================================
@@ -1103,21 +1102,23 @@ namespace surrogate_gui
 			//return;
 		}
 		if (stringsEqual(name, PARAM_NAME_PULL_MAP))
-		  {
-		    _mWrapper->lock();
-		    if (_mWrapper->getMap() != NULL) 
-		      {
-			PointCloud<PointXYZRGB>::Ptr cloudXYZRGB = _mWrapper->getMap()->getAsPointCloud();
-			getDisplayInfo()->cloud = cloudXYZRGB;
-			getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
-		      }
+		{
+			std::vector<maps::ViewClient::MapViewPtr> views = _mViewClient->getAllViews();
+			if (views.size() > 0) 
+			{
+				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
+				for (size_t v = 0; v < views.size(); ++v)
+				{
+					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
+					(*cloudFull) += *cloud;
+				}
+				getDisplayInfo()->cloud = cloudFull;
+				getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
+				cout << "Grabbed a point cloud of " << getDisplayInfo()->cloud->points.size() <<
+					" points from octree" << endl;
+			}
 
-
-		    _mWrapper->unlock();
-		    
-		    cout << "Grabbed a point cloud of " << getDisplayInfo()->cloud->points.size() <<
-		      " points from octree" << endl;
-		  }
+		}
 
 
 		// tracking mode

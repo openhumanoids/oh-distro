@@ -3,13 +3,18 @@ add_library(maps SHARED
   DataBlob.cpp
   Utils.cpp
   PointDataBuffer.cpp
+  VoxelGrid.cpp
   SensorDataReceiver.cpp
   LocalMap.cpp
   MapManager.cpp
+  MapView.cpp
+  LcmTranslator.cpp
+  ViewClient.cpp
+#  ViewServer.cpp
+#  MapWrapper.cpp
 #    SpatialQuery.cpp
 #    DeltaPublisher.cpp
 #    DeltaReceiver.cpp
-#    MapWrapper.cpp
 #    SpatialQueryWrapper.cpp
 )
 
@@ -21,13 +26,18 @@ pods_install_headers(
   ThreadSafeQueue.hpp
   Utils.hpp
   PointDataBuffer.hpp
+  VoxelGrid.hpp
   SensorDataReceiver.hpp
   LocalMap.hpp
   MapManager.hpp
+  MapView.hpp
+  LcmTranslator.hpp
+  ViewClient.hpp
+#  ViewServer.hpp
+#  MapWrapper.hpp
 #  SpatialQuery.hpp
 #  DeltaPublisher.hpp
 #  DeltaReceiver.hpp
-#  MapWrapper.hpp
 #  SpatialQueryWrapper.hpp
   DESTINATION maps
 )

@@ -1,5 +1,5 @@
-#ifndef _SensorDataReceiver_hpp_
-#define _SensorDataReceiver_hpp_
+#ifndef _maps_SensorDataReceiver_hpp_
+#define _maps_SensorDataReceiver_hpp_
 
 #include <unordered_map>
 #include <string>

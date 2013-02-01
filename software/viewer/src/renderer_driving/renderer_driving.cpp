@@ -728,21 +728,14 @@ static void send_new_octomap (RendererDriving *self){
 
   drc_map_params_t msgout;
   msgout.utime = self->robot_utime;
-  msgout.message_id = 0;
   msgout.map_id = -1;
   msgout.resolution = 0.02;
-  msgout.dimensions[0] = 40;//10;
-  msgout.dimensions[1] = 40;//10;
-  msgout.dimensions[2] = 40;//10;
-  
-  msgout.transform_to_local.translation.x = self->robot_pose.translation().x();
-  msgout.transform_to_local.translation.y = self->robot_pose.translation().y();
-  msgout.transform_to_local.translation.z = self->robot_pose.translation().z();
-  msgout.transform_to_local.rotation.x = 0;
-  msgout.transform_to_local.rotation.y = 0;
-  msgout.transform_to_local.rotation.z = 0;
-  msgout.transform_to_local.rotation.w = 1; // to keep world aligned  
-
+  msgout.buffer_size = 1000;
+  float size = 40;//10;
+  for (int i = 0; i < 3; ++i) {
+    msgout.bound_min[i] = self->robot_pose.translation()[i] - size/2;
+    msgout.bound_max[i] = self->robot_pose.translation()[i] + size/2;
+  }
   drc_map_params_t_publish(self->lc,"MAP_CREATE",&msgout);
   bot_viewer_set_status_bar_message(self->viewer, "Sent MAP_CREATE");
 }

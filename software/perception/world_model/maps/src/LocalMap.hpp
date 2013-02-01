@@ -26,7 +26,6 @@ public:
     int mPointBufferSize;
     bool mActive;
     float mOctreeResolution;
-    Eigen::Isometry3f mOctreeTransform;  // from reference to octree coords
 
     Spec() {
       mId = -1;
@@ -35,7 +34,6 @@ public:
       mPointBufferSize = 1000;
       mActive = true;
       mOctreeResolution = 0.1;
-      mOctreeTransform = Eigen::Isometry3f::Identity();
     }
   };
 
@@ -53,11 +51,6 @@ public:
 
     void set(const std::vector<Eigen::Vector4f>& iPlanes,
              const int64_t iMinTime=-1, const int64_t iMaxTime=-1);
-  };
-
-  struct Octree {
-    boost::shared_ptr<octomap::OcTree> mTree;
-    Eigen::Isometry3f mTransform;
   };
 
   
@@ -92,9 +85,10 @@ public:
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   // export this entire representation as an octree
-  Octree getAsOctree(const float iResolution, const bool iTraceRays=false,
-                     const Eigen::Vector3f& iShift=Eigen::Vector3f(0,0,0),
-                     const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
+  maps::Octree
+  getAsOctree(const float iResolution, const bool iTraceRays=false,
+              const Eigen::Vector3f& iShift=Eigen::Vector3f(0,0,0),
+              const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   /*
   // export this representation as height map
@@ -112,7 +106,7 @@ protected:
   Spec mSpec;
   bool mIsFrozen;
   boost::shared_ptr<PointDataBuffer> mPointData;
-  Octree mOctree;
+  maps::Octree mOctree;
 };
 
 }

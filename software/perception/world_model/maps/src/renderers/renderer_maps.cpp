@@ -13,15 +13,11 @@
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
 
-#include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/drc/map_octree_t.hpp>
-#include <lcmtypes/drc/map_cloud_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
+#include <lcmtypes/drc/map_command_t.hpp>
 
-#include <zlib.h>
-#include <image_utils/jpeg.h>
-#include <image_utils/pixels.h>
+#include <drc_utils/Clock.hpp>
 
 #include <unordered_map>
 
@@ -29,7 +25,12 @@
 #include <pcl/point_cloud.h>
 #include <pcl/common/transforms.h>
 
-#include <maps/DataBlob.hpp>
+#include <image_utils/jpeg.h>
+#include <image_utils/pixels.h>
+#include <pointcloud_tools/filter_colorize.hpp>
+
+#include <maps/ViewClient.hpp>
+#include <maps/MapView.hpp>
 
 static const char* RENDERER_NAME = "Maps";
 
@@ -38,8 +39,8 @@ static const char* PARAM_REQUEST_TYPE = "Data Type";
 static const char* PARAM_REQUEST_RES = "Resolution m";
 static const char* PARAM_REQUEST_FREQ = "Frequency Hz";
 static const char* PARAM_DATA_REQUEST = "Send Request";
-
-typedef pcl::PointCloud<pcl::PointXYZ> PointCloudType;
+static const char* PARAM_MAP_COMMAND_TYPE = "Command";
+static const char* PARAM_MAP_COMMAND = "Execute";
 
 enum InputMode {
   INPUT_MODE_NONE,
@@ -50,6 +51,12 @@ enum InputMode {
 enum DataRequestType {
   REQUEST_TYPE_CLOUD,
   REQUEST_TYPE_OCTREE
+};
+
+enum MapCommand {
+  MAP_COMMAND_CLEAR,
+  MAP_COMMAND_STOP,
+  MAP_COMMAND_START
 };
 
 struct Frustum {
@@ -64,9 +71,8 @@ struct Frustum {
   Eigen::Vector3f mRay4;
 };
 
-struct CloudData {
+struct ViewMetaData {
   int mId;
-  PointCloudType::Ptr mCloud;
   Frustum mFrustum;
   Eigen::Vector3f mColor;
 };
@@ -83,6 +89,14 @@ static const int kBoxQuads[6][4] = {
 
 struct RendererMaps {
 
+  struct ViewClientListener : public maps::ViewClient::Listener {
+    RendererMaps* mRenderer;
+
+    void notify(const int64_t iViewId) {
+      bot_viewer_request_redraw(mRenderer->mViewer);
+    }
+  };
+
   BotRenderer mRenderer;
   BotViewer* mViewer;
   boost::shared_ptr<lcm::LCM> mLcm;
@@ -91,8 +105,10 @@ struct RendererMaps {
   BotGtkParamWidget* mWidget;
   BotEventHandler mEventHandler;
 
-  typedef std::unordered_map<int64_t,CloudData> DataMap;
-  DataMap mClouds;
+  typedef std::unordered_map<int64_t,ViewMetaData> DataMap;
+  DataMap mViewData;
+  maps::ViewClient mViewClient;
+  ViewClientListener mViewClientListener;
 
   InputMode mInputMode;
   bool mDragging;
@@ -107,145 +123,44 @@ struct RendererMaps {
   float mRequestFrequency;
   float mRequestResolution;
 
+  MapCommand mMapCommand;
+
   BotCamTrans* mCamTrans;
+  bot_core::image_t mCameraImage;
 
   RendererMaps() {
     mCamTrans = NULL;
     mBoxValid = false;
     mDragging = false;
+    mCameraImage.size = 0;
   }
 
-  void onCloud(const lcm::ReceiveBuffer* iBuf,
-               const std::string& iChannel,
-               const drc::map_cloud_t* iMessage) {
-
-    // transform from cloud to reference coords
-    Eigen::Affine3f matx;
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        matx(i,j) = iMessage->transform[i][j];
-      }
-    }
-
-    // data blob
-    maps::DataBlob::Spec spec;
-    const drc::map_blob_t& msgBlob = iMessage->blob;
-    spec.mDimensions.resize(msgBlob.dimensions.size());
-    std::copy(msgBlob.dimensions.begin(), msgBlob.dimensions.end(),
-              spec.mDimensions.begin());
-    spec.mStrideBytes.resize(msgBlob.stride_bytes.size());
-    std::copy(msgBlob.stride_bytes.begin(), msgBlob.stride_bytes.end(),
-              spec.mStrideBytes.begin());
-    switch (msgBlob.compression) {
-    case drc::map_blob_t::UNCOMPRESSED:
-      spec.mCompressionType = maps::DataBlob::CompressionTypeNone;
-      break;
-    case drc::map_blob_t::ZLIB:
-      spec.mCompressionType = maps::DataBlob::CompressionTypeZlib;
-      break;
-    default:
-      return;
-    }
-    switch (msgBlob.data_type) {
-    case drc::map_blob_t::UINT8:
-      spec.mDataType = maps::DataBlob::DataTypeUint8;
-      break;
-    case drc::map_blob_t::UINT16:
-      spec.mDataType = maps::DataBlob::DataTypeUint16;
-      break;
-    case drc::map_blob_t::FLOAT32:
-      spec.mDataType = maps::DataBlob::DataTypeFloat32;
-      break;
-    default:
-      return;
-    }
-    maps::DataBlob blob;
-    blob.setData(msgBlob.data, spec);
-
-    // convert to point cloud
-    blob.convertTo(maps::DataBlob::CompressionTypeNone,
-                   maps::DataBlob::DataTypeFloat32);
-    float* raw = (float*)(&blob.getBytes()[0]);
-    PointCloudType::Ptr cloud(new PointCloudType());
-    cloud->resize(spec.mDimensions[1]);
-    for (size_t i = 0; i < cloud->size(); ++i) {
-      (*cloud)[i].x = raw[i*3 + 0];
-      (*cloud)[i].y = raw[i*3 + 1];
-      (*cloud)[i].z = raw[i*3 + 2];
-    }    
-
-    // transform and add
-    // TODO: separate some of this out
-    pcl::transformPointCloud(*cloud, *cloud, matx);
-    DataMap::iterator item = mClouds.find(iMessage->view_id);
-    if (item == mClouds.end()) {
-      CloudData data;
-      data.mId = iMessage->view_id;
-      data.mCloud = cloud;
-      if (data.mId != 1) {
-        data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                      (double)rand()/RAND_MAX,
-                                      (double)rand()/RAND_MAX);
-      }
-      else {
-        data.mColor = Eigen::Vector3f(0,1,0);
-      }
-      mClouds[iMessage->view_id] = data;
+  void onCameraImage(const lcm::ReceiveBuffer* iBuf,
+                     const std::string& iChannel,
+                     const bot_core::image_t* iMessage) {
+    mCameraImage = *iMessage;
+    if (iMessage->pixelformat == PIXEL_FORMAT_MJPEG) {
+      int stride = iMessage->width * 3;
+      mCameraImage.data.resize(iMessage->height * stride);
+      mCameraImage.pixelformat = 0;
+      jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
+                             &mCameraImage.data[0],
+                             iMessage->width, iMessage->height, stride);
     }
     else {
-      item->second.mCloud = cloud;
+      // TODO: this will break unless rgb3
     }
+
+    if (mCamTrans == NULL) {
+      mCamTrans = bot_param_get_new_camtrans(mBotParam, "CAMERALEFT");
+      if (mCamTrans == NULL) {
+        std::cout << "Error: RendererHeightMap: bad camtrans" << std::endl;
+      }
+    }
+
+    bot_viewer_request_redraw(mViewer);
   }
 
-  void onOctree(const lcm::ReceiveBuffer* iBuf,
-                const std::string& iChannel,
-                const drc::map_octree_t* iMessage) {
-
-    // TODO: move heavy lifting out of lcm thread
-
-    // transform from reference to octree coords
-    Eigen::Isometry3f matx;
-    Eigen::Quaternionf q(iMessage->transform.rotation.w,
-                         iMessage->transform.rotation.x,
-                         iMessage->transform.rotation.y,
-                         iMessage->transform.rotation.z);
-    Eigen::Vector3f pos(iMessage->transform.translation.x,
-                        iMessage->transform.translation.y,
-                        iMessage->transform.translation.z);
-    matx.linear() = q.matrix();
-    matx.translation() = pos;
-    std::string str(iMessage->data.begin(), iMessage->data.end());
-    std::stringstream ss(str);
-    octomap::OcTree oct(0.1);
-    oct.readBinary(ss);
-    PointCloudType::Ptr cloud(new PointCloudType());
-    octomap::OcTree::leaf_iterator iter = oct.begin_leafs();
-    for (; iter != oct.end_leafs(); ++iter) {
-      if (oct.isNodeOccupied(*iter)) {
-        PointCloudType::PointType pt(iter.getX(), iter.getY(), iter.getZ());
-        cloud->push_back(pt);
-      }
-    }
-    pcl::transformPointCloud(*cloud, *cloud, matx);
-    DataMap::iterator item = mClouds.find(iMessage->view_id);
-    if (item == mClouds.end()) {
-      CloudData data;
-      data.mId = iMessage->view_id;
-      data.mCloud = cloud;
-      if (data.mId != 1) {
-        data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                      (double)rand()/RAND_MAX,
-                                      (double)rand()/RAND_MAX);
-      }
-      else {
-        data.mColor = Eigen::Vector3f(1,0,0);
-      }
-      mClouds[iMessage->view_id] = data;
-    }
-    else {
-      item->second.mCloud = cloud;
-    }
-  }
 
   static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
                                    const char *iName,
@@ -258,9 +173,33 @@ struct RendererMaps {
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_FREQ);
     self->mRequestResolution = (float)
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_RES);
+    self->mMapCommand = (MapCommand)
+      bot_gtk_param_widget_get_enum(iWidget, PARAM_MAP_COMMAND_TYPE);
+
+    if (!strcmp(iName, PARAM_MAP_COMMAND)) {
+      drc::map_command_t command;
+      command.utime = drc::Clock::instance()->getCurrentTime();
+      command.map_id = 1;
+      switch (self->mMapCommand) {
+      case MAP_COMMAND_CLEAR:
+        command.command = drc::map_command_t::CLEAR;
+        break;
+      case MAP_COMMAND_STOP:
+        command.command = drc::map_command_t::STOP;
+        break;
+      case MAP_COMMAND_START:
+        command.command = drc::map_command_t::START;
+        break;
+      default:
+        std::cout << "WARNING: BAD MAP COMMAND TYPE" << std::endl;
+        break;
+      }
+      self->mLcm->publish("MAP_COMMAND", &command);
+    }
 
     if (!strcmp(iName, PARAM_DATA_REQUEST) && (self->mBoxValid)) {
       drc::map_request_t request;
+      request.utime = drc::Clock::instance()->getCurrentTime();
       request.map_id = 0;
       request.view_id = ((int64_t)rand() << 31) + rand();
       switch(self->mRequestType) {
@@ -288,17 +227,15 @@ struct RendererMaps {
       self->mLcm->publish("MAP_REQUEST", &request);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_NONE);
-      CloudData data;
+      ViewMetaData data;
       data.mId = request.view_id;
       data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
                                     (double)rand()/RAND_MAX,
                                     (double)rand()/RAND_MAX);
       data.mFrustum = self->mFrustum;
-      self->mClouds[data.mId] = data;
+      self->mViewData[data.mId] = data;
       self->mBoxValid = false;
     }
-  
-    bot_viewer_request_redraw(self->mViewer);
   }
 
   static void draw(BotViewer *iViewer, BotRenderer *iRenderer) {
@@ -321,30 +258,90 @@ struct RendererMaps {
     glEnable(GL_RESCALE_NORMAL);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    // TODO: make separate objects and render methods
-
     // clouds
-    for (DataMap::const_iterator iter = self->mClouds.begin();
-         iter != self->mClouds.end(); ++iter) {
-      const CloudData& data = iter->second;
-      if ((data.mCloud == NULL) || (data.mCloud->size() == 0)) {
+    std::vector<maps::ViewClient::MapViewPtr> views =
+      self->mViewClient.getAllViews();
+    for (size_t v = 0; v < views.size(); ++v) {
+      maps::ViewClient::MapViewPtr view = views[v];
+
+      // try to find ancillary data for this view; add if it doesn't exist
+      int64_t id = view->getSpec().mViewId;
+      DataMap::const_iterator item = self->mViewData.find(id);
+      ViewMetaData data;
+      if (item == self->mViewData.end()) {
+        data.mId = id;
+        if (data.mId != 1) {
+          data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
+                                        (double)rand()/RAND_MAX,
+                                        (double)rand()/RAND_MAX);
+        }
+        else {
+          data.mColor = Eigen::Vector3f(1,0,0);
+        }
+        self->mViewData[id] = data;
+      }
+      data = self->mViewData[id];
+
+      // see if point cloud has any data
+      maps::PointCloud::Ptr cloud = view->getAsPointCloud();
+      if (cloud->size() == 0) {
         continue;
       }
-      const PointCloudType& cloud = *data.mCloud;
-      glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
+
+      //
+      // draw point cloud
+      //
+
       glPointSize(3);
       glBegin(GL_POINTS);
-      for (size_t i = 0; i < cloud.size(); ++i) {
-        const PointCloudType::PointType pt = cloud[i];
-        glVertex3f(pt.x, pt.y, pt.z);
+
+      // if we should colorize
+      if ((self->mCameraImage.size > 0) && (self->mCamTrans != NULL)) {
+        double matx[16];
+        bot_frames_get_trans_mat_4x4_with_utime(self->mBotFrames,
+                                                "local", "CAMERA",
+                                                self->mCameraImage.utime, matx);
+        Eigen::Affine3d xform;
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            xform(i,j) = matx[i*4+j];
+          }
+        }
+        pcl::PointCloud<pcl::PointXYZRGB> cloudColor;
+        FilterColorize::colorize<maps::PointCloud::PointType,
+                                 pcl::PointXYZRGB>
+          (*cloud, xform, self->mCameraImage,
+           self->mCamTrans, cloudColor);
+        for (size_t i = 0; i < cloudColor.size(); ++i) {
+          const pcl::PointXYZRGB pt = cloudColor[i];
+          if ((pt.r == 0) && (pt.g == 0) && (pt.b == 0)) {
+            glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
+          }
+          else {
+            glColor3b(pt.r, pt.g, pt.b);
+          }
+          glVertex3f(pt.x, pt.y, pt.z);
+        }
       }
+
+      // otherwise choose single color
+      else {
+        glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
+        for (size_t i = 0; i < cloud->size(); ++i) {
+          const maps::PointCloud::PointType pt = (*cloud)[i];
+          glVertex3f(pt.x, pt.y, pt.z);
+        }
+      }
+
       glEnd();
+
       if (data.mFrustum.mPlanes.size() > 0) {
         self->drawFrustum(data.mFrustum, data.mColor);
       }
     }
 
 
+    // draw drag rectangle
     if (self->mDragging && self->mInputMode == INPUT_MODE_RECT) {
       int width = GTK_WIDGET(iViewer->gl_area)->allocation.width;
       int height = GTK_WIDGET(iViewer->gl_area)->allocation.height;
@@ -454,7 +451,7 @@ struct RendererMaps {
         (iEvent->keyval == GDK_Escape)) {
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_NONE);
-      return 0;  // return 1;
+      return 0;
     }
     return 0;
   }
@@ -473,7 +470,8 @@ struct RendererMaps {
         self->mDragPoint1[0] = iEvent->x;
         self->mDragPoint1[1] = iEvent->y;
         self->mDragPoint2 = self->mDragPoint1;
-        return 0; // return 1;
+        bot_viewer_request_redraw(self->mViewer);
+        return 1;
       }
       else {}
     }
@@ -487,12 +485,14 @@ struct RendererMaps {
           self->mDragPoint2 = self->mDragPoint1;
           self->mBaseValue = (iEvent->button == 1) ? self->mFrustum.mNear :
             self->mFrustum.mFar;
-          return 0; // return 1;
+          bot_viewer_request_redraw(self->mViewer);
+          return 1;
         }
         else {}
       }
     }
     else {}
+    bot_viewer_request_redraw(self->mViewer);
     return 0;
   }
 
@@ -508,6 +508,7 @@ struct RendererMaps {
         self->mDragging = false;
 
         if ((self->mDragPoint2-self->mDragPoint1).norm() < 1) {
+          bot_viewer_request_redraw(self->mViewer);
           return 0;
         }
         
@@ -573,7 +574,8 @@ struct RendererMaps {
 
         self->mBoxValid = true;
 
-        return 0; // return 1;
+        bot_viewer_request_redraw(self->mViewer);
+        return 1;
       }
       else {}
     }
@@ -581,6 +583,7 @@ struct RendererMaps {
       self->mDragging = false;
     }
     else {}
+    bot_viewer_request_redraw(self->mViewer);
     return 0;
   }
 
@@ -595,7 +598,8 @@ struct RendererMaps {
       if (self->mDragging) {
         self->mDragPoint2[0] = iEvent->x;
         self->mDragPoint2[1] = iEvent->y;
-        return 0; // return 1;
+        bot_viewer_request_redraw(self->mViewer);
+        return 1;
       }
       else {}
     }
@@ -607,17 +611,20 @@ struct RendererMaps {
         float scaledDist = dist/100;
         if (self->mWhichButton == 1) {
           self->mFrustum.mNear = std::max(0.0f, self->mBaseValue+scaledDist);
-          return 0; // return 1;
+          bot_viewer_request_redraw(self->mViewer);
+          return 1;
         }
         else if (self->mWhichButton == 3) {
           self->mFrustum.mFar = std::max(0.0f, self->mBaseValue+scaledDist);
-          return 0; // return 1;
+          bot_viewer_request_redraw(self->mViewer);
+          return 1;
         }
         else {}
       }
       else {}
     }
     else {}
+    bot_viewer_request_redraw(self->mViewer);
     return 0;
   }
 
@@ -667,14 +674,14 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   self->mBotParam = param;
   self->mBotFrames = frames;
 
+  drc::Clock::instance()->setLcm(self->mLcm);
+
   // events
   BotEventHandler* handler = &self->mEventHandler;
+  memset(handler, 0, sizeof(BotEventHandler));
   handler->name = (char*)RENDERER_NAME;
   handler->enabled = 1;
-  handler->picking = 0;
-  handler->pick_query = NULL;
   handler->key_press = RendererMaps::keyPress;
-  handler->hover_query = NULL;
   handler->mouse_press = RendererMaps::mousePress;
   handler->mouse_release = RendererMaps::mouseRelease;
   handler->mouse_motion = RendererMaps::mouseMotion;
@@ -707,6 +714,13 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                                   0.01, 1, 0.01, 0.05);
 
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_DATA_REQUEST, NULL);
+
+  bot_gtk_param_widget_add_enum(self->mWidget, PARAM_MAP_COMMAND_TYPE,
+                                BOT_GTK_PARAM_WIDGET_MENU, MAP_COMMAND_CLEAR,
+                                "Clear Map", MAP_COMMAND_CLEAR,
+                                "Stop Update", MAP_COMMAND_STOP,
+                                "Start Update", MAP_COMMAND_START, NULL);
+  bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_MAP_COMMAND, NULL);
   
   g_signal_connect (G_OBJECT (self->mWidget), "changed",
                     G_CALLBACK (RendererMaps::onParamWidgetChanged),
@@ -719,8 +733,14 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   g_signal_connect (G_OBJECT (viewer), "save-preferences",
                     G_CALLBACK (on_save_preferences), self);
 
-  self->mLcm->subscribe("MAP_OCTREE", &RendererMaps::onOctree, self);
-  self->mLcm->subscribe("MAP_CLOUD", &RendererMaps::onCloud, self);
+  self->mViewClient.setLcm(self->mLcm);
+  self->mViewClient.setOctreeChannel("MAP_OCTREE");
+  self->mViewClient.setCloudChannel("MAP_CLOUD");
+  self->mViewClientListener.mRenderer = self;
+  self->mViewClient.addListener(&self->mViewClientListener);
+  self->mViewClient.start();
+
+  self->mLcm->subscribe("CAMERALEFT", &RendererMaps::onCameraImage, self);
 
   std::cout << "Finished Setting Up Maps Renderer" << std::endl;
 
