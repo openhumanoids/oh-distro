@@ -118,14 +118,17 @@ int main(int argc, char *argv[])
   g_thread_init(NULL);
   
   lcm_t * lcm;
-  string viewer_title="";  
+  string viewer_title="";
+  string vis_config_file="";
   if(role.compare("robot") == 0){
      lcm= bot_lcm_get_global(NULL);
      viewer_title = "(Robot) MIT DRC Viewer";
+     vis_config_file = ".bot-plugin-robot-drc-viewer";
   }else if(role.compare("base") == 0){
      string lcm_url = "udpm://239.255.12.68:1268?ttl=1";
      lcm= lcm_create(lcm_url.c_str());// bot_lcm_get_global(lcm_url.c_str());
      viewer_title = "(Base) MIT DRC Viewer";
+     vis_config_file = ".bot-plugin-base-drc-viewer";
   }else{
     std::cout << "DRC Viewer role not understood, choose: robot or base\n";
     return 1;
