@@ -31,7 +31,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 			       Eigen::Vector3f( 1.0, 0.0, 1.0 )); //color
 	sphere._otdf_id = AffordanceState::SPHERE;
 	sphere._params[AffordanceState::RADIUS_NAME] = 0.125;
-	wrapper.addOrReplace(sphere);
+	wrapper.addNewlyFittedAffordance(sphere);
 
 	//box
 	AffordanceState box("Box", uniqueObjId++, mapId,
@@ -41,7 +41,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 	box._params[AffordanceState::LENGTH_NAME] = 100;
 	box._params[AffordanceState::WIDTH_NAME]  = 100;
 	box._params[AffordanceState::HEIGHT_NAME] = 1.0;
-	wrapper.addOrReplace(box);
+	wrapper.addNewlyFittedAffordance(box);
 
 	//cylinder
 	AffordanceState cylinder("Cylinder", uniqueObjId++, mapId,
@@ -50,17 +50,17 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 	cylinder._otdf_id = AffordanceState::CYLINDER;
 	cylinder._params[AffordanceState::RADIUS_NAME] = 0.25;
 	cylinder._params[AffordanceState::LENGTH_NAME] = 0.25;
-	wrapper.addOrReplace(cylinder);
+	wrapper.addNewlyFittedAffordance(cylinder);
 
 	//=============
 	//add a bunch of affordances w/ just names + ids
-	wrapper.addOrReplace(AffordanceState("4-Rung Ladder",      uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("6-Rung Ladder",       uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Lever",      uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Table",       uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Steering Wheel",  uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Gas Pedal", 		uniqueObjId++, mapId));
-	wrapper.addOrReplace(AffordanceState("Brake Pedal", 	uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("4-Rung Ladder",      uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("6-Rung Ladder",       uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("Lever",      uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("Table",       uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("Steering Wheel",  uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("Gas Pedal", 		uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("Brake Pedal", 	uniqueObjId++, mapId));
 
 	int j = 0;
 	boost::posix_time::seconds sleepTime(1); //update every 1 seconds
