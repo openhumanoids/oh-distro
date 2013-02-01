@@ -97,10 +97,10 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
  gluQuadricOrientation(quadric, GLU_OUTSIDE);
   
 
-  int type = link->type ;
-  enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
+ //int type = link->type ;
+  //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
   
-  if (type == SPHERE)
+ if (link->type == otdf::Geometry::SPHERE)
     {
   glPushMatrix();
       boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(link));	
@@ -112,7 +112,7 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
       glEnd();
   glPopMatrix();
     }
-  else if  (type == BOX)
+  else if  (link->type == otdf::Geometry::BOX)
     {
     boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(link));
     double xDim = box->dim.x;
@@ -136,7 +136,7 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
   
 
   }
-  else if  (type == CYLINDER)
+  else if  (link->type == otdf::Geometry::CYLINDER)
     {
     boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(link));
 
@@ -204,13 +204,13 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
   glPopMatrix();
 
   }
-  else if  (type == MESH)
+  else if  (link->type == otdf::Geometry::MESH)
     {
     //cout << "MESH"<< endl;
     //boost::shared_ptr<otdf::Mesh> mesh(boost::shared_dynamic_cast<otdf::Mesh>(it->second->visual->geometry));
     //renderMesh(mesh->filename)
   }
-  else if  (type == TORUS)
+  else if  (link->type == otdf::Geometry::TORUS)
   {
     boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
     double innerRadius = torus->tube_radius;

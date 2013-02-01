@@ -5,6 +5,7 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 
 #include "AffordanceCollectionListener.hpp"
+#include "affordance/AffordanceState.h"
 
 using namespace std;
 using namespace boost;
@@ -106,19 +107,25 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 
  std::string AffordanceCollectionListener::get_filename(int32_t otdf_id)
  {
-   enum{CYLINDER, LEVER};
+   //enum{CYLINDER, LEVER};
        
   std::string filename;
-          
+  
+  using namespace affordance;
+       
   //NOTE: Have to manually list all the otdf templates, not ideal. 
   //Much better if otdf_id is a string instead of a enumerated type.
-  if(otdf_id==CYLINDER){
+  if(otdf_id==AffordanceState::CYLINDER){
    // check if cylinder exists in _parent_otdf_renderer->otdf_filenames
    filename = "cylinder";
   }
-  else if(otdf_id==LEVER)
+  else if(otdf_id==AffordanceState::LEVER)
   {
    filename = "lever";
+  }
+  else if(otdf_id==AffordanceState::SPHERE)
+  {
+    filename = "cylinder";  //TODO
   }
     
   return filename;
