@@ -72,17 +72,19 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
         if((whole_body_selection_enabled)&&(selected_link != " ")) {
           glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
-        }   
-        if(is_otdf_instance)
-        {
-         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[i];
-         GlKinematicBody::draw_link(nextLink,nextTf);
-        }
-        else
-        {     
-         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[i];
-         GlKinematicBody::draw_link(nextLink,nextTf);
-        }
+        } 
+        GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);  
+//        if(is_otdf_instance)
+//        {
+//         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[i];
+//         GlKinematicBody::draw_link(nextLink,nextTf.name,nextTf.frame);
+//         
+//        }
+//        else
+//        {     
+//         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[i];
+//         GlKinematicBody::draw_link(nextLink,nextTf.name,nextTf.frame);
+//        }
       }
    };
    
@@ -117,18 +119,12 @@ class InteractableGlKinematicBody: public GlKinematicBody
 
         if((whole_body_selection_enabled)&&(selected_link != " ")) {
           glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
-        }   
-        if(is_otdf_instance)
-        {
-         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[i];
-         GlKinematicBody::draw_link(nextLink,nextTf);
         }
-        else
-        {     
-         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[i];
-         GlKinematicBody::draw_link(nextLink,nextTf);
-        }
+        
+        GlKinematicBody::draw_link_current_and_future(c,alpha,i,nextTf);    
+      
       }
+
    };
    
    void draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape, const LinkFrameStruct &link_tf);

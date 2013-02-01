@@ -243,8 +243,8 @@ InteractableGlKinematicBody::~InteractableGlKinematicBody()
 
 void InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
 {
-    GlKinematicBody::set_state(msg);  //code re-use
-    update_urdf_collision_objects();
+   GlKinematicBody::set_state(msg);  //code re-use
+   update_urdf_collision_objects();
 } // end InteractableGlKinematicBody::set_state(const drc::robot_state_t)
 
 
