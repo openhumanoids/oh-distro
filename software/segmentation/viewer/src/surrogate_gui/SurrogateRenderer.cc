@@ -288,9 +288,22 @@ namespace surrogate_gui
 		}
 		glBegin(GL_POINTS);
 
+		float minZ=1e10;
+		float maxZ=-1e10;
+
+		for (uint i = 0; i < msg->size(); i++)
+	        {
+		  minZ = min(minZ,msg->points[i].z);
+		  maxZ = max(maxZ,msg->points[i].z);
+		}
+
+
 		//iterate through all the points
 		for (uint i = 0; i < msg->size(); i++)
 		{
+		         float heightRatio = (msg->points[i].z-minZ)/(maxZ-minZ);
+			 float *outColor = bot_color_util_jet(heightRatio);
+
 			//extract (original) color
 			RGB_PCL pclColor;
 			pclColor.float_value = msg->points[i].rgb;
@@ -299,7 +312,8 @@ namespace surrogate_gui
 			{
 				//blend w/ background color.  see OpenGL superbible page 231
 				glColor4f(_viewer->backgroundColor[0], _viewer->backgroundColor[1], _viewer->backgroundColor[2], 255);
-				glColor4ub(pclColor.red, pclColor.green, pclColor.blue, ALPHA_CLOUD_UB); //use original point cloud color
+				//glColor4ub(pclColor.red, pclColor.green, pclColor.blue, ALPHA_CLOUD_UB); //use original point cloud color
+				glColor4f(outColor[0], outColor[1], outColor[2], ALPHA_CLOUD_UB/255.0f); 
 			}
 			else if (isPaused()) //might be highlighting a selection
 			{
