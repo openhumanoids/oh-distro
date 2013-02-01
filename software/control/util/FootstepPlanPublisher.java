@@ -5,12 +5,12 @@ public class FootstepPlanPublisher
 {
 	drc.ee_goal_sequence_t msg;
 	String channel_name;
-	String[2] actuator_names;
+	String[] actuator_names;
 
-	public FootstepPlanPublisher(String robot_name, String[2] actuator_names, String channel)
+	public FootstepPlanPublisher(String robot_name, String[] actuator_names, String channel)
 	{
 		msg = new drc.ee_goal_sequence_t();
-		msg.robot_name = robot_name
+		msg.robot_name = robot_name;
 		channel_name = channel;
 
 	}
@@ -28,7 +28,7 @@ public class FootstepPlanPublisher
 		}
 	}
 
-	public void publish(double[] t, double[6][] x)
+	public void publish(double[] t, double[][] x)
 	{
 		LCM lcm = LCM.getSingleton();
 		msg.utime = System.nanoTime()/1000;
