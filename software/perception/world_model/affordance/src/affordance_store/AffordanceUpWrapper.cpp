@@ -41,21 +41,34 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 
 
 //=============mutators
-/**@param aff affordance to add to the server store.  or, if this affordance already
-	 * exists, then we are replacing the existing affordance.
-	 * Note that changes will only be refelcted in getAllAffordances once
-	 * the server accepts the addition/replacement and then pushes
-	 * the resulting affordance collection to this object.*/
-void AffordanceUpWrapper::addOrReplace(const AffordanceState &aff)
+/**Add a newly fitted affordance to the server.
+   @param aff affordance to add to the server store.  or, if this affordance already
+ * exists, then we are replacing the existing affordance.
+ * Note that changes will only be refelcted in getAllAffordances once
+ * the server accepts the addition/replacement and then pushes
+ * the resulting affordance collection to this object.*/
+  void AffordanceUpWrapper::addNewlyFittedAffordance(const AffordanceState &aff)
 {
 	_accessMutex.lock(); //=========lock
 
 	drc::affordance_t msg;
 	aff.toMsg(&msg);
-	_lcm->publish(AffordanceServer::AFFORDANCE_ADD_REPLACE_CHANNEL, &msg);
+	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msg);
 
 	_accessMutex.unlock(); //========unlock
 }
+
+  /***/
+  void AffordanceUpWrapper::updateTrackedAffordance(const AffordanceState &aff)
+  {
+    	_accessMutex.lock(); //=========lock
+
+	drc::affordance_t msg;
+	aff.toMsg(&msg);
+	_lcm->publish(AffordanceServer::AFFORDANCE_TRACK_CHANNEL, &msg);
+
+	_accessMutex.unlock(); //========unlock
+  }
 
 
 /**receives affordance collection message from server -- which represents

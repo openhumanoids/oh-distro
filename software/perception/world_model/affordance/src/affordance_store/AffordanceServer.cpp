@@ -18,9 +18,9 @@ using namespace boost;
 namespace affordance
 {
 
-const string AffordanceServer::AFF_SERVER_CHANNEL("AFF_SERVER_COLL");
-const string AffordanceServer::AFFORDANCE_ADD_REPLACE_CHANNEL("AFFORDANCE");
-const string AffordanceServer::AFF_COLLECTION_ADD_REPLACE_CHANNEL("AFFORDANCE_COLLECTION");
+const string AffordanceServer::AFF_SERVER_CHANNEL("AFFORDANCE_COLLECTION");
+const string AffordanceServer::AFFORDANCE_TRACK_CHANNEL("AFFORDANCE_TRACK");
+const string AffordanceServer::AFFORDANCE_FIT_CHANNEL("AFFORDANCE_FIT");
 
 
 /**@param lcm shared lcm object
@@ -30,8 +30,8 @@ AffordanceServer::AffordanceServer(shared_ptr<lcm::LCM> lcm)
 	: _lcm(lcm), _mapIdToAffIdMaps(), _serverMutex()
 {
 	//subscribe
-	lcm->subscribe(AFFORDANCE_ADD_REPLACE_CHANNEL, &AffordanceServer::handleAffordanceMsg, this);
-	lcm->subscribe(AFF_COLLECTION_ADD_REPLACE_CHANNEL, &AffordanceServer::handleCollectionMsg, this);
+	lcm->subscribe(AFFORDANCE_TRACK_CHANNEL, &AffordanceServer::handleAffordanceTrackMsg, this);
+	lcm->subscribe(AFFORDANCE_FIT_CHANNEL, &AffordanceServer::handleAffordanceFitMsg, this);
 
 	//start publishing thread
 	_pubThread = boost::thread(&AffordanceServer::runPeriodicPublish, this);
@@ -43,18 +43,18 @@ AffordanceServer::~AffordanceServer()
 }
 
 //-------methods
-void AffordanceServer::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-										   const drc::affordance_collection_t *collection)
-{
-	//loop thru and call handle Affordance
-	for(int i = 0; i < collection->naffs; i++)
-		handle(&collection->affs[i]);
-}
-void AffordanceServer::handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-										   const drc::affordance_t *affordance)
+void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+						const drc::affordance_t *affordance)
 {
 	handle(affordance);
 }
+
+void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+					      const drc::affordance_t *affordance)
+{
+	handle(affordance);
+}
+
 
 void AffordanceServer::handle(const drc::affordance_t *aff)
 {

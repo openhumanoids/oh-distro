@@ -47,7 +47,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		  s._object_id = 42;
 		  s._otdf_id = AffordanceState::CYLINDER;
 		  s._params[AffordanceState::RADIUS_NAME] = (j == 10 ? 9999 : 1.41);
-		  wrapper.addOrReplace(s);
+		  wrapper.addNewlyFittedAffordance(s);
 		}
 
 		if (j == 15)
@@ -57,7 +57,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		  s._object_id = 21;		  
 		  s._otdf_id = AffordanceState::BOX;
 		  s._params[AffordanceState::LENGTH_NAME] = .11111;
-		  wrapper.addOrReplace(s);
+		  wrapper.addNewlyFittedAffordance(s);
 		}
 	}
 }

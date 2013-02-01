@@ -30,13 +30,16 @@ public:
 	 * to periodically publish the server state.*/
 	const static std::string AFF_SERVER_CHANNEL;
 
-	/**an affordance_t message received on this channel will be added to the server and
-	 * will replace and existing affordances with the same map/objectId.*/
-	const static std::string AFFORDANCE_ADD_REPLACE_CHANNEL;
+	/**Channel for affordance updates from tracking
+	   an affordance_t message received on this channel will be added to the server and
+	 * will replace any existing affordance with the same map/objectId.*/
+	const static std::string AFFORDANCE_TRACK_CHANNEL;
 
-	/**an affordance_collection_t message received on this channel will be added to the
-	 * server and will replace and existing affordances with the same map/objectId.*/
-		const static std::string AFF_COLLECTION_ADD_REPLACE_CHANNEL;
+	/**Channel for new affordances from fitting
+	   an affordance_t message received on this channel will be added to the
+	 * server and will replace anY existing affordance with the same map/objectId.
+	 */
+	const static std::string AFFORDANCE_FIT_CHANNEL;
 
 private:
 	/**shared lcm object */
@@ -58,11 +61,10 @@ public:
 
 	//---------message handling
 private:
-	void handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-						  	 const drc::affordance_collection_t *collection);
-
-	void handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-						  	 const drc::affordance_t *affordance);
+	void handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+				      const drc::affordance_t *affordance);
+	void handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+				      const drc::affordance_t *affordance);
 
 	void handle(const drc::affordance_t *aff);
 

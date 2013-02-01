@@ -38,7 +38,8 @@ public:
 	std::string toString();
 
 	//-----------mutators
-	void addOrReplace(const AffordanceState &aff);
+	void addNewlyFittedAffordance(const AffordanceState &aff);
+	void updateTrackedAffordance(const AffordanceState &aff);
 
 private:
 	void handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
