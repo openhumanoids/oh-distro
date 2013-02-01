@@ -17,6 +17,9 @@ using namespace std;
 
 namespace action_authoring 
 {
+    /**Wrapper object around maps from various objects to StorageUIDS and is used for serialization.
+    Passed as a parameter to the serialization helper functions
+    */
     struct ObjectToStorageUIDMappings
     {
         OrderedMap<AffConstPtr, string> affordanceToStorageUID;
@@ -27,6 +30,9 @@ namespace action_authoring
         OrderedMap<AtomicConstraintConstPtr, string> atomicConstraintToStorageUID;
     };
 
+    /**Wrapper object around maps from StorageUIDS to various objects and is used for deserialization.
+    Passed as a parameter to the deserialization helper functions
+    */
     struct StorageUIDToObjectMappings
     {
         OrderedMap<string, AffConstPtr> StorageUIDToAffordance;
@@ -37,7 +43,8 @@ namespace action_authoring
         OrderedMap<string, AtomicConstraintPtr> StorageUIDToAtomicConstraint;
     };
 
-  /**todo comment*/
+  /**Stores and retrieves action plans created in the gui to and from an xml formatted document.
+  */
   class DatabaseManager 
   {
   private:
@@ -48,7 +55,6 @@ namespace action_authoring
     static string getStorageUID(ManipulatorStateConstPtr manipulator, ObjectToStorageUIDMappings &mappings);
     static string getStorageUID(AtomicConstraintConstPtr atomicConstraint, ObjectToStorageUIDMappings &mappings);
 
-    //todo : in the cpp file, add doxygen comments for each of these methods
     static void addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
     static void addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
     static void addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings);
@@ -59,12 +65,8 @@ namespace action_authoring
     static void parseTree(xmlDocPtr doc, xmlNode* xmlnode, StorageUIDToObjectMappings &mappings);
 
   public:
-    //Writing data to a file
-    //todo : add (in the cpp file) doxygen style comments 
     static void store(const string &filename, vector<AffConstPtr> &affordanceList, vector<ConstraintMacroPtr> &constraintList);
-    
-    //Reading data from a file
-    //todo : add (in the cpp file) doxygen style comments
+
     static void retrieve(const string &filename, vector<AffConstPtr> &affordanceList, vector<ConstraintMacroPtr> &constraintList);
 
   }; //class DatabaseManager

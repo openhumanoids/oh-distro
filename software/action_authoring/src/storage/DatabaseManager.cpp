@@ -64,6 +64,9 @@ using namespace std;
             Utility Methods
 ************************************/
 
+/**Storage UID generator function.
+@returns a random 16 character long id string.
+*/
 string generateRandomIdString() {
   string result;
   int len = 16;
@@ -78,7 +81,15 @@ bool isInMapping(AffConstPtr affordance, ObjectToStorageUIDMappings &mappings) {
   return mappings.affordanceToStorageUID.isKey(affordance);
 }
 
-//Looks up the uid of an affordance or assigns one if none exists
+/**Looks up the storage UID for an object.
+Picks the the appropriate object to storage UID map, and looks up the object.
+If it exists in the mapping, it returns the corresponding storage UID,
+otherwise, it assigns a new storage UID, inserts the object abd UID into the mapping, and returns
+the newly assigned storage UID. 
+@param object  the object to get the storageUID for.
+@param mappings the struct of object to storage UID mappings.
+@return a string identifier for the object.
+*/
 string DatabaseManager::getStorageUID(AffConstPtr affordance, ObjectToStorageUIDMappings &mappings) {
   string uid;
   if (mappings.affordanceToStorageUID.isKey(affordance)) {
@@ -154,6 +165,23 @@ string DatabaseManager::getStorageUID(AtomicConstraintConstPtr atomicConstraint,
   return uid;
 }
 
+
+/**Creates a new child xml node with a given name and content and adds it to a parent xml node.
+Each overloaded function takes a different content type
+
+@param parent the parent node.
+@param name the name of the child node.
+@param content the content of the node
+@returns an xmlNodePtr to the child node
+
+example:
+calling makeChild(fooNode, "child", "child contents') then writing the parent node to a file results in:
+
+<parent>
+  <child>child contents</child>
+</parent>
+*/
+
 xmlNodePtr makeChild(xmlNodePtr parent, const string &name, const string &content) {
   return xmlNewChild(parent, NULL, BAD_CAST name.c_str(), BAD_CAST content.c_str());
 }
@@ -176,72 +204,117 @@ xmlNodePtr makeChild(xmlNodePtr parent, const string &name) {
 
 /***********************************
             Writing To File
+
+General Methodology: When DatabaseManager::store is called, a new 
+xml document and a root xml node is created. Each object in the paramenter lists is
+converted into an xmlNode and added to the root node. Then root node is then written
+to a file in xmlFormat (via xmllib).
+
+For each add<sometype>ToNode function, the following conventions mus be followed:
+1. Each node must be added to the same root node
+
+2. All children of an object must be serialized before that object can be serialized
+  e.g. if foo object has child object bar, then the first call of addFooToNode must be
+    addBarToNode(foo->getBar());
+
+3. Each node must have a string constant name specifying its type
+  e.g. specify #define FOO_BAR_NODE "foo-bar" at the top of this file
+
+4. Each node must have a storage uid, gotten from a call to getStorageUID
+
+All other node specifications are left as user-defined behavior
 ************************************/
 
-//Converts an affordance into an XML Node, and adds it as a child to another node
-void DatabaseManager::addAffordanceStateToNode(AffConstPtr affordance, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
+/**Translates an AffordanceState to an xmlNode
+@param affordance the AffordanceState to serialize
+@param node the parent node
+@param mappings a struct of object to storage UID mappings
+*/
+void DatabaseManager::addAffordanceStateToNode(AffConstPtr affordanceState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
   xmlNodePtr affordanceNode = makeChild(node, AFFORDANCE_STATE_NODE);
-  makeChild(affordanceNode, UID_NODE, getStorageUID(affordance, mappings));
-  makeChild(affordanceNode, NAME_NODE, affordance->getName());
+  makeChild(affordanceNode, UID_NODE, getStorageUID(affordanceState, mappings));
+  makeChild(affordanceNode, NAME_NODE, affordanceState->getName());
   makeChild(affordanceNode, "contents", "LCM serialized affordance");
 }
 
-void DatabaseManager::addManipulatorStateToNode(ManipulatorStateConstPtr manipulator, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
+/**Translates a ManipulatorState to an xmlNode
+@param manipulatorState the ManipulatorState to serialize
+@param node the parent node
+@param mappings a struct of object to storage UID mappings
+*/
+void DatabaseManager::addManipulatorStateToNode(ManipulatorStateConstPtr manipulatorState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
   xmlNodePtr manipulatorNode = makeChild(node, MANIPULATOR_STATE_NODE);
-  makeChild(manipulatorNode, NAME_NODE, manipulator->getName());
-  makeChild(manipulatorNode, UID_NODE, getStorageUID(manipulator, mappings));
-  makeChild(manipulatorNode, GUID_PART_1_NODE, manipulator->getGlobalUniqueId().first);
-  makeChild(manipulatorNode, GUID_PART_2_NODE, manipulator->getGlobalUniqueId().second);
+  makeChild(manipulatorNode, NAME_NODE, manipulatorState->getName());
+  makeChild(manipulatorNode, UID_NODE, getStorageUID(manipulatorState, mappings));
+  makeChild(manipulatorNode, GUID_PART_1_NODE, manipulatorState->getGlobalUniqueId().first);
+  makeChild(manipulatorNode, GUID_PART_2_NODE, manipulatorState->getGlobalUniqueId().second);
 }
 
+/**Translates an RelationState to an xmlNode
+@param relationState the RelationState to serialize
+@param node the parent node
+@param mappings a struct of object to storage UID mappings
+*/
 void DatabaseManager::addRelationStateToNode(RelationStateConstPtr relationState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
   xmlNodePtr relationStateNode = makeChild(node, RELATION_STATE_NODE);
   makeChild(relationStateNode, UID_NODE, getStorageUID(relationState, mappings));
   makeChild(relationStateNode, RELATION_STATE_TYPE_NODE, "foo bar");//relationState->getRelationType())
 }
 
-void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atom, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
-  addManipulatorStateToNode(atom->getManipulator(), node, mappings);
+/**Translates an AtomicConstraint to an xmlNode
+@param atomicConstraint the AtomicConstraint to serialize
+@param node the parent node
+@param mappings a struct of object to storage UID mappings
+*/
+void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atomicConstraint, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
+  addManipulatorStateToNode(atomicConstraint->getManipulator(), node, mappings);
 
-  const ManipulationRelation *underlying = dynamic_cast<const ManipulationRelation*>(atom.get());
+  const ManipulationRelation *underlying = dynamic_cast<const ManipulationRelation*>(atomicConstraint.get());
   if (underlying == NULL)
     throw NotImplementedException("todo: handle atomic constraints that aren't manipulation relations");
 
-  if (!isInMapping(atom->getAffordance(), mappings)) {
-    addAffordanceStateToNode(atom->getAffordance(), node, mappings);
+  if (!isInMapping(atomicConstraint->getAffordance(), mappings)) {
+    addAffordanceStateToNode(atomicConstraint->getAffordance(), node, mappings);
   }
 
   addRelationStateToNode(underlying->getRelationState(), node, mappings);
 
   xmlNodePtr relationNode = makeChild(node, MANIPULATION_RELATION_NODE);
-  makeChild(relationNode, UID_NODE, getStorageUID(atom, mappings));
-  makeChild(relationNode, AFFORDANCE_STATE_UID_NODE, getStorageUID(atom->getAffordance(), mappings));
-  makeChild(relationNode, MANIPULATOR_STATE_UID_NODE, getStorageUID(atom->getManipulator(), mappings));
+  makeChild(relationNode, UID_NODE, getStorageUID(atomicConstraint, mappings));
+  makeChild(relationNode, AFFORDANCE_STATE_UID_NODE, getStorageUID(atomicConstraint->getAffordance(), mappings));
+  makeChild(relationNode, MANIPULATOR_STATE_UID_NODE, getStorageUID(atomicConstraint->getManipulator(), mappings));
   makeChild(relationNode, RELATION_STATE_UID_NODE, getStorageUID(underlying->getRelationState(), mappings));
 }
 
-//Converts a constraint into an XML Node, and adds it as a child to another node
-void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
-  //Atomic ConstraintMacro conversion
 
-  if (constraint->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
-    addAtomicConstraintToNode(constraint->getAtomicConstraint(), node, mappings);
+/**Translates a ConstraintMacro to an xmlNode
+@param constraint the ConstraintMacro to serialize
+@param node the parent node
+@param mappings a struct of object to storage UID mappings
+*/
+void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraintMacro, xmlNodePtr node, ObjectToStorageUIDMappings &mappings) {
+  // There are different types of constraint macros, so check the type and serialize appropriately
+
+  // Atomic type ConstraintMacro translation
+  if (constraintMacro->getConstraintMacroType() == ConstraintMacro::ATOMIC) {
+    addAtomicConstraintToNode(constraintMacro->getAtomicConstraint(), node, mappings);
 
     xmlNodePtr constraintNode = makeChild(node, ATOMIC_CONSTRAINT_MACRO_NODE);
-    makeChild(constraintNode, UID_NODE, getStorageUID(constraint, mappings));
-    makeChild(constraintNode, NAME_NODE, constraint->getName());
-    makeChild(constraintNode, RELATION_UID_NODE, getStorageUID(constraint->getAtomicConstraint(), mappings));
-    makeChild(constraintNode, TIME_LOWER_BOUND_NODE, constraint->getTimeLowerBound());
-    makeChild(constraintNode, TIME_UPPER_BOUND_NODE, constraint->getTimeUpperBound());
+    makeChild(constraintNode, UID_NODE, getStorageUID(constraintMacro, mappings));
+    makeChild(constraintNode, NAME_NODE, constraintMacro->getName());
+    makeChild(constraintNode, RELATION_UID_NODE, getStorageUID(constraintMacro->getAtomicConstraint(), mappings));
+    makeChild(constraintNode, TIME_LOWER_BOUND_NODE, constraintMacro->getTimeLowerBound());
+    makeChild(constraintNode, TIME_UPPER_BOUND_NODE, constraintMacro->getTimeUpperBound());
   }
-  //Seqeuntial ConstraintMacro conversion
-  else if ( constraint->getConstraintMacroType() == ConstraintMacro::SEQUENTIAL ) {
+
+  //Seqeuntial type ConstraintMacro translation
+  else if ( constraintMacro->getConstraintMacroType() == ConstraintMacro::SEQUENTIAL ) {
     xmlNodePtr constraintNode = makeChild(node, SEQUENTIAL_CONSTRAINT_MACRO_NODE);
-    makeChild(constraintNode, UID_NODE, getStorageUID(constraint, mappings));
-    makeChild(constraintNode, NAME_NODE, constraint->getName());
+    makeChild(constraintNode, UID_NODE, getStorageUID(constraintMacro, mappings));
+    makeChild(constraintNode, NAME_NODE, constraintMacro->getName());
 
     std::vector<ConstraintMacroPtr> constraintList;
-    constraint->getConstraintMacros(constraintList);
+    constraintMacro->getConstraintMacros(constraintList);
 
     for ( int i = 0; i < (int)constraintList.size(); i++ ) {
       string uid = getStorageUID(constraintList[i], mappings);
@@ -249,12 +322,42 @@ void DatabaseManager::addConstraintMacroToNode(ConstraintMacroPtr constraint, xm
     }
   }
   else {
-    printf("Don't know how to parse constraint '%s'. Ignoring.\n", 
-	   constraint->getName().c_str()); 
+    printf("Don't know how to parse constraint macro '%s'. Ignoring.\n", 
+	   constraintMacro->getName().c_str()); 
   }
 }
 
-//Storing algorithm preparation - ensures all nodes efficent storage via uid references to children 
+/**Adds a tree of nested constraints to a queue following a post order tree traversal.
+@param constraint the ConstraintMacroPtr to add to the queue
+@param q the queue to add constraints to
+@param done a set of constraints already added to the queue
+
+The storage algorithm stores each item with a storage UID. Then, whenever another object
+is serialized that has an already stored item as a child, the child's id is stored with the parent object.
+
+e.g. foo object has child bar. We are storing foo. The resulting xml document looks like:
+
+<bar>
+  <uid>1111111111>/uid>
+  ... more bar contents ..
+</bar>
+
+<foo>
+  <uid>2222222222</uid>
+  <child-uid>1111111111</child-uid>
+  ..more foo contents ...
+</foo>
+
+This requires that all child-uid references already be declared earlier in the file.
+The post order traversal of the constraint tree ensures that this condition is satisfied.
+
+e.g.  post ordering  A  will yeild a queue [B, C, A] 
+                    / \ 
+                   B   C
+
+such that children B and C are given storage UIDs and translated to xmlNodes before A is translated.
+Then A's children can be stored by listing thier storage UIDs
+*/
 void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroPtr constraint, 
 							                                           std::queue<ConstraintMacroPtr> &q, 
 							                                           std::set<ConstraintMacroPtr> &done) {
@@ -271,10 +374,13 @@ void DatabaseManager::postOrderAddConstraintMacroToQueue(ConstraintMacroPtr cons
     }
 }
 
-//main API call for storing all objects
+/** Stores a list of objects to a file.
+This is the main API call for the DatabaseManager for storing lists of items to a file.
+@param filename the name of the file that the objects will be written to.
+@param affordanceList the list of AffordanceStates to be stored to the file.
+@param constraintList the list of ConstraintsMacros to be stores to the file.
+*/
 void DatabaseManager::store(const std::string &filename, std::vector<AffConstPtr> &affordanceList, std::vector<ConstraintMacroPtr> &constraintList) {
-	//printf("beginning to store\n");
-
   srand(time(0));
 
   xmlDocPtr doc = NULL;
@@ -545,9 +651,6 @@ void deserializeSequentialConstraintMacro(xmlDocPtr doc, xmlNode* node, StorageU
     }
   }
 
-  ///TODO FIX ME!!!!!!!!!!!!!!!!!!!!!!!!
-  //I SHOULD NOT BE ConstraintMacro::SEQUENTIAL!!!!!!!!!!!!!
-  printf("deserializeSequentialConstraintMacro TODO: deserialized type.\n");
   ConstraintMacroPtr constraintMacro (new ConstraintMacro(name, ConstraintMacro::SEQUENTIAL));
   for (int i = 0; i < (int)childConstraintMacros.size(); i++ ) {
     constraintMacro->appendConstraintMacro(childConstraintMacros[i]);

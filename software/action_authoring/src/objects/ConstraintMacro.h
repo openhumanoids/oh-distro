@@ -23,8 +23,8 @@ namespace action_authoring {
     typedef enum 
     {
       ATOMIC, //todo: add small comment
-      SEQUENTIAL, //to each of 
-      UNORDERED} //these lines.
+      SEQUENTIAL //
+    }
     ConstraintMacroType;
     
   //------------fields--------
