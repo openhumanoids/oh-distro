@@ -900,7 +900,7 @@ namespace surrogate_gui
 	  affordanceMsg.nstates = 0;
 	  
 	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
 	  cout << "\n ***published \n" << endl;
 	  
 	  return;
