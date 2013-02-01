@@ -6,9 +6,11 @@
 #define PARAM_SEED_LF "Seed LFoot"
 #define PARAM_SEED_RF "Seed RFoot"
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
+#define PARAM_ADJUST_DOFS "Set Desired State"
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
-#define PARAM_COMMIT "Publish eegoal"
+#define PARAM_COMMIT "Publish EE goal"
+#define PARAM_EE_MOTION "Publish EE path"
 #define PARAM_RESEED "Re-seed"
 #define PARAM_HALT_OPT "Halt Opt"
 #define PARAM_DELETE "Delete"
@@ -19,8 +21,154 @@ using namespace renderer_affordances;
 
 namespace renderer_affordances_gui_utils
 {
+//--------------------------------------------------------------------------------
+//  OTDF object dblclk popup and associated cbs.
 
-//  OTDF object rightclk popup and associated cbs.
+
+//---------------------------------------------------------------
+// SECOND STAGE ADJUST DOFS POPUP
+    static void on_adjust_dofs_popup_close2 (BotGtkParamWidget *pw, void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    std::string instance_name=  (*self->object_selection);
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    it->second._gl_object->set_future_state_changing(false);
+    
+  //   TODO: Send publish desired affordance state command msg    
+  
+  }
+
+  static void on_otdf_adjust_dofs_widget_changed2(BotGtkParamWidget *pw, const char *name,void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    std::string instance_name=  (*self->object_selection);
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    
+    if(!it->second._gl_object->is_future_state_changing()) {
+    
+      it->second._gl_object->set_future_state_changing(true);
+
+     // clear previously accumulated motion states for all dependent bodies
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+         if (hand_it->second.object_name == (instance_name))
+         {
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
+         }
+         hand_it++;
+      }
+     }//end if(!it->second._gl_object->is_future_state_changing())
+
+    // get desired state from popup sliders
+    KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+    std::map<std::string, double> jointpos_in;
+      
+    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
+    {     
+      double desired_dof_pos = 0;
+      if(joint->second->type!=(int) otdf::Joint::FIXED) {
+          desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str());
+          jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
+       cout <<  joint->first << " dof changed to " << desired_dof_pos << endl;
+      }
+     }
+    it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
+
+    bot_viewer_request_redraw(self->viewer);
+  }
+  
+  static void spawn_adjust_dofs_popup_2 (RendererAffordances *self)
+  {
+
+    GtkWidget *window, *close_button, *vbox;
+    BotGtkParamWidget *pw;
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
+    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+    //gtk_widget_set_size_request (window, 300, 250);
+    //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    gtk_window_set_title(GTK_WINDOW(window), "Adjust Dofs");
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+    std::string instance_name=  (*self->object_selection);
+
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+
+    // Need tarcked joint positions of all objects.
+    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
+    {     
+      double current_dof_position = 0;// TODO: dof pos tracking
+      if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+        if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
+          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_dof_position); 
+        }
+        else{
+          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+          joint->second->limits->lower, joint->second->limits->upper, .01, current_dof_position);
+        }   
+      }
+    }
+    //Have to handle joint_patterns separately   
+    // DoF of all joints in joint patterns.
+    typedef std::map<std::string,boost::shared_ptr<otdf::Joint_pattern> > jp_mapType;
+    for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++)
+    {
+      // for all joints in joint pattern.
+      for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
+      {
+        double current_dof_position = 0;// TODO: dof pos tracking
+        if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+          if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
+          bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+          -2*M_PI, 2*M_PI, .01, current_dof_position); 
+          }
+          else{
+          bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+          jp_it->second->joint_set[i]->limits->lower, jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+          }   
+        } // end if         
+      } // end for all joints in jp
+    }// for all joint patterns
+
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed2), self);
+
+
+    close_button = gtk_button_new_with_label ("Close");
+    g_signal_connect (G_OBJECT (close_button),
+                    "clicked",
+                    G_CALLBACK (on_popup_close),
+                    (gpointer) window);
+    g_signal_connect(G_OBJECT(pw), "destroy",
+      G_CALLBACK(on_adjust_dofs_popup_close2), self); 
+
+
+    vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show_all(window); 
+  }
+
+
+
+
+//---------------------------------------------------------------
+// FIRST STAGE POPUP
+//---------------------------------------------------------------
+
   static void on_object_geometry_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -110,6 +258,9 @@ namespace renderer_affordances_gui_utils
       } 
     
     }
+    else if (! strcmp(name, PARAM_ADJUST_DOFS)) {
+        spawn_adjust_dofs_popup_2(self);
+    }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
       KDL::Frame T_geom_rhandpose = KDL::Frame::Identity();
@@ -142,7 +293,7 @@ namespace renderer_affordances_gui_utils
     }
         
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_CONTACT_MASK_SELECT))
+    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DOFS))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
@@ -152,6 +303,8 @@ namespace renderer_affordances_gui_utils
     // TODO: Send publish affordance command msg
     self->dblclk_popup = NULL;
   }
+  
+
 
   static void spawn_object_geometry_dblclk_popup (RendererAffordances *self)
   {
@@ -188,8 +341,9 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_separator (pw,"Opt Control");
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);
+//    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
+//    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_ADJUST_DOFS,NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
     
@@ -224,6 +378,8 @@ namespace renderer_affordances_gui_utils
     free(contact_masks);
     free(contact_nums);
   }
+  
+ 
   
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
@@ -282,6 +438,39 @@ namespace renderer_affordances_gui_utils
     _lcm->publish(channel, &goalmsg);
   }
   
+  
+  static void publish_desired_hand_motion( StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel, void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    drc::traj_opt_constraint_t trajmsg;
+    trajmsg.utime = self->last_state_msg_timestamp;
+    trajmsg.robot_name = "atlas";
+
+      trajmsg.num_links =  sticky_hand_struc._gl_hand->_desired_body_motion_history.size();
+        for(uint i = 0; i < trajmsg.num_links; i++)
+        {
+           double x,y,z,w;
+           KDL::Frame nextTfframe = sticky_hand_struc._gl_hand->_desired_body_motion_history[i];
+           nextTfframe.M.GetQuaternion(x,y,z,w);
+           drc::position_3d_t pose;
+	         pose.translation.x = nextTfframe.p[0];
+	         pose.translation.y = nextTfframe.p[1];
+	         pose.translation.z = nextTfframe.p[2];
+           pose.rotation.x = x;
+           pose.rotation.y = y;
+           pose.rotation.z = z;
+           pose.rotation.w = w; 
+           trajmsg.link_name.push_back(ee_name);
+           trajmsg.link_origin_position.push_back(pose);  
+           trajmsg.link_timestamps.push_back(i);     
+	      }
+	      
+	      trajmsg.num_joints =0;
+     self->lcm->publish(channel, &trajmsg);
+  }
+  
+  
+  
   static void on_sticky_hand_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -298,6 +487,19 @@ namespace renderer_affordances_gui_utils
     }
     else if (! strcmp(name, PARAM_RESEED)) {
       cout << "TODO" << endl;
+    }
+    else if(! strcmp(name, PARAM_EE_MOTION)) {
+    
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+      drc::grasp_opt_control_t msg; // just to access types
+      int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_desired_hand_motion(hand_it->second,"l_hand","DESIRED_L_HAND_MOTION",self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_desired_hand_motion( hand_it->second,"r_hand","DESIRED_R_HAND_MOTION",self);
+      
     }
     else if (! strcmp(name, PARAM_COMMIT)) {
     
@@ -352,6 +554,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_RESEED, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_EE_MOTION, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
     
     

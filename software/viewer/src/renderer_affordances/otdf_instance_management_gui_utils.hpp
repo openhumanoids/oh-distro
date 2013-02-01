@@ -71,20 +71,58 @@ namespace renderer_affordances_gui_utils
 
   static void on_adjust_dofs_popup_close (BotGtkParamWidget *pw, void *user)
   {
-  //   RendererAffordances *self = (RendererAffordances*) user;
-  //   std::string instance_name=  (*self->instance_selection_ptr);
-  //   typedef std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > object_instance_map_type_;
-  //   object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-  //   TODO: Send publish affordance command msg
+    RendererAffordances *self = (RendererAffordances*) user;
+    std::string instance_name=  (*self->instance_selection_ptr);
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    it->second._gl_object->set_future_state_changing(false);
+    
+  //   TODO: Send publish desired affordance state command msg    
+  
   }
 
   static void on_otdf_adjust_dofs_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
-  //   RendererAffordances *self = (RendererAffordances*) user;
-  //   std::string instance_name=  (*self->instance_selection_ptr);
-  //   typedef std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > object_instance_map_type_;
-  //   object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-  //   TODO: do something
+    RendererAffordances *self = (RendererAffordances*) user;
+    std::string instance_name=  (*self->instance_selection_ptr);
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    
+    if(!it->second._gl_object->is_future_state_changing()) {
+    
+      it->second._gl_object->set_future_state_changing(true);
+
+     // clear previously accumulated motion states for all dependent bodies
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+         if (hand_it->second.object_name == (instance_name))
+         {
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
+         }
+         hand_it++;
+      }
+     }//end if(!it->second._gl_object->is_future_state_changing())
+
+    // get desired state from popup sliders
+    KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+    std::map<std::string, double> jointpos_in;
+      
+    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
+    {     
+      double desired_dof_pos = 0;
+      if(joint->second->type!=(int) otdf::Joint::FIXED) {
+          desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str());
+          jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
+       cout <<  joint->first << " dof changed to " << desired_dof_pos << endl;
+      }
+     }
+    it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
+
+  
+    bot_viewer_request_redraw(self->viewer);
   }
 
   static void spawn_adjust_params_popup (RendererAffordances *self)
@@ -165,19 +203,14 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
-    enum
-    {
-      UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED
-    };
-
     // Need tarcked joint positions of all objects.
     typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
     for (joints_mapType::iterator joint = it->second._otdf_instance->joints_.begin();joint != it->second._otdf_instance->joints_.end(); joint++)
     {     
       double current_dof_position = 0;// TODO: dof pos tracking
-      if(joint->second->type!=(int) FIXED) { // All joints that not of the type FIXED.
-        if(joint->second->type==(int) CONTINUOUS) {
-          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, 0, M_PI, .01, current_dof_position); 
+      if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+        if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
+          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_dof_position); 
         }
         else{
           bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
@@ -194,10 +227,10 @@ namespace renderer_affordances_gui_utils
       for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
       {
         double current_dof_position = 0;// TODO: dof pos tracking
-        if(jp_it->second->joint_set[i]->type!=(int) FIXED) { // All joints that not of the type FIXED.
-          if(jp_it->second->joint_set[i]->type==(int) CONTINUOUS) {
+        if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+          if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
           bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-          0, M_PI, .01, current_dof_position); 
+          -2*M_PI, 2*M_PI, .01, current_dof_position); 
           }
           else{
           bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,

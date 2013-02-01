@@ -89,12 +89,31 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
     
     if(!obj_it->second._gl_object->get_link_frame(hand_it->second.geometry_name,T_world_graspgeometry))
-       cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
     else {  
-      double r,p,y;
-      T_world_graspgeometry.M.GetRPY(r,p,y);
-      hand_it->second._gl_hand->draw_body_in_frame (c2,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
+        double r,p,y;
+        T_world_graspgeometry.M.GetRPY(r,p,y);
+        hand_it->second._gl_hand->draw_body_in_frame (c2,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
+
       }
+    
+    float c3[3] = {0.5,0.5,0.0}; 
+    double alpha2 = 0.15;
+    if(obj_it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_graspgeometry)) { // if future frame exists draw 
+        double r,p,y;
+        T_world_graspgeometry.M.GetRPY(r,p,y);
+        
+        
+        
+        if(obj_it->second._gl_object->is_future_state_changing())
+          hand_it->second._gl_hand->log_motion_trail(true);
+        else
+          hand_it->second._gl_hand->log_motion_trail(false);
+        
+        hand_it->second._gl_hand->draw_body_in_frame (c3,alpha2,T_world_graspgeometry);
+        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
+      } 
+
     
   }
   
