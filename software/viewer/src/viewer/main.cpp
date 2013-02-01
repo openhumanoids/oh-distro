@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   on_top_view_clicked(NULL, (void *) viewer);  
   
   // load the renderer params from the config file.
-  char *fname = g_build_filename(g_get_user_config_dir(), ".bot-plugin-drc-viewer", NULL);
+  char *fname = g_build_filename(g_get_user_config_dir(), vis_config_file.c_str() , NULL);
   bot_viewer_load_preferences(viewer, fname);
 
   gtk_main();
