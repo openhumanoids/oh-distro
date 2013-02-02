@@ -151,46 +151,46 @@ class GlKinematicBody
     };
    
       
-    void draw_body_in_frame (float (&c)[3], double alpha, const KDL::Frame &T_newWorldFrame_currentWorldFrame)
+    void draw_body_in_frame (float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_currentWorldFrame)
     {
 
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
-        KDL::Frame T_currentWorldFrame_link,T_newWorldFrame_link;
+        KDL::Frame T_currentWorldFrame_link,T_drawFrame_link;
         LinkFrameStruct nextTf;
         
         nextTf = _link_tfs[i];
         T_currentWorldFrame_link = _link_tfs[i].frame;
-        T_newWorldFrame_link = T_newWorldFrame_currentWorldFrame*T_currentWorldFrame_link;
-        nextTf.frame = T_newWorldFrame_link;
+        T_drawFrame_link = T_drawFrame_currentWorldFrame*T_currentWorldFrame_link;
+        nextTf.frame = T_drawFrame_link;
         draw_link_current_and_future(c,alpha,i,nextTf);
       }
 
       
     };
     
-    void accumulate_and_draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_newWorldFrame_currentWorldFrame)
+    void accumulate_and_draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_accumulationFrame,const KDL::Frame &T_accumulationFrame_currentWorldFrame)
     {
     glColor4f(c[0],c[1],c[2],alpha);
      if(accumulate_motion_trail)
       {
-        KDL::Frame T_world_body = T_newWorldFrame_currentWorldFrame*_T_world_body;
+        KDL::Frame T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
 
         if(_desired_body_motion_history.size()>0)
         {  
-          KDL::Frame prev_T_world_body = _desired_body_motion_history.back();
-          KDL::Vector diff = prev_T_world_body.p -  T_world_body.p;
+          KDL::Frame prev_T_accumulationFrame_body = _desired_body_motion_history.back();
+          KDL::Vector diff = prev_T_accumulationFrame_body.p -  T_accumulationFrame_body.p;
           double distance = sqrt( diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
 
           if(distance > 0.01)//>1cm
           {
-           _desired_body_motion_history.push_back(T_world_body);
+           _desired_body_motion_history.push_back(T_accumulationFrame_body);
           }
         }
         else
-          _desired_body_motion_history.push_back(T_world_body);      
+          _desired_body_motion_history.push_back(T_accumulationFrame_body);      
       }
       
       
@@ -202,7 +202,7 @@ class GlKinematicBody
         //glBegin(GL_POINTS);
         for(uint i = 0; i < _desired_body_motion_history.size(); i++)
         {
-           KDL::Frame nextTfframe = _desired_body_motion_history[i];
+           KDL::Frame nextTfframe = T_drawFrame_accumulationFrame*_desired_body_motion_history[i];
 	         glVertex3f(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
         }
         glEnd();

@@ -89,18 +89,18 @@ class InteractableGlKinematicBody: public GlKinematicBody
    };
    
    
-   void draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_newWorldFrame_currentWorldFrame)
+   void draw_body_in_frame (float (&c)[3], float alpha,const KDL::Frame &T_drawFrame_currentWorldFrame)
    {
      
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_tfs.size(); i++)
       {
-        KDL::Frame T_currentWorldFrame_link,T_newWorldFrame_link;
+        KDL::Frame T_currentWorldFrame_link,T_drawFrame_link;
         LinkFrameStruct nextTf=_link_tfs[i];
         
         T_currentWorldFrame_link = nextTf.frame;
-        T_newWorldFrame_link = T_newWorldFrame_currentWorldFrame*T_currentWorldFrame_link;
-        nextTf.frame = T_newWorldFrame_link;
+        T_drawFrame_link = T_drawFrame_currentWorldFrame*T_currentWorldFrame_link;
+        nextTf.frame = T_drawFrame_link;
 
         
         std::stringstream oss;
