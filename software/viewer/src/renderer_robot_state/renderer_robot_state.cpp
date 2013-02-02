@@ -262,9 +262,10 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RobotStateRendererStruc *self = (RobotStateRendererStruc*) calloc (1, sizeof (RobotStateRendererStruc));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
+
     self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self->lcm, 
 												    viewer));
-
+    
     BotRenderer *renderer = &self->renderer;
 
     renderer->draw = _renderer_draw;

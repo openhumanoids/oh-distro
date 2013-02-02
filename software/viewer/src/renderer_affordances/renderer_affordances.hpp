@@ -388,19 +388,21 @@ typedef struct _RendererAffordances {
   
   }
  //-------------------------------------------------------------------------------
-  inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
+inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
   {
   
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand. 
    Eigen::Vector3d ux,uy,uz;
-   ux << 1 , 0 , 0; //x axis on sandia hand is pointing away from the palm face
+   //x axis on sandia hand is pointing away from the palm face
+   // if we define the urdf in palm frame as base then palm is facing z positive :Will scale to other hands
+   ux << 1 , 0 , 0; 
    uy << 0 , 1 , 0;
    uz << 0 , 0 , 1;
   
    Eigen::Vector3d nray = -(to - from);
    nray.normalize();  // normalize
    
-     // back-track from the hit pt in the approach dir by 100*t cm
+     // back-track from the hit pt in the approach dir by 10*t cm
    double t = 0.1;
    Eigen::Vector3d p;
    p << to[0]+t*nray[0], to[1]+t*nray[1], to[2]+t*nray[2]; 
@@ -594,21 +596,9 @@ typedef struct _RendererAffordances {
 
     T_objectgeometry_hand = T_objectgeometry_hand *(T_rotatedhand_hand.Inverse());//T_objectgeometry_rotatedhand 
 
-// To flip z 
-
-//    if( fabs(uz.dot(nray))>max(fabs(ux.dot(nray)),fabs(uy.dot(nray))) )
-//    {
-//      if(min_dimension_tag=="Z"){ 
-//        KDL::Frame fliphand; 
-//        fliphand.p[0]=0;
-//        fliphand.p[1]=0;
-//        fliphand.p[2]=0;
-//        fliphand.M =  KDL::Rotation::RPY(M_PI,0,0);
-//        T_objectgeometry_hand = fliphand*T_objectgeometry_hand;
-//      }
-//    }//end if
 
   }
+  
   
  //-------------------------------------------------------------------------------  
   inline static void set_hand_init_position(void *user)

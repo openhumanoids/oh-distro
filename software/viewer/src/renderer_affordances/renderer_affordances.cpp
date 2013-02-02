@@ -111,7 +111,11 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
           hand_it->second._gl_hand->log_motion_trail(false);
         
         hand_it->second._gl_hand->draw_body_in_frame (c3,alpha2,T_world_graspgeometry);
-        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
+        
+        KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+        KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
+        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_object,T_object_graspgeometry); // accumulates in object frame.
+        //hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
       } 
 
     

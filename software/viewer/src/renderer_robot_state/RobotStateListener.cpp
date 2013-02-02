@@ -64,7 +64,7 @@ namespace renderer_robot_state
       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
       _urdf_subscription_on =  false; 	
     }
-   
+
     _gl_robot->set_state(*msg);
 
     bot_viewer_request_redraw(_viewer);
@@ -86,7 +86,7 @@ namespace renderer_robot_state
       _urdf_xml_string = msg->urdf_xml_string;
       cout<< "\nReceived urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << endl;
-      
+
 
       _gl_robot = shared_ptr<visualization_utils::InteractableGlKinematicBody>(new visualization_utils::InteractableGlKinematicBody(_urdf_xml_string,_collision_detector,true,_robot_name));
   
@@ -95,7 +95,7 @@ namespace renderer_robot_state
       //remember that we've parsed the urdf already
       _urdf_parsed = true;
     }
-    
+ 
   } // end urdf handler
 
 

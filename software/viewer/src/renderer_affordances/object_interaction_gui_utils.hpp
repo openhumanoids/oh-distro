@@ -9,6 +9,7 @@
 #define PARAM_ADJUST_DOFS "Set Desired State"
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
+#define PARAM_PREGRASP "Publish EE pre-goal"
 #define PARAM_COMMIT "Publish EE goal"
 #define PARAM_EE_MOTION "Publish EE path"
 #define PARAM_RESEED "Re-seed"
@@ -384,26 +385,52 @@ namespace renderer_affordances_gui_utils
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
-  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry)
+  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry,bool pregrasp_flag)
   {
     drc::ee_goal_t goalmsg;
     goalmsg.robot_name = "atlas";
     goalmsg.root_name = "pelvis";
     goalmsg.ee_name = ee_name;
 
-    double x,y,z,w;
-
     // desired ee position in world frame
-    KDL::Frame T_world_ee,T_body_ee,T_geometry_hand;
-    T_geometry_hand = sticky_hand_struc.T_geometry_hand;
-    T_world_ee = T_world_geometry*T_geometry_hand;
+    KDL::Frame T_world_ee,T_body_ee;
+    
+// Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
+   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+//    KDL::Frame T_hand_palm = KDL::Frame::Identity();
+//    // this was there in urdf to make sure fingers are pointing in z axis.
+//    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
+//    KDL::Frame  T_geometry_palm = T_geometry_hand*T_hand_palm.Inverse()
+
+    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+    if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+      cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+
+//    double ro,pi,ya;  
+//   KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
+//   T_hand_palm.M.GetRPY(ro,pi,ya);
+//    cout <<"pitch"<<pi*(180/M_PI) << endl;
+    
+    T_world_ee = T_world_geometry*T_geometry_palm;
+          
+   if(pregrasp_flag){
+    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
+    KDL::Frame T_hand_offset = KDL::Frame::Identity();
+    T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
+    // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
+    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
+    
+    // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+    T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
+    //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+   }  
           
     //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 
     // desired ee position wrt to robot body.
     //T_body_ee = T_body_world*T_world_ee;
     T_body_ee = T_world_ee; // send them in world frame for now.
-
+    double x,y,z,w;
     T_body_ee.M.GetQuaternion(x,y,z,w);
 
     goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
@@ -428,7 +455,12 @@ namespace renderer_affordances_gui_utils
     goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
     goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
     for(int i = 0; i < goalmsg.num_chain_joints; i++){
-    goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
+    if(!pregrasp_flag){
+      goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
+    }
+    else{
+      goalmsg.joint_posture_bias[i]=0;//sticky_hand_struc.joint_position[i];
+    }
     goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
     }
 
@@ -445,13 +477,27 @@ namespace renderer_affordances_gui_utils
     drc::traj_opt_constraint_t trajmsg;
     trajmsg.utime = self->last_state_msg_timestamp;
     trajmsg.robot_name = "atlas";
+    
+    KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+   if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+     cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+    KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
 
+
+    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(sticky_hand_struc.object_name);
+    KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+    
       trajmsg.num_links =  sticky_hand_struc._gl_hand->_desired_body_motion_history.size();
         for(uint i = 0; i < trajmsg.num_links; i++)
         {
            double x,y,z,w;
-           KDL::Frame nextTfframe = sticky_hand_struc._gl_hand->_desired_body_motion_history[i];
+           KDL::Frame T_object_hand = sticky_hand_struc._gl_hand->_desired_body_motion_history[i];
+           KDL::Frame T_world_hand = T_world_object*T_object_hand;
+           KDL::Frame nextTfframe = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame
            nextTfframe.M.GetQuaternion(x,y,z,w);
+
            drc::position_3d_t pose;
 	         pose.translation.x = nextTfframe.p[0];
 	         pose.translation.y = nextTfframe.p[1];
@@ -496,12 +542,12 @@ namespace renderer_affordances_gui_utils
       int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_desired_hand_motion(hand_it->second,"l_hand","DESIRED_L_HAND_MOTION",self);
+          publish_desired_hand_motion(hand_it->second,"l_palm","DESIRED_L_PALM_MOTION",self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_desired_hand_motion( hand_it->second,"r_hand","DESIRED_R_HAND_MOTION",self);
+          publish_desired_hand_motion( hand_it->second,"r_palm","DESIRED_R_PALM_MOTION",self);
       
     }
-    else if (! strcmp(name, PARAM_COMMIT)) {
+    else if ((!strcmp(name, PARAM_COMMIT))||(!strcmp(name, PARAM_PREGRASP))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
@@ -515,12 +561,13 @@ namespace renderer_affordances_gui_utils
       else { 
         drc::grasp_opt_control_t msg; // just to access types
         int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-        
+        bool pregrasp_flag = !strcmp(name, PARAM_PREGRASP);
+
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_hand","L_HAND_GOAL",T_world_graspgeometry);
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_palm","L_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_hand","R_HAND_GOAL",T_world_graspgeometry);
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_palm","R_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
       }
  
     }
@@ -553,6 +600,7 @@ namespace renderer_affordances_gui_utils
 
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_RESEED, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_PREGRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_EE_MOTION, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);

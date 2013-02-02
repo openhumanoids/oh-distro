@@ -190,7 +190,7 @@ namespace renderer_affordances
       }
       else {
         it->second._gl_hand->set_state(T_world_hand, posture_msg);
-        it->second.T_geometry_hand = T_world_hand;
+        it->second.T_geometry_hand = T_world_hand; 
         it->second.joint_position = posture_msg.joint_position;
       }
   }
