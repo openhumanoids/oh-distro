@@ -152,7 +152,9 @@
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
+ <!-- limits are customized in the urdf, no point setting limits in xacro as they differ for each finger  -->
+ <!--      <limit effort="1" lower="-1.57079" upper="0" velocity="1"/>-->
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>

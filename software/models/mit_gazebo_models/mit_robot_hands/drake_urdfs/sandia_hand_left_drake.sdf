@@ -23,7 +23,7 @@
         </geometry>
     </collision> -->
   </link>
-  <link name="left_palm">
+  <link name="l_palm">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -35,7 +35,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/palm.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin">
+      <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -46,12 +46,12 @@
         </geometry>
   </collision> -->
   </link>
-  <joint name="left_sandia_hand_joint" type="fixed">
+  <joint name="l_sandia_hand_joint" type="fixed">
     <parent link="base"/>
-    <child link="left_palm"/>
+    <child link="l_palm"/>
     <origin rpy="0 -1.57079 0" xyz="0 0 0.0"/>
   </joint>
-  <link name="left_f0_base">
+  <link name="l_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -59,7 +59,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f0_fixed_accel">
+  <link name="l_f0_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -73,7 +73,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="left_f0_knuckle_dummy_contact">
+  <link name="l_f0_knuckle_dummy_contact">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.001"/>
@@ -87,7 +87,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="left_f0_0">
+  <link name="l_f0_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -99,7 +99,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -110,7 +110,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f0_1">
+  <link name="l_f0_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -122,7 +122,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin">
+      <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -133,7 +133,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f0_1_accel">
+  <link name="l_f0_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -147,7 +147,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="left_f0_2">
+  <link name="l_f0_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -159,7 +159,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -170,7 +170,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f0_2_accel">
+  <link name="l_f0_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -184,75 +184,75 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_f0_base" type="fixed">
-    <parent link="left_palm"/>
-    <child link="left_f0_base"/>
+  <joint name="l_f0_base" type="fixed">
+    <parent link="l_palm"/>
+    <child link="l_f0_base"/>
     <origin rpy="0 0 0.3" xyz="0.14 0.0 0"/>
   </joint>
-  <joint name="left_f0_j0" type="revolute">
+  <joint name="l_f0_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f0_base"/>
-    <child link="left_f0_0"/>
-<!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
+    <parent link="l_f0_base"/>
+    <child link="l_f0_0"/>
+    <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
     <limit effort="1" lower="-1.57079" upper="0" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="left_f0_j1" type="revolute">
+  <joint name="l_f0_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f0_0"/>
-    <child link="left_f0_1"/>
+    <parent link="l_f0_0"/>
+    <child link="l_f0_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="left_f0_j2" type="revolute">
+  <joint name="l_f0_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f0_1"/>
-    <child link="left_f0_2"/>
+    <parent link="l_f0_1"/>
+    <child link="l_f0_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="left_f0_fixed_accel" type="fixed">
-    <parent link="left_f0_base"/>
-    <child link="left_f0_fixed_accel"/>
+  <joint name="l_f0_fixed_accel" type="fixed">
+    <parent link="l_f0_base"/>
+    <child link="l_f0_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f0_knuckle_dummy_contact" type="fixed">
-    <parent link="left_f0_base"/>
-    <child link="left_f0_knuckle_dummy_contact"/>
+  <joint name="l_f0_knuckle_dummy_contact" type="fixed">
+    <parent link="l_f0_base"/>
+    <child link="l_f0_knuckle_dummy_contact"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f0_1_accel" type="fixed">
-    <parent link="left_f0_1"/>
-    <child link="left_f0_1_accel"/>
+  <joint name="l_f0_1_accel" type="fixed">
+    <parent link="l_f0_1"/>
+    <child link="l_f0_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="left_f0_2_accel" type="fixed">
-    <parent link="left_f0_2"/>
-    <child link="left_f0_2_accel"/>
+  <joint name="l_f0_2_accel" type="fixed">
+    <parent link="l_f0_2"/>
+    <child link="l_f0_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="left_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f0_j0"/>
-    <actuator name="left_f0_j0_motor"/>
+  <transmission name="l_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f0_j0"/>
+    <actuator name="l_f0_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f0_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f0_j1"/>
-    <actuator name="left_f0_j1_motor"/>
+  <transmission name="l_f0_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f0_j1"/>
+    <actuator name="l_f0_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f0_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f0_j2"/>
-    <actuator name="left_f0_j2_motor"/>
+  <transmission name="l_f0_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f0_j2"/>
+    <actuator name="l_f0_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="left_f1_base">
+  <link name="l_f1_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -260,7 +260,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f1_fixed_accel">
+  <link name="l_f1_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -274,7 +274,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="left_f1_knuckle_dummy_contact">
+  <link name="l_f1_knuckle_dummy_contact">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.001"/>
@@ -288,7 +288,7 @@
       </geometry>
     </collision>
   </link>
-  <link name="left_f1_0">
+  <link name="l_f1_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -300,7 +300,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -311,7 +311,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f1_1">
+  <link name="l_f1_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -323,7 +323,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin">
+      <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -334,44 +334,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f1_1_accel">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-    </inertial>
-     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-  </link>
-  <link name="left_f1_2">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
-      </geometry>
-      <material name="left_sandia_hand_skin_suntan">
-        <color rgba="0.8 0.6 0.3 1.0"/>
-      </material>
-    </visual>
-    <!-- <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="$(find mit_drcsim_scripts)/models/sandia_hand/meshes/f2.stl"/>
-        </geometry>
-  </collision> -->
-  </link>
-  <link name="left_f1_2_accel">
+  <link name="l_f1_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -385,75 +348,112 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_f1_base" type="fixed">
-    <parent link="left_palm"/>
-    <child link="left_f1_base"/>
+  <link name="l_f1_2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+      </geometry>
+      <material name="l_sandia_hand_skin_suntan">
+        <color rgba="0.8 0.6 0.3 1.0"/>
+      </material>
+    </visual>
+    <!-- <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="$(find mit_drcsim_scripts)/models/sandia_hand/meshes/f2.stl"/>
+        </geometry>
+  </collision> -->
+  </link>
+  <link name="l_f1_2_accel">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_f1_base" type="fixed">
+    <parent link="l_palm"/>
+    <child link="l_f1_base"/>
     <origin rpy="0 0 0.3" xyz="0.115 0.03122 0"/>
   </joint>
-  <joint name="left_f1_j0" type="revolute">
+  <joint name="l_f1_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f1_base"/>
-    <child link="left_f1_0"/>
+    <parent link="l_f1_base"/>
+    <child link="l_f1_0"/>
     <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
     <limit effort="1" lower="-0.09" upper="0.09" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="left_f1_j1" type="revolute">
+  <joint name="l_f1_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f1_0"/>
-    <child link="left_f1_1"/>
+    <parent link="l_f1_0"/>
+    <child link="l_f1_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="left_f1_j2" type="revolute">
+  <joint name="l_f1_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f1_1"/>
-    <child link="left_f1_2"/>
+    <parent link="l_f1_1"/>
+    <child link="l_f1_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="left_f1_fixed_accel" type="fixed">
-    <parent link="left_f1_base"/>
-    <child link="left_f1_fixed_accel"/>
+  <joint name="l_f1_fixed_accel" type="fixed">
+    <parent link="l_f1_base"/>
+    <child link="l_f1_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f1_knuckle_dummy_contact" type="fixed">
-    <parent link="left_f1_base"/>
-    <child link="left_f1_knuckle_dummy_contact"/>
+  <joint name="l_f1_knuckle_dummy_contact" type="fixed">
+    <parent link="l_f1_base"/>
+    <child link="l_f1_knuckle_dummy_contact"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f1_1_accel" type="fixed">
-    <parent link="left_f1_1"/>
-    <child link="left_f1_1_accel"/>
+  <joint name="l_f1_1_accel" type="fixed">
+    <parent link="l_f1_1"/>
+    <child link="l_f1_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="left_f1_2_accel" type="fixed">
-    <parent link="left_f1_2"/>
-    <child link="left_f1_2_accel"/>
+  <joint name="l_f1_2_accel" type="fixed">
+    <parent link="l_f1_2"/>
+    <child link="l_f1_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="left_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f1_j0"/>
-    <actuator name="left_f1_j0_motor"/>
+  <transmission name="l_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f1_j0"/>
+    <actuator name="l_f1_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f1_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f1_j1"/>
-    <actuator name="left_f1_j1_motor"/>
+  <transmission name="l_f1_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f1_j1"/>
+    <actuator name="l_f1_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f1_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f1_j2"/>
-    <actuator name="left_f1_j2_motor"/>
+  <transmission name="l_f1_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f1_j2"/>
+    <actuator name="l_f1_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="left_f2_base">
+  <link name="l_f2_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -461,22 +461,21 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f2_fixed_accel">
+  <link name="l_f2_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
-     <collision>
+    <collision>
       <origin rpy="0 0 0" xyz="0 0 0.05"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
   </link>
-
-  <link name="left_f2_knuckle_dummy_contact">
+  <link name="l_f2_knuckle_dummy_contact">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.001"/>
@@ -490,8 +489,7 @@
       </geometry>
     </collision>
   </link>
-
-  <link name="left_f2_0">
+  <link name="l_f2_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -503,7 +501,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -514,7 +512,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f2_1">
+  <link name="l_f2_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -526,7 +524,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin">
+      <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -537,44 +535,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f2_1_accel">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-    </inertial>
-       <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>  
-  </link>
-  <link name="left_f2_2">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
-      </geometry>
-      <material name="left_sandia_hand_skin_suntan">
-        <color rgba="0.8 0.6 0.3 1.0"/>
-      </material>
-    </visual>
-    <!-- <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="$(find mit_drcsim_scripts)/models/sandia_hand/meshes/f2.stl"/>
-        </geometry>
-  </collision> -->
-  </link>
-  <link name="left_f2_2_accel">
+  <link name="l_f2_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -588,75 +549,112 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_f2_base" type="fixed">
-    <parent link="left_palm"/>
-    <child link="left_f2_base"/>
+  <link name="l_f2_2">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+      </geometry>
+      <material name="l_sandia_hand_skin_suntan">
+        <color rgba="0.8 0.6 0.3 1.0"/>
+      </material>
+    </visual>
+    <!-- <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="$(find mit_drcsim_scripts)/models/sandia_hand/meshes/f2.stl"/>
+        </geometry>
+  </collision> -->
+  </link>
+  <link name="l_f2_2_accel">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_f2_base" type="fixed">
+    <parent link="l_palm"/>
+    <child link="l_f2_base"/>
     <origin rpy="0 0 0.3" xyz="0.09 0.06245 0"/>
   </joint>
-  <joint name="left_f2_j0" type="revolute">
+  <joint name="l_f2_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f2_base"/>
-    <child link="left_f2_0"/>
-<!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
+    <parent link="l_f2_base"/>
+    <child link="l_f2_0"/>
+    <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
     <limit effort="1" lower="0" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="left_f2_j1" type="revolute">
+  <joint name="l_f2_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f2_0"/>
-    <child link="left_f2_1"/>
+    <parent link="l_f2_0"/>
+    <child link="l_f2_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="left_f2_j2" type="revolute">
+  <joint name="l_f2_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f2_1"/>
-    <child link="left_f2_2"/>
+    <parent link="l_f2_1"/>
+    <child link="l_f2_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="left_f2_fixed_accel" type="fixed">
-    <parent link="left_f2_base"/>
-    <child link="left_f2_fixed_accel"/>
+  <joint name="l_f2_fixed_accel" type="fixed">
+    <parent link="l_f2_base"/>
+    <child link="l_f2_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f2_knuckle_dummy_contact" type="fixed">
-    <parent link="left_f2_base"/>
-    <child link="left_f2_knuckle_dummy_contact"/>
+  <joint name="l_f2_knuckle_dummy_contact" type="fixed">
+    <parent link="l_f2_base"/>
+    <child link="l_f2_knuckle_dummy_contact"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f2_1_accel" type="fixed">
-    <parent link="left_f2_1"/>
-    <child link="left_f2_1_accel"/>
+  <joint name="l_f2_1_accel" type="fixed">
+    <parent link="l_f2_1"/>
+    <child link="l_f2_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="left_f2_2_accel" type="fixed">
-    <parent link="left_f2_2"/>
-    <child link="left_f2_2_accel"/>
+  <joint name="l_f2_2_accel" type="fixed">
+    <parent link="l_f2_2"/>
+    <child link="l_f2_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="left_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f2_j0"/>
-    <actuator name="left_f2_j0_motor"/>
+  <transmission name="l_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f2_j0"/>
+    <actuator name="l_f2_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f2_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f2_j1"/>
-    <actuator name="left_f2_j1_motor"/>
+  <transmission name="l_f2_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f2_j1"/>
+    <actuator name="l_f2_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f2_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f2_j2"/>
-    <actuator name="left_f2_j2_motor"/>
+  <transmission name="l_f2_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f2_j2"/>
+    <actuator name="l_f2_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="left_f3_base">
+  <link name="l_f3_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -664,7 +662,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f3_fixed_accel">
+  <link name="l_f3_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -672,7 +670,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f3_0">
+  <link name="l_f3_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -684,7 +682,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
@@ -695,7 +693,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f3_1">
+  <link name="l_f3_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -707,7 +705,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin">
+      <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
@@ -718,7 +716,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f3_1_accel">
+  <link name="l_f3_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -726,7 +724,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="left_f3_2">
+  <link name="l_f3_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -738,7 +736,7 @@
       <geometry>
         <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
-      <material name="left_sandia_hand_skin_suntan">
+      <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
@@ -749,7 +747,7 @@
         </geometry>
   </collision> -->
   </link>
-  <link name="left_f3_2_accel">
+  <link name="l_f3_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -763,66 +761,66 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_f3_base" type="fixed">
-    <parent link="left_palm"/>
-    <child link="left_f3_base"/>
+  <joint name="l_f3_base" type="fixed">
+    <parent link="l_palm"/>
+    <child link="l_f3_base"/>
     <origin rpy="0 -1.57079 -2.3562" xyz="0.03995 -0.04383 0.014"/>
   </joint>
-  <joint name="left_f3_j0" type="revolute">
+  <joint name="l_f3_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f3_base"/>
-    <child link="left_f3_0"/>
+    <parent link="l_f3_base"/>
+    <child link="l_f3_0"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="left_f3_j1" type="revolute">
+  <joint name="l_f3_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f3_0"/>
-    <child link="left_f3_1"/>
+    <parent link="l_f3_0"/>
+    <child link="l_f3_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="left_f3_j2" type="revolute">
+  <joint name="l_f3_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="left_f3_1"/>
-    <child link="left_f3_2"/>
+    <parent link="l_f3_1"/>
+    <child link="l_f3_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="left_f3_fixed_accel" type="fixed">
-    <parent link="left_f3_base"/>
-    <child link="left_f3_fixed_accel"/>
+  <joint name="l_f3_fixed_accel" type="fixed">
+    <parent link="l_f3_base"/>
+    <child link="l_f3_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="left_f3_1_accel" type="fixed">
-    <parent link="left_f3_1"/>
-    <child link="left_f3_1_accel"/>
+  <joint name="l_f3_1_accel" type="fixed">
+    <parent link="l_f3_1"/>
+    <child link="l_f3_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="left_f3_2_accel" type="fixed">
-    <parent link="left_f3_2"/>
-    <child link="left_f3_2_accel"/>
+  <joint name="l_f3_2_accel" type="fixed">
+    <parent link="l_f3_2"/>
+    <child link="l_f3_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="left_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f3_j0"/>
-    <actuator name="left_f3_j0_motor"/>
+  <transmission name="l_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f3_j0"/>
+    <actuator name="l_f3_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f3_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f3_j1"/>
-    <actuator name="left_f3_j1_motor"/>
+  <transmission name="l_f3_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f3_j1"/>
+    <actuator name="l_f3_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="left_f3_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="left_f3_j2"/>
-    <actuator name="left_f3_j2_motor"/>
+  <transmission name="l_f3_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="l_f3_j2"/>
+    <actuator name="l_f3_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 </robot>

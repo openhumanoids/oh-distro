@@ -10,7 +10,7 @@
       <origin rpy="0 0 0" xyz="0 0 0.25"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
-    <!--<visual>
+    <!--   <visual>
         <origin xyz="0 0 0.25" rpy="0 0 0" />
         <geometry>
             <box size="0.5 0.5 0.5" />
@@ -21,9 +21,9 @@
         <geometry>
             <box size="0.5 0.5 0.5" />
         </geometry>
-    </collision>-->
+    </collision> -->
   </link>
-  <link name="right_palm">
+  <link name="r_palm">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -41,17 +41,17 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/palm.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin">
+      <material name="r_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <joint name="right_sandia_hand_joint" type="fixed">
+  <joint name="r_sandia_hand_joint" type="fixed">
     <parent link="base"/>
-    <child link="right_palm"/>
+    <child link="r_palm"/>
     <origin rpy="0 -1.57079 0" xyz="0 0 0.0"/>
   </joint>
-  <link name="right_f0_base">
+  <link name="r_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -59,7 +59,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f0_fixed_accel">
+  <link name="r_f0_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -67,7 +67,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f0_0">
+  <link name="r_f0_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -85,12 +85,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f0.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f0_1">
+  <link name="r_f0_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -108,12 +108,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f1.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin">
+      <material name="r_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f0_1_accel">
+  <link name="r_f0_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -121,7 +121,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f0_2">
+  <link name="r_f0_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -139,12 +139,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f2.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f0_2_accel">
+  <link name="r_f0_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -152,69 +152,69 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <joint name="right_f0_base" type="fixed">
-    <parent link="right_palm"/>
-    <child link="right_f0_base"/>
+  <joint name="r_f0_base" type="fixed">
+    <parent link="r_palm"/>
+    <child link="r_f0_base"/>
     <origin rpy="0 0 0.3" xyz="0.14 0.0 0"/>
   </joint>
-  <joint name="right_f0_j0" type="revolute">
+  <joint name="r_f0_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f0_base"/>
-    <child link="right_f0_0"/>
+    <parent link="r_f0_base"/>
+    <child link="r_f0_0"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="right_f0_j1" type="revolute">
+  <joint name="r_f0_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f0_0"/>
-    <child link="right_f0_1"/>
+    <parent link="r_f0_0"/>
+    <child link="r_f0_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="right_f0_j2" type="revolute">
+  <joint name="r_f0_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f0_1"/>
-    <child link="right_f0_2"/>
+    <parent link="r_f0_1"/>
+    <child link="r_f0_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="right_f0_fixed_accel" type="fixed">
-    <parent link="right_f0_base"/>
-    <child link="right_f0_fixed_accel"/>
+  <joint name="r_f0_fixed_accel" type="fixed">
+    <parent link="r_f0_base"/>
+    <child link="r_f0_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="right_f0_1_accel" type="fixed">
-    <parent link="right_f0_1"/>
-    <child link="right_f0_1_accel"/>
+  <joint name="r_f0_1_accel" type="fixed">
+    <parent link="r_f0_1"/>
+    <child link="r_f0_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="right_f0_2_accel" type="fixed">
-    <parent link="right_f0_2"/>
-    <child link="right_f0_2_accel"/>
+  <joint name="r_f0_2_accel" type="fixed">
+    <parent link="r_f0_2"/>
+    <child link="r_f0_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="right_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f0_j0"/>
-    <actuator name="right_f0_j0_motor"/>
+  <transmission name="r_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f0_j0"/>
+    <actuator name="r_f0_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f0_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f0_j1"/>
-    <actuator name="right_f0_j1_motor"/>
+  <transmission name="r_f0_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f0_j1"/>
+    <actuator name="r_f0_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f0_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f0_j2"/>
-    <actuator name="right_f0_j2_motor"/>
+  <transmission name="r_f0_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f0_j2"/>
+    <actuator name="r_f0_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="right_f1_base">
+  <link name="r_f1_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -222,7 +222,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f1_fixed_accel">
+  <link name="r_f1_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -230,7 +230,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f1_0">
+  <link name="r_f1_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -248,12 +248,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f0.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f1_1">
+  <link name="r_f1_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -271,12 +271,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f1.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin">
+      <material name="r_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f1_1_accel">
+  <link name="r_f1_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -284,7 +284,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f1_2">
+  <link name="r_f1_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -302,12 +302,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f2.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f1_2_accel">
+  <link name="r_f1_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -315,69 +315,69 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <joint name="right_f1_base" type="fixed">
-    <parent link="right_palm"/>
-    <child link="right_f1_base"/>
+  <joint name="r_f1_base" type="fixed">
+    <parent link="r_palm"/>
+    <child link="r_f1_base"/>
     <origin rpy="0 0 0.3" xyz="0.115 0.03122 0"/>
   </joint>
-  <joint name="right_f1_j0" type="revolute">
+  <joint name="r_f1_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f1_base"/>
-    <child link="right_f1_0"/>
+    <parent link="r_f1_base"/>
+    <child link="r_f1_0"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="right_f1_j1" type="revolute">
+  <joint name="r_f1_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f1_0"/>
-    <child link="right_f1_1"/>
+    <parent link="r_f1_0"/>
+    <child link="r_f1_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="right_f1_j2" type="revolute">
+  <joint name="r_f1_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f1_1"/>
-    <child link="right_f1_2"/>
+    <parent link="r_f1_1"/>
+    <child link="r_f1_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="right_f1_fixed_accel" type="fixed">
-    <parent link="right_f1_base"/>
-    <child link="right_f1_fixed_accel"/>
+  <joint name="r_f1_fixed_accel" type="fixed">
+    <parent link="r_f1_base"/>
+    <child link="r_f1_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="right_f1_1_accel" type="fixed">
-    <parent link="right_f1_1"/>
-    <child link="right_f1_1_accel"/>
+  <joint name="r_f1_1_accel" type="fixed">
+    <parent link="r_f1_1"/>
+    <child link="r_f1_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="right_f1_2_accel" type="fixed">
-    <parent link="right_f1_2"/>
-    <child link="right_f1_2_accel"/>
+  <joint name="r_f1_2_accel" type="fixed">
+    <parent link="r_f1_2"/>
+    <child link="r_f1_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="right_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f1_j0"/>
-    <actuator name="right_f1_j0_motor"/>
+  <transmission name="r_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f1_j0"/>
+    <actuator name="r_f1_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f1_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f1_j1"/>
-    <actuator name="right_f1_j1_motor"/>
+  <transmission name="r_f1_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f1_j1"/>
+    <actuator name="r_f1_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f1_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f1_j2"/>
-    <actuator name="right_f1_j2_motor"/>
+  <transmission name="r_f1_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f1_j2"/>
+    <actuator name="r_f1_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="right_f2_base">
+  <link name="r_f2_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -385,7 +385,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f2_fixed_accel">
+  <link name="r_f2_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -393,7 +393,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f2_0">
+  <link name="r_f2_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -411,12 +411,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f0.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f2_1">
+  <link name="r_f2_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -434,12 +434,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f1.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin">
+      <material name="r_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f2_1_accel">
+  <link name="r_f2_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -447,7 +447,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f2_2">
+  <link name="r_f2_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -465,12 +465,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f2.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f2_2_accel">
+  <link name="r_f2_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -478,69 +478,69 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <joint name="right_f2_base" type="fixed">
-    <parent link="right_palm"/>
-    <child link="right_f2_base"/>
+  <joint name="r_f2_base" type="fixed">
+    <parent link="r_palm"/>
+    <child link="r_f2_base"/>
     <origin rpy="0 0 0.3" xyz="0.09 0.06245 0"/>
   </joint>
-  <joint name="right_f2_j0" type="revolute">
+  <joint name="r_f2_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f2_base"/>
-    <child link="right_f2_0"/>
+    <parent link="r_f2_base"/>
+    <child link="r_f2_0"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="right_f2_j1" type="revolute">
+  <joint name="r_f2_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f2_0"/>
-    <child link="right_f2_1"/>
+    <parent link="r_f2_0"/>
+    <child link="r_f2_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="right_f2_j2" type="revolute">
+  <joint name="r_f2_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f2_1"/>
-    <child link="right_f2_2"/>
+    <parent link="r_f2_1"/>
+    <child link="r_f2_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="right_f2_fixed_accel" type="fixed">
-    <parent link="right_f2_base"/>
-    <child link="right_f2_fixed_accel"/>
+  <joint name="r_f2_fixed_accel" type="fixed">
+    <parent link="r_f2_base"/>
+    <child link="r_f2_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="right_f2_1_accel" type="fixed">
-    <parent link="right_f2_1"/>
-    <child link="right_f2_1_accel"/>
+  <joint name="r_f2_1_accel" type="fixed">
+    <parent link="r_f2_1"/>
+    <child link="r_f2_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="right_f2_2_accel" type="fixed">
-    <parent link="right_f2_2"/>
-    <child link="right_f2_2_accel"/>
+  <joint name="r_f2_2_accel" type="fixed">
+    <parent link="r_f2_2"/>
+    <child link="r_f2_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="right_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f2_j0"/>
-    <actuator name="right_f2_j0_motor"/>
+  <transmission name="r_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f2_j0"/>
+    <actuator name="r_f2_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f2_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f2_j1"/>
-    <actuator name="right_f2_j1_motor"/>
+  <transmission name="r_f2_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f2_j1"/>
+    <actuator name="r_f2_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f2_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f2_j2"/>
-    <actuator name="right_f2_j2_motor"/>
+  <transmission name="r_f2_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f2_j2"/>
+    <actuator name="r_f2_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <link name="right_f3_base">
+  <link name="r_f3_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -548,7 +548,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f3_fixed_accel">
+  <link name="r_f3_fixed_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -556,7 +556,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f3_0">
+  <link name="r_f3_0">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -574,12 +574,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f0.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f3_1">
+  <link name="r_f3_1">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -597,12 +597,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f1.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin">
+      <material name="r_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f3_1_accel">
+  <link name="r_f3_1_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -610,7 +610,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <link name="right_f3_2">
+  <link name="r_f3_2">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -628,12 +628,12 @@
       <geometry>
         <mesh filename="package://sandia_hand/meshes/f2.stl"/>
       </geometry>
-      <material name="right_sandia_hand_skin_suntan">
+      <material name="r_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="right_f3_2_accel">
+  <link name="r_f3_2_accel">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
       <mass value="0.1"/>
@@ -641,66 +641,66 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <joint name="right_f3_base" type="fixed">
-    <parent link="right_palm"/>
-    <child link="right_f3_base"/>
+  <joint name="r_f3_base" type="fixed">
+    <parent link="r_palm"/>
+    <child link="r_f3_base"/>
     <origin rpy="0 -1.57079 -2.3562" xyz="0.03995 -0.04383 0.014"/>
   </joint>
-  <joint name="right_f3_j0" type="revolute">
+  <joint name="r_f3_j0" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f3_base"/>
-    <child link="right_f3_0"/>
+    <parent link="r_f3_base"/>
+    <child link="r_f3_0"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
-  <joint name="right_f3_j1" type="revolute">
+  <joint name="r_f3_j1" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f3_0"/>
-    <child link="right_f3_1"/>
+    <parent link="r_f3_0"/>
+    <child link="r_f3_1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="1.57079 0 0" xyz="0.028 0 0"/>
   </joint>
-  <joint name="right_f3_j2" type="revolute">
+  <joint name="r_f3_j2" type="revolute">
     <axis xyz="0 0 1"/>
-    <parent link="right_f3_1"/>
-    <child link="right_f3_2"/>
+    <parent link="r_f3_1"/>
+    <child link="r_f3_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
   </joint>
-  <joint name="right_f3_fixed_accel" type="fixed">
-    <parent link="right_f3_base"/>
-    <child link="right_f3_fixed_accel"/>
+  <joint name="r_f3_fixed_accel" type="fixed">
+    <parent link="r_f3_base"/>
+    <child link="r_f3_fixed_accel"/>
     <origin rpy="0 0 0" xyz="-0.05 0 0"/>
   </joint>
-  <joint name="right_f3_1_accel" type="fixed">
-    <parent link="right_f3_1"/>
-    <child link="right_f3_1_accel"/>
+  <joint name="r_f3_1_accel" type="fixed">
+    <parent link="r_f3_1"/>
+    <child link="r_f3_1_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.03 0 0"/>
   </joint>
-  <joint name="right_f3_2_accel" type="fixed">
-    <parent link="right_f3_2"/>
-    <child link="right_f3_2_accel"/>
+  <joint name="r_f3_2_accel" type="fixed">
+    <parent link="r_f3_2"/>
+    <child link="r_f3_2_accel"/>
     <origin rpy="-1.5709 0 0" xyz="0.04 0 0"/>
   </joint>
-  <transmission name="right_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f3_j0"/>
-    <actuator name="right_f3_j0_motor"/>
+  <transmission name="r_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f3_j0"/>
+    <actuator name="r_f3_j0_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f3_j1" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f3_j1"/>
-    <actuator name="right_f3_j1_motor"/>
+  <transmission name="r_f3_j1" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f3_j1"/>
+    <actuator name="r_f3_j1_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-  <transmission name="right_f3_j2" type="pr2_mechanism_model/SimpleTransmission">
-    <joint name="right_f3_j2"/>
-    <actuator name="right_f3_j2_motor"/>
+  <transmission name="r_f3_j2" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="r_f3_j2"/>
+    <actuator name="r_f3_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 </robot>
