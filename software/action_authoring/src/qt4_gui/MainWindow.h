@@ -76,8 +76,6 @@ WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filen
   
 };
 
-
-
 //==========AUTHORING STATE
  
 
@@ -103,6 +101,7 @@ public:
 
     //=================gui state
  private: 
+    boost::shared_ptr<lcm::LCM> _theLcm;
     QTimer* _scrubberTimer;
     QLineEdit* _actionName;
     DefaultValueSlider* _scrubber;

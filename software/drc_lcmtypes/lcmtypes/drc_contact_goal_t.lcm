@@ -11,8 +11,8 @@ struct contact_goal_t
 	string object_2_name; // not used for ON_GROUND_PLANE
 	string object_2_contact_grp; // not used for ON_GROUND_PLANE
 
-	double goal_completion_lower_bound_time;
-	double goal_completion_upper_bound_time;
+	double lower_bound_completion_time;
+	double upper_bound_completion_time;
 
 	const int32_t ON_GROUND_PLANE=0, TOUCH=1, FORCE_CLOSURE=2;
 	int32_t contact_type;

@@ -12,6 +12,8 @@ using namespace action_authoring;
 using namespace affordance;
 using namespace boost;
 
+#define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
+
 
 //using namespace collision_detection;
 
@@ -172,6 +174,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
 
 {
+
+    _theLcm = theLcm;
+
     // setup the OpenGL scene
 //  _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf");
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
@@ -743,5 +748,24 @@ nextKeyFrame() {
 void
 MainWindow::
 publishActionToLCM() {
-    
+    std::vector<Qt4ConstraintMacroPtr> all_gui_constraints = _authoringState._all_gui_constraints;
+    std::vector<drc::contact_goal_t> contact_goals;
+
+    for ( int i = 0; i < (int) all_gui_constraints.size(); i++ ) {
+      std::vector<drc::contact_goal_t> constraint_contact_goals = all_gui_constraints[i]->getConstraintMacro()->toLCM();
+      for ( int j = 0; j < (int) constraint_contact_goals.size(); j++ ) {
+        contact_goals.push_back(constraint_contact_goals[j]);
+      }
+    }
+
+    drc::action_sequence_t actionSequence;
+
+    // TODO: get the actual name and the proper time
+    actionSequence.utime = 0;
+    actionSequence.robot_name = "foo bar robot";
+
+    actionSequence.num_contact_goals = (int) contact_goals.size();
+    actionSequence.contact_goals = contact_goals;
+
+    _theLcm->publish(PLAN_ACTION_MESSAGE_CHANNEL, &actionSequence);
 }

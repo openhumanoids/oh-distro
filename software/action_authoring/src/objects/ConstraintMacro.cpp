@@ -61,8 +61,8 @@ std::vector<drc::contact_goal_t> ConstraintMacro::toLCM() {
     msg.object_1_name = _name;
     msg.object_1_contact_grp = "a contact group";
     msg.contact_type = msg.ON_GROUND_PLANE;
-    msg.goal_completion_lower_bound_time = _timeLowerBound;
-    msg.goal_completion_upper_bound_time = _timeUpperBound;
+    msg.lower_bound_completion_time = _timeLowerBound;
+    msg.upper_bound_completion_time = _timeUpperBound;
     lcmMessages.push_back(msg);
   }
   else if ( _constraintType == ConstraintMacro::SEQUENTIAL ) {
