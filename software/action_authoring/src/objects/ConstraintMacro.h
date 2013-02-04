@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>  
 #include <boost/unordered_map.hpp>
+#include <lcm/lcm-cpp.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 #include "ConstraintMacro.h"
 #include "AtomicConstraint.h"
@@ -59,6 +61,8 @@ namespace action_authoring {
     
     //Available for ATOMIC constraints only
     AtomicConstraintPtr getAtomicConstraint() const;
+
+    std::vector<drc::contact_goal_t> toLCM();
   }; //class ConstraintMacro
 
   typedef boost::shared_ptr<ConstraintMacro> ConstraintMacroPtr;

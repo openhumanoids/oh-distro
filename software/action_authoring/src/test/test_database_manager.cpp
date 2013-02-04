@@ -7,11 +7,16 @@
 #include "action_authoring/ConstraintMacro.h"
 #include "action_authoring/DatabaseManager.h"
 #include "action_authoring/OrderedMap.h"
+#include <lcm/lcm-cpp.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
+#include <boost/thread.hpp>
 
 using namespace action_authoring;
 using namespace std;
 using namespace boost;
 using namespace affordance;
+
+#define LCM_MESSAGE_CHANNEL "test_database_manager"
 
 void tabprintf(std::string string, int num_tabs) {
   for ( int i = 0; i < num_tabs; i++ ) {
@@ -59,6 +64,13 @@ void printConstraintMacro(ConstraintMacroPtr constraint, int num_tabs=0) {
       printConstraintMacro(constraints[i], num_tabs + 1);
     }
   }
+}
+
+void runLcmHandleLoop(const shared_ptr<lcm::LCM> theLcm)
+{
+  //lcm loop
+  cout << "\nstarting lcm loop" << endl;
+  while (0 == theLcm->handle());
 }
 
 int main() {
@@ -149,6 +161,37 @@ int main() {
   for (int i = 0; i < (int)affordances.size(); i++) {
     printf("%s\n", affordances[i]->getName().c_str());
   }
+
+
+  printf("Done Testing Store and Retrieve.\n");
+  printf("Now Testing LCM\n");
+
+  shared_ptr<lcm::LCM> theLcm(new lcm::LCM());
+  if (!theLcm->good())
+  {
+    cerr << "Cannot create lcm object" << endl;
+      return -1;
+  }
+
+  printf("Created the LCM object\n");
+  boost::thread testThread = boost::thread(runLcmHandleLoop, theLcm);
+
+  printf("Created the thread \n");
+
+  //flatten the ingress constraint
+  std::vector<drc::contact_goal_t> contact_goals = ingress->toLCM();
+
+  drc::action_sequence_t actionSequence;
+  printf("Created the action sequence\n");
+  actionSequence.num_contact_goals = (int) contact_goals.size();
+  printf("Added the number of contact goals\n");
+  actionSequence.contact_goals = contact_goals;
+  printf("Added the contact goals list\n");
+  actionSequence.robot_name = "foo bar robot";
+  actionSequence.utime = 0;
+
+  theLcm->publish(LCM_MESSAGE_CHANNEL, &actionSequence); 
+  printf("Published the message.\n");
 
   return(0); 
 }

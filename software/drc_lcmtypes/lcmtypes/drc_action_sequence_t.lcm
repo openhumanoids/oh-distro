@@ -6,10 +6,4 @@ struct action_sequence_t
 	string robot_name;
 	int32_t num_contact_goals;
 	contact_goal_t contact_goals[num_contact_goals];
-
-	int64_t start_times[num_contact_goals];
-	int64_t end_times[num_contact_goals]; // negative end time means constraint is in effect until end of action seq
-
-	int64_t start_time_tol[num_contact_goals];
-	int64_t end_time_tol[num_contact_goals];
 }

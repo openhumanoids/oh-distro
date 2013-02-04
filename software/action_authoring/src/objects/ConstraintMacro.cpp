@@ -52,3 +52,31 @@ AtomicConstraintPtr ConstraintMacro::getAtomicConstraint() const {
   return _atomicConstraint;
 }
 
+std::vector<drc::contact_goal_t> ConstraintMacro::toLCM() {
+  std::vector<drc::contact_goal_t> lcmMessages;
+  if ( _constraintType == ConstraintMacro::ATOMIC ) {
+    drc::contact_goal_t msg;
+    printf("Created the LCM message.\n");
+    //populate the message
+    msg.object_1_name = _name;
+    msg.object_1_contact_grp = "a contact group";
+    msg.contact_type = msg.ON_GROUND_PLANE;
+    msg.goal_completion_lower_bound_time = _timeLowerBound;
+    msg.goal_completion_upper_bound_time = _timeUpperBound;
+    lcmMessages.push_back(msg);
+  }
+  else if ( _constraintType == ConstraintMacro::SEQUENTIAL ) {
+    std::vector<drc::contact_goal_t> child_constraints;
+    for (int i = 0; i < (int) _constraints.size(); i++ ) {
+      child_constraints = _constraints[i]->toLCM();
+      for (int j=0; j < (int)child_constraints.size(); j++ ) {
+        lcmMessages.push_back(child_constraints[j]);
+      }
+    }
+  } 
+  else {
+    printf("Don't know how to convert ConstraintMacro type to LCM. Ignoring.\n");
+  }
+  return lcmMessages;
+}
+
