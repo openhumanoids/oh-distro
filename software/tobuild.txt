@@ -16,8 +16,7 @@ control
 
 gfe
 perception
-# disabled for now as its breaking build
-#action_authoring
+action_authoring
 viewer
 segmentation
 
