@@ -102,9 +102,9 @@ void VRCPlugin::DeferredLoad()
   // allowing the controllers can initialize without the robot falling
   if (this->atlas.isInitialized)
   {
-    //this->SetRobotMode("nominal");
-    this->SetRobotMode("pinned");
-    this->atlas.startupHarness = true;
+    this->SetRobotMode("nominal");
+    //this->SetRobotMode("pinned");
+    //this->atlas.startupHarness = true;
     //if (this->atlas.startupHarness) {
 	//	ROS_INFO("Start robot with gravity turned off and harnessed.");
 	//	ROS_INFO("Resume to nominal mode after 10 seconds.");
@@ -224,6 +224,9 @@ void VRCPlugin::SetRobotPose(const geometry_msgs::Pose::ConstPtr &_pose)
                                    _pose->orientation.y,
                                    _pose->orientation.z));
   this->atlas.model->SetWorldPose(pose);
+  
+  // also set body velocity to zero
+  this->atlas.model->SetWorldTwist(math::Vector3(0,0,0), math::Vector3(0,0,0));  
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -513,7 +516,7 @@ void VRCPlugin::Teleport(const physics::LinkPtr &_pinLink,
                                this->atlas.pinLink,
                                "revolute",
                                math::Vector3(0, 0, 0),
-                               math::Vector3(0, 0, 1),
+                               math::Vector3(0, 0, 1.5),
                                0.0, 0.0);
   this->world->SetPaused(p);
   this->world->EnablePhysicsEngine(e);
@@ -528,8 +531,8 @@ void VRCPlugin::UpdateStates()
   if (this->atlas.isInitialized &&
       this->atlas.startupHarness && curTime > 0.5)
   {
-    this->SetRobotMode("nominal");
-    this->atlas.startupHarness = false;
+//    this->SetRobotMode("nominal");
+//    this->atlas.startupHarness = false;
   }
 
   if (curTime > this->lastUpdateTime)
@@ -859,13 +862,22 @@ void VRCPlugin::LoadRobotROSAPI()
 void VRCPlugin::SetRobotConfiguration(const sensor_msgs::JointState::ConstPtr &_cmd)
 {
   std::map<std::string, double> jointPositions;
+  gazebo::physics::JointPtr j;	
   for (int i=0; i<_cmd->position.size(); i++) {
   	std::stringstream ss;
 	ss << "atlas::" << _cmd->name[i];
 	std::string s = ss.str();
   	jointPositions[s] = _cmd->position[i];
+  	j = this->atlas.model->GetJoint(_cmd->name[i]);
+  	j->SetVelocity(0,0.0);
+  	j->SetVelocity(1,0.0);
+  	j->SetVelocity(2,0.0);
+  	j->SetForce(0,0.0);
+  	j->SetForce(1,0.0);
+  	j->SetForce(2,0.0);
   }
   this->atlas.model->SetJointPositions(jointPositions);
+  //this->atlas.model->SetJointVelocities(jointVelocities);
 }
 
 
