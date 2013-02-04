@@ -13,7 +13,7 @@ public:
 
   template<typename PointType>
   static Eigen::Isometry3f
-  getPoseMatrix(const pcl::PointCloud<PointType>& iCloud) {
+  getPose(const pcl::PointCloud<PointType>& iCloud) {
     Eigen::Isometry3f xform = Eigen::Isometry3f::Identity();
     xform.linear() = iCloud.sensor_orientation_.matrix();
     Eigen::Vector4f position = iCloud.sensor_origin_;
@@ -24,7 +24,10 @@ public:
   template<typename PointType>
   static void
   setPose(const Eigen::Isometry3f iPose, pcl::PointCloud<PointType>& oCloud) {
-    oCloud.sensor_origin_ = iPose.translation();
+    for (int i = 0; i < 3; ++i) {
+      oCloud.sensor_origin_[i] = iPose.translation()[i];
+    }
+    oCloud.sensor_origin_[3] = 1;
     oCloud.sensor_orientation_ = iPose.rotation();
   }
 

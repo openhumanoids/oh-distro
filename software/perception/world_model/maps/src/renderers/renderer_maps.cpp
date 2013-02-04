@@ -288,6 +288,7 @@ struct RendererMaps {
         continue;
       }
 
+
       //
       // draw point cloud
       //

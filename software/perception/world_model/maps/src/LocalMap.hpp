@@ -87,7 +87,7 @@ public:
   // export this entire representation as an octree
   maps::Octree
   getAsOctree(const float iResolution, const bool iTraceRays=false,
-              const Eigen::Vector3f& iShift=Eigen::Vector3f(0,0,0),
+              const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   /*

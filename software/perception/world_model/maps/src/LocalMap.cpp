@@ -104,7 +104,7 @@ addData(const maps::PointSet& iPointSet) {
   }
 
   // transform points to reference coords
-  Eigen::Affine3f xformToReference = Utils::getPoseMatrix(*iPointSet.mCloud);
+  Eigen::Affine3f xformToReference = Utils::getPose(*iPointSet.mCloud);
   maps::PointCloud refCloud;
   pcl::transformPointCloud(*iPointSet.mCloud, refCloud, xformToReference);
 
@@ -212,7 +212,7 @@ getAsPointCloud(const float iResolution,
 
 maps::Octree LocalMap::
 getAsOctree(const float iResolution, const bool iTraceRays,
-            const Eigen::Vector3f& iShift,
+            const Eigen::Vector3f& iOrigin,
             const SpaceTimeBounds& iBounds) const {
   //  return mOctree;
 
@@ -230,9 +230,7 @@ getAsOctree(const float iResolution, const bool iTraceRays,
 
   Octree oct;
   oct.mTransform = Eigen::Isometry3f::Identity();
-  oct.mTransform(0,3) = iShift(0);
-  oct.mTransform(1,3) = iShift(1);
-  oct.mTransform(2,3) = iShift(2);
+  oct.mTransform.translation() = iOrigin;
   oct.mTree.reset(new octomap::OcTree(iResolution));
   std::vector<maps::PointSet> pointSets =
     mPointData->get(iBounds.mMinTime, iBounds.mMaxTime);
@@ -241,23 +239,23 @@ getAsOctree(const float iResolution, const bool iTraceRays,
     maps::PointCloud::Ptr outCloud(new maps::PointCloud());
     Utils::crop(*inCloud, *outCloud, mSpec.mBoundMin, mSpec.mBoundMax);
     Utils::crop(*outCloud, *outCloud, iBounds.mPlanes);
+    Eigen::Vector3f origin = oct.mTransform.translation();
     if (iTraceRays) {
       octomap::Pointcloud octCloud;    
       for (int j = 0; j < outCloud->points.size(); ++j) {
-        octomap::point3d pt(outCloud->points[j].x + iShift(0),
-                            outCloud->points[j].y + iShift(1),
-                            outCloud->points[j].z + iShift(2));
+        octomap::point3d pt(outCloud->points[j].x - origin(0),
+                            outCloud->points[j].y - origin(1),
+                            outCloud->points[j].z - origin(2));
         octCloud.push_back(pt);
       }
-      Eigen::Vector3f origin = oct.mTransform.translation();
-      octomap::point3d octOrigin(origin[0], origin[1], origin[2]);
+      octomap::point3d octOrigin(-origin[0], -origin[1], -origin[2]);
       oct.mTree->insertScan(octCloud, octOrigin);
     }
     else {
       for (int j = 0; j < outCloud->points.size(); ++j) {
-        octomap::point3d pt(outCloud->points[j].x + iShift(0),
-                            outCloud->points[j].y + iShift(1),
-                            outCloud->points[j].z + iShift(2));
+        octomap::point3d pt(outCloud->points[j].x - origin(0),
+                            outCloud->points[j].y - origin(1),
+                            outCloud->points[j].z - origin(2));
         oct.mTree->updateNode(pt, true);
       }
     }

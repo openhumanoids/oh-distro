@@ -21,7 +21,7 @@ namespace maps {
 
   struct Octree {
     boost::shared_ptr<octomap::OcTree> mTree;
-    Eigen::Isometry3f mTransform;
+    Eigen::Isometry3f mTransform;  // from map to reference coords
   };
 
 }

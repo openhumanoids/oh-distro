@@ -2,7 +2,8 @@
 #define _FilterColorize_hpp_
 
 #include <pcl/point_cloud.h>
-#include <pcl/common/io.h>
+#include <pcl/common/transforms.h>
+#include <pcl/io/io.h>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <bot_core/camtrans.h>
@@ -20,12 +21,12 @@ public:
                        const BotCamTrans* iCamTrans,
                        typename pcl::PointCloud<PointTypeOut>& oCloud) {
     pcl::copyPointCloud(iCloud, oCloud);
+    pcl::PointCloud<PointTypeOut> tempCloud;
+    pcl::transformPointCloud(iCloud, tempCloud, iCloudToCamera.cast<float>());
 
     int numPoints = iCloud.size();
     for (int i = 0; i < numPoints; ++i) {
-      Eigen::Vector3d pt(iCloud[i].x, iCloud[i].y, iCloud[i].z);
-      pt = iCloudToCamera*pt;
-      double p[3] = {pt(0),pt(1),pt(2)};
+      double p[3] = {tempCloud[i].x, tempCloud[i].y, tempCloud[i].z};
       double pix[3];
       bot_camtrans_project_point(iCamTrans, p, pix);
       oCloud[i].r = oCloud[i].g = oCloud[i].b = 0;

@@ -118,7 +118,7 @@ getAsCloud(const int64_t iTimestamp1, const int64_t iTimestamp2) {
   std::vector<maps::PointSet> pointSets = get(iTimestamp1, iTimestamp2);
   maps::PointCloud::Ptr cloud(new maps::PointCloud());
   for (int i = 0; i < pointSets.size(); ++i) {
-    Eigen::Affine3f xform = Utils::getPoseMatrix(*pointSets[i].mCloud);
+    Eigen::Affine3f xform = Utils::getPose(*pointSets[i].mCloud);
     maps::PointCloud curCloud;
     pcl::transformPointCloud(*pointSets[i].mCloud, curCloud, xform);
     *cloud += curCloud;
