@@ -6,7 +6,8 @@ options.dt = 0.001;
 r = Atlas('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
 
 % set initial state to fixed point
-load('data/atlas_fp.mat');
+load('data/atlas_fp3.mat');
+xstar(3) = xstar(3)-0.002;
 r = r.setInitialState(xstar);
 
 % set initial conditions in gazebo

@@ -7,6 +7,7 @@ r = Atlas('urdf/atlas_minimal_contact.urdf',options);
 
 % set initial state to fixed point
 load('data/atlas_fp3.mat');
+xstar(3) = xstar(3)-0.002;
 r = r.setInitialState(xstar);
 
 % atlas state subscriber
