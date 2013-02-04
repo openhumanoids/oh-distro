@@ -16,3 +16,9 @@ rosbuild_add_executable(lcm2ros src/lcm2ros.cpp)
 pods_install_executables(lcm2ros)
 pods_use_pkg_config_packages(lcm2ros lcm lcmtypes_drc_lcmtypes bot2-core) 
 
+
+rosbuild_add_executable(ros2lcm src/ros2lcm.cpp)
+target_link_libraries(ros2lcm boost_signals)
+pods_install_executables(ros2lcm)
+pods_use_pkg_config_packages(ros2lcm lcm lcmtypes_drc_lcmtypes bot2-core) 
+

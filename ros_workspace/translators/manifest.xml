@@ -8,15 +8,15 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url></url>
-<!--  <depend package="gazebo"/> -->
-<!--  <depend package="gazebo_msgs"/> -->
   <depend package="urdf"/>
   <depend package="urdf_interface"/>
   <depend package="roscpp"/>
   <depend package="atlas_gazebo_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
-
+  <!-- Required for stereo transmission -->
+  <depend package="image_transport"/>
+  <depend package="image_geometry"/> 
 </package>
 
 
