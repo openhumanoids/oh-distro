@@ -148,7 +148,7 @@ private slots:
     void mediaFastBackward();
     void mediaPlay();
     void nextKeyFrame();
-
+    void publishActionToLCM();
 };
 
 } //namespace action_authoring

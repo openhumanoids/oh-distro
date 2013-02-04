@@ -212,7 +212,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     toolbar->addWidget(savebutton);
     QPushButton* loaddiff = new QPushButton("Load Action");
     toolbar->addWidget(loaddiff);
-
+    QPushButton* planbutton = new QPushButton("Publish For Planning");
+    toolbar->addWidget(planbutton);
 
 
     vbox->addWidget(toolbar);
@@ -243,6 +244,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     constraint_toolbar->addWidget(_moveDownButton);
     constraint_toolbar->addSeparator();
     constraint_toolbar->addWidget(addconstraintbutton);
+    constraint_toolbar->addSeparator();
     vbox->addStretch(1);
     vbox->addWidget(constraint_toolbar);
 
@@ -326,6 +328,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     this->setLayout(layout);
 
     // wire up the buttons
+    connect(planbutton, SIGNAL(released()), this, SLOT(publishActionToLCM()));
+
     connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
     connect(_ffwd, SIGNAL(released()), this, SLOT(mediaFastForward()));
     connect(_fbwd, SIGNAL(released()), this, SLOT(mediaFastBackward()));
@@ -677,7 +681,6 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
 		pc->setPoint1(hitPoint);
 	}
     }
-
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
@@ -735,4 +738,10 @@ nextKeyFrame() {
 	    break;
 	}
     }    
+}
+
+void
+MainWindow::
+publishActionToLCM() {
+    
 }
