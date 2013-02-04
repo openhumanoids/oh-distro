@@ -9,78 +9,24 @@
 // fingerprint_base = long = 4
 // 4 missing bytes = 4 (probably the channel OR that the fingerprint has be double counted here)
 
-#include <boost/thread.hpp>
-#include <lcm/lcm.h>
+#include "network-bridge.h"
 
-#include <bot_param/param_client.h>
-#include <bot_param/param_util.h>
-#include <lcmtypes/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.h>
 #include <ConciseArgs>
 
 using namespace boost; 
 using namespace std;
 
-// Structure of which channels to resent and when
-struct Resend{
-  Resend(std::string channel, double max_freq, bool robot2base, int64_t last_utime):
-    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime) {}
-  std::string channel; // .. LCM channel
-  double max_freq; // max freq of transmission
-  int64_t last_utime; // last utime of transmission
-  bool robot2base; // true r2b | false b2r
-};
+const std::string KMCLApp::B2R_CHANNEL = "TUNNEL_BASE_TO_ROBOT";
+const std::string KMCLApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
 
-///////////////////////////////////////////////////////////////
-class KMCLApp{
-  public:
-    KMCLApp(lcm_t* robot_lcm, lcm_t* base_lcm,
-	 std::string task);
-    
-    ~KMCLApp(){
-    }
-    
-    lcm_t* robot_lcm;
-    lcm_t* base_lcm;
-    bool verbose;
-    BotParam * bot_param;
-    
-    string robot2base_subscription;
-    string base2robot_subscription;
-    
-    // the time we started counting the BW:
-    int64_t bw_init_utime;
-    // Size in ??? of the culumative bandwidth this period:
-    int bw_cumsum_base2robot;
-    int bw_cumsum_robot2base;
-    
-    void addResend( Resend resent_in ){  resendlist_.push_back(resent_in);    }
-    bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base);    
-
-    void set_current_utime(int64_t current_utime_in){
-        boost::mutex::scoped_lock lock(guard);
-        current_utime = current_utime_in;
-    }    
-    
-    int64_t get_current_utime(){
-      boost::mutex::scoped_lock lock(guard);
-      return current_utime;
-    }
-    
-    std::string parse_direction(string task, string direction, bool direction_bool);    
-private:
-    std::string task;
-    std::vector<Resend> resendlist_;    
-    
-    int64_t current_utime;   
-    boost::mutex guard;
-};  
 
 KMCLApp::KMCLApp(lcm_t* robot_lcm,lcm_t* base_lcm,
-      std::string task):
+                 std::string task,
+                 bool base_only,
+                 bool bot_only):
       robot_lcm(robot_lcm), base_lcm(base_lcm),
-      task(task){
-  verbose=false;
+      task(task),base_only(base_only),bot_only(bot_only){
+    verbose=false;
   current_utime=0;
   
   bw_init_utime = 0;
@@ -153,7 +99,7 @@ bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime,
    if ( resendlist_[i].channel.compare(channel) == 0){
      if (resendlist_[i].max_freq ==0){
        robot2base = resendlist_[i].robot2base;
-       cout << "always send " << channel << " message\n";
+       // cout << "always send " << channel << " message\n";
        return true;
      }
      double elapsed_time = (msg_utime - resendlist_[i].last_utime)/1E6;
@@ -177,84 +123,31 @@ void utime_handler(const lcm_recv_buf_t* rbuf, const char* channel,
 //  std::cout << "got current time\n";
 }
 
-// message-type ignorant callback:
-// All traffic passes through here
-void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
-{
-  KMCLApp* app = (KMCLApp*) user_data;
-  if (app->verbose)
-        printf ("%.3f Channel %-20s size %d\n", rbuf->recv_utime / 1000000.0,
-                channel, rbuf->data_size);
-        
-  // Keep Bandwidth Stats:
-  double elapsed_time = (double) (app->get_current_utime() - app->bw_init_utime)/1E6 ;
-  double bw_window = 1.0; // bw window in seconds
-  if ( elapsed_time  > 1.0  ){
-    // 1024 is also used in bot spy:
-    double bw_base2robot =  app->bw_cumsum_base2robot /(1024.0* elapsed_time );
-    double bw_robot2base=  app->bw_cumsum_robot2base / (1024.0* elapsed_time );
-    cout << "r "<<  bw_robot2base << " <----------> "<< bw_base2robot << " b [kB/s] w="<< bw_window << "sec\n";
-     
-    drc_bandwidth_stats_t stats;
-    stats.utime = app->get_current_utime();
-    stats.previous_utime = app->bw_init_utime;
-    stats.bytes_from_robot = app->bw_cumsum_robot2base;
-    stats.bytes_to_robot = app->bw_cumsum_base2robot;
-    drc_bandwidth_stats_t_publish(app->robot_lcm, "BW_STATS", &stats);
-    drc_bandwidth_stats_t_publish(app->base_lcm, "BW_STATS", &stats);
-     
-    app->bw_init_utime = app->get_current_utime();
-    app->bw_cumsum_robot2base = 0;
-    app->bw_cumsum_base2robot = 0;
-  }
-        
-  // Determine if the message should be dropped or sent (and then send)
-  bool robot2base=true;
-  if (app->determine_resend_from_list(channel, app->get_current_utime(), robot2base )  ) {  
-    if (robot2base){
-      app->bw_cumsum_robot2base += rbuf->data_size;
-      lcm_publish (app->base_lcm, channel, rbuf->data, rbuf->data_size); 
-      if (app->verbose)
-        cout << "R2B " <<app->get_current_utime()<< "| "<<channel <<"\n";
-    }else{
-      app->bw_cumsum_base2robot += rbuf->data_size;
-      lcm_publish (app->robot_lcm, channel, rbuf->data, rbuf->data_size); 
-      if (app->verbose)
-        cout << "B2R " <<app->get_current_utime()<< "| "<<channel <<"\n";
-    }
-  }        
-}
-
-void robot2base(KMCLApp& app ) { 
-  // Subscribe to robot time and use that to key the publishing of all messages in both directions:
-  drc_utime_t_subscribe(app.robot_lcm, "ROBOT_UTIME", utime_handler, &app);
-  lcm_subscribe (app.robot_lcm, app.robot2base_subscription.c_str() , generic_handler, &app);
-  cout << "robot to base subscribed\n";
-  while (1)
-      lcm_handle(app.robot_lcm);    
-}
-
-void base2robot(KMCLApp& app) { 
-  sleep(1); // ... not necessary just for clarity
-  lcm_subscribe (app.base_lcm, app.base2robot_subscription.c_str(), generic_handler, &app);
-  cout << "base to robot subscribed\n";
-  while (1)
-    lcm_handle(app.base_lcm);
-}
-
-
 int main (int argc, char ** argv) {
   string task = "driving";
+  bool bot_only = false;
+  bool base_only = false;
+  
   ConciseArgs opt(argc, (char**)argv);
   opt.add(task, "t", "task","Task: driving, walking, manipulation");
+  opt.add(bot_only, "r", "robotonly", "If true, do not LCM connect base side.");
+  opt.add(base_only, "b", "baseonly", "If true, do not LCM connect robot side.");
   opt.parse();
   std::cout << "task: " << task << "\n";
+  std::cout << "robot only: " << bot_only << "\n";
+  std::cout << "base only: " << base_only << "\n";
+
+  lcm_t* robot_lcm = 0;
+  lcm_t* base_lcm = 0;
+  robot_lcm= lcm_create(NULL);//"udpm://239.255.12.67:1267?ttl=1");  
+  base_lcm = lcm_create("udpm://239.255.12.68:1268?ttl=1");  
   
-  lcm_t * robot_lcm= lcm_create(NULL);//"udpm://239.255.12.67:1267?ttl=1");  
-  lcm_t * base_lcm= lcm_create("udpm://239.255.12.68:1268?ttl=1");  
-  
-  KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,task);
+  KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,task,base_only,bot_only);
   boost::thread_group thread_group;
+
+  // Subscribe to robot time and use that to key the publishing of all messages in both directions:
+  drc_utime_t_subscribe(app->robot_lcm, "ROBOT_UTIME", utime_handler, app);
+  
   thread_group.create_thread(boost::bind(robot2base, boost::ref( *app)));
   thread_group.create_thread(boost::bind(base2robot, boost::ref( *app)));
   thread_group.join_all();  

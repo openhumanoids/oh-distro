@@ -1,0 +1,8 @@
+package drc;
+
+struct shaper_msg_t
+{
+    string channel;
+    int32_t data_size;
+    byte    data[data_size];
+}
