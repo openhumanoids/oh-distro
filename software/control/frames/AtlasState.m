@@ -4,7 +4,7 @@ classdef AtlasState < LCMCoordinateFrameWCoder & Singleton
     function obj=AtlasState(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
-      joint_names = r.getStateFrame.coordinates(1:r.getNumStates()/2);
+      joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
       
       coder = RobotStateCoder('atlas', joint_names);

@@ -16,7 +16,7 @@ public:
 	  drc::robot_plan_t plan_msg;
 	 plan_msg.utime =  msg->utime;
 	 plan_msg.robot_name =  msg->robot_name;
-	 plan_msg.num_states = 10;
+	 plan_msg.num_states = 50;
 	 drc::robot_state_t state_msg;
 	 drc::position_3d_t body_origin;
 	 body_origin = msg->origin_position; 

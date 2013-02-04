@@ -56,109 +56,111 @@ classdef QPController < DrakeSystem
     p = obj.plant;
 
     global alpha;
-      q = x(1:obj.nq); 
-      qd = x(obj.nq+(1:obj.nq));
+    q = x(1:obj.nq); 
+    qd = x(obj.nq+(1:obj.nq));
 
-      [H,C,B] = p.manipulatorDynamics(q,qd);
-      [foot_pos,Jp,dJp] = p.contactPositions(q); 
-      % note, if friction cone approx d=4, could just use
-      % contactConstraints function to get position and J
-      [phi,Jc,D_] = p.contactConstraints(q);
-      % D_ is the parameterization of the polyhedral approximation of the 
-      %    friction cone, in joint coordinates (figure 1 from Stewart96)
-      %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
+    [H,C,B] = p.manipulatorDynamics(q,qd);
+    [foot_pos,Jp,dJp] = p.contactPositions(q); 
+    % note, if friction cone approx d=4, could just use
+    % contactConstraints function to get position and J
+    [phi,Jc,D_] = p.contactConstraints(q);
+    % D_ is the parameterization of the polyhedral approximation of the 
+    %    friction cone, in joint coordinates (figure 1 from Stewart96)
+    %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
 
-      % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for the kth
-      % contact point
-      D = cell(1,obj.nc);
-      for k=1:obj.nc
-        for i=1:obj.nd
-          D{k}(:,i) = D_{i}(k,:)'; 
-        end
+    % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for the kth
+    % contact point
+    D = cell(1,obj.nc);
+    for k=1:obj.nc
+      for i=1:obj.nd
+        D{k}(:,i) = D_{i}(k,:)'; 
       end
-      Dbar = [D{:}];
+    end
+    Dbar = [D{:}];
 
-      if any(phi < -1e-5)
-        warning('QPController: Detected contact point penetration...');
-      end
+    if any(phi < -1e-5)
+      warning('QPController: Detected contact point penetration...');
+    end
 
-      % TEMP: assume mu=1
-      mu = ones(obj.nc,1);
+    % TEMP: assume mu=1
+    mu = ones(obj.nc,1);
 
-      Aeq_ = cell(1,3+obj.nc);
-      beq_ = cell(1,3+obj.nc);
-      Ain_ = cell(1,obj.nc);
-      bin_ = cell(1,obj.nc);
+    Aeq_ = cell(1,3+obj.nc);
+    beq_ = cell(1,3+obj.nc);
+    Ain_ = cell(1,obj.nc);
+    bin_ = cell(1,obj.nc);
 
-      % CT dynamics constraint
-      Aeq_{1} = H*obj.Iqdd - B*obj.Iu - Jc'*obj.Iz - Dbar*obj.Ibeta;
-      beq_{1} = -C;
+    % CT dynamics constraint
+    Aeq_{1} = H*obj.Iqdd - B*obj.Iu - Jc'*obj.Iz - Dbar*obj.Ibeta;
+    beq_{1} = -C;
 
-      % no-slip constraint
-      Jpdot = zeros(obj.nc*obj.dim,obj.nq);
-      for i=1:obj.nq
-        Jpdot(:,i) = dJp(:,(i-1)*obj.nq+(1:obj.nq))*qd;
-      end
-      Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
-      beq_{2} = -Jpdot*qd;
+    % no-slip constraint
+    Jpdot = zeros(obj.nc*obj.dim,obj.nq);
+    for i=1:obj.nq
+      Jpdot(:,i) = dJp(:,(i-1)*obj.nq+(1:obj.nq))*qd;
+    end
+    Aeq_{2} = Jp*obj.Iqdd + obj.Ieps;
+    beq_{2} = -Jpdot*qd;
 
-      % complementarity constraints
-      phi(abs(phi)<1e-3) = 0; % epsilon is close enough
-      Aeq_{3} = phi'*obj.Iz;
-      beq_{3} = 0;
+    % complementarity constraints
+    %phi(abs(phi)<1e-3) = 0; % epsilon is close enough
+    %Aeq_{3} = phi'*obj.Iz;
+    %beq_{3} = 0;
 
-      for i=1:obj.nc
-        Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-        beq_{3+i} = 0;
-        Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
-        bin_{i} = 0;
-      end
+    for i=1:obj.nc
+      %Aeq_{3+i} = repmat(phi(i),1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+      %beq_{3+i} = 0;
+      Ain_{i} = -mu(i)*obj.Iz(i,:) + ones(1,obj.nd)*obj.Ibeta((i-1)*obj.nd+(1:obj.nd),:);
+      bin_{i} = 0;
+    end
 
-      % linear equality constraints: Aeq*alpha = beq
-      Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
-      %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
-      beq = vertcat(beq_{:});
+    % linear equality constraints: Aeq*alpha = beq
+    %Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),3+obj.nc,1));
+    Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(obj.nparams),2,1));
+    beq = vertcat(beq_{:});
 
-      % linear inequality constraints: Ain*alpha <= bin
-      Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(obj.nparams),obj.nc,1));
-      bin = vertcat(bin_{:});
+    % linear inequality constraints: Ain*alpha <= bin
+    Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(obj.nparams),obj.nc,1));
+    bin = vertcat(bin_{:});
 
-      % get desired COM pos
-      ch = convhull(foot_pos(1:2,:)');
-      com_des = [mean(foot_pos(1:2,ch),2);0];
-      
-      [cm,J,dJ] = p.getCOM(q);
-      Jdot = zeros(obj.dim,obj.nq);
-      for i=1:obj.nq
-        Jdot(:,i) = dJ(:,(i-1)*obj.nq+(1:obj.nq))*qd;
-      end
+    % get desired COM pos
+    ch = convhull(foot_pos(1:2,:)');
+    com_des = [mean(foot_pos(1:2,ch),2);0];
 
-      % COM PD controller
-      Kp = 500*eye(obj.dim); 
-      Kd = 120*eye(obj.dim);
-      
-      P = diag([1 1 0]); % ignore z
-      err = com_des - cm;
-      cm_dot = J*qd;
-      cm_ddot_des = Kp*P*err - Kd*P*cm_dot;
+    [cm,J,dJ] = p.getCOM(q);
+    Jdot = zeros(obj.dim,obj.nq);
+    for i=1:obj.nq
+      Jdot(:,i) = dJ(:,(i-1)*obj.nq+(1:obj.nq))*qd;
+    end
 
-      % nominal pose PD controller
-      Kp_q = 15*eye(obj.nq);
-      Kd_q = 5*eye(obj.nq);
-      Kp_q(1:6,1:6) = zeros(6); % ignore free body dofs
-      Kd_q(1:6,1:6) = zeros(6); % ignore free body dofs
-      err_q = obj.qstar - q;
-      qdd_des = Kp_q*err_q - Kd_q*qd;
+    % COM PD controller
+    Kp = 500*eye(obj.dim); 
+    Kd = 120*eye(obj.dim);
 
-      w_com = 0.0;
-      w_q = 0.05;
+    P = diag([1 1 0]); % ignore z
+    err = P*(com_des - cm);
+    cm_dot = P*J*qd;
+    cm_ddot_des = Kp*err - Kd*cm_dot;
 
-      Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
-      Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0
-      fqp = horzcat(w_com*(Jdot*qd - cm_ddot_des)'*J*obj.Iqdd, -w_q*qdd_des'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
+    % debug
+    scope('Atlas','com_err',t,norm(err),struct('linespec','r','scope_id',1));
 
-      alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
+    % nominal pose PD controller
+    Kp_q = 15*eye(obj.nq);
+    Kd_q = 5*eye(obj.nq);
+    Kp_q(1:6,1:6) = zeros(6); % ignore free body dofs
+    Kd_q(1:6,1:6) = zeros(6); % ignore free body dofs
+    err_q = obj.qstar - q;
+    qdd_des = Kp_q*err_q - Kd_q*qd;
 
+    w_com = 0.1;
+    w_q = 1.0;
+
+    Hqp = repmat(eye(obj.nparams),2,1)'*blkdiag(w_com*obj.Iqdd'*(J'*J + 0.0001*eye(obj.nq))*obj.Iqdd, w_q*obj.Iqdd'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
+    Hqp(obj.nparams-obj.nc*obj.dim+1:end,obj.nparams-obj.nc*obj.dim+1:end) = eye(obj.nc*obj.dim); % drive slack vars to 0
+    fqp = horzcat(w_com*(Jdot*qd - cm_ddot_des)'*J*obj.Iqdd, -w_q*qdd_des'*obj.Iqdd)*repmat(eye(obj.nparams),2,1);
+
+    alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,obj.lb,obj.ub,alpha);%,obj.options);
     y=alpha(obj.nq+(1:obj.nu));
    
   end

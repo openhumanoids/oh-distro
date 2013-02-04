@@ -1,9 +1,8 @@
-classdef SimpleCOMGoalGenerator < DrakeSystem
-  % simple system for generating COM goals at the center of the 
-  % support foot polygon for Atlas (minimal contact model)
+classdef SimpleAlternatingCOMGoalGenerator < DrakeSystem
+  % example alternating foot COM goal generator
    
   methods
-    function obj = SimpleCOMGoalGenerator(r)
+    function obj = SimpleAlternatingCOMGoalGenerator(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
       comframe = AtlasCOM(r);
@@ -26,14 +25,27 @@ classdef SimpleCOMGoalGenerator < DrakeSystem
       % assumes minimal contact model for now
       k = convhull(gc(1:2,:)');
       com_des = [mean(gc(1:2,k),2);cm(3)];
-    end
-        
+    end        
+    
     function com_des = update(obj,t,com_des,x)
-      q = x(1:obj.manip.getNumDOF());
+      nq = getNumDOF(obj.manip);
+      q = x(1:nq);
+
       gc = obj.manip.contactPositions(q);
       
-      % compute desired COM projection
       % assumes minimal contact model for now
+      ts = 3;
+      idx = 1:8;
+      if t>3*ts
+        idx = 1:8;
+      elseif t>2*ts
+        idx = 1:4;
+      elseif t>ts
+        idx = 5:8;
+      end
+      
+      gc = gc(:,idx);
+      % compute desired COM projection
       k = convhull(gc(1:2,:)');
       com_des(1:2) = mean(gc(1:2,k),2);
     end
