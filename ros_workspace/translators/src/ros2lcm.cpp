@@ -536,7 +536,7 @@ int main(int argc, char **argv){
 
   App *app = new App( "camera", "CAMERA", nh);
   std::cout << "ros2lcm translator ready\n";
-  ros::spin();
+  //ros::spin();
   
   
   
