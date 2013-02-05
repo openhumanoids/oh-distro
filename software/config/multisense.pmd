@@ -1,0 +1,101 @@
+group "core" {
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/real_multisense_sl/multisense.urdf";
+        host = "localhost";
+    }
+    cmd "estpub_no_sense" {
+        exec = "est_robot_state_publisher_no_exteroception";
+        host = "localhost";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+}
+
+group "ros" {
+    cmd "rviz" {
+        exec = "rosrun rviz rviz";
+        host = "localhost";
+    }
+    cmd "head_control" {
+        exec = "roslaunch multisense_bringup control.launch";
+        host = "localhost";
+    }
+    cmd "head_dash" {
+        exec = "rosrun multisense_dashboard multisense_dashboard";
+        host = "localhost";
+    }
+    cmd "head_driver" {
+        exec = "roslaunch multisense_bringup multisense.launch";
+        host = "localhost";
+    }
+    cmd "head_watchdog" {
+        exec = "rosrun ROS2LCM_translator  real_multisense_subscribe";
+        host = "localhost";
+    }
+}
+group "head_ctrl" {
+    cmd "fast" {
+        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 2";
+        host = "localhost";
+    }
+    cmd "slow" {
+        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 0.3";
+        host = "localhost";
+    }
+    cmd "stop" {
+        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 0";
+        host = "localhost";
+    }
+}
+
+group "processing" {
+    cmd "imagesplit" {
+        exec = "drc-image-splitter  -c CAMERA";
+        host = "localhost";
+    }
+    cmd "reg_vo" {
+        exec = "drc-reg-vo -b stereo -pPOSE_HEAD -m 2";
+        host = "localhost";
+    }
+}
+
+
+
+
+
+group "misc" {
+    cmd "spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+}
+
+group "zold" {
+    cmd "disparity" {
+        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "sensing";
+}
