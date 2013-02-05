@@ -911,7 +911,7 @@ namespace surrogate_gui
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_t affordanceMsg;
 	  	  
-	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER; // FIXEME: extend daffordance_t for SPHERE;
+	  affordanceMsg.otdf_id = drc::affordance_t::SPHERE; 
 	  affordanceMsg.name = "sphere";
 
           //geometrical properties
