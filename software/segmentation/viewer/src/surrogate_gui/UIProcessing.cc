@@ -618,6 +618,10 @@ namespace surrogate_gui
 			_button_states.shift_L_is_down = false;
 		else if (event->keyval == GDK_Shift_R)
 			_button_states.shift_R_is_down = false;
+		else if (event->keyval == GDK_Control_L)
+			_button_states.ctrl_L_is_down = false;
+		else if (event->keyval == GDK_Control_R)
+			_button_states.ctrl_R_is_down = false;
 		return 1;
 	}
 
