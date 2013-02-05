@@ -1,0 +1,55 @@
+notes to get the CRL multisense-sl head up and running
+
+1. Disable DHCP
+- see image file in this directory
+
+1b. Set /etc/network/interface
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 192.168.1.100
+netmask 255.255.255.0
+network 192.168.1.0
+broadcast 192.168.1.255
+gateway 192.168.1.254
+
+... reboot
+
+2.
+sudo ifconfig eth0 10.10.72.56
+sudo echo 16777215 > /proc/sys/net/core/rmem_max
+sudo echo 16777215 > /proc/sys/net/core/wmem_max
+sudo ifconfig eth0 mtu 7200
+
+
+3. verify ip address:
+$ ifconfig
+eth0      Link encap:Ethernet  HWaddr 3c:97:0e:2d:d4:25  
+          inet addr:10.10.72.56  Bcast:10.255.255.255  Mask:255.0.0.0
+...
+
+
+4. ping 10.10.72.52
+
+5. Ros tools:
+rosrun image_view image_view image:=/stereo/left/image_rect
+rosrun rviz rviz /home/mfallon/drc/ros_workspace/multisense/multisense/multisense_bringup/rviz_config.vcg
+
+6. Notes
+Spindle: max speed: 2.158 rad/sec (20.60 rpm)
+
+Size of rectified image produced by the device:
+width : 1024 pixels 
+height: 600 pixels (sides) 570 (center)
+nominal output resolution: 1024x1088 [wxh] with extensive letterboxing top and bottom
+
+Joint angle range: (always decreasing):
+5.78 -> 0 -> -0.5
+0.000 - upright
+3.142 - upside down
+
+
+
+Why does the joint angle have such a strange range?
