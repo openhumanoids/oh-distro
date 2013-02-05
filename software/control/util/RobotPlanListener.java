@@ -36,15 +36,19 @@ public class RobotPlanListener implements LCMSubscriber
       try {
         drc.robot_plan_t msg = new drc.robot_plan_t(dins);
         if (msg.robot_name.equals(m_robot_name)) {
-          plan = new double[msg.num_states][msg.plan[0].num_joints];
-
+          int numq = msg.plan[0].num_joints+nonfloating_joint_start_ndx;
+          plan = new double[2*numq][msg.num_states];
+          
           int index;
           for (int i=0;i<msg.num_states;i++) {
             
             if (nonfloating_joint_start_ndx == 6) {
-              plan[i][0] = msg.plan[i].origin_position.translation.x;
-              plan[i][1] = msg.plan[i].origin_position.translation.y;
-              plan[i][2] = msg.plan[i].origin_position.translation.z;
+              plan[0][i] = msg.plan[i].origin_position.translation.x;
+              plan[1][i] = msg.plan[i].origin_position.translation.y;
+              plan[2][i] = msg.plan[i].origin_position.translation.z;
+              plan[numq+0][i] = msg.plan[i].origin_twist.linear_velocity.x;
+              plan[numq+1][i] = msg.plan[i].origin_twist.linear_velocity.y;
+              plan[numq+2][i] = msg.plan[i].origin_twist.linear_velocity.z;
       
               double[] q = new double[4];
               q[0] = msg.plan[i].origin_position.rotation.w;
@@ -58,15 +62,19 @@ public class RobotPlanListener implements LCMSubscriber
                                 2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
                                 q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
               
-              plan[i][3] = rpy[0];
-              plan[i][4] = rpy[1];
-              plan[i][5] = rpy[2];
+              plan[3][i] = rpy[0];
+              plan[4][i] = rpy[1];
+              plan[5][i] = rpy[2];
+              
+              plan[numq+3][i] = msg.plan[i].origin_twist.angular_velocity.x;
+              plan[numq+4][i] = msg.plan[i].origin_twist.angular_velocity.y;
+              plan[numq+5][i] = msg.plan[i].origin_twist.angular_velocity.z;
             }
             
             for (int j=0;j<msg.plan[i].num_joints;j++) {
               index = m_joint_map.get(msg.plan[i].joint_name[j]).intValue();
-              plan[i][index] = msg.plan[i].joint_position[j];
-              plan[i][index+msg.plan[i].num_joints+nonfloating_joint_start_ndx] = msg.plan[i].joint_velocity[j];
+              plan[index][i] = msg.plan[i].joint_position[j];
+              plan[index+numq][i] = msg.plan[i].joint_velocity[j];
             }
           }
           
