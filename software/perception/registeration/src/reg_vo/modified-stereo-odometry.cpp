@@ -67,7 +67,7 @@ StereoOdometry::init_calibration(const char * key_prefix)
 
 
   // IMU variables:
-  imu_init=false;
+  _imu_init=false;
 
   return 0;
 }
@@ -129,9 +129,11 @@ StereoOdometry::decode_image(const bot_core_image_t * msg)
 void
 StereoOdometry::publish_motion_estimation()
 {
+    
+  
   // Pose already has look vector is +X, and up is +Z
-  Eigen::Vector3d translation(pose.translation());
-  Eigen::Quaterniond rotation(pose.rotation());
+  Eigen::Vector3d translation(_local_to_camera.translation());
+  Eigen::Quaterniond rotation(_local_to_camera.rotation());
 
   // Output motion estimate - in CV frame:
   Eigen::Isometry3d motion_estimate = _odom->getMotionEstimate();
@@ -209,23 +211,29 @@ StereoOdometry::publish_motion_estimation()
   }
 
   if (_publish_pose) {
-    // publish current pose
-    bot_core_pose_t pose_msg;
-    memset(&pose_msg, 0, sizeof(pose_msg));
-    pose_msg.utime = _utime_cur;
-    pose_msg.pos[0] = translation[0];
-    pose_msg.pos[1] = translation[1];
-    pose_msg.pos[2] = translation[2];
-    pose_msg.orientation[0] = rotation.w();
-    pose_msg.orientation[1] = rotation.x();
-    pose_msg.orientation[2] = rotation.y();
-    pose_msg.orientation[3] = rotation.z();
+    // Convert from camera to head frame:
+    // local->head =  local->camera  * camera->head
+    Eigen::Isometry3d c2h;
+    _bot_frames_cpp->get_trans_with_utime( _bot_frames ,  "head", "CAMERA", _utime_cur, c2h);
+
+    Eigen::Isometry3d l2h = _local_to_camera *c2h;
+    Eigen::Vector3d l2h_trans(l2h.translation());
+    Eigen::Quaterniond l2h_rot(l2h.rotation());
+
+    // publish local to head pose
+    bot_core_pose_t l2h_pose_msg;
+    memset(&l2h_pose_msg, 0, sizeof(l2h_pose_msg));
+    l2h_pose_msg.utime = _utime_cur;
+    l2h_pose_msg.pos[0] = l2h_trans[0];
+    l2h_pose_msg.pos[1] = l2h_trans[1];
+    l2h_pose_msg.pos[2] = l2h_trans[2];
+    l2h_pose_msg.orientation[0] = l2h_rot.w();
+    l2h_pose_msg.orientation[1] = l2h_rot.x();
+    l2h_pose_msg.orientation[2] = l2h_rot.y();
+    l2h_pose_msg.orientation[3] = l2h_rot.z();
     bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
-                            &pose_msg);
-    // mfallon: Added this for Sisir, aug 2012
-    bot_core_pose_t_publish(_publish_lcm, "POSE_HEAD", /// actually worng... needs to be transfomred
-                            &pose_msg);
-    //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
+                            &l2h_pose_msg);    
+    
   }
 
   if (_publish_frame_update) {
@@ -367,7 +375,7 @@ void StereoOdometry::writeFeatures(std::vector<ImageFeature> features){
   std::fstream feat_file;
   string fname = string(  ss.str() + ".feat");
   feat_file.open(  fname.c_str() , std::fstream::out);
-  cout << "nmatches written to file: "<< features.size() << " @ " << _ref_utime << "\n";
+//  cout << "nmatches written to file: "<< features.size() << " @ " << _ref_utime << "\n";
   feat_file << "#i,track_id,uv,base_uv,uvd,xyz,xyzw,color\n";
   for (size_t i = 0; i < features.size(); i++) {
     ImageFeature f = features[i];
@@ -436,11 +444,13 @@ void StereoOdometry::sendFeatures(std::vector<ImageFeature> features){
 void
 StereoOdometry::image_handler(const bot_core_image_t *msg)
 {
-  //if (!imu_init){
-  //  cout << "no imu yet, passing\n";
-  //  return;
-  //}
-  //cout << "about to process "<< msg->utime <<"\n";
+  if (_imu_attitude > 0){
+    if (!_imu_init){
+      cout << "no imu yet, passing\n";
+      return;
+    }
+  }
+
 
 
   tictoc("image_handler");
@@ -457,27 +467,16 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
   tictoc("processFrame");
 
   Eigen::Isometry3d delta_cam_to_local = _odom->getMotionEstimate();
-  // Rotate incremental motion so that look vector is +X, and up is +Z
-//  Eigen::Matrix3d M;
-//  M <<  0,  0, 1,
-//       -1,  0, 0,
-//        0, -1, 0;
-//  delta_cam_to_local = M * delta_cam_to_local; 
-  Eigen::Vector3d translation(delta_cam_to_local.translation());
-  Eigen::Quaterniond rotation(delta_cam_to_local.rotation());
-//  rotation = rotation * M.transpose(); // this is paired with the matrix multiply above
+  //std::stringstream ss;
+  //print_Isometry3d(delta_cam_to_local,ss);
+  //std::cout << "delta_cam_to_local: " << ss.str() << "\n";
 
-  // Apply update to pose estimate
-  Eigen::Isometry3d delta_pose;
-  delta_pose.setIdentity();
-  delta_pose.translation() << translation[0],translation[1],translation[2];
-  delta_pose.rotate(rotation);
-  pose = pose*delta_pose;
+  _local_to_camera = _local_to_camera*delta_cam_to_local;
 
   publish_motion_estimation();
 
   // Send vo pose:
-  Isometry3dTime poseT = Isometry3dTime(msg->utime, pose);
+  Isometry3dTime poseT = Isometry3dTime(msg->utime, _local_to_camera);
   pc_vis_->pose_to_lcm_from_list(60000, poseT);
   
   
@@ -681,7 +680,7 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
   if (_odom->getChangeReferenceFrames()){
     //cout << "changed Ref frame at: "<< msg->utime<<"\n";
     _ref_utime = msg->utime;
-    _ref_pose = pose; // publish this pose when the 
+    _ref_pose = _local_to_camera; // publish this pose when the 
 
    
     // Keep the image buffer to write with the features:
@@ -701,15 +700,83 @@ void
 StereoOdometry::imu_handler(const microstrain_ins_t *msg)
 {
 
-  if (!imu_init){
-    Eigen::Quaterniond m = imu2robotquat(msg);
-    Eigen::Isometry3d init_pose;
-    init_pose.setIdentity();
-    init_pose.translation() << 0,0,0;
-    init_pose.rotate(m);
-    pose = init_pose;
-    imu_init = true;
-    cout << "got first IMU measurement\n";
+  if (_imu_attitude >0 ){
+    if (!_imu_init){
+      Eigen::Quaterniond m = imu2robotquat(msg);
+      Eigen::Isometry3d init_pose;
+      init_pose.setIdentity();
+      init_pose.translation() << 0,0,0;
+      init_pose.rotate(m);
+      
+      // Use head-to-camera as the required transform
+      // (Multisense on its own doesnt have an imu frame)
+      Eigen::Isometry3d imu2camera;
+      _bot_frames_cpp->get_trans_with_utime( _bot_frames ,  "CAMERA", "head", msg->utime, imu2camera);
+
+      _local_to_camera = init_pose *imu2camera;
+      _imu_init = true;
+      cout << "got first IMU measurement\n";
+    }else if(_imu_attitude ==2){
+      if (_imu_counter==100){
+        // Every 100 frame: replace the pitch and roll with that from the IMU
+        // convert the camera pose to body frame
+        // extract xyz and yaw from body frame
+        // extract pitch and roll from imu (in body frame)
+        // combine, convert to camera frame... set as pose
+
+        cout << "\nmore IMU measurements\n";
+        std::stringstream ss3;
+        print_Isometry3d(_local_to_camera, ss3);
+        std::cout << "_local_to_camera: " << ss3.str() << "\n";        
+        
+        Eigen::Isometry3d cam2head;
+        _bot_frames_cpp->get_trans_with_utime( _bot_frames ,  "head", "CAMERA", msg->utime, cam2head);        
+        std::stringstream ss;
+        print_Isometry3d(cam2head,ss);
+        std::cout << "cam2head: " << ss.str() << "\n";        
+        
+        Eigen::Isometry3d local_to_head = _local_to_camera *cam2head;
+        std::stringstream ss2;
+        print_Isometry3d(local_to_head, ss2);
+        double ypr[3];
+        quat_to_euler(  Eigen::Quaterniond(local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+        std::cout << "_local_to_head: " << ss2.str() << " | "<< 
+          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+
+        double xyz[3];
+        xyz[0] = local_to_head.translation().x();
+        xyz[1] = local_to_head.translation().y();
+        xyz[2] = local_to_head.translation().z();
+        std::cout << xyz[0] << " " << xyz[1] << " " << xyz[2] << " pose xyz\n";
+          
+        double ypr_imu[3];
+        quat_to_euler( imu2robotquat(msg) , 
+                        ypr_imu[0], ypr_imu[1], ypr_imu[2]);
+        std::cout <<  ypr_imu[0]*180/M_PI << " " << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << " imuypr\n";        
+        
+        Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr[0], ypr_imu[1], ypr_imu[2]);             
+        Eigen::Isometry3d revised_local_to_head;
+        revised_local_to_head.setIdentity();
+        revised_local_to_head.translation() = local_to_head.translation();
+        revised_local_to_head.rotate(revised_local_to_head_quat);        
+        std::stringstream ss4;
+        print_Isometry3d(revised_local_to_head, ss4);
+        quat_to_euler(  Eigen::Quaterniond(revised_local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+        std::cout << "_local_revhead: " << ss4.str() << " | "<< 
+          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+        
+        Eigen::Isometry3d revised_local_to_camera = revised_local_to_head *cam2head.inverse();
+        std::stringstream ss5;
+        print_Isometry3d(revised_local_to_camera,ss5);
+        std::cout << "revised_local_to_camera: " << ss5.str() << "\n";        
+        _local_to_camera = revised_local_to_camera;
+        
+      }
+      if (_imu_counter > 100) { _imu_counter =0; }
+      _imu_counter++;
+    }
+  }else{
+//    cout << "got IMU measurement - not incorporating them\n";
   }
 
 
@@ -740,6 +807,7 @@ StereoOdometry::usage(const char* progname)
 #ifdef USE_LCMGL
       "  -l, --lcmgl                   Render debugging information with LCMGL\n"
 #endif
+      "  -m, --mode                    IMU integration mode\n",
       "  -h, --help                    Shows this help text and exits\n",
       progname);
 }
@@ -747,7 +815,7 @@ StereoOdometry::usage(const char* progname)
 int
 StereoOdometry::parse_command_line_options(int argc, char **argv) {
   // TODO parse options
-  const char *optstring = "hp::u::s::t::o::i:w:c:b:a:l";
+  const char *optstring = "hp::u::s::t::o::i:w:c:b:a:l:m:";
   int c;
   struct option long_opts[] = {
     { "help", no_argument, 0, 'h' },
@@ -762,6 +830,7 @@ StereoOdometry::parse_command_line_options(int argc, char **argv) {
     { "camera-block", required_argument, 0, 'b' },
     { "param-file", required_argument, 0, 'a'},
     { "lcmgl", no_argument, 0, 'l' },
+    { "mode", required_argument, 0, 'm' },
     {0, 0, 0, 0}
   };
 
@@ -812,6 +881,9 @@ StereoOdometry::parse_command_line_options(int argc, char **argv) {
         _draw_lcmgl = true;
         break;
 #endif
+      case 'm':
+        _imu_attitude = atoi(optarg);
+        break;
       case 'h':
       default:
         usage(argv[0]);
@@ -826,7 +898,7 @@ StereoOdometry::StereoOdometry() :
     _subscribe_lcm(NULL),
     _bot_param_lcm(NULL),
     _odom_channel("STEREO_REL_ODOMETRY"),
-    _pose_channel("POSE"),
+    _pose_channel("POSE_HEAD"),
     _frame_update_channel("BODY_TO_LOCAL"),
     _stats_channel("FOVIS_STATS"),
     _tictoc_channel("FOVIS_TICTOC"),
@@ -838,6 +910,8 @@ StereoOdometry::StereoOdometry() :
     _publish_frame_update(false),
     _publish_stats(false),
     _publish_tictoc(false),
+    _imu_attitude(0), // mfallon
+    _imu_counter(0),
     _utime_cur(0),
     _utime_prev(0),
     _ref_utime(0), //mfallon
@@ -982,19 +1056,22 @@ StereoOdometry::initialize(int argc, char **argv)
   bot_core_image_t_subscribe(_subscribe_lcm, image_channel.c_str(),
                              StereoOdometry::image_handler_aux, this);
 
+  _bot_frames= bot_frames_get_global(_publish_lcm, _bot_param);
+  
   /// IMU:
   microstrain_ins_t_subscribe(_subscribe_lcm, "MICROSTRAIN_INS",
                              StereoOdometry::imu_handler_aux, this);
-  pose.setIdentity();
+  _local_to_camera.setIdentity();
+
+// Apply in initial local-to-camera pose transform
   Eigen::Matrix3d m;
   m = Eigen::AngleAxisd ( 0*M_PI/180 , Eigen::Vector3d::UnitZ ())
     * Eigen::AngleAxisd ( 180*M_PI/180 , Eigen::Vector3d::UnitY ())
     * Eigen::AngleAxisd ( 90*M_PI/180  , Eigen::Vector3d::UnitX ());
-  //ypr
-  pose.setIdentity ();
-  pose *= m;
+  _local_to_camera.setIdentity ();
+  _local_to_camera *= m;
   
-//  pose.translation().x() =10;
+  _local_to_camera.translation().x() =10;
   
   
   // Vis Config:
@@ -1055,30 +1132,38 @@ StereoOdometry::getDefaultOptions()
   VisualOdometryOptions vo_opts = VisualOdometry::getDefaultOptions();
 
   // change to stereo 'defaults'
+  vo_opts["use-adaptive-threshold"] = "false"; // hordur: use now not very useful - adds noisy features
+  vo_opts["fast-threshold"] = "15";
+  // hordur: use not and set fast-threshold as 10-15
+
+  // options if uat is true
   vo_opts["feature-window-size"] = "9";
   vo_opts["max-pyramid-level"] = "3";
   vo_opts["min-pyramid-level"] = "0";
-  vo_opts["target-pixels-per-feature"] = "250";
-  vo_opts["fast-threshold"] = "10";
+  vo_opts["target-pixels-per-feature"] = "250"; 
+  //width*height/250 = target number of features for fast detector
+  // - related to fast-threshold-adaptive-gain
+  // 640x480 pr2 ---> 307200/tppf = nfeatures = 400 (typically for pr2)
+  // 1024x620 (1088)> 634880/tppf = nfeatures
   vo_opts["fast-threshold-adaptive-gain"] = "0.002";
-  vo_opts["use-adaptive-threshold"] = "true";
   vo_opts["use-homography-initialization"] = "true";
-  vo_opts["ref-frame-change-threshold"] = "150";
+  vo_opts["ref-frame-change-threshold"] = "100"; // hordur: lowering this is a good idea. down to 100 is good. results in tracking to poses much further appart
+
 
   // OdometryFrame
-  vo_opts["use-bucketing"] = "true";
+  vo_opts["use-bucketing"] = "true"; // dependent on resolution: bucketing of features. might want to increase this...
   vo_opts["bucket-width"] = "50";
   vo_opts["bucket-height"] = "50";
   vo_opts["max-keypoints-per-bucket"] = "10";
-  vo_opts["use-image-normalization"] = "true";
+  vo_opts["use-image-normalization"] = "true"; //hordur: not of major importance, can turn off, extra computation
 
   // MotionEstimator
-  vo_opts["inlier-max-reprojection-error"] = "2.0";
+  vo_opts["inlier-max-reprojection-error"] = "1.0"; // putting this down to 1.0 is good - give better alignment
   vo_opts["clique-inlier-threshold"] = "0.1";
   vo_opts["min-features-for-estimate"] = "10";
   vo_opts["max-mean-reprojection-error"] = "8.0";
-  vo_opts["use-subpixel-refinement"] = "true";
-  vo_opts["feature-search-window"] = "25";
+  vo_opts["use-subpixel-refinement"] = "true"; // hordur: v.important to use
+  vo_opts["feature-search-window"] = "25"; // for rapid motion this should be higher - size of area to search for new features
   vo_opts["update-target-features-with-refined"] = "false";
 
   // StereoDepth
@@ -1086,6 +1171,51 @@ StereoOdometry::getDefaultOptions()
   vo_opts["stereo-max-dist-epipolar-line"] = "2.0";
   vo_opts["stereo-max-refinement-displacement"] = "2.0";
   vo_opts["stereo-max-disparity"] = "128";
+
+
+/* Original:
+
+  // change to stereo 'defaults'
+  vo_opts["use-adaptive-threshold"] = "true"; // hordur: use now not very useful - adds noisy features
+  vo_opts["fast-threshold"] = "10";
+  // hordur: use not and set fast-threshold as 10-15
+
+  // options if uat is true
+  vo_opts["feature-window-size"] = "9";
+  vo_opts["max-pyramid-level"] = "3";
+  vo_opts["min-pyramid-level"] = "0";
+  vo_opts["target-pixels-per-feature"] = "250"; 
+  //width*height/250 = target number of features for fast detector
+  // - related to fast-threshold-adaptive-gain
+  // 640x480 pr2 ---> 307200/tppf = nfeatures = 400 (typically for pr2)
+  // 1024x620 (1088)> 634880/tppf = nfeatures
+  vo_opts["fast-threshold-adaptive-gain"] = "0.002";
+  vo_opts["use-homography-initialization"] = "true";
+  vo_opts["ref-frame-change-threshold"] = "150"; // hordur: lowering this is a good idea. down to 100 is good. results in tracking to poses much further appart
+
+
+  // OdometryFrame
+  vo_opts["use-bucketing"] = "true"; // dependent on resolution: bucketing of features. might want to increase this...
+  vo_opts["bucket-width"] = "50";
+  vo_opts["bucket-height"] = "50";
+  vo_opts["max-keypoints-per-bucket"] = "10";
+  vo_opts["use-image-normalization"] = "true"; //hordur: not of major importance, can turn off, extra computation
+
+  // MotionEstimator
+  vo_opts["inlier-max-reprojection-error"] = "2.0"; // putting this down to 1.0 is good - give better alignment
+  vo_opts["clique-inlier-threshold"] = "0.1";
+  vo_opts["min-features-for-estimate"] = "10";
+  vo_opts["max-mean-reprojection-error"] = "8.0";
+  vo_opts["use-subpixel-refinement"] = "true"; // hordur: v.important to use
+  vo_opts["feature-search-window"] = "25"; // for rapid motion this should be higher - size of area to search for new features
+  vo_opts["update-target-features-with-refined"] = "false";
+
+  // StereoDepth
+  vo_opts["stereo-require-mutual-match"] = "true";
+  vo_opts["stereo-max-dist-epipolar-line"] = "2.0";
+  vo_opts["stereo-max-refinement-displacement"] = "2.0";
+  vo_opts["stereo-max-disparity"] = "128";
+*/
 
   return vo_opts;
 }

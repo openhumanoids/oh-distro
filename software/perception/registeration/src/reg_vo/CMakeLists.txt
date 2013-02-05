@@ -17,6 +17,8 @@ pods_use_pkg_config_packages(drc-reg-vo
     libfovis
     bot2-core
     bot2-param-client
+    bot2-frames # mfallon
+    bot2-frames_cpp
     lcmtypes_fovis-bot2
     lcmtypes_bot2-core
     lcmtypes_microstrain_comm

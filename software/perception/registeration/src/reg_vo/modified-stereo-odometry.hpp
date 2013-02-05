@@ -23,6 +23,10 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #endif
 
+// mfallon:
+#include <bot_frames/bot_frames.h>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
+
 #include <fovis/fovis.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -125,6 +129,9 @@ private:
   std::string _tictoc_channel;
 
   BotParam* _bot_param;
+  BotFrames* _bot_frames; // added mfallon
+  bot::frames* _bot_frames_cpp; // added mfallon
+    
   VisualOdometry* _odom;
   StereoDepth* _depth_producer;
   StereoCalibrationParameters _stereo_params;
@@ -151,8 +158,10 @@ private:
   size_t _buf_size;
 
   // IMU variables:
-  bool imu_init;
-  Eigen::Isometry3d pose;
+  int _imu_attitude; // 0 no-imu | 1 only for init | 2 reuse imu occasionally to reinit pitch and roll
+  bool _imu_init;
+  Eigen::Isometry3d _local_to_camera; // main pose estimated by the VO system
+  int _imu_counter;
 
   const fovis::OdometryFrame* ref_odom_frame_;
   const fovis::OdometryFrame* target_odom_frame_;
