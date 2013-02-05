@@ -77,6 +77,13 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     it->second._gl_object->enable_link_selection(self->selection_enabled);
     it->second._gl_object->draw_body(c,alpha);
   }
+  
+  if(self->selection_hold_on) { 
+    
+    //draw temp object
+    self->gl_temp_object->draw_body(c,0.3);
+  
+  }
 
   // Draw all sticky hands
   float c2[3] = {0.3,0.5,0.3}; alpha = 0.6;
@@ -396,7 +403,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
-  RendererAffordances *self = (RendererAffordances*) user;
+   RendererAffordances *self = (RendererAffordances*) user;
   if(!strcmp(name, PARAM_MANAGE_INSTANCES)) {
     fprintf(stderr,"\nClicked Manage Instances\n");
     spawn_instance_management_popup(self);
@@ -439,7 +446,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
    self->rhand_urdf_id = bot_gtk_param_widget_get_enum (self->pw, PARAM_RHAND_URDF_SELECT);
   } 
 
-  
+
 }
 
 static void
@@ -496,7 +503,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   }
 
   
-  
+
   self->affordanceMsgHandler = boost::shared_ptr<AffordanceCollectionListener>(new AffordanceCollectionListener(self));
   self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self));
   self->candidateGraspSeedListener = boost::shared_ptr<CandidateGraspSeedListener>(new CandidateGraspSeedListener(self));
@@ -571,6 +578,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 	self->link_selection = new string(" ");
   self->object_selection = new string(" ");
   self->stickyhand_selection = new string(" ");
+  self->selection_hold_on = false;
   return &self->renderer;
 }
 

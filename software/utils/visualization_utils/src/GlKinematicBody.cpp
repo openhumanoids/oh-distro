@@ -248,9 +248,9 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
    {
      if(joint->second->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
           double dof_current_pos = 0; // TODO: need object's initial dof state from fitting
-          //double pos, vel; 
-          //otdf_instance->getJointState(joint->first, pos, vel); 
-          //dof_current_pos = pos;
+          double pos, vel; 
+          otdf_instance->getJointState(joint->first, pos, vel); 
+          dof_current_pos = pos;
           jointpos_in.insert(make_pair(joint->first, dof_current_pos)); 
        }
    }

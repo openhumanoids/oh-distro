@@ -186,7 +186,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
         double length = cyl->length;
         //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
         
-Eigen::Vector3f dims;
+        Eigen::Vector3f dims;
         dims<< 2*radius,2*radius,length;
         shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));        
         

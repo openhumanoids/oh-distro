@@ -52,7 +52,9 @@
 
 namespace otdf{
 
-  boost::shared_ptr<ModelInterface> parseOTDF(const std::string &xml_string);
+  boost::shared_ptr<ModelInterface> parseOTDF(const std::string &xml_string); 
+  // Add a duplicate method;
+  boost::shared_ptr<ModelInterface> duplicateOTDFInstance(const boost::shared_ptr<ModelInterface>);
   bool get_xml_string_from_file(const std::string& filename, std::string& xml_string);
 
 

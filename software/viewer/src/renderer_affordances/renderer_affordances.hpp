@@ -188,6 +188,11 @@ typedef struct _RendererAffordances {
   std::vector<std::string> urdf_filenames; // otdf_template_names
 
   std::string* instance_selection_ptr; 
+  bool selection_hold_on;
+  boost::shared_ptr<otdf::ModelInterface> otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
+  boost::shared_ptr<visualization_utils::GlKinematicBody> gl_temp_object;
+
+  //otdf::ModelInterface otdf_instance_hold; // keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
   std::map<std::string, OtdfInstanceStruc > instantiated_objects; // otdftemplatename+ object_uid
   
   std::map<std::string, StickyHandStruc> sticky_hands; // otdftemplatename + object_uid + geometryname + "_grasp_" + hand_uid;
@@ -237,7 +242,8 @@ typedef struct _RendererAffordances {
     it->second = it->second + 1;
     std::stringstream oss;
     oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second;  
-
+    instance_struc._otdf_instance->name_ = oss.str(); // unique name
+    
     instance_struc._collision_detector.reset();
      // Each object has its own collision detector for now.      
     instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());

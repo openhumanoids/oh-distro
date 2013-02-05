@@ -42,11 +42,12 @@
 
 
 namespace otdf {
-
+// parse OTDF function effectively serves as a constructor
   boost::shared_ptr<ModelInterface>  parseOTDF(const std::string &xml_string)
   {
     boost::shared_ptr<ModelInterface> model(new ModelInterface);
     model->clear();
+    model->xml_string_ = xml_string;
 
     TiXmlDocument xml_doc;
     xml_doc.Parse(xml_string.c_str());
@@ -82,16 +83,16 @@ namespace otdf {
         {
           //ROS_ERROR("material '%s' is not unique.", material->name.c_str());
           std::cerr<< "ERROR: param" << param->name <<"is not unique."<< std::endl;   
-	  param.reset();
+          param.reset();
           model.reset();
           return model;
         }
         else
         {
-	  //std::cout << param->name << std::endl;
-	  model->params_map_.insert(make_pair(param->name,param->value));
-	  model->params_order_.push_back(param->name);
-	  model->param_properties_map_.insert(make_pair(param->name,param->properties));
+	        //std::cout << param->name << std::endl;
+	        model->params_map_.insert(make_pair(param->name,param->value));
+	        model->params_order_.push_back(param->name);
+	        model->param_properties_map_.insert(make_pair(param->name,param->properties));
           // Add to symbol table
           model->symbol_table.add_variable(param->name,model->params_map_[param->name]);
           //ROS_DEBUG("successfully added a new material '%s'", material->name.c_str());
@@ -145,7 +146,7 @@ namespace otdf {
     // Get all Link elements
     for (TiXmlElement* link_xml = object_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
     {
-  //     std::cout<< link_xml->Attribute("name") << std::endl;
+      //std::cout<< link_xml->Attribute("name") << std::endl;
       boost::shared_ptr<Link> link;
       link.reset(new Link);
 
@@ -192,7 +193,7 @@ namespace otdf {
           }
 
           model->links_.insert(make_pair(link->name,link));
-	  model->entities_.insert(make_pair(link->name,link));
+          model->entities_.insert(make_pair(link->name,link));
           //ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
         }
       }
@@ -260,7 +261,7 @@ namespace otdf {
   //               }//end if (link->visual)
   //               
   //               model->links_.insert(make_pair(link->name,link));
-  // 	      model->entities_.insert(make_pair(link->name,link));
+  // 	             model->entities_.insert(make_pair(link->name,link));
   // 
   //             }  //end if (model->getLink( ))
   //             }// end for  (unsigned int i=0; i < noofrepetitions; i++)
@@ -300,7 +301,7 @@ namespace otdf {
         else
         {
           model->bounding_volumes_.insert(make_pair(bounding_volume->name,bounding_volume));
-	  model->entities_.insert(make_pair(bounding_volume->name,bounding_volume));
+          model->entities_.insert(make_pair(bounding_volume->name,bounding_volume));
           //ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
         }
       }
@@ -408,6 +409,42 @@ namespace otdf {
     return model;
   }
   
+  //---------------------------------------------------------------------------------------------------
+  // Clones the ModelInterface shared_ptr
+  boost::shared_ptr<ModelInterface> duplicateOTDFInstance(const boost::shared_ptr<ModelInterface>   instance_in)
+  {
+
+    // create new shell with the correct kinematic structure
+    boost::shared_ptr<ModelInterface> instance_out = parseOTDF(instance_in->xml_string_);
+
+    // Set state
+    //----------------
+    // set params
+    instance_out->name_ = instance_in->name_;
+    typedef std::map<std::string, double > params_mapType;
+    for( params_mapType::const_iterator it = instance_out->params_map_.begin(); it!=instance_out->params_map_.end(); it++) 
+    {
+      double val = instance_in->getParam(it->first);
+      instance_out->setParam(it->first, val);
+    }
+    
+    // set joint DOF states
+    typedef   std::map<std::string, boost::shared_ptr<Joint> > joints_mapType;
+    for( joints_mapType::const_iterator it = instance_out->joints_.begin(); it!=instance_out->joints_.end(); it++) 
+    {
+      double pos, vel;
+      instance_in->getJointState(it->first,pos,vel);
+      instance_out->setJointState(it->first,pos,vel);
+    }
+
+    return instance_out;
+
+  }
+    
+  
+  //---------------------------------------------------------------------------------------------------
+  // Utils
+  //--------------------------------------------------------------------------------------------------- 
   bool get_xml_string_from_file(const std::string& filename, std::string& xml_string)
   {
    std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
@@ -431,7 +468,7 @@ namespace otdf {
      std::cerr << "Could not open otdf file ["<<filename<<"] for parsing."<< std::endl;
       return false;
     }
-  };
+  }
 
 }//end namespace
 

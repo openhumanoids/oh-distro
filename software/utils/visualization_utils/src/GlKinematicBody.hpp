@@ -88,7 +88,10 @@ class GlKinematicBody
     GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance);
     ~ GlKinematicBody();
     
+    //object state
     KDL::Frame _T_world_body; //store position in the world
+    //Also store current jointangles map.
+    //std::map<std::string, double> &_current_joint_pos;
     std::vector<KDL::Frame> _desired_body_motion_history;
     
     // state can be set via robot_state_t, or urdf::Model,  or affordance_state_t,  or otdf::ModelInterface;

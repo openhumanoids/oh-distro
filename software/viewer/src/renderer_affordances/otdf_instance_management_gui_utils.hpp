@@ -22,53 +22,109 @@ namespace renderer_affordances_gui_utils
   
   // ================================================================================
   // Second Stage Popup of OTDF instance management for Adjust Params and Dofs using Spinboxes and Sliders
+  //------------------------------------------------------------------
+  // PARAM adjust popup management
+
   
+  static void publish_otdf_instance_to_affstore(string channel, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
+  {
+   RendererAffordances *self = (RendererAffordances*) user;
+   drc::affordance_t msg;
+
+   msg.map_utime = 0;//Need to persist these as they arrive via aff store.
+   msg.map_id = 0;
+   msg.object_id = 0;
+   msg.otdf_id = 0;
+   //std::string instance_name=  (*self->instance_selection_ptr);
+   msg.name = instance_in->name_;//instance_name;
+   msg.nparams =  instance_in->params_map_.size();
+   typedef std::map<std::string, double > params_mapType;
+   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
+   { 
+      msg.param_names.push_back(it->first);
+      msg.params.push_back(it->second);
+   }
+
+  int cnt=0;
+   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
+    {     
+      double dof_pos = 0;
+      if(it->second->type!=(int) otdf::Joint::FIXED) {
+
+          double pos, vel;
+          instance_in->getJointState(it->first,pos,vel);
+          cnt++;
+          msg.state_names.push_back(it->first);
+          msg.states.push_back(pos);
+      }
+     }
+   msg.nstates =  cnt;
+   msg.nptinds = 0;
+
+   self->lcm->publish(channel, &msg);
+
+  } 
+  //------------------
   static void on_adjust_params_popup_close (BotGtkParamWidget *pw, void *user)
   {
+
     RendererAffordances *self = (RendererAffordances*) user;
-    std::string instance_name=  (*self->instance_selection_ptr);
-    //typedef std::map<std::string, boost::shared_ptr<otdf::ModelInterface> > object_instance_map_type_;
-    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+//    std::string instance_name=  (*self->instance_selection_ptr);
+//    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+//    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    
     typedef std::map<std::string, double > params_mapType;
-    // for( params_mapType::const_iterator it2 = it->second->params_map_.begin(); it2!=it->second->params_map_.end(); it2++)
-    for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
+    //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
+    for( params_mapType::const_iterator it2 = self->otdf_instance_hold->params_map_.begin(); it2!=self->otdf_instance_hold->params_map_.end(); it2++) 
     { 
       double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
       //std::cout << it->first << ": " << t << std::endl;
-      //it->second->setParam(it->first, t);
-      it->second._otdf_instance->setParam(it2->first, t);
+      //it->second._otdf_instance->setParam(it2->first, t);
+      self->otdf_instance_hold->setParam(it2->first, t);
     }
-    // it->second->update();
-
     // regen kdl::tree and reset fksolver
     // regen link tfs and shapes for display
-    update_OtdfInstanceStruc(it->second);
+    //update_OtdfInstanceStruc(it->second);
+    self->otdf_instance_hold->update();
+    self->gl_temp_object->set_state(self->otdf_instance_hold);
+    self->selection_hold_on=false;
+   
+    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->otdf_instance_hold,self); 
     bot_viewer_request_redraw(self->viewer);
-  }
-
+  }  
+  //------------------
   static void on_otdf_adjust_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
+
     RendererAffordances *self = (RendererAffordances*) user;
-
-    std::string instance_name=  (*self->instance_selection_ptr);
-    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-
+//    std::string instance_name=  (*self->instance_selection_ptr);
+//    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+//    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    
     typedef std::map<std::string, double > params_mapType;
-    for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
+    //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
+    for( params_mapType::const_iterator it2 = self->otdf_instance_hold->params_map_.begin(); it2!=self->otdf_instance_hold->params_map_.end(); it2++)
     { 
       if(!strcmp(name, it2->first.c_str())) {
           double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
-        //std::cout << it2->first << ": " << t << std::endl;
-        it->second._otdf_instance->setParam(it2->first, t);
+      //std::cout << it->first << ": " << t << std::endl;
+      //it->second._otdf_instance->setParam(it2->first, t);
+      self->otdf_instance_hold->setParam(it2->first, t);
       }
     }
-    // gives realtime feedback of the geometry changing.
-    update_OtdfInstanceStruc(it->second);
-    bot_viewer_request_redraw(self->viewer);
+    
+     self->otdf_instance_hold->update(); //update_OtdfInstanceStruc(it->second);
+     self->gl_temp_object->set_state(self->otdf_instance_hold);
+   //publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->otdf_instance_hold,self); 
+    bot_viewer_request_redraw(self->viewer);// gives realtime feedback of the geometry changing.
   }
+  
 
+  
+  
+//------------------------------------------------------------------
+// DOF adjust popup management
   static void on_adjust_dofs_popup_close (BotGtkParamWidget *pw, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -124,7 +180,7 @@ namespace renderer_affordances_gui_utils
   
     bot_viewer_request_redraw(self->viewer);
   }
-
+//------------------------------------------------------------------
   static void spawn_adjust_params_popup (RendererAffordances *self)
   {
 
@@ -145,7 +201,6 @@ namespace renderer_affordances_gui_utils
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
     std::string instance_name=  (*self->instance_selection_ptr);
-
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
@@ -157,6 +212,14 @@ namespace renderer_affordances_gui_utils
       double value = it->second._otdf_instance->params_map_[*it2];
       bot_gtk_param_widget_add_double(pw, (*it2).c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
        min, max, inc, value); 
+    }
+    
+    // create a temp copy of the selected otdf instance to make modifications to.    
+    if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
+      self->otdf_instance_hold = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+      self->gl_temp_object.reset();
+      self->gl_temp_object = shared_ptr<GlKinematicBody>(new GlKinematicBody(self->otdf_instance_hold));
+      self->selection_hold_on=true;
     }
 
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_param_widget_changed), self);

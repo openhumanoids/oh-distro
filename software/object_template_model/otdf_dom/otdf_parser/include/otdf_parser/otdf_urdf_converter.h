@@ -26,6 +26,7 @@ std::string convertObjectInstanceToURDFstring(boost::shared_ptr<ModelInterface> 
 std::string convertObjectInstanceToCompliantURDFstring(boost::shared_ptr<ModelInterface> object);
 
 void convertObjectInstanceToURDFfile(boost::shared_ptr<ModelInterface> object);
+//return urdf::AffordanceLcmMsgToUrdfString(msg); //May be move into new file {object_template_model_lcm_utils.h}
 }
 
 #endif

@@ -61,7 +61,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
        
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
-          cout <<"updated_otdf_object_instance: "<< aff.name << endl;
+          //cout <<"updated_otdf_object_instance: "<< aff.name << endl;
           update_object_instance(aff);
        }      
        else {
@@ -135,7 +135,7 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   if (!instance_struc._otdf_instance){
     std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
   }
-  
+  instance_struc._otdf_instance->name_ = aff.name;
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)
    {   
