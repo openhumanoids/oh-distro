@@ -1,6 +1,6 @@
 function runGraspSynthesis4PoolServer()
 %profile on;
-no_of_workers =  2;
+no_of_workers =  4;
 if(matlabpool('size')==0)
 matlabpool(no_of_workers)
 end
