@@ -1,4 +1,3 @@
-
 import java.io.*;
 import lcm.lcm.*;
 
