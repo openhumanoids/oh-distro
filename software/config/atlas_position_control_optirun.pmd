@@ -4,7 +4,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "pub" {
@@ -32,6 +32,13 @@ group "core" {
         host = "localhost";
     }
 
+}
+
+group "drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       host = "localhost";
+    }
 }
 
 group "gazebo" {
