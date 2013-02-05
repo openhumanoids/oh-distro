@@ -1,0 +1,18 @@
+<package>
+  <description brief="multisense_test">
+
+     multisense_test
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_test</url>
+
+  <depend package="multisense_lib"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+

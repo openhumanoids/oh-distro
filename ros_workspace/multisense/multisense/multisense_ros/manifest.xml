@@ -1,0 +1,29 @@
+<package>
+  <description brief="multisense_ros">
+
+     multisense_ros
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_ros</url>
+
+  <depend package="multisense_driver"/>
+  <depend package="multisense_lib"/>
+  <depend package="multisense_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="laser_assembler"/>
+  <depend package="image_transport"/>
+  <depend package="opencv2"/>
+  <depend package="angles"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="image_geometry"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="" />
+  </export>
+
+</package>
+
+

@@ -1,0 +1,14 @@
+<package>
+  <description brief="multisense_command">
+  </description>
+  <author>Maurice Fallon</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/trajectory_control_tutorial</url>
+  <depend package="atlas_utils"/>
+  <depend package="multisense_msgs"/>
+
+
+</package>
+
+

@@ -1,0 +1,16 @@
+<package>
+  <description brief="multisense_dashboard">
+
+     multisense_dashboard
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_dashboard</url>
+
+  <depend package="robot_monitor"/>;
+
+</package>
+
+

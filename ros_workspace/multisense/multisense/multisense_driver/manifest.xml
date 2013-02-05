@@ -1,0 +1,21 @@
+<package>
+  <description brief="multisense_driver">
+
+     multisense_driver
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_driver</url>
+
+  <depend package="multisense_lib"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmultisense_driver" />
+  </export>
+
+
+</package>
+
+

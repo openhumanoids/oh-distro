@@ -1,0 +1,18 @@
+<package>
+  <description brief="multisense_lib">
+
+     multisense_lib
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_lib</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lPlatform -lSensorPodCommunications" />
+  </export>
+
+</package>
+
+

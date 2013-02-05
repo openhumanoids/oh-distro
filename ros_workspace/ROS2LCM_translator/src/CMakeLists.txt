@@ -13,9 +13,19 @@ pods_install_executables(TRUE_robot_state_publisher)
 
 rosbuild_add_executable(ros2lcm_translator_combined ros2lcm_translator_combined.cpp)
 pods_use_pkg_config_packages(ros2lcm_translator_combined lcm lcmtypes_drc_lcmtypes
-	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization) 
+	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization
+	pointcloud_vis) 
 target_link_libraries(ros2lcm_translator_combined boost_signals)
 pods_install_executables( ros2lcm_translator_combined)
+
+
+rosbuild_add_executable(real_multisense_subscribe real_multisense_subscribe.cpp)
+pods_use_pkg_config_packages(real_multisense_subscribe lcm lcmtypes_drc_lcmtypes
+	bot2-core  lcmtypes_bot2-core lcmtypes_drc_lcmtypes lcmtypes_visualization
+	pointcloud_vis) 
+target_link_libraries(real_multisense_subscribe boost_signals)
+pods_install_executables( real_multisense_subscribe )
+
 
 #rosbuild_add_executable(ros2lcm_translator_spinning ros2lcm_translator_spinning.cpp)
 #pods_use_pkg_config_packages(ros2lcm_translator_spinning lcm lcmtypes_drc_lcmtypes

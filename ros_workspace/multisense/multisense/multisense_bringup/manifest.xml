@@ -1,0 +1,16 @@
+<package>
+  <description brief="multisense_bringup">
+
+     multisense_bringup
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_bringup</url>
+  <depend package="multisense_ros"/>
+  <depend package="multisense_diagnostics"/>
+
+</package>
+
+

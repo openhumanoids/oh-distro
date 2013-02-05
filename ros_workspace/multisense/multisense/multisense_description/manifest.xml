@@ -1,0 +1,6 @@
+<package>
+  <description brief="MultiSense-SL_simplified2">MultiSense-SL_simplified2</description>
+  <depend package="gazebo" />
+  <author>Stephen Brawner, John Hsu</author>
+  <license>Apache 2.0</license>
+</package>

@@ -9,6 +9,8 @@
 
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
+      <!-- mfallon added -->
+      <update_rate>1000</update_rate> 
       <ode>
         <solver>
           <type>quick</type>
@@ -68,10 +70,11 @@
     <include><uri>model://fire_hose</uri><pose>0.6  0.2 1.10 0 0 1.171</pose></include>
     <include><uri>model://standpipe</uri><pose>1.25 2.4 1.1 0 0 0</pose></include>
 
-    <include><uri>model://steering_assembly</uri><pose>0.0 0.0 0.0 0.0 0. 0.0</pose></include>
+    <include><uri>model://steering_assembly</uri><pose>0.5 -0.1524 0.0 0.0 0. 1.571</pose></include>
 
     <!-- DRC specific components -->
-    <include><uri>model://mit_robot</uri><pose>-1.0 0 1 0 0 0</pose></include>
+    <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1 0 0 0</pose></include>
+<!--    <include><uri>model://mit_robot</uri><pose>-1.0 0 1 0 0 0</pose></include> -->
     <include><uri>model://mit_golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">

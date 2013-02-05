@@ -1,3 +1,6 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+
+
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
@@ -35,36 +38,29 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(ActuatorCmds_translator src/ActuatorCmds_translator.cpp)
-
 pods_install_executables(ActuatorCmds_translator)
 pods_use_pkg_config_packages(ActuatorCmds_translator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
 
 rosbuild_add_executable(sandiaPositionCommandTranslator src/sandiaPositionCommandTranslator.cpp)
-
 pods_install_executables(sandiaPositionCommandTranslator)
 pods_use_pkg_config_packages(sandiaPositionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
 
 rosbuild_add_executable(atlasWithHandsPositionCommandTranslator src/atlasWithHandsPositionCommandTranslator.cpp)
-
 pods_install_executables(atlasWithHandsPositionCommandTranslator)
 pods_use_pkg_config_packages(atlasWithHandsPositionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
 
 rosbuild_add_executable(syncActuatorCmds_translator src/syncActuatorCmds_translator.cpp)
-
 pods_install_executables(syncActuatorCmds_translator)
 pods_use_pkg_config_packages(syncActuatorCmds_translator lcm lcmtypes_drc_lcmtypes bot2-core) 
 
 
+##############################333
 rosbuild_add_executable(positionCommandTranslator src/positionCommandTranslator.cpp)
-
 pods_install_executables(positionCommandTranslator)
 pods_use_pkg_config_packages(positionCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 
-
-
 rosbuild_add_executable(configurationCommandTranslator src/configurationCommandTranslator.cpp)
-
 pods_install_executables(configurationCommandTranslator)
 pods_use_pkg_config_packages(configurationCommandTranslator lcm lcmtypes_drc_lcmtypes bot2-core) 

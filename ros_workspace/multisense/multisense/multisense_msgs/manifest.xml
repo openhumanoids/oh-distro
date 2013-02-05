@@ -1,0 +1,16 @@
+<package>
+  <description brief="multisense_msgs">
+
+     multisense_msgs
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_msgs</url>
+
+  <depend package="actionlib"/>
+
+</package>
+
+

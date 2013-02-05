@@ -1,0 +1,39 @@
+<launch>
+
+  <!-- Laser diagnostics -->
+  <node pkg="multisense_diagnostics" type="stream_diagnostics" name="laser_diagnostics" >
+    <remap from="stream_name" to="laser" />
+  </node>
+
+
+  <!-- Depth diagnostics -->
+  <node pkg="multisense_diagnostics" type="stream_diagnostics" name="stereo_diagnostics_depth" >
+    <remap from="stream_name/diagnostics" to="stereo/depth_diagnostics" />
+  </node>
+
+
+  <!-- Camera diagnostics -->
+  <node pkg="multisense_diagnostics" type="stream_diagnostics" name="stereo_diagnostics_image" >
+    <remap from="stream_name/diagnostics" to="stereo/image_diagnostics" />
+  </node>
+
+  <!-- Camera configuration diagnostics -->
+  <node pkg="multisense_diagnostics" type="stream_diagnostics" name="stereo_diagnostics_config" >
+    <remap from="stream_name/diagnostics" to="stereo/config_diagnostics" />
+  </node>
+
+
+  <!-- Joint diagnostics -->
+  <node pkg="multisense_diagnostics" type="joint_diagnostics" name="joint_diagnostics" >
+    <remap from="stream_name" to="laser_joint" />
+  </node>
+
+
+  <!-- Aggregator -->
+  <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
+      <rosparam command="load" file="$(find multisense_diagnostics)/conf/analyzers.conf" />
+  </node>
+
+
+
+</launch>

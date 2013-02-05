@@ -1,0 +1,17 @@
+<package>
+  <description brief="multisense_diagnostics">
+
+     multisense_diagnostics
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multisense_diagnostics</url>
+
+  <depend package="multisense_ros"/>
+  <depend package="diagnostic_updater"/>
+
+</package>
+
+

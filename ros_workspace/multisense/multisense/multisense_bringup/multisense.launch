@@ -1,0 +1,25 @@
+<launch>
+
+  <!-- Robot Description -->
+  <param name="robot_description"
+         textfile="$(find multisense_description)/urdf/multisense.urdf"/>
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+  </node>
+
+  <!-- ROS Driver -->
+  <node pkg="multisense_ros" type="ros_driver" name="multisese_driver" output="screen">
+     <param name="laser/frame_id" value="/hokuyo_link" />
+     <param name="stereo/frame_id" value="/left_camera_optical_frame" />
+  </node>
+
+  <!-- Initialize controls -->
+  <node pkg="multisense_ros" type="laser_joint_init.py" name="multisense_laser_joint_init" />
+  <node pkg="multisense_ros" type="led_init.py" name="multisense_led_init" />
+
+  <!-- Diagnostics -->
+  <include file="$(find multisense_diagnostics)/diagnostics.launch" />
+
+</launch>

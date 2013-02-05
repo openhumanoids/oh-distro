@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="actionlib" type="axclient.py" args="/laser_joint/spindle_control" name="spindle_control" />
+  <node pkg="actionlib" type="axclient.py" args="/led_control" name="led_control" />
+</launch>
