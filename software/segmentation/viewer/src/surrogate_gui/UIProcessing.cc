@@ -111,6 +111,8 @@ namespace surrogate_gui
 
 		_button_states.shift_L_is_down = false;
 		_button_states.shift_R_is_down = false;
+		_button_states.ctrl_L_is_down = false;
+		_button_states.ctrl_R_is_down = false;
 
 		//=event handler
 		_ehandler		 			= (BotEventHandler*) calloc(1, sizeof(BotEventHandler));
@@ -183,6 +185,29 @@ namespace surrogate_gui
 			i != selected_indices.end(); ++i)
 		{
 			currObj->indices->insert(*i);
+		}
+
+		return;
+	}
+
+	void UIProcessing::removeIndicesFromCurrentObject(set<int> &selected_indices)
+	{
+		if (_gui_state != SEGMENTING || !_surrogate_renderer.isPaused())
+			throw SurrogateException("removeIndicesFromCurrentObject: should be segmenting and paused");
+
+		//get the current object
+		ObjectPointsPtr currObj = getCurrentObjectSelected();
+		if (currObj == ObjectPointsPtr())
+		{
+			_surrogate_renderer.setWarningText("No Object Selected for Storing Segmentation!!! Please hit 'New Object'");
+			return;
+		}
+
+		// Insert the indices into the current view and intersection
+		for(set<int>::iterator i = selected_indices.begin();
+			i != selected_indices.end(); ++i)
+		{
+			currObj->indices->erase(*i);
 		}
 
 		return;
@@ -305,6 +330,8 @@ namespace surrogate_gui
 
 			if (_button_states.shift_L_is_down || _button_states.shift_R_is_down)
 				addIndicesToCurrentObject(selected_indices);
+			else if (_button_states.ctrl_L_is_down || _button_states.ctrl_R_is_down)
+				removeIndicesFromCurrentObject(selected_indices);
 			else if (selected_indices.size() != 0)//intersect
 				intersectViews(selected_indices);
 			else if (selected_indices.size() == 0) //empty intersection, clear
@@ -427,6 +454,13 @@ namespace surrogate_gui
 				break;
 			case GDK_Shift_R:
 				_button_states.shift_R_is_down = true;
+				break;
+
+			case GDK_Control_L:
+				_button_states.ctrl_L_is_down = true;
+				break;
+			case GDK_Control_R:
+				_button_states.ctrl_R_is_down = true;
 				break;
 			case GDK_Tab:
 			{

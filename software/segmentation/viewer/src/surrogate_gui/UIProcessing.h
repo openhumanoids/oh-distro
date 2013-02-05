@@ -51,6 +51,8 @@ namespace surrogate_gui
 	{
 		bool shift_L_is_down;
 		bool shift_R_is_down;
+		bool ctrl_L_is_down;
+		bool ctrl_R_is_down;
 	} ButtonStates;
 
 
@@ -94,6 +96,7 @@ namespace surrogate_gui
 
 			//segmentation
 			void addIndicesToCurrentObject(std::set<int> &selected_indices);
+			void removeIndicesFromCurrentObject(std::set<int> &selected_indices);
 			void intersectViews(std::set<int> &selected_indices);
 			void suggestSegments();
 
