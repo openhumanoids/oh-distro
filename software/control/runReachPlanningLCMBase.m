@@ -1,5 +1,12 @@
-function runReachPlanningLCM
+function runReachPlanningLCMBase
 %NOTEST
+mode = 1; % 0 = robot, 1 = base
+if mode ==1
+  lcm_url = 'udpm://239.255.12.68:1268?ttl=1';
+else
+  lcm_url = 'udpm://239.255.76.67:7667?ttl=1';
+end
+lcm.lcm.LCM.getSingletonTemp(lcm_url); % only works on mfallons machine
 
 options.floating = true;
 options.dt = 0.001;
@@ -158,27 +165,5 @@ joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 plan_pub.publish(ts,xtraj,des_traj);
-
-% wait for confirmation
-disp('Waiting for confirmation...');
-while isempty(getNextMessage(ee_start_frame,1));
-  % do nothing
-end
-
-% execute plan
-disp('Executing plan...');
-t=0;
-t_offset = -1;
-while t <= T
-  [x,tsim] = getNextMessage(state_frame,1);
-  if (~isempty(x) && (t_offset == -1 || t <= T))
-    if (t_offset == -1)
-      t_offset = tsim;
-    end
-    t=tsim-t_offset;
-    qd=des_traj.eval(t);
-    qd_frame.publish(t,qd,'JOINT_POSITION_CMDS');
-  end
-end
 
 end
