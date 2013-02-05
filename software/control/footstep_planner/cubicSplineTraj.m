@@ -42,11 +42,3 @@ classdef cubicSplineTraj
 		end
 	end
 end
-
-
-
-% num_steps = int32((lambda(end) - lambda(1)) / (step_length / 2));
-
-% xyi = interp1(lambda, [x', y'], lambdai);
-% dydxi = interp1(lambda, [0;dydx'], lambdai)';
-% unit_v_along_length = [1 ./ sqrt(1 + dydxi.^2), dydxi ./ sqrt(1 + dydxi.^2)];
