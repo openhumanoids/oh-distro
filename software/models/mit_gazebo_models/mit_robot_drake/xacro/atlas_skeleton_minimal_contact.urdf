@@ -63,25 +63,25 @@
                 <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_foot.wrl" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
+        <collision group="l_foot_toe">
 	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
 	  	  <geometry>
 	    	<sphere radius="0"/>
 	  	  </geometry>
 		</collision>
-		<collision>
+		<collision group="l_foot_toe">
 		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
 		  </geometry>
 		</collision>
-		<collision>
+		<collision group="l_foot_heel">
 		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
 		  </geometry>
 		</collision>
-		<collision>
+		<collision group="l_foot_heel">
 		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
@@ -269,25 +269,25 @@
                 <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_foot.wrl" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
+        <collision group="r_foot_toe">
 	  	  <origin rpy="0 0 0" xyz="0.178 0.032 -0.081"/>
 	  	  <geometry>
 	    	<sphere radius="0"/>
 	  	  </geometry>
 		</collision>
-		<collision>
+		<collision group="r_foot_toe">
 		  <origin rpy="0 0 0" xyz="0.178 -0.032 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
 		  </geometry>
 		</collision>
-		<collision>
+		<collision group="r_foot_heel">
 		  <origin rpy="0 0 0" xyz="-0.075 -0.047 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
 		  </geometry>
 		</collision>
-		<collision>
+		<collision group="r_foot_heel">
 		  <origin rpy="0 0 0" xyz="-0.075 0.048 -0.081"/>
 		  <geometry>
 			<sphere radius="0"/>
