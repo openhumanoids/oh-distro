@@ -6,8 +6,8 @@ classdef SplineFootstepPlanner
     step_time
     state_listener
     nav_goal_listener
-    xstar
     v
+    xstar
     plan_publisher
   end
   
@@ -37,7 +37,7 @@ classdef SplineFootstepPlanner
 
       obj.nav_goal_listener = RobotNavGoalListener(robot_name, 'NAV_GOAL_TIMED');
       obj.v = obj.manip.constructVisualizer();
-      load('data/atlas_fp.mat');
+      load('../data/atlas_fp.mat');
       obj.xstar = xstar;
 
       obj.plan_publisher = RobotPlanPublisher(robot_name, joint_names, true, 'CANDIDATE_ROBOT_PLAN');
@@ -50,12 +50,13 @@ classdef SplineFootstepPlanner
         if ~isempty(x)
           x0 = x;
           t0 = t;
+          obj.v.draw(t0, x0);
         end
         g = obj.nav_goal_listener.getNextMessage(0);
         if ~isempty(g) && ~isempty(x0)
           x0(1:6)
-          % q0 = x0(1:end/2);
-          q0 = obj.xstar(1:end/2);
+          q0 = x0(1:end/2);
+          % q0 = obj.xstar(1:end/2);
           g
 
           [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, g, obj.step_length, obj.step_time);
@@ -64,6 +65,7 @@ classdef SplineFootstepPlanner
           addpath(fullfile(getDrakePath,'examples','ZMP'));
           [com,Jcom] = getCOM(obj.manip,q0);
           comdot = Jcom*obj.xstar(getNumDOF(obj.manip)+(1:getNumDOF(obj.manip)));
+          % comdot = Jcom*x0(getNumDOF(obj.manip)+(1:getNumDOF(obj.manip)));
           limp = LinearInvertedPendulum(com(3,1));
 
           comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZMP)); ...
