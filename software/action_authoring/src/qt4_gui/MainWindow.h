@@ -10,6 +10,7 @@
 // Custom QT widgets
 #include "../qt4_widgets/TogglePanel.h"
 #include "../qt4_widgets/CustomSlider.h"
+#include "../qt4_widgets/segmentedbutton/qtsegmentcontrol.h"
 #include "Qt4ConstraintMacro.h"
 
 // OpenGL includes

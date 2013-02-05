@@ -34,7 +34,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 	wrapper.addNewlyFittedAffordance(sphere);
 
 	//box
-	AffordanceState box("Box", uniqueObjId++, mapId,
+	AffordanceState box("Ground Plane", uniqueObjId++, mapId,
 			    KDL::Frame(KDL::Vector( 0.0, 0.0, -1.6)),
 			    Eigen::Vector3f( 0.75, 0.75, 0.0 ));
 	box._otdf_id = AffordanceState::BOX;

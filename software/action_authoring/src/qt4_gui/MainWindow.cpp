@@ -214,10 +214,13 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     toolbar->addWidget(actionType);
     toolbar->addSeparator();
     QPushButton* savebutton = new QPushButton("Save Action");
+    savebutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogSaveButton));
     toolbar->addWidget(savebutton);
     QPushButton* loaddiff = new QPushButton("Load Action");
+    loaddiff->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton));
     toolbar->addWidget(loaddiff);
     QPushButton* planbutton = new QPushButton("Publish For Planning");
+    planbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DriveNetIcon));
     toolbar->addWidget(planbutton);
 
 
@@ -296,6 +299,12 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     mediaControls->setLayout(mediaControlsLayout);
     _play->resize(_play->width() * 2, _play->height());
 
+    QtSegmentControl* controller = new QtSegmentControl();
+    controller->setCount(2);
+    controller->setSegmentText(0, tr("Authoring"));
+    controller->setSegmentText(1, tr("Live"));
+    controller->setSelectionBehavior(QtSegmentControl::SelectOne);
+
     QGroupBox* widgetWrapper = new QGroupBox();
     widgetWrapper->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 0px; padding: 0px; margin: 0px; background-color: black; }");
     QVBoxLayout* widgetWrapperLayout = new QVBoxLayout();
@@ -313,6 +322,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
 //    rightsidelayout->addWidget(_jointSlider);
+    rightsidelayout->addWidget(controller);
     rightsidelayout->addWidget(widgetWrapper);
     rightsidelayout->addWidget(_scrubber);
     rightside->setLayout(rightsidelayout);
@@ -559,9 +569,10 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 	_moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
 	_fbwd->setEnabled(selected_index != 0);
 	_ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
-	
-	updateScrubber();
+
     }
+    // update the scrubber tick lines
+    updateScrubber();
 
     // highlight the affordance
     selectedOpenGLObjectChanged(_authoringState._selected_gui_constraint->getConstraintMacro()

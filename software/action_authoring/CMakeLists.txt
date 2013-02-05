@@ -38,7 +38,8 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
 			     src/qt4_widgets/CustomSlider.h 
 			     src/qt4_gui/Qt4ConstraintMacro.h
 			     src/opengl/SelectableOpenGLWidget.h
-			     src/qt4_widgets/ExtendedLabel.h)
+			     src/qt4_widgets/ExtendedLabel.h
+			     src/qt4_widgets/segmentedbutton/qtsegmentcontrol.h)
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
@@ -74,6 +75,7 @@ add_executable(action_authoring_gui
   src/qt4_gui/MainWindow.cpp 
   src/qt4_widgets/TogglePanel.cpp
   src/qt4_widgets/ExtendedLabel.cpp
+  src/qt4_widgets/segmentedbutton/qtsegmentcontrol.cpp
   src/qt4_gui/Qt4ConstraintMacro.cpp
   src/opengl/ColorRobot.cpp
   src/opengl/SelectableOpenGLWidget.cpp
