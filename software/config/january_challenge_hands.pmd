@@ -1,0 +1,125 @@
+group "1.robot" {
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "control_manager" {
+        exec = "base_controller_manager";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robotWhands_PnC/model.urdf";
+        host = "localhost";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun translators lcm2ros -r -p";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
+        host = "localhost";
+    }
+}
+
+group "2.gazebo" {
+    cmd "gazebo" {
+        exec = "roslaunch mit_drcsim_scripts atlasWhands_test_world.launch";
+        host = "localhost";
+    }
+}
+
+group "3.sensing" {
+    cmd "icompress" {
+        exec = "drc-image-compress -j 50 -c CAMERALEFT";
+        host = "localhost";
+    }
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r robot";
+        host = "localhost";
+    }
+}
+
+group "4.drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesis4PoolServer;\"";
+       host = "localhost";
+    }
+}
+
+group "5.base" {
+    cmd "netbridge" {
+        exec = "drc-network-bridge -t manipulation";
+        host = "localhost";
+    }
+    cmd "viewer_remote" {
+        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
+        host = "localhost";
+    }
+    cmd "surrogate_viewer" {
+        exec = "surrogate_viewer -r base";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robotWhands_PnC/model.urdf";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base";
+        host = "localhost";
+    }
+}
+
+
+
+group "misc" {
+    cmd "spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "base_spy" {
+        exec = "bot-spy -l 'udpm://239.255.12.68:1268?ttl=1'";
+        host = "localhost";
+    }
+    cmd "teleop" {
+        exec = "rosrun keyboard_teleop keyboard_teleop";
+        host = "localhost";
+    }
+}
+
+
+script "startup simulation" {
+    start group "core";
+    start group "drake";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "sensing";
+}
