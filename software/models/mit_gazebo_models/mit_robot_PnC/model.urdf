@@ -4,6 +4,57 @@
 <!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->
 <!-- =================================================================================== -->
 <robot name="atlas" xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+  <link name="head">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
+      <mass value="1.4199"/>
+      <inertia ixx="0.0039688" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.0041178" iyz="-6.8415E-07" izz="0.0035243"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 1.570795" xyz="-0.0446 0 0.0880"/>
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/base_link.STL"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.9098 0.44314 0.031373 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 1.570795" xyz="-0.0446 0 0.0880"/>
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/base_link.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="hokuyo_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.012428 0.0004084 -0.0041835"/>
+      <mass value="0.057664"/>
+      <inertia ixx="3.7174E-05" ixy="4.9927E-08" ixz="1.1015E-05" iyy="4.2412E-05" iyz="-9.8165E-09" izz="4.167E-05"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.5707963267949 0 1.5707963267949" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.72941 0.35686 0.023529 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963267949 0 1.5707963267949" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="hokuyo_joint" type="continuous">
+    <origin rpy="0 0 0" xyz="-0.0446 0 0.0880"/>
+    <parent link="head"/>
+    <child link="hokuyo_link"/>
+    <axis xyz="1 0 0"/>
+    <dynamics damping="0.01" friction="0"/>
+  </joint>
   <link name="pelvis">
     <inertial>
       <mass value="14.2529"/>
@@ -20,25 +71,6 @@
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1"/>
-      </geometry>
-    </collision>
-  </link>
-  <link name="head">
-    <inertial>
-      <mass value="2.6"/>
-      <origin rpy="0 -0 0" xyz="-0.004 0 0.056"/>
-      <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.006" iyz="0" izz="0.007"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://mit_robot/meshes/head.stl" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
@@ -691,13 +723,14 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14"/>
   </joint>
   <joint name="neck_ay" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.011 0 0.44"/>
+    <origin rpy="0 0 0" xyz="0.16555 0 0.50823"/>
     <axis xyz="0 1 0"/>
     <parent link="utorso"/>
     <child link="head"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="5" lower="-0.785398" upper="0.785398" velocity="12"/>
-    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.7854" soft_upper_limit="10.7854"/>
+    <!-- per slides on sensor head kinematics 2012-12-14 -->
+    <limit effort="5" lower="-0.610865238" upper="1.13446401" velocity="12"/>
+    <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.610865238" soft_upper_limit="11.13446401"/>
   </joint>
   <joint name="r_arm_elx" type="revolute">
     <origin rpy="0 -0 0" xyz="0 -0.121 0.013"/>
@@ -948,17 +981,20 @@
     <joint name="r_leg_uhz"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <!-- was: -->
+  <!--  <include filename="$(find atlas_utils)/urdf/atlas.sensors" /> -->
+  <!-- now: -->
   <joint name="head_hokuyo_joint" type="fixed">
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="0.03 0 0.13"/>
-    <parent link="head"/>
+    <origin rpy="0 0 0" xyz="0.03 0 0.015"/>
+    <parent link="hokuyo_link"/>
     <child link="head_hokuyo"/>
   </joint>
   <link name="head_hokuyo" type="laser">
     <inertial>
-      <mass value="0.1"/>
+      <mass value="0.01"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <gazebo reference="head_hokuyo">
@@ -976,9 +1012,9 @@
           </horizontal>
         </scan>
         <range>
-          <min>0.10</min>
+          <min>0.1</min>
           <max>30.0</max>
-          <resolution>0.01</resolution>
+          <resolution>0.001</resolution>
         </range>
       </ray>
       <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller">
@@ -990,8 +1026,47 @@
       </plugin>
     </sensor>
   </gazebo>
+  <link name="head_imu_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="head_imu_joint" type="revolute">
+    <parent link="head"/>
+    <child link="head_imu_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit effort="0" lower="0" upper="0" velocity="0"/>
+    <safety_controller k_position="0" k_velocity="0" soft_lower_limit="0" soft_upper_limit="0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <gazebo>
+    <plugin filename="libgazebo_ros_imu.so" name="drc_robot_imu_head">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <bodyName>head_imu_link</bodyName>
+      <topicName>head_imu</topicName>
+      <gaussianNoise>0.0</gaussianNoise>
+      <xyzOffsets>0 0 0</xyzOffsets>
+      <rpyOffsets>0 0 0</rpyOffsets>
+    </plugin>
+  </gazebo>
   <joint name="left_camera_frame_joint" type="fixed">
-    <origin xyz="0.03 0.1 0.1"/>
+    <!-- optical frame collocated with tilting DOF -->
+    <origin xyz="0.0 0.035 -0.002"/>
     <parent link="head"/>
     <child link="left_camera_frame"/>
   </joint>
@@ -1010,22 +1085,27 @@
   <link name="left_camera_optical_frame"/>
   <gazebo reference="left_camera_frame">
     <sensor name="left_camera_sensor" type="camera">
-      <update_rate>25.0</update_rate>
+      <!-- update rate based on spec sheet for 2mp 15fps -->
+      <update_rate>15.0</update_rate>
       <camera>
-        <horizontal_fov>1.5708</horizontal_fov>
+        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
+        <!-- but gazebo will violate the vertical fov for now to keep aspect ratio of 1 -->
+        <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>320</width>
-          <height>240</height>
+          <width>1024</width>
+          <height>544</height>
           <format>R8G8B8</format>
         </image>
         <clip>
-          <near>0.01</near>
+          <near>0.02</near>
           <far>100</far>
         </clip>
       </camera>
       <plugin filename="libgazebo_ros_camera.so" name="left_camera_controller">
         <alwaysOn>true</alwaysOn>
-        <updateRate>25.0</updateRate>
+        <!-- update rate based on spec sheet for 2mp 15fps -->
+        <updateRate>15.0</updateRate>
         <cameraName>multisense_sl/left</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
@@ -1040,7 +1120,7 @@
     </sensor>
   </gazebo>
   <joint name="right_camera_frame_joint" type="fixed">
-    <origin xyz="0.03 -0.1 0.1"/>
+    <origin xyz="0.0 -0.035 -0.002"/>
     <parent link="head"/>
     <child link="right_camera_frame"/>
   </joint>
@@ -1059,27 +1139,32 @@
   <link name="right_camera_optical_frame"/>
   <gazebo reference="right_camera_frame">
     <sensor name="right_camera_sensor" type="camera">
-      <update_rate>25.0</update_rate>
+      <!-- update rate based on spec sheet for 2mp 15fps -->
+      <update_rate>15.0</update_rate>
       <camera>
-        <horizontal_fov>1.5708</horizontal_fov>
+        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
+        <!-- but gazebo will violate the vertical fov for now to keep aspect ratio of 1 -->
+        <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>320</width>
-          <height>240</height>
+          <width>1024</width>
+          <height>544</height>
           <format>R8G8B8</format>
         </image>
         <clip>
-          <near>0.01</near>
+          <near>0.02</near>
           <far>100</far>
         </clip>
       </camera>
       <plugin filename="libgazebo_ros_camera.so" name="right_camera_controller">
         <alwaysOn>true</alwaysOn>
-        <updateRate>25.0</updateRate>
+        <!-- update rate based on spec sheet for 2mp 15fps -->
+        <updateRate>15.0</updateRate>
         <cameraName>multisense_sl/right</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>left_camera_optical_frame</frameName>
-        <hackBaseline>0.2</hackBaseline>
+        <hackBaseline>0.07</hackBaseline>
         <!-- check this -->
         <distortionK1>0.0</distortionK1>
         <distortionK2>0.0</distortionK2>
@@ -1089,13 +1174,60 @@
       </plugin>
     </sensor>
   </gazebo>
+  <joint name="center_top_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 0.0105"/>
+    <parent link="head"/>
+    <child link="center_top_led_frame"/>
+  </joint>
+  <link name="center_top_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="center_bottom_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 -0.0155"/>
+    <parent link="head"/>
+    <child link="center_bottom_led_frame"/>
+  </joint>
+  <link name="center_bottom_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="left_led_frame_joint" type="fixed">
+    <origin rpy="0 -0.15 0.53" xyz="-0.01443 0.07452 0.050346"/>
+    <parent link="head"/>
+    <child link="left_led_frame"/>
+  </joint>
+  <link name="left_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="right_led_frame_joint" type="fixed">
+    <origin rpy="0 -0.15 -0.53" xyz="-0.01443 -0.07452 0.050346"/>
+    <parent link="head"/>
+    <child link="right_led_frame"/>
+  </joint>
+  <link name="right_led_frame">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
   <!--  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas.gazebo" /> -->
   <gazebo>
     <!-- robot model offset -->
     <pose>0 0 0.927 0 0 0</pose>
   </gazebo>
   <gazebo>
-    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="libAtlasPlugin.so" name="atlas_plugin"/>
     <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
@@ -1115,12 +1247,8 @@
       <alwaysOn>true</alwaysOn>
       <topicName>actuator_cmd</topicName>
     </plugin>
-    <!--
-    <plugin filename="libMITRobotPlugin.so" name="mit_drc_robot_plugin">
-      <mode>nominal</mode>
-      <harnessed>false</harnessed>
-    </plugin>
-	-->
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
+    <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin"/>
   </gazebo>
   <link name="imu_link">
     <inertial>

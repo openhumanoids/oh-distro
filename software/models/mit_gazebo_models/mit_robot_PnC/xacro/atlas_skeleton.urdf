@@ -1,4 +1,67 @@
 <robot name="drc_skeleton">
+  <link name="head">
+    <inertial>
+      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
+      <mass value="1.4199" />
+      <inertia
+        iyy="0.0041178"
+        ixy="-1.5797E-06"
+        iyz="-6.8415E-07"
+        ixx="0.0039688"
+        ixz="-0.00089293"
+        izz="0.0035243" />
+    </inertial>
+    <visual>
+      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="hokuyo_link">
+    <inertial>
+      <origin xyz="0.012428 0.0004084 -0.0041835" rpy="0 0 0" />
+      <mass value="0.057664" />
+      <inertia
+        iyy="4.2412E-05"
+        ixy="4.9927E-08"
+        iyz="-9.8165E-09"
+        ixx="3.7174E-05"
+        ixz="1.1015E-05"
+        izz="4.167E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.72941 0.35686 0.023529 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
+      <geometry>
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="hokuyo_joint" type="continuous">
+    <origin xyz="-0.0446 0 0.0880" rpy="0 0 0" />
+    <parent link="head" />
+    <child link="hokuyo_link" />
+    <axis xyz="1 0 0" />
+    <dynamics damping="0.01" friction="0"/>
+  </joint>
     <link name="pelvis">
         <inertial>
             <mass value="14.2529" />
@@ -15,25 +78,6 @@
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
                 <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1" />
-            </geometry>
-        </collision>
-    </link>
-    <link name="head">
-        <inertial>
-            <mass value="2.6" />
-            <origin xyz="-0.004 0 0.056" rpy="0 -0 0" />
-            <inertia ixx="0.009" ixy="0" ixz="0" iyy="0.006" iyz="0" izz="0.007" />
-        </inertial>
-        <visual>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/head.dae" scale="1 1 1" />
-            </geometry>
-        </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/head.stl" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -686,13 +730,14 @@
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14" />
     </joint>
     <joint name="neck_ay" type="revolute">
-        <origin xyz="0.011 0 0.44" rpy="0 -0 0" />
+    <origin rpy="0 0 0" xyz="0.16555 0 0.50823"/>
         <axis xyz="0 1 0" />
         <parent link="utorso" />
         <child link="head" />
         <dynamics damping="0.1" friction="0" />
-        <limit effort="5" velocity="12" lower="-0.785398" upper="0.785398" />
-        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.7854" soft_upper_limit="10.7854" />
+        <!-- per slides on sensor head kinematics 2012-12-14 -->
+        <limit effort="5" lower="-0.610865238" upper="1.13446401" velocity="12"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.610865238" soft_upper_limit="11.13446401"/>
     </joint>
     <joint name="r_arm_elx" type="revolute">
         <origin xyz="0 -0.121 0.013" rpy="0 -0 0" />

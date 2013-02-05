@@ -16,7 +16,11 @@
   </xacro:sandia_hand>
 
   <include filename="$(find atlas_utils)/urdf/atlas.transmission" />
-  <include filename="$(find atlas_utils)/urdf/atlas.sensors" /> 
+<!-- was: -->
+<!--  <include filename="$(find atlas_utils)/urdf/atlas.sensors" /> -->
+<!-- now: -->
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/atlas.sensors" /> 
+
 <!--  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas.gazebo" /> -->
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas_position_control.gazebo" />
 </robot>

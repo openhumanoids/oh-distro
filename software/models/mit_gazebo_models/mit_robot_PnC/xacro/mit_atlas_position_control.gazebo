@@ -28,13 +28,9 @@
       <topicName>actuator_cmd</topicName>
     </plugin> 
     
-    <!--
-    <plugin filename="libMITRobotPlugin.so" name="mit_drc_robot_plugin">
-      <mode>nominal</mode>
-      <harnessed>false</harnessed>
-    </plugin>
-	-->
- 
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
+    <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin" />
+
   </gazebo>
   <!-- imu -->
   <link name="imu_link">
