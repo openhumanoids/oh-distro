@@ -1,0 +1,21 @@
+
+
+Parameterized version:  [0.7  1]  [0  1]  [-0.5  2]   argv7: [0.09]  argv8,9: [0.01  2]
+
+## wide and tall cylinder
+./cylinder_segmentation 0.7 1  0 1  -0.5 2   0.09 0.01 2 table.pcd cylinder_1.pcd 
+
+## horizontal tube on the table 
+./cylinder_segmentation 0.2 1 0 0.8 -0.5 0.05 0.09 0.01 2 table.pcd cylinder_2.pcd
+
+## vertical tube
+./cylinder_segmentation -1.5 0  0.5 2  -0.5 0  0.09 0.01 2 table.pcd cylinder_3.pcd
+
+## horizontal bar in the inverted |_ tube shape
+./cylinder_segmentation -1.5 0  0 2  0 0.05 0.09 0.01 2 table.pcd cylinder_4.pcd
+
+##
+./cylinder_segmentation 1 3  0 1  -0.5 2  0.09 0.01 2 table.pcd cylinder_5.pcd
+
+##
+./cylinder_segmentation 0.5 0.7  0 1 -0.5 2  0.09 0.01 2 table.pcd cylinder_6.pcd
