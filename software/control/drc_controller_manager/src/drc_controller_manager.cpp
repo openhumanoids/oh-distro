@@ -189,7 +189,7 @@ namespace drc_control{
     //==================== SPAWN CONTROLLERS
     std::string tip_link_name,root_link_name; // get it from command message.
 
-   	if(robot_name == "mit_drc_robot")
+   	if(robot_name == "atlas")
    	{
 	    tip_link_name = "l_hand";
 	    root_link_name = "utorso";
@@ -252,7 +252,7 @@ namespace drc_control{
     this->left_arm_controller = boost::shared_ptr<pd_chain_control::ChainController<NUM_OF_ARM_JOINTS> >(new pd_chain_control::ChainController<NUM_OF_ARM_JOINTS>(this->_lcm,channel,kdl_chain,_robot_name,_urdf_robot_model,Gains,use_JT_Control));
 	
 
-	  if(robot_name == "mit_drc_robot")
+	  if(robot_name == "atlas")
 	  {
 	    tip_link_name = "r_hand";
 	    root_link_name = "utorso";
