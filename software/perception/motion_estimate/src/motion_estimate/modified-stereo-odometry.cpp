@@ -237,23 +237,77 @@ StereoOdometry::publish_motion_estimation()
   }
 
   if (_publish_pose) {
+
+  Eigen::Isometry3d l2c = camera_to_body*pose;
+
+
+  Eigen::Vector3d l2c_trans(l2c.translation());
+  Eigen::Quaterniond l2c_rot(l2c.rotation());
+  cout << l2c_trans[0] << " "
+    << l2c_trans[1] << " "
+    << l2c_trans[2] << " | "
+    << l2c_rot.w() << " "
+    << l2c_rot.x() << " "
+    << l2c_rot.y() << " "
+    << l2c_rot.z() << " pre \n";
+
     // publish current pose
     bot_core_pose_t pose_msg;
     memset(&pose_msg, 0, sizeof(pose_msg));
     pose_msg.utime = _utime_cur;
-    pose_msg.pos[0] = translation[0];
-    pose_msg.pos[1] = translation[1];
-    pose_msg.pos[2] = translation[2];
-    pose_msg.orientation[0] = rotation.w();
-    pose_msg.orientation[1] = rotation.x();
-    pose_msg.orientation[2] = rotation.y();
-    pose_msg.orientation[3] = rotation.z();
-    //bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
-    //                        &pose_msg);
-    // mfallon: Added this for Sisir, aug 2012
-    bot_core_pose_t_publish(_publish_lcm, "CAMERA_STATE",
+    pose_msg.pos[0] = l2c_trans[0];
+    pose_msg.pos[1] = l2c_trans[1];
+    pose_msg.pos[2] = l2c_trans[2];
+    pose_msg.orientation[0] = l2c_rot.w();
+    pose_msg.orientation[1] = l2c_rot.x();
+    pose_msg.orientation[2] = l2c_rot.y();
+    pose_msg.orientation[3] = l2c_rot.z();
+    bot_core_pose_t_publish(_publish_lcm, _pose_channel.c_str(),
                             &pose_msg);
+    // mfallon: Added this for Sisir, aug 2012
+    //bot_core_pose_t_publish(_publish_lcm, "CAMERA_STATE",
+    //                        &pose_msg);
     //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
+
+    // local->head =  local->camera  * camera->head
+    BotTrans transform;
+    bot_frames_get_trans_with_utime(_bot_frames, "CAMERA", "head",
+                                        _utime_cur, &transform);  
+    std::cout << transform.trans_vec[0] << " "
+              << transform.trans_vec[1] << " "
+              << transform.trans_vec[2] << " | "
+              << transform.rot_quat[0] << " "
+              << transform.rot_quat[1] << " "
+              << transform.rot_quat[2] << " "
+              << transform.rot_quat[3] << "\n";
+
+    Eigen::Quaterniond c2h_rot = Eigen::Quaterniond(1,0,0,0);//transform.rot_quat[0], transform.rot_quat[1],transform.rot_quat[2],transform.rot_quat[3]);
+    Eigen::Isometry3d c2h;
+    c2h.setIdentity();
+    c2h.translation()  << transform.trans_vec[0], transform.trans_vec[1], transform.trans_vec[2];
+    c2h.rotate(c2h_rot);
+
+  cout << transform.trans_vec[0] << " "
+    << transform.trans_vec[1] << " "
+    << transform.trans_vec[2] << " | "
+    << c2h_rot.w() << " "
+    << c2h_rot.x() << " "
+    << c2h_rot.y() << " "
+    << c2h_rot.z() << " rot\n\n";
+
+   Eigen::Isometry3d l2h = l2c *c2h;
+
+  Eigen::Vector3d l2h_trans(l2h.translation());
+  Eigen::Quaterniond l2h_rot(l2h.rotation());
+
+  cout << l2h_trans[0] << " "
+    << l2h_trans[1] << " "
+    << l2h_trans[2] << " | "
+    << l2h_rot.w() << " "
+    << l2h_rot.x() << " "
+    << l2h_rot.y() << " "
+    << l2h_rot.z() << " post\n\n";
+
   }
 
   if (_publish_frame_update) {
@@ -400,7 +454,7 @@ StereoOdometry::imu_handler(const microstrain_ins_t *msg)
     cout << "got first IMU measurement\n";
   }
   }else{
-    cout << "got IMU measurement - not incorporating them\n";
+//    cout << "got IMU measurement - not incorporating them\n";
   }
 
 }
@@ -671,6 +725,9 @@ StereoOdometry::initialize(int argc, char **argv)
   cout << image_channel.c_str() << " is cannel\n";
   bot_core_image_t_subscribe(_subscribe_lcm, image_channel.c_str(),
                              StereoOdometry::image_handler_aux, this);
+
+  _bot_frames= bot_frames_get_global(_publish_lcm, _bot_param);
+
 
   /// IMU:
   microstrain_ins_t_subscribe(_subscribe_lcm, "MICROSTRAIN_INS",

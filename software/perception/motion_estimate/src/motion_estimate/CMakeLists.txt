@@ -17,6 +17,7 @@ pods_use_pkg_config_packages(drc-motion-estimate
     libfovis
     bot2-core
     bot2-param-client
+    bot2-frames # mfallon
     lcmtypes_fovis-bot2
     lcmtypes_bot2-core
     lcmtypes_microstrain_comm

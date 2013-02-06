@@ -20,6 +20,9 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #endif
 
+// mfallon:
+#include <bot_frames/bot_frames.h>
+
 #include <fovis/fovis.hpp>
 
 namespace fovis
@@ -99,6 +102,8 @@ private:
   std::string _tictoc_channel;
 
   BotParam* _bot_param;
+  BotFrames* _bot_frames; // added mfallon
+
   VisualOdometry* _odom;
   StereoDepth* _depth_producer;
   StereoCalibrationParameters _stereo_params;
