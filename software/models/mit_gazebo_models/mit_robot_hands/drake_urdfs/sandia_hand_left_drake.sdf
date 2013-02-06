@@ -33,7 +33,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/palm.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/palm.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
@@ -97,7 +97,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
@@ -120,7 +120,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
@@ -157,7 +157,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
@@ -298,7 +298,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
@@ -321,7 +321,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
@@ -358,7 +358,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
@@ -499,7 +499,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
@@ -522,7 +522,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
@@ -559,7 +559,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
@@ -680,7 +680,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f0.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.7 0.4 0.2 1.0"/>
@@ -703,7 +703,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f1.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin">
         <color rgba="0.835 0.655 0.345 1.0"/>
@@ -734,7 +734,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="/home/drc/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
+        <mesh filename="/home/mfallon/drc/ros_workspace/mit_drcsim_scripts/models/sandia_hand/meshes/f2.wrl"/>
       </geometry>
       <material name="l_sandia_hand_skin_suntan">
         <color rgba="0.8 0.6 0.3 1.0"/>
