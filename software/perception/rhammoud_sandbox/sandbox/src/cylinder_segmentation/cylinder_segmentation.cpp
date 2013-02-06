@@ -274,7 +274,7 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   // Send affordance:
   drc_affordance_collection_t affs_coll;
   affs_coll.map_id = 0;
-  affs_coll.name = (char*)  "homers_desk";
+  affs_coll.name = (char*)  "desk_scene";
   affs_coll.map_utime = 0;
   affs_coll.naffs = 1;
   drc_affordance_t affs[affs_coll.naffs];
