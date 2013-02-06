@@ -1,10 +1,6 @@
-group "core" {
+group "1.robot" {
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
-        host = "localhost";
-    }
-    cmd "r2l" {
-        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
         host = "localhost";
     }
     cmd "roscore" {
@@ -20,15 +16,19 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "estpub" {
         exec = "est_robot_state_publisher_no_sensing";
         host = "localhost";
     }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm";
+        host = "localhost";
+    }
     cmd "l2r" {
-        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        exec = "rosrun translators lcm2ros -r -p";
         host = "localhost";
     }
     cmd "j2f" {
@@ -39,31 +39,16 @@ group "core" {
         exec = "drc-lidar-passthrough";
         host = "localhost";
     }
-    cmd "aff_server" {
-        exec = "affordance_server  -r base";
-        host = "localhost";
-    }
 }
 
-group "drake" {
-    cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesis4PoolServer;\"";
-       host = "localhost";
-    }
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
-        host = "localhost";
-    }
-}
-
-group "gazebo" {
+group "2.gazebo" {
     cmd "gazebo" {
         exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
         host = "localhost";
     }
 }
 
-group "sensing" {
+group "3.sensing" {
     cmd "icompress" {
         exec = "drc-image-compress -j 50 -c CAMERALEFT";
         host = "localhost";
@@ -72,10 +57,13 @@ group "sensing" {
         exec = "maps-server";
         host = "localhost";
     }
+    cmd "aff_server" {
+        exec = "affordance_server  -r robot";
+        host = "localhost";
+    }
 }
 
-
-group "base" {
+group "4.base" {
     cmd "netbridge" {
         exec = "drc-network-bridge -t manipulation";
         host = "localhost";
@@ -89,19 +77,36 @@ group "base" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r base";
         host = "localhost";
     }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base";
+        host = "localhost";
+    }
+}
+
+group "5.drake_base" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "localhost";
+    }
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
+        host = "localhost";
+    }
 }
 
 
 
+
+
 group "misc" {
-    cmd "spy" {
+    cmd "robot_spy" {
         exec = "bot-spy";
         host = "localhost";
     }
