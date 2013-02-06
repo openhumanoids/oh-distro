@@ -34,11 +34,13 @@ classdef cubicSplineTraj
 			obj.lambda = lambda;
 		end
 
-		function [Xi, dXi] = eval(obj, li)
+		function Xi = eval(obj, li)
 			li = li * obj.lambda(end);
-			Xi = interp1(obj.lambda, obj.X, li);
+			trans = interp1(obj.lambda, obj.X, li);
 			dXi = interp1(obj.lambda, obj.dX, li);
 			dXi = dXi ./ repmat(sqrt(sum(dXi .^ 2, 2)), 1, 2);
+			yaw = atan2(dXi(:,2), dXi(:,1));
+			Xi = [trans'; zeros(3, length(li)); yaw'];
 		end
 	end
 end
