@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
   }else if(role.compare("base") == 0){
      lcm_url = "udpm://239.255.12.68:1268?ttl=1";
   }else{
-    std::cout << "DRC Viewer role not understood, choose: robot or base\n";
+    std::cout << "Role not understood, choose: robot or base\n";
     return 1;
   }
 
