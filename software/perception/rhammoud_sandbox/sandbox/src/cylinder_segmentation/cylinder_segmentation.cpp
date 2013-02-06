@@ -8,6 +8,12 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
+#include <GL/gl.h>
+#include <lcm/lcm.h>
+#include <bot_lcmgl_client/lcmgl.h>
+#include <lcmtypes/drc_lcmtypes.h>
+
+
 typedef pcl::PointXYZ PointT;
 
 int
@@ -23,6 +29,11 @@ main (int argc, char** argv)
 	      << "\n\n";
     exit(0);
   }
+
+
+  lcm_t * publish_lcm = lcm_create(NULL);
+  bot_lcmgl_t* lcmgl_;
+  lcmgl_ = bot_lcmgl_init(publish_lcm, "lcmgl-example");
 
   // All the objects needed
   pcl::PCDReader reader;
@@ -52,6 +63,20 @@ main (int argc, char** argv)
   //    reader.read ("waterBottle.pcd", *cloud);
   reader.read(argv[10], *cloud); //tube.pcd //table.pcd", *cloud); 
 std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
+
+
+  // Publish points to LCMGL:
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_point_size(lcmgl_, 1.5f);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  for (size_t i=0; i < cloud->points.size (); ++i) {
+    bot_lcmgl_vertex3f(lcmgl_,  cloud->points[i].x,  
+                       cloud->points[i].y, cloud->points[i].z); 
+  }
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
 
 /* 
 //----------------------------------
@@ -148,6 +173,21 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   std::cerr << "PointCloud representing the planar component: " << cloud_plane->points.size () << " data points." << std::endl;
   writer.write ("table_plane.pcd", *cloud_plane, false);
 
+
+  // Publish points to LCMGL:
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_point_size(lcmgl_, 1.5f);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 1, 0, 0); // Blue
+  for (size_t i=0; i < cloud_plane->points.size (); ++i) {
+    bot_lcmgl_vertex3f(lcmgl_,  cloud_plane->points[i].x,  
+                       cloud_plane->points[i].y, cloud_plane->points[i].z); 
+  }
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
+
+
   // Remove the planar inliers, extract the rest
   extract.setNegative (true);
   extract.filter (*cloud_filtered2);
@@ -202,6 +242,7 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   pcl::PointCloud<PointT>::Ptr cloud_cylinder (new pcl::PointCloud<PointT> ());
   extract.filter (*cloud_cylinder);
 
+
   // "cylinder_table_pcd_out.pcd"
 
   if (cloud_cylinder->points.empty ()) 
@@ -211,7 +252,91 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
 	  std::cerr << "PointCloud representing the cylindrical component: " << cloud_cylinder->points.size () << " data points." << std::endl;
 	  // writer.write ("waterBottle_textured_cylinder.pcd", *cloud_cylinder, false);
 	  writer.write (argv[11], *cloud_cylinder, false);
+
   }
+
+
+  // Publish points to LCMGL:
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_point_size(lcmgl_, 1.5f);
+  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
+  bot_lcmgl_color3f(lcmgl_, 0, 1, 0); // Green
+  for (size_t i=0; i < cloud_cylinder->points.size (); ++i) {
+    bot_lcmgl_vertex3f(lcmgl_,  cloud_cylinder->points[i].x,  
+         cloud_cylinder->points[i].y, cloud_cylinder->points[i].z); 
+  }
+  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+
+
+
+
+  // Send affordance:
+  drc_affordance_collection_t affs_coll;
+  affs_coll.map_id = 0;
+  affs_coll.name = (char*)  "homers_desk";
+  affs_coll.map_utime = 0;
+  affs_coll.naffs = 1;
+  drc_affordance_t affs[affs_coll.naffs];
+
+  affs[0].map_utime = 0;
+  affs[0].map_id = 0;
+  affs[0].name = (char*) "cylinder";
+  affs[0].otdf_id = 0;
+
+  affs[0].nparams=8;
+  double* params = new double[affs[0].nparams];
+  char** param_names = new char*[affs[0].nparams];
+
+  param_names[0]="x";
+  params[0]=_x;
+  param_names[1]="y";
+  params[1]=_y;
+
+  param_names[2]="z";
+  params[2]=_z;
+
+  param_names[3]="roll";
+  params[3]=0.0;
+
+  param_names[4]="pitch";
+  params[4]=0.0;
+  param_names[5]="yaw";
+  params[5]=0.0;
+
+  param_names[6]="radius";
+  params[6]=_radius;
+  param_names[7]="length";
+  params[7]=0.1;
+  param_names[8]="mass";
+  params[8]=1.0;
+
+    affs[0].params = params;
+    affs[0].param_names = param_names;
+
+    affs[0].nstates=0;
+    affs[0].states=NULL;
+    affs[0].state_names=NULL;
+
+    affs[0].nptinds=0;
+    affs[0].ptinds=NULL;
+
+
+  affs_coll.affs = affs;
+  drc_affordance_collection_t_publish(publish_lcm, "AFFORDANCE_COLLECTION", &affs_coll);
+
+
+
+
+
+
+
+
+
+
+  // Send output:
+  bot_lcmgl_switch_buffer(lcmgl_);  
+
   return (0);
 }
  

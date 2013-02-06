@@ -12,8 +12,10 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
 add_executable(cylinder_segmentation cylinder_segmentation.cpp  )
-pods_use_pkg_config_packages(cylinder_segmentation  ${PCL_LIBRARIES})
+pods_use_pkg_config_packages(cylinder_segmentation  ${PCL_LIBRARIES}
+   lcmtypes_drc_lcmtypes
+   bot2-lcmgl-client )
 
 target_link_libraries(cylinder_segmentation boost_thread)
-include_directories(cylinder_segmentation vtk-5.6)
+#include_directories(cylinder_segmentation vtk-5.6)
 pods_install_executables(cylinder_segmentation )
