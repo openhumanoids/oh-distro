@@ -38,6 +38,8 @@ namespace renderer_robot_plan
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_robot;
     //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _base_gl_robot;
     //----------------constructor/destructor
+    
+    
   public:
      int64_t _last_plan_msg_timestamp; 
     RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm,
@@ -48,6 +50,9 @@ namespace renderer_robot_plan
     //std::vector< boost::shared_ptr<visualization_utils::GlKinematicBody> >  _gl_robot_list;
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_robot_list;
     //-------------message callback
+    
+    drc::robot_plan_t revieved_plan_;
+    
   private:
     void handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 

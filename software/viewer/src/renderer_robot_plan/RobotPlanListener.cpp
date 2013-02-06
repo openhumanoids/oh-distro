@@ -60,6 +60,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 	 _urdf_subscription_on =  false; 	
     }
    
+       // 0. Make Local copy to later output
+        revieved_plan_ = *msg;
+   
   	int max_num_states = 20;
   	int num_states = 0;
    	int inc = 1;
@@ -78,7 +81,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       _collision_detector.reset();
       _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
-  	int count=0;
+    int count=0;
     for (uint i = 0; i <(uint)num_states; i++)
     {
       drc::robot_state_t state_msg  = msg->plan[count];

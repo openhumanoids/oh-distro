@@ -25,6 +25,7 @@
 #define PARAM_PLAN_PART "Part of Plan"  
 #define DRAW_PERSIST_SEC 4
 #define PARAM_START_PLAN "Start Planning"
+#define PARAM_SEND_COMMITTED_PLAN "Send Plan"
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 
 using namespace std;
@@ -378,11 +379,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->use_colormap = false;
       
     }
-  }
-  else if(!strcmp(name,PARAM_START_PLAN)){
+  }else if(!strcmp(name,PARAM_START_PLAN)){
    publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
-  }
-  else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
+  }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
+   self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
+  }else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
     drc::plan_collect_t msg;
     msg.utime = self->robot_utime;//bot_timestamp_now();
     msg.type = self->vicon_type;
@@ -432,6 +433,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
