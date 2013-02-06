@@ -68,7 +68,7 @@ group "processing" {
         host = "localhost";
     }
     cmd "reg_vo" {
-        exec = "drc-reg-vo -b stereo -pPOSE_HEAD -m 2";
+        exec = "drc-reg-vo -b stereo -pPOSE_HEAD -m 1";
         host = "localhost";
     }
 }
