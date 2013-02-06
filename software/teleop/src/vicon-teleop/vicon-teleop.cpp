@@ -40,7 +40,7 @@ class Pass{
     void sendRobotPlan( );
     void collectPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::plan_collect_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
-    void publishEndEffectorGoal(Isometry3dTime waist_to_segment, std::string channel, std::string ee_name);
+    void publishEndEffectorGoal(Isometry3dTime body_to_segment, std::string channel, std::string ee_name);
     void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  vicon::body_t* msg);   
     
     bot_lcmgl_t* lcmgl_;
@@ -56,9 +56,9 @@ class Pass{
     
     int64_t dummy_utime_;
 
-    Eigen::Isometry3d human_world_to_waist_;    
+    Eigen::Isometry3d human_world_to_body_;    
     
-    Eigen::Isometry3d world_to_robot_waist_;    
+    Eigen::Isometry3d world_to_robot_body_;    
     
     Eigen::Vector3d human_to_robot_scale_;
     
@@ -107,30 +107,30 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   pc_vis_->obj_cfg_list.push_back( obj_cfg(70006,"World to Waist [Human]",5,1) );
 
   
-  human_world_to_waist_.setIdentity();
+  human_world_to_body_.setIdentity();
   
   double yaw = 180.0;
   Matrix3d m;
   m = AngleAxisd (  yaw*M_PI/180.0   , Vector3d::UnitZ ())
     * AngleAxisd (0, Vector3d::UnitY ())
     * AngleAxisd (0, Vector3d::UnitX ());  
-  human_world_to_waist_ *= m;
+  human_world_to_body_ *= m;
   
-  human_world_to_waist_.translation().x() = 0.77;
-  human_world_to_waist_.translation().y() = -1.08;
-  human_world_to_waist_.translation().z() = 0.66;
+  human_world_to_body_.translation().x() = 0.77;
+  human_world_to_body_.translation().y() = -1.08;
+  human_world_to_body_.translation().z() = 0.66;
 
   vis_counter_ =0;
   printf_counter_ =0;
 
   // Currently the human_to_robot_scale is a single number in x,y,z:  
   human_to_robot_scale_= Eigen::Vector3d(human_to_robot_scale_factor,human_to_robot_scale_factor,human_to_robot_scale_factor);
-  world_to_robot_waist_.setIdentity();
+  world_to_robot_body_.setIdentity();
   
   first_rstate_received_=false;
   
   // Nominal values:
-  plan_sample_period_ = 0.5;
+  plan_sample_period_ = 0.1;
   n_plan_samples_ = 20;
   // Last time we stored a plan
   last_plan_utime_=0;
@@ -143,19 +143,19 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
 
 
 
-void Pass::publishEndEffectorGoal(Isometry3dTime waist_to_segment , std::string channel, std::string ee_name) //KDL::Frame &T_body_ee, 
+void Pass::publishEndEffectorGoal(Isometry3dTime body_to_segment , std::string channel, std::string ee_name) //KDL::Frame &T_body_ee, 
 {
   drc::ee_goal_t goalmsg;
   goalmsg.robot_name = "atlas";
   goalmsg.ee_name = ee_name;
-  goalmsg.root_name = "utorso";
+  goalmsg.root_name = "pelvis";
   double x,y,z,w;
 
-  goalmsg.ee_goal_pos.translation.x = waist_to_segment.pose.translation().x();
-  goalmsg.ee_goal_pos.translation.y = waist_to_segment.pose.translation().y();
-  goalmsg.ee_goal_pos.translation.z = waist_to_segment.pose.translation().z();
+  goalmsg.ee_goal_pos.translation.x = body_to_segment.pose.translation().x();
+  goalmsg.ee_goal_pos.translation.y = body_to_segment.pose.translation().y();
+  goalmsg.ee_goal_pos.translation.z = body_to_segment.pose.translation().z();
 
-  Eigen::Quaterniond r(waist_to_segment.pose.rotation());
+  Eigen::Quaterniond r(body_to_segment.pose.rotation());
   goalmsg.ee_goal_pos.rotation.x = r.x();
   goalmsg.ee_goal_pos.rotation.y = r.y();
   goalmsg.ee_goal_pos.rotation.z = r.z();
@@ -192,9 +192,9 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   
   if (verbose_){
-    // Visualise the human's fixed waist position
-    Isometry3dTime human_world_to_waistT = Isometry3dTime( msg->utime , human_world_to_waist_ );
-    pc_vis_->pose_to_lcm_from_list(70006, human_world_to_waistT);    
+    // Visualise the human's fixed body/pelvis position
+    Isometry3dTime human_world_to_bodyT = Isometry3dTime( msg->utime , human_world_to_body_ );
+    pc_vis_->pose_to_lcm_from_list(70006, human_world_to_bodyT);    
   }
   
   Eigen::Isometry3d pose;
@@ -221,9 +221,9 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
 	  pc_vis_->pose_to_lcm_from_list(70001, human_world_to_rightT_);
   }
   
-  // 1. Find segments relative to the person's waist
-  human_world_to_leftT_.pose = human_world_to_waist_.inverse() * human_world_to_leftT_.pose ;
-  human_world_to_rightT_.pose = human_world_to_waist_.inverse() * human_world_to_rightT_.pose ;
+  // 1. Find segments relative to the person's body
+  human_world_to_leftT_.pose = human_world_to_body_.inverse() * human_world_to_leftT_.pose ;
+  human_world_to_rightT_.pose = human_world_to_body_.inverse() * human_world_to_rightT_.pose ;
 
   // 2. Scale the end effector:
   human_world_to_leftT_.pose.translation().x() *= human_to_robot_scale_(0);
@@ -247,13 +247,13 @@ void Pass::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   // 7. Determine the end effector goals and publish them to the controllers:
   if ((output_type_.compare( "left" ) == 0) || (output_type_.compare( "both" ) == 0) ) {
     publishEndEffectorGoal( human_world_to_leftT_,  "L_HAND_GOAL","l_hand");
-    human_world_to_leftT_.pose = world_to_robot_waist_*human_world_to_leftT_.pose;
+    human_world_to_leftT_.pose = world_to_robot_body_*human_world_to_leftT_.pose;
     pc_vis_->pose_to_lcm_from_list(70004, human_world_to_leftT_);
   }
     
   if ((output_type_.compare( "right" ) == 0) || (output_type_.compare( "both" ) == 0) ) {
     publishEndEffectorGoal( human_world_to_rightT_,  "R_HAND_GOAL","r_hand");
-    human_world_to_rightT_.pose = world_to_robot_waist_*human_world_to_rightT_.pose;
+    human_world_to_rightT_.pose = world_to_robot_body_*human_world_to_rightT_.pose;
     pc_vis_->pose_to_lcm_from_list(70005, human_world_to_rightT_);
   }
 }
@@ -279,11 +279,11 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   }
   
   // Extract World to Body TF:
-  world_to_robot_waist_.setIdentity();
-  world_to_robot_waist_.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+  world_to_robot_body_.setIdentity();
+  world_to_robot_body_.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
                                                msg->origin_position.rotation.y, msg->origin_position.rotation.z);
-  world_to_robot_waist_.rotate(quat);
+  world_to_robot_body_.rotate(quat);
   
   if (collect_plan_){
     if (  msg->utime - (plan_sample_period_ *1E6) > last_plan_utime_ ){
