@@ -13,12 +13,12 @@ goal_dist = 1;
 
 joint_names = r.getStateFrame.coordinates(1:nx/2);
 
-lcmcoder = JLCMCoder(RobotStateCoder(robot_name, joint_names, r.has_floating_base));
+lcmcoder = JLCMCoder(RobotStateCoder(robot_name, joint_names, true));
 joint_names
 state_listener = LCMCoordinateFrameWCoder(robot_name, nx, r.getStateFrame().prefix, lcmcoder);
 state_listener.subscribe('EST_ROBOT_STATE');
 
-plan_publisher = RobotPlanPublisher(robot_name, joint_names, r.has_floating_base, 'CANDIDATE_ROBOT_PLAN', options.num_knot_points);
+plan_publisher = RobotPlanPublisher(robot_name, joint_names, true, 'CANDIDATE_ROBOT_PLAN', options.num_knot_points);
 
 
 
