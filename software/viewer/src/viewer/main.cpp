@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
   bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
   collections_add_renderer_to_viewer(viewer, 1, lcm);
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm);
