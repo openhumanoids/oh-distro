@@ -1,4 +1,4 @@
-function [zmptraj,lfoottraj,rfoottraj,step_times] = planZMPandFootTrajectory(r,q0, goal_pos, step_length,step_time)
+function [zmptraj,lfoottraj,rfoottraj,step_times] = planZMPandFootTrajectory(r,q0, goal_poses, step_length,step_time)
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -53,11 +53,14 @@ zmp = [com0(1:2), feetCenter(rfootpos(:,2), lfootpos(:,2))];
 p0 = feetCenter(rfoot0, lfoot0)
 start_pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
 step_width = sqrt(sum((lfoot0(1:2) - rfoot0(1:2)).^2));
-[Xright, Xleft, XY] = cubicSplineFootsteps(start_pos, goal_pos, step_length, step_width);
+% traj = cubicSplineTraj([start_pos, goal_pos]);
+poses = [start_pos, goal_poses];
+traj = turnGoTraj(poses);
+[Xright, Xleft, X] = constrainedFootsteps(traj, step_length, step_width);
 figure(21)
 plot(Xright(1,:), Xright(2,:), 'go',...
   Xleft(1,:), Xleft(2,:), 'ro', ...
-  XY(:,1), XY(:,2), 'b')
+  X(1,:), X(2,:), 'b')
 axis equal
 drawnow
 
