@@ -25,6 +25,7 @@ classdef turnGoTraj
       li = max(zeros(size(li)), li);
       li = min(ones(size(li)), li);
 			Xi = interp1(obj.lambdas, obj.poses', li)';
+      Xi(3:5, :) = 0;
 		end
 	end
 end

@@ -1,4 +1,4 @@
-function pos = getAtlasFeetPos(r, q0)
+function [pos, width] = getAtlasFeetPos(r, q0)
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -46,5 +46,6 @@ lfootpos = [lfoot0, lfoot0];
 
 p0 = feetCenter(rfoot0, lfoot0);
 pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
+width = sqrt(sum((rfoot0 - lfoot0) .^ 2));
 
 end
