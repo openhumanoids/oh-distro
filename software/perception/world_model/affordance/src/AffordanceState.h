@@ -8,9 +8,11 @@
 #ifndef AFFORDANCE_STATE_H
 #define AFFORDANCE_STATE_H
 
-#include "affordance/ModelState.h"
+#include <affordance/ModelState.h>
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#include <otdf_lcm_utils/otdf_lcm_utils.h>
 
 namespace affordance
 {
@@ -23,30 +25,23 @@ namespace affordance
 
     //------enums and typedefs
   public:
-//    enum OTDF_TYPE  {CYLINDER 	= drc::affordance_t::CYLINDER,
-//		     LEVER 	= drc::affordance_t::LEVER,
-//		     SPHERE	= drc::affordance_t::SPHERE,
-//		     BOX 	= drc::affordance_t::BOX,
-//		     UNKNOWN};
 
-typedef std::string OTDF_TYPE;
-
-    static std::string CYLINDER;
-    static std::string BOX;
+    typedef std::string OTDF_TYPE; //type is a string / relative filename
+    static std::string CYLINDER;  //relative file name for cylinder
+    static std::string BOX; //todo: read these in from the right directory
     static std::string SPHERE;
     static std::string LEVER;
     static std::string UNKNOWN;
-      
+    
+    static const boost::unordered_set<OTDF_TYPE> supportedOtdfTypes;
+    static boost::unordered_set<OTDF_TYPE> getSupportedOtdfTypes();
+
     /**standardizing the naming for common fields in drc::affordance_t. 
        These should be used as keys in the _params map*/
     static std::string  X_NAME, Y_NAME, Z_NAME, ROLL_NAME, PITCH_NAME, YAW_NAME,
       RADIUS_NAME, LENGTH_NAME, WIDTH_NAME, HEIGHT_NAME,  R_COLOR_NAME, G_COLOR_NAME, B_COLOR_NAME;
     
     //------------fields
-
-  private:
-
-    
   public: //should make get / private set methods for these
     //mimicking lcm
     int64_t    _utime;
@@ -55,10 +50,8 @@ typedef std::string OTDF_TYPE;
     /**which object in the scene?*/
     int32_t    _uid;
     
-    /**type of object*/
-    //OTDF_TYPE  _otdf_id;
-    
-    /**informal name for the affordance*/
+    /**type of affordance.  this is a relative otdf file name w/o
+     the otdf extension at the end.  e.g. "cylinder"*/
     std::string _otdf_type;
     
     /**{name --> value} maps*/
@@ -82,8 +75,8 @@ typedef std::string OTDF_TYPE;
     //observers
   public:
     void toMsg(drc::affordance_t *affordanceMsg) const;
-    
-    
+    void toURDF(std::string &urdf_xml_string) const;
+        
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
     virtual std::string getName() const;
@@ -116,7 +109,7 @@ typedef std::string OTDF_TYPE;
 				  const std::string &key);
   public:
     static std::string toStrFromMap(boost::unordered_map<std::string,double> m);
-    static void printIdToEnumMap();
+    static void printSupportedOtdfTypes();
     
   };
   

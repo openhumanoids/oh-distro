@@ -31,11 +31,35 @@ string AffordanceState::R_COLOR_NAME  	= "r_color";
 string AffordanceState::G_COLOR_NAME  	= "g_color";
 string AffordanceState::B_COLOR_NAME  	= "b_color";
 
-string AffordanceState::CYLINDER  	= "cylinder";
-string AffordanceState::LEVER  	= "lever";
-string AffordanceState::SPHERE  	= "sphere";
-string AffordanceState::BOX  	= "box";
-string AffordanceState::UNKNOWN  	= "unknown";
+string AffordanceState::CYLINDER  = "cylinder";
+string AffordanceState::LEVER  	  = "lever";
+string AffordanceState::SPHERE    = "sphere";
+string AffordanceState::BOX  	  = "box";
+string AffordanceState::UNKNOWN   = "unknown";
+
+const unordered_set<AffordanceState::OTDF_TYPE> AffordanceState::supportedOtdfTypes = getSupportedOtdfTypes();
+
+unordered_set<AffordanceState::OTDF_TYPE> AffordanceState::getSupportedOtdfTypes()
+{
+  unordered_set<OTDF_TYPE> s;
+  vector<string> files;
+  otdf::get_filenames_from_otdf_models_dir(files);
+  for (uint i = 0; i < files.size(); i++)
+    s.insert(files[i]);
+  return s;
+}
+
+void AffordanceState::printSupportedOtdfTypes()
+{
+  cout << "\n=====Supported OTDF TYPES:======" << endl;
+  for(unordered_set<OTDF_TYPE>::iterator i = supportedOtdfTypes.begin();
+      i != supportedOtdfTypes.end();
+      ++i)
+    {
+      cout << *i << endl;
+    }
+  cout << "===========" << endl;
+}
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg) 
@@ -103,36 +127,32 @@ AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
 /**used by constructor and copy constructor*/
 void AffordanceState::initHelper(const drc::affordance_t *msg)
 {
-	if (_states.size() != 0 || _params.size() != 0 || _ptinds.size() != 0)
-		throw ArgumentException("shouldn't call init if these fields aren't empty");
+  if (_states.size() != 0 || _params.size() != 0 || _ptinds.size() != 0)
+    throw ArgumentException("shouldn't call init if these fields aren't empty");
+  
+  _utime 	= msg->utime;
+  _map_id 	= msg->map_id;
+  _uid 	= msg->uid;
+  _otdf_type 		= msg->otdf_type;
+  _ptinds 	= msg->ptinds;
+    
+  //argument check
+  if (supportedOtdfTypes.find(msg->otdf_type) == supportedOtdfTypes.end())
+    {
+      printSupportedOtdfTypes();
+      throw InvalidOtdfID(string("not recognized: ") 
+			  + msg->otdf_type 
+			  + string("  : otdf_type =  ") + msg->otdf_type );
+      
+    }
+  
+  _otdf_type = msg->otdf_type;
+  
+  for(int i = 0; i < msg->nstates; i++)
+    _states[msg->state_names[i]] = msg->states[i];
 
-	_utime 	= msg->utime;
-	_map_id 	= msg->map_id;
-	_uid 	= msg->uid;
-	_otdf_type 		= msg->otdf_type;
-	_ptinds 	= msg->ptinds;
-
-
-	//argument check
-	/*
-	
-	 todo 
-	 
-	 if (idToEnum->find(msg->otdf_id) == idToEnum->end())
-	  {
-	    printIdToEnumMap();
-	    throw InvalidOtdfID(string("not recognized: ") + ToString::toStr<short>(msg->otdf_id) 
-				+ string("  : otdf_type =  ") + msg->otdf_type );
-	    
-	  }
-   */
-	_otdf_type = msg->otdf_type;//todo: idToEnum->find(msg->otdf_id)->second;
-
-	for(int i = 0; i < msg->nstates; i++)
-		_states[msg->state_names[i]] = msg->states[i];
-
-	for (int i = 0; i < msg->nparams; i++)
-		_params[msg->param_names[i]] = msg->params[i];
+  for (int i = 0; i < msg->nparams; i++)
+    _params[msg->param_names[i]] = msg->params[i];
 }
 
 AffordanceState::~AffordanceState()
@@ -140,15 +160,6 @@ AffordanceState::~AffordanceState()
 	//
 }
 
-void AffordanceState::printIdToEnumMap()
-{
-/* todo
-  cout << "\n map size = " << idToEnum->size() << endl;
-  for(unordered_map<int16_t, OTDF_TYPE>::const_iterator i = idToEnum->begin();
-      i != idToEnum->end(); ++i)
-    cout << "\n next mapping = ( " << i->first << ", " << i->second << ")" << endl; */
-    
-}
 
 //------methods-------
 /**convert this to a drc_affordacne_t lcm message*/
@@ -184,6 +195,13 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->ptinds.push_back(_ptinds[i]);
 }
 
+/**convert from this AffordanceState into a urdf xml string representation*/
+void AffordanceState::toURDF(string &urdf_xml_string) const
+{
+  	drc::affordance_t msg;
+	toMsg(&msg);
+	otdf::AffordanceLcmMsgToUrdfString(msg, urdf_xml_string);
+}
 
 /**@return x,y,z or throws an exception if any of those are not present*/
 Vector3f AffordanceState::getXYZ() const
@@ -272,18 +290,18 @@ string AffordanceState::toStrFromMap(unordered_map<string,double> m)
 
 namespace affordance
 {
-	/**operator << */
-	ostream& operator<<(ostream& out, const AffordanceState& other )
-	{
-		out << "=====Affordance " << other._otdf_type << "========" << endl;
-		out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
-			  << other._uid << ", " << other._otdf_type << ")\n";
-		out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
-		out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
-		return out;
-	}
-
-
+/**operator << */
+  ostream& operator<<(ostream& out, const AffordanceState& other )
+  {
+    out << "=====Affordance " << other._otdf_type << "========" << endl;
+    out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
+	<< other._uid << ", " << other._otdf_type << ")\n";
+    out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
+    out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
+    return out;
+  }
+  
+} //namespace affordance
 
 //=============================================
 //=============================================
@@ -343,7 +361,4 @@ void AffordanceState::getCopy(ModelState &copy) const
 {
   throw NotImplementedException("aff state");
 }
-
-
-} //namespace affordance
 
