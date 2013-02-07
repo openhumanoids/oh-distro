@@ -159,10 +159,10 @@ namespace otdf
     void setParentJoint(boost::shared_ptr<Joint> child);
     void addChild(boost::shared_ptr<BaseEntity> child);
     void addChildJoint(boost::shared_ptr<Joint> child);
-    void clearChildEntities(){
+    virtual void clearChildEntities(){
       this->child_links.clear();    
     };   
-    void clearChildJoints(){
+    virtual void clearChildJoints(){
       this->child_joints.clear();    
     };   
     
@@ -338,11 +338,26 @@ namespace otdf
     {
        this->parent_link_ = parent;
     };
-    //void setParentJoint(boost::shared_ptr<Joint> child);
-    //void addChild(boost::shared_ptr<BaseEntity> child);
-    //void addChildJoint(boost::shared_ptr<Joint> child);
 
-    void setParentJointPattern(boost::shared_ptr<Joint_pattern>  parent)
+
+    virtual void setParentJoint(boost::shared_ptr<Joint> child) 
+      { throw std::runtime_error("Link_pattern: setParentJoint not implemented");} 
+
+    virtual void addChild(boost::shared_ptr<BaseEntity> child)
+    {throw std::runtime_error("Link_pattern: addChild not implemented");} 
+
+    virtual void addChildJoint(boost::shared_ptr<Joint> child)
+    {throw std::runtime_error("Link_pattern: addChildJoint not implemented");} 
+
+    virtual void clearChildEntities()
+    {throw std::runtime_error("Link_pattern: clearChildEntities not implemented");} 
+
+    virtual void clearChildJoints()
+    {throw std::runtime_error("Link_pattern: clearChildJoints not implemented");} 
+
+
+
+    virtual void setParentJointPattern(boost::shared_ptr<Joint_pattern>  parent)
     {
       this->parent_joint_pattern = parent;
     };

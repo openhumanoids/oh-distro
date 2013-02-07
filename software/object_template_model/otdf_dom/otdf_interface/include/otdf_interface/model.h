@@ -221,7 +221,6 @@ public:
   
   void getJointState(const std::string& name,  double &position, double &velocity) 
   {
-    double value;
     if (this->joints_.find(name) == this->joints_.end()){
       position = 0;
       velocity=0;

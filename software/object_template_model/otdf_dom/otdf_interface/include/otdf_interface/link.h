@@ -56,18 +56,18 @@ namespace otdf{
 
   std::string name;
   
-  virtual std::string getEntityType() const{}
+  virtual std::string getEntityType() const = 0;
   
-  virtual void initXml(TiXmlElement* config ,ParamTable_t &symbol_table){}  
-  virtual void clear(){} 
-  virtual void update(){} 
-  virtual void setParent(boost::shared_ptr<BaseEntity> parent){} 
-  virtual void setParentJoint(boost::shared_ptr<Joint> parent){}  
-  virtual void addChild(boost::shared_ptr<BaseEntity> child){}   
-  virtual void addChildJoint(boost::shared_ptr<Joint> child){}  
-  virtual void clearChildEntities(){}   
-  virtual void clearChildJoints(){}  
-  virtual boost::shared_ptr<BaseEntity> getParent(){}
+  virtual void initXml(TiXmlElement* config ,ParamTable_t &symbol_table) = 0;
+  virtual void clear() = 0;
+  virtual void update() = 0;
+  virtual void setParent(boost::shared_ptr<BaseEntity> parent) = 0;
+  virtual void setParentJoint(boost::shared_ptr<Joint> parent) = 0;
+  virtual void addChild(boost::shared_ptr<BaseEntity> child) = 0;
+  virtual void addChildJoint(boost::shared_ptr<Joint> child) = 0;
+  virtual void clearChildEntities() = 0;
+  virtual void clearChildJoints() = 0;  
+  virtual boost::shared_ptr<BaseEntity> getParent() const = 0;
   
 //   void setParent(boost::shared_ptr<BaseEntity> parent)
 //   {
@@ -427,7 +427,7 @@ public:
 
   void initXml(TiXmlElement* config ,ParamTable_t &symbol_table);
 
-  boost::shared_ptr<BaseEntity> getParent() const
+  virtual boost::shared_ptr<BaseEntity> getParent() const
   {return parent_link_.lock();};
 
   void setParent(boost::shared_ptr<BaseEntity> parent);
