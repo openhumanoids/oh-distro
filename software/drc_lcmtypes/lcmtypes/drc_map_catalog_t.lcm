@@ -1,0 +1,11 @@
+package drc;
+
+struct map_catalog_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // current active views
+  int32_t num_views;
+  map_request_t views[num_views];
+}

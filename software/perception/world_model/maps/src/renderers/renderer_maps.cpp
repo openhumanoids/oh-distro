@@ -14,7 +14,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/drc/map_request_t.hpp>
 #include <lcmtypes/drc/map_command_t.hpp>
 
 #include <drc_utils/Clock.hpp>
@@ -31,6 +30,7 @@
 
 #include <maps/ViewClient.hpp>
 #include <maps/MapView.hpp>
+#include <maps/Utils.hpp>
 
 static const char* RENDERER_NAME = "Maps";
 
@@ -43,7 +43,7 @@ static const char* PARAM_MAP_COMMAND_TYPE = "Command";
 static const char* PARAM_MAP_COMMAND = "Execute";
 
 enum InputMode {
-  INPUT_MODE_NONE,
+  INPUT_MODE_CAMERA,
   INPUT_MODE_RECT,
   INPUT_MODE_DEPTH
 };
@@ -65,35 +65,56 @@ struct Frustum {
   float mFar;
   Eigen::Vector3f mPos;
   Eigen::Vector3f mDir;
-  Eigen::Vector3f mRay1;
-  Eigen::Vector3f mRay2;
-  Eigen::Vector3f mRay3;
-  Eigen::Vector3f mRay4;
 };
 
+struct RendererMaps;
+
 struct ViewMetaData {
-  int mId;
+  int64_t mId;
+  bool mVisible;
   Frustum mFrustum;
   Eigen::Vector3f mColor;
 };
 
-
-static const double kBoxPoints[8][3] = {
-  {-0.5,-0.5,-0.5}, {0.5,-0.5,-0.5}, {0.5,0.5,-0.5}, {-0.5,0.5,-0.5},
-  {-0.5,-0.5,0.5}, {0.5,-0.5,0.5}, {0.5,0.5,0.5}, {-0.5,0.5,0.5}
+struct ViewWidget {
+  int64_t mId;
+  RendererMaps* mRenderer;
+  GtkWidget* mBox;
 };
-static const int kBoxQuads[6][4] = {
-  {3,2,1,0}, {4,5,6,7}, {0,4,7,3}, {1,2,6,5}, {0,1,5,4}, {3,7,6,2}
-};
-
 
 struct RendererMaps {
 
   struct ViewClientListener : public maps::ViewClient::Listener {
     RendererMaps* mRenderer;
+    bool mInitialized;
 
-    void notify(const int64_t iViewId) {
+    void notifyData(const int64_t iViewId) {
       bot_viewer_request_redraw(mRenderer->mViewer);
+    }
+    void notifyCatalog(const bool iChanged) {
+      if (!mInitialized || iChanged) {
+        std::vector<maps::ViewClient::MapViewPtr> views =
+          mRenderer->mViewClient.getAllViews();
+        std::set<int64_t> catalogIds;
+        for (size_t v = 0; v < views.size(); ++v) {
+          int64_t id = views[v]->getSpec().mViewId;
+          mRenderer->addViewMetaData(id);
+          catalogIds.insert(id);
+        }
+        for (DataMap::iterator iter = mRenderer->mViewData.begin();
+             iter != mRenderer->mViewData.end(); ) {
+          int64_t id = iter->second.mId;
+          if (catalogIds.find(id) == catalogIds.end()) {
+            mRenderer->mViewData.erase(iter++);
+            mRenderer->removeViewMetaData(id);
+          }
+          else {
+            ++iter;
+          }
+        }
+        mInitialized = true;
+        bot_viewer_request_redraw(mRenderer->mViewer);
+      }
     }
   };
 
@@ -104,6 +125,10 @@ struct RendererMaps {
   BotFrames* mBotFrames;
   BotGtkParamWidget* mWidget;
   BotEventHandler mEventHandler;
+  GtkWidget* mViewListWidget;
+
+  typedef std::unordered_map<int64_t,ViewWidget> WidgetMap;
+  WidgetMap mViewWidgets;
 
   typedef std::unordered_map<int64_t,ViewMetaData> DataMap;
   DataMap mViewData;
@@ -152,7 +177,7 @@ struct RendererMaps {
     }
 
     if (mCamTrans == NULL) {
-      mCamTrans = bot_param_get_new_camtrans(mBotParam, "CAMERALEFT");
+      mCamTrans = bot_param_get_new_camtrans(mBotParam, iChannel.c_str());
       if (mCamTrans == NULL) {
         std::cout << "Error: RendererHeightMap: bad camtrans" << std::endl;
       }
@@ -198,42 +223,28 @@ struct RendererMaps {
     }
 
     if (!strcmp(iName, PARAM_DATA_REQUEST) && (self->mBoxValid)) {
-      drc::map_request_t request;
-      request.utime = drc::Clock::instance()->getCurrentTime();
-      request.map_id = 0;
-      request.view_id = ((int64_t)rand() << 31) + rand();
+      maps::MapView::Spec spec;
+      spec.mMapId = 0;
+      spec.mViewId = -1;
+      spec.mActive = true;
       switch(self->mRequestType) {
       case REQUEST_TYPE_OCTREE:
-        request.type = drc::map_request_t::OCTREE;
+        spec.mType = maps::MapView::Spec::TypeOctree;
         break;
       case REQUEST_TYPE_CLOUD:
-        request.type = drc::map_request_t::CLOUD;
+        spec.mType = maps::MapView::Spec::TypeCloud;
         break;
       default:
         return;
       }
-      request.resolution = self->mRequestResolution;
-      request.frequency = self->mRequestFrequency;
-      request.time_min = -1;
-      request.time_max = -1;
-      request.num_clip_planes = 6;
-      request.clip_planes.resize(request.num_clip_planes);
-      for (int i = 0; i < 6; ++i) {
-        request.clip_planes[i].resize(4);
-        for (int j = 0; j < 4; ++j) {
-          request.clip_planes[i][j] = self->mFrustum.mPlanes[i][j];
-        }
-      }
-      self->mLcm->publish("MAP_REQUEST", &request);
+      spec.mResolution = self->mRequestResolution;
+      spec.mFrequency = self->mRequestFrequency;
+      spec.mTimeMin = -1;
+      spec.mTimeMax = -1;
+      spec.mClipPlanes = self->mFrustum.mPlanes;
+      int64_t id = self->mViewClient.request(spec);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
-                                    INPUT_MODE_NONE);
-      ViewMetaData data;
-      data.mId = request.view_id;
-      data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                    (double)rand()/RAND_MAX,
-                                    (double)rand()/RAND_MAX);
-      data.mFrustum = self->mFrustum;
-      self->mViewData[data.mId] = data;
+                                    INPUT_MODE_CAMERA);
       self->mBoxValid = false;
     }
   }
@@ -266,21 +277,17 @@ struct RendererMaps {
 
       // try to find ancillary data for this view; add if it doesn't exist
       int64_t id = view->getSpec().mViewId;
-      DataMap::const_iterator item = self->mViewData.find(id);
-      ViewMetaData data;
-      if (item == self->mViewData.end()) {
-        data.mId = id;
-        if (data.mId != 1) {
-          data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                        (double)rand()/RAND_MAX,
-                                        (double)rand()/RAND_MAX);
-        }
-        else {
-          data.mColor = Eigen::Vector3f(1,0,0);
-        }
-        self->mViewData[id] = data;
+      self->addViewMetaData(id);
+      ViewMetaData data = self->mViewData[id];
+
+      // draw box
+      if (data.mFrustum.mPlanes.size() > 0) {
+        self->drawFrustum(data.mFrustum, data.mColor);
       }
-      data = self->mViewData[id];
+
+      if (!data.mVisible) {
+        continue;
+      }
 
       // see if point cloud has any data
       maps::PointCloud::Ptr cloud = view->getAsPointCloud();
@@ -335,10 +342,6 @@ struct RendererMaps {
       }
 
       glEnd();
-
-      if (data.mFrustum.mPlanes.size() > 0) {
-        self->drawFrustum(data.mFrustum, data.mColor);
-      }
     }
 
 
@@ -384,24 +387,125 @@ struct RendererMaps {
     glPopAttrib();
   }
 
+  void removeViewMetaData(const int64_t iId) {
+    mViewData.erase(iId);
+    WidgetMap::iterator item = mViewWidgets.find(iId);
+    if (item != mViewWidgets.end()) {
+      gtk_widget_destroy(item->second.mBox);
+      mViewWidgets.erase(item);
+    }
+  }
+
+  void addViewMetaData(const int64_t iId) {
+    bool added = false;
+    DataMap::const_iterator item = mViewData.find(iId);
+    ViewMetaData data;
+    if (item == mViewData.end()) {
+      added = true;
+      data.mId = iId;
+      data.mVisible = true;
+      if (data.mId != 1) {
+        data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
+                                      (double)rand()/RAND_MAX,
+                                      (double)rand()/RAND_MAX);
+      }
+      else {
+        data.mColor = Eigen::Vector3f(1,0,0);
+      }
+      mViewData[iId] = data;
+    }
+
+    maps::MapView::Ptr mapView = mViewClient.getView(iId);
+    if (mapView != NULL) {
+      const std::vector<Eigen::Vector4f>& planes =
+        mapView->getSpec().mClipPlanes;
+      if (planes.size() != data.mFrustum.mPlanes.size()) {
+        mViewData[iId].mFrustum.mPlanes = mapView->getSpec().mClipPlanes;
+      }
+    }
+
+
+    if (added) {
+      char name[256];
+      sprintf(name, "%ld", iId);
+
+      GtkBox *hb = GTK_BOX(gtk_hbox_new (FALSE, 0));
+
+      ViewWidget viewWidget;
+      viewWidget.mId = iId;
+      viewWidget.mRenderer = this;
+      viewWidget.mBox = GTK_WIDGET(hb);
+      mViewWidgets[iId] = viewWidget;
+
+      GtkWidget* cb = gtk_toggle_button_new_with_label("                ");
+      GdkColor color, colorDim;
+      color.red =   data.mColor[0]*65535;
+      color.green = data.mColor[1]*65535;
+      color.blue =  data.mColor[2]*65535;
+      colorDim.red =   (data.mColor[0]+1)/2*65535;
+      colorDim.green = (data.mColor[1]+1)/2*65535;
+      colorDim.blue =  (data.mColor[2]+1)/2*65535;
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cb), TRUE);
+      gtk_widget_modify_bg(GTK_WIDGET(cb), GTK_STATE_ACTIVE, &color);
+      gtk_widget_modify_bg(GTK_WIDGET(cb), GTK_STATE_NORMAL, &colorDim);
+      gtk_box_pack_start(GTK_BOX(hb), cb, FALSE, FALSE, 0);
+      g_signal_connect(G_OBJECT(cb), "toggled",
+                       G_CALLBACK(&RendererMaps::onToggleButton),
+                       &mViewWidgets[iId]);
+
+      if (iId != 1) {
+        GtkWidget* cancelButton = gtk_button_new_with_label("X");
+        gtk_box_pack_start(GTK_BOX(hb), cancelButton, FALSE, FALSE, 0);
+        g_signal_connect(G_OBJECT(cancelButton), "clicked",
+                         G_CALLBACK(&RendererMaps::onCancelButton),
+                         &mViewWidgets[iId]);
+      }
+
+      gtk_widget_show_all(GTK_WIDGET(hb));
+      gtk_box_pack_start(GTK_BOX(mViewListWidget), GTK_WIDGET(hb),
+                         TRUE, TRUE, 0);
+    }
+  }
+
+  static void onToggleButton(GtkWidget *iButton, ViewWidget* data) {
+    bool checked = gtk_toggle_button_get_active((GtkToggleButton*)iButton);
+    int64_t id = data->mId;
+    DataMap::iterator item = data->mRenderer->mViewData.find(id);
+    if (item != data->mRenderer->mViewData.end()) {
+      item->second.mVisible = checked;
+      bot_viewer_request_redraw (data->mRenderer->mViewer);    
+    }
+  }
+
+  static void onCancelButton(GtkWidget *iButton, ViewWidget* data) {
+    int64_t id = data->mId;
+    DataMap::iterator item = data->mRenderer->mViewData.find(id);
+    if (item != data->mRenderer->mViewData.end()) {
+      maps::MapView::Spec spec;
+      spec.mMapId = 0;
+      spec.mViewId = id;
+      spec.mResolution = spec.mFrequency = 0;
+      spec.mTimeMin = spec.mTimeMax = 0;
+      spec.mActive = false;
+      spec.mType = maps::MapView::Spec::TypeCloud;
+      data->mRenderer->mViewClient.request(spec);
+      bot_viewer_request_redraw (data->mRenderer->mViewer);
+    }
+    // TODO: guard thread safety for access to data pointer
+  }
+
   static void drawFrustum(const Frustum& iFrustum,
                           const Eigen::Vector3f& iColor) {
-    // intersect each ray with front and back plane
-    std::vector<Eigen::Vector3f> p(8);
-    p[0] = intersect(iFrustum.mPos, iFrustum.mRay1, iFrustum.mPlanes[4]);
-    p[1] = intersect(iFrustum.mPos, iFrustum.mRay2, iFrustum.mPlanes[4]);
-    p[2] = intersect(iFrustum.mPos, iFrustum.mRay3, iFrustum.mPlanes[4]);
-    p[3] = intersect(iFrustum.mPos, iFrustum.mRay4, iFrustum.mPlanes[4]);
-    p[4] = intersect(iFrustum.mPos, iFrustum.mRay1, iFrustum.mPlanes[5]);
-    p[5] = intersect(iFrustum.mPos, iFrustum.mRay2, iFrustum.mPlanes[5]);
-    p[6] = intersect(iFrustum.mPos, iFrustum.mRay3, iFrustum.mPlanes[5]);
-    p[7] = intersect(iFrustum.mPos, iFrustum.mRay4, iFrustum.mPlanes[5]);
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<std::vector<int> > faces;
+    maps::Utils::polyhedronFromPlanes(iFrustum.mPlanes, vertices, faces);
     glColor3f(iColor[0], iColor[1], iColor[2]);
-    for (int i = 0; i < 6; ++i) {
+    glLineWidth(3);
+    for (size_t i = 0; i < faces.size(); ++i) {
       glBegin(GL_LINE_LOOP);
-      for (int j = 0; j < 4; ++j) {
-        glVertex3f(p[kBoxQuads[i][j]][0], p[kBoxQuads[i][j]][1],
-                   p[kBoxQuads[i][j]][2]);
+      for (size_t j = 0; j < faces[i].size(); ++j) {
+        Eigen::Vector3f pt = vertices[faces[i][j]];
+        glVertex3f(pt[0], pt[1], pt[2]);
       }
       glEnd();
     }
@@ -448,10 +552,10 @@ struct RendererMaps {
   static int keyPress(BotViewer* iViewer, BotEventHandler* iHandler, 
                       const GdkEventKey* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
-    if ((self->mInputMode != INPUT_MODE_NONE) &&
+    if ((self->mInputMode != INPUT_MODE_CAMERA) &&
         (iEvent->keyval == GDK_Escape)) {
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
-                                    INPUT_MODE_NONE);
+                                    INPUT_MODE_CAMERA);
       return 0;
     }
     return 0;
@@ -462,7 +566,7 @@ struct RendererMaps {
                         const GdkEventButton* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
 
-    if (self->mInputMode == INPUT_MODE_NONE) {
+    if (self->mInputMode == INPUT_MODE_CAMERA) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
       if (iEvent->button == 1) {
@@ -502,7 +606,7 @@ struct RendererMaps {
                           const GdkEventButton* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
 
-    if (self->mInputMode == INPUT_MODE_NONE) {
+    if (self->mInputMode == INPUT_MODE_CAMERA) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
       if (iEvent->button == 1) {
@@ -551,14 +655,6 @@ struct RendererMaps {
         Eigen::Vector3f p3(x,y,z);
         gluUnProject(u1,v2,0,modelViewGl,projGl,viewportGl,&x,&y,&z);
         Eigen::Vector3f p4(x,y,z);
-        self->mFrustum.mRay1 = p1-pos;
-        self->mFrustum.mRay2 = p2-pos;
-        self->mFrustum.mRay3 = p3-pos;
-        self->mFrustum.mRay4 = p4-pos;
-        self->mFrustum.mRay1.normalize();
-        self->mFrustum.mRay2.normalize();
-        self->mFrustum.mRay3.normalize();
-        self->mFrustum.mRay4.normalize();
 
         self->mFrustum.mNear = 5;
         self->mFrustum.mFar = 10;
@@ -593,7 +689,7 @@ struct RendererMaps {
                          const GdkEventMotion* iEvent) {
     RendererMaps* self = (RendererMaps*)iHandler->user;
 
-    if (self->mInputMode == INPUT_MODE_NONE) {
+    if (self->mInputMode == INPUT_MODE_CAMERA) {
     }
     else if (self->mInputMode == INPUT_MODE_RECT) {
       if (self->mDragging) {
@@ -696,8 +792,8 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   gtk_widget_show (GTK_WIDGET (self->mWidget));
 
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_INPUT_MODE,
-                                BOT_GTK_PARAM_WIDGET_MENU, INPUT_MODE_NONE,
-                                "None", INPUT_MODE_NONE,
+                                BOT_GTK_PARAM_WIDGET_MENU, INPUT_MODE_CAMERA,
+                                "Move View", INPUT_MODE_CAMERA,
                                 "Drag Rect", INPUT_MODE_RECT,
                                 "Set Depth", INPUT_MODE_DEPTH, NULL);
 
@@ -722,6 +818,10 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                                 "Stop Update", MAP_COMMAND_STOP,
                                 "Start Update", MAP_COMMAND_START, NULL);
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_MAP_COMMAND, NULL);
+
+  self->mViewListWidget = gtk_vbox_new (FALSE, 0);
+  gtk_container_add (GTK_CONTAINER (self->mWidget), self->mViewListWidget);
+  gtk_widget_show (self->mViewListWidget);
   
   g_signal_connect (G_OBJECT (self->mWidget), "changed",
                     G_CALLBACK (RendererMaps::onParamWidgetChanged),
@@ -738,6 +838,7 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   self->mViewClient.setOctreeChannel("MAP_OCTREE");
   self->mViewClient.setCloudChannel("MAP_CLOUD");
   self->mViewClientListener.mRenderer = self;
+  self->mViewClientListener.mInitialized = false;
   self->mViewClient.addListener(&self->mViewClientListener);
   self->mViewClient.start();
 

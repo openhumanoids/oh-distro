@@ -6,9 +6,50 @@
 
 using namespace maps;
 
+MapView::Spec::
+Spec() {
+  mMapId = mViewId = 0;
+  mActive = false;
+  mType = TypeCloud;
+  mResolution = 0;
+  mFrequency = 0;
+  mTimeMin = mTimeMax = 0;
+}
+
+bool MapView::Spec::
+operator==(const Spec& iSpec) const {
+  bool eq = (mMapId == iSpec.mMapId) &&
+    (mViewId == iSpec.mViewId) &&
+    (mActive == iSpec.mActive) &&
+    (mType == iSpec.mType) &&
+    (mResolution == iSpec.mResolution) &&
+    (mFrequency == iSpec.mFrequency) &&
+    (mTimeMin == iSpec.mTimeMin) &&
+    (mTimeMax == iSpec.mTimeMax) &&
+    (mClipPlanes.size() == iSpec.mClipPlanes.size());
+  if (!eq) {
+    return false;
+  }
+  for (int i = 0; i < mClipPlanes.size(); ++i) {
+    if (mClipPlanes[i] != iSpec.mClipPlanes[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool MapView::Spec::
+operator!=(const Spec& iSpec) const {
+  return !(*this == iSpec);
+}
+
+
+
+
 MapView::
 MapView(const Spec& iSpec) {
   mSpec = iSpec;
+  mCloud.reset(new maps::PointCloud());
 }
 
 MapView::
@@ -49,8 +90,15 @@ MapView::Ptr MapView::
 clone() const {
   boost::mutex::scoped_lock lock(mMutex);
   Ptr view(new MapView(mSpec));
-  view->mCloud.reset(new maps::PointCloud());
-  pcl::copyPointCloud(*mCloud, *view->mCloud);
+  view->mCloud = mCloud;
+  return view;
+}
+
+MapView::Ptr MapView::
+clone(const Spec& iSpec) const {
+  boost::mutex::scoped_lock lock(mMutex);
+  Ptr view(new MapView(iSpec));
+  view->mCloud = mCloud;
   return view;
 }
 

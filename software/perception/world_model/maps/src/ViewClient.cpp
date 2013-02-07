@@ -3,12 +3,15 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
+#include <lcmtypes/drc/map_catalog_t.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
+#include <drc_utils/Clock.hpp>
 
 #include "LcmTranslator.hpp"
 #include "ThreadSafeQueue.hpp"
+#include "Utils.hpp"
 
 using namespace maps;
 
@@ -23,7 +26,8 @@ struct ViewClient::Worker {
   struct Message {
     enum Type {
       TypeOctree,
-      TypeCloud
+      TypeCloud,
+      TypeCatalog
     };
     Type mType;
     int64_t mId;
@@ -35,6 +39,7 @@ struct ViewClient::Worker {
   State mState;
   lcm::Subscription* mOctreeSubscription;
   lcm::Subscription* mCloudSubscription;
+  lcm::Subscription* mCatalogSubscription;
   ThreadSafeQueue<Message> mMessageQueue;
   boost::mutex mMutex;
   boost::condition_variable mCondition;
@@ -44,6 +49,7 @@ struct ViewClient::Worker {
     mClient = iClient;
     mOctreeSubscription = NULL;
     mCloudSubscription = NULL;
+    mCatalogSubscription = NULL;
     mState = StateIdle;
     mThread = boost::thread(boost::ref(*this));
   }
@@ -52,6 +58,7 @@ struct ViewClient::Worker {
     boost::mutex::scoped_lock lock(mMutex);
     mLcm->unsubscribe(mOctreeSubscription);
     mLcm->unsubscribe(mCloudSubscription);
+    mLcm->unsubscribe(mCatalogSubscription);
     mState = StateShutdown;
     mCondition.notify_one();
     mMessageQueue.unblock();
@@ -70,6 +77,8 @@ struct ViewClient::Worker {
       mLcm->subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
     mCloudSubscription =
       mLcm->subscribe(mClient->mCloudChannel, &Worker::onCloud, this);
+    mCatalogSubscription =
+      mLcm->subscribe(mClient->mCatalogChannel, &Worker::onCatalog, this);
     return true;
   }
 
@@ -80,6 +89,7 @@ struct ViewClient::Worker {
     }
     mLcm->unsubscribe(mOctreeSubscription);
     mLcm->unsubscribe(mCloudSubscription);
+    mLcm->unsubscribe(mCatalogSubscription);
     mMessageQueue.unblock();
     mState = StateIdle;
     mCondition.notify_one();
@@ -111,6 +121,18 @@ struct ViewClient::Worker {
     mMessageQueue.push(msg);
   }
 
+  void onCatalog(const lcm::ReceiveBuffer* iBuf,
+                 const std::string& iChannel,
+                 const drc::map_catalog_t* iMessage) {
+    Message msg;
+    msg.mType = Message::TypeCatalog;
+    msg.mId = 0;
+    boost::shared_ptr<drc::map_catalog_t>
+      payload(new drc::map_catalog_t(*iMessage));
+    msg.mPayload = boost::static_pointer_cast<void>(payload);
+    mMessageQueue.push(msg);
+  }
+
   void operator()() {
     while (mState != StateShutdown) {
 
@@ -131,12 +153,50 @@ struct ViewClient::Worker {
         continue;
       }
 
+      // handle catalog
+      if (msg.mType == Message::TypeCatalog) {
+        boost::shared_ptr<drc::map_catalog_t> catalog =
+          boost::static_pointer_cast<drc::map_catalog_t>(msg.mPayload);
+        bool changed = false;
+        std::set<int64_t> catalogIds;
+        for (int i = 0; i < catalog->views.size(); ++i) {
+          MapView::Spec spec = LcmTranslator::fromLcm(catalog->views[i]);
+          int64_t id = spec.mViewId;
+          catalogIds.insert(id);
+          MapViewCollection::const_iterator item = mClient->mViews.find(id);
+          if (item == mClient->mViews.end()) {
+            mClient->mViews[id].reset(new MapView(spec));
+            changed = true;
+          }
+          else {
+            if (spec != item->second->getSpec()) {
+              mClient->mViews[id] = item->second->clone(spec);
+              changed = true;
+            }
+          }
+        }
+        for (MapViewCollection::const_iterator iter = mClient->mViews.begin();
+             iter != mClient->mViews.end(); ) {
+          if (catalogIds.find(iter->second->getSpec().mViewId) ==
+              catalogIds.end()) {
+            mClient->mViews.erase(iter++);
+            changed = true;
+          }
+          else {
+            ++iter;
+          }
+        }
+        mClient->notifyCatalogListeners(changed);
+        continue;
+      }
+
       // find view or insert new one for this id
       MapViewCollection::const_iterator item = mClient->mViews.find(msg.mId);
       if (item == mClient->mViews.end()) {
         MapView::Spec spec;
         spec.mViewId = msg.mId;
         mClient->mViews[msg.mId].reset(new MapView(spec));
+        mClient->notifyCatalogListeners(true);
       }
       MapViewPtr view = mClient->mViews[msg.mId];
 
@@ -156,21 +216,18 @@ struct ViewClient::Worker {
         view->set(*cloud);
       }
 
-      // notify all listeners
-      for (std::set<Listener*>::iterator iter = mClient->mListeners.begin();
-           iter != mClient->mListeners.end(); ++iter) {
-        if (*iter != NULL) {
-          (*iter)->notify(msg.mId);
-        }
-      }
+      // notify subscribers
+      mClient->notifyDataListeners(msg.mId);
     }
   }
 };
 
 ViewClient::
 ViewClient() {
+  setRequestChannel("MAP_REQUEST");
   setOctreeChannel("MAP_OCTREE");
   setCloudChannel("MAP_CLOUD");
+  setCatalogChannel("MAP_CATALOG");
   mWorker.reset(new Worker(this));
 }
 
@@ -181,7 +238,13 @@ ViewClient::
 
 void ViewClient::
 setLcm(const LcmPtr& iLcm) {
+  mLcm = iLcm;
   mWorker->mLcm = iLcm;
+}
+
+void ViewClient::
+setRequestChannel(const std::string& iChannel) {
+  mRequestChannel = iChannel;
 }
 
 void ViewClient::
@@ -192,6 +255,21 @@ setOctreeChannel(const std::string& iChannel) {
 void ViewClient::
 setCloudChannel(const std::string& iChannel) {
   mCloudChannel = iChannel;
+}
+
+void ViewClient::
+setCatalogChannel(const std::string& iChannel) {
+  mCatalogChannel = iChannel;
+}
+
+int64_t ViewClient::request(const MapView::Spec& iSpec) {
+  drc::map_request_t message = LcmTranslator::toLcm(iSpec);
+  message.utime = drc::Clock::instance()->getCurrentTime();
+  if (message.view_id < 0) {
+    message.view_id = (Utils::rand64() >> 1);
+  }
+  mLcm->publish(mRequestChannel, &message);
+  return message.view_id;
 }
 
 ViewClient::MapViewPtr ViewClient::
@@ -238,4 +316,24 @@ start() {
 bool ViewClient::
 stop() {
   return mWorker->stop();
+}
+
+void ViewClient::
+notifyCatalogListeners(const bool iChanged) {
+  for (std::set<Listener*>::iterator iter = mListeners.begin();
+       iter != mListeners.end(); ++iter) {
+    if (*iter != NULL) {
+      (*iter)->notifyCatalog(iChanged);
+    }
+  }
+}
+
+void ViewClient::
+notifyDataListeners(const int64_t iId) {
+  for (std::set<Listener*>::iterator iter = mListeners.begin();
+       iter != mListeners.end(); ++iter) {
+    if (*iter != NULL) {
+      (*iter)->notifyData(iId);
+    }
+  }
 }

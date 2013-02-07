@@ -16,6 +16,7 @@ public:
 
     int64_t mMapId;
     int64_t mViewId;
+    bool mActive;
     Type mType;
     float mResolution;
     float mFrequency;
@@ -23,13 +24,10 @@ public:
     int64_t mTimeMax;
     std::vector<Eigen::Vector4f> mClipPlanes;
 
-    Spec() {
-      mMapId = mViewId = 0;
-      mType = TypeCloud;
-      mResolution = 0;
-      mFrequency = 0;
-      mTimeMin = mTimeMax = 0;
-    }
+    Spec();
+
+    bool operator==(const Spec& iSpec) const;
+    bool operator!=(const Spec& iSpec) const;
   };
 
   typedef boost::shared_ptr<MapView> Ptr;
@@ -44,6 +42,7 @@ public:
   bool set(const maps::Octree& iTree);
 
   Ptr clone() const;
+  Ptr clone(const Spec& iSpec) const;
 
   maps::PointCloud::Ptr getAsPointCloud() const;
   // TODO: can add other representations here if needed, such as meshes

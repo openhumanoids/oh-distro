@@ -6,13 +6,13 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 
+#include "MapView.hpp"
+
 namespace lcm {
   class LCM;
 }
 
 namespace maps {
-
-class MapView;
 
 class ViewClient {
 public:
@@ -21,7 +21,8 @@ public:
 
   class Listener {
   public:
-    virtual void notify(const int64_t iId) = 0;
+    virtual void notifyData(const int64_t iId) = 0;
+    virtual void notifyCatalog(const bool iChanged) = 0;
   };
 
 protected:
@@ -34,8 +35,12 @@ public:
   virtual ~ViewClient();
 
   void setLcm(const LcmPtr& iLcm);
+  void setRequestChannel(const std::string& iChannel);
   void setOctreeChannel(const std::string& iChannel);
   void setCloudChannel(const std::string& iChannel);
+  void setCatalogChannel(const std::string& iChannel);
+
+  int64_t request(const MapView::Spec& iSpec);
 
   MapViewPtr getView(const int64_t iId) const;
   std::vector<MapViewPtr> getAllViews() const;
@@ -47,10 +52,17 @@ public:
   bool start();
   bool stop();
 
+protected:
+  void notifyCatalogListeners(const bool iChanged);
+  void notifyDataListeners(const int64_t iId);
+
 
 protected:
+  std::string mRequestChannel;
   std::string mOctreeChannel;
   std::string mCloudChannel;
+  std::string mCatalogChannel;
+  LcmPtr mLcm;
 
   boost::shared_ptr<Worker> mWorker;
   MapViewCollection mViews;

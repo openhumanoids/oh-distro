@@ -1,5 +1,8 @@
 #include "Utils.hpp"
 
+#include <random>
+#include <chrono>
+
 using namespace maps;
 
 // helper functions
@@ -124,7 +127,169 @@ planesFromBox(const Eigen::Vector3f& iBoundMin,
 }
 
 
-int64_t Utils::
+uint64_t Utils::
 rand64() {
-  return (rand() << 31) + rand();
+  std::chrono::high_resolution_clock::duration duration =
+    std::chrono::high_resolution_clock::now().time_since_epoch();
+  std::default_random_engine generator;
+  generator.seed(duration.count());
+  std::uniform_int_distribution<uint64_t> distribution;
+  return distribution(generator);
+}
+
+
+bool Utils::
+polyhedronFromPlanes(const std::vector<Eigen::Vector4f>& iPlanes,
+                     std::vector<Eigen::Vector3f>& oVertices,
+                     std::vector<std::vector<int> >& oFaces,
+                     const double iTol) {
+  const double kTol = iTol;
+
+  // first find all 3-plane intersections
+  int numPlanes = iPlanes.size();
+  Eigen::Matrix<double,3,4> planeMatrix;
+  for (int i = 0; i < numPlanes; ++i) {
+    planeMatrix.row(0) = iPlanes[i].cast<double>();
+    for (int j = i+1; j < numPlanes; ++j) {
+      planeMatrix.row(1) = iPlanes[j].cast<double>();
+      for (int k = j+1; k < numPlanes; ++k) {
+        planeMatrix.row(2) = iPlanes[k].cast<double>();
+
+        // compute intersection
+        Eigen::FullPivLU<Eigen::Matrix<double,3,4> > lu(planeMatrix);
+        Eigen::MatrixXd nullSpace = lu.kernel();
+        if (nullSpace.cols() != 1) {
+          continue;
+        }
+        double denom = nullSpace(3,0);
+        if (fabs(denom) < kTol) {
+          continue;
+        }
+        Eigen::Vector3f pt = (nullSpace.topRows<3>()/denom).cast<float>();
+
+        // evaluate against all planes
+        bool success = true;
+        for (int p = 0; p < numPlanes; ++p) {
+          const Eigen::Vector4f& plane = iPlanes[p];
+          double dist =
+            pt[0]*plane[0] + pt[1]*plane[1] + pt[2]*plane[2] + plane[3];
+          if (dist < -kTol) {
+            success = false;
+            break;
+          }
+        }
+        if (!success) {
+          continue;
+        }
+
+        // keep this intersection if it is on or inside the polyhedron
+        oVertices.push_back(pt);
+      }
+    }
+  }
+
+  // form point-plane incidence matrix
+  int numPoints = oVertices.size();
+  Eigen::MatrixXf incidence(numPlanes, numPoints);
+  for (int i = 0; i < numPoints; ++i) {
+    const Eigen::Vector3f& pt = oVertices[i];
+    for (int j = 0; j < numPlanes; ++j) {
+      const Eigen::Vector4f& plane = iPlanes[j];
+      incidence(j,i) = 0;
+      double dist =
+        pt[0]*plane[0] + pt[1]*plane[1] + pt[2]*plane[2] + plane[3];
+      if (fabs(dist) < kTol) {
+        incidence(j,i) = 1;
+      }
+    }
+  }
+
+  // form point-point adjacency matrix
+  Eigen::MatrixXf adjacency = incidence.transpose()*incidence -
+    Eigen::MatrixXf::Identity(numPoints, numPoints)*2;
+  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> adj =
+    (adjacency.array() >= 2);
+
+  // form faces as cycles
+  // TODO: make this more efficient
+  for (int i = 0; i < numPlanes; ++i) {
+
+    // find indices of points incident on this face
+    std::vector<int> indices;
+    indices.reserve(numPoints);
+    for (int j = 0; j < numPoints; ++j) {
+      if (incidence(i,j) > 0) {
+        indices.push_back(j);
+      }
+    }
+    int numIndices = indices.size();
+    if (numIndices < 3) {
+      continue;
+    }
+
+    // extract adjacency sub-matrix
+    Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>
+      adjSub(numIndices, numIndices);
+    for (int j = 0; j < numIndices; ++j) {
+      for (int k = 0; k < numIndices; ++k) {
+        adjSub(j,k) = adj(indices[j], indices[k]);
+      }
+    }
+
+    // find cycle using adjacency sub-matrix
+    std::vector<bool> hits(numIndices);
+    std::fill(hits.begin(), hits.end(), false);
+    std::vector<int> face(numIndices);
+    face[0] = 0;
+    hits[0] = true;
+    for (int j = 1; j < numIndices; ++j) {
+      for (int k = 0; k < numIndices; ++k) {
+        if (!adjSub(face[j-1],k) || hits[k]) {
+          continue;
+        }
+        face[j] = k;
+        hits[k] = true;
+        break;
+      }
+    }
+
+    // remap to real vertex indices
+    for (int j = 0; j < face.size(); ++j) {
+      face[j] = indices[face[j]];
+    }
+
+    // ensure ordering is consistent with face normal
+    Eigen::Vector3f normal = iPlanes[i].head<3>();
+    Eigen::Vector3f v1 = oVertices[face[1]] - oVertices[face[0]];
+    Eigen::Vector3f v2 = oVertices[face[2]] - oVertices[face[1]];
+    Eigen::Vector3f crossProd = v1.cross(v2);
+    if (normal.dot(crossProd) < 0) {
+      std::reverse(face.begin(), face.end());
+    }
+
+    // add face
+    oFaces.push_back(face);
+  }
+  return true;
+}
+
+std::vector<Eigen::Vector4f> Utils::
+planesFromPolyhedron(const std::vector<Eigen::Vector3f>& iVertices,
+                     const std::vector<std::vector<int> >& iFaces) {
+  std::vector<Eigen::Vector4f> planes;
+  planes.reserve(iFaces.size());
+  for (int i = 0; i < planes.size(); ++i) {
+    if (iFaces[i].size() < 3) {
+      continue;
+    }
+    Eigen::Vector3f v1 = iVertices[iFaces[i][1]] - iVertices[iFaces[i][0]];
+    Eigen::Vector3f v2 = iVertices[iFaces[i][2]] - iVertices[iFaces[i][1]];
+    Eigen::Vector3f normal = v1.cross(v2);
+    normal.normalize();
+    Eigen::Vector4f plane;
+    plane.head<3>() = normal;
+    plane[3] = -normal.dot(iVertices[iFaces[i][0]]);
+    planes.push_back(plane);
+  }
+  return planes;
 }

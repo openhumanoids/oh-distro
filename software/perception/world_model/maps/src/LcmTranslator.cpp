@@ -39,6 +39,7 @@ toLcm(const MapView::Spec& iSpec) {
   drc::map_request_t msg;
   msg.map_id = iSpec.mMapId;
   msg.view_id = iSpec.mViewId;
+  msg.active = iSpec.mActive;
   switch (iSpec.mType) {
   case MapView::Spec::TypeOctree:
     msg.type = drc::map_request_t::OCTREE;
@@ -57,6 +58,7 @@ toLcm(const MapView::Spec& iSpec) {
   msg.num_clip_planes = iSpec.mClipPlanes.size();
   msg.clip_planes.resize(msg.num_clip_planes);
   for (int i = 0; i < msg.num_clip_planes; ++i) {
+    msg.clip_planes[i].resize(4);
     for (int j = 0; j < 4; ++j) {
       msg.clip_planes[i][j] = iSpec.mClipPlanes[i][j];
     }
@@ -69,6 +71,7 @@ fromLcm(const drc::map_request_t& iMessage) {
   MapView::Spec spec;
   spec.mMapId = iMessage.map_id;
   spec.mViewId = iMessage.view_id;
+  spec.mActive =  iMessage.active;
   switch (iMessage.type) {
   case drc::map_request_t::OCTREE:
     spec.mType = MapView::Spec::TypeOctree;

@@ -11,6 +11,9 @@ struct map_request_t
   // id assigned to requested view
   int64_t view_id;
 
+  // whether the view should be active
+  boolean active;
+
   // type of data requested
   int8_t type;
 
@@ -29,6 +32,7 @@ struct map_request_t
   float clip_planes[num_clip_planes][4];
 
   // enum for request types
+  const int8_t NONE = 0;
   const int8_t CLOUD = 1;
   const int8_t OCTREE = 2;
 }

@@ -139,7 +139,17 @@ public:
   planesFromBox(const Eigen::Vector3f& iBoundMin,
                 const Eigen::Vector3f& iBoundMax);
 
-  static int64_t rand64();
+  static bool polyhedronFromPlanes(const std::vector<Eigen::Vector4f>& iPlanes,
+                                   std::vector<Eigen::Vector3f>& oVertices,
+                                   std::vector<std::vector<int> >& oFaces,
+                                   const double iTol=1e-5);
+
+  static std::vector<Eigen::Vector4f>
+  planesFromPolyhedron(const std::vector<Eigen::Vector3f>& iVertices,
+                       const std::vector<std::vector<int> >& iFaces);
+
+
+  static uint64_t rand64();
 };
 
 }
