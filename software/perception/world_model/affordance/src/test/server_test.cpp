@@ -44,7 +44,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		{
 		  AffordanceState s("First Affordance");
 		  s._map_id 	 = 7;
-		  s._uid = 42;
+		  s._uid = 0;
 		  s._otdf_type= AffordanceState::CYLINDER;
 		  s._params[AffordanceState::RADIUS_NAME] = (j == 10 ? 9999 : 1.41);
 		  wrapper.addNewlyFittedAffordance(s);
@@ -54,7 +54,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		{
 		  AffordanceState s("Second Affordance");
 		  s._map_id 	 = 7;
-		  s._uid = 21;		  
+		  s._uid = 21; //should get set to 1 by the server		  
 		  s._otdf_type= AffordanceState::BOX;
 		  s._params[AffordanceState::LENGTH_NAME] = .11111;
 		  wrapper.addNewlyFittedAffordance(s);

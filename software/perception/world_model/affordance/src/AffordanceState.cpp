@@ -107,20 +107,25 @@ AffordanceState::AffordanceState(const string &otdf_type,
 
 AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
 {
-	if (this == &rhs) // protect against invalid self-assignment
-		return *this;
+  if (this == &rhs) // protect against invalid self-assignment
+    return *this;
+  
+  //convert to message and then call fromMsg
+  drc::affordance_t msg;
+  rhs.toMsg(&msg);
+  fromMsg(&msg);
+ 
+  return *this;
+}
 
-	//clear an object state
-	_states.clear();
-	_params.clear();
-	_ptinds.clear();
-
-	//convert to message and then run init
-	drc::affordance_t msg;
-	rhs.toMsg(&msg);
-	initHelper(&msg);
-
-	return *this;
+/**sets the state of this to that of msg*/
+void AffordanceState::fromMsg(const drc::affordance_t *msg)
+{
+  //clear an object state
+  _states.clear();
+  _params.clear();
+  _ptinds.clear();
+  initHelper(msg);
 }
 
 

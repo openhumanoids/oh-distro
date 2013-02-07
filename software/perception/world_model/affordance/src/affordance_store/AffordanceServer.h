@@ -48,6 +48,9 @@ private:
 	/**map id --> {affordanceObjectId --> affordance}*/
 	boost::unordered_map<int32_t, AffIdMap> _mapIdToAffIdMaps;
 
+	/**uid that will be assigned to the next object added*/
+	uint _nextObjectUID;
+
 	/**periodic publishing thread*/
 	boost::thread _pubThread;
 

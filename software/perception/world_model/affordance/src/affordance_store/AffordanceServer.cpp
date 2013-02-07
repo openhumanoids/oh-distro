@@ -27,7 +27,7 @@ const string AffordanceServer::AFFORDANCE_FIT_CHANNEL("AFFORDANCE_FIT");
  * @param affordanceChannel channel on which to listen for affordance_t messages
  * @param affCollectionChannel channel on which to listen for affordance_collection_t messages */
 AffordanceServer::AffordanceServer(shared_ptr<lcm::LCM> lcm)
-	: _lcm(lcm), _mapIdToAffIdMaps(), _serverMutex()
+  : _lcm(lcm), _mapIdToAffIdMaps(), _nextObjectUID(0), _serverMutex()
 {
 	//subscribe
 	lcm->subscribe(AFFORDANCE_TRACK_CHANNEL, &AffordanceServer::handleAffordanceTrackMsg, this);
@@ -69,6 +69,9 @@ void AffordanceServer::handle(const drc::affordance_t *aff)
 
 	//get the affordance for a particular map
 	AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
+
+	if (scene->find(aptr->_uid) == scene->end())
+	  aptr->_uid = _nextObjectUID++;
 
 	//set or modify the appropriate affordance
 	(*scene)[aptr->_uid] = aptr;

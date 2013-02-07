@@ -71,6 +71,9 @@ namespace affordance
     
     void initHelper(const drc::affordance_t *msg);
     virtual ~AffordanceState();
+
+    //mutators
+    void fromMsg(const drc::affordance_t *msg);
     
     //observers
   public:
