@@ -31,30 +31,11 @@ string AffordanceState::R_COLOR_NAME  	= "r_color";
 string AffordanceState::G_COLOR_NAME  	= "g_color";
 string AffordanceState::B_COLOR_NAME  	= "b_color";
 
-
-/**initialize the idEnumMap*/
-unordered_map<int16_t, AffordanceState::OTDF_TYPE> *AffordanceState::initIdEnumMap()
-{
-
-  unordered_map<int16_t, OTDF_TYPE> *m = new unordered_map<int16_t, OTDF_TYPE>;
-  int16_t c 	   = drc::affordance_t::CYLINDER;
-  int16_t lev 	   = drc::affordance_t ::LEVER;
-  int16_t box	   = drc::affordance_t::BOX;
-  int16_t sphere   = drc::affordance_t::SPHERE;
-  (*m)[c]  	   = AffordanceState::CYLINDER;
-  (*m)[lev]           = AffordanceState::LEVER;
-  (*m)[box]	   = AffordanceState::BOX;
-  (*m)[sphere]        = AffordanceState::SPHERE;
-  
-  int unknown = box + 1;
-  if (m->find(unknown) != m->end())
-    throw ArgumentException("initToIdEnumMap : investigate");
-  (*m)[unknown] = AffordanceState::UNKNOWN;
-
-  return m;
-}
-
-const unordered_map<int16_t, AffordanceState::OTDF_TYPE> *AffordanceState::idToEnum = initIdEnumMap();
+string AffordanceState::CYLINDER  	= "cylinder";
+string AffordanceState::LEVER  	= "lever";
+string AffordanceState::SPHERE  	= "sphere";
+string AffordanceState::BOX  	= "box";
+string AffordanceState::UNKNOWN  	= "unknown";
 
 /**Constructs an AffordanceState from an lcm message.*/
 AffordanceState::AffordanceState(const drc::affordance_t *msg) 
@@ -77,11 +58,11 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 @param frame transformation in the map
 @param rgb color values from [0,1]
 */
-AffordanceState::AffordanceState(const string &name,
-				 const int &objId, const int &mapId,
+AffordanceState::AffordanceState(const string &otdf_type,
+				 const int &uid, const int &mapId,
 				 const KDL::Frame &frame,
 				 const Eigen::Vector3f &color)
-  : _map_id(mapId), _object_id(objId), _otdf_id(UNKNOWN), _name(name)
+  : _map_id(mapId), _uid(uid), _otdf_type(otdf_type)
 {
 	//---set xyz roll pitch yaw from the frame
 	_params[X_NAME] = frame.p[0];
@@ -125,23 +106,27 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 	if (_states.size() != 0 || _params.size() != 0 || _ptinds.size() != 0)
 		throw ArgumentException("shouldn't call init if these fields aren't empty");
 
-	_map_utime 	= msg->map_utime;
+	_utime 	= msg->utime;
 	_map_id 	= msg->map_id;
-	_object_id 	= msg->object_id;
-	_name 		= msg->name;
+	_uid 	= msg->uid;
+	_otdf_type 		= msg->otdf_type;
 	_ptinds 	= msg->ptinds;
 
 
 	//argument check
-	if (idToEnum->find(msg->otdf_id) == idToEnum->end())
+	/*
+	
+	 todo 
+	 
+	 if (idToEnum->find(msg->otdf_id) == idToEnum->end())
 	  {
 	    printIdToEnumMap();
 	    throw InvalidOtdfID(string("not recognized: ") + ToString::toStr<short>(msg->otdf_id) 
-				+ string("  : name =  ") + msg->name );
+				+ string("  : otdf_type =  ") + msg->otdf_type );
 	    
 	  }
-
-	_otdf_id = idToEnum->find(msg->otdf_id)->second;
+   */
+	_otdf_type = msg->otdf_type;//todo: idToEnum->find(msg->otdf_id)->second;
 
 	for(int i = 0; i < msg->nstates; i++)
 		_states[msg->state_names[i]] = msg->states[i];
@@ -157,21 +142,22 @@ AffordanceState::~AffordanceState()
 
 void AffordanceState::printIdToEnumMap()
 {
+/* todo
   cout << "\n map size = " << idToEnum->size() << endl;
   for(unordered_map<int16_t, OTDF_TYPE>::const_iterator i = idToEnum->begin();
       i != idToEnum->end(); ++i)
-    cout << "\n next mapping = ( " << i->first << ", " << i->second << ")" << endl;
+    cout << "\n next mapping = ( " << i->first << ", " << i->second << ")" << endl; */
+    
 }
 
 //------methods-------
 /**convert this to a drc_affordacne_t lcm message*/
 void AffordanceState::toMsg(drc::affordance_t *msg) const
 {
-	msg->map_utime 	= _map_utime;
+	msg->utime 	= _utime;
 	msg->map_id		= _map_id;
-	msg->object_id 	= _object_id;
-	msg->otdf_id	= _otdf_id;
-	msg->name		= _name;
+	msg->uid 	= _uid;
+	msg->otdf_type		= _otdf_type;
 
 
 	unordered_map<string,double>::const_iterator iter;
@@ -289,9 +275,9 @@ namespace affordance
 	/**operator << */
 	ostream& operator<<(ostream& out, const AffordanceState& other )
 	{
-		out << "=====Affordance " << other._name << "========" << endl;
-		out << "(mapId, objectId, otdfId) = (" << other._map_id << ", "
-			  << other._object_id << ", " << other._otdf_id << ")\n";
+		out << "=====Affordance " << other._otdf_type << "========" << endl;
+		out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
+			  << other._uid << ", " << other._otdf_type << ")\n";
 		out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
 		out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
 		return out;
@@ -309,12 +295,12 @@ namespace affordance
 //=============================================
 GlobalUID AffordanceState::getGlobalUniqueId() const
 {
-  return GlobalUID(_map_id, _object_id);
+  return GlobalUID(_map_id, _uid);
 }
 
 string AffordanceState:: getName() const
 {
-  return _name;
+  return _otdf_type;
 }
 
 Vector3f AffordanceState::getColor() const

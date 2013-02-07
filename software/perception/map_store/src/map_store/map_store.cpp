@@ -91,17 +91,17 @@ void map_store::publish_affordance_collection(LocalMap m){
   drc_affordance_collection_t affs_coll;
   affs_coll.map_id = m.map_id;
   affs_coll.name = (char*)  "homers_desk";
-  affs_coll.map_utime = m.utime;
+  affs_coll.utime = m.utime;
   affs_coll.naffs = m.objects.size();
   drc_affordance_t affs[affs_coll.naffs];
 
   cout << m.objects.size() << " Objects\n";
   for (size_t i=0;i <m.objects.size(); i++){
 
-    affs[i].map_utime = m.utime;
+    affs[i].utime = m.utime;
     affs[i].map_id = m.map_id;
-    affs[i].name = (char*) m.object_names[i].c_str();
-    affs[i].otdf_id = m.object_ids[i];
+    affs[i].otdf_type = (char*) m.otdf_types[i].c_str();
+    affs[i].uid = m.object_ids[i];
 
     otdfPtr object= m.objects[i];
     std::map<std::string, double> param_map = object->params_map_; // all parameters defined in the object template
@@ -299,8 +299,8 @@ void map_store::pointcloud_handler(const drc_pointcloud2_t *msg){
   object->setParam("mass", 1.00);
   object->update();
   map.objects.push_back(object);
-  map.object_ids.push_back(DRC_AFFORDANCE_T_CYLINDER);
-  map.object_names.push_back("uraniumrod");
+  map.object_ids.push_back(0);
+  map.otdf_types.push_back("cylinder");//uraniumrod
 
   otdfPtr object2( new otdf::ModelInterface);
   create_otdf_object_instance(object2,"lever");
@@ -309,8 +309,8 @@ void map_store::pointcloud_handler(const drc_pointcloud2_t *msg){
   object2->setParam("z", 5);
   object2->update();
   map.objects.push_back(object2);
-  map.object_ids.push_back(DRC_AFFORDANCE_T_LEVER);
-  map.object_names.push_back("savereactor");
+  map.object_ids.push_back(1);
+  map.otdf_types.push_back("lever");//savereactor
 
   maps.push_back(map);
 

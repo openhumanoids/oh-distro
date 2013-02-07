@@ -3,17 +3,17 @@ package drc;
 struct affordance_t
 {
 
-  // These are duplication ... remove?
-  int64_t map_utime;
-  int32_t map_id;
-
-  // which object in the scene is it?
-  int32_t object_id;
-  // which object, see constants below
-  int16_t otdf_id;   
-  // informal label for the affordance:
-  string name;
-   
+  int64_t utime;
+  string otdf_type; //name of the otdf file
+  int32_t uid;      //affordance uid, should come from a free running cnt in aff store.
+  // This field is not required for a NEW AFFORDANCE FIT. 
+  // The aff store will figure out what the field is acc to its free running counter.
+  
+  int32_t map_id; // placeholder for future
+  
+  int16_t aff_store_control;
+  const int16_t NEW=0, UPDATE=1, DELETE=2; //interruption for reset or halting
+  
   // geometrical properties, 
   int32_t nparams;
   double params[nparams];
@@ -24,12 +24,7 @@ struct affordance_t
   double states[nstates];
   string state_names[nstates];
 
-  // Point Cloud Indices:
+  // Point Cloud Indices: Only needed when a NEW affordance is published.
   int32_t nptinds;
   int32_t ptinds[nptinds];
-
-  // This enum involves modifying the lcm type
-  // for every otdf addition. Remove otdf id?
-  // A label is sufficient?
-  const int16_t CYLINDER=0, LEVER=1, SPHERE=2, BOX=3; 
 }

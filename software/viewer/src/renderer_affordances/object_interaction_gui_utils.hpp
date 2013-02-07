@@ -28,7 +28,7 @@ namespace renderer_affordances_gui_utils
 
 //---------------------------------------------------------------
 // SECOND STAGE ADJUST DOFS POPUP
-    static void on_adjust_dofs_popup_close2 (BotGtkParamWidget *pw, void *user)
+  static void on_adjust_dofs_popup_close2 (BotGtkParamWidget *pw, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
     std::string instance_name=  (*self->object_selection);

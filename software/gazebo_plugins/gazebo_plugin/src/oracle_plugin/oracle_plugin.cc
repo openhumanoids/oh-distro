@@ -82,11 +82,11 @@ class OraclePlugin: public ModelPlugin{
     
     { 
       drc::affordance_t a;
-      a.map_utime =0;
+      a.utime =0;
       a.map_id =0;
-      a.object_id =0;
-      a.otdf_id =0;
-      a.name ="mit_golf_cart_steering_wheel";
+      a.uid =0;
+      a.otdf_type ="cylinder";
+      //a.name ="mit_golf_cart_steering_wheel"; // no name field 
       a.nparams =9;
 
       a.param_names.push_back("x");
@@ -113,17 +113,21 @@ class OraclePlugin: public ModelPlugin{
       a.nstates =0;
       a.nptinds =0;
       
-      aff_map_["mit_golf_cart_steering_wheel"]=a;
+      std::stringstream oss;
+      oss << a.otdf_type << "_" << a.uid; // appending uid to template type
+      
+      
+      aff_map_[oss.str()]=a;
     }
     
     
     { 
       drc::affordance_t a;
-      a.map_utime =0;
+      a.utime =0;
       a.map_id =0;
-      a.object_id =0;
-      a.otdf_id =0;
-      a.name ="mit_golf_cart_hand_brake";
+      a.uid =1;
+      a.otdf_type ="cylinder";
+      //a.name ="mit_golf_cart_hand_brake";
       a.nparams =9;
 
       a.param_names.push_back("x");
@@ -150,17 +154,21 @@ class OraclePlugin: public ModelPlugin{
       a.nstates =0;
       a.nptinds =0;
       
-      aff_map_["mit_golf_cart_hand_brake"]=a;
+      std::stringstream oss;
+      oss << a.otdf_type << "_" << a.uid; // appending uid to template type
+      
+      
+      aff_map_[oss.str()]=a;
     }    
     
     
     { 
       drc::affordance_t a;
-      a.map_utime =0;
+      a.utime =0;
       a.map_id =0;
-      a.object_id =0;
-      a.otdf_id =0;
-      a.name ="simple_cylinder_link";
+      a.uid =2;
+      a.otdf_type ="cylinder";
+      //a.name ="simple_cylinder_link";
       a.nparams =9;
 
       a.param_names.push_back("x");
@@ -187,7 +195,11 @@ class OraclePlugin: public ModelPlugin{
       a.nstates =0;
       a.nptinds =0;
       
-      aff_map_["simple_cylinder_link"]=a;
+      std::stringstream oss;
+      oss << a.otdf_type << "_" << a.uid; // appending uid to template type
+      
+      
+      aff_map_[oss.str()]=a;
     }        
     
   }
@@ -261,7 +273,7 @@ class OraclePlugin: public ModelPlugin{
       
       drc::affordance_collection_t affcol;
       affcol.name;    // name to display e.g. "kitchen" or "pump room"
-      affcol.map_utime=0; // utime of the local map we refer to
+      affcol.utime=0; // utime of the local map we refer to
       affcol.map_id=0; // id of the local map - duplication of the above?
       affcol.naffs=1;
     

@@ -26,17 +26,19 @@ namespace renderer_affordances_gui_utils
   // PARAM adjust popup management
 
   
-  static void publish_otdf_instance_to_affstore(string channel, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
+  static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
   {
    RendererAffordances *self = (RendererAffordances*) user;
    drc::affordance_t msg;
 
-   msg.map_utime = 0;//Need to persist these as they arrive via aff store.
+   msg.utime = 0;
    msg.map_id = 0;
-   msg.object_id = 0;
-   msg.otdf_id = 0;
-   //std::string instance_name=  (*self->instance_selection_ptr);
-   msg.name = instance_in->name_;//instance_name;
+
+   msg.uid = uid; 
+   msg.otdf_type = otdf_type; 
+   
+   msg.aff_store_control = msg.UPDATE;
+
    msg.nparams =  instance_in->params_map_.size();
    typedef std::map<std::string, double > params_mapType;
    for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
@@ -90,7 +92,7 @@ namespace renderer_affordances_gui_utils
     self->gl_temp_object->set_state(self->otdf_instance_hold);
     self->selection_hold_on=false;
    
-    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->otdf_instance_hold,self); 
+    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->instance_hold_otdf_type,self->instance_hold_uid,self->otdf_instance_hold,self); 
     bot_viewer_request_redraw(self->viewer);
   }  
   //------------------
@@ -219,6 +221,9 @@ namespace renderer_affordances_gui_utils
       self->otdf_instance_hold = otdf::duplicateOTDFInstance(it->second._otdf_instance);
       self->gl_temp_object.reset();
       self->gl_temp_object = shared_ptr<GlKinematicBody>(new GlKinematicBody(self->otdf_instance_hold));
+      self->instance_hold_otdf_type=it->second.otdf_type;
+      self->instance_hold_uid=it->second.uid;
+      
       self->selection_hold_on=true;
     }
 

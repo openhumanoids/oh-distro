@@ -27,8 +27,8 @@ namespace renderer_affordances
     //lcm ok?
     if(!_lcm->good())
       {
-	cerr << "\nLCM Not Good: Robot State Handler" << endl;
-	return;
+	      cerr << "\nLCM Not Good: Robot State Handler" << endl;
+	      return;
       }
 
 
@@ -51,23 +51,29 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 						 const string& chan, 
 						 const drc::affordance_collection_t* msg)						 
   {
-    //cout << "Ok!: " << msg->name << endl;
+  
+
+  
+    //cout << "Ok!: " << oss.str() << endl;
     for (size_t i=0; i< (size_t)msg->naffs; i++)
     {
       const drc::affordance_t aff = msg->affs[i];
+      
+      std::stringstream oss;
+      oss << aff.otdf_type << "_"<< aff.uid; 
         
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(aff.name);
+      object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
-          //cout <<"updated_otdf_object_instance: "<< aff.name << endl;
+          //cout <<"updated_otdf_object_instance: "<< aff.otdf_type <<  " " <<  aff.uid << endl;
           update_object_instance(aff);
        }      
        else {
           // add new otdf instance
-          std::string filename = get_filename(aff.otdf_id);
-          cout <<"add new otdf instance: "<< aff.name << ", of template :" << filename << endl;
+          std::string filename = aff.otdf_type;//get_filename(aff.otdf_id);
+          cout <<"add new otdf instance: "<< aff.otdf_type << "_"<< aff.uid << ", of template :" << filename << endl;
           //std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
           add_new_otdf_object_instance(filename, aff);
        }
@@ -80,10 +86,12 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
   void AffordanceCollectionListener::handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
 					       const  drc::affordance_t* msg) 
   {
-       cout << "Received affordance: " << msg->name << endl;
-       
+       cout << "Received affordance: " << msg->otdf_type << " with uid: " << msg->uid << endl;
+       std::stringstream oss;
+       oss << msg->otdf_type << "_"<< msg->uid; 
+    
        typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-       object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(msg->name);
+       object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
          cout <<"update_otdf_object_instance" << endl;
@@ -92,7 +100,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
        else{
           // add new otdf instance
           cout <<"add new otdf instance" << endl;
-          std::string filename = get_filename(msg->otdf_id);
+          std::string filename = msg->otdf_type;//get_filename(msg->otdf_id);
           add_new_otdf_object_instance(filename, (*msg));
        }
        
@@ -102,7 +110,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
  //  Utils
  // =======================================================================   
 
- std::string AffordanceCollectionListener::get_filename(int32_t otdf_id)
+ /*std::string AffordanceCollectionListener::get_filename(int32_t otdf_id)
  {
        
   std::string filename;
@@ -123,7 +131,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
   }
     
   return filename;
- }
+ }*/
  // =======================================================================
 void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff)
 {
@@ -138,7 +146,7 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   if (!instance_struc._otdf_instance){
     std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
   }
-  instance_struc._otdf_instance->name_ = aff.name;
+  //instance_struc._otdf_instance->name_ = aff.name;
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)
    {   
@@ -148,24 +156,25 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   
   //TODO: set All JointStates too.
   
-  // TODO: create a KDL tree parser from OTDF instance, without having to convert to urdf.
+  // create a KDL tree parser from OTDF instance, without having to convert to urdf.
   // otdf can contain some elements that are not part of urdf. e.g. TORUS  
   std::string _urdf_xml_string = otdf::convertObjectInstanceToCompliantURDFstring(instance_struc._otdf_instance);
   
-  std::map<std::string, int >::iterator it;
+  /*std::map<std::string, int >::iterator it;
   it= _parent_affordance_renderer->instance_cnt.find(filename);
-  it->second = it->second + 1;
+  it->second = it->second + 1;*/
   std::stringstream oss;
-  oss << filename << "_"<< it->second; //TODO: eventually use object_id? 
-  
+  oss << aff.otdf_type << "_"<< aff.uid;
+  instance_struc.uid = aff.uid;
+  instance_struc.otdf_type = aff.otdf_type;
   instance_struc._collision_detector.reset();
   instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
-  instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,aff.name));
+  instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
   instance_struc._gl_object->set_state(instance_struc._otdf_instance);
 
 
   //_parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
-  _parent_affordance_renderer->instantiated_objects.insert(std::make_pair(aff.name, instance_struc));
+  _parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
   // Update params 
   
   //Request redraw
@@ -176,8 +185,12 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
 // =======================================================================  
 void AffordanceCollectionListener::update_object_instance (const drc::affordance_t &aff)
 {
+
+  std::stringstream oss;
+  oss << aff.otdf_type << "_"<< aff.uid; 
+
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-       object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(aff.name);
+  object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)

@@ -28,7 +28,7 @@ struct LocalMap
   pcl::PointCloud<PointXYZRGB>::Ptr cloud; // the raw point cloud
 
   // otdfs:
-  std::vector< std::string > object_names;
+  std::vector< std::string > otdf_types;
   std::vector< int16_t > object_ids;
   std::vector< boost::shared_ptr<otdf::ModelInterface> > objects;
   // rgb stills

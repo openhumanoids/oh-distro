@@ -32,36 +32,29 @@ void OpenGL_Affordance::draw()
   KDL::Frame frame = _affordance->getFrame();
 
   OpenGL_Object *obj; 
-  switch(_affordance->_otdf_id)
-    {
-      
-    case AffordanceState::CYLINDER:
+  if (_affordance->_otdf_type == AffordanceState::CYLINDER)
+  {
       _cylinder.set(frame, Vector2f(_affordance->radius(),
 				    _affordance->length()));
       obj = &_cylinder;
-      break;
-      
-    case AffordanceState::LEVER:
+   }
+   else if (_affordance->_otdf_type == AffordanceState::LEVER)
       throw runtime_error("not handling lever right now");
-      break;
-      
-    case AffordanceState::BOX:
+   else if (_affordance->_otdf_type == AffordanceState::BOX)
+   {
       _box.set(frame, Vector3f(_affordance->length(),
 			       _affordance->width(),
 			       _affordance->height()));
       obj = &_box;
-      break;
-      
-    case AffordanceState::SPHERE:
+    }
+    else if (_affordance->_otdf_type == AffordanceState::SPHERE)
+    {
       _sphere.set(frame, _affordance->radius());
       obj = &_sphere;
-      break;
-      
-    default:
+     }
+     else
       throw runtime_error("unhandled affordance state");
-    }
-
-  
+      
   if (_isHighlighted) 
     obj->draw(_highlightColor);
   else
@@ -77,8 +70,8 @@ AffConstPtr OpenGL_Affordance::getAffordance() const
 
 bool OpenGL_Affordance::isSupported(affordance::AffConstPtr affordance)
 {
-  return affordance->_otdf_id == AffordanceState::CYLINDER ||
-    affordance->_otdf_id == AffordanceState::LEVER ||
-    affordance->_otdf_id == AffordanceState::BOX ||
-    affordance->_otdf_id == AffordanceState::SPHERE;
+  return affordance->_otdf_type == AffordanceState::CYLINDER ||
+    affordance->_otdf_type == AffordanceState::LEVER ||
+    affordance->_otdf_type == AffordanceState::BOX ||
+    affordance->_otdf_type == AffordanceState::SPHERE;
 }

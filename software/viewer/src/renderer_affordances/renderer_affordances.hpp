@@ -120,6 +120,8 @@ typedef point3d_t vec3d_t;
 
 
 typedef struct _OtdfInstanceStruc {
+    std::string otdf_type;
+    int uid;
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;  
@@ -189,9 +191,14 @@ typedef struct _RendererAffordances {
 
   std::string* instance_selection_ptr; 
   bool selection_hold_on;
+  
+  
+  // TODO: make the following OtdfInstanceStruc
   boost::shared_ptr<otdf::ModelInterface> otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
   boost::shared_ptr<visualization_utils::GlKinematicBody> gl_temp_object;
-
+  std::string instance_hold_otdf_type;
+  int instance_hold_uid;
+    
   //otdf::ModelInterface otdf_instance_hold; // keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
   std::map<std::string, OtdfInstanceStruc > instantiated_objects; // otdftemplatename+ object_uid
   
@@ -241,8 +248,11 @@ typedef struct _RendererAffordances {
     it= self->instance_cnt.find(self->otdf_filenames[self->otdf_id]);
     it->second = it->second + 1;
     std::stringstream oss;
-    oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second;  
-    instance_struc._otdf_instance->name_ = oss.str(); // unique name
+    oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second;  // unique name
+    
+    instance_struc.otdf_type=filename;
+    instance_struc.uid=it->second; 
+    //instance_struc._otdf_instance->name_ = oss.str();
     
     instance_struc._collision_detector.reset();
      // Each object has its own collision detector for now.      
@@ -394,7 +404,7 @@ typedef struct _RendererAffordances {
   
   }
  //-------------------------------------------------------------------------------
-inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
+  inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
   {
   
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand. 

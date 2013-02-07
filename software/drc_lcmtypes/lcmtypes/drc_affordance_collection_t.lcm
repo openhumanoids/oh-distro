@@ -4,7 +4,7 @@ struct affordance_collection_t
 {
   string name;    // name to display e.g. "kitchen" or "pump room"
 
-  int64_t map_utime; // utime of the local map we refer to
+  int64_t utime; 
   int32_t map_id; // id of the local map - duplication of the above?
 
   int32_t naffs;

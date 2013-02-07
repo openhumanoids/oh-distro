@@ -14,7 +14,7 @@
 using namespace std;
 using namespace boost;
 
-//maps from: affordance.object_id --> affordance message
+//maps from: affordance.uid --> affordance message
 namespace affordance
 {
 
@@ -71,7 +71,7 @@ void AffordanceServer::handle(const drc::affordance_t *aff)
 	AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
 
 	//set or modify the appropriate affordance
-	(*scene)[aptr->_object_id] = aptr;
+	(*scene)[aptr->_uid] = aptr;
 
 	_serverMutex.unlock(); //========unlock
 }
@@ -101,7 +101,7 @@ void AffordanceServer::runPeriodicPublish()
 
 		msg.naffs 		= msg.affs.size();
 		msg.map_id 		= -1;
-		msg.map_utime 	= -1;
+		msg.utime 	= -1;
 		msg.name 		= "affordanceServerPeriodicPublish";
 
 		_lcm->publish(AFF_SERVER_CHANNEL, &msg); //====publish

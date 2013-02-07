@@ -882,8 +882,8 @@ namespace surrogate_gui
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_t affordanceMsg;
 	  	  
-	  affordanceMsg.otdf_id = drc::affordance_t::CYLINDER;
-	  affordanceMsg.name = "cylinder";
+	  affordanceMsg.map_id = 0; 	  
+	  affordanceMsg.otdf_type = "cylinder";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
@@ -948,9 +948,9 @@ namespace surrogate_gui
 	{
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_t affordanceMsg;
-	  	  
-	  affordanceMsg.otdf_id = drc::affordance_t::SPHERE; 
-	  affordanceMsg.name = "sphere";
+	  
+	  affordanceMsg.map_id = 0; 	  
+	  affordanceMsg.otdf_type = "sphere";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();

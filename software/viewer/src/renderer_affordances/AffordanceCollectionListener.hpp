@@ -50,7 +50,7 @@ namespace renderer_affordances
 			    const  drc::affordance_t* msg);    
 			    
 	//-------------utils   
-	std::string get_filename(int32_t otdf_id); 
+	//std::string get_filename(int32_t otdf_id); 
 	void add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff);
 	void update_object_instance (const drc::affordance_t &aff);
 

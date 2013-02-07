@@ -23,12 +23,20 @@ namespace affordance
 
     //------enums and typedefs
   public:
-    enum OTDF_TYPE  {CYLINDER 	= drc::affordance_t::CYLINDER,
-		     LEVER 	= drc::affordance_t::LEVER,
-		     SPHERE	= drc::affordance_t::SPHERE,
-		     BOX 	= drc::affordance_t::BOX,
-		     UNKNOWN};
-    
+//    enum OTDF_TYPE  {CYLINDER 	= drc::affordance_t::CYLINDER,
+//		     LEVER 	= drc::affordance_t::LEVER,
+//		     SPHERE	= drc::affordance_t::SPHERE,
+//		     BOX 	= drc::affordance_t::BOX,
+//		     UNKNOWN};
+
+typedef std::string OTDF_TYPE;
+
+    static std::string CYLINDER;
+    static std::string BOX;
+    static std::string SPHERE;
+    static std::string LEVER;
+    static std::string UNKNOWN;
+      
     /**standardizing the naming for common fields in drc::affordance_t. 
        These should be used as keys in the _params map*/
     static std::string  X_NAME, Y_NAME, Z_NAME, ROLL_NAME, PITCH_NAME, YAW_NAME,
@@ -37,23 +45,21 @@ namespace affordance
     //------------fields
 
   private:
-    static const boost::unordered_map<int16_t, OTDF_TYPE> *idToEnum;
-    static boost::unordered_map<int16_t, OTDF_TYPE> *initIdEnumMap(); //to initialiaze idToEnum
 
     
   public: //should make get / private set methods for these
     //mimicking lcm
-    int64_t    _map_utime;
+    int64_t    _utime;
     int32_t    _map_id;
     
     /**which object in the scene?*/
-    int32_t    _object_id;
+    int32_t    _uid;
     
     /**type of object*/
-    OTDF_TYPE  _otdf_id;
+    //OTDF_TYPE  _otdf_id;
     
     /**informal name for the affordance*/
-    std::string _name;
+    std::string _otdf_type;
     
     /**{name --> value} maps*/
     boost::unordered_map<std::string, double> _params, //geometrical properties

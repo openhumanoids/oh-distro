@@ -32,13 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Original URDF_DOM Author: Wim Meeussen */
 // Modified from ROS's URDF_DOM library Written by Josh Faust and Wim Meeussen
 #include <boost/algorithm/string.hpp>
 #include <vector>
 #include "otdf_parser/otdf_parser.h"
 #include "otdf_interface/exceptions.h"
-
+#include "otdf_lcm_utils/otdf_lcm_utils.h"
 
 
 namespace otdf {
@@ -440,6 +440,7 @@ namespace otdf {
     return instance_out;
 
   }
+
     
   
   //---------------------------------------------------------------------------------------------------

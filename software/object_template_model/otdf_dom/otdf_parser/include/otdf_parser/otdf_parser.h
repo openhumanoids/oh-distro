@@ -32,8 +32,9 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Original URDF_DOM Author: Wim Meeussen */
 // Modified from ROS's URDF_DOM library Written by Josh Faust and Wim Meeussen
+
 #ifndef OTDF_PARSER_H
 #define OTDF_PARSER_H
 

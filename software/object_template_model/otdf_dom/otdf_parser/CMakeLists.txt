@@ -9,14 +9,15 @@ add_library(otdf_dom SHARED src/expression_parsing.cpp src/link.cpp src/joint.cp
  
 # make the header public
 # install it to include/urdf_interface
-pods_install_headers(include/otdf_parser/otdf_parser.h include/otdf_parser/otdf_urdf_converter.h  DESTINATION otdf_parser)
+pods_install_headers(include/otdf_parser/otdf_parser.h include/otdf_parser/otdf_urdf_converter.h DESTINATION otdf_parser)
+pods_install_headers(include/otdf_parser/otdf_lcm_utils.h DESTINATION otdf_lcm_utils)
 
 # make the library public
 pods_install_libraries(otdf_dom)
 
 # uncomment these lines to link against another library via pkg-config
 set(REQUIRED_PACKAGES tinyxml path-util)
-pods_use_pkg_config_packages(otdf_dom ${REQUIRED_PACKAGES})
+pods_use_pkg_config_packages(otdf_dom  lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
