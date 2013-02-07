@@ -3,7 +3,9 @@ classdef SplineFootstepPlanner
   properties
     manip
     step_length
+    step_width
     step_time
+    step_rot
     state_listener
     nav_goal_listener
     v
@@ -12,7 +14,7 @@ classdef SplineFootstepPlanner
   end
   
   methods
-    function obj = SplineFootstepPlanner(r, step_length, step_time)
+    function obj = SplineFootstepPlanner(r, step_length, step_width, step_rot, step_time)
       % @param r the time-stepping manipulator
       % @param step_length the length of each step in m
       % @param step_time  the duration of each step in s
@@ -26,6 +28,8 @@ classdef SplineFootstepPlanner
       obj.manip = compile(obj.manip);
 
       obj.step_length = step_length;
+      obj.step_width = step_width;
+      obj.step_rot = step_rot;
       obj.step_time = step_time;
 
       nx = r.getNumStates();
@@ -56,10 +60,16 @@ classdef SplineFootstepPlanner
         if ~isempty(g) && ~isempty(x0)
           x0(1:6)
           q0 = x0(1:end/2);
-          % q0 = obj.xstar(1:end/2);
-          g
-
-          [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, g, obj.step_length, obj.step_time);
+          start_pos = getAtlasFeetPos(obj.manip, q0);
+          poses = [start_pos, g];
+          traj = turnGoTraj(poses);
+          [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.step_length, obj.step_width, obj.step_rot);
+          figure(21)
+          plotFootstepPlan(traj, lambda, ndx_r, ndx_l, obj.step_width)
+          Xright = footstepLocations(traj, lambda(ndx_r), -pi/2, obj.step_width);
+          Xleft = footstepLocations(traj, lambda(ndx_l), pi/2, obj.step_width);
+          
+          [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
 
           %% covert ZMP plan into COM plan using LIMP model
           addpath(fullfile(getDrakePath,'examples','ZMP'));

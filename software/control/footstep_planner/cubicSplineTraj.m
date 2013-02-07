@@ -38,6 +38,8 @@ classdef cubicSplineTraj
 		end
 
 		function Xi = eval(obj, li)
+      li = max(zeros(size(li)), li);
+      li = min(ones(size(li)), li);
 			li = li * obj.lambda(end);
 			trans = interp1(obj.lambda, obj.X, li);
 			dXi = interp1(obj.lambda, obj.dX, li);
