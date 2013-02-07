@@ -2,15 +2,13 @@
 #include <affordance/OpenGL_Manipulator.h>
 #include <affordance/Collision_Object_Affordance.h>
 #include <affordance/Collision_Object_Manipulator.h>
+
 using namespace std;
-using namespace KDL;
-using namespace Eigen;
 using namespace opengl;
 using namespace state;
 using namespace collision;
 using namespace action_authoring;
 using namespace affordance;
-using namespace boost;
 
 #define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
 
@@ -174,11 +172,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
 
 {
-
     _theLcm = theLcm;
 
     // setup the OpenGL scene
-//  _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf");
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
     _worldState.colorRobot.set(_worldState.state_gfe);
   
@@ -243,9 +239,13 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     QToolBar *constraint_toolbar = new QToolBar("main toolbar");
     QPushButton* deletebutton = new QPushButton("delete");
+    deletebutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_TrashIcon));
     _moveUpButton = new QPushButton("move up");
+    //_moveUpButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowUp));
     _moveDownButton = new QPushButton("move down");
+    //_moveDownButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowDown));
     QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
+//    addconstraintbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileDialogNewFolder));
     constraint_toolbar->addWidget(deletebutton);
     constraint_toolbar->addSeparator();
     constraint_toolbar->addWidget(_moveUpButton);
@@ -255,7 +255,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     constraint_toolbar->addSeparator();
     vbox->addStretch(1);
     vbox->addWidget(constraint_toolbar);
-
 
     QGroupBox* mediaControls = new QGroupBox();
     QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
@@ -468,7 +467,7 @@ handleDeleteConstraint() {
     if (i >= 0) {
 	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints.begin() + i);
 	rebuildGUIFromState(_authoringState, _worldState);
-    } 
+    }
 }
 
 void
