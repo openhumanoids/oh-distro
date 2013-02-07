@@ -6,7 +6,10 @@ classdef cubicSplineTraj
 	end
 
 	methods
-		function obj = cubicSplineTraj(start_pos, goal_pos)
+		function obj = cubicSplineTraj(poses)
+      sizecheck(poses, [6,2]);
+      start_pos = poses(:,1);
+      goal_pos = poses(:,2);
 			p0 = start_pos(1:2);
 			pf = goal_pos(1:2) - p0;
 			initial_angle = start_pos(6);
