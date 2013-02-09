@@ -605,7 +605,7 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
     ref_odom_frame_ = ref_odom_frame;
   } else if (ref_odom_frame != ref_odom_frame_) {
     ref_odom_frame_ = ref_odom_frame;
-    //cout << "tracking from " << _utime_prev << " at " << msg->utime <<"\n";
+    cout << "new ref frame. tracking from " << _utime_prev << " at " << msg->utime <<"\n";
     status=1;
 
     // Write the images and features
@@ -616,10 +616,10 @@ StereoOdometry::image_handler(const bot_core_image_t *msg)
         sendFeatures(featuresA);
         
         // Send Features paired with the pose at the ref frame:
-        sendFeaturesAsCollection(featuresA, 3001); // blue, last 
-        sendFeaturesAsCollection(featuresA, 3002); // red, most recent
         Isometry3dTime ref_poseT = Isometry3dTime(_ref_utime, _ref_pose);
         pc_vis_->pose_to_lcm_from_list(3000, ref_poseT);
+        sendFeaturesAsCollection(featuresA, 3001); // blue, last 
+        sendFeaturesAsCollection(featuresA, 3002); // red, most recent
         
         _output_counter++;
       }

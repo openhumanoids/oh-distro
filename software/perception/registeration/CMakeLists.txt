@@ -9,6 +9,11 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/voconfig)
+add_subdirectory(src/vofeatures)
+add_subdirectory(src/voestimator)
+add_subdirectory(src/fovision)
+
 
 add_subdirectory(src/registeration)
 add_subdirectory(src/reg_vo)
