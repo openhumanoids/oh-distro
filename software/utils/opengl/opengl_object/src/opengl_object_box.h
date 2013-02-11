@@ -15,7 +15,8 @@ namespace opengl {
     virtual ~OpenGL_Object_Box();
     OpenGL_Object_Box( const OpenGL_Object_Box& other );
     OpenGL_Object_Box& operator=( const OpenGL_Object_Box& other );
-
+  
+    void set( Eigen::Vector3f dimensions );
     void set( KDL::Frame transform, Eigen::Vector3f dimensions );
 
     virtual void draw( void );

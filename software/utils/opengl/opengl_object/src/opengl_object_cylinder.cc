@@ -60,6 +60,17 @@ operator=( const OpenGL_Object_Cylinder& other ) {
   return (*this);
 }
 
+void
+OpenGL_Object_Cylinder::
+set( Vector2f dimensions ){
+  _dimensions = dimensions;
+  if( glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
 /**
  * set 
  * sets the position and dimensions of the cylinder
@@ -70,6 +81,10 @@ set( Frame transform,
       Vector2f dimensions ){
   _transform = transform;
   _dimensions = dimensions;
+  if( glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
   return;
 }
 
@@ -136,6 +151,7 @@ OpenGL_Object_Cylinder::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
+    _dl = 0;
   }
   _dl = glGenLists( 1 );
   glNewList( _dl, GL_COMPILE );

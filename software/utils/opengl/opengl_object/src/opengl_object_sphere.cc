@@ -58,6 +58,17 @@ operator=( const OpenGL_Object_Sphere& other ) {
   return (*this);
 }
 
+void
+OpenGL_Object_Sphere::
+set( double dimensions ){
+  _dimensions = dimensions;
+  if( glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
 /**
  * set
  * sets the transform and dimensions of the sphere
@@ -68,6 +79,10 @@ set( Frame transform,
       double dimensions ){
   _transform = transform;
   _dimensions = dimensions;
+  if( glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
   return;
 }
 
@@ -130,6 +145,7 @@ OpenGL_Object_Sphere::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
+    _dl = 0;
   }
   _dl = glGenLists( 1 );
   glNewList( _dl, GL_COMPILE );

@@ -15,11 +15,13 @@ namespace opengl {
     virtual ~OpenGL_Object_Sphere();
     OpenGL_Object_Sphere( const OpenGL_Object_Sphere& other );
     OpenGL_Object_Sphere& operator=( const OpenGL_Object_Sphere& other );
-    
+
+    void set( double dimensions );    
     void set( KDL::Frame transform, double dimensions );
 
     virtual void draw( void );
     virtual void draw( Eigen::Vector3f color );
+    static void draw( double radius, Eigen::Vector3f color );
 
     double dimensions( void )const;
 

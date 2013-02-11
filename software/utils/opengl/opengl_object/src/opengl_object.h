@@ -21,12 +21,12 @@ namespace opengl {
     virtual void draw( void );
     virtual void draw( Eigen::Vector3f color );
 
-    void set_id( std::string id );
-    void set_visible( bool visible );
-    void set_color( Eigen::Vector3f color );
-    void setHighlighted(bool); 
-    void set_transparency( double transparency );
-    void set_transform( KDL::Frame transform );
+    virtual void set_id( std::string id );
+    virtual void set_visible( bool visible );
+    virtual void set_color( Eigen::Vector3f color );
+    virtual void setHighlighted(bool); 
+    virtual void set_transparency( double transparency );
+    virtual void set_transform( KDL::Frame transform );
 
     std::string id( void )const;
     bool visible( void )const;

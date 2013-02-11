@@ -39,6 +39,7 @@ OpenGL_Object_DAE::
   if( glIsList( _dl ) == GL_TRUE )
     {
       glDeleteLists( _dl, 0 );
+      _dl = 0;
     }
 }
 
@@ -197,6 +198,7 @@ OpenGL_Object_DAE::
 _generate_dl( void ){
   if( glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
+    _dl = 0;
   }
   _dl = glGenLists( 1 );
   glNewList( _dl, GL_COMPILE );

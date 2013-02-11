@@ -15,8 +15,9 @@ namespace opengl {
     virtual ~OpenGL_Object_Cylinder();
     OpenGL_Object_Cylinder( const OpenGL_Object_Cylinder& other );
     OpenGL_Object_Cylinder& operator=( const OpenGL_Object_Cylinder& other );
-    
-    void set( KDL::Frame transform, Eigen::Vector2f dimensions );
+   
+    virtual void set( Eigen::Vector2f dimensions ); 
+    virtual void set( KDL::Frame transform, Eigen::Vector2f dimensions );
 
     virtual void draw( void );
     virtual void draw( Eigen::Vector3f color );
