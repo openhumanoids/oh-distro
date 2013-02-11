@@ -2,8 +2,8 @@
 # and lines starting with '#' are ignored
 
 drc_utils
+collision
 opengl
 qt4
-collision
 visualization_utils
 
