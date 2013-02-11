@@ -718,6 +718,44 @@
     <limit effort="260" lower="-1.14" upper="0.32" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32"/>
   </joint>
+  <link name="l_hand_point_mass">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="2.9"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="r_hand_point_mass">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="2.9"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_joint" type="fixed">
+    <parent link="l_hand"/>
+    <child link="l_hand_point_mass"/>
+    <origin rpy="0 0 0" xyz="0.0089 0.1855 0.0047"/>
+  </joint>
+  <joint name="r_hand_joint" type="fixed">
+    <parent link="r_hand"/>
+    <child link="r_hand_point_mass"/>
+    <origin rpy="0 0 0" xyz="0.0089 -0.1855 -0.0047"/>
+  </joint>
   <transmission name="back_lbz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_lbz"/>
     <actuator name="back_lbz_motor"/>

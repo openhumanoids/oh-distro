@@ -1,12 +1,4 @@
-<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
-       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
-       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       name="atlas" >
-  
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/atlas_skeleton_minimal_contact.urdf" />
-  <include filename="$(find atlas_utils)/urdf/atlas.transmission" />
-
+<robot name="drc_skeleton">  
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -17,15 +9,9 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.03"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
   </link>
 
   <link name="r_hand_point_mass">
@@ -38,15 +24,9 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.03"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
   </link>
 
    <joint name="l_hand_joint" type="fixed">
