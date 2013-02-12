@@ -46,15 +46,9 @@ class ActuatorCmdHandler{
 			actuator_cmd_msg.actuator_effort.push_back(msg->actuator_effort.at(i));
 			actuator_cmd_msg.effort_duration.push_back(msg->effort_duration.at(i));
 		}
-		if(ros::ok())
-		{
+		if(ros::ok()) {
 		  std_srvs::Empty srv;
-		  if (client.call(srv))
-		  {
-			//ROS_INFO("unpaused");
-		  }
-		  else
-		  {
+		  if (!client.call(srv)) {
 			ROS_ERROR("Failed to call unpause service");
 		  }	
 		
