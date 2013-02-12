@@ -259,10 +259,10 @@ namespace surrogate_gui
 		{
 			const PointXYZRGB &nextPoint = cloud->points[*indIter];
 			double error = pcl::pointToPlaneDistance(nextPoint, //planeParameters);
-													 planeCoeffs->values[0],
-													 planeCoeffs->values[1],
-													 planeCoeffs->values[2],
-													 planeCoeffs->values[3]);
+								 planeCoeffs->values[0],
+								 planeCoeffs->values[1],
+								 planeCoeffs->values[2],
+								 planeCoeffs->values[3]);
 			sumSquaredErrors += error*error;
 			sumAbsErrors += error;
 			double distanceFromCentroid = euclideanDistance(centroid, nextPoint);
@@ -414,11 +414,13 @@ namespace surrogate_gui
     writer.write ("table_objects.pcd", *subcloud, false);
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
+		
+		// find direction's largest component x, y, or z
+		int maxIndex = 0;
+		for(int i=1;i<3;i++) if(fabs(direction[i]) > fabs(direction[maxIndex])) maxIndex=i;
 
     // project points on to line and find endpoints
     Vector3f pMin, pMax;    
-    Vector3f p1 = base;
-    Vector3f u = direction;
     for(int i=0; i<cylinderIndices->indices.size();i++){ // for each inlier
       // extract point
       int index = cylinderIndices->indices[i];
@@ -426,16 +428,16 @@ namespace surrogate_gui
       Vector3f q(pt.x,pt.y,pt.z);
       
       // project on to line
-      Vector3f pq = q-p1;
-      Vector3f w2 = pq - u * pq.dot(u);
+      Vector3f pq = q - base;
+      Vector3f w2 = pq - direction * pq.dot(direction);
       Vector3f p = q - w2;
 
       // find end points
       if(i==0){
-	pMin = pMax = p;
-      }else{ //TODO handle if cylinder is on side
-	if(p.z()<pMin.z()) pMin = p;
-	if(p.z()>pMax.z()) pMax = p;
+				pMin = pMax = p;
+      }else{ 
+				if(p[maxIndex]<pMin[maxIndex]) pMin = p;
+				if(p[maxIndex]>pMax[maxIndex]) pMax = p;
       }
     }
 
