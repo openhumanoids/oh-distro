@@ -28,6 +28,7 @@
 
 using namespace std;
 using namespace pcl;
+using namespace Eigen;
 
 namespace surrogate_gui
 {
@@ -310,7 +311,7 @@ namespace surrogate_gui
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_cyl);
     ransac.setDistanceThreshold(0.09);
     ransac.computeModel();
-    PointIndices::Ptr cylIndices (new PointIndices); //TODO
+    PointIndices::Ptr cylIndices (new PointIndices); //TODO set
     Eigen::VectorXf coeff;
     ransac.getModelCoefficients(coeff);
     cout << "SampleConsensusModelCylinder: ";
@@ -398,63 +399,51 @@ namespace surrogate_gui
       cout<<coefficients->values[i]<<", ";
     }
     cout<<endl;
-    
+    // TODO can coeff be empty?
+
     // calculate roll, pitch, and yaw
-    x = coefficients->values[0];
-    y = coefficients->values[1];
-    z = coefficients->values[2];
-    float dx = coefficients->values[3];
-    float dy = coefficients->values[4];
-    float dz = coefficients->values[5];
-    if(dz<0){  // flip if z is negative to simplify math
-      dx=-dx;
-      dy=-dy;
-      dz=-dz;
-    }
+    Vector3f base(&coefficients->values[0]);
+    Vector3f direction(&coefficients->values[3]);
+    // flip if z is negative to simplify math
+    if(direction.z()<0) direction = -direction;
     roll = 0;
-    pitch = acos(dz);
-    yaw = atan2(dy, dx);
+    pitch = acos(direction.z());
+    yaw = atan2(direction.y(), direction.x());
     radius = coefficients->values[6];
     
-  writer.write ("table_objects.pcd", *subcloud, false);
-
+    writer.write ("table_objects.pcd", *subcloud, false);
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
 
-    //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
-    //is oriented vertically)
-    //z = centroid.z;
-
-    
-
     // project points on to line and find endpoints
-    Eigen::Vector3f pMin, pMax;    
-    Eigen::Vector3f p1(x,y,z);
-    Eigen::Vector3f u(dx,dy,dz);
+    Vector3f pMin, pMax;    
+    Vector3f p1 = base;
+    Vector3f u = direction;
     for(int i=0; i<cylinderIndices->indices.size();i++){ // for each inlier
       // extract point
       int index = cylinderIndices->indices[i];
       PointXYZRGB& pt = subcloud->at(index);
-      Eigen::Vector3f q(pt.x,pt.y,pt.z);
+      Vector3f q(pt.x,pt.y,pt.z);
       
       // project on to line
-      Eigen::Vector3f pq = q-p1;
-      Eigen::Vector3f w2 = pq - u * pq.dot(u);
-      Eigen::Vector3f p = q - w2;
+      Vector3f pq = q-p1;
+      Vector3f w2 = pq - u * pq.dot(u);
+      Vector3f p = q - w2;
 
+      // find end points
       if(i==0){
 	pMin = pMax = p;
-      }else{ //TODO handle if dz is small
-	if(p[2]<pMin[2]) pMin = p;
-	if(p[2]>pMax[2]) pMax = p;
+      }else{ //TODO handle if cylinder is on side
+	if(p.z()<pMin.z()) pMin = p;
+	if(p.z()>pMax.z()) pMax = p;
       }
-      
     }
 
-    Eigen::Vector3f center = (pMax+pMin)/2;
-    x = center[0];
-    y = center[1];
-    z = center[2];
+    // copy results to output
+    Vector3f center = (pMax+pMin)/2;
+    x = center.x();
+    y = center.y();
+    z = center.z();
     length = (pMax-pMin).norm();
 
     return cylinderIndices;
@@ -497,7 +486,7 @@ namespace surrogate_gui
     ransac.setDistanceThreshold(0.09);
     //ransac.setSampleConsensusModel(pcl::SAC_MLESAC);
     ransac.computeModel();
-    PointIndices::Ptr sphereIndices (new PointIndices); //TODO
+    PointIndices::Ptr sphereIndices (new PointIndices); //TODO set
     /*vector<int> inliers;
     ransac.getInliers(inliers);
     PointCloud<PointXYZRGB>::Ptr outputcloud
@@ -514,7 +503,7 @@ namespace surrogate_gui
       z = coeff[2];
       radius = coeff[3];
     }else{
-      //TODO
+      //TODO can this happen?
     }
     return sphereIndices;
 
