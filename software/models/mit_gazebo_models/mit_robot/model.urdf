@@ -47,7 +47,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.stl" />
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1" />
@@ -56,7 +56,7 @@
     <collision>
       <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
+        <mesh filename="package://multisense_sl/meshes/hokuyo_link.stl" />
       </geometry>
     </collision>
   </link>
