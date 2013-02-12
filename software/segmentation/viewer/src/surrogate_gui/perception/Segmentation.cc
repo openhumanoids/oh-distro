@@ -15,6 +15,10 @@
 #include <pcl/features/normal_3d.h>  //for computePointNormal
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac.h>
+#include <pcl/sample_consensus/sac_model_sphere.h>
+#include <pcl/sample_consensus/sac_model_cylinder.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
 #include <pcl/sample_consensus/sac_model_plane.h>
@@ -281,6 +285,62 @@ namespace surrogate_gui
 	}
 
 
+  PointIndices::Ptr Segmentation::fitCylinderNew(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					      boost::shared_ptr<set<int> >  subcloudIndices,
+					      double &x, double &y, double &z,
+					      double &roll, double &pitch, double &yaw, 
+					      double &radius,
+					      double &length)
+  {
+    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+
+    //---normals
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
+    NormalEstimation<PointXYZRGB, pcl::PointXYZRGBNormal> ne;
+    ne.setSearchMethod (tree);
+    ne.setInputCloud (subcloud);
+    ne.setKSearch (50);
+    PointCloud<pcl::PointXYZRGBNormal>::Ptr subcloud_normals (new PointCloud<pcl::PointXYZRGBNormal>);
+    ne.compute (*subcloud_normals);
+
+    pcl::SampleConsensusModelCylinder<pcl::PointXYZRGB,pcl::PointXYZRGBNormal>::Ptr model_cyl(new 
+	     pcl::SampleConsensusModelCylinder<pcl::PointXYZRGB,pcl::PointXYZRGBNormal>(subcloud));
+    model_cyl->setRadiusLimits(0.01,0.5);
+    model_cyl->setInputNormals(subcloud_normals);
+    pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_cyl);
+    ransac.setDistanceThreshold(0.09);
+    ransac.computeModel();
+    PointIndices::Ptr cylIndices (new PointIndices); //TODO
+    Eigen::VectorXf coeff;
+    ransac.getModelCoefficients(coeff);
+    cout << "SampleConsensusModelCylinder: ";
+    for(int i=0;i<coeff.size();i++) cout << coeff[i] << ", ";
+    cout << endl;
+
+    x=coeff[0];
+    y=coeff[1];
+    z=coeff[2];
+    float dx=coeff[3];
+    float dy=coeff[4];
+    float dz=coeff[5];
+    if(dz<0){
+      dx=-dx;
+      dy=-dy;
+      dz=-dz;
+    }
+    roll = 0;
+    pitch = acos(dz);
+    yaw = atan2(dy, dx)-M_PI;
+    radius = coeff[6];
+
+    cout << length << endl;
+
+    return cylIndices;
+
+
+  }
+
+
   //==============cylinder
   /**fits a cylinder to subcloudIndices in cloud.  currently, we assume
      the cylinder is oriented on the z axis*/
@@ -332,12 +392,29 @@ namespace surrogate_gui
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
     PointIndices::Ptr cylinderIndices (new PointIndices);
     seg.segment(*cylinderIndices, *coefficients);
+
+    cout << "Cylinder: ";
+    for(int i=0;i<coefficients->values.size();i++){
+      cout<<coefficients->values[i]<<", ";
+    }
+    cout<<endl;
     
     //todo: xyz / rpyaw  / radius, length
     //model_coefficientsthe coefficients of the cylinder (point_on_axis, axis_direction, cylinder_radius_R)
     x = coefficients->values[0];
     y = coefficients->values[1];
-    z = coefficients->values[2];    
+    z = coefficients->values[2];
+    float dx = coefficients->values[3];
+    float dy = coefficients->values[4];
+    float dz = coefficients->values[5];
+    if(dz<0){
+      dx=-dx;
+      dy=-dy;
+      dz=-dz;
+    }
+    roll = 0;
+    pitch = acos(dz);
+    yaw = atan2(dy, dx);
     radius = coefficients->values[6];
     
   // Obtain the cylinder inliers and coefficients
@@ -349,7 +426,7 @@ namespace surrogate_gui
 
     //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
     //is oriented vertically)
-    z = centroid.z;
+    //z = centroid.z;
 
     return cylinderIndices;
   }
@@ -364,8 +441,6 @@ namespace surrogate_gui
     cout << "\n cloud size = " << cloud->points.size() << endl;
 
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
-
-
 
     //debugging
     Eigen::Vector4f centroid4f;
@@ -384,6 +459,37 @@ namespace surrogate_gui
     PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
     ne.compute (*subcloud_normals);
 
+
+#if 1
+    pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>::Ptr model_sphere(new 
+			       pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
+    model_sphere->setRadiusLimits(0.01, 0.5);
+    pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_sphere);
+    ransac.setDistanceThreshold(0.09);
+    //ransac.setSampleConsensusModel(pcl::SAC_MLESAC);
+    ransac.computeModel();
+    PointIndices::Ptr sphereIndices (new PointIndices); //TODO
+    /*vector<int> inliers;
+    ransac.getInliers(inliers);
+    PointCloud<PointXYZRGB>::Ptr outputcloud
+    pcl::copyPointCloud<pcl::pointXYZRGB>(*subcloud,inliers,*outputcloud);*/
+    Eigen::VectorXf coeff;
+    ransac.getModelCoefficients(coeff);
+    cout << "SampleConsensusModelSphere: ";
+    for(int i=0;i<coeff.size();i++) cout << coeff[i] << ", ";
+    cout << endl;
+
+    if(coeff.size()==4){
+      x = coeff[0];
+      y = coeff[1];
+      z = coeff[2];
+      radius = coeff[3];
+    }else{
+      //TODO
+    }
+    return sphereIndices;
+
+#else
     //create the segmentation object
     SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
     seg.setOptimizeCoefficients(true); //optional
@@ -415,6 +521,7 @@ namespace surrogate_gui
     z = centroid.z;
 
     return sphereIndices;
+#endif
   }
 
 
