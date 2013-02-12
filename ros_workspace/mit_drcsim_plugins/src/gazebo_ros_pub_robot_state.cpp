@@ -36,7 +36,6 @@ GazeboRosPubRobotState::GazeboRosPubRobotState()
 {
   this->robotStateConnectCount = 0;
   this->last_update_time_ = common::Time(0);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +168,6 @@ void GazeboRosPubRobotState::RobotStateDisconnect()
 // Update the controller
 void GazeboRosPubRobotState::UpdateChild()
 {
-
   if (this->world->IsPaused()) return;
   /***************************************************************/
   /*                                                             */
@@ -253,21 +251,23 @@ void GazeboRosPubRobotState::UpdateChild()
 	{
 	gazebo::Joint* joint = this->parent_model_->GetJoint(i);
 	std::string name =  joint->GetName();//joint name
-	double current_position = joint->GetAngle(0).GetAsRadian(); // joint position
+	double current_position = joint->GetAngle(0).Radian(); // joint position
 	double current_velocity = joint->GetVelocity(0); // joint velocity
 	this->robotStateMsg.joint_name.push_back(name);
 	this->robotStateMsg.joint_position.push_back(current_position);
 	this->robotStateMsg.joint_velocity.push_back(current_velocity);
-//std::cout << "    name[" << joint->GetName() << "] pos[" << joint->GetAngle(0).GetAsRadian() << "] rate [" << joint->GetVelocity(0) << "]\n";
+//std::cout << "    name[" << joint->GetName() << "] pos[" << joint->GetAngle(0).Radian() << "] rate [" << joint->GetVelocity(0) << "]\n";
 	}*/
 
         //Get pointers to all joints in the model and store them in a map (which performs and intrinsic 	 alphabetical sort on joint name).
         //
 	if(this->joints_.empty()) {
+	  physics::Joint_V joints = this->parent_model_->GetJoints();
+	  
 	  for (int i = 0; i < joint_count ; i++)
 	  {
-	    physics::JointPtr joint = this->parent_model_->GetJoint(i);
-            this->joints_.insert(make_pair(joint->GetName(), joint));
+//	    physics::JointPtr joint = this->parent_model_->GetJoint(i); // uses pre Gazebo 1.4 API
+            this->joints_.insert(make_pair(joints[i]->GetName(), joints[i]));
 		//populate joints_ once	
 	  }
 	}
@@ -277,7 +277,7 @@ void GazeboRosPubRobotState::UpdateChild()
         { 
 
 	  std::string name =  it->second->GetName();//joint name
-          double current_position = it->second->GetAngle(0).GetAsRadian(); // joint position
+          double current_position = it->second->GetAngle(0).Radian(); // joint position
           current_position = fmod(current_position, 2*M_PI );
           // if out of bounds, then correct: (added due to Gazebo bug in dec 2012, mfallon
           // their angles arent bound checked

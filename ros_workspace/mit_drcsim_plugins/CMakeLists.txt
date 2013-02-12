@@ -39,11 +39,11 @@ rosbuild_link_boost(gazebo_ros_pub_robot_state thread)
 #rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
 #rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
 
-rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
-rosbuild_link_boost(planar_hover_plugin thread)
+#rosbuild_add_library(planar_hover_plugin src/planar_hover_plugin.cpp)
+#rosbuild_link_boost(planar_hover_plugin thread)
 
-rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
-rosbuild_link_boost(joint_actuation_plugin thread)
+#rosbuild_add_library(joint_actuation_plugin src/joint_actuation_plugin.cpp)
+#rosbuild_link_boost(joint_actuation_plugin thread)
 
 ## DRCSim DRCRobotPlugin with MIT's modifications
 #get_rospack_flags(trajectory_msgs)
