@@ -17,6 +17,8 @@
   <!-- Required for stereo transmission -->
   <depend package="image_transport"/>
   <depend package="image_geometry"/> 
+  <depend package="osrf_msgs"/>
+
 </package>
 
 
