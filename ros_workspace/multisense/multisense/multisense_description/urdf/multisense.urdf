@@ -60,7 +60,7 @@
     <visual>
       <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
       <geometry>
-        <mesh filename="package://multisense_description/meshes/base_link.STL" />
+        <mesh filename="package://multisense_description/meshes/base_link.stl" />
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1" />

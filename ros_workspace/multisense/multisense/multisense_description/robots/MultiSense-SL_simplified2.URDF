@@ -22,7 +22,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://MultiSense-SL_simplified2/meshes/base_link.STL" />
+          filename="package://MultiSense-SL_simplified2/meshes/base_link.stl" />
       </geometry>
       <material
         name="">
@@ -36,7 +36,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://MultiSense-SL_simplified2/meshes/base_link.STL" />
+          filename="package://MultiSense-SL_simplified2/meshes/base_link.stl" />
       </geometry>
     </collision>
   </link>
