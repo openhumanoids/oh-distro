@@ -1,19 +1,47 @@
 <launch>
 
-  <arg name="gzname" default="gazebo" />
-  <!-- <arg name="gzworld" default="atlas.world" /> -->
+  <arg name="gzname" default="gazebo"/>
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control.world" />
 
-  <param name="/use_sim_time" type="bool" value="true" />
+  <param name="/use_sim_time" type="bool" value="true"/>
 
   <!-- start gazebo with the Atlas -->
-  <!-- <node name="gazebo" pkg="atlas_utils" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" /> -->
+<!--  <node name="gazebo" pkg="atlas_utils" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" />-->
   <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" /> 
 
   <!-- Robot Description -->
-  <!-- <param name="robot_description" textfile="$(find atlas)/model.urdf"/> -->
+<!--  <param name="robot_description" textfile="$(find atlas)/atlas.urdf"/>-->  
   <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot_PnC/model.urdf"/>
-
-</launch>
   
+  <!-- joint states to tf -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="atlas_robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <remap from="joint_states" to="/atlas/joint_states" />
+  </node>
+  <node pkg="robot_state_publisher" type="state_publisher" name="multisense_sl_robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <remap from="joint_states" to="/multisense_sl/joint_states" />
+  </node>
+
+  <!-- TF Buffer Server -->
+  <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
+    <param name="buffer_size" value="1200.0"/>
+  </node>
+
+  <!-- Arms -->
+  <rosparam command="load" file="$(find atlas_utils)/config/whole_body_trajectory_controller.yaml" />
+
+  <!-- Controllers that come up started
+  <node name="atlas_controller_spawner"
+        pkg="pr2_controller_manager" type="spawner" output="screen"
+        args="- -wait-for=/calibrated atlas_controller" />
+  -->
+
+  <!-- Stereo image processing -->
+  <node ns="multisense_sl/camera" name="stereo_proc" pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen">
+    <param name="disparity_range" type="int" value="128"/>
+    <param name="approximate_sync" type="bool" value="false"/>
+  </node>  
+  
+</launch>
 
