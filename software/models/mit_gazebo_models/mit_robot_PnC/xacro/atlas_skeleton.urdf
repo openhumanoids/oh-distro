@@ -1,86 +1,4 @@
 <robot name="drc_skeleton">
-  <link name="head">
-    <inertial>
-      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
-      <mass value="1.4199" />
-      <inertia
-        iyy="0.0041178"
-        ixy="-1.5797E-06"
-        iyz="-6.8415E-07"
-        ixx="0.0039688"
-        ixz="-0.00089293"
-        izz="0.0035243" />
-    </inertial>
-    <visual>
-      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
-      </geometry>
-      <material name="">
-        <color rgba="0.9098 0.44314 0.031373 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.0446 0 0.0880" rpy="0 0 1.570795" />
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/base_link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <link name="hokuyo_link">
-    <inertial>
-      <origin xyz="0.012428 0.0004084 -0.0041835" rpy="0 0 0" />
-      <mass value="0.057664" />
-      <inertia
-        iyy="4.2412E-05"
-        ixy="4.9927E-08"
-        iyz="-9.8165E-09"
-        ixx="3.7174E-05"
-        ixz="1.1015E-05"
-        izz="4.167E-05" />
-    </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
-      </geometry>
-      <material name="">
-        <color rgba="0.72941 0.35686 0.023529 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="1.5707963267949 0 1.5707963267949" />
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/hokuyo_link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint name="hokuyo_joint" type="continuous">
-    <origin xyz="-0.0446 0 0.0880" rpy="0 0 0" />
-    <parent link="head" />
-    <child link="hokuyo_link" />
-    <axis xyz="1 0 0" />
-    <dynamics damping="0.01" friction="0"/>
-  </joint>
-    <link name="pelvis">
-        <inertial>
-            <mass value="14.2529" />
-            <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
-            <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167" />
-        </inertial>
-        <visual>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
-            </geometry>
-        </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.stl" scale="1 1 1" />
-            </geometry>
-        </collision>
-    </link>
     <link name="l_clav">
         <inertial>
             <mass value="2.369" />
@@ -93,11 +11,17 @@
                 <mesh filename="package://mit_robot/meshes/l_clav.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_clav.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0.0744 0.03657"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.1525"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="-0.5236 0 0" xyz="0 0.012 0.012"/>
+          <geometry>
+            <cylinder radius="0.04" length="0.027"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_farm">
@@ -112,11 +36,17 @@
                 <mesh filename="package://mit_robot/meshes/l_farm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_farm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0174215 0"/>
+          <geometry>
+            <cylinder radius="0.0458825" length="0.035181"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.000226 0.06028 0.0"/>
+          <geometry>
+            <cylinder radius="0.0279" length="0.050472"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_foot">
@@ -131,12 +61,21 @@
                 <mesh filename="package://mit_robot/meshes/l_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_foot.stl" scale="1 1 1" />
-            </geometry>
+        <!-- bottom -->
+        <collision group="default">
+          <origin xyz="0.048 0 -0.076119" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.26 0.124887 0.01"/>
+          </geometry>
         </collision>
+        <!-- ankle FIXME: adding this collision body destabilizes robot, shouldn't
+        <collision group="other">
+          <origin xyz="0.0 0 -0.0528735" rpy="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.0373" length="0.037827"/>
+          </geometry>
+        </collision>
+        -->
     </link>
     <link name="l_hand">
         <inertial>
@@ -150,11 +89,23 @@
                 <mesh filename="package://mit_robot/meshes/l_hand.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_hand.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0526955 0.0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.055117"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.034375 0.002643 0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.019"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0365945 0.002643 0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.019"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_larm">
@@ -169,11 +120,23 @@
                 <mesh filename="package://mit_robot/meshes/l_larm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_larm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0.056065 0 0"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.0161"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0556155 0 0"/> <!-- double check -->
+          <geometry>
+            <cylinder radius="0.045" length="0.0161"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0940525 0.0"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.188105"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_lglut">
@@ -188,11 +151,17 @@
                 <mesh filename="package://mit_robot/meshes/l_lglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lglut.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0.049968 0.022488 -0.0501165"/>
+          <geometry>
+            <cylinder radius="0.02009687" length="0.060306"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.02" length="0.12"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_lleg">
@@ -207,11 +176,11 @@
                 <mesh filename="package://mit_robot/meshes/l_lleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lleg.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="-0.00345 0.00295 -0.1913"/>
+          <geometry>
+            <box size="0.1465 0.1205 0.476"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_scap">
@@ -226,11 +195,23 @@
                 <mesh filename="package://mit_robot/meshes/l_scap.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_scap.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.118521 0"/>
+          <geometry>
+            <cylinder radius="0.0418405" length="0.137492"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0884125 0 0"/>
+          <geometry>
+            <cylinder radius="0.048709" length="0.013937"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.0847565 0 0"/>
+          <geometry>
+            <cylinder radius="0.048709" length="0.013737"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_talus">
@@ -245,11 +226,17 @@
                 <mesh filename="package://mit_robot/meshes/l_talus.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_talus.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.010181" length="0.029542"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.010348" length="0.010059"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_uarm">
@@ -264,11 +251,17 @@
                 <mesh filename="package://mit_robot/meshes/l_uarm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uarm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0583385 0"/>
+          <geometry>
+            <cylinder radius="0.0449" length="0.116677"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0.1205235 0.00912975"/>
+          <geometry>
+            <cylinder radius="0.04504847" length="0.088934"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_uglut">
@@ -283,11 +276,17 @@
                 <mesh filename="package://mit_robot/meshes/l_uglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uglut.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.019096" length="0.078396"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.019841" length="0.080842"/>
+          </geometry>
         </collision>
     </link>
     <link name="l_uleg">
@@ -302,11 +301,11 @@
                 <mesh filename="package://mit_robot/meshes/l_uleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uleg.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="-0.0179 0.02085 -0.21"/>
+          <geometry>
+            <box size="0.2 0.1865 0.26"/>
+          </geometry>
         </collision>
     </link>
     <link name="ltorso">
@@ -321,12 +320,26 @@
                 <mesh filename="package://mit_robot/meshes/ltorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/ltorso.stl" scale="1 1 1" />
-            </geometry>
+        <!-- this part is completely internal
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="0 0 0.039762"/>
+          <geometry>
+            <cylinder radius="0.025918" length="0.076922"/>
+          </geometry>
         </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0250065 0.09025"/>
+          <geometry>
+            <cylinder radius="0.014828" length="0.020367"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0248895 0.09025"/>
+          <geometry>
+            <cylinder radius="0.014828" length="0.020169"/>
+          </geometry>
+        </collision>
+        -->
     </link>
     <link name="mtorso">
         <inertial>
@@ -340,11 +353,54 @@
                 <mesh filename="package://mit_robot/meshes/mtorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.017" length="0.03"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.0285 0 0.05"/>
+          <geometry>
+            <cylinder radius="0.015" length="0.02"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0285 0 0.05"/>
+          <geometry>
+            <cylinder radius="0.015" length="0.02"/>
+          </geometry>
+        </collision>
+    </link>
+    <link name="pelvis">
+        <inertial>
+            <mass value="14.2529" />
+            <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
+            <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167" />
+        </inertial>
+        <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/mtorso.stl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
             </geometry>
+        </visual>
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="0 0 0"/>
+          <geometry>
+            <sphere radius="0.129"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0 0" xyz="0 0.034 0.06"/>
+          <geometry>
+            <cylinder radius="0.130" length="0.07"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0 0" xyz="0 -0.034 0.06"/>
+          <geometry>
+            <cylinder radius="0.130" length="0.07"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_clav">
@@ -359,11 +415,17 @@
                 <mesh filename="package://mit_robot/meshes/r_clav.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_clav.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 -0.0744 0.03657"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.1525"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0.5236 0 0" xyz="0 -0.012 0.012"/>
+          <geometry>
+            <cylinder radius="0.04" length="0.027"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_farm">
@@ -378,11 +440,17 @@
                 <mesh filename="package://mit_robot/meshes/r_farm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_farm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0174215 0"/>
+          <geometry>
+            <cylinder radius="0.0458825" length="0.035181"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.000226 -0.06028 0.0"/>
+          <geometry>
+            <cylinder radius="0.0279" length="0.050472"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_foot">
@@ -397,12 +465,21 @@
                 <mesh filename="package://mit_robot/meshes/r_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_foot.stl" scale="1 1 1" />
-            </geometry>
+        <!-- bottom -->
+        <collision group="default">
+          <origin xyz="0.048 0 -0.076119" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.26 0.124887 0.01"/>
+          </geometry>
         </collision>
+        <!-- ankle FIXME: adding this collision body destabilizes robot, shouldn't
+        <collision group="other">
+          <origin xyz="0.0 0 -0.0528735" rpy="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.0373" length="0.037827"/>
+          </geometry>
+        </collision>
+        -->
     </link>
     <link name="r_hand">
         <inertial>
@@ -416,11 +493,23 @@
                 <mesh filename="package://mit_robot/meshes/r_hand.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_hand.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0526955 0.0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.055117"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.034375 -0.002643 0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.019"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0365945 -0.002643 0"/>
+          <geometry>
+            <cylinder radius="0.035939" length="0.019"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_larm">
@@ -435,11 +524,23 @@
                 <mesh filename="package://mit_robot/meshes/r_larm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_larm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0.056065 0 0"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.0161"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0556155 0 0"/> <!-- double check -->
+          <geometry>
+            <cylinder radius="0.045" length="0.0161"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0940525 0.0"/>
+          <geometry>
+            <cylinder radius="0.045" length="0.188105"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_lglut">
@@ -454,11 +555,17 @@
                 <mesh filename="package://mit_robot/meshes/r_lglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lglut.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0.049968 -0.022488 -0.0501165"/>
+          <geometry>
+            <cylinder radius="0.02009687" length="0.060306"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.02" length="0.12"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_lleg">
@@ -473,11 +580,11 @@
                 <mesh filename="package://mit_robot/meshes/r_lleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lleg.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="-0.00345 -0.00295 -0.1913"/>
+          <geometry>
+            <box size="0.1465 0.1205 0.476"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_scap">
@@ -492,11 +599,23 @@
                 <mesh filename="package://mit_robot/meshes/r_scap.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_scap.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.118521 0"/>
+          <geometry>
+            <cylinder radius="0.0418405" length="0.137492"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="-0.0884125 0 0"/>
+          <geometry>
+            <cylinder radius="0.048709" length="0.013937"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0.0847565 0 0"/>
+          <geometry>
+            <cylinder radius="0.048709" length="0.013737"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_talus">
@@ -511,11 +630,17 @@
                 <mesh filename="package://mit_robot/meshes/r_talus.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_talus.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.010181" length="0.029542"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="1.5707963267949 0 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.010348" length="0.010059"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_uarm">
@@ -530,11 +655,17 @@
                 <mesh filename="package://mit_robot/meshes/r_uarm.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uarm.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0583385 0"/>
+          <geometry>
+            <cylinder radius="0.0449" length="0.116677"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 1.5707963267949 0" xyz="0 -0.1205235 0.00912975"/>
+          <geometry>
+            <cylinder radius="0.04504847" length="0.088934"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_uglut">
@@ -549,11 +680,17 @@
                 <mesh filename="package://mit_robot/meshes/r_uglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uglut.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.019096" length="0.078396"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0 0" xyz="0 0 0"/>
+          <geometry>
+            <cylinder radius="0.019841" length="0.080842"/>
+          </geometry>
         </collision>
     </link>
     <link name="r_uleg">
@@ -568,11 +705,11 @@
                 <mesh filename="package://mit_robot/meshes/r_uleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uleg.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 0 0" xyz="-0.0179 -0.02085 -0.21"/>
+          <geometry>
+            <box size="0.2 0.1865 0.26"/>
+          </geometry>
         </collision>
     </link>
     <link name="utorso">
@@ -587,11 +724,23 @@
                 <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso.stl" scale="1 1 1" />
-            </geometry>
+        <collision group="default">
+          <origin rpy="0 -0 0" xyz="0.0446 0 0.1869"/>
+          <geometry>
+            <box size="0.3188 0.24 0.3662"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="-0.5236 0 0" xyz="0.024 0.16 0.18"/>
+          <geometry>
+            <cylinder radius="0.0363" length="0.22375"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0.5236 0 0" xyz="0.024 -0.16 0.18"/>
+          <geometry>
+            <cylinder radius="0.0363" length="0.22375"/>
+          </geometry>
         </collision>
     </link>
     <joint name="back_lbz" type="revolute">
@@ -730,7 +879,8 @@
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14" />
     </joint>
     <joint name="neck_ay" type="revolute">
-    <origin rpy="0 0 0" xyz="0.16555 0 0.50823"/>
+        <!-- per slides on sensor head kinematics 2012-12-14 -->
+        <origin xyz="0.16555 0 0.50823" rpy="0 -0 0" />
         <axis xyz="0 1 0" />
         <parent link="utorso" />
         <child link="head" />
@@ -777,7 +927,7 @@
     </joint>
     <joint name="r_arm_usy" type="revolute">
         <origin xyz="0.024 -0.221 0.289" rpy="0 -0 0" />
-        <axis xyz="0 -0.5 0.866025" />
+        <axis xyz="0 0.5 -0.866025" />
         <parent link="utorso" />
         <child link="r_clav" />
         <dynamics damping="0.1" friction="0" />
@@ -848,3 +998,4 @@
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32" />
     </joint>
 </robot>
+
