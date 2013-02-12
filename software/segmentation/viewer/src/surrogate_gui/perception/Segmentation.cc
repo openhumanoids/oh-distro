@@ -399,15 +399,14 @@ namespace surrogate_gui
     }
     cout<<endl;
     
-    //todo: xyz / rpyaw  / radius, length
-    //model_coefficientsthe coefficients of the cylinder (point_on_axis, axis_direction, cylinder_radius_R)
+    // calculate roll, pitch, and yaw
     x = coefficients->values[0];
     y = coefficients->values[1];
     z = coefficients->values[2];
     float dx = coefficients->values[3];
     float dy = coefficients->values[4];
     float dz = coefficients->values[5];
-    if(dz<0){
+    if(dz<0){  // flip if z is negative to simplify math
       dx=-dx;
       dy=-dy;
       dz=-dz;
@@ -417,8 +416,6 @@ namespace surrogate_gui
     yaw = atan2(dy, dx);
     radius = coefficients->values[6];
     
-  // Obtain the cylinder inliers and coefficients
-  
   writer.write ("table_objects.pcd", *subcloud, false);
 
 
@@ -427,6 +424,38 @@ namespace surrogate_gui
     //hack: using centroid.z since the coeffients.z could be anywhere on the axis (assuming cylinder
     //is oriented vertically)
     //z = centroid.z;
+
+    
+
+    // project points on to line and find endpoints
+    Eigen::Vector3f pMin, pMax;    
+    Eigen::Vector3f p1(x,y,z);
+    Eigen::Vector3f u(dx,dy,dz);
+    for(int i=0; i<cylinderIndices->indices.size();i++){ // for each inlier
+      // extract point
+      int index = cylinderIndices->indices[i];
+      PointXYZRGB& pt = subcloud->at(index);
+      Eigen::Vector3f q(pt.x,pt.y,pt.z);
+      
+      // project on to line
+      Eigen::Vector3f pq = q-p1;
+      Eigen::Vector3f w2 = pq - u * pq.dot(u);
+      Eigen::Vector3f p = q - w2;
+
+      if(i==0){
+	pMin = pMax = p;
+      }else{ //TODO handle if dz is small
+	if(p[2]<pMin[2]) pMin = p;
+	if(p[2]>pMax[2]) pMax = p;
+      }
+      
+    }
+
+    Eigen::Vector3f center = (pMax+pMin)/2;
+    x = center[0];
+    y = center[1];
+    z = center[2];
+    length = (pMax-pMin).norm();
 
     return cylinderIndices;
   }
