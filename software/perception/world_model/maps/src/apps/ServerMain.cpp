@@ -264,7 +264,7 @@ public:
       std::cout << "sending catalog" << std::endl;
       drc::map_catalog_t catalog;
       catalog.utime = drc::Clock::instance()->getCurrentTime();
-      catalog.views.reserve(catalog.num_views);
+      catalog.views.reserve(mState->mWorkers.size());
       WorkerMap::const_iterator iter = mState->mWorkers.begin();
       for (; iter != mState->mWorkers.end(); ++iter) {
         if (iter->second->mActive) {
