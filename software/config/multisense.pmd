@@ -43,21 +43,28 @@ group "ros" {
         host = "localhost";
     }
     cmd "head_watchdog" {
-        exec = "rosrun ROS2LCM_translator  real_multisense_subscribe";
+        exec = "rosrun multisense_command multisense_subscribe -d";
+        host = "localhost";
+    }
+    cmd "reconfig" {
+        exec = "rosrun dynamic_reconfigure reconfigure_gui";
         host = "localhost";
     }
 }
+
+
+
 group "head_ctrl" {
     cmd "fast" {
-        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 2";
+        exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 2.156";
         host = "localhost";
     }
     cmd "slow" {
-        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 0.3";
+        exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 0.3";
         host = "localhost";
     }
     cmd "stop" {
-        exec = "$HOME/drc/ros_workspace/multisense_command/multisense_command.py speed 0";
+        exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 0";
         host = "localhost";
     }
 }
