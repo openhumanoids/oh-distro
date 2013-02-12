@@ -13,6 +13,7 @@ namespace octomap {
 namespace maps {
 
 class PointDataBuffer;
+template<typename T> class VoxelGrid;
 
 class LocalMap {
 public:
@@ -25,7 +26,7 @@ public:
     Eigen::Vector3f mBoundMax;
     int mPointBufferSize;
     bool mActive;
-    float mOctreeResolution;
+    float mResolution;
 
     Spec() {
       mId = -1;
@@ -33,7 +34,7 @@ public:
       mBoundMax = Eigen::Vector3f(1e10, 1e10, 1e10);
       mPointBufferSize = 1000;
       mActive = true;
-      mOctreeResolution = 0.1;
+      mResolution = 0.1;
     }
   };
 
@@ -107,6 +108,7 @@ protected:
   bool mIsFrozen;
   boost::shared_ptr<PointDataBuffer> mPointData;
   maps::Octree mOctree;
+  boost::shared_ptr<VoxelGrid<int16_t> > mGrid;
 };
 
 }

@@ -36,8 +36,9 @@ static const char* RENDERER_NAME = "Maps";
 
 static const char* PARAM_INPUT_MODE = "Input Mode";
 static const char* PARAM_REQUEST_TYPE = "Data Type";
-static const char* PARAM_REQUEST_RES = "Resolution m";
-static const char* PARAM_REQUEST_FREQ = "Frequency Hz";
+static const char* PARAM_REQUEST_RES = "Resolution (m)";
+static const char* PARAM_REQUEST_FREQ = "Frequency (Hz)";
+static const char* PARAM_REQUEST_TIME = "Time Window (s)";
 static const char* PARAM_DATA_REQUEST = "Send Request";
 static const char* PARAM_MAP_COMMAND_TYPE = "Command";
 static const char* PARAM_MAP_COMMAND = "Execute";
@@ -147,6 +148,7 @@ struct RendererMaps {
   DataRequestType mRequestType;
   float mRequestFrequency;
   float mRequestResolution;
+  float mRequestTimeWindow;
 
   MapCommand mMapCommand;
 
@@ -198,6 +200,8 @@ struct RendererMaps {
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_FREQ);
     self->mRequestResolution = (float)
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_RES);
+    self->mRequestTimeWindow = (float)
+      bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_TIME);
     self->mMapCommand = (MapCommand)
       bot_gtk_param_widget_get_enum(iWidget, PARAM_MAP_COMMAND_TYPE);
 
@@ -240,9 +244,12 @@ struct RendererMaps {
       spec.mResolution = self->mRequestResolution;
       spec.mFrequency = self->mRequestFrequency;
       spec.mTimeMin = -1;
+      if (self->mRequestTimeWindow > 1e-3) {
+        spec.mTimeMin = -self->mRequestTimeWindow*1e6;
+      }
       spec.mTimeMax = -1;
       spec.mClipPlanes = self->mFrustum.mPlanes;
-      int64_t id = self->mViewClient.request(spec);
+      self->mViewClient.request(spec);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_CAMERA);
       self->mBoxValid = false;
@@ -809,6 +816,10 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   bot_gtk_param_widget_add_double(self->mWidget, PARAM_REQUEST_RES,
                                   BOT_GTK_PARAM_WIDGET_SPINBOX,
                                   0.01, 1, 0.01, 0.05);
+
+  bot_gtk_param_widget_add_double(self->mWidget, PARAM_REQUEST_TIME,
+                                  BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                  0, 10, 0.1, 0);
 
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_DATA_REQUEST, NULL);
 

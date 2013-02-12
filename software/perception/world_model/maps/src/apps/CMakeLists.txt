@@ -1,10 +1,10 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++0x -Wno-deprecated-declarations")
+
 add_executable(maps-server ServerMain.cpp)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-server maps)
 pods_install_executables(maps-server)
 
 add_executable(maps-test TestMain.cpp)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-test maps)
 pods_install_executables(maps-test)
 
@@ -42,6 +42,5 @@ pods_install_executables(maps-test)
 #pods_install_executables(maps-depthmap-publisher)
 
 add_executable(maps-recent-scan-publisher RecentScanPublisher.cpp)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(maps-recent-scan-publisher bot2-lcmgl-client maps pointcloud_vis)
 pods_install_executables(maps-recent-scan-publisher) 

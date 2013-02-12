@@ -23,9 +23,6 @@
 #include <ConciseArgs>
 #include <octomap/octomap.h>
 
-// TODO: TEMP
-#include <boost/progress.hpp>
-
 
 using namespace std;
 using namespace maps;
@@ -78,18 +75,13 @@ struct Worker {
       }
       if (localMap != NULL) {
 
+        MapView::Spec spec = LcmTranslator::fromLcm(mRequest);
+
         // get bounds
         LocalMap::SpaceTimeBounds bounds;
-        bounds.mMinTime = mRequest.time_min;
-        bounds.mMaxTime = mRequest.time_max;
-        bounds.mPlanes.resize(mRequest.num_clip_planes);
-        for (int i = 0; i < bounds.mPlanes.size(); ++i) {
-          bounds.mPlanes[i] =
-            Eigen::Vector4f(mRequest.clip_planes[i][0],
-                            mRequest.clip_planes[i][1],
-                            mRequest.clip_planes[i][2],
-                            mRequest.clip_planes[i][3]);
-        }
+        bounds.mMinTime = spec.mTimeMin;
+        bounds.mMaxTime = spec.mTimeMax;
+        bounds.mPlanes = spec.mClipPlanes;
 
         // get and publish octree
         if (mRequest.type == drc::map_request_t::OCTREE) {
@@ -195,17 +187,7 @@ public:
   void onMapParams(const lcm::ReceiveBuffer* iBuf,
                    const std::string& iChannel,
                    const drc::map_params_t* iMessage) {
-    LocalMap::Spec spec;
-    spec.mPointBufferSize = iMessage->buffer_size;
-    spec.mActive = true;
-    spec.mBoundMin = Eigen::Vector3f(iMessage->bound_min[0],
-                                     iMessage->bound_min[1],
-                                     iMessage->bound_min[2]);
-    spec.mBoundMax = Eigen::Vector3f(iMessage->bound_max[0],
-                                     iMessage->bound_max[1],
-                                     iMessage->bound_max[2]);
-    spec.mOctreeResolution = iMessage->resolution;
-    spec.mPointBufferSize = iMessage->buffer_size;
+    LocalMap::Spec spec = LcmTranslator::fromLcm(*iMessage);
     int id = mManager->createMap(spec);
   }
 
@@ -316,11 +298,12 @@ int main(const int iArgc, const char** iArgv) {
   // set up remaining parameters
   state.mSensorDataReceiver->setMaxBufferSize(100);
   LocalMap::Spec spec;
+  spec.mId = 1;
   spec.mPointBufferSize = 5000;
   spec.mActive = true;
   spec.mBoundMin = Eigen::Vector3f(-5,-5,-5);
   spec.mBoundMax = Eigen::Vector3f(5,5,5);
-  spec.mOctreeResolution = 0.1; // TODO
+  spec.mResolution = 0.1; // TODO
   int id = state.mManager->createMap(spec);
   state.mRequestSubscription =
     state.mLcm->subscribe("MAP_REQUEST", &State::onRequest, &state);

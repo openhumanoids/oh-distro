@@ -11,7 +11,7 @@ drc::map_params_t LcmTranslator::
 toLcm(const LocalMap::Spec& iSpec) {
   drc::map_params_t msg;
   msg.map_id = iSpec.mId;
-  msg.resolution = iSpec.mOctreeResolution;
+  msg.resolution = iSpec.mResolution;
   for (int i = 0; i < 3; ++i) {
     msg.bound_min[i] = iSpec.mBoundMin[i];
     msg.bound_max[i] = iSpec.mBoundMax[i];
@@ -24,7 +24,7 @@ LocalMap::Spec LcmTranslator::
 fromLcm(const drc::map_params_t& iMessage) {
   LocalMap::Spec spec;
   spec.mId = iMessage.map_id;
-  spec.mOctreeResolution = iMessage.resolution;
+  spec.mResolution = iMessage.resolution;
   for (int i = 0; i < 3; ++i) {
     spec.mBoundMin[i] = iMessage.bound_min[i];
     spec.mBoundMax[i] = iMessage.bound_max[i];

@@ -37,7 +37,7 @@ LocalMap(const LocalMap::Spec& iSpec) {
   mSpec = iSpec;
   mPointData.reset(new PointDataBuffer());
   mPointData->setMaxLength(mSpec.mPointBufferSize);
-  mOctree.mTree.reset(new octomap::OcTree(mSpec.mOctreeResolution));
+  mOctree.mTree.reset(new octomap::OcTree(mSpec.mResolution));
   mOctree.mTransform = Eigen::Isometry3f::Identity();
   mOctree.mTransform.translation() = 0.5f*(mSpec.mBoundMax + mSpec.mBoundMin);
   mStateId = 0;
@@ -190,9 +190,16 @@ getPointData() const {
 maps::PointCloud::Ptr LocalMap::
 getAsPointCloud(const float iResolution,
                 const SpaceTimeBounds& iBounds) const {
+  // interpret time bounds
+  // TODO: could be more intuitive
+  int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
+  if ((timeMax < 0) && (timeMin < 0)) {
+    int64_t latestPointTime = mPointData->getTimeMax();
+    timeMin = latestPointTime - timeMin;
+  }
+
   // grab point cloud and crop to space-time bounds
-  maps::PointCloud::Ptr cloud =
-    mPointData->getAsCloud(iBounds.mMinTime, iBounds.mMaxTime);
+  maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
   Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
   Utils::crop(*cloud, *cloud, iBounds.mPlanes);
 
@@ -228,12 +235,19 @@ getAsOctree(const float iResolution, const bool iTraceRays,
   return oct;
   */
 
+  // interpret time bounds
+  // TODO: could be more intuitive
+  int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
+  if ((timeMax < 0) && (timeMin < 0)) {
+    int64_t latestPointTime = mPointData->getTimeMax();
+    timeMin = latestPointTime - timeMin;
+  }
+
   Octree oct;
   oct.mTransform = Eigen::Isometry3f::Identity();
   oct.mTransform.translation() = iOrigin;
   oct.mTree.reset(new octomap::OcTree(iResolution));
-  std::vector<maps::PointSet> pointSets =
-    mPointData->get(iBounds.mMinTime, iBounds.mMaxTime);
+  std::vector<maps::PointSet> pointSets = mPointData->get(timeMin, timeMax);
   for (int i = 0; i < pointSets.size(); ++i) {
     maps::PointCloud::Ptr inCloud = pointSets[i].mCloud;
     maps::PointCloud::Ptr outCloud(new maps::PointCloud());
