@@ -1,0 +1,1 @@
+/usr/bin/c++   -O2 -g     -pthread CMakeFiles/publish_joint_commands.dir/src/publish_joint_commands.o  -o ../bin/publish_joint_commands -rdynamic -L/opt/ros/fuerte/lib -L/usr/local/lib -L/usr/local/lib/gazebo-1.4/plugins -lroscpp -lrostime -lrosconsole -lroscpp_serialization -lxmlrpcpp -Wl,-rpath,/opt/ros/fuerte/lib:/usr/local/lib:/usr/local/lib/gazebo-1.4/plugins 

@@ -16,7 +16,7 @@ using namespace std;
 
 class LCM2ROS{
   public:
-    LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_,bool reconfig_, bool pause_physics_then_reconfig_);
+    LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_,bool synchronized_, bool pause_physics_before_reconfig_);
     ~LCM2ROS() {}
 
   private:
@@ -26,17 +26,19 @@ class LCM2ROS{
     // DRCSIM 2.0 joint command API
     void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     ros::Publisher joint_cmd_pub_;
-        
+       
     ros::Publisher rot_scan_cmd_pub_;
     void rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg);
     
     // Variables to reconfigure the gazebo simulator in running:
     ros::Publisher pose_pub_;
     ros::Publisher joint_pub_;
-    bool reconfig_;
-    ros::ServiceClient pause_physics_;    
-    bool pause_physics_then_reconfig_;
     void reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::robot_state_t* msg);
+
+    bool synchronized_;
+    bool pause_physics_before_reconfig_;
+    ros::ServiceClient pause_physics_;    
+    ros::ServiceClient unpause_physics_;
 
     // Non-api translations:
     ros::Publisher body_twist_cmd_pub_;
@@ -44,27 +46,27 @@ class LCM2ROS{
     void bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg);
     ros::Publisher gas_pedal_pub_, brake_pedal_pub_;
     void estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::nav_goal_timed_t* msg);   
+    
+    ros::NodeHandle* rosnode;
 };
 
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool reconfig_, bool pause_physics_then_reconfig_): 
-           lcm_(lcm_),nh_(nh_), reconfig_(reconfig_), pause_physics_then_reconfig_(pause_physics_then_reconfig_) {
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool synchronized_, bool pause_physics_before_reconfig_): 
+           lcm_(lcm_),nh_(nh_), synchronized_(synchronized_), pause_physics_before_reconfig_(pause_physics_before_reconfig_) {
 
-  // DRCSIM 2.0 joint command API
-  lcm_->subscribe("JOINT_CMDS",&LCM2ROS::jointCommandHandler,this);  
+  /// DRCSIM 2.0 joint command API
+  lcm_->subscribe("JOINT_COMMANDS",&LCM2ROS::jointCommandHandler,this);  
   joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10);
 
   /// Spinning Laser control:
   lcm_->subscribe("ROTATING_SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
   rot_scan_cmd_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
   
-  /// Reconfiguring Gazebo while running:
-  if (reconfig_){
-    pose_pub_ = nh_.advertise<geometry_msgs::Pose>("/atlas/set_pose",10);
-    joint_pub_ = nh_.advertise<sensor_msgs::JointState>("/atlas/configuration",10);
-    pause_physics_ = nh_.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
-    lcm_->subscribe("SET_ROBOT_CONFIG",&LCM2ROS::reconfigCmdHandler,this);
-  }
+  /// For reconfiguring Gazebo while running:
+  pose_pub_ = nh_.advertise<geometry_msgs::Pose>("/atlas/set_pose",10);
+  joint_pub_ = nh_.advertise<sensor_msgs::JointState>("/atlas/configuration",10);
+  pause_physics_ = nh_.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
+  lcm_->subscribe("SET_ROBOT_CONFIG",&LCM2ROS::reconfigCmdHandler,this);
   
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
   body_twist_cmd_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel",10);
@@ -73,24 +75,42 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool r
   lcm_->subscribe("NAV_GOAL_ESTOP",&LCM2ROS::estopHandler,this);
   gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("mit_golf_cart/gas_pedal/cmd", 1000);
   brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("mit_golf_cart/brake_pedal/cmd", 1000);
+  
+  rosnode = new ros::NodeHandle();
 }
 
 
-void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::joint_command_t* msg){
+void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+
+  if(synchronized_ && ros::ok()) {
+    std_srvs::Empty srv;
+    if (!unpause_physics_.call(srv)) {
+      ROS_ERROR("LCM2ROS::jointCommandHandler: Failed to unpause gazebo.");
+    }  
+  }
+
   osrf_msgs::JointCommands joint_command_msg;
+  
+  joint_command_msg.ki_position.resize(msg->num_joints);
+  joint_command_msg.kp_velocity.resize(msg->num_joints);
+  joint_command_msg.i_effort_min.resize(msg->num_joints);
+  joint_command_msg.i_effort_max.resize(msg->num_joints);
+
   for (int i=0; i<msg->num_joints; i++) {
-    joint_command_msg.name.push_back(msg->name[i]);
+    joint_command_msg.name.push_back("atlas::" + msg->name[i]); // must use scoped name
     joint_command_msg.position.push_back(msg->position[i]);
     joint_command_msg.velocity.push_back(msg->velocity[i]);
     joint_command_msg.effort.push_back(msg->effort[i]);
 
     joint_command_msg.kp_position.push_back(msg->kp_position[i]);
-    joint_command_msg.ki_position.push_back(msg->ki_position[i]);
     joint_command_msg.kd_position.push_back(msg->kd_position[i]);
-    joint_command_msg.kp_velocity.push_back(msg->kp_velocity[i]);
 
-    joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
-    joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
+    // for now never change i gains or clamps
+    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/p", joint_command_msg.kp_position[i]);
+    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/d", joint_command_msg.kd_position[i]);
+    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
+    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
+    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
   }
   if(ros::ok()) {
     joint_cmd_pub_.publish(joint_command_msg);
@@ -107,12 +127,12 @@ void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const st
   
 ///////////////// Everything below this is not the in the gazebo API and should eventally be removed ///////////////////
 void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::robot_state_t* msg){
-  cout << "Reconfiguration requested ...\n";
+  cout << "Reconfiguration requested...\n";
   // pause gazebo beford resetting the state:
-  if(pause_physics_then_reconfig_ && ros::ok()) {
+  if(pause_physics_before_reconfig_ && ros::ok()) {
     std_srvs::Empty srv;
     if (!pause_physics_.call(srv)) {
-      ROS_ERROR("Failed to pause gazebo.");
+      ROS_ERROR("LCM2ROS::reconfigCmdHandler: Failed to pause gazebo.");
     }  
   }
 
@@ -142,6 +162,14 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
   
   // set PID goals
   osrf_msgs::JointCommands joint_command_msg;
+  
+  joint_command_msg.kp_position.resize(msg->num_joints);
+  joint_command_msg.ki_position.resize(msg->num_joints);
+  joint_command_msg.kd_position.resize(msg->num_joints);
+  joint_command_msg.kp_velocity.resize(msg->num_joints);
+  joint_command_msg.i_effort_min.resize(msg->num_joints);
+  joint_command_msg.i_effort_max.resize(msg->num_joints);
+
   for (int i=0; i<msg->num_joints; i++) {
     joint_command_msg.name.push_back(msg->joint_name[i]);
     joint_command_msg.position.push_back(msg->joint_position[i]);
@@ -185,13 +213,13 @@ void LCM2ROS::estopHandler(const lcm::ReceiveBuffer* rbuf,const std::string &cha
 
 int main(int argc,char** argv) {
   ConciseArgs parser(argc, argv, "lcm2ros");
-  bool reconfig =false;
-  bool pause_physics_then_reconfig = false;// do we need physics to be paused to reconfig the robot
-  parser.add(reconfig, "r", "reconfig", "Listen for gazebo reconfig messages");
-  parser.add(pause_physics_then_reconfig, "p", "pause_physics_then_reconfig", "Pause physics then reconfig");
+  bool synced = false;
+  bool pause_physics_before_reconfig = true; // do we need physics to be paused to reconfig the robot
+  parser.add(synced, "s", "synced", "Synchronized joint commands.");
+  parser.add(pause_physics_before_reconfig, "p", "pause_physics_before_reconfig", "Pause physics before setting robot config.");
   parser.parse();
-  cout << "reconfig: " << reconfig << "\n"; 
-  cout << "pause_physics_then_reconfig: " << pause_physics_then_reconfig << "\n";   
+  cout << "Synchronized: " << synced << "\n"; 
+  cout << "Pause physics before setting robot config: " << pause_physics_before_reconfig << "\n";   
   
   ros::init(argc,argv,"lcm2ros",ros::init_options::NoSigintHandler);
 
@@ -201,7 +229,7 @@ int main(int argc,char** argv) {
   }  
   ros::NodeHandle nh;
   
-  LCM2ROS handlerObject(lcm, nh, reconfig, pause_physics_then_reconfig);
+  LCM2ROS handlerObject(lcm, nh, synced, pause_physics_before_reconfig);
   cout << "\nlcm2ros translator ready\n";
   while(0 == lcm->handle());
   return 0;
