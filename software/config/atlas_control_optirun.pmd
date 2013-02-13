@@ -12,15 +12,11 @@ group "core" {
         host = "localhost";
     }
     cmd "r2l" {
-        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
+        exec = "rosrun translators ros2lcm";
         host = "localhost";
     } 
-    cmd "l2r_pos" {
-        exec = "rosrun LCM2ROS_translator positionCommandTranslator";
-        host = "localhost";
-    }
-    cmd "l2r_config" {
-        exec = "rosrun LCM2ROS_translator configurationCommandTranslator";
+    cmd "l2r" {
+        exec = "rosrun translators lcm2ros";
         host = "localhost";
     }
     cmd "pserver" {
@@ -48,10 +44,9 @@ group "drake" {
 
 group "gazebo" {
     cmd "gfe" {
-        exec = "roslaunch mit_drcsim_scripts atlas_position_control.launch";
+        exec = "optirun roslaunch mit_drcsim_scripts atlas_control.launch";
         host = "localhost";
     }
-
 }
 
 
