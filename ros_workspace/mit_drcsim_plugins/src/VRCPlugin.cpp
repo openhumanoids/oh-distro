@@ -1,32 +1,28 @@
 /*
- *  Gazebo - Outdoor Multi-Robot Simulator
- *  Copyright (C) 2012 Open Source Robotics Foundation
+ * Copyright 2012 Open Source Robotics Foundation
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- */
-/*
- * Desc: Plugin to allow development shortcuts for VRC competition.
- * Author: John Hsu and Steven Peters
- * Date: December 2012
- */
+*/
 
-#include "VRCPlugin.hh"
+#include <map>
+#include <string>
+
+#include "VRCPlugin.h"
 
 namespace gazebo
 {
+GZ_REGISTER_WORLD_PLUGIN(VRCPlugin)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -65,13 +61,12 @@ void VRCPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf)
 // Load the controller
 void VRCPlugin::DeferredLoad()
 {
-
   // initialize ros
   if (!ros::isInitialized())
   {
     gzerr << "Not loading vrc plugin since ROS hasn't been "
           << "properly initialized.  Try starting gazebo with ros plugin:\n"
-          << "  gazebo -s libgazebo_ros_api.so\n";
+          << "  gazebo -s libgazebo_ros_api_plugin.so\n";
     return;
   }
 
@@ -102,18 +97,15 @@ void VRCPlugin::DeferredLoad()
   // allowing the controllers can initialize without the robot falling
   if (this->atlas.isInitialized)
   {
-    this->SetRobotMode("nominal");
-    //this->SetRobotMode("pinned");
-    //this->atlas.startupHarness = true;
-    //if (this->atlas.startupHarness) {
-	//	ROS_INFO("Start robot with gravity turned off and harnessed.");
-	//	ROS_INFO("Resume to nominal mode after 10 seconds.");
-    //}
+    this->SetRobotMode("pinned");
+    this->atlas.startupHarness = true;
+    ROS_INFO("Start robot with gravity turned off and harnessed.");
+    ROS_INFO("Resume to nominal mode after 10 seconds.");
   }
 
   // ros callback queue for processing subscription
   this->callbackQueueThread = boost::thread(
-    boost::bind( &VRCPlugin::ROSQueueThread,this ) );
+    boost::bind(&VRCPlugin::ROSQueueThread, this));
 
   // Mechanism for Updating every World Cycle
   // Listen to the update event. This event is broadcast every
@@ -175,8 +167,7 @@ void VRCPlugin::SetRobotMode(const std::string &_str)
     physics::Link_V links = this->atlas.model->GetLinks();
     for (unsigned int i = 0; i < links.size(); ++i)
     {
-      //links[i]->SetGravityMode(false);
-      links[i]->SetGravityMode(true);
+      links[i]->SetGravityMode(false);
     }
   }
   else if (_str == "nominal")
@@ -195,7 +186,6 @@ void VRCPlugin::SetRobotMode(const std::string &_str)
   {
     ROS_INFO("available modes:no_gravity, feet, pinned, nominal");
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,7 +215,7 @@ void VRCPlugin::SetRobotPose(const geometry_msgs::Pose::ConstPtr &_pose)
                                    _pose->orientation.z));
   this->atlas.model->SetWorldPose(pose);
   
-  // also set body velocity to zero
+  // also set body velocity to zero, added by sk
   this->atlas.model->SetWorldTwist(math::Vector3(0,0,0), math::Vector3(0,0,0));  
 }
 
@@ -313,6 +303,12 @@ physics::JointPtr VRCPlugin::AddJoint(physics::WorldPtr _world,
 ////////////////////////////////////////////////////////////////////////////////
 void VRCPlugin::RobotEnterCar(const geometry_msgs::Pose::ConstPtr &_pose)
 {
+  // Check if drcVehicle.model is loaded
+  if (!this->drcVehicle.model)
+  {
+    ROS_ERROR("drc_vehicle model not found, cannot enter car.");
+    return;
+  }
   math::Quaternion q(_pose->orientation.w, _pose->orientation.x,
                     _pose->orientation.y, _pose->orientation.z);
   q.Normalize();
@@ -375,7 +371,7 @@ void VRCPlugin::RobotEnterCar(const geometry_msgs::Pose::ConstPtr &_pose)
 */
 
   // wait for action server to come up
-  while(!this->jointTrajectoryController.clientTraj->waitForServer(
+  while (!this->jointTrajectoryController.clientTraj->waitForServer(
     ros::Duration(1.0)))
   {
     ROS_INFO("Waiting for the joint_trajectory_action server");
@@ -385,7 +381,7 @@ void VRCPlugin::RobotEnterCar(const geometry_msgs::Pose::ConstPtr &_pose)
     this->jointTrajectoryController.seatingConfiguration());
 
   // Wait for trajectory completion
-  while(!jointTrajectoryController.getState().isDone() && ros::ok())
+  while (!jointTrajectoryController.getState().isDone() && ros::ok())
   {
     ros::spinOnce();
     usleep(50000);
@@ -415,6 +411,12 @@ void VRCPlugin::RobotEnterCar(const geometry_msgs::Pose::ConstPtr &_pose)
 ////////////////////////////////////////////////////////////////////////////////
 void VRCPlugin::RobotExitCar(const geometry_msgs::Pose::ConstPtr &_pose)
 {
+  // Check if drcVehicle.model is loaded
+  if (!this->drcVehicle.model)
+  {
+    ROS_ERROR("drc_vehicle model not found, cannot exit car.");
+    return;
+  }
   math::Quaternion q(_pose->orientation.w, _pose->orientation.x,
                     _pose->orientation.y, _pose->orientation.z);
   q.Normalize();
@@ -446,8 +448,9 @@ void VRCPlugin::RobotExitCar(const geometry_msgs::Pose::ConstPtr &_pose)
                                        0.0, 0.0);
 
   // wait for action server to come up
-  while(!this->jointTrajectoryController.clientTraj->waitForServer(
-    ros::Duration(1.0))){
+  while (!this->jointTrajectoryController.clientTraj->waitForServer(
+    ros::Duration(1.0)))
+  {
     ROS_INFO("Waiting for the joint_trajectory_action server");
   }
 
@@ -455,7 +458,7 @@ void VRCPlugin::RobotExitCar(const geometry_msgs::Pose::ConstPtr &_pose)
     this->jointTrajectoryController.standingConfiguration());
 
   // Wait for trajectory completion
-  while(!jointTrajectoryController.getState().isDone() && ros::ok())
+  while (!jointTrajectoryController.getState().isDone() && ros::ok())
   {
     ros::spinOnce();
     usleep(50000);
@@ -516,7 +519,7 @@ void VRCPlugin::Teleport(const physics::LinkPtr &_pinLink,
                                this->atlas.pinLink,
                                "revolute",
                                math::Vector3(0, 0, 0),
-                               math::Vector3(0, 0, 1.5),
+                               math::Vector3(0, 0, 1),
                                0.0, 0.0);
   this->world->SetPaused(p);
   this->world->EnablePhysicsEngine(e);
@@ -529,10 +532,10 @@ void VRCPlugin::UpdateStates()
   double curTime = this->world->GetSimTime().Double();
 
   if (this->atlas.isInitialized &&
-      this->atlas.startupHarness && curTime > 0.5)
+      this->atlas.startupHarness && curTime > 10)
   {
-//    this->SetRobotMode("nominal");
-//    this->atlas.startupHarness = false;
+    this->SetRobotMode("nominal");
+    this->atlas.startupHarness = false;
   }
 
   if (curTime > this->lastUpdateTime)
@@ -594,7 +597,7 @@ void VRCPlugin::FireHose::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
   this->fireHoseModel = _world->GetModel(fireHoseModelName);
   if (!this->fireHoseModel)
   {
-    ROS_ERROR("fire_hose_model [%s] not found", fireHoseModelName.c_str());
+    ROS_INFO("fire_hose_model [%s] not found", fireHoseModelName.c_str());
     return;
   }
   this->initialFireHosePose = this->fireHoseModel->GetWorldPose();
@@ -709,7 +712,7 @@ void VRCPlugin::Vehicle::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
 
   if (!this->model)
   {
-    ROS_ERROR("drc vehicle not found.");
+    ROS_INFO("drc vehicle not found.");
     return;
   }
 
@@ -791,7 +794,7 @@ void VRCPlugin::LoadVRCROSAPI()
   ros::SubscribeOptions robot_enter_car_so =
     ros::SubscribeOptions::create<geometry_msgs::Pose>(
     robot_enter_car_topic_name, 100,
-    boost::bind( &VRCPlugin::RobotEnterCar,this,_1),
+    boost::bind(&VRCPlugin::RobotEnterCar, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->subRobotEnterCar = this->rosNode->subscribe(robot_enter_car_so);
 
@@ -799,7 +802,7 @@ void VRCPlugin::LoadVRCROSAPI()
   ros::SubscribeOptions robot_exit_car_so =
     ros::SubscribeOptions::create<geometry_msgs::Pose>(
     robot_exit_car_topic_name, 100,
-    boost::bind( &VRCPlugin::RobotExitCar,this,_1),
+    boost::bind(&VRCPlugin::RobotExitCar, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->subRobotExitCar = this->rosNode->subscribe(robot_exit_car_so);
 
@@ -807,7 +810,7 @@ void VRCPlugin::LoadVRCROSAPI()
   ros::SubscribeOptions robot_grab_so =
     ros::SubscribeOptions::create<geometry_msgs::Pose>(
     robot_grab_topic_name, 100,
-    boost::bind( &VRCPlugin::RobotGrabFireHose,this,_1),
+    boost::bind(&VRCPlugin::RobotGrabFireHose, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->subRobotGrab = this->rosNode->subscribe(robot_grab_so);
 
@@ -815,7 +818,7 @@ void VRCPlugin::LoadVRCROSAPI()
   ros::SubscribeOptions robot_release_so =
     ros::SubscribeOptions::create<geometry_msgs::Pose>(
     robot_release_topic_name, 100,
-    boost::bind( &VRCPlugin::RobotReleaseLink,this,_1),
+    boost::bind(&VRCPlugin::RobotReleaseLink, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->subRobotRelease = this->rosNode->subscribe(robot_release_so);
 }
@@ -836,7 +839,7 @@ void VRCPlugin::LoadRobotROSAPI()
   ros::SubscribeOptions pose_so =
     ros::SubscribeOptions::create<geometry_msgs::Pose>(
     pose_topic_name, 100,
-    boost::bind(&VRCPlugin::SetRobotPose,this,_1),
+    boost::bind(&VRCPlugin::SetRobotPose, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->atlas.subPose = this->rosNode->subscribe(pose_so);
 
@@ -853,7 +856,7 @@ void VRCPlugin::LoadRobotROSAPI()
   ros::SubscribeOptions mode_so =
     ros::SubscribeOptions::create<std_msgs::String>(
     mode_topic_name, 100,
-    boost::bind( &VRCPlugin::SetRobotModeTopic,this,_1),
+    boost::bind(&VRCPlugin::SetRobotModeTopic, this, _1),
     ros::VoidPtr(), &this->rosQueue);
   this->atlas.subMode = this->rosNode->subscribe(mode_so);
 }
@@ -861,6 +864,7 @@ void VRCPlugin::LoadRobotROSAPI()
 ////////////////////////////////////////////////////////////////////////////////
 void VRCPlugin::SetRobotConfiguration(const sensor_msgs::JointState::ConstPtr &_cmd)
 {
+  // added by sk
   std::map<std::string, double> jointPositions;
   gazebo::physics::JointPtr j;	
   for (int i=0; i<_cmd->position.size(); i++) {
@@ -869,17 +873,14 @@ void VRCPlugin::SetRobotConfiguration(const sensor_msgs::JointState::ConstPtr &_
 	std::string s = ss.str();
   	jointPositions[s] = _cmd->position[i];
   	j = this->atlas.model->GetJoint(_cmd->name[i]);
-  	j->SetVelocity(0,0.0);
-  	j->SetVelocity(1,0.0);
-  	j->SetVelocity(2,0.0);
-  	j->SetForce(0,0.0);
-  	j->SetForce(1,0.0);
-  	j->SetForce(2,0.0);
+//  	j->SetVelocity(0,0.0);
+//  	j->SetVelocity(1,0.0);
+//  	j->SetVelocity(2,0.0);
+//  	j->SetForce(0,0.0);
+//  	j->SetForce(1,0.0);
+//  	j->SetForce(2,0.0);
   }
   this->atlas.model->SetJointPositions(jointPositions);
   //this->atlas.model->SetJointVelocities(jointVelocities);
 }
-
-
-GZ_REGISTER_WORLD_PLUGIN(VRCPlugin)
 }
