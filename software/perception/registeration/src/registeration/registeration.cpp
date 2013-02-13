@@ -509,10 +509,15 @@ void Reg::align_images(cv::Mat &img0, cv::Mat &img1,
     //                     0,   0,   1, 0;
 
     // bumblebee left:
-    projection_matrix << 836.466,  0, 513.198, 0,
-                         0, 835.78,  397.901, 0,
-                         0,   0,   1, 0;
+    //projection_matrix << 836.466,  0, 513.198, 0,
+    //                     0, 835.78,  397.901, 0,
+    //                     0,   0,   1, 0;
         
+    // loader multisense left:
+    projection_matrix << 606.0344848632812,  0, 512.0, 0,
+                         0, 606.0344848632812,  272.0, 0,
+                         0,   0,   1, 0;
+
     delta = pose_estimate(match, inliers, motion, covariance,
         projection_matrix);
 

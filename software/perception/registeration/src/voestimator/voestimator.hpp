@@ -29,6 +29,12 @@ public:
   void voUpdate(int64_t utime, Eigen::Isometry3d delta_camera);
 
   Eigen::Isometry3d getCameraPose(){ return local_to_head_*head_to_camera_; }
+  Eigen::Isometry3d getHeadPose(){ return local_to_head_; }
+
+  
+  void setHeadPose(Eigen::Isometry3d local_to_head_in){
+    local_to_head_ = local_to_head_in;
+  }
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
   pointcloud_vis* pc_vis_;

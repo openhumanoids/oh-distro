@@ -6,7 +6,8 @@ add_library(fovision SHARED fovision.cpp )
 pods_use_pkg_config_packages(fovision eigen3 libfovis)
 
 target_link_libraries(fovision 
-       lcmtypes_fovis-bot2   lcmtypes_bot2-core
+       lcmtypes_fovis-bot2   
+       lcmtypes_bot2-core
     boost_thread      
     boost_program_options)
 
@@ -28,6 +29,7 @@ pods_use_pkg_config_packages(drc-fovision-odometry eigen3
   bot2-frames_cpp
   lcmtypes_bot2-core   
   lcmtypes_fovis-bot2
+  lcmtypes_microstrain_comm
   voconfig
   vofeatures
   voestimator

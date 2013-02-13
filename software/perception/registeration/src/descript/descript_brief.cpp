@@ -2,7 +2,7 @@
 // - read in 0016* files
 // match to all others in that directory
 //
-// this was finished in jan 2012.
+// this was finished in jan 2013.
 // next step is to create an application which uses this as part of an lcm stream
 
 #include <stdio.h>
@@ -494,16 +494,22 @@ void align_images(cv::Mat &img0, cv::Mat &img1,
     Eigen::Matrix<double, 3, 4> projection_matrix;
     // fx 0  cx 0
     // 0  fy cy 0
-    // 0  0  0  0
+    // 0  0  1  0
     // from newcollege_stereo config: (left)
     //projection_matrix << 389.956085,  0, 254.903519, 0,
     //                     0, 389.956085,  201.899490, 0,
     //                     0,   0,   1, 0;
 
     // bumblebee left:
-    projection_matrix << 836.466,  0, 513.198, 0,
-                         0, 835.78,  397.901, 0,
+    //projection_matrix << 836.466,  0, 513.198, 0,
+    //                     0, 835.78,  397.901, 0,
+    //                     0,   0,   1, 0;
+                         
+    // loader multisense left:
+    projection_matrix << 606.0344848632812,  0, 512.0, 0,
+                         0, 606.0344848632812,  272.0, 0,
                          0,   0,   1, 0;
+                         
         
     delta = pose_estimate(match, inliers, motion, covariance,
         projection_matrix);
@@ -572,7 +578,8 @@ int main( int argc, char** argv ) {
   _lcmgl = bot_lcmgl_init(_bot_param_lcm, "descript-brief");
 
   
-  int reset =0;
+  int reset_poses =0;
+  int reset_points =1;
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis(_bot_param_lcm);
@@ -585,17 +592,19 @@ int main( int argc, char** argv ) {
 
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose A",5,reset) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud A"     ,1,reset, 1000,1,colors_0));
-  colors_0[0] = 0.7;
-  colors_0[1] = 0.7;
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud A - inliers"     ,1,reset, 1000,1,colors_0));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose A",4,reset_poses ) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud A"     ,1,reset_points, 1000,1,colors_0));
+  colors_0[0] = 0.0;
+  colors_0[1] = 1.0;
+  colors_0[2] = 0.0;
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud A - inliers"     ,1,reset_points, 1000,1,colors_0));
 
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose B",5,reset) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud B"     ,1,reset, 2000,1,colors_1));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose B",5,reset_poses ) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud B"     ,1,reset_points, 2000,1,colors_1));
+  colors_1[0] = 0.7;
   colors_1[1] = 0.7;
   colors_1[2] = 0.7;
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B - inliers"     ,1,reset, 2000,1,colors_1));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B - inliers"     ,1,reset_points, 2000,1,colors_1));
 
   
   std::vector<string> futimes;

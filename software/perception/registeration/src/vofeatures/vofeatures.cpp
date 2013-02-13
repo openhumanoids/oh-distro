@@ -128,24 +128,20 @@ void VoFeatures::setFeatures(const fovis::FeatureMatch* matches, int num_matches
 }
 
 void VoFeatures::sendFeatures(){
-
-        //write_ref_images();
-     //   writeFeatures(featuresA);
-        sendFeatures(featuresA);
-        
-        // Send Features paired with the pose at the ref frame:
-      Eigen::Isometry3d temp_pose;
-      temp_pose.setIdentity();
-
-
-        Isometry3dTime ref_camera_poseT = Isometry3dTime(utime_, ref_camera_pose_);
-        pc_vis_->pose_to_lcm_from_list(3000, ref_camera_poseT);
-        sendFeaturesAsCollection(featuresA, 3001); // blue, last 
-        sendFeaturesAsCollection(featuresA, 3002); // red, most recent
+  writeReferenceImages();
+  writeFeatures(featuresA);
+  writePose();
+  sendFeatures(featuresA);
   output_counter_++;
+
+  // Send Features paired with the pose at the ref frame:
+  Isometry3dTime ref_camera_poseT = Isometry3dTime(utime_, ref_camera_pose_);
+  pc_vis_->pose_to_lcm_from_list(3000, ref_camera_poseT);
+  sendFeaturesAsCollection(featuresA, 3001); // blue, last 
+  sendFeaturesAsCollection(featuresA, 3002); // red, most recent 
 }
 
-void VoFeatures::write_ref_images(){
+void VoFeatures::writeReferenceImages(){
   //cout << "images written to file @ " << utime_ << "\n";
   stringstream ss;
   char buff[10];
@@ -184,6 +180,28 @@ void VoFeatures::writeFeatures(std::vector<ImageFeature> features){
         << (int) f.color[0] << "," << (int) f.color[1] << "," << (int) f.color[2] << "\n";
     feat_file << temp2.str() ;
   }
+  feat_file.close();
+}
+
+
+void VoFeatures::writePose(){
+  stringstream ss;
+  char buff[10];
+  sprintf(buff,"%0.4d",output_counter_);
+  ss << buff << "_" << utime_;
+
+  std::fstream feat_file;
+  string fname = string(  ss.str() + ".pose");
+  feat_file.open(  fname.c_str() , std::fstream::out);
+  feat_file << "#utime,pos_x,pos_y,pos_z,quat_w,quat_x,quat_y,quat_z\n";
+  
+  Eigen::Vector3d t(ref_camera_pose_.translation());
+  Eigen::Quaterniond r(ref_camera_pose_.rotation());
+  feat_file <<utime_<< "," << t[0]<<","<<t[1]<<","<<t[2]<<"," 
+       <<r.w()<<","<<r.x()<<","<<r.y()<<","<<r.z() ;
+  
+  
+  
   feat_file.close();
 }
 

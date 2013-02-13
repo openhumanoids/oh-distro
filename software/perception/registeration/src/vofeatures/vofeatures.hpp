@@ -47,9 +47,9 @@ private:
   int image_height_;
   int output_counter_;
   
-  void write_images();
-  void write_ref_images();
+  void writeReferenceImages();
   void writeFeatures(std::vector<ImageFeature> features);
+  void writePose();
   void sendFeatures(std::vector<ImageFeature> features);
   void sendFeaturesAsCollection(std::vector<ImageFeature> features, int vs_id);
 

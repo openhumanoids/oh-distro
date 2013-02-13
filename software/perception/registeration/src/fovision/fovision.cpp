@@ -37,28 +37,38 @@ FoVision::~FoVision()
 
 
 
-
+// Typical Stereo:
 void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf){
-//  const uint8_t* gray = gray_in;
-
-  //depth_producer_.setDisparityData(disparity);
-  //odom_.processFrame(gray, &depth_producer_);
-
-
   depth_producer_->setRightImage(right_buf);
   odom_.processFrame(left_buf, depth_producer_);
-
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
-
-	printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
+  printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
           me->getNumInliers(),
           me->getNumReprojectionFailures(),
           me->getNumMatches(),
           (int) odom_.getTargetFrame()->getNumKeypoints(),
           me->getMeanInlierReprojectionError());
-
 }
 
+// Left and Disparity:
+void FoVision::doOdometry(uint8_t *left_buf,uint16_t *disparity_buf){
+//  const uint8_t* gray = gray_in;
+  std::cout << "not working yet\n";
+  return;
+  // Kinect:
+  //depth_producer_.setDisparityData(disparity);
+  //odom_.processFrame(gray, &depth_producer_);
+
+  //depth_producer_->setDisparityData(disparity_buf);
+  //odom_.processFrame(left_buf, depth_producer_);
+  const fovis::MotionEstimator * me = odom_.getMotionEstimator();
+  printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
+          me->getNumInliers(),
+          me->getNumReprojectionFailures(),
+          me->getNumMatches(),
+          (int) odom_.getTargetFrame()->getNumKeypoints(),
+          me->getMeanInlierReprojectionError());
+}
 
 void FoVision::fovis_stats(){
   
@@ -254,9 +264,9 @@ fovis::StereoCalibration* FoVision::default_config(){
   kparams.left_parameters = lparams;
   kparams.right_parameters = rparams;
 
-  kparams.right_to_left_rotation[0] = -0.07;
-  kparams.right_to_left_rotation[1] =  0.0;
-  kparams.right_to_left_rotation[2] =  0.0;
+  kparams.right_to_left_translation[0] = -0.07;
+  kparams.right_to_left_translation[1] =  0.0;
+  kparams.right_to_left_translation[2] =  0.0;
   kparams.right_to_left_rotation[0] = 1.0;
   kparams.right_to_left_rotation[1] = 0.0;
   kparams.right_to_left_rotation[2] = 0.0;
