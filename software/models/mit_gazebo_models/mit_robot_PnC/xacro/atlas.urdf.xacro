@@ -10,9 +10,9 @@
     <origin xyz="0  0.1 0" rpy=" 1.57079 0  1.57079"/>
   </xacro:sandia_hand>
 
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas.gazebo" />
   <include filename="$(find atlas_description)/urdf/atlas.transmission" />
   <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_PnC/xacro/mit_atlas.gazebo" />
 
   <gazebo>
     <!-- include plugin for snadia hands -->
