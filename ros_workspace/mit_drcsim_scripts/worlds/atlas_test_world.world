@@ -1,15 +1,8 @@
 <?xml version="1.0" ?>
 <gazebo version="1.2">
   <world name="default">
-    <gui>
-    <camera name="user_camera">
-      <pose>-20 10.0 2.00 0 0.2 0</pose>
-    </camera>
-    </gui>
-
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
-      <!-- mfallon added -->
       <update_rate>1000</update_rate> 
       <ode>
         <solver>
@@ -46,9 +39,8 @@
     <include><name>sbox_r5</name><uri>model://simple_box</uri><pose>-8 -17.0 1 0 0 0</pose></include>
 
     <!-- green and yellow path -->
-    <include><name>diybox</name><uri>model://diy_box</uri><pose>7.5 -20.75 0 0 0 3.142</pose></include>
-
-<!--    <include><name>simple_plane</name><uri>model://simple_plane</uri><pose>47.5 60.75 0 0 0 3.142</pose></include> -->
+    <!-- this causes gazebo to crash as of feb 2013 -->
+<!--    <include><name>diybox</name><uri>model://diy_box</uri><pose>7.5 -20.75 0 0 0 3.142</pose></include> -->
 
     <!-- 2 rows of boxes to the front of the robot - retained for now -->
     <include><name>simple_box_l2</name><uri>model://simple_box</uri><pose>5 4 1 0 0 0</pose></include>
@@ -58,6 +50,7 @@
     <include><name>simple_box_r2</name><uri>model://simple_box</uri><pose>7 -4 1 0 0 0</pose></include>
     <include><name>simple_box_r3</name><uri>model://simple_box</uri><pose>12 -4 1 0 0 0</pose></include>
     <include><name>simple_box_r4</name><uri>model://simple_box</uri><pose>17 -4 1 0 0 0</pose></include>
+
 
     <!-- box with window on it - for visual tracking -->
     <include><name>box_type2</name><uri>model://box_type2</uri><pose>-35 -8.5 1 0 0 0</pose></include>
@@ -74,8 +67,9 @@
 
     <!-- DRC specific components -->
     <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1 0 0 0</pose></include>
-<!--    <include><uri>model://mit_robot</uri><pose>-1.0 0 1 0 0 0</pose></include> -->
-    <include><uri>model://mit_golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include>
+    <include><uri>model://golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include>
+
+    <include><uri>model://polaris_ranger_ev</uri><pose>0.0 -2.55 0.1 0 0 0</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
@@ -83,7 +77,7 @@
          <pin_link>utorso</pin_link>
       </atlas>
       <drc_vehicle>
-        <model_name>mit_golf_cart</model_name>
+        <model_name>golf_cart</model_name>
         <seat_link>chassis</seat_link>
       </drc_vehicle>
       <drc_fire_hose>
