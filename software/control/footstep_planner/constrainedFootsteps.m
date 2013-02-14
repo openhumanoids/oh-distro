@@ -15,14 +15,16 @@ while 1
 	lambda_n = 1;
 	while 1
 		for current_foot = 1:2
-			[ds(current_foot), rs(current_foot)] = stepDistance(traj, lambda(end), lambda_n, foot_angles(current_foot), step_width);
+      X0 = footstepLocations(traj, lambda(end), foot_angles(current_foot), step_width);
+      Xf = footstepLocations(traj, lambda_n, foot_angles(current_foot), step_width);
+			[ds(current_foot), rs(current_foot)] = stepDistance(X0, Xf);
     end
     d = max(ds);
     r = max(rs);
 		if d <= (step_length / 2) && r <= (max_rot / 2)
 			break
 		end
-		lambda_n = lambda(end) + (lambda_n - lambda(end)) / 2;
+		lambda_n = lambda(end) + (lambda_n - lambda(end)) * .9;
 	end
 	lambda(end+1) = lambda_n;
 end

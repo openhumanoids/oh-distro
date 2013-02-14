@@ -61,14 +61,14 @@ classdef FootstepPlanner
           traj = turnGoTraj(poses);
           [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.step_length, step_width, obj.step_rot);
           figure(21)
-          plotFootstepPlan(traj, lambda, ndx_r, ndx_l, step_width);
-          
-          lambda = optimizeFootsteps(traj, lambda, obj.step_length, step_width, obj.step_rot);
-          figure(22)
-          plotFootstepPlan(traj, lambda, ndx_r, ndx_l, step_width);
-          
           Xright = footstepLocations(traj, lambda(ndx_r), -pi/2, step_width);
           Xleft = footstepLocations(traj, lambda(ndx_l), pi/2, step_width);
+          plotFootstepPlan(traj, Xright, Xleft);
+          drawnow
+          
+          [lambda, Xright, Xleft] = optimizeFootsteps(traj, lambda, obj.step_length, step_width, obj.step_rot, ndx_r, ndx_l);
+          figure(22)
+          plotFootstepPlan(traj, Xright, Xleft);
           
           [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
 

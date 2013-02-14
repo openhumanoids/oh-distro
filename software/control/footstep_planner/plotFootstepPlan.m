@@ -1,7 +1,4 @@
-function plotFootstepPlan(traj, lambda, ndx_r, ndx_l, step_width)
-
-Xright = footstepLocations(traj, lambda(ndx_r), -pi/2, step_width);
-Xleft = footstepLocations(traj, lambda(ndx_l), pi/2, step_width);
+function plotFootstepPlan(traj, Xright, Xleft)
 X = traj.eval(linspace(0,1));
 
 plot(Xright(1,:), Xright(2,:), 'go',...
