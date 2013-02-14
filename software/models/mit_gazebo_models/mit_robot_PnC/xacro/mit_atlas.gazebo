@@ -16,20 +16,19 @@
     </plugin>
     -->
   </gazebo>
-  
-  <!-- MIT ADD ON, TO BE REMOVED -->
   <gazebo>
+  <!-- mit add on to be removed -->
     <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>200.0</updateRate>
         <topicName>true_robot_state</topicName>
         <synchronization>false</synchronization>
     </plugin>
-  </gazebo>
   <!-- END MIT ADD ON -->
+  </gazebo>
     
-  <!-- imu -->
   <link name="imu_link">
+    <!-- imu -->
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
@@ -48,15 +47,20 @@
       </geometry>
     </visual>
   </link>
-  <joint name="imu_joint" type="revolute">
-    <!-- use a zero limit revolute joint rather than fixed to prevent lumping -->
+  <joint name="imu_joint" type="fixed">
     <parent link="pelvis"/>
     <child link="imu_link"/>
-    <origin xyz="0.05991527603 0 -0.01415" rpy="0 0 0"/>
-    <limit effort="0" lower="0" upper="0" velocity="0"/>
-    <safety_controller k_position="0" k_velocity="0" soft_lower_limit="0" soft_upper_limit="0"/>
-    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.05991527603 0 -0.01415"/>
   </joint>
+  <gazebo reference="imu_link">
+    <!-- this is expected to be reparented to pelvis with appropriate offset
+         when imu_link is reduced by fixed joint reduction -->
+    <!-- todo: this is working with gazebo 1.4, need to write a unit test -->
+    <sensor name="imu_sensor" type="imu">
+      <always_on>1</always_on>
+      <update_rate>1000.0</update_rate>
+    </sensor>
+  </gazebo>
   <gazebo reference="l_arm_mwx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
