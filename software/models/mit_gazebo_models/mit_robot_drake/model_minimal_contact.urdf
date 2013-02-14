@@ -43,49 +43,25 @@
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 0.038 -0.081"/>
+      <origin rpy="0 0 0" xyz="-0.082 0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 -0.037 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.049 0.063 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.049 -0.062 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.08 0.063 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.08 -0.062 -0.081"/>
+      <origin rpy="0 0 0" xyz="-0.082 -0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.179 0.026 -0.081"/>
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.179 -0.025 -0.081"/>
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -286,49 +262,25 @@
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 0.038 -0.081"/>
+      <origin rpy="0 0 0" xyz="-0.082 0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 -0.037 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.049 0.063 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.049 -0.062 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.08 0.063 -0.081"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.08 -0.062 -0.081"/>
+      <origin rpy="0 0 0" xyz="-0.082 -0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.179 0.026 -0.081"/>
+      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.179 -0.025 -0.081"/>
+      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
