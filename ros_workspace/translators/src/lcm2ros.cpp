@@ -30,6 +30,11 @@ class LCM2ROS{
     ros::Publisher rot_scan_cmd_pub_;
     void rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg);
     
+    void sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
+    void sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
+    ros::Publisher sandia_l_hand_joint_cmd_pub_;
+    ros::Publisher sandia_r_hand_joint_cmd_pub_;
+    
     // Variables to reconfigure the gazebo simulator in running:
     ros::Publisher pose_pub_;
     ros::Publisher joint_pub_;
@@ -61,6 +66,12 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   /// Spinning Laser control:
   lcm_->subscribe("ROTATING_SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
   rot_scan_cmd_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
+  
+  /// Sandia Hands joint command API
+  lcm_->subscribe("L_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaLHandJointCommandHandler,this);  
+  sandia_l_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/l_hand/joint_commands",10);
+  lcm_->subscribe("R_HAND_JOINT_COMMANDS",&LCM2ROS::sandiaRHandJointCommandHandler,this);  
+  sandia_r_hand_joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/sandia_hands/r_hand/joint_commands",10); 
   
   /// For reconfiguring Gazebo while running:
   pose_pub_ = nh_.advertise<geometry_msgs::Pose>("/atlas/set_pose",10);
@@ -124,6 +135,63 @@ void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const st
     rot_scan_cmd_pub_.publish(rot_scan_cmd_msg);
   }
 }  
+
+// Sandia Hands joint command handlers
+void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+
+  if(synchronized_ && ros::ok()) {
+    std_srvs::Empty srv;
+    if (!unpause_physics_.call(srv)) {
+      ROS_ERROR("LCM2ROS::sandia_l_hand_jointCommandHandler: Failed to unpause gazebo.");
+    }  
+  }
+
+  osrf_msgs::JointCommands joint_command_msg;
+
+  for (int i=0; i<msg->num_joints; i++) {
+    joint_command_msg.name.push_back("sandia_hands::l_hand::" + msg->name[i]); // must use scoped name
+    joint_command_msg.position.push_back(msg->position[i]);
+    joint_command_msg.velocity.push_back(msg->velocity[i]);
+    joint_command_msg.effort.push_back(msg->effort[i]);
+    joint_command_msg.kp_position.push_back(msg->kp_position[i]);
+    joint_command_msg.kd_position.push_back(msg->kd_position[i]);
+    joint_command_msg.ki_position.push_back(msg->ki_position[i]);
+    joint_command_msg.kp_velocity.resize(msg->kp_velocity[i]);
+    joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
+    joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
+  }
+  if(ros::ok()) {
+    joint_cmd_pub_.publish(joint_command_msg);
+  } 
+} 
+
+void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
+
+  if(synchronized_ && ros::ok()) {
+    std_srvs::Empty srv;
+    if (!unpause_physics_.call(srv)) {
+      ROS_ERROR("LCM2ROS::sandia_r_hand_jointCommandHandler: Failed to unpause gazebo.");
+    }  
+  }
+
+  osrf_msgs::JointCommands joint_command_msg;
+
+  for (int i=0; i<msg->num_joints; i++) {
+    joint_command_msg.name.push_back("sandia_hands::r_hand::" + msg->name[i]); // must use scoped name
+    joint_command_msg.position.push_back(msg->position[i]);
+    joint_command_msg.velocity.push_back(msg->velocity[i]);
+    joint_command_msg.effort.push_back(msg->effort[i]);
+    joint_command_msg.kp_position.push_back(msg->kp_position[i]);
+    joint_command_msg.kd_position.push_back(msg->kd_position[i]);
+    joint_command_msg.ki_position.push_back(msg->ki_position[i]);
+    joint_command_msg.kp_velocity.resize(msg->kp_velocity[i]);
+    joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
+    joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
+  }
+  if(ros::ok()) {
+    joint_cmd_pub_.publish(joint_command_msg);
+  } 
+}
   
 ///////////////// Everything below this is not the in the gazebo API and should eventally be removed ///////////////////
 void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::robot_state_t* msg){
