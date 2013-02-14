@@ -243,7 +243,8 @@ class OraclePlugin: public ModelPlugin{
         if (model){
           if ( model->GetName().compare( this->robot_name_ ) == 0){
             //gzerr << "which link: "<< model->GetName() <<"\n";
-            physics::Link_V all_links = model->GetAllLinks();
+            //physics::Link_V all_links = model->GetAllLinks(); // depricated in 1.4.0
+            physics::Link_V all_links = model->GetLinks();
             BOOST_FOREACH( physics::LinkPtr link, all_links ){
               if (link){
                 if ( link->GetName().compare( this->world_to_robot_link_ ) == 0){
@@ -287,7 +288,8 @@ class OraclePlugin: public ModelPlugin{
             //gzerr << "couldn't find this: "<< model->GetName() <<"\n";
           }else{
             int model_id = model_map_.find(   model->GetName()  )->second;
-            physics::Link_V all_links = model->GetAllLinks();
+            // physics::Link_V all_links = model->GetAllLinks(); deprecated in 1.4.0
+            physics::Link_V all_links = model->GetLinks();
             //gzerr << "model_id: " << model_id << " with " << all_links.size() << " links\n";
 
             int64_t counter =0;
