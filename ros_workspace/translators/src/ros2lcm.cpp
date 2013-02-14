@@ -21,6 +21,8 @@
 #include <image_geometry/stereo_camera_model.h>
 
 #include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
+
 
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Image.h>
@@ -113,11 +115,11 @@ App::App(const std::string & stereo_in,
   clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
 
   // IMU:
-  torso_imu_sub_ = node_.subscribe(string("/imu"), 10, &App::torso_imu_cb,this);
-  head_imu_sub_ = node_.subscribe(string("/head_imu"), 10, &App::head_imu_cb,this);
+  torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 10, &App::torso_imu_cb,this);
+  head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 10, &App::head_imu_cb,this);
   
   // Laser:
-  rotating_scan_sub_ = node_.subscribe(string("/scan"), 10, &App::rotating_scan_cb,this);
+  rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 10, &App::rotating_scan_cb,this);
   // Porterbot
   scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
   scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
@@ -125,10 +127,9 @@ App::App(const std::string & stereo_in,
   // Robot State:
   rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
 //  rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
-        
-  // Mono-Cameras:
-  left_image_sub_ = node_.subscribe(string("/multisense_sl/left/image_raw"), 10, &App::left_image_cb,this);
-  right_image_sub_ = node_.subscribe(string("/multisense_sl/right/image_raw"), 10, &App::right_image_cb,this);
+
+  cout << "sin :" << stereo_in_ << "sdfsdfsdfsdfsdfssdfsd\n";
+  
 
   // Stereo Image:
   std::string lim_string ,lin_string,rim_string,rin_string;
@@ -149,10 +150,10 @@ App::App(const std::string & stereo_in,
     rim_string = stereo_in_ + "/right/image_raw";
     rin_string = stereo_in_ + "/right/camera_info";
   }else if(which_image==4){ // Raw on GFE:
-    lim_string = "/multisense_sl/left/image_raw";
-    lin_string = "/multisense_sl/left/camera_info";
-    rim_string = "/multisense_sl/right/image_raw";
-    rin_string = "/multisense_sl/right/camera_info";
+    lim_string = stereo_in_ + "/left/image_raw";
+    lin_string = stereo_in_ + "/left/camera_info";
+    rim_string = stereo_in_ + "/right/image_raw";
+    rin_string = stereo_in_ + "/right/camera_info";
   }else{
     cout << "Image choice not supported!\n";
     exit(-1); 
@@ -164,6 +165,12 @@ App::App(const std::string & stereo_in,
   r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
   sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
   sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
+  
+  // Mono-Cameras:
+  if (1==0){
+    left_image_sub_ = node_.subscribe(lim_string, 10, &App::left_image_cb,this);
+    right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
+  }
 };
 
 App::~App()  {
@@ -225,14 +232,13 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::ImageConstPtr& r_image,
     const sensor_msgs::CameraInfoConstPtr& r_cam_info)
 {
+  
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
-
   stereo_counter++;
-  if (stereo_counter%10 ==0){
-    std::cout << stereo_counter << " STEREO\n";
+  if (stereo_counter%30 ==0){
+    std::cout << stereo_counter << " stereo images -> CAMERA \n";
   }
 
-  /*
   namespace enc = sensor_msgs::image_encodings;
   cv_bridge::CvImageConstPtr left_ptr;
   cv_bridge::CvImageConstPtr right_ptr;
@@ -281,16 +287,25 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     copy(l_image->data.begin(), l_image->data.end(), stereo_data);
     copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
     stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
+  }else if (l_image->encoding.compare("rgb8") == 0){
+    // Need to convert image to OpenCV to invert R and B:
+    // OpenCV: BGR | LCM: RGB
+    int n_colors = 3; // 1 is grey, 3 is rgb
+    stereo.row_stride=n_colors*l_image->width;
+    stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    stereo.size =n_colors *2*isize;
+    copy(l_image->data.begin(), l_image->data.end(), stereo_data);
+    copy(r_image->data.begin(), r_image->data.end(), stereo_data +  n_colors*isize);
+    stereo.data.assign(stereo_data, stereo_data + ( n_colors*2*isize));   
   }else{
     cout << l_image->encoding << " image encoded not supported, not publishing\n";
     cout << stereo_out_ << "\n";
     return;
   }
-
   lcm_publish_.publish(stereo_out_.c_str(), &stereo);
-  */
-
-  stereo_counter++;
+  
+  // As a convenience also publish the left image:
+  send_image(l_image, "CAMERALEFT" );
 }
 
 
@@ -496,8 +511,8 @@ void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
 int scan_counter=0;
 void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
   scan_counter++;
-  if (scan_counter%30 ==0){
-    std::cout << scan_counter << " /scan -> ROTATING_SCAN\n";
+  if (scan_counter%80 ==0){
+    std::cout << scan_counter << " /multisense_sl/laser/scan -> ROTATING_SCAN\n";
   }  
   send_lidar(msg, "ROTATING_SCAN");
 }
@@ -534,7 +549,7 @@ int main(int argc, char **argv){
   nh.setCallbackQueue(&local_callback_queue);
   
 
-  App *app = new App( "camera", "CAMERA", nh);
+  App *app = new App( "multisense_sl/camera", "CAMERA", nh);
   std::cout << "ros2lcm translator ready\n";
   //ros::spin();
   
