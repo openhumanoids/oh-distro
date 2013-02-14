@@ -33,10 +33,12 @@ void SetJointStates(const sensor_msgs::JointState::ConstPtr &_js)
     jointcommands.header.stamp = _js->header.stamp;
 
     // assign sinusoidal joint angle targets
-    for (unsigned int i = 0; i < jointcommands.name.size(); i++)
-      jointcommands.position[i] =
-        3.2* sin((ros::Time::now() - startTime).toSec());
-
+    for (unsigned int i = 0; i < jointcommands.name.size(); i++) {
+      if (jointcommands.name[i] == "atlas::l_arm_elx")
+        jointcommands.position[i] = 0.5*sin((ros::Time::now() - startTime).toSec());
+      else
+        jointcommands.position[i] = 0;
+    }
     pub_joint_commands_.publish(jointcommands);
   }
 }
