@@ -10,7 +10,7 @@ pods_use_pkg_config_packages(drc-network-bridge lcm
 pods_install_executables(drc-network-bridge)
 
 add_executable(drc-network-shaper network-bridge.cpp shaper-handlers.cpp)
-target_link_libraries (drc-network-shaper boost_system boost_thread)
+target_link_libraries (drc-network-shaper boost_system boost_thread goby_acomms protobuf boost_signals)
 pods_use_pkg_config_packages(drc-network-shaper lcm 
              bot2-param-client 
 	     lcmtypes_drc_lcmtypes eigen3)

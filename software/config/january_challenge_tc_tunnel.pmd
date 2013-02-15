@@ -43,13 +43,8 @@ group "core" {
         exec = "affordance_server  -r base";
         host = "localhost";
     }
-
     cmd "botnetshaper" {
         exec = "drc-network-shaper -t manipulation -r";
-        host = "localhost";
-    }
-    cmd "botnettunnel" {
-        exec = "bot-lcm-tunnel -p 9001 -l \"\" --udp";
         host = "localhost";
     }
 }
@@ -81,10 +76,6 @@ group "sensing" {
 
 
 group "base" {
-    cmd "basenettunnel" {
-        exec = "bot-lcm-tunnel 172.19.5.2:9001 -l udpm://239.255.12.68:1268?ttl=1 --udp -s TUNNEL_BASE_TO_ROBOT -r TUNNEL_ROBOT_TO_BASE";
-        host = "localhost";
-    }
     cmd "basenetshaper" {
         exec = "drc-network-shaper -t manipulation -b";
         host = "localhost";

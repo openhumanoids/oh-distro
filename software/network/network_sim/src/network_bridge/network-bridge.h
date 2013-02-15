@@ -67,6 +67,10 @@ class KMCLApp{
       return current_utime;
     }
     
+    const std::vector<Resend>& resendlist() 
+    { return resendlist_; }
+    
+    
     std::string parse_direction(std::string task, std::string direction, bool direction_bool);    
     
     static const std::string B2R_CHANNEL;
