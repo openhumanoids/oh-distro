@@ -1,4 +1,4 @@
-function [pos, width] = getAtlasFeetPos(r, q0)
+function [pos, width] = getFeetPos(r, q0)
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
