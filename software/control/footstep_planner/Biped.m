@@ -1,6 +1,7 @@
 classdef Biped
   properties
     manip
+    visualizer
     step_time
     max_step_length
     max_step_rot
@@ -11,6 +12,7 @@ classdef Biped
   methods
     function obj = Biped(manip, options)
       obj.manip = manip;
+      obj.visualizer = obj.manip.constructVisualizer();
       if nargin < 2
         options = struct();
       end
@@ -43,7 +45,6 @@ classdef Biped
         end
       end
       q0 = x0(1:end/2);
-      v = obj.manip.constructVisualizer();
       [start_pos, step_width] = getFeetPos(obj.manip, q0);
       
       if strcmp(options.traj_type, 'turn_and_go')
@@ -76,35 +77,35 @@ classdef Biped
       end
     end
     
-    function xtraj = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)
+    function [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)
       v = obj.manip.constructVisualizer();
       q0 = x0(1:end/2);
       [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
-      xtraj = computeZMPPlan(obj.manip, v, x0, zmptraj, lfoottraj, rfoottraj, ts);
+      xtraj = computeZMPPlan(obj.manip, obj.visualizer, x0, zmptraj, lfoottraj, rfoottraj, ts);
     end
     
-    function xtraj = walkingPlanFromSteps(obj, x0, Xright, Xleft)
+    function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft)
       q0 = x0(1:end/2);
       [zmptraj, lfoottraj, rfoottraj] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
       v = obj.manip.constructVisualizer();
-      xtraj = computeZMPPlan(obj.manip, v, x0, zmptraj, lfoottraj, rfoottraj, ts);
+      xtraj = computeZMPPlan(obj.manip, obj.visualizer, x0, zmptraj, lfoottraj, rfoottraj, ts);
     end
     
-    function xtraj = walkingPlan(obj, x0, poses, options)
+    function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
       if nargin < 4
         options = struct();
       end
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
-      xtraj = walkingPlanFromSteps(obj, x0, Xright, Xleft);
+      [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft);
     end
     
-    function xtraj = roughWalkingPlan(obj, x0, poses, options)
+    function [xtraj, ts] = roughWalkingPlan(obj, x0, poses, options)
       if nargin < 4
         options = struct();
       end
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
-      xtraj = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft);
+      [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft);
     end
   end
 end
