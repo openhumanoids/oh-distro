@@ -35,6 +35,9 @@ rosbuild_add_boost_directories()
 rosbuild_add_library(gazebo_ros_pub_robot_state src/gazebo_ros_pub_robot_state.cpp)
 rosbuild_link_boost(gazebo_ros_pub_robot_state thread)
 
+rosbuild_add_library(FloatingSandiaHandPlugin src/FloatingSandiaHandPlugin.cpp)
+rosbuild_link_boost(FloatingSandiaHandPlugin thread)
+
 # drives rolling robot's base
 #rosbuild_add_library(fourWheeled_diffdrive_plugin src/fourWheeled_diffdrive_plugin.cpp)
 #rosbuild_link_boost(fourWheeled_diffdrive_plugin thread)
