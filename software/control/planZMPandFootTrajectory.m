@@ -82,7 +82,7 @@ while 1
   lfootpos = [lfootpos, lf, lf(:,end)];
   zmp = [zmp, stepzmp, stepzmp(:,end)];
   ts = [ts, tstep];
-  step_times = [step_times, ts(end)];
+  step_times = [step_times, tstep(2), tstep(end)];
   bRightStep = ~bRightStep;
   if istep_l == length(Xleft(1,:)) && istep_r == length(Xright(1,:))
     break
