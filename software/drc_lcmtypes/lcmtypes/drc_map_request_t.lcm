@@ -14,6 +14,12 @@ struct map_request_t
   // whether the view should be active
   boolean active;
 
+  // whether the time range is absolute or relative
+  boolean relative_time;
+
+  // whether the clip planes are absolute or relative
+  boolean relative_location;
+
   // type of data requested
   int8_t type;
 

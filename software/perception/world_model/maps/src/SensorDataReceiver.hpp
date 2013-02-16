@@ -9,10 +9,10 @@
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/drc/pointcloud2_t.hpp>
-#include <bot_param/param_client.h>
 
 #include "Types.hpp"
 #include "ThreadSafeQueue.hpp"
+#include "BotFramesWrapper.hpp"
 
 namespace maps {
 
@@ -24,22 +24,17 @@ public:
   };
 
 protected:
-  struct SubscriptionInfo {
-    std::string mSensorChannel;
-    SensorType mSensorType;
-    std::string mTransformFrom;
-    std::string mTransformTo;
-    lcm::Subscription* mSubscription;
-  };
+  struct SubscriptionInfo;
+  struct BotStructures;
 
-  typedef std::unordered_map<std::string, SubscriptionInfo> SubscriptionMap;
+  typedef std::unordered_map<std::string, boost::shared_ptr<SubscriptionInfo> >
+  SubscriptionMap;
 
 public:
   SensorDataReceiver();
   ~SensorDataReceiver();
 
   void setLcm(boost::shared_ptr<lcm::LCM>& iLcm);
-  void setBotParam(BotParam* iParam);
   bool addChannel(const std::string& iSensorChannel,
                   const SensorType iSensorType,
                   const std::string& iTransformFrom,
@@ -56,7 +51,8 @@ public:
 
 protected:
 
-  bool getPose(const std::string& iChannel, const int64_t iTimestamp,
+  bool getPose(const boost::shared_ptr<SubscriptionInfo>& iInfo,
+               const int64_t iTimestamp,
                Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation);
 
 
@@ -70,7 +66,8 @@ protected:
 
 protected:
   boost::shared_ptr<lcm::LCM> mLcm;
-  BotParam* mBotParam;
+  boost::shared_ptr<BotFramesWrapper> mBotFrames;
+  boost::shared_ptr<BotStructures> mBotStructures;
   SubscriptionMap mSubscriptions;
   bool mIsRunning;
 

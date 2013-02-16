@@ -12,9 +12,11 @@
 #include <bot_frames/bot_frames.h>
 #include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/map_command_t.hpp>
+#include <lcmtypes/drc/map_macro_t.hpp>
 
 #include <drc_utils/Clock.hpp>
 
@@ -56,8 +58,7 @@ enum DataRequestType {
 
 enum MapCommand {
   MAP_COMMAND_CLEAR,
-  MAP_COMMAND_STOP,
-  MAP_COMMAND_START
+  MAP_COMMAND_SCAN_HIGH_RES
 };
 
 struct Frustum {
@@ -73,6 +74,7 @@ struct RendererMaps;
 struct ViewMetaData {
   int64_t mId;
   bool mVisible;
+  bool mRelative;
   Frustum mFrustum;
   Eigen::Vector3f mColor;
 };
@@ -206,29 +208,29 @@ struct RendererMaps {
       bot_gtk_param_widget_get_enum(iWidget, PARAM_MAP_COMMAND_TYPE);
 
     if (!strcmp(iName, PARAM_MAP_COMMAND)) {
-      drc::map_command_t command;
-      command.utime = drc::Clock::instance()->getCurrentTime();
-      command.map_id = 1;
-      switch (self->mMapCommand) {
-      case MAP_COMMAND_CLEAR:
+      if (self->mMapCommand == MAP_COMMAND_CLEAR) {
+        drc::map_command_t command;
+        command.utime = drc::Clock::instance()->getCurrentTime();
+        command.map_id = -1;
         command.command = drc::map_command_t::CLEAR;
-        break;
-      case MAP_COMMAND_STOP:
-        command.command = drc::map_command_t::STOP;
-        break;
-      case MAP_COMMAND_START:
-        command.command = drc::map_command_t::START;
-        break;
-      default:
-        std::cout << "WARNING: BAD MAP COMMAND TYPE" << std::endl;
-        break;
+        self->mLcm->publish("MAP_COMMAND", &command);
       }
-      self->mLcm->publish("MAP_COMMAND", &command);
+
+      else if (self->mMapCommand == MAP_COMMAND_SCAN_HIGH_RES) {
+        drc::map_macro_t macro;
+        macro.utime = drc::Clock::instance()->getCurrentTime();
+        macro.command = drc::map_macro_t::CREATE_DENSE_MAP;
+        self->mLcm->publish("MAP_MACRO", &macro);
+      }
+
+      else {
+        std::cout << "WARNING: BAD MAP COMMAND TYPE" << std::endl;
+      }
     }
 
     if (!strcmp(iName, PARAM_DATA_REQUEST) && (self->mBoxValid)) {
       maps::MapView::Spec spec;
-      spec.mMapId = 0;
+      spec.mMapId = -1;
       spec.mViewId = -1;
       spec.mActive = true;
       switch(self->mRequestType) {
@@ -244,11 +246,24 @@ struct RendererMaps {
       spec.mResolution = self->mRequestResolution;
       spec.mFrequency = self->mRequestFrequency;
       spec.mTimeMin = -1;
+      spec.mTimeMax = -1;
+      spec.mRelativeTime = false;
       if (self->mRequestTimeWindow > 1e-3) {
         spec.mTimeMin = -self->mRequestTimeWindow*1e6;
+        spec.mTimeMax = 0;
+        spec.mRelativeTime = true;
       }
-      spec.mTimeMax = -1;
       spec.mClipPlanes = self->mFrustum.mPlanes;
+      spec.mRelativeLocation = false;
+      /* TODO
+      spec.mRelativeLocation = self->mRequestRelativeLocation;
+      if (spec.mRelativeLocation) {
+        for (int i = 0; i < spec.mClipPlanes; ++i) {
+          Eigen::Vector4f plane = spec.mClipPlanes[i];
+          spec.mClipPlanes[i][3] = pos.dot(plane.head<3>()) + plane[3];
+        }
+      }
+      */
       self->mViewClient.request(spec);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_CAMERA);
@@ -289,7 +304,18 @@ struct RendererMaps {
 
       // draw box
       if (data.mFrustum.mPlanes.size() > 0) {
+        BotTrans trans;
+        bot_frames_get_trans_with_utime(self->mBotFrames,
+                                        "head", "local",
+                                        self->mCameraImage.utime, &trans);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        if (data.mRelative) {
+          glTranslatef(trans.trans_vec[0], trans.trans_vec[1],
+                       trans.trans_vec[2]);
+        }
         self->drawFrustum(data.mFrustum, data.mColor);
+        glPopMatrix();
       }
 
       if (!data.mVisible) {
@@ -411,6 +437,7 @@ struct RendererMaps {
       added = true;
       data.mId = iId;
       data.mVisible = true;
+      data.mRelative = false;
       if (data.mId != 1) {
         data.mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
                                       (double)rand()/RAND_MAX,
@@ -428,6 +455,7 @@ struct RendererMaps {
         mapView->getSpec().mClipPlanes;
       if (planes.size() != data.mFrustum.mPlanes.size()) {
         mViewData[iId].mFrustum.mPlanes = mapView->getSpec().mClipPlanes;
+        mViewData[iId].mRelative = mapView->getSpec().mRelativeLocation;
       }
     }
 
@@ -798,6 +826,8 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                      GTK_WIDGET(self->mWidget));
   gtk_widget_show (GTK_WIDGET (self->mWidget));
 
+  bot_gtk_param_widget_add_separator(self->mWidget, "view creation");
+
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_INPUT_MODE,
                                 BOT_GTK_PARAM_WIDGET_MENU, INPUT_MODE_CAMERA,
                                 "Move View", INPUT_MODE_CAMERA,
@@ -823,13 +853,16 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
 
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_DATA_REQUEST, NULL);
 
+  bot_gtk_param_widget_add_separator(self->mWidget, "macro commands");
+
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_MAP_COMMAND_TYPE,
                                 BOT_GTK_PARAM_WIDGET_MENU, MAP_COMMAND_CLEAR,
                                 "Clear Map", MAP_COMMAND_CLEAR,
-                                "Stop Update", MAP_COMMAND_STOP,
-                                "Start Update", MAP_COMMAND_START, NULL);
+                                "High-Res Scan", MAP_COMMAND_SCAN_HIGH_RES,
+                                NULL);
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_MAP_COMMAND, NULL);
 
+  bot_gtk_param_widget_add_separator(self->mWidget, "view list");
   self->mViewListWidget = gtk_vbox_new (FALSE, 0);
   gtk_container_add (GTK_CONTAINER (self->mWidget), self->mViewListWidget);
   gtk_widget_show (self->mViewListWidget);
@@ -839,7 +872,6 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                     self);
 
 
-  // save widget modes:
   g_signal_connect (G_OBJECT (viewer), "load-preferences",
                     G_CALLBACK (on_load_preferences), self);
   g_signal_connect (G_OBJECT (viewer), "save-preferences",

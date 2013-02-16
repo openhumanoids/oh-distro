@@ -10,6 +10,8 @@ MapView::Spec::
 Spec() {
   mMapId = mViewId = 0;
   mActive = false;
+  mRelativeTime = false;
+  mRelativeLocation = false;
   mType = TypeCloud;
   mResolution = 0;
   mFrequency = 0;
@@ -21,6 +23,8 @@ operator==(const Spec& iSpec) const {
   bool eq = (mMapId == iSpec.mMapId) &&
     (mViewId == iSpec.mViewId) &&
     (mActive == iSpec.mActive) &&
+    (mRelativeTime == iSpec.mRelativeTime) &&
+    (mRelativeLocation == iSpec.mRelativeLocation) &&
     (mType == iSpec.mType) &&
     (mResolution == iSpec.mResolution) &&
     (mFrequency == iSpec.mFrequency) &&

@@ -5,6 +5,10 @@ struct map_catalog_t
   // timestamp of this message
   int64_t utime;
 
+  // current active maps
+  int32_t num_maps;
+  map_params_t maps[num_maps];
+
   // current active views
   int32_t num_views;
   map_request_t views[num_views];

@@ -39,7 +39,6 @@ struct State {
     drc::Clock::instance()->setLcm(mLcm);
     mSensorDataReceiver->setLcm(mLcm);
     mBotParam = bot_param_new_from_server(mLcm->getUnderlyingLCM(), 0);
-    mSensorDataReceiver->setBotParam(mBotParam);
     mBotFrames = bot_frames_get_global(mLcm->getUnderlyingLCM(), mBotParam);
     mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "recent-points");
   }

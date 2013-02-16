@@ -108,9 +108,6 @@ int main() {
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
                laserChannel, "local");
-  BotParam* theParam =
-    bot_param_new_from_server(state.mLcm->getUnderlyingLCM(), 0);
-  state.mSensorDataReceiver->setBotParam(theParam);
   state.mSensorDataReceiver->start();
   DataConsumer consumer(&state);
   boost::thread consumerThread(boost::ref(consumer));

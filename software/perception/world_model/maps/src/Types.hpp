@@ -8,10 +8,15 @@
 namespace octomap {
   class OcTree;
 }
+namespace lcm {
+  class LCM;
+}
 
 namespace maps {
   typedef pcl::PointXYZRGB PointType;
   typedef pcl::PointCloud<PointType> PointCloud;
+
+  typedef boost::shared_ptr<lcm::LCM> LcmPtr;
 
   struct PointSet {
     int64_t mTimestamp;

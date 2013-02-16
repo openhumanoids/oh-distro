@@ -4,6 +4,7 @@ add_library(maps SHARED
   Utils.cpp
   PointDataBuffer.cpp
   VoxelGrid.cpp
+  BotFramesWrapper.cpp
   SensorDataReceiver.cpp
   LocalMap.cpp
   MapManager.cpp
@@ -27,6 +28,7 @@ pods_install_headers(
   Utils.hpp
   PointDataBuffer.hpp
   VoxelGrid.hpp
+  BotFramesWrapper.hpp
   SensorDataReceiver.hpp
   LocalMap.hpp
   MapManager.hpp

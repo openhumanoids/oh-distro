@@ -1,0 +1,13 @@
+package drc;
+
+struct map_macro_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // command to execute
+  int8_t command;
+
+  // command types
+  const int8_t CREATE_DENSE_MAP = 1;
+}

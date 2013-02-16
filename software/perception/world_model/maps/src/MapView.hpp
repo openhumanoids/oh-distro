@@ -17,6 +17,8 @@ public:
     int64_t mMapId;
     int64_t mViewId;
     bool mActive;
+    bool mRelativeTime;
+    bool mRelativeLocation;
     Type mType;
     float mResolution;
     float mFrequency;

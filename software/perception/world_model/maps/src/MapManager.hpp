@@ -62,7 +62,7 @@ public:
   // add data to all active maps
   bool addData(const maps::PointSet& iPointSet);
 
-  // get underlying point data (TODO: experimental)
+  // get underlying point data
   const boost::shared_ptr<PointDataBuffer> getPointData() const;
 
 protected:

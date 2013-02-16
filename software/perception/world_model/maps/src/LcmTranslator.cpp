@@ -40,6 +40,8 @@ toLcm(const MapView::Spec& iSpec) {
   msg.map_id = iSpec.mMapId;
   msg.view_id = iSpec.mViewId;
   msg.active = iSpec.mActive;
+  msg.relative_time = iSpec.mRelativeTime;
+  msg.relative_location = iSpec.mRelativeLocation;
   switch (iSpec.mType) {
   case MapView::Spec::TypeOctree:
     msg.type = drc::map_request_t::OCTREE;
@@ -71,7 +73,9 @@ fromLcm(const drc::map_request_t& iMessage) {
   MapView::Spec spec;
   spec.mMapId = iMessage.map_id;
   spec.mViewId = iMessage.view_id;
-  spec.mActive =  iMessage.active;
+  spec.mActive = iMessage.active;
+  spec.mRelativeTime = iMessage.relative_time;
+  spec.mRelativeLocation = iMessage.relative_location;
   switch (iMessage.type) {
   case drc::map_request_t::OCTREE:
     spec.mType = MapView::Spec::TypeOctree;

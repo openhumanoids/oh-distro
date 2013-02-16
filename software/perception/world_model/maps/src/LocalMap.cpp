@@ -139,6 +139,7 @@ addData(const maps::PointSet& iPointSet) {
       continue;
     }
 
+    /* TODO: not using master octree at the moment
     // add ray to octree
     p1 = referenceToOctree*p1;
     p2 = referenceToOctree*p2;
@@ -149,6 +150,7 @@ addData(const maps::PointSet& iPointSet) {
     if (t2 < 1.0f) {
       mOctree.mTree->deleteNode(octPt2);
     }
+    */
 
     float range2 = (refPt-refOrigin).squaredNorm();
     float thresh2 = iPointSet.mMaxRange*iPointSet.mMaxRange;
@@ -191,12 +193,7 @@ maps::PointCloud::Ptr LocalMap::
 getAsPointCloud(const float iResolution,
                 const SpaceTimeBounds& iBounds) const {
   // interpret time bounds
-  // TODO: could be more intuitive
   int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
-  if ((timeMax < 0) && (timeMin < 0)) {
-    int64_t latestPointTime = mPointData->getTimeMax();
-    timeMin = latestPointTime - timeMin;
-  }
 
   // grab point cloud and crop to space-time bounds
   maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
@@ -235,14 +232,7 @@ getAsOctree(const float iResolution, const bool iTraceRays,
   return oct;
   */
 
-  // interpret time bounds
-  // TODO: could be more intuitive
   int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
-  if ((timeMax < 0) && (timeMin < 0)) {
-    int64_t latestPointTime = mPointData->getTimeMax();
-    timeMin = latestPointTime - timeMin;
-  }
-
   Octree oct;
   oct.mTransform = Eigen::Isometry3f::Identity();
   oct.mTransform.translation() = iOrigin;
