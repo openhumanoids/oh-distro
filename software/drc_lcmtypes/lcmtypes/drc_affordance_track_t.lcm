@@ -1,0 +1,8 @@
+package drc;
+
+struct affordance_track_t
+{
+  int32_t uid;           //affordance uid	
+  string segment;        //corresponding segment (or link) name from the otdf
+  vector_3d_t position;  //observation
+}
