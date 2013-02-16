@@ -18,6 +18,9 @@ constraint_app::constraint_app(lcm_t* publish_lcm) :
 
   drc_affordance_collection_t_subscribe(subscribe_lcm_, "AFFORDANCE_COLLECTION",
 					affordance_collection_handler_aux, this);
+
+  drc_affordance_track_collection_t_subscribe(subscribe_lcm_, "AFFORDANCE_TRACK_COLLECTION",
+					      affordance_track_collection_handler_aux, this);
 }
 
 void constraint_app::affordance_collection_handler(const drc_affordance_collection_t *msg)
@@ -68,6 +71,17 @@ void constraint_app::print_kdl_tree(const KDL::Tree& tree,
     print_kdl_tree(tree, segment.children[i]->second, depth+1);
   }
   
+}
+
+void constraint_app::affordance_track_collection_handler(const drc_affordance_track_collection_t *msg)
+{
+  std::cout << "got a new track collection" << std::endl;
+
+  std::cout << "sent a new (empty) estimate of joint angles" << std::endl;
+  drc_affordance_joint_angles_t aja;
+  aja.utime = msg->utime;
+  aja.uid = msg->uid;
+  drc_affordance_joint_angles_t_publish(publish_lcm_, "AFFORDANCE_JOINT_ANGLES", &aja);
 }
 
 int main(int argc, char ** argv)

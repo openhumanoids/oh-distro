@@ -32,6 +32,14 @@ class constraint_app{
     }
     void affordance_collection_handler(const drc_affordance_collection_t *msg);
 
+  static void affordance_track_collection_handler_aux(const lcm_recv_buf_t* rbuf,
+						      const char* channel,
+						      const drc_affordance_track_collection_t* msg,
+						      void* user_data) {
+    ((constraint_app *) user_data)->affordance_track_collection_handler(msg);
+  }
+  void affordance_track_collection_handler(const drc_affordance_track_collection_t *msg);
+
   void print_kdl_tree(const KDL::Tree& tree, 
 		      const KDL::TreeElement& segment,
 		      unsigned int depth);

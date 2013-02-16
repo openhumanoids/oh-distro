@@ -14,6 +14,9 @@ sys.path.append(path2)
 import lcm
 from drc.affordance_collection_t import affordance_collection_t
 from drc.affordance_t import affordance_t
+from drc.affordance_track_collection_t import affordance_track_collection_t
+from drc.affordance_track_t import affordance_track_t
+from drc.vector_3d_t import vector_3d_t
 
 def timestamp_now (): return int (time.time () * 1000000)
 
@@ -41,15 +44,19 @@ aff1.uid = 0
 aff1.nparams     = 11
 aff1.params      = [0.0, 0.0, 0.0,    0.0,     0.0,   0.0,            1.0,           0.2,  4.0,  4.0,  4.0]
 aff1.param_names = ["x", "y", "z", "roll", "pitch", "yaw", "valve_radius", "tube_radius", "lX", "lY", "lZ"]
-'''
-aff2 = affordance_t() 
-aff2.utime =affc.utime
-aff2.otdf_type = "savereactor"
-aff2.uid = 0 
-aff2.nparams =23
-aff2.params = [0, 1, 1, 1,1, 3, 3, 3, 1, 1.5, 0.2, 0.0, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1, -0.67, 0.0]
-aff2.param_names = ["Density", "base_density", "base_h", "base_l", "base_w", "lX", "lY", "lZ", "lever_density", "lever_length","lever_thickness", "lever_turn", "lever_width", "lever_y_offset", "lever_z_offset", "pitch", "roll", "tube_radius", "wheel_radius", "x", "y", "yaw", "z"]
-'''
+
+
+track1 = affordance_track_t()
+track1.segment = "gate_neck"
+track1.position = vector_3d_t()
+
+
+atc = affordance_track_collection_t()
+atc.utime = timestamp_now()
+atc.uid = 0
+atc.ntracks = 1
+atc.tracks = [track1]
+
 for i in range(2):
   print i
   #aff2.params[11] =i/10.0 
@@ -57,6 +64,7 @@ for i in range(2):
   affc.affs = [aff1]
   
   lc.publish("AFFORDANCE_COLLECTION", affc.encode())
+  lc.publish("AFFORDANCE_TRACK_COLLECTION", atc.encode())
   time.sleep(0.1)
  
 
