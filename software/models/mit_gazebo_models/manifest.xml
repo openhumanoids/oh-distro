@@ -13,6 +13,7 @@
     <uri>file://mit_legless_robot</uri>
     <uri>file://mit_terrain</uri>
     <uri>file://mit_compassGait_robot</uri>
+    <uri>file://mit_floating_sandia_hands</uri>
   </models>
 </database>
 

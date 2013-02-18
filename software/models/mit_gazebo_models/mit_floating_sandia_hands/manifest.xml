@@ -1,0 +1,7 @@
+<?xml version='1.0'?>
+<model>
+  <name>sandia_hands_floating</name>
+  <description>sandia_hands_floating</description>
+  <sdf>../mit_robot_hands/floatingbase_urdfs/sandia_hands_floating.urdf</sdf>
+</model>
+
