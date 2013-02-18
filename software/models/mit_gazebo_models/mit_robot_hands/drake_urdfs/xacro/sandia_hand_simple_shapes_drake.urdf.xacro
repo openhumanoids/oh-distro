@@ -1,0 +1,822 @@
+<?xml version="1.0"?>
+<!-- Changes from sandia_hand_simple_shapes.urdf.xacro in  /usr/share/sandia-hand-5.1/ros/sandia_hand_description package -->
+<!-- 
+ 1) Copied unchanged finger macro to a new thumb macro
+ 2) Commented out all existing mesh collision elements
+ 5) Added custom collision elements to links "${side}_f${idx}_2_accel" in thumb macro 
+ 6) Added custom collision elements to links "${side}_f${idx}_fixed_accel, and ${side}_f${idx}_2_accel" in finger macro
+ 7) Commented out finger base Joint "${side}_f${idx}_j0" in finger macro and readded custom Joints for f0,f1 and f2 in the hand macro.
+ 8) Added a dummy knuckle link and also dummy accel_2 links and associated joints to finger macro.
+ 9) Added a  dummy accel_2 links and associated joints to finger macro.
+-->
+
+<robot name="sandia_hand"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
+
+  <xacro:property name="M_pi" value="3.1415926535897931" />
+  <xacro:macro name="finger" params="idx x y z r p yaw side reflect">
+    <link name="${side}_f${idx}_base">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.35"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+    </link>
+    <link name="${side}_f${idx}_fixed_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- ############ MIT ADDITION ############ -->
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.05"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>  
+      <!-- ############    END     ############ -->       
+    </link>
+    <link name="${side}_f${idx}_0">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f0 -->
+      <!-- <collision group="default">
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.015" length="0.023" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.023" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f0 -->
+      <!-- begin visual shape approximation of f0 -->
+      <visual>
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.015" length="0.023" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.023" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f0 -->
+      <!-- begin collision mesh of f0 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f0 -->
+      <!-- begin visual mesh of f0 ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f0 -->
+    </link>
+    <link name="${side}_f${idx}_1">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f1 -->
+      <!-- <collision group="default">
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.067" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f1 -->
+      <!-- begin visual shape approximation of f1 -->
+      <visual>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.067" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f1 -->
+      <!-- begin collision mesh of f1 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f1 -->
+      <!-- begin visual mesh of f1 ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f1 -->
+    </link>
+    <link name="${side}_f${idx}_1_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- ############ MIT ADDITION ############ -->
+<!--      <collision>-->
+<!--        <origin rpy="0 0 0" xyz="0 0 0.01"/>-->
+<!--        <geometry>-->
+<!--          <sphere radius="0"/>-->
+<!--        </geometry>-->
+<!--      </collision>  -->
+      <!-- ############    END     ############ -->         
+    </link>
+    <link name="${side}_f${idx}_2">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f2 -->
+      <!-- <collision group="default">
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.009" length="0.057" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.009" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f2 -->
+      <!-- begin visual shape approximation of f2 -->
+      <visual>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.009" length="0.057" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.009" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <!-- begin collision mesh of f2    ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f2 -->
+    </link>
+    <link name="${side}_f${idx}_2_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- ############ MIT ADDITION ############ -->
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision>  
+      <!-- ############    END     ############ -->         
+    </link>
+
+     <!-- ############ MIT ADDITION ############ -->
+    <link name="${side}_f${idx}_2_accel_dummy1">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision> 
+    </link>
+    
+    <joint name="${side}_f${idx}_2_accel_dummy1" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel_dummy1"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+      <!-- ############    END     ############ --> 
+
+    <joint name="${side}_f${idx}_base" type="fixed">
+      <parent link="${side}_palm"/>
+      <child link="${side}_f${idx}_base"/>
+      <origin xyz="${x} ${y} ${z}" rpy="${r} ${p} ${yaw}"/>
+    </joint>
+    
+<!-- ############ MIT COMMENT OUT ############ -->    
+<!--    <joint name="${side}_f${idx}_j0" type="revolute">-->
+<!--      <axis xyz="0 0 ${reflect}"/>-->
+<!--      <parent link="${side}_f${idx}_base"/>-->
+<!--      <child link="${side}_f${idx}_0"/>-->
+<!--      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>-->
+<!--      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>-->
+<!--      <dynamics damping="0.2"/>-->
+<!--      <origin xyz="0 0 0" rpy="0 0 0"/>-->
+<!--    </joint>-->
+<!-- ############    END     ############ --> 
+
+    <joint name="${side}_f${idx}_j1" type="revolute">
+      <axis xyz="0 0 1"/>
+      <parent link="${side}_f${idx}_0"/>
+      <child link="${side}_f${idx}_1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+      <dynamics damping="0.2"/>
+      <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_j2" type="revolute">
+      <axis xyz="0 0 1"/>
+      <parent link="${side}_f${idx}_1"/>
+      <child link="${side}_f${idx}_2"/>
+      <origin xyz="0.05 0 0" rpy="0 0 0"/>
+      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+      <dynamics damping="0.2"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+    </joint>
+
+    <joint name="${side}_f${idx}_fixed_accel" type="fixed">
+      <parent link="${side}_f${idx}_base"/>
+      <child link="${side}_f${idx}_fixed_accel"/>
+      <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_1_accel" type="fixed">
+      <parent link="${side}_f${idx}_1"/>
+      <child link="${side}_f${idx}_1_accel"/>
+      <origin xyz="0.03 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_2_accel" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+    
+<!-- ############ MIT ADDITION ############ -->    
+   <link name="${side}_f${idx}_knuckle_dummy_contact">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.058 0 0.034"/> <!--TODO: THERE IS A ERROR HERE: xyz needs to be "0.058 0 0.034" instead of "0.1 0 0.05"-->
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+   <joint name="${side}_f${idx}_knuckle_dummy_contact" type="fixed">
+    <parent link="${side}_f${idx}_base"/>
+    <child link="${side}_f${idx}_knuckle_dummy_contact"/>
+    <origin rpy="0 0 0" xyz="-0.05 0 0"/>
+  </joint>      
+<!-- ############    END     ############ -->     
+
+    <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
+  </xacro:macro>
+  
+  
+ <xacro:macro name="thumb" params="idx x y z r p yaw side reflect">
+    <link name="${side}_f${idx}_base">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.35"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+    </link>
+    <link name="${side}_f${idx}_fixed_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+    </link>
+    <link name="${side}_f${idx}_0">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f0 -->
+      <!-- <collision group="default">
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.015" length="0.023" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.023" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f0 -->
+      <!-- begin visual shape approximation of f0 -->
+      <visual>
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.015" length="0.023" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.023" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f0 -->
+      <!-- begin collision mesh of f0 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f0 -->
+      <!-- begin visual mesh of f0 ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f0 -->
+    </link>
+    <link name="${side}_f${idx}_1">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f1 -->
+      <!-- <collision group="default">
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.067" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f1 -->
+      <!-- begin visual shape approximation of f1 -->
+      <visual>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.067" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f1 -->
+      <!-- begin collision mesh of f1 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f1 -->
+      <!-- begin visual mesh of f1 ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f1 -->
+    </link>
+    <link name="${side}_f${idx}_1_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+    </link>
+    <link name="${side}_f${idx}_2">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of f2 -->
+      <!-- <collision group="default">
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.009" length="0.057" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.009" />
+        </geometry>
+      </collision> -->
+      <!--   end simple shape approximation of f2 -->
+      <!-- begin visual shape approximation of f2 -->
+      <visual>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.009" length="0.057" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.009" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <!-- begin collision mesh of f2    ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f2 -->
+    </link>
+    <link name="${side}_f${idx}_2_accel">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- ############ MIT ADDITION ############ -->
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision> 
+      <!-- ############    END     ############ -->       
+    </link>
+    
+     <!-- ############ MIT ADDITION ############ -->
+    
+    <link name="${side}_f${idx}_2_accel_dummy1">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+        <geometry>
+          <sphere radius="0"/>
+        </geometry>
+      </collision> 
+    </link>
+    
+    <joint name="${side}_f${idx}_2_accel_dummy1" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel_dummy1"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+      <!-- ############    END     ############ --> 
+      
+    <joint name="${side}_f${idx}_base" type="fixed">
+      <parent link="${side}_palm"/>
+      <child link="${side}_f${idx}_base"/>
+      <origin xyz="${x} ${y} ${z}" rpy="${r} ${p} ${yaw}"/>
+    </joint>
+    <joint name="${side}_f${idx}_j0" type="revolute">
+      <axis xyz="0 0 ${reflect}"/>
+      <parent link="${side}_f${idx}_base"/>
+      <child link="${side}_f${idx}_0"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+      <dynamics damping="0.2"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_j1" type="revolute">
+      <axis xyz="0 0 1"/>
+      <parent link="${side}_f${idx}_0"/>
+      <child link="${side}_f${idx}_1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+      <dynamics damping="0.2"/>
+      <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_j2" type="revolute">
+      <axis xyz="0 0 1"/>
+      <parent link="${side}_f${idx}_1"/>
+      <child link="${side}_f${idx}_2"/>
+      <origin xyz="0.05 0 0" rpy="0 0 0"/>
+      <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+      <dynamics damping="0.2"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+    </joint>
+
+    <joint name="${side}_f${idx}_fixed_accel" type="fixed">
+      <parent link="${side}_f${idx}_base"/>
+      <child link="${side}_f${idx}_fixed_accel"/>
+      <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_1_accel" type="fixed">
+      <parent link="${side}_f${idx}_1"/>
+      <child link="${side}_f${idx}_1_accel"/>
+      <origin xyz="0.03 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+    <joint name="${side}_f${idx}_2_accel" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_accel"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+
+    <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
+  </xacro:macro>  
+
+  <xacro:macro name="sandia_hand" params="side parent reflect *origin">
+    <link name="${side}_palm">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <mass value="0.3"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <!-- begin simple shape approximation of palm -->
+      <!-- <collision group="default">
+        <origin xyz="0.069 ${0.016 * reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9 * reflect}"/>
+        <geometry>
+          <cylinder radius="0.013" length="0.100" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.064 ${0.008 * reflect} 0.021" rpy="0.41 0 ${-0.9 * reflect}"/>
+        <geometry>
+          <box size="0.09 .035 .05" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.038" length="0.05" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision> -->
+      <!--<collision group="other">
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision> -->
+      <!-- <collision group="other">
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+      </collision>-->
+      <!--   end simple shape approximation of palm -->
+      <!-- begin visual shape approximation of palm -->
+      <visual>
+        <origin xyz="0.069 ${0.016*reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9*reflect}"/>
+        <geometry>
+          <cylinder radius="0.013" length="0.100" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.064 ${0.008*reflect} 0.021" rpy="0.41 0 ${-0.9*reflect}"/>
+        <geometry>
+          <box size="0.09 .035 .05" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.038" length="0.05" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .06" />
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of palm -->
+      <!-- begin collision mesh of f2 ->
+      <collision group="default">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>
+        </geometry>
+      </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!-   end visual mesh of f2 -->
+    </link>
+
+    <joint name="${side}_sandia_hand_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${side}_palm"/>
+      <insert_block name="origin" />
+    </joint>
+
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:thumb side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-2.3562*reflect}" reflect="${reflect}" />
+
+
+ <!-- ############ MIT ADDITION ############ -->   
+ <!-- custom finger joint limits for base joint of fingers -->
+  <joint name="${side}_f0_j0" type="revolute">
+    <axis xyz="0 0 ${reflect}"/>
+    <parent link="${side}_f0_base"/>
+    <child link="${side}_f0_0"/>
+    <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
+    <limit effort="1" lower="-${M_pi/2}" upper="0" velocity="1"/>
+    <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+    <dynamics damping="0.2"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+  <joint name="${side}_f1_j0" type="revolute">
+    <axis xyz="0 0 ${reflect}"/>
+    <parent link="${side}_f1_base"/>
+    <child link="${side}_f1_0"/>
+    <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
+    <limit effort="1" lower="-0.09" upper="0.09" velocity="1"/>
+    <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+    <dynamics damping="0.2"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>  
+  <joint name="${side}_f2_j0" type="revolute">
+    <axis xyz="0 0 ${reflect}"/>
+    <parent link="${side}_f2_base"/>
+    <child link="${side}_f2_0"/>
+    <!--    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>-->
+    <limit effort="1" lower="0" upper="${M_pi/2}" velocity="1"/>
+    <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
+    <dynamics damping="0.2"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>  
+<!-- ############    END     ############ -->      
+
+    <!-- not needed unless simulating the hand by itself
+    <xacro:sandia_hand_gazebo side="${side}" />
+    -->
+
+  </xacro:macro>
+</robot>
+
