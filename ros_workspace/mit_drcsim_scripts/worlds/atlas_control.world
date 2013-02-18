@@ -8,7 +8,7 @@
         <solver>
           <type>quick</type>
           <dt>0.001</dt>
-          <iters>40</iters>
+          <iters>80</iters>
           <sor>1.0</sor>
         </solver>
         <constraints>
@@ -28,7 +28,7 @@
       <uri>model://ground_plane</uri>
     </include>
     <include>
-        <uri>model://mit_robot_PnC</uri>
+      <uri>model://mit_robot_PnC</uri>
     </include>
     <!-- Table stuff -->
 <!--		<include>-->

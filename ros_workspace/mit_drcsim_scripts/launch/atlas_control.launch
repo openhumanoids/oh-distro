@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="gzname" default="gazebo"/>
+<!--  <arg name="gzworld" default="atlas_sandia_hands.world"/>-->
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control.world" />
 
   <param name="/use_sim_time" type="bool" value="true"/>
@@ -10,15 +11,15 @@
   <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" /> 
 
   <!-- Robot Description -->
-<!--  <param name="robot_description" textfile="$(find atlas)/atlas.urdf"/>-->  
+<!--  <param name="robot_description" textfile="$(find atlas_sandia_hands)/atlas_sandia_hands.urdf"/>-->
   <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot_PnC/model.urdf"/>
 
   <node pkg="robot_state_publisher" type="state_publisher" name="sandia_hands_l_hand_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" />
     <remap from="joint_states" to="/sandia_hands/l_hand/joint_states" />
   </node>
   <node pkg="robot_state_publisher" type="state_publisher" name="sandia_hands_r_hand_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" />
     <remap from="joint_states" to="/sandia_hands/r_hand/joint_states" />
   </node>
 
@@ -27,14 +28,21 @@
   <!-- launch some simple grasp controllers just for a strawman -->
   <node pkg="sandia_hand_teleop" type="simple_grasp.py" name="simple_grasp_left"  ns="sandia_hands/l_hand"/>
   <node pkg="sandia_hand_teleop" type="simple_grasp.py" name="simple_grasp_right" ns="sandia_hands/r_hand"/>
- 
+
+<!-- Use sim time -->
+  <param name="/use_sim_time" type="bool" value="true"/>
+
+  <!-- Controller Manager
+  <include file="$(find pr2_controller_manager)/controller_manager.launch" />
+  -->
+
   <!-- joint states to tf -->
   <node pkg="robot_state_publisher" type="state_publisher" name="atlas_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" />
     <remap from="joint_states" to="/atlas/joint_states" />
   </node>
   <node pkg="robot_state_publisher" type="state_publisher" name="multisense_sl_robot_state_publisher">
-    <param name="publish_frequency" type="double" value="200.0" /> <!-- changed from 50 to 200 -sk -->
+    <param name="publish_frequency" type="double" value="50.0" />
     <remap from="joint_states" to="/multisense_sl/joint_states" />
   </node>
 
@@ -62,5 +70,7 @@
     <param name="disparity_range" type="int" value="128"/>
     <param name="approximate_sync" type="bool" value="false"/>
   </node>
+  
 </launch>
+
 
