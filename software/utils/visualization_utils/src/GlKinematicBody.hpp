@@ -61,11 +61,16 @@ class GlKinematicBody
     std::map<std::string, boost::shared_ptr<otdf::Link> > _otdf_links_map;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
 
-    std::vector<std::string > _link_names;
+    std::vector<std::string > _link_names; 
     std::vector<boost::shared_ptr<urdf::Geometry> > _link_shapes;
     std::vector<boost::shared_ptr<otdf::Geometry> > _otdf_link_shapes; //for affordance display we want to use otdf::Geometry
-    std::vector<LinkFrameStruct> _link_tfs;     
-    std::map<std::string, MeshStruct > _mesh_map; // associates link name with meshstruct
+    std::vector<LinkFrameStruct> _link_tfs;    
+    
+    // adding support for multiple visual geometries for a given link 
+    std::vector<std::string > _link_geometry_names; //_link name + id;
+    std::vector<LinkFrameStruct> _link_geometry_tfs;
+     
+    std::map<std::string, MeshStruct > _mesh_map; // associates link geometry name with meshstruct
   //Avoids loading the same mesh multiple times.
     std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
     
@@ -121,7 +126,7 @@ class GlKinematicBody
       {
         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[link_shape_index];
         draw_link(nextLink,nextTf.name, nextTf.frame);
-        // TODO: Pseudo code for future visualization: displays desired end state .
+        //displays desired end state.
         if(future_display_active) {
             glColor4f(0.5,0.5,0,0.15);
             draw_link(nextLink,nextTf.name,nextTf.future_frame);
@@ -132,8 +137,8 @@ class GlKinematicBody
       {
         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[link_shape_index];
         draw_link(nextLink,nextTf.name, nextTf.frame);
-        // TODO: Pseudo code for future visualization: displays desired end state .
         if(future_display_active) {
+           //displays desired end state.
             glColor4f(0.5,0.5,0,0.15);
             draw_link(nextLink,nextTf.name,nextTf.future_frame);
             glColor4f(c[0],c[1],c[2],alpha);
@@ -145,9 +150,9 @@ class GlKinematicBody
     {
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
-      for(uint i = 0; i < _link_tfs.size(); i++)
+      for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
-        LinkFrameStruct nextTf = _link_tfs[i];
+        LinkFrameStruct nextTf = _link_geometry_tfs[i];
         draw_link_current_and_future(c,alpha,i,nextTf);
       }
       
@@ -159,13 +164,13 @@ class GlKinematicBody
 
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
-      for(uint i = 0; i < _link_tfs.size(); i++)
+      for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
         KDL::Frame T_currentWorldFrame_link,T_drawFrame_link;
         LinkFrameStruct nextTf;
         
-        nextTf = _link_tfs[i];
-        T_currentWorldFrame_link = _link_tfs[i].frame;
+        nextTf = _link_geometry_tfs[i];
+        T_currentWorldFrame_link = _link_geometry_tfs[i].frame;
         T_drawFrame_link = T_drawFrame_currentWorldFrame*T_currentWorldFrame_link;
         nextTf.frame = T_drawFrame_link;
         draw_link_current_and_future(c,alpha,i,nextTf);
@@ -263,12 +268,23 @@ class GlKinematicBody
     {
       return _links_map;
     };
+    
+    std::vector<LinkFrameStruct> get_link_geometry_tfs()
+    {
+      return _link_geometry_tfs;
+    };
+    std::vector<std::string > get_link_geometry_names()
+    {
+      return _link_geometry_names;
+    };
 
     bool get_link_frame(const std::string &link_name, KDL::Frame &T_world_link);
-    bool get_link_future_frame(const std::string &link_name, KDL::Frame &T_world_link);// if not future display not active return false
-    bool get_link_geometry(const std::string &link_name, boost::shared_ptr<urdf::Geometry> &link_geom);
-    bool get_link_geometry(const std::string &link_name, boost::shared_ptr<otdf::Geometry> &link_geom);
-    bool get_mesh_struct(const std::string &link_name, MeshStruct &mesh_struct);
+    bool get_link_future_frame(const std::string &link_name, KDL::Frame &T_world_link);// if not future display not active return false    
+    bool get_link_geometry_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link);
+    bool get_link_geometry_future_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link);// if not future display not active return fals
+    bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<urdf::Geometry> &link_geom);
+    bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom);
+    bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
     
     // Was protected: (mfallon changed this:
     std::string evalMeshFilePath(std::string file_path_expression);

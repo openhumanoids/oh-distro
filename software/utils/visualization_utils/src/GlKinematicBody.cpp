@@ -60,59 +60,78 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   typedef map<string, shared_ptr<urdf::Link> > links_mapType;
   for(links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
   { 
-    if(it->second->visual)
+    if(it->second->visual) // atleast one default visual tag exists
     {
       cout << it->first << endl;
-      int type = it->second->visual->geometry->type;
-
+      
+      typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+      visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+      for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
+      {
+         //int type = it->second->visual->geometry->type;
+           vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+           int type = visuals[iv]->geometry->type;
+    
       //enum {SPHERE, BOX, CYLINDER, MESH}; 
 
-      if  (type == urdf::Geometry::MESH)
-      {
-         shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
-
-        // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
-        string file_path = evalMeshFilePath(mesh->filename);
-        //storing wavefront_model for different file_paths to prevent repeated creation of the same wavefront model  
-        MeshStruct mesh_struct;
-        typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
-        mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
-        if(mesh_model_it==_mesh_model_map.end()) // does not exist
+        if  (type == urdf::Geometry::MESH)
         {
-          cout <<"MESH:" << file_path << endl;
-          BotWavefrontModel* wavefront_model;
-          wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
+          //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
+          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
           
-          GLuint dl = glGenLists (1);
-          glNewList (dl, GL_COMPILE);
-          //glEnable(GL_LIGHTING);
-          bot_wavefront_model_gl_draw(wavefront_model);
-          //glDisable(GL_LIGHTING);
-          glEndList ();
-          double minv[3];
-          double maxv[3];
-          bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
-          mesh_struct.displaylist = dl;
-          mesh_struct.span_x = maxv[0] - minv[0];
-          mesh_struct.span_y = maxv[1] - minv[1];
-          mesh_struct.span_z = maxv[2] - minv[2];
-          mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
-          mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
-          mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
-          bot_wavefront_model_destroy(wavefront_model);
-          // remember store in memory
-          _mesh_model_map.insert(make_pair(file_path, mesh_struct));
-        }
-        else
-        {
-        //recall from memory if the a wavefront model for a file path exists.
-         mesh_struct = mesh_model_it->second;
-        }
+          // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
+          string file_path = evalMeshFilePath(mesh->filename);
+          //storing wavefront_model for different file_paths to prevent repeated creation of the same wavefront model  
+          MeshStruct mesh_struct;
+          typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+          mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
+          if(mesh_model_it==_mesh_model_map.end()) // does not exist
+          {
+            cout <<"MESH:" << file_path << endl;
+            BotWavefrontModel* wavefront_model;
+            wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
+            
+            GLuint dl = glGenLists (1);
+            glNewList (dl, GL_COMPILE);
+            //glEnable(GL_LIGHTING);
+            bot_wavefront_model_gl_draw(wavefront_model);
+            //glDisable(GL_LIGHTING);
+            glEndList ();
+            double minv[3];
+            double maxv[3];
+            bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
+            mesh_struct.displaylist = dl;
+            mesh_struct.span_x = maxv[0] - minv[0];
+            mesh_struct.span_y = maxv[1] - minv[1];
+            mesh_struct.span_z = maxv[2] - minv[2];
+            mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
+            mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
+            mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
+            bot_wavefront_model_destroy(wavefront_model);
+            // remember store in memory
+            _mesh_model_map.insert(make_pair(file_path, mesh_struct));
+          }
+          else
+          {
+          //recall from memory if the a wavefront model for a file path exists.
+           mesh_struct = mesh_model_it->second;
+          }
           
-       // populate data structures
-        _mesh_map.insert(make_pair(it->first, mesh_struct));
+          std::stringstream oss;
+          oss << it->first << "_"<< iv; 
+          string unique_geometry_name = oss.str();
+            
+         // populate data structures
+          typedef std::map<std::string, MeshStruct> mesh_map_type_;
+          mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
+          if(mesh_map_it==_mesh_model_map.end())
+            _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));
 
-      }//end  if  (type == MESH)
+
+        }//end  if  (type == MESH)
+      
+      }// end for all visuals in a visual group
+      
     } // end if(it->second->visual)
   } // end for
 
@@ -181,56 +200,74 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
     if(it->second->visual)
     {
       //cout << it->first << endl;
-      int type = it->second->visual->geometry->type;
-
-      //enum {SPHERE, BOX, CYLINDER, MESH}; 
-
-      if  (type == otdf::Geometry::MESH)
+      typedef map<string, shared_ptr<vector<shared_ptr<otdf::Visual> > > >  visual_groups_mapType;
+      visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+      for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
       {
-         shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(it->second->visual->geometry));
-
-        // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
-        string file_path = evalMeshFilePath(mesh->filename);
-              
-        MeshStruct mesh_struct;
-        typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
-        mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
-        if(mesh_model_it==_mesh_model_map.end()) // does not exist
+      
+         
+        //int type = it->second->visual->geometry->type;
+        vector<shared_ptr<otdf::Visual> > visuals = (*v_grp_it->second);
+        int type = visuals[iv]->geometry->type;
+           
+        //enum {SPHERE, BOX, CYLINDER, MESH};
+        if  (type == otdf::Geometry::MESH)
         {
-          cout <<"MESH:" << file_path << endl;
-          BotWavefrontModel* wavefront_model;
-          wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
-          
-          GLuint dl = glGenLists (1);
-          glNewList (dl, GL_COMPILE);
-          //glEnable(GL_LIGHTING);
-          bot_wavefront_model_gl_draw(wavefront_model);
-          //glDisable(GL_LIGHTING);
-          glEndList ();
-          double minv[3];
-          double maxv[3];
-          bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
-          mesh_struct.displaylist = dl;
-          mesh_struct.span_x = maxv[0] - minv[0];
-          mesh_struct.span_y = maxv[1] - minv[1];
-          mesh_struct.span_z = maxv[2] - minv[2];
-          mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
-          mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
-          mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
-          bot_wavefront_model_destroy(wavefront_model);
-          // remember store in memory
-          _mesh_model_map.insert(make_pair(file_path, mesh_struct));
-        }
-        else
-        {
-        //recall from memory if the a wavefront model for a file path exists.
-         mesh_struct = mesh_model_it->second;
-        }
-          
-       // populate data structures
-        _mesh_map.insert(make_pair(it->first, mesh_struct));
+           shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(visuals[iv]->geometry));
 
-      }//end  if  (type == MESH)
+          // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
+          string file_path = evalMeshFilePath(mesh->filename);
+                
+          MeshStruct mesh_struct;
+          typedef std::map<std::string, MeshStruct> mesh_model_map_type_;
+          mesh_model_map_type_::iterator mesh_model_it = _mesh_model_map.find(file_path);
+          if(mesh_model_it==_mesh_model_map.end()) // does not exist
+          {
+            cout <<"MESH:" << file_path << endl;
+            BotWavefrontModel* wavefront_model;
+            wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
+            
+            GLuint dl = glGenLists (1);
+            glNewList (dl, GL_COMPILE);
+            //glEnable(GL_LIGHTING);
+            bot_wavefront_model_gl_draw(wavefront_model);
+            //glDisable(GL_LIGHTING);
+            glEndList ();
+            double minv[3];
+            double maxv[3];
+            bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
+            mesh_struct.displaylist = dl;
+            mesh_struct.span_x = maxv[0] - minv[0];
+            mesh_struct.span_y = maxv[1] - minv[1];
+            mesh_struct.span_z = maxv[2] - minv[2];
+            mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
+            mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
+            mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
+            bot_wavefront_model_destroy(wavefront_model);
+            // remember store in memory
+            _mesh_model_map.insert(make_pair(file_path, mesh_struct));
+          }
+          else
+          {
+          //recall from memory if the a wavefront model for a file path exists.
+           mesh_struct = mesh_model_it->second;
+          }
+            
+          std::stringstream oss;
+          oss << it->first << "_"<< iv; 
+          string unique_geometry_name = oss.str();
+            
+         // populate data structures
+          typedef std::map<std::string, MeshStruct> mesh_map_type_;
+          mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
+          if(mesh_map_it==_mesh_model_map.end())
+            _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));    
+
+        }//end  if  (type == MESH)
+            
+      }// end for visual_groups
+
+       
     } // end if(it->second->visual)
   } // end for
     
@@ -263,10 +300,10 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
       for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
       {
 
-	if(jp_it->second->joint_set[i]->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-	       double dof_current_pos = 0; //TODO: need object's initial dof state from fitting
-              jointpos_in.insert(make_pair(jp_it->second->joint_set[i]->name, dof_current_pos)); 
-         } // end if
+        if(jp_it->second->joint_set[i]->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+            double dof_current_pos = 0; //TODO: need object's initial dof state from fitting
+            jointpos_in.insert(make_pair(jp_it->second->joint_set[i]->name, dof_current_pos)); 
+        } // end if
          
       } // end for all joints in jp
     }// for all joint patterns
@@ -307,7 +344,7 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
   for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
     
-  //TODO: STORE previous jointpos_in and T_world_body as private members.
+  //TODO: STORE previous jointpos_in and T_world_body as private members?
   //InteractableGLKinematicBody will provide an method for interactive adjustment.  
     
   KDL::Frame T_world_body;
@@ -357,7 +394,9 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
    //clear stored data
    if (!update_future_frame){
     _link_names.clear();
+    _link_geometry_names.clear();
     _link_tfs.clear();
+    _link_geometry_tfs.clear();
     _link_shapes.clear();
     }
     
@@ -384,106 +423,132 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
 
       if(it->second->visual)
       {  
-        urdf::Pose visual_origin = it->second->visual->origin;
-        KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual;
 
-
-        map<string, KDL::Frame>::const_iterator transform_it;
-        transform_it=cartpos_out.find(it->first);
-
-        // usually find fails if base_link has a visual element.
-        // Kdl based FK ignores the root link which must be set to body pose
-        // manually.
-        if(transform_it!=cartpos_out.end())// fk cart pos exists
+        typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+        for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
         {
-
-          T_body_parentjoint= transform_it->second;
-
-
-
-          T_parentjoint_visual.p[0]=visual_origin.position.x;
-          T_parentjoint_visual.p[1]=visual_origin.position.y;
-          T_parentjoint_visual.p[2]=visual_origin.position.z;
-          T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
-
-          T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
-
-          T_world_visual = T_world_body*T_body_visual;
-           //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
-
-          LinkFrameStruct state;	    
-          if (!update_future_frame){
-            state.name = it->first;
-            state.frame = T_world_visual;
-          }
+          vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+          
+          urdf::Pose visual_origin = visuals[iv]->origin;
+          KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual, T_world_parentjoint;
 
 
-            shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
-            //---store
-             if (!update_future_frame){
-              _link_names.push_back(it->first);  
-              _link_shapes.push_back(geom);
-              _link_tfs.push_back(state);
-            }
-            else{ // update future frame
-              std::vector<std::string>::const_iterator found;
-              found = std::find (_link_names.begin(), _link_names.end(), it->first);
-              if (found != _link_names.end()) {
-                  unsigned int index = found - _link_names.begin();
-                  _link_tfs[index].future_frame = T_world_visual;
-              }
-            }
+          map<string, KDL::Frame>::const_iterator transform_it;
+          transform_it=cartpos_out.find(it->first);
+
+          // usually find fails if base_link has a visual element.
+          // Kdl based FK ignores the root link which must be set to body pose
+          // manually.
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+
+            T_body_parentjoint= transform_it->second;
 
 
-          //cout << "translation  : " << endl;
-          //cout << "\t .x  : " << state.tf.translation.x << endl;
-          //cout << "\t .y  : " << state.tf.translation.y << endl;
-          //cout << "\t .z  : " << state.tf.translation.z << endl;
-          //cout << "quaternion" << endl;
-          //cout << "\t .x  : " << state.tf.rotation.x << endl;
-          //cout << "\t .y  : " << state.tf.rotation.y << endl;
-          //cout << "\t .z  : " << state.tf.rotation.z << endl;
-          //cout << "\t .w  : " << state.tf.rotation.w << endl;   
-          //cout << "\n"<< endl;
 
-        }//if(transform_it!=cartpos_out.end())
-        else // root link has visual element (but is not part of fk output)
-        {
-            urdf::Pose visual_origin = it->second->visual->origin;
-            T_body_visual.p[0]=visual_origin.position.x;
-            T_body_visual.p[1]=visual_origin.position.y;
-            T_body_visual.p[2]=visual_origin.position.z;
-            T_body_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+            T_parentjoint_visual.p[0]=visual_origin.position.x;
+            T_parentjoint_visual.p[1]=visual_origin.position.y;
+            T_parentjoint_visual.p[2]=visual_origin.position.z;
+            T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
+            T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
 
             T_world_visual = T_world_body*T_body_visual;
+            T_world_parentjoint = T_world_body*T_body_parentjoint;
+             //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
+             
+             
+            std::stringstream oss;
+            oss << it->first << "_"<< iv; 
+            string unique_geometry_name = oss.str();
 
-            shared_ptr<urdf::Geometry> geom =  it->second->visual->geometry;
-
-            LinkFrameStruct state;	    
-            
+            LinkFrameStruct geometry_state,link_state;	    
             if (!update_future_frame){
-              state.name = it->first;
-              state.frame = T_world_visual;
+              geometry_state.name = unique_geometry_name;
+              geometry_state.frame = T_world_visual;
+              link_state.name = it->first;
+              link_state.frame = T_world_parentjoint;
             }
 
+              shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
               //---store
-               if (!update_future_frame){
-                _link_names.push_back(it->first);  
+              if (!update_future_frame){
+                _link_names.push_back(it->first);
+                _link_geometry_names.push_back(unique_geometry_name);
                 _link_shapes.push_back(geom);
-                _link_tfs.push_back(state);
+                _link_tfs.push_back(link_state);
+                _link_geometry_tfs.push_back(geometry_state);
               }
-              else{// update future frame
+              else{ // update future frame
                 std::vector<std::string>::const_iterator found;
-                found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                if (found != _link_names.end()) {
-                    unsigned int index = found - _link_names.begin();
-                    _link_tfs[index].future_frame = T_world_visual;
+                found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+                if (found != _link_geometry_names.end()) {
+                    unsigned int index = found - _link_geometry_names.begin();
+                    _link_tfs[index].future_frame = T_world_parentjoint;
+                    _link_geometry_tfs[index].future_frame = T_world_visual; 
                 }
               }
 
-  
-       } //end if(transform_it!=cartpos_out.end())
+
+            //cout << "translation  : " << endl;
+            //cout << "\t .x  : " << state.tf.translation.x << endl;
+            //cout << "\t .y  : " << state.tf.translation.y << endl;
+            //cout << "\t .z  : " << state.tf.translation.z << endl;
+            //cout << "quaternion" << endl;
+            //cout << "\t .x  : " << state.tf.rotation.x << endl;
+            //cout << "\t .y  : " << state.tf.rotation.y << endl;
+            //cout << "\t .z  : " << state.tf.rotation.z << endl;
+            //cout << "\t .w  : " << state.tf.rotation.w << endl;   
+            //cout << "\n"<< endl;
+
+          }//if(transform_it!=cartpos_out.end())
+          else // root link has visual element (but is not part of fk output)
+          {
+              urdf::Pose visual_origin = visuals[iv]->origin;
+              T_body_visual.p[0]=visual_origin.position.x;
+              T_body_visual.p[1]=visual_origin.position.y;
+              T_body_visual.p[2]=visual_origin.position.z;
+              T_body_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+
+
+              T_world_visual = T_world_body*T_body_visual;
+              T_world_parentjoint = T_world_body;
+              
+              std::stringstream oss;
+              oss << it->first << "_"<< iv; 
+              string unique_geometry_name = oss.str();
+              shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
+              LinkFrameStruct geometry_state,link_state;	
+              if (!update_future_frame){
+                geometry_state.name = unique_geometry_name;
+                geometry_state.frame = T_world_visual;
+                link_state.name = it->first;
+                link_state.frame = T_world_parentjoint;
+              }
+
+                //---store
+                 if (!update_future_frame){
+                  _link_names.push_back(it->first);
+                  _link_geometry_names.push_back(unique_geometry_name);  
+                  _link_shapes.push_back(geom);
+                  _link_tfs.push_back(link_state);
+                  _link_geometry_tfs.push_back(geometry_state);
+                }
+                else{// update future frame
+                  std::vector<std::string>::const_iterator found;
+                  found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+                  if (found != _link_geometry_names.end()) {
+                    unsigned int index = found - _link_geometry_names.begin();
+                    _link_tfs[index].future_frame = T_world_parentjoint;
+                    _link_geometry_tfs[index].future_frame = T_world_visual;
+                  }
+                }
+
+    
+         } //end if(transform_it!=cartpos_out.end())
+           
+        }// end for visual groups   
 
       }//if(it->second->visual)
 
@@ -499,7 +564,9 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
    //clear stored data
    if (!update_future_frame){
     _link_names.clear();
+    _link_geometry_names.clear();
     _link_tfs.clear();
+    _link_geometry_tfs.clear();
     _otdf_link_shapes.clear();    
     }
 
@@ -526,88 +593,116 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
       if(it->second->visual)
       {  
-        otdf::Pose visual_origin = it->second->visual->origin;
-        KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual;
-
-
-        map<string, KDL::Frame>::const_iterator transform_it;
-        transform_it=cartpos_out.find(it->first);
-
-        // usually find fails if base_link has a visual element.
-        // Kdl based FK ignores the root link which must be set to body pose
-        // manually.
-        if(transform_it!=cartpos_out.end())// fk cart pos exists
+        typedef map<string, shared_ptr<vector<shared_ptr<otdf::Visual> > > >  visual_groups_mapType;
+        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+        for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
         {
-          T_body_parentjoint = transform_it->second;
+          vector<shared_ptr<otdf::Visual> > visuals = (*v_grp_it->second);
+          
+          otdf::Pose visual_origin = visuals[iv]->origin;
+          KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual, T_world_parentjoint;
 
-          T_parentjoint_visual.p[0]=visual_origin.position.x;
-          T_parentjoint_visual.p[1]=visual_origin.position.y;
-          T_parentjoint_visual.p[2]=visual_origin.position.z;
-          T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
 
-          T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
+          map<string, KDL::Frame>::const_iterator transform_it;
+          transform_it=cartpos_out.find(it->first);
 
-          T_world_visual = T_world_body*T_body_visual;
-           //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
+          // usually find fails if base_link has a visual element.
+          // Kdl based FK ignores the root link which must be set to body pose
+          // manually.
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+            T_body_parentjoint = transform_it->second;
 
-            LinkFrameStruct state;	    
+            T_parentjoint_visual.p[0]=visual_origin.position.x;
+            T_parentjoint_visual.p[1]=visual_origin.position.y;
+            T_parentjoint_visual.p[2]=visual_origin.position.z;
+            T_parentjoint_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+
+            T_body_visual  = T_body_parentjoint*T_parentjoint_visual;
+
+            T_world_visual = T_world_body*T_body_visual;
+            T_world_parentjoint = T_world_body*T_body_parentjoint;
+             //T_world_visual  = T_world_camera*T_camera_body*T_body_visual;
+
+            std::stringstream oss;
+            oss << it->first << "_"<< iv; 
+            string unique_geometry_name = oss.str();
+
+            LinkFrameStruct geometry_state,link_state;	
             if (!update_future_frame){
-              state.name = it->first;
-              state.frame = T_world_visual;
+              geometry_state.name = unique_geometry_name;
+              geometry_state.frame = T_world_visual;
+              link_state.name = it->first;
+              link_state.frame = T_world_parentjoint;
             }
-      
-              shared_ptr<otdf::Geometry> geom =  it->second->visual->geometry;
+
+                  
+            shared_ptr<otdf::Geometry> geom =  visuals[iv]->geometry;
+            //---store
+             if (!update_future_frame){
+              _link_names.push_back(it->first); 
+              _link_geometry_names.push_back(unique_geometry_name);   
+              _otdf_link_shapes.push_back(geom);
+              _link_tfs.push_back(link_state);
+              _link_geometry_tfs.push_back(geometry_state);
+            }
+            else{
+              std::vector<std::string>::const_iterator found;
+              found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+              if (found != _link_geometry_names.end()) {
+                  unsigned int index = found - _link_geometry_names.begin();
+                  _link_tfs[index].future_frame = T_world_parentjoint; 
+                  _link_geometry_tfs[index].future_frame = T_world_visual; 
+              }
+            }
+
+          }//if(transform_it!=cartpos_out.end())
+          else // root link has visual element (but is not part of fk output)
+          {
+              otdf::Pose visual_origin = visuals[iv]->origin;
+              T_body_visual.p[0]=visual_origin.position.x;
+              T_body_visual.p[1]=visual_origin.position.y;
+              T_body_visual.p[2]=visual_origin.position.z;
+              T_body_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
+
+
+              T_world_visual = T_world_body*T_body_visual;
+              T_world_parentjoint = T_world_body;
+              
+              std::stringstream oss;
+              oss << it->first << "_"<< iv; 
+              string unique_geometry_name = oss.str(); 
+              shared_ptr<otdf::Geometry> geom =  visuals[iv]->geometry;
+              
+              LinkFrameStruct geometry_state,link_state;	
+              if (!update_future_frame){
+                geometry_state.name = unique_geometry_name;
+                geometry_state.frame = T_world_visual;
+                link_state.name = it->first;
+                link_state.frame = T_world_parentjoint;
+              }
+
               //---store
                if (!update_future_frame){
                 _link_names.push_back(it->first);  
+                _link_geometry_names.push_back(unique_geometry_name);
                 _otdf_link_shapes.push_back(geom);
-                _link_tfs.push_back(state);
+                _link_tfs.push_back(link_state);
+                _link_geometry_tfs.push_back(geometry_state);
               }
               else{
                 std::vector<std::string>::const_iterator found;
-                found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                if (found != _link_names.end()) {
-                    unsigned int index = found - _link_names.begin();
-                    _link_tfs[index].future_frame = T_world_visual;
+                found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+                if (found != _link_geometry_names.end()) {
+                    unsigned int index = found - _link_geometry_names.begin();
+                    _link_tfs[index].future_frame = T_world_parentjoint;
+                    _link_geometry_tfs[index].future_frame = T_world_visual;
                 }
               }
 
-        }//if(transform_it!=cartpos_out.end())
-        else // root link has visual element (but is not part of fk output)
-        {
-            otdf::Pose visual_origin = it->second->visual->origin;
-            T_body_visual.p[0]=visual_origin.position.x;
-            T_body_visual.p[1]=visual_origin.position.y;
-            T_body_visual.p[2]=visual_origin.position.z;
-            T_body_visual.M =  KDL::Rotation::Quaternion(visual_origin.rotation.x, visual_origin.rotation.y, visual_origin.rotation.z, visual_origin.rotation.w);
-
-
-            T_world_visual = T_world_body*T_body_visual;
-
-
-            shared_ptr<otdf::Geometry> geom =  it->second->visual->geometry;
-            LinkFrameStruct state;	    
-              if (!update_future_frame){
-                state.name = transform_it->first;
-                state.frame = T_world_visual;
-              }
-
-                //---store
-                 if (!update_future_frame){
-                  _link_names.push_back(it->first);  
-                  _otdf_link_shapes.push_back(geom);
-                  _link_tfs.push_back(state);
-                }
-                else{
-                  std::vector<std::string>::const_iterator found;
-                  found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                  if (found != _link_names.end()) {
-                      unsigned int index = found - _link_names.begin();
-                    _link_tfs[index].future_frame = T_world_visual;
-                  }
-                }
-
-         } //end if(transform_it!=cartpos_out.end())
+           } //end if(transform_it!=cartpos_out.end())
+                     
+        }// end for visual groups    
 
       }//if(it->second->visual)
 
@@ -618,6 +713,53 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 //===============================================================================================
 // ACCESS METHODS
 //
+
+bool GlKinematicBody::get_link_geometry_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link)
+{
+      LinkFrameStruct state;	    
+
+     // retrieve T_world_link from store
+      std::vector<std::string>::const_iterator found;
+      found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+      if (found != _link_geometry_names.end()) {
+        unsigned int index = found - _link_geometry_names.begin();
+        state = _link_geometry_tfs[index];  
+        T_world_link= state.frame;       
+        return true;
+      } 
+      else 
+      {  
+       T_world_link = KDL::Frame::Identity();
+       // std::cerr << "ERROR:"<< link_geometry_name << " not found in _link_geometry_names" << std::endl;
+       return false;
+      }
+}  
+
+
+bool GlKinematicBody::get_link_geometry_future_frame(const std::string &link_geometry_name, KDL::Frame &T_world_link)
+{
+      LinkFrameStruct state;	    
+
+     // retrieve T_world_link from store
+      std::vector<std::string>::const_iterator found;
+      found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+      if (found != _link_geometry_names.end()) {
+        unsigned int index = found - _link_geometry_names.begin();
+        state = _link_geometry_tfs[index]; 
+        if(future_display_active){
+          T_world_link= state.future_frame;       
+          return true;
+        }
+        else
+          return false;
+      } 
+      else 
+      {  
+       T_world_link = KDL::Frame::Identity();
+       std::cerr << "ERROR in GlKinematicBody::get_link_future_frame:"<< link_geometry_name << " not found in _link_geometry_names" << std::endl;
+       return false;
+      }
+} 
 
 bool GlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T_world_link)
 {
@@ -666,35 +808,64 @@ bool GlKinematicBody::get_link_future_frame(const std::string &link_name, KDL::F
       }
 }  
 
-bool GlKinematicBody::get_link_geometry(const std::string &link_name, boost::shared_ptr<urdf::Geometry> &link_geom)
+//bool GlKinematicBody::get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<urdf::Geometry> &link_geom)
+//{
+//    typedef map<string, shared_ptr<urdf::Link> > links_mapType; 
+//    links_mapType::const_iterator link_it =  _links_map.find(link_geometry_name);
+//    if (link_it != _links_map.end()) {
+//      link_geom = link_it->second->visual->geometry; // TODO: check if this is somehow affected by visual groups
+//      return true;
+//    }
+//    else 
+//     return false; 
+
+//}
+
+//bool GlKinematicBody::get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom)
+//{
+//    typedef map<string, shared_ptr<otdf::Link> > links_mapType; 
+//    links_mapType::const_iterator link_it =  _otdf_links_map.find(link_geometry_name);
+//    if (link_it != _otdf_links_map.end()) {
+//      link_geom = link_it->second->visual->geometry; // TODO: check if this is somehow affected by visual groups, only the default visual geometry is returned.
+//      return true;
+//    }
+//    else 
+//     return false; 
+//}
+
+bool GlKinematicBody::get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<urdf::Geometry> &link_geom)
 {
-    typedef map<string, shared_ptr<urdf::Link> > links_mapType; 
-    links_mapType::const_iterator link_it =  _links_map.find(link_name);
-    if (link_it != _links_map.end()) {
-      link_geom = link_it->second->visual->geometry;
-      return true;
+
+    std::vector<std::string>::const_iterator found;
+    found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+    if (found != _link_geometry_names.end()) {
+        unsigned int index = found - _link_geometry_names.begin();
+        link_geom = _link_shapes[index]; 
+        return true;
     }
     else 
      return false; 
 
 }
 
-bool GlKinematicBody::get_link_geometry(const std::string &link_name, boost::shared_ptr<otdf::Geometry> &link_geom)
+
+bool GlKinematicBody::get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom)
 {
-    typedef map<string, shared_ptr<otdf::Link> > links_mapType; 
-    links_mapType::const_iterator link_it =  _otdf_links_map.find(link_name);
-    if (link_it != _otdf_links_map.end()) {
-      link_geom = link_it->second->visual->geometry;
-      return true;
+    std::vector<std::string>::const_iterator found;
+    found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+    if (found != _link_geometry_names.end()) {
+        unsigned int index = found - _link_geometry_names.begin();
+        link_geom = _otdf_link_shapes[index]; 
+        return true;
     }
     else 
      return false; 
 }
 
-bool GlKinematicBody::get_mesh_struct(const std::string &link_name, MeshStruct &mesh_struct) 
+bool GlKinematicBody::get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct) 
 {
   std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-  mesh_map_it = _mesh_map.find(link_name);
+  mesh_map_it = _mesh_map.find(link_geometry_name);
   if(mesh_map_it!=_mesh_map.end()) 
   { 
     mesh_struct = mesh_map_it->second;

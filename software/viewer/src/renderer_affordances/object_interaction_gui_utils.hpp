@@ -9,9 +9,13 @@
 #define PARAM_ADJUST_DOFS "Set Desired State"
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
-#define PARAM_PREGRASP "Publish EE pre-goal"
-#define PARAM_COMMIT "Publish EE goal"
-#define PARAM_EE_MOTION "Publish EE path"
+
+#define PARAM_PREGRASP "Reach (pre-grasp pose)"   // publishes pre-grasp pose as ee_goal for reaching controller
+#define PARAM_COMMIT   "Commit (desired end-state)"  // commits grasp state as setpoint and enables grasp controller
+#define PARAM_EXECUTE  "Execute (go)" // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
+#define PARAM_EE_MOTION "Execute EE path"
+
+
 #define PARAM_RESEED "Re-seed"
 #define PARAM_HALT_OPT "Halt Opt"
 #define PARAM_DELETE "Delete"
@@ -184,11 +188,12 @@ namespace renderer_affordances_gui_utils
       }
     }
     else if (! strcmp(name, PARAM_SEED_LH)) {
-      KDL::Frame T_geom_lhandpose = self->T_graspgeometry_handinitpos;
-      KDL::Frame T_geom_rhandpose = KDL::Frame::Identity(); 
       drc::grasp_opt_control_t msg;
-
       int grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+
+      KDL::Frame T_geom_lhandpose = self->T_graspgeometry_lhandinitpos;
+      KDL::Frame T_geom_rhandpose = KDL::Frame::Identity(); 
+
       int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);  
       int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;//       
       self->free_running_sticky_hand_cnt++;
@@ -211,17 +216,18 @@ namespace renderer_affordances_gui_utils
  
     }
     else if (! strcmp(name, PARAM_SEED_RH)) {
+      drc::grasp_opt_control_t msg;
+      int grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
-      KDL::Frame T_geom_rhandpose = self->T_graspgeometry_handinitpos;
+      KDL::Frame T_geom_rhandpose = self->T_graspgeometry_rhandinitpos;
       
       //T_geom_rhandpose = KDL::Frame::Identity();
       //T_geom_rhandpose.M =  KDL::Rotation::RPY((M_PI/4),0,(M_PI/4));
       //double x,y,z,w;
       //T_geom_rhandpose.M.GetQuaternion(x,y,z,w);
       //std::cout << w << " " << x <<" " << y << " " << z << std::endl;
-      drc::grasp_opt_control_t msg;
-   
-      int grasp_type = msg.SANDIA_RIGHT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+
       int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_CONTACT_MASK_SELECT);  
       int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
       self->free_running_sticky_hand_cnt++;
@@ -349,7 +355,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
     
     
-    
+
      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
      object_instance_map_type_::iterator it= self->instantiated_objects.find((*self->object_selection));
      bool val;
@@ -516,6 +522,107 @@ namespace renderer_affordances_gui_utils
   }
   
   
+  static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry, bool pregrasp_flag, void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    drc::desired_grasp_state_t msg;
+    msg.utime = self->last_state_msg_timestamp;
+    msg.robot_name = "atlas";
+    
+    msg.object_name = sticky_hand_struc.object_name;
+    msg.geometry_name = sticky_hand_struc.geometry_name;
+    msg.unique_id = sticky_hand_struc.uid;
+    msg.grasp_type = sticky_hand_struc.hand_type;
+
+    // desired ee position in world frame
+    KDL::Frame T_world_ee,T_body_ee;
+    
+// Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
+   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+//    KDL::Frame T_hand_palm = KDL::Frame::Identity();
+//    // this was there in urdf to make sure fingers are pointing in z axis.
+//    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
+//    KDL::Frame  T_geometry_palm = T_geometry_hand*T_hand_palm.Inverse()
+
+    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+    if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+      cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+
+//    double ro,pi,ya;  
+//   KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
+//   T_hand_palm.M.GetRPY(ro,pi,ya);
+//    cout <<"pitch"<<pi*(180/M_PI) << endl;
+    
+    T_world_ee = T_world_geometry*T_geometry_palm;
+          
+   if(pregrasp_flag){
+    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
+    KDL::Frame T_hand_offset = KDL::Frame::Identity();
+    T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
+    // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
+    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
+    
+    // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+    T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
+    //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+   }  
+          
+    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
+
+    // desired ee position wrt to robot body.
+    //T_body_ee = T_body_world*T_world_ee;
+    T_body_ee = T_world_ee; // send them in world frame for now.
+    double x,y,z,w;
+    T_body_ee.M.GetQuaternion(x,y,z,w);
+    
+    drc::position_3d_t hand_pose; 
+
+    hand_pose.translation.x = T_body_ee.p[0];
+    hand_pose.translation.y = T_body_ee.p[1];
+    hand_pose.translation.z = T_body_ee.p[2];
+
+    hand_pose.rotation.x = x;
+    hand_pose.rotation.y = y;
+    hand_pose.rotation.z = z;
+    hand_pose.rotation.w = w;
+    
+    if((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.IROBOT_LEFT)){
+      msg.l_hand_pose = hand_pose;
+      msg.num_l_joints  = sticky_hand_struc.joint_name.size();
+      msg.num_r_joints  = 0;
+      msg.l_joint_name.resize(msg.num_l_joints);
+      msg.l_joint_position.resize(msg.num_l_joints);
+      for(int i = 0; i < msg.num_l_joints; i++){
+        if(!pregrasp_flag){
+          msg.l_joint_position[i]=sticky_hand_struc.joint_position[i];
+        }
+        else{
+          msg.l_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
+        }
+        msg.l_joint_name[i]= sticky_hand_struc.joint_name[i];
+      }
+    }
+    else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
+      msg.r_hand_pose = hand_pose;
+      msg.num_r_joints  = sticky_hand_struc.joint_name.size();
+      msg.num_l_joints  = 0;
+      msg.r_joint_name.resize(msg.num_r_joints);
+      msg.r_joint_position.resize(msg.num_r_joints);
+      for(int i = 0; i < msg.num_r_joints; i++){
+        if(!pregrasp_flag){
+          msg.r_joint_position[i]=sticky_hand_struc.joint_position[i];
+        }
+        else{
+          msg.r_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
+        }
+        msg.r_joint_name[i]= sticky_hand_struc.joint_name[i];
+      }
+    }
+
+    // Publish the message 
+    self->lcm->publish(channel, &msg);
+  }
+  
   
   static void on_sticky_hand_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
@@ -542,12 +649,36 @@ namespace renderer_affordances_gui_utils
       int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_desired_hand_motion(hand_it->second,"l_palm","DESIRED_L_PALM_MOTION",self);
+          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_desired_hand_motion( hand_it->second,"r_palm","DESIRED_R_PALM_MOTION",self);
+          publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
       
     }
-    else if ((!strcmp(name, PARAM_COMMIT))||(!strcmp(name, PARAM_PREGRASP))) {
+    else if (!strcmp(name, PARAM_COMMIT)) {
+      typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(hand_it->second.geometry_name,T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+      else { 
+        drc::desired_grasp_state_t msg; // just to access types
+        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        bool pregrasp_flag = false; 
+
+        //publish desired_grasp_state_t on COMMITED_GRASP msg.
+            //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT)
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,pregrasp_flag,self);
+        else if(grasp_type== msg.SANDIA_RIGHT)
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,pregrasp_flag,self);
+      }
+     
+    }
+    else if ((!strcmp(name, PARAM_EXECUTE))||(!strcmp(name, PARAM_PREGRASP))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
@@ -556,7 +687,7 @@ namespace renderer_affordances_gui_utils
       object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
-      if(!obj_it->second._gl_object->get_link_frame(hand_it->second.geometry_name,T_world_graspgeometry))
+      if(!obj_it->second._gl_object->get_link_geometry_frame(hand_it->second.geometry_name,T_world_graspgeometry))
       cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
         drc::grasp_opt_control_t msg; // just to access types
@@ -564,10 +695,18 @@ namespace renderer_affordances_gui_utils
         bool pregrasp_flag = !strcmp(name, PARAM_PREGRASP);
 
         //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_hand","L_HAND_GOAL",T_world_graspgeometry,pregrasp_flag);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_hand","R_HAND_GOAL",T_world_graspgeometry,pregrasp_flag);
+        if(grasp_type == msg.SANDIA_LEFT) {
+           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
+           if(pregrasp_flag){ //DEBUG ONLY. TODO: REMOVE LATER
+            publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,pregrasp_flag,self);
+           }
+        }
+        else if(grasp_type== msg.SANDIA_RIGHT) {
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
+           if(pregrasp_flag){ //DEBUG ONLY.  TODO: REMOVE LATER
+            publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,pregrasp_flag,self);
+           }
+        }
       }
  
     }
@@ -602,9 +741,10 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_RESEED, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_PREGRASP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_EXECUTE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_EE_MOTION, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
-    
+
     
     //cout <<*self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);

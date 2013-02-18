@@ -86,7 +86,10 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   }
 
   // Draw all sticky hands
-  float c2[3] = {0.3,0.5,0.3}; alpha = 0.6;
+  float c_green[3] = {0.3,0.5,0.3}; 
+  float c_yellow[3] = {0.5,0.5,0.3};
+  float c_gray[3] = {0.3,0.3,0.3};
+  alpha = 0.6;
   typedef map<string, StickyHandStruc > sticky_hands_map_type_;
   for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
   {
@@ -95,18 +98,23 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
     KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
     
-    if(!obj_it->second._gl_object->get_link_frame(hand_it->second.geometry_name,T_world_graspgeometry))
+    if(!obj_it->second._gl_object->get_link_geometry_frame(hand_it->second.geometry_name,T_world_graspgeometry))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
     else {  
         double r,p,y;
         T_world_graspgeometry.M.GetRPY(r,p,y);
-        hand_it->second._gl_hand->draw_body_in_frame (c2,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
+        float ch[3];//SANDIA_LEFT=0, SANDIA_RIGHT=1,
+        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+        if(hand_it->second.hand_type == 0) {
+          ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+        }
+        
+        hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
 
       }
-    
-    float c3[3] = {0.5,0.5,0.0}; 
+
     double alpha2 = 0.15;
-    if(obj_it->second._gl_object->get_link_future_frame(hand_it->second.geometry_name,T_world_graspgeometry)) { // if future frame exists draw 
+    if(obj_it->second._gl_object->get_link_geometry_future_frame(hand_it->second.geometry_name,T_world_graspgeometry)) { // if future frame exists draw 
         double r,p,y;
         T_world_graspgeometry.M.GetRPY(r,p,y);
         
@@ -116,12 +124,18 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
           hand_it->second._gl_hand->log_motion_trail(true);
         else
           hand_it->second._gl_hand->log_motion_trail(false);
-        
-        hand_it->second._gl_hand->draw_body_in_frame (c3,alpha2,T_world_graspgeometry);
+          
+          
+        float ch[3];//SANDIA_LEFT=0, SANDIA_RIGHT=1,
+        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+        if(hand_it->second.hand_type == 0) {
+          ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+        }
+        hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
         
         KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
         KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
-        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_object,T_object_graspgeometry); // accumulates in object frame.
+        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c_gray,0.8,T_world_object,T_object_graspgeometry); // accumulates in object frame.
         //hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
       } 
 
@@ -237,7 +251,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
         KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
         object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(it->second.object_name);
-        if(!obj_it->second._gl_object->get_link_frame(it->second.geometry_name,T_world_graspgeometry))
+        if(!obj_it->second._gl_object->get_link_geometry_frame(it->second.geometry_name,T_world_graspgeometry))
             cerr << " failed to retrieve " << it->second.geometry_name<<" in object " << it->second.object_name <<endl;
         else {
             KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
@@ -249,7 +263,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
             it->second._gl_hand->_collision_detector->num_collisions();
             it->second._gl_hand->_collision_detector->ray_test( from_geomframe, to_geomframe, intersected_object,hit_pt);
 
-            if(intersected_object != NULL ){
+            if(intersected_object != NULL ){              
               Eigen::Vector3f diff = (from_geomframe-hit_pt);
               double distance = diff.norm();
               if(shortest_distance>0) {
@@ -259,7 +273,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
                   it->second._gl_hand->enable_whole_body_selection(true);
                   (*self->object_selection)  =  " ";
                   (*self->link_selection)  =  " ";
-                  (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name                  
+                  (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name 
                 }
               }
               else{
@@ -489,7 +503,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->urdf_dir_name_ptr = new string(urdf_models_path);
   cout << "searching for hand urdf files in: "<< (*self->urdf_dir_name_ptr) << endl;
   vector<string> urdf_files = vector<string>();
-  get_URDF_or_SDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
+  //get_URDF_or_SDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
+  get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
   cout << "found " << urdf_files.size() << " files"<< endl;
   self->num_urdfs = urdf_files.size();
   self->urdf_names =(char **) calloc(self->num_urdfs, sizeof(char *));
@@ -510,7 +525,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->initGraspOptPublisher  = boost::shared_ptr<InitGraspOptPublisher>(new InitGraspOptPublisher(self));
   self->graspOptStatusListener= boost::shared_ptr<GraspOptStatusListener>(new GraspOptStatusListener(self));
   self->free_running_sticky_hand_cnt = 0;
-  self->T_graspgeometry_handinitpos= KDL::Frame::Identity(); 
+  self->T_graspgeometry_lhandinitpos= KDL::Frame::Identity(); 
+  self->T_graspgeometry_rhandinitpos= KDL::Frame::Identity(); 
   
   self->viewer = viewer;
   self->renderer.draw = _draw;
@@ -537,8 +553,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
   self->otdf_id= 0; // default file
-  self->lhand_urdf_id= 1; // default file
-  self->rhand_urdf_id= 2; // default file
+  self->lhand_urdf_id= 0; // default file
+  self->rhand_urdf_id= 1; // default file
   bot_gtk_param_widget_add_separator (self->pw,"Objects");
   bot_gtk_param_widget_add_enumv (self->pw, PARAM_OTDF_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                          self->otdf_id,
@@ -578,6 +594,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 	self->link_selection = new string(" ");
   self->object_selection = new string(" ");
   self->stickyhand_selection = new string(" ");
+  self->instance_hold_otdf_type_ptr = new string(" ");
   self->selection_hold_on = false;
   return &self->renderer;
 }

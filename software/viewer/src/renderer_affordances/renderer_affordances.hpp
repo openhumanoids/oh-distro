@@ -196,7 +196,7 @@ typedef struct _RendererAffordances {
   // TODO: make the following OtdfInstanceStruc
   boost::shared_ptr<otdf::ModelInterface> otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
   boost::shared_ptr<visualization_utils::GlKinematicBody> gl_temp_object;
-  std::string instance_hold_otdf_type;
+  std::string*  instance_hold_otdf_type_ptr; // std::stromg segfaults , hence using a pointer
   int instance_hold_uid;
     
   //otdf::ModelInterface otdf_instance_hold; // keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
@@ -207,8 +207,8 @@ typedef struct _RendererAffordances {
   // this variable should ideally be in the affordance store process.
   int free_running_sticky_hand_cnt; // never decremented, used to set uid of sticky hands which is unique in global map scope 
   
-  KDL::Frame T_graspgeometry_handinitpos;
-  
+  KDL::Frame T_graspgeometry_lhandinitpos;
+  KDL::Frame T_graspgeometry_rhandinitpos;
   // LCM msg handlers and publishers
   boost::shared_ptr<AffordanceCollectionListener> affordanceMsgHandler;
   boost::shared_ptr<RobotStateListener> robotStateListener;
@@ -248,10 +248,10 @@ typedef struct _RendererAffordances {
     it= self->instance_cnt.find(self->otdf_filenames[self->otdf_id]);
     it->second = it->second + 1;
     std::stringstream oss;
-    oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second;  // unique name
+    oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second-1;  // unique name, cnt starts from zero
     
     instance_struc.otdf_type=filename;
-    instance_struc.uid=it->second; 
+    instance_struc.uid=it->second-1; // starts from zero
     //instance_struc._otdf_instance->name_ = oss.str();
     
     instance_struc._collision_detector.reset();
@@ -333,7 +333,27 @@ typedef struct _RendererAffordances {
       }
       closedir(dp);
       return 0;
-  }  
+  }
+  
+    inline static int get_URDF_filenames_from_dir (std::string dir, std::vector<std::string> &files)
+  {
+      DIR *dp;
+      struct dirent *dirp;
+      if((dp  = opendir(dir.c_str())) == NULL) {
+          cout << "Error(" << errno << ") opening " << dir << endl;
+          return errno;
+      }
+
+      while ((dirp = readdir(dp)) != NULL) {
+        std::string fn =string(dirp->d_name);
+        if(fn.substr(fn.find_last_of(".") + 1) == "urdf") 
+          files.push_back(fn.substr(0,fn.find_last_of(".")));
+      }
+      closedir(dp);
+      return 0;
+  } 
+  
+    
 //===============================================================================
 // MISC. UTILS
 
@@ -404,7 +424,7 @@ typedef struct _RendererAffordances {
   
   }
  //-------------------------------------------------------------------------------
-  inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
+  inline static void get_user_specified_hand_approach(void *user, Eigen::Vector3d objectframe_finger_dir, Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand, KDL::Frame &T_objectgeometry_rhand)
   {
   
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand. 
@@ -447,7 +467,7 @@ typedef struct _RendererAffordances {
     quat << 0,-ux[2],ux[1],ux[0];
     quat.normalize();
   } 
-  
+   KDL::Frame T_objectgeometry_hand;
    T_objectgeometry_hand.p[0]=p[0];
    T_objectgeometry_hand.p[1]=p[1];
    T_objectgeometry_hand.p[2]=p[2];
@@ -466,10 +486,11 @@ typedef struct _RendererAffordances {
   //-------
   // Hand is now with the palm facing the object.
   
-   KDL::Frame T_rotatedhand_hand; //dependent on hand model and object dimensions
-   T_rotatedhand_hand.p[0]=0;
-   T_rotatedhand_hand.p[1]=0;
-   T_rotatedhand_hand.p[2]=0.125;
+   KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
+   T_rotatedhand_lhand.p[0]=0;
+   T_rotatedhand_lhand.p[1]=0;
+   T_rotatedhand_lhand.p[2]=0.125;
+   T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
    
    objectframe_finger_dir.normalize(); // finger dir in object frame.
  
@@ -480,15 +501,18 @@ typedef struct _RendererAffordances {
    rotate_eigen_vector_given_kdl_frame(objectframe_finger_dir,temp_frame,desired_finger_dir);
   
    double theta = atan2(desired_finger_dir[2],desired_finger_dir[1]);
-
-   //std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
-   T_rotatedhand_hand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
-   T_objectgeometry_hand = T_objectgeometry_hand *(T_rotatedhand_hand.Inverse());//gets T_objectgeometry_rotatedhand 
+   //depending on left or right hand, sign of rotation will change.
+   std::cout<< "theta: "<< theta*(180/M_PI) << std::endl;
+    
+   T_rotatedhand_lhand.M =  KDL::Rotation::RPY(5*(M_PI/8)-theta,0,0);
+   T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8)-theta,0,0);
+   T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//gets T_objectgeometry_rotatedhand 
+   T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//gets T_objectgeometry_rotatedhand 
    
-  }
+  } // end get_user_specified_hand_approach
   
    //-------------------------------------------------------------------------------
-  inline static void get_hand_approach(Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_hand)
+  inline static void get_hand_approach(Eigen::Vector3d from, Eigen::Vector3d to, boost::shared_ptr<otdf::Geometry> &link_geom, KDL::Frame &T_objectgeometry_lhand,KDL::Frame &T_objectgeometry_rhand)
   {
 
    // calculate the rotation required to rotate x axis of hand to the negative ray direction. The palm face is pointing in the -x direction for the sandia hand.  
@@ -551,7 +575,7 @@ typedef struct _RendererAffordances {
   } 
 
 
-   
+   KDL::Frame T_objectgeometry_hand;
    T_objectgeometry_hand.p[0]=p[0];
    T_objectgeometry_hand.p[1]=p[1];
    T_objectgeometry_hand.p[2]=p[2];
@@ -582,7 +606,6 @@ typedef struct _RendererAffordances {
      
      
   //  if looking down at the object from the top or looking up from the bottom.
-  // TODO: looking up from bottom doesn't work.
     if( fabs(uz.dot(nray))>max(fabs(ux.dot(nray)),fabs(uy.dot(nray))) )
     {
    
@@ -598,43 +621,48 @@ typedef struct _RendererAffordances {
       T_objectgeometry_hand = T_objectgeometry_hand*rotatetocenter;
     }//end if
       
-
-     KDL::Frame T_rotatedhand_hand; //dependent on hand model and object dimensions
-     T_rotatedhand_hand.p[0]=0;
-     T_rotatedhand_hand.p[1]=0;
-     T_rotatedhand_hand.p[2]=0.125;
+     //depending on left or right hand, sign of rotation will change.
+     KDL::Frame T_rotatedhand_lhand,T_rotatedhand_rhand; //dependent on hand model and object dimensions
+     T_rotatedhand_lhand.p[0]=0;
+     T_rotatedhand_lhand.p[1]=0;
+     T_rotatedhand_lhand.p[2]=0.125;
+     T_rotatedhand_rhand.p=T_rotatedhand_lhand.p;
      if((min_dimension_tag=="XY")&&(fabs(uz.dot(nray))<=max(fabs(ux.dot(nray)),fabs(uy.dot(nray))))){
-      T_rotatedhand_hand.M =  KDL::Rotation::RPY(3*(M_PI/8),0,0);
+      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-3*(M_PI/8),0,0);
+      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(3*(M_PI/8),0,0);
      }
      else if(min_dimension_tag=="Z"){ 
-      T_rotatedhand_hand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
+      T_rotatedhand_lhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
+      T_rotatedhand_rhand.M =  KDL::Rotation::RPY(-M_PI/8,0,0);
      }
 
-    T_objectgeometry_hand = T_objectgeometry_hand *(T_rotatedhand_hand.Inverse());//T_objectgeometry_rotatedhand 
+    T_objectgeometry_lhand = T_objectgeometry_hand *(T_rotatedhand_lhand.Inverse());//T_objectgeometry_rotatedhand 
+    T_objectgeometry_rhand = T_objectgeometry_hand *(T_rotatedhand_rhand.Inverse());//T_objectgeometry_rotatedhand 
 
-
-  }
+  }// end get_hand_approach
   
   
  //-------------------------------------------------------------------------------  
   inline static void set_hand_init_position(void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    
+
     string object_geometry_name = (*self->link_selection); 
     string object_name_token  = (*self->object_selection) + "_";
     size_t found = object_geometry_name.find(object_name_token);  
     string geometry_name =object_geometry_name.substr(found+object_name_token.size());
-
-    KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
-    self->T_graspgeometry_handinitpos = KDL::Frame::Identity();
+  
     
+    KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();
+    self->T_graspgeometry_lhandinitpos = KDL::Frame::Identity();
+    self->T_graspgeometry_rhandinitpos = KDL::Frame::Identity();
     //Get initial position of hand relative to object geometry.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator obj_it = self->instantiated_objects.find((*self->object_selection));
-    if(!obj_it->second._gl_object->get_link_frame(geometry_name,T_world_graspgeometry))
+    if(!obj_it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_graspgeometry))
         cerr << " failed to retrieve " << geometry_name<<" in object " << (*self->object_selection) <<endl;
     else {
+        
         KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
         Eigen::Vector3d from_geomframe,hit_pt_geomframe;
         rotate_eigen_vector_given_kdl_frame(self->ray_start,T_graspgeometry_world,from_geomframe);
@@ -642,6 +670,7 @@ typedef struct _RendererAffordances {
 
         boost::shared_ptr<otdf::Geometry> link_geom;
         obj_it->second._gl_object->get_link_geometry(geometry_name,link_geom); 
+
         
         // when not dragging set handpose deterministically (assumes z is up). 
         // Other wise you the user specified orientation as the direction of the fingers.        
@@ -655,14 +684,16 @@ typedef struct _RendererAffordances {
          temp_frame.p = 0*temp_frame.p;// ignore translation while dealing with direction vectors
          rotate_eigen_vector_given_kdl_frame(diff,temp_frame,fingerdir_geomframe);//something wrong here.
          fingerdir_geomframe.normalize();
-         get_user_specified_hand_approach(self,fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_handinitpos);
+         get_user_specified_hand_approach(self,fingerdir_geomframe,from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
         }
-        else
-         get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_handinitpos); 
+        else{
+         get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
+
+        }
          
-        std::cout << "T_objectgeometry_hand.p: " << self->T_graspgeometry_handinitpos.p[0] 
-                                          << " " << self->T_graspgeometry_handinitpos.p[1] 
-                                          << " " << self->T_graspgeometry_handinitpos.p[2] << " " << std::endl;
+        /*std::cout << "T_objectgeometry_hand.p: " << self->T_graspgeometry_lhandinitpos.p[0] 
+                                          << " " << self->T_graspgeometry_lhandinitpos.p[1] 
+                                          << " " << self->T_graspgeometry_lhandinitpos.p[2] << " " << std::endl;*/
         
     }
   }

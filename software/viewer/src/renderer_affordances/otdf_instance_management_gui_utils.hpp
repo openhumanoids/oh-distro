@@ -63,7 +63,7 @@ namespace renderer_affordances_gui_utils
      }
    msg.nstates =  cnt;
    msg.nptinds = 0;
-
+   cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
    self->lcm->publish(channel, &msg);
 
   } 
@@ -92,7 +92,7 @@ namespace renderer_affordances_gui_utils
     self->gl_temp_object->set_state(self->otdf_instance_hold);
     self->selection_hold_on=false;
    
-    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->instance_hold_otdf_type,self->instance_hold_uid,self->otdf_instance_hold,self); 
+    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",(*self->instance_hold_otdf_type_ptr),self->instance_hold_uid,self->otdf_instance_hold,self); 
     bot_viewer_request_redraw(self->viewer);
   }  
   //------------------
@@ -221,7 +221,7 @@ namespace renderer_affordances_gui_utils
       self->otdf_instance_hold = otdf::duplicateOTDFInstance(it->second._otdf_instance);
       self->gl_temp_object.reset();
       self->gl_temp_object = shared_ptr<GlKinematicBody>(new GlKinematicBody(self->otdf_instance_hold));
-      self->instance_hold_otdf_type=it->second.otdf_type;
+      (*self->instance_hold_otdf_type_ptr)=it->second.otdf_type;
       self->instance_hold_uid=it->second.uid;
       
       self->selection_hold_on=true;

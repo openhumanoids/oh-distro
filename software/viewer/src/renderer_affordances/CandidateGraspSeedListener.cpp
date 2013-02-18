@@ -203,11 +203,11 @@ namespace renderer_affordances
     std::string filename, ext;
     if (grasp_type  == msg.SANDIA_LEFT){
       filename ="sandia_hand_left";
-      ext=".sdf";
+      ext=".urdf";
     }
     else if (grasp_type  == msg.SANDIA_RIGHT){
       filename ="sandia_hand_right";
-      ext=".sdf";
+      ext=".urdf";
     }
     else if ((grasp_type  == msg.IROBOT_LEFT)||(grasp_type  == msg.IROBOT_RIGHT)){
       filename ="irobot_hand";

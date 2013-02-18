@@ -61,69 +61,78 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
     if(it->second->visual)
     {
       //cout << it->first << endl;
+
+      typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+      visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+      for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
+      {
+         std::stringstream oss,oss2;
+         oss << _unique_name << "_"<< it->first << "_" << iv; 
+         oss2 << it->first << "_"<< iv; 
+         string unique_geometry_name = oss2.str();
       
-      std::stringstream oss;
-      oss << _unique_name << "_"<< it->first; 
-      //
+         //int type = it->second->visual->geometry->type;
+          vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+          int type = visuals[iv]->geometry->type;
+
+          enum {SPHERE, BOX, CYLINDER, MESH}; 
+
+          if  (type == SPHERE)
+          {
+            shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(visuals[iv]->geometry));	
+            double radius = sphere->radius;
+     
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+             
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == BOX)
+          {
+            shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(visuals[iv]->geometry));
+            Eigen::Vector3f dims;
+            dims<< box->dim.x,box->dim.y,box->dim.z;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == CYLINDER)
+          {
+            shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(visuals[iv]->geometry));
+            double radius = cyl->radius;
+            double length = cyl->length;
+    //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            Eigen::Vector3f dims;
+            dims<< 2*radius,2*radius,length;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));  
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+       
+          }
+          else if  (type == MESH)
+          //if  (type == MESH)
+          {
+            shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
+
+          typedef std::map<std::string, MeshStruct > mesh_map_type_;
+          mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
+     
+            Eigen::Vector3f dims;
+            dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
       
-      int type = it->second->visual->geometry->type;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+             
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+            //std::cout  << "num_colls: " << _collision_detector->num_collisions() <<  std::endl;
 
-      enum {SPHERE, BOX, CYLINDER, MESH}; 
-
-      if  (type == SPHERE)
-      {
-        shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(it->second->visual->geometry));	
-        double radius = sphere->radius;
- 
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-         
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == BOX)
-      {
-        shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
-        Eigen::Vector3f dims;
-        dims<< box->dim.x,box->dim.y,box->dim.z;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == CYLINDER)
-      {
-        shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(it->second->visual->geometry));
-        double radius = cyl->radius;
-        double length = cyl->length;
-//shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        Eigen::Vector3f dims;
-        dims<< 2*radius,2*radius,length;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));  
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-   
-      }
-      else if  (type == MESH)
-      //if  (type == MESH)
-      {
-        shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
-
-      typedef std::map<std::string, MeshStruct > mesh_map_type_;
-      mesh_map_type_::iterator mesh_map_it = _mesh_map.find(it->first);
- 
-        Eigen::Vector3f dims;
-        dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
-  
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-         
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-        //std::cout  << "num_colls: " << _collision_detector->num_collisions() <<  std::endl;
-
-      }//end  if  (type == MESH)
+          }//end  if  (type == MESH)
+      
+      }// end for visuals in default visual group
     } // end if(it->second->visual)
   } // end for
 
@@ -154,78 +163,89 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
     if(it->second->visual)
     {
       //cout << it->first << endl;
-      std::stringstream oss;
-      oss << _unique_name << "_"<< it->first; 
-      int type = it->second->visual->geometry->type;
+      
+      typedef map<string, shared_ptr<vector<shared_ptr<otdf::Visual> > > >  visual_groups_mapType;
+      visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+      for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
+      {
+         std::stringstream oss,oss2;
+         oss << _unique_name << "_"<< it->first << "_" << iv; 
+         oss2 << it->first << "_"<< iv; 
+         string unique_geometry_name = oss2.str(); 
+      
+         //int type = it->second->visual->geometry->type;
+          vector<shared_ptr<otdf::Visual> > visuals = (*v_grp_it->second);
+          int type = visuals[iv]->geometry->type;
 
-      enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
-      //TODO: create collision objects for cylinder,sphere and torus.
-      if  (type == SPHERE)
-      {
-        shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(it->second->visual->geometry));	
-        double radius = sphere->radius;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == BOX)
-      {
-        shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(it->second->visual->geometry));
-        Eigen::Vector3f dims;
-        dims<< box->dim.x,box->dim.y,box->dim.z;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == CYLINDER)
-      {
-        shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(it->second->visual->geometry));
-        double radius = cyl->radius;
-        double length = cyl->length;
-        //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        
-        Eigen::Vector3f dims;
-        dims<< 2*radius,2*radius,length;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));        
-        
-        
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == TORUS)
-      {
-        shared_ptr<otdf::Torus> tor(shared_dynamic_cast<otdf::Torus>(it->second->visual->geometry));
-        double radius = tor->radius;
-        double length = tor->tube_radius;       
-      //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        Eigen::Vector3f dims;
-        dims<< 2*radius,2*radius,length;
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-      }
-      else if  (type == MESH)
-      //if  (type == MESH)
-      {
-        shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(it->second->visual->geometry));
+          enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
+          //TODO: create collision objects for cylinder,sphere and torus.
+          if  (type == SPHERE)
+          {
+            shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(visuals[iv]->geometry));	
+            double radius = sphere->radius;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == BOX)
+          {
+            shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(visuals[iv]->geometry));
+            Eigen::Vector3f dims;
+            dims<< box->dim.x,box->dim.y,box->dim.z;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == CYLINDER)
+          {
+            shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(visuals[iv]->geometry));
+            double radius = cyl->radius;
+            double length = cyl->length;
+            //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            
+            Eigen::Vector3f dims;
+            dims<< 2*radius,2*radius,length;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));        
+            
+            
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == TORUS)
+          {
+            shared_ptr<otdf::Torus> tor(shared_dynamic_cast<otdf::Torus>(visuals[iv]->geometry));
+            double radius = tor->radius;
+            double length = tor->tube_radius;       
+          //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            Eigen::Vector3f dims;
+            dims<< 2*radius,2*radius,length;
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) )); 
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+          }
+          else if  (type == MESH)
+          //if  (type == MESH)
+          {
+            shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(visuals[iv]->geometry));
 
-        typedef std::map<std::string, MeshStruct > mesh_map_type_;
-        mesh_map_type_::iterator mesh_map_it = _mesh_map.find(it->first);
- 
-        Eigen::Vector3f dims;
-        dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
-        
-        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
-        _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
-        // add a collision object to the collision detector class
-        _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
-        //std::cout  << "num_colls: " << _collision_detector->num_collisions() <<  std::endl;
+            typedef std::map<std::string, MeshStruct > mesh_map_type_;
+            mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
+     
+            Eigen::Vector3f dims;
+            dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
+            
+            shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+            _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
+            // add a collision object to the collision detector class
+            _collision_detector->add_collision_object(&*_collision_object_map.find(oss.str())->second);
+            //std::cout  << "num_colls: " << _collision_detector->num_collisions() <<  std::endl;
 
-      }//end  if  (type == MESH)
+          }//end  if  (type == MESH)
+      }// end for visuals in default visual group
     } // end if(it->second->visual)
   } // end for
 
@@ -259,89 +279,101 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
  
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;
     for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
-    {  		
-      std::stringstream oss;
-      oss << _unique_name << "_"<< it->first;
+    { 
       if(it->second->visual)
       {
-          KDL::Frame  T_world_visual;
-          LinkFrameStruct state;	    
+      
+        typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+        for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
+        {
+            
+            vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+             
+            std::stringstream oss,oss2;
+            oss << _unique_name << "_"<< it->first << "_" << iv; 
+            oss2 << it->first << "_"<< iv; 
+            string unique_geometry_name = oss2.str(); 
+             
+            KDL::Frame  T_world_visual;
+            LinkFrameStruct state;	    
 
-         // retrieve T_world_visual from store
-         // #include <algorithm>
-          std::vector<std::string>::const_iterator found;
-          found = std::find (_link_names.begin(), _link_names.end(), it->first);
-          if (found != _link_names.end()) {
-            unsigned int index = found - _link_names.begin();
-            state=_link_tfs[index];  
-            T_world_visual = state.frame;
-          } 
-          else 
-          {  
-           T_world_visual = KDL::Frame::Identity();
-           std::cerr << "ERROR:"<< it->first << " not found in _link_names" << std::endl;
-          }
+           // retrieve T_world_visual from store
+           // #include <algorithm>
+            std::vector<std::string>::const_iterator found;
+            found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+            if (found != _link_geometry_names.end()) {
+              unsigned int index = found - _link_geometry_names.begin();
+              state=_link_geometry_tfs[index];  
+              T_world_visual = state.frame;
+            } 
+            else 
+            {  
+             T_world_visual = KDL::Frame::Identity();
+             std::cerr << "ERROR:"<< unique_geometry_name << " not found in _link_geometry_names" << std::endl;
+            }
 
-          int type = it->second->visual->geometry->type;
-          enum {SPHERE, BOX, CYLINDER, MESH}; 
-          
-          Eigen::Vector3f p;
-          p[0] = state.frame.p[0];
-          p[1] = state.frame.p[1];
-          p[2] = state.frame.p[2];
-            double x,y,z,w;
-          state.frame.M.GetQuaternion(x,y,z,w);
-          Eigen::Vector4f q;
-          q << x, y, z, w;
-          if  (type == SPHERE)
-          {
-            shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-          }
-          else if  (type == BOX)
-          {
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-          }
-          else if  (type == CYLINDER)
-          {
-            //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
 
-          }
-          else if  (type == MESH)
-          {
-            MeshStruct mesh_struct = _mesh_map.find(it->first)->second;
-
-            KDL::Frame T_visual_objorigin, T_world_objorigin; 
-
-            T_visual_objorigin = KDL::Frame::Identity();
-            T_visual_objorigin.p[0]= mesh_struct.offset_x;
-            T_visual_objorigin.p[1]= mesh_struct.offset_y;
-            T_visual_objorigin.p[2]= mesh_struct.offset_z;
-
-            /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
-            T_world_objorigin = T_world_visual*T_visual_objorigin;
-
-            state.frame = T_world_objorigin; 
-
+            int type = visuals[iv]->geometry->type;
+            enum {SPHERE, BOX, CYLINDER, MESH}; 
+            
             Eigen::Vector3f p;
             p[0] = state.frame.p[0];
             p[1] = state.frame.p[1];
             p[2] = state.frame.p[2];
-            double x,y,z,w;
+              double x,y,z,w;
             state.frame.M.GetQuaternion(x,y,z,w);
             Eigen::Vector4f q;
             q << x, y, z, w;
+            if  (type == SPHERE)
+            {
+              shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
+            }
+            else if  (type == BOX)
+            {
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
+            }
+            else if  (type == CYLINDER)
+            {
+              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
 
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q); 
+            }
+            else if  (type == MESH)
+            {
+              MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
 
-            
-          } // end if MESH
+              KDL::Frame T_visual_objorigin, T_world_objorigin; 
 
+              T_visual_objorigin = KDL::Frame::Identity();
+              T_visual_objorigin.p[0]= mesh_struct.offset_x;
+              T_visual_objorigin.p[1]= mesh_struct.offset_y;
+              T_visual_objorigin.p[2]= mesh_struct.offset_z;
 
+              /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
+              T_world_objorigin = T_world_visual*T_visual_objorigin;
+
+              state.frame = T_world_objorigin; 
+
+              Eigen::Vector3f p;
+              p[0] = state.frame.p[0];
+              p[1] = state.frame.p[1];
+              p[2] = state.frame.p[2];
+              double x,y,z,w;
+              state.frame.M.GetQuaternion(x,y,z,w);
+              Eigen::Vector4f q;
+              q << x, y, z, w;
+
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q); 
+              
+            } // end if MESH
+             
+        }// end for geoemtries in visual group  
+        
       }//if(it->second->visual)
 
     }//end for
@@ -360,110 +392,116 @@ void InteractableGlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterfa
 
 void InteractableGlKinematicBody::update_otdf_collision_objects(void)
 {
-  
+ 
     typedef map<string, shared_ptr<otdf::Link> > links_mapType;
     for( links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
     {  		
-      std::stringstream oss;
-      oss << _unique_name << "_"<< it->first; 
+
       if(it->second->visual)
       {
-          KDL::Frame  T_world_visual;
-          LinkFrameStruct state;	    
+      
+        typedef map<string, shared_ptr<vector<shared_ptr<otdf::Visual> > > >  visual_groups_mapType;
+        visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+        for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
+        {
+            
+            vector<shared_ptr<otdf::Visual> > visuals = (*v_grp_it->second);
+             
+            std::stringstream oss,oss2;
+            oss << _unique_name << "_"<< it->first << "_" << iv; 
+            oss2 << it->first << "_"<< iv; 
+            string unique_geometry_name = oss2.str(); 
+             
+            KDL::Frame  T_world_visual;
+            LinkFrameStruct state;	    
 
-         // retrieve T_world_visual from store
-         // #include <algorithm>
-          std::vector<std::string>::const_iterator found;
-          found = std::find (_link_names.begin(), _link_names.end(), it->first);
-          if (found != _link_names.end()) {
-            unsigned int index = found - _link_names.begin();
-            state=_link_tfs[index]; 
-            T_world_visual = state.frame;
-          } 
-          else 
-          {  
-           T_world_visual = KDL::Frame::Identity();
-           std::cerr << "ERROR:"<< it->first << " not found in _link_names" << std::endl;
-          }
+           // retrieve T_world_visual from store
+           // #include <algorithm>
+            std::vector<std::string>::const_iterator found;
+            found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
+            if (found != _link_geometry_names.end()) {
+              unsigned int index = found - _link_geometry_names.begin();
+              state=_link_geometry_tfs[index];  
+              T_world_visual = state.frame;
+            } 
+            else 
+            {  
+             T_world_visual = KDL::Frame::Identity();
+             std::cerr << "ERROR:"<< unique_geometry_name << " not found in _link_geometry_names" << std::endl;
+            }
 
-          int type = it->second->visual->geometry->type;
-          enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
-          Eigen::Vector3f p;
-          p[0] = state.frame.p[0];
-          p[1] = state.frame.p[1];
-          p[2] = state.frame.p[2];
-          double x,y,z,w;
-          state.frame.M.GetQuaternion(x,y,z,w);
-          Eigen::Vector4f q;
-          q << x, y, z, w;
-          if  (type == SPHERE)
-          {
-            shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-          }
-          else if  (type == BOX)
-          {
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-          }
-          else if  (type == CYLINDER)
-          {
-            //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
 
-          }
-          else if  (type == TORUS)
-          {
-            //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q);
-          }
-          else if  (type == MESH)
-          {
-            MeshStruct mesh_struct = _mesh_map.find(it->first)->second;
-
-            KDL::Frame T_visual_objorigin, T_world_objorigin; 
-
-            T_visual_objorigin = KDL::Frame::Identity();
-            T_visual_objorigin.p[0]= mesh_struct.offset_x;
-            T_visual_objorigin.p[1]= mesh_struct.offset_y;
-            T_visual_objorigin.p[2]= mesh_struct.offset_z;
-
-            /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
-            T_world_objorigin = T_world_visual*T_visual_objorigin;
-
-            state.frame = T_world_objorigin;
-
+            int type = visuals[iv]->geometry->type;
+            enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
+            
             Eigen::Vector3f p;
             p[0] = state.frame.p[0];
             p[1] = state.frame.p[1];
             p[2] = state.frame.p[2];
-            double x,y,z,w;
+              double x,y,z,w;
             state.frame.M.GetQuaternion(x,y,z,w);
             Eigen::Vector4f q;
             q << x, y, z, w;
-            
-            //shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(it->second->visual->geometry));
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
-            downcasted_object->set_transform(p,q); 
+            if  (type == SPHERE)
+            {
+              shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
+            }
+            else if  (type == BOX)
+            {
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
+            }
+            else if  (type == CYLINDER)
+            {
+              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
 
-          } // end if MESH
+            }
+            else if  (type == TORUS)
+            {
+              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q);
+            }
+            else if  (type == MESH)
+            {
+              MeshStruct mesh_struct = _mesh_map.find(unique_geometry_name)->second;
 
+              KDL::Frame T_visual_objorigin, T_world_objorigin; 
 
+              T_visual_objorigin = KDL::Frame::Identity();
+              T_visual_objorigin.p[0]= mesh_struct.offset_x;
+              T_visual_objorigin.p[1]= mesh_struct.offset_y;
+              T_visual_objorigin.p[2]= mesh_struct.offset_z;
+
+              /*In drc mesh files visual origin is not geometric origin. It is implicit in the vertex units. If you want to draw like a bounding box for collision detection that assumes vertices relative to the geometric origin, you have to take into account this shift in the frame used to define the vertices with that of the geometric origin of the object.*/
+              T_world_objorigin = T_world_visual*T_visual_objorigin;
+
+              state.frame = T_world_objorigin; 
+
+              Eigen::Vector3f p;
+              p[0] = state.frame.p[0];
+              p[1] = state.frame.p[1];
+              p[2] = state.frame.p[2];
+              double x,y,z,w;
+              state.frame.M.GetQuaternion(x,y,z,w);
+              Eigen::Vector4f q;
+              q << x, y, z, w;
+
+              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              downcasted_object->set_transform(p,q); 
+              
+            } // end if MESH
+             
+        }// end for geoemtries in visual group  
+        
       }//if(it->second->visual)
 
     }//end for
-
 }
 
-bool InteractableGlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T_world_link)
-{
-   if(GlKinematicBody::get_link_frame(link_name,T_world_link))
-      return true;
-   else
-      return false;
-}  
 
 //==================================================================================================== 	  
 // drawing utils
