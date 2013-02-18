@@ -193,9 +193,11 @@ void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
   } 
 }
   
+  int counter =0;
 ///////////////// Everything below this is not the in the gazebo API and should eventally be removed ///////////////////
 void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::robot_state_t* msg){
-  cout << "Reconfiguration requested...\n";
+  cout << "Reconfiguration requested..."<< counter<<"\n";
+  counter++;
   // pause gazebo beford resetting the state:
   if(pause_physics_before_reconfig_ && ros::ok()) {
     std_srvs::Empty srv;
@@ -238,11 +240,63 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
   joint_command_msg.i_effort_min.resize(msg->num_joints);
   joint_command_msg.i_effort_max.resize(msg->num_joints);
 
+  joint_command_msg.name.resize(msg->num_joints);
+  joint_command_msg.position.resize(msg->num_joints);
+  joint_command_msg.velocity.resize(msg->num_joints);
+  joint_command_msg.effort.resize(msg->num_joints);
+  
+  
+  map<string, int> correct_order;
+  correct_order["back_lbz"]= 0 ;
+  correct_order["back_mby"]= 1 ;
+  correct_order["back_ubx"]= 2 ;
+  correct_order["neck_ay"]= 3 ;
+  correct_order["l_leg_uhz"]= 4 ;
+  correct_order["l_leg_mhx"]= 5 ;
+  correct_order["l_leg_lhy"]= 6 ;
+  correct_order["l_leg_kny"]= 7 ;
+  correct_order["l_leg_uay"]= 8 ;
+  correct_order["l_leg_lax"]= 9 ;
+  correct_order["r_leg_uhz"]= 10 ;
+  correct_order["r_leg_mhx"]= 11 ;
+  correct_order["r_leg_lhy"]= 12 ;
+  correct_order["r_leg_kny"]= 13 ;
+  correct_order["r_leg_uay"]= 14 ;
+  correct_order["r_leg_lax"]= 15 ;
+  correct_order["l_arm_usy"]= 16 ;
+  correct_order["l_arm_shx"]= 17 ;
+  correct_order["l_arm_ely"]= 18 ;
+  correct_order["l_arm_elx"]= 19 ;
+  correct_order["l_arm_uwy"]= 20 ;
+  correct_order["l_arm_mwx"]= 21 ;
+  correct_order["r_arm_usy"]= 22 ;
+  correct_order["r_arm_shx"]= 23 ;
+  correct_order["r_arm_ely"]= 24 ;
+  correct_order["r_arm_elx"]= 25 ;
+  correct_order["r_arm_uwy"]= 26 ;
+  correct_order["r_arm_mwx"]= 27 ;
+   
+  
   for (int i=0; i<msg->num_joints; i++) {
-    joint_command_msg.name.push_back(msg->joint_name[i]);
-    joint_command_msg.position.push_back(msg->joint_position[i]);
-    joint_command_msg.velocity.push_back(0);
-    joint_command_msg.effort.push_back(0);
+    int j = correct_order.find( msg->joint_name[i] )->second;
+    
+    joint_command_msg.name[j] = msg->joint_name[i];
+    joint_command_msg.position[j] = msg->joint_position[i];
+    joint_command_msg.velocity[j] = 0;
+    joint_command_msg.effort[j] = 0;
+    
+    joint_command_msg.kp_position[j] =1.0;
+    joint_command_msg.kd_position[j] =0.0;
+    joint_command_msg.ki_position[j] =0.0;
+    joint_command_msg.i_effort_max[j]=0.0;
+
+//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/p", joint_command_msg.kp_position[j]);
+//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/d", joint_command_msg.kd_position[j]);
+//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i", joint_command_msg.ki_position[j]);
+//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i_clamp", joint_command_msg.i_effort_max[j]);
+    
+    joint_command_msg.i_effort_min[j] = -joint_command_msg.i_effort_max[j];
+    
   }
   if(ros::ok()) {
     joint_cmd_pub_.publish(joint_command_msg);

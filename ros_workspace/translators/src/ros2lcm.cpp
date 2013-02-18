@@ -28,8 +28,16 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Imu.h>
-#include <atlas_gazebo_msgs/RobotState.h>
+#include <sensor_msgs/JointState.h>
 #include <rosgraph_msgs/Clock.h>
+// deprecated:
+//#include <atlas_gazebo_msgs/RobotState.h>
+#include <nav_msgs/Odometry.h>
+
+#include <geometry_msgs/Wrench.h>
+
+
+
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -58,9 +66,28 @@ private:
   ros::Subscriber clock_sub_;
   void clock_cb(const rosgraph_msgs::ClockConstPtr& msg);
   
-  // Robot State:
-  ros::Subscriber rstate_sub_;
-  void rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg);
+  // All of this data is mashed down into one LCM message - Robot State ////
+//  ros::Subscriber rstate_sub_;
+//  void rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg);
+  sensor_msgs::JointState l_hand_joint_states_, r_hand_joint_states_, robot_joint_states_, head_joint_states_;  
+  ros::Subscriber  joint_states_sub_, l_hand_joint_states_sub_, r_hand_joint_states_sub_, head_joint_states_sub_;  
+  void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
+  void l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
+  void r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
+  void head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
+  void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in); 
+  void appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_in, std::string sensor_name);
+  void publishRobotState(int64_t utime_in);
+
+  ros::Subscriber l_foot_contact_sub_,r_foot_contact_sub_;  
+  void r_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg);  
+  void l_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg);  
+  geometry_msgs::Wrench r_foot_contact_, l_foot_contact_;
+  
+  ros::Subscriber ground_truth_odom_sub_;  
+  void ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg);  
+  nav_msgs::Odometry ground_truth_odom_;
+  //////////////////////////////////////////////////////////////////////////
   
   // Imu:
   ros::Subscriber torso_imu_sub_,head_imu_sub_;
@@ -83,7 +110,7 @@ private:
   void right_image_cb(const sensor_msgs::ImageConstPtr& msg);
   ros::Subscriber left_image_sub_,right_image_sub_;
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
-
+  
   // Combined Stereo Image:
   void stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
       const sensor_msgs::CameraInfoConstPtr& l_cam_info,
@@ -119,21 +146,26 @@ App::App(const std::string & stereo_in,
   head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 10, &App::head_imu_cb,this);
   
   // Laser:
-  rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 10, &App::rotating_scan_cb,this);
+  rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/scan"), 10, &App::rotating_scan_cb,this);
   // Porterbot
   scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
   scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
 
   // Robot State:
-  rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  //rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
 //  rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  head_joint_states_sub_ = node_.subscribe(string("/multisense_sl/joint_states"), 1000, &App::head_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  l_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/l_hand/joint_states"), 1000, &App::l_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  r_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/r_hand/joint_states"), 1000, &App::r_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
 
-  cout << "sin :" << stereo_in_ << "sdfsdfsdfsdfsdfssdfsd\n";
+  ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
+  r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
   
-
   // Stereo Image:
   std::string lim_string ,lin_string,rim_string,rin_string;
-  int which_image = 4;
+  int which_image = 0;
   if (which_image==0){ // Grey:
     lim_string = stereo_in_ + "/left/image_rect";
     lin_string = stereo_in_ + "/left/camera_info";
@@ -167,8 +199,9 @@ App::App(const std::string & stereo_in,
   sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
   
   // Mono-Cameras:
+  left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
   if (1==0){
-    left_image_sub_ = node_.subscribe(lim_string, 10, &App::left_image_cb,this);
+    left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
     right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
   }
 };
@@ -305,7 +338,7 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
   lcm_publish_.publish(stereo_out_.c_str(), &stereo);
   
   // As a convenience also publish the left image:
-  send_image(l_image, "CAMERALEFT" );
+  //send_image(l_image, "CAMERALEFT" );
 }
 
 
@@ -447,6 +480,103 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 }
 
 
+void App::r_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg){
+  r_foot_contact_ = *msg;
+}
+void App::l_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg){
+  l_foot_contact_ = *msg;
+}
+void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
+  ground_truth_odom_ = *msg;
+}
+/// Locally cache the joint states:
+void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  robot_joint_states_ = *msg; 
+  
+  int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+  publishRobotState(joint_utime);
+}
+void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  head_joint_states_= *msg;
+}
+void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  l_hand_joint_states_= *msg;
+}
+void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+  r_hand_joint_states_= *msg;
+}
+
+
+
+void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointState msg_in){
+  drc::joint_covariance_t j_cov;
+  j_cov.variance = 0;
+  for (std::vector<int>::size_type i = 0; i < msg_in.name.size(); i++)  {
+    msg_out.joint_name.push_back(msg_in.name[i]);
+    msg_out.joint_position.push_back(msg_in.position[i]);
+    msg_out.joint_velocity.push_back(msg_in.velocity[i]);
+    msg_out.measured_effort.push_back( msg_in.effort[i] );
+    msg_out.joint_cov.push_back(j_cov);
+  }
+}
+
+void App::appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_in, std::string sensor_name){
+  drc::vector_3d_t f_left;
+  f_left.x = msg_in.force.x;f_left.y = msg_in.force.y;f_left.z = msg_in.force.z;
+  drc::vector_3d_t t_left;
+  t_left.x = msg_in.torque.x; t_left.y = msg_in.torque.y; t_left.z = msg_in.torque.z;
+
+  msg_out.contacts.id.push_back(sensor_name);
+  msg_out.contacts.contact_force.push_back(f_left);
+  msg_out.contacts.contact_torque.push_back(t_left);  
+}
+
+void App::publishRobotState(int64_t utime_in){
+  drc::robot_state_t robot_state_msg;
+  robot_state_msg.utime = utime_in;
+  robot_state_msg.robot_name = "atlas";
+  
+  // Pelvis Pose:
+  robot_state_msg.origin_position.translation.x = ground_truth_odom_.pose.pose.position.x;
+  robot_state_msg.origin_position.translation.y = ground_truth_odom_.pose.pose.position.y;
+  robot_state_msg.origin_position.translation.z = ground_truth_odom_.pose.pose.position.z;
+  robot_state_msg.origin_position.rotation.x = ground_truth_odom_.pose.pose.orientation.x;
+  robot_state_msg.origin_position.rotation.y = ground_truth_odom_.pose.pose.orientation.y;
+  robot_state_msg.origin_position.rotation.z = ground_truth_odom_.pose.pose.orientation.z;
+  robot_state_msg.origin_position.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
+
+  robot_state_msg.origin_twist.linear_velocity.x =ground_truth_odom_.twist.twist.linear.x;
+  robot_state_msg.origin_twist.linear_velocity.y =ground_truth_odom_.twist.twist.linear.y;
+  robot_state_msg.origin_twist.linear_velocity.z =ground_truth_odom_.twist.twist.linear.z;
+  robot_state_msg.origin_twist.angular_velocity.x =ground_truth_odom_.twist.twist.angular.x;
+  robot_state_msg.origin_twist.angular_velocity.y =ground_truth_odom_.twist.twist.angular.y;
+  robot_state_msg.origin_twist.angular_velocity.z =ground_truth_odom_.twist.twist.angular.z;
+  int i,j;
+  for(i = 0; i < 6; i++)  {
+    for(j = 0; j < 6; j++) {
+      robot_state_msg.origin_cov.position_cov[i][j] = 0;
+      robot_state_msg.origin_cov.twist_cov[i][j] = 0;
+    }
+  }
+
+  // Joint States:
+  appendJointStates(robot_state_msg, robot_joint_states_);
+  appendJointStates(robot_state_msg, head_joint_states_);
+  appendJointStates(robot_state_msg, l_hand_joint_states_);
+  appendJointStates(robot_state_msg, r_hand_joint_states_);
+  robot_state_msg.num_joints = robot_state_msg.joint_name.size();
+  
+  // ground contact states
+  appendContact(robot_state_msg, l_foot_contact_, "l_foot_contact");
+  appendContact(robot_state_msg, r_foot_contact_, "r_foot_contact");
+  robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
+    
+  lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+}
+
+
+
+/*
 void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -506,6 +636,7 @@ void App::rstate_cb(const atlas_gazebo_msgs::RobotStateConstPtr& msg){
 
   lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);
 }
+*/
 
 
 int scan_counter=0;
@@ -523,17 +654,13 @@ void App::scan_right_cb(const sensor_msgs::LaserScanConstPtr& msg){
   send_lidar(msg, "SCAN_RIGHT");
 }
 
-
 void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   bot_core::planar_lidar_t scan_out;
-  for (size_t i=0; i < msg->ranges.size(); i++){
-    scan_out.ranges.push_back( msg->ranges[i] );
-  }
+  scan_out.ranges = msg->ranges;
+  scan_out.intensities = msg->intensities; // currently all identical
   scan_out.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   scan_out.nranges =msg->ranges.size();
-  // TODO: pass the intensities:
-  scan_out.nintensities=0;
-  //scan_out.intensities=NULL;
+  scan_out.nintensities=msg->intensities.size();
   scan_out.rad0 = msg->angle_min;
   scan_out.radstep = msg->angle_increment;
 
@@ -541,23 +668,16 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   if (VERBOSE) cout << channel << ": "<< scan_out.utime << "\n";
 }
 
-
 int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm");
   ros::CallbackQueue local_callback_queue;
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-
   App *app = new App( "multisense_sl/camera", "CAMERA", nh);
   std::cout << "ros2lcm translator ready\n";
-  //ros::spin();
-  
-  
-  
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
-  }
-  
+  }  
   return 0;
 }

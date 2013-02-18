@@ -25,7 +25,7 @@
 
     <!-- 4 surrounding cubes -->
     <include><name>sbox1</name><uri>model://simple_box</uri><pose>5 0 1 0 0 0</pose></include>
-    <include><name>sbox2</name><uri>model://simple_box</uri><pose>0 5 1 0 0 0</pose></include>
+<!--    <include><name>sbox2</name><uri>model://simple_box</uri><pose>0 5 1 0 0 0</pose></include> -->
     <include><name>sbox3</name><uri>model://simple_box</uri><pose>0 -5 1 0 0 0</pose></include>
     <include><name>sbox4</name><uri>model://simple_box</uri><pose>-8 0 1 0 0 0</pose></include>
 
@@ -51,6 +51,13 @@
     <include><name>simple_box_r3</name><uri>model://simple_box</uri><pose>12 -4 1 0 0 0</pose></include>
     <include><name>simple_box_r4</name><uri>model://simple_box</uri><pose>17 -4 1 0 0 0</pose></include>
 
+    <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>-2.0 8.0 0.26 0 0 0</pose></include>
+    <include><name>simple_box_stage_2</name><uri>model://simple_box_stage</uri><pose>-7.0 20.5 0.26 0 0 0</pose></include>
+
+    <include><name>simple_box_steppingstone_r1</name><uri>model://simple_box_steppingstone</uri><pose>-3.5 13.5 0.26 0 0 0</pose></include>
+    <include><name>simple_box_steppingstone_r2</name><uri>model://simple_box_steppingstone</uri><pose>-3.5 14.8 0.26 0 0 0</pose></include>
+    <include><name>simple_box_steppingstone_l1</name><uri>model://simple_box_steppingstone</uri><pose>-4.4 14.15 0.26 0 0 0</pose></include>
+
 
     <!-- box with window on it - for visual tracking -->
     <include><name>box_type2</name><uri>model://box_type2</uri><pose>-35 -8.5 1 0 0 0</pose></include>
@@ -66,7 +73,7 @@
     <include><uri>model://steering_assembly</uri><pose>0.5 -0.1524 0.0 0.0 0. 1.571</pose></include>
 
     <!-- DRC specific components -->
-    <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1 0 0 0</pose></include>
+    <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1.5 0 0 0</pose></include>
     <include><uri>model://golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include>
 
     <include><uri>model://polaris_ranger_ev</uri><pose>0.0 -2.55 0.1 0 0 0</pose></include>

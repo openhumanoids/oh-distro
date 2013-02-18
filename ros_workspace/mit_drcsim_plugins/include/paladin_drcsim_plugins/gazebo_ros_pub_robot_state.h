@@ -52,6 +52,9 @@
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+
 namespace gazebo
 {
 /// @addtogroup gazebo_dynamic_plugins Gazebo Dynamic Plugins
@@ -136,6 +139,10 @@ class GazeboRosPubRobotState : public ModelPlugin
   /// \bridf: ros node handle and publisher
   private: ros::NodeHandle* rosnode_;
   private: ros::Publisher pub_;
+  private: bool publish_true_robot_state_;
+
+  private: ros::Publisher pub_pose_;
+  private: ros::Publisher pub_twist_;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
@@ -146,6 +153,10 @@ class GazeboRosPubRobotState : public ModelPlugin
   /// \brief topic name
   private: std::string topicName;
   private: std::string synchronization; 
+
+  private: std::string topicNamePose;
+  private: std::string topicNameTwist;
+
 
   /// \brief frame transform name, should match link name
   private: std::string frameName;

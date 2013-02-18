@@ -84,6 +84,10 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
   else
     this->topicName = _sdf->GetElement("topicName")->GetValueString();
     
+  // TODO: add config reading of these:
+  this->topicNamePose = "/true_pose";
+  this->topicNameTwist = "/true_twist";
+
   
   if (!_sdf->HasElement("synchronization"))
   {
@@ -118,16 +122,42 @@ void GazeboRosPubRobotState::Load( physics::ModelPtr _parent, sdf::ElementPtr _s
   }
   this->rosnode_ = new ros::NodeHandle(this->robotNamespace);
   
+  // NEW FEB 2013: this value turns true state on and off:
+  this->publish_true_robot_state_ = false;
+
+
   if (this->topicName != "")
   {
 #ifdef USE_CBQ
-    ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
-      this->topicName,1,
+    if(this->publish_true_robot_state_){
+      ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<atlas_gazebo_msgs::RobotState>(
+        this->topicName,1,
+        boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
+        boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);
+      this->pub_ = this->rosnode_->advertise(ao);
+    }
+
+
+    ros::AdvertiseOptions ao_pose = ros::AdvertiseOptions::create<geometry_msgs::PoseStamped>(
+      this->topicNamePose,1,
       boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
       boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);
-    this->pub_ = this->rosnode_->advertise(ao);
+    this->pub_pose_ = this->rosnode_->advertise(ao_pose);
+
+    ros::AdvertiseOptions ao_twist = ros::AdvertiseOptions::create<geometry_msgs::TwistStamped>(
+      this->topicNameTwist,1,
+      boost::bind( &GazeboRosPubRobotState::RobotStateConnect,this),
+      boost::bind( &GazeboRosPubRobotState::RobotStateDisconnect,this), ros::VoidPtr(), &this->queue_);
+    this->pub_twist_ = this->rosnode_->advertise(ao_twist);
+
 #else
-    this->pub_ = this->rosnode_->advertise<atlas_gazebo_msgs::RobotState>(this->topicName, 1);
+    if(this->publish_true_robot_state_){
+      this->pub_ = this->rosnode_->advertise<atlas_gazebo_msgs::RobotState>(this->topicName, 1);
+    }
+
+    this->pub_pose_ = this->rosnode_->advertise<geometry_msgs::PoseStamped>(this->topicNamePose, 1);
+    this->pub_twist_ = this->rosnode_->advertise<geometry_msgs::TwistStamped>(this->topicNameTwist, 1);
+
 #endif
   }
 
@@ -192,62 +222,79 @@ void GazeboRosPubRobotState::UpdateChild()
      
     this->lock.lock();
 
-    // compose robotStateMsg
-    this->robotStateMsg.header.frame_id = this->frameName;
-    this->robotStateMsg.header.stamp.fromSec(cur_time.Double());
 
-     // get name
-     // this->robotStateMsg.name.push_back(std::string(biter->second->GetName()));
+    // set pose
+    // get pose from simulator
+    math::Pose pose;
+    math::Quaternion rot;
+    math::Vector3 pos;
+
+    // Get Pose/Orientation 
+    pose = this->parent_model_->GetWorldPose();
+    // apply xyz offsets and get position and rotation components
+    pos = pose.pos; // (add if there's offset) + this->xyzOffsets;
+    rot = pose.rot;
+    // apply rpy offsets
+    /* add if there's offsets
+    Quatern qOffsets;
+    qOffsets.SetFromEuler(this->rpyOffsets);
+    rot = qOffsets*rot;
+    rot.Normalize();
+    */
+
+    geometry_msgs::Pose geom_pose; 
+    geom_pose.position.x    = pos.x;
+    geom_pose.position.y    = pos.y;
+    geom_pose.position.z    = pos.z;
+    geom_pose.orientation.x = rot.x;
+    geom_pose.orientation.y = rot.y;
+    geom_pose.orientation.z = rot.z;
+    geom_pose.orientation.w = rot.w;     
+
+    // get Rates 
+    math::Vector3 vpos = this->parent_model_->GetWorldLinearVel();
+    math::Vector3 veul = this->parent_model_->GetWorldAngularVel();
+
+    // pass linear rates
+    geometry_msgs::Twist geom_twist;
+    geom_twist.linear.x        = vpos.x;
+    geom_twist.linear.y        = vpos.y;
+    geom_twist.linear.z        = vpos.z;
+    // pass euler angular rates
+    geom_twist.angular.x    = veul.x;
+    geom_twist.angular.y    = veul.y;
+    geom_twist.angular.z    = veul.z;
+
+
+
+
+    geometry_msgs::PoseStamped geom_pose_stamped;
+    geom_pose_stamped.header.stamp.fromSec(cur_time.Double());
+    geom_pose_stamped.pose = geom_pose;
+    this->pub_pose_.publish(geom_pose_stamped);   
+
+    geometry_msgs::TwistStamped geom_twist_stamped;
+    geom_twist_stamped.header.stamp.fromSec(cur_time.Double());
+    geom_twist_stamped.twist = geom_twist;
+    this->pub_twist_.publish(geom_twist_stamped);   
+
+    if (this->publish_true_robot_state_){
+      ////////////////////////////////////
+      // compose robotStateMsg
+      this->robotStateMsg.header.frame_id = this->frameName;
+      this->robotStateMsg.header.stamp.fromSec(cur_time.Double());
+
+      // get name
+      // this->robotStateMsg.name.push_back(std::string(biter->second->GetName()));
       this->robotStateMsg.robot_name = std::string(this->parent_model_->GetName());
-      // set pose
-      // get pose from simulator
-      math::Pose pose;
-      math::Quaternion rot;
-      math::Vector3 pos;
 
-      // Get Pose/Orientation 
-       pose = this->parent_model_->GetWorldPose();
-      // apply xyz offsets and get position and rotation components
-      pos = pose.pos; // (add if there's offset) + this->xyzOffsets;
-      rot = pose.rot;
-      // apply rpy offsets
-      /* add if there's offsets
-      Quatern qOffsets;
-      qOffsets.SetFromEuler(this->rpyOffsets);
-      rot = qOffsets*rot;
-      rot.Normalize();
-      */
-      geometry_msgs::Pose geom_pose; 
-      geom_pose.position.x    = pos.x;
-      geom_pose.position.y    = pos.y;
-      geom_pose.position.z    = pos.z;
-      geom_pose.orientation.x = rot.x;
-      geom_pose.orientation.y = rot.y;
-      geom_pose.orientation.z = rot.z;
-      geom_pose.orientation.w = rot.w;     
       this->robotStateMsg.body_pose =geom_pose;
-    
-
-      // set velocities
-      // get Rates 
-      math::Vector3 vpos = this->parent_model_->GetWorldLinearVel();
-      math::Vector3 veul = this->parent_model_->GetWorldAngularVel();
-
-      // pass linear rates
-      geometry_msgs::Twist geom_twist;
-      geom_twist.linear.x        = vpos.x;
-      geom_twist.linear.y        = vpos.y;
-      geom_twist.linear.z        = vpos.z;
-      // pass euler angular rates
-      geom_twist.angular.x    = veul.x;
-      geom_twist.angular.y    = veul.y;
-      geom_twist.angular.z    = veul.z;
       this->robotStateMsg.body_twist=geom_twist;
 
 
       int joint_count = this->parent_model_->GetJointCount();
 
-	/*for (int i = 0; i < joint_count ; i++)
+      /*for (int i = 0; i < joint_count ; i++)
 	{
 	gazebo::Joint* joint = this->parent_model_->GetJoint(i);
 	std::string name =  joint->GetName();//joint name
@@ -260,44 +307,45 @@ void GazeboRosPubRobotState::UpdateChild()
 	}*/
 
         //Get pointers to all joints in the model and store them in a map (which performs and intrinsic 	 alphabetical sort on joint name).
-        //
-	if(this->joints_.empty()) {
-	  physics::Joint_V joints = this->parent_model_->GetJoints();
+      //
+      if(this->joints_.empty()) {
+	physics::Joint_V joints = this->parent_model_->GetJoints();
 	  
-	  for (int i = 0; i < joint_count ; i++)
-	  {
+	for (int i = 0; i < joint_count ; i++)
+	{
 //	    physics::JointPtr joint = this->parent_model_->GetJoint(i); // uses pre Gazebo 1.4 API
             this->joints_.insert(make_pair(joints[i]->GetName(), joints[i]));
 		//populate joints_ once	
-	  }
 	}
+      }
 
- 	 typedef std::map<std::string, physics::JointPtr > joints_mapType;
-        for( joints_mapType::const_iterator it = this->joints_.begin(); it!=this->joints_.end(); it++)
-        { 
+      typedef std::map<std::string, physics::JointPtr > joints_mapType;
+      for( joints_mapType::const_iterator it = this->joints_.begin(); it!=this->joints_.end(); it++)
+      { 
 
-	  std::string name =  it->second->GetName();//joint name
-          double current_position = it->second->GetAngle(0).Radian(); // joint position
-          current_position = fmod(current_position, 2*M_PI );
-          // if out of bounds, then correct: (added due to Gazebo bug in dec 2012, mfallon
-          // their angles arent bound checked
-          if (current_position > 2*M_PI){
-            current_position =  current_position- 2*M_PI;
-          }else if (current_position < 0){
-            current_position =  current_position+ 2*M_PI;
-          }
-	  double current_velocity = it->second->GetVelocity(0); // joint velocity
-	  this->robotStateMsg.joint_name.push_back(name);
-	  this->robotStateMsg.joint_position.push_back(current_position);
-	  this->robotStateMsg.joint_velocity.push_back(current_velocity);
+	std::string name =  it->second->GetName();//joint name
+        double current_position = it->second->GetAngle(0).Radian(); // joint position
+        current_position = fmod(current_position, 2*M_PI );
+        // if out of bounds, then correct: (added due to Gazebo bug in dec 2012, mfallon
+        // their angles arent bound checked
+        if (current_position > 2*M_PI){
+          current_position =  current_position- 2*M_PI;
+        }else if (current_position < 0){
+          current_position =  current_position+ 2*M_PI;
+        }
+	double current_velocity = it->second->GetVelocity(0); // joint velocity
+	this->robotStateMsg.joint_name.push_back(name);
+	this->robotStateMsg.joint_position.push_back(current_position);
+	this->robotStateMsg.joint_velocity.push_back(current_velocity);
 
 //std::cout << "    name[" << name << "] pos[" << current_position << "] rate [" << current_velocity<< "]\n";
-        }
+      }
 
-    this->pub_.publish(this->robotStateMsg);   
-    this->robotStateMsg.joint_name.clear();
-    this->robotStateMsg.joint_position.clear();
-    this->robotStateMsg.joint_velocity.clear();
+      this->pub_.publish(this->robotStateMsg);   
+      this->robotStateMsg.joint_name.clear();
+      this->robotStateMsg.joint_position.clear();
+      this->robotStateMsg.joint_velocity.clear();
+    }
    
     this->lock.unlock();
 
