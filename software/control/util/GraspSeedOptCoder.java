@@ -64,7 +64,7 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
           // fdata.val = [unique_id;drake_control;grasp_type;contact_mask;
           //              l_hand_init_pose.translation;l_hand_init_pose.rotation;
           //              r_hand_init_pose.translation;r_hand_init_pose.rotation;
-          //              geometry_type;num_dims;joint_effort[1, ...,num_dims]];
+          //              geometry_type;num_dims;dims[1, ...,num_dims]];
           
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
          
