@@ -7,9 +7,8 @@ end
 
 drc_path= getenv('DRC_PATH');% set this in startup.m
 %filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake.sdf'];
-%filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake.sdf'];
-r_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_right_drake.sdf'];
-l_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_left_drake.sdf'];
+r_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_right.urdf'];
+l_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_left.urdf'];
 
 options=struct();
 options.ground =true;
@@ -313,7 +312,7 @@ end %end while
             mask=[1:size(phiC,1)];
             if(usefingermask)
                 mask =[8 10 12 13];
-                %mask =[8:13];
+                mask =[8:1:14];
             end
             phiC = phiC(mask);
             JC = JC(mask,:);

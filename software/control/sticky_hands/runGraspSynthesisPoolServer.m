@@ -6,7 +6,9 @@ if mode ==1
 else
   lcm_url = 'udpm://239.255.76.67:7667?ttl=1';
 end
-lcm.lcm.LCM.getSingletonTemp(lcm_url); % only works on mfallons machine
+
+lcm_url = 'udpm://239.255.76.67:7667?ttl=0';
+%lcm.lcm.LCM.getSingletonTemp(lcm_url); % only works on mfallons machine
 
 %profile on;
 no_of_workers = n_workers;
