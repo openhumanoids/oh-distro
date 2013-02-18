@@ -23,16 +23,21 @@ public:
 	 for (uint i=0; i<plan_msg.num_states; i++)
 	 {
 	   state_msg = *msg;
-	   body_origin.translation.x = body_origin.translation.x + 0.5;
+	   body_origin.translation.x = body_origin.translation.x + 0.1;
 	   state_msg.origin_position =  body_origin; 
 	  // std::cout<< state_msg.joint_name.size() <<std::endl;
 	  for(std::vector<std::string>::size_type j = 0; j != state_msg.joint_name.size(); j++) 
     {
       //std::cout<< "ok" <<std::endl;
-     if(state_msg.joint_name[j]=="theta")
+     if(state_msg.joint_name[j]=="LShoulderPitch")
      {
-       state_msg.joint_position[j] = i*0.1;
+       state_msg.joint_position[j] = -0.2*i;
      }
+//     if(state_msg.joint_name[j]=="LElbowPitch")
+//     {
+//       state_msg.joint_position[j] = i*0.3;
+//     }
+
     }
 	   
 	   
