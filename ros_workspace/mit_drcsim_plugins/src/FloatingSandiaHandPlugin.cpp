@@ -32,8 +32,8 @@ FloatingSandiaHandPlugin::FloatingSandiaHandPlugin()
 {
 
 // ================ MIT MODIFICATION ===========================  
-  this->leftImuLinkName = "left_palm";//"l_hand";
-  this->rightImuLinkName = "right_palm";//"r_hand";
+  this->leftImuLinkName = "left_base_x";//"l_hand";
+  this->rightImuLinkName = "right_base_x";//"r_hand";
 // ================ MIT MODIFICATION ===========================  
 }
 
@@ -257,8 +257,10 @@ void FloatingSandiaHandPlugin::DeferredLoad()
   this->rosNode = new ros::NodeHandle("");
 
   // pull down controller parameters; they should be on the param server by now
-  const int NUM_SIDES = 2, NUM_FINGERS = 4, NUM_FINGER_JOINTS = 3;
+  const int NUM_SIDES = 2, NUM_FINGERS = 4, NUM_FINGER_JOINTS = 3, NUM_FLOATING_JOINTS = 6;
   const char *sides[NUM_SIDES] = {"left", "right"};
+  int joint_idx=0;
+  int floating_idx = 0;
   for (int side = 0; side < NUM_SIDES; side++)
   {
     for (int finger = 0; finger < NUM_FINGERS; finger++)
@@ -282,9 +284,9 @@ void FloatingSandiaHandPlugin::DeferredLoad()
           ROS_ERROR("couldn't find a param for %s", joint_ns);
           continue;
         }
-        int joint_idx = side * (NUM_FINGERS * NUM_FINGER_JOINTS) +
+        joint_idx = side * (NUM_FINGERS * NUM_FINGER_JOINTS) +
                         finger * NUM_FINGER_JOINTS +
-                        joint;
+                        joint + floating_idx;
         this->jointCommands.kp_position[joint_idx]  =  p_val;
         this->jointCommands.ki_position[joint_idx]  =  i_val;
         this->jointCommands.kd_position[joint_idx]  =  d_val;
@@ -292,6 +294,150 @@ void FloatingSandiaHandPlugin::DeferredLoad()
         this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val;
       }
     }
+// ================ MIT ADDITION (UGLY)===========================    
+    char joint_ns[200] = "";
+    snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_x/",
+               sides[side]);
+     // this is so ugly
+      double p_val = 0, i_val = 0, d_val = 0, i_clamp_val = 0;
+      string p_str = string(joint_ns)+"p";
+      string i_str = string(joint_ns)+"i";
+      string d_str = string(joint_ns)+"d";
+      string i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;
+      floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val;           
+
+    snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_y/",
+               sides[side]);
+     // this is so ugly
+      p_val = 0; i_val = 0; d_val = 0; i_clamp_val = 0;
+      p_str = string(joint_ns)+"p";
+      i_str = string(joint_ns)+"i";
+      d_str = string(joint_ns)+"d";
+      i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val;    
+      
+
+      
+      snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_z/",
+               sides[side]);
+     // this is so ugly
+      p_val = 0; i_val = 0; d_val = 0; i_clamp_val = 0;
+      p_str = string(joint_ns)+"p";
+      i_str = string(joint_ns)+"i";
+      d_str = string(joint_ns)+"d";
+      i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val;    
+      
+      snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_roll/",
+               sides[side]);
+     // this is so ugly
+      p_val = 0; i_val = 0; d_val = 0; i_clamp_val = 0;
+      p_str = string(joint_ns)+"p";
+      i_str = string(joint_ns)+"i";
+      d_str = string(joint_ns)+"d";
+      i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val;
+          
+      snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_pitch/",
+               sides[side]);
+     // this is so ugly
+      p_val = 0; i_val = 0; d_val = 0; i_clamp_val = 0;
+      p_str = string(joint_ns)+"p";
+      i_str = string(joint_ns)+"i";
+      d_str = string(joint_ns)+"d";
+      i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val; 
+      
+      snprintf(joint_ns, sizeof(joint_ns), "sandia_hands/gains/%s_base_yaw/",
+               sides[side]);
+     // this is so ugly
+      p_val = 0; i_val = 0; d_val = 0; i_clamp_val = 0;
+      p_str = string(joint_ns)+"p";
+      i_str = string(joint_ns)+"i";
+      d_str = string(joint_ns)+"d";
+      i_clamp_str = string(joint_ns)+"i_clamp";
+      if (!this->rosNode->getParam(p_str, p_val) ||
+          !this->rosNode->getParam(i_str, i_val) ||
+          !this->rosNode->getParam(d_str, d_val) ||
+          !this->rosNode->getParam(i_clamp_str, i_clamp_val))
+      {
+        ROS_ERROR("couldn't find a param for %s", joint_ns);
+        continue;
+      }
+      joint_idx = joint_idx+1;floating_idx++;
+      this->jointCommands.kp_position[joint_idx]  =  p_val;
+      this->jointCommands.ki_position[joint_idx]  =  i_val;
+      this->jointCommands.kd_position[joint_idx]  =  d_val;
+      this->jointCommands.i_effort_min[joint_idx] = -i_clamp_val;
+      this->jointCommands.i_effort_max[joint_idx] =  i_clamp_val; 
+ // ================ END MIT ADDITION ===========================         
+      
   }
 
   // ROS Controller API
@@ -313,7 +459,7 @@ void FloatingSandiaHandPlugin::DeferredLoad()
   jointCommandsSo =
     ros::SubscribeOptions::create<osrf_msgs::JointCommands>(
     "sandia_hands/r_hand/joint_commands", 100,
-    boost::bind(&FloatingSandiaHandPlugin::SetJointCommands, this, _1, 12),
+    boost::bind(&FloatingSandiaHandPlugin::SetJointCommands, this, _1, 18),
     ros::VoidPtr(), &this->rosQueue);
   this->subJointCommands[1] = this->rosNode->subscribe(jointCommandsSo);
 
