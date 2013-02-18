@@ -10,7 +10,6 @@ public class RobotStateCoder implements drake.util.LCMCoder
     java.util.TreeMap<String,Integer> m_joint_map;
     java.util.TreeMap<String,Integer> m_floating_joint_map;
     drc.robot_state_t msg;
-    String base_name;
 
     public RobotStateCoder(String robot_name, String[] joint_name)
     {
@@ -20,23 +19,16 @@ public class RobotStateCoder implements drake.util.LCMCoder
       
       m_num_joints = 0;
       m_num_floating_joints = 0;
-
       for (int i=0; i<joint_name.length; i++) {
         if (joint_name[i].startsWith("base_")) {  
-          assert (base_name == "base_" || base_name == null);
-          base_name = "base_";
           m_floating_joint_map.put(joint_name[i],i);
           m_num_floating_joints+=1;
-        } else if (joint_name[i].startsWith("pelvis_")) {
-          assert (base_name == "pelvis_" || base_name == null);
-          base_name = "pelvis_";
-          m_floating_joint_map.put(joint_name[i],i);
-          m_num_floating_joints+=1;
-        } else {
+        }
+        else {
           m_joint_map.put(joint_name[i],i);
           m_num_joints+=1;
         }
-      }
+      }     
       
       msg = new drc.robot_state_t();
       msg.robot_name = robot_name;
@@ -60,7 +52,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
       msg.joint_name = new String[m_num_joints];
       int j=0;
       for (int i=0; i<joint_name.length; i++) {
-        if (!(joint_name[i].startsWith(base_name)))  
+        if (!(joint_name[i].startsWith("base_")))  
           msg.joint_name[j++] = joint_name[i];
       }     
       msg.joint_position = new float[m_num_joints];
@@ -105,13 +97,13 @@ public class RobotStateCoder implements drake.util.LCMCoder
             fdata.val[index] = msg.origin_position.translation.x;
             fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.linear_velocity.x;
           }
-          j = m_floating_joint_map.get(base_name + "y");
+          j = m_floating_joint_map.get("base_y");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.origin_position.translation.y;
             fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.linear_velocity.y;
           }
-          j = m_floating_joint_map.get(base_name + "z");
+          j = m_floating_joint_map.get("base_z");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = msg.origin_position.translation.z;
@@ -132,7 +124,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
                                     2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
                                     q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
           
-          j = m_floating_joint_map.get(base_name + "roll");
+          j = m_floating_joint_map.get("base_roll");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = rpy[0];
@@ -141,7 +133,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
             fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.x;
           }
           
-          j = m_floating_joint_map.get(base_name + "pitch");
+          j = m_floating_joint_map.get("base_pitch");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = rpy[1];
@@ -150,7 +142,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
             fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.y;
           }
           
-          j = m_floating_joint_map.get(base_name + "yaw");
+          j = m_floating_joint_map.get("base_yaw");
           if (j!=null) {
             index = j.intValue();
             fdata.val[index] = rpy[2];
@@ -184,19 +176,19 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
       if (m_num_floating_joints != 0) {
         // TODO: should be generalized eventually
-        j = m_floating_joint_map.get(base_name + "x");
+        j = m_floating_joint_map.get("base_x");
         if (j!=null) {
           index = j.intValue();
           msg.origin_position.translation.x = (float) d.val[index];
           msg.origin_twist.linear_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
         }
-        j = m_floating_joint_map.get(base_name + "y");
+        j = m_floating_joint_map.get("base_y");
         if (j!=null) {
           index = j.intValue();
           msg.origin_position.translation.y = (float) d.val[index];
           msg.origin_twist.linear_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints];
         }
-        j = m_floating_joint_map.get(base_name + "z");
+        j = m_floating_joint_map.get("base_z");
         if (j!=null) {
           index = j.intValue();
           msg.origin_position.translation.z = (float) d.val[index];
@@ -204,15 +196,15 @@ public class RobotStateCoder implements drake.util.LCMCoder
         }
 
         float roll, pitch, yaw;
-        index = m_floating_joint_map.get(base_name + "roll").intValue();
+        index = m_floating_joint_map.get("base_roll").intValue();
         roll = (float) d.val[index];
         msg.origin_twist.angular_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
 
-        index = m_floating_joint_map.get(base_name + "pitch").intValue();
+        index = m_floating_joint_map.get("base_pitch").intValue();
         pitch = (float) d.val[index];
         msg.origin_twist.angular_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints]; 
 
-        index = m_floating_joint_map.get(base_name + "yaw").intValue();
+        index = m_floating_joint_map.get("base_yaw").intValue();
         yaw = (float) d.val[index];
         msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
 
