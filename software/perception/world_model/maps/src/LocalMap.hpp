@@ -91,17 +91,6 @@ public:
               const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
-  /*
-  // export this representation as height map
-  HeightMap getAsHeightMap(const int iDownSample=1,
-                           const float iMaxHeight=1e20) const;
-
-  // export this representation as depth map
-  DepthMap getAsDepthMap(const Eigen::Projective3d& iLocalToImage,
-                         const int iWidth, const int iHeight) const;
-  */
-
-
 protected:
   int64_t mStateId;
   Spec mSpec;

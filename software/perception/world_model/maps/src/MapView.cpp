@@ -112,3 +112,45 @@ getAsPointCloud() const {
   maps::PointCloud::Ptr cloud(new maps::PointCloud(*mCloud));
   return cloud;
 }
+
+MapView::HeightMap::Ptr MapView::
+getAsHeightMap(const float iResolution, const float iMaxHeight) const {
+  // get points
+  maps::PointCloud cloud;
+  {
+    boost::mutex::scoped_lock lock(mMutex);
+    cloud = *mCloud;
+  }
+
+  // determine 2d extents
+  maps::PointCloud::PointType minPoint, maxPoint;
+  pcl::getMinMax3D(cloud, minPoint, maxPoint);
+
+  // compute transform from image to reference coordinates
+  Eigen::Affine3f imgToRef = Eigen::Affine3f::Identity();
+  imgToRef(0,0) = imgToRef(1,1) = iResolution;
+  imgToRef(0,3) = minPoint.x;
+  imgToRef(1,3) = minPoint.y;
+  Eigen::Affine3f refToImg = imgToRef.inverse();
+  
+  // initialize height map data
+  HeightMap::Ptr heightMap(new HeightMap());
+  const float unobservedValue = -std::numeric_limits<float>::max();
+  heightMap->mTransform = imgToRef;
+  heightMap->mWidth = ceil((maxPoint.x - minPoint.x)/iResolution) + 1;
+  heightMap->mHeight = ceil((maxPoint.y - minPoint.y)/iResolution) + 1;
+  int totalPixels = heightMap->mWidth * heightMap->mHeight;
+  heightMap->mData.resize(totalPixels);
+  std::fill(heightMap->mData.begin(), heightMap->mData.end(), unobservedValue);
+
+  // add height values into height map
+  // TODO: consider case of going from lower res to higher res
+  pcl::transformPointCloud(cloud, cloud, refToImg);
+  for (int i = 0; i < cloud.size(); ++i) {
+    int x(cloud[i].x + 0.5f), y(cloud[i].y + 0.5f);
+    int index = y*heightMap->mWidth + x;
+    heightMap->mData[index] = std::max(heightMap->mData[index], cloud[i].z);
+  }
+
+  return heightMap;
+}

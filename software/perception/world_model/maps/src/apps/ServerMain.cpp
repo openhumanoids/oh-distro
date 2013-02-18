@@ -97,6 +97,7 @@ struct ViewWorker {
           bounds.mMaxTime += curTime;
         }
         if (spec.mRelativeLocation) {
+          // TODO: transform rotation in xy as well (maybe z too?)
           for (int i = 0; i < bounds.mPlanes.size(); ++i) {
             Eigen::Vector4f plane = bounds.mPlanes[i];
             Eigen::Vector3f pos;
@@ -395,6 +396,7 @@ int main(const int iArgc, const char** iArgv) {
   string laserChannel = "ROTATING_SCAN";
   float publishPeriod = 3;
   float defaultResolution = 0.1;
+  float timeWindowSeconds = 0;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
@@ -404,6 +406,8 @@ int main(const int iArgc, const char** iArgv) {
           "resolution of default contextual map, in m");
   opt.add(state.mCatalogPublishPeriod, "c", "catalog",
           "interval between catalog publications, in s");
+  opt.add(timeWindowSeconds, "w", "window",
+          "time window of default contextual map, in s");
   opt.parse();
   state.mSensorDataReceiver->
     addChannel(laserChannel,
@@ -448,10 +452,15 @@ int main(const int iArgc, const char** iArgv) {
   viewSpec.mResolution = defaultResolution;
   viewSpec.mFrequency = 1.0/publishPeriod;
   viewSpec.mTimeMin = viewSpec.mTimeMax = -1;
+  viewSpec.mRelativeTime = false;
+  if (timeWindowSeconds > 0) {
+    viewSpec.mTimeMin = -timeWindowSeconds*1e6;
+    viewSpec.mTimeMax = 0;
+    viewSpec.mRelativeTime = true;
+  }
   viewSpec.mClipPlanes = Utils::planesFromBox(Eigen::Vector3f(-5,-5,-5),
                                               Eigen::Vector3f(5,5,5));
   viewSpec.mActive = true;
-  viewSpec.mRelativeTime = false;
   viewSpec.mRelativeLocation = true;
   drc::map_request_t request = LcmTranslator::toLcm(viewSpec);
   state.addViewWorker(request);

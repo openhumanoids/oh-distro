@@ -32,6 +32,15 @@ public:
     bool operator!=(const Spec& iSpec) const;
   };
 
+  struct HeightMap {
+    int mWidth;
+    int mHeight;
+    std::vector<float> mData;
+    Eigen::Affine3f mTransform;  // heightmap to reference coords
+
+    typedef boost::shared_ptr<HeightMap> Ptr;
+  };
+
   typedef boost::shared_ptr<MapView> Ptr;
 
 public:
@@ -47,6 +56,8 @@ public:
   Ptr clone(const Spec& iSpec) const;
 
   maps::PointCloud::Ptr getAsPointCloud() const;
+  HeightMap::Ptr getAsHeightMap(const float iResolution,
+                                const float iMaxHeight=1e20) const;
   // TODO: can add other representations here if needed, such as meshes
 
 protected:
