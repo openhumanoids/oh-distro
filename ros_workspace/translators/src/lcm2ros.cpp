@@ -161,7 +161,7 @@ void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
     joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
   }
   if(ros::ok()) {
-    joint_cmd_pub_.publish(joint_command_msg);
+    sandia_l_hand_joint_cmd_pub_.publish(joint_command_msg);
   } 
 } 
 
@@ -189,7 +189,7 @@ void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
     joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
   }
   if(ros::ok()) {
-    joint_cmd_pub_.publish(joint_command_msg);
+    sandia_r_hand_joint_cmd_pub_.publish(joint_command_msg);
   } 
 }
   
