@@ -22,6 +22,6 @@ add_subdirectory(src/motion_estimate_ypr_only)
 #find_package(PythonInterp REQUIRED)
 #pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
-pods_install_python_script(drc-python-lcmscope scripts/python_lcmscope.py)
+pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
 #INSTALL_FILES(<dir> regexp)
 
