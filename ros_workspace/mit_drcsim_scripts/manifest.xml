@@ -11,7 +11,8 @@
   <depend package="urdf"/>
   <depend package="mit_drcsim_plugins"/>
   <depend package="atlas_gazebo_msgs"/>
-
+  <depend package="sandia_hand_msgs"/>
+  <depend package="osrf_msgs"/>
 </package>
 
 
