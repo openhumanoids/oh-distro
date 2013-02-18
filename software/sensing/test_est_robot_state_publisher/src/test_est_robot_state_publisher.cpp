@@ -121,10 +121,10 @@ int main(int argc, char ** argv)
     message.contacts.num_contacts =0;
     message.contacts.id.push_back("dummy");
     for (int i=0; i< message.contacts.num_contacts; i++){
-        message.contacts.inContact.push_back(0);
         drc::vector_3d_t f_zero;
         f_zero.x = 0;f_zero.y = 0;f_zero.z = 0;
-        message.contacts.contactForce.push_back(f_zero);
+        message.contacts.contact_force.push_back(f_zero);
+        message.contacts.contact_torque.push_back(f_zero);
     }
     // Publish
     lcm.publish("EST_ROBOT_STATE", &message);
@@ -136,8 +136,8 @@ int main(int argc, char ** argv)
     message.measured_effort.clear();
     message.joint_cov.clear();
     message.contacts.id.clear();
-    message.contacts.inContact.clear();
-    message.contacts.contactForce.clear();
+    message.contacts.contact_torque.clear();
+    message.contacts.contact_force.clear();
     
     usleep(10000); // publish at 100 hz.
    } 
