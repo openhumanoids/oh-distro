@@ -11,10 +11,6 @@ group "core" {
         exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/real_multisense_sl/multisense.urdf";
         host = "localhost";
     }
-    cmd "estpub_no_sense" {
-        exec = "est_robot_state_publisher_no_exteroception";
-        host = "localhost";
-    }
     cmd "estpub" {
         exec = "est_robot_state_publisher";
         host = "localhost";

@@ -28,7 +28,7 @@ group "1.robot" {
         host = "localhost";
     }
     cmd "l2r" {
-        exec = "rosrun translators lcm2ros -r -p";
+        exec = "rosrun translators lcm2ros -p";
         host = "localhost";
     }
     cmd "j2f" {
@@ -63,7 +63,14 @@ group "3.sensing" {
     }
 }
 
-group "4.base" {
+group "4.drake_robot" {
+    cmd "control_planner" {
+        exec = "matlab";
+        host = "localhost";
+    }
+}
+
+group "5.base" {
     cmd "netbridge" {
         exec = "drc-network-bridge -t manipulation";
         host = "localhost";
@@ -90,14 +97,18 @@ group "4.base" {
     }
 }
 
-group "5.drake_base" {
-    cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+group "6.drake_base" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
        host = "localhost";
     }
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
-        host = "localhost";
+    cmd "footstep_planner" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
+       host = "localhost";
+    }
+    cmd "base_planner" {
+       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1')\" ";
+       host = "localhost";
     }
 }
 
