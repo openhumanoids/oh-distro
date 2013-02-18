@@ -889,13 +889,15 @@ namespace surrogate_gui
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
+	  std::vector<double> inliers_distances; 
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
 					 currObj->indices,
 					x,y,z,
 					roll,pitch,yaw,
 					radius,
-					length);
+					length, 
+					inliers_distances);
 	      
 	  affordanceMsg.params.push_back(x);
 	  affordanceMsg.param_names.push_back("x");
