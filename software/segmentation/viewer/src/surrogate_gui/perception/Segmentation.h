@@ -49,7 +49,8 @@ namespace surrogate_gui
 								  double &x, double &y, double &z,
 								  double &roll, double &pitch, double &yaw, 
 								  double &radius,
-								  double &height);
+								  double &height,
+								  std::vector<double> &inliers_distances);
 			
 			static pcl::PointIndices::Ptr fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 								  boost::shared_ptr<std::set<int> > subcloudIndices,

@@ -205,6 +205,19 @@ namespace surrogate_gui
 		return pclIndices;
 	}
 
+
+	/**Converts indices into pcl PointIndices format*/
+  void PclSurrogateUtils::toSet(const PointIndices::Ptr indices,
+				set<int> &copy)
+  {
+    for(uint i =0; i < indices->indices.size(); i++)
+      {
+	      copy.insert(indices->indices[i]);
+      }
+  }
+	  
+
+
 	/**@return a copy of indices*/
 	PointIndices::Ptr PclSurrogateUtils::copyIndices(const PointIndices::Ptr indices)
 	{

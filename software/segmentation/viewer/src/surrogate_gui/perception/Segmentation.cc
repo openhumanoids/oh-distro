@@ -350,7 +350,7 @@ namespace surrogate_gui
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
 					      double &radius,
-					      double &length)
+					      double &length,  std::vector<double> & inliers_distances)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -447,6 +447,19 @@ namespace surrogate_gui
     y = center.y();
     z = center.z();
     length = (pMax-pMin).norm();
+
+    // residuals 
+    inliers_distances.clear ();
+    inliers_distances.resize (cylinderIndices->indices.size ());
+    Eigen::Vector4f line_pt  (coefficients->values[0], coefficients->values[1], coefficients->values[2], 0);
+    Eigen::Vector4f line_dir (coefficients->values[3], coefficients->values[4], coefficients->values[5], 0);
+
+    for (size_t i = 0; i < cylinderIndices->indices.size (); ++i)
+      {
+	Eigen::Vector4f pt (subcloud->points[cylinderIndices->indices[i]].x, subcloud->points[cylinderIndices->indices[i]].y, subcloud->points[cylinderIndices->indices[i]].z, 0);
+        double d_euclid = fabs (sqrt(pcl::sqrPointToLineDistance (pt, line_pt, line_dir)) - coefficients->values[6]);
+	inliers_distances[i] = d_euclid; 
+      }
 
     return cylinderIndices;
   }

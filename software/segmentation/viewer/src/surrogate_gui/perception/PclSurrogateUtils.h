@@ -65,7 +65,9 @@ namespace surrogate_gui
 			static pcl::PointCloud<pcl::PointXYZRGB>::Ptr toPcl(const std::vector<int> &indices, const lkr_color_point_cloud_t *originalCloud);
 			static pcl::PointIndices::Ptr toPclIndices(const SetIntPtr indices);
 			static pcl::PointIndices::Ptr copyIndices(const pcl::PointIndices::Ptr indices);
-
+			static void toSet(const pcl::PointIndices::Ptr indices,
+					  std::set<int> &copy);
+			  
 			static void convert(const std::vector<pcl::PointXYZRGB> &input,
 							    std::list<pcl::PointXYZ> &output);
 
