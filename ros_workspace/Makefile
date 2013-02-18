@@ -6,5 +6,5 @@ all:
 	make -C keyboard_teleop
 	make -C keyboard_driving
 	make -C multisense_command
-	echo "Finished making MIT's ROS DRC repo";
+	echo "===Finished making MIT's ROS DRC repo===";
 
