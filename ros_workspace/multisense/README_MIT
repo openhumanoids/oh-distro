@@ -1,9 +1,9 @@
-notes to get the CRL multisense-sl head up and running
+Notes to get the CRL multisense-sl head up and running
 
 1. Disable DHCP
 - see image file in this directory
 
-1b. Set /etc/network/interface
+1b. Set /etc/network/interface to be:
 auto lo
 iface lo inet loopback
 
@@ -15,7 +15,7 @@ network 192.168.1.0
 broadcast 192.168.1.255
 gateway 192.168.1.254
 
-... reboot
+... reboot your machine
 
 2.
 sudo ifconfig eth0 10.10.72.56
@@ -23,15 +23,14 @@ sudo echo 16777215 > /proc/sys/net/core/rmem_max
 sudo echo 16777215 > /proc/sys/net/core/wmem_max
 sudo ifconfig eth0 mtu 7200
 
-
 3. verify ip address:
 $ ifconfig
 eth0      Link encap:Ethernet  HWaddr 3c:97:0e:2d:d4:25  
           inet addr:10.10.72.56  Bcast:10.255.255.255  Mask:255.0.0.0
 ...
 
-
-4. ping 10.10.72.52
+4. ping the device's ip:
+ping 10.10.72.52
 
 5. Ros tools:
 rosrun image_view image_view image:=/stereo/left/image_rect
@@ -39,17 +38,135 @@ rosrun rviz rviz /home/mfallon/drc/ros_workspace/multisense/multisense/multisens
 
 6. Notes
 Spindle: max speed: 2.158 rad/sec (20.60 rpm)
+Angle range: 5.78 -> 0 -> -0.5 (always decreasing)
+- 0.000 - upright
+3.142 - upside down
+Why does the joint angle have such a strange range?
 
 Size of rectified image produced by the device:
 width : 1024 pixels 
 height: 600 pixels (sides) 570 (center)
 nominal output resolution: 1024x1088 [wxh] with extensive letterboxing top and bottom
+- simuation is 1024 and 544
+- so have removed top and bottom 272 rows
 
-Joint angle range: (always decreasing):
-5.78 -> 0 -> -0.5
-0.000 - upright
-3.142 - upside down
+Depth = focal_length*baseline/disparity
+  // (Raw disparity message is in 16ths of pixels)
+double scale = right_cam_info_.P[3]*16.0*right_cam_info_.P[0];
+where P3 -42.4053, P0 606.034, scale = -411185
+
+reprojection matrix (to project depth onto color image):
+[1, 0, 0, -512;
+  0, 1, 0, -544;
+  0, 0, 0, 606.0344848632812;
+  0, 0, 14.2914745276283, 0]
+
+Frame Rate:
+letterbox removed: sustains 22hz on Left and Disparity with 49MBs reported in the spy
+letterbox no removed: sustains 14hz on Left and Disparity with 76MBs reported in the spy
+left and right: seemed to be about 28hz - check
 
 
 
-Why does the joint angle have such a strange range?
+IMPORTANT TODO:
+// Move back to using the inliers as the feature queue
+
+
+
+Freenect
+state->depth_producer->setDisparityData(disparity);
+state->odom->processFrame(gray, state->depth_producer);
+fovis::PrimeSenseDepth depth_producer;   ... implementation of DepthSource
+
+Openni MM:
+- depth in mm, first convert to m
+depth_image->setDepthImage(state->depth_buf);
+state->odom->processFrame(gray, state->depth_image);
+fovis::DepthImage depth_image;   ... implementation of DepthSource
+
+Stereo:
+depth_producer_->setRightImage(right_buf);
+odom_.processFrame(left_buf, depth_producer_);
+fovis::StereoDepth depth_producer_ ... implementation of DepthSource
+
+
+PrimeSenseDepth
+getXyz() 
+for each keypoint:
+- calls getXyzFast()
+- gets xyzw, xyz, disparity using projection of keypoint provided uv values
+
+
+
+Inside: VisualOdometry::processFrame ....
+
+
+OdometryFrame::prepareFrame calls:
+  depth_source->haveXyz(du, dv)
+  depth_source->getXyz(this);
+
+  
+MotionEstimator::estimateMotion calls:
+  depth_source->refineXyz(_matches, _num_matches, target_frame);
+  (and also getBaseline for stereo)
+
+  
+  
+  
+The multisense camera provides either:
+- (1) left and right, [collected at 30Hz]
+- (2) left and disparity (computed on an FPGA, 1/16 pixel uint16 values) [collected at 22Hz]
+- (3) disparity and (1) - published separately, but may be synchronized
+- (4) left, right and disparity synchronized (not implemented yet by CRL, will be at lower fps)
+Theres a price to be paid (in fps) for choosing anything other than (1),
+but (2) seems the correct choice - as we get dense depth free of processing and latency.
+
+Out of the box, (1) works well with the stereo odometry algorithm in fovis - as you can see in (B).
+
+Fundamentally the laser alone will not be sufficient to carry out tracking and fitting of small objects.
+(in both point density and more importantly frequency e.g 1Hz laser versus 22Hz dense depth).
+See video (A) below. Additionally feature-based approaches (e.g. the TLD tracker) will fail for
+small feature-less objects e.g. pipes, valves, etc. As Matt pointed out the primary features
+extracted by the TLD are edges of the object - which are likely not to be stable for different
+view points. However for table top scenes (2) provides a lot of dense depth data at 22Hz (A).
+
+I envisage fusing both laser and dense depth using a TSDF volume, as in KinectFusion,
+using FOVIS for motion estimation. The laser data will integrated with very low uncertainty
+and the depth data with high uncertainty into the TSDF.
+This will also allow us to smoothly vary our surface reconstruction at 22Hz and remain consistent.
+This fusion in itself is academically interesting.
+
+We could also simulate both depth and color images within the TSDF framework - which can be used
+to simulate model views within a probabilistic filter e.g. particle filter.
+In this way it may provide a signal for Jon Brookshire's work.
+
+Additionally, the sandia hands each have a stereo camera. Meaning that this approach would
+naturally support hand-to-object position estimation during grasping - Making the difference
+between blindly reaching and closed loop reaching. ****
+
+In addition, FOVIS will need to be expanded to support differentiating between multiple feature
+cliques i.e. to differentiate between tracking using the background scene versus incorrectly
+tracking relative to a large object moving in the foreground e.g. the moving handtool in the
+(A) would by likely to cause FOVIS (as is) to fail.
+
+Finally, more specifically about the usage case, I imagine the robot approaching a scene
+and doing a quick survey by shuffling around. See Video (C) - this is open loop, but I imagine
+some local bundle adjustment or SLAM (!gasp!) will be needed to avoid drift - like PTAM really.
+This also points to tight interaction between the control side of our system and perception ****
+
+To do this its necessary to interface (2) with FOVIS. This requires modification of FOVIS.
+Not major surgery - but it has to be done correctly.
+I think I will need Albert's help to do this - at least to check what I write. But if he was amiable
+to write the extension my time might be better spent elsewhere.
+
+Finally, CRL have intonated that additional software models may provide some of these
+capabilities - but we have no details about this or its quality.
+
+All videos are recorded at 0.25 speed but can be processed between 25-30Hz:
+(A) Dense Depth (using data from (2)):
+http://youtu.be/-qAG39Hu8lo
+(B) Laser alone (using data from (1) to estimate motion:
+http://youtu.be/CkuV_lczjQM
+(C) Open Loop VO, using data from (1):
+http://youtu.be/1GQ67Zv5LVQ
+

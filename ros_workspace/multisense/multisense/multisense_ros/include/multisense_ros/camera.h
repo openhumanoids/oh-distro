@@ -26,6 +26,7 @@
 #include <LibSensorPodCommunications/CamStopImageStreamAckMessage.h>
 
 #include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/multisense.hpp>
 #include <lcm/lcm-cpp.hpp>
 
 namespace multisense_ros
@@ -112,7 +113,13 @@ private:
 
 
   lcm::LCM lcm_publish_ ;
-  bot_core::image_t msg_out_;
+  //
+  bot_core::image_t stereo_msg_out_;
+  // this message bundles both together:
+  multisense::images_t multisense_msg_out_;
+  bot_core::image_t disparity_msg_out_;
+  bot_core::image_t left_msg_out_;
+  bot_core::image_t right_msg_out_;
 };
 
 }

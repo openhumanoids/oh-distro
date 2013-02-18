@@ -43,6 +43,6 @@ rosbuild_add_boost_directories()
 #target_link_libraries(${PROJECT_NAME} another_library)
 rosbuild_add_executable(ros_driver src/ros_driver.cpp)
 
-pods_use_pkg_config_packages(ros_driver lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core ) 
+pods_use_pkg_config_packages(ros_driver lcm lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcmtypes_multisense) 
 
 target_link_libraries(ros_driver ${PROJECT_NAME})

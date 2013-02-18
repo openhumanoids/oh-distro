@@ -47,6 +47,10 @@ Camera::Camera(multisense_driver::MultisenseDriver* driver) :
   if(!lcm_publish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
+  multisense_msg_out_.image_types.push_back(0);// multisense::images_t::LEFT );
+  multisense_msg_out_.image_types.push_back(2);// multisense::images_t::DISPARITY );
+  multisense_msg_out_.images.push_back(left_msg_out_);
+  multisense_msg_out_.images.push_back(disparity_msg_out_);
 
   stereo_nh_.param("frame_id", frame_id_, std::string("/left_camera_optical_frame"));
 
@@ -194,10 +198,84 @@ void Camera::processCamData(const boost::shared_ptr<const CamDataMessage>& msg)
   depth_diagnostics_.countStream();
 }
 
+
 void Camera::processDepthImage(const boost::shared_ptr<const CamDataMessage>& msg)
 {
-  cv::Mat_<uint16_t> disparity(msg->height, msg->width, msg->disparityImage);
+  ros::Time cam_time = convertTime(msg->timeStamp.getCurrentTime());
+  //std::cout << msg->width << " " << msg->height << " " << isize << "\n";
+  
+  bool send_letterboxed =false;
+  if (send_letterboxed){ 
+    // Disparity:
+    int n_bytes=4; // 4 bytes per value
+    int isize = n_bytes*msg->width*msg->height;
+    disparity_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    disparity_msg_out_.width = msg->width;
+    disparity_msg_out_.height = msg->height;
+    disparity_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32; //PIXEL_FORMAT_GRAY;
+    disparity_msg_out_.nmetadata =0;
+    disparity_msg_out_.row_stride=n_bytes*msg->width;
+    disparity_msg_out_.size =isize;
+    disparity_msg_out_.data.resize(isize);
+    memcpy(&disparity_msg_out_.data[0], msg->disparityImage, isize);
+    //lcm_publish_.publish("DISPARITY", &disparity_msg_out_);
 
+    // LCM: (assumes mono)
+    int n_colors=1;
+    int left_isize = n_colors*msg->width*msg->height;
+    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    left_msg_out_.width = msg->width;
+    left_msg_out_.height = msg->height;
+    left_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    left_msg_out_.nmetadata =0;
+    left_msg_out_.row_stride=n_colors*msg->width;
+    left_msg_out_.size =n_colors*left_isize;
+    left_msg_out_.data.resize( left_isize);
+    memcpy(&left_msg_out_.data[0], msg->grayScaleImage, left_isize);
+    //lcm_publish_.publish("CAMERALEFT", &left_msg_out_);
+  }else{
+    /// remove the letterbox - to halve bandwidth
+    // Assume 1024x1088 nominal:
+    int rows_skip = 272;
+    int rows_send = 544;
+    
+    // Disparity:
+    int n_bytes=4; // 4 bytes per value
+    int isize = n_bytes*msg->width*rows_send;//msg->height;
+    disparity_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    disparity_msg_out_.width = msg->width;
+    disparity_msg_out_.height = rows_send;
+    disparity_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32; //PIXEL_FORMAT_GRAY;
+    disparity_msg_out_.nmetadata =0;
+    disparity_msg_out_.row_stride=n_bytes*msg->width;
+    disparity_msg_out_.size =isize;
+    disparity_msg_out_.data.resize(isize);
+    memcpy(&disparity_msg_out_.data[ 0 ], msg->disparityImage  + rows_skip*msg->width, isize); 
+    //lcm_publish_.publish("DISPARITY", &disparity_msg_out_);
+    
+    // LCM: (assumes mono)
+    int n_colors=1;
+    int left_isize = n_colors*msg->width*rows_send;// msg->height;
+    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    left_msg_out_.width = msg->width;
+    left_msg_out_.height =rows_send;// msg->height;
+    left_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    left_msg_out_.nmetadata =0;
+    left_msg_out_.row_stride=n_colors*msg->width;
+    left_msg_out_.size =n_colors*left_isize;
+    left_msg_out_.data.resize( left_isize);
+    memcpy(&left_msg_out_.data[  0   ], msg->grayScaleImage + rows_skip*n_colors*msg->width , left_isize);
+    //lcm_publish_.publish("CAMERALEFT", &left_msg_out_);
+  }  
+  
+  multisense_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+  multisense_msg_out_.n_images =2;
+  multisense_msg_out_.images[0]= left_msg_out_;
+  multisense_msg_out_.images[1]= disparity_msg_out_;
+  lcm_publish_.publish("MULTISENSE_LD", &multisense_msg_out_);
+  
+  /////////////////////////////////////////////////////////////  
+  cv::Mat_<uint16_t> disparity(msg->height, msg->width, msg->disparityImage);
   depth_image_.header.frame_id = frame_id_;
   depth_image_.header.stamp = convertTime(msg->timeStamp.getCurrentTime());
 
@@ -209,7 +287,7 @@ void Camera::processDepthImage(const boost::shared_ptr<const CamDataMessage>& ms
   depth_image_.data.resize(msg->height*msg->width*4);
 
   cv::Mat_<float> depth(msg->height, msg->width, (float*) &(depth_image_.data[0]));
-
+  
   // Depth = focal_length*baseline/disparity
   // (Raw disparity message is in 16ths of pixels)
   double scale = right_cam_info_.P[3]*16.0*right_cam_info_.P[0];
@@ -243,29 +321,63 @@ void Camera::processCamImageData(const boost::shared_ptr<const CamImageDataMessa
 
 void Camera::processImages(const boost::shared_ptr<const CamImageDataMessage>& msg)
 {
+  ros::Time cam_time = convertTime(msg->timeStamp.getCurrentTime());
 
+if (1==0){  
   // LCM: (assumes mono)
   int n_colors=1;
   int isize = n_colors*msg->width*msg->height;
-
-  ros::Time cam_time = convertTime(msg->timeStamp.getCurrentTime());
-  msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
-  msg_out_.width = msg->width;
-  msg_out_.height = 2*msg->height;
-  msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-  msg_out_.nmetadata =0;
-  msg_out_.row_stride=n_colors*msg->width;
-  msg_out_.size =2*n_colors*isize;
-
-  msg_out_.data.resize( 2*isize);
-  memcpy(&msg_out_.data[0], msg->leftImage, isize);
-  memcpy(&msg_out_.data[isize], msg->rightImage, isize);
-
-  //copy(msg->data.begin(), msg->data.end(), singleimage_data);
-  //lcm_img.data.assign(singleimage_data, singleimage_data + ( n_colors*isize));
-  lcm_publish_.publish("CAMERA", &msg_out_);
+  stereo_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+  stereo_msg_out_.width = msg->width;
+  stereo_msg_out_.height = 2*msg->height;
+  stereo_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+  stereo_msg_out_.nmetadata =0;
+  stereo_msg_out_.row_stride=n_colors*msg->width;
+  stereo_msg_out_.size =2*n_colors*isize;
+  stereo_msg_out_.data.resize( 2*isize);
+  memcpy(&stereo_msg_out_.data[0], msg->leftImage, isize);
+  memcpy(&stereo_msg_out_.data[isize], msg->rightImage, isize);
+  lcm_publish_.publish("MULTISENSE_LR", &stereo_msg_out_);
   /////////////////////////////////////////////////////////////
+}else{
+    int rows_skip = 272;
+    int rows_send = 544;
+  
+    // LCM: (assumes mono)
+    int n_colors=1;
+    int left_isize = n_colors*msg->width*rows_send;// msg->height;
+    left_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    left_msg_out_.width = msg->width;
+    left_msg_out_.height =rows_send;// msg->height;
+    left_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    left_msg_out_.nmetadata =0;
+    left_msg_out_.row_stride=n_colors*msg->width;
+    left_msg_out_.size =n_colors*left_isize;
+    left_msg_out_.data.resize( left_isize);
+    memcpy(&left_msg_out_.data[  0   ], msg->leftImage + rows_skip*n_colors*msg->width , left_isize);
 
+    right_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+    right_msg_out_.width = msg->width;
+    right_msg_out_.height =rows_send;// msg->height;
+    right_msg_out_.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
+    right_msg_out_.nmetadata =0;
+    right_msg_out_.row_stride=n_colors*msg->width;
+    right_msg_out_.size =n_colors*left_isize;
+    right_msg_out_.data.resize( left_isize);
+    memcpy(&right_msg_out_.data[  0   ], msg->rightImage + rows_skip*n_colors*msg->width , left_isize);
+    
+    
+  
+  multisense_msg_out_.utime = (int64_t) floor(cam_time.toNSec()/1000);
+  multisense_msg_out_.n_images =2;
+  multisense_msg_out_.image_types[0]= 0;
+  multisense_msg_out_.image_types[1]= 1;
+  multisense_msg_out_.images[0]= left_msg_out_;
+  multisense_msg_out_.images[1]= right_msg_out_;
+  lcm_publish_.publish("MULTISENSE_LR", &multisense_msg_out_);
+  
+  
+}
 
   if (left_cam_pub_.getNumSubscribers() > 0)
   {
