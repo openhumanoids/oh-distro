@@ -1,0 +1,34 @@
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="sandia_hand_right" >
+
+  <!-- derived from /usr/share/sandia-hand-5.1/ros/sandia_hand_description/robots/sandia_hand_right_on_box.urdf.xacro-->
+
+  <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
+  <!--<include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />-->
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
+
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/floatingbase_urdfs/xacro/floating_base.urdf.xacro" />
+   
+  <link name="world">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+  
+   <xacro:base_links side ="right" reflect="1"/>  
+
+  <xacro:sandia_hand side="right" parent="right_base_yaw" reflect="1">
+    <origin xyz="0 0 0.0" rpy="0 -1.57079 0"/>
+  </xacro:sandia_hand>
+  
+  <gazebo>
+    <plugin name="floating_sandia_hand_plugin" filename="libFloatingSandiaHandPlugin.so"/>
+  </gazebo>  
+  
+</robot>
