@@ -7,9 +7,9 @@ l_jointNames = r_left.getStateFrame.coordinates(7:nq_l);
 nq_r = r_right.getNumStates/2;
 r_jointNames = r_right.getStateFrame.coordinates(7:nq_r);
 
-% Temporary fix as URDFs for sticky hands are not up to date. TODO: remove later
-l_jointNames = regexprep(l_jointNames,'left_','l_');
-r_jointNames = regexprep(r_jointNames,'right_','r_');
+% Temporary fix as URDFs for sticky hands are not up to date.
+% l_jointNames = regexprep(l_jointNames,'left_','l_');
+% r_jointNames = regexprep(r_jointNames,'right_','r_');
 
 lcmcoder = JLCMCoder(GraspStateCoder('atlas',l_jointNames,r_jointNames));
 nx=18+nq_l-6+nq_r-6; % this changes?
