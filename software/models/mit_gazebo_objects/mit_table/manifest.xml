@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<model>
+  <name>mit_table</name>
+  <version>1.0</version>
+  <sdf version="1.2">model.sdf</sdf>
+
+  <author>
+    <name>hej</name>
+    <email></email>
+  </author>
+
+  <description>
+    A table with the dimension of a real table in CSAIL
+  </description>
+</model>

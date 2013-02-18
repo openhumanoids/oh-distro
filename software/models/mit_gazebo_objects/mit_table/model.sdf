@@ -1,0 +1,88 @@
+<?xml version="1.0" ?>
+<gazebo version="1.2">
+  <model name="mit_table">
+    <static>false</static>
+    <link name="link">
+      <collision name="surface">
+        <pose>0 0 0.674 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>1.219 0.762 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual1">
+        <pose>0 0 0.673 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>1.219 0.762 0.02</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="front_left_leg">
+        <pose>0.56 0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="front_left_leg">
+        <pose>0.56 0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="front_right_leg">
+        <pose>0.56 -0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="front_right_leg">
+        <pose>0.56 -0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="back_right_leg">
+        <pose>-0.56 -0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="back_right_leg">
+        <pose>-0.56 -0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="back_left_leg">
+        <pose>-0.56 0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="back_left_leg">
+        <pose>-0.56 0.331 0.3365 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.673</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</gazebo>
