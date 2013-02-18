@@ -6,7 +6,7 @@
 <robot name="sandia_hand_right" xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!--  derived from /usr/share/sandia-hand-5.1/ros/sandia_hand_description/robots/sandia_hand_right_on_box.urdf.xacro-->
   <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
-  <!--<include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/new_xacro/sandia_hand_drake.urdf.xacro" />-->
+  <!--<include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/xacro/sandia_hand_drake.urdf.xacro" />-->
   <link name="world">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -397,12 +397,12 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
+    <!--      <collision>-->
+    <!--        <origin rpy="0 0 0" xyz="0 0 0.01"/>-->
+    <!--        <geometry>-->
+    <!--          <sphere radius="0"/>-->
+    <!--        </geometry>-->
+    <!--      </collision>  -->
     <!-- ############    END     ############ -->
   </link>
   <link name="right_f0_2">
@@ -481,6 +481,25 @@
     </collision>
     <!-- ############    END     ############ -->
   </link>
+  <link name="right_f0_2_accel_dummy1">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_f0_2_accel_dummy1" type="fixed">
+    <parent link="right_f0_2"/>
+    <child link="right_f0_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="right_f0_base" type="fixed">
     <parent link="right_palm"/>
     <child link="right_f0_base"/>
@@ -693,12 +712,12 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
+    <!--      <collision>-->
+    <!--        <origin rpy="0 0 0" xyz="0 0 0.01"/>-->
+    <!--        <geometry>-->
+    <!--          <sphere radius="0"/>-->
+    <!--        </geometry>-->
+    <!--      </collision>  -->
     <!-- ############    END     ############ -->
   </link>
   <link name="right_f1_2">
@@ -777,6 +796,25 @@
     </collision>
     <!-- ############    END     ############ -->
   </link>
+  <link name="right_f1_2_accel_dummy1">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_f1_2_accel_dummy1" type="fixed">
+    <parent link="right_f1_2"/>
+    <child link="right_f1_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="right_f1_base" type="fixed">
     <parent link="right_palm"/>
     <child link="right_f1_base"/>
@@ -989,12 +1027,12 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
-      <geometry>
-        <sphere radius="0"/>
-      </geometry>
-    </collision>
+    <!--      <collision>-->
+    <!--        <origin rpy="0 0 0" xyz="0 0 0.01"/>-->
+    <!--        <geometry>-->
+    <!--          <sphere radius="0"/>-->
+    <!--        </geometry>-->
+    <!--      </collision>  -->
     <!-- ############    END     ############ -->
   </link>
   <link name="right_f2_2">
@@ -1073,6 +1111,25 @@
     </collision>
     <!-- ############    END     ############ -->
   </link>
+  <link name="right_f2_2_accel_dummy1">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_f2_2_accel_dummy1" type="fixed">
+    <parent link="right_f2_2"/>
+    <child link="right_f2_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="right_f2_base" type="fixed">
     <parent link="right_palm"/>
     <child link="right_f2_base"/>
@@ -1353,6 +1410,25 @@
     </collision>
     <!-- ############    END     ############ -->
   </link>
+  <link name="right_f3_2_accel_dummy1">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.02 0.0 0.01"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_f3_2_accel_dummy1" type="fixed">
+    <parent link="right_f3_2"/>
+    <child link="right_f3_2_accel_dummy1"/>
+    <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
+  </joint>
   <joint name="right_f3_base" type="fixed">
     <parent link="right_palm"/>
     <child link="right_f3_base"/>
