@@ -5,7 +5,8 @@ pods_use_pkg_config_packages(drc-viewer
         bot2-frames-renderers  
         laser-util-renderer
         image-util-renderer
-        path-util
+        renderer_walking
+        multisense-renderer
         octomap-renderer
         renderer_heightmap
         renderer_maps
@@ -19,6 +20,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_manipulation
         renderer_driving
         renderer_walking
-        renderer_scrollingplots)
+        renderer_scrollingplots
+        renderer_status)
 #scrollingplots_renderer
 pods_install_executables(drc-viewer)

@@ -20,12 +20,14 @@
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_heightmap/renderer_heightmap.hpp>
 #include <renderer_maps/renderer_maps.hpp>
+#include <multisense/multisense_renderer.h>
 
 // Individual Renderers:
 #include <renderer_drc/renderer_scrollingplots.h>
 #include <renderer_drc/renderer_driving.hpp>
 #include <renderer_drc/renderer_manipulation.hpp>
 #include <renderer_drc/renderer_walking.hpp>
+#include <renderer_drc/renderer_status.hpp>
 
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
@@ -171,6 +173,8 @@ int main(int argc, char *argv[])
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm);
@@ -183,12 +187,14 @@ int main(int argc, char *argv[])
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
+  status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm);
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  
+  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
+
   // add custon TOP VIEW button
   GtkWidget *top_view_button;
   top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);

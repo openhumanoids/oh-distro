@@ -565,9 +565,9 @@ namespace renderer_affordances_gui_utils
 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_palm","L_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"l_hand","L_HAND_GOAL",T_world_graspgeometry,pregrasp_flag);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_palm","R_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"r_hand","R_HAND_GOAL",T_world_graspgeometry,pregrasp_flag);
       }
  
     }
