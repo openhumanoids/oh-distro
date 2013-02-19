@@ -34,6 +34,7 @@
 #include "DisplayInfo.h"
 #include "SurrogateRenderer.h"
 #include "ObjectTracker.h"
+#include "Segmentation.h"
 
 //-------pulling maps
 #include <maps/ViewClient.hpp>
@@ -54,7 +55,6 @@ namespace surrogate_gui
 		bool ctrl_L_is_down;
 		bool ctrl_R_is_down;
 	} ButtonStates;
-
 
 	//================class UI_Processing
 
@@ -102,13 +102,13 @@ namespace surrogate_gui
 
 			void handleMouseModeAdjust(BotEventHandler *default_handler, BotGtkParamWidget *pw); //user clicks on MouseMode drop-down menu
 			void handleTrackLiveButton(BotGtkParamWidget *pw);
-			void handleAffordancePubButton();
-			void handleAffordancePubButtonCylinder();
-			void handleAffordancePubButtonSphere();
-			void handleAffordancePubButtonPlane();
-			void handleAffordancePubButtonLine();
-			void handleAffordancePubButtonTorus();
-			void handleAffordancePubButtonCube();
+			void handleAffordancePubButton(BotGtkParamWidget *pw);
+			void handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonPlane(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonLine(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonTorus(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonCube(const Segmentation::FittingParams& fp);
 			void handleFullResetButton(BotGtkParamWidget *pw);
 
 			//callbacks

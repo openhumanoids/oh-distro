@@ -347,6 +347,7 @@ namespace surrogate_gui
      the cylinder is oriented on the z axis*/
   PointIndices::Ptr Segmentation::fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
+								const FittingParams& fp,
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
 					      double &radius,
@@ -382,9 +383,9 @@ namespace surrogate_gui
     seg.setOptimizeCoefficients(true); //optional
     seg.setModelType(SACMODEL_CYLINDER); //pcl::SACMODEL_CYLINDER);
     seg.setMethodType(SAC_MLESAC); 
-    seg.setDistanceThreshold(0.09); //0.05);
-    seg.setRadiusLimits(0.01, 0.25); //0.05, 0.2);
-       
+    seg.setDistanceThreshold(fp.distanceThreshold); //0.05);
+    seg.setRadiusLimits(fp.minRadius, fp.maxRadius); //0.05, 0.2);
+
     //set input
     seg.setInputCloud(subcloud);
     seg.setInputNormals(subcloud_normals);
@@ -392,6 +393,11 @@ namespace surrogate_gui
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
     PointIndices::Ptr cylinderIndices (new PointIndices);
+		//Vector3f axis = seg.getAxis();
+		//double angle = seg.getEpsAngle();
+		//cout << "Axis: " << axis.transpose() << angle <<endl;
+		//seg.setAxis(Vector3f(0,0,1)); //TODO: convert from YPR to axis
+		//seg.setEpsAngle(fp.maxAngle); // seg faults if too small
     seg.segment(*cylinderIndices, *coefficients);
 
     cout << "Cylinder: ";
@@ -467,6 +473,7 @@ namespace surrogate_gui
   //==============sphere
     PointIndices::Ptr Segmentation::fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
+								const FittingParams& fp,
 					      double &x, double &y, double &z,
 					      double &radius)
   {
@@ -496,9 +503,9 @@ namespace surrogate_gui
 #if 1
     pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>::Ptr model_sphere(new 
 			       pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
-    model_sphere->setRadiusLimits(0.01, 0.5);
+    model_sphere->setRadiusLimits(fp.minRadius, fp.maxRadius);
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_sphere);
-    ransac.setDistanceThreshold(0.09);
+    ransac.setDistanceThreshold(fp.distanceThreshold);
     //ransac.setSampleConsensusModel(pcl::SAC_MLESAC);
     ransac.computeModel();
     PointIndices::Ptr sphereIndices (new PointIndices); //TODO set
