@@ -7,7 +7,9 @@ message ShaperPacket
   required fixed32 message_number = 3;
   required fixed32 fragment = 4;
   required bool is_last_fragment = 5;
-  required bytes data = 6;
+  required fixed32 message_size = 10;
+  
+  required bytes data = 30;
 }
 
 
