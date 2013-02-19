@@ -135,6 +135,16 @@ group "misc" {
     }
 }
 
+group "motion"{
+    cmd "teleop" {
+        exec = "est_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "control_manager" {
+        exec = "drc-fovision-odometry -i 2";
+        host = "localhost";
+    }
+}
 
 script "startup simulation" {
     start group "core";
