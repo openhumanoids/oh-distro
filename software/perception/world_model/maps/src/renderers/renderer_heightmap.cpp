@@ -1,22 +1,15 @@
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include "renderer_heightmap.hpp"
 
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
 #include <bot_vis/bot_vis.h>
-#include <bot_core/camtrans.h>
-#include <bot_param/param_util.h>
-#include <bot_frames/bot_frames.h>
-#include <Eigen/Geometry>
 #include <boost/shared_ptr.hpp>
 
 #include <lcmtypes/drc/map_image_t.hpp>
-#include <lcmtypes/bot_core/image_t.hpp>
 #include <zlib.h>
-#include <image_utils/jpeg.h>
-#include <image_utils/pixels.h>
+
+#include "MeshRenderer.hpp"
 
 static const char* RENDERER_NAME = "Heightmap";
 
@@ -25,6 +18,7 @@ static const char* PARAM_COLOR_MODE_Z_MAX_Z = "Red Height";
 static const char* PARAM_COLOR_MODE_Z_MIN_Z = "Blue Height";
 static const char* PARAM_HEIGHT_MODE = "Height Mode";
 static const char* PARAM_COLOR_ALPHA = "Alpha";
+static const char* PARAM_POINT_SIZE = "Point Size";
 static const char* PARAM_NAME_FREEZE = "Freeze";
 
 enum ColorMode {
@@ -37,9 +31,9 @@ enum ColorMode {
 enum HeightMode {
   HEIGHT_MODE_MESH,
   HEIGHT_MODE_WIRE,
+  HEIGHT_MODE_POINTS,
   HEIGHT_MODE_NONE,
 };
-
 
 struct RendererHeightMap {
 
@@ -50,61 +44,15 @@ struct RendererHeightMap {
   BotFrames* mBotFrames;
   BotGtkParamWidget* mWidget;
 
+  boost::shared_ptr<maps::MeshRenderer> mMeshRenderer;
+
   drc::map_image_t mHeightMap;
   drc::map_image_t mCostMap;
-  bot_core::image_t mCameraImage;
-
   HeightMode mHeightMode;
-  ColorMode mColorMode;
-  double mColorAlpha;
-  double mMaxZ;
-  double mMinZ;
-
-  GLuint mVertexBufferId;
-  GLuint mColorBufferId;
-  GLuint mTexCoordBufferId;
-  GLuint mIndexBufferId;
-  GLuint mCameraTextureId;
-  bool mFirstDraw;
-
-  BotCamTrans* mCamTrans;
 
   RendererHeightMap() {
     mHeightMap.total_bytes = 0;
     mCostMap.total_bytes = 0;
-    mCameraImage.size = 0;
-    mCamTrans = NULL;
-    mFirstDraw = true;
-  }
-
-  void onCameraImage(const lcm::ReceiveBuffer* iBuf,
-                     const std::string& iChannel,
-                     const bot_core::image_t* iMessage) {
-    if (bot_gtk_param_widget_get_bool (mWidget, PARAM_NAME_FREEZE)) {
-      return;
-    }
-
-    mCameraImage = *iMessage;
-    if (iMessage->pixelformat == PIXEL_FORMAT_MJPEG) {
-      int stride = iMessage->width * 3;
-      mCameraImage.data.resize(iMessage->height * stride);
-      mCameraImage.pixelformat = 0;
-      jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
-                             &mCameraImage.data[0],
-                             iMessage->width, iMessage->height, stride);
-    }
-    else {
-      // TODO: this will break unless rgb3
-    }
-
-    if (mCamTrans == NULL) {
-      mCamTrans = bot_param_get_new_camtrans(mBotParam, "CAMERALEFT");
-      if (mCamTrans == NULL) {
-        std::cout << "Error: RendererHeightMap: bad camtrans" << std::endl;
-      }
-    }
-
-    bot_viewer_request_redraw(mViewer);
   }
 
   void onMapImage(const lcm::ReceiveBuffer* iBuf,
@@ -174,16 +122,44 @@ struct RendererHeightMap {
   static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
                                    const char *iName, 
                                    RendererHeightMap *self) {
-    self->mMaxZ =
-      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MAX_Z);
-    self->mMinZ =
-      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MIN_Z);
-    self->mHeightMode = (HeightMode)
-      bot_gtk_param_widget_get_enum(iWidget, PARAM_HEIGHT_MODE);
-    self->mColorMode = (ColorMode)
-      bot_gtk_param_widget_get_enum(iWidget, PARAM_COLOR_MODE);
-    self->mColorAlpha =
-      bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_ALPHA);
+    double val, val2;
+    val = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MIN_Z);
+    val2 = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MAX_Z);
+    self->mMeshRenderer->setHeightScale(val,val2);
+    val = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_ALPHA);
+    self->mMeshRenderer->setColorAlpha(val);
+    val = bot_gtk_param_widget_get_double(iWidget, PARAM_POINT_SIZE);
+    self->mMeshRenderer->setPointSize(val);
+    int mode;
+    mode = bot_gtk_param_widget_get_enum(iWidget, PARAM_HEIGHT_MODE);
+    self->mHeightMode = HeightMode(mode);
+    switch(self->mHeightMode) {
+    case HEIGHT_MODE_WIRE:
+      self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeWireframe);
+      break;
+    case HEIGHT_MODE_MESH:
+      self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeFilled);
+      break;
+    case HEIGHT_MODE_POINTS:
+      self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModePoints);
+      break;
+    default:
+      break;
+    }
+    mode = bot_gtk_param_widget_get_enum(iWidget, PARAM_COLOR_MODE);
+    switch(ColorMode(mode)) {
+    case COLOR_MODE_ORANGE:
+      self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeFlat);
+      break;
+    case COLOR_MODE_Z:
+      self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeHeight);
+      break;
+    case COLOR_MODE_CAMERA:
+      self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeCamera);
+      break;
+    default:
+      break;
+    }
   
     bot_viewer_request_redraw(self->mViewer);
   }
@@ -195,186 +171,27 @@ struct RendererHeightMap {
       return;
     }
 
-    // save state
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glPushClientAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-
-    // set rendering flags
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
-    glEnable (GL_RESCALE_NORMAL);
-    if (self->mHeightMode == HEIGHT_MODE_MESH) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-    else {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-
-    // transform from image to world
-    Eigen::Matrix4d imageToLocal;
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        imageToLocal(i,j) = img.transform[i][j];
-      }
-    }
-    imageToLocal = imageToLocal.inverse();
-    GLdouble imageToLocalGl[16];
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        imageToLocalGl[4*j + i] = imageToLocal(i,j);
-      }
-    }
-    glMatrixMode(GL_MODELVIEW);
-    glMultMatrixd(imageToLocalGl);
-
-    // assign all buffers
-    if (self->mFirstDraw) {
-      glGenBuffers(1, &self->mVertexBufferId);
-      glGenBuffers(1, &self->mColorBufferId);
-      glGenBuffers(1, &self->mTexCoordBufferId);
-      glGenBuffers(1, &self->mIndexBufferId);
-      glGenTextures(1, &self->mCameraTextureId);
-      self->mFirstDraw = false;
-    }
-
     // create vertex buffer
     float* data = (float*)(&img.data[0]);
     int numVertices = img.width*img.height;
-    std::vector<float> vertexBuf(numVertices*3);
+    std::vector<Eigen::Vector3f> vertices(numVertices);
+    float minZ(1e10);
     for (int i = 0; i < img.height; ++i) {
       for (int j = 0; j < img.width; ++j) {
         int idx = i*img.width + j;
-        float z = (self->mHeightMode == HEIGHT_MODE_NONE) ?
-          self->mMinZ : data[idx];
-        vertexBuf[idx*3+0] = j;
-        vertexBuf[idx*3+1] = i;
-        vertexBuf[idx*3+2] = z;
+        vertices[idx] = Eigen::Vector3f(j,i,data[idx]);
+        minZ = std::min(minZ, data[idx]);
       }
     }
-    glBindBuffer(GL_ARRAY_BUFFER, self->mVertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, numVertices*3*sizeof(float),
-                 &vertexBuf[0], GL_STATIC_DRAW);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    //glVertexPointer(3, GL_FLOAT, 0, &vertexBuf[0]);
-    glVertexPointer(3, GL_FLOAT, 0, 0);
-
-    // create color buffer
-    if (self->mColorMode != COLOR_MODE_CAMERA) {
-      std::vector<uint8_t> colorBuf(numVertices*4);
-      float orange[] = {1.0, 0.5, 0.0};
-      float* outColor;
-      for (int i = 0; i < img.height; ++i) {
-        for (int j = 0; j < img.width; ++j) {
-          int idx = i*img.width + j;
-          outColor = orange;
-          switch(self->mColorMode) {
-          case COLOR_MODE_Z:
-            {
-              float z = data[idx]*imageToLocal(2,2) + imageToLocal(2,3);
-              outColor = bot_color_util_jet((z - self->mMinZ) /
-                                            (self->mMaxZ - self->mMinZ));
-            }
-            break;
-          case COLOR_MODE_GRADIENT:
-            if (self->mCostMap.total_bytes > 0) {
-              outColor = bot_color_util_jet(self->mCostMap.data[idx]);
-            }
-            break;
-          case COLOR_MODE_ORANGE:
-          default:
-            break;
-          }
-          colorBuf[idx*4+0] = outColor[0]*255;
-          colorBuf[idx*4+1] = outColor[1]*255;
-          colorBuf[idx*4+2] = outColor[2]*255;
-          colorBuf[idx*4+3] = self->mColorAlpha*255;
-        }        
+    if (self->mHeightMode == HEIGHT_MODE_NONE) {
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i][2] = minZ;
       }
-      glBindBuffer(GL_ARRAY_BUFFER, self->mColorBufferId);
-      glBufferData(GL_ARRAY_BUFFER, numVertices*4,
-                   &colorBuf[0], GL_STATIC_DRAW);
-      //glColorPointer(4, GL_UNSIGNED_BYTE, 0, &colorBuf[0]);
-      glEnableClientState(GL_COLOR_ARRAY);
-      glColorPointer(4, GL_UNSIGNED_BYTE, 0, 0);
-    }
-
-    // create texture coordinate buffer
-    else if (self->mCameraImage.size > 0) {
-      int texCoordSize = 3;
-      std::vector<float> texCoordBuf(numVertices*texCoordSize);
-      for (int i = 0; i < img.height; ++i) {
-        for (int j = 0; j < img.width; ++j) {
-          int idx = i*img.width + j;
-          float x = (float)j;
-          float y = (float)i;
-          float z = data[idx];
-          texCoordBuf[idx*texCoordSize+0] = x;
-          texCoordBuf[idx*texCoordSize+1] = y;
-          texCoordBuf[idx*texCoordSize+2] = z;
-        }
-      }
-
-      // texture coordinates transformation
-      glMatrixMode(GL_TEXTURE);
-      glLoadIdentity();
-      {
-        double width = bot_camtrans_get_width(self->mCamTrans);
-        double height = bot_camtrans_get_height(self->mCamTrans);
-        double K00 = bot_camtrans_get_focal_length_x(self->mCamTrans);
-        double K11 = bot_camtrans_get_focal_length_y(self->mCamTrans);
-        double K01 = bot_camtrans_get_skew(self->mCamTrans);
-        double K02 = bot_camtrans_get_principal_x(self->mCamTrans);
-        double K12 = bot_camtrans_get_principal_y(self->mCamTrans);
-
-        double matxProject[16], matxProjectGl[16];
-        memset(matxProject, 0, 16*sizeof(double));
-        matxProject[0*4 + 0] = K00;
-        matxProject[0*4 + 1] = K01;
-        matxProject[0*4 + 2] = K02;
-        matxProject[1*4 + 1] = K11;
-        matxProject[1*4 + 2] = K12;
-        matxProject[2*4 + 3] = 1;
-        matxProject[3*4 + 2] = 1;
-        bot_matrix_transpose_4x4d(matxProject, matxProjectGl);
-        glScaled(1/width,1/height,1);
-        glMultMatrixd(matxProjectGl);        
-      }
-      double matx[16], matxGl[16];
-      bot_frames_get_trans_mat_4x4_with_utime(self->mBotFrames,
-                                              "local", "CAMERA",
-                                              self->mCameraImage.utime, matx);
-      bot_matrix_transpose_4x4d(matx, matxGl);
-      glMultMatrixd(matxGl);
-      glMultMatrixd(imageToLocalGl);
-
-      // draw texture
-      glColor4ub(255,255,255,255*self->mColorAlpha);
-      glBindTexture(GL_TEXTURE_2D, self->mCameraTextureId);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-      glTexImage2D(GL_TEXTURE_2D, 0, 3, self->mCameraImage.width,
-                   self->mCameraImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                   &self->mCameraImage.data[0]);
-
-      glBindBuffer(GL_ARRAY_BUFFER, self->mTexCoordBufferId);
-      glBufferData(GL_ARRAY_BUFFER, numVertices*texCoordSize*sizeof(float),
-                   &texCoordBuf[0], GL_STATIC_DRAW);
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-      //glTexCoordPointer(2, GL_FLOAT, 0, &texCoordBuf[0]);
-      glTexCoordPointer(texCoordSize, GL_FLOAT, 0, 0);
     }
 
     // determine valid triangles
-    std::vector<uint32_t> indexBuf;
+    std::vector<Eigen::Vector3i> faces;
+    faces.reserve(2*numVertices);
     for (int i = 0; i < img.height-1; i++) {
       for (int j = 0; j < img.width-1; j++) {
         int idx = i*img.width + j;
@@ -398,54 +215,40 @@ struct RendererHeightMap {
         Eigen::Vector3f p11(j+1,i+1,z11);
 	  
         if (validSum == 4) {
-          pushIndices(indexBuf, idx, idx+1, idx+img.width);
-          pushIndices(indexBuf, idx+1+img.width, idx+1, idx+img.width);
+          faces.push_back(Eigen::Vector3i(idx, idx+1, idx+img.width));
+          faces.push_back(Eigen::Vector3i(idx+1+img.width, idx+1,
+                                          idx+img.width));
         }	  
         else {
           if (!valid00) {
-            pushIndices(indexBuf, idx+1, idx+img.width, idx+1+img.width);
+            faces.push_back(Eigen::Vector3i(idx+1, idx+img.width,
+                                            idx+1+img.width));
           }
           else if (!valid10) {
-            pushIndices(indexBuf, idx, idx+img.width, idx+1+img.width);
+            faces.push_back(Eigen::Vector3i(idx, idx+img.width,
+                                            idx+1+img.width));
           }
           else if (!valid01) {
-            pushIndices(indexBuf, idx, idx+1+img.width, idx+1);
+            faces.push_back(Eigen::Vector3i(idx, idx+1+img.width, idx+1));
           }
           else if (!valid11) {
-            pushIndices(indexBuf, idx, idx+img.width, idx+1);
+            faces.push_back(Eigen::Vector3i(idx, idx+img.width, idx+1));
           }
         }
       }
     }
 
-    // create index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->mIndexBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuf.size()*sizeof(uint32_t),
-                 &indexBuf[0], GL_STATIC_DRAW);
-    /*
-    glDrawElements(GL_TRIANGLES, indexBuf.size(),
-                   GL_UNSIGNED_INT, &indexBuf[0]);
-    */
-    glDrawElements(GL_TRIANGLES, indexBuf.size(), GL_UNSIGNED_INT, 0);
+    // transform
+    Eigen::Affine3f meshToLocal;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        meshToLocal(i,j) = img.transform[i][j];
+      }
+    }
+    meshToLocal = meshToLocal.inverse();  // TODO: NEED?
 
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    // restore state
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopClientAttrib();
-    glPopAttrib();
-  }
-
-  static void pushIndices(std::vector<uint32_t>& ioInds,
-                          const int iA, const int iB, const int iC) {
-    ioInds.push_back(iA);
-    ioInds.push_back(iB);
-    ioInds.push_back(iC);
+    self->mMeshRenderer->setMesh(vertices, faces, meshToLocal);
+    self->mMeshRenderer->draw();
   }
 
 };
@@ -456,10 +259,6 @@ struct RendererHeightMap {
 static void
 heightmap_renderer_free (BotRenderer *renderer) {
   RendererHeightMap *self = (RendererHeightMap*) renderer;
-  // TODO: free gl stuff
-  if (self->mCamTrans != NULL) {
-    bot_camtrans_destroy(self->mCamTrans);
-  }
   free (self->mRenderer.name);
   delete self;
 }
@@ -495,18 +294,20 @@ heightmap_add_renderer_to_viewer(BotViewer* viewer,
   self->mLcm.reset(new lcm::LCM(lcm));
   self->mBotParam = param;
   self->mBotFrames = frames;
+  self->mMeshRenderer.reset(new maps::MeshRenderer());
+  self->mMeshRenderer->setColor(1,0.5,0);
 
   self->mWidget = BOT_GTK_PARAM_WIDGET (bot_gtk_param_widget_new ());
   gtk_container_add (GTK_CONTAINER (self->mRenderer.widget),
                      GTK_WIDGET(self->mWidget));
   gtk_widget_show (GTK_WIDGET (self->mWidget));
 
-  bot_gtk_param_widget_add_double(self->mWidget, PARAM_COLOR_MODE_Z_MAX_Z,
-                                  BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                  -20, 20.0, .1, 20.0 );
   bot_gtk_param_widget_add_double(self->mWidget, PARAM_COLOR_MODE_Z_MIN_Z,
                                   BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                  -20, 20.0, .1, -20.0 );
+                                  0, 1, 0.01, 0);
+  bot_gtk_param_widget_add_double(self->mWidget, PARAM_COLOR_MODE_Z_MAX_Z,
+                                  BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                  0, 1, 0.01, 1);
 
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_COLOR_MODE,
                                 BOT_GTK_PARAM_WIDGET_MENU, COLOR_MODE_Z, 
@@ -517,14 +318,18 @@ heightmap_add_renderer_to_viewer(BotViewer* viewer,
 
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_HEIGHT_MODE,
                                 BOT_GTK_PARAM_WIDGET_MENU, HEIGHT_MODE_MESH,
-                                "Mesh", HEIGHT_MODE_MESH,
-                                "Wire", HEIGHT_MODE_WIRE,
+                                "Filled", HEIGHT_MODE_MESH,
+                                "Wireframe", HEIGHT_MODE_WIRE,
+                                "Points", HEIGHT_MODE_POINTS,
                                 "None", HEIGHT_MODE_NONE, NULL);  
   
   
   bot_gtk_param_widget_add_double (self->mWidget, PARAM_COLOR_ALPHA,
                                    BOT_GTK_PARAM_WIDGET_SLIDER,
-                                   0, 1, 0.001, 1);
+                                   0, 1, 0.01, 1);
+  bot_gtk_param_widget_add_double (self->mWidget, PARAM_POINT_SIZE,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER,
+                                   0, 10, 0.1, 3);
   bot_gtk_param_widget_add_booleans (self->mWidget,
                                      BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,
                                      PARAM_NAME_FREEZE, 0, NULL);
@@ -542,7 +347,6 @@ heightmap_add_renderer_to_viewer(BotViewer* viewer,
 
   self->mLcm->subscribe("COST_MAP", &RendererHeightMap::onMapImage, self);
   self->mLcm->subscribe("HEIGHT_MAP", &RendererHeightMap::onMapImage, self);
-  self->mLcm->subscribe("CAMERALEFT", &RendererHeightMap::onCameraImage, self);
 
   std::cout << "Finished Setting Up Heightmap Renderer" << std::endl;
 

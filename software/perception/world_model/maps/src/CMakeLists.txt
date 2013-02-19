@@ -53,6 +53,7 @@ set(REQUIRED_PACKAGES
   pcl_filters-1.6
   pcl_features-1.6
   pcl_io-1.6
+  pcl_surface-1.6
   octomap
   glib-2.0
   bot2-frames

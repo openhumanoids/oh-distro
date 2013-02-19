@@ -3,13 +3,14 @@ add_definitions(-Wall)
 
 #####################################################################
 add_library(renderer_heightmap SHARED 
-  renderer_heightmap.cpp)
+  renderer_heightmap.cpp
+  MeshRenderer.cpp)
   
 set_target_properties(renderer_heightmap PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(renderer_heightmap
   lcmtypes_drc_lcmtypes eigen3
-  bot2-core bot2-vis bot2-frames)
+  bot2-core bot2-vis bot2-frames maps)
 
 pods_install_headers(renderer_heightmap.hpp
   DESTINATION renderer_heightmap)
@@ -18,13 +19,14 @@ pods_install_libraries(renderer_heightmap)
   
 pods_install_pkg_config_file(renderer_heightmap
     LIBS -lrenderer_heightmap 
-    REQUIRES bot2-core bot2-vis bot2-frames 
+    REQUIRES bot2-core bot2-vis bot2-frames
     VERSION 0.0.1)
 
 
 #####################################################################
 add_library(renderer_maps SHARED 
-  renderer_maps.cpp)
+  renderer_maps.cpp
+  MeshRenderer.cpp)
   
 set_target_properties(renderer_maps PROPERTIES SOVERSION 1)
 

@@ -7,7 +7,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_vis/bot_vis.h>
-#include <bot_core/camtrans.h>
 #include <bot_param/param_util.h>
 #include <bot_frames/bot_frames.h>
 #include <Eigen/Geometry>
@@ -34,6 +33,8 @@
 #include <maps/MapView.hpp>
 #include <maps/Utils.hpp>
 
+#include "MeshRenderer.hpp"
+
 static const char* RENDERER_NAME = "Maps";
 
 static const char* PARAM_INPUT_MODE = "Input Mode";
@@ -41,9 +42,12 @@ static const char* PARAM_REQUEST_TYPE = "Data Type";
 static const char* PARAM_REQUEST_RES = "Resolution (m)";
 static const char* PARAM_REQUEST_FREQ = "Frequency (Hz)";
 static const char* PARAM_REQUEST_TIME = "Time Window (s)";
+static const char* PARAM_REQUEST_RELATIVE = "Relative Position?";
 static const char* PARAM_DATA_REQUEST = "Send Request";
 static const char* PARAM_MAP_COMMAND_TYPE = "Command";
 static const char* PARAM_MAP_COMMAND = "Execute";
+static const char* PARAM_MESH_MODE = "Mesh Mode";
+static const char* PARAM_COLOR_MODE = "Color Mode";
 
 enum InputMode {
   INPUT_MODE_CAMERA,
@@ -61,6 +65,18 @@ enum MapCommand {
   MAP_COMMAND_SCAN_HIGH_RES
 };
 
+enum ColorMode {
+  COLOR_MODE_SOLID,
+  COLOR_MODE_HEIGHT,
+  COLOR_MODE_CAMERA
+};
+
+enum MeshMode {
+  MESH_MODE_POINTS,
+  MESH_MODE_WIREFRAME,
+  MESH_MODE_FILLED
+};
+
 struct Frustum {
   std::vector<Eigen::Vector4f> mPlanes;
   float mNear;
@@ -76,6 +92,7 @@ struct ViewMetaData {
   bool mVisible;
   bool mRelative;
   Frustum mFrustum;
+  maps::MapView::TriangleMesh::Ptr mMesh;
   Eigen::Vector3f mColor;
 };
 
@@ -92,7 +109,12 @@ struct RendererMaps {
     bool mInitialized;
 
     void notifyData(const int64_t iViewId) {
-      bot_viewer_request_redraw(mRenderer->mViewer);
+      mRenderer->addViewMetaData(iViewId);
+      if (mRenderer->mMeshMode != MESH_MODE_POINTS) {
+        mRenderer->mViewData[iViewId].mMesh =
+          mRenderer->mViewClient.getView(iViewId)->getAsMesh();
+        bot_viewer_request_redraw(mRenderer->mViewer);
+      }
     }
     void notifyCatalog(const bool iChanged) {
       if (!mInitialized || iChanged) {
@@ -138,6 +160,10 @@ struct RendererMaps {
   maps::ViewClient mViewClient;
   ViewClientListener mViewClientListener;
 
+  boost::shared_ptr<maps::MeshRenderer> mMeshRenderer;
+  ColorMode mColorMode;
+  MeshMode mMeshMode;
+
   InputMode mInputMode;
   bool mDragging;
   Eigen::Vector2f mDragPoint1;
@@ -151,45 +177,17 @@ struct RendererMaps {
   float mRequestFrequency;
   float mRequestResolution;
   float mRequestTimeWindow;
+  bool mRequestRelativeLocation;
 
   MapCommand mMapCommand;
 
-  BotCamTrans* mCamTrans;
-  bot_core::image_t mCameraImage;
-
   RendererMaps() {
-    mCamTrans = NULL;
     mBoxValid = false;
     mDragging = false;
-    mCameraImage.size = 0;
+    mMeshRenderer.reset(new maps::MeshRenderer());
+    mMeshRenderer->setPointSize(3);
+    mMeshRenderer->setCameraChannel("CAMERALEFT");
   }
-
-  void onCameraImage(const lcm::ReceiveBuffer* iBuf,
-                     const std::string& iChannel,
-                     const bot_core::image_t* iMessage) {
-    mCameraImage = *iMessage;
-    if (iMessage->pixelformat == PIXEL_FORMAT_MJPEG) {
-      int stride = iMessage->width * 3;
-      mCameraImage.data.resize(iMessage->height * stride);
-      mCameraImage.pixelformat = 0;
-      jpeg_decompress_8u_rgb(&iMessage->data[0], iMessage->size,
-                             &mCameraImage.data[0],
-                             iMessage->width, iMessage->height, stride);
-    }
-    else {
-      // TODO: this will break unless rgb3
-    }
-
-    if (mCamTrans == NULL) {
-      mCamTrans = bot_param_get_new_camtrans(mBotParam, iChannel.c_str());
-      if (mCamTrans == NULL) {
-        std::cout << "Error: RendererHeightMap: bad camtrans" << std::endl;
-      }
-    }
-
-    bot_viewer_request_redraw(mViewer);
-  }
-
 
   static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
                                    const char *iName,
@@ -204,6 +202,13 @@ struct RendererMaps {
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_RES);
     self->mRequestTimeWindow = (float)
       bot_gtk_param_widget_get_double(iWidget, PARAM_REQUEST_TIME);
+    self->mRequestRelativeLocation = (bool)
+      bot_gtk_param_widget_get_bool(iWidget, PARAM_REQUEST_RELATIVE);
+    self->mMeshMode = (MeshMode)
+      bot_gtk_param_widget_get_enum(iWidget, PARAM_MESH_MODE);
+    self->mColorMode = (ColorMode)
+      bot_gtk_param_widget_get_enum(iWidget, PARAM_COLOR_MODE);
+      
     self->mMapCommand = (MapCommand)
       bot_gtk_param_widget_get_enum(iWidget, PARAM_MAP_COMMAND_TYPE);
 
@@ -255,15 +260,19 @@ struct RendererMaps {
       }
       spec.mClipPlanes = self->mFrustum.mPlanes;
       spec.mRelativeLocation = false;
-      /* TODO
       spec.mRelativeLocation = self->mRequestRelativeLocation;
       if (spec.mRelativeLocation) {
-        for (int i = 0; i < spec.mClipPlanes; ++i) {
+        int64_t curTime = drc::Clock::instance()->getCurrentTime();
+        BotTrans trans;
+        bot_frames_get_trans_with_utime(self->mBotFrames,
+                                        "head", "local", curTime, &trans);
+        Eigen::Vector3f pos(trans.trans_vec[0], trans.trans_vec[1],
+                            trans.trans_vec[2]);
+        for (size_t i = 0; i < spec.mClipPlanes.size(); ++i) {
           Eigen::Vector4f plane = spec.mClipPlanes[i];
           spec.mClipPlanes[i][3] = pos.dot(plane.head<3>()) + plane[3];
         }
       }
-      */
       self->mViewClient.request(spec);
       bot_gtk_param_widget_set_enum(self->mWidget, PARAM_INPUT_MODE,
                                     INPUT_MODE_CAMERA);
@@ -307,7 +316,7 @@ struct RendererMaps {
         BotTrans trans;
         bot_frames_get_trans_with_utime(self->mBotFrames,
                                         "head", "local",
-                                        self->mCameraImage.utime, &trans);
+                                        view->getUpdateTime(), &trans);
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
         if (data.mRelative) {
@@ -333,50 +342,45 @@ struct RendererMaps {
       // draw point cloud
       //
 
-      glPointSize(3);
-      glBegin(GL_POINTS);
-
-      // if we should colorize
-      if ((self->mCameraImage.size > 0) && (self->mCamTrans != NULL)) {
-        double matx[16];
-        bot_frames_get_trans_mat_4x4_with_utime(self->mBotFrames,
-                                                "local", "CAMERA",
-                                                self->mCameraImage.utime, matx);
-        Eigen::Affine3d xform;
-        for (int i = 0; i < 4; ++i) {
-          for (int j = 0; j < 4; ++j) {
-            xform(i,j) = matx[i*4+j];
-          }
-        }
-        pcl::PointCloud<pcl::PointXYZRGB> cloudColor;
-        FilterColorize::colorize<maps::PointCloud::PointType,
-                                 pcl::PointXYZRGB>
-          (*cloud, xform, self->mCameraImage,
-           self->mCamTrans, cloudColor);
-        for (size_t i = 0; i < cloudColor.size(); ++i) {
-          const pcl::PointXYZRGB pt = cloudColor[i];
-          if ((pt.r == 0) && (pt.g == 0) && (pt.b == 0)) {
-            glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
-          }
-          else {
-            glColor3b(pt.r, pt.g, pt.b);
-          }
-          glVertex3f(pt.x, pt.y, pt.z);
-        }
+      self->mMeshRenderer->setColor(data.mColor[0], data.mColor[1],
+                                    data.mColor[2]);
+      switch(self->mColorMode) {
+      case COLOR_MODE_CAMERA:
+        self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeCamera);
+        break;
+      case COLOR_MODE_HEIGHT:
+        self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeHeight);
+        break;
+      case COLOR_MODE_SOLID:
+      default:
+        self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeFlat);
+        break;
       }
 
-      // otherwise choose single color
-      else {
-        glColor3f(data.mColor[0], data.mColor[1], data.mColor[2]);
-        for (size_t i = 0; i < cloud->size(); ++i) {
-          const maps::PointCloud::PointType pt = (*cloud)[i];
-          glVertex3f(pt.x, pt.y, pt.z);
+      if (self->mMeshMode == MESH_MODE_POINTS) {
+        std::vector<Eigen::Vector3f> vertices(cloud->size());
+        for (size_t k = 0; k < cloud->size(); ++k) {
+          vertices[k] = Eigen::Vector3f((*cloud)[k].x, (*cloud)[k].y,
+                                        (*cloud)[k].z);
         }
+        std::vector<Eigen::Vector3i> faces;
+        self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModePoints);
+        self->mMeshRenderer->setMesh(vertices, faces);
+      }
+      else if (data.mMesh != NULL) {
+        if (self->mMeshMode == MESH_MODE_WIREFRAME) {
+          self->mMeshRenderer->
+            setMeshMode(maps::MeshRenderer::MeshModeWireframe);
+        }
+        else {
+          self->mMeshRenderer->
+            setMeshMode(maps::MeshRenderer::MeshModeFilled);
+        }
+        self->mMeshRenderer->setMesh(data.mMesh->mVertices, data.mMesh->mFaces);
       }
 
-      glEnd();
+      self->mMeshRenderer->draw();
     }
-
 
     // draw drag rectangle
     if (self->mDragging && self->mInputMode == INPUT_MODE_RECT) {
@@ -768,9 +772,6 @@ struct RendererMaps {
 static void
 maps_renderer_free (BotRenderer *renderer) {
   RendererMaps *self = (RendererMaps*) renderer;
-  if (self->mCamTrans != NULL) {
-    bot_camtrans_destroy(self->mCamTrans);
-  }
   delete self;
 }
 
@@ -807,6 +808,7 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   self->mBotFrames = frames;
 
   drc::Clock::instance()->setLcm(self->mLcm);
+  self->mMeshRenderer->setLcm(self->mLcm);
 
   // events
   BotEventHandler* handler = &self->mEventHandler;
@@ -825,6 +827,18 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   gtk_container_add (GTK_CONTAINER (self->mRenderer.widget),
                      GTK_WIDGET(self->mWidget));
   gtk_widget_show (GTK_WIDGET (self->mWidget));
+
+  bot_gtk_param_widget_add_separator(self->mWidget, "appearance");
+  bot_gtk_param_widget_add_enum(self->mWidget, PARAM_COLOR_MODE,
+                                BOT_GTK_PARAM_WIDGET_MENU, COLOR_MODE_SOLID,
+                                "Solid Color", COLOR_MODE_SOLID,
+                                "Height Pseudocolor", COLOR_MODE_HEIGHT,
+                                "Camera Texture", COLOR_MODE_CAMERA, NULL);
+  bot_gtk_param_widget_add_enum(self->mWidget, PARAM_MESH_MODE,
+                                BOT_GTK_PARAM_WIDGET_MENU, MESH_MODE_POINTS,
+                                "Point Cloud", MESH_MODE_POINTS,
+                                "Wireframe", MESH_MODE_WIREFRAME,
+                                "Filled", MESH_MODE_FILLED, NULL);
 
   bot_gtk_param_widget_add_separator(self->mWidget, "view creation");
 
@@ -850,6 +864,10 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   bot_gtk_param_widget_add_double(self->mWidget, PARAM_REQUEST_TIME,
                                   BOT_GTK_PARAM_WIDGET_SPINBOX,
                                   0, 10, 0.1, 0);
+
+  bot_gtk_param_widget_add_booleans(self->mWidget,
+                                    BOT_GTK_PARAM_WIDGET_CHECKBOX,
+                                    PARAM_REQUEST_RELATIVE, 0, NULL);
 
   bot_gtk_param_widget_add_buttons(self->mWidget, PARAM_DATA_REQUEST, NULL);
 
@@ -884,8 +902,6 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   self->mViewClientListener.mInitialized = false;
   self->mViewClient.addListener(&self->mViewClientListener);
   self->mViewClient.start();
-
-  self->mLcm->subscribe("CAMERALEFT", &RendererMaps::onCameraImage, self);
 
   std::cout << "Finished Setting Up Maps Renderer" << std::endl;
 

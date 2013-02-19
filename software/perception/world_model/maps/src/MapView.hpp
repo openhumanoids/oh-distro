@@ -32,13 +32,25 @@ public:
     bool operator!=(const Spec& iSpec) const;
   };
 
+  class Filter {
+  public:
+    virtual bool operate(const maps::PointCloud& iCloud,
+                         maps::PointCloud& oCloud) const = 0;
+    typedef boost::shared_ptr<Filter> Ptr;
+  };
+
   struct HeightMap {
     int mWidth;
     int mHeight;
     std::vector<float> mData;
     Eigen::Affine3f mTransform;  // heightmap to reference coords
-
     typedef boost::shared_ptr<HeightMap> Ptr;
+  };
+
+  struct TriangleMesh {
+    std::vector<Eigen::Vector3f> mVertices;
+    std::vector<Eigen::Vector3i> mFaces;
+    typedef boost::shared_ptr<TriangleMesh> Ptr;
   };
 
   typedef boost::shared_ptr<MapView> Ptr;
@@ -52,16 +64,24 @@ public:
   bool set(const maps::PointCloud& iCloud);
   bool set(const maps::Octree& iTree);
 
+  void setUpdateTime(const int64_t iTime);
+  int64_t getUpdateTime() const;
+
   Ptr clone() const;
   Ptr clone(const Spec& iSpec) const;
 
-  maps::PointCloud::Ptr getAsPointCloud() const;
-  HeightMap::Ptr getAsHeightMap(const float iResolution,
-                                const float iMaxHeight=1e20) const;
-  // TODO: can add other representations here if needed, such as meshes
+  maps::PointCloud::Ptr
+  getAsPointCloud(const Filter::Ptr& iFilter=Filter::Ptr()) const;
+
+  HeightMap::Ptr
+  getAsHeightMap(const float iResolution, const float iMaxHeight=1e20,
+                 const Filter::Ptr& iFilter=Filter::Ptr()) const;
+
+  TriangleMesh::Ptr getAsMesh(const Filter::Ptr& iFilter=Filter::Ptr()) const;
 
 protected:
   Spec mSpec;
+  int64_t mUpdateTime;
   maps::PointCloud::Ptr mCloud;
   mutable boost::mutex mMutex;
 };

@@ -206,6 +206,7 @@ struct ViewClient::Worker {
           boost::static_pointer_cast<drc::map_octree_t>(msg.mPayload);
         maps::Octree octree = LcmTranslator::fromLcm(*payload);
         view->set(octree);
+        view->setUpdateTime(payload->utime);
       }
 
       // handle cloud
@@ -214,6 +215,7 @@ struct ViewClient::Worker {
           boost::static_pointer_cast<drc::map_cloud_t>(msg.mPayload);
         maps::PointCloud::Ptr cloud = LcmTranslator::fromLcm(*payload);
         view->set(*cloud);
+        view->setUpdateTime(payload->utime);
       }
 
       // notify subscribers
