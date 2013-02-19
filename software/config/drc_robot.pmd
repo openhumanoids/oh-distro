@@ -1,18 +1,10 @@
-group "core" {
+group "1.robot" {
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
     }
-    cmd "r2l" {
-        exec = "rosrun ROS2LCM_translator ros2lcm_translator_combined";
-        host = "localhost";
-    }
     cmd "roscore" {
         exec = "roscore";
-        host = "localhost";
-    }
-    cmd "control_manager" {
-        exec = "base_controller_manager";
         host = "localhost";
     }
     cmd "viewer" {
@@ -20,121 +12,125 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "estpub" {
-        exec = "est_robot_state_publisher";
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm";
         host = "localhost";
     }
     cmd "l2r" {
-        exec = "rosrun LCM2ROS_translator ActuatorCmds_translator";
+        exec = "rosrun translators lcm2ros -p";
         host = "localhost";
     }
     cmd "j2f" {
         exec = "drc-joints2frames";
         host = "localhost";
     }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
+        host = "localhost";
+    }
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -r";
+        host = "localhost";
+    }
 }
 
-group "gazebo" {
+group "2.gazebo" {
     cmd "gazebo" {
         exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
         host = "localhost";
     }
-    cmd "dropleft" {
-        exec = "rostopic pub /l_arm_shx_position_controller/command std_msgs/Float64 '{ data : -1.74 }'";
+}
+
+group "3.sensing" {
+    cmd "icompress" {
+        exec = "drc-image-compress -j 50 -c CAMERALEFT";
         host = "localhost";
     }
-    cmd "dropright" {
-        exec = "rostopic pub /r_arm_shx_position_controller/command std_msgs/Float64 '{ data : 1.74 }'";
+    cmd "maps-server" {
+        exec = "maps-server";
         host = "localhost";
     }
-    cmd "straightback" {
-        exec = "rostopic pub /back_mby_position_controller/command std_msgs/Float64 '{ data : 0 }'";
-        host = "localhost";
-    }
-    cmd "straightneck" {
-        exec = "rostopic pub /neck_ay_position_controller/command std_msgs/Float64 '{ data : 0.35 }'";
+    cmd "aff_server" {
+        exec = "affordance_server  -r robot";
         host = "localhost";
     }
 }
 
-group "sensing" {
-    cmd "map-store" {
-        exec = "drc-map-store";
-        host = "localhost";
-    }
-    cmd "surrogate_viewer" {
-        exec = "surrogate_viewer";
-        host = "localhost";
-    }
-    cmd "local-map" {
-        exec = "drc-local-map";
-        host = "localhost";
-    }
-    cmd "moest_old" {
-        exec = "drc-motion-estimate-scanmatcher  -l BASE_SCAN -d -R 9 --pose CAMERA_STATE";
-        host = "localhost";
-    }
-    cmd "moest_new" {
-        exec = "drc-motion-estimate-scanmatcher-righted-vertical   -l RIGHTED_SCAN -d -R 36 --pose CAMERA_STATE --mask -3.14,3.14";
-        host = "localhost";
-    }
-    cmd "moest_ypr" {
-        exec = "drc-motion-estimate-ypr";
+group "4.drake_robot" {
+    cmd "control_planner" {
+        exec = "matlab";
         host = "localhost";
     }
 }
+
+group "5.base" {
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -b";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
+        host = "localhost";
+    }
+    cmd "surrogate_viewer" {
+        exec = "surrogate_viewer -r base";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base";
+        host = "localhost";
+    }
+}
+
+group "6.drake_base" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       host = "localhost";
+    }
+    cmd "footstep_planner" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
+       host = "localhost";
+    }
+    cmd "base_planner" {
+       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1')\" ";
+       host = "localhost";
+    }
+}
+
+
 
 
 
 group "misc" {
-    cmd "spy" {
+    cmd "robot_spy" {
         exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "base_spy" {
+        exec = "bot-spy -l 'udpm://239.255.12.68:1268?ttl=1'";
         host = "localhost";
     }
     cmd "teleop" {
         exec = "rosrun keyboard_teleop keyboard_teleop";
         host = "localhost";
     }
-    cmd "vo" {
-        exec = "drc-motion-estimate -p POSE -c $HOME/drc/config/drc_robot.cfg -b CAMERA";
-        host = "localhost";
-    }
-}
-
-group "zother" {
-    cmd "oldconverter_tx3" {
-        exec = "rosrun ros_fovis ros-stereo2lcm camera CAMERA";
-        host = "localhost";
-    }
-    cmd "oldconverter_tx1" {
-        exec = "rosrun ROS2LCM_translator ros2lcm_translator";
-        host = "localhost";
-    }
-    cmd "test_tf_solver" {
-        exec = "test_tf_solver";
-        host = "localhost";
-    }
-    cmd "oldconverter_proc" {
-        exec = "ROS_NAMESPACE=camera rosrun stereo_image_proc stereo_image_proc";
-        host = "localhost";
-    }
-    cmd "manip_gfe" {
-        exec = "roslaunch mit_object_models gfe_mit_manipulation.launch";
-        host = "localhost";
-    }
-    cmd "disparity" {
-        exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
-        host = "localhost";
-    }
-    cmd "oldconverter_tx2" {
-        exec = "rosrun ROS2LCM_translator TRUE_robot_state_publisher";
-        host = "localhost";
-    }
-    cmd "oldbot" {
-        exec = "roslaunch atlas_description sensing_wheeled_atlas_gazebo_pre_fuerte.launch";
+    cmd "control_manager" {
+        exec = "base_controller_manager";
         host = "localhost";
     }
 }
@@ -142,6 +138,7 @@ group "zother" {
 
 script "startup simulation" {
     start group "core";
+    start group "drake";
     wait ms 1000;
     start group "gazebo";
     wait ms 5000;
