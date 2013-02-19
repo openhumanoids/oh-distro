@@ -52,5 +52,5 @@ script "startup simulation" {
     start group "core";
     start group "drake";
     wait ms 1000;
-    start cmd "gazebo";
+    start group "gazebo";
 }
