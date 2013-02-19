@@ -71,6 +71,7 @@ public:
 
     const fovis::FeatureMatch* getMatches(){ return odom_.getMotionEstimator()->getMatches(); }
     int getNumMatches(){ return odom_.getMotionEstimator()->getNumMatches(); }
+    int getNumInliers(){ return odom_.getMotionEstimator()->getNumInliers(); }
 
     bool getChangeReferenceFrames(){ return odom_.getChangeReferenceFrames(); }
 

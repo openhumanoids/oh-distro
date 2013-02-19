@@ -31,15 +31,23 @@ public:
   ~VoFeatures();
 
   void setFeatures(const fovis::FeatureMatch* matches, int num_matches, int64_t utime);
-  void setImages(uint8_t *left_buf,uint8_t *right_buf){    
-    left_buf_ = left_buf; 
-    right_buf_ = right_buf;   
+  void setReferenceImages(uint8_t *left_ref_buf,uint8_t *right_ref_buf){    
+    left_ref_buf_ = left_ref_buf; 
+    right_ref_buf_ = right_ref_buf;   
   }
-  void setCameraPose(Eigen::Isometry3d ref_camera_pose){    
+  void setCurrentImages(uint8_t *left_cur_buf,uint8_t *right_cur_buf){    
+    left_cur_buf_ = left_cur_buf; 
+    right_cur_buf_ = right_cur_buf;   
+  }
+  void setReferenceCameraPose(Eigen::Isometry3d ref_camera_pose){    
     ref_camera_pose_ = ref_camera_pose;
   }
+  void setCurrentCameraPose(Eigen::Isometry3d cur_camera_pose){    
+    cur_camera_pose_ = cur_camera_pose;
+  }
 
-  void sendFeatures();
+  void doFeatureProcessing(int reference_or_current);
+  void sendImage(std::string channel, int which_image );
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
   pointcloud_vis* pc_vis_;
@@ -50,17 +58,25 @@ private:
   void writeReferenceImages();
   void writeFeatures(std::vector<ImageFeature> features);
   void writePose();
-  void sendFeatures(std::vector<ImageFeature> features);
-  void sendFeaturesAsCollection(std::vector<ImageFeature> features, int vs_id);
+  void sendFeatures(std::vector<ImageFeature> features, 
+                    std::vector<int> features_indices, std::string channel);
+  void sendFeaturesAsCollection(std::vector<ImageFeature> features, 
+                                std::vector<int> features_indices,
+                                int vs_id);
+  
+  void drawFeaturesOnImage(cv::Mat &img, int which_image );
 
   // All the incoming data and state:
-  Eigen::Isometry3d ref_camera_pose_;
+  Eigen::Isometry3d ref_camera_pose_, cur_camera_pose_;
   int64_t utime_;
   // pointers to reference images: (only used of visual output):
-  uint8_t *left_buf_, *right_buf_;
-  std::vector<ImageFeature> featuresA;
-  std::vector<int> featuresA_indices;
-
+  uint8_t *left_ref_buf_, *right_ref_buf_;
+  std::vector<ImageFeature> features_ref_;
+  std::vector<int> features_ref_indices_; // 0 outlier, 1 inlier
+  // pointers to reference images: (only used of visual output):
+  uint8_t *left_cur_buf_, *right_cur_buf_;
+  std::vector<ImageFeature> features_cur_;
+  std::vector<int> features_cur_indices_;
 
 };
 

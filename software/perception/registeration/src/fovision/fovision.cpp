@@ -72,6 +72,10 @@ void FoVision::doOdometry(uint8_t *left_buf,uint16_t *disparity_buf){
 
 void FoVision::fovis_stats(){
   
+
+  
+  
+  
   Eigen::Isometry3d cam_to_local = odom_.getPose();
   
   // rotate coordinate frame so that look vector is +X, and up is +Z

@@ -13,9 +13,10 @@ VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
+  
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose Head",5,0) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose Head",5,1) );
 }
 
 // TODO: remove fovis dependency entirely:

@@ -16,7 +16,10 @@ add_subdirectory(src/fovision)
 
 
 add_subdirectory(src/registeration)
-add_subdirectory(src/reg_vo)
-add_subdirectory(src/descript)
 
-add_subdirectory(src/image-splitter)
+add_subdirectory(src/tools)
+
+
+#add_subdirectory(src/reg_vo)
+#add_subdirectory(src/descript)
+

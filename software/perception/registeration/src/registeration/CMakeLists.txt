@@ -28,6 +28,8 @@ target_link_libraries(drc-registeration)
 pods_use_pkg_config_packages(drc-registeration
   bot2-vis visualization-utils
   pointcloud_vis opencv
+  bot2-param-client
+  bot2-frames
   lcm bot2-lcmgl-client registeration  )
 pods_install_executables(drc-registeration)
 

@@ -7,6 +7,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/microstrain_comm.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 #include "drcvision/voconfig.hpp"
 #include "drcvision/vofeatures.hpp"
@@ -66,6 +67,8 @@ class StereoOdom{
     bool imu_initialized_;
     int imu_counter_;
     void microstrainHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  microstrain::ins_t* msg);
+    void gazeboHeadIMUHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
+    void fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency);
 };    
 
 StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, string camera_config_) : 
@@ -101,26 +104,64 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
   imu_initialized_=false;
   imu_counter_=0;
   lcm_->subscribe("MICROSTRAIN_INS",&StereoOdom::microstrainHandler,this);
+  lcm_->subscribe("HEAD_IMU",&StereoOdom::gazeboHeadIMUHandler,this);
   
   cout <<"StereoOdom Constructed\n";
 }
 
+
+int counter =0;
 void StereoOdom::featureAnalysis(){
-  /// Feature Output: ///////////////////////////////////////////////
+
+  /// Incremental Feature Output:
+  if (counter%5 == 0 ){
+    features_->setFeatures(vo_->getMatches(), vo_->getNumMatches() , utime_cur_);
+    features_->setCurrentImages(left_buf_, right_buf_);
+    features_->setCurrentCameraPose( estimator_->getCameraPose() );
+    features_->doFeatureProcessing(1); // 1 = send the FEATURES_CUR
+
+
+//// Delete this:
+  stringstream ss;
+  ss << "Messaging traffic here";
+  drc::system_status_t status_msg;
+  status_msg.utime =  utime_cur_;
+  status_msg.system = 0;// use enums!!
+  status_msg.importance = 0;// use enums!!
+  status_msg.frequency = 1;// use enums!!
+  status_msg.value = ss.str();
+  lcm_->publish("SYSTEM_STATUS", &status_msg);
+{
+  stringstream ss;
+  ss << "Tracking message goes here";
+  drc::system_status_t status_msg;
+  status_msg.utime =  utime_cur_;
+  status_msg.system = 2;// use enums!!
+  status_msg.importance = 0;// use enums!!
+  status_msg.frequency = 1;// use enums!!
+  status_msg.value = ss.str();
+  lcm_->publish("SYSTEM_STATUS", &status_msg);
+}
+//// Delete this]
+
+  }
+  
+  /// Reference Feature Output: ///////////////////////////////////////////////
   // Check we changed reference frame last iteration, if so output the set of matching inliers:
   if (changed_ref_frames_) {
     if (ref_utime_ > 0){ // skip the first null image
       if(vo_->getNumMatches() > 200){ // if less than 50 features - dont bother writing
       // was:      if(featuresA.size() > 50){ // if less than 50 features - dont bother writing
-        cout << "ref frame from " << utime_prev_ << " at " << utime_cur_ <<"\n";
+        cout << "ref frame from " << utime_prev_ << " at " << utime_cur_ <<  " with " <<vo_->getNumMatches()<<" matches\n";
         features_->setFeatures(vo_->getMatches(), vo_->getNumMatches() , ref_utime_);
-        features_->setImages(left_buf_ref_, right_buf_ref_);
-        features_->setCameraPose( ref_camera_pose_ );
-        features_->sendFeatures( );
+        features_->setReferenceImages(left_buf_ref_, right_buf_ref_);
+        features_->setReferenceCameraPose( ref_camera_pose_ );
+        features_->doFeatureProcessing(0); // 0 = send the FEATURES_REF
       }
     }
     changed_ref_frames_=false;
   }
+
   if (vo_->getChangeReferenceFrames()){ // If we change reference frame, note the change for the next iteration.
     ref_utime_ = utime_cur_;
     ref_camera_pose_ = estimator_->getCameraPose(); // publish this pose when the 
@@ -128,6 +169,7 @@ void StereoOdom::featureAnalysis(){
     std::copy( right_buf_, right_buf_+ right_buf_size_  , right_buf_ref_);
     changed_ref_frames_=true;
   }
+  counter++;
 }
 
 void StereoOdom::updateMotion(){
@@ -137,6 +179,17 @@ void StereoOdom::updateMotion(){
   vo_->getMotion(delta_camera, delta_cov, delta_status );
   //vo_->fovis_stats();
   estimator_->voUpdate(utime_cur_, delta_camera);
+  
+  stringstream ss;
+  ss << "Number of Visual Odometry inliers: " << vo_->getNumInliers();
+  drc::system_status_t status_msg;
+  status_msg.utime =  utime_cur_;
+  status_msg.system = 1;// use enums!!
+  status_msg.importance = 0;// use enums!!
+  status_msg.frequency = 1;// use enums!!
+  status_msg.value = ss.str();
+  lcm_->publish("SYSTEM_STATUS", &status_msg);
+  
 }
 
 void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -178,9 +231,16 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 
-// Transform the Microstrain IMU into the head frame:
+// Transform the Gazebo head IMU orientation into the head frame:
 // TODO: add an imu frame into the config
-Eigen::Quaterniond imu2robotquat(const microstrain::ins_t *msg){
+Eigen::Quaterniond gazeboHeadIMUToRobotOrientation(const drc::imu_t *msg){
+  Eigen::Quaterniond m(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
+  return m;
+}
+
+// Transform the Microstrain IMU orientation into the head frame:
+// TODO: add an imu frame into the config
+Eigen::Quaterniond microstrainIMUToRobotOrientation(const microstrain::ins_t *msg){
   Eigen::Quaterniond m(msg->quat[0],msg->quat[1],msg->quat[2],msg->quat[3]);
   Eigen::Isometry3d motion_estimate;
   motion_estimate.setIdentity();
@@ -218,29 +278,24 @@ Eigen::Quaterniond imu2robotquat(const microstrain::ins_t *msg){
   return r_x;
 }
 
-
-
-void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf, 
-     const std::string& channel, const  microstrain::ins_t* msg){
+void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency){
   if (imu_fusion_mode_ >0 ){
     if (!imu_initialized_){
-      Eigen::Quaterniond m = imu2robotquat(msg);
       Eigen::Isometry3d init_pose;
       init_pose.setIdentity();
       init_pose.translation() << 0,0,0;
-      init_pose.rotate(m);
+      init_pose.rotate( imu_robotorientation );
       estimator_->setHeadPose(init_pose);
       imu_initialized_ = true;
       cout << "got first IMU measurement\n";
     }else if(imu_fusion_mode_ ==2){
-      if (imu_counter_==100){
-        // Every 100 frame: replace the pitch and roll with that from the IMU
+      if (imu_counter_== correction_frequency){
+        // Every X frames: replace the pitch and roll with that from the IMU
         // convert the camera pose to body frame
         // extract xyz and yaw from body frame
         // extract pitch and roll from imu (in body frame)
         // combine, convert to camera frame... set as pose
         bool verbose = false;
-        cout << "IMU pitch roll correction...\n";
         
         Eigen::Isometry3d local_to_head = estimator_->getHeadPose();// _local_to_camera *cam2head;
         std::stringstream ss2;
@@ -260,11 +315,14 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
         }
           
         double ypr_imu[3];
-        quat_to_euler( imu2robotquat(msg) , 
+        quat_to_euler( imu_robotorientation , 
                         ypr_imu[0], ypr_imu[1], ypr_imu[2]);
         if (verbose){
           std::cout <<  ypr_imu[0]*180/M_PI << " " << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << " imuypr\n";        
         }
+        cout << "IMU correction | pitch roll | was: "
+             << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << " | now: "
+             << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << "\n";
         
         Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr[0], ypr_imu[1], ypr_imu[2]);             
         Eigen::Isometry3d revised_local_to_head;
@@ -281,12 +339,28 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
         }
         estimator_->setHeadPose(revised_local_to_head);
       }
-      if (imu_counter_ > 100) { imu_counter_ =0; }
+      if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
       imu_counter_++;
     }
   }else{
 //    cout << "got IMU measurement - not incorporating them\n";
   }  
+}
+
+void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf, 
+     const std::string& channel, const  microstrain::ins_t* msg){
+  Eigen::Quaterniond imu_robotorientation;
+  imu_robotorientation =microstrainIMUToRobotOrientation(msg);
+  int correction_frequency=100;
+  fuseInterial(imu_robotorientation, correction_frequency);
+}
+
+void StereoOdom::gazeboHeadIMUHandler(const lcm::ReceiveBuffer* rbuf, 
+     const std::string& channel, const  drc::imu_t* msg){
+  Eigen::Quaterniond imu_robotorientation;
+  imu_robotorientation =gazeboHeadIMUToRobotOrientation(msg);
+  int correction_frequency=1000;
+  fuseInterial(imu_robotorientation, correction_frequency);  
 }
 
 

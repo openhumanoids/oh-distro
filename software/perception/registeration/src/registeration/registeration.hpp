@@ -8,6 +8,7 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include <bot_lcmgl_client/lcmgl.h>
+#include <estimate-pose/pose_estimator.hpp>
 
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
@@ -26,8 +27,6 @@ struct ImageFeature{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-enum{SUCCESS, INSUFFICIENT_INLIERS};
-
 struct FrameMatch{
   std::vector<int> featuresA_indices;
   std::vector<int> featuresB_indices;
@@ -35,8 +34,9 @@ struct FrameMatch{
   std::vector<ImageFeature> featuresA;
   std::vector<ImageFeature> featuresB;
   
-  int estimation_status; // 0 = sucess, 0 = too few matches, 1 = too few inliers
+  pose_estimator::PoseEstimateStatus status; // 0 = sucess, 0 = too few matches, 1 = too few inliers
   Eigen::Isometry3d delta; // A->B transform : where is B relative to A
+  int n_inliers;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -53,7 +53,7 @@ class Reg
     
     void align_images(cv::Mat &img0, cv::Mat &img1, 
                            std::vector<ImageFeature> &features0, std::vector<ImageFeature> &features1,
-                           int64_t utime0, int64_t utime1);
+                           int64_t utime0, int64_t utime1, FrameMatchPtr &match);
     
     
     void draw_both_reg(std::vector<ImageFeature> features0,    std::vector<ImageFeature> features1,
@@ -76,6 +76,7 @@ class Reg
     bot_lcmgl_t* lcmgl_;
 
     pointcloud_vis* pc_vis_;
+    bool verbose_;
     
 };
 

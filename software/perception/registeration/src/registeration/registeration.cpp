@@ -28,7 +28,6 @@
 
 #include <bot_lcmgl_client/lcmgl.h>
 
-#include <estimate-pose/pose_estimator.hpp>
 
 #include "registeration.hpp"
 
@@ -73,7 +72,7 @@ Reg::Reg(boost::shared_ptr<lcm::LCM> &lcm_):
   colors_1[2] = 0.7;
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud B - inliers"     ,1,reset, 2000,1,colors_1));
             
-
+  verbose_ =false;
 }
 
 void Reg::draw_reg(std::vector<ImageFeature> features,    int status, Eigen::Isometry3d pose)
@@ -367,8 +366,11 @@ Eigen::Isometry3d pose_estimate(FrameMatchPtr match,
   // PoseEstimateStatus status = pe.estimate(src_xyzw, dst_xyzw, &inliers, &motion, &motion_covariance);
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> motion_covariance_col_major;
 
-  PoseEstimateStatus status = pe.estimate(src_xyzw, dst_xyzw, &inliers, &motion, &motion_covariance_col_major); //&motion_covariance);
+  pose_estimator::PoseEstimateStatus status = pe.estimate(src_xyzw, dst_xyzw, &inliers, &motion, &motion_covariance_col_major); //&motion_covariance);
   motion_covariance = motion_covariance_col_major;
+
+  match->status = status;
+  match->delta = motion;
 
   /*
   int num_inliers = std::accumulate(inliers.begin(), inliers.end(), 0);
@@ -403,19 +405,21 @@ void Reg::send_lcm_image(cv::Mat &img, std::string channel ){
 }
 
 
-//FrameMatchPtr
 void Reg::align_images(cv::Mat &img0, cv::Mat &img1, 
                            std::vector<ImageFeature> &features0, std::vector<ImageFeature> &features1,
-                           int64_t utime0, int64_t utime1){
+                           int64_t utime0, int64_t utime1, FrameMatchPtr &match){
     /// 2. Extract Image Descriptors:
   std::vector<cv::KeyPoint> keypoints0, keypoints1;
   cv::Mat descriptors0, descriptors1;
   cv::BriefDescriptorExtractor extractor(32); // size of descriptor in bytes
   std::string desc_name= "brief";
   compute_descriptors(img0, features0, desc_name, extractor,descriptors0,keypoints0);
-  cout << descriptors0.rows << "descripters in 0\n";
   compute_descriptors(img1, features1, desc_name, extractor,descriptors1,keypoints1);
-  cout << descriptors1.rows << "descripters in 1\n";
+
+  if (verbose_){
+    cout << descriptors0.rows << "descripters in 0\n";
+    cout << descriptors1.rows << "descripters in 1\n";
+  }
 
 
   /// 3: Matching descriptor vectors with a brute force matcher
@@ -435,9 +439,11 @@ void Reg::align_images(cv::Mat &img0, cv::Mat &img1,
       matches1in0.begin(), matches1in0.end(),
       std::back_inserter(matches),
       DMatch_lt);
-  std::cout << matches0in1.size() << " matches0in1 found\n";
-  std::cout << matches1in0.size() << " matches1in0 found\n";
-  std::cout << matches.size() << " intersect matches found\n";
+  if (verbose_){
+    std::cout << matches0in1.size() << " matches0in1 found\n";
+    std::cout << matches1in0.size() << " matches1in0 found\n";
+    std::cout << matches.size() << " intersect matches found\n";
+  }
 
   /// 3c Draw descriptor matches
   cv::Mat img_matches0in1, img_matches1in0;
@@ -474,7 +480,6 @@ void Reg::align_images(cv::Mat &img0, cv::Mat &img1,
   std::vector<char> inliers;
   int num_inliers = 0;
   Eigen::Isometry3d motion;
-  FrameMatchPtr match(new FrameMatch());
   BOOST_FOREACH (const cv::DMatch& dmatch, matches) {
     //match->featuresA_indices.push_back(idxA[dmatch.queryIdx]);
     //match->featuresB_indices.push_back(idxB[dmatch.trainIdx]);
@@ -522,14 +527,15 @@ void Reg::align_images(cv::Mat &img0, cv::Mat &img1,
         projection_matrix);
 
     Eigen::Quaterniond delta_quat = Eigen::Quaterniond(delta.rotation());
-    cout << delta.translation().x() << " "
+    if(verbose_){
+      cout << delta.translation().x() << " "
         << delta.translation().y() << " "
         << delta.translation().z() << " | "
         << delta_quat.w() << " "
         << delta_quat.x() << " "
         << delta_quat.y() << " "
         << delta_quat.z() << "\n";
-  
+    }
 
     Eigen::Isometry3d nullpose;
     nullpose.setIdentity();
@@ -546,32 +552,28 @@ void Reg::align_images(cv::Mat &img0, cv::Mat &img1,
     }
     match->featuresA_indices.resize(j);
     match->featuresB_indices.resize(j);
-    cout << j << " inliers found\n";
-    if (j > 8){ // used 15 earlier... ask Hordur
-      cout <<"suitable match found\n";
-
-      // all the feature:
-      send_both_reg(features0, features1,delta,nullpose, utime0, utime1);
+    match->n_inliers = inliers.size();//
+    //cout << inliers.size() << " inliers found\n";
+    if (match->status == pose_estimator::SUCCESS){ // used 15 earlier... ask Hordur
+      if (verbose_){
+	      // all the features:
+	      send_both_reg(features0, features1,delta,nullpose, utime0, utime1);
       
-      // just the inliers:
-      send_both_reg_inliers(features0, features1,nullpose,delta, 
+        // just the inliers:
+        send_both_reg_inliers(features0, features1,nullpose,delta, 
                         match->featuresA_indices, match->featuresB_indices,
                         utime0, utime1);
+      }
 
       // Draw the inlier set:
       cv::Mat img_copy = img_matches_inter ;
       draw_inliers(img_copy,features0, features1,match->featuresA_indices, match->featuresB_indices);
       //    imshow("Matches Inliers", img_copy);
-      
-      send_lcm_image(img_copy, "CAMLCM_LEFT_RECTIFIED" );
-
-      match->estimation_status = SUCCESS;
-    }else{
-      match->estimation_status = INSUFFICIENT_INLIERS;
+      send_lcm_image(img_copy, "REGISTERATION" );
     }
   } else {
     // TODO: this should have a different code e.g. insufficient matches:
-    match->estimation_status = INSUFFICIENT_INLIERS;
+    match->status = pose_estimator::INSUFFICIENT_INLIERS;
     num_inliers = 0;
   }
 

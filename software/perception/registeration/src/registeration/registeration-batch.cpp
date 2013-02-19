@@ -147,7 +147,8 @@ void RegApp::doRegisterationBatch(std::string ref_filename){
     read_features(featfile1.str(), features1);
     
     //FrameMatchPtr match =  
-    reg->align_images(img0, img1, features0, features1, main_utime, utime );
+    FrameMatchPtr match(new FrameMatch());
+    reg->align_images(img0, img1, features0, features1, main_utime, utime,match );
 
     int incoming;
     cin >> incoming;
