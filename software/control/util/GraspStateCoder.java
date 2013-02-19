@@ -180,7 +180,7 @@ public class GraspStateCoder implements drake.util.LCMCoder
       }
       offset = 18+m_num_l_joints;
       for (int i=0; i<m_num_r_joints; i++) {
-        j = m_l_joints_map.get(pmsg.r_joint_name[i]);
+        j = m_r_joints_map.get(pmsg.r_joint_name[i]);
         if (j!=null) {
           index = offset+j.intValue();
           pmsg.r_joint_position[i] = d.val[index];
