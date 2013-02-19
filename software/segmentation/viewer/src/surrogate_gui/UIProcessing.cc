@@ -1149,6 +1149,7 @@ namespace surrogate_gui
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
+					if(views[v]->getSpec().mMapId == 1) continue; // get rid of low rez map
 					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
 					(*cloudFull) += *cloud;
 				}
