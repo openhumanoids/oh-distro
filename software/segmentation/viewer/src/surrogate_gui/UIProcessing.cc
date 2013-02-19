@@ -147,6 +147,8 @@ namespace surrogate_gui
 		ptools_pointcloud2_t_subscribe(lcm->getUnderlyingLCM(), 
 					       kinect_channel.c_str(), 
 					       cb_on_kinect_frame, this);
+
+		on_param_widget_changed_xyzrgb(pw, PARAM_NAME_NEW_OBJECT, NULL); // create new object by default
 	}
 
 	UIProcessing::~UIProcessing()
