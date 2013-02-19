@@ -146,7 +146,10 @@ int main (int argc, char ** argv) {
   boost::thread_group thread_group;
 
   // Subscribe to robot time and use that to key the publishing of all messages in both directions:
-  drc_utime_t_subscribe(app->robot_lcm, "ROBOT_UTIME", utime_handler, app);
+  if(base_only)
+      drc_utime_t_subscribe(app->base_lcm, "ROBOT_UTIME", utime_handler, app);      
+  else
+      drc_utime_t_subscribe(app->robot_lcm, "ROBOT_UTIME", utime_handler, app);
   
   thread_group.create_thread(boost::bind(robot2base, boost::ref( *app)));
   thread_group.create_thread(boost::bind(base2robot, boost::ref( *app)));
