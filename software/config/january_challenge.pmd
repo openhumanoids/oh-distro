@@ -7,10 +7,6 @@ group "1.robot" {
         exec = "roscore";
         host = "localhost";
     }
-    cmd "control_manager" {
-        exec = "base_controller_manager";
-        host = "localhost";
-    }
     cmd "viewer" {
         exec = "drc-viewer";
         host = "localhost";
@@ -37,6 +33,10 @@ group "1.robot" {
     }
     cmd "lidarfilt" {
         exec = "drc-lidar-passthrough";
+        host = "localhost";
+    }
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -r";
         host = "localhost";
     }
 }
@@ -71,11 +71,11 @@ group "4.drake_robot" {
 }
 
 group "5.base" {
-    cmd "netbridge" {
-        exec = "drc-network-bridge -t manipulation";
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -b";
         host = "localhost";
     }
-    cmd "viewer_remote" {
+    cmd "viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "localhost";
     }
@@ -127,6 +127,10 @@ group "misc" {
     }
     cmd "teleop" {
         exec = "rosrun keyboard_teleop keyboard_teleop";
+        host = "localhost";
+    }
+    cmd "control_manager" {
+        exec = "base_controller_manager";
         host = "localhost";
     }
 }
