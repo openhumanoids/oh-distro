@@ -60,6 +60,15 @@ namespace surrogate_gui
 					      "Cube", CUBE,
 					      NULL);
 
+		// DOF Controls
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MIN_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.01, 10, 0.01, 0.01);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.1, 10, 0.1, 0.3);		
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_DISTANCE_THRESHOLD, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.01, 1, 0.01, 0.09);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_YAW, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, 0.0);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_PITCH, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, 0.0);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_ROLL, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, 0.0);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_ANGLE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 6.28, 0.05, 6.28);
+
 		//pause
 		bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
 		//self->paused = 0;

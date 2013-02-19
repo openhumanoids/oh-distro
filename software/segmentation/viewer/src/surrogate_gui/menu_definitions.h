@@ -25,6 +25,15 @@ namespace surrogate_gui
 	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "Geometric Primitive"
 	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE};
 
+	//======DOF Controls
+	#define PARAM_NAME_YAW "Yaw"
+	#define PARAM_NAME_PITCH "Pitch"
+	#define PARAM_NAME_ROLL "Roll"
+	#define PARAM_NAME_MAX_ANGLE "Max Angle"
+	#define PARAM_NAME_MIN_RADIUS "Min Radius"
+	#define PARAM_NAME_MAX_RADIUS "Max Radius"
+	#define PARAM_NAME_DISTANCE_THRESHOLD "Distance Threshold"
+
 	//=============pause
 	#define PARAM_NAME_CLOUD_PAUSE "Pause Cloud Updates"
 	//#define PARAM_NAME_SHOW_CLOUD "Show Cloud Updates"
