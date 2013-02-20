@@ -3,12 +3,12 @@
   <world name="default">
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
-      <update_rate>1000</update_rate>
+      <update_rate>2000</update_rate>
       <ode>
         <solver>
           <type>quick</type>
-          <dt>0.001</dt>
-          <iters>80</iters>
+          <dt>0.0005</dt>
+          <iters>2000</iters>
           <sor>1.0</sor>
         </solver>
         <constraints>
@@ -39,6 +39,25 @@
 <!--		  <uri>model://coke_can</uri>-->
 <!--		  <pose>0.45 -0.1 1.05 0 0 0</pose>-->
 <!--		</include>-->
+
+
+    <!--	It's raining creates	-->
+<!--    <include>-->
+<!--   		<name>create1</name>-->
+<!--		  <uri>model://create</uri>-->
+<!--		  <pose>0 0 2.5 0 0 0</pose>-->
+<!--		</include>-->
+<!--		<include>-->
+<!--   		<name>create2</name>-->
+<!--		  <uri>model://create</uri>-->
+<!--		  <pose>0.05 0.2 3.0 0 0 0</pose>-->
+<!--		</include>-->
+<!--		<include>-->
+<!--   		<name>create3</name>-->
+<!--		  <uri>model://create</uri>-->
+<!--		  <pose>-0.05 -0.2 3.5 0 0 0</pose>-->
+<!--		</include>-->
+
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
