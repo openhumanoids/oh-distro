@@ -62,7 +62,7 @@ namespace renderer_affordances
 		//-------------utils
   private:	      
 		void add_or_update_sticky_hand(int uid, std::string& unique_hand_name, KDL::Frame &T_world_hand, drc::joint_angles_t &posture_msg);		
-		void load_hand_urdf(int grasp_type);
+		bool load_hand_urdf(int grasp_type);
 		
 		std::string _object_name;
 		std::string _geometry_name;

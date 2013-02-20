@@ -37,16 +37,22 @@ namespace renderer_affordances
     _handtype_id_map[msg.SANDIA_RIGHT]=1;
      // load and pre-parse base_gl_hands for left and right hand
     shared_ptr<GlKinematicBody> new_hand;
+    bool urdf_found=true;
     for (map<int,int>::iterator it=_handtype_id_map.begin(); it!=_handtype_id_map.end(); ++it)
     { 
-     load_hand_urdf(it->first);
+     urdf_found = urdf_found && load_hand_urdf(it->first);
+     if(urdf_found){
      new_hand =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string));
       _gl_hand_list.push_back(new_hand);
+     }
     }
-
+    if(urdf_found){
     //Subscribe to CANDIDATE_GRASP_SEED 
     _lcm->subscribe("CANDIDATE_GRASP_SEED", &CandidateGraspSeedListener::handleDesiredGraspStateMsg, this); 
-
+    }
+    else{
+     cerr << "##### ERROR: #####" <<  " sticky_hand urdfs not found in CandidateGraspSeedListener.cpp. Disabling candidate GraspSeedListener in renderer_affordances. Please update your models folder" << endl;    
+    }
   }
  
   CandidateGraspSeedListener::~CandidateGraspSeedListener() {
@@ -177,7 +183,7 @@ namespace renderer_affordances
           sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody((*_gl_hand_list[hand_it->second]),sticky_hand_struc._collision_detector,true,unique_hand_name));
         }
         else {
-          load_hand_urdf(_grasp_type); // gets the urdf string from file
+          bool urdf_found=load_hand_urdf(_grasp_type); // gets the urdf string from file
           sticky_hand_struc._gl_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_urdf_xml_string,sticky_hand_struc._collision_detector,true,unique_hand_name)); 
       }
         
@@ -195,7 +201,7 @@ namespace renderer_affordances
       }
   }
   
-  void CandidateGraspSeedListener::load_hand_urdf(int grasp_type)
+  bool CandidateGraspSeedListener::load_hand_urdf(int grasp_type)
   {
     drc::desired_grasp_state_t msg;
     std::stringstream oss;
@@ -224,9 +230,13 @@ namespace renderer_affordances
       get_xmlstring_from_file(oss.str(),xml_string);
       _urdf_xml_string = xml_string;
     } 
-    else
-     cerr << "ERROR: " << filename << " not found in CandidateGraspSeedListener.cpp" << endl;
+    else{
+       cerr << "ERROR: " << filename << " not found in CandidateGraspSeedListener.cpp" << endl;
+       return false;
+     }
+    return true;
    }
+
 
 
 } //end namespace
