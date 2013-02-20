@@ -1,5 +1,5 @@
 function plot_lcm_points(values,colors_in, id, name, type, reset)
-% Supported Type Values
+% Supported Point Type Values
 % POINT=1,
 % LINE_STRIP=2,
 % LINE_LOOP=3,

@@ -1,10 +1,10 @@
 % demonstration of Collections to LCM
 
-% 2. Plot a set of axes:
-pos= rand(100,3) 
+% 2. Plot a set of axes - and connect them:
+pos= rand(4,3) 
 pos(:,1) = pos(:,1) - 2
 ypr= rand(size(pos))/5
-plot_lcm_poses(pos, ypr, 9, 'Triads', 5, 1)
+plot_lcm_poses(pos, ypr, 8, 'Triads', 5, 1, 1, 9)
 
 % 2. Plot a set of points and lines
 pos= rand(12,3)
@@ -27,7 +27,7 @@ cols = reshape( double(mit)/255 ,32*32,3);
 plot_lcm_points(pos, cols, 13, 'MIT Logo', 1, 1)
 
 
-% 4. Foot steps:
+% 4. Foot steps - dont connect them
 pos = [0.5  , 0 ,0;
        0  , 1.05 ,0;
        0.6, 2.05 ,0;
@@ -39,8 +39,7 @@ pos = [0.5  , 0 ,0;
 pos(:,1)= pos(:,1) + 2;
 ypr= zeros(size(pos))
 ypr(:,1) = ( 90-10 + 20*rand( size(pos,1) ,1) )*pi/180
-plot_lcm_poses(pos, ypr, 14, 'Foot Steps', 4, 1)
-
+plot_lcm_poses(pos, ypr, 14, 'Foot Steps', 4, 1, 0, -1)
 
 
 % 5. A polygon:
