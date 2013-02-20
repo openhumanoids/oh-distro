@@ -1,0 +1,15 @@
+<package>
+  <description brief="tutorial_atlas_control">
+
+     tutorial_atlas_control
+
+  </description>
+  <author>Maurice Fallon</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/tutorial_atlas_control</url>
+  <depend package="osrf_msgs"/>
+
+</package>
+
+
