@@ -555,17 +555,30 @@ namespace renderer_affordances_gui_utils
     
     T_world_ee = T_world_geometry*T_geometry_palm;
           
-   if(pregrasp_flag){
+   
     KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
+    
+    
     KDL::Frame T_hand_offset = KDL::Frame::Identity();
-    T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
+    
+    if(pregrasp_flag){
+      T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
+    }  
+    
     // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
     KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
     
     // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
     T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
     //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-   }  
+
+ 
+// double ro,pi,ya;
+//   T_world_ee.M.GetRPY(ro,pi,ya);
+//   cout <<"roll"<<ro*(180/M_PI) << endl;
+//   cout <<"pitch"<<pi*(180/M_PI) << endl;
+//   cout <<"yaw"<<ya*(180/M_PI) << endl;
+   
           
     //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 
