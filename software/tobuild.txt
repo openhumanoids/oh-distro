@@ -3,6 +3,7 @@
 
 #externals
 drc_lcmtypes
+models
 robot_model
 object_template_model
 kinematics
