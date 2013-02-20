@@ -10,6 +10,9 @@ namespace lcm {
   class LCM;
 }
 
+struct _BotParam;
+typedef _BotParam BotParam;
+
 namespace maps {
 
 class MeshRenderer {
@@ -33,6 +36,7 @@ public:
   ~MeshRenderer();
 
   void setLcm(const boost::shared_ptr<lcm::LCM> iLcm);
+  void setBotParam(const BotParam* iBotParam);
   void setCameraChannel(const std::string& iChannel);
   void setColorMode(const ColorMode& iMode);
   void setMeshMode(const MeshMode& iMode);

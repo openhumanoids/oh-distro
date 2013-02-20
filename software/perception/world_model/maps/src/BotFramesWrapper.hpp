@@ -9,6 +9,9 @@ namespace lcm {
   class LCM;
 }
 
+struct _BotParam;
+typedef _BotParam BotParam;
+
 namespace maps {
 
 class BotFramesWrapper {
@@ -16,7 +19,7 @@ protected:
   struct BotStructures;
 
 public:
-  BotFramesWrapper();
+  BotFramesWrapper(const BotParam* iParam=NULL);
   ~BotFramesWrapper();
 
   void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);

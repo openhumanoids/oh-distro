@@ -11,7 +11,8 @@ struct BotFramesWrapper::BotStructures {
 };
 
 BotFramesWrapper::
-BotFramesWrapper() {
+BotFramesWrapper(const BotParam* iParam) {
+  mBotStructures->mParam = (BotParam*)iParam;
 }
 
 BotFramesWrapper::
@@ -23,7 +24,9 @@ setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
   mLcm = iLcm;
   lcm_t* lcm = mLcm->getUnderlyingLCM();
   mBotStructures.reset(new BotStructures());
-  mBotStructures->mParam = bot_param_get_global(lcm, 0);
+  if (mBotStructures->mParam == NULL) {
+    mBotStructures->mParam = bot_param_get_global(lcm, 0);
+  }
   mBotStructures->mFrames = bot_frames_get_global(lcm, mBotStructures->mParam);
 }
 

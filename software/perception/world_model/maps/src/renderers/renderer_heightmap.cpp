@@ -295,6 +295,8 @@ heightmap_add_renderer_to_viewer(BotViewer* viewer,
   self->mBotParam = param;
   self->mBotFrames = frames;
   self->mMeshRenderer.reset(new maps::MeshRenderer());
+  self->mMeshRenderer->setBotParam(self->mBotParam);
+  self->mMeshRenderer->setLcm(self->mLcm);
   self->mMeshRenderer->setColor(1,0.5,0);
 
   self->mWidget = BOT_GTK_PARAM_WIDGET (bot_gtk_param_widget_new ());

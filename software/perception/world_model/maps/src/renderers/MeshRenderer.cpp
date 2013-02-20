@@ -139,10 +139,18 @@ MeshRenderer::
 void MeshRenderer::
 setLcm(const boost::shared_ptr<lcm::LCM> iLcm) {
   mState->mLcm = iLcm;
-  mState->mBotParam = bot_param_get_global(mState->mLcm->getUnderlyingLCM(),0);
-  mState->mBotFrames.reset(new BotFramesWrapper());
+  if (mState->mBotParam == NULL) {
+    mState->mBotParam =
+      bot_param_get_global(mState->mLcm->getUnderlyingLCM(),0);
+  }
+  mState->mBotFrames.reset(new BotFramesWrapper(mState->mBotParam));
   mState->mBotFrames->setLcm(mState->mLcm);
   setCameraChannel(mState->mCameraChannel);
+}
+
+void MeshRenderer::
+setBotParam(const BotParam* iBotParam) {
+  mState->mBotParam = (BotParam*)iBotParam;
 }
 
 void MeshRenderer::

@@ -808,6 +808,7 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
   self->mBotFrames = frames;
 
   drc::Clock::instance()->setLcm(self->mLcm);
+  self->mMeshRenderer->setBotParam(self->mBotParam);
   self->mMeshRenderer->setLcm(self->mLcm);
 
   // events
