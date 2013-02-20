@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
   state_t* state = new state_t();
   state->publish_lcm= lcm_create(NULL);
 
-  state->robot_name = "mit_golf_cart";
+  state->robot_name = "drc_vehicle";
   ros::init(argc, argv, "keyboard_driving");
   ros::NodeHandle n;
   hand_wheel_pub = n.advertise<std_msgs::Float64>(state->robot_name +"/hand_wheel/cmd", 1000);
