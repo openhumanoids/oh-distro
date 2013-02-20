@@ -2590,8 +2590,7 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo>
-       <plugin filename="libFloatingSandiaHandPlugin.so" name="floating_sandia_hand_plugin"/>
-       <!--<plugin filename="libSandiaHandPlugin.so" name="sandia_hand_plugin"/>-->
+    <plugin filename="libFloatingSandiaHandPlugin.so" name="floating_sandia_hand_plugin"/>
   </gazebo>
 </robot>
 
