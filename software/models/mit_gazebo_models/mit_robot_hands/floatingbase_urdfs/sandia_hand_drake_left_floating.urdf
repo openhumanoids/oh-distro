@@ -94,7 +94,7 @@
     <axis xyz="1 0 0"/>
     <parent link="left_base_z"/>
     <child link="left_base_roll"/>
-    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
+    <limit effort="1" lower="-6.2832" upper="6.2832" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -103,7 +103,7 @@
     <axis xyz="0 1 0"/>
     <parent link="left_base_roll"/>
     <child link="left_base_pitch"/>
-    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
+    <limit effort="1" lower="-6.2832" upper="6.2832" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -112,7 +112,7 @@
     <axis xyz="0 0 1"/>
     <parent link="left_base_pitch"/>
     <child link="left_base_yaw"/>
-    <limit effort="1" lower="-1.57079" upper="1.57079" velocity="1"/>
+    <limit effort="1" lower="-6.2832" upper="6.2832" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
     <dynamics damping="0.1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>

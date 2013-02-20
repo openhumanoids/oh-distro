@@ -83,7 +83,7 @@
       <axis xyz="1 0 0"/>
       <parent link="${side}_base_z"/>
       <child link="${side}_base_roll"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -92,7 +92,7 @@
       <axis xyz="0 1 0"/>
       <parent link="${side}_base_roll"/>
       <child link="${side}_base_pitch"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -101,7 +101,7 @@
       <axis xyz="0 0 1"/>
       <parent link="${side}_base_pitch"/>
       <child link="${side}_base_yaw"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
