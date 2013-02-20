@@ -58,10 +58,12 @@ classdef SandiaGraspController < MIMODrakeSystem
             %   y_r = [u(10:12);r;p;y;r_joint_positions];
             
             msg = obj.getInputFrame.lcmcoder.encode(t,u);
-            [r,p,y] = quat2angle(u(6:9)','ZYX');
+            [r,p,y] = quat2angle([u(9);u(6:8)]','XYZ');
             q_l = [u(3:5);r;p;y;msg.l_joint_position];
-            [r,p,y] = quat2angle(u(13:16)','ZYX');
+            [r,p,y] = quat2angle([u(16);u(13:15)]','XYZ');
             q_r = [u(10:12);r;p;y;msg.r_joint_position];
+            
+            
             if(msg.grasp_type==msg.SANDIA_LEFT)
                 publish(obj.getOutputFrame.frame{1},t,q_l,'L_HAND_JOINT_COMMANDS');
             elseif(msg.grasp_type==msg.SANDIA_RIGHT)

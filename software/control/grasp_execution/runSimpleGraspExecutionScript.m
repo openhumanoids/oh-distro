@@ -43,11 +43,13 @@ while(1)
         %   n_r_joints =nq_r-6;
         %   l_joint_positions = x(19:19+n_l_joints-1);
         %   r_joint_positions = x(19+n_l_joints:19+n_l_joints+n_r_joints-1);
-        
-        [r,p,y] = quat2angle(x(6:9)','ZYX');
-        q_l = [x(3:5);r;p;y;msg.l_joint_position];
-        [r,p,y] = quat2angle(x(13:16)','ZYX');
+
+        [r,p,y] = quat2angle([x(9);x(6:8)]','XYZ');   
+        q_l = [x(3:5);r;p;y;msg.l_joint_position];   
+        [r,p,y] = quat2angle([x(16);x(13:15)]','XYZ');
         q_r = [x(10:12);r;p;y;msg.r_joint_position];
+        q_l(1) =q_l(1)+0.1;
+        q_r(1) =q_r(1)-0.1;
         if(msg.grasp_type==msg.SANDIA_LEFT)
             publish(l_hand_joint_cmd_publisher,ts,q_l,'L_HAND_JOINT_COMMANDS');
         elseif(msg.grasp_type==msg.SANDIA_RIGHT)
