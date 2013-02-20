@@ -124,7 +124,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
          // populate data structures
           typedef std::map<std::string, MeshStruct> mesh_map_type_;
           mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
-          if(mesh_map_it==_mesh_model_map.end())
+          if(mesh_map_it==_mesh_map.end())
             _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));
 
 
@@ -260,7 +260,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
          // populate data structures
           typedef std::map<std::string, MeshStruct> mesh_map_type_;
           mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
-          if(mesh_map_it==_mesh_model_map.end())
+          if(mesh_map_it==_mesh_map.end())
             _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));    
 
         }//end  if  (type == MESH)
@@ -1015,6 +1015,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
         mesh_map_it=_mesh_map.find(nextTfname);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
+
           if(!visualize_bbox)
           {
             glCallList (mesh_map_it->second.displaylist);

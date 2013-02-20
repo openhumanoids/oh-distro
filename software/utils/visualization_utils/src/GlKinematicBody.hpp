@@ -122,6 +122,7 @@ class GlKinematicBody
     void draw_link(boost::shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);
     void draw_link_current_and_future(float (&c)[3], float alpha,int link_shape_index, const LinkFrameStruct &nextTf)
     {    
+    
       if(is_otdf_instance)
       {
         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[link_shape_index];
@@ -152,7 +153,7 @@ class GlKinematicBody
       glColor4f(c[0],c[1],c[2],alpha);
       for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
-        LinkFrameStruct nextTf = _link_geometry_tfs[i];
+        LinkFrameStruct nextTf = _link_geometry_tfs[i];   
         draw_link_current_and_future(c,alpha,i,nextTf);
       }
       
