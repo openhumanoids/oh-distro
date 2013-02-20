@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 import roslib; roslib.load_manifest('tutorial_atlas_control')
 import rospy, yaml, sys
 from osrf_msgs.msg import JointCommands
