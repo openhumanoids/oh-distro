@@ -12,7 +12,7 @@ group "1.robot" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
         host = "localhost";
     }
     cmd "estpub" {
@@ -47,6 +47,22 @@ group "2.gazebo" {
         host = "localhost";
     }
 }
+group "2.head_control" {
+    cmd "head_0" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
+        host = "localhost";
+    }
+    cmd "head_45" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
+        host = "localhost";
+    }
+    cmd "head_90" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
+        host = "localhost";
+    }
+}
+
+
 
 group "3.sensing" {
     cmd "icompress" {
@@ -136,11 +152,11 @@ group "misc" {
 }
 
 group "motion"{
-    cmd "teleop" {
+    cmd "estpub_sensing" {
         exec = "est_robot_state_publisher";
         host = "localhost";
     }
-    cmd "control_manager" {
+    cmd "motion_vo" {
         exec = "drc-fovision-odometry -i 2";
         host = "localhost";
     }
