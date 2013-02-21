@@ -406,28 +406,32 @@ namespace renderer_affordances_gui_utils
         
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
-      self->instantiated_objects.erase(it);
-      if((*self->object_selection)==std::string(instance_name))
-      {
-        (*self->link_selection) = " ";
-        (*self->object_selection) = " ";
-      }  
+      
+     if(it!=self->instantiated_objects.end())
+     {
+        self->instantiated_objects.erase(it);
+        if((*self->object_selection)==std::string(instance_name))
+        {
+          (*self->link_selection) = " ";
+          (*self->object_selection) = " ";
+        }  
 
-      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-     
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
-      while (hand_it!=self->sticky_hands.end()) {
-         if (hand_it->second.object_name == std::string(instance_name))
-         {
-            if((*self->stickyhand_selection)==hand_it->first)
-               (*self->stickyhand_selection) = " ";
-            self->sticky_hands.erase(hand_it++);
-         }
-         else
-            hand_it++;
-      } 
+        typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+       
+        sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+        while (hand_it!=self->sticky_hands.end()) {
+           if (hand_it->second.object_name == std::string(instance_name))
+           {
+              if((*self->stickyhand_selection)==hand_it->first)
+                 (*self->stickyhand_selection) = " ";
+              self->sticky_hands.erase(hand_it++);
+           }
+           else
+              hand_it++;
+        } 
 
-      bot_viewer_request_redraw(self->viewer);
+        bot_viewer_request_redraw(self->viewer);
+      }
     }
     else if(!strcmp(name,PARAM_OTDF_INSTANCE_CLEAR_ALL)) {
       fprintf(stderr,"\nClearing Instantiated Objects\n");
