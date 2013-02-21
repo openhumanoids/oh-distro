@@ -84,8 +84,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
 
   /// Experiments with car control:
   lcm_->subscribe("NAV_GOAL_ESTOP",&LCM2ROS::estopHandler,this);
-  gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("mit_golf_cart/gas_pedal/cmd", 1000);
-  brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("mit_golf_cart/brake_pedal/cmd", 1000);
+  gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/gas_pedal/cmd", 1000);
+  brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/brake_pedal/cmd", 1000);
   
   rosnode = new ros::NodeHandle();
 }
