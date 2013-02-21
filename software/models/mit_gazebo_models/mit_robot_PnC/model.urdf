@@ -3646,7 +3646,8 @@
   <gazebo reference="left_camera_frame">
     <sensor name="stereo_camera" type="multicamera">
       <!-- update rate based on spec sheet for 2mp 15fps -->
-      <update_rate>15.0</update_rate>
+      <!-- over drive to get good fps mfallon -->
+      <update_rate>30.0</update_rate>
       <camera name="left">
         <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
         <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
@@ -3682,7 +3683,8 @@
       </camera>
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
-        <updateRate>15.0</updateRate>
+        <!-- over drive to get good fps mfallon -->
+        <updateRate>30.0</updateRate>
         <cameraName>multisense_sl/camera</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
@@ -3807,12 +3809,15 @@
   </gazebo>
   <gazebo>
     <!-- mit add on to be removed -->
-    <plugin filename="libgazebo_ros_pub_robot_state.so" name="gazebo_ros_pub_robot_controller">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>200.0</updateRate>
-      <topicName>true_robot_state</topicName>
-      <synchronization>false</synchronization>
+    <!-- mfallon, sisir: depreciating MIT's cheat [feb 2013]
+    <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>200.0</updateRate>
+        <topicName>true_robot_state</topicName>
+        <synchronization>false</synchronization>
     </plugin>
+   -->
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <!-- END MIT ADD ON -->
   </gazebo>
   <link name="imu_link">
