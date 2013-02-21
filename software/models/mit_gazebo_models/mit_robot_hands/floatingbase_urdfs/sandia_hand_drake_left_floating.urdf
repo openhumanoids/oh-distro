@@ -474,7 +474,7 @@
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0.001"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -547,7 +547,6 @@
     </inertial>
     <collision>
       <origin rpy="0 0 0" xyz="0.058 0 0.034"/>
-      <!--TODO: THERE IS A ERROR HERE: xyz needs to be "0.058 0 0.034" instead of "0.1 0 0.05"-->
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -789,7 +788,7 @@
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0.001"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -862,7 +861,6 @@
     </inertial>
     <collision>
       <origin rpy="0 0 0" xyz="0.058 0 0.034"/>
-      <!--TODO: THERE IS A ERROR HERE: xyz needs to be "0.058 0 0.034" instead of "0.1 0 0.05"-->
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -1104,7 +1102,7 @@
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0.001"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -1177,7 +1175,6 @@
     </inertial>
     <collision>
       <origin rpy="0 0 0" xyz="0.058 0 0.034"/>
-      <!--TODO: THERE IS A ERROR HERE: xyz needs to be "0.058 0 0.034" instead of "0.1 0 0.05"-->
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -1403,7 +1400,7 @@
     </inertial>
     <!-- ############ MIT ADDITION ############ -->
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0.001"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>

@@ -234,7 +234,7 @@
       </inertial>
       <!-- ############ MIT ADDITION ############ -->
       <collision>
-        <origin rpy="0 0 0" xyz="0 0 0.01"/>
+        <origin rpy="0 0 0" xyz="0 0 0.001"/>
         <geometry>
           <sphere radius="0"/>
         </geometry>
@@ -327,7 +327,7 @@
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
     </inertial>
     <collision>
-      <origin rpy="0 0 0" xyz="0.058 0 0.034"/> <!--TODO: THERE IS A ERROR HERE: xyz needs to be "0.058 0 0.034" instead of "0.1 0 0.05"-->
+      <origin rpy="0 0 0" xyz="0.058 0 0.034"/> 
       <geometry>
         <sphere radius="0"/>
       </geometry>
@@ -545,7 +545,7 @@
       </inertial>
       <!-- ############ MIT ADDITION ############ -->
       <collision>
-        <origin rpy="0 0 0" xyz="0 0 0.01"/>
+        <origin rpy="0 0 0" xyz="0 0 0.001"/>
         <geometry>
           <sphere radius="0"/>
         </geometry>
