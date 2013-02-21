@@ -1,0 +1,168 @@
+group "1.robot" {
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        host = "localhost";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun translators lcm2ros -p";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
+        host = "localhost";
+    }
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t walking -r";
+        host = "localhost";
+    }
+}
+
+group "2.gazebo" {
+    cmd "gazebo" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
+        host = "localhost";
+    }
+}
+group "2.head_control" {
+    cmd "head_0" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
+        host = "localhost";
+    }
+    cmd "head_45" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
+        host = "localhost";
+    }
+    cmd "head_90" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
+        host = "localhost";
+    }
+}
+
+
+
+group "3.sensing" {
+    cmd "icompress" {
+        exec = "drc-image-compress -j 50 -c CAMERALEFT";
+        host = "localhost";
+    }
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r robot";
+        host = "localhost";
+    }
+    cmd "heightmap" {
+        exec = "maps-heightmap-publisher -w 4";
+        host = "localhost";
+    }
+}
+
+group "4.drake_robot" {
+    cmd "control_planner" {
+        exec = "matlab";
+        host = "localhost";
+    }
+}
+
+group "5.base" {
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t walking -b";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer  -r base -c drc_robot.cfg"; 
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        host = "localhost";
+    }
+    cmd "aff_server" {
+        exec = "affordance_server  -r base";
+        host = "localhost";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -r base";
+        host = "localhost";
+    }
+}
+
+group "6.drake_base" {
+    cmd "footstep_planner" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
+       host = "localhost";
+    }
+    cmd "base_planner" {
+       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1')\" ";
+       host = "localhost";
+    }
+}
+
+
+
+
+
+group "misc" {
+    cmd "robot_spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "base_spy" {
+        exec = "bot-spy -l 'udpm://239.255.12.68:1268?ttl=1'";
+        host = "localhost";
+    }
+    cmd "teleop" {
+        exec = "rosrun keyboard_teleop keyboard_teleop";
+        host = "localhost";
+    }
+    cmd "control_manager" {
+        exec = "base_controller_manager";
+        host = "localhost";
+    }
+}
+
+group "motion"{
+    cmd "estpub_sensing" {
+        exec = "est_robot_state_publisher";
+        host = "localhost";
+    }
+    cmd "motion_vo" {
+        exec = "drc-fovision-odometry -i 2";
+        host = "localhost";
+    }
+}
+
+script "startup simulation" {
+    start group "core";
+    start group "drake";
+    wait ms 1000;
+    start group "gazebo";
+    wait ms 5000;
+    start group "sensing";
+}
