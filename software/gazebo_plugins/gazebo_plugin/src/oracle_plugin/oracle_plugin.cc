@@ -90,7 +90,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   if(!lcm_publish_.good()){ gzerr <<"ERROR: lcm is not good()" <<std::endl; }
 
   // Update rate of the publisher in Hz
-  this->update_rate_=10; // can increase if needed
+  this->update_rate_=20; // can increase if needed
   if (this->update_rate_ > 0.0)
     this->update_period_ = 1.0/this->update_rate_;
   else
@@ -199,7 +199,7 @@ void OraclePlugin::storeAffordances(){
     a.param_names.push_back("radius");
     a.params.push_back(0.020000);
     a.param_names.push_back("length");
-    a.params.push_back(0.30000);
+    a.params.push_back(0.13);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     
@@ -208,6 +208,17 @@ void OraclePlugin::storeAffordances(){
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
+    
+    offset.translation()  << -0.085, 0.03, 0.20;
+    //3
+    
+    double ypr[3]={0, 1.571,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    //offset.translation() = local_to_head.translation();
+    offset.rotate(quat);
+    
+    
+    
 
     AffordancePlus affp;
     affp.aff =a;
@@ -216,7 +227,7 @@ void OraclePlugin::storeAffordances(){
   }    
   
   
-  { 
+  {
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;
