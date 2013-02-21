@@ -46,7 +46,7 @@
 <!--    <include><name>diybox</name><uri>model://diy_box</uri><pose>7.5 -20.75 0 0 0 3.142</pose></include> -->
 
     <!-- walking qual -->
-    <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>-2.0 8.0 0.26 0 0 0</pose></include>
+<!--    <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>-2.0 8.0 0.26 0 0 0</pose></include>
     <include><name>simple_box_stage_2</name><uri>model://simple_box_stage</uri><pose>-6.0 20.5 0.26 0 0 0</pose></include>
     <include><name>simple_box_steppingstone_r1</name><uri>model://simple_box_steppingstone</uri><pose>-3.5 13.5 0.26 0 0 0</pose></include>
     <include><name>simple_box_steppingstone_r2</name><uri>model://simple_box_steppingstone</uri><pose>-3.5 14.8 0.26 0 0 0</pose></include>
@@ -55,6 +55,10 @@
     <include><name>simple_box_squat_1</name><uri>model://simple_box_squat</uri><pose>-2   11.0 2.0 0 0 -1.571</pose></include>
     <include><name>simple_box_squat_2</name><uri>model://simple_box_squat</uri><pose>-6.5 18.0 2.0 0 0 -1.571</pose></include>
     <include><name>simple_box_squat_3</name><uri>model://simple_box_squat</uri><pose>-2   18.0 2.0 0 0 -1.571</pose></include>
+-->
+    <include>
+       <uri>model://mit_walking_world</uri>
+    </include>
 
     <!-- manipulation qual -->
     <include><uri>model://mit_table</uri><pose>    1.5  1.8 0.0 0 0 1.571</pose></include>
