@@ -208,17 +208,11 @@ void OraclePlugin::storeAffordances(){
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    
     offset.translation()  << -0.085, 0.03, 0.20;
-    //3
-    
     double ypr[3]={0, 1.571,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     //offset.translation() = local_to_head.translation();
     offset.rotate(quat);
-    
-    
-    
 
     AffordancePlus affp;
     affp.aff =a;
