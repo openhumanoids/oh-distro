@@ -97,14 +97,16 @@ struct ViewWorker {
           bounds.mMaxTime += curTime;
         }
         if (spec.mRelativeLocation) {
-          // TODO: transform rotation in xy as well (maybe z too?)
+          Eigen::Isometry3f headToLocal;
+          mFrames->getTransform("head", "local", curTime, headToLocal);
+          float theta = atan2(headToLocal(1,0), headToLocal(0,0));
+          Eigen::Matrix4f planeTransform = headToLocal.matrix();
+          Eigen::Matrix3f rotation;
+          rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+          planeTransform.topLeftCorner<3,3>() = rotation;
+          planeTransform = planeTransform.inverse().transpose();
           for (int i = 0; i < bounds.mPlanes.size(); ++i) {
-            Eigen::Vector4f plane = bounds.mPlanes[i];
-            Eigen::Vector3f pos;
-            Eigen::Quaternionf rot;
-            if (mFrames->getTransform("head", "local", curTime, pos, rot)) {
-              bounds.mPlanes[i][3] = -pos.dot(plane.head<3>()) + plane[3];
-            }
+            bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
           }
         }
 

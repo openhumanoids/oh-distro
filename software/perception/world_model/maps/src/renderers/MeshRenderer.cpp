@@ -17,6 +17,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#include <iostream>
+
 using namespace maps;
 
 struct MeshRenderer::InternalState {
@@ -95,7 +97,7 @@ struct MeshRenderer::InternalState {
       std::string key("cameras.");
       key += (mCameraChannel + ".coord_frame");
       char* val = NULL;
-      if (bot_param_get_str(mBotParam, key.c_str(), &val) != 0) {
+      if (bot_param_get_str(mBotParam, key.c_str(), &val) == 0) {
         mCameraFrame = val;
         free(val);
       }
@@ -351,7 +353,7 @@ draw() {
     glBufferData(GL_ARRAY_BUFFER, mState->mVertexBuffer.size()*sizeof(float),
                  &mState->mVertexBuffer[0], GL_STATIC_DRAW);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(mState->mVertexBuffer.size(), GL_FLOAT, 0, 0);
+    glTexCoordPointer(3, GL_FLOAT, 0, 0);
   }
 
   // create index buffer and draw as triangles

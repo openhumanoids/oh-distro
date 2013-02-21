@@ -9,5 +9,7 @@ struct map_macro_t
   int8_t command;
 
   // command types
-  const int8_t CREATE_DENSE_MAP = 1;
+  const int8_t NORMAL_SCAN_MODE = 1;
+  const int8_t CREATE_DENSE_MAP = 2;
+  const int8_t GROUND_SCAN_MODE = 3;
 }

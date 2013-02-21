@@ -40,14 +40,11 @@ getTransform(const std::string& iFrom, const std::string& iTo,
     return false;
   }
 
-  oTransform.translation() = Eigen::Vector3d(mat[3], mat[7], mat[11]);
-  Eigen::Matrix3d rot;
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      rot(i,j) = mat[i*4+j];
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oTransform(i,j) = mat[i*4+j];
     }
   }
-  oTransform.linear() = rot;
   return true;
 }
 
@@ -62,14 +59,11 @@ getTransform(const std::string& iFrom, const std::string& iTo,
     return false;
   }
 
-  oTransform.translation() = Eigen::Vector3f(mat[3], mat[7], mat[11]);
-  Eigen::Matrix3f rot;
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      rot(i,j) = mat[i*4+j];
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oTransform(i,j) = mat[i*4+j];
     }
   }
-  oTransform.linear() = rot;
   return true;
 }
 

@@ -70,7 +70,7 @@ group "3.sensing" {
         host = "localhost";
     }
     cmd "maps-server" {
-        exec = "maps-server";
+        exec = "maps-server -w 4";
         host = "localhost";
     }
     cmd "aff_server" {
@@ -78,7 +78,7 @@ group "3.sensing" {
         host = "localhost";
     }
     cmd "heightmap" {
-        exec = "maps-heightmap-publisher -w 4";
+        exec = "maps-heightmap-publisher";
         host = "localhost";
     }
 }

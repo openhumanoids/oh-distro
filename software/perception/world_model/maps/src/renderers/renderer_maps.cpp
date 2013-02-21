@@ -48,6 +48,7 @@ static const char* PARAM_MAP_COMMAND_TYPE = "Command";
 static const char* PARAM_MAP_COMMAND = "Execute";
 static const char* PARAM_MESH_MODE = "Mesh Mode";
 static const char* PARAM_COLOR_MODE = "Color Mode";
+static const char* PARAM_POINT_SIZE = "Point Size";
 
 enum InputMode {
   INPUT_MODE_CAMERA,
@@ -208,6 +209,9 @@ struct RendererMaps {
       bot_gtk_param_widget_get_enum(iWidget, PARAM_MESH_MODE);
     self->mColorMode = (ColorMode)
       bot_gtk_param_widget_get_enum(iWidget, PARAM_COLOR_MODE);
+    float val = (double)
+      bot_gtk_param_widget_get_double(iWidget, PARAM_POINT_SIZE);      
+    self->mMeshRenderer->setPointSize(val);
       
     self->mMapCommand = (MapCommand)
       bot_gtk_param_widget_get_enum(iWidget, PARAM_MAP_COMMAND_TYPE);
@@ -268,9 +272,19 @@ struct RendererMaps {
                                         "head", "local", curTime, &trans);
         Eigen::Vector3f pos(trans.trans_vec[0], trans.trans_vec[1],
                             trans.trans_vec[2]);
+        Eigen::Quaternionf q(trans.rot_quat[0], trans.rot_quat[1],
+                             trans.rot_quat[2], trans.rot_quat[3]);
+        Eigen::Matrix3f rotMatx = q.toRotationMatrix();
+        Eigen::Vector3f heading = rotMatx.col(0);
+        float theta = atan2(heading[1],heading[0]);
+        Eigen::Matrix4f planeTransform = Eigen::Matrix4f::Identity();
+        planeTransform.topRightCorner<3,1>() = pos;
+        Eigen::Matrix3f rotation;
+        rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+        planeTransform.topLeftCorner<3,3>() = rotation;
+        planeTransform = planeTransform.transpose();
         for (size_t i = 0; i < spec.mClipPlanes.size(); ++i) {
-          Eigen::Vector4f plane = spec.mClipPlanes[i];
-          spec.mClipPlanes[i][3] = pos.dot(plane.head<3>()) + plane[3];
+          spec.mClipPlanes[i] = planeTransform*spec.mClipPlanes[i];
         }
       }
       self->mViewClient.request(spec);
@@ -840,6 +854,9 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                                 "Point Cloud", MESH_MODE_POINTS,
                                 "Wireframe", MESH_MODE_WIREFRAME,
                                 "Filled", MESH_MODE_FILLED, NULL);
+  bot_gtk_param_widget_add_double (self->mWidget, PARAM_POINT_SIZE,
+                                   BOT_GTK_PARAM_WIDGET_SLIDER,
+                                   0, 10, 0.1, 3);
 
   bot_gtk_param_widget_add_separator(self->mWidget, "view creation");
 
