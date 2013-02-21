@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="gzname" default="gazebo" />
-  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/floating_sandia_hands.world" />
+  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_manipulation_floating_hands.world" />
   <param name="/use_sim_time" type="bool" value="true" />
 
   <!-- start gazebo with the Sandia -->
