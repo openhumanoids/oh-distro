@@ -1,0 +1,4 @@
+
+
+
+./circle3d 0.7 1  0 1  -0.5 2   0.09 0.01 2 table_objects_wheel_1.pcd wheel_1.pcd

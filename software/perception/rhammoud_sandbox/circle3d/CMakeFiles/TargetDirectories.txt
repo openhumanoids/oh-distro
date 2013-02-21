@@ -1,0 +1,1 @@
+/mnt/hgfs/C/x/circle3d/CMakeFiles/circle3d.dir
