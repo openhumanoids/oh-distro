@@ -37,30 +37,17 @@
 
 
 #define RENDERER_NAME "Driving"
-#define PARAM_GOAL_SEND "[G]oal (timed)"
+#define PARAM_GOAL_SEND "Seek Relative"
 #define PARAM_GOAL_TIMEOUT "Goal Lifespan"
-#define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_VISUAL_GOAL_TYPE "VisGoalType"
-#define PARAM_VISUAL_GOAL      "Visual Goal"
-#define PARAM_NEW_MAP "New Map"
-#define PARAM_NEW_OCTOMAP "New OctoMap"
-#define PARAM_HEIGHTMAP_RES "Heightmap Res"
-#define PARAM_UPDATE_HEIGHTMAP "Update Heightmap"
+#define PARAM_VISUAL_GOAL      "Seek Visual"
 #define PARAM_ENABLE "Enable"
 
-
-typedef enum _heightmap_res_t {
-  HEIGHTMAP_RES_HIGH, HEIGHTMAP_RES_LOW,
-} heightmap_res_t;
 
 typedef enum _visual_goal_type_t {
   VISUAL_GOAL_GLOBAL, VISUAL_GOAL_RELATIVE
 } visual_goal_type_t;
 
-
-// Controlling Spinning Lidar:
-#define PARAM_LIDAR_RATE "Lidar Rate"
-#define PARAM_LIDAR_RATE_SEND "Send Rate"
 
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);
@@ -214,7 +201,6 @@ typedef struct _RendererDriving {
   double theta;
   double goal_std;
   double goal_timeout; // no. seconds before this goal expires
-  heightmap_res_t heightmap_res;
 
   int64_t max_draw_utime;
   double circle_color[3];
@@ -242,10 +228,7 @@ typedef struct _RendererDriving {
   Eigen::Vector4d body_pointpose_from;
   Eigen::Vector4d body_pointpose_to;
   
-  
-  // Frequency of rotating lidar in hz:
-  double lidar_rate;
-
+ 
 }RendererDriving;
 
 static void
@@ -444,34 +427,11 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     glVertex2f(path_x, path_y + path_center);
     glEnd();
     glPopMatrix();
-    bot_viewer_set_status_bar_message(self->viewer, "Valid Goal, click ok to send it");
+    bot_viewer_set_status_bar_message(self->viewer, "Valid Goal, click \"Seek Relative\" to send it");
   }else{
      bot_viewer_set_status_bar_message(self->viewer, "Invalid Goal: too far or too tight");
   }
   
-/*  
- // Old stuff from Navigator circle
-  if(!self->dragging && now > self->max_draw_utime)
-    return;
-
-  //glColor3f(0, 1, 0);
-  glColor3f(self->circle_color[0], self->circle_color[1], self->circle_color[2]);
-  glPushMatrix();
-  glTranslatef(self->click_pos.x, self->click_pos.y, 0);
-
-  bot_gl_draw_circle(self->goal_std);
-
-  glBegin(GL_LINE_STRIP);
-  glVertex2f(0.0,0.0);
-
-  glVertex2f(self->goal_std*cos(self->theta),self->goal_std*sin(self->theta));
-  glEnd();
-
-  glPopMatrix();
-  
-  */
-
-
 }
 
 static void
@@ -663,97 +623,11 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 {
   RendererDriving *self = (RendererDriving*) ehandler->user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
-  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
-
-  if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
-    printf("\n[R]einit key registered\n");
-    activate(self,1);
-  }else if ((event->keyval == 'g' || event->keyval == 'G') && self->active==0) {
-    printf("\n[G]oal (timed) key registered\n");
-    activate(self,2);
-  }else if ((event->keyval == 'l' || event->keyval == 'L') && self->active==0) {
-    printf("\n[L]eft arm key registered\n");
-    activate(self,3);
-  } else if(event->keyval == GDK_Escape) {
-    //self->active = 0;
-    //bot_viewer_set_status_bar_message(self->viewer, "");
-  }
 
   return 1;
 }
 
 
-// Send a message to start a new map
-// this is really lasy as it reuses the reinitialse message
-// i did this to avoid inventing another
-static void send_new_map (RendererDriving *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-
-  drc_localize_reinitialize_cmd_t msg;
-  msg.utime = self->robot_utime;//bot_timestamp_now();
-  msg.mean[0] = -99999;
-  msg.mean[1] = -99999;
-  msg.mean[2] = -99999;
-  msg.variance[0] = -99999;
-  msg.variance[1] = -99999;
-  msg.variance[2] = -99999;
-  fprintf(stderr,"\nSending LOCALIZE_NEW_MAP message\n");//, self->active);
-  drc_localize_reinitialize_cmd_t_publish(self->lc, "LOCALIZE_NEW_MAP", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent LOCALIZE_NEW_MAP");
-}
-
-
-static void send_new_lidar_rate (RendererDriving *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-  // This is a direct command of the rotation rate... 
-
-  drc_twist_timed_t msg;
-  msg.utime = self->robot_utime;//bot_timestamp_now();
-  msg.angular_velocity.x = self->lidar_rate;
-  msg.angular_velocity.y = 0.0;
-  msg.angular_velocity.z = 0.0;
-  msg.linear_velocity.x = 0.0;
-  msg.linear_velocity.y = 0.0;
-  msg.linear_velocity.z = 0.0;
-
-  fprintf(stderr,"\nSending ROTATING_SCAN_RATE_CMD message %f\n",self->lidar_rate);//, self->active);
-  drc_twist_timed_t_publish(self->lc, "ROTATING_SCAN_RATE_CMD", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent ROTATING_SCAN_RATE_CMD [%f Hz]",self->lidar_rate);
-}
-
-
-// Send a message to start a new OctoMap 
-static void send_new_octomap (RendererDriving *self){
-  BotViewHandler *vhandler = self->viewer->view_handler;
-
-  drc_map_params_t msgout;
-  msgout.utime = self->robot_utime;
-  msgout.map_id = -1;
-  msgout.resolution = 0.02;
-  msgout.buffer_size = 1000;
-  float size = 40;//10;
-  for (int i = 0; i < 3; ++i) {
-    msgout.bound_min[i] = self->robot_pose.translation()[i] - size/2;
-    msgout.bound_max[i] = self->robot_pose.translation()[i] + size/2;
-  }
-  drc_map_params_t_publish(self->lc,"MAP_CREATE",&msgout);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent MAP_CREATE");
-}
-
-static void update_heightmap (RendererDriving *self) {
-  drc_heightmap_params_t msg;
-  msg.utime = self->robot_utime;
-  switch (self->heightmap_res) {
-  case HEIGHTMAP_RES_HIGH:
-    msg.resolution = 0.1; break;
-  case HEIGHTMAP_RES_LOW:
-    msg.resolution = 0.5; break;
-  default:
-    msg.resolution = 0.1; break;
-  }
-  drc_heightmap_params_t_publish(self->lc,"HEIGHTMAP_PARAMS", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent HEIGHTMAP_PARAMS");
-}
 
 static void send_seek_goal_visual (RendererDriving *self) {
   
@@ -772,32 +646,6 @@ static void send_seek_goal_visual (RendererDriving *self) {
     drc_seek_goal_timed_t_publish(self->lc, "SEEK_GOAL", &msgout);       
     bot_viewer_set_status_bar_message(self->viewer, "Sent SEEK_GOAL (Visual, Relative)");
   }  
-
-  /*
-  // Set goal:
-  drc_nav_goal_timed_t msgout;
-  msgout.utime = self->robot_utime; //bot_timestamp_now();
-  msgout.timeout = (int64_t) 1E6*self->goal_timeout; //self->goal_timeout;
-  msgout.robot_name = "atlas"; // this should be set from robot state message
-  msgout.goal_pos.translation.z = 0;
-  msgout.goal_pos.rotation.w = 1; // Null heading
-  msgout.goal_pos.rotation.x = 0;
-  msgout.goal_pos.rotation.y = 0;
-  msgout.goal_pos.rotation.z = 0;
-  if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
-    msgout.goal_pos.translation.x = self->local_pointpose_to[0];
-    msgout.goal_pos.translation.y = self->local_pointpose_to[1];
-    fprintf(stderr, "Sending NAV_GOAL_TIMED\n");
-    drc_nav_goal_timed_t_publish(self->lc, "NAV_GOAL_TIMED", &msgout); 
-    bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL_TIMED (Visual) ");
-  }else if (self->visual_goal_type == VISUAL_GOAL_RELATIVE){
-    msgout.goal_pos.translation.x = self->body_pointpose_to[0];
-    msgout.goal_pos.translation.y = self->body_pointpose_to[1];
-    fprintf(stderr, "Sending RELATIVE_NAV_GOAL_TIMED\n");
-    drc_nav_goal_timed_t_publish(self->lc, "RELATIVE_NAV_GOAL_TIMED", &msgout);       
-    bot_viewer_set_status_bar_message(self->viewer, "Sent RELATIVE_NAV_GOAL_TIMED (Visual) ");
-  }
-  */
 }
 
 
@@ -805,8 +653,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 {
   RendererDriving *self = (RendererDriving*) user;
   self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
-  self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
-  self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   self->visual_goal_type =(visual_goal_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_VISUAL_GOAL_TYPE);
   
   if(!strcmp(name, PARAM_VISUAL_GOAL)) {
@@ -815,23 +661,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 2);
-  }else if(!strcmp(name, PARAM_GOAL_SEND_LEFT_HAND)) {
-    fprintf(stderr,"\nClicked NAV_GOAL_LEFT_HAND\n");
-    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    activate(self, 3);
-  }else if(!strcmp(name, PARAM_LIDAR_RATE_SEND)) {
-    fprintf(stderr,"\nClicked LIDAR_RATE_SEND\n");
-    //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-    send_new_lidar_rate(self);
-  }else if (! strcmp (name, PARAM_NEW_MAP)) {
-    send_new_map(self);
-  }else if (! strcmp (name, PARAM_NEW_OCTOMAP)) {
-    send_new_octomap(self);
-  }else if (! strcmp (name, PARAM_UPDATE_HEIGHTMAP)) {
-    update_heightmap(self);
   }
   
-    bot_viewer_request_redraw(self->viewer);
+  bot_viewer_request_redraw(self->viewer);
 
 }
 
@@ -950,7 +782,6 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   self->bot_frames = frames;  
   self->robot_pose.setIdentity();
   
-  self->heightmap_res = HEIGHTMAP_RES_LOW;
   self->visual_goal_type = VISUAL_GOAL_GLOBAL;
   
   self->goal_timeout =5.0;
@@ -971,18 +802,9 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, .5, 5.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_VISUAL_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, VISUAL_GOAL_GLOBAL, "Global", VISUAL_GOAL_GLOBAL, "Relative", VISUAL_GOAL_RELATIVE, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_VISUAL_GOAL, NULL);
-
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_MAP, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_OCTOMAP, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHTMAP_RES, BOT_GTK_PARAM_WIDGET_MENU, HEIGHTMAP_RES_LOW, "High", HEIGHTMAP_RES_HIGH, "Low", HEIGHTMAP_RES_LOW, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_HEIGHTMAP, NULL);
-
-  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 60.0, 0.1, 15.0);  
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);
-  
+ 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
 

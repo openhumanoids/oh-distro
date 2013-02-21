@@ -42,7 +42,7 @@ typedef enum _heightmap_res_t {
 
 
 // Controlling Spinning Lidar:
-#define PARAM_LIDAR_RATE "Lidar Rate"
+#define PARAM_LIDAR_RATE "Lidar Rate [RPM]"
 #define PARAM_LIDAR_RATE_SEND "Send Rate"
 
 #define DRAW_PERSIST_SEC 4
@@ -427,7 +427,7 @@ static void send_new_lidar_rate (RendererWalking *self){
 
   drc_twist_timed_t msg;
   msg.utime = self->robot_utime;//bot_timestamp_now();
-  msg.angular_velocity.x = self->lidar_rate;
+  msg.angular_velocity.x = self->lidar_rate * (2*M_PI)/60; // convert from RPM to rad/sec
   msg.angular_velocity.y = 0.0;
   msg.angular_velocity.z = 0.0;
   msg.linear_velocity.x = 0.0;
@@ -565,7 +565,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_enum(self->pw, PARAM_HEIGHTMAP_RES, BOT_GTK_PARAM_WIDGET_MENU, HEIGHTMAP_RES_LOW, "High", HEIGHTMAP_RES_HIGH, "Low", HEIGHTMAP_RES_LOW, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_HEIGHTMAP, NULL);
 
-  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 60.0, 0.1, 15.0);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_LIDAR_RATE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 60.0, 0.2, 7.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_LIDAR_RATE_SEND, NULL);
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);

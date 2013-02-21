@@ -25,7 +25,6 @@
 // Individual Renderers:
 #include <renderer_drc/renderer_scrollingplots.h>
 #include <renderer_drc/renderer_driving.hpp>
-#include <renderer_drc/renderer_manipulation.hpp>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_status.hpp>
 
@@ -188,7 +187,6 @@ int main(int argc, char *argv[])
   maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
-  setup_renderer_manipulation(viewer, 0,lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm);
 

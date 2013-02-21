@@ -98,12 +98,12 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
       self->deques[ w ]->pop_front();
     }
 
-    stringstream ss;
-    ss << "Sizes: ";
+    /*stringstream ss;
+    ss << "Deque Sizes: ";
     for (int i=0;i<3;i++){
       ss << self->deques[i]->size() << ", ";
     }
-    cout << ss.str() <<"\n";
+    cout << ss.str() <<"\n";*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
