@@ -668,8 +668,20 @@ void FloatingSandiaHandPlugin::UpdateStates()
                      this->jointCommands.kd_position[i] *
                      this->errorTerms[i].d_q_p_dt +
                      this->jointCommands.effort[i];
+      if (i < (this->joints.size() / 2)-6)
+         this->joints[i]->SetForce(0, force);
+      else if((i >= (this->joints.size() / 2)-6)&&(i < (this->joints.size() / 2)))
+      {
+         this->joints[i]->SetForce(0, force);//this->joints[i]->SetAngle(0, this->jointCommands.position[i]);
+         
+      }
+      else if((i >= (this->joints.size() / 2))&&(i < this->joints.size()-6))
+         this->joints[i]->SetForce(0, force);
+      else if((i >= this->joints.size()-6)&&(i < this->joints.size()))
+      {
+         this->joints[i]->SetForce(0, force);//this->joints[i]->SetAngle(0, this->jointCommands.position[i]);
+      }
 
-      this->joints[i]->SetForce(0, force);
     }
     this->lastControllerUpdateTime = curTime;
   }
