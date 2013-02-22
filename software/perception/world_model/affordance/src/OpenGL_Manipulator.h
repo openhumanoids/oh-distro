@@ -23,9 +23,8 @@ class OpenGL_Manipulator: public opengl::OpenGL_Object
 {
 	//------------------fields
 private:
-	/**underlying manipulator state*/
-	const ManipulatorStateConstPtr _manipulator; 
-
+        std::vector<KDL::Frame> _collisionPts;
+        Eigen::Vector3f _color;
 	//-----------------constructors
 public:
 	OpenGL_Manipulator(ManipulatorStateConstPtr manipulator, 
@@ -35,9 +34,6 @@ public:
 
 	//-------drawing
 	virtual void draw();
-
-	//observers
-	ManipulatorStateConstPtr getManipulator() const;
 };
 
 } /* namespace affordance */

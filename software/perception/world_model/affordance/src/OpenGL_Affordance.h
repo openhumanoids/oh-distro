@@ -23,8 +23,9 @@ class OpenGL_Affordance: public opengl::OpenGL_Object
 {
 	//------------------fields
 private:
-	/**underlying affordance state*/
-	const AffConstPtr _affordance; 
+        KDL::Frame _frame;
+	OpenGL_Object *_obj; 
+	Eigen::Vector3f _color;
 
 	//---we're drawing 1 of these
 	opengl::OpenGL_Object_Box _box;
@@ -40,9 +41,6 @@ public:
 
 	//-------drawing
 	virtual void draw();
-
-	//observers
-	AffConstPtr getAffordance() const;
 
 	static bool isSupported(affordance::AffConstPtr affordance); //check if we support drawing a given type of affordance
  };

@@ -17,8 +17,34 @@ OpenGL_Affordance::OpenGL_Affordance(AffConstPtr affordance,
 				     bool isHighlighted,
 				     Eigen::Vector3f highlightColor)
   : OpenGL_Object(affordance->getGUIDAsString(), isHighlighted, highlightColor),
-    _affordance(affordance)
+    _frame(affordance->getFrame()),
+    _color(affordance->getColor())
 {
+
+  //frame will be used by everything -- only compute once
+  if (affordance->_otdf_type == AffordanceState::CYLINDER)
+  {
+      _cylinder.set(_frame, Vector2f(affordance->radius(),
+				    affordance->length()));
+      _obj = &_cylinder;
+   }
+   else if (affordance->_otdf_type == AffordanceState::LEVER)
+      throw runtime_error("not handling lever right now");
+   else if (affordance->_otdf_type == AffordanceState::BOX)
+   {
+      _box.set(_frame, Vector3f(affordance->length(),
+			       affordance->width(),
+			       affordance->height()));
+      _obj = &_box;
+    }
+    else if (affordance->_otdf_type == AffordanceState::SPHERE)
+    {
+      _sphere.set(_frame, affordance->radius());
+      _obj = &_sphere;
+     }
+     else
+      throw runtime_error("unhandled affordance state");
+
 }
 
 OpenGL_Affordance::~OpenGL_Affordance()
@@ -28,45 +54,12 @@ OpenGL_Affordance::~OpenGL_Affordance()
 /**sets the state of the object we want to draw and then draws*/
 void OpenGL_Affordance::draw()
 {
-  //frame will be used by everything -- only compute once
-  KDL::Frame frame = _affordance->getFrame();
-
-  OpenGL_Object *obj; 
-  if (_affordance->_otdf_type == AffordanceState::CYLINDER)
-  {
-      _cylinder.set(frame, Vector2f(_affordance->radius(),
-				    _affordance->length()));
-      obj = &_cylinder;
-   }
-   else if (_affordance->_otdf_type == AffordanceState::LEVER)
-      throw runtime_error("not handling lever right now");
-   else if (_affordance->_otdf_type == AffordanceState::BOX)
-   {
-      _box.set(frame, Vector3f(_affordance->length(),
-			       _affordance->width(),
-			       _affordance->height()));
-      obj = &_box;
-    }
-    else if (_affordance->_otdf_type == AffordanceState::SPHERE)
-    {
-      _sphere.set(frame, _affordance->radius());
-      obj = &_sphere;
-     }
-     else
-      throw runtime_error("unhandled affordance state");
-      
   if (_isHighlighted) 
-    obj->draw(_highlightColor);
+    _obj->draw(_highlightColor);
   else
-    obj->draw(_affordance->getColor());
+    _obj->draw(_color);
 }
 
-
-//------observers
-AffConstPtr OpenGL_Affordance::getAffordance() const
-{
-  return _affordance;
-}
 
 bool OpenGL_Affordance::isSupported(affordance::AffConstPtr affordance)
 {
