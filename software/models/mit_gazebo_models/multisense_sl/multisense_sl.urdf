@@ -178,7 +178,8 @@
   <gazebo reference="left_camera_frame">
     <sensor type="multicamera" name="stereo_camera">
       <!-- update rate based on spec sheet for 2mp 15fps -->
-      <update_rate>15.0</update_rate>
+        <!-- over drive to get good fps mfallon -->
+      <update_rate>30.0</update_rate>
       <camera name="left">
         <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
         <!-- for resolution of 2048 x 1088, we have non-unity aspect ratio -->
@@ -214,7 +215,8 @@
       </camera>
       <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
         <alwaysOn>true</alwaysOn>
-        <updateRate>15.0</updateRate>
+        <!-- over drive to get good fps mfallon -->
+        <updateRate>30.0</updateRate>
         <cameraName>multisense_sl/camera</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
