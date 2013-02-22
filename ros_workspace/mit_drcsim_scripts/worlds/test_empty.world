@@ -29,7 +29,7 @@
 <!-- Walking at a height    
     <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1.5 0 0 0</pose></include> -->
 <!-- Manipulation in front of the table -->
-    <include><uri>model://mit_robot_PnC</uri><pose>0.7 1.50 0.928 0 0 0</pose></include>
+    <include><uri>model://mit_robot_PnC</uri><pose>0.7 1.50 0.95 0 0 0</pose></include>
 
     <include><uri>model://drc_vehicle</uri><pose>0.0 -2.55 0.1 0 0 3.142</pose></include>
 <!--    <include><uri>model://golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include> -->
