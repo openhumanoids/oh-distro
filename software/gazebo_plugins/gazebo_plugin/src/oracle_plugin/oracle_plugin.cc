@@ -109,7 +109,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["mit_table"]=70006;
   model_map_["mit_coke_can"]=70007; 
   model_map_["bowl"]=70008;
-  model_map_["mit_golf_cart"]=70009;
+  model_map_["drc_vehicle"]=70009;
   model_map_["mit_cordless_drill"]=70010;
   model_map_["saucepan"]=70011;  
   model_map_["simple_cylinder"]=70012;  
@@ -131,12 +131,12 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
 
 
 void OraclePlugin::storeAffordances(){
-  
+  int counter=0;
   { 
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;
-    a.uid =0;
+    a.uid =counter++;
     a.otdf_type ="cylinder";
     a.nparams =9;
 
@@ -170,7 +170,7 @@ void OraclePlugin::storeAffordances(){
     AffordancePlus affp;
     affp.aff =a;
     affp.offset = offset;
-    aff_map_["mit_golf_cart_steering_wheel"]=affp;
+    aff_map_["drc_vehicle_steering_wheel"]=affp;
   }
   
   
@@ -178,7 +178,7 @@ void OraclePlugin::storeAffordances(){
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;
-    a.uid =1;
+    a.uid =counter++;
     a.otdf_type ="cylinder";
     a.nparams =9;
 
@@ -202,7 +202,6 @@ void OraclePlugin::storeAffordances(){
     a.params.push_back(0.13);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    
     a.nstates =0;
     a.nptinds =0;
     
@@ -211,7 +210,6 @@ void OraclePlugin::storeAffordances(){
     offset.translation()  << -0.085, 0.03, 0.20;
     double ypr[3]={0, 1.571,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
-    //offset.translation() = local_to_head.translation();
     offset.rotate(quat);
 
     AffordancePlus affp;
@@ -220,12 +218,58 @@ void OraclePlugin::storeAffordances(){
     aff_map_["mit_cordless_drill_link"]=affp;
   }    
   
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.030000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.11);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << 0, -0.025, 0.15;
+    //double ypr[3]={0, 0,0};
+    //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    //offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["mit_cordless_drill_link_handle"]=affp;
+  }    
+    
+  
   
   {
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;
-    a.uid =2;
+    a.uid =counter++;
     a.otdf_type ="cylinder";
     a.nparams =9;
 
@@ -259,6 +303,88 @@ void OraclePlugin::storeAffordances(){
     affp.offset = offset;
     aff_map_["mit_coke_can_link"]=affp;
   }        
+  
+  
+
+  {
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+    a.param_names.push_back("radius");
+    a.params.push_back(0.05500); // 
+    a.param_names.push_back("length");
+    a.params.push_back(0.23000); //.32
+    a.param_names.push_back("mass");
+    a.params.push_back(0.39); // unknown
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << 0.0,0,0.0;
+    
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["simple_cylinder_link"]=affp;
+  }        
+    
+    
+  {
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+    a.param_names.push_back("radius");
+    a.params.push_back(0.02500); // 
+    a.param_names.push_back("length");
+    a.params.push_back(0.23000); //.32
+    a.param_names.push_back("mass");
+    a.params.push_back(0.39); // unknown
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << 0.0,0,0.15;
+    
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["standpipe_standpipe"]=affp;
+  }        
+        
   
 }
 
@@ -403,6 +529,17 @@ void OraclePlugin::OnUpdate(){
               }
               if ( model->GetName().compare( "mit_cordless_drill" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  affcol.affs.push_back ( getAffordance(  "mit_cordless_drill_link_handle",  world_to_link) );
+                }
+              }
+              if ( model->GetName().compare( "simple_cylinder" ) == 0){
+                if ( link->GetName().compare( "link" ) == 0){
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                }
+              }
+              if ( model->GetName().compare( "standpipe" ) == 0){
+                if ( link->GetName().compare( "standpipe" ) == 0){
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
               }
