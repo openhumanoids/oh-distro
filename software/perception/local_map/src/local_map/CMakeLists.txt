@@ -17,9 +17,9 @@ pods_use_pkg_config_packages(drc-local-map
   lcmtypes_velodyne
   path-util
   bot2-param-client
+  bot2-frames
   pointcloud_lcm        pointcloud_vis        pointcloud_math
   lcmtypes_drc_lcmtypes  lcmtypes_visualization
-  bot2-frames
   ${PCL_LIBRARIES})
 
 pods_install_executables(drc-local-map )

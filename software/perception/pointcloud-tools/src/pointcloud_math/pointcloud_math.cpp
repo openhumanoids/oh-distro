@@ -78,9 +78,12 @@ Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss){
   Eigen::Vector3d t(pose.translation());
   Eigen::Quaterniond r(pose.rotation());
+  double ypr[3];
+  quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
+  
   ss <<t[0]<<", "<<t[1]<<", "<<t[2]<<" | " 
-       <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() ;
-  //  std::cout << ss.str() << "q\n";
+       <<r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << " | YPR "
+       << ypr[0] <<", "<< ypr[1] <<", "<< ypr[2];
 }
 
 void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss){

@@ -55,6 +55,14 @@ struct Isometry3dTime{
 // Out: rgb jet colours 0->1
 // http://metastine.com/2011/01/implementing-a-continuous-jet-colormap-function-in-glsl/
 static inline void jet_rgb(float value,float rgb[]){
+  if (value < 0.0){
+    rgb[0]=0.0; rgb[1]=0.0; rgb[2]=1.0;
+    return;
+  }else if (value > 1.0){
+    rgb[0]=1.0; rgb[1]=0.0; rgb[2]=0.0;
+    return;
+  }
+  
   float fourValue = (float) 4 * value;
   rgb[0]   = std::min(fourValue - 1.5, -fourValue + 4.5);
   rgb[1] = std::min(fourValue - 0.5, -fourValue + 3.5);
