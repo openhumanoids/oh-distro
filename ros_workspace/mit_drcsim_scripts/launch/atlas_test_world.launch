@@ -4,11 +4,13 @@
 
 <!-- Choose your world here but don't commit changes, mfallon -->
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_combined.world" />
-<!--
-  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_driving.world" />
+<!--  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_driving.world" />
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_walking.world" />
   <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/test_manipulation.world" />
 -->
+
+
+
 
   <param name="/use_sim_time" type="bool" value="true"/>
 
