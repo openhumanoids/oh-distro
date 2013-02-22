@@ -130,15 +130,15 @@ void MainWindow::handleAffordancesChanged()
 
  
   //todo: this is just demo code
-  if (_worldState.manipulators.size() > 4) {
-      AffConstPtr rfoot = nameToAffMap["4-Rung Ladder"];
-      AffConstPtr lfoot = nameToAffMap["6-Rung Ladder"];
-      AffConstPtr rhand = nameToAffMap["Lever"];
-      AffConstPtr lhand = nameToAffMap["Table"];
+  if (false && _worldState.manipulators.size() > 4) {
+      AffConstPtr rfoot = nameToAffMap["ladder_cyl"];
+      AffConstPtr lfoot = nameToAffMap["box"];
+      AffConstPtr rhand = nameToAffMap["sphere"];
+      AffConstPtr lhand = nameToAffMap["cylinder"];
 
-      AffConstPtr gas = nameToAffMap["Gas Pedal"];
-      AffConstPtr brake = nameToAffMap["Brake Pedal"];
-      AffConstPtr wheel = nameToAffMap["Steering Wheel"];
+      AffConstPtr gas = nameToAffMap["ladder"];
+      AffConstPtr brake = nameToAffMap["box"];
+      AffConstPtr wheel = nameToAffMap["steering_cyl"];
 
       ManipulatorStateConstPtr manip = _worldState.manipulators[0];
       ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
@@ -178,6 +178,10 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
     _worldState.colorRobot.set(_worldState.state_gfe);
   
+    _widget_opengl.setMinimumHeight(100);
+    _widget_opengl.setMinimumWidth(500);
+    _widget_opengl.setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
+
     //setup timer to look for affordance changes
     QTimer *timer = new QTimer;
     connect(timer, SIGNAL(timeout()), 
@@ -225,17 +229,18 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 //    _constraint_vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
 //    _constraint_vbox->setMargin(0);
     _constraint_vbox->setAlignment(Qt::AlignTop);
-//_constraint_container->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
     _constraint_container->setLayout(_constraint_vbox);
     QScrollArea *area = new QScrollArea();
 //    area->setBackgroundRole(QPalette::Dark);
     area->setWidgetResizable(true);
     area->setWidget(_constraint_container);
-    area->setMinimumSize( QSize(800, 700 ) );
+    area->setMinimumSize(QSize(725, 600));
+    area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
     area->setAlignment(Qt::AlignTop);
 //    vbox->addWidget(_constraint_container);
     vbox->addWidget(area);
-
+    vbox->setStretchFactor(area, 1000);
 
     QToolBar *constraint_toolbar = new QToolBar("main toolbar");
     QPushButton* deletebutton = new QPushButton("delete");
@@ -298,11 +303,25 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     mediaControls->setLayout(mediaControlsLayout);
     _play->resize(_play->width() * 2, _play->height());
 
-    QtSegmentControl* controller = new QtSegmentControl();
-    controller->setCount(2);
-    controller->setSegmentText(0, tr("Authoring"));
-    controller->setSegmentText(1, tr("Live"));
-    controller->setSelectionBehavior(QtSegmentControl::SelectOne);
+    _segmentedButton = new QtSegmentControl();
+    _segmentedButton->setCount(2);
+    _segmentedButton->setSegmentText(0, tr("Authoring"));
+    _segmentedButton->setSegmentText(1, tr("Live"));
+    _segmentedButton->setSelectionBehavior(QtSegmentControl::SelectOne);
+
+    QWidget* _liveWidgets = new QWidget(this);
+//    QHBoxLayout* metaActionLayout = new QHBoxLayout();
+//    QPushButton* addAffordanceButton = new QPushButton("Copy Selected Affordance for Authoring");
+//    metaActionLayout->addWidget(addAffordanceButton);
+//    QPushButton* bindButton = new QPushButton("Bind To...");
+//    metaActionLayout->addWidget(bindButton);
+//    _liveWidgets->setLayout(metaActionLayout);
+
+    QWidget* _authoringWidgets = new QWidget(this);
+//    QHBoxLayout* authoringWidgetsLayout = new QHBoxLayout();
+//    QPushButton* something = new QPushButton("authoring view button");
+//    metaActionLayout->addWidget(something);
+//    _authoringWidgets->setLayout(authoringWidgetsLayout);
 
     QGroupBox* widgetWrapper = new QGroupBox();
     widgetWrapper->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 0px; padding: 0px; margin: 0px; background-color: black; }");
@@ -321,13 +340,16 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
 //    rightsidelayout->addWidget(_jointSlider);
-    rightsidelayout->addWidget(controller);
+    rightsidelayout->addWidget(_segmentedButton);
+    rightsidelayout->addWidget(_liveWidgets);
+    rightsidelayout->addWidget(_authoringWidgets);
     rightsidelayout->addWidget(widgetWrapper);
     rightsidelayout->addWidget(_scrubber);
     rightside->setLayout(rightsidelayout);
 
     splitter->addWidget( leftside);
     splitter->addWidget(rightside);
+    splitter->setStretchFactor(1, 1000);
 
     layout->addWidget(splitter);
     vbox->addStretch(1);
@@ -343,6 +365,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     // wire up the buttons
     connect(planbutton, SIGNAL(released()), this, SLOT(publishActionToLCM()));
+    connect(_segmentedButton, SIGNAL(segmentSelected(int)), this, SLOT(changeMode()));
 
     connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
     connect(_ffwd, SIGNAL(released()), this, SLOT(mediaFastForward()));
@@ -778,4 +801,19 @@ publishActionToLCM() {
     actionSequence.contact_goals = contact_goals;
 
     _theLcm->publish(PLAN_ACTION_MESSAGE_CHANNEL, &actionSequence);
+}
+
+void
+MainWindow::
+changeMode() {
+    cout << "hi htere" << endl;
+    if (_segmentedButton->isSegmentSelected(0)) { // authoring view 
+	_authoringWidgets->show();
+	//_liveWidgets->hide();	
+    } 
+    else if (_segmentedButton->isSegmentSelected(1)) { // live view 
+	//_authoringWidgets->hide();	
+	//_liveWidgets->show();	
+    }
+    cout << "done there" << endl;
 }

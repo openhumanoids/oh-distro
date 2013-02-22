@@ -54,13 +54,13 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 
 	//=============
 	//add a bunch of affordances w/ just names + ids
-	wrapper.addNewlyFittedAffordance(AffordanceState("4-Rung Ladder",      uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("6-Rung Ladder",       uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("Lever",      uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("Table",       uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("Steering Wheel",  uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("Gas Pedal", 		uniqueObjId++, mapId));
-	wrapper.addNewlyFittedAffordance(AffordanceState("Brake Pedal", 	uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("steering_cyl",      uniqueObjId++, mapId));
+	wrapper.addNewlyFittedAffordance(AffordanceState("box",       uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("ladder",      uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("cylinder",       uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("sphere",  uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("box", 		uniqueObjId++, mapId));
+//	wrapper.addNewlyFittedAffordance(AffordanceState("ladder_cyl", 	uniqueObjId++, mapId));
 
 	int j = 0;
 	boost::posix_time::seconds sleepTime(1); //update every 1 seconds

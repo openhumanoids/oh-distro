@@ -16,6 +16,8 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
 //    this->setMinimumWidth(this->sizeHint().width());
 
     icon = new QPushButton(QString::fromUtf8("\u25B8"));
+    icon->setFlat(true);
+    icon->setFocusPolicy(Qt::NoFocus);
     icon->setMaximumSize(15, 15);
 
     //icon->setPixmap(_collapseIcon);
@@ -39,10 +41,20 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
     // see http://qt-project.org/doc/qt-4.8/qstyle.html#standardIcon
     if (hasStatus) {
 	_plannerButton = new QPushButton("");
+	_plannerButton->setFlat(true);
+	_plannerButton->setAutoFillBackground(false);
+
 	setPlannerStatus(PLANNER_OK);
 	//_plannerButton->setIconSize();
 	headerLayout->addWidget(_plannerButton);
-	headerLayout->addWidget(new QPushButton("unbound : click here to bind"));
+	QPushButton* bindButton;
+	bindButton = new QPushButton("unbound");
+	bindButton->setFlat(true);
+	bindButton->setMaximumWidth(70);
+	headerLayout->addWidget(bindButton);
+	QPushButton* adjustButton = new QPushButton("adjust...");
+	adjustButton->setMaximumWidth(100);
+	headerLayout->addWidget(adjustButton);
     }
 
     _headerArea->setLayout(headerLayout);
@@ -51,9 +63,11 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
     mainLayout->setMargin(0);
     mainLayout->setSpacing(5);
     mainLayout->addWidget(_headerArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
-    _headerArea->setStyleSheet("QPushButton { border: 0px solid gray; border-radius: 0px; "
-			       "padding: 0px; margin: 0px; background-color: transparent; } "
-			       "QPushButton:focus { background-color: none; }");
+
+    _headerArea->setStyleSheet("QPushButton { padding: 0px; margin: 0px; } "
+			       "QPushButton[flat=\"true\"] { border: 0px solid gray; border-radius: 0px; "
+			       "background-color: transparent; } "
+			       "QPushButton[flat=\"true\"]:focus { background-color: transparent; }");
 
     mainLayout->addWidget(_widgetArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 

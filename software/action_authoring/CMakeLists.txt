@@ -46,7 +46,6 @@ add_library(action_authoring SHARED
   src/objects/ManipulationRelation.cpp
   src/objects/RelationState.cpp
   src/objects/PointContactRelation.cpp
-  src/objects/OffsetRelation.cpp
   src/objects/ConstraintMacro.cpp
   src/storage/DatabaseManager.cpp
    )

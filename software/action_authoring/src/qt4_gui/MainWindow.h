@@ -119,6 +119,9 @@ public:
     bool _isPlaying;
     QPushButton* _bwd;
     QPushButton* _fbwd;
+    QtSegmentControl* _segmentedButton;
+    QWidget* _liveWidgets;
+    QWidget* _authoringWidgets;
 
     //================world state and authoring state
 private:
@@ -149,6 +152,7 @@ private slots:
     void mediaPlay();
     void nextKeyFrame();
     void publishActionToLCM();
+    void changeMode();
 };
 
 } //namespace action_authoring
