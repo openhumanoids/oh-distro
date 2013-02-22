@@ -9,23 +9,24 @@ class TogglePanel : public QWidget
 {
     Q_OBJECT
 
-    typedef enum {
-	PLANNER_OK,
-	PLANNER_UNKNOWN,
-	PLANNER_NOT_OK,
-	PLANNER_WARNING
+    typedef enum
+    {
+        PLANNER_OK,
+        PLANNER_UNKNOWN,
+        PLANNER_NOT_OK,
+        PLANNER_WARNING
     } PlannerStatus;
 
 private:
-    QWidget* _headerArea;
+    QWidget *_headerArea;
     QString _headerText;
-    QWidget* _widgetArea;
-    QPushButton* icon;    
-    QPushButton* _plannerButton;
-    ExtendedQLabel* _headerTextLabel;
-    QVBoxLayout* _widgetLayout;
+    QWidget *_widgetArea;
+    QPushButton *icon;
+    QPushButton *_plannerButton;
+    ExtendedQLabel *_headerTextLabel;
+    QVBoxLayout *_widgetLayout;
     int _state;
-    QObject* _parent;
+    QObject *_parent;
 
 public:
     ~TogglePanel();

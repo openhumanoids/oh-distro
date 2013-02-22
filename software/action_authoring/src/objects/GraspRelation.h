@@ -10,22 +10,22 @@ namespace action_authoring
 class GraspRelation : RelationState
 {
     //------------fields
- private:
+private:
 
     //------------Constructor--------
- public:
+public:
     GraspRelation();
 
-  //---------------Accessors
+    //---------------Accessors
     virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
     virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
-  //mutators
-  
+    //mutators
+
 }; //class GraspRelation
- 
- typedef boost::shared_ptr<GraspRelation> GraspRelationPtr;
- typedef boost::shared_ptr<const GraspRelation> GraspRelationConstPtr;
+
+typedef boost::shared_ptr<GraspRelation> GraspRelationPtr;
+typedef boost::shared_ptr<const GraspRelation> GraspRelationConstPtr;
 
 } //namespace action_authoring
 

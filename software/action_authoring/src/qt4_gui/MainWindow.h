@@ -52,33 +52,37 @@
 namespace action_authoring
 {
 
-  //===============WORLD STATE
-  class InvalidStateException : public std::runtime_error {public: InvalidStateException(const std::string &msg) : std::runtime_error(msg){}};
+//===============WORLD STATE
+class InvalidStateException : public std::runtime_error
+{
+public:
+    InvalidStateException(const std::string &msg) : std::runtime_error(msg) {}
+};
 
 /**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
 
-  affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
-  std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
-  std::vector<affordance::ManipulatorStateConstPtr> manipulators; //robot manipulators
-  state::State_GFE state_gfe; //robot state
-  robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
-  opengl::OpenGL_Object_DAE* colorVehicle; // TODO : special case for demo
-  std::vector<opengl::OpenGL_Object*> glObjects; //objects for rendering
+    affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
+    std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
+    std::vector<affordance::ManipulatorStateConstPtr> manipulators; //robot manipulators
+    state::State_GFE state_gfe; //robot state
+    robot_opengl::ColorRobot colorRobot; //subclasses OpenGL_Object_GFE. used for coloring the robot
+    opengl::OpenGL_Object_DAE *colorVehicle; // TODO : special case for demo
+    std::vector<opengl::OpenGL_Object *> glObjects; //objects for rendering
 
-  std::map<opengl::OpenGL_Object*,affordance::ModelStateConstPtr> objectsToModels; //map to identify clicked objects
-  std::vector<collision::Collision_Object*> collisionObjs; //collision objects corresponding to glObjects
+    std::map<opengl::OpenGL_Object *, affordance::ModelStateConstPtr> objectsToModels; //map to identify clicked objects
+    std::vector<collision::Collision_Object *> collisionObjs; //collision objects corresponding to glObjects
 
-  /**initializes all the fields in the struct*/
-WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
- : affServerWrapper(theLcm), colorRobot(urdf_filename)
-  { }
-  
+    /**initializes all the fields in the struct*/
+    WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
+        : affServerWrapper(theLcm), colorRobot(urdf_filename)
+    { }
+
 };
 
 //==========AUTHORING STATE
- 
+
 
 /**represents the state of the authoring gui*/
 typedef struct
@@ -97,31 +101,31 @@ class MainWindow : public QWidget
 public:
     explicit MainWindow(const boost::shared_ptr<lcm::LCM> &theLcm, QWidget *parent = 0);
     boost::shared_ptr<TogglePanel> createWaypointGUI(Qt4ConstraintMacroPtr waypoint_constraint,
-				   std::vector<std::string> joint_names);
+            std::vector<std::string> joint_names);
     ~MainWindow();
 
     //=================gui state
- private: 
+private:
     boost::shared_ptr<lcm::LCM> _theLcm;
-    QTimer* _scrubberTimer;
-    QLineEdit* _actionName;
-    DefaultValueSlider* _scrubber;
-    QLabel * _actionDescLabel;
+    QTimer *_scrubberTimer;
+    QLineEdit *_actionName;
+    DefaultValueSlider *_scrubber;
+    QLabel *_actionDescLabel;
     double _timeSum; // total length of time for all robot actions to complete. sum of all upperTimeBounds
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
-    QWidget* _constraint_container;
-    QVBoxLayout* _constraint_vbox;
-    QPushButton* _moveUpButton;
-    QPushButton* _moveDownButton;
-    QPushButton* _ffwd;
-    QPushButton* _fwd;
-    QPushButton* _play;
+    QWidget *_constraint_container;
+    QVBoxLayout *_constraint_vbox;
+    QPushButton *_moveUpButton;
+    QPushButton *_moveDownButton;
+    QPushButton *_ffwd;
+    QPushButton *_fwd;
+    QPushButton *_play;
     bool _isPlaying;
-    QPushButton* _bwd;
-    QPushButton* _fbwd;
-    QtSegmentControl* _segmentedButton;
-    QWidget* _liveWidgets;
-    QWidget* _authoringWidgets;
+    QPushButton *_bwd;
+    QPushButton *_fbwd;
+    QtSegmentControl *_segmentedButton;
+    QWidget *_liveWidgets;
+    QWidget *_authoringWidgets;
 
     //================world state and authoring state
 private:
@@ -144,7 +148,7 @@ private slots:
     void handleAddConstraint();
     void handleMoveUp();
     void handleMoveDown();
-    void setSelectedAction(Qt4ConstraintMacro* activator);
+    void setSelectedAction(Qt4ConstraintMacro *activator);
     void selectedOpenGLObjectChanged(const std::string &modelGUID);
     void selectedOpenGLObjectChanged(const std::string &modelName, Eigen::Vector3f hitPoint);
     void mediaFastForward();

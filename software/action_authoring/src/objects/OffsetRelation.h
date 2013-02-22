@@ -11,31 +11,43 @@ namespace action_authoring
 class OffsetRelation : RelationState
 {
     //------------fields
- private:
-   Eigen::Vector3f _translation;
-   Eigen::Vector4f _rotation;
+private:
+    Eigen::Vector3f _translation;
+    Eigen::Vector4f _rotation;
 
     //------------Constructor--------
- public:
+public:
     OffsetRelation();
 
-    Eigen::Vector3f getTranslation() { return _translation; }
-    Eigen::Vector4f getRotation() { return _rotation; }
+    Eigen::Vector3f getTranslation()
+    {
+        return _translation;
+    }
+    Eigen::Vector4f getRotation()
+    {
+        return _rotation;
+    }
 
     //----------Mutators
-    void setTranslation(Eigen::Vector3f t) { _translation = t; }
-    void setRotation(Eigen::Vector4f r) { _rotation = r; }
+    void setTranslation(Eigen::Vector3f t)
+    {
+        _translation = t;
+    }
+    void setRotation(Eigen::Vector4f r)
+    {
+        _rotation = r;
+    }
 
-  //---------------Accessors
+    //---------------Accessors
     virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
     virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
-  //mutators
-  
+    //mutators
+
 }; //class OffsetRelation
- 
- typedef boost::shared_ptr<OffsetRelation> OffsetRelationPtr;
- typedef boost::shared_ptr<const OffsetRelation> OffsetRelationConstPtr;
+
+typedef boost::shared_ptr<OffsetRelation> OffsetRelationPtr;
+typedef boost::shared_ptr<const OffsetRelation> OffsetRelationConstPtr;
 
 } //namespace action_authoring
 

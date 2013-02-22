@@ -14,19 +14,20 @@ namespace action_authoring
  Immutable class indicating how 2 objects are related */
 class RelationState
 {
-  
-  //----------Enumerations
- public:
-//------------------------------------------------------------------------
-// WARNING
-// if you edit this enum, edit the string definitions in the constructor
-//------------------------------------------------------------------------
-    typedef enum {
-      UNDEFINED,
-      GRASP,
-      FORCE_CLOSURE,
-      POINT_CONTACT,
-      OFFSET
+
+    //----------Enumerations
+public:
+    //------------------------------------------------------------------------
+    // WARNING
+    // if you edit this enum, edit the string definitions in the constructor
+    //------------------------------------------------------------------------
+    typedef enum
+    {
+        UNDEFINED,
+        GRASP,
+        FORCE_CLOSURE,
+        POINT_CONTACT,
+        OFFSET
     } RelationType;
 
     //static init helpers
@@ -34,27 +35,27 @@ class RelationState
 
     /**maps from string name for RelationType to the value*/
     const static boost::unordered_map<std::string, RelationType> rNameToValue;
-    
+
     //------------fields
- private:
+private:
     const RelationType _relationType;
 
     //------------Constructor--------
- public:
+public:
     RelationState(const RelationState::RelationType &relationType);
 
-  //---------------Accessors
+    //---------------Accessors
     RelationType getRelationType() const;
     virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
     virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
 }; //class RelationState
 
- std::ostream& operator<<(std::ostream& out, const RelationState& other);
- 
- typedef boost::shared_ptr<RelationState> RelationStatePtr;
- typedef boost::shared_ptr<const RelationState> RelationStateConstPtr;
- 
+std::ostream &operator<<(std::ostream &out, const RelationState &other);
+
+typedef boost::shared_ptr<RelationState> RelationStatePtr;
+typedef boost::shared_ptr<const RelationState> RelationStateConstPtr;
+
 } //namespace action_authoring
 
 

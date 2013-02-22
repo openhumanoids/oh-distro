@@ -8,7 +8,7 @@ class ExtendedQLabel : public QLabel
     Q_OBJECT
 
 public:
-    explicit ExtendedQLabel(const QString &text ="", QWidget *parent = 0);
+    explicit ExtendedQLabel(const QString &text = "", QWidget *parent = 0);
     ~ExtendedQLabel();
 
 signals:

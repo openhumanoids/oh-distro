@@ -17,159 +17,170 @@ using namespace affordance;
 
 string RandomString(int len)
 {
-   string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-   int pos;
-   while((int)str.size() != len) {
-    pos = ((rand() % (str.size() - 1)));
-    str.erase (pos, 1);
-   }
-   return str;
+    string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int pos;
+
+    while ((int)str.size() != len)
+    {
+        pos = ((rand() % (str.size() - 1)));
+        str.erase(pos, 1);
+    }
+
+    return str;
 }
 
 /*
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
- */ 
+ */
 void MainWindow::handleAffordancesChanged()
 {
-  //------------------------REDRAW
-  //clear the scene.  todo : is there a better way to handle 
-  //memory management thru boost pointers?  opengl_scene doesn't use boost
-  if (_worldState.glObjects.size() != _worldState.collisionObjs.size())
-    throw InvalidStateException("glObjects and collisionObjs should have the same size");
-
-  _widget_opengl.opengl_scene().clear_objects();  
-  for(uint i = 0; i < _worldState.glObjects.size(); i++)
+    //------------------------REDRAW
+    //clear the scene.  todo : is there a better way to handle
+    //memory management thru boost pointers?  opengl_scene doesn't use boost
+    if (_worldState.glObjects.size() != _worldState.collisionObjs.size())
     {
-      delete _worldState.glObjects[i];
-      delete _worldState.collisionObjs[i];
-    }
-      
-  _worldState.glObjects.clear();
-  _worldState.collisionObjs.clear();
-
-  for(uint i = 0; i < _worldState.affordances.size(); i++)
-    {
-      AffConstPtr next = _worldState.affordances[i];
-
-      if (!Collision_Object_Affordance::isSupported(next))
-	{
-	  cout << "\n Collision_Object_Affordance doesn't support " << next->getName() << endl;
-	  continue;
-	}
-      
-      if (!OpenGL_Affordance::isSupported(next))
-	{
-	  cout << "\n OpenGL_Affordance doesn't support " << next->getName() << endl;
-	  continue;
-	}
-      
-      //opengl 
-      OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next); 
-      _widget_opengl.opengl_scene().add_object(*asGlAff);
-      _worldState.glObjects.push_back(asGlAff);
-      
-      //collisions:  Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
-      Collision_Object* collision_object_affordance = new Collision_Object_Affordance(next);
-      _widget_opengl.add_collision_object(collision_object_affordance);
-      _worldState.collisionObjs.push_back(collision_object_affordance);
+        throw InvalidStateException("glObjects and collisionObjs should have the same size");
     }
 
-  //----------handle constraint macros 
-  unordered_map<string, AffConstPtr> nameToAffMap;
-  for(vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
-      iter != _worldState.affordances.end();
-      ++iter)
-  {
-      nameToAffMap[(*iter)->getName()] = *iter;
-  }
+    _widget_opengl.opengl_scene().clear_objects();
+
+    for (uint i = 0; i < _worldState.glObjects.size(); i++)
+    {
+        delete _worldState.glObjects[i];
+        delete _worldState.collisionObjs[i];
+    }
+
+    _worldState.glObjects.clear();
+    _worldState.collisionObjs.clear();
+
+    for (uint i = 0; i < _worldState.affordances.size(); i++)
+    {
+        AffConstPtr next = _worldState.affordances[i];
+
+        if (!Collision_Object_Affordance::isSupported(next))
+        {
+            cout << "\n Collision_Object_Affordance doesn't support " << next->getName() << endl;
+            continue;
+        }
+
+        if (!OpenGL_Affordance::isSupported(next))
+        {
+            cout << "\n OpenGL_Affordance doesn't support " << next->getName() << endl;
+            continue;
+        }
+
+        //opengl
+        OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next);
+        _widget_opengl.opengl_scene().add_object(*asGlAff);
+        _worldState.glObjects.push_back(asGlAff);
+
+        //collisions:  Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
+        Collision_Object *collision_object_affordance = new Collision_Object_Affordance(next);
+        _widget_opengl.add_collision_object(collision_object_affordance);
+        _worldState.collisionObjs.push_back(collision_object_affordance);
+    }
+
+    //----------handle constraint macros
+    unordered_map<string, AffConstPtr> nameToAffMap;
+
+    for (vector<AffConstPtr>::iterator iter = _worldState.affordances.begin();
+            iter != _worldState.affordances.end();
+            ++iter)
+    {
+        nameToAffMap[(*iter)->getName()] = *iter;
+    }
 
     // read the joints from the robot state
     // create the manipulators from the robot's joints
     std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
+
     for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
     {
-    	const State_GFE_Joint& state_gfe_joint = it->second;
-	std::string id = state_gfe_joint.id();
-	shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+        const State_GFE_Joint &state_gfe_joint = it->second;
+        std::string id = state_gfe_joint.id();
+        shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
 
-	ManipulatorStateConstPtr manipulator(new ManipulatorState(link, 
-	    _worldState.colorRobot.getKinematicsModel().link(link->name),
-	    GlobalUID(rand(), rand()))); //todo guid
+        ManipulatorStateConstPtr manipulator(new ManipulatorState(link,
+                                             _worldState.colorRobot.getKinematicsModel().link(link->name),
+                                             GlobalUID(rand(), rand()))); //todo guid
 
-	_worldState.manipulators.push_back(manipulator);
- 
-	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
-	_widget_opengl.opengl_scene().add_object(*asGlMan);
-	_worldState.glObjects.push_back(asGlMan);
+        _worldState.manipulators.push_back(manipulator);
 
-	Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
-	if (cObjManip->isSupported(manipulator)) {
-	    _widget_opengl.add_collision_object(cObjManip);
-	    _worldState.collisionObjs.push_back(cObjManip);
-	}
-     }
+        OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
+        _widget_opengl.opengl_scene().add_object(*asGlMan);
+        _worldState.glObjects.push_back(asGlMan);
 
-    
-  //----------add robot and vehicle
-  _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
+        Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
 
-  connect(&_widget_opengl, SIGNAL(raycastCallback(std::string, Eigen::Vector3f)),
-	  this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
-//  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
-//	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
-
-  // TODO resolve path
-  _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle", 
-    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
-  _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
-
-  _widget_opengl.update();
-  //_widget_opengl.add_object_with_collision(_collision_object_gfe);
+        if (cObjManip->isSupported(manipulator))
+        {
+            _widget_opengl.add_collision_object(cObjManip);
+            _worldState.collisionObjs.push_back(cObjManip);
+        }
+    }
 
 
- 
-  //todo: this is just demo code
-  if (false && _worldState.manipulators.size() > 4) {
-      AffConstPtr rfoot = nameToAffMap["ladder_cyl"];
-      AffConstPtr lfoot = nameToAffMap["Sphere"];
-      AffConstPtr rhand = nameToAffMap["Ground Plan"];
-      AffConstPtr lhand = nameToAffMap["cylinder"];
+    //----------add robot and vehicle
+    _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-//      AffConstPtr gas = nameToAffMap["ladder"];
-//      AffConstPtr brake = nameToAffMap["box"];
-//      AffConstPtr wheel = nameToAffMap["steering_cyl"];
+    connect(&_widget_opengl, SIGNAL(raycastCallback(std::string, Eigen::Vector3f)),
+            this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
+    //  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
+    //	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
 
-      ManipulatorStateConstPtr manip = _worldState.manipulators[0];
-      ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
-      ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
-      ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
-      PointContactRelationPtr relstate(new PointContactRelation());
+    // TODO resolve path
+    _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle",
+            "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
-      AtomicConstraintPtr rfoot_gas_relation (new ManipulationRelation(rfoot, manip, relstate));
-      AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
-      AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
-      AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
-  
-      ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
-      ConstraintMacroPtr lfoot_brake (new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation)); 
-      ConstraintMacroPtr rhand_wheel (new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
-      ConstraintMacroPtr lhand_wheel (new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
-  
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
+    _widget_opengl.update();
+    //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
-      rebuildGUIFromState(_authoringState, _worldState);
-  }
+
+
+    //todo: this is just demo code
+    if (false && _worldState.manipulators.size() > 4)
+    {
+        AffConstPtr rfoot = nameToAffMap["ladder_cyl"];
+        AffConstPtr lfoot = nameToAffMap["Sphere"];
+        AffConstPtr rhand = nameToAffMap["Ground Plan"];
+        AffConstPtr lhand = nameToAffMap["cylinder"];
+
+        //      AffConstPtr gas = nameToAffMap["ladder"];
+        //      AffConstPtr brake = nameToAffMap["box"];
+        //      AffConstPtr wheel = nameToAffMap["steering_cyl"];
+
+        ManipulatorStateConstPtr manip = _worldState.manipulators[0];
+        ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
+        ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
+        ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
+        PointContactRelationPtr relstate(new PointContactRelation());
+
+        AtomicConstraintPtr rfoot_gas_relation(new ManipulationRelation(rfoot, manip, relstate));
+        AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
+        AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
+        AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
+
+        ConstraintMacroPtr rfoot_gas(new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
+        ConstraintMacroPtr lfoot_brake(new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));
+        ConstraintMacroPtr rhand_wheel(new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
+        ConstraintMacroPtr lhand_wheel(new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
+
+        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
+        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
+        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
+        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
+
+        rebuildGUIFromState(_authoringState, _worldState);
+    }
 }
 
-MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
-	: _widget_opengl(),
-	  _constraint_container(new QWidget()),
-	  _constraint_vbox(new QVBoxLayout()),
-	  _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
+MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
+    : _widget_opengl(),
+      _constraint_container(new QWidget()),
+      _constraint_vbox(new QVBoxLayout()),
+      _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
 
 {
     _theLcm = theLcm;
@@ -177,80 +188,80 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     // setup the OpenGL scene
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
     _worldState.colorRobot.set(_worldState.state_gfe);
-  
+
     _widget_opengl.setMinimumHeight(100);
     _widget_opengl.setMinimumWidth(500);
-    _widget_opengl.setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
+    _widget_opengl.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     //setup timer to look for affordance changes
     QTimer *timer = new QTimer;
-    connect(timer, SIGNAL(timeout()), 
-	    this, SLOT(affordanceUpdateCheck()));
-    timer->start(1000); //1Hz  
+    connect(timer, SIGNAL(timeout()),
+            this, SLOT(affordanceUpdateCheck()));
+    timer->start(1000); //1Hz
 
     _scrubberTimer = new QTimer;
     connect(_scrubberTimer, SIGNAL(timeout()), this, SLOT(nextKeyFrame()));
 
     this->setWindowTitle("Action Authoring Interface");
 
-    QVBoxLayout* layout = new QVBoxLayout();
+    QVBoxLayout *layout = new QVBoxLayout();
     layout->setMargin(0);
 
-    QSplitter* splitter = new QSplitter();
-    QWidget* leftside = new QWidget();
-    QVBoxLayout* vbox = new QVBoxLayout();
+    QSplitter *splitter = new QSplitter();
+    QWidget *leftside = new QWidget();
+    QVBoxLayout *vbox = new QVBoxLayout();
 
     QToolBar *toolbar = new QToolBar("main toolbar");
     toolbar->addWidget(new QLabel("Action: "));
     _actionName = new QLineEdit("Ingress");
     toolbar->addWidget(_actionName);
-    QLabel* actionTypeLabel = new QLabel(" acts on: ");
+    QLabel *actionTypeLabel = new QLabel(" acts on: ");
     toolbar->addWidget(actionTypeLabel);
-    QComboBox* actionType = new QComboBox();
+    QComboBox *actionType = new QComboBox();
     actionType->insertItem(0, "Vehicle");
     actionType->insertItem(0, "Door");
     actionType->insertItem(0, "Ladder");
     actionType->insertItem(0, "Table");
     toolbar->addWidget(actionType);
     toolbar->addSeparator();
-    QPushButton* savebutton = new QPushButton("Save Action");
+    QPushButton *savebutton = new QPushButton("Save Action");
     savebutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogSaveButton));
     toolbar->addWidget(savebutton);
-    QPushButton* loaddiff = new QPushButton("Load Action");
+    QPushButton *loaddiff = new QPushButton("Load Action");
     loaddiff->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton));
     toolbar->addWidget(loaddiff);
-    QPushButton* planbutton = new QPushButton("Publish For Planning");
+    QPushButton *planbutton = new QPushButton("Publish For Planning");
     planbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DriveNetIcon));
     toolbar->addWidget(planbutton);
 
 
     vbox->addWidget(toolbar);
 
-//    _constraint_vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
-//    _constraint_vbox->setMargin(0);
+    //    _constraint_vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    //    _constraint_vbox->setMargin(0);
     _constraint_vbox->setAlignment(Qt::AlignTop);
     _constraint_container->setLayout(_constraint_vbox);
     QScrollArea *area = new QScrollArea();
-//    area->setBackgroundRole(QPalette::Dark);
+    //    area->setBackgroundRole(QPalette::Dark);
     area->setWidgetResizable(true);
     area->setWidget(_constraint_container);
     area->setMinimumSize(QSize(725, 600));
     area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     area->setAlignment(Qt::AlignTop);
-//    vbox->addWidget(_constraint_container);
+    //    vbox->addWidget(_constraint_container);
     vbox->addWidget(area);
     vbox->setStretchFactor(area, 1000);
 
     QToolBar *constraint_toolbar = new QToolBar("main toolbar");
-    QPushButton* deletebutton = new QPushButton("delete");
+    QPushButton *deletebutton = new QPushButton("delete");
     deletebutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_TrashIcon));
     _moveUpButton = new QPushButton("move up");
     //_moveUpButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowUp));
     _moveDownButton = new QPushButton("move down");
     //_moveDownButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowDown));
-    QPushButton* addconstraintbutton = new QPushButton("+ add constraint");
-//    addconstraintbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileDialogNewFolder));
+    QPushButton *addconstraintbutton = new QPushButton("+ add constraint");
+    //    addconstraintbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileDialogNewFolder));
     constraint_toolbar->addWidget(deletebutton);
     constraint_toolbar->addSeparator();
     constraint_toolbar->addWidget(_moveUpButton);
@@ -261,8 +272,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     vbox->addStretch(1);
     vbox->addWidget(constraint_toolbar);
 
-    QGroupBox* mediaControls = new QGroupBox();
-    QHBoxLayout* mediaControlsLayout = new QHBoxLayout();
+    QGroupBox *mediaControls = new QGroupBox();
+    QHBoxLayout *mediaControlsLayout = new QHBoxLayout();
     _fbwd = new QPushButton();
     _bwd = new QPushButton();
     _play = new QPushButton();
@@ -309,37 +320,37 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     _segmentedButton->setSegmentText(1, tr("Live"));
     _segmentedButton->setSelectionBehavior(QtSegmentControl::SelectOne);
 
-    QWidget* _liveWidgets = new QWidget(this);
-//    QHBoxLayout* metaActionLayout = new QHBoxLayout();
-//    QPushButton* addAffordanceButton = new QPushButton("Copy Selected Affordance for Authoring");
-//    metaActionLayout->addWidget(addAffordanceButton);
-//    QPushButton* bindButton = new QPushButton("Bind To...");
-//    metaActionLayout->addWidget(bindButton);
-//    _liveWidgets->setLayout(metaActionLayout);
+    QWidget *_liveWidgets = new QWidget(this);
+    //    QHBoxLayout* metaActionLayout = new QHBoxLayout();
+    //    QPushButton* addAffordanceButton = new QPushButton("Copy Selected Affordance for Authoring");
+    //    metaActionLayout->addWidget(addAffordanceButton);
+    //    QPushButton* bindButton = new QPushButton("Bind To...");
+    //    metaActionLayout->addWidget(bindButton);
+    //    _liveWidgets->setLayout(metaActionLayout);
 
-    QWidget* _authoringWidgets = new QWidget(this);
-//    QHBoxLayout* authoringWidgetsLayout = new QHBoxLayout();
-//    QPushButton* something = new QPushButton("authoring view button");
-//    metaActionLayout->addWidget(something);
-//    _authoringWidgets->setLayout(authoringWidgetsLayout);
+    QWidget *_authoringWidgets = new QWidget(this);
+    //    QHBoxLayout* authoringWidgetsLayout = new QHBoxLayout();
+    //    QPushButton* something = new QPushButton("authoring view button");
+    //    metaActionLayout->addWidget(something);
+    //    _authoringWidgets->setLayout(authoringWidgetsLayout);
 
-    QGroupBox* widgetWrapper = new QGroupBox();
+    QGroupBox *widgetWrapper = new QGroupBox();
     widgetWrapper->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 0px; padding: 0px; margin: 0px; background-color: black; }");
-    QVBoxLayout* widgetWrapperLayout = new QVBoxLayout();
+    QVBoxLayout *widgetWrapperLayout = new QVBoxLayout();
     widgetWrapperLayout->setSpacing(0);
     widgetWrapperLayout->setMargin(0);
     widgetWrapperLayout->addWidget(&_widget_opengl);
     widgetWrapperLayout->addWidget(mediaControls);
     widgetWrapper->setLayout(widgetWrapperLayout);
 
-    QVBoxLayout* rightsidelayout = new QVBoxLayout();
-    QWidget* rightside = new QWidget();
+    QVBoxLayout *rightsidelayout = new QVBoxLayout();
+    QWidget *rightside = new QWidget();
     _actionDescLabel = new QLabel();
     _actionDescLabel->setTextFormat(Qt::RichText);
-    _scrubber = new DefaultValueSlider( Qt::Horizontal, this );
+    _scrubber = new DefaultValueSlider(Qt::Horizontal, this);
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
-//    rightsidelayout->addWidget(_jointSlider);
+    //    rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(_segmentedButton);
     rightsidelayout->addWidget(_liveWidgets);
     rightsidelayout->addWidget(_authoringWidgets);
@@ -347,7 +358,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
     rightsidelayout->addWidget(_scrubber);
     rightside->setLayout(rightsidelayout);
 
-    splitter->addWidget( leftside);
+    splitter->addWidget(leftside);
     splitter->addWidget(rightside);
     splitter->setStretchFactor(1, 1000);
 
@@ -357,9 +368,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget* parent)
 
     // fix the borders on the group boxes
     this->setStyleSheet("QGroupBox { border: 1px solid gray; border-radius: 3px; padding: 5px; } "
-			"QGroupBox::title { background-color: transparent; "
-			"subcontrol-position: top left; /* position at the top left*/ "
-			"padding:2 5px; } ");
+                        "QGroupBox::title { background-color: transparent; "
+                        "subcontrol-position: top left; /* position at the top left*/ "
+                        "padding:2 5px; } ");
 
     this->setLayout(layout);
 
@@ -385,80 +396,93 @@ MainWindow::~MainWindow()
 
 }
 
-void MainWindow::handleLoadAction() 
+void MainWindow::handleLoadAction()
 {
-  QString fileName = QFileDialog::getOpenFileName(this,
-      tr("Open Action"), "", tr("Action XML Files (*.xml)"));
-  
-  if (fileName.toStdString() == "") 
-      return;
+    QString fileName = QFileDialog::getOpenFileName(this,
+                       tr("Open Action"), "", tr("Action XML Files (*.xml)"));
 
-  std::vector<ConstraintMacroPtr> revivedConstraintMacros;
-  std::vector<AffConstPtr> revivedAffordances;
+    if (fileName.toStdString() == "")
+    {
+        return;
+    }
+
+    std::vector<ConstraintMacroPtr> revivedConstraintMacros;
+    std::vector<AffConstPtr> revivedAffordances;
 
 #ifdef DATABASE
-  DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
+    DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
 
-  printf("done retrieving.\n");
-  _worldState.affordances.clear();
+    printf("done retrieving.\n");
+    _worldState.affordances.clear();
 
 
-  printf("done clearing world state affordances.\n");
+    printf("done clearing world state affordances.\n");
 
-  for (int i = 0; i < (int)revivedAffordances.size(); i++ ) {
-      _worldState.affordances.push_back(revivedAffordances[i]);
-  }
+    for (int i = 0; i < (int)revivedAffordances.size(); i++)
+    {
+        _worldState.affordances.push_back(revivedAffordances[i]);
+    }
 
-  _authoringState._all_gui_constraints.clear();
-  printf("done clearing authoring state gui constraints.\n");
+    _authoringState._all_gui_constraints.clear();
+    printf("done clearing authoring state gui constraints.\n");
 
-  for (int i = 0; i < (int)revivedConstraintMacros.size(); i++) 
-  {
-      printf("making Qt4ConstraintMacroPtr %i\n", i);
-      _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i], i)); 
-  }
+    for (int i = 0; i < (int)revivedConstraintMacros.size(); i++)
+    {
+        printf("making Qt4ConstraintMacroPtr %i\n", i);
+        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(revivedConstraintMacros[i], i));
+    }
 
-  printf("Now calling rebuild gui from state.");
-  rebuildGUIFromState(_authoringState, _worldState);
+    printf("Now calling rebuild gui from state.");
+    rebuildGUIFromState(_authoringState, _worldState);
 
 #endif
 }
 
 void
 MainWindow::
-handleSaveAction() {
- QString fileName = QFileDialog::getSaveFileName(this,
-     tr("Save Action"), _actionName->text() + ".xml", tr("Action XML Files (*.xml)"));  
+handleSaveAction()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                       tr("Save Action"), _actionName->text() + ".xml", tr("Action XML Files (*.xml)"));
 
- if (fileName.toStdString() == "") 
-     return;
+    if (fileName.toStdString() == "")
+    {
+        return;
+    }
 
 #ifdef DATABASE
- vector<ConstraintMacroPtr> all_constraints;
- for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++) {
-     all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
- }
- 
-// todo: hack
- for (uint i = 0; i < _authoringState._all_gui_constraints.size(); i++) {
-     cout << "gui constraint i " << all_constraints[i]->getAtomicConstraint()->getAffordance().get() << endl;
-     for (uint j = 0; j < _worldState.affordances.size(); j++) {
-	 cout << "......vs affordance j " << _worldState.affordances[j].get() << endl;
-	 if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance()) {
-//	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
-	     cout << "matched i, j " << i << ", " << j << endl;
-	     all_constraints[i]->getAtomicConstraint()->setAffordance(_worldState.affordances[j]);
-	 }
+    vector<ConstraintMacroPtr> all_constraints;
+
+    for (int i = 0; i < (int)_authoringState._all_gui_constraints.size(); i++)
+    {
+        all_constraints.push_back(_authoringState._all_gui_constraints[i]->getConstraintMacro());
+    }
+
+    // todo: hack
+    for (uint i = 0; i < _authoringState._all_gui_constraints.size(); i++)
+    {
+        cout << "gui constraint i " << all_constraints[i]->getAtomicConstraint()->getAffordance().get() << endl;
+
+        for (uint j = 0; j < _worldState.affordances.size(); j++)
+        {
+            cout << "......vs affordance j " << _worldState.affordances[j].get() << endl;
+
+            if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance())
+            {
+                //	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
+                cout << "matched i, j " << i << ", " << j << endl;
+                all_constraints[i]->getAtomicConstraint()->setAffordance(_worldState.affordances[j]);
+            }
+        }
+    }
+
+    /* for (uint j = 0; j < _worldState.affordances.size(); j++) {
+         cout << "......vs affordance j " << j << " : " << (*_worldState.affordances[j] << endl;
+         //if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance()) {
      }
- }
+    */
 
-/* for (uint j = 0; j < _worldState.affordances.size(); j++) {
-     cout << "......vs affordance j " << j << " : " << (*_worldState.affordances[j] << endl;
-     //if (_worldState.affordances[j] == all_constraints[i]->getAtomicConstraint()->getAffordance()) {
- }
-*/
-
- DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
+    DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
 
 
 #endif //DATABASE
@@ -467,40 +491,52 @@ handleSaveAction() {
 
 int
 MainWindow::
-getSelectedGUIConstraintIndex() {
+getSelectedGUIConstraintIndex()
+{
     if (_authoringState._selected_gui_constraint == NULL)
-	return -1;
+    {
+        return -1;
+    }
 
     std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
     std::vector<Qt4ConstraintMacroPtr>::iterator it = std::find(
-	constraints.begin(), constraints.end(), 
-	_authoringState._selected_gui_constraint);
-    if (it != constraints.end()) {
-	int i = it - constraints.begin();
-	return i;
-    } else {
-	return -1;
+                constraints.begin(), constraints.end(),
+                _authoringState._selected_gui_constraint);
+
+    if (it != constraints.end())
+    {
+        int i = it - constraints.begin();
+        return i;
+    }
+    else
+    {
+        return -1;
     }
 }
 
 void
 MainWindow::
-handleDeleteConstraint() {
+handleDeleteConstraint()
+{
     int i = getSelectedGUIConstraintIndex();
-    if (i >= 0) {
-	_authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints.begin() + i);
-	rebuildGUIFromState(_authoringState, _worldState);
+
+    if (i >= 0)
+    {
+        _authoringState._all_gui_constraints.erase(_authoringState._all_gui_constraints.begin() + i);
+        rebuildGUIFromState(_authoringState, _worldState);
     }
 }
 
 void
 MainWindow::
-handleAddConstraint() {
-    if (_worldState.affordances.size() == 0 || _worldState.manipulators.size() == 0) {
-	QMessageBox msgBox;
-	msgBox.setText("Need at least one affordance and manipulator to add a constraint");
-	msgBox.exec();
-	return;
+handleAddConstraint()
+{
+    if (_worldState.affordances.size() == 0 || _worldState.manipulators.size() == 0)
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Need at least one affordance and manipulator to add a constraint");
+        msgBox.exec();
+        return;
     }
 
     AffConstPtr left = _worldState.affordances[0];
@@ -509,7 +545,7 @@ handleAddConstraint() {
     PointContactRelationPtr relstate(new PointContactRelation());
     AtomicConstraintPtr new_constraint(new ManipulationRelation(left, manip, relstate));
 
-    ConstraintMacroPtr rfoot_gas  (new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
+    ConstraintMacroPtr rfoot_gas(new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
 
     // compute the number
     int index = _authoringState._all_gui_constraints.size();
@@ -519,44 +555,55 @@ handleAddConstraint() {
 
 void
 MainWindow::
-moveQt4Constraint(bool up) {
+moveQt4Constraint(bool up)
+{
     int i = getSelectedGUIConstraintIndex();
     std::vector<Qt4ConstraintMacroPtr> &constraints = _authoringState._all_gui_constraints;
-    if ((up && i > 0) || ((! up) && (i < (int)constraints.size() - 1))) {
-	int j = i + (up ? -1 : 1);
-	std::cout << "swapping " << i << " with " << j << std::endl;
-	//std::swap(constraints[i], constraints[i + (up ? i - 1 : i + 1)]);
-	//rebuildGUIFromState(_authoringState, _worldState);
+
+    if ((up && i > 0) || ((! up) && (i < (int)constraints.size() - 1)))
+    {
+        int j = i + (up ? -1 : 1);
+        std::cout << "swapping " << i << " with " << j << std::endl;
+        //std::swap(constraints[i], constraints[i + (up ? i - 1 : i + 1)]);
+        //rebuildGUIFromState(_authoringState, _worldState);
     }
 }
 
 void
 MainWindow::
-handleMoveUp() {
+handleMoveUp()
+{
     moveQt4Constraint(true);
 }
 
 void
 MainWindow::
-handleMoveDown() {
+handleMoveDown()
+{
     moveQt4Constraint(false);
 }
 
-void 
+void
 MainWindow::
-updateScrubber() {
+updateScrubber()
+{
     // update the scrubber
     _timeSum = 0.0;
     vector<double> lengths;
     _scrubber->clearTicks();
-    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
-	lengths.push_back(_timeSum + max);
-	_timeSum += max;
+
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
+    {
+        double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
+        lengths.push_back(_timeSum + max);
+        _timeSum += max;
     }
-    for (int i = 0; i < (int)lengths.size(); i++) {
-	_scrubber->addTick(lengths[i] / _timeSum);
+
+    for (int i = 0; i < (int)lengths.size(); i++)
+    {
+        _scrubber->addTick(lengths[i] / _timeSum);
     }
+
     _scrubber->setSelectedRangeIndex(getSelectedGUIConstraintIndex());
     _scrubber->update();
 }
@@ -566,92 +613,110 @@ updateScrubber() {
  * Qt4ConstraintMacros. It is called whenever a piece of constraint state
  * is modified in the GUI.
  */
-void 
+void
 MainWindow::
-setSelectedAction(Qt4ConstraintMacro* activator) { 
+setSelectedAction(Qt4ConstraintMacro *activator)
+{
     int selected_index = -1;
     bool noChange = false;
-    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	if (activator == _authoringState._all_gui_constraints[i].get()) {
-	    _authoringState._all_gui_constraints[i]->setSelected(true);
-	    if (_authoringState._selected_gui_constraint == _authoringState._all_gui_constraints[i]) {
-		noChange = true;
-	    } else {
-		_authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
-	    }
-	    selected_index = i;
-	} else {
-	    _authoringState._all_gui_constraints[i]->setSelected(false);
-	}
+
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
+    {
+        if (activator == _authoringState._all_gui_constraints[i].get())
+        {
+            _authoringState._all_gui_constraints[i]->setSelected(true);
+
+            if (_authoringState._selected_gui_constraint == _authoringState._all_gui_constraints[i])
+            {
+                noChange = true;
+            }
+            else
+            {
+                _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
+            }
+
+            selected_index = i;
+        }
+        else
+        {
+            _authoringState._all_gui_constraints[i]->setSelected(false);
+        }
     }
 
-    if (! noChange) {
-	// enable or disable media/move buttons
-	_moveUpButton->setEnabled(selected_index != 0);
-	_moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
-	_fbwd->setEnabled(selected_index != 0);
-	_ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
+    if (! noChange)
+    {
+        // enable or disable media/move buttons
+        _moveUpButton->setEnabled(selected_index != 0);
+        _moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
+        _fbwd->setEnabled(selected_index != 0);
+        _ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
 
     }
+
     // update the scrubber tick lines
     updateScrubber();
 
     // highlight the affordance
     selectedOpenGLObjectChanged(_authoringState._selected_gui_constraint->getConstraintMacro()
-				->getAtomicConstraint()->getAffordance()->getGUIDAsString());
+                                ->getAtomicConstraint()->getAffordance()->getGUIDAsString());
 
     // highlight the manipulator
     _worldState.colorRobot.setSelectedLink(_authoringState._selected_gui_constraint->getConstraintMacro()
-					   ->getAtomicConstraint()->getManipulator()->getName());
+                                           ->getAtomicConstraint()->getManipulator()->getName());
 
     // "make the manipulator fly"
     string man = _authoringState._selected_gui_constraint->
-	getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
+                 getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
 
-    for (uint i = 0; i < _worldState.manipulators.size(); i++) {
-	if (_worldState.manipulators[i]->getName() == man) {
-	    cout << "found manipulator " << _worldState.manipulators[i]->getName() << endl;
-	    // TODO here is : to pass the manipulator through the currently selected *relation* and render the outcome
-	    KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
-	    shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
-	    ManipulatorStateConstPtr newManip(new ManipulatorState(
-		_worldState.manipulators[i]->getLink(), 
-		shifted_frame, GlobalUID(rand(), rand())));
-	    OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
-	    _widget_opengl.opengl_scene().add_object(*asGlMan);
-	    _worldState.glObjects.push_back(asGlMan);
-	}
+    for (uint i = 0; i < _worldState.manipulators.size(); i++)
+    {
+        if (_worldState.manipulators[i]->getName() == man)
+        {
+            cout << "found manipulator " << _worldState.manipulators[i]->getName() << endl;
+            // TODO here is : to pass the manipulator through the currently selected *relation* and render the outcome
+            KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
+            shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
+            ManipulatorStateConstPtr newManip(new ManipulatorState(
+                                                  _worldState.manipulators[i]->getLink(),
+                                                  shifted_frame, GlobalUID(rand(), rand())));
+            OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
+            _widget_opengl.opengl_scene().add_object(*asGlMan);
+            _worldState.glObjects.push_back(asGlMan);
+        }
     }
-   
+
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
 }
 
-/* 
+/*
  * Get the toggle panels from the Qt4ConstraintMacro objects and populate the gui
  */
 void
 MainWindow::
-rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState) {
+rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState)
+{
     // delete all of the current constraint's toggle panel widgets
-//    std::cout << "deleting rendered children " << std::endl;
-//    qDeleteAll(_constraint_container->findChildren<QWidget*>());
+    //    std::cout << "deleting rendered children " << std::endl;
+    //    qDeleteAll(_constraint_container->findChildren<QWidget*>());
 
-    for(std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++) 
+    for (std::vector<int>::size_type i = 0; i != state._all_gui_constraints.size(); i++)
     {
-	state._all_gui_constraints[i]->setModelObjects(worldState.affordances, worldState.manipulators);
-	if (! state._all_gui_constraints[i]->isInitialized()) { // have we already added this tp?
-	    TogglePanel* tp = state._all_gui_constraints[i]->getPanel();
-	    // TODO: the connect() call here appears to be quadratic in the
-	    // number of previously connected signals
-	    connect(state._all_gui_constraints[i].get(),
-		    SIGNAL(activatedSignal(Qt4ConstraintMacro*)), 
-		    this, SLOT(setSelectedAction(Qt4ConstraintMacro*)));
-//		    Qt::UniqueConnection);
-//	    std::cout << "adding constraint #" << i << std::endl;
-	    _constraint_vbox->addWidget(tp);
-	}
+        state._all_gui_constraints[i]->setModelObjects(worldState.affordances, worldState.manipulators);
+
+        if (! state._all_gui_constraints[i]->isInitialized())   // have we already added this tp?
+        {
+            TogglePanel *tp = state._all_gui_constraints[i]->getPanel();
+            // TODO: the connect() call here appears to be quadratic in the
+            // number of previously connected signals
+            connect(state._all_gui_constraints[i].get(),
+                    SIGNAL(activatedSignal(Qt4ConstraintMacro *)),
+                    this, SLOT(setSelectedAction(Qt4ConstraintMacro *)));
+            //		    Qt::UniqueConnection);
+            //	    std::cout << "adding constraint #" << i << std::endl;
+            _constraint_vbox->addWidget(tp);
+        }
     }
 }
 
@@ -662,18 +727,22 @@ void
 MainWindow::
 affordanceUpdateCheck()
 {
-  int origSize = _worldState.affordances.size();
-  _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
-  if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordance if the sizes are equal )
-    return;
-  
-  cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
-  handleAffordancesChanged(); 
+    int origSize = _worldState.affordances.size();
+    _worldState.affServerWrapper.getAllAffordances(_worldState.affordances);
+
+    if ((int)_worldState.affordances.size() == origSize) //todo : use a better check than size (like "==" on each affordance if the sizes are equal )
+    {
+        return;
+    }
+
+    cout << "\n\n\n size of _worldState.affordances changed \n\n" << endl;
+    handleAffordancesChanged();
 }
 
 void
 MainWindow::
-selectedOpenGLObjectChanged(const std::string &modelGUID) {
+selectedOpenGLObjectChanged(const std::string &modelGUID)
+{
     selectedOpenGLObjectChanged(modelGUID, Eigen::Vector3f(0, 0, 0));
 }
 
@@ -689,55 +758,76 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
     //cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
 
     // highlight the object in the GUI
-    for(uint i = 0; i < _worldState.glObjects.size(); i++)
+    for (uint i = 0; i < _worldState.glObjects.size(); i++)
     {
-	if (_worldState.glObjects[i]->id() == modelGUID) {
-	    _worldState.glObjects[i]->setHighlighted(true);
-	}
-	else {
-	    _worldState.glObjects[i]->setHighlighted(false);
-	}
+        if (_worldState.glObjects[i]->id() == modelGUID)
+        {
+            _worldState.glObjects[i]->setHighlighted(true);
+        }
+        else
+        {
+            _worldState.glObjects[i]->setHighlighted(false);
+        }
     }
+
     _widget_opengl.update();
 
-    if (_authoringState._selected_gui_constraint == NULL) 
-	return;
+    if (_authoringState._selected_gui_constraint == NULL)
+    {
+        return;
+    }
 
     // set the selected manipulator or affordance in the currently selected constraint pane
     // begin by getting the ModelState object from the selected openGL object
     // TODO: slow; use map objectsToModels
     bool wasAffordance = false;
-    for (int i = 0; i < (int)_worldState.affordances.size(); i++) {
-	if (_worldState.affordances[i]->getGUIDAsString() == modelGUID) {
-	    //std::cout << " setting affordance" << std::endl;
-	    _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
-	    _authoringState._selected_gui_constraint->updateElementsFromState();
-	    wasAffordance = true;
-	    break;
-	}
-    }
-    if (! wasAffordance) {
-	for (int i = 0; i < (int)_worldState.manipulators.size(); i++) {
-	    if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID) {
-		//std::cout << " setting manipulator" << std::endl;
-		_authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
-		_authoringState._selected_gui_constraint->updateElementsFromState();
-		break;
-	    }
-	}
+
+    for (int i = 0; i < (int)_worldState.affordances.size(); i++)
+    {
+        if (_worldState.affordances[i]->getGUIDAsString() == modelGUID)
+        {
+            //std::cout << " setting affordance" << std::endl;
+            _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
+            _authoringState._selected_gui_constraint->updateElementsFromState();
+            wasAffordance = true;
+            break;
+        }
     }
 
-    if (_authoringState._selected_gui_constraint != NULL) {
-	// set the contact point for the relation
-	RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
-	if (rel->getRelationType() == RelationState::POINT_CONTACT) {
-	    PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
-	    if (wasAffordance) 
-		pc->setPoint2(hitPoint);
-	    else 
-		pc->setPoint1(hitPoint);
-	}
+    if (! wasAffordance)
+    {
+        for (int i = 0; i < (int)_worldState.manipulators.size(); i++)
+        {
+            if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID)
+            {
+                //std::cout << " setting manipulator" << std::endl;
+                _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
+                _authoringState._selected_gui_constraint->updateElementsFromState();
+                break;
+            }
+        }
     }
+
+    if (_authoringState._selected_gui_constraint != NULL)
+    {
+        // set the contact point for the relation
+        RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+
+        if (rel->getRelationType() == RelationState::POINT_CONTACT)
+        {
+            PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
+
+            if (wasAffordance)
+            {
+                pc->setPoint2(hitPoint);
+            }
+            else
+            {
+                pc->setPoint1(hitPoint);
+            }
+        }
+    }
+
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
@@ -747,67 +837,86 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
 
 void
 MainWindow::
-mediaFastForward() {
+mediaFastForward()
+{
     int i = getSelectedGUIConstraintIndex();
     _authoringState._all_gui_constraints[i + 1]->setActiveExternal();
 }
 
 void
 MainWindow::
-mediaFastBackward() {
+mediaFastBackward()
+{
     int i = getSelectedGUIConstraintIndex();
     _authoringState._all_gui_constraints[i - 1]->setActiveExternal();
 }
 
 void
 MainWindow::
-mediaPlay() {
-    if (_isPlaying) {
-	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
-	_play->setIcon(QIcon(pixmap3));
-	_play->setIconSize(pixmap3.rect().size());
-	_scrubberTimer->start(50); // 20 HZ
-    } else {
-	QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-play-32.png");
-	_play->setIcon(QIcon(pixmap3));
-	_play->setIconSize(pixmap3.rect().size());
-	_scrubberTimer->stop();
+mediaPlay()
+{
+    if (_isPlaying)
+    {
+        QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-pause-32.png");
+        _play->setIcon(QIcon(pixmap3));
+        _play->setIconSize(pixmap3.rect().size());
+        _scrubberTimer->start(50); // 20 HZ
     }
+    else
+    {
+        QPixmap pixmap3(":/trolltech/styles/commonstyle/images/media-play-32.png");
+        _play->setIcon(QIcon(pixmap3));
+        _play->setIconSize(pixmap3.rect().size());
+        _scrubberTimer->stop();
+    }
+
     _isPlaying = ! _isPlaying;
 }
 
 void
 MainWindow::
-nextKeyFrame() {
-    if (_scrubber->value() == _scrubber->maximum()) {
-	_scrubberTimer->stop();
-    } else { 
-	_scrubber->setValue(_scrubber->value() + 1);
+nextKeyFrame()
+{
+    if (_scrubber->value() == _scrubber->maximum())
+    {
+        _scrubberTimer->stop();
+    }
+    else
+    {
+        _scrubber->setValue(_scrubber->value() + 1);
     }
 
     double fraction = (double)_scrubber->value() / (double)_scrubber->maximum();
     double acc = 0.0;
+
     // round fraction to the nearest constraint and select it
-    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++) {
-	acc += _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
-	if ((acc / _timeSum) > fraction) {
-	    setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
-	    break;
-	}
-    }    
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
+    {
+        acc += _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
+
+        if ((acc / _timeSum) > fraction)
+        {
+            setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
+            break;
+        }
+    }
 }
 
 void
 MainWindow::
-publishActionToLCM() {
+publishActionToLCM()
+{
     std::vector<Qt4ConstraintMacroPtr> all_gui_constraints = _authoringState._all_gui_constraints;
     std::vector<drc::contact_goal_t> contact_goals;
 
-    for ( int i = 0; i < (int) all_gui_constraints.size(); i++ ) {
-      std::vector<drc::contact_goal_t> constraint_contact_goals = all_gui_constraints[i]->getConstraintMacro()->toLCM();
-      for ( int j = 0; j < (int) constraint_contact_goals.size(); j++ ) {
-        contact_goals.push_back(constraint_contact_goals[j]);
-      }
+    for (int i = 0; i < (int) all_gui_constraints.size(); i++)
+    {
+        std::vector<drc::contact_goal_t> constraint_contact_goals = all_gui_constraints[i]->getConstraintMacro()->toLCM();
+
+        for (int j = 0; j < (int) constraint_contact_goals.size(); j++)
+        {
+            contact_goals.push_back(constraint_contact_goals[j]);
+        }
     }
 
     drc::action_sequence_t actionSequence;
@@ -824,15 +933,20 @@ publishActionToLCM() {
 
 void
 MainWindow::
-changeMode() {
+changeMode()
+{
     cout << "hi htere" << endl;
-    if (_segmentedButton->isSegmentSelected(0)) { // authoring view 
-	_authoringWidgets->show();
-	//_liveWidgets->hide();	
-    } 
-    else if (_segmentedButton->isSegmentSelected(1)) { // live view 
-	//_authoringWidgets->hide();	
-	//_liveWidgets->show();	
+
+    if (_segmentedButton->isSegmentSelected(0))   // authoring view
+    {
+        _authoringWidgets->show();
+        //_liveWidgets->hide();
     }
+    else if (_segmentedButton->isSegmentSelected(1))   // live view
+    {
+        //_authoringWidgets->hide();
+        //_liveWidgets->show();
+    }
+
     cout << "done there" << endl;
 }

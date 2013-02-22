@@ -12,28 +12,40 @@ namespace action_authoring
 class PointContactRelation : public RelationState
 {
     //------------fields
- private:
+private:
     Eigen::Vector3f _point1;
     Eigen::Vector3f _point2;
 
     //------------Constructor--------
- public:
+public:
     PointContactRelation();
 
-  //---------------Accessors
-    Eigen::Vector3f getPoint1() { return _point1; }
-    Eigen::Vector3f getPoint2() { return _point2; }
-  //mutators
-    void setPoint1(Eigen::Vector3f p1) { _point1 = p1; }
-    void setPoint2(Eigen::Vector3f p2) { _point2 = p2; }
-  
+    //---------------Accessors
+    Eigen::Vector3f getPoint1()
+    {
+        return _point1;
+    }
+    Eigen::Vector3f getPoint2()
+    {
+        return _point2;
+    }
+    //mutators
+    void setPoint1(Eigen::Vector3f p1)
+    {
+        _point1 = p1;
+    }
+    void setPoint2(Eigen::Vector3f p2)
+    {
+        _point2 = p2;
+    }
+
     virtual std::string getPrompt() const;
     virtual std::string getState() const;
 
 }; //class PointContactRelation
- 
- typedef boost::shared_ptr<PointContactRelation> PointContactRelationPtr;
- typedef boost::shared_ptr<const PointContactRelation> PointContactRelationConstPtr;
+
+typedef boost::shared_ptr<PointContactRelation> PointContactRelationPtr;
+typedef boost::shared_ptr<const PointContactRelation> PointContactRelationConstPtr;
 
 } //namespace action_authoring
 

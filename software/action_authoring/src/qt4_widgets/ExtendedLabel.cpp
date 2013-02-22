@@ -1,25 +1,29 @@
 #include "ExtendedLabel.h"
 
 ExtendedQLabel::
-ExtendedQLabel(const QString &text, QWidget * parent):
-    QLabel(parent) {
+ExtendedQLabel(const QString &text, QWidget *parent):
+    QLabel(parent)
+{
     this->setText(text);
 }
 
 ExtendedQLabel::
-~ExtendedQLabel() {
+~ExtendedQLabel()
+{
 
 }
 
 void
 ExtendedQLabel
-::mouseMoveEvent(QMouseEvent * e) {
+::mouseMoveEvent(QMouseEvent *e)
+{
     emit hover();
 }
 
 void
 ExtendedQLabel
-::mouseReleaseEvent(QMouseEvent * e) {
+::mouseReleaseEvent(QMouseEvent *e)
+{
     emit clicked();
 }
 

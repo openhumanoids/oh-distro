@@ -19,22 +19,22 @@ class SelectableOpenGLWidget : public qt4::Qt4_Widget_OpenGL
 {
     Q_OBJECT
 
-	//------fields
+    //------fields
 protected:
-	const boost::shared_ptr<collision::Collision_Detector> _collisionDetector;
+    const boost::shared_ptr<collision::Collision_Detector> _collisionDetector;
 
-	//------constructor
+    //------constructor
 public:
-	SelectableOpenGLWidget();
+    SelectableOpenGLWidget();
 
 
-	//--------methods
-	void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
-   	void add_collision_object(collision::Collision_Object* collisionObject);
-	
+    //--------methods
+    void raycast(const KDL::Vector eyePosition, const KDL::Vector clickPosition);
+    void add_collision_object(collision::Collision_Object *collisionObject);
+
 signals:
-	void raycastCallback(std::string affordance_id, Eigen::Vector3f);
-    };
+    void raycastCallback(std::string affordance_id, Eigen::Vector3f);
+};
 }
 
 #endif /* SELECTABLEOPENGLWIDGET_H */
