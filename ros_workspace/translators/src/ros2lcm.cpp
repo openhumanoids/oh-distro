@@ -36,13 +36,13 @@
 
 #include <geometry_msgs/Wrench.h>
 
-
-
-
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <ros/callback_queue.h>
+
+#include <ConciseArgs>
+
 
 #define VERBOSE false
 using namespace std;
@@ -55,10 +55,11 @@ uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale im
 
 class App{
 public:
-  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_);
+  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_);
   ~App();
 
 private:
+  string mode_;
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
@@ -126,12 +127,13 @@ private:
 
 App::App(const std::string & stereo_in,
     const std::string & stereo_out,
-    ros::NodeHandle node_) :
+    ros::NodeHandle node_, string mode_) :
     stereo_in_(stereo_in),
     stereo_out_(stereo_out),
     node_(node_),
     it_(node_),
-    sync_(10) {
+    sync_(10),
+    mode_(mode_){
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
@@ -501,6 +503,14 @@ void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 }
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   l_hand_joint_states_= *msg;
+  
+  cout <<"got l hands\n";
+  cout << mode_ << "mdoe\n";
+  if (mode_.compare("hands") == 0){
+    int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
+    ground_truth_odom_.pose.pose.orientation.w =1;
+    publishRobotState(joint_utime);
+  }
 }
 void App::r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   r_hand_joint_states_= *msg;
@@ -669,12 +679,20 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 }
 
 int main(int argc, char **argv){
+  ConciseArgs parser(argc, argv, "lcm2ros");
+  string mode = "robot";
+  parser.add(mode, "m", "mode", "Mode: robot, hands");
+  parser.parse();
+  cout << "Publish Mode: " << mode << "\n";   
+  
+  
+  
   ros::init(argc, argv, "ros2lcm");
   ros::CallbackQueue local_callback_queue;
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App( "multisense_sl/camera", "CAMERA", nh);
+  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode);
   std::cout << "ros2lcm translator ready\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
