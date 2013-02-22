@@ -13,7 +13,7 @@ gains:
   left_f3_j2: {p: 10.0, d: 0.6, i: 0.0, i_clamp: 0.0}
   left_base_x: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
   left_base_y: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
-  left_base_z: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
+  left_base_z: {p: 800.0, d: 34.0, i: 0.0, i_clamp: 0.0}
   left_base_roll: {p: 40.0, d: 14.0, i: 0.0, i_clamp: 0.0}
   left_base_pitch: {p: 40.0, d: 14.0, i: 0.0, i_clamp: 0.0}
   left_base_yaw: {p: 5.0, d: 2.5, i: 0.0, i_clamp: 0.0}
@@ -31,7 +31,7 @@ gains:
   right_f3_j2: {p: 10.0, d: 0.6, i: 0.0, i_clamp: 0.0}
   right_base_x: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
   right_base_y: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
-  right_base_z: {p: 80.0, d: 34.0, i: 0.0, i_clamp: 0.0}
+  right_base_z: {p: 800.0, d: 34.0, i: 0.0, i_clamp: 0.0}
   right_base_roll: {p: 40.0, d: 14.0, i: 0.0, i_clamp: 0.0}
   right_base_pitch: {p: 40.0, d: 14.0, i: 0.0, i_clamp: 0.0}
   right_base_yaw: {p: 5.0, d: 2.5, i: 0.0, i_clamp: 0.0}  

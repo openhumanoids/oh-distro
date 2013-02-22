@@ -2590,7 +2590,7 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <gazebo>
-    <selfCollide>true</selfCollide>
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="libFloatingSandiaHandPlugin.so" name="floating_sandia_hand_plugin"/>
   </gazebo>
 </robot>

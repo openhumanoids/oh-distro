@@ -32,6 +32,7 @@
   </xacro:sandia_hand>
   
   <gazebo>
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin name="floating_sandia_hand_plugin" filename="libFloatingSandiaHandPlugin.so"/>
   </gazebo>
   
