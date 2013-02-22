@@ -17,7 +17,7 @@
       <collision name='collision'>
         <geometry>
           <cylinder>
-            <radius>0.085000</radius>
+            <radius>0.070000</radius>
             <length>0.250000</length>
           </cylinder>
         </geometry>
@@ -25,7 +25,7 @@
 <visual name='visual'>
   <geometry>
           <cylinder>
-            <radius>0.085000</radius>
+            <radius>0.070000</radius>
             <length>0.250000</length>
           </cylinder>
   </geometry>
@@ -33,6 +33,7 @@
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
 <!--            <name>Gazebo/CeilingTiled</name> -->
+            <name>Gazebo/WoodFloor</name>
             <name>Gazebo/DuffBeer</name>
           </script>
           <ambient>0.2 0.2 0.2 1</ambient>
