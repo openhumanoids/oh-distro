@@ -26,8 +26,8 @@ using namespace boost::assign;
 
 /////////////////////////////////////
 
-joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm):
-          lcm_(publish_lcm), _urdf_parsed(false),
+joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_):
+          lcm_(publish_lcm), _urdf_parsed(false), show_labels_(show_labels_),
           world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
           body_to_headT_(0, Eigen::Isometry3d::Identity()) {
 
@@ -172,7 +172,9 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   //std::cout << body_to_jointTs.size() << " jts\n";
   //pc_vis_->pose_collection_to_lcm_from_list(6000, body_to_jointTs); // all joints releative to body - publish if necessary
   pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
-  pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
+
+  if (show_labels_)
+    pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
 }
 
 
@@ -226,10 +228,13 @@ void joints2frames::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::stri
 int
 main(int argc, char ** argv){
   string role = "robot";
+  bool labels = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
+  opt.add(labels, "l", "labels","Labels - show no not");
   opt.parse();
   std::cout << "role: " << role << "\n";
+  std::cout << "labels: " << labels << "\n";
 
   string lcm_url="";
   if(role.compare("robot") == 0){
@@ -245,7 +250,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm);
+  joints2frames app(lcm,labels);
   while(0 == lcm->handle());
   return 0;
 }
