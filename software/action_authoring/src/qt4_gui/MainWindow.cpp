@@ -610,8 +610,16 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
 
     for (uint i = 0; i < _worldState.manipulators.size(); i++) {
 	if (_worldState.manipulators[i]->getName() == man) {
-	    cout << "found manipulator" << endl;
+	    cout << "found manipulator " << _worldState.manipulators[i]->getName() << endl;
 	    // TODO here is : to pass the manipulator through the currently selected *relation* and render the outcome
+	    KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
+	    shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
+	    ManipulatorStateConstPtr newManip(new ManipulatorState(
+		_worldState.manipulators[i]->getLink(), 
+		shifted_frame, GlobalUID(rand(), rand())));
+	    OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
+	    _widget_opengl.opengl_scene().add_object(*asGlMan);
+	    _worldState.glObjects.push_back(asGlMan);
 	}
     }
    
