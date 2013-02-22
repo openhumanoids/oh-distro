@@ -36,8 +36,6 @@ draw(void)
             }
         }
     }
-
-    return;
 }
 
 void
@@ -63,4 +61,21 @@ getLinkFromJointName(string joint_name)
 {
     const urdf::Model &m = _kinematics_model.model();
     return m.getLink(m.getJoint(joint_name)->child_link_name);
+}
+
+OpenGL_Object* 
+ColorRobot::
+getOpenGLObjectForLink(string link_name) 
+{
+    for (unsigned int i = 0; i < _opengl_objects.size(); i++)
+    {
+        if (_opengl_objects[i] != NULL)
+        {
+            if (link_name.compare(_opengl_objects[i]->id()) == 0)
+            {
+                return _opengl_objects[i];
+            }
+        }
+    }
+    return NULL;
 }

@@ -668,23 +668,34 @@ setSelectedAction(Qt4ConstraintMacro *activator)
     string man = _authoringState._selected_gui_constraint->
                  getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
 
-    for (uint i = 0; i < _worldState.manipulators.size(); i++)
+    OpenGL_Object* linkgl = _worldState.colorRobot.getOpenGLObjectForLink(man);
+    if (linkgl != NULL)
     {
-        if (_worldState.manipulators[i]->getName() == man)
+        for (uint i = 0; i < _worldState.manipulators.size(); i++)
         {
-            cout << "found manipulator " << _worldState.manipulators[i]->getName() << endl;
-            // TODO here is : to pass the manipulator through the currently selected *relation* and render the outcome
-            KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
-            shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
-            ManipulatorStateConstPtr newManip(new ManipulatorState(
-                                                  _worldState.manipulators[i]->getLink(),
-                                                  shifted_frame, GlobalUID(rand(), rand())));
-            OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
-            _widget_opengl.opengl_scene().add_object(*asGlMan);
-            _worldState.glObjects.push_back(asGlMan);
+            if (_worldState.manipulators[i]->getName() == man)
+            {
+                cout << "found " << man << endl;
+                // TODO (mfleder, ine) here is : to pass the manipulator through
+                // the currently selected *relation* and render the outcome
+
+                KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
+                shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
+                ManipulatorStateConstPtr newManip(new ManipulatorState(
+                                                      _worldState.manipulators[i]->getLink(),
+                                                      shifted_frame, GlobalUID(rand(), rand())));
+
+                // TODO: make the OpenGL manipulator instead of doing it manually with linkgl
+                //OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
+                OpenGL_Object* flying_link = new OpenGL_Object();
+                *flying_link = *linkgl;
+                flying_link->set_transform(shifted_frame);
+
+                _widget_opengl.opengl_scene().add_object(*flying_link);
+                _worldState.glObjects.push_back(flying_link);
+            }
         }
     }
-
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 

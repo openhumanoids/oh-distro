@@ -24,6 +24,7 @@ public:
     void setSelectedLink(std::string link_name);
     CollisionGroupPtr getCollisionGroupsForLink(std::string link_name);
     boost::shared_ptr<const urdf::Link> getLinkFromJointName(std::string joint_name);
+    opengl::OpenGL_Object* getOpenGLObjectForLink(std::string link_name);
 
 };
 }
