@@ -7,11 +7,13 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       input_names = r.getInputFrame().coordinates;
       input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
       
-      coder = JointAnglesCoder('atlas',input_names);
+      [Kp,Kd] = getPDGains(r,'gazebo');
+      
+      coder = JointCommandCoder('atlas',input_names,diag(Kp),diag(Kd));
       
       obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',r.getNumInputs(),'x',JLCMCoder(coder));
       obj.setCoordinateNames(input_names);
-      obj.setDefaultChannel('JOINT_POSITION_CMDS');
+      obj.setDefaultChannel('JOINT_COMMANDS');
     end
   end
 end

@@ -10,7 +10,7 @@ classdef AtlasJointConfig < LCMCoordinateFrameWCoder & Singleton
         floating = true;
       end
       
-      nq = r.getNumStates()/2;
+      nq = r.getNumDOF();
       if floating
         jrange = 7:nq; % ignore floating base dofs
       else

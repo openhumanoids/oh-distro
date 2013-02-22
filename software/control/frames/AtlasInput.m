@@ -7,11 +7,11 @@ classdef AtlasInput < LCMCoordinateFrameWCoder & Singleton
       input_names = r.getInputFrame().coordinates;
       input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
       
-      coder = RobotInputCoder('atlas', input_names);
+      coder = JointCommandCoder('atlas', input_names);
       
       obj = obj@LCMCoordinateFrameWCoder('AtlasInput',r.getNumInputs(),'x',JLCMCoder(coder));
       obj.setCoordinateNames(input_names);
-      obj.setDefaultChannel('ACTUATOR_CMDS');
+      obj.setDefaultChannel('JOINT_COMMANDS');
     end
   end
 end

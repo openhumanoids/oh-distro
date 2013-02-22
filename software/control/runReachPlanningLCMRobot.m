@@ -6,7 +6,7 @@ if mode==1
 else
   lcm_url = 'udpm://239.255.76.67:7667?ttl=1';
 end
-lcm.lcm.LCM.getSingletonTemp(lcm_url);
+lcm.lcm.LCM.getSingletonTemp(lcm_url); % only works on mfallons machine
 
 options.floating = true;
 options.dt = 0.001;
