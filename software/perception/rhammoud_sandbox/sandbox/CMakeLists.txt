@@ -9,5 +9,9 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/circle3dlib)
+add_subdirectory(src/circle3d)
+
 add_subdirectory(src/cylinder_segmentation)
+
 

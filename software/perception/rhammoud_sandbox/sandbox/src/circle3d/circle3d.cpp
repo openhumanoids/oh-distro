@@ -6,16 +6,6 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h> 
 //#include <pcl/sample_consensus/sac_model_circle3d.h> 
 #include <pcl/sample_consensus/sac.h>
@@ -41,19 +31,37 @@
 #include <pcl/features/normal_3d.h>
 
 
-#include <GL/gl.h>
-#include <lcm/lcm.h>
-#include <bot_lcmgl_client/lcmgl.h>
-#include <lcmtypes/drc_lcmtypes.h>
+#include <circle3dlib/circle3dlib.hpp>
 
+using namespace std;
 
 typedef pcl::PointXYZ PointT;
 
-using namespace std;
 using namespace pcl;
 using namespace pcl::io;
 
 //typedef SampleConsensusModelCircle3D<PointXYZ>::Ptr SampleConsensusModelCircle3DPtr;
+
+void saveLineCoef(char *fname, Eigen::VectorXf &fLineCoefs){
+
+  FILE *fid = fopen(fname, "w");
+  float _x = fLineCoefs[0];
+  float _y = fLineCoefs[1];
+  float _z = fLineCoefs[2];
+  float _r = fLineCoefs[3];
+  float _nx = fLineCoefs[4];
+  float _ny = fLineCoefs[5];
+  float _nz = fLineCoefs[6];
+
+  fprintf(fid, "%f %f %f %f %f %f %f\n", _x, _y, _z, _r, _nx, _ny, _nz);
+
+  fclose(fid); 
+
+}
+
+
+
+Circle3D* circle3d;
 
 
 int
@@ -66,15 +74,9 @@ main (int argc, char** argv)
 	      << "Fitting parameters: [dist_thresh] (radius limits: [low, high])  \n"   
 	      << "input PCD file.pcd\n" 
 	      << "output_file_name.pcd\n" 
-              << "flag: 1 (circle) otherwise (cylinder)"
 	      << "\n\n";
     exit(0);
   }
-
-
-  lcm_t * publish_lcm = lcm_create(NULL);
-  bot_lcmgl_t* lcmgl_;
-  lcmgl_ = bot_lcmgl_init(publish_lcm, "lcmgl-example");
 
   // All the objects needed
   pcl::PCDReader reader;
@@ -106,150 +108,36 @@ main (int argc, char** argv)
 std::cerr << "PointCloud has: " << cloud->points.size () << " data points." << std::endl;
 
 
+  circle3d->setWidth(1);
+  circle3d->doCircle3D(*cloud);
 
-  // Publish points to LCMGL:
-  bot_lcmgl_push_matrix(lcmgl_);
-  bot_lcmgl_point_size(lcmgl_, 1.5f);
-  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
-  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
-  for (size_t i=0; i < cloud->points.size (); ++i) {
-    bot_lcmgl_vertex3f(lcmgl_,  cloud->points[i].x,  
-                       cloud->points[i].y, cloud->points[i].z); 
-  }
-  bot_lcmgl_end(lcmgl_);
-  bot_lcmgl_pop_matrix(lcmgl_);
+/*
+// Create a shared 3d circle model pointer directly
+  SampleConsensusModelCircle3DPtr model (new SampleConsensusModelCircle3D<PointXYZ> (cloud));
 
+ // Create the RANSAC object
+  RandomSampleConsensus<PointXYZ> sac(model, 0.01);
+ // Algorithm tests
+  bool result = sac.computeModel ();
 
+  cout << "convergence: " << result << endl;
 
- float circle_flag = atof(argv[12]);
-/* if (circle_flag){
-   // fit a 3D circle to the input cloud
-   
-   // Create a shared 3d circle model pointer directly
-   SampleConsensusModelCircle3DPtr model (new SampleConsensusModelCircle3D<PointXYZ> (cloud);
-
-   // Create the RANSAC object
-   RandomSampleConsensus<PointXYZ> sac(model, 0.03);
-   // Algorithm tests
-   bool result = sac.computeModel ();
-
-   std::vector<int> sample;
-   sac.getModel (sample);
+  std::vector<int> sample;
+  sac.getModel (sample);
  
-   std::vector<int> inliers;
-   sac.getInliers (inliers);
+  std::vector<int> inliers;
+  sac.getInliers (inliers);
 
-   Eigen::VectorXf coeff;
-   sac.getModelCoefficients (coeff);
+  Eigen::VectorXf coeff;
+  sac.getModelCoefficients (coeff);
   
- 
-   cout << "\n------------------------\n 3D circle fitting resutls:\n " << coeff << endl;
-   
-   float _x; 
-   float _y;
-   float _z;
-   float _nx;
-   float _ny;
-   float _nz;
-   float _radius;
+  saveLineCoef("fitted_3dcircle_params.txt", coeff); 
 
-  if (0) {
-    // this file is generate by circle3d module and located in data/ 
-    FILE *fid = fopen("fitted_3dcircle_params.txt", "r");
-    fscanf(fid, "%f %f %f %f %f %f %f\n", &_x, &_y, &_z, &_radius, &_nx, &_ny, &_nz);
-    cout << _x << endl << _y << endl << _z << endl << _radius << endl << _nz << endl;
-    fclose(fid);
-  }
-  else {
-    _x = coeff[0];
-    _y = coeff[1];
-    _z = coeff[2];
-    _r = coeff[3];
-    _nx = coeff[4];
-    _ny = coeff[5];
-    _nz = coeff[6];  
-  }
+  cout << "\n------------------------\n 3D circle fitting resutls:\n " << coeff << endl;
 
-  double roll;
-  double pitch;
-  double yaw; 
-  double length;
-
-  if(_nz<0){ 
-    _nx=-_nx;
-    _ny=-_ny;
-    _nz=-_nz;
-  }
-  
-  roll = 0;
-  pitch = acos(_nz);
-  yaw = atan2(_ny, _nx);
-  
-  
-   // Send affordance:
-  drc_affordance_collection_t affs_coll;
-  affs_coll.map_id = 0;
-//  affs_coll.name = (char*)  "desk_scene";
-//  affs_coll.map_utime = 0;
-  affs_coll.naffs = 1;
-  drc_affordance_t affs[affs_coll.naffs];
-
-  affs[0].map_utime = 0;
-  affs[0].map_id = 0;
-//  affs[0].name = (char*) "cylinder";
-  affs[0].otdf_id = 0;
-
-  affs[0].nparams=8;
-  double* params = new double[affs[0].nparams];
-  char** param_names = new char*[affs[0].nparams];
-
-  param_names[0]="x";
-  params[0]=_x;
-  param_names[1]="y";
-  params[1]=_y;
-
-  param_names[2]="z";
-  params[2]=_z;
-
-  param_names[3]="roll";
-  params[3]=roll; 
-
-  param_names[4]="pitch";
-  params[4]=pitch; 
-  param_names[5]="yaw";
-  params[5]=yaw; 
-
-  param_names[6]="radius";
-  params[6]=_radius;
-  param_names[7]="length";
-  params[7]=0.01; 
-  param_names[8]="mass";
-  params[8]=1.0;
-
-    affs[0].params = params;
-    affs[0].param_names = param_names;
-
-    affs[0].nstates=0;
-    affs[0].states=NULL;
-    affs[0].state_names=NULL;
-
-    affs[0].nptinds=0;
-    affs[0].ptinds=NULL;
-
-
-  affs_coll.affs = affs;
-  drc_affordance_collection_t_publish(publish_lcm, "AFFORDANCE_COLLECTION", &affs_coll);
-
-
-  // Send output:
-  bot_lcmgl_switch_buffer(lcmgl_);  
-
-  return 1; 
-
- } 
 */
 
-
+  return 1; 
 
 /* 
 //----------------------------------
@@ -346,21 +234,6 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   std::cerr << "PointCloud representing the planar component: " << cloud_plane->points.size () << " data points." << std::endl;
   writer.write ("table_plane.pcd", *cloud_plane, false);
 
-
-  // Publish points to LCMGL:
-  bot_lcmgl_push_matrix(lcmgl_);
-  bot_lcmgl_point_size(lcmgl_, 1.5f);
-  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
-  bot_lcmgl_color3f(lcmgl_, 1, 0, 0); // Blue
-  for (size_t i=0; i < cloud_plane->points.size (); ++i) {
-    bot_lcmgl_vertex3f(lcmgl_,  cloud_plane->points[i].x,  
-                       cloud_plane->points[i].y, cloud_plane->points[i].z); 
-  }
-  bot_lcmgl_end(lcmgl_);
-  bot_lcmgl_pop_matrix(lcmgl_);
-
-
-
   // Remove the planar inliers, extract the rest
   extract.setNegative (true);
   extract.filter (*cloud_filtered2);
@@ -389,6 +262,27 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
 
   writer.write ("table_objects.pcd", *cloud_filtered2, false);
 
+  /*// Create a shared 3d circle model pointer directly
+  SampleConsensusModelCircle3DPtr model (new SampleConsensusModelCircle3D<PointXYZ> (cloud_filtered2));
+
+ // Create the RANSAC object
+  RandomSampleConsensus<PointXYZ> sac(model, 0.03);
+ // Algorithm tests
+  bool result = sac.computeModel ();
+
+  std::vector<int> sample;
+  sac.getModel (sample);
+ 
+  std::vector<int> inliers;
+  sac.getInliers (inliers);
+
+  Eigen::VectorXf coeff;
+  sac.getModelCoefficients (coeff);
+  
+  
+  cout << "\n------------------------\n 3D circle fitting resutls:\n " << coeff << endl;
+  */
+
   // Riad
 
   FILE *fid = fopen("cylinder_coef_table_out.txt", "w");
@@ -401,66 +295,8 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   float _ny = coefficients_cylinder->values[4];
   float _nz = coefficients_cylinder->values[5]; 
 
-  double roll;
-  double pitch;
-  double yaw; 
-  double length;
-
-  if(_nz<0){  // flip if z is negative to simplify math
-    _nx=-_nx;
-    _ny=-_ny;
-    _nz=-_nz;
-  }
-  roll = 0;
-  pitch = acos(_nz);
-  yaw = atan2(_ny, _nx);
-  
   float _radius = coefficients_cylinder->values[6];
 
-  double x = _x; 
-  double y = _y; 
-  double z = _z; 
-  double dx = _nx; 
-  double dy = _ny; 
-  double dz = _nz; 
-
-  // project points on to line and find endpoints
-  Eigen::Vector3f pMin, pMax;    
-  Eigen::Vector3f p1(x,y,z);
-  Eigen::Vector3f u(dx,dy,dz);
-  for(int i=0; i<inliers_cylinder->indices.size();i++){ // for each inlier
-    // extract point
-    int index = inliers_cylinder->indices[i];
-    PointT& pt = cloud_filtered2->at(index);
-    Eigen::Vector3f q(pt.x,pt.y,pt.z);
-      
-    // project on to line
-    Eigen::Vector3f pq = q-p1;
-    Eigen::Vector3f w2 = pq - u * pq.dot(u);
-    Eigen::Vector3f p = q - w2;
-
-    if(i==0){
-      pMin = pMax = p;
-    }else{ //TODO handle if dz is small
-      if(p[2]<pMin[2]) pMin = p;
-      if(p[2]>pMax[2]) pMax = p;
-    }
-      
-  }
-
-  Eigen::Vector3f center = (pMax+pMin)/2;
-  x = center[0];
-  y = center[1];
-  z = center[2];
-  length = (pMax-pMin).norm();
-
-  _x = x; 
-  _y = y; 
-  _z = z; 
-  _nx = roll; 
-  _ny = pitch; 
-  _nz = yaw;
-  
   fprintf(fid, "%f %f %f \n %f %f %f\n %f \n", _x, _y, _z, _nx, _ny, _nz, _radius);
 
   fclose(fid);
@@ -473,7 +309,6 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
   pcl::PointCloud<PointT>::Ptr cloud_cylinder (new pcl::PointCloud<PointT> ());
   extract.filter (*cloud_cylinder);
 
-
   // "cylinder_table_pcd_out.pcd"
 
   if (cloud_cylinder->points.empty ()) 
@@ -483,91 +318,7 @@ cout << "Cloud centroid:: " << centroid4f[0] << ",  " << centroid4f[1] <<  ":: Z
 	  std::cerr << "PointCloud representing the cylindrical component: " << cloud_cylinder->points.size () << " data points." << std::endl;
 	  // writer.write ("waterBottle_textured_cylinder.pcd", *cloud_cylinder, false);
 	  writer.write (argv[11], *cloud_cylinder, false);
-
   }
-
-
-  // Publish points to LCMGL:
-  bot_lcmgl_push_matrix(lcmgl_);
-  bot_lcmgl_point_size(lcmgl_, 1.5f);
-  bot_lcmgl_begin(lcmgl_, GL_POINTS);  // render as points
-  bot_lcmgl_color3f(lcmgl_, 0, 1, 0); // Green
-  for (size_t i=0; i < cloud_cylinder->points.size (); ++i) {
-    bot_lcmgl_vertex3f(lcmgl_,  cloud_cylinder->points[i].x,  
-         cloud_cylinder->points[i].y, cloud_cylinder->points[i].z); 
-  }
-  bot_lcmgl_end(lcmgl_);
-  bot_lcmgl_pop_matrix(lcmgl_);
-
-
-
-
-  // Send affordance:
-  drc_affordance_collection_t affs_coll;
-  affs_coll.map_id = 0;
-//  affs_coll.name = (char*)  "desk_scene";
-//  affs_coll.map_utime = 0;
-  affs_coll.naffs = 1;
-  drc_affordance_t affs[affs_coll.naffs];
-
-//  affs[0].map_utime = 0;
-  affs[0].map_id = 0;
-//  affs[0].name = (char*) "cylinder";
-//  affs[0].otdf_id = 0;
-
-  affs[0].nparams=8;
-  double* params = new double[affs[0].nparams];
-  char** param_names = new char*[affs[0].nparams];
-
-  param_names[0]="x";
-  params[0]=_x;
-  param_names[1]="y";
-  params[1]=_y;
-
-  param_names[2]="z";
-  params[2]=_z;
-
-  param_names[3]="roll";
-  params[3]=_nx; 
-
-  param_names[4]="pitch";
-  params[4]=_ny; 
-  param_names[5]="yaw";
-  params[5]=_nz; 
-
-  param_names[6]="radius";
-  params[6]=_radius;
-  param_names[7]="length";
-  params[7]=length;
-  param_names[8]="mass";
-  params[8]=1.0;
-
-    affs[0].params = params;
-    affs[0].param_names = param_names;
-
-    affs[0].nstates=0;
-    affs[0].states=NULL;
-    affs[0].state_names=NULL;
-
-    affs[0].nptinds=0;
-    affs[0].ptinds=NULL;
-
-
-  affs_coll.affs = affs;
-  drc_affordance_collection_t_publish(publish_lcm, "AFFORDANCE_COLLECTION", &affs_coll);
-
-
-
-
-
-
-
-
-
-
-  // Send output:
-  bot_lcmgl_switch_buffer(lcmgl_);  
-
   return (0);
 }
  
