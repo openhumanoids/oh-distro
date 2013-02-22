@@ -98,7 +98,7 @@ void MainWindow::handleAffordancesChanged()
 	    GlobalUID(rand(), rand()))); //todo guid
 
 	_worldState.manipulators.push_back(manipulator);
-
+ 
 	OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator); 
 	_widget_opengl.opengl_scene().add_object(*asGlMan);
 	_worldState.glObjects.push_back(asGlMan);
@@ -132,13 +132,13 @@ void MainWindow::handleAffordancesChanged()
   //todo: this is just demo code
   if (false && _worldState.manipulators.size() > 4) {
       AffConstPtr rfoot = nameToAffMap["ladder_cyl"];
-      AffConstPtr lfoot = nameToAffMap["box"];
-      AffConstPtr rhand = nameToAffMap["sphere"];
+      AffConstPtr lfoot = nameToAffMap["Sphere"];
+      AffConstPtr rhand = nameToAffMap["Ground Plan"];
       AffConstPtr lhand = nameToAffMap["cylinder"];
 
-      AffConstPtr gas = nameToAffMap["ladder"];
-      AffConstPtr brake = nameToAffMap["box"];
-      AffConstPtr wheel = nameToAffMap["steering_cyl"];
+//      AffConstPtr gas = nameToAffMap["ladder"];
+//      AffConstPtr brake = nameToAffMap["box"];
+//      AffConstPtr wheel = nameToAffMap["steering_cyl"];
 
       ManipulatorStateConstPtr manip = _worldState.manipulators[0];
       ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
@@ -603,6 +603,17 @@ setSelectedAction(Qt4ConstraintMacro* activator) {
     // highlight the manipulator
     _worldState.colorRobot.setSelectedLink(_authoringState._selected_gui_constraint->getConstraintMacro()
 					   ->getAtomicConstraint()->getManipulator()->getName());
+
+    // "make the manipulator fly"
+    string man = _authoringState._selected_gui_constraint->
+	getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
+
+    for (uint i = 0; i < _worldState.manipulators.size(); i++) {
+	if (_worldState.manipulators[i]->getName() == man) {
+	    cout << "found manipulator" << endl;
+	    // TODO here is : to pass the manipulator through the currently selected *relation* and render the outcome
+	}
+    }
    
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
