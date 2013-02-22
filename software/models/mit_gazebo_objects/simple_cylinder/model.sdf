@@ -17,16 +17,16 @@
       <collision name='collision'>
         <geometry>
           <cylinder>
-            <radius>0.070000</radius>
-            <length>0.250000</length>
+            <radius>0.055000</radius>
+            <length>0.230000</length>
           </cylinder>
         </geometry>
       </collision>
 <visual name='visual'>
   <geometry>
           <cylinder>
-            <radius>0.070000</radius>
-            <length>0.250000</length>
+            <radius>0.055000</radius>
+            <length>0.230000</length>
           </cylinder>
   </geometry>
         <material>
