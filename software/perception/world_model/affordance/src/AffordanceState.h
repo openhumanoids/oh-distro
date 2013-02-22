@@ -62,7 +62,7 @@ namespace affordance
     //-----------constructor/destructor
   public:
     AffordanceState(const drc::affordance_t *affordanceMsg);
-    AffordanceState(const std::string &name,
+    AffordanceState(const OTDF_TYPE &otdf_type,
 		    const int &objId = 0, const int &mapId = 0,
 		    const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
 		    const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
@@ -82,6 +82,7 @@ namespace affordance
         
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
+    OTDF_TYPE getOTDFType() const;
     virtual std::string getName() const;
 
     virtual Eigen::Vector3f getColor() const;

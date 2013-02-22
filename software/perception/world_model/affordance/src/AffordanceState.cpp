@@ -76,13 +76,13 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 }
 
 /**Constructs an affordance and sets the name, objId,mapid, frame, and color as specified
-@param name affordance name
+@param otdf_type the OTDF type for this affordance
 @param unique object id.  must be unique for the map
 @param mapId
 @param frame transformation in the map
 @param rgb color values from [0,1]
 */
-AffordanceState::AffordanceState(const string &otdf_type,
+AffordanceState::AffordanceState(const AffordanceState::OTDF_TYPE &otdf_type,
 				 const int &uid, const int &mapId,
 				 const KDL::Frame &frame,
 				 const Eigen::Vector3f &color)
@@ -321,7 +321,12 @@ GlobalUID AffordanceState::getGlobalUniqueId() const
   return GlobalUID(_map_id, _uid);
 }
 
-string AffordanceState:: getName() const
+std::string AffordanceState:: getName() const
+{
+    return _otdf_type + ToString::toStr(_uid);
+}
+
+AffordanceState::OTDF_TYPE AffordanceState:: getOTDFType() const
 {
   return _otdf_type;
 }
