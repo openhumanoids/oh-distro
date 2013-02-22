@@ -33,7 +33,7 @@
           <script>
             <uri>file://media/materials/scripts/gazebo.material</uri>
 <!--            <name>Gazebo/CeilingTiled</name> -->
-            <name>Gazebo/WoodFloor</name>
+<!--            <name>Gazebo/WoodFloor</name> -->
             <name>Gazebo/DuffBeer</name>
           </script>
           <ambient>0.2 0.2 0.2 1</ambient>
