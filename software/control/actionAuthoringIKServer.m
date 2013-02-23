@@ -12,13 +12,30 @@ lc.subscribe('action_authoring_plan_action_request',monitor);
 % construct lcm state publisher
 % todo: should really load model name from lcm
 r = RigidBodyManipulator('drake/examples/Atlas/urdf/atlas_minimal_contact.urdf',struct('floating',true));
+%r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf',struct('floating',true));
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
 
 % load the "zero position"
 load('data/atlas_fp3.mat');
-q0 = xstar(1:getNumDOF(r));
+q = xstar(1:getNumDOF(r));
+
+cost = Point(r.getStateFrame,1);
+cost.pelvis_x = 0;
+cost.pelvis_y = 0;
+cost.pelvis_z = 0;
+cost.pelvis_roll = 1000;
+cost.pelvis_pitch = 1000;
+cost.pelvis_yaw = 0;
+cost.back_mby = 100;
+cost.back_ubx = 100;
+cost = double(cost);
+options = struct();
+options.Q = diag(cost(1:r.getNumDOF));
+options.q_nom = q;
+
+v = r.constructVisualizer();
 
 timeout=10;
 while (1)
@@ -37,12 +54,14 @@ while (1)
         ikargs={ikargs{:},body,[pos.x;pos.y;pos.z]};
       end
     end
+    if isempty(ikargs) continue; end
     
     % call IK 
-    q = inverseKin(r,q0,ikargs{:});
+    q = inverseKin(r,q,ikargs{:},options);
     
     % publish robot state message
     x = [q;0*q];
+    v.draw(0,x);
     publish(robot_state_coder,0,x,'ACTION_AUTHORING_IK_ROBOT_STATE');
   end
 end
