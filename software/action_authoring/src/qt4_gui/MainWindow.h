@@ -16,6 +16,7 @@
 // OpenGL includes
 #include "opengl/opengl_object.h"
 #include "opengl/opengl_object_dae.h"
+#include "opengl/opengl_object_coordinate_axis.h"
 
 // The following are now subclassed
 //#include "qt4/qt4_widget_opengl.h"
@@ -128,6 +129,10 @@ private:
     QWidget *_liveWidgets;
     QWidget *_authoringWidgets;
 
+    // TODO: temporary
+    opengl::OpenGL_Object_Coordinate_Axis point_contact_axis;
+    opengl::OpenGL_Object_Coordinate_Axis point_contact_axis2;
+
     //================world state and authoring state
 private:
     WorldStateView _worldState; //view of the world state
@@ -143,6 +148,7 @@ private:
     void updateRobotState(const lcm::ReceiveBuffer* rbuf, 
                           const std::string& channel,
                           const drc::robot_state_t *robot_state);
+    void updatePointVisualizer();
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances

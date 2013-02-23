@@ -122,6 +122,11 @@ void MainWindow::handleAffordancesChanged()
 
     updateFlyingManipulators();
 
+    _widget_opengl.opengl_scene().add_object(point_contact_axis);
+    _worldState.glObjects.push_back(&point_contact_axis);
+    _widget_opengl.opengl_scene().add_object(point_contact_axis2);
+    _worldState.glObjects.push_back(&point_contact_axis2);
+
     //----------add robot and vehicle
     _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
@@ -187,6 +192,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _theLcm = theLcm;
 	_theLcm->subscribe("ACTION_AUTHORING_IK_ROBOT_STATE",
                        &MainWindow::updateRobotState, this);
+
+    //point_contact_axis = new OpenGL_Object_Coordinate_Axis();
+    //point_contact_axis2 = new OpenGL_Object_Coordinate_Axis();
 
     // setup the OpenGL scene
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
@@ -546,13 +554,13 @@ handleAddConstraint()
     ManipulatorStateConstPtr manip = _worldState.manipulators[0];
 
     PointContactRelationPtr relstate(new PointContactRelation());
-    AtomicConstraintPtr new_constraint(new ManipulationRelation(left, manip, relstate));
+    AtomicConstraintPtr new_atomic(new ManipulationRelation(left, manip, relstate));
 
-    ConstraintMacroPtr rfoot_gas(new ConstraintMacro("Untitled" + RandomString(5), new_constraint));
+    ConstraintMacroPtr new_constraint(new ConstraintMacro("Untitled" + RandomString(5), new_atomic));
 
     // compute the number
     int index = _authoringState._all_gui_constraints.size();
-    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, index));
+    _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(new_constraint, index));
     rebuildGUIFromState(_authoringState, _worldState);
 }
 
@@ -669,6 +677,8 @@ setSelectedAction(Qt4ConstraintMacro *activator)
 
     // update any flying manipulators
     updateFlyingManipulators();
+
+    updatePointVisualizer();
 
     // prompt to set relation state
     std::cout << "getting mode states" << std::endl;
@@ -795,16 +805,14 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
         }
     }
 
-    if (_authoringState._selected_gui_constraint != NULL)
+    if (_authoringState._selected_gui_constraint != NULL && ! (hitPoint.x() == 0 && hitPoint.y() == 0 && hitPoint.z() == 0))
     {
         // set the contact point for the relation
         RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
 
         if (rel->getRelationType() == RelationState::POINT_CONTACT)
         {
-            std::cout << "casting point contact" << std::endl;
             PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
-            std::cout << "casting ok" << std::endl;
             if (wasAffordance)
             {
                 pc->setPoint2(hitPoint);
@@ -813,6 +821,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
             {
                 pc->setPoint1(hitPoint);
             }
+            updatePointVisualizer();
         }
     }
 
@@ -958,10 +967,9 @@ updateFlyingManipulators()
             RelationStatePtr rel = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getAtomicConstraint()->getRelationState();
             string constraint_link_name = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
 
-            cout << "found " << man_link_name << " vs " << constraint_link_name << " type " << rel->getRelationType() << endl;
-
             if (constraint_link_name == man_link_name && rel->getRelationType() == RelationState::OFFSET) 
             {
+                // TODO: mfleder, ine
 /*
                 cout << "ITS AN OFFSET " << endl;
                 //KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
@@ -988,8 +996,28 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
                  const std::string& channel,
                  const drc::robot_state_t *new_robot_state)
 {
-    cout << ">>>>>>>>>>>>>>>>>>>> GOT ROBOT MESSAGE " << endl;
     _worldState.state_gfe.from_lcm(*new_robot_state);
     _worldState.colorRobot.set(_worldState.state_gfe);
     _widget_opengl.update();
+}
+
+void
+MainWindow::
+updatePointVisualizer() 
+{
+    // TODO: This should probably be abstracted into a class called
+    // OpenGL_PointContactRelation or something
+    RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+
+    // update the coordinate axis visualizer
+    if (rel->getRelationType() == RelationState::POINT_CONTACT)
+    {
+        PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
+
+        KDL::Frame trans(KDL::Rotation::Quaternion(0, 0, 0, 1.0), KDL::Vector(prel->getPoint1().x(), prel->getPoint1().y(), prel->getPoint1().z()));
+        point_contact_axis.set_transform(trans);
+
+        KDL::Frame trans2(KDL::Rotation::Quaternion(0, 0, 0, 1.0), KDL::Vector(prel->getPoint2().x(), prel->getPoint2().y(), prel->getPoint2().z()));
+        point_contact_axis2.set_transform(trans2);
+    }
 }
