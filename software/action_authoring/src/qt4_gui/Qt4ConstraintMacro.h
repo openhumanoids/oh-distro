@@ -10,6 +10,8 @@
 #include <action_authoring/ConstraintMacro.h>
 #include <action_authoring/RelationState.h>
 #include <action_authoring/ManipulationRelation.h>
+#include <action_authoring/OffsetRelation.h>
+#include <action_authoring/PointContactRelation.h>
 
 namespace action_authoring
 {

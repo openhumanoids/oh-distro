@@ -73,13 +73,12 @@ getPanel()
     //_all_robot_link_combos[waypoint_constraint->getName()] = radio1;
 
     // See RelationState.h for enum definitions
-/*
-    for (uint i = 0; i < RelationType::RELATION_TYPE_LENGTH; i++) {
+    for (uint i = 0; i < RelationState::RELATION_TYPE_LENGTH; i++) {
+        // insert backwards
         RelationState::bm_type::right_const_iterator right_iter = 
-            RelationState::rNameToValue.right.find((RelationState::RelationType)i);
+            RelationState::rNameToValue.right.find((RelationState::RelationType)(RelationState::RELATION_TYPE_LENGTH - 1 - i));
         _gui_constraintType->insertItem(0, QString::fromStdString(right_iter->second));
     }
-*/
 
     /*
     _gui_constraintType->insertItem(0, "near");
@@ -185,10 +184,25 @@ updateStateFromElements()
     _constraint->setTimeLowerBound(_gui_time_lower_bound->value());
     _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
 
-    if (_gui_constraintType->currentIndex() != (int)(_constraint->getAtomicConstraint()->getRelationState()->getRelationType()))
+    if (_gui_constraintType->currentIndex() != (int)(_constraint->getAtomicConstraint()->getRelationState()->getRelationType()) &&
+        _gui_constraintType->currentIndex() >= 0 && _gui_constraintType->currentIndex() < RelationState::RELATION_TYPE_LENGTH)
     {
-        RelationStatePtr newRel(new RelationState((RelationState::RelationType)_gui_constraintType->currentIndex()));
-        _constraint->getAtomicConstraint()->setRelationState(newRel);
+        std::cout << "made new pointer, index" << _gui_constraintType->currentIndex() << std::endl;
+        // TODO refractor into factory
+        RelationState::RelationType rType = (RelationState::RelationType)_gui_constraintType->currentIndex();
+        if (rType == RelationState::OFFSET) 
+        {
+            _constraint->getAtomicConstraint()->setRelationState((OffsetRelationPtr)new OffsetRelation());
+        }
+        else if (rType == RelationState::POINT_CONTACT)
+        {
+            _constraint->getAtomicConstraint()->setRelationState((PointContactRelationPtr)new PointContactRelation());
+        }
+        else 
+        {
+            _constraint->getAtomicConstraint()->setRelationState((RelationStatePtr)new RelationState(RelationState::UNDEFINED));
+        }
+        std::cout << "set new pointer" << std::endl;
     }
 
     if (_gui_robotJointType->currentIndex() >= 0)
@@ -231,6 +245,8 @@ void
 Qt4ConstraintMacro::
 updateElementsFromState()
 {
+    std::cout << "Updating elements from state..." << std::endl;
+
     // if we don't block signals, we willl overwrite state when we are
     // rebuilding the GUI elements because the values will change and
     // automatically trigger state updates

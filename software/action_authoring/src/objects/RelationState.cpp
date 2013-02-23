@@ -23,6 +23,7 @@ const bm_type RelationState::rNameToValue = RelationState::makeRNameMap();
 RelationState::RelationState(const RelationState::RelationType &relationType)
     : _relationType(relationType)
 {
+    
 }
 
 RelationState::RelationType RelationState::getRelationType() const

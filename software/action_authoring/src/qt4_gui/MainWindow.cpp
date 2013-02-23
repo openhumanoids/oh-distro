@@ -671,7 +671,9 @@ setSelectedAction(Qt4ConstraintMacro *activator)
     updateFlyingManipulators();
 
     // prompt to set relation state
+    std::cout << "getting mode states" << std::endl;
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+    std::cout << "done getting mode states" << std::endl;
 
 }
 
@@ -800,8 +802,9 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
 
         if (rel->getRelationType() == RelationState::POINT_CONTACT)
         {
+            std::cout << "casting point contact" << std::endl;
             PointContactRelationPtr pc = boost::static_pointer_cast<PointContactRelation>(rel);
-
+            std::cout << "casting ok" << std::endl;
             if (wasAffordance)
             {
                 pc->setPoint2(hitPoint);
@@ -959,6 +962,7 @@ updateFlyingManipulators()
 
             if (constraint_link_name == man_link_name && rel->getRelationType() == RelationState::OFFSET) 
             {
+/*
                 cout << "ITS AN OFFSET " << endl;
                 //KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
                 //shifted_frame.p = KDL::Vector(shifted_frame.p + rel->getTranslation());
@@ -968,10 +972,11 @@ updateFlyingManipulators()
                 OpenGL_Object_DAE* flying_link = new OpenGL_Object_DAE(
                     *((OpenGL_Object_DAE*)_worldState.colorRobot.getOpenGLObjectForLink(man_link_name)));
                 OffsetRelationPtr offset = boost::dynamic_pointer_cast<OffsetRelation>(rel);
-                flying_link->set_transform(offset->getFrame());
-                
+                //flying_link->set_transform(offset->getFrame());
+
                 _widget_opengl.opengl_scene().add_object(*flying_link);
                 _worldState.glObjects.push_back(flying_link);
+*/
             }
         }
     }

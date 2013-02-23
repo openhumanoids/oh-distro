@@ -9,7 +9,7 @@ namespace action_authoring
 {
 
 /**todo: add comment*/
-class OffsetRelation : RelationState
+class OffsetRelation : public RelationState
 {
     //------------fields
 private:
