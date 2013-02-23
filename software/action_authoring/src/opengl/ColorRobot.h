@@ -3,6 +3,7 @@
 
 #include <opengl/opengl_object_gfe.h>
 #include <kinematics_model/kinematics_model_gfe.h>
+#include <opengl/opengl_object_dae.h>
 #include <urdf/model.h>
 
 namespace robot_opengl

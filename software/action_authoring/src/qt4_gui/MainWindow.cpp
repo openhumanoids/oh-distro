@@ -120,6 +120,7 @@ void MainWindow::handleAffordancesChanged()
         }
     }
 
+    updateFlyingManipulators();
 
     //----------add robot and vehicle
     _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
@@ -664,38 +665,9 @@ setSelectedAction(Qt4ConstraintMacro *activator)
     _worldState.colorRobot.setSelectedLink(_authoringState._selected_gui_constraint->getConstraintMacro()
                                            ->getAtomicConstraint()->getManipulator()->getName());
 
-    // "make the manipulator fly"
-    string man = _authoringState._selected_gui_constraint->
-                 getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
+    // update any flying manipulators
+    updateFlyingManipulators();
 
-    OpenGL_Object* linkgl = _worldState.colorRobot.getOpenGLObjectForLink(man);
-    if (linkgl != NULL)
-    {
-        for (uint i = 0; i < _worldState.manipulators.size(); i++)
-        {
-            if (_worldState.manipulators[i]->getName() == man)
-            {
-                cout << "found " << man << endl;
-                // TODO (mfleder, ine) here is : to pass the manipulator through
-                // the currently selected *relation* and render the outcome
-
-                KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
-                shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
-                ManipulatorStateConstPtr newManip(new ManipulatorState(
-                                                      _worldState.manipulators[i]->getLink(),
-                                                      shifted_frame, GlobalUID(rand(), rand())));
-
-                // TODO: make the OpenGL manipulator instead of doing it manually with linkgl
-                //OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(newManip);
-                OpenGL_Object* flying_link = new OpenGL_Object();
-                *flying_link = *linkgl;
-                flying_link->set_transform(shifted_frame);
-
-                _widget_opengl.opengl_scene().add_object(*flying_link);
-                _worldState.glObjects.push_back(flying_link);
-            }
-        }
-    }
     // prompt to set relation state
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
@@ -960,4 +932,43 @@ changeMode()
     }
 
     cout << "done there" << endl;
+}
+
+
+void
+MainWindow::
+updateFlyingManipulators()
+{
+    // for each relation, add an appropriate "flying" manipulator
+    for (uint i = 0; i < _worldState.manipulators.size(); i++)
+    {
+        string man_link_name = _worldState.manipulators[i]->getName();
+        // TODO (mfleder, ine) here is : to pass the manipulator through
+        // the currently selected *relation* and render the outcome
+
+        // find any relations that reference this link. for each relation, spawn
+        // a new flying affordance.
+        for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
+        {
+            RelationStatePtr rel = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+            string constraint_link_name = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getAtomicConstraint()->getManipulator()->getName();
+
+            cout << "found " << man_link_name << " vs " << constraint_link_name << " type " << rel->getRelationType() << endl;
+
+            if (constraint_link_name == man_link_name) // && rel->getRelationType() == RelationState::OFFSET) 
+            {
+                KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
+                //shifted_frame.p = KDL::Vector(shifted_frame.p + rel->getTranslation());
+                shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
+                // TODO: this is a hack, we assume that the object is an OpenGL_Object_DAE. 
+                // that's not necessarily true! It could be any subclass of OpenGL_Object
+                OpenGL_Object_DAE* flying_link = new OpenGL_Object_DAE(
+                    *((OpenGL_Object_DAE*)_worldState.colorRobot.getOpenGLObjectForLink(man_link_name)));
+                flying_link->set_transform(shifted_frame);
+                
+                _widget_opengl.opengl_scene().add_object(*flying_link);
+                _worldState.glObjects.push_back(flying_link);
+            }
+        }
+    }
 }

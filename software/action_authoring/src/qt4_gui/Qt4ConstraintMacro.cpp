@@ -73,13 +73,15 @@ getPanel()
     //_all_panels[waypoint_constraint->getName()] = outputPanel;
     //_all_robot_link_combos[waypoint_constraint->getName()] = radio1;
 
-    _gui_constraintType->insertItem(0, "point to point");
-    _gui_constraintType->insertItem(0, "3D Offset");
-    _gui_constraintType->insertItem(0, "tangent to");
-    _gui_constraintType->insertItem(0, "normal to");
+    // IMPORTANT: the order of this LIST IS SIGNIFICANT. SEE RelationState.h
     _gui_constraintType->insertItem(0, "near");
     _gui_constraintType->insertItem(0, "surface touches");
+    _gui_constraintType->insertItem(0, "tangent to");
+    _gui_constraintType->insertItem(0, "3D Offset"); // OFFSET
+    _gui_constraintType->insertItem(0, "point to point");
+    _gui_constraintType->insertItem(0, "force closure");
     _gui_constraintType->insertItem(0, "grasps");
+    _gui_constraintType->insertItem(0, "undefined");
 
     QVBoxLayout *vbox = new QVBoxLayout;
     QHBoxLayout *top_line_hbox = new QHBoxLayout();

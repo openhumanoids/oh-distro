@@ -63,7 +63,7 @@ getLinkFromJointName(string joint_name)
     return m.getLink(m.getJoint(joint_name)->child_link_name);
 }
 
-OpenGL_Object* 
+OpenGL_Object*
 ColorRobot::
 getOpenGLObjectForLink(string link_name) 
 {

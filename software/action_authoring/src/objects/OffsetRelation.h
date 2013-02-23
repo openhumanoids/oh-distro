@@ -17,7 +17,7 @@ private:
 
     //------------Constructor--------
 public:
-    OffsetRelation();
+    OffsetRelation() { _relationType = RelationState::OFFSET; } ;
 
     Eigen::Vector3f getTranslation()
     {

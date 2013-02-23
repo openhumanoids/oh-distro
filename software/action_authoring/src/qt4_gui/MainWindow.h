@@ -138,6 +138,7 @@ private:
     int getSelectedGUIConstraintIndex();
     void moveQt4Constraint(bool up);
     void updateScrubber();
+    void updateFlyingManipulators();
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
