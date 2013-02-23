@@ -7,11 +7,11 @@ lc = lcm.lcm.LCM.getSingleton(); %('udpm://239.255.76.67:7667?ttl=1');
 
 % construct lcm input monitor
 monitor = drake.util.MessageMonitor(drc.action_sequence_t(),'utime');
-lc.subscribe('ACTION_SEQUENCE',monitor);
+lc.subscribe('action_authoring_plan_action_request',monitor);
 
 % construct lcm state publisher
 % todo: should really load model name from lcm
-r = RigidBodyManipulator('todo: fill this in');
+r = RigidBodyManipulator('drake/examples/Atlas/urdf/atlas_minimal_contact.urdf',struct('floating',true));
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
@@ -20,8 +20,9 @@ robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',J
 load('data/atlas_fp3.mat');
 q0 = xstar(1:getNumDOF(r));
 
+timeout=10;
 while (1)
-  data = getNextMessage(obj.monitor,timeout);
+  data = getNextMessage(monitor,timeout);
   if ~isempty(data)
     msg = drc.action_sequence_t(data);
     % parse the action sequence
@@ -30,7 +31,8 @@ while (1)
     for i=1:msg.num_contact_goals
       goal = msg.contact_goals(i);
       if (goal.contact_type==goal.ON_GROUND_PLANE)
-        body=findLink(r,char(goal.object_1_name));
+%        body=findLink(r,char(goal.object_1_name));
+        body=findLink(r,'r_foot');
         pos=goal.ground_plane_pt;
         ikargs={ikargs{:},body,[pos.x;pos.y;pos.z]};
       end
