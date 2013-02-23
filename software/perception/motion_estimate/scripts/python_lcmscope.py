@@ -9,8 +9,10 @@ import numpy  as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/site-packages")
-sys.path.append("/home/mfallon/drc/software/build/lib/python2.7/dist-packages")
+home_dir =os.getenv("HOME")
+#print home_dir
+sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
+sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 from bot_core.pose_t import pose_t
 from bot_core.planar_lidar_t import planar_lidar_t
 #from mav.filter_state_t import filter_state_t

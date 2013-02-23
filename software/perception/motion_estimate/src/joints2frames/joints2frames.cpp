@@ -26,8 +26,8 @@ using namespace boost::assign;
 
 /////////////////////////////////////
 
-joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_):
-          lcm_(publish_lcm), _urdf_parsed(false), show_labels_(show_labels_),
+joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_):
+          lcm_(publish_lcm), _urdf_parsed(false), show_labels_(show_labels_), show_triads_(show_triads_),
           world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
           body_to_headT_(0, Eigen::Isometry3d::Identity()) {
 
@@ -171,10 +171,13 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   
   //std::cout << body_to_jointTs.size() << " jts\n";
   //pc_vis_->pose_collection_to_lcm_from_list(6000, body_to_jointTs); // all joints releative to body - publish if necessary
-  pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
+  
+  if (show_triads_){
+    pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
+    if (show_labels_)
+      pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
+  }
 
-  if (show_labels_)
-    pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
 }
 
 
@@ -229,11 +232,18 @@ int
 main(int argc, char ** argv){
   string role = "robot";
   bool labels = false;
+  bool triads = true;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
-  opt.add(labels, "l", "labels","Labels - show no not");
+  opt.add(triads, "t", "triads","Frame Triads - show no not");
+  opt.add(labels, "l", "labels","Frame Labels - show no not");
   opt.parse();
+  if (labels){ // require triads if labels is to be published
+    triads=true;
+  }
+  
   std::cout << "role: " << role << "\n";
+  std::cout << "triads: " << triads << "\n";
   std::cout << "labels: " << labels << "\n";
 
   string lcm_url="";
@@ -250,7 +260,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels);
+  joints2frames app(lcm,labels,triads);
   while(0 == lcm->handle());
   return 0;
 }

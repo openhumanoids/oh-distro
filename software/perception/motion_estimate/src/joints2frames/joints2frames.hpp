@@ -28,7 +28,7 @@
 ///////////////////////////////////////////////////////////////
 class joints2frames{
   public:
-    joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_);
+    joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_);
     
     ~joints2frames(){
     }
@@ -44,7 +44,7 @@ class joints2frames{
 
     void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
-    bool show_labels_;
+    bool show_labels_, show_triads_;
 
     // Solver: [from sisir]
     std::string _robot_name;
