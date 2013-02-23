@@ -9,6 +9,8 @@ import numpy  as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
+from threading import Thread
+
 home_dir =os.getenv("HOME")
 #print home_dir
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
@@ -59,11 +61,8 @@ def quat_to_euler(q) :
   return [roll,pitch,yaw]
 
 def plot_data():
-  global last_plot_time, last_utime
-  nowtime = time.time ()
-  if (nowtime < last_plot_time +plot_timing):
-    return
-  last_plot_time = nowtime
+  global last_utime
+  front_block =1000000
   if ( len(pos.utimes) >1):
     plt.figure(1)
     ############################################################
@@ -73,7 +72,7 @@ def plot_data():
     ax1.plot(pos.utimes[1:], np.transpose(pos.v[1:,2]), 'b', linewidth=1,label="z")
     ax1.legend();  ax1.set_xlabel('Time '+ str(last_utime));  ax1.set_ylabel('Local Pos [m]');  ax1.grid(True)
     ax1.legend(loc=2,prop={'size':10})
-    ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ############################################################
     ax2.cla()
     ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,0]), 'r', linewidth=1,label="xdot")
@@ -81,7 +80,7 @@ def plot_data():
     ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,2]), 'b', linewidth=1,label="zdot")
     ax2.legend();  ax2.set_xlabel('Time '+ str(last_utime));  ax2.set_ylabel('Acceloration [m/s2]');  ax2.grid(True)
     ax2.legend(loc=2,prop={'size':10})
-    ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ###################### TODO - add this back in and remove the element above and put in a different window
     #ax2.cla()
     #ax2.plot(posrate.utimes[1:], np.transpose(posrate.v[1:,0]), 'r', linewidth=1,label="u fwd")
@@ -93,7 +92,7 @@ def plot_data():
     #ax2.plot(vo_posrate.utimes[1:],  np.transpose(vo_posrate.v[1:,2]), 'b+', linewidth=1,label="VO w up")
     #ax2.legend();   ax2.set_xlabel('Time - vo: ' + str(len(vo_posrate.utimes)));   ax2.set_ylabel('Body Pos Rate [m/s]');   ax2.grid(True)
     #ax2.legend(loc=2,prop={'size':10})
-    #ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    #ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ##ax2.set_ylim(-2,2)
     ############################################################
     ax3.cla()
@@ -102,7 +101,7 @@ def plot_data():
     ax3.plot(ang.utimes[1:], np.transpose(ang.v[1:,2]) *180/math.pi , 'y', linewidth=1,label="yaw")
     ax3.legend();   ax3.set_xlabel('Time - pose: ' + str(len(ang.utimes)));   ax3.set_ylabel('Local Angle [Deg]');   ax3.grid(True)
     ax3.legend(loc=2,prop={'size':10})
-    ax3.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax3.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ############################################################
     ax4.cla()
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,0]), 'r', linewidth=1,label="p")
@@ -118,7 +117,7 @@ def plot_data():
     # Gazebo Measurements:
     ax4.legend();   ax4.set_xlabel('Time - ins: ' + str(len(ins_angrate.utimes)));  ax4.set_ylabel('Body Angle Rate [Deg/s]');   ax4.grid(True)
     ax4.legend(loc=2,prop={'size':10})
-    ax4.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax4.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
 
 
   if (len(lf_force.utimes) >1):
@@ -132,7 +131,7 @@ def plot_data():
     ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,1]), 'r+', linewidth=1,label="Right Y")
     ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,2]), 'r.', linewidth=1,label="Right Z")
     ax5.legend(loc=2,prop={'size':10});   ax5.set_xlabel('Time '+ str(last_utime));   ax5.set_ylabel('Force [imaginary units]');   ax5.grid(True)
-    ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block- first_utime)/1000000 )
     # Vo angle rates:
     ax6.cla()
     ax6.plot(lf_torque.utimes[1:],     np.transpose(lf_torque.v[1:,0]), 'b',  linewidth=1,label="Left X")
@@ -142,7 +141,7 @@ def plot_data():
     ax6.plot(rf_torque.utimes[1:],     np.transpose(rf_torque.v[1:,1]), 'r+', linewidth=1,label="Right Y")
     ax6.plot(rf_torque.utimes[1:],     np.transpose(rf_torque.v[1:,2]), 'r.', linewidth=1,label="Right Z")
     ax6.legend(loc=2,prop={'size':10});   ax6.set_xlabel('Time '+ str(last_utime));   ax6.set_ylabel('Torque [imaginary units]');   ax5.grid(True)
-    ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     # VO angle delta - measured change in angle:
     ax7.cla()
     ax7.plot(vo_angdelta.utimes[1:],  np.transpose(vo_angdelta.v[1:,0]), 'r+', linewidth=1,label="roll")
@@ -150,7 +149,7 @@ def plot_data():
     ax7.plot(vo_angdelta.utimes[1:],  np.transpose(vo_angdelta.v[1:,2]), 'y+', linewidth=1,label="yaw")
     ax7.legend();   ax7.set_xlabel('Time');   ax7.set_ylabel('VO Body Angle Delta [Deg]');   ax7.grid(True)
     ax7.legend(loc=2,prop={'size':10})
-    ax7.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax7.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     # vo_posdelta - measured change in position:
     ax8.cla()
     ax8.plot(vo_posdelta.utimes[1:],  np.transpose(vo_posdelta.v[1:,0]), 'r+', linewidth=1,label="dx fwd")
@@ -158,7 +157,7 @@ def plot_data():
     ax8.plot(vo_posdelta.utimes[1:],  np.transpose(vo_posdelta.v[1:,2]), 'b+', linewidth=1,label="dz up")
     ax8.legend();   ax8.set_xlabel('Time');   ax8.set_ylabel('VO Body Delta Pos [m]');   ax8.grid(True)
     ax8.legend(loc=2,prop={'size':10})
-    ax8.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime - first_utime)/1000000 )
+    ax8.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
   plt.plot()
   plt.draw()
 
@@ -208,7 +207,7 @@ def on_pose(channel, data):
     print "out of order data, resetting now %s | last %s"   %(m.utime,last_utime)
     reset_all()
   last_utime = m.utime
-  plot_data()
+  #plot_data()
   #print "POSE:      %.3f" % (dt)
 
 def on_state(channel, data):
@@ -244,13 +243,12 @@ def on_imu(channel, data):
   #print "Gazebo IMU:      %.3f" % (m.utime)
 
 #################################################################################
+
 lc = lcm.LCM()
 print "started"
-last_plot_time = 0
 last_utime=0
 first_utime=0
-plot_window=10*1000000 #3sec
-plot_timing=5 # 3 second between updates of the plots - in wall time
+plot_window=5*1000000 #3sec
 pos = SensorData(3); posrate = SensorData(3); 
 ang = SensorData(3); angrate = SensorData(3); 
 ins_angrate = SensorData(3); ins_posaccel = SensorData(3); # raw ins angrates and linear accelorations
@@ -283,23 +281,38 @@ ax2 = fig1.add_axes(box_ur)
 ax3 = fig1.add_axes(box_ll)
 ax4 = fig1.add_axes(box_lr)
 
+def lcm_thread():
+  sub1 = lc.subscribe("POSE_HEAD", on_pose)
+  sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
+  sub3 = lc.subscribe("MICROSTRAIN_INS", on_ins)
+  sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
 
-sub1 = lc.subscribe("POSE_HEAD", on_pose)
-sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
-sub3 = lc.subscribe("MICROSTRAIN_INS", on_ins)
-sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
+  # DRC msgs
+  sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
+  sub6 = lc.subscribe("HEAD_IMU", on_imu)
 
-# DRC msgs
-sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
-sub6 = lc.subscribe("HEAD_IMU", on_imu)
+  while True:
+    ## Handle LCM if new messages have arrived.
+    lc.handle()
 
-while True:
-  ## Handle LCM if new messages have arrived.
-  lc.handle()
+  lc.unsubscribe(sub1)
+  lc.unsubscribe(sub2)
+  lc.unsubscribe(sub3)
+  lc.unsubscribe(sub4)
+  lc.unsubscribe(sub5)
+  lc.unsubscribe(sub6)
 
-lc.unsubscribe(sub1)
-lc.unsubscribe(sub2)
-lc.unsubscribe(sub3)
-lc.unsubscribe(sub4)
-lc.unsubscribe(sub5)
-lc.unsubscribe(sub6)
+t2 = Thread(target=lcm_thread)
+t2.start()
+
+time.sleep(5)
+
+plot_timing=0.1 # time between updates of the plots - in wall time
+while (1==1):
+  time.sleep(plot_timing)
+  print "draw"
+  plot_data()
+
+
+
+
