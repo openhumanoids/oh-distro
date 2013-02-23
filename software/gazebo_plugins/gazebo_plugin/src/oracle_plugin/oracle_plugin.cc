@@ -553,7 +553,7 @@ void OraclePlugin::OnUpdate(){
     }
     
     affcol.naffs = affcol.affs.size();
-    lcm_publish_.publish( ("AFFORDANCE_COLLECTION") , &affcol);        
+    lcm_publish_.publish( ("AFFORDANCE_ORACLE") , &affcol);        
     
     this->last_update_time_ = sim_time;
   }

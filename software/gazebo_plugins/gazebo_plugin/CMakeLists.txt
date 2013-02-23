@@ -13,3 +13,4 @@ lcmtypes_build()
 #add_subdirectory(src/hokuyospin_plugin)
 add_subdirectory(src/oracle_plugin)
 
+pods_install_python_script(drc-oracle2collection scripts/oracle2collection.py)
