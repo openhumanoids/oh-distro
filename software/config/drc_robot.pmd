@@ -39,6 +39,10 @@ group "1.robot" {
         exec = "drc-network-shaper -t manipulation -r";
         host = "localhost";
     }
+    cmd "oracle2coll" {
+        exec = "drc-oracle2collection";
+        host = "localhost";
+    }
 }
 
 group "2.gazebo" {
