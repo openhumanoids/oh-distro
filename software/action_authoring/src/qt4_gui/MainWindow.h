@@ -42,6 +42,7 @@
 #include <action_authoring/ConstraintMacro.h>
 #include <action_authoring/RelationState.h>
 #include <action_authoring/PointContactRelation.h>
+#include <action_authoring/OffsetRelation.h>
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
 #define DATABASE 1
@@ -139,6 +140,9 @@ private:
     void moveQt4Constraint(bool up);
     void updateScrubber();
     void updateFlyingManipulators();
+    void updateRobotState(const lcm::ReceiveBuffer* rbuf, 
+                          const std::string& channel,
+                          const drc::robot_state_t *robot_state);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances

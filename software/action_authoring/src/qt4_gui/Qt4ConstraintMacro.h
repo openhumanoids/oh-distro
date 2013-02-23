@@ -8,6 +8,8 @@
 // Custom QT widget
 #include "../qt4_widgets/TogglePanel.h"
 #include <action_authoring/ConstraintMacro.h>
+#include <action_authoring/RelationState.h>
+#include <action_authoring/ManipulationRelation.h>
 
 namespace action_authoring
 {

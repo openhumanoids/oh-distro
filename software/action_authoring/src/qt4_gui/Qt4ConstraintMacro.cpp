@@ -1,5 +1,4 @@
 #include "Qt4ConstraintMacro.h"
-#include <action_authoring/ManipulationRelation.h>
 #include <iostream>
 #include <sstream>
 
@@ -73,7 +72,16 @@ getPanel()
     //_all_panels[waypoint_constraint->getName()] = outputPanel;
     //_all_robot_link_combos[waypoint_constraint->getName()] = radio1;
 
-    // IMPORTANT: the order of this LIST IS SIGNIFICANT. SEE RelationState.h
+    // See RelationState.h for enum definitions
+/*
+    for (uint i = 0; i < RelationType::RELATION_TYPE_LENGTH; i++) {
+        RelationState::bm_type::right_const_iterator right_iter = 
+            RelationState::rNameToValue.right.find((RelationState::RelationType)i);
+        _gui_constraintType->insertItem(0, QString::fromStdString(right_iter->second));
+    }
+*/
+
+    /*
     _gui_constraintType->insertItem(0, "near");
     _gui_constraintType->insertItem(0, "surface touches");
     _gui_constraintType->insertItem(0, "tangent to");
@@ -82,6 +90,7 @@ getPanel()
     _gui_constraintType->insertItem(0, "force closure");
     _gui_constraintType->insertItem(0, "grasps");
     _gui_constraintType->insertItem(0, "undefined");
+    */
 
     QVBoxLayout *vbox = new QVBoxLayout;
     QHBoxLayout *top_line_hbox = new QHBoxLayout();
@@ -176,6 +185,12 @@ updateStateFromElements()
     _constraint->setTimeLowerBound(_gui_time_lower_bound->value());
     _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
 
+    if (_gui_constraintType->currentIndex() != (int)(_constraint->getAtomicConstraint()->getRelationState()->getRelationType()))
+    {
+        RelationStatePtr newRel(new RelationState((RelationState::RelationType)_gui_constraintType->currentIndex()));
+        _constraint->getAtomicConstraint()->setRelationState(newRel);
+    }
+
     if (_gui_robotJointType->currentIndex() >= 0)
     {
         _constraint->getAtomicConstraint()->setManipulator(_manipulators[_gui_robotJointType->currentIndex()]);
@@ -231,6 +246,9 @@ updateElementsFromState()
 
     _gui_time_lower_bound->setValue(_constraint->getTimeLowerBound());
     _gui_time_upper_bound->setValue(_constraint->getTimeUpperBound());
+
+    // assumes that the enum maps to the correct items
+    _gui_constraintType->setCurrentIndex((int)_constraint->getAtomicConstraint()->getRelationState()->getRelationType());
 
     // re-initialize the maps
     _affordance1IndexMap.clear();

@@ -1,7 +1,7 @@
 #ifndef RELATION_STATE_H
 #define RELATION_STATE_H
 
-#include <boost/unordered_map.hpp>
+#include <boost/bimap.hpp>
 #include <boost/shared_ptr.hpp>
 #include <algorithm>
 #include <vector>
@@ -27,14 +27,17 @@ public:
         GRASP,
         FORCE_CLOSURE,
         POINT_CONTACT,
-        OFFSET
+        OFFSET,
+        RELATION_TYPE_LENGTH,
     } RelationType;
 
+    typedef boost::bimap<std::string, RelationType> bm_type;
+
     //static init helpers
-    static boost::unordered_map<std::string, RelationType> makeRNameMap();
+    static bm_type makeRNameMap();
 
     /**maps from string name for RelationType to the value*/
-    const static boost::unordered_map<std::string, RelationType> rNameToValue;
+    const static bm_type rNameToValue;
 
     //------------fields
 private:

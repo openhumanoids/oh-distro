@@ -10,8 +10,6 @@
 #include <collision/collision_detector.h>
 #include <collision/collision_object_box.h>
 
-
-
 namespace robot_opengl
 {
 

@@ -185,6 +185,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
 {
     _theLcm = theLcm;
+	_theLcm->subscribe("ACTION_AUTHORING_IK_ROBOT_STATE",
+                       &MainWindow::updateRobotState, this);
 
     // setup the OpenGL scene
     _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
@@ -955,20 +957,34 @@ updateFlyingManipulators()
 
             cout << "found " << man_link_name << " vs " << constraint_link_name << " type " << rel->getRelationType() << endl;
 
-            if (constraint_link_name == man_link_name) // && rel->getRelationType() == RelationState::OFFSET) 
+            if (constraint_link_name == man_link_name && rel->getRelationType() == RelationState::OFFSET) 
             {
-                KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
+                cout << "ITS AN OFFSET " << endl;
+                //KDL::Frame shifted_frame = _worldState.manipulators[i]->getLinkFrame();
                 //shifted_frame.p = KDL::Vector(shifted_frame.p + rel->getTranslation());
-                shifted_frame.p = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
+                //shifted_frame = KDL::Vector(shifted_frame.p.x() + 0.25, shifted_frame.p.y(), shifted_frame.p.z());
                 // TODO: this is a hack, we assume that the object is an OpenGL_Object_DAE. 
                 // that's not necessarily true! It could be any subclass of OpenGL_Object
                 OpenGL_Object_DAE* flying_link = new OpenGL_Object_DAE(
                     *((OpenGL_Object_DAE*)_worldState.colorRobot.getOpenGLObjectForLink(man_link_name)));
-                flying_link->set_transform(shifted_frame);
+                OffsetRelationPtr offset = boost::dynamic_pointer_cast<OffsetRelation>(rel);
+                flying_link->set_transform(offset->getFrame());
                 
                 _widget_opengl.opengl_scene().add_object(*flying_link);
                 _worldState.glObjects.push_back(flying_link);
             }
         }
     }
+}
+
+void
+MainWindow::
+updateRobotState(const lcm::ReceiveBuffer* rbuf, 
+                 const std::string& channel,
+                 const drc::robot_state_t *new_robot_state)
+{
+    cout << ">>>>>>>>>>>>>>>>>>>> GOT ROBOT MESSAGE " << endl;
+    _worldState.state_gfe.from_lcm(*new_robot_state);
+    _worldState.colorRobot.set(_worldState.state_gfe);
+    _widget_opengl.update();
 }

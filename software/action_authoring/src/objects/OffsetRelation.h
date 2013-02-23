@@ -2,7 +2,8 @@
 #define OFFSET_RELATION_H
 
 #include <boost/shared_ptr.hpp>
-#include <Eigen/Core>
+#include <action_authoring/RelationState.h>
+#include <kdl/frames.hpp>
 
 namespace action_authoring
 {
@@ -12,33 +13,17 @@ class OffsetRelation : RelationState
 {
     //------------fields
 private:
-    Eigen::Vector3f _translation;
-    Eigen::Vector4f _rotation;
+    KDL::Frame _frame;
 
     //------------Constructor--------
 public:
-    OffsetRelation() { _relationType = RelationState::OFFSET; } ;
-
-    Eigen::Vector3f getTranslation()
-    {
-        return _translation;
-    }
-    Eigen::Vector4f getRotation()
-    {
-        return _rotation;
-    }
+    OffsetRelation();
 
     //----------Mutators
-    void setTranslation(Eigen::Vector3f t)
-    {
-        _translation = t;
-    }
-    void setRotation(Eigen::Vector4f r)
-    {
-        _rotation = r;
-    }
+    void setFrame(KDL::Frame f) { _frame = f; }
 
     //---------------Accessors
+    KDL::Frame getFrame() { return _frame; }
     virtual std::string getState() const; // returns a user-friendly string that explains the state of relation
     virtual std::string getPrompt() const; // prompts the user for the next field to set to complete the relation
 
