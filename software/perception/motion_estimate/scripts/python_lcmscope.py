@@ -311,7 +311,11 @@ plot_timing=0.1 # time between updates of the plots - in wall time
 while (1==1):
   time.sleep(plot_timing)
   print "draw"
+  tic_ms = float(round(time.time() * 1000))
   plot_data()
+  toc_ms = float(round(time.time() * 1000))
+  dt_sec = (toc_ms - tic_ms)*1000
+  print dt_sec
 
 
 
