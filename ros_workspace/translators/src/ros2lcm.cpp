@@ -55,11 +55,12 @@ uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale im
 
 class App{
 public:
-  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_);
+  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_, bool control_only_);
   ~App();
 
 private:
   string mode_;
+  bool control_only_; // dont publish perception data
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
@@ -127,13 +128,13 @@ private:
 
 App::App(const std::string & stereo_in,
     const std::string & stereo_out,
-    ros::NodeHandle node_, string mode_) :
+    ros::NodeHandle node_, string mode_, bool control_only_) :
     stereo_in_(stereo_in),
     stereo_out_(stereo_out),
     node_(node_),
     it_(node_),
     sync_(10),
-    mode_(mode_){
+    mode_(mode_), control_only_(control_only_){
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
@@ -146,12 +147,6 @@ App::App(const std::string & stereo_in,
   // IMU:
   torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 10, &App::torso_imu_cb,this);
   head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 10, &App::head_imu_cb,this);
-  
-  // Laser:
-  rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/scan"), 10, &App::rotating_scan_cb,this);
-  // Porterbot
-  scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
-  scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
 
   // Robot State:
   //rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
@@ -165,46 +160,55 @@ App::App(const std::string & stereo_in,
   l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
   r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
   
-  // Stereo Image:
-  std::string lim_string ,lin_string,rim_string,rin_string;
-  int which_image = 0;
-  if (which_image==0){ // Grey:
-    lim_string = stereo_in_ + "/left/image_rect";
-    lin_string = stereo_in_ + "/left/camera_info";
-    rim_string = stereo_in_ + "/right/image_rect";
-    rin_string = stereo_in_ + "/right/camera_info";
-  }else if(which_image==1){ // Color:
-    lim_string = stereo_in_ + "/left/image_rect_color";
-    lin_string = stereo_in_ + "/left/camera_info";
-    rim_string = stereo_in_ + "/right/image_rect_color";
-    rin_string = stereo_in_ + "/right/camera_info";
-  }else if(which_image==2){ // Raw:
-    lim_string = stereo_in_ + "/left/image_raw";
-    lin_string = stereo_in_ + "/left/camera_info";
-    rim_string = stereo_in_ + "/right/image_raw";
-    rin_string = stereo_in_ + "/right/camera_info";
-  }else if(which_image==4){ // Raw on GFE:
-    lim_string = stereo_in_ + "/left/image_raw";
-    lin_string = stereo_in_ + "/left/camera_info";
-    rim_string = stereo_in_ + "/right/image_raw";
-    rin_string = stereo_in_ + "/right/camera_info";
-  }else{
-    cout << "Image choice not supported!\n";
-    exit(-1); 
-  }
-  cout << lim_string << " is the left stereo image subscription [for stereo]\n";
-  l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
-  l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
-  r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
-  r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
-  sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
-  sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
+  if (!control_only_){
+    // Laser:
+    rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/scan"), 10, &App::rotating_scan_cb,this);
+    // Porterbot
+    scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
+    scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
   
-  // Mono-Cameras:
-  left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
-  if (1==0){
-    left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
-    right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
+    // Stereo Image:
+    std::string lim_string ,lin_string,rim_string,rin_string;
+    int which_image = 0;
+    if (which_image==0){ // Grey:
+      lim_string = stereo_in_ + "/left/image_rect";
+      lin_string = stereo_in_ + "/left/camera_info";
+      rim_string = stereo_in_ + "/right/image_rect";
+      rin_string = stereo_in_ + "/right/camera_info";
+    }else if(which_image==1){ // Color:
+      lim_string = stereo_in_ + "/left/image_rect_color";
+      lin_string = stereo_in_ + "/left/camera_info";
+      rim_string = stereo_in_ + "/right/image_rect_color";
+      rin_string = stereo_in_ + "/right/camera_info";
+    }else if(which_image==2){ // Raw:
+      lim_string = stereo_in_ + "/left/image_raw";
+      lin_string = stereo_in_ + "/left/camera_info";
+      rim_string = stereo_in_ + "/right/image_raw";
+      rin_string = stereo_in_ + "/right/camera_info";
+    }else if(which_image==4){ // Raw on GFE:
+      lim_string = stereo_in_ + "/left/image_raw";
+      lin_string = stereo_in_ + "/left/camera_info";
+      rim_string = stereo_in_ + "/right/image_raw";
+      rin_string = stereo_in_ + "/right/camera_info";
+    }else{
+      cout << "Image choice not supported!\n";
+      exit(-1); 
+    }
+    cout << lim_string << " is the left stereo image subscription [for stereo]\n";
+    l_image_sub_.subscribe(it_, ros::names::resolve( lim_string ), 3);
+    l_info_sub_.subscribe(node_, ros::names::resolve( lin_string ), 3);
+    r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
+    r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
+    sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
+    sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
+
+    // Mono-Cameras:
+    left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
+    if (1==0){
+      left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
+      right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
+    }
+  
   }
 };
 
@@ -247,12 +251,12 @@ void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
 
 void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"TORSO_IMU");
-  send_imu_as_pose(msg,"POSE_BODY_ORIENT");
+  //send_imu_as_pose(msg,"POSE_BODY_ORIENT");
 }
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"HEAD_IMU");
-  send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
+  //send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
 }
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
@@ -504,8 +508,6 @@ void App::head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 void App::l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   l_hand_joint_states_= *msg;
   
-  cout <<"got l hands\n";
-  cout << mode_ << "mdoe\n";
   if (mode_.compare("hands") == 0){
     int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
     ground_truth_odom_.pose.pose.orientation.w =1;
@@ -681,9 +683,12 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "lcm2ros");
   string mode = "robot";
+  bool control_only = false;
   parser.add(mode, "m", "mode", "Mode: robot, hands");
+  parser.add(control_only, "c", "control_only", "Publish control - ignore perception");
   parser.parse();
   cout << "Publish Mode: " << mode << "\n";   
+  cout << "Publish Control Data Only: " << control_only << "\n";   
   
   
   
@@ -692,7 +697,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode);
+  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode, control_only);
   std::cout << "ros2lcm translator ready\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
