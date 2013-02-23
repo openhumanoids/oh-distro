@@ -50,9 +50,11 @@ classdef Biped
       if strcmp(options.traj_type, 'turn_and_go')
         sizecheck(poses(:,1), [6]);
         traj = turnGoTraj([start_pos, poses]);
-      else
+      elseif strcmp(options.traj_type, 'cubic_spline')
         sizecheck(poses, [6,1]);
         traj = cubicSplineTraj([start_pos, poses]);
+      else
+        error('Invalid trajectory type specified: %s', options.traj_type);
       end
       
       [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.max_step_length,...
@@ -64,6 +66,9 @@ classdef Biped
         plotFootstepPlan(traj, Xright, Xleft);
         drawnow
       end
+      plot_lcm_poses(Xright(1:3,:)', Xright([6,5,4],:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+      plot_lcm_poses(Xleft(1:3,:)', Xright([6,5,4],:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+
       
       if options.interactive
         [~, Xright, Xleft] = interactiveFootstepOptimization(traj,lambda,obj.max_step_length,step_width,obj.max_step_rot,ndx_r,ndx_l);
@@ -75,6 +80,8 @@ classdef Biped
           drawnow
         end
       end
+%       plot_lcm_poses(Xright(1:3,:)', Xright(4:6,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+%       plot_lcm_poses(Xleft(1:3,:)', Xright(4:6,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
     end
     
     function [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)

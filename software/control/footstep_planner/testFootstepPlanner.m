@@ -7,6 +7,14 @@ xstar = d.xstar;
 r = r.setInitialState(xstar);
 biped = Biped(r);
 
-poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
-xtraj = biped.roughWalkingPlan(xstar, poses, struct('plotting', true, 'interactive', false, 'traj_type', 'turn_and_go'));
-v.playback(xtraj, struct('slider', true));
+% poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
+% xtraj = biped.roughWalkingPlan(xstar, poses, struct('plotting', true, ...
+%   'interactive', false, 'traj_type', 'turn_and_go'));
+% biped.visualizer.playback(xtraj, struct('slider', true));
+% pause
+
+poses = [1;1;0;0;0;-pi/4];
+xtraj = biped.roughWalkingPlan(xstar, poses, struct('plotting', true, ...
+  'interactive', false, 'traj_type', 'cubic_spline'));
+
+biped.visualizer.playback(xtraj, struct('slider', true));

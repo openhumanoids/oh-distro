@@ -30,7 +30,7 @@ end
   end
 
 lambda_star = fmincon(@cost, lambda, [], [], [], [], zeros(size(lambda)), ones(size(lambda)),[],...
-  optimset('MaxTime', 10, 'Display', 'off'));
+  optimset('MaxIter', 10, 'Display', 'off'));
 Xright = footstepLocations(traj, lambda_star(ndx_r), -pi/2, step_width);
 Xleft = footstepLocations(traj, lambda_star(ndx_l), pi/2, step_width);
 for j = 1:length(ndx_r)
