@@ -62,7 +62,7 @@ def quat_to_euler(q) :
 
 def plot_data():
   global last_utime
-  front_block =1000000
+  front_block =0 # offset into the future (to ensure no recent data not viewed)
   if ( len(pos.utimes) >1):
     plt.figure(1)
     ############################################################
@@ -75,9 +75,9 @@ def plot_data():
     ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ############################################################
     ax2.cla()
-    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,0]), 'r', linewidth=1,label="xdot")
-    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,1]), 'g', linewidth=1,label="ydot")
-    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,2]), 'b', linewidth=1,label="zdot")
+    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,0]), 'r', linewidth=1,label="x accel")
+    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,1]), 'g', linewidth=1,label="y accel")
+    ax2.plot(ins_posaccel.utimes[1:], np.transpose(ins_posaccel.v[1:,2]), 'b', linewidth=1,label="z accel")
     ax2.legend();  ax2.set_xlabel('Time '+ str(last_utime));  ax2.set_ylabel('Acceloration [m/s2]');  ax2.grid(True)
     ax2.legend(loc=2,prop={'size':10})
     ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -248,7 +248,7 @@ lc = lcm.LCM()
 print "started"
 last_utime=0
 first_utime=0
-plot_window=5*1000000 #3sec
+plot_window=3*1000000 #3sec
 pos = SensorData(3); posrate = SensorData(3); 
 ang = SensorData(3); angrate = SensorData(3); 
 ins_angrate = SensorData(3); ins_posaccel = SensorData(3); # raw ins angrates and linear accelorations
@@ -282,8 +282,8 @@ ax3 = fig1.add_axes(box_ll)
 ax4 = fig1.add_axes(box_lr)
 
 def lcm_thread():
-  sub1 = lc.subscribe("POSE_HEAD", on_pose)
-  sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
+  sub1 = lc.subscribe("POSE_HEAD", on_pose) # required
+  #sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
   sub3 = lc.subscribe("MICROSTRAIN_INS", on_ins)
   sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
 
@@ -305,17 +305,16 @@ def lcm_thread():
 t2 = Thread(target=lcm_thread)
 t2.start()
 
-time.sleep(5)
+time.sleep(1) # wait for some data- could easily remove
 
 plot_timing=0.1 # time between updates of the plots - in wall time
 while (1==1):
   time.sleep(plot_timing)
-  print "draw"
   tic_ms = float(round(time.time() * 1000))
   plot_data()
   toc_ms = float(round(time.time() * 1000))
-  dt_sec = (toc_ms - tic_ms)*1000
-  print dt_sec
+  dt_sec = (toc_ms - tic_ms)/1000
+  print "drawing time: %f" %(dt_sec)
 
 
 
