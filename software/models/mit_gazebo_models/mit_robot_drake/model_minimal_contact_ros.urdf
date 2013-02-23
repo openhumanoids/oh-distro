@@ -103,6 +103,12 @@
         <mesh filename="package://mit_robot/meshes/l_hand.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 0.115 0.0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
   </link>
   <link name="l_larm">
     <inertial>
@@ -142,6 +148,18 @@
         <mesh filename="package://mit_robot/meshes/l_lleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
   </link>
   <link name="l_scap">
     <inertial>
@@ -346,6 +364,12 @@
         <mesh filename="package://mit_robot/meshes/r_hand.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.0 -0.115 0.0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
   </link>
   <link name="r_larm">
     <inertial>
@@ -385,6 +409,18 @@
         <mesh filename="package://mit_robot/meshes/r_lleg.wrl" scale="1 1 1"/>
       </geometry>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
   </link>
   <link name="r_scap">
     <inertial>
