@@ -560,8 +560,11 @@ void deserializeAffordanceState(xmlDocPtr doc, xmlNode *node, StorageUIDToObject
         }
     }
 
-    AffConstPtr affordance(new AffordanceState(name));
-    mappings.StorageUIDToAffordance[uid] = affordance;
+    // TODO: read LCM-serialized data from XML document, then pass the LCM
+    //object into the affordance constructor
+    throw NotImplementedException("can't restore affordance");
+    //AffConstPtr affordance(new
+    //AffordanceState()); mappings.StorageUIDToAffordance[uid] = affordance;
 }
 
 void deserializeManipulatorState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMappings &mappings)

@@ -68,10 +68,10 @@ std::vector<drc::contact_goal_t> ConstraintMacro::toLCM()
         //populate the message
         msg.utime = 0.0;
         //msg.object_1_name = _name;
-        msg.object_1_contact_grp = "ContactGroup";
+        msg.object_1_contact_grp = "default";
         msg.contact_type = msg.ON_GROUND_PLANE;
         msg.contact_type = 0;
-        msg.ground_plane_pt_radius = .25;
+        msg.ground_plane_pt_radius = .0025;
         msg.lower_bound_completion_time = _timeLowerBound;
         msg.upper_bound_completion_time = _timeUpperBound;
         lcmMessages.push_back(msg);
