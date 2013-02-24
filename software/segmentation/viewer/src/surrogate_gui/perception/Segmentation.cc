@@ -580,31 +580,9 @@ namespace surrogate_gui
 		cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 		
-		// All the objects needed
-		//pcl::PCDReader reader;
-		//pcl::PassThrough<PointT> pass;
-		//pcl::NormalEstimation<PointT, pcl::Normal> ne;
-		//pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
-		//pcl::PCDWriter writer;
-		//pcl::ExtractIndices<PointT> extract;
-		//pcl::ExtractIndices<pcl::Normal> extract_normals;
-		//pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
-		
-		// Datasets
-		//pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
-		//pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
-		//pcl::PointCloud<PointT>::Ptr cloud_filtered_y (new pcl::PointCloud<PointT>);
-		//pcl::PointCloud<PointT>::Ptr cloud_filtered_z (new pcl::PointCloud<PointT>);
-		
-		
-		//pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-		//pcl::PointCloud<PointT>::Ptr cloud_filtered2 (new pcl::PointCloud<PointT>);
-		//pcl::PointCloud<pcl::Normal>::Ptr cloud_normals2 (new pcl::PointCloud<pcl::Normal>);
-		//pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients), coefficients_cylinder (new pcl::ModelCoefficients);
-		//pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices), inliers_cylinder (new pcl::PointIndices);
+    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
-		// Create a shared 3d circle model pointer directly
-		SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (cloud));
+		SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (subcloud));
 		
 		// Create the RANSAC object
 		RandomSampleConsensus<PointXYZRGB> sac(model, 0.01);
