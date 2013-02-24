@@ -31,11 +31,11 @@ string AffordanceState::R_COLOR_NAME  	= "r_color";
 string AffordanceState::G_COLOR_NAME  	= "g_color";
 string AffordanceState::B_COLOR_NAME  	= "b_color";
 
-string AffordanceState::CYLINDER  = "cylinder";
-string AffordanceState::LEVER  	  = "lever";
-string AffordanceState::SPHERE    = "sphere";
-string AffordanceState::BOX  	  = "box";
-string AffordanceState::UNKNOWN   = "unknown";
+AffordanceState::OTDF_TYPE AffordanceState::CYLINDER  = "cylinder";
+AffordanceState::OTDF_TYPE AffordanceState::LEVER  	  = "lever";
+AffordanceState::OTDF_TYPE AffordanceState::SPHERE    = "sphere";
+AffordanceState::OTDF_TYPE AffordanceState::BOX  	  = "box";
+AffordanceState::OTDF_TYPE AffordanceState::UNKNOWN   = "unknown";
 
 const unordered_set<AffordanceState::OTDF_TYPE> AffordanceState::supportedOtdfTypes = getSupportedOtdfTypes();
 
@@ -82,11 +82,10 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 @param frame transformation in the map
 @param rgb color values from [0,1]
 */
-AffordanceState::AffordanceState(const AffordanceState::OTDF_TYPE &otdf_type,
-				 const int &uid, const int &mapId,
-				 const KDL::Frame &frame,
-				 const Eigen::Vector3f &color)
-  : _map_id(mapId), _uid(uid), _otdf_type(otdf_type)
+AffordanceState::AffordanceState(const int &uid, const int &mapId,
+                                 const KDL::Frame &frame,
+                                 const Eigen::Vector3f &color)
+  : _map_id(mapId), _uid(uid), _otdf_type(AffordanceState::UNKNOWN)
 {
 	//---set xyz roll pitch yaw from the frame
 	_params[X_NAME] = frame.p[0];
@@ -100,6 +99,7 @@ AffordanceState::AffordanceState(const AffordanceState::OTDF_TYPE &otdf_type,
 	_params[YAW_NAME] 	= yaw;
 
 	//------set the color
+
 	_params[R_COLOR_NAME] = color[0];
 	_params[G_COLOR_NAME] = color[1];
 	_params[B_COLOR_NAME] = color[2];
@@ -126,6 +126,22 @@ void AffordanceState::fromMsg(const drc::affordance_t *msg)
   _params.clear();
   _ptinds.clear();
   initHelper(msg);
+}
+
+void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
+{
+  //do checks to make sure the relevant fields are defined
+  _otdf_type = type;
+
+  if (type == AffordanceState::CYLINDER && 
+      !(hasRadius() && hasLength()))
+    throw ArgumentException("State for cylinder not defined");
+  if (type == AffordanceState::SPHERE &&
+      !hasRadius())
+    throw ArgumentException("State for sphere not defined");
+  if (type == AffordanceState::BOX &&
+      !(hasWidth() && hasHeight() && hasWidth()))
+    throw ArgumentException("State for box not defined");
 }
 
 
@@ -231,6 +247,32 @@ bool AffordanceState::hasRPY() const
 			_params.find(YAW_NAME) != _params.end());
 }
 
+
+/**@return true if we radius defined.  false otherwise*/
+bool AffordanceState::hasRadius() const
+{
+  return _params.find(RADIUS_NAME) != _params.end();
+}
+
+/**@return true if we length defined.  false otherwise*/
+bool AffordanceState::hasLength() const
+{
+  return _params.find(LENGTH_NAME) != _params.end();
+}
+
+/**@return true if we width defined.  false otherwise*/
+bool AffordanceState::hasWidth() const
+{
+  return _params.find(WIDTH_NAME) != _params.end();
+}
+
+/**@return true if we height defined.  false otherwise*/
+bool AffordanceState::hasHeight() const
+{
+  return _params.find(HEIGHT_NAME) != _params.end();
+}
+
+
 /**@return roll,pitch,yaw or 0,0,0 none of those are not present*/
 Vector3f AffordanceState::getRPY() const
 {
@@ -292,20 +334,26 @@ string AffordanceState::toStrFromMap(unordered_map<string,double> m)
 	return s.str();
 }
 
+AffordanceState::OTDF_TYPE AffordanceState::getType() const
+{
+  return _otdf_type;
+}
+
 
 namespace affordance
 {
 /**operator << */
   ostream& operator<<(ostream& out, const AffordanceState& other )
   {
-    out << "=====Affordance " << other._otdf_type << "========" << endl;
+    out << "=====Affordance " << other.getType() << "========" << endl;
     out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
-	<< other._uid << ", " << other._otdf_type << ")\n";
+        << other._uid << ", " << other.getType() << ")\n";
     out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;
     out << "------states: \n" << AffordanceState::toStrFromMap(other._states) << endl;
     return out;
   }
-  
+
+
 } //namespace affordance
 
 //=============================================

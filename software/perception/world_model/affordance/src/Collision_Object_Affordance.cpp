@@ -25,24 +25,24 @@ Collision_Object_Affordance::Collision_Object_Affordance(AffConstPtr affordance)
 {
   if (!isSupported(affordance))
     throw ArgumentException("Unsupported affordance passed to Collision_Object_Affordance Constructor: otdf_type = " 
-			    + affordance->_otdf_type);
+			    + affordance->getType());
   
   Vector3f xyz = affordance->getXYZ();
   Vector4f q = affordance->getQuaternion();
   
-  if (affordance->_otdf_type == AffordanceState::BOX) 
+  if (affordance->getType() == AffordanceState::BOX) 
     {
       _obj = new Collision_Object_Box(affordance->getGUIDAsString(), 
 				      Vector3f(affordance->length(), affordance->width(), affordance->height()), 
 				      xyz, q);
     }
-  else if (affordance->_otdf_type == AffordanceState::CYLINDER) 
+  else if (affordance->getType() == AffordanceState::CYLINDER) 
     {
       _obj = new Collision_Object_Cylinder(affordance->getGUIDAsString(),
 					   affordance->radius(), affordance->length(),
 					   xyz, q);
     }
-  else if (affordance->_otdf_type == AffordanceState::SPHERE) 
+  else if (affordance->getType() == AffordanceState::SPHERE) 
     {
       _obj = new Collision_Object_Sphere(affordance->getGUIDAsString(),
 					 affordance->radius(),
@@ -59,9 +59,9 @@ Collision_Object_Affordance::~Collision_Object_Affordance()
 
 bool Collision_Object_Affordance::isSupported(AffConstPtr affordance)
 {
-  return affordance->_otdf_type == AffordanceState::CYLINDER ||
-    affordance->_otdf_type == AffordanceState::BOX ||
-    affordance->_otdf_type == AffordanceState::SPHERE;
+  return affordance->getType() == AffordanceState::CYLINDER ||
+    affordance->getType() == AffordanceState::BOX ||
+    affordance->getType() == AffordanceState::SPHERE;
 }
 
 

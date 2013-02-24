@@ -42,21 +42,24 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		//======add something to the server
 		if (j++ == 1 || j == 10)
 		{
-		  AffordanceState s("First Affordance");
+		  AffordanceState s;
 		  s._map_id 	 = 7;
 		  s._uid = 0;
-		  s._otdf_type= AffordanceState::CYLINDER;
 		  s._params[AffordanceState::RADIUS_NAME] = (j == 10 ? 9999 : 1.41);
+          s._params[AffordanceState::LENGTH_NAME] = 9;
+          s.setType(AffordanceState::CYLINDER);
 		  wrapper.addNewlyFittedAffordance(s);
 		}
 
 		if (j == 15)
 		{
-		  AffordanceState s("Second Affordance");
+		  AffordanceState s;
 		  s._map_id 	 = 7;
 		  s._uid = 21; //should get set to 1 by the server		  
-		  s._otdf_type= AffordanceState::BOX;
 		  s._params[AffordanceState::LENGTH_NAME] = .11111;
+		  s._params[AffordanceState::WIDTH_NAME] = 0;
+		  s._params[AffordanceState::HEIGHT_NAME] = 0;
+          s.setType(AffordanceState::BOX);
 		  wrapper.addNewlyFittedAffordance(s);
 		}
 	}

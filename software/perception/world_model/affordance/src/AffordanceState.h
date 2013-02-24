@@ -27,11 +27,11 @@ namespace affordance
   public:
 
     typedef std::string OTDF_TYPE; //type is a string / relative filename
-    static std::string CYLINDER;  //relative file name for cylinder
-    static std::string BOX; //todo: read these in from the right directory
-    static std::string SPHERE;
-    static std::string LEVER;
-    static std::string UNKNOWN;
+    static OTDF_TYPE CYLINDER;  //relative file name for cylinder
+    static OTDF_TYPE BOX; //todo: read these in from the right directory
+    static OTDF_TYPE SPHERE;
+    static OTDF_TYPE LEVER;
+    static OTDF_TYPE UNKNOWN;
     
     static const boost::unordered_set<OTDF_TYPE> supportedOtdfTypes;
     static boost::unordered_set<OTDF_TYPE> getSupportedOtdfTypes();
@@ -49,23 +49,23 @@ namespace affordance
     
     /**which object in the scene?*/
     int32_t    _uid;
-    
-    /**type of affordance.  this is a relative otdf file name w/o
-     the otdf extension at the end.  e.g. "cylinder"*/
-    std::string _otdf_type;
-    
+        
     /**{name --> value} maps*/
     boost::unordered_map<std::string, double> _params, //geometrical properties
                                              _states;
     std::vector< int32_t > _ptinds;
     
+  private:
+    /**type of affordance.  this is a relative otdf file name w/o
+     the otdf extension at the end.  e.g. "cylinder"*/
+    OTDF_TYPE _otdf_type;
+
     //-----------constructor/destructor
   public:
     AffordanceState(const drc::affordance_t *affordanceMsg);
-    AffordanceState(const OTDF_TYPE &otdf_type,
-		    const int &objId = 0, const int &mapId = 0,
-		    const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
-		    const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+    AffordanceState(const int &uid = 0, const int &mapId = 0,
+                    const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+                    const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
     AffordanceState(const AffordanceState &other);
     AffordanceState& operator=( const AffordanceState& rhs );
     
@@ -74,12 +74,15 @@ namespace affordance
 
     //mutators
     void fromMsg(const drc::affordance_t *msg);
+
+    void setType(const OTDF_TYPE &type);
     
     //observers
   public:
     void toMsg(drc::affordance_t *affordanceMsg) const;
     void toURDF(std::string &urdf_xml_string) const;
-        
+    OTDF_TYPE getType() const;
+
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
     OTDF_TYPE getOTDFType() const;
@@ -105,8 +108,12 @@ namespace affordance
     double height() const;
 
     //useful
+    bool hasRadius() const;    
+    bool hasLength() const;
+    bool hasWidth() const;
+    bool hasHeight() const;
     bool hasRPY() const;
-    
+
     //helpers
   private:
     static void assertContainsKey(const boost::unordered_map<std::string, double> &map,

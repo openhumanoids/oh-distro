@@ -22,22 +22,22 @@ OpenGL_Affordance::OpenGL_Affordance(AffConstPtr affordance,
 {
 
   //frame will be used by everything -- only compute once
-  if (affordance->_otdf_type == AffordanceState::CYLINDER)
+  if (affordance->getType() == AffordanceState::CYLINDER)
   {
       _cylinder.set(_frame, Vector2f(affordance->radius(),
 				    affordance->length()));
       _obj = &_cylinder;
    }
-   else if (affordance->_otdf_type == AffordanceState::LEVER)
+   else if (affordance->getType() == AffordanceState::LEVER)
       throw runtime_error("not handling lever right now");
-   else if (affordance->_otdf_type == AffordanceState::BOX)
+   else if (affordance->getType() == AffordanceState::BOX)
    {
       _box.set(_frame, Vector3f(affordance->length(),
 			       affordance->width(),
 			       affordance->height()));
       _obj = &_box;
     }
-    else if (affordance->_otdf_type == AffordanceState::SPHERE)
+    else if (affordance->getType() == AffordanceState::SPHERE)
     {
       _sphere.set(_frame, affordance->radius());
       _obj = &_sphere;
@@ -63,8 +63,8 @@ void OpenGL_Affordance::draw()
 
 bool OpenGL_Affordance::isSupported(affordance::AffConstPtr affordance)
 {
-  return affordance->_otdf_type == AffordanceState::CYLINDER ||
-    affordance->_otdf_type == AffordanceState::LEVER ||
-    affordance->_otdf_type == AffordanceState::BOX ||
-    affordance->_otdf_type == AffordanceState::SPHERE;
+  return affordance->getType() == AffordanceState::CYLINDER ||
+    affordance->getType() == AffordanceState::LEVER ||
+    affordance->getType() == AffordanceState::BOX ||
+    affordance->getType() == AffordanceState::SPHERE;
 }
