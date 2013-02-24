@@ -49,7 +49,7 @@ set_dimensions( double majorRadius,
                 double minorRadius ){
   _major_radius = majorRadius;
   _minor_radius = minorRadius;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }

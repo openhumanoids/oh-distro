@@ -59,7 +59,7 @@ void
 OpenGL_Object_Box::
 set( Vector3f dimensions ){
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }
@@ -76,7 +76,7 @@ set( Frame transform,
       Vector3f dimensions ){
   _transform = transform;
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }

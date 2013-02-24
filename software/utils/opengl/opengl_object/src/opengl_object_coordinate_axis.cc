@@ -44,7 +44,7 @@ void
 OpenGL_Object_Coordinate_Axis::
 set_scale( double scale ){
   _scale = scale;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }

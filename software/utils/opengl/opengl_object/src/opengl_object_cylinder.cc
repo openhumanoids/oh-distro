@@ -64,7 +64,7 @@ void
 OpenGL_Object_Cylinder::
 set( Vector2f dimensions ){
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }
@@ -81,7 +81,7 @@ set( Frame transform,
       Vector2f dimensions ){
   _transform = transform;
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }

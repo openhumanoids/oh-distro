@@ -62,7 +62,7 @@ void
 OpenGL_Object_Sphere::
 set( double dimensions ){
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }
@@ -79,7 +79,7 @@ set( Frame transform,
       double dimensions ){
   _transform = transform;
   _dimensions = dimensions;
-  if( glIsList( _dl ) == GL_TRUE ){
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
   }

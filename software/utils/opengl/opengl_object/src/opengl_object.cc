@@ -43,8 +43,9 @@ OpenGL_Object( const OpenGL_Object& other ) : _id( other._id ),
                                               _visible( other._visible ),
                                               _color( other._color ),
                                               _transparency( other._transparency ),
-                                              _transform( other._transform ){
-
+                                              _transform( other._transform ),
+                                              _highlightColor( other._highlightColor ),
+                                              _isHighlighted( other._isHighlighted ){    
 }
 
 /**
