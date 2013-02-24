@@ -288,7 +288,7 @@ class GlKinematicBody
     bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
     
     // Was protected: (mfallon changed this:
-    std::string evalMeshFilePath(std::string file_path_expression);
+    std::string evalMeshFilePath(std::string file_path_expression, bool return_convex_hull_path =false);
   protected:
      std::string exec(std::string cmd);
      std::string evalROSMeshFilePath(std::string file_path_expression);  

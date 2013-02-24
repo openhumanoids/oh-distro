@@ -1257,7 +1257,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
 //===============================================================================================
 // MISC. UTILITIES 
 //
- std::string GlKinematicBody::evalMeshFilePath(std::string file_path_expression)
+ std::string GlKinematicBody::evalMeshFilePath(std::string file_path_expression, bool return_convex_hull_path)
   {
     std::string result = "";
     std::string package_path = std::string(getModelsPath()) + "/mit_gazebo_models/"; // getModelsPath gives /drc/software/build/models/
@@ -1269,8 +1269,11 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     if (found1!=std::string::npos) // if string contains package:// as a substring 
     {  
     found2=file_path_expression.find(token_str2);
-      file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+".obj"; 
-      //file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+"_chull.obj"; 
+      if (return_convex_hull_path){
+        file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+"_chull.obj"; 
+      }else{
+        file_path = package_path + file_path_expression.substr(found1+token_str1.size(),found2-found1-token_str1.size())+".obj"; 
+      }
     }
     else
     file_path = file_path_expression;
