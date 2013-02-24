@@ -43,6 +43,8 @@ void MainWindow::handleAffordancesChanged()
         throw InvalidStateException("glObjects and collisionObjs should have the same size");
     }
 
+    std::cout << " flag1" << std::endl;
+
     _widget_opengl.opengl_scene().clear_objects();
 
     for (uint i = 0; i < _worldState.glObjects.size(); i++)
@@ -51,13 +53,15 @@ void MainWindow::handleAffordancesChanged()
         delete _worldState.collisionObjs[i];
     }
 
+    std::cout << " flag2" << std::endl;
+
     _worldState.glObjects.clear();
     _worldState.collisionObjs.clear();
-
+    std::cout << " flag2d" << std::endl;
     for (uint i = 0; i < _worldState.affordances.size(); i++)
     {
         AffConstPtr next = _worldState.affordances[i];
-
+    std::cout << " flag2c" << std::endl;
         if (!Collision_Object_Affordance::isSupported(next))
         {
             cout << "\n Collision_Object_Affordance doesn't support " << next->getName() << endl;
@@ -69,17 +73,22 @@ void MainWindow::handleAffordancesChanged()
             cout << "\n OpenGL_Affordance doesn't support " << next->getName() << endl;
             continue;
         }
-
+    std::cout << " flag2b" << std::endl;
+    std::cout << " next " << next->getName() << std::endl;
         //opengl
         OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next);
+    std::cout << " flag2b-1" << std::endl;
         _widget_opengl.opengl_scene().add_object(*asGlAff);
+    std::cout << " flag2b-2" << std::endl;
         _worldState.glObjects.push_back(asGlAff);
-
+    std::cout << " flag2a" << std::endl;
         //collisions:  Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
         Collision_Object *collision_object_affordance = new Collision_Object_Affordance(next);
         _widget_opengl.add_collision_object(collision_object_affordance);
         _worldState.collisionObjs.push_back(collision_object_affordance);
     }
+
+    std::cout << " flag3" << std::endl;
 
     //----------handle constraint macros
     unordered_map<string, AffConstPtr> nameToAffMap;
@@ -91,95 +100,32 @@ void MainWindow::handleAffordancesChanged()
         nameToAffMap[(*iter)->getName()] = *iter;
     }
 
-    // read the joints from the robot state
-    // create the manipulators from the robot's joints
-    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
+    std::cout << " flag4" << std::endl;
 
-    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
-    {
-        const State_GFE_Joint &state_gfe_joint = it->second;
-        std::string id = state_gfe_joint.id();
-        shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
-
-        ManipulatorStateConstPtr manipulator(new ManipulatorState(link,
-                                             _worldState.colorRobot.getKinematicsModel().link(link->name),
-                                             GlobalUID(rand(), rand()))); //todo guid
-
-        _worldState.manipulators.push_back(manipulator);
-
-        OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
-        _widget_opengl.opengl_scene().add_object(*asGlMan);
-        _worldState.glObjects.push_back(asGlMan);
-
-        Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
-
-        if (cObjManip->isSupported(manipulator))
-        {
-            _widget_opengl.add_collision_object(cObjManip);
-            _worldState.collisionObjs.push_back(cObjManip);
-        }
-    }
-
+    createManipulators();
     updateFlyingManipulators();
 
     _widget_opengl.opengl_scene().add_object(point_contact_axis);
-    _worldState.glObjects.push_back(&point_contact_axis);
+    //_worldState.glObjects.push_back(&point_contact_axis);
     _widget_opengl.opengl_scene().add_object(point_contact_axis2);
-    _worldState.glObjects.push_back(&point_contact_axis2);
+    //_worldState.glObjects.push_back(&point_contact_axis2);
 
     //----------add robot and vehicle
     _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-    connect(&_widget_opengl, SIGNAL(raycastCallback(std::string, Eigen::Vector3f)),
-            this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
+        std::cout << " flag5" << std::endl;
+
     //  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
     //	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
 
     // TODO resolve path
-    _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle",
-            "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
-    _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
+    //_worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle",
+    //"/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+    //_widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
     _widget_opengl.update();
     //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
-
-
-    //todo: this is just demo code
-    if (false && _worldState.manipulators.size() > 4)
-    {
-        AffConstPtr rfoot = nameToAffMap["ladder_cyl"];
-        AffConstPtr lfoot = nameToAffMap["Sphere"];
-        AffConstPtr rhand = nameToAffMap["Ground Plan"];
-        AffConstPtr lhand = nameToAffMap["cylinder"];
-
-        //      AffConstPtr gas = nameToAffMap["ladder"];
-        //      AffConstPtr brake = nameToAffMap["box"];
-        //      AffConstPtr wheel = nameToAffMap["steering_cyl"];
-
-        ManipulatorStateConstPtr manip = _worldState.manipulators[0];
-        ManipulatorStateConstPtr manip1 = _worldState.manipulators[1];
-        ManipulatorStateConstPtr manip2 = _worldState.manipulators[2];
-        ManipulatorStateConstPtr manip3 = _worldState.manipulators[3];
-        PointContactRelationPtr relstate(new PointContactRelation());
-
-        AtomicConstraintPtr rfoot_gas_relation(new ManipulationRelation(rfoot, manip, relstate));
-        AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(lfoot, manip1, relstate));
-        AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(rhand, manip2, relstate));
-        AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(lhand, manip3, relstate));
-
-        ConstraintMacroPtr rfoot_gas(new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
-        ConstraintMacroPtr lfoot_brake(new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));
-        ConstraintMacroPtr rhand_wheel(new ConstraintMacro("Right Hand To Wheel", rhand_wheel_relation));
-        ConstraintMacroPtr lhand_wheel(new ConstraintMacro("Left Hand To Wheel", lhand_wheel_relation));
-
-        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rfoot_gas, 0));
-        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lfoot_brake, 1));
-        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(rhand_wheel, 2));
-        _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(lhand_wheel, 3));
-
-        rebuildGUIFromState(_authoringState, _worldState);
-    }
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
@@ -203,6 +149,9 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _widget_opengl.setMinimumHeight(100);
     _widget_opengl.setMinimumWidth(500);
     _widget_opengl.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    connect(&_widget_opengl, SIGNAL(raycastCallback(std::string, Eigen::Vector3f)),
+            this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
 
     //setup timer to look for affordance changes
     QTimer *timer = new QTimer;
@@ -998,7 +947,7 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
 {
     _worldState.state_gfe.from_lcm(*new_robot_state);
     _worldState.colorRobot.set(_worldState.state_gfe);
-    _widget_opengl.update();
+    handleAffordancesChanged();
 }
 
 void
@@ -1019,5 +968,40 @@ updatePointVisualizer()
 
         KDL::Frame trans2(KDL::Rotation::Quaternion(0, 0, 0, 1.0), KDL::Vector(prel->getPoint2().x(), prel->getPoint2().y(), prel->getPoint2().z()));
         point_contact_axis2.set_transform(trans2);
+    }
+}
+
+// create the manipulators from the robot's joints
+// TODO : pull out worldState and robot
+void
+MainWindow::
+createManipulators()
+{
+    // read the joints from the robot state
+    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
+
+    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
+    {
+        const State_GFE_Joint &state_gfe_joint = it->second;
+        std::string id = state_gfe_joint.id();
+        shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
+
+        ManipulatorStateConstPtr manipulator(new ManipulatorState(link,
+                                             _worldState.colorRobot.getKinematicsModel().link(link->name),
+                                             GlobalUID(rand(), rand()))); //todo guid
+
+        _worldState.manipulators.push_back(manipulator);
+
+        OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
+        _widget_opengl.opengl_scene().add_object(*asGlMan);
+        _worldState.glObjects.push_back(asGlMan);
+
+        Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
+
+        if (cObjManip->isSupported(manipulator))
+        {
+            _widget_opengl.add_collision_object(cObjManip);
+            _worldState.collisionObjs.push_back(cObjManip);
+        }
     }
 }

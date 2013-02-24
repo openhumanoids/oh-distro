@@ -149,6 +149,7 @@ private:
                           const std::string& channel,
                           const drc::robot_state_t *robot_state);
     void updatePointVisualizer();
+    void createManipulators();
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
