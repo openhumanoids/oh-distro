@@ -63,12 +63,15 @@ std::vector<drc::contact_goal_t> ConstraintMacro::toLCM()
 
     if (_constraintType == ConstraintMacro::ATOMIC)
     {
-        drc::contact_goal_t msg;
-        printf("Created the LCM message.\n");
+        drc::contact_goal_t msg = _atomicConstraint->toLCM();
+        //printf("Created the LCM message.\n");
         //populate the message
-        msg.object_1_name = _name;
-        msg.object_1_contact_grp = "a contact group";
+        msg.utime = 0.0;
+        //msg.object_1_name = _name;
+        msg.object_1_contact_grp = "ContactGroup";
         msg.contact_type = msg.ON_GROUND_PLANE;
+        msg.contact_type = 0;
+        msg.ground_plane_pt_radius = .25;
         msg.lower_bound_completion_time = _timeLowerBound;
         msg.upper_bound_completion_time = _timeUpperBound;
         lcmMessages.push_back(msg);

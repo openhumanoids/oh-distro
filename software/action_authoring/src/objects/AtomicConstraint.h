@@ -26,6 +26,7 @@ public:
     virtual void setAffordance(affordance::AffConstPtr affordance) = 0;
     virtual void setManipulator(affordance::ManipulatorStateConstPtr manipulator) = 0;
     virtual void setRelationState(RelationStatePtr relationState) = 0;
+    virtual drc::contact_goal_t toLCM() = 0;
 };  //class AtomicConstraint
 
 typedef boost::shared_ptr<AtomicConstraint> AtomicConstraintPtr;

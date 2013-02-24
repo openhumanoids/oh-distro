@@ -34,11 +34,11 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
 
     //box
     AffordanceState box(AffordanceState::BOX, uniqueObjId++, mapId,
-                        KDL::Frame(KDL::Vector(0.0, 0.0, -1.6)),
+                        KDL::Frame(KDL::Vector(0.0, 0.0, 0.0)),
                         Eigen::Vector3f(0.75, 0.75, 0.0));
     box._params[AffordanceState::LENGTH_NAME] = 100;
     box._params[AffordanceState::WIDTH_NAME]  = 100;
-    box._params[AffordanceState::HEIGHT_NAME] = 1.0;
+    box._params[AffordanceState::HEIGHT_NAME] = .00001;
     wrapper.addNewlyFittedAffordance(box);
 
     //cylinder

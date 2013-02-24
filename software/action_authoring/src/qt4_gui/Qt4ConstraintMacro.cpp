@@ -81,14 +81,14 @@ getPanel()
     }
 
     /*
-    _gui_constraintType->insertItem(0, "near");
-    _gui_constraintType->insertItem(0, "surface touches");
-    _gui_constraintType->insertItem(0, "tangent to");
+    //_gui_constraintType->insertItem(0, "near");
+    //_gui_constraintType->insertItem(0, "surface touches");
+    //_gui_constraintType->insertItem(0, "tangent to");
     _gui_constraintType->insertItem(0, "3D Offset"); // OFFSET
-    _gui_constraintType->insertItem(0, "point to point");
-    _gui_constraintType->insertItem(0, "force closure");
-    _gui_constraintType->insertItem(0, "grasps");
-    _gui_constraintType->insertItem(0, "undefined");
+    //_gui_constraintType->insertItem(0, "point to point");
+    //_gui_constraintType->insertItem(0, "force closure");
+    //_gui_constraintType->insertItem(0, "grasps");
+    //_gui_constraintType->insertItem(0, "undefined");
     */
 
     QVBoxLayout *vbox = new QVBoxLayout;

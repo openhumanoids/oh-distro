@@ -45,6 +45,8 @@ public:
         _relationState = relationState;
     }
 
+    drc::contact_goal_t toLCM();
+
     //------------Fields
 private:
     affordance::AffConstPtr _affordance;

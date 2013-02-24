@@ -491,26 +491,23 @@ void DatabaseManager::store(const std::string &filename, std::vector<AffConstPtr
           Reading From File
 ************************************/
 
-//Utiliity function that checks equality of xmlNode name to given name
+//Utility function that checks equality of xmlNode name to given name
 bool nodeIs(xmlNode *node, const char *name)
 {
     return xmlStrncmp(node->name, BAD_CAST name, 100) == 0;
 }
 
 //Utility function that gets value of an xml node
-char *value(xmlDocPtr doc, xmlNode *node)
-{
-    return (char *)xmlNodeListGetString(doc, node->xmlChildrenNode, 1);
+string value(xmlDocPtr doc, xmlNode* node) {
+  return (char*)xmlNodeListGetString(doc, node->xmlChildrenNode, 1);
 }
 
-int intvalue(xmlDocPtr doc, xmlNode *node)
-{
-    return (int)(*value(doc, node));
+int intvalue(xmlDocPtr doc, xmlNode* node) {
+  return atoi(value(doc, node).c_str());
 }
 
-double doublevalue(xmlDocPtr doc, xmlNode *node)
-{
-    return (double) atof(value(doc, node));
+double doublevalue(xmlDocPtr doc, xmlNode* node) {
+  return (double) atof(value(doc, node).c_str());
 }
 
 void printAffordanceMap(map<string, AffConstPtr> &affordances)
