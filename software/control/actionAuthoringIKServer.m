@@ -11,16 +11,20 @@ lc.subscribe('action_authoring_plan_action_request',monitor);
 
 % construct lcm state publisher
 % todo: should really load model name from lcm
-r = RigidBodyManipulator('drake/examples/Atlas/urdf/atlas_minimal_contact.urdf',struct('floating',true));
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct( ...
+  'floating','true', ...
+  'package','/Users/russt/drc/ros_workspace/mit_drcsim_scripts/models/'));
+%r = RigidBodyManipulator('drake/examples/Atlas/urdf/atlas_minimal_contact.urdf',struct('floating',true));
 %r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf',struct('floating',true));
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
 
 % load the "zero position"
-load('data/atlas_fp3.mat');
+load('data/aa_atlas_fp.mat');
 q = xstar(1:getNumDOF(r));
 
+% setup IK prefs
 cost = Point(r.getStateFrame,1);
 cost.pelvis_x = 0;
 cost.pelvis_y = 0;
@@ -44,20 +48,32 @@ while (1)
     msg = drc.action_sequence_t(data);
     % parse the action sequence
     
-    ikargs={};
-    for i=1:msg.num_contact_goals
-      goal = msg.contact_goals(i);
-      if (goal.contact_type==goal.ON_GROUND_PLANE)
-%        body=findLink(r,char(goal.object_1_name));
-        body=findLink(r,'r_foot');
-        pos=goal.ground_plane_pt;
-        ikargs={ikargs{:},body,[pos.x;pos.y;pos.z]};
+    q_bk = q;
+    try 
+      ikargs={};
+      for i=1:msg.num_contact_goals
+        goal = msg.contact_goals(i);
+        if (goal.contact_type==goal.ON_GROUND_PLANE)
+          body=findLink(r,char(goal.object_1_name));
+          collision_group = find(strcmpi(char(goal.object_1_contact_grp),body.collision_group_name));
+          if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
+          p=[goal.ground_plane_pt.x; goal.ground_plane_pt.y; goal.ground_plane_pt.z];
+          pos.min=p-goal.ground_plane_pt_radius*[1;1;0];
+          pos.max=p+goal.ground_plane_pt_radius*[1;1;0];
+          ikargs={ikargs{:},body,collision_group,pos};
+        end
       end
+      if isempty(ikargs)
+        q=options.q_nom;
+      else
+        % call IK
+        q = inverseKin(r,q,ikargs{:},options);
+      end
+    catch ex
+      warning(ex.identifier,ex.message);
+      q=q_bk;
+      continue;
     end
-    if isempty(ikargs) continue; end
-    
-    % call IK 
-    q = inverseKin(r,q,ikargs{:},options);
     
     % publish robot state message
     x = [q;0*q];
