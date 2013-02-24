@@ -26,27 +26,30 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     int uniqueObjId = 0;
 
     //sphere
-    AffordanceState sphere(AffordanceState::SPHERE, uniqueObjId++, mapId,
+    AffordanceState sphere(uniqueObjId++, mapId,
                            KDL::Frame(KDL::Vector(-0.5, -0.5, 0.0)),
                            Eigen::Vector3f(1.0, 0.0, 1.0));   //color
     sphere._params[AffordanceState::RADIUS_NAME] = 0.125;
+    sphere.setType(AffordanceState::SPHERE);
     wrapper.addNewlyFittedAffordance(sphere);
 
     //box
-    AffordanceState box(AffordanceState::BOX, uniqueObjId++, mapId,
+    AffordanceState box(uniqueObjId++, mapId,
                         KDL::Frame(KDL::Vector(0.0, 0.0, 0.0)),
                         Eigen::Vector3f(0.75, 0.75, 0.0));
     box._params[AffordanceState::LENGTH_NAME] = 100;
     box._params[AffordanceState::WIDTH_NAME]  = 100;
     box._params[AffordanceState::HEIGHT_NAME] = .00001;
+    box.setType(AffordanceState::BOX);
     wrapper.addNewlyFittedAffordance(box);
 
     //cylinder
-    AffordanceState cylinder(AffordanceState::CYLINDER, uniqueObjId++, mapId,
+    AffordanceState cylinder(uniqueObjId++, mapId,
                              KDL::Frame(KDL::Vector(0.0, 1.0, 0.0)),
                              Eigen::Vector3f(0.0, 1.0, 1.0)); //color
     cylinder._params[AffordanceState::RADIUS_NAME] = 0.25;
     cylinder._params[AffordanceState::LENGTH_NAME] = 0.25;
+    cylinder.setType(AffordanceState::CYLINDER);
     wrapper.addNewlyFittedAffordance(cylinder);
 
     //=============
