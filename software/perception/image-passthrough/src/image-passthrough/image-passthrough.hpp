@@ -49,7 +49,7 @@ class SimExample
     typedef boost::shared_ptr<const SimExample> ConstPtr;
 	
     SimExample (int argc, char** argv,
-		int height,int width, boost::shared_ptr<lcm::LCM> &lcm_);
+		int height,int width, boost::shared_ptr<lcm::LCM> &lcm_, bool output_color_);
     void initializeGL (int argc, char** argv);
     
     Scene::Ptr scene_;
@@ -70,7 +70,7 @@ class SimExample
     
     // Create a scene using a robot's joint positions
     // NOTE: generalised to allow rendering of any set of objects. link = object
-    void createScene (std::string folder_name, std::vector<std::string> object_names,
+    void createScene (std::vector<std::string> object_names,
                       std::vector<Eigen::Isometry3d> object_tfs);
     
     void doSim (Eigen::Isometry3d pose_in);
@@ -90,6 +90,9 @@ class SimExample
   private:
     uint16_t t_gamma[2048];  
 
+    // either output a color mash or a grey mask
+    bool output_color_;
+    
     // Duplicates the list in collections renderer:
     // assumed to be 3xN colors
     std::vector < float > colors_;       

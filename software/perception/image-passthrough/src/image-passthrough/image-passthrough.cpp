@@ -3,11 +3,12 @@
 
 using namespace boost::assign; // bring 'operator+=()' into scope
 
-#define DO_TIMING_PROFILE TRUE
+#define DO_TIMING_PROFILE FALSE
 
 SimExample::SimExample(int argc, char** argv,
-	int height,int width, boost::shared_ptr<lcm::LCM> &lcm_):
-        height_(height), width_(width), lcm_(lcm_){
+	int height,int width, boost::shared_ptr<lcm::LCM> &lcm_,
+        bool output_color_):
+        height_(height), width_(width), lcm_(lcm_), output_color_(output_color_){
 
   initializeGL (argc, argv);
   
@@ -244,10 +245,14 @@ void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
     mesh_struct.file_path = file_paths_in[i];
     mesh_struct.polygon_mesh = getPolygonMesh(mesh_struct.file_path);          
     
-    // Set the mesh to a false color:
-    int j =i%(colors_.size()/3);
-    //cout << i << " of " << (colors_.size()/3) << " " << j << "\n";
-    setPolygonMeshColor(mesh_struct.polygon_mesh, colors_[j*3], colors_[j*3+1], colors_[j*3+2] );
+    
+    if(output_color_){
+      // Set the mesh to a false color:
+      int j =i%(colors_.size()/3);
+      setPolygonMeshColor(mesh_struct.polygon_mesh, colors_[j*3], colors_[j*3+1], colors_[j*3+2] );
+    }else{
+      setPolygonMeshColor(mesh_struct.polygon_mesh, 1.0,1.0,1.0 );
+    }
     
     polymesh_map_.insert(make_pair( link_names_in[i] , mesh_struct));
   }
@@ -272,7 +277,7 @@ int64_t _timestamp_now()
 }
 
 void
-SimExample::createScene (std::string folder_name, std::vector<std::string> object_names, 
+SimExample::createScene (std::vector<std::string> object_names, 
                          std::vector<Eigen::Isometry3d> object_tfs){
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
@@ -288,12 +293,18 @@ SimExample::createScene (std::string folder_name, std::vector<std::string> objec
   pcl::PolygonMesh combined_mesh;
   pcl::PolygonMesh::Ptr combined_mesh_ptr(new pcl::PolygonMesh(combined_mesh));
   for (size_t i=0; i < object_names.size() ; i++ ) { 
-    //std::cout << object_names[i] << " is to be transformed now\n";
+    // skip the head and hokuyo_link (which cannot be seen and are large meshes
+    if ( object_names[i].compare("head") == 0){ 
+      continue; 
+    }else if ( object_names[i].compare("hokuyo_link") == 0){
+      continue; 
+    }
+      
     
     std::map<std::string, PolygonMeshStruct >::iterator it;
     it=polymesh_map_.find(  object_names[i] );
     if (it == polymesh_map_.end() ){ // the element has a visual link but is not a mesh ... skip for now
-      std::cout << "link not found ====================\n"; 
+      //std::cout <<  object_names[i] << " link not found ====================\n"; 
       continue;
     }
     
@@ -355,6 +366,7 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
   //poses.push_back (pose_in);
   //poses.push_back (pose_in);
   rl_->computeLikelihoods (reference, poses, scores);
+  /*
   std::cout << "camera: " << camera_->getX ()
        << " " << camera_->getY ()
        << " " << camera_->getZ ()
@@ -362,6 +374,7 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
        << " " << camera_->getPitch ()
        << " " << camera_->getYaw ()
        << std::endl;
+       */
        
   delete [] reference;
 }
@@ -583,7 +596,7 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
 void
 SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
 {
-  bool do_timing=true;
+  bool do_timing=false;
   std::vector<int64_t> tic_toc;
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
@@ -593,7 +606,7 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
   int n_colors;
   int8_t pixelformat;
   uint8_t* img_buff;
-  if (1==0){
+  if (output_color_){
     n_colors = 3;
     img_buff = new uint8_t[npixels * n_colors];
     for (int y = 0; y <  rl_->getHeight(); ++y)
@@ -607,6 +620,7 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
         img_buff [3* (px) +2] = rgb_buffer[3*px_in+2];      
       }
     }
+    
   }else{
     n_colors=1;
     img_buff = new uint8_t[npixels * n_colors];
@@ -624,12 +638,11 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
   
   
   
-  
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
   }
   
-  std::string channel = fname + "_COLOR"; // yeah with a 'u', deal with it!
+  std::string channel = fname + "_COLOR";
   int isize =rl_->getWidth()*rl_->getHeight();
 
   if (1==1){ 

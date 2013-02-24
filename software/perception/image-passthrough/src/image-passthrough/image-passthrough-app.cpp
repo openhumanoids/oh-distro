@@ -30,7 +30,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 
-#define DO_TIMING_PROFILE TRUE
+#define DO_TIMING_PROFILE FALSE
 #include <ConciseArgs>
 
 
@@ -110,7 +110,8 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   double fy = 610.1778;
   double cx = 512.5;
   double cy = 272.5;
-  simexample = SimExample::Ptr (new SimExample (argc, argv, height,width , lcm_));
+  bool output_color=false;
+  simexample = SimExample::Ptr (new SimExample (argc, argv, height,width , lcm_, output_color));
   simexample->setCameraIntrinsicsParameters (width, height, fx, fy, cx, cy);
 }
 
@@ -126,7 +127,7 @@ int64_t _timestamp_now()
 // Output the simulated output to file:
 void Pass::sendOutput(int64_t utime){ 
   
-  bool do_timing=true;
+  bool do_timing=false;
   std::vector<int64_t> tic_toc;
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
@@ -198,7 +199,9 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
           
           mesh_link_names.push_back( it->first );
           // Verify the existance so the file:
-          mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename) );
+          bool get_convex_hull_path = true;
+          
+          mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, get_convex_hull_path) );
         }
       }
     }
@@ -394,10 +397,12 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   Eigen::Quaterniond fix_r = euler_to_quat(0.0*M_PI/180.0, -90.0*M_PI/180.0 , 90.0*M_PI/180.0);
   fixrotation_pose.rotate(fix_r);    
   world_to_camera = world_to_camera*fixrotation_pose;
-    
-  std::stringstream ss;
-  print_Isometry3d(world_to_camera, ss);
-  cout << ss.str() << " head_pose\n";
+  
+  if (verbose_){
+    std::stringstream ss;
+    print_Isometry3d(world_to_camera, ss);
+    cout << ss.str() << " head_pose\n";
+  }
     
   Isometry3dTime world_to_cameraT = Isometry3dTime( msg->utime, world_to_camera);
   pc_vis_->pose_to_lcm_from_list(9999, world_to_cameraT);
@@ -408,7 +413,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     tic_toc.push_back(_timestamp_now());
   #endif
   
-  simexample->createScene("/home/mfallon/Desktop/drc_mesh_rgbd/", link_names, link_tfs_e);
+  simexample->createScene(link_names, link_tfs_e);
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());

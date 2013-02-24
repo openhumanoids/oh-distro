@@ -1185,7 +1185,7 @@ RangeLikelihood::getColorBuffer ()
 
   if (color_buffer_dirty_)
   {
-    std::cout << "Read color buffer" << std::endl;
+    //std::cout << "Read color buffer" << std::endl;
 
     // Read Color
     GLint old_read_buffer;
