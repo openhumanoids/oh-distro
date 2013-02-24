@@ -78,7 +78,7 @@ operator=( const OpenGL_Object_GFE& other ) {
  */
 void
 OpenGL_Object_GFE::
-set( robot_state_t& robotState ){
+set( const robot_state_t& robotState ){
   _kinematics_model.set( robotState );
   return;
 }

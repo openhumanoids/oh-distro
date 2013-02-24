@@ -16,7 +16,7 @@ namespace opengl {
     OpenGL_Object_GFE( const OpenGL_Object_GFE& other );
     OpenGL_Object_GFE& operator=( const OpenGL_Object_GFE& other );
     
-    void set( drc::robot_state_t& robotState );
+    void set( const drc::robot_state_t& robotState );
     void set( state::State_GFE& stateGFE );
   
     virtual void draw( void );

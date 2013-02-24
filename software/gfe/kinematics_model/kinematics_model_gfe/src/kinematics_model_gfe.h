@@ -21,7 +21,7 @@ namespace kinematics_model {
     
     bool load_xml_string( std::string xmlString ); 
     bool load_urdf( std::string urdf );
-    void set( drc::robot_state_t& robotState );  
+    void set( const drc::robot_state_t& robotState );  
     void set( state::State_GFE& stateGFE );
 
     const urdf::Model& model( void )const;
