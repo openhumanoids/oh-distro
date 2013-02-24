@@ -10,6 +10,7 @@ ManipulatorState::ManipulatorState(const std::string &name,
 				   const GlobalUID &guid)
   : _name(name), _guid(guid), _link()     
 {
+    _contact_group_name = "default";
 }
 
 ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link, 
@@ -17,6 +18,7 @@ ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link,
 				   const GlobalUID &guid)
     : _name(link->name), _guid(guid), _link(link), _link_frame(link_frame)
 {
+    _contact_group_name = "default";
 }
 
 
@@ -142,8 +144,7 @@ void ManipulatorState::getCollisionContactPoints(vector<KDL::Frame> &pts) const
       */
     }
 }
-
-//TODO: ine, fill this in from the GUI
-int ManipulatorState::getSelectedContactGroupIndex() const{
-  return 0;
+void ManipulatorState::setContactGroupName(std::string contactGroupName)
+{
+  _contact_group_name = contactGroupName;
 }

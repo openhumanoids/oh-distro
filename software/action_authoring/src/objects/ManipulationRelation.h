@@ -18,6 +18,13 @@ public:
                          affordance::ManipulatorStateConstPtr manipulator,
                          RelationStatePtr relationState);
 
+    ManipulationRelation(affordance::AffConstPtr affordance,
+                         affordance::ManipulatorStateConstPtr manipulator,
+                         RelationStatePtr relationState,
+                         double timeLowerBound,
+                         double timeUpperBound
+                         );
+
     //----------Accessors
     affordance::AffConstPtr getAffordance() const
     {
@@ -31,6 +38,14 @@ public:
     {
         return _relationState;
     }
+    double getTimeLowerBound() const
+    {
+        return _timeLowerBound;
+    }
+    double getTimeUpperBound() const
+    {
+        return _timeUpperBound;
+    }
 
     void setAffordance(affordance::AffConstPtr affordance)
     {
@@ -43,6 +58,14 @@ public:
     void setRelationState(RelationStatePtr relationState)
     {
         _relationState = relationState;
+    }
+    void setTimeLowerBound(double timeLowerBound)
+    {
+        _timeLowerBound = timeLowerBound;
+    }
+    void setTimeUpperBound(double timeUpperBound)
+    {
+        _timeUpperBound = timeUpperBound;
     }
 
     drc::contact_goal_t toLCM();

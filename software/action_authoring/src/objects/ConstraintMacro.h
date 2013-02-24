@@ -57,19 +57,43 @@ public:
     };
     double getTimeLowerBound()
     {
-        return _timeLowerBound;
+        if (_constraintType == ConstraintMacro::ATOMIC)
+        {
+            return _atomicConstraint->getTimeLowerBound();
+        } else 
+        {
+            return _timeLowerBound;
+        }
     }
     double getTimeUpperBound()
     {
-        return _timeUpperBound;
+        if (_constraintType == ConstraintMacro::ATOMIC)
+        {
+            return _atomicConstraint->getTimeUpperBound();
+        } else
+        {
+            return _timeUpperBound;
+        }
     }
     void setTimeLowerBound(double t)
     {
-        _timeLowerBound = t;
+        if (_constraintType == ConstraintMacro::ATOMIC)
+        {
+            _atomicConstraint->setTimeLowerBound(t);
+        } else
+        {
+            _timeLowerBound = t;
+        }
     }
     void setTimeUpperBound(double t)
     {
-        _timeUpperBound = t;
+        if (_constraintType == ConstraintMacro::ATOMIC)
+        {
+            _atomicConstraint->setTimeUpperBound(t);
+        } else
+        {
+            _timeUpperBound = t;
+        }
     }
 
     ConstraintMacroType getConstraintMacroType() const

@@ -14,18 +14,27 @@ todo: make some pure virtual methods*/
 
 class AtomicConstraint
 {
+protected:
+	double _timeLowerBound;
+	double _timeUpperBound;
 
     //---------------Accessors
 public:
     virtual affordance::AffConstPtr getAffordance() const  = 0; //should throw exception if doesn't apply
     virtual affordance::ManipulatorStateConstPtr getManipulator() const = 0; //should throw exception if doesn't apply
     virtual RelationStatePtr getRelationState() const = 0; //todo should throw exception if doesn't apply
+    virtual double getTimeLowerBound() const = 0;
+    virtual double getTimeUpperBound() const = 0;
 
     //mutators
 public:
     virtual void setAffordance(affordance::AffConstPtr affordance) = 0;
     virtual void setManipulator(affordance::ManipulatorStateConstPtr manipulator) = 0;
     virtual void setRelationState(RelationStatePtr relationState) = 0;
+    virtual void setTimeLowerBound(double timeLowerBound) = 0;
+    virtual void setTimeUpperBound(double timeUpperBound) = 0;
+    
+public:
     virtual drc::contact_goal_t toLCM() = 0;
 };  //class AtomicConstraint
 

@@ -24,6 +24,7 @@ namespace affordance
     const GlobalUID _guid;
     const boost::shared_ptr<const urdf::Link> _link;
     KDL::Frame _link_frame;
+    std::string _contact_group_name;
 
     //-----------constructor/destructor
   public:
@@ -61,7 +62,8 @@ namespace affordance
     std::string getGUIDAsString()  const;
     KDL::Frame getLinkFrame() const { return _link_frame; }
     void getCollisionContactPoints(std::vector<KDL::Frame> &pts) const;
-    int getSelectedContactGroupIndex() const;
+    std::string getContactGroupName() const { return _contact_group_name; }
+    void setContactGroupName(std::string contact_group_name);
 
  private:
     typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  
