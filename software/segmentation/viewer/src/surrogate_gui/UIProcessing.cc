@@ -53,6 +53,7 @@ namespace surrogate_gui
 					      0, // initial value
 					      "Cylinder", CYLINDER,
 					      "Sphere", SPHERE,
+								"3D Circle", CIRCLE_3D,
 					      "Plane", PLANE,
 					      "Line", LINE,
 					      "Torus", TORUS,
@@ -60,14 +61,21 @@ namespace surrogate_gui
 					      NULL);
 
 		// DOF Controls
-		Segmentation::FittingParams fp; //default fitting params
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MIN_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.01, 10, 0.01, fp.minRadius);
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.1, 10, 0.1, fp.maxRadius);		
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_DISTANCE_THRESHOLD, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.01, 1, 0.01, fp.distanceThreshold);
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_YAW, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, fp.yaw);
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_PITCH, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, fp.pitch);
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_ROLL, BOT_GTK_PARAM_WIDGET_SPINBOX, -3.14, +3.14, 0.05, fp.roll);
-		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_ANGLE, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 6.28, 0.05, fp.maxAngle);
+		Segmentation::FittingParams defaultFp; //default fitting params
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MIN_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		0.01, 10, 0.01, defaultFp.minRadius);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_RADIUS, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		0.1, 10, 0.1, defaultFp.maxRadius);		
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_DISTANCE_THRESHOLD, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		0.01, 1, 0.01, defaultFp.distanceThreshold);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_YAW, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		-3.14, +3.14, 0.05, defaultFp.yaw);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_PITCH, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		-3.14, +3.14, 0.05, defaultFp.pitch);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_ROLL, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		-3.14, +3.14, 0.05, defaultFp.roll);
+		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_ANGLE, BOT_GTK_PARAM_WIDGET_SPINBOX, 
+																		0, 6.28, 0.05, defaultFp.maxAngle);
 
 		//pause
 		bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
@@ -883,6 +891,7 @@ namespace surrogate_gui
 	  switch(getGeometricPrimitive()){
 	  case CYLINDER: handleAffordancePubButtonCylinder(fp); break;
 	  case SPHERE:   handleAffordancePubButtonSphere(fp); break;
+	  case CIRCLE_3D:handleAffordancePubButtonCircle3d(fp); break;
 	  case PLANE:    handleAffordancePubButtonPlane(fp); break;
 	  case LINE:     handleAffordancePubButtonLine(fp); break;
 	  case TORUS:    handleAffordancePubButtonTorus(fp); break;
@@ -918,7 +927,7 @@ namespace surrogate_gui
 					radius,
 					length, 
 					inliers_distances);
-	      
+	
 	  affordanceMsg.params.push_back(x);
 	  affordanceMsg.param_names.push_back("x");
 	  
@@ -1013,6 +1022,76 @@ namespace surrogate_gui
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  cout << "\n ***published \n" << endl;
+	  
+	  return;
+	}
+
+	void UIProcessing::handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp)
+	{
+	  //todo: map_utime, map_id, object_id
+	  drc::affordance_t affordanceMsg;
+	  	  
+	  affordanceMsg.map_id = 0; 	  
+	  affordanceMsg.otdf_type = "cylinder";
+
+          //geometrical properties
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
+	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
+	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
+	  std::vector<double> inliers_distances; 
+	  PointIndices::Ptr cylinderIndices 
+	    = Segmentation::fitCircle3d(_surrogate_renderer._display_info.cloud,
+																	currObj->indices, fp,
+					x,y,z,
+					roll,pitch,yaw,
+					radius,
+					inliers_distances);
+
+		length = 0.01; // a 3d circle is a cylinder with 1 cm length
+	      
+	  affordanceMsg.params.push_back(x);
+	  affordanceMsg.param_names.push_back("x");
+	  
+	  affordanceMsg.params.push_back(y);
+	  affordanceMsg.param_names.push_back("y");
+
+	  affordanceMsg.params.push_back(z);
+	  affordanceMsg.param_names.push_back("z");
+
+	  affordanceMsg.params.push_back(roll);
+	  affordanceMsg.param_names.push_back("roll");
+
+	  affordanceMsg.params.push_back(pitch);
+	  affordanceMsg.param_names.push_back("pitch");
+
+	  affordanceMsg.params.push_back(yaw);
+	  affordanceMsg.param_names.push_back("yaw");
+
+	  affordanceMsg.params.push_back(radius);
+	  affordanceMsg.param_names.push_back("radius");
+
+	  affordanceMsg.params.push_back(length);
+	  affordanceMsg.param_names.push_back("length");
+
+
+	  //point cloud indices
+	  affordanceMsg.nptinds = cylinderIndices->indices.size();
+	  affordanceMsg.ptinds = vector<int>(cylinderIndices->indices.begin(),
+	  				     cylinderIndices->indices.end());
+
+	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
+	       << affordanceMsg.ptinds.size() << endl;
+
+	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.param_names.size() << endl;
+
+	  //todo : Set these
+	  //states: todo? is this used? states/state_names
+	  affordanceMsg.nstates = 0;
+	  
+	  cout << "\n about to publish" << endl;
+	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
 	  cout << "\n ***published \n" << endl;
 	  
 	  return;
@@ -1164,12 +1243,13 @@ namespace surrogate_gui
 		if (stringsEqual(name, PARAM_NAME_PULL_MAP))
 		{
 			std::vector<maps::ViewClient::MapViewPtr> views = _mViewClient->getAllViews();
+			cout << "Views:" << views.size() <<endl;
 			if (views.size() > 0) 
 			{
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
-					if(views[v]->getSpec().mMapId == 1) continue; // get rid of low rez map
+					if(views[v]->getSpec().mViewId == 1) continue; // get rid of low rez map
 					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
 					(*cloudFull) += *cloud;
 				}

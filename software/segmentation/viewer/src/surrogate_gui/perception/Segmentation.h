@@ -64,6 +64,14 @@ namespace surrogate_gui
 
 
 
+			static pcl::PointIndices::Ptr fitCircle3d(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+								boost::shared_ptr<std::set<int> >  subcloudIndices,
+								const FittingParams& fp,
+					      double &x, double &y, double &z,
+					      double &roll, double &pitch, double &yaw, 
+					      double &radius,
+					      std::vector<double> & inliers_distances);
+
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
 

@@ -19,6 +19,7 @@
 #include <pcl/sample_consensus/sac.h>
 #include <pcl/sample_consensus/sac_model_sphere.h>
 #include <pcl/sample_consensus/sac_model_cylinder.h>
+#include <pcl/sample_consensus/sac_model_circle3d.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
 #include <pcl/sample_consensus/sac_model_plane.h>
@@ -390,14 +391,18 @@ namespace surrogate_gui
     seg.setInputCloud(subcloud);
     seg.setInputNormals(subcloud_normals);
 
+		// convert FittingParams YPR to XYZ vector
+		Matrix3f Rx,Ry,Rz;
+		Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
+		Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
+		Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
+		Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
+
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
     PointIndices::Ptr cylinderIndices (new PointIndices);
-		//Vector3f axis = seg.getAxis();
-		//double angle = seg.getEpsAngle();
-		//cout << "Axis: " << axis.transpose() << angle <<endl;
-		//seg.setAxis(Vector3f(0,0,1)); //TODO: convert from YPR to axis
-		//seg.setEpsAngle(fp.maxAngle); // seg faults if too small
+		seg.setAxis(seedDirection); 
+		seg.setEpsAngle(fp.maxAngle); // seg faults if too small
     seg.segment(*cylinderIndices, *coefficients);
 
     cout << "Cylinder: ";
@@ -564,7 +569,84 @@ namespace surrogate_gui
 #endif
   }
 
+	PointIndices::Ptr Segmentation::fitCircle3d(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					      boost::shared_ptr<set<int> >  subcloudIndices,
+								const FittingParams& fp,
+					      double &x, double &y, double &z,
+					      double &roll, double &pitch, double &yaw, 
+					      double &radius,
+					      std::vector<double> & inliers_distances)
+	{
+		cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
+    cout << "\n cloud size = " << cloud->points.size() << endl;
+		
+		// All the objects needed
+		//pcl::PCDReader reader;
+		//pcl::PassThrough<PointT> pass;
+		//pcl::NormalEstimation<PointT, pcl::Normal> ne;
+		//pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg; 
+		//pcl::PCDWriter writer;
+		//pcl::ExtractIndices<PointT> extract;
+		//pcl::ExtractIndices<pcl::Normal> extract_normals;
+		//pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
+		
+		// Datasets
+		//pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
+		//pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
+		//pcl::PointCloud<PointT>::Ptr cloud_filtered_y (new pcl::PointCloud<PointT>);
+		//pcl::PointCloud<PointT>::Ptr cloud_filtered_z (new pcl::PointCloud<PointT>);
+		
+		
+		//pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+		//pcl::PointCloud<PointT>::Ptr cloud_filtered2 (new pcl::PointCloud<PointT>);
+		//pcl::PointCloud<pcl::Normal>::Ptr cloud_normals2 (new pcl::PointCloud<pcl::Normal>);
+		//pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients), coefficients_cylinder (new pcl::ModelCoefficients);
+		//pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices), inliers_cylinder (new pcl::PointIndices);
 
+		// Create a shared 3d circle model pointer directly
+		SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (cloud));
+		
+		// Create the RANSAC object
+		RandomSampleConsensus<PointXYZRGB> sac(model, 0.01);
+		// Algorithm tests
+		bool result = sac.computeModel ();
+
+		cout << "convergence: " << result << endl;
+
+		std::vector<int> sample;
+		sac.getModel (sample);
+		
+		std::vector<int> inliers;
+		sac.getInliers (inliers);
+		
+		Eigen::VectorXf coeff;
+		sac.getModelCoefficients (coeff);
+
+    x = coeff[0];
+    y = coeff[1];
+    z = coeff[2];
+    radius = coeff[3];
+
+		// convert direction to ypr
+		Vector3f base(&coeff[0]);
+    Vector3f direction(&coeff[4]);  
+		// flip if z is negative to simplify math
+    if(direction.z()<0) direction = -direction;
+    roll = 0;
+    pitch = acos(direction.z());
+    yaw = atan2(direction.y(), direction.x());
+
+		//TODO
+		// inliers
+		// fitting params
+		// inlier distance
+		// set inliers
+		PointIndices::Ptr circle3dIndices (new PointIndices);
+
+		return circle3dIndices;
+
+
+	}
 
 
 

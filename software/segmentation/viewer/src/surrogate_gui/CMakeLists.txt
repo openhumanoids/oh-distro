@@ -14,6 +14,7 @@ set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
 
 include_directories(. perception)
 include_directories(. display_objects)
+include_directories(perception/pcl_circle3d/include)
 
 add_library(surrogate SHARED 
   SurrogateRenderer.cc
@@ -25,6 +26,7 @@ add_library(surrogate SHARED
   perception/ObjectTracker.cc
   perception/Segmentation.cc
   perception/PclSurrogateUtils.cc
+	perception/pcl_circle3d/src/sac_model_circle3d.cpp
 #  otdf_renderer/renderer_otdf.cpp
 #  otdf_renderer/AffordanceCollectionListener.cpp
 #  otdf_renderer/RobotStateListener.cpp

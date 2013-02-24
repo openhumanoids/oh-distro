@@ -23,7 +23,7 @@ namespace surrogate_gui
 
 	//======geometric primitive
 	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "Geometric Primitive"
-	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE};
+	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE, CIRCLE_3D};
 
 	//======DOF Controls
 	#define PARAM_NAME_YAW "Yaw"

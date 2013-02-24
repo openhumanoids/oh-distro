@@ -105,6 +105,7 @@ namespace surrogate_gui
 			void handleAffordancePubButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp);
+			void handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonPlane(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonLine(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonTorus(const Segmentation::FittingParams& fp);
