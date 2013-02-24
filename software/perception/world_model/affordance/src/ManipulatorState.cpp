@@ -142,3 +142,8 @@ void ManipulatorState::getCollisionContactPoints(vector<KDL::Frame> &pts) const
       */
     }
 }
+
+//TODO: ine, fill this in from the GUI
+int ManipulatorState::getSelectedContactGroupIndex() const{
+  return 0;
+}

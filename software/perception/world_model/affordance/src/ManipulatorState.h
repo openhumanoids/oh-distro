@@ -61,6 +61,7 @@ namespace affordance
     std::string getGUIDAsString()  const;
     KDL::Frame getLinkFrame() const { return _link_frame; }
     void getCollisionContactPoints(std::vector<KDL::Frame> &pts) const;
+    int getSelectedContactGroupIndex() const;
 
  private:
     typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  
