@@ -11,11 +11,11 @@ lc.subscribe('action_authoring_plan_action_request',monitor);
 
 % construct lcm state publisher
 % todo: should really load model name from lcm
-r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct( ...
-  'floating','true', ...
-  'package','/Users/russt/drc/ros_workspace/mit_drcsim_scripts/models/'));
-%r = RigidBodyManipulator('drake/examples/Atlas/urdf/atlas_minimal_contact.urdf',struct('floating',true));
-%r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf',struct('floating',true));
+
+s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct('floating','true'));
+warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
