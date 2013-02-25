@@ -501,7 +501,7 @@ handleAddConstraint()
     ManipulatorStateConstPtr manip = _worldState.manipulators[0];
 
     PointContactRelationPtr relstate(new PointContactRelation());
-    AtomicConstraintPtr new_atomic(new ManipulationRelation(left, manip, relstate));
+    AtomicConstraintPtr new_atomic(new ManipulationConstraint(left, manip, relstate));
 
     ConstraintMacroPtr new_constraint(new ConstraintMacro("Untitled" + RandomString(5), new_atomic));
 

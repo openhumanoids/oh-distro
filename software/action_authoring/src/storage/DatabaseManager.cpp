@@ -46,7 +46,7 @@ using namespace std;
 #define RELATION_STATE_NODE "relation-state"
 #define RELATION_STATE_TYPE_NODE "relation-state-type"
 
-//ManipulationRelation defines
+//ManipulationConstraint defines
 #define MANIPULATION_RELATION_NODE "mainpulation-relation"
 #define AFFORDANCE_STATE_UID_NODE "affordance-state-uid"
 #define MANIPULATOR_STATE_UID_NODE "manipulator-state-uid"
@@ -312,7 +312,7 @@ void DatabaseManager::addAtomicConstraintToNode(AtomicConstraintConstPtr atomicC
 {
     addManipulatorStateToNode(atomicConstraint->getManipulator(), node, mappings);
 
-    const ManipulationRelation *underlying = dynamic_cast<const ManipulationRelation *>(atomicConstraint.get());
+    const ManipulationConstraint *underlying = dynamic_cast<const ManipulationConstraint *>(atomicConstraint.get());
 
     if (underlying == NULL)
     {
@@ -636,7 +636,7 @@ void deserializeRelationState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMa
     mappings.StorageUIDToRelationState[uid] = relationState;
 }
 
-void deserializeManipulationRelation(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMappings &mappings)
+void deserializeManipulationConstraint(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMappings &mappings)
 {
     //printf("\nserializing affordance\n");
     xmlNode *current_node = NULL;
@@ -668,7 +668,7 @@ void deserializeManipulationRelation(xmlDocPtr doc, xmlNode *node, StorageUIDToO
             }
             else
             {
-                printf("WARNING: Ignored unknown entry '%s' while deserializing ManipulationRelation\n", current_node->name);
+                printf("WARNING: Ignored unknown entry '%s' while deserializing ManipulationConstraint\n", current_node->name);
             }
         }
     }
@@ -680,8 +680,8 @@ void deserializeManipulationRelation(xmlDocPtr doc, xmlNode *node, StorageUIDToO
     RelationStatePtr relationState = mappings.StorageUIDToRelationState[relationStateUID];
     assert(relationState != NULL);
 
-    ManRelPtr manipulationRelation(new ManipulationRelation(affordance, manipulatorState, relationState));
-    mappings.StorageUIDToManipulationRelation[uid] = manipulationRelation;
+    ManRelPtr manipulationRelation(new ManipulationConstraint(affordance, manipulatorState, relationState));
+    mappings.StorageUIDToManipulationConstraint[uid] = manipulationRelation;
 }
 
 //Creates an Atomic ConstraintMacro object from an XML node and stores it in a map of uids to constraints
@@ -727,7 +727,7 @@ void deserializeAtomicConstraintMacro(xmlDocPtr doc, xmlNode *node, StorageUIDTo
     }
 
     //TODO switch lookup for different relations
-    AtomicConstraintPtr atomicConstraint = mappings.StorageUIDToManipulationRelation[atomicConstraintUID];
+    AtomicConstraintPtr atomicConstraint = mappings.StorageUIDToManipulationConstraint[atomicConstraintUID];
     assert(atomicConstraint != NULL);
     ConstraintMacroPtr constraintMacro(new ConstraintMacro(name, atomicConstraint));
     constraintMacro->setTimeLowerBound(timeLowerBound);
@@ -816,7 +816,7 @@ void DatabaseManager::parseTree(xmlDocPtr doc, xmlNode *xmlnode, StorageUIDToObj
             else if (nodeIs(current_node, MANIPULATION_RELATION_NODE))
             {
                 // debug_print("deserialize manipulation-relation called\n");
-                deserializeManipulationRelation(doc, current_node, mappings);
+                deserializeManipulationConstraint(doc, current_node, mappings);
             }
             else
             {
@@ -865,7 +865,7 @@ void DatabaseManager::retrieve(const string &filename, vector<AffConstPtr> &affo
     debug_print("Retrieved %i affordanceState items.\n", (int) mappings.StorageUIDToAffordance.size());
     debug_print("Retrieved %i manipulationState items.\n", (int) mappings.StorageUIDToManipulatorState.size());
     debug_print("Retrieved %i relationState items.\n", (int) mappings.StorageUIDToRelationState.size());
-    debug_print("Retrieved %i manipulationRelation items.\n", (int) mappings.StorageUIDToManipulationRelation.size());
+    debug_print("Retrieved %i manipulationRelation items.\n", (int) mappings.StorageUIDToManipulationConstraint.size());
     debug_print("Retrieved %i atomicConstraint items.\n", (int) mappings.StorageUIDToAtomicConstraint.size());
     debug_print("Retrieved %i ConstraintMacro items.\n", (int) mappings.StorageUIDToConstraintMacro.size());
 

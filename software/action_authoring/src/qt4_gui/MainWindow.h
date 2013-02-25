@@ -38,7 +38,7 @@
 //#include <action_authoring/AtomicConstraintMacro.h>
 #include "../opengl/ColorRobot.h"
 #include "../opengl/SelectableOpenGLWidget.h"
-#include <action_authoring/ManipulationRelation.h>
+#include <action_authoring/ManipulationConstraint.h>
 #include <action_authoring/AtomicConstraint.h>
 #include <action_authoring/ConstraintMacro.h>
 #include <action_authoring/RelationState.h>

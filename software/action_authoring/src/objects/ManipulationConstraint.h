@@ -9,16 +9,16 @@
 
 namespace action_authoring
 {
-class ManipulationRelation : public AtomicConstraint
+class ManipulationConstraint : public AtomicConstraint
 {
 
     //----------Constructor
 public:
-    ManipulationRelation(affordance::AffConstPtr affordance,
+    ManipulationConstraint(affordance::AffConstPtr affordance,
                          affordance::ManipulatorStateConstPtr manipulator,
                          RelationStatePtr relationState);
 
-    ManipulationRelation(affordance::AffConstPtr affordance,
+    ManipulationConstraint(affordance::AffConstPtr affordance,
                          affordance::ManipulatorStateConstPtr manipulator,
                          RelationStatePtr relationState,
                          double timeLowerBound,
@@ -76,9 +76,9 @@ private:
     affordance::ManipulatorStateConstPtr _manipulator;
     RelationStatePtr _relationState;
 
-}; // class ManipulationRelation
-typedef boost::shared_ptr<ManipulationRelation> ManRelPtr;
-typedef boost::shared_ptr<const ManipulationRelation> ManRelConstPtr;
+}; // class ManipulationConstraint
+typedef boost::shared_ptr<ManipulationConstraint> ManRelPtr;
+typedef boost::shared_ptr<const ManipulationConstraint> ManRelConstPtr;
 
 } //namespace action_authoring
 

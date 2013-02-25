@@ -43,7 +43,7 @@ qt_wrap_cpp(action_authoring MOC_SRCS src/qt4_gui/MainWindow.h
 
 #========libary action_authoring
 add_library(action_authoring SHARED 
-  src/objects/ManipulationRelation.cpp
+  src/objects/ManipulationConstraint.cpp
   src/objects/RelationState.cpp
   src/objects/PointContactRelation.cpp
   src/objects/OffsetRelation.cpp 
@@ -53,7 +53,7 @@ add_library(action_authoring SHARED
 
 pods_install_headers(
   src/objects/OrderedMap.h
-  src/objects/ManipulationRelation.h 
+  src/objects/ManipulationConstraint.h 
   src/objects/RelationState.h 
   src/objects/GraspRelation.h 
   src/objects/OffsetRelation.h 

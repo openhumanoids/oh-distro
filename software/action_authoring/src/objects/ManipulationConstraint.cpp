@@ -1,11 +1,11 @@
-#include "ManipulationRelation.h"
+#include "ManipulationConstraint.h"
 #include "PointContactRelation.h"
 
 using namespace action_authoring;
 using namespace affordance;
 
-ManipulationRelation::
-ManipulationRelation(AffConstPtr affordance,
+ManipulationConstraint::
+ManipulationConstraint(AffConstPtr affordance,
                      ManipulatorStateConstPtr manipulator,
                      RelationStatePtr relationState
                      )
@@ -17,8 +17,8 @@ ManipulationRelation(AffConstPtr affordance,
 	_timeUpperBound = 0.0;
 }
 
-ManipulationRelation::
-ManipulationRelation(AffConstPtr affordance,
+ManipulationConstraint::
+ManipulationConstraint(AffConstPtr affordance,
                      ManipulatorStateConstPtr manipulator,
                      RelationStatePtr relationState,
                      double timeLowerBound,
@@ -32,7 +32,7 @@ ManipulationRelation(AffConstPtr affordance,
 	_timeUpperBound = timeUpperBound;
 }
 
-drc::contact_goal_t ManipulationRelation::toLCM()
+drc::contact_goal_t ManipulationConstraint::toLCM()
 {
 	printf("creating LCM message\n");
 	drc::contact_goal_t msg;

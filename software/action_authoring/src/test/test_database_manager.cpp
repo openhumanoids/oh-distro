@@ -107,10 +107,10 @@ int main()
 
     RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
 
-    AtomicConstraintPtr rfoot_gas_relation(new ManipulationRelation(gas, rhand, relstate));
-    AtomicConstraintPtr lfoot_brake_relation(new ManipulationRelation(brake, lfoot, relstate));
-    AtomicConstraintPtr rhand_wheel_relation(new ManipulationRelation(wheel, rhand, relstate));
-    AtomicConstraintPtr lhand_wheel_relation(new ManipulationRelation(wheel, lhand, relstate));
+    AtomicConstraintPtr rfoot_gas_relation(new ManipulationConstraint(gas, rhand, relstate));
+    AtomicConstraintPtr lfoot_brake_relation(new ManipulationConstraint(brake, lfoot, relstate));
+    AtomicConstraintPtr rhand_wheel_relation(new ManipulationConstraint(wheel, rhand, relstate));
+    AtomicConstraintPtr lhand_wheel_relation(new ManipulationConstraint(wheel, lhand, relstate));
 
     ConstraintMacroPtr rfoot_gas(new ConstraintMacro("Right Foot to Gas Pedal", rfoot_gas_relation));
     ConstraintMacroPtr lfoot_brake(new ConstraintMacro("Left Foot to Brake Pedal", lfoot_brake_relation));

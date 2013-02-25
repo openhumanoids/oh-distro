@@ -2,7 +2,7 @@
 #define DATABASE_MANAGER_H
 
 #include "action_authoring/ConstraintMacro.h"
-#include "action_authoring/ManipulationRelation.h"
+#include "action_authoring/ManipulationConstraint.h"
 #include "action_authoring/OrderedMap.h"
 #include "affordance/AffordanceState.h"
 #include <vector>
@@ -39,7 +39,7 @@ struct StorageUIDToObjectMappings
     OrderedMap<string, ConstraintMacroPtr> StorageUIDToConstraintMacro;
     OrderedMap<string, ManipulatorStateConstPtr> StorageUIDToManipulatorState;
     OrderedMap<string, RelationStatePtr> StorageUIDToRelationState;
-    OrderedMap<string, ManRelPtr> StorageUIDToManipulationRelation;
+    OrderedMap<string, ManRelPtr> StorageUIDToManipulationConstraint;
     OrderedMap<string, AtomicConstraintPtr> StorageUIDToAtomicConstraint;
 };
 
