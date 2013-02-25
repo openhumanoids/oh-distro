@@ -74,6 +74,7 @@ pods_install_pkg_config_file(action_authoring
 add_executable(action_authoring_gui 
   src/qt4_gui/Main.cpp
   src/qt4_gui/MainWindow.cpp 
+  src/qt4_gui/GUIManipulators.cpp 
   src/qt4_widgets/TogglePanel.cpp
   src/qt4_widgets/ExtendedLabel.cpp
   src/qt4_widgets/segmentedbutton/qtsegmentcontrol.cpp
