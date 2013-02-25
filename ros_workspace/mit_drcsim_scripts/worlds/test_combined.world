@@ -60,7 +60,8 @@
 
     <!-- manipulation qual -->
     <include><uri>model://mit_table</uri><pose>    1.5  1.8 0.0 0 0 1.571</pose></include>
-    <include><uri>model://simple_cylinder</uri><pose> 1.3  2.4 1.18 0 0 0</pose></include>
+    <!-- <include><uri>model://simple_cylinder</uri><pose> 1.3  2.4 1.18 0 0 0</pose></include> -->
+    <include><uri>model://duff_beer</uri><pose> 1.3  2.4 1.18 0 0 0</pose></include>
     <include><uri>model://mit_coke_can</uri><pose> 1.3  1.8 1.10 0 0 0</pose></include>
     <!-- <include><uri>model://bowl</uri><pose>     1.7  1.3 1.03 0 0 0</pose></include> -->
     <!-- <include><uri>model://saucepan</uri><pose> 1.6  1.5 1.07 0 0 0</pose></include> -->
