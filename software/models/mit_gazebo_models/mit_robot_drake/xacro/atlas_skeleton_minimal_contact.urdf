@@ -120,13 +120,7 @@
             </geometry>
         </visual>
         <collision>
-          <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
-          <geometry>
-            <sphere radius="0"/>
-          </geometry>
-        </collision>
-        <collision>
-          <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
+          <origin rpy="0 0 0" xyz="0.049 0.0 -0.05"/>
           <geometry>
             <sphere radius="0"/>
           </geometry>
@@ -357,13 +351,7 @@
             </geometry>
         </visual>
         <collision>
-         <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
-         <geometry>
-           <sphere radius="0"/>
-         </geometry>
-       </collision>
-       <collision>
-         <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
+         <origin rpy="0 0 0" xyz="0.049 0.0 -0.05"/>
          <geometry>
            <sphere radius="0"/>
          </geometry>
