@@ -95,7 +95,7 @@
       <bodyName>pelvis</bodyName>
       <topicName>/ground_truth_odom</topicName>
       <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
+      <updateRate>200.0</updateRate> <!--increased from 100-->
     </plugin>
   </gazebo>
 </robot>
