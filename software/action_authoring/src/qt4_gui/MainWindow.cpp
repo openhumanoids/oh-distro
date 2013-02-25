@@ -1,7 +1,4 @@
 #include "MainWindow.h"
-#include <affordance/OpenGL_Manipulator.h>
-#include <affordance/Collision_Object_Affordance.h>
-#include <affordance/Collision_Object_Manipulator.h>
 
 using namespace std;
 using namespace opengl;
@@ -11,9 +8,8 @@ using namespace action_authoring;
 using namespace affordance;
 
 #define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
-
-//using namespace collision_detection;
-typedef std::map<string, boost::shared_ptr<vector<boost::shared_ptr<urdf::Collision> > > > CollisionMapType;
+#define IK_RESPONSE_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_STATE"
+#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
 
 string RandomString(int len)
 {
@@ -95,9 +91,7 @@ void MainWindow::handleAffordancesChanged()
         nameToAffMap[(*iter)->getName()] = *iter;
     }
 
-    std::cout << " flag4" << std::endl;
-
-    createManipulators();
+    GUIManipulators::createManipulators(_worldState, _widget_opengl);
 
     updateFlyingManipulators();
 
@@ -108,8 +102,6 @@ void MainWindow::handleAffordancesChanged()
 
     //----------add robot and vehicle
     _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
-
-    std::cout << " flag5" << std::endl;
 
     //  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
     //	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
@@ -122,26 +114,24 @@ void MainWindow::handleAffordancesChanged()
     _widget_opengl.update();
     //_widget_opengl.add_object_with_collision(_collision_object_gfe);
 
-    std::cout << std::endl << "HANDLE AFFORDANCES CHANGED : EXIT " << std::endl;
-
 }
 
 MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     : _widget_opengl(),
       _constraint_container(new QWidget()),
       _constraint_vbox(new QVBoxLayout()),
-      _worldState(theLcm, "/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf")
+      _worldState(theLcm, ROBOT_URDF_MODEL_PATH)
 
 {
     _theLcm = theLcm;
-	_theLcm->subscribe("ACTION_AUTHORING_IK_ROBOT_STATE",
+	_theLcm->subscribe(IK_RESPONSE_MESSAGE_CHANNEL,
                        &MainWindow::updateRobotState, this);
 
     //point_contact_axis = new OpenGL_Object_Coordinate_Axis();
     //point_contact_axis2 = new OpenGL_Object_Coordinate_Axis();
 
     // setup the OpenGL scene
-    _worldState.state_gfe.from_urdf("/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf");
+    _worldState.state_gfe.from_urdf(ROBOT_URDF_MODEL_PATH); 
     _worldState.colorRobot.set(_worldState.state_gfe);
 
     _widget_opengl.setMinimumHeight(100);
@@ -391,12 +381,15 @@ void
 MainWindow::
 handleLoadAction(std::string fileName)
 {
-
     std::vector<ConstraintMacroPtr> revivedConstraintMacros;
     std::vector<AffConstPtr> revivedAffordances;
 
 #ifdef DATABASE
     DatabaseManager::retrieve(fileName, revivedAffordances, revivedConstraintMacros);
+
+    // todo: Chris, store the action name 
+    //std::string action_name;
+    //_actionName->setText(); //QString::fromStdString(action_name));
 
     printf("done retrieving.\n");
     _worldState.affordances.clear();
@@ -1024,50 +1017,6 @@ updatePointVisualizer()
 
         KDL::Frame trans2(KDL::Rotation::Quaternion(0, 0, 0, 1.0), KDL::Vector(prel->getPoint2().x(), prel->getPoint2().y(), prel->getPoint2().z()));
         point_contact_axis2.set_transform(trans2);
-    }
-}
-
-// create the manipulators from the robot's joints
-// TODO : pull out worldState and robot
-void
-MainWindow::
-createManipulators()
-{
-    // read the joints from the robot state
-    std::map< std::string, State_GFE_Joint > joints = _worldState.state_gfe.joints();
-
-    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
-    {
-        const State_GFE_Joint &state_gfe_joint = it->second;
-        std::string id = state_gfe_joint.id();
-        shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
-        
-        // TODO mfleder
-        // std::map<string, boost::shared_ptr<vector<boost::shared_ptr<Collision> > > > 
-        // link->collision_groups
-        // for (collision_group_name in link->collision_groups.keys()) {
-        for(CollisionMapType::const_iterator iter = link->collision_groups.begin();
-            iter != link->collision_groups.end();
-            ++iter)
-          {
-            ManipulatorStateConstPtr manipulator(new ManipulatorState(link, iter->first,
-                                                                      _worldState.colorRobot.getKinematicsModel().link(link->name),
-                                                                      GlobalUID(rand(), rand()))); //todo guid
-            
-            _worldState.manipulators.push_back(manipulator);
-            
-            OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
-            _widget_opengl.opengl_scene().add_object(*asGlMan);
-            _worldState.glObjects.push_back(asGlMan);
-            
-                        
-            if (Collision_Object_Manipulator::isSupported(manipulator))
-              {
-                Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
-                _widget_opengl.add_collision_object(cObjManip);
-                _worldState.collisionObjs.push_back(cObjManip);
-              } 
-          }
     }
 }
 

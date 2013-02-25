@@ -29,10 +29,13 @@
 #include <collision/collision_object_gfe.h>
 
 // Affordances
+#include <affordance/ModelState.h>
 #include <affordance/AffordanceState.h>
 #include <affordance/AffordanceUpWrapper.h>
 #include <affordance/OpenGL_Affordance.h>
-#include <affordance/ModelState.h>
+#include <affordance/OpenGL_Manipulator.h>
+#include <affordance/Collision_Object_Affordance.h>
+#include <affordance/Collision_Object_Manipulator.h>
 
 // Local includes
 //#include <action_authoring/AtomicConstraintMacro.h>
@@ -47,6 +50,9 @@
 
 // File handling
 #include "UtilityFile.h"
+
+// GUI helpers
+#include "GUIManipulators.h"
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
 #define DATABASE 1
@@ -67,7 +73,6 @@ public:
 /**Represents the read-only state of the world and objects used for rendering that state*/
 struct WorldStateView
 {
-
     affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
     std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
     std::vector<affordance::ManipulatorStateConstPtr> manipulators; //robot manipulators
@@ -156,7 +161,6 @@ private:
                           const std::string& channel,
                           const drc::robot_state_t *robot_state);
     void updatePointVisualizer();
-    void createManipulators();
     void updateFilesListComboBox();
 
 protected:
