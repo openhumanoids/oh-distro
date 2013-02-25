@@ -67,3 +67,11 @@ void SelectableOpenGLWidget::add_collision_object(Collision_Object *collisionObj
     cout << "(should intersect with box2)" << endl;
     */
 }
+
+void SelectableOpenGLWidget::clear_collision_objects()
+{
+    cout << "cleared " << endl;
+    _collisionDetector = shared_ptr<Collision_Detector>(new Collision_Detector());
+    cout << "\t\tnumber of objects: " << _collisionDetector->collision_objects().size() << endl;
+}
+

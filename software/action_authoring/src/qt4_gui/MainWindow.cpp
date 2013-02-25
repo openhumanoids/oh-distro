@@ -35,6 +35,8 @@ string RandomString(int len)
  */
 void MainWindow::handleAffordancesChanged()
 {
+    std::cout << std::endl << "HANDLE AFFORDANCES CHANGED ENTERED " << std::endl;
+
     //------------------------REDRAW
     //clear the scene.  todo : is there a better way to handle
     //memory management thru boost pointers?  opengl_scene doesn't use boost
@@ -42,8 +44,6 @@ void MainWindow::handleAffordancesChanged()
     {
         throw InvalidStateException("glObjects and collisionObjs should have the same size");
     }
-
-    std::cout << " flag1" << std::endl;
 
     _widget_opengl.opengl_scene().clear_objects();
 
@@ -53,15 +53,15 @@ void MainWindow::handleAffordancesChanged()
         delete _worldState.collisionObjs[i];
     }
 
-    std::cout << " flag2" << std::endl;
-
     _worldState.glObjects.clear();
     _worldState.collisionObjs.clear();
-    std::cout << " flag2d" << std::endl;
+    // TODO: just have it sync with worldState collisionObjs
+    _widget_opengl.clear_collision_objects();
+
     for (uint i = 0; i < _worldState.affordances.size(); i++)
     {
         AffConstPtr next = _worldState.affordances[i];
-    std::cout << " flag2c" << std::endl;
+
         if (!Collision_Object_Affordance::isSupported(next))
         {
             cout << "\n Collision_Object_Affordance doesn't support " << next->getName() << endl;
@@ -73,22 +73,17 @@ void MainWindow::handleAffordancesChanged()
             cout << "\n OpenGL_Affordance doesn't support " << next->getName() << endl;
             continue;
         }
-    std::cout << " flag2b" << std::endl;
-    std::cout << " next " << next->getName() << std::endl;
+
         //opengl
         OpenGL_Affordance *asGlAff = new OpenGL_Affordance(next);
-    std::cout << " flag2b-1" << std::endl;
         _widget_opengl.opengl_scene().add_object(*asGlAff);
-    std::cout << " flag2b-2" << std::endl;
         _worldState.glObjects.push_back(asGlAff);
-    std::cout << " flag2a" << std::endl;
+
         //collisions:  Create CollisionObject_Affordances, add to scene, and add to _worldState.glObjects
         Collision_Object *collision_object_affordance = new Collision_Object_Affordance(next);
         _widget_opengl.add_collision_object(collision_object_affordance);
         _worldState.collisionObjs.push_back(collision_object_affordance);
     }
-
-    std::cout << " flag3" << std::endl;
 
     //----------handle constraint macros
     unordered_map<string, AffConstPtr> nameToAffMap;
@@ -103,6 +98,7 @@ void MainWindow::handleAffordancesChanged()
     std::cout << " flag4" << std::endl;
 
     createManipulators();
+
     updateFlyingManipulators();
 
     _widget_opengl.opengl_scene().add_object(point_contact_axis);
@@ -113,7 +109,7 @@ void MainWindow::handleAffordancesChanged()
     //----------add robot and vehicle
     _widget_opengl.opengl_scene().add_object(_worldState.colorRobot); //add robot
 
-        std::cout << " flag5" << std::endl;
+    std::cout << " flag5" << std::endl;
 
     //  connect(&_widget_opengl, SIGNAL(raycastPointIntersectCallback(Eigen::Vector3f)),
     //	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
@@ -125,6 +121,8 @@ void MainWindow::handleAffordancesChanged()
 
     _widget_opengl.update();
     //_widget_opengl.add_object_with_collision(_collision_object_gfe);
+
+    std::cout << std::endl << "HANDLE AFFORDANCES CHANGED : EXIT " << std::endl;
 
 }
 
@@ -154,10 +152,10 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
             this, SLOT(selectedOpenGLObjectChanged(std::string, Eigen::Vector3f)));
 
     //setup timer to look for affordance changes
-    QTimer *timer = new QTimer;
-    connect(timer, SIGNAL(timeout()),
-            this, SLOT(affordanceUpdateCheck()));
-    timer->start(1000); //1Hz
+    _affordanceUpdateTimer = new QTimer;
+    connect(_affordanceUpdateTimer, SIGNAL(timeout()),
+    this, SLOT(affordanceUpdateCheck()));
+    _affordanceUpdateTimer->start(1000); //1Hz
 
     _scrubberTimer = new QTimer;
     connect(_scrubberTimer, SIGNAL(timeout()), this, SLOT(nextKeyFrame()));
@@ -701,7 +699,7 @@ void
 MainWindow::
 selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoint)
 {
-    //cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
+    cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
 
     // highlight the object in the GUI
     for (uint i = 0; i < _worldState.glObjects.size(); i++)
@@ -786,7 +784,10 @@ MainWindow::
 mediaFastForward()
 {
     int i = getSelectedGUIConstraintIndex();
-    _authoringState._all_gui_constraints[i + 1]->setActiveExternal();
+    if (i >= 0 && i != (int)_authoringState._all_gui_constraints.size() - 1)
+    {
+        _authoringState._all_gui_constraints[i + 1]->setActiveExternal();
+    }
 }
 
 void
@@ -794,7 +795,10 @@ MainWindow::
 mediaFastBackward()
 {
     int i = getSelectedGUIConstraintIndex();
-    _authoringState._all_gui_constraints[i - 1]->setActiveExternal();
+    if (i >= 0)
+    {
+        _authoringState._all_gui_constraints[i - 1]->setActiveExternal();
+    }
 }
 
 void
@@ -949,8 +953,8 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
     _worldState.colorRobot.set(_worldState.state_gfe);
     // seems redundant but is necessary to get pose to work - don't remove!
     _worldState.colorRobot.set(*new_robot_state);
-    // TODO: re-enable
-    //handleAffordancesChanged();
+
+    handleAffordancesChanged();
 }
 
 void
@@ -988,8 +992,13 @@ createManipulators()
         const State_GFE_Joint &state_gfe_joint = it->second;
         std::string id = state_gfe_joint.id();
         shared_ptr<const urdf::Link> link = _worldState.colorRobot.getLinkFromJointName(id);
-
-        ManipulatorStateConstPtr manipulator(new ManipulatorState(link,
+        
+        // TODO mfleder
+        // std::map<string, boost::shared_ptr<vector<boost::shared_ptr<Collision> > > > 
+        // link->collision_groups
+        // for (collision_group_name in link->collision_groups.keys()) {
+        
+        ManipulatorStateConstPtr manipulator(new ManipulatorState(link, // TODO (mfleder) : collision_group_name,
                                              _worldState.colorRobot.getKinematicsModel().link(link->name),
                                              GlobalUID(rand(), rand()))); //todo guid
 
@@ -1006,5 +1015,23 @@ createManipulators()
             _widget_opengl.add_collision_object(cObjManip);
             _worldState.collisionObjs.push_back(cObjManip);
         }
+
+        // end for loop
+        // end TODO mfleder
     }
+}
+
+void
+MainWindow::
+keyPressEvent(QKeyEvent *event) {
+/*
+    if (event->key() == Qt::Key_Right || event->key() == Qt::Key_Down)
+    {
+        mediaFastForward();
+    }
+    if (event->key() == Qt::Key_Left || event->key() == Qt::Key_Right)
+    {
+        mediaFastBackward();
+    }
+*/
 }

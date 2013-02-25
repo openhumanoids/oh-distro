@@ -110,6 +110,7 @@ public:
 private:
     boost::shared_ptr<lcm::LCM> _theLcm;
     QTimer *_scrubberTimer;
+    QTimer *_affordanceUpdateTimer;
     QLineEdit *_actionName;
     DefaultValueSlider *_scrubber;
     QLabel *_actionDescLabel;
@@ -150,6 +151,9 @@ private:
                           const drc::robot_state_t *robot_state);
     void updatePointVisualizer();
     void createManipulators();
+
+protected:
+    virtual void  keyPressEvent(QKeyEvent *event);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
