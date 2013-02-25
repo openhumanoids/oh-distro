@@ -998,4 +998,3 @@
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32" />
     </joint>
 </robot>
-
