@@ -169,6 +169,20 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     QWidget *leftside = new QWidget();
     QVBoxLayout *vbox = new QVBoxLayout();
 
+    QToolBar* toptoolbar = new QToolBar("top toolbar");
+    QLabel *fileslistlabel = new QLabel("saved action sequences : ");
+    toptoolbar->addWidget(fileslistlabel);
+    _filesList = new QComboBox();
+    updateFilesListComboBox();
+    toptoolbar->addWidget(_filesList);
+    QPushButton *loadfromcombo = new QPushButton("Load");
+    toptoolbar->addWidget(loadfromcombo);
+    toptoolbar->addSeparator();
+    QPushButton *loaddiff = new QPushButton("Load Action...");
+    loaddiff->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton));
+    toptoolbar->addWidget(loaddiff);
+    vbox->addWidget(toptoolbar);
+
     QToolBar *toolbar = new QToolBar("main toolbar");
     toolbar->addWidget(new QLabel("Action: "));
     _actionName = new QLineEdit("Ingress");
@@ -185,9 +199,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     QPushButton *savebutton = new QPushButton("Save Action");
     savebutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogSaveButton));
     toolbar->addWidget(savebutton);
-    QPushButton *loaddiff = new QPushButton("Load Action");
-    loaddiff->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton));
-    toolbar->addWidget(loaddiff);
     QPushButton *planbutton = new QPushButton("Publish For Planning");
     planbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DriveNetIcon));
     toolbar->addWidget(planbutton);
@@ -347,6 +358,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
+    connect(loadfromcombo, SIGNAL(released()), this, SLOT(handleLoadActionCombo()));
 }
 
 MainWindow::~MainWindow()
@@ -354,7 +366,16 @@ MainWindow::~MainWindow()
 
 }
 
-void MainWindow::handleLoadAction()
+void
+MainWindow::
+handleLoadActionCombo() 
+{
+    handleLoadAction(_filesList->currentText().toStdString());
+}
+
+void 
+MainWindow::
+handleLoadAction() 
 {
     QString fileName = QFileDialog::getOpenFileName(this,
                        tr("Open Action"), "", tr("Action XML Files (*.xml)"));
@@ -363,12 +384,19 @@ void MainWindow::handleLoadAction()
     {
         return;
     }
+    handleLoadAction(fileName.toStdString());
+}
+
+void
+MainWindow::
+handleLoadAction(std::string fileName)
+{
 
     std::vector<ConstraintMacroPtr> revivedConstraintMacros;
     std::vector<AffConstPtr> revivedAffordances;
 
 #ifdef DATABASE
-    DatabaseManager::retrieve(fileName.toStdString(), revivedAffordances, revivedConstraintMacros);
+    DatabaseManager::retrieve(fileName, revivedAffordances, revivedConstraintMacros);
 
     printf("done retrieving.\n");
     _worldState.affordances.clear();
@@ -442,6 +470,8 @@ handleSaveAction()
 
     DatabaseManager::store(fileName.toStdString(), _worldState.affordances, all_constraints);
 
+    // make sure the new file shows up in our list
+    updateFilesListComboBox();
 
 #endif //DATABASE
 }
@@ -575,6 +605,11 @@ void
 MainWindow::
 setSelectedAction(Qt4ConstraintMacro *activator)
 {
+    if (activator == NULL) 
+    {
+        return;
+    }
+
     int selected_index = -1;
     bool noChange = false;
 
@@ -662,6 +697,16 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState)
             _constraint_vbox->addWidget(tp);
         }
     }
+
+    if (state._all_gui_constraints.size() == 0)
+    {
+        setSelectedAction(NULL);
+    } 
+    else 
+    {
+        setSelectedAction(state._all_gui_constraints[0].get()); // Qt ugliness requires .get
+    }
+
 }
 
 /*
@@ -1039,4 +1084,17 @@ keyPressEvent(QKeyEvent *event) {
         mediaFastBackward();
     }
 */
+}
+
+void
+MainWindow::
+updateFilesListComboBox() 
+{
+    _filesList->clear();
+    // list *.xml files in directory, but them in combo box
+    std::vector<std::string> names = UtilityFile::getFilenamesInDirectory(".", ".xml");
+    for (uint i = 0; i < names.size(); i++) 
+    {
+        _filesList->insertItem(0, QString::fromStdString(names[i]));
+    }
 }

@@ -45,6 +45,9 @@
 #include <action_authoring/PointContactRelation.h>
 #include <action_authoring/OffsetRelation.h>
 
+// File handling
+#include "UtilityFile.h"
+
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
 #define DATABASE 1
 #ifdef DATABASE
@@ -114,6 +117,7 @@ private:
     QTimer *_scrubberTimer;
     QTimer *_affordanceUpdateTimer;
     QLineEdit *_actionName;
+    QComboBox *_filesList;
     DefaultValueSlider *_scrubber;
     QLabel *_actionDescLabel;
     double _timeSum; // total length of time for all robot actions to complete. sum of all upperTimeBounds
@@ -153,6 +157,7 @@ private:
                           const drc::robot_state_t *robot_state);
     void updatePointVisualizer();
     void createManipulators();
+    void updateFilesListComboBox();
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);
@@ -161,6 +166,8 @@ private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
 
     void handleLoadAction();
+    void handleLoadAction(std::string);
+    void handleLoadActionCombo();
     void handleSaveAction();
     void handleDeleteConstraint();
     void handleAddConstraint();
