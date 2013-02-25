@@ -350,6 +350,7 @@ void GazeboRosPubRobotState::UpdateChild()
     this->lock.unlock();
 
     this->last_update_time_ = cur_time;
+//    if(this->synchronization=="1" && cur_time > 10) // starts when harness is turned off -sk
     if(this->synchronization=="1")
     {
      // gzerr <<this->synchronization  << " ok!"<< std::endl;
