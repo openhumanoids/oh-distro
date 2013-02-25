@@ -8,7 +8,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_clav.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_clav.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -21,7 +21,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_farm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_farm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -34,7 +34,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_foot.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_foot.wrl" scale="1 1 1" />
             </geometry>
         </visual>
         <collision group="heel"> 
@@ -69,11 +69,17 @@
             <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.01" />
         </inertial>
         <visual>
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_hand.wrl" scale="1 1 1" />
-            </geometry>
+          <origin xyz="0 0 0" rpy="0 -0 0" />
+          <geometry>
+            <mesh filename="package://mit_robot/meshes/l_hand.wrl" scale="1 1 1" />
+          </geometry>
         </visual>
+        <collision>
+          <origin rpy="0 0 0" xyz="0.0 0.115 0.0"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
     </link>
     <link name="l_larm">
         <inertial>
@@ -84,7 +90,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_larm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_larm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -97,7 +103,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_lglut.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_lglut.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -110,9 +116,21 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_lleg.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_lleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
+        <collision>
+          <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
+        <collision>
+          <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
     </link>
     <link name="l_scap">
         <inertial>
@@ -123,7 +141,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_scap.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_scap.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -136,7 +154,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_talus.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_talus.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -149,7 +167,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_uarm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_uarm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -162,7 +180,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_uglut.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_uglut.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -175,7 +193,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/l_uleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -188,7 +206,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/ltorso.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/ltorso.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -201,7 +219,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/mtorso.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/mtorso.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -214,7 +232,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/pelvis.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/pelvis.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -227,7 +245,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_clav.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_clav.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -240,7 +258,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_farm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_farm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -253,7 +271,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_foot.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_foot.wrl" scale="1 1 1" />
             </geometry>
         </visual>
         <collision group="heel"> 
@@ -290,9 +308,15 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_hand.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_hand.wrl" scale="1 1 1" />
             </geometry>
         </visual>
+        <collision>
+          <origin rpy="0 0 0" xyz="0.0 -0.115 0.0"/>
+          <geometry>
+            <sphere radius="0"/>
+          </geometry>
+        </collision>
     </link>
     <link name="r_larm">
         <inertial>
@@ -303,7 +327,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_larm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_larm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -316,7 +340,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_lglut.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_lglut.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -329,9 +353,21 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_lleg.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_lleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
+        <collision>
+         <origin rpy="0 0 0" xyz="0.049 0.063 -0.05"/>
+         <geometry>
+           <sphere radius="0"/>
+         </geometry>
+       </collision>
+       <collision>
+         <origin rpy="0 0 0" xyz="0.049 -0.063 -0.05"/>
+         <geometry>
+           <sphere radius="0"/>
+         </geometry>
+       </collision>
     </link>
     <link name="r_scap">
         <inertial>
@@ -342,7 +378,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_scap.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_scap.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -355,7 +391,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_talus.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_talus.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -368,7 +404,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_uarm.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_uarm.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -381,7 +417,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_uglut.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_uglut.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -394,7 +430,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/r_uleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
@@ -407,7 +443,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="$(find mit_drcsim_scripts)/models/mit_robot/meshes/utorso.wrl" scale="1 1 1" />
+                <mesh filename="package://mit_robot/meshes/utorso.wrl" scale="1 1 1" />
             </geometry>
         </visual>
     </link>
