@@ -61,7 +61,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
 
   /// DRCSIM 2.0 joint command API
   lcm_->subscribe("JOINT_COMMANDS",&LCM2ROS::jointCommandHandler,this);  
-  joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",1, true);
+  joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10, true);
 
   /// Spinning Laser control:
   lcm_->subscribe("ROTATING_SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
@@ -76,7 +76,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   /// For reconfiguring Gazebo while running:
   pose_pub_ = nh_.advertise<geometry_msgs::Pose>("/atlas/set_pose",10);
   joint_pub_ = nh_.advertise<sensor_msgs::JointState>("/atlas/configuration",10);
-  pause_physics_ = nh_.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
   lcm_->subscribe("SET_ROBOT_CONFIG",&LCM2ROS::reconfigCmdHandler,this);
   
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
@@ -87,6 +86,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   gas_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/gas_pedal/cmd", 1000);
   brake_pedal_pub_ = nh_.advertise<std_msgs::Float64>("drc_vehicle/brake_pedal/cmd", 1000);
   
+  pause_physics_ = nh_.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
+  unpause_physics_ = nh_.serviceClient<std_srvs::Empty>("/gazebo/unpause_physics");
+
   rosnode = new ros::NodeHandle();
 }
 
@@ -116,16 +118,19 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     joint_command_msg.kp_position.push_back(msg->kp_position[i]);
     joint_command_msg.kd_position.push_back(msg->kd_position[i]);
 
+    // NOTE: This slows things down significantly, just set to zero instead
     // for now never change i gains or clamps
 //    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/p", joint_command_msg.kp_position[i]);
 //    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/d", joint_command_msg.kd_position[i]);
-    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
-    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
-    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
+//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i", joint_command_msg.ki_position[i]);
+//    rosnode->getParam("atlas_controller/gains/" + msg->name[i] + "/i_clamp", joint_command_msg.i_effort_max[i]);
+//    joint_command_msg.i_effort_min[i] = -joint_command_msg.i_effort_max[i];
   }
   if(ros::ok()) {
     joint_cmd_pub_.publish(joint_command_msg);
   } 
+  
+  ros::spinOnce();
 }  
 
 void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg){
@@ -230,9 +235,12 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
     pose_pub_.publish(pose_msg);      
   }      
   
-  // set PID goals
+  // send zero joint command
   osrf_msgs::JointCommands joint_command_msg;
-  
+  joint_command_msg.name.resize(msg->num_joints);
+  joint_command_msg.position.resize(msg->num_joints);
+  joint_command_msg.velocity.resize(msg->num_joints);
+  joint_command_msg.effort.resize(msg->num_joints);
   joint_command_msg.kp_position.resize(msg->num_joints);
   joint_command_msg.ki_position.resize(msg->num_joints);
   joint_command_msg.kd_position.resize(msg->num_joints);
@@ -285,15 +293,15 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
     joint_command_msg.velocity[j] = 0;
     joint_command_msg.effort[j] = 0;
     
-    joint_command_msg.kp_position[j] =1.0;
-    joint_command_msg.kd_position[j] =0.0;
-    joint_command_msg.ki_position[j] =0.0;
-    joint_command_msg.i_effort_max[j]=0.0;
+//    joint_command_msg.kp_position[j] =0.0;
+//    joint_command_msg.kd_position[j] =0.0;
+//    joint_command_msg.ki_position[j] =0.0;
+//    joint_command_msg.i_effort_max[j]=0.0;
 
-//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/p", joint_command_msg.kp_position[j]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/d", joint_command_msg.kd_position[j]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i", joint_command_msg.ki_position[j]);
-//    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i_clamp", joint_command_msg.i_effort_max[j]);
+    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/p", joint_command_msg.kp_position[j]);
+    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/d", joint_command_msg.kd_position[j]);
+    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i", joint_command_msg.ki_position[j]);
+    rosnode->getParam("atlas_controller/gains/" + msg->joint_name[i] + "/i_clamp", joint_command_msg.i_effort_max[j]);
     
     joint_command_msg.i_effort_min[j] = -joint_command_msg.i_effort_max[j];
     
