@@ -43,8 +43,8 @@ function ps=addbox(p)
 %  ps.max = p+.5*[1;1;0];
 end
 
-r_hand_pos = [.7;-.25;0];
-l_hand_pos = [.7;.25;0];
+r_hand_pos = [.7;-.25;0;.5;0;pi/2];
+l_hand_pos = [.7;.25;0;-.5;0;-pi/2];
 r_knee_pos = [-.5; -.18; 0];
 l_knee_pos = [-.5; .18; 0];
 r_toe_pos.min = [-inf;-.3;0];
@@ -138,7 +138,7 @@ ttape(end+1) = ttape(end)+.5;
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
-r_hand_pos = [0;-.25;.15];
+r_hand_pos = [-.05;-.25;.15];
 com_pos.max(1) = -.4;
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
@@ -146,21 +146,21 @@ ttape(end+1) = ttape(end)+.5;
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
-r_hand_pos = [-.2;-.25;0];
+r_hand_pos = [-.3;-.25;0];
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
 ttape(end+1) = ttape(end)+.5; 
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
-l_hand_pos = [0;.2;.15];
+l_hand_pos = [-.05;.2;.15];
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
 ttape(end+1) = ttape(end)+.5; 
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
-l_hand_pos = [-.2;.15;0];
+l_hand_pos = [-.3;.15;0];
 com_pos.max(1) = -.45;
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
