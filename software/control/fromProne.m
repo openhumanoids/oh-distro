@@ -1,9 +1,12 @@
 function fromProne
 % script to test standing up from the prone position
 
-r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct( ...
-  'floating','true')); %, ...
-%  'package','/Users/russt/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot'));
+draw_frames=false;
+
+s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct('floating','true'));
+warning(s);
 v = r.constructVisualizer();
 
 data = load('data/aa_atlas_fp.mat');
@@ -40,21 +43,248 @@ function ps=addbox(p)
 %  ps.max = p+.5*[1;1;0];
 end
 
-r_hand_pos = [.3;-.2;0];
-l_hand_pos = [.3;.2;0];
-r_knee_pos = [-.5; -.1; 0];
-l_knee_pos = [-.5; .1; 0];
-r_toe_pos.min = [-inf;-inf;0];
-r_toe_pos.max = [inf;0;inf];
-l_toe_pos.min = [-inf;0;0];
-l_toe_pos.max = [inf;inf;inf];
+r_hand_pos = [.7;-.25;0];
+l_hand_pos = [.7;.25;0];
+r_knee_pos = [-.5; -.18; 0];
+l_knee_pos = [-.5; .18; 0];
+r_toe_pos.min = [-inf;-.3;0];
+r_toe_pos.max = [inf;-0.2;.02];
+l_toe_pos.min = [-inf;0.2;0];
+l_toe_pos.max = [inf;.3;.02];
 com_pos.min = [-inf;-inf;0.1];
-com_pos.max = [inf;inf;inf];
-head_pos.min = [nan;nan;.2];
+com_pos.max = [inf;inf;.2];
+head_pos.min = [nan;nan;.35];
 head_pos.max = nan(3,1);
 
-ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos};%,head,zeros(3,1),head_pos};
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos};%,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos};%,0,com_pos};%,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
-v.draw(0,[q;0*q]);
+
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape = [0,2];
+qtape = [q,q];
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end  
+
+com_pos.max = [nan;nan;.25];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max = [nan;nan;nan];
+r_hand_pos = [.4;-.25;.15];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_hand_pos = [.2;-.25;0];
+kinsol = doKinematics(r,q);
+p = forwardKin(r,kinsol,l_foot,mean(getContactPoints(l_foot,'toe'),2));
+l_toe_pos.min(1)=p(1);
+l_toe_pos.max(1)=p(1);
+l_toe_pos.max(3)=0;
+l_toe_pos = repmat(l_toe_pos,1,2);
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [.4;.25;.15];
+com_pos.max(1) = -.2;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [.2;.25;0];
+kinsol = doKinematics(r,q);
+r_toe_pos.min(1)=l_toe_pos(1).min(1);
+r_toe_pos.max(1)=l_toe_pos(1).min(1);
+r_toe_pos.max(3)=0;
+r_toe_pos = repmat(r_toe_pos,1,2);
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_knee_pos=[]; 
+r_knee_pos.min = [nan; -.18; 0];
+r_knee_pos.max = [nan; -.18; nan];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_knee_pos=[];
+l_knee_pos.min = [nan; .18; 0];
+l_knee_pos.max = [nan; .18; nan];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max(1) = -.3;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_hand_pos = [0;-.25;.15];
+com_pos.max(1) = -.4;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_hand_pos = [-.2;-.25;0];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [0;.2;.15];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [-.2;.15;0];
+com_pos.max(1) = -.45;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_knee_pos.min = [nan; -inf; 0.05];
+r_knee_pos.max = [nan; -.2; inf];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_knee_pos=[];
+l_knee_pos.min = [nan; .2; 0.05];
+l_knee_pos.max = [nan; inf; inf];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_hand_pos = [-.25;-.1;.15];
+%r_knee_pos.min = [nan; -.325; 0.1];
+%r_knee_pos.max = [nan; -.325; nan];
+com_pos.max(1)=-.5;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+r_hand_pos = [-.3;-.05;0];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [-.25;.1;.15];
+%l_knee_pos.min = [nan; .325; 0.1];
+%l_knee_pos.max = [nan; .325; nan];
+com_pos.max(1)=-.55;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+l_hand_pos = [-.3;.05;0];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+%adding heel constraints
+heel_pos.min = [nan;nan;0];
+heel_pos.max = [nan;nan;nan];
+
+com_pos.max(1)=-.6;
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max(1)=-.7;
+r_hand_pos = [-.4;-.1;.1];
+l_hand_pos = [-.4;.1;.1];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max(1)=-.8;
+r_hand_pos = [-.5;-.2;.3];
+l_hand_pos = [-.5;.2;.3];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max(1)=-.9;
+r_hand_pos = [-.7;-.25;.5];
+l_hand_pos = [-.7;.25;.5];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+kinsol = doKinematics(r,q);
+rpts = forwardKin(r,kinsol,r_foot,getContactPoints(r_foot));
+lpts = forwardKin(r,kinsol,l_foot,getContactPoints(l_foot));
+pts = [rpts,lpts];  
+k = convhull(pts(1:2,:)');
+com_pos = mean(pts(:,k),2); com_pos(3)=nan;
+% note: also dropping hand and knee constraints
+ikargs={r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+% interpolate one extra frame (because the feet look like they're going
+% through the ground)
+options.q_nom = mean(qtape(:,(end-1):end),2);
+% just foot constraints
+ikargs={r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,options.q_nom,ikargs{:},options);
+ttape(end+1)=ttape(end);
+ttape(end-1) = mean(ttape((end-2):(end-1)),2);
+qtape(:,end+1)=qtape(:,end);
+qtape(:,end-1)=q;
+
+xtraj = PPTrajectory(foh(ttape,[qtape;0*qtape]));
+xtraj = setOutputFrame(xtraj,r.getStateFrame);
+v.playback(xtraj);
+
+%v.playbackAVI(xtraj,'fromProne.avi');
 
 end
