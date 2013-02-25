@@ -5,7 +5,7 @@ draw_frames=false;
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct('floating','true'));
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
 warning(s);
 v = r.constructVisualizer();
 
@@ -27,7 +27,6 @@ options = struct();
 options.Q = diag(cost(1:r.getNumDOF));
 options.q_nom = q;
 
-
 % find the relevant links:
 r_hand = findLink(r,'r_hand');
 l_hand = findLink(r,'l_hand');
@@ -47,10 +46,10 @@ r_hand_pos = [.7;-.25;0;.5;0;pi/2];
 l_hand_pos = [.7;.25;0;-.5;0;-pi/2];
 r_knee_pos = [-.5; -.18; 0];
 l_knee_pos = [-.5; .18; 0];
-r_toe_pos.min = [-inf;-.3;0];
-r_toe_pos.max = [inf;-0.2;.02];
-l_toe_pos.min = [-inf;0.2;0];
-l_toe_pos.max = [inf;.3;.02];
+r_toe_pos.min = [-inf;-.35;0];
+r_toe_pos.max = [inf;-0.15;.02];
+l_toe_pos.min = [-inf;0.15;0];
+l_toe_pos.max = [inf;.35;.02];
 com_pos.min = [-inf;-inf;0.1];
 com_pos.max = [inf;inf;.2];
 head_pos.min = [nan;nan;.35];
@@ -102,7 +101,7 @@ qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
 l_hand_pos = [.2;.25;0];
-kinsol = doKinematics(r,q);
+% kinsol = doKinematics(r,q);
 r_toe_pos.min(1)=l_toe_pos(1).min(1);
 r_toe_pos.max(1)=l_toe_pos(1).min(1);
 r_toe_pos.max(3)=0;

@@ -14,7 +14,7 @@ lc.subscribe('action_authoring_plan_action_request',monitor);
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_ros.urdf', struct('floating','true'));
+r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
