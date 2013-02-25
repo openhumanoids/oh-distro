@@ -92,6 +92,8 @@ typedef struct
     /**sorted sequence of actomic constraints being authored*/
     std::vector<Qt4ConstraintMacroPtr> _all_gui_constraints;
     Qt4ConstraintMacroPtr _selected_gui_constraint;
+    std::string _selected_affordance_guid;
+    std::string _selected_manipulator_guid;
 } AuthoringState;
 
 //===========MAIN WINDOW

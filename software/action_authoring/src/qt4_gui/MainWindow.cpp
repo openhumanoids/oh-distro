@@ -701,21 +701,6 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
 {
     cout << " hit " << modelGUID << " at point " << hitPoint.x() << ", " << hitPoint.y() << ", " << hitPoint.z() << endl;
 
-    // highlight the object in the GUI
-    for (uint i = 0; i < _worldState.glObjects.size(); i++)
-    {
-        if (_worldState.glObjects[i]->id() == modelGUID)
-        {
-            _worldState.glObjects[i]->setHighlighted(true);
-        }
-        else
-        {
-            _worldState.glObjects[i]->setHighlighted(false);
-        }
-    }
-
-    _widget_opengl.update();
-
     if (_authoringState._selected_gui_constraint == NULL)
     {
         return;
@@ -731,6 +716,7 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
         if (_worldState.affordances[i]->getGUIDAsString() == modelGUID)
         {
             //std::cout << " setting affordance" << std::endl;
+            _authoringState._selected_affordance_guid = modelGUID;
             _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
             _authoringState._selected_gui_constraint->updateElementsFromState();
             wasAffordance = true;
@@ -745,12 +731,30 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
             if (_worldState.manipulators[i]->getGUIDAsString() == modelGUID)
             {
                 //std::cout << " setting manipulator" << std::endl;
+                _authoringState._selected_manipulator_guid = modelGUID;
                 _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
                 _authoringState._selected_gui_constraint->updateElementsFromState();
                 break;
             }
         }
     }
+
+    // TODO: refractor out into separate method
+    // highlight the object in the GUI
+    for (uint i = 0; i < _worldState.glObjects.size(); i++)
+    {
+        if (_worldState.glObjects[i]->id() == _authoringState._selected_manipulator_guid ||
+            _worldState.glObjects[i]->id() == _authoringState._selected_affordance_guid)
+        {
+            _worldState.glObjects[i]->setHighlighted(true);
+        }
+        else
+        {
+            _worldState.glObjects[i]->setHighlighted(false);
+        }
+    }
+
+    _widget_opengl.update();
 
     if (_authoringState._selected_gui_constraint != NULL && ! (hitPoint.x() == 0 && hitPoint.y() == 0 && hitPoint.z() == 0))
     {
