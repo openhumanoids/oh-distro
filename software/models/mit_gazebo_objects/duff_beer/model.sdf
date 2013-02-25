@@ -1,0 +1,56 @@
+<?xml version='1.0'?>
+<gazebo version='1.2'>
+  <model name="duff_beer">
+    <link name='link'>
+      <inertial>
+        <mass>0.390</mass>
+        <inertia>
+          <ixx>0.00058</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00058</iyy>
+          <iyz>0</iyz>
+          <izz>0.00019</izz>
+        </inertia>
+      </inertial>
+      <pose>0 0 0 0 0 0</pose>
+      <collision name='collision'>
+        <geometry>
+          <cylinder>
+            <radius>0.055000</radius>
+            <length>0.230000</length>
+          </cylinder>
+        </geometry>
+      </collision>
+<visual name='visual'>
+  <geometry>
+          <cylinder>
+            <radius>0.055000</radius>
+            <length>0.230000</length>
+          </cylinder>
+  </geometry>
+                <material>
+                  <script>
+                    <uri>model://duff_beer/materials/scripts</uri>
+            		<uri>model://duff_beer/materials/textures</uri>
+                    <name>DuffBeer/Diffuse</name>
+                  </script>
+                </material>
+
+<!--
+        <material>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DuffBeer</name>
+          </script>
+          <ambient>0.2 0.2 0.2 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+          <emissive>0.5 0.5 0.5 1</emissive>
+        </material> -->
+</visual>
+  </link>     
+  </model>
+</gazebo>
+
+
