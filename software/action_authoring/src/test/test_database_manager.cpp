@@ -15,6 +15,7 @@ using namespace action_authoring;
 using namespace std;
 using namespace boost;
 using namespace affordance;
+using namespace Eigen;
 
 #define LCM_MESSAGE_CHANNEL "test_database_manager"
 
@@ -101,9 +102,9 @@ int main()
     ManipulatorStateConstPtr rfoot(new ManipulatorState("Right Foot", GlobalUID(rand(), rand())));
     ManipulatorStateConstPtr lfoot(new ManipulatorState("Left Foot", GlobalUID(rand(), rand())));
 
-    AffConstPtr wheel(new AffordanceState("Steering Wheel"));
-    AffConstPtr gas(new AffordanceState("Gas Pedal"));
-    AffConstPtr brake(new AffordanceState("Brake Pedal"));
+    AffConstPtr wheel(new AffordanceState(0, 0, KDL::Frame(KDL::Vector(0, 0, 0)), Eigen::Vector3f(1, 0, 0)));
+    AffConstPtr gas(new AffordanceState(0, 1, KDL::Frame(KDL::Vector(1, 0, 0)), Eigen::Vector3f(1, 0, 0)));
+    AffConstPtr brake(new AffordanceState(0, 2, KDL::Frame(KDL::Vector(0, 1, 0)), Eigen::Vector3f(0, 1, 0)));
 
     RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
 

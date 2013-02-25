@@ -16,6 +16,7 @@ This includes platonic affordancesm, atomic constraints, and higher level plans
 using namespace action_authoring;
 using namespace affordance;
 using namespace std;
+using namespace Eigen;
 
 #define DEBUG 0
 
@@ -236,6 +237,13 @@ xmlNodePtr makeChild(xmlNodePtr parent, const string &name, const double &conten
     return makeChild(parent, name, ss.str());
 }
 
+xmlNodePtr makeChild(xmlNodePtr parent, const string &name, const float &content)
+{
+    stringstream ss;
+    ss << content;
+    return makeChild(parent, name, ss.str());
+}
+
 xmlNodePtr makeChild(xmlNodePtr parent, const string &name)
 {
     return xmlNewChild(parent, NULL, BAD_CAST name.c_str(), NULL);
@@ -274,7 +282,17 @@ void DatabaseManager::addAffordanceStateToNode(AffConstPtr affordanceState, xmlN
     xmlNodePtr affordanceNode = makeChild(node, AFFORDANCE_STATE_NODE);
     makeChild(affordanceNode, UID_NODE, getStorageUID(affordanceState, mappings));
     makeChild(affordanceNode, NAME_NODE, affordanceState->getName());
-    makeChild(affordanceNode, "contents", "LCM serialized affordance");
+    makeChild(affordanceNode, GUID_PART_1_NODE, affordanceState->getGlobalUniqueId().first);
+    makeChild(affordanceNode, GUID_PART_2_NODE, affordanceState->getGlobalUniqueId().second);
+
+    Vector3f color = affordanceState->getColor();
+    Vector3f frameVector = affordanceState->getXYZ();
+    makeChild(affordanceNode, "color_r", color[0]);
+    makeChild(affordanceNode, "color_g", color[1]);
+    makeChild(affordanceNode, "color_b", color[2]);
+    makeChild(affordanceNode, "frame_vector_x", frameVector[0]);
+    makeChild(affordanceNode, "frame_vector_y", frameVector[1]);
+    makeChild(affordanceNode, "frame_vector_z", frameVector[2]);
 }
 
 /**Translates a ManipulatorState to an xmlNode
@@ -510,6 +528,10 @@ double doublevalue(xmlDocPtr doc, xmlNode* node) {
   return (double) atof(value(doc, node).c_str());
 }
 
+float floatvalue(xmlDocPtr doc, xmlNode* node) {
+  return (float) atof(value(doc, node).c_str());
+}
+
 void printAffordanceMap(map<string, AffConstPtr> &affordances)
 {
     printf("Affordance Map:\n");
@@ -540,6 +562,14 @@ void deserializeAffordanceState(xmlDocPtr doc, xmlNode *node, StorageUIDToObject
     xmlNode *current_node = NULL;
     string name;
     string uid;
+    int guidpt1;
+    int guidpt2;
+    float frame_vector_x = 0.0;
+    float frame_vector_y = 0.0;
+    float frame_vector_z = 0.0;
+    float color_r = 1.0;
+    float color_g = 1.0;
+    float color_b = 1.0;
 
     for (current_node = node->children; current_node; current_node = current_node->next)
     {
@@ -553,6 +583,38 @@ void deserializeAffordanceState(xmlDocPtr doc, xmlNode *node, StorageUIDToObject
             {
                 name = value(doc, current_node);
             }
+            else if (nodeIs(current_node, GUID_PART_1_NODE))
+            {
+                guidpt1 = intvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, GUID_PART_2_NODE))
+            {
+                guidpt2 = intvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "frame_vector_x"))
+            {
+                frame_vector_x = intvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "frame_vector_y"))
+            {
+                frame_vector_y = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "frame_vector_z"))
+            {
+                frame_vector_z = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "color_r"))
+            {
+                color_r = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "color_g"))
+            {
+                color_g = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "color_b"))
+            {
+                color_b  = floatvalue(doc, current_node);
+            }
             else
             {
                 printf("WARNING: Ignored unknown entry '%s' while deserializing Affordance.\n", current_node->name);
@@ -560,11 +622,10 @@ void deserializeAffordanceState(xmlDocPtr doc, xmlNode *node, StorageUIDToObject
         }
     }
 
-    // TODO: read LCM-serialized data from XML document, then pass the LCM
-    //object into the affordance constructor
-    throw NotImplementedException("can't restore affordance");
-    //AffConstPtr affordance(new
-    //AffordanceState()); mappings.StorageUIDToAffordance[uid] = affordance;
+    KDL::Frame frame = KDL::Frame(KDL::Vector(frame_vector_x, frame_vector_y, frame_vector_z));
+    Eigen::Vector3f color = Eigen::Vector3f(color_r, color_g, color_b);
+    AffConstPtr affordance(new AffordanceState(guidpt1, guidpt2, frame, color));
+    mappings.StorageUIDToAffordance[uid] = affordance;
 }
 
 void deserializeManipulatorState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMappings &mappings)
