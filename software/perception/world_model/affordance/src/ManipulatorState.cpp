@@ -14,11 +14,13 @@ ManipulatorState::ManipulatorState(const std::string &name,
 }
 
 ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link, 
-				   KDL::Frame link_frame,
-				   const GlobalUID &guid)
-    : _name(link->name), _guid(guid), _link(link), _link_frame(link_frame)
+                                   const string &contact_group_name,
+                                   KDL::Frame link_frame,
+                                   const GlobalUID &guid)
+  : _name(link->name + "." + contact_group_name), 
+    _guid(guid), _link(link), _link_frame(link_frame),
+    _contact_group_name(contact_group_name)
 {
-    _contact_group_name = "default";
 }
 
 
@@ -47,7 +49,7 @@ string ManipulatorState::getGUIDAsString()  const
 
 string ManipulatorState::getName() const
 {
-	return _name;
+  return _name;
 }
 
 Vector3f ManipulatorState::getColor() const
@@ -118,7 +120,7 @@ void ManipulatorState::getCollisionContactPoints(vector<KDL::Frame> &pts) const
 {
   pts.clear();
 
-  CollisionGroupPtr colgroup = _link->getCollisions("default");
+  CollisionGroupPtr colgroup = _link->getCollisions(_contact_group_name);
   if (colgroup == NULL || colgroup->size() == 0) 
     return;
 
@@ -144,7 +146,8 @@ void ManipulatorState::getCollisionContactPoints(vector<KDL::Frame> &pts) const
       */
     }
 }
-void ManipulatorState::setContactGroupName(std::string contactGroupName)
+
+/*void ManipulatorState::setContactGroupName(std::string contactGroupName)
 {
   _contact_group_name = contactGroupName;
-}
+  }*/

@@ -29,8 +29,9 @@ namespace affordance
     //-----------constructor/destructor
   public:
     ManipulatorState(boost::shared_ptr<const urdf::Link> link, 
-		     KDL::Frame link_frame,
-		     const GlobalUID &uid);
+                     const std::string &contact_group_name,
+                     KDL::Frame link_frame,
+                     const GlobalUID &uid);
     ManipulatorState(const std::string &s, const GlobalUID &uid);
 
     //ManipulatorState(const ManipulatorState &other); //todo
@@ -63,7 +64,7 @@ namespace affordance
     KDL::Frame getLinkFrame() const { return _link_frame; }
     void getCollisionContactPoints(std::vector<KDL::Frame> &pts) const;
     std::string getContactGroupName() const { return _contact_group_name; }
-    void setContactGroupName(std::string contact_group_name);
+    // void setContactGroupName(std::string contact_group_name);
 
  private:
     typedef boost::shared_ptr<std::vector<boost::shared_ptr<urdf::Collision > > > CollisionGroupPtr;  

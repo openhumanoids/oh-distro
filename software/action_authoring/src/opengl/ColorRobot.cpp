@@ -47,11 +47,12 @@ setSelectedLink(std::string link_name)
 
 CollisionGroupPtr
 ColorRobot::
-getCollisionGroupsForLink(string link_name)
+getCollisionGroupForLink(const string &link_name,
+                          const string &collisionGroupName)
 {
     const urdf::Model &m = _kinematics_model.model();
     shared_ptr<const urdf::Link> t = m.getLink(link_name);
-    shared_ptr<vector<shared_ptr<Collision > > > cols = t->getCollisions("default");
+    shared_ptr<vector<shared_ptr<Collision > > > cols = t->getCollisions(collisionGroupName);
     return cols;
 }
 

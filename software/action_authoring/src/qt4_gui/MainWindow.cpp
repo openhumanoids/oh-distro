@@ -12,8 +12,8 @@ using namespace affordance;
 
 #define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
 
-
 //using namespace collision_detection;
+typedef std::map<string, boost::shared_ptr<vector<boost::shared_ptr<urdf::Collision> > > > CollisionMapType;
 
 string RandomString(int len)
 {
@@ -997,27 +997,28 @@ createManipulators()
         // std::map<string, boost::shared_ptr<vector<boost::shared_ptr<Collision> > > > 
         // link->collision_groups
         // for (collision_group_name in link->collision_groups.keys()) {
-        
-        ManipulatorStateConstPtr manipulator(new ManipulatorState(link, // TODO (mfleder) : collision_group_name,
-                                             _worldState.colorRobot.getKinematicsModel().link(link->name),
-                                             GlobalUID(rand(), rand()))); //todo guid
-
-        _worldState.manipulators.push_back(manipulator);
-
-        OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
-        _widget_opengl.opengl_scene().add_object(*asGlMan);
-        _worldState.glObjects.push_back(asGlMan);
-
-        Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
-
-        if (cObjManip->isSupported(manipulator))
-        {
-            _widget_opengl.add_collision_object(cObjManip);
-            _worldState.collisionObjs.push_back(cObjManip);
-        }
-
-        // end for loop
-        // end TODO mfleder
+        for(CollisionMapType::const_iterator iter = link->collision_groups.begin();
+            iter != link->collision_groups.end();
+            ++iter)
+          {
+            ManipulatorStateConstPtr manipulator(new ManipulatorState(link, iter->first,
+                                                                      _worldState.colorRobot.getKinematicsModel().link(link->name),
+                                                                      GlobalUID(rand(), rand()))); //todo guid
+            
+            _worldState.manipulators.push_back(manipulator);
+            
+            OpenGL_Manipulator *asGlMan = new OpenGL_Manipulator(manipulator);
+            _widget_opengl.opengl_scene().add_object(*asGlMan);
+            _worldState.glObjects.push_back(asGlMan);
+            
+                        
+            if (Collision_Object_Manipulator::isSupported(manipulator))
+              {
+                Collision_Object_Manipulator *cObjManip = new Collision_Object_Manipulator(manipulator);
+                _widget_opengl.add_collision_object(cObjManip);
+                _worldState.collisionObjs.push_back(cObjManip);
+              } 
+          }
     }
 }
 
