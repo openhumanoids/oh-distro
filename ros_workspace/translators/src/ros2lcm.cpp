@@ -80,6 +80,7 @@ private:
   void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in); 
   void appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_in, std::string sensor_name);
   void publishRobotState(int64_t utime_in);
+  bool init_recd_[2]; // have recived gt [0], robot joints [1]
 
   ros::Subscriber l_foot_contact_sub_,r_foot_contact_sub_;  
   void r_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg);  
@@ -159,6 +160,9 @@ App::App(const std::string & stereo_in,
   ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
   r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
+  
+  init_recd_[0]=false;
+  init_recd_[1]=false;
   
   if (!control_only_){
     // Laser:
@@ -494,10 +498,13 @@ void App::l_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg){
 }
 void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
   ground_truth_odom_ = *msg;
+  
+  init_recd_[0] =true;
 }
 /// Locally cache the joint states:
 void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   robot_joint_states_ = *msg; 
+  init_recd_[1] =true; 
   
   int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   publishRobotState(joint_utime);
@@ -544,6 +551,13 @@ void App::appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_
 }
 
 void App::publishRobotState(int64_t utime_in){
+  if(!init_recd_[0])
+    return;
+  if(!init_recd_[1])
+    return;
+    
+  
+  
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
   robot_state_msg.robot_name = "atlas";
@@ -655,9 +669,9 @@ int scan_counter=0;
 void App::rotating_scan_cb(const sensor_msgs::LaserScanConstPtr& msg){
   scan_counter++;
   if (scan_counter%80 ==0){
-    std::cout << scan_counter << " /multisense_sl/laser/scan -> ROTATING_SCAN\n";
+    std::cout << scan_counter << " /multisense_sl/laser/scan -> SCAN\n";
   }  
-  send_lidar(msg, "ROTATING_SCAN");
+  send_lidar(msg, "SCAN");
 }
 void App::scan_left_cb(const sensor_msgs::LaserScanConstPtr& msg){
   send_lidar(msg, "SCAN_LEFT");
