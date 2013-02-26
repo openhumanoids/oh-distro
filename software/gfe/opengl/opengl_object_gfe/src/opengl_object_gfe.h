@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+// sorry, boost
+#include <boost/algorithm/string.hpp>
+
 #include <state/state_gfe.h>
 #include <kinematics_model/kinematics_model_gfe.h>
 #include <opengl/opengl_object.h>

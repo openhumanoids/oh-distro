@@ -135,6 +135,8 @@ _load_opengl_objects( void ){
         std::string model_filename = mesh->filename;
         model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
         model_filename.erase( model_filename.end()-3, model_filename.end() );
+        // chomp model filename up to models/ *TODO UGLY HACK*
+        boost::replace_all(model_filename, "mit_drcsim_scripts/models/", "");
         model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "dae" );
         _opengl_objects.push_back( new OpenGL_Object_DAE( links[ i ]->name, model_filename ) );
       }
