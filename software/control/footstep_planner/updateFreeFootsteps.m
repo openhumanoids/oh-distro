@@ -1,4 +1,4 @@
-function [X, Xright, Xleft] = optimizeFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps)
+function [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps)
 
 if nargin < 5
   fixed_steps = repmat({[]}, length(X(1,:)), 2);
@@ -15,18 +15,6 @@ function c = cost(x_flat)
   c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
   c2 = sum(d2.^2 + (r2 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d2 .* r2 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
   c = c1 + c2;
-%   figure(23);
-%   clf
-%   x_flat
-%   quiver(Xright(1,:), Xright(2,:), cos(Xright(6,:)), sin(Xright(6,:)),'Color', 'g', 'AutoScaleFactor', 0.2);
-%   hold on
-%   quiver(Xleft(1,:), Xleft(2,:), cos(Xleft(6,:)), sin(Xleft(6,:)),'Color', 'r', 'AutoScaleFactor', 0.2);
-%   quiver(X(1,:), X(2,:), cos(X(6,:)), sin(X(6,:)),'Color', 'k', 'AutoScaleFactor', 0.2);
-%   hold off
-%   d = d1 + d2;
-%   r = r1 + r2;
-%   dist = 
-%   c = sum(dist .^ 2)
 end
 
 
@@ -36,8 +24,8 @@ x_flat = reshape(X([1,2,6],:), 1, []);
 
 x_l = min(X, [], 2);
 x_u = max(X, [], 2);
-x_lb = x_l - abs(x_u - x_l) * 0.5
-x_ub = x_u + abs(x_u - x_l) * 0.5
+x_lb = x_l - abs(x_u - x_l) * 0.5;
+x_ub = x_u + abs(x_u - x_l) * 0.5;
 
 lb = [repmat(x_lb(1), 1, length(X(1,:))); repmat(x_lb(2), 1, length(X(1,:))); -pi * ones(1, length(X(1,:)))];
 ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi * ones(1, length(X(1,:)))];
@@ -45,7 +33,7 @@ ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi
 
 x_flat = fmincon(@cost, x_flat,[],[],[],[],...
   reshape(lb, 1, []), reshape(ub, 1, []),[],...
-  optimset('MaxIter', 100, 'Display', 'off'));
+  optimset('MaxIter', 10, 'Display', 'off'));
 
 
 X = locate_step_centers(x_flat);
@@ -70,13 +58,5 @@ function X = locate_step_centers(x_flat)
       X(:,i) = fixed_steps{i,2} + (biped.step_width / 2) * [cos(angle); sin(angle);0;0;0;0];
     end
   end
-%   for i = 1:length(Xright(1,:))
-%     if ~isempty(fixed_steps{i, 1})
-%       Xright(:,i) = fixed_steps{i,1};
-%     end
-%     if ~isempty(fixed_steps{i, 2})
-%       Xleft(:,i) = fixed_steps{i, 2};
-%     end
-%   end
 end
 end

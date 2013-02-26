@@ -1,4 +1,4 @@
-function [Xright, Xleft] = interactiveFreeFootstepOptimization(traj, lambda, biped, ndx_r, ndx_l)
+function [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, biped, ndx_r, ndx_l)
 
 fixed_steps = repmat({[]}, length(lambda), 2);
 % fixed_steps{2,1} = [.3;-.1;0;0;0;0];
