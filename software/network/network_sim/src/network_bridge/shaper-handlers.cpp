@@ -335,10 +335,7 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                 {                
                     payload_size = floor_multiple_sixteen(msg->max_frame_bytes()-overhead);
                     while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
-                    {
-                        std::cout << payload_size << std::endl;
                         payload_size = floor_multiple_sixteen(payload_size-1);
-                    }
                     
                     if(payload_size == 0)
                         throw(std::runtime_error("udp_frame_size_bytes is too small for LDPC error correction, use a larger value"));
@@ -434,7 +431,6 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
 
             std::map<int, drc::ShaperPacket>& received_frags = this_queue[packet.message_number()];
             try_decode(received_frags);            
-            received_frags.clear();
         }
         
     }
@@ -463,16 +459,17 @@ void DRCShaper::try_decode(std::map<int, drc::ShaperPacket>& received_frags)
                 
                 lcm_publish(lcm_, channel_id_.right.at(front.channel()).c_str(),
                             &buffer[0], buffer.size());
+                received_frags.clear();
                 return;
             }
             else
             {
                 std::cout << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
+                received_frags.clear();
                 return;
             }
         }
     }
-
     
     int expected = ceil(front.message_size()*fec_ / front.data().size());
     int received = received_frags.size();
