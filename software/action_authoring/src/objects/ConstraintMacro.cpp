@@ -59,19 +59,25 @@ AtomicConstraintPtr ConstraintMacro::getAtomicConstraint() const
 
 std::vector<drc::contact_goal_t> ConstraintMacro::toLCM()
 {
+    printf("toLCM called\n");
     std::vector<drc::contact_goal_t> lcmMessages;
 
     if (_constraintType == ConstraintMacro::ATOMIC)
     {
+        printf("types is ATOMIC, calling toLCM on atomic constraint\n");
         lcmMessages.push_back(_atomicConstraint->toLCM());
+        printf("ATOMIC toLCM complete\n");
     }
     else if (_constraintType == ConstraintMacro::SEQUENTIAL)
     {
+        printf("type is SEQEUENTIAL\n");
         std::vector<drc::contact_goal_t> child_constraints;
 
         for (int i = 0; i < (int) _constraints.size(); i++)
         {
+            printf("calling toLCM on child %i \n", i);
             child_constraints = _constraints[i]->toLCM();
+            printf("child %i toLCM is finished\n", i);
 
             for (int j = 0; j < (int)child_constraints.size(); j++)
             {

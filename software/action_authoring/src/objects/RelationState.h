@@ -23,12 +23,12 @@ public:
     //------------------------------------------------------------------------
     typedef enum
     {
-        UNDEFINED,
-        GRASP,
-        FORCE_CLOSURE,
-        POINT_CONTACT,
-        OFFSET,
-        RELATION_TYPE_LENGTH,
+        UNDEFINED = 0,
+        GRASP = 1,
+        FORCE_CLOSURE = 2,
+        POINT_CONTACT = 3,
+        OFFSET = 4,
+        RELATION_TYPE_LENGTH
     } RelationType;
 
     typedef boost::bimap<std::string, RelationType> bm_type;

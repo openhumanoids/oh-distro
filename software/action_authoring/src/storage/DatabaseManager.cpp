@@ -9,6 +9,7 @@ This includes platonic affordancesm, atomic constraints, and higher level plans
 
 #include "DatabaseManager.h"
 #include "action_authoring/AtomicConstraint.h"
+#include "action_authoring/PointContactRelation.h"
 #include <sstream>
 #include <iostream>
 #include <time.h>
@@ -318,7 +319,19 @@ void DatabaseManager::addRelationStateToNode(RelationStateConstPtr relationState
 {
     xmlNodePtr relationStateNode = makeChild(node, RELATION_STATE_NODE);
     makeChild(relationStateNode, UID_NODE, getStorageUID(relationState, mappings));
-    makeChild(relationStateNode, RELATION_STATE_TYPE_NODE, "foo bar");//relationState->getRelationType())
+    makeChild(relationStateNode, RELATION_STATE_TYPE_NODE, relationState->getRelationType());
+
+    if (relationState->getRelationType() == RelationState::POINT_CONTACT)
+    {
+        const Eigen::Vector3f v1 = boost::static_pointer_cast<const PointContactRelation>(relationState)->getPoint1();
+        const Eigen::Vector3f v2 = boost::static_pointer_cast<const PointContactRelation>(relationState)->getPoint2();
+        makeChild(relationStateNode, "point1_x", v1.x());
+        makeChild(relationStateNode, "point1_y", v1.y());
+        makeChild(relationStateNode, "point1_z", v1.z());
+        makeChild(relationStateNode, "point2_x", v2.x());
+        makeChild(relationStateNode, "point2_y", v2.y());
+        makeChild(relationStateNode, "point2_z", v2.z());
+    }
 }
 
 /**Translates an AtomicConstraint to an xmlNode
@@ -672,6 +685,13 @@ void deserializeRelationState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMa
     xmlNode *current_node = NULL;
     string name;
     string uid;
+    int relation_type = 0;
+    float v1_x;
+    float v1_y;
+    float v1_z;
+    float v2_x;
+    float v2_y;
+    float v2_z;
 
     for (current_node = node->children; current_node; current_node = current_node->next)
     {
@@ -683,7 +703,31 @@ void deserializeRelationState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMa
             }
             else if (nodeIs(current_node, RELATION_STATE_TYPE_NODE))
             {
-                printf("deserializeRelationState TODO: deserialize type\n");
+                relation_type = intvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point1_x"))
+            {
+                v1_x = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point1_y"))
+            {
+                v1_y = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point1_z"))
+            {
+                v1_z = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point2_x"))
+            {
+                v2_x = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point2_y"))
+            {
+                v2_y = floatvalue(doc, current_node);
+            }
+            else if (nodeIs(current_node, "point2_z"))
+            {
+                v2_z = floatvalue(doc, current_node);
             }
             else
             {
@@ -693,8 +737,17 @@ void deserializeRelationState(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMa
     }
 
     //TODO deserialize type
-    RelationStatePtr relationState(new RelationState(RelationState::UNDEFINED));
-    mappings.StorageUIDToRelationState[uid] = relationState;
+    RelationStatePtr relationState(new RelationState((RelationState::RelationType)relation_type));
+    
+    if (relation_type == RelationState::POINT_CONTACT) {
+        PointContactRelationPtr pointContactRelation(new PointContactRelation(Eigen::Vector3f(v1_x, v1_y, v1_z), Eigen::Vector3f(v2_x, v2_y, v2_z)));
+        mappings.StorageUIDToRelationState[uid] = boost::dynamic_pointer_cast<RelationState>(pointContactRelation);
+    }
+    else
+    {
+        printf("WARNING: Ignored unknown type '%i' while deserializing RelationState.\n.", relation_type);
+    }
+
 }
 
 void deserializeManipulationConstraint(xmlDocPtr doc, xmlNode *node, StorageUIDToObjectMappings &mappings)

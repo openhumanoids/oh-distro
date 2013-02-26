@@ -9,6 +9,12 @@ PointContactRelation::PointContactRelation() : RelationState(RelationState::POIN
     _point2 = Eigen::Vector3f(0.0, 0.0, 0.0);
 }
 
+PointContactRelation::PointContactRelation(Eigen::Vector3f p1, Eigen::Vector3f p2) : RelationState(RelationState::POINT_CONTACT)
+{
+    _point1 = p1;
+    _point2 = p2;
+}
+
 std::string
 PointContactRelation::
 getPrompt() const

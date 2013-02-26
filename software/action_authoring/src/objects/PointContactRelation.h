@@ -19,13 +19,14 @@ private:
     //------------Constructor--------
 public:
     PointContactRelation();
+    PointContactRelation(Eigen::Vector3f p1, Eigen::Vector3f p2);
 
     //---------------Accessors
-    Eigen::Vector3f getPoint1()
+    Eigen::Vector3f getPoint1() const
     {
         return _point1;
     }
-    Eigen::Vector3f getPoint2()
+    Eigen::Vector3f getPoint2() const
     {
         return _point2;
     }

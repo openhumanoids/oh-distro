@@ -32,16 +32,10 @@ void tabprintf(std::string string, int num_tabs)
 void printAtomicConstraint(AtomicConstraintPtr atomicConstraint, int num_tabs)
 {
     std::string relationStateString;
-    atomicConstraint->getRelationState();
 
-    if (atomicConstraint->getRelationState()->getRelationType() == RelationState::UNDEFINED)
-    {
-        relationStateString = "Undefined Type";
-    }
-    else
-    {
-        relationStateString = "could not find match for relation type";
-    }
+    stringstream ss;
+    ss << atomicConstraint->getRelationState()->getRelationType();
+    relationStateString = ss.str();
 
     tabprintf("Atomic Constraint - " + relationStateString, num_tabs);
     tabprintf(atomicConstraint->getManipulator()->getName(), num_tabs);
@@ -106,7 +100,7 @@ int main()
     AffConstPtr gas(new AffordanceState(0, 1, KDL::Frame(KDL::Vector(1, 0, 0)), Eigen::Vector3f(1, 0, 0)));
     AffConstPtr brake(new AffordanceState(0, 2, KDL::Frame(KDL::Vector(0, 1, 0)), Eigen::Vector3f(0, 1, 0)));
 
-    RelationStatePtr relstate(new RelationState(RelationState::UNDEFINED));
+    RelationStatePtr relstate(new RelationState(RelationState::POINT_CONTACT));
 
     AtomicConstraintPtr rfoot_gas_relation(new ManipulationConstraint(gas, rhand, relstate));
     AtomicConstraintPtr lfoot_brake_relation(new ManipulationConstraint(brake, lfoot, relstate));
@@ -210,6 +204,8 @@ int main()
 
     //flatten the ingress constraint
     std::vector<drc::contact_goal_t> contact_goals = ingress->toLCM();
+
+    printf("toLCM finished\n");
 
     drc::action_sequence_t actionSequence;
     printf("Created the action sequence\n");
