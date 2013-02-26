@@ -21,6 +21,7 @@ ManipulatorState::ManipulatorState(shared_ptr<const urdf::Link> link,
     _guid(guid), _link(link), _link_frame(link_frame),
     _contact_group_name(contact_group_name)
 {
+  _link_name = link->name;
 }
 
 
