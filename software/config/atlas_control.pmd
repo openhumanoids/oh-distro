@@ -12,7 +12,7 @@ group "core" {
         host = "localhost";
     }
     cmd "r2l" {
-        exec = "rosrun translators ros2lcm";
+        exec = "rosrun translators ros2lcm -c";
         host = "localhost";
     } 
     cmd "l2r" {
