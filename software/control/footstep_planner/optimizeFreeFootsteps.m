@@ -1,24 +1,42 @@
-function [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, biped, ndx_r, ndx_l)
+function [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, poses, biped, ndx_r, ndx_l, interactive)
 
+X = traj.eval(lambda(1:end));
 fixed_steps = repmat({[]}, length(lambda), 2);
-% fixed_steps{2,1} = [.3;-.1;0;0;0;0];
 
-h = figure(22);
-set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
-set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));done = false;
-hButton = uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
+for p = poses
+  [~,j] = min(sum((X - repmat(p, 1, length(X(1,:)))).^2));
+  if find(ndx_r == j)
+    [fixed_steps{j,1},~] = biped.footPositions(X(:,j));
+  end
+  if find(ndx_l == j)
+    [~, fixed_steps{j,2}] = biped.footPositions(X(:,j));
+  end
+end
+% 
+% [fixed_steps{1,1}, fixed_steps{1,2}] = biped.footPositions(X(:,1));
+% [fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
+[X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps);
+
+
+if interactive
+  h = figure(22);
+  set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
+  set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));
+end
+
+done = false;
+uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
 function set_done()
   done = true;
 end
 
-X = traj.eval(lambda(1:end));
-[Xright, Xleft] = biped.footPositions(X, ndx_r, ndx_l);
-
-while ~done
-  [X, Xright, Xleft] = optimizeFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps);
-  figure(22)
-  plotFootstepPlan(traj, Xright, Xleft);
-  drawnow
+if interactive
+  while ~done
+    [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps);
+    figure(22)
+    plotFootstepPlan(traj, Xright, Xleft);
+    drawnow
+  end
 end
 
 function mouse_down_handler(hFig)

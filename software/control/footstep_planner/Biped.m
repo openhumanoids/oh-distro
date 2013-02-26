@@ -71,16 +71,16 @@ classdef Biped
 %       plot_lcm_poses(Xright(1:3,:)', Xright([6,5,4],:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
 %       plot_lcm_poses(Xleft(1:3,:)', Xright([6,5,4],:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
 
-      
-      if options.interactive
-%         [~, Xright, Xleft] = interactiveFootstepOptimization(traj,lambda,obj.max_step_length,obj.step_width,obj.max_step_rot,ndx_r,ndx_l);
-         [Xright, Xleft] = interactiveFreeFootstepOptimization(traj, lambda, obj, ndx_r, ndx_l);
-      else
-%         [~, Xright, Xleft] = optimizeFootsteps(traj, lambda, obj.max_step_length, step_width, obj.max_step_rot, ndx_r, ndx_l);
-        
-        X = traj.eval(lambda(1:end));
-        [~, Xright, Xleft] = optimizeFreeFootsteps(X, obj, ndx_r, ndx_l);
-      end
+      [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, [start_pos, poses], obj, ndx_r, ndx_l, options.interactive);
+%       if options.interactive
+% %         [~, Xright, Xleft] = interactiveFootstepOptimization(traj,lambda,obj.max_step_length,obj.step_width,obj.max_step_rot,ndx_r,ndx_l);
+%          [Xright, Xleft] = interactiveFreeFootstepOptimization(traj, lambda, obj, ndx_r, ndx_l);
+%       else
+% %         [~, Xright, Xleft] = optimizeFootsteps(traj, lambda, obj.max_step_length, step_width, obj.max_step_rot, ndx_r, ndx_l);
+%         
+%         X = traj.eval(lambda(1:end));
+%         [~, Xright, Xleft] = optimizeFreeFootsteps(X, obj, ndx_r, ndx_l);
+%       end
       if options.plotting
         figure(22)
         plotFootstepPlan(traj, Xright, Xleft);

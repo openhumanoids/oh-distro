@@ -1,9 +1,5 @@
 function [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps)
 
-if nargin < 5
-  fixed_steps = repmat({[]}, length(X(1,:)), 2);
-end
-
 [fixed_steps{1,1}, fixed_steps{1,2}] = biped.footPositions(X(:,1));
 [fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
 
