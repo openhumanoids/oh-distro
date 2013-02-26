@@ -1,5 +1,14 @@
 #include "SensorDataReceiver.hpp"
 
+#include <unordered_map>
+#include <boost/thread/mutex.hpp>
+#include <lcm/lcm-cpp.hpp>
+
+#include <lcmtypes/bot_core/planar_lidar_t.hpp>
+#include <lcmtypes/drc/pointcloud2_t.hpp>
+
+#include "Types.hpp"
+#include "ThreadSafeQueue.hpp"
 #include "BotFramesWrapper.hpp"
 
 #include <pcl/io/io.h>
@@ -7,25 +16,133 @@
 
 using namespace maps;
 
-struct SensorDataReceiver::SubscriptionInfo {
-  std::string mSensorChannel;
-  SensorType mSensorType;
-  std::string mTransformFrom;
-  std::string mTransformTo;
-  float mRangeMin;
-  float mRangeMax;
-  lcm::Subscription* mSubscription;
-  typedef boost::shared_ptr<SubscriptionInfo> Ptr;
-};
+struct SensorDataReceiver::Helper {
+  struct SubscriptionInfo {
+    std::string mSensorChannel;
+    SensorType mSensorType;
+    std::string mTransformFrom;
+    std::string mTransformTo;
+    float mRangeMin;
+    float mRangeMax;
+    lcm::Subscription* mSubscription;
+    typedef boost::shared_ptr<SubscriptionInfo> Ptr;
+  };
 
-struct SensorDataReceiver::BotStructures {
-  BotParam* mParam;
+  typedef std::unordered_map<std::string, boost::shared_ptr<SubscriptionInfo> >
+  SubscriptionMap;
+
+  boost::shared_ptr<lcm::LCM> mLcm;
+  boost::shared_ptr<BotFramesWrapper> mBotFrames;
+  BotParam* mBotParam;
+  SubscriptionMap mSubscriptions;
+  bool mIsRunning;
+  ThreadSafeQueue<SensorData> mDataBuffer;
+  boost::mutex mBufferMutex;
+  boost::mutex mSubscriptionsMutex;
+  boost::condition_variable mBufferCondition;
+
+  bool getPose(const boost::shared_ptr<SubscriptionInfo>& iInfo,
+               const int64_t iTimestamp,
+               Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation) {
+    Eigen::Vector3f trans;
+    Eigen::Quaternionf rot;
+    if (!mBotFrames->getTransform(iInfo->mTransformFrom, iInfo->mTransformTo,
+                                  iTimestamp, trans, rot)) {
+      std::cerr << "SensorDataReceiver: cannot get transform from " <<
+        iInfo->mTransformFrom << " to " << iInfo->mTransformTo << std::endl;
+      return false;
+    }
+
+    oPosition.head<3>() = trans;
+    oPosition[3] = 1;
+    oOrientation = rot;
+    return true;
+  }
+
+  void onCloud(const lcm::ReceiveBuffer* iBuf,
+               const std::string& iChannel,
+               const drc::pointcloud2_t* iMessage) {
+    if (!mIsRunning) return;
+
+    pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
+    pointCloud.width = iMessage->width;
+    pointCloud.height = iMessage->height;
+    pointCloud.resize(iMessage->width * iMessage->height);
+    pointCloud.is_dense = false;
+    uint8_t* cloudData = (uint8_t*)(&pointCloud[0]);
+    const uint8_t* messageData = (uint8_t*)(&iMessage->data[0]);
+    memcpy(cloudData, messageData, iMessage->data_nbytes);
+    maps::PointCloud::Ptr newCloud(new maps::PointCloud());
+    pcl::copyPointCloud(pointCloud, *newCloud);
+
+    boost::shared_ptr<SubscriptionInfo> info;
+    {
+      boost::mutex::scoped_lock lock(mSubscriptionsMutex);
+      SubscriptionMap::const_iterator item = mSubscriptions.find(iChannel);
+      if (item == mSubscriptions.end()) return;
+      info = item->second;
+    }
+    if (!getPose(info, iMessage->utime, newCloud->sensor_origin_,
+                 newCloud->sensor_orientation_)) return;
+
+    SensorData data;
+    data.mPointSet.reset(new PointSet());
+    data.mPointSet->mTimestamp = iMessage->utime;
+    data.mPointSet->mMaxRange = 1e10;
+    data.mPointSet->mCloud = newCloud;
+    data.mChannel = iChannel;
+    data.mSensorType = info->mSensorType;
+    mDataBuffer.push(data);
+  }
+
+  void onLidar(const lcm::ReceiveBuffer* iBuf,
+               const std::string& iChannel,
+               const bot_core::planar_lidar_t* iMessage) {
+    if (!mIsRunning) return;
+
+    boost::shared_ptr<SubscriptionInfo> info;
+    {
+      boost::mutex::scoped_lock lock(mSubscriptionsMutex);
+      SubscriptionMap::const_iterator item = mSubscriptions.find(iChannel);
+      if (item == mSubscriptions.end()) return;
+      info = item->second;
+    }
+
+    maps::PointCloud::Ptr cloud(new maps::PointCloud());
+    cloud->height = 1;
+    cloud->is_dense = false;
+    cloud->points.reserve(iMessage->nranges);
+    for (int i = 0; i < iMessage->nranges; ++i) {
+      double theta = iMessage->rad0 + i*iMessage->radstep;
+      double range = iMessage->ranges[i];
+      if (range < info->mRangeMin) range = 0;
+      else if (range > info->mRangeMax) range = 1000;
+      PointType pt;
+      pt.x = cos(theta)*range;
+      pt.y = sin(theta)*range;
+      pt.z = 0;
+      cloud->points.push_back(pt);
+    }
+    cloud->width = cloud->points.size();
+
+    if (!getPose(info, iMessage->utime, cloud->sensor_origin_,
+                 cloud->sensor_orientation_)) return;
+
+    SensorData data;
+    data.mPointSet.reset(new PointSet());
+    data.mPointSet->mTimestamp = iMessage->utime;
+    data.mPointSet->mMaxRange = info->mRangeMax;
+    data.mPointSet->mCloud = cloud;
+    data.mChannel = iChannel;
+    mDataBuffer.push(data);
+  }
 };
 
 
 SensorDataReceiver::
 SensorDataReceiver() {
-  mIsRunning = false;
+  mHelper.reset(new Helper());
+  mHelper->mIsRunning = false;
   setMaxBufferSize(100);
 }
 
@@ -35,13 +152,12 @@ SensorDataReceiver::
 }
 
 void SensorDataReceiver::
-setLcm(boost::shared_ptr<lcm::LCM>& iLcm) {
-  mLcm = iLcm;
-  lcm_t* lcm = mLcm->getUnderlyingLCM();
-  mBotStructures.reset(new BotStructures());
-  mBotStructures->mParam = bot_param_get_global(lcm, 0);
-  mBotFrames.reset(new BotFramesWrapper());
-  mBotFrames->setLcm(mLcm);
+setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
+  mHelper->mLcm = iLcm;
+  lcm_t* lcm = mHelper->mLcm->getUnderlyingLCM();
+  mHelper->mBotParam = bot_param_get_global(lcm, 0);
+  mHelper->mBotFrames.reset(new BotFramesWrapper());
+  mHelper->mBotFrames->setLcm(mHelper->mLcm);
   clearChannels();
 }
 
@@ -50,7 +166,7 @@ addChannel(const std::string& iSensorChannel,
            const SensorType iSensorType,
            const std::string& iTransformFrom,
            const std::string& iTransformTo) {
-  SubscriptionInfo::Ptr info(new SubscriptionInfo());
+  Helper::SubscriptionInfo::Ptr info(new Helper::SubscriptionInfo());
   info->mSensorChannel = iSensorChannel;
   info->mSensorType = iSensorType;
   info->mTransformFrom = iTransformFrom;
@@ -60,17 +176,17 @@ addChannel(const std::string& iSensorChannel,
 
   // get min and max values from config
   char* lidarName =
-    bot_param_get_planar_lidar_name_from_lcm_channel(mBotStructures->mParam,
+    bot_param_get_planar_lidar_name_from_lcm_channel(mHelper->mBotParam,
                                                      iSensorChannel.c_str());
   char prefix[1024];
   bot_param_get_planar_lidar_prefix(NULL, lidarName, prefix, sizeof(prefix));
   std::string key = std::string(prefix) + ".max_range";
   double val;
-  if (0 == bot_param_get_double(mBotStructures->mParam, key.c_str(), &val)) {
+  if (0 == bot_param_get_double(mHelper->mBotParam, key.c_str(), &val)) {
     info->mRangeMax = val;
   }
   key = std::string(prefix) + ".min_range";
-  if (0 == bot_param_get_double(mBotStructures->mParam, key.c_str(), &val)) {
+  if (0 == bot_param_get_double(mHelper->mBotParam, key.c_str(), &val)) {
     info->mRangeMin = val;
   }
   free(lidarName);
@@ -79,20 +195,20 @@ addChannel(const std::string& iSensorChannel,
   lcm::Subscription* sub = NULL;
   switch(iSensorType) {
   case SensorTypePlanarLidar:
-    sub = mLcm->subscribe(iSensorChannel,
-                          &SensorDataReceiver::onLidar, this);
+    sub = mHelper->mLcm->subscribe
+      (iSensorChannel, &SensorDataReceiver::Helper::onLidar, mHelper.get());
     break;
   case SensorTypePointCloud:
-    sub = mLcm->subscribe(iSensorChannel,
-                          &SensorDataReceiver::onPointCloud, this);
+    sub = mHelper->mLcm->subscribe
+      (iSensorChannel, &SensorDataReceiver::Helper::onCloud, mHelper.get());
     break;
   default:
     return false;
   }
   info->mSubscription = sub;
   {
-    boost::mutex::scoped_lock lock(mSubscriptionsMutex);
-    mSubscriptions[info->mSensorChannel] = info;
+    boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+    mHelper->mSubscriptions[info->mSensorChannel] = info;
   }
 
   return true;
@@ -100,164 +216,62 @@ addChannel(const std::string& iSensorChannel,
 
 void SensorDataReceiver::
 clearChannels() {
-  boost::mutex::scoped_lock lock(mSubscriptionsMutex);
-  SubscriptionMap::const_iterator iter;
-  for (iter = mSubscriptions.begin(); iter != mSubscriptions.end(); ++iter) {
-    mLcm->unsubscribe(iter->second->mSubscription);
+  boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+  Helper::SubscriptionMap::const_iterator iter;
+  for (iter = mHelper->mSubscriptions.begin();
+       iter != mHelper->mSubscriptions.end(); ++iter) {
+    mHelper->mLcm->unsubscribe(iter->second->mSubscription);
   }
-  mSubscriptions.clear();
+  mHelper->mSubscriptions.clear();
 }
 
 bool SensorDataReceiver::
 removeChannel(const std::string& iSensorChannel) {
-  boost::mutex::scoped_lock lock(mSubscriptionsMutex);
-  SubscriptionMap::iterator item = mSubscriptions.find(iSensorChannel);
-  if (item == mSubscriptions.end()) {
+  boost::mutex::scoped_lock lock(mHelper->mSubscriptionsMutex);
+  Helper::SubscriptionMap::iterator item =
+    mHelper->mSubscriptions.find(iSensorChannel);
+  if (item == mHelper->mSubscriptions.end()) {
     return false;
   }
-  mLcm->unsubscribe(item->second->mSubscription);
-  mSubscriptions.erase(item);
+  mHelper->mLcm->unsubscribe(item->second->mSubscription);
+  mHelper->mSubscriptions.erase(item);
   return true;
 }
 
 void SensorDataReceiver::
 setMaxBufferSize(const int iSize) {
-  mDataBuffer.setMaxSize(iSize);
+  mHelper->mDataBuffer.setMaxSize(iSize);
 }
 
 bool SensorDataReceiver::
-pop(maps::PointSet& oData) {
-  return mDataBuffer.pop(oData);
+pop(SensorData& oData) {
+  return mHelper->mDataBuffer.pop(oData);
 }
 
 bool SensorDataReceiver::
-waitForData(maps::PointSet& oData) {
-  return mDataBuffer.waitForData(oData);
+waitForData(SensorData& oData) {
+  return mHelper->mDataBuffer.waitForData(oData);
+}
+
+void SensorDataReceiver::
+unblock() {
+  return mHelper->mDataBuffer.unblock();
 }
 
 bool SensorDataReceiver::
 start() {
-  if (mIsRunning) {
+  if (mHelper->mIsRunning) {
     return false;
   }
-  mIsRunning = true;
+  mHelper->mIsRunning = true;
   return true;
 }
 
 bool SensorDataReceiver::
 stop() {
-  if (!mIsRunning) {
+  if (!mHelper->mIsRunning) {
     return false;
   }
-  mIsRunning = false;
+  mHelper->mIsRunning = false;
   return true;
-}
-
-bool SensorDataReceiver::
-getPose(const SubscriptionInfo::Ptr& iInfo, const int64_t iTimestamp,
-        Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation) {
-  Eigen::Vector3f trans;
-  Eigen::Quaternionf rot;
-  if (!mBotFrames->getTransform(iInfo->mTransformFrom, iInfo->mTransformTo,
-                                iTimestamp, trans, rot)) {
-    std::cerr << "SensorDataReceiver: cannot get transform from " <<
-      iInfo->mTransformFrom << " to " << iInfo->mTransformTo << std::endl;
-    return false;
-  }
-
-  oPosition.head<3>() = trans;
-  oPosition[3] = 1;
-  oOrientation = rot;
-  return true;
-}
-
-
-void SensorDataReceiver::
-onPointCloud(const lcm::ReceiveBuffer* iBuf,
-             const std::string& iChannel,
-             const drc::pointcloud2_t* iMessage) {
-
-  if (!mIsRunning) {
-    return;
-  }
-
-  pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
-  pointCloud.width = iMessage->width;
-  pointCloud.height = iMessage->height;
-  pointCloud.resize(iMessage->width * iMessage->height);
-  pointCloud.is_dense = false;
-  uint8_t* cloudData = (uint8_t*)(&pointCloud[0]);
-  const uint8_t* messageData = (uint8_t*)(&iMessage->data[0]);
-  memcpy(cloudData, messageData, iMessage->data_nbytes);
-  maps::PointCloud::Ptr newCloud(new maps::PointCloud());
-  pcl::copyPointCloud(pointCloud, *newCloud);
-
-  SubscriptionMap::const_iterator item;
-  {
-    boost::mutex::scoped_lock lock(mSubscriptionsMutex);
-    item = mSubscriptions.find(iChannel);
-    if (item == mSubscriptions.end()) {
-      return;
-    }
-  }
-  if (!getPose(item->second, iMessage->utime, newCloud->sensor_origin_,
-               newCloud->sensor_orientation_)) {
-    return;
-  }
-
-  maps::PointSet data;
-  data.mTimestamp = iMessage->utime;
-  data.mMaxRange = 1e10;
-  data.mCloud = newCloud;
-  mDataBuffer.push(data);
-}
-
-void SensorDataReceiver::
-onLidar(const lcm::ReceiveBuffer* iBuf,
-        const std::string& iChannel,
-        const bot_core::planar_lidar_t* iMessage) {
-
-  if (!mIsRunning) {
-    return;
-  }
-
-  SubscriptionMap::const_iterator item;
-  {
-    boost::mutex::scoped_lock lock(mSubscriptionsMutex);
-    item = mSubscriptions.find(iChannel);
-    if (item == mSubscriptions.end()) {
-      return;
-    }
-  }
-
-  maps::PointCloud::Ptr cloud(new maps::PointCloud());
-  cloud->height = 1;
-  cloud->is_dense = false;
-  cloud->points.reserve(iMessage->nranges);
-  for (int i = 0; i < iMessage->nranges; ++i) {
-    double theta = iMessage->rad0 + i*iMessage->radstep;
-    double range = iMessage->ranges[i];
-    if (range < item->second->mRangeMin) {
-      range = 0;
-    }
-    else if (range > item->second->mRangeMax) {
-      range = 1000;
-    }
-    PointType pt;
-    pt.x = cos(theta)*range;
-    pt.y = sin(theta)*range;
-    pt.z = 0;
-    cloud->points.push_back(pt);
-  }
-  cloud->width = cloud->points.size();
-
-  if (!getPose(item->second, iMessage->utime, cloud->sensor_origin_,
-               cloud->sensor_orientation_)) {
-    return;
-  }
-  maps::PointSet data;
-  data.mTimestamp = iMessage->utime;
-  data.mMaxRange = item->second->mRangeMax;
-  data.mCloud = cloud;
-  mDataBuffer.push(data);
 }

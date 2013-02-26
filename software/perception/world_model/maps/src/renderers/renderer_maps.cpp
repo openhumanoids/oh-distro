@@ -9,11 +9,7 @@
 #include <bot_vis/bot_vis.h>
 #include <bot_param/param_util.h>
 #include <bot_frames/bot_frames.h>
-#include <Eigen/Geometry>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 
-#include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_macro_t.hpp>
 
@@ -21,13 +17,7 @@
 
 #include <unordered_map>
 
-#include <octomap/octomap.h>
-#include <pcl/point_cloud.h>
 #include <pcl/common/transforms.h>
-
-#include <image_utils/jpeg.h>
-#include <image_utils/pixels.h>
-#include <pointcloud_tools/filter_colorize.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/MapView.hpp>
@@ -58,7 +48,8 @@ enum InputMode {
 
 enum DataRequestType {
   REQUEST_TYPE_CLOUD,
-  REQUEST_TYPE_OCTREE
+  REQUEST_TYPE_OCTREE,
+  REQUEST_TYPE_RANGE
 };
 
 enum MapCommand {
@@ -69,11 +60,13 @@ enum MapCommand {
 enum ColorMode {
   COLOR_MODE_SOLID,
   COLOR_MODE_HEIGHT,
+  COLOR_MODE_RANGE,
   COLOR_MODE_CAMERA
 };
 
 enum MeshMode {
   MESH_MODE_POINTS,
+  MESH_MODE_SURFELS,
   MESH_MODE_WIREFRAME,
   MESH_MODE_FILLED
 };
@@ -94,6 +87,7 @@ struct ViewMetaData {
   bool mRelative;
   Frustum mFrustum;
   maps::MapView::TriangleMesh::Ptr mMesh;
+  maps::MapView::TriangleMesh::Ptr mSurfels;
   Eigen::Vector3f mColor;
 };
 
@@ -111,12 +105,39 @@ struct RendererMaps {
 
     void notifyData(const int64_t iViewId) {
       mRenderer->addViewMetaData(iViewId);
-      if (mRenderer->mMeshMode != MESH_MODE_POINTS) {
-        mRenderer->mViewData[iViewId].mMesh =
-          mRenderer->mViewClient.getView(iViewId)->getAsMesh();
-        bot_viewer_request_redraw(mRenderer->mViewer);
+      ViewMetaData& data = mRenderer->mViewData[iViewId];
+      if ((mRenderer->mMeshMode == MESH_MODE_FILLED) ||
+          (mRenderer->mMeshMode == MESH_MODE_WIREFRAME)) {
+        data.mMesh = mRenderer->mViewClient.getView(iViewId)->getAsMesh();
       }
+      else if (mRenderer->mMeshMode == MESH_MODE_SURFELS) {
+        const maps::MapView::SurfelCloud::Ptr surfels =
+          mRenderer->mViewClient.getView(iViewId)->getAsSurfels();
+        if (data.mSurfels == NULL) {
+          data.mSurfels.reset(new maps::MapView::TriangleMesh());
+        }
+        data.mSurfels->mVertices.reserve(4*surfels->size());
+        data.mSurfels->mFaces.reserve(2*surfels->size());
+        for (size_t i = 0; i < surfels->size(); ++i) {
+          float size = 0.1;  // TODO
+          maps::MapView::SurfelCloud::PointType& s = (*surfels)[i];
+          Eigen::Vector3f pt(s.x, s.y, s.z);
+          Eigen::Vector3f normal(s.normal[0], s.normal[1], s.normal[2]);
+          Eigen::Vector3f v2 = Eigen::Vector3f::UnitZ()*size;
+          Eigen::Vector3f v1 = v2.cross(normal);
+          v1.normalize();
+          v1 *= size;
+          data.mSurfels->mVertices.push_back(pt-v1+v2);
+          data.mSurfels->mVertices.push_back(pt+v1+v2);
+          data.mSurfels->mVertices.push_back(pt+v1-v2);
+          data.mSurfels->mVertices.push_back(pt-v1-v2);
+          data.mSurfels->mFaces.push_back(Eigen::Vector3i(4*i,4*i+3,4*i+1));
+          data.mSurfels->mFaces.push_back(Eigen::Vector3i(4*i+1,4*i+3,4*i+2));
+        }
+      }
+      bot_viewer_request_redraw(mRenderer->mViewer);
     }
+
     void notifyCatalog(const bool iChanged) {
       if (!mInitialized || iChanged) {
         std::vector<maps::ViewClient::MapViewPtr> views =
@@ -247,7 +268,10 @@ struct RendererMaps {
         spec.mType = maps::MapView::Spec::TypeOctree;
         break;
       case REQUEST_TYPE_CLOUD:
-        spec.mType = maps::MapView::Spec::TypeCloud;
+        spec.mType = maps::MapView::Spec::TypePointCloud;
+        break;
+      case REQUEST_TYPE_RANGE:
+        spec.mType = maps::MapView::Spec::TypeRangeImage;
         break;
       default:
         return;
@@ -266,10 +290,8 @@ struct RendererMaps {
       spec.mRelativeLocation = false;
       spec.mRelativeLocation = self->mRequestRelativeLocation;
       if (spec.mRelativeLocation) {
-        int64_t curTime = drc::Clock::instance()->getCurrentTime();
         BotTrans trans;
-        bot_frames_get_trans_with_utime(self->mBotFrames,
-                                        "head", "local", curTime, &trans);
+        bot_frames_get_trans(self->mBotFrames, "head", "local", &trans);
         Eigen::Vector3f pos(trans.trans_vec[0], trans.trans_vec[1],
                             trans.trans_vec[2]);
         Eigen::Quaternionf q(trans.rot_quat[0], trans.rot_quat[1],
@@ -365,6 +387,16 @@ struct RendererMaps {
       case COLOR_MODE_HEIGHT:
         self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeHeight);
         break;
+      case COLOR_MODE_RANGE:
+        {
+          BotTrans trans;
+          bot_frames_get_trans(self->mBotFrames, "head", "local", &trans);
+          Eigen::Vector3f pos(trans.trans_vec[0], trans.trans_vec[1],
+                              trans.trans_vec[2]);
+          self->mMeshRenderer->setRangeOrigin(pos);
+          self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeRange);
+        }
+        break;
       case COLOR_MODE_SOLID:
       default:
         self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeFlat);
@@ -379,7 +411,14 @@ struct RendererMaps {
         }
         std::vector<Eigen::Vector3i> faces;
         self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModePoints);
-        self->mMeshRenderer->setMesh(vertices, faces);
+        self->mMeshRenderer->setData(vertices, faces);
+      }
+      else if (self->mMeshMode == MESH_MODE_SURFELS) {
+        if (data.mSurfels != NULL) {
+          self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeFilled);
+          self->mMeshRenderer->setData(data.mSurfels->mVertices,
+                                       data.mSurfels->mFaces);
+        }
       }
       else if (data.mMesh != NULL) {
         if (self->mMeshMode == MESH_MODE_WIREFRAME) {
@@ -390,7 +429,7 @@ struct RendererMaps {
           self->mMeshRenderer->
             setMeshMode(maps::MeshRenderer::MeshModeFilled);
         }
-        self->mMeshRenderer->setMesh(data.mMesh->mVertices, data.mMesh->mFaces);
+        self->mMeshRenderer->setData(data.mMesh->mVertices, data.mMesh->mFaces);
       }
 
       self->mMeshRenderer->draw();
@@ -526,7 +565,7 @@ struct RendererMaps {
     DataMap::iterator item = data->mRenderer->mViewData.find(id);
     if (item != data->mRenderer->mViewData.end()) {
       item->second.mVisible = checked;
-      bot_viewer_request_redraw (data->mRenderer->mViewer);    
+      bot_viewer_request_redraw (data->mRenderer->mViewer);
     }
   }
 
@@ -540,7 +579,7 @@ struct RendererMaps {
       spec.mResolution = spec.mFrequency = 0;
       spec.mTimeMin = spec.mTimeMax = 0;
       spec.mActive = false;
-      spec.mType = maps::MapView::Spec::TypeCloud;
+      spec.mType = maps::MapView::Spec::TypePointCloud;
       data->mRenderer->mViewClient.request(spec);
       bot_viewer_request_redraw (data->mRenderer->mViewer);
     }
@@ -848,10 +887,12 @@ maps_add_renderer_to_viewer(BotViewer* viewer,
                                 BOT_GTK_PARAM_WIDGET_MENU, COLOR_MODE_SOLID,
                                 "Solid Color", COLOR_MODE_SOLID,
                                 "Height Pseudocolor", COLOR_MODE_HEIGHT,
+                                "Range Pseudocolor", COLOR_MODE_RANGE,
                                 "Camera Texture", COLOR_MODE_CAMERA, NULL);
   bot_gtk_param_widget_add_enum(self->mWidget, PARAM_MESH_MODE,
                                 BOT_GTK_PARAM_WIDGET_MENU, MESH_MODE_POINTS,
                                 "Point Cloud", MESH_MODE_POINTS,
+                                "Surfels", MESH_MODE_SURFELS,
                                 "Wireframe", MESH_MODE_WIREFRAME,
                                 "Filled", MESH_MODE_FILLED, NULL);
   bot_gtk_param_widget_add_double (self->mWidget, PARAM_POINT_SIZE,

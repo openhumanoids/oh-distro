@@ -11,6 +11,7 @@ add_library(maps SHARED
   MapView.cpp
   LcmTranslator.cpp
   ViewClient.cpp
+  Collector.cpp
 #  ViewServer.cpp
 #  MapWrapper.cpp
 #    SpatialQuery.cpp
@@ -35,6 +36,7 @@ pods_install_headers(
   MapView.hpp
   LcmTranslator.hpp
   ViewClient.hpp
+  Collector.hpp
 #  ViewServer.hpp
 #  MapWrapper.hpp
 #  SpatialQuery.hpp

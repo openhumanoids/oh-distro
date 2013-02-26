@@ -5,12 +5,16 @@ pods_use_pkg_config_packages(maps-server maps)
 pods_install_executables(maps-server)
 
 add_executable(maps-test TestMain.cpp)
-pods_use_pkg_config_packages(maps-test maps)
+pods_use_pkg_config_packages(maps-test maps bot2-lcmgl-client)
 pods_install_executables(maps-test)
 
 add_executable(maps-heightmap-publisher HeightMapPublisher.cpp)
 pods_use_pkg_config_packages(maps-heightmap-publisher maps)
 pods_install_executables(maps-heightmap-publisher)
+
+add_executable(maps-test-collector TestCollector.cpp)
+pods_use_pkg_config_packages(maps-test-collector maps bot2-lcmgl-client)
+pods_install_executables(maps-test-collector)
 
 
 #add_executable(maps-builder-robot BuilderRobotMain.cpp)
@@ -45,6 +49,6 @@ pods_install_executables(maps-heightmap-publisher)
 #pods_use_pkg_config_packages(maps-depthmap-publisher bot2-lcmgl-client maps)
 #pods_install_executables(maps-depthmap-publisher)
 
-add_executable(maps-recent-scan-publisher RecentScanPublisher.cpp)
-pods_use_pkg_config_packages(maps-recent-scan-publisher bot2-lcmgl-client maps pointcloud_vis)
-pods_install_executables(maps-recent-scan-publisher) 
+#add_executable(maps-recent-scan-publisher RecentScanPublisher.cpp)
+#pods_use_pkg_config_packages(maps-recent-scan-publisher bot2-lcmgl-client maps pointcloud_vis)
+#pods_install_executables(maps-recent-scan-publisher) 

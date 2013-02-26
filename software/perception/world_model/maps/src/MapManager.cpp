@@ -163,3 +163,8 @@ addData(const maps::PointSet& iPointSet) {
   }
   return true;
 }
+
+const boost::shared_ptr<PointDataBuffer> MapManager::
+getPointData() const {
+  return mPointData;
+}

@@ -42,8 +42,8 @@ public:
   // structure for specifying data volume in space and time
   struct SpaceTimeBounds {
     std::vector<Eigen::Vector4f> mPlanes;
-    int64_t mMinTime;
-    int64_t mMaxTime;
+    int64_t mTimeMin;
+    int64_t mTimeMax;
 
   public:
     SpaceTimeBounds();
@@ -90,6 +90,13 @@ public:
   getAsOctree(const float iResolution, const bool iTraceRays=false,
               const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
+
+  // export this entire representation as a range image
+  maps::RangeImage
+  getAsRangeImage(const int iWidth, const int iHeight,
+                  const Eigen::Isometry3f& iPose,
+                  const Eigen::Matrix4f& iProjector,
+                  const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
 protected:
   int64_t mStateId;

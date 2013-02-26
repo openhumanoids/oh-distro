@@ -20,6 +20,7 @@
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_heightmap/renderer_heightmap.hpp>
 #include <renderer_maps/renderer_maps.hpp>
+#include <renderer_lidartest/LidarTestRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 
 // Individual Renderers:
@@ -185,6 +186,7 @@ int main(int argc, char *argv[])
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  lidartest_renderer_setup("Lidar Test", viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);

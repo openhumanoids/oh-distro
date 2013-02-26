@@ -6,6 +6,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_params_t.hpp>
@@ -86,15 +87,15 @@ struct ViewWorker {
 
         // get bounds
         LocalMap::SpaceTimeBounds bounds;
-        bounds.mMinTime = spec.mTimeMin;
-        bounds.mMaxTime = spec.mTimeMax;
+        bounds.mTimeMin = spec.mTimeMin;
+        bounds.mTimeMax = spec.mTimeMax;
         bounds.mPlanes = spec.mClipPlanes;
 
         // transform bounds if necessary
         int64_t curTime = drc::Clock::instance()->getCurrentTime();
         if (spec.mRelativeTime) {
-          bounds.mMinTime += curTime;
-          bounds.mMaxTime += curTime;
+          bounds.mTimeMin += curTime;
+          bounds.mTimeMax += curTime;
         }
         if (spec.mRelativeLocation) {
           Eigen::Isometry3f headToLocal;
@@ -125,18 +126,28 @@ struct ViewWorker {
             " bytes" << std::endl;
         }
 
-        else if (mRequest.type == drc::map_request_t::CLOUD) {
-
-          // get point cloud
+        else if (mRequest.type == drc::map_request_t::POINT_CLOUD) {
           maps::PointCloud::Ptr cloud =
             localMap->getAsPointCloud(mRequest.resolution, bounds);
-
           drc::map_cloud_t msgCloud = LcmTranslator::toLcm(*cloud);
           msgCloud.utime = drc::Clock::instance()->getCurrentTime();
           msgCloud.map_id = localMap->getId();
           msgCloud.view_id = mRequest.view_id;
           msgCloud.blob.utime = msgCloud.utime;
           mLcm->publish("MAP_CLOUD", &msgCloud);
+        }
+
+        else if (mRequest.type == drc::map_request_t::RANGE_IMAGE) {
+          maps::RangeImage image;
+          // TODO = localMap->getAsRangeImage(mRequest.resolution, bounds);
+          drc::map_image_t msgImg = LcmTranslator::toLcm(image);
+          msgImg.utime = drc::Clock::instance()->getCurrentTime();
+          /* TODO
+             msgImg.map_id = localMap->getId();
+             msgImg.view_id = mRequest.view_id;
+             msgImg.blob.utime = msgImg.utime;
+          */
+          mLcm->publish("MAP_RANGE", &msgImg);
         }
 
         // one-shot request has 0 frequency
@@ -244,7 +255,9 @@ public:
     struct MacroWorker {
       State* mState;
       drc::map_macro_t mMacro;
+
       void operator()() {
+        // create single-scan dense map
         if (mMacro.command == drc::map_macro_t::CREATE_DENSE_MAP) {
           std::cout << "About to create dense map" << std::endl;
 
@@ -284,6 +297,11 @@ public:
           mState->mLcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
 
           std::cout << "Done creating dense map" << std::endl;
+        }
+        else if (drc::map_macro_t::GROUND_SCAN_MODE) {
+          // TODO:
+          // probably need to rework this; maybe a single thread for all time
+          // that can switch modes if it's interrupted by new macro
         }
         else {
           std::cout << "Invalid macro" << std::endl;
@@ -325,6 +343,7 @@ public:
   }
 };
 
+// TODO: use builder here
 class DataConsumer {
 public:
   DataConsumer(State* iState) {
@@ -333,9 +352,9 @@ public:
 
   void operator()() {
     while(true) {
-      maps::PointSet data;
+      SensorDataReceiver::SensorData data;
       if (mState->mSensorDataReceiver->waitForData(data)) {
-        mState->mManager->addData(data);
+        mState->mManager->addData(*data.mPointSet);
       }
     }
   }

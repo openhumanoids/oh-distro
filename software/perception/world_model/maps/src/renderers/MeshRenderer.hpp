@@ -20,6 +20,7 @@ public:
   enum ColorMode {
     ColorModeFlat,
     ColorModeHeight,
+    ColorModeRange,
     ColorModeTexture,
     ColorModeCamera
   };
@@ -42,11 +43,18 @@ public:
   void setMeshMode(const MeshMode& iMode);
 
   void setColor(const float iR, const float iG, const float iB);
-  void setHeightScale(const float iMinZ, const float iMaxZ);
+  void setScaleRange(const float iMinZ, const float iMaxZ);
   void setColorAlpha(const float iAlpha);
   void setPointSize(const float iSize);
+  void setRangeOrigin(const Eigen::Vector3f& iOrigin);
   // TODO void setTexture();
-  void setMesh(const std::vector<Eigen::Vector3f>& iVertices,
+
+  void setData(const std::vector<Eigen::Vector3f>& iVertices,
+               const std::vector<Eigen::Vector3f>& iNormals,
+               const std::vector<Eigen::Vector3i>& iFaces,
+               const Eigen::Affine3f& iTransform=Eigen::Affine3f::Identity());
+
+  void setData(const std::vector<Eigen::Vector3f>& iVertices,
                const std::vector<Eigen::Vector3i>& iFaces,
                const Eigen::Affine3f& iTransform=Eigen::Affine3f::Identity());
 

@@ -47,6 +47,29 @@ pods_install_pkg_config_file(renderer_maps
     VERSION 0.0.1)
 
 
+#####################################################################
+add_library(renderer_lidartest SHARED 
+  RendererBase.cpp
+  LidarTestRenderer.cpp
+)
+  
+set_target_properties(renderer_lidartest PROPERTIES SOVERSION 1)
+
+pods_use_pkg_config_packages(renderer_lidartest
+  lcmtypes_drc_lcmtypes eigen3
+  bot2-core bot2-vis bot2-frames gtkmm-2.4 maps)
+
+pods_install_headers(LidarTestRenderer.hpp RendererBase.hpp
+  DESTINATION renderer_lidartest)
+
+pods_install_libraries(renderer_lidartest)
+  
+pods_install_pkg_config_file(renderer_lidartest
+    LIBS -lrenderer_lidartest
+    REQUIRES bot2-core bot2-vis bot2-frames
+    VERSION 0.0.1)
+
+
 
 #####################################################################
 # add_library(renderer_depthmap SHARED 

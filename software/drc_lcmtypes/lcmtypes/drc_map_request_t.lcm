@@ -39,6 +39,7 @@ struct map_request_t
 
   // enum for request types
   const int8_t NONE = 0;
-  const int8_t CLOUD = 1;
+  const int8_t POINT_CLOUD = 1;
   const int8_t OCTREE = 2;
+  const int8_t RANGE_IMAGE = 3;
 }

@@ -3,6 +3,7 @@
 #include "Utils.hpp"
 
 #include <pcl/io/io.h>
+#include <pcl/common/transforms.h>
 
 // TODO: may want to add internal queue to immediately handle "add" calls
 
@@ -129,7 +130,7 @@ getAsCloud(const int64_t iTimestamp1, const int64_t iTimestamp2) {
   return cloud;
 }
 
-boost::shared_ptr<PointDataBuffer> PointDataBuffer::
+PointDataBuffer::Ptr PointDataBuffer::
 clone() {
   boost::mutex::scoped_lock lock(mMutex);
   boost::shared_ptr<PointDataBuffer> buf(new PointDataBuffer());

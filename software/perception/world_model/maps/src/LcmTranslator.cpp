@@ -3,6 +3,12 @@
 #include "DataBlob.hpp"
 #include <octomap/octomap.h>
 
+#include <lcmtypes/drc/map_params_t.hpp>
+#include <lcmtypes/drc/map_request_t.hpp>
+#include <lcmtypes/drc/map_cloud_t.hpp>
+#include <lcmtypes/drc/map_octree_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
+
 #include <pcl/common/transforms.h>
 
 using namespace maps;
@@ -46,8 +52,11 @@ toLcm(const MapView::Spec& iSpec) {
   case MapView::Spec::TypeOctree:
     msg.type = drc::map_request_t::OCTREE;
     break;
-  case MapView::Spec::TypeCloud:
-    msg.type = drc::map_request_t::CLOUD;
+  case MapView::Spec::TypePointCloud:
+    msg.type = drc::map_request_t::POINT_CLOUD;
+    break;
+  case MapView::Spec::TypeRangeImage:
+    msg.type = drc::map_request_t::RANGE_IMAGE;
     break;
   default:
     std::cout << "LcmTranslator: bad type given in map spec" << std::endl;
@@ -80,8 +89,11 @@ fromLcm(const drc::map_request_t& iMessage) {
   case drc::map_request_t::OCTREE:
     spec.mType = MapView::Spec::TypeOctree;
     break;
-  case drc::map_request_t::CLOUD:
-    spec.mType = MapView::Spec::TypeCloud;
+  case drc::map_request_t::POINT_CLOUD:
+    spec.mType = MapView::Spec::TypePointCloud;
+    break;
+  case drc::map_request_t::RANGE_IMAGE:
+    spec.mType = MapView::Spec::TypeRangeImage;
     break;
   default:
     std::cout << "LcmTranslator: bad type given in map_request" << std::endl;
@@ -274,4 +286,18 @@ fromLcm(const drc::map_octree_t& iMessage) {
   octree.mTree.reset(new octomap::OcTree(0.1));
   octree.mTree->readBinary(ss);
   return octree;
+}
+
+drc::map_image_t LcmTranslator::
+toLcm(const maps::RangeImage& iImage) {
+  drc::map_image_t msg;
+  // TODO
+  return msg;
+}
+
+maps::RangeImage LcmTranslator::
+fromLcm(const drc::map_image_t& iMessage) {
+  maps::RangeImage image;
+  // TODO
+  return image;
 }

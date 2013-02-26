@@ -14,8 +14,8 @@
 static const char* RENDERER_NAME = "Heightmap";
 
 static const char* PARAM_COLOR_MODE = "Color Mode";
-static const char* PARAM_COLOR_MODE_Z_MAX_Z = "Red Height";
-static const char* PARAM_COLOR_MODE_Z_MIN_Z = "Blue Height";
+static const char* PARAM_COLOR_MODE_Z_MAX_Z = "Red Z";
+static const char* PARAM_COLOR_MODE_Z_MIN_Z = "Blue Z";
 static const char* PARAM_HEIGHT_MODE = "Height Mode";
 static const char* PARAM_COLOR_ALPHA = "Alpha";
 static const char* PARAM_POINT_SIZE = "Point Size";
@@ -23,6 +23,7 @@ static const char* PARAM_NAME_FREEZE = "Freeze";
 
 enum ColorMode {
   COLOR_MODE_Z,
+  COLOR_MODE_RANGE,
   COLOR_MODE_ORANGE,
   COLOR_MODE_GRADIENT,
   COLOR_MODE_CAMERA
@@ -125,7 +126,7 @@ struct RendererHeightMap {
     double val, val2;
     val = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MIN_Z);
     val2 = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_MODE_Z_MAX_Z);
-    self->mMeshRenderer->setHeightScale(val,val2);
+    self->mMeshRenderer->setScaleRange(val,val2);
     val = bot_gtk_param_widget_get_double(iWidget, PARAM_COLOR_ALPHA);
     self->mMeshRenderer->setColorAlpha(val);
     val = bot_gtk_param_widget_get_double(iWidget, PARAM_POINT_SIZE);
@@ -153,6 +154,16 @@ struct RendererHeightMap {
       break;
     case COLOR_MODE_Z:
       self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeHeight);
+      break;
+    case COLOR_MODE_RANGE:
+      {
+        BotTrans trans;
+        bot_frames_get_trans(self->mBotFrames, "head", "local", &trans);
+        Eigen::Vector3f pos(trans.trans_vec[0], trans.trans_vec[1],
+                            trans.trans_vec[2]);
+        self->mMeshRenderer->setRangeOrigin(pos);
+        self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeRange);
+      }
       break;
     case COLOR_MODE_CAMERA:
       self->mMeshRenderer->setColorMode(maps::MeshRenderer::ColorModeCamera);
@@ -247,7 +258,7 @@ struct RendererHeightMap {
     }
     meshToLocal = meshToLocal.inverse();  // TODO: NEED?
 
-    self->mMeshRenderer->setMesh(vertices, faces, meshToLocal);
+    self->mMeshRenderer->setData(vertices, faces, meshToLocal);
     self->mMeshRenderer->draw();
   }
 

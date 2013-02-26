@@ -11,6 +11,9 @@ namespace octomap {
 namespace lcm {
   class LCM;
 }
+namespace pcl {
+  class RangeImage;
+}
 
 namespace maps {
   typedef pcl::PointXYZRGB PointType;
@@ -27,6 +30,11 @@ namespace maps {
   struct Octree {
     boost::shared_ptr<octomap::OcTree> mTree;
     Eigen::Isometry3f mTransform;  // from map to reference coords
+  };
+
+  struct RangeImage {
+    boost::shared_ptr<pcl::RangeImage> mImage;
+    bool mOrthographic;
   };
 
 }

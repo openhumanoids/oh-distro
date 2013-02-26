@@ -1,4 +1,3 @@
-#include <chrono>
 #include <fstream>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -41,6 +40,8 @@ public:
   DataProducer(State* iState) : mState(iState) {}
 
   void operator()() {
+    const float kPi = 4*tan(1);
+    const float degToRad = kPi/180;
     while (true) {
       // get submap we created earlier
       LocalMap::Ptr localMap =
@@ -48,13 +49,14 @@ public:
 
       // find time range of desired swath (from 45 to 135 degrees)
       int64_t timeMin, timeMax;
-      mState->mCollector->getLatestSwath(60*4*atan(1)/180, 120*4*atan(1)/180,
-                                       timeMin, timeMax);
+      mState->mCollector->getLatestSwath(45*degToRad, 135*degToRad,
+                                         timeMin, timeMax);
       LocalMap::SpaceTimeBounds bounds;
       bounds.mTimeMin = timeMin;
       bounds.mTimeMax = timeMax;
 
-      // get and publish point cloud corresponding to this time
+      // get and publish point cloud corresponding to this time range
+      // (for debugging)
       maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
       bot_lcmgl_t* lcmgl = mState->mLcmGl;
       bot_lcmgl_color3f(lcmgl, 0, 1, 0);
@@ -88,9 +90,9 @@ public:
       maps::RangeImage rangeImage =
         localMap->getAsRangeImage(width, height, pose, projector, bounds);
 
-      // get and store range image pixel values
+      // get range image pixel values and store to file
       float* ranges = rangeImage.mImage->getRangesArray();
-      std::ofstream ofs("/home/antone/ranges.txt");
+      std::ofstream ofs("/tmp/ranges.txt");
       for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
           ofs << ranges[i*width + j] << " ";
@@ -100,10 +102,10 @@ public:
       ofs.close();
       std::cout << "Got range image" << std::endl;
 
-      // wait for timer expiry
+      // wait for timer expiration
       boost::asio::io_service service;
       boost::asio::deadline_timer timer(service);
-      timer.expires_from_now(boost::posix_time::milliseconds(1*1000));
+      timer.expires_from_now(boost::posix_time::seconds(2));
       timer.wait();
       std::cout << "Timer expired." << std::endl;
     }

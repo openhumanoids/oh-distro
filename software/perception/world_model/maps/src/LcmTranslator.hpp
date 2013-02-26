@@ -1,10 +1,13 @@
 #ifndef _maps_LcmTranslator_hpp_
 #define _maps_LcmTranslator_hpp_
 
-#include <lcmtypes/drc/map_params_t.hpp>
-#include <lcmtypes/drc/map_request_t.hpp>
-#include <lcmtypes/drc/map_cloud_t.hpp>
-#include <lcmtypes/drc/map_octree_t.hpp>
+namespace drc {
+  class map_request_t;
+  class map_params_t;
+  class map_cloud_t;
+  class map_octree_t;
+  class map_image_t;
+}
 
 #include "LocalMap.hpp"
 #include "MapView.hpp"
@@ -29,6 +32,10 @@ public:
   // for octree
   static drc::map_octree_t toLcm(const maps::Octree& iTree);
   static maps::Octree fromLcm(const drc::map_octree_t& iMessage);
+
+  // for range image
+  static drc::map_image_t toLcm(const maps::RangeImage& iImage);
+  static maps::RangeImage fromLcm(const drc::map_image_t& iMessage);
 };
 
 }

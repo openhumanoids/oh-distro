@@ -41,9 +41,11 @@ struct MeshRenderer::InternalState {
   float mScaleMinZ;
   float mScaleMaxZ;
   float mPointSize;
+  Eigen::Vector3f mRangeOrigin;
 
   // gl state
   GLuint mVertexBufferId;
+  GLuint mNormalBufferId;
   GLuint mColorBufferId;
   GLuint mTexCoordBufferId;
   GLuint mFaceBufferId;
@@ -53,6 +55,7 @@ struct MeshRenderer::InternalState {
   // mesh data
   Eigen::Affine3f mTransform;
   std::vector<float> mVertexBuffer;
+  std::vector<float> mNormalBuffer;
   std::vector<uint32_t> mFaceBuffer;
   std::vector<uint8_t> mColorBuffer;
   float mMinZ;
@@ -122,8 +125,9 @@ MeshRenderer() {
   setMeshMode(MeshModeWireframe);
   setColor(1, 0.5, 0);
   setColorAlpha(1.0);
-  setHeightScale(0, 1);
+  setScaleRange(0, 1);
   setPointSize(3);
+  setRangeOrigin(Eigen::Vector3f(0,0,0));
 }
 
 MeshRenderer::
@@ -193,7 +197,7 @@ setColorAlpha(const float iAlpha) {
 }
 
 void MeshRenderer::
-setHeightScale(const float iMinZ, const float iMaxZ) {
+setScaleRange(const float iMinZ, const float iMaxZ) {
   mState->mScaleMinZ = iMinZ;
   mState->mScaleMaxZ = iMaxZ;
   mState->mNeedsUpdate = true;
@@ -205,11 +209,26 @@ setPointSize(const float iSize) {
 }
 
 void MeshRenderer::
-setMesh(const std::vector<Eigen::Vector3f>& iVertices,
+setRangeOrigin(const Eigen::Vector3f& iOrigin) {
+  mState->mRangeOrigin = iOrigin;
+}
+
+
+void MeshRenderer::
+setData(const std::vector<Eigen::Vector3f>& iVertices,
+        const std::vector<Eigen::Vector3i>& iFaces,
+        const Eigen::Affine3f& iTransform) {
+  return setData(iVertices, std::vector<Eigen::Vector3f>(), iFaces, iTransform);
+}
+
+void MeshRenderer::
+setData(const std::vector<Eigen::Vector3f>& iVertices,
+        const std::vector<Eigen::Vector3f>& iNormals,
         const std::vector<Eigen::Vector3i>& iFaces,
         const Eigen::Affine3f& iTransform) { 
   boost::mutex::scoped_lock lock(mState->mMutex);
 
+  // vertices
   mState->mVertexBuffer.resize(iVertices.size()*3);
   mState->mMinZ = 1e10;
   mState->mMaxZ = -1e10;
@@ -219,6 +238,18 @@ setMesh(const std::vector<Eigen::Vector3f>& iVertices,
     }
   }
 
+  // normals
+  mState->mNormalBuffer.resize(0);
+  if (iNormals.size() == iVertices.size()) {
+    mState->mNormalBuffer.resize(iNormals.size()*3);
+    for (size_t i = 0; i < iNormals.size(); ++i) {
+      for (int k = 0; k < 3; ++k) {
+        mState->mNormalBuffer[3*i+k] = iNormals[i][k];
+      }
+    }
+  }
+
+  // faces
   mState->mFaceBuffer.resize(iFaces.size()*3);
   for (size_t i = 0; i < iFaces.size(); ++i) {
     for (int k = 0; k < 3; ++k) {
@@ -226,6 +257,7 @@ setMesh(const std::vector<Eigen::Vector3f>& iVertices,
     }
   }
 
+  // compute z bounds from vertices if there are no faces defined
   if (iFaces.size()==0) {
     for (size_t i = 0; i < iVertices.size(); ++i) {
       float z = mState->mVertexBuffer[3*i+2];
@@ -233,6 +265,8 @@ setMesh(const std::vector<Eigen::Vector3f>& iVertices,
       mState->mMaxZ = std::max(mState->mMaxZ, z);
     }
   }    
+
+  // compute z bounds only from vertices belonging to faces
   else {
     for (size_t i = 0; i < iFaces.size(); ++i) {
       for (int k = 0; k < 3; ++k) {
@@ -243,7 +277,9 @@ setMesh(const std::vector<Eigen::Vector3f>& iVertices,
     }
   }
 
+  // allocate color buffer (will be filled in when drawing)
   mState->mColorBuffer.resize(iVertices.size()*4);
+
   mState->mTransform = iTransform;
   mState->mNeedsUpdate = true;
 }
@@ -266,6 +302,7 @@ draw() {
 
   // set rendering flags
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
@@ -283,9 +320,10 @@ draw() {
   glMatrixMode(GL_MODELVIEW);
   glMultMatrixf(mState->mTransform.data());
 
-  // assign all buffers
+  // assign all buffer ids the first time through
   if (mState->mFirstDraw) {
     glGenBuffers(1, &mState->mVertexBufferId);
+    glGenBuffers(1, &mState->mNormalBufferId);
     glGenBuffers(1, &mState->mColorBufferId);
     glGenBuffers(1, &mState->mTexCoordBufferId);
     glGenBuffers(1, &mState->mFaceBufferId);
@@ -300,6 +338,15 @@ draw() {
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(3, GL_FLOAT, 0, 0);
 
+  // create normal buffer
+  if (mState->mNormalBuffer.size() > 0) {
+    glBindBuffer(GL_ARRAY_BUFFER, mState->mNormalBufferId);
+    glBufferData(GL_ARRAY_BUFFER, mState->mNormalBuffer.size()*sizeof(float),
+                 &mState->mNormalBuffer[0], GL_STATIC_DRAW);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+  }
+
   // create color buffer
   if ((mState->mColorMode != ColorModeCamera) &&
       (mState->mColorMode != ColorModeTexture)) {
@@ -307,10 +354,31 @@ draw() {
     Eigen::Vector3f color = mState->mColor;
     float invDenom1 = 1/(mState->mMaxZ - mState->mMinZ);
     float invDenom2 = 1/(mState->mScaleMaxZ - mState->mScaleMinZ);
+    float rangeMin(1e10), rangeMax(-1e10), invRangeDenom(1);
+    std::vector<float> ranges;
+    if (mState->mColorMode == ColorModeRange) {
+      ranges.resize(numVertices);
+      for (int i = 0; i < numVertices; ++i) {
+        Eigen::Vector3f pt(mState->mVertexBuffer[3*i+0],
+                           mState->mVertexBuffer[3*i+1],
+                           mState->mVertexBuffer[3*i+2]);
+        float range = (pt - mState->mRangeOrigin).norm();
+        rangeMin = std::min(rangeMin, range);
+        rangeMax = std::max(rangeMax, range);
+        ranges[i] = range;
+      }
+      invRangeDenom = 1/(rangeMax-rangeMin);
+    }
     for (int i = 0; i < numVertices; ++i) {
       if (mState->mColorMode == ColorModeHeight) {
         float z = (mState->mVertexBuffer[3*i+2] - mState->mMinZ) * invDenom1;
         float w = (z-mState->mScaleMinZ) * invDenom2;
+        float* col = bot_color_util_jet(w);
+        color = Eigen::Vector3f(col[0], col[1], col[2]);
+      }
+      if (mState->mColorMode == ColorModeRange) {
+        float z = (ranges[i] - rangeMin) * invRangeDenom;
+        float w = (z - mState->mScaleMinZ) * invDenom2;
         float* col = bot_color_util_jet(w);
         color = Eigen::Vector3f(col[0], col[1], col[2]);
       }

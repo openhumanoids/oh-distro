@@ -11,7 +11,8 @@ public:
   struct Spec {
     enum Type {
       TypeOctree,
-      TypeCloud
+      TypePointCloud,
+      TypeRangeImage
     };
 
     int64_t mMapId;
@@ -53,6 +54,8 @@ public:
     typedef boost::shared_ptr<TriangleMesh> Ptr;
   };
 
+  typedef pcl::PointCloud<pcl::PointSurfel> SurfelCloud;
+
   typedef boost::shared_ptr<MapView> Ptr;
 
 public:
@@ -77,7 +80,11 @@ public:
   getAsHeightMap(const float iResolution, const float iMaxHeight=1e20,
                  const Filter::Ptr& iFilter=Filter::Ptr()) const;
 
-  TriangleMesh::Ptr getAsMesh(const Filter::Ptr& iFilter=Filter::Ptr()) const;
+  TriangleMesh::Ptr
+  getAsMesh(const Filter::Ptr& iFilter=Filter::Ptr()) const;
+
+  SurfelCloud::Ptr
+  getAsSurfels(const Filter::Ptr& iFilter=Filter::Ptr()) const;
 
 protected:
   Spec mSpec;

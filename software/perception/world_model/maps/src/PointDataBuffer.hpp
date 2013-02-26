@@ -6,13 +6,14 @@
 #include <Eigen/Geometry>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
-#include <pcl/common/transforms.h>
 
 #include "Types.hpp"
 
 namespace maps {
 
 class PointDataBuffer {
+public:
+  typedef boost::shared_ptr<PointDataBuffer> Ptr;
 
 protected:
   typedef std::unordered_map<int64_t, PointSet> PointSetGroup;
@@ -39,7 +40,7 @@ public:
   maps::PointCloud::Ptr getAsCloud(const int64_t iTimestamp1,
                                    const int64_t iTimestamp2);
 
-  boost::shared_ptr<PointDataBuffer> clone();
+  Ptr clone();
 
 protected:
   int mMaxLength;

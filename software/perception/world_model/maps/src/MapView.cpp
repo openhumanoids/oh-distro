@@ -16,7 +16,7 @@ Spec() {
   mActive = false;
   mRelativeTime = false;
   mRelativeLocation = false;
-  mType = TypeCloud;
+  mType = TypePointCloud;
   mResolution = 0;
   mFrequency = 0;
   mTimeMin = mTimeMax = 0;
@@ -231,7 +231,7 @@ getAsMesh(const Filter::Ptr& iFilter) const {
   normEst.setKSearch(10);
   normEst.compute(*normals);
 
-  // Concatenate the XYZ and normal fields*
+  // Concatenate the XYZ and normal fields
   pcl::PointCloud<pcl::PointNormal>::Ptr
     cloudWithNormals(new pcl::PointCloud<pcl::PointNormal>());
   pcl::concatenateFields(*cloudXyz, *normals, *cloudWithNormals);
@@ -277,4 +277,43 @@ getAsMesh(const Filter::Ptr& iFilter) const {
     mesh->mFaces[i] = Eigen::Vector3i(vtx[0], vtx[1], vtx[2]);
   }
   return mesh;
+}
+
+MapView::SurfelCloud::Ptr
+MapView::getAsSurfels(const Filter::Ptr& iFilter) const {
+  maps::PointCloud::Ptr cloud(new maps::PointCloud());
+  {
+    boost::mutex::scoped_lock lock(mMutex);
+    *cloud = *mCloud;
+  }
+  if (iFilter != NULL) {
+    iFilter->operate(*cloud, *cloud);
+  }
+
+  // Normal estimation
+  pcl::NormalEstimation<maps::PointType, pcl::Normal> normEst;
+  pcl::PointCloud<pcl::Normal>::Ptr
+    normals(new pcl::PointCloud<pcl::Normal>());
+  pcl::search::KdTree<maps::PointType>::Ptr
+    tree(new pcl::search::KdTree<maps::PointType>());
+  tree->setInputCloud(cloud);
+  normEst.setInputCloud(cloud);
+  normEst.setSearchMethod(tree);
+  normEst.setKSearch(10);
+  normEst.compute(*normals);
+
+  SurfelCloud::Ptr surfels(new SurfelCloud());
+  surfels->resize(cloud->size());
+  for (int i = 0; i < surfels->size(); ++i) {
+    pcl::PointSurfel& surf = (*surfels)[i];
+    maps::PointType& pt = (*cloud)[i];
+    pcl::Normal& normal = (*normals)[i];
+    surf.x = pt.x;
+    surf.y = pt.y;
+    surf.z = pt.z;
+    for (int k = 0; k < 3; ++k) surf.normal[k] = normal.normal[k];
+    surf.curvature = normal.curvature;
+    surf.radius = 1;  // TODO: can we estimate this easily?
+  }
+  return surfels;
 }

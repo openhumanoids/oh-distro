@@ -1,5 +1,6 @@
 #include "LocalMap.hpp"
 
+#include <pcl/range_image/range_image_planar.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
 
@@ -12,21 +13,21 @@ using namespace maps;
 
 LocalMap::SpaceTimeBounds::
 SpaceTimeBounds() {
-  mMinTime = mMaxTime = -1;
+  mTimeMin = mTimeMax = -1;
 }
 
 LocalMap::SpaceTimeBounds::
 SpaceTimeBounds(const std::vector<Eigen::Vector4f>& iPlanes,
-                const int64_t iMinTime, const int64_t iMaxTime) {
-  set(iPlanes, iMinTime, iMaxTime);
+                const int64_t iTimeMin, const int64_t iTimeMax) {
+  set(iPlanes, iTimeMin, iTimeMax);
 }
 
 void LocalMap::SpaceTimeBounds::
 set(const std::vector<Eigen::Vector4f>& iPlanes,
-    const int64_t iMinTime, const int64_t iMaxTime) {
+    const int64_t iTimeMin, const int64_t iTimeMax) {
   mPlanes = iPlanes;
-  mMinTime = iMinTime;
-  mMaxTime = iMaxTime;
+  mTimeMin = iTimeMin;
+  mTimeMax = iTimeMax;
 }
 
 
@@ -193,7 +194,7 @@ maps::PointCloud::Ptr LocalMap::
 getAsPointCloud(const float iResolution,
                 const SpaceTimeBounds& iBounds) const {
   // interpret time bounds
-  int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
+  int64_t timeMin(iBounds.mTimeMin), timeMax(iBounds.mTimeMax);
 
   // grab point cloud and crop to space-time bounds
   maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
@@ -218,21 +219,7 @@ maps::Octree LocalMap::
 getAsOctree(const float iResolution, const bool iTraceRays,
             const Eigen::Vector3f& iOrigin,
             const SpaceTimeBounds& iBounds) const {
-  //  return mOctree;
-
-  /* TODO: want to copy and crop the actual octree rather than create new
-  std::stringstream ss;
-  mOctree.mTree->writeBinaryConst(ss);
-  ss.flush();
-  Octree oct;
-  oct.mTree.reset(new octomap::OcTree(mOctree.mTree->getResolution()));
-  oct.mTree->readBinary(ss);
-  //  mOctree.mTree->deepCopy();
-  oct.mTransform = mOctree.mTransform;
-  return oct;
-  */
-
-  int64_t timeMin(iBounds.mMinTime), timeMax(iBounds.mMaxTime);
+  int64_t timeMin(iBounds.mTimeMin), timeMax(iBounds.mTimeMax);
   Octree oct;
   oct.mTransform = Eigen::Isometry3f::Identity();
   oct.mTransform.translation() = iOrigin;
@@ -268,55 +255,19 @@ getAsOctree(const float iResolution, const bool iTraceRays,
   return oct;
 }
 
-
-
-/*
-
-LocalMap::DepthMap LocalMap::
-getAsDepthMap(const Eigen::Projective3d& iLocalToImage,
-              const int iWidth, const int iHeight) const {
-  DepthMap depthMap;
-  depthMap.mWidth = iWidth;
-  depthMap.mHeight = iHeight;
-  depthMap.mTransform = iLocalToImage;
-
-  Eigen::Projective3d xformToImage = iLocalToImage*mTransformToLocal;
-  Eigen::Projective3d xformFromImage = xformToImage.inverse();
-  Eigen::Vector4d bottomRow = xformToImage.matrix().bottomRows<1>();
-  Eigen::Vector4d o = xformFromImage.matrix()*bottomRow;
-  octomap::point3d origin(o(0)/o(3), o(1)/o(3), o(2)/o(3));
-  octomap::point3d direction;
-  bool orthographic = (fabs(bottomRow(3)) > fabs(bottomRow(2)));
-
-  depthMap.mData.resize(iWidth*iHeight);
-  const float unobservedValue = -std::numeric_limits<float>::max();
-  for (int i = 0; i < iHeight; ++i) {
-    for (int j = 0; j < iWidth; ++j) {
-      int index = i*iWidth + j;
-      // TODO: may need to change origin if ortho
-      Eigen::Vector4d dir = xformFromImage*Eigen::Vector4d(j,i,1,1);
-      octomap::point3d direction(dir(0)/dir(3)-origin(0),
-                                 dir(1)/dir(3)-origin(1),
-                                 dir(2)/dir(3)-origin(2));
-      std::cout << "ORG=(" << origin(0) << "," << origin(1) << "," <<
-        origin(2) << ") DIR=(" << direction.x() << "," << direction.y() <<
-        "," << direction.z() << ")" << std::endl;
-      octomap::point3d hitPoint;
-      if (mOctree->castRay(origin, direction, hitPoint, true, -1)) {
-        Eigen::Vector4d pt(hitPoint.x(), hitPoint.y(), hitPoint.z(), 1);
-        pt = xformToImage*pt;
-        pt /= pt(3);
-        depthMap.mData[index] = pt(2);  // TODO: make align with pix
-        std::cout << "PT (" << j << "," << i << ") (" <<
-          pt(0) << "," << pt(1) << "," << pt(2) << ")" << std::endl;
-      }
-      else {
-        depthMap.mData[index] = unobservedValue;
-      }
-    }
-  }
-  
-  return depthMap;
+maps::RangeImage LocalMap::
+getAsRangeImage(const int iWidth, const int iHeight,
+                const Eigen::Isometry3f& iPose,
+                const Eigen::Matrix4f& iProjector,
+                const SpaceTimeBounds& iBounds) const {
+  // TODO: can we do orthographic projection?
+  maps::PointCloud::Ptr cloud = getAsPointCloud(0, iBounds);
+  std::cout << "Cloud has " << cloud->size() << " points." << std::endl;
+  maps::RangeImage rangeImage;
+  pcl::RangeImagePlanar::Ptr img(new pcl::RangeImagePlanar());
+  img->createFromPointCloudWithFixedSize
+    (*cloud, iWidth, iHeight, iProjector(0,2), iProjector(1,2),
+     iProjector(0,0), iProjector(1,1), iPose);
+  rangeImage.mImage = img;
+  return rangeImage;
 }
-
-*/
