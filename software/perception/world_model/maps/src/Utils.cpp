@@ -293,3 +293,15 @@ planesFromPolyhedron(const std::vector<Eigen::Vector3f>& iVertices,
   }
   return planes;
 }
+
+bool Utils::
+factorViewMatrix(const Eigen::Matrix4f& iMatrix,
+                 Eigen::Isometry3f& oPose, Eigen::Matrix3f& oCalib,
+                 bool& oIsOrthographic) {
+  /*
+  const Eigen::Vector4f unitW(0,0,0,1);
+  float dot1 = fabs(iMatrix.row(3).normali
+  */
+  return true;
+}
+

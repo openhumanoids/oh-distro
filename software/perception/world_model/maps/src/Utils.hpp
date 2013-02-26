@@ -148,6 +148,10 @@ public:
   planesFromPolyhedron(const std::vector<Eigen::Vector3f>& iVertices,
                        const std::vector<std::vector<int> >& iFaces);
 
+  static bool factorViewMatrix(const Eigen::Matrix4f& iMatrix,
+                               Eigen::Isometry3f& oPose,
+                               Eigen::Matrix3f& oCalib,
+                               bool& oIsOrthographic);
 
   static uint64_t rand64();
 };

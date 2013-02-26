@@ -708,6 +708,13 @@ struct RendererMaps {
           bot_viewer_request_redraw(self->mViewer);
           return 0;
         }
+
+        // compute min and max extents of drag
+        Eigen::Vector2f dragPoint1, dragPoint2;
+        dragPoint1[0] = std::min(self->mDragPoint1[0], self->mDragPoint2[0]);
+        dragPoint1[1] = std::min(self->mDragPoint1[1], self->mDragPoint2[1]);
+        dragPoint2[0] = std::max(self->mDragPoint1[0], self->mDragPoint2[0]);
+        dragPoint2[1] = std::max(self->mDragPoint1[1], self->mDragPoint2[1]);
         
         // get view info
         GLdouble modelViewGl[16];
@@ -736,8 +743,8 @@ struct RendererMaps {
 
         // compute four corner rays
         int height = GTK_WIDGET(iViewer->gl_area)->allocation.height;
-        double u1(self->mDragPoint1[0]), v1(height-self->mDragPoint1[1]);
-        double u2(self->mDragPoint2[0]), v2(height-self->mDragPoint2[1]);
+        double u1(dragPoint1[0]), v1(height-dragPoint1[1]);
+        double u2(dragPoint2[0]), v2(height-dragPoint2[1]);
         double x,y,z;
         gluUnProject(u1,v1,0,modelViewGl,projGl,viewportGl,&x,&y,&z);
         Eigen::Vector3f p1(x,y,z);

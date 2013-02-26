@@ -42,7 +42,8 @@ class LidarTestRenderer : public RendererBase {
 protected:
   enum DrawMode {
     DrawModePoints,
-    DrawModeSurfels
+    DrawModeSurfelsWire,
+    DrawModeSurfelsFilled
   };
   enum SurfelMode {
     SurfelModeFixed,
@@ -85,8 +86,10 @@ public:
       addCombo("Color Mode", mColorMode, labels, ids);
     }
     {
-      std::vector<int> ids = { DrawModePoints, DrawModeSurfels };
-      std::vector<std::string> labels = { "Points", "Surfels" };
+      std::vector<int> ids = { DrawModePoints, DrawModeSurfelsWire,
+                               DrawModeSurfelsFilled };
+      std::vector<std::string> labels = { "Points", "Surfels Wire",
+                                          "Surfels Filled"};
       mDrawMode = DrawModePoints;
       addCombo("Draw Mode", mDrawMode, labels, ids);
     }
@@ -220,12 +223,16 @@ public:
         mMeshRenderer->setData(mPointBuffer, std::vector<Eigen::Vector3i>());
       }
 
-      // draw surfels
-      else if (mDrawMode == DrawModeSurfels) {
+      // draw surfels (wireframe)
+      else if ((mDrawMode == DrawModeSurfelsWire) ||
+               (mDrawMode == DrawModeSurfelsFilled)) {
         std::vector<Eigen::Vector3f> vertices;
         std::vector<Eigen::Vector3i> faces;
         computeSurfels(data, vertices, faces);
         mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeWireframe);
+        if (mDrawMode == DrawModeSurfelsFilled) {
+          mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeFilled);
+        }
         mMeshRenderer->setData(vertices, faces);
       }
 
