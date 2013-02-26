@@ -93,7 +93,7 @@ cv::StereoVar var;
 // Stereo BM params
 // Variable Parameters
 std::string vCHANNEL_LEFT, vCHANNEL_RIGHT;
-float vSCALE = .25f;
+float vSCALE = .25f;// full scale 1.f; // key scaling parameter
 bool vDEBUG = false;
 
 int vPRE_FILTER_SIZE = 9; // 5-255
@@ -148,10 +148,15 @@ publish_opencv_image(lcm_t* lcm, const char* str, const cv::Mat& _img, double ut
 // Publish both left and disparity in one image type:
 cv::Mat temp_img;
 void
-publish_opencv_image_multisense(lcm_t* lcm, const char* str, const cv::Mat& _disp, const cv::Mat& _left,  double utime ,
+publish_opencv_image_multisense(lcm_t* lcm, const char* str, cv::Mat& _disp, const cv::Mat& _left,  double utime ,
   const bot_core_image_t * msg) { 
   int h = _disp.rows;
   int w = _disp.cols;
+  
+  // MAGIC scaling parameter to match default stereo_match parameters 
+  // to Carnegie Robotic's 1/16th disparity values
+  // TODO: find the proper scaling function between SBM and CRL's data
+  _disp = 4* _disp;
   
   //////// RIGHT IMAGE /////////////////////////////////////////////  
   int n_bytes=4; // 4 bytes per value
@@ -238,7 +243,7 @@ decode_image(const bot_core_image_t * msg, cv::Mat& left_img, cv::Mat& right_img
 
 // Stereo related variables
 cv::Mat left_stereo, right_stereo;
-
+int  verbose_counter=0;
 void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
     const bot_core_image_t *msg, void *user_data)
 {
@@ -262,7 +267,7 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
       (left_stereo.size() != right_stereo.size()))
       return;
 
-  std::cerr << "RECEIVED both LEFT & RIGHT" << std::endl;  
+  // std::cerr << "RECEIVED both LEFT & RIGHT" << std::endl;  
   
 
   // cv::Mat left, right; 
@@ -358,7 +363,11 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   else if( alg == STEREO_SGBM || alg == STEREO_HH )
       sgbm(left, right, disp);
   tm = cv::getTickCount() - tm;
-  printf("Time elapsed: %f ms\n", tm*1000/cv::getTickFrequency());
+  
+  verbose_counter++;
+  if (verbose_counter%10 ==0){ // give ouput every X frames
+    printf("Frames %d : Time elapsed: %f ms\n", verbose_counter, tm*1000/cv::getTickFrequency());
+  }
 
   if( vSCALE != 1.f ) {
       int method =vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
@@ -378,12 +387,6 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
       publish_opencv_image(self->lcm, "CAMERADEPTH8", disp8, msg->utime);
   
   publish_opencv_image_multisense(self->lcm, "CAMERADEPTH", disp, left_stereo, msg->utime, msg);
-
-  
-  std::stringstream disparity_fname;
-  disparity_fname << "disparity_lcm_" << msg->utime << ".png";
-  imwrite(disparity_fname.str(),disp); 
-  printf("finished write\n");
   
   return;
 }
