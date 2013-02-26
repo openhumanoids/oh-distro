@@ -36,7 +36,7 @@ m.type =type;
 m.name =name;
 m.reset =logical(reset);
 m.nobjs = size(values,1);
-m.objs = m.objs(3:end)
+m.objs = m.objs(3:end);
 
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('OBJ_COLLECTION', m);
@@ -46,7 +46,7 @@ lc.publish('OBJ_COLLECTION', m);
 %%%%%%%%%%%%%%%%%%%%%%%%%%% LINKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (draw_links)
 link_col = vs.link_collection_t();
-link_col.id = link_id
+link_col.id = link_id;
 link_col.name = [name ' (L)'] ;
 link_col.reset =logical(reset);
 
@@ -65,7 +65,7 @@ for i=2:size(values,1)
   link.id2 = i-1;
   link_col.links=[link_col.links , link];
 end 
-link_col.links = link_col.links(3:end)
+link_col.links = link_col.links(3:end);
 link_col.nlinks=size(values,1)-1;
 
 lc.publish('LINK_COLLECTION',link_col)
