@@ -1,4 +1,4 @@
-function fromProne
+function xtraj = fromProne
 % script to test standing up from the prone position
 
 draw_frames=false;
@@ -58,7 +58,7 @@ head_pos.max = nan(3,1);
 ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos};%,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos};%,0,com_pos};%,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
 
-ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,'toe',r_toe_pos,l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),repmat(r_toe_pos,1,2),l_foot,'toe',l_toe_pos,0,com_pos,head,zeros(3,1),head_pos};
 q=inverseKin(r,q,ikargs{:},options);
 ttape = [0,2];
 qtape = [q,q];
@@ -271,6 +271,8 @@ if (draw_frames) v.draw(ttape(end),[q;0*q]); end
 
 % interpolate one extra frame (because the feet look like they're going
 % through the ground)
+heel_pos.min = [nan;nan;0];
+heel_pos.max = [nan;nan;0];
 options.q_nom = mean(qtape(:,(end-1):end),2);
 % just foot constraints
 ikargs={r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
