@@ -23,7 +23,7 @@ add_executable(stereo-bm
 
 pods_use_pkg_config_packages ( stereo-bm lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
   bot2-frames jpeg-utils
-  bot2-param-client opencv perception-opencv-utils )
+  bot2-param-client opencv perception-opencv-utils lcmtypes_multisense )
 
 target_link_libraries(stereo-bm 
   ${LCMTYPES_LIBS} 

@@ -9,6 +9,10 @@
 #include <signal.h>
 #include <math.h>
 
+
+#include <lcmtypes/multisense.h>
+
+
 // libbot/lcm includes
 #include <bot_core/bot_core.h>
 #include <bot_frames/bot_frames.h>
@@ -139,26 +143,91 @@ publish_opencv_image(lcm_t* lcm, const char* str, const cv::Mat& _img, double ut
   return;
 }
 
+
+
+// Publish both left and disparity in one image type:
+cv::Mat temp_img;
 void
-decode_image(const bot_core_image_t * msg, cv::Mat& img)
+publish_opencv_image_multisense(lcm_t* lcm, const char* str, const cv::Mat& _disp, const cv::Mat& _left,  double utime ,
+  const bot_core_image_t * msg) { 
+  int h = _disp.rows;
+  int w = _disp.cols;
+  
+  //////// RIGHT IMAGE /////////////////////////////////////////////  
+  int n_bytes=4; // 4 bytes per value
+  int isize = n_bytes*w*h;
+  bot_core_image_t disp_msg_out;
+  disp_msg_out.utime = utime; 
+  disp_msg_out.width = w; 
+  disp_msg_out.height = h;
+  disp_msg_out.pixelformat = BOT_CORE_IMAGE_T_PIXEL_FORMAT_FLOAT_GRAY32;
+  disp_msg_out.row_stride = n_bytes*w;
+  disp_msg_out.size = isize;
+  disp_msg_out.data = (uint8_t*) _disp.data;
+  disp_msg_out.nmetadata = 0;
+  disp_msg_out.metadata = NULL;
+
+  //////// LEFT IMAGE //////////////////////////////////////////////
+  if (temp_img.empty() || temp_img.rows != h || temp_img.cols != w)
+        temp_img.create(h, w, CV_8UC1);    
+  bot_core_image_t left_msg_out;
+  left_msg_out.utime = utime; 
+  left_msg_out.width = w;
+  left_msg_out.height =h;
+  left_msg_out.row_stride = w; 
+  left_msg_out.pixelformat = BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
+  left_msg_out.size = w*h;
+  std::copy(msg->data             , msg->data+msg->size/2 , temp_img.data);
+  left_msg_out.data = (uint8_t*) temp_img.data;
+  left_msg_out.nmetadata = 0;
+  left_msg_out.metadata = NULL;
+
+  //////// BOTH IMAGES /////////////////////////////////////////////
+  multisense_images_t images;
+  images.utime = utime;
+  images.n_images=2;
+  int16_t im_types[ 2 ];
+  im_types[0] = MULTISENSE_IMAGES_T_LEFT;
+  im_types[1] = MULTISENSE_IMAGES_T_DISPARITY;
+  bot_core_image_t im_list[ 2 ];
+  im_list[0] = left_msg_out;
+  im_list[1] = disp_msg_out;
+  images.image_types = im_types;
+  images.images = im_list;
+  multisense_images_t_publish(lcm, "MULTISENSE_LD", &images);        
+  return;
+}
+
+
+void
+decode_image(const bot_core_image_t * msg, cv::Mat& left_img, cv::Mat& right_img)
 {
-    if (img.empty() || img.rows != msg->height || img.cols != msg->width)
-        img.create(msg->height, msg->width, CV_8UC3);
+  int w = msg->width;
+  int h = msg->height/2;
+  
+  if (left_img.empty() || left_img.rows != h || left_img.cols != w)
+        left_img.create(h, w, CV_8UC1);
+  if (right_img.empty() || right_img.rows != h || right_img.cols != w)
+        right_img.create(h, w, CV_8UC1);
 
   // extract image data
-  // TODO add support for raw RGB
   switch (msg->pixelformat) {
-    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
-        memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height * 3);
+//    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+      ///  memcpy(img.data, msg->data, sizeof(uint8_t) * w * h * 3);
+      std::copy(msg->data             , msg->data+msg->size/2 , left_img.data);
+      std::copy(msg->data+msg->size/2 , msg->data+msg->size   , right_img.data);
       break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      printf("jpegs not supported yet\n");
+      exit(-1);
       // for some reason msg->row_stride is 0, so we use msg->width instead.
-      jpeg_decompress_8u_gray(msg->data,
-                              msg->size,
-                              img.data,
-                              msg->width,
-                              msg->height,
-                              msg->width);
+      //jpeg_decompress_8u_gray(msg->data,
+      //                        msg->size,
+      //                        img.data,
+      //                        msg->width,
+      //                        msg->height,
+      //                        msg->width);
       break;
     default:
       fprintf(stderr, "Unrecognized image format\n");
@@ -173,32 +242,28 @@ cv::Mat left_stereo, right_stereo;
 void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
     const bot_core_image_t *msg, void *user_data)
 {
-    // Comp *self = (Comp*) user_data;
-    state_t* self = (state_t*) user_data;
+  state_t* self = (state_t*) user_data;
+  decode_image(msg, left_stereo, right_stereo);
   
-    if (strcmp(vCHANNEL_LEFT.c_str(), channel) == 0) { 
-        decode_image(msg, left_stereo);
-        if( vSCALE != 1.f ) {
-            int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
-            cv::resize(left_stereo, left_stereo, cv::Size(), vSCALE, vSCALE, method);
-        }
-        cv::cvtColor(left_stereo, left_stereo, CV_RGB2BGR);
-    }  else if (strcmp(vCHANNEL_RIGHT.c_str(), channel) == 0) { 
-        decode_image(msg, right_stereo);
-        if( vSCALE != 1.f ) {
-            int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
-            cv::resize(right_stereo, right_stereo, cv::Size(), vSCALE, vSCALE, method);
-        }
-        cv::cvtColor(right_stereo, right_stereo, CV_RGB2BGR);
-    }
-  else  
-      std::cerr << "Unrecognized channel name" << std::endl;
+  if( vSCALE != 1.f ) {
+      int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
+      cv::resize(left_stereo, left_stereo, cv::Size(), vSCALE, vSCALE, method);
+  }
+  //cv::cvtColor(left_stereo, left_stereo, CV_RGB2BGR);
 
+  if( vSCALE != 1.f ) {
+      int method = vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
+      cv::resize(right_stereo, right_stereo, cv::Size(), vSCALE, vSCALE, method);
+  }
+  //cv::cvtColor(right_stereo, right_stereo, CV_RGB2BGR);
+
+  
   if (left_stereo.empty() || right_stereo.empty() || 
       (left_stereo.size() != right_stereo.size()))
       return;
 
-  std::cerr << "RECEIVED both LEFT & RIGHT" << std::endl;
+  std::cerr << "RECEIVED both LEFT & RIGHT" << std::endl;  
+  
 
   // cv::Mat left, right; 
   // cv::cvtColor(left_stereo, left_stereo, CV_BGR2GRAY);
@@ -310,9 +375,16 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
       return;
   
   if (vDEBUG)
-      publish_opencv_image(self->lcm, "CAMERADEPTH8", disp8);
-  publish_opencv_image(self->lcm, "CAMERADEPTH", disp);
+      publish_opencv_image(self->lcm, "CAMERADEPTH8", disp8, msg->utime);
+  
+  publish_opencv_image_multisense(self->lcm, "CAMERADEPTH", disp, left_stereo, msg->utime, msg);
 
+  
+  std::stringstream disparity_fname;
+  disparity_fname << "disparity_lcm_" << msg->utime << ".png";
+  imwrite(disparity_fname.str(),disp); 
+  printf("finished write\n");
+  
   return;
 }
 
@@ -387,10 +459,10 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
-    bot_core_image_t_subscription_t * sub_left =  bot_core_image_t_subscribe(state->lcm, vCHANNEL_LEFT.c_str(), 
+    bot_core_image_t_subscription_t * sub =  bot_core_image_t_subscribe(state->lcm, "CAMERA", 
                                                                              on_image_frame, state);
-    bot_core_image_t_subscription_t * sub_right =  bot_core_image_t_subscribe(state->lcm, vCHANNEL_RIGHT.c_str(), 
-                                                                              on_image_frame, state);
+//    bot_core_image_t_subscription_t * sub_right =  bot_core_image_t_subscribe(state->lcm, vCHANNEL_RIGHT.c_str(), 
+//                                                                              on_image_frame, state);
 
     //add lcm to mainloop 
     bot_glib_mainloop_attach_lcm (state->lcm);
