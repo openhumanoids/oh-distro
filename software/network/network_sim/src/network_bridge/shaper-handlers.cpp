@@ -64,6 +64,7 @@ unsigned int xor_cs(const std::vector<Char>& data)
 unsigned int floor_multiple_sixteen(unsigned int v)
 {
     unsigned int lg = (v / 16)*16;
+    return lg;
 }
 
 
@@ -299,8 +300,8 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             if(last_send_type_ > largest_id_)
                 last_send_type_ = 0;
             
-//            std::cout << "Checking channel id: " << last_send_type_ << std::endl;          
-//            std::cout << "Name: " << channel_id_.right.at(last_send_type_) << std::endl;
+	    //            std::cout << "Checking channel id: " << last_send_type_ << std::endl;          
+            //            std::cout << "Name: " << channel_id_.right.at(last_send_type_) << std::endl;
             
             std::map<std::string, MessageQueue >::iterator it =
                 queues_.find(channel_id_.right.at(last_send_type_));
@@ -333,10 +334,10 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                 }
                 else
                 {                
-                    payload_size = floor_multiple_sixteen(msg->max_frame_bytes()-overhead);
+		    payload_size = floor_multiple_sixteen(msg->max_frame_bytes()-overhead);
                     while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
-                        payload_size = floor_multiple_sixteen(payload_size-1);
-                    
+		      payload_size = floor_multiple_sixteen(payload_size-1);
+
                     if(payload_size == 0)
                         throw(std::runtime_error("udp_frame_size_bytes is too small for LDPC error correction, use a larger value"));
                     
