@@ -10,7 +10,9 @@ function c = cost(x_flat)
 %   c = c1 + c2;
   [d, r] = stepDistance(X(:,1:(end-1)), X(:,2:end),1);
   c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-  
+  plot_lcm_poses(Xright(1:3,ndx_r)', Xright(6:-1:4,ndx_r)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+  plot_lcm_poses(Xleft(1:3,ndx_l)', Xleft(6:-1:4,ndx_l)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+
 end
 
 

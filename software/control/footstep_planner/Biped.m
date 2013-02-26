@@ -86,8 +86,6 @@ classdef Biped
         plotFootstepPlan(traj, Xright, Xleft);
         drawnow
       end
-%       plot_lcm_poses(Xright(1:3,:)', Xright(4:6,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
-%       plot_lcm_poses(Xleft(1:3,:)', Xright(4:6,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
     end
     
     function [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)
