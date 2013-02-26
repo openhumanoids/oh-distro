@@ -17,20 +17,16 @@ end
 % [fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
 [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps);
 
-
-if interactive
-  h = figure(22);
-  set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
-  set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));
-end
-
 done = false;
-uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
 function set_done()
   done = true;
 end
 
 if interactive
+  h = figure(22);
+  set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
+  set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));
+  uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
   while ~done
     [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps);
     figure(22)

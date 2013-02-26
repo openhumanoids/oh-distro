@@ -1,16 +1,16 @@
 function [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps)
 
-[fixed_steps{1,1}, fixed_steps{1,2}] = biped.footPositions(X(:,1));
-[fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
-
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
   [Xright, Xleft] = biped.footPositions(X);
-  [d1, r1] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end));
-  [d2, r2] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end));
-  c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-  c2 = sum(d2.^2 + (r2 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d2 .* r2 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-  c = c1 + c2;
+%   [d1, r1] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end));
+%   [d2, r2] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end));
+%   c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
+%   c2 = sum(d2.^2 + (r2 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d2 .* r2 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
+%   c = c1 + c2;
+  [d, r] = stepDistance(X(:,1:(end-1)), X(:,2:end),1);
+  c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
+  
 end
 
 

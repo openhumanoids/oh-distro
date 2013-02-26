@@ -17,7 +17,7 @@ while 1
 		for current_foot = 1:2
       X0 = footstepLocations(traj, lambda(end), foot_angles(current_foot), step_width);
       Xf = footstepLocations(traj, lambda_n, foot_angles(current_foot), step_width);
-			[ds(current_foot), rs(current_foot)] = stepDistance(X0, Xf);
+			[ds(current_foot), rs(current_foot)] = stepDistance(X0, Xf, 0);
     end
     d = max(ds);
     r = max(rs);
