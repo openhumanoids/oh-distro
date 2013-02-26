@@ -41,7 +41,9 @@ drc::contact_goal_t ManipulationConstraint::toLCM()
 
   //TODO change contact type based on affordance
 	msg.contact_type = 0;
-	msg.object_1_name = _manipulator->getName();
+  printf("flag0\n");
+	msg.object_1_name = _manipulator->getLinkName();
+  printf("flag0.5\n");
 	msg.object_1_contact_grp = _manipulator->getContactGroupName();
   
     //TODO remove hardcodes here!
@@ -53,7 +55,9 @@ drc::contact_goal_t ManipulationConstraint::toLCM()
   
 	if (_relationState->getRelationType() == RelationState::POINT_CONTACT)
 	{
+    printf("flag1\n");
 		Eigen::Vector3f v = (boost::static_pointer_cast<PointContactRelation>(_relationState))->getPoint2();
+    printf("flag2\n");
     drc::vector_3d_t pt;
  	 	pt.x = v.x();
   	pt.y = v.y();
