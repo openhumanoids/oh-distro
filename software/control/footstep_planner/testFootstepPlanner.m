@@ -13,8 +13,9 @@ biped = Biped(r);
 % biped.visualizer.playback(xtraj, struct('slider', true));
 % pause
 
-poses = [1;1;0;0;0;-pi/4];
+% poses = [1;1;0;0;0;-pi/4];
+poses = [1;0;0;0;0;0];
 xtraj = biped.roughWalkingPlan(xstar, poses, struct('plotting', true, ...
-  'interactive', false, 'traj_type', 'cubic_spline'));
+  'interactive', true, 'traj_type', 'cubic_spline'));
 
 biped.visualizer.playback(xtraj, struct('slider', true));
