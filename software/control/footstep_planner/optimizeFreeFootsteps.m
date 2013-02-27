@@ -1,11 +1,13 @@
-function [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, poses, biped, interactive)
+function [Xright, Xleft] = optimizeFreeFootsteps(poses, biped, interactive)
 
-X = traj.eval(lambda(1:end));
-fixed_steps = repmat({[]}, length(lambda), 2);
+X = interp1([1:length(poses(1,:))]', poses', [1:0.5:length(poses(1,:))]')';
+% X = traj.eval(lambda(1:end));
+total_steps = length(X(1,:));
 
-num_steps = length(lambda);
-ndx_r = int32([1, 2, 4:2:(num_steps-1), num_steps]);
-ndx_l = int32([1:2:(num_steps-1), num_steps]);
+fixed_steps = repmat({[]}, total_steps, 2);
+
+ndx_r = int32([1, 2, 4:2:(total_steps-1), total_steps]);
+ndx_l = int32([1:2:(total_steps-1), total_steps]);
 for p = poses
   [~,j] = min(sum((X - repmat(p, 1, length(X(1,:)))).^2));
   if find(ndx_r == j)
@@ -104,7 +106,7 @@ while 1
   
   [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
   figure(22)
-  plotFootstepPlan(traj, Xright, Xleft);
+  plotFootstepPlan(X, Xright, Xleft);
   drawnow
   if (~interactive && ~modified) || (done)
     break

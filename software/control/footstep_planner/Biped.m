@@ -35,8 +35,7 @@ classdef Biped
     end
     
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
-      defaults = struct('traj_type', 'turn_and_go',...
-        'interactive', false,...
+      defaults = struct('interactive', false,...
         'plotting', true);
       if nargin < 3
         options = struct();
@@ -50,15 +49,15 @@ classdef Biped
       q0 = x0(1:end/2);
       [start_pos, obj.step_width] = obj.feetPosition(q0);
       
-      if strcmp(options.traj_type, 'turn_and_go')
-        sizecheck(poses(:,1), 6);
-        traj = turnGoTraj([start_pos, poses]);
-      elseif strcmp(options.traj_type, 'cubic_spline')
-        sizecheck(poses, [6,1]);
-        traj = cubicSplineTraj([start_pos, poses]);
-      else
-        error('Invalid trajectory type specified: %s', options.traj_type);
-      end
+%       if strcmp(options.traj_type, 'turn_and_go')
+%         sizecheck(poses(:,1), 6);
+%         traj = turnGoTraj([start_pos, poses]);
+%       elseif strcmp(options.traj_type, 'cubic_spline')
+%         sizecheck(poses, [6,1]);
+%         traj = cubicSplineTraj([start_pos, poses]);
+%       else
+%         error('Invalid trajectory type specified: %s', options.traj_type);
+%       end
       
 %       [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.max_step_length,...
 %         obj.step_width, obj.max_step_rot);
@@ -68,15 +67,15 @@ classdef Biped
 %         plotFootstepPlan(traj, Xright, Xleft);
 %         drawnow
 %       end
-       lambda = [0,0.5,1];
+%        lambda = [0,0.5,1];
 %       plot_lcm_poses(Xright(1:3,:)', Xright([6,5,4],:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
 %       plot_lcm_poses(Xleft(1:3,:)', Xright([6,5,4],:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
 
-      [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, [start_pos, poses], obj, options.interactive);
+      [Xright, Xleft] = optimizeFreeFootsteps([start_pos, poses], obj, options.interactive);
 
       if options.plotting
         figure(22)
-        plotFootstepPlan(traj, Xright, Xleft);
+        plotFootstepPlan([], Xright, Xleft);
         drawnow
       end
     end
