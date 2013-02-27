@@ -18,6 +18,7 @@
 #define PCL_VERBOSITY_LEVEL L_ERROR
 
 using namespace std;
+using namespace cv;
 
 
 pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
@@ -41,7 +42,7 @@ pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
   memcpy(kcal->depth_to_rgb_translation, depth_to_rgb_translation  , 3*sizeof(double));  
 
 
-  kinect_decimate =32.0;
+  decimate_ =32.0;
 }
 
 
@@ -162,15 +163,15 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 
     // 3 for each depth point find the corresponding xyz and then RGB
     //   then put into PCL structure
-    cloud->width    =(int) (msg->depth.width/ (double) kinect_decimate) ;
-    cloud->height   =(int) (msg->depth.height/ (double) kinect_decimate);
+    cloud->width    =(int) (msg->depth.width/ (double) decimate_) ;
+    cloud->height   =(int) (msg->depth.height/ (double) decimate_);
     cloud->is_dense = false;
     cloud->points.resize (cloud->width * cloud->height);
     double xyzw2[4];
     int j2=0;
     // NB: the order of these loop was changed... aug 2011. important
-    for(int v=0; v<msg->depth.height; v=v+ kinect_decimate) { // t2b state->height 480
-      for(int u=0; u<msg->depth.width; u=u+kinect_decimate ) {  //l2r state->width 640
+    for(int v=0; v<msg->depth.height; v=v+ decimate_) { // t2b state->height 480
+      for(int u=0; u<msg->depth.width; u=u+decimate_ ) {  //l2r state->width 640
         // 3.4.1 compute distorted pixel coordinates
         uint16_t disparity = disparity_array[v*msg->depth.width+u];
         double uvd_depth[4] = { u, v, disparity, 1 };
@@ -218,15 +219,15 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     int npixels = msg->depth.width * msg->depth.height;
     const uint16_t* val = reinterpret_cast<const uint16_t*>( depth_data );
 
-    cloud->width    =(int) (msg->depth.width/ (double) kinect_decimate) ;
-    cloud->height   =(int) (msg->depth.height/ (double) kinect_decimate); 
+    cloud->width    =(int) (msg->depth.width/ (double) decimate_) ;
+    cloud->height   =(int) (msg->depth.height/ (double) decimate_); 
     cloud->is_dense = false;
     cloud->points.resize (cloud->width * cloud->height);
     double xyzw[4];
     int j=0;
     int j2=0;
-    for(int v=0; v<msg->depth.height; v=v+ kinect_decimate) { // t2b self->height 480
-      for(int u=0; u<msg->depth.width; u=u+kinect_decimate ) {  //l2r self->width 640
+    for(int v=0; v<msg->depth.height; v=v+ decimate_) { // t2b self->height 480
+      for(int u=0; u<msg->depth.width; u=u+decimate_ ) {  //l2r self->width 640
         uint8_t r = rgb_data[v*msg->depth.width*3 + u*3 + 0];
         uint8_t g = rgb_data[v*msg->depth.width*3 + u*3 + 1];
         uint8_t b = rgb_data[v*msg->depth.width*3 + u*3 + 2];
@@ -252,5 +253,65 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 
   if(msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
     free(uncompress_buffer); // memory leak bug fixed
+  }
+}
+
+
+// msg - raw input data
+// repro_matrix is reprojection matrix e.g. this was the loan unit in feb 2013:
+//   [1, 0, 0, -512.5;
+//    0, 1, 0, -272.5;
+//    0, 0, 0, 606.034;
+//    0, 0, 14.2914745276283, 0]
+// cloud - output pcl cloud
+void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
+
+  int h = msg->images[0].height;
+  int w = msg->images[0].width;
+  
+  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
+  disparity_orig_temp.data = msg->images[1].data;  
+  
+  cv::Mat_<float> disparity_orig(h, w);
+  disparity_orig = disparity_orig_temp;
+  
+  //std::stringstream disparity_fname;
+  //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
+  //imwrite(disparity_fname.str(),disparity_orig_temp); 
+  
+  disparity_buff_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buff_[0]));
+  disparity = disparity_orig / 16.0;
+    
+  // Allocate buffer for reprojection output
+  points_buff_.resize(h * w);
+  cv::Mat_<cv::Vec3f> points(h, w, &(points_buff_[0]));
+
+  // Do the reprojection in open space
+  static const bool handle_missing_values = true;
+  cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
+  
+  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  cloud->width    =(int) (w/ (double) decimate_) ;
+  cloud->height   =(int) (h/ (double) decimate_);
+  cloud->is_dense = true;
+  cloud->points.resize (cloud->width * cloud->height);  
+  int j2=0;
+  for(int v=0; v<h; v=v+ decimate_) { // t2b
+    for(int u=0; u<w; u=u+decimate_ ) {  //l2r
+        //cout <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
+        cloud->points[j2].x = points(v,u)[0];
+        cloud->points[j2].y = points(v,u)[1];
+        cloud->points[j2].z = points(v,u)[2];
+        
+        // TODO: add check for RGB - this assumed gray:
+        cloud->points[j2].r = msg->images[0].data[v*w + u];
+        cloud->points[j2].g = msg->images[0].data[v*w + u];// + 1];
+        cloud->points[j2].b = msg->images[0].data[v*w + u];// + 2];
+        j2++;
+    }
   }
 }

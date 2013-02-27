@@ -43,6 +43,12 @@
 #include <lcmtypes/kinect_frame_msg_t.h>
 
 
+// Multisense Requires:
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <lcmtypes/multisense.h>
+
+
 using namespace pcl;
 using namespace pcl::io;
 
@@ -56,13 +62,22 @@ class pointcloud_lcm {
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
-    void set_kinect_decimate(int decimate_in){ kinect_decimate = decimate_in; };
+    void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    
+    // an integer decimation factor:
+    void set_decimate(int decimate_in){ decimate_ = decimate_in; };
 
   private:
     lcm_t *publish_lcm_; 
 
     KinectCalibration* kcal;
-    int kinect_decimate;
+    int decimate_;
+    
+    
+    // Multisense Compress:
+    mutable std::vector<float> disparity_buff_;
+    mutable std::vector<cv::Vec3f> points_buff_;    
 };
 
 
@@ -130,6 +145,10 @@ convertLidar(std::vector< float > ranges, int numPoints, double thetaStart,
   cloud->width   = count;
   cloud->points.resize (count);
 }
+
+
+
+
 
 
 
