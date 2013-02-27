@@ -16,10 +16,15 @@
 #include <signal.h>
 #include <math.h>
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <jpeg-utils/jpeg-utils.h>
 #include <jpeg-utils/jpeg-utils-ijg.h>
 #include <zlib.h>
 #include <ConciseArgs>
+
+using namespace cv;
 
 using namespace std;
 
@@ -68,6 +73,32 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   if (self->counter%30 ==0){
      cout << self->counter << " | " << msg->utime << "\n"; 
   }
+  
+  /// 1024x544 --> 256x136
+  Mat src= Mat::zeros( msg->width , msg->height ,CV_8UC3);
+  src.data = msg->data;
+  
+  int resize_height = msg->height/4;
+  int resize_width  = msg->width/4;
+  Mat img = Mat::zeros( resize_height , resize_width ,CV_8UC3);
+  // Resize src to img size
+  cv::resize(src, img, img.size());  
+
+  bot_core_image_t msgout_small;
+  msgout_small.utime = msg->utime;
+  msgout_small.width = resize_width;
+  msgout_small.height = resize_height;
+  msgout_small.row_stride = 3*resize_width;
+  msgout_small.size = resize_height*resize_width*3;
+  msgout_small.pixelformat = BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
+  msgout_small.data = img.data;
+  msgout_small.nmetadata =0;
+  msgout_small.metadata = NULL;
+  
+  string channel_out_small = string(channel) + "_COMPRESSED_SMALL";
+  bot_core_image_t_publish(self->publish_lcm, channel_out_small.c_str(), &msgout_small);
+  
+  
 }
 
 int main(int argc, char ** argv) {

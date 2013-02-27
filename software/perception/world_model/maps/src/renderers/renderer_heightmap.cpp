@@ -306,7 +306,7 @@ heightmap_add_renderer_to_viewer(BotViewer* viewer,
   self->mBotParam = param;
   self->mBotFrames = frames;
   self->mMeshRenderer.reset(new maps::MeshRenderer());
-  self->mMeshRenderer->setBotParam(self->mBotParam);
+  self->mMeshRenderer->setBotParam(param);
   self->mMeshRenderer->setLcm(self->mLcm);
   self->mMeshRenderer->setColor(1,0.5,0);
 

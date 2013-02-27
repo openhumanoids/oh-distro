@@ -14,6 +14,7 @@
 //   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243, 
 // - These numbers are for RGB. Outputing Gray reduces sendOutput by half
 //   so sending convex works at about 35Hz
+// Also, I've removed renderering of the head.
 
 #include <iostream>
 #include <Eigen/Dense>
@@ -205,7 +206,6 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
         }
       }
     }
-    
     simexample->setPolygonMeshs(mesh_link_names, mesh_file_paths );
     
     

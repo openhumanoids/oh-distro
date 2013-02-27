@@ -92,7 +92,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   
   // TODO: get the urdf model from LCM:
   collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString() );
-  n_collision_points_ = 1000;
+  n_collision_points_ = 1048; // was 1000, real lidar from sensor head has about 1048 returns (varies)
   collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ );
   // create the collision detector
   collision_detector_ = new Collision_Detector();
@@ -126,7 +126,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
 void Pass::DoCollisionCheck(int64_t current_utime ){
   // create a std::vector< Eigen::Vector3f > of points
   vector< Vector3f > points;
-  int which=2; // 0 random points in a box, 1 a line, 2 the actual lidar returns
+  int which=2; // 0 random points in a box [for testing], 1 a line [for testing], 2 the actual lidar returns
   if (which==0){
     for( unsigned int i = 0; i < 500; i++ ){
       Vector3f point(last_rstate_.origin_position.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
@@ -237,7 +237,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   // 2. Project the scan into local frame:
   Eigen::Isometry3d scan_to_local;
-  frames_cpp_->get_trans_with_utime( botframes_ ,  "ROTATING_SCAN", "local", msg->utime, scan_to_local);
+  frames_cpp_->get_trans_with_utime( botframes_ ,  lidar_channel_.c_str() , "local", msg->utime, scan_to_local);
   Eigen::Isometry3f pose_f = Isometry_d2f(scan_to_local);
   Eigen::Quaternionf pose_quat(pose_f.rotation());
   pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l_,
@@ -279,7 +279,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
-  string lidar_channel="ROTATING_SCAN";
+  string lidar_channel="SCAN";
   parser.add(verbose, "v", "verbose", "Verbosity");
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
   parser.parse();
