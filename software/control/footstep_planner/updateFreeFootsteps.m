@@ -1,8 +1,8 @@
-function [X, Xright, Xleft] = updateFreeFootsteps(X, biped, ndx_r, ndx_l, fixed_steps)
+function [X] = updateFreeFootsteps(X, biped, fixed_steps)
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
-  [Xright, Xleft] = biped.footPositions(X);
+%   [Xright, Xleft] = biped.footPositions(X);
 %   [d1, r1] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end));
 %   [d2, r2] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end));
 %   c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
@@ -10,8 +10,8 @@ function c = cost(x_flat)
 %   c = c1 + c2;
   [d, r] = stepDistance(X(:,1:(end-1)), X(:,2:end),1);
   c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-  plot_lcm_poses(Xright(1:3,ndx_r)', Xright(6:-1:4,ndx_r)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
-  plot_lcm_poses(Xleft(1:3,ndx_l)', Xleft(6:-1:4,ndx_l)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+%   plot_lcm_poses(Xright(1:3,ndx_r)', Xright(6:-1:4,ndx_r)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+%   plot_lcm_poses(Xleft(1:3,ndx_l)', Xleft(6:-1:4,ndx_l)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
 
 end
 
@@ -35,9 +35,7 @@ x_flat = fmincon(@cost, x_flat,[],[],[],[],...
 
 
 X = locate_step_centers(x_flat);
-[Xright, Xleft] = biped.footPositions(X);
-Xright = Xright(:, ndx_r);
-Xleft = Xleft(:, ndx_l);
+
 
 
 function X = locate_step_centers(x_flat)
