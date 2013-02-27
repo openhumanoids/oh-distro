@@ -48,7 +48,7 @@ classdef Biped
         end
       end
       q0 = x0(1:end/2);
-      [start_pos, obj.step_width] = getFeetPos(obj.manip, q0);
+      [start_pos, obj.step_width] = obj.feetPosition(q0);
       
       if strcmp(options.traj_type, 'turn_and_go')
         sizecheck(poses(:,1), 6);
@@ -62,7 +62,7 @@ classdef Biped
       
 %       [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.max_step_length,...
 %         obj.step_width, obj.max_step_rot);
-%       [Xright, Xleft] = obj.footPositions(traj.eval(lambda), ndx_r, ndx_l);
+%       [Xright, Xleft] = obj.stepLocations(traj.eval(lambda), ndx_r, ndx_l);
 %       if options.plotting
 %         figure(21)
 %         plotFootstepPlan(traj, Xright, Xleft);
@@ -73,15 +73,7 @@ classdef Biped
 %       plot_lcm_poses(Xleft(1:3,:)', Xright([6,5,4],:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
 
       [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, [start_pos, poses], obj, options.interactive);
-%       if options.interactive
-% %         [~, Xright, Xleft] = interactiveFootstepOptimization(traj,lambda,obj.max_step_length,obj.step_width,obj.max_step_rot,ndx_r,ndx_l);
-%          [Xright, Xleft] = interactiveFreeFootstepOptimization(traj, lambda, obj, ndx_r, ndx_l);
-%       else
-% %         [~, Xright, Xleft] = optimizeFootsteps(traj, lambda, obj.max_step_length, step_width, obj.max_step_rot, ndx_r, ndx_l);
-%         
-%         X = traj.eval(lambda(1:end));
-%         [~, Xright, Xleft] = optimizeFreeFootsteps(X, obj, ndx_r, ndx_l);
-%       end
+
       if options.plotting
         figure(22)
         plotFootstepPlan(traj, Xright, Xleft);
@@ -118,7 +110,7 @@ classdef Biped
       [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft);
     end
     
-    function [Xright, Xleft] = footPositions(obj, X, ndx_r, ndx_l)
+    function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
       if nargin == 2
         ndx_r = 1:length(X(1,:));
         ndx_l = 1:length(X(1,:));
@@ -129,7 +121,56 @@ classdef Biped
       Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(4, length(ndx_r))] .* (obj.step_width / 2);
       Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(4, length(ndx_l))] .* (obj.step_width / 2);
     end
+    
+    function [pos, width] = feetPosition(obj, q0)
+      typecheck(obj.manip,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
+      typecheck(q0,'numeric');
+      sizecheck(q0,[obj.manip.getNumDOF,1]);
 
+      kinsol = doKinematics(obj.manip,q0);
+      rfoot_body = findLink(obj.manip,obj.r_foot_name);
+      lfoot_body = findLink(obj.manip,obj.l_foot_name);
+
+      rfoot0 = forwardKin(obj.manip,kinsol,rfoot_body,[0;0;0],true);
+      lfoot0 = forwardKin(obj.manip,kinsol,lfoot_body,[0;0;0],true);
+
+      gc = obj.manip.contactPositions(q0);
+
+      % compute desired COM projection
+      % assumes minimal contact model for now
+      k = convhull(gc(1:2,1:4)');
+      lfootcen0 = [mean(gc(1:2,k),2);0];
+      k = convhull(gc(1:2,5:8)');
+      rfootcen0 = [mean(gc(1:2,4+k),2);0];
+      roffset = rfootcen0 - rfoot0(1:3);
+      loffset = lfootcen0 - lfoot0(1:3);
+
+      function pos = rfootCenter(rfootpos)
+        yaw = rfootpos(6);
+        offset = [cos(yaw), -sin(yaw); sin(yaw), cos(yaw)] * roffset(1:2);
+        pos = rfootpos(1:2)+offset;
+      end    
+
+      function pos = lfootCenter(lfootpos)
+        yaw = lfootpos(6);
+        offset = [cos(yaw), -sin(yaw); sin(yaw), cos(yaw)] * loffset(1:2);
+        pos = lfootpos(1:2)+offset;
+      end
+
+      function pos = feetCenter(rfootpos,lfootpos)
+        rcen = rfootCenter(rfootpos);
+        lcen = lfootCenter(lfootpos);
+        pos = mean([rcen,lcen],2);
+      end
+
+      rfootpos = [rfoot0, rfoot0];
+      lfootpos = [lfoot0, lfoot0];
+
+
+      p0 = feetCenter(rfoot0, lfoot0);
+      pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
+      width = sqrt(sum((rfoot0 - lfoot0) .^ 2));
+    end
   end
 end
 

@@ -9,15 +9,15 @@ ndx_l = int32([1:2:(num_steps-1), num_steps]);
 for p = poses
   [~,j] = min(sum((X - repmat(p, 1, length(X(1,:)))).^2));
   if find(ndx_r == j)
-    [fixed_steps{j,1},~] = biped.footPositions(X(:,j));
+    [fixed_steps{j,1},~] = biped.stepLocations(X(:,j));
   end
   if find(ndx_l == j)
-    [~, fixed_steps{j,2}] = biped.footPositions(X(:,j));
+    [~, fixed_steps{j,2}] = biped.stepLocations(X(:,j));
   end
 end
 % 
-% [fixed_steps{1,1}, fixed_steps{1,2}] = biped.footPositions(X(:,1));
-% [fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
+% [fixed_steps{1,1}, fixed_steps{1,2}] = biped.stepLocations(X(:,1));
+% [fixed_steps{end,1}, fixed_steps{end,2}] = biped.stepLocations(X(:,end));
 X = updateFreeFootsteps(X, biped, fixed_steps);
 
 
@@ -39,7 +39,7 @@ while 1
   if outputflag ~= 1 && outputflag ~= 2
     modified = 1;
   end
-  [Xright, Xleft] = biped.footPositions(X);
+  [Xright, Xleft] = biped.stepLocations(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
   
   [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
@@ -102,7 +102,7 @@ while 1
   ndx_r = int32([1, 2, 4:2:(total_steps-1), total_steps]);
   ndx_l = int32([1:2:(total_steps-1), total_steps]);
   
-  [Xright, Xleft] = biped.footPositions(X, ndx_r, ndx_l);
+  [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
   figure(22)
   plotFootstepPlan(traj, Xright, Xleft);
   drawnow

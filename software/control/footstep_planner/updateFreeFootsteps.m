@@ -34,7 +34,7 @@ X = locate_step_centers(x_flat);
 
 function [c, ceq] = nonlcon(x_flat)
   X = locate_step_centers(x_flat);
-  [Xright, Xleft] = biped.footPositions(X);
+  [Xright, Xleft] = biped.stepLocations(X);
   [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
   [d_l, r_l] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
   [d_alt_r, r_alt_r] = stepDistance(Xright(:,1:end-1), Xleft(:,2:end), 0);
@@ -50,7 +50,7 @@ end
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
-%   [Xright, Xleft] = biped.footPositions(X);
+%   [Xright, Xleft] = biped.stepLocations(X);
 %   [d1, r1] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end));
 %   [d2, r2] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end));
 %   c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
