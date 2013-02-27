@@ -30,13 +30,23 @@ ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi
 
 
 x_flat = fmincon(@cost, x_flat,[],[],[],[],...
-  reshape(lb, 1, []), reshape(ub, 1, []),[],...
+  reshape(lb, 1, []), reshape(ub, 1, []),@nonlcon,...
   optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off'));
 
 
 X = locate_step_centers(x_flat);
 
-
+function [c, ceq] = nonlcon(x_flat)
+  X = locate_step_centers(x_flat);
+  [Xright, Xleft] = biped.footPositions(X);
+  [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
+  [d_l, r_l] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
+  c = [d_r - biped.max_step_length;
+       d_l - biped.max_step_length;
+       r_r - biped.max_step_rot;
+       r_l - biped.max_step_rot];
+  ceq = 0;
+end
 
 function X = locate_step_centers(x_flat)
   x_flat = reshape(x_flat, 3, []);
