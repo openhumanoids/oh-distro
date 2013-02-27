@@ -1,4 +1,4 @@
-function [X] = updateFreeFootsteps(X, biped, fixed_steps)
+function [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps)
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
@@ -24,13 +24,23 @@ x_l = min(X, [], 2);
 x_u = max(X, [], 2);
 x_lb = x_l - abs(x_u - x_l) * 0.5;
 x_ub = x_u + abs(x_u - x_l) * 0.5;
+lb = repmat(x_lb, 1, length(X(1,:)));
+ub = repmat(x_ub, 1, length(X(1,:)));
+lb(6,:) = repmat(-pi, 1, length(X(1,:)));
+ub(6,:) = repmat(pi, 1, length(X(1,:)));
 
-lb = [repmat(x_lb(1), 1, length(X(1,:))); repmat(x_lb(2), 1, length(X(1,:))); -pi * ones(1, length(X(1,:)))];
-ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi * ones(1, length(X(1,:)))];
+ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
+lb(:, ndx_fixed) = X(:, ndx_fixed);
+ub(:, ndx_fixed) = X(:, ndx_fixed);
+
+% 
+% lb = [repmat(x_lb(1), 1, length(X(1,:))); repmat(x_lb(2), 1, length(X(1,:))); -pi * ones(1, length(X(1,:)))];
+% ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi * ones(1, length(X(1,:)))];
 
 
-x_flat = fmincon(@cost, x_flat,[],[],[],[],...
-  reshape(lb, 1, []), reshape(ub, 1, []),@nonlcon,...
+
+[x_flat, ~, outputflag] = fmincon(@cost, x_flat,[],[],[],[],...
+  reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
   optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off'));
 
 

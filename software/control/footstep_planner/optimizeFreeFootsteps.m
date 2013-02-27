@@ -26,17 +26,19 @@ function set_done()
   done = true;
 end
 
-if interactive
-  h = figure(22);
-  set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
-  set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));
-  uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
-end
+h = figure(22);
+set(h, 'WindowButtonDownFcn', @(s, e) mouse_down_handler(h));
+set(h, 'WindowButtonUpFcn', @(s, e) mouse_up_handler(h));
+uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done());
 
 drag_ndx = 1;
 
-while ~done
-  X = updateFreeFootsteps(X, biped, fixed_steps);
+while 1
+  modified = 0;
+  [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps);
+  if outputflag ~= 1 && outputflag ~= 2
+    modified = 1;
+  end
   [Xright, Xleft] = biped.footPositions(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
   
@@ -50,14 +52,13 @@ while ~done
               sum(r_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
     if  ((dist > num_steps * biped.max_step_length / 2 ...
           || rot > num_steps * biped.max_step_rot / 2) ...
-         && num_steps > 1) ...
-        || (dist > num_steps * biped.max_step_length * 3/4 ...
-          || rot > num_steps * biped.max_step_rot * 3/4)
+         && num_steps > 1)
       j = ndx_fixed(n);
       fixed_steps(j+3:end+2,:) = fixed_steps(j+1:end,:);
       fixed_steps([j+1,j+2],:) = repmat({[]}, 2, 2);
       X(:,j+3:end+2) = X(:,j+1:end);
       X(:,[j+1,j+2]) = interp1([0,1], X(:,[j,j+1])', [1/3, 2/3])';
+      modified = 1;
       if drag_ndx > j
         drag_ndx = drag_ndx + 2;
       end
@@ -70,6 +71,7 @@ while ~done
       fixed_steps(end-1:end,:) = [];
       X(:,j+1:end-2) = X(:,j+3:end);
       X(:,end-1:end) = [];
+      modified = 1;
       if drag_ndx > j+1
         drag_ndx = drag_ndx - 2;
       end
@@ -104,6 +106,9 @@ while ~done
   figure(22)
   plotFootstepPlan(traj, Xright, Xleft);
   drawnow
+  if (~interactive && ~modified) || (done)
+    break
+  end
 end
 
 
