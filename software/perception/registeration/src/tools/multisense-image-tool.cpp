@@ -1,4 +1,11 @@
-// mfallon sept 2012
+// Tool to take a multisense stereo image (images_t)
+// - republish images on seperate channels
+// - use disparity image and left and create a point cloud
+//
+// Various features incomplete as of feb 2013
+// e.g. support for rgb, masking, checking if images are actually left or disparity
+//      getting the camera calibration from the param server
+// mfallon 2013
 
 #include <stdio.h>
 #include <lcm/lcm.h>
