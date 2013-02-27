@@ -177,7 +177,7 @@ void StereoOdom::updateMotion(){
   Eigen::MatrixXd delta_cov;
   fovis::MotionEstimateStatusCode delta_status;
   vo_->getMotion(delta_camera, delta_cov, delta_status );
-  //vo_->fovis_stats();
+  vo_->fovis_stats();
   estimator_->voUpdate(utime_cur_, delta_camera);
   
   stringstream ss;
