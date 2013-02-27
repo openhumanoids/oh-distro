@@ -11,17 +11,21 @@ lcmtypes_build()
 
 add_subdirectory(src/joints2frames)
 
-add_subdirectory(src/motion_estimate)
-add_subdirectory(src/motion_estimate_scanmatcher_bolt_vertical)
-add_subdirectory(src/motion_estimate_scanmatcher_righted_vertical)
-add_subdirectory(src/motion_estimate_scanmatcher_rotating)
+add_subdirectory(src/voconfig)
+add_subdirectory(src/vofeatures)
+add_subdirectory(src/voestimator)
+add_subdirectory(src/fovision)
 
-add_subdirectory(src/motion_estimate_ypr_only)
-
-
-#find_package(PythonInterp REQUIRED)
-#pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/scripts)
+add_subdirectory(src/registeration)
+add_subdirectory(src/tools)
 
 pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
-#INSTALL_FILES(<dir> regexp)
 
+
+
+## Older Depreciated Stuff for Laser and Rotating Laser:
+#add_subdirectory(src/motion_estimate)
+#add_subdirectory(src/motion_estimate_scanmatcher_bolt_vertical)
+#add_subdirectory(src/motion_estimate_scanmatcher_righted_vertical)
+#add_subdirectory(src/motion_estimate_scanmatcher_rotating)
+#add_subdirectory(src/motion_estimate_ypr_only)

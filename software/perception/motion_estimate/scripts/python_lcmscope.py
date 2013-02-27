@@ -23,6 +23,7 @@ from fovis.update_t import update_t
 
 from drc.robot_state_t import robot_state_t
 from drc.imu_t import imu_t #... not to be confused with ins_t
+from drc.utime_t import utime_t #... not to be confused with ins_t
 ########################################################################################
 
 def timestamp_now (): return int (time.time () * 1000000)
@@ -107,6 +108,8 @@ def plot_data():
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,0]), 'r', linewidth=1,label="p")
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,1]), 'm', linewidth=1,label="q")
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,2]), 'y', linewidth=1,label="r")
+    print len(ins_angrate.utimes[1:])
+    print len(np.transpose(ins_angrate.v[1:,0]))
     ax4.plot(ins_angrate.utimes[1:], -1* np.transpose(ins_angrate.v[1:,0]), 'r:', linewidth=1,label="-g0")
     ax4.plot(ins_angrate.utimes[1:],     np.transpose(ins_angrate.v[1:,1]), 'm:', linewidth=1,label="g1")
     ax4.plot(ins_angrate.utimes[1:], -1* np.transpose(ins_angrate.v[1:,2]), 'y:', linewidth=1,label="-g2")
@@ -158,9 +161,20 @@ def plot_data():
     ax8.legend();   ax8.set_xlabel('Time');   ax8.set_ylabel('VO Body Delta Pos [m]');   ax8.grid(True)
     ax8.legend(loc=2,prop={'size':10})
     ax8.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    
+  if (len(utime_10hz_rate.utimes) >1):
+    plt.figure(3)
+    print "draw3"
+    ax9.cla()
+    ax9.plot(utime_10hz_rate.utimes[2:],     np.transpose(utime_10hz_rate.v[2:,0]), 'b',  linewidth=1,label="10Hz samples")
+    ax9.plot(utime_1hz_rate.utimes[2:],     np.transpose(utime_1hz_rate.v[2:,0]), 'r',  linewidth=1,label="1Hz samples")
+    ax9.legend(loc=2,prop={'size':10});   ax9.set_xlabel('Time '+ str(last_utime));   ax9.set_ylabel('Fraction Realtime');   ax9.grid(True)
+    ax9.set_ylim(0, 1);
+    ax9.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block- first_utime)/1000000 )
+    
   plt.plot()
   plt.draw()
-
+  
 
 def on_relvo(channel, data):
   m = update_t.decode(data)
@@ -184,7 +198,6 @@ def on_relvo(channel, data):
   #  print "out of order data, resetting now %s | last %s"   %(m.timestamp,last_utime)
   #  reset_all()
   #last_utime = m.timestamp
-  plot_data()
 
 # Microstrain INS/IMU Sensor:
 def on_ins(channel, data):
@@ -221,7 +234,6 @@ def on_state(channel, data):
     print "out of order data, resetting now %s | last %s"   %(m.utime,last_utime)
     reset_all()
   last_utime = m.utime
-  plot_data()
   #print "STATE     %.3f" % (m.utime)
 
 
@@ -240,8 +252,39 @@ def on_imu(channel, data):
   m = imu_t.decode(data)
   ins_angrate.append(m.utime,m.angular_velocity)
   ins_posaccel.append(m.utime,m.linear_acceleration)
+  #print "ins"
+  #print len(ins_angrate.utimes[1:])
+  #print len(np.transpose(ins_angrate.v[1:,0]))
   #print "Gazebo IMU:      %.3f" % (m.utime)
 
+
+  
+last_10hz_rbot_time =0
+last_10hz_wall_time = timestamp_now ()
+last_1hz_rbot_time =0
+last_1hz_wall_time = timestamp_now ()
+bot_utime_list=[]
+def on_utime(channel, data):  
+  global last_10hz_rbot_time, last_10hz_wall_time, last_1hz_rbot_time, last_1hz_wall_time
+  m = utime_t.decode(data)
+  curr_wall_time = timestamp_now ()
+  if (m.utime > last_1hz_rbot_time + 1000000):
+    frac = float( m.utime - last_1hz_rbot_time ) / float(curr_wall_time  - last_1hz_wall_time)
+    utime_1hz_rate.append(m.utime,frac)
+    last_1hz_wall_time = curr_wall_time
+    last_1hz_rbot_time = m.utime
+  if (m.utime > last_10hz_rbot_time + 100000):
+    #print "================="
+    #print m.utime
+    #print last_10hz_rbot_time
+    #print float(m.utime - last_10hz_rbot_time)
+    #print float(curr_wall_time  - last_10hz_rbot_time)
+    frac = float( m.utime - last_10hz_rbot_time ) / float(curr_wall_time  - last_10hz_wall_time)
+    #print frac
+    utime_10hz_rate.append(m.utime,frac)
+    last_10hz_wall_time = curr_wall_time
+    last_10hz_rbot_time = m.utime
+  
 #################################################################################
 
 lc = lcm.LCM()
@@ -258,6 +301,7 @@ vo_angdelta = SensorData(4); vo_angrate = SensorData(4);
 lf_force = SensorData(3); rf_force = SensorData(3); # left and right foot
 lf_torque = SensorData(3); rf_torque = SensorData(3); # left and right foot
 
+utime_10hz_rate = SensorData(1); utime_1hz_rate = SensorData(1); 
 
 left, bottom, width, height =0.07, 0.07, 0.395, 0.395
 box_ul = [left, 2*bottom+height, width, height]
@@ -271,6 +315,12 @@ ax6 = fig2.add_axes(box_ur)
 ax7 = fig2.add_axes(box_ll)
 ax8 = fig2.add_axes(box_lr)
 
+fig3 = plt.figure(num=3, figsize=(14, 10), dpi=80, facecolor='w', edgecolor='k')
+ax9 = fig3.add_axes(box_ul)
+ax10 = fig3.add_axes(box_ur)
+ax11 = fig3.add_axes(box_ll)
+ax12 = fig3.add_axes(box_lr)
+
 plt.interactive(True)
 plt.plot()
 plt.draw()
@@ -283,14 +333,16 @@ ax4 = fig1.add_axes(box_lr)
 
 def lcm_thread():
   sub1 = lc.subscribe("POSE_HEAD", on_pose) # required
-  #sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
-  sub3 = lc.subscribe("MICROSTRAIN_INS", on_ins)
-  sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
+  ##sub2 = lc.subscribe("STATE_ESTIMATOR_STATE", on_state)
+  #sub3 = lc.subscribe("MICROSTRAIN_INS", on_ins)
+  #sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
 
   # DRC msgs
-  sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
-  sub6 = lc.subscribe("HEAD_IMU", on_imu)
+  #sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
+  #sub6 = lc.subscribe("HEAD_IMU", on_imu)
+  sub7 = lc.subscribe("ROBOT_UTIME", on_utime)
 
+  
   while True:
     ## Handle LCM if new messages have arrived.
     lc.handle()
@@ -301,11 +353,12 @@ def lcm_thread():
   lc.unsubscribe(sub4)
   lc.unsubscribe(sub5)
   lc.unsubscribe(sub6)
+  lc.unsubscribe(sub7)
 
 t2 = Thread(target=lcm_thread)
 t2.start()
 
-time.sleep(1) # wait for some data- could easily remove
+time.sleep(3) # wait for some data- could easily remove
 
 plot_timing=0.1 # time between updates of the plots - in wall time
 while (1==1):
