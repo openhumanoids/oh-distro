@@ -19,12 +19,6 @@ ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
 lb(:, ndx_fixed) = X(:, ndx_fixed);
 ub(:, ndx_fixed) = X(:, ndx_fixed);
 
-% 
-% lb = [repmat(x_lb(1), 1, length(X(1,:))); repmat(x_lb(2), 1, length(X(1,:))); -pi * ones(1, length(X(1,:)))];
-% ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi * ones(1, length(X(1,:)))];
-
-
-
 [x_flat, ~, outputflag] = fmincon(@cost, x_flat,[],[],[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
   optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off'));
@@ -50,17 +44,10 @@ end
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
-%   [Xright, Xleft] = biped.stepLocations(X);
-%   [d1, r1] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end));
-%   [d2, r2] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end));
-%   c1 = sum(d1.^2 + (r1 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d1 .* r1 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-%   c2 = sum(d2.^2 + (r2 .* (biped.max_step_length / biped.max_step_rot)).^2 + (d2 .* r2 .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-%   c = c1 + c2;
   [d, r] = stepDistance(X(:,1:(end-1)), X(:,2:end),1);
   c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
 %   plot_lcm_poses(Xright(1:3,ndx_r)', Xright(6:-1:4,ndx_r)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
 %   plot_lcm_poses(Xleft(1:3,ndx_l)', Xleft(6:-1:4,ndx_l)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
-
 end
 
 function X = locate_step_centers(x_flat)

@@ -39,7 +39,7 @@ classdef FootstepPlanner
         g = obj.nav_goal_listener.getNextMessage(0);
         if ~isempty(g) && ~isempty(x0)
           [xtraj, ts] = obj.biped.roughWalkingPlan(x0, g, struct('plotting', true, ...
-  'interactive', true, 'traj_type', 'turn_and_go'));
+  'interactive', true));
           obj.plan_publisher.publish(ts, xtraj.eval(ts));
         end
       end
