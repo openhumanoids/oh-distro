@@ -21,7 +21,7 @@
 #include "imagefeatures.hpp"
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
-#include <lcmtypes/registeration.hpp>
+#include <lcmtypes/motion_estimate.hpp>
 
 
 class VoFeatures

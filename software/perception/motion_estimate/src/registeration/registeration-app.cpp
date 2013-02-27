@@ -39,7 +39,7 @@ If at any time an alignment to utimeA is not possible, we do VO until it is.
 
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/registeration.hpp>
+#include <lcmtypes/motion_estimate.hpp>
 
 
 #define DO_TIMING_PROFILE TRUE
