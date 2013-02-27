@@ -60,18 +60,19 @@ classdef Biped
         error('Invalid trajectory type specified: %s', options.traj_type);
       end
       
-      [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.max_step_length,...
-        obj.step_width, obj.max_step_rot);
-      [Xright, Xleft] = obj.footPositions(traj.eval(lambda), ndx_r, ndx_l);
-      if options.plotting
-        figure(21)
-        plotFootstepPlan(traj, Xright, Xleft);
-        drawnow
-      end
+%       [lambda, ndx_r, ndx_l] = constrainedFootsteps(traj, obj.max_step_length,...
+%         obj.step_width, obj.max_step_rot);
+%       [Xright, Xleft] = obj.footPositions(traj.eval(lambda), ndx_r, ndx_l);
+%       if options.plotting
+%         figure(21)
+%         plotFootstepPlan(traj, Xright, Xleft);
+%         drawnow
+%       end
+       lambda = [0,0.5,1];
 %       plot_lcm_poses(Xright(1:3,:)', Xright([6,5,4],:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
 %       plot_lcm_poses(Xleft(1:3,:)', Xright([6,5,4],:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
 
-      [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, [start_pos, poses], obj, ndx_r, ndx_l, options.interactive);
+      [Xright, Xleft] = optimizeFreeFootsteps(traj, lambda, [start_pos, poses], obj, options.interactive);
 %       if options.interactive
 % %         [~, Xright, Xleft] = interactiveFootstepOptimization(traj,lambda,obj.max_step_length,obj.step_width,obj.max_step_rot,ndx_r,ndx_l);
 %          [Xright, Xleft] = interactiveFreeFootstepOptimization(traj, lambda, obj, ndx_r, ndx_l);

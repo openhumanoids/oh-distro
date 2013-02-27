@@ -31,7 +31,7 @@ ub = [repmat(x_ub(1), 1, length(X(1,:))); repmat(x_ub(2), 1, length(X(1,:))); pi
 
 x_flat = fmincon(@cost, x_flat,[],[],[],[],...
   reshape(lb, 1, []), reshape(ub, 1, []),[],...
-  optimset('MaxIter', 10, 'Display', 'off'));
+  optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off'));
 
 
 X = locate_step_centers(x_flat);
