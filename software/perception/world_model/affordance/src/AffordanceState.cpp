@@ -87,23 +87,10 @@ AffordanceState::AffordanceState(const int &uid, const int &mapId,
                                  const Eigen::Vector3f &color)
   : _map_id(mapId), _uid(uid), _otdf_type(AffordanceState::UNKNOWN)
 {
-	//---set xyz roll pitch yaw from the frame
-	_params[X_NAME] = frame.p[0];
-	_params[Y_NAME] = frame.p[1];
-	_params[Z_NAME] = frame.p[2];
-
-	double roll,pitch,yaw;
-	frame.M.GetRPY(roll,pitch,yaw);
-	_params[ROLL_NAME] 	= roll;
-	_params[PITCH_NAME] = pitch;
-	_params[YAW_NAME] 	= yaw;
-
-	//------set the color
-
-	_params[R_COLOR_NAME] = color[0];
-	_params[G_COLOR_NAME] = color[1];
-	_params[B_COLOR_NAME] = color[2];
+  setFrame(frame);
+  setColor(color);
 }
+
 
 AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
 {
@@ -118,15 +105,105 @@ AffordanceState& AffordanceState::operator=( const AffordanceState& rhs )
   return *this;
 }
 
+//======================MUTATORS
 /**sets the state of this to that of msg*/
 void AffordanceState::fromMsg(const drc::affordance_t *msg)
 {
-  //clear an object state
-  _states.clear();
-  _params.clear();
-  _ptinds.clear();
+  clear();  //clear any object state
   initHelper(msg);
 }
+
+void AffordanceState::setFrame(const KDL::Frame &frame)
+{
+  //---set xyz roll pitch yaw from the frame
+  _params[X_NAME] = frame.p[0];
+  _params[Y_NAME] = frame.p[1];
+  _params[Z_NAME] = frame.p[2];
+  
+  double roll,pitch,yaw;
+  frame.M.GetRPY(roll,pitch,yaw);
+  _params[ROLL_NAME] 	= roll;
+  _params[PITCH_NAME] = pitch;
+  _params[YAW_NAME] 	= yaw;
+}
+
+void AffordanceState::setColor(const Eigen::Vector3f &color)
+{
+  _params[R_COLOR_NAME] = color[0];
+  _params[G_COLOR_NAME] = color[1];
+  _params[B_COLOR_NAME] = color[2];  
+}
+
+
+void AffordanceState::clear()
+{
+  _utime = 0;
+  _map_id = 0;
+  _uid = 0;
+  
+  _params.clear();  
+  _states.clear();
+  _ptinds.clear();
+  
+  _otdf_type = AffordanceState::UNKNOWN;
+}
+
+void AffordanceState::setToBox(const double length, const double width,
+			       const double height,
+			       const int &uid, const int &mapId,
+			       const KDL::Frame &frame,
+			       const Eigen::Vector3f &color)
+{
+  clear();
+  
+  _params[LENGTH_NAME] = length;
+  _params[WIDTH_NAME] = width;
+  _params[HEIGHT_NAME] = height;
+  _otdf_type = AffordanceState::BOX;
+
+  //set rest of the fields
+  _uid = uid;
+  _map_id = mapId;
+  setFrame(frame);
+  setColor(color);;    
+}
+
+
+
+void AffordanceState::setToSphere(const double radius,
+				  const int &uid, const int &mapId,
+				  const KDL::Frame &frame,
+				  const Eigen::Vector3f &color)
+{
+  clear();
+
+  _params[RADIUS_NAME] = radius;
+  _otdf_type = AffordanceState::SPHERE;
+  //set rest of the fields
+  _uid = uid;
+  _map_id = mapId;
+  setFrame(frame);
+  setColor(color);;    
+}
+
+
+void AffordanceState::setToCylinder(const double length, const double radius,
+                                    const int &uid, const int &mapId,
+                                    const KDL::Frame &frame,
+                                    const Eigen::Vector3f &color)
+{
+  clear();
+
+  _params[LENGTH_NAME] = length;
+  _params[RADIUS_NAME] = radius;
+  _otdf_type = AffordanceState::CYLINDER;
+  //set rest of the fields
+  _uid = uid;
+  _map_id = mapId;
+  setFrame(frame);
+  setColor(color);;    
+}
+
 
 void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
 {

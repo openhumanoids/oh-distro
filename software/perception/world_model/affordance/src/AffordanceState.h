@@ -68,15 +68,42 @@ namespace affordance
                     const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
     AffordanceState(const AffordanceState &other);
     AffordanceState& operator=( const AffordanceState& rhs );
-    
+    virtual ~AffordanceState();    
+
+  private:
     void initHelper(const drc::affordance_t *msg);
-    virtual ~AffordanceState();
 
     //mutators
+  public:
     void fromMsg(const drc::affordance_t *msg);
 
+    void setFrame(const KDL::Frame &frame);
+    void setColor(const Eigen::Vector3f &color);
+
+	     
+    void setToBox(const double length = 0, const double width = 0,
+		  const double height = 0,
+		  const int &uid = 0, const int &mapId = 0,
+		  const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+		  const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+		  
+		  
+
+    void setToSphere(const double radius,
+		     const int &uid = 0, const int &mapId = 0,
+		     const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+		     const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+
+
+    void setToCylinder(const double length = 0, const double radius = 0,
+		       const int &uid = 0, const int &mapId = 0,
+		       const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)), 
+      		       const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+    
     void setType(const OTDF_TYPE &type);
     
+    void clear();
+
     //observers
   public:
     void toMsg(drc::affordance_t *affordanceMsg) const;
