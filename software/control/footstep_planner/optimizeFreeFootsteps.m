@@ -15,9 +15,6 @@ for p = poses
     [~, fixed_steps{j,2}] = biped.footPositions(X(:,j));
   end
 end
-% 
-% [fixed_steps{1,1}, fixed_steps{1,2}] = biped.footPositions(X(:,1));
-% [fixed_steps{end,1}, fixed_steps{end,2}] = biped.footPositions(X(:,end));
 X = updateFreeFootsteps(X, biped, fixed_steps);
 
 
@@ -81,26 +78,6 @@ while ~done
   total_steps = length(X(1,:));
   ndx_r = int32([1, 2, 4:2:(total_steps-1), total_steps]);
   ndx_l = int32([1:2:(total_steps-1), total_steps]);
-  
-%   for j = 1:length(d_r)
-%     if (~isempty(fixed_steps{j,1}) || ~isempty(fixed_steps{j,2})) && ...
-%        (~isempty(fixed_steps{j+1,1}) || ~isempty(fixed_steps{j+1,2}))
-%       continue
-%     end
-%     if (d_r(j) > biped.max_step_length/2) || ...
-%        (r_r(j) > biped.max_step_rot/2) || ...
-%        (d_l(j) > biped.max_step_length/2) || ...
-%        (r_l(j) > biped.max_step_length/2)
-%       fixed_steps(j+3:end+2,:) = fixed_steps(j+1:end,:);
-%       fixed_steps([j+1,j+2],:) = repmat({[]}, 2, 2);
-%       X(:,j+3:end+2) = X(:,j+1:end);
-%       X(:,[j+1,j+2]) = interp1([0,1], X(:,[j,j+1])', [1/3, 2/3])';
-%       num_steps = length(X(1,:));
-%       ndx_r = int32([1, 2, 4:2:(num_steps-1), num_steps]);
-%       ndx_l = int32([1:2:(num_steps-1), num_steps]);
-%       break
-%     end
-%   end
   [Xright, Xleft] = biped.footPositions(X, ndx_r, ndx_l);
   figure(22)
   plotFootstepPlan(traj, Xright, Xleft);
