@@ -25,6 +25,10 @@ pods_use_pkg_config_packages(drc-image-writer-multisense
                 lcmtypes_multisense
                 ${PCL_LIBRARIES}
                 pointcloud_vis
+                pointcloud_lcm
+                bot2-core
+                bot2-frames
+                bot2-frames_cpp
                 opencv)
 pods_install_executables(drc-image-writer-multisense )
 
