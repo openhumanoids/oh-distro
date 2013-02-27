@@ -51,22 +51,6 @@ group "2.gazebo" {
         host = "localhost";
     }
 }
-group "2.head_control" {
-    cmd "head_0" {
-        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
-        host = "localhost";
-    }
-    cmd "head_45" {
-        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
-        host = "localhost";
-    }
-    cmd "head_90" {
-        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
-        host = "localhost";
-    }
-}
-
-
 
 group "3.sensing" {
     cmd "icompress" {
@@ -134,9 +118,28 @@ group "6.drake_base" {
 
 
 
+group "X.simple_control" {
+    cmd "head_0" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
+        host = "localhost";
+    }
+    cmd "head_45" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
+        host = "localhost";
+    }
+    cmd "head_90" {
+        exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
+        host = "localhost";
+    }
+    cmd "individual_joints" {
+        exec = "rosrun tutorial_atlas_control traj_gui.py";
+        host = "localhost";
+    }
+}
 
 
-group "misc" {
+
+group "X.misc" {
     cmd "robot_spy" {
         exec = "bot-spy";
         host = "localhost";
@@ -149,13 +152,21 @@ group "misc" {
         exec = "rosrun keyboard_teleop keyboard_teleop";
         host = "localhost";
     }
-    cmd "control_manager" {
-        exec = "base_controller_manager";
+    cmd "lcmscope" {
+        exec = "drc-lcmscope";
+        host = "localhost";
+    }
+    cmd "individual_joints" {
+        exec = "rosrun tutorial_atlas_control traj_gui.py";
+        host = "localhost";
+    }
+    cmd "stereo-bm" {
+        exec = "stereo-bm";
         host = "localhost";
     }
 }
 
-group "motion"{
+group "X.motion"{
     cmd "estpub_sensing" {
         exec = "est_robot_state_publisher";
         host = "localhost";
