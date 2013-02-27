@@ -19,8 +19,8 @@ pods_use_pkg_config_packages(drc-image-writer
 pods_install_executables(drc-image-writer )
 
 
-add_executable(drc-image-writer-multisense image-writer-multisense.cpp  )
-pods_use_pkg_config_packages(drc-image-writer-multisense
+add_executable(drc-multisense-image-tool multisense-image-tool.cpp  )
+pods_use_pkg_config_packages(drc-multisense-image-tool
                 lcmtypes_bot2-core
                 lcmtypes_multisense
                 ${PCL_LIBRARIES}
@@ -30,7 +30,7 @@ pods_use_pkg_config_packages(drc-image-writer-multisense
                 bot2-frames
                 bot2-frames_cpp
                 opencv)
-pods_install_executables(drc-image-writer-multisense )
+pods_install_executables(drc-multisense-image-tool )
 
 
 
