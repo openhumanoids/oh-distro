@@ -6,6 +6,10 @@
 // e.g. support for rgb, masking, checking if images are actually left or disparity
 //      getting the camera calibration from the param server
 // mfallon 2013
+//
+// Example usage:
+// drc-multisense-image-tool -p -s -d 4
+
 
 #include <stdio.h>
 #include <lcm/lcm.h>
