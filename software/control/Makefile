@@ -12,10 +12,14 @@ BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
 
+JAVAFILES := $(wildcard src/*.java)
+CLASSFILES = $(JAVAFILES:%.java=%.class) 
+
+
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
 
-all: 
+all: $(BUILD_PREFIX)/share/java/drc_control.jar
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
@@ -25,7 +29,15 @@ all:
 	done
 	@# Place additional commands here if you have any
 
+$(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
+	jar -cf $@ $(CLASSFILES)
+
+%.class : %.java
+	javac $<
+
 clean:
+	-rm $(CLASSFILES)
+	-rm $(BUILD_PREFIX)/share/java/drc_control.jar 	
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
 		echo "-- $$subdir"; \
@@ -33,3 +45,4 @@ clean:
 		$(MAKE) -C $$subdir clean; \
 	done
 	@# Place additional commands here if you have any
+

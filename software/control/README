@@ -1,1 +1,21 @@
-make sure you add the frames directory to your matlab path --sk
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         control
+Maintainers:  Russ Tedrake <russt@mit.edu>
+	      Mark Pearrow <mpearrow@csail.mit.edu>
+	      Scott Kuindersma <scottk@csail.mit.edu>
+Summary:      DRC planning and control POD
+Description:
+  DRC specific routines for planning and control (with drake included as an external)
+
+Requirements: 
+
+License:      FILL-ME-IN
