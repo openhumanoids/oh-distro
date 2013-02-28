@@ -3,12 +3,13 @@
 
 using namespace boost::assign; // bring 'operator+=()' into scope
 
+#define LINK_OFFSET 128
 #define DO_TIMING_PROFILE FALSE
 
 SimExample::SimExample(int argc, char** argv,
 	int height,int width, boost::shared_ptr<lcm::LCM> &lcm_,
-        bool output_color_):
-        height_(height), width_(width), lcm_(lcm_), output_color_(output_color_){
+        int output_color_mode_):
+        height_(height), width_(width), lcm_(lcm_), output_color_mode_(output_color_mode_){
 
   initializeGL (argc, argv);
   
@@ -32,17 +33,18 @@ SimExample::SimExample(int argc, char** argv,
   if (1==0){ // set world at launch:
   // 2. read mesh and setup model:
   std::cout << "About to read: " << argv[2] << std::endl;
-  pcl::PolygonMesh mesh;	// (new pcl::PolygonMesh);
-  pcl::io::loadPolygonFile (argv[2], mesh);
-  pcl::PolygonMesh::Ptr cloud (new pcl::PolygonMesh (mesh));
+  pcl::PolygonMesh combined_mesh;	// (new pcl::PolygonMesh);
+  pcl::io::loadPolygonFile (argv[2], combined_mesh);
+  pcl::PolygonMesh::Ptr combined_mesh_ptr_temp (new pcl::PolygonMesh (combined_mesh));
+  combined_mesh_ptr_ = combined_mesh_ptr_temp;
   
   // Not sure if PolygonMesh assumes triangles if to, TODO: Ask a developer
-  PolygonMeshModel::Ptr model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, cloud));
+  PolygonMeshModel::Ptr model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_));
   scene_->add (model);
   
   std::cout << "Just read " << argv[2] << std::endl;
-  std::cout << mesh.polygons.size () << " polygons and "
-	    << mesh.cloud.data.size () << " triangles\n";  
+  std::cout << combined_mesh.polygons.size () << " polygons and "
+	    << combined_mesh.cloud.data.size () << " triangles\n";  
   }
 	    
   // works well for MIT CSAIL model 3rd floor:
@@ -66,34 +68,34 @@ SimExample::SimExample(int argc, char** argv,
   
   // Duplicates the list in collections renderer:
   colors_+= 
-      51/255.0, 160/255.0, 44/255.0,  //0
-      166/255.0, 206/255.0, 227/255.0,
-      178/255.0, 223/255.0, 138/255.0,//6
-      31/255.0, 120/255.0, 180/255.0,
-      251/255.0, 154/255.0, 153/255.0,// 12
-      227/255.0, 26/255.0, 28/255.0,
-      253/255.0, 191/255.0, 111/255.0,// 18
-      106/255.0, 61/255.0, 154/255.0,
-      255/255.0, 127/255.0, 0/255.0, // 24
-      202/255.0, 178/255.0, 214/255.0,
-      1.0, 0.0, 0.0, // red // 30
-      0.0, 1.0, 0.0, // green
-      0.0, 0.0, 1.0, // blue// 36
-      1.0, 1.0, 0.0,
-      1.0, 0.0, 1.0, // 42
-      0.0, 1.0, 1.0,
-      0.5, 1.0, 0.0,
-      1.0, 0.5, 0.0,
-      0.5, 0.0, 1.0,
-      1.0, 0.0, 0.5,
-      0.0, 0.5, 1.0,
-      0.0, 1.0, 0.5,
-      1.0, 0.5, 0.5,
-      0.5, 1.0, 0.5,
-      0.5, 0.5, 1.0,
-      0.5, 0.5, 1.0,
-      0.5, 1.0, 0.5,
-      0.5, 0.5, 1.0;  
+      51, 160, 44,  //0
+      166, 206, 227,
+      178, 223, 138,//6
+      31, 120, 180,
+      251, 154, 153,// 12
+      227, 26, 28,
+      253, 191, 111,// 18
+      106, 61, 154,
+      255, 127, 0, // 24
+      202, 178, 214,
+      255,   0,   0, // red // 30
+        0, 255,   0, // green
+        0,   0, 255, // blue// 36
+      255, 255,   0,
+      255,   0, 255, // 42
+        0, 255, 255,
+      127, 255,   0,
+      255, 127,   0,
+      127,   0, 255,
+      255,   0, 127,
+        0, 127, 255,
+        0, 255, 127,
+      255, 127, 127,
+      127, 255, 127,
+      127, 127, 255,
+      127, 127, 255,
+      127, 255, 127,
+      127, 127, 255;  
   
 }
 
@@ -189,14 +191,14 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 }
 
 
-void setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, float r,float g, float b ){
+void SimExample::setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b ){
   pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
   pcl::fromROSMsg(mesh->cloud, mesh_cloud_1st);
 
   for (size_t i=0;i< mesh_cloud_1st.points.size() ; i++){
-    mesh_cloud_1st.points[i].r = r*255.0;
-    mesh_cloud_1st.points[i].g = g*255.0;
-    mesh_cloud_1st.points[i].b = b*255.0;
+    mesh_cloud_1st.points[i].r = r;
+    mesh_cloud_1st.points[i].g = g;
+    mesh_cloud_1st.points[i].b = b;
   }
       
   // transform
@@ -204,9 +206,19 @@ void setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, float r,float g, float b 
 }
 
 bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
-
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
-  pcl::fromROSMsg(meshA->cloud, cloudA);
+  // HACKY BUG FIX: 
+  // issue: if meshA->cloud contains no data, then it contains no cloud.fields
+  //        so it will complain and give a warning when we try to copy to cloudA
+  //        Failed to find match for field 'x'.
+  //        Failed to find match for field 'y'.
+  //        Failed to find match for field 'z'.
+  //        Failed to find match for field 'rgb'.  
+  // Instead dont try to copy if empty...
+  if ( meshA->cloud.fields.size()  !=0){
+    pcl::fromROSMsg(meshA->cloud, cloudA);
+  }
+  
   int original_size = cloudA.points.size() ;
 
   //cout << original_size << " is the cloud before (insize) size\n";
@@ -227,13 +239,21 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   } 
   
   cloudA += cloudB;
-  pcl::toROSMsg (cloudA, meshA->cloud);
   
+  pcl::toROSMsg (cloudA, meshA->cloud);
+
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
   
   return true;
 }
+
+
+// cat meshB onto combined_mesh_ptr_
+void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
+  mergePolygonMesh(combined_mesh_ptr_,meshB);  
+}
+
 
 
 void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
@@ -246,12 +266,15 @@ void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
     mesh_struct.polygon_mesh = getPolygonMesh(mesh_struct.file_path);          
     
     
-    if(output_color_){
+    if(output_color_mode_==0){
       // Set the mesh to a false color:
       int j =i%(colors_.size()/3);
       setPolygonMeshColor(mesh_struct.polygon_mesh, colors_[j*3], colors_[j*3+1], colors_[j*3+2] );
-    }else{
-      setPolygonMeshColor(mesh_struct.polygon_mesh, 1.0,1.0,1.0 );
+    }else if(output_color_mode_==1){
+      setPolygonMeshColor(mesh_struct.polygon_mesh, LINK_OFFSET + (int) i ,
+                          0,0 );
+    }else{      
+      setPolygonMeshColor(mesh_struct.polygon_mesh, 255,0,0 ); // last two are not used
     }
     
     polymesh_map_.insert(make_pair( link_names_in[i] , mesh_struct));
@@ -291,7 +314,8 @@ SimExample::createScene (std::vector<std::string> object_names,
   #endif
     
   pcl::PolygonMesh combined_mesh;
-  pcl::PolygonMesh::Ptr combined_mesh_ptr(new pcl::PolygonMesh(combined_mesh));
+  pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh(combined_mesh));
+  combined_mesh_ptr_ = combined_mesh_ptr_temp;
   for (size_t i=0; i < object_names.size() ; i++ ) { 
     // skip the head and hokuyo_link (which cannot be seen and are large meshes
     if ( object_names[i].compare("head") == 0){ 
@@ -318,26 +342,22 @@ SimExample::createScene (std::vector<std::string> object_names,
     pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, pose_f_1st.translation(), pose_quat_1st);  
     pcl::toROSMsg (mesh_cloud_1st, mesh_ptr_1st_transformed->cloud);  
     
-    mergePolygonMesh(combined_mesh_ptr,mesh_ptr_1st_transformed);
+    mergePolygonMesh(combined_mesh_ptr_,mesh_ptr_1st_transformed);
   }  
-  
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-
-  //  TriangleMeshModel::Ptr combined_model = TriangleMeshModel::Ptr (new TriangleMeshModel (combined_mesh_ptr));
-  PolygonMeshModel::Ptr combined_model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr));
-
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-  #endif
-  
-  scene_->add(combined_model); 
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"createScene");
   #endif
+
+}    
+    
+void
+SimExample::addScene (){    
+  // NB: using triangles would make things much quicker....
+  //  TriangleMeshModel::Ptr combined_model = TriangleMeshModel::Ptr (new TriangleMeshModel (combined_mesh_ptr_));
+  PolygonMeshModel::Ptr combined_model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_));
+  scene_->add(combined_model);   
 }
 
 
@@ -606,7 +626,7 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
   int n_colors;
   int8_t pixelformat;
   uint8_t* img_buff;
-  if (output_color_){
+  if (output_color_mode_==0){
     n_colors = 3;
     img_buff = new uint8_t[npixels * n_colors];
     for (int y = 0; y <  rl_->getHeight(); ++y)

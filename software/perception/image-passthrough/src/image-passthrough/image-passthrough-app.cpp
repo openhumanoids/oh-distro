@@ -1,3 +1,7 @@
+// 0 - free (black)
+// 64-??? affordances
+// 128-??? joints
+
 // TODO: Can significantly reduce the latency by transmitting the image timestamp directly 
 // to this program - which will be quicker than waiting for the message to show up alone.
 // TODO: - Improve mergePolygonMesh() code avoiding mutliple conversions and keeping the polygon list
@@ -28,12 +32,17 @@
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
+#include <rgbd_simulation/rgbd_primitives.hpp> // to create basic affordance meshes
+
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 
 #define DO_TIMING_PROFILE FALSE
 #include <ConciseArgs>
 
+#define PCL_VERBOSITY_LEVEL L_ERROR
+
+#define AFFORDANCE_OFFSET 64
 
 using namespace std;
 using namespace drc;
@@ -52,7 +61,9 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
-    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
+    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    
     std::string camera_channel_;
 
     bot_lcmgl_t* lcmgl_;
@@ -62,6 +73,10 @@ class Pass{
     // OpenGL:
     void sendOutput(int64_t utime);
     SimExample::Ptr simexample;
+    
+    boost::shared_ptr<rgbd_primitives>  prim_;
+    pcl::PolygonMesh::Ptr aff_mesh_ ;
+
     
     // Last robot state: this is used to extract link positions:
     drc::robot_state_t last_rstate_;
@@ -77,14 +92,16 @@ class Pass{
     std::string robot_name_;
     std::string urdf_xml_string_; 
     
+    int output_color_mode_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 };
 
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_):          
-    lcm_(lcm_),urdf_parsed_(false), camera_channel_(camera_channel_){
+    lcm_(lcm_),urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_){
 
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
+  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
   lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
   urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
@@ -93,14 +110,18 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(9999,"Pass - Pose - Left",5,1) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(9998,"Pass - Frames",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(9999,"iPass - Pose - Left",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(9998,"iPass - Frames",5,1) );
   
   float colors_b[] ={0.0,0.0,0.0};
   std::vector<float> colors_v;
   colors_v.assign(colors_b,colors_b+4*sizeof(float));
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"Pass - Pose - Left Original",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"Pass - Sim Cloud"     ,1,1, 9995,0, colors_v ));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"iPass - Pose - Left Original",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"iPass - Sim Cloud"     ,1,1, 9995,0, colors_v ));
+  
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"iPass - Null",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
+  
   
   verbose_ =false;  
 
@@ -111,9 +132,15 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   double fy = 610.1778;
   double cx = 512.5;
   double cy = 272.5;
-  bool output_color=false;
-  simexample = SimExample::Ptr (new SimExample (argc, argv, height,width , lcm_, output_color));
+  output_color_mode_=1; // 0 =rgb, 1=grayscale mask, 2=binary black/white grayscale mask
+  simexample = SimExample::Ptr (new SimExample (argc, argv, height,width , lcm_, output_color_mode_));
+  
   simexample->setCameraIntrinsicsParameters (width, height, fx, fy, cx, cy);
+  
+  
+  pcl::PolygonMesh::Ptr aff_mesh_ptr_temp(new pcl::PolygonMesh());
+  aff_mesh_ = aff_mesh_ptr_temp;
+    
 }
 
 // same as bot_timestamp_now():
@@ -125,7 +152,7 @@ int64_t _timestamp_now()
 }
 
 
-// Output the simulated output to file:
+// Output the simulated output to file/lcm:
 void Pass::sendOutput(int64_t utime){ 
   
   bool do_timing=false;
@@ -143,7 +170,7 @@ void Pass::sendOutput(int64_t utime){
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"sendOutput");
   }
-  
+   
   /*
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_out (new pcl::PointCloud<pcl::PointXYZRGB>);
   // Save camera relative:
@@ -167,6 +194,37 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 }
 
 
+
+// Receive affordances and create a combined mesh in world frame
+// TODO: properly parse the affordances
+void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg){
+  cout << "got "<< msg->naffs <<" affs\n"; 
+  pcl::PolygonMesh::Ptr aff_mesh_temp(new pcl::PolygonMesh());
+  aff_mesh_ = aff_mesh_temp;
+  for (int i=0; i < msg->naffs; i++){
+    Eigen::Quaterniond quat = euler_to_quat( msg->affs[i].params[5] , msg->affs[i].params[4] , msg->affs[i].params[3] );             
+    Eigen::Isometry3d transform;
+    transform.setIdentity();
+    transform.translation()  << msg->affs[i].params[0] , msg->affs[i].params[1], msg->affs[i].params[2];
+    transform.rotate(quat);  
+    pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh());
+    combined_mesh_ptr_temp = prim_->getCylinderWithTransform(transform, msg->affs[i].params[6], msg->affs[i].params[6], msg->affs[i].params[7]);
+    // demo of bounding boxes: (using radius as x and y dimensions
+    //combined_mesh_ptr_temp = prim_->getCubeWithTransform(transform, msg->affs[i].params[6], msg->affs[i].params[6], msg->affs[i].params[7]);
+
+    if(output_color_mode_==0){
+      // Set the mesh to a false color:
+      int j =i%(simexample->colors_.size()/3);
+      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
+    }else if(output_color_mode_==1){
+      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, 
+                                      AFFORDANCE_OFFSET + i,0,0 ); // using red field as gray, last digits ignored
+    }else{
+      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, 255,0,0 ); // white (last digits ignored
+    }
+    simexample->mergePolygonMesh(aff_mesh_, combined_mesh_ptr_temp); 
+  }
+}
 
 
 
@@ -200,7 +258,7 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
           
           mesh_link_names.push_back( it->first );
           // Verify the existance so the file:
-          bool get_convex_hull_path = true;
+          bool get_convex_hull_path = false;
           
           mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, get_convex_hull_path) );
         }
@@ -284,6 +342,10 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 // Initially we will transmit a mask 1-for-1 with the image
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
+  if (!urdf_parsed_){
+    std::cout << "URDF not parsed, ignoring image\n";
+    return;
+  }
   if (!init_rstate_){
     std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
     return;
@@ -365,10 +427,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     world_to_jointTs.push_back(body_to_jointT);
     counter++;
   }
-  pc_vis_->pose_collection_to_lcm_from_list(9998, world_to_jointTs); // all joints in world frame
-  pc_vis_->text_collection_to_lcm(9997, 9998, "Pass - Frames [Labels]", link_names, world_to_joint_utimes );    
+  
+  if(verbose_){
+    pc_vis_->pose_collection_to_lcm_from_list(9998, world_to_jointTs); // all joints in world frame
+    pc_vis_->text_collection_to_lcm(9997, 9998, "IPass - Frames [Labels]", link_names, world_to_joint_utimes );    
 
-  if (verbose_){
     cout << "link_tfs size: " << link_tfs.size() <<"\n";
     for (size_t i=0; i < link_tfs.size() ; i ++){
       double x,y,z,w;
@@ -384,9 +447,10 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     }    
   }
   
-  
-  Isometry3dTime world_to_cameraTorig = Isometry3dTime( msg->utime, world_to_camera);
-  pc_vis_->pose_to_lcm_from_list(9995, world_to_cameraTorig);
+  if (verbose_){
+    Isometry3dTime world_to_cameraTorig = Isometry3dTime( msg->utime, world_to_camera);
+    pc_vis_->pose_to_lcm_from_list(9995, world_to_cameraTorig);
+  }
   
   
   // Fix to rotate Camera into correct frame:
@@ -402,18 +466,26 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     std::stringstream ss;
     print_Isometry3d(world_to_camera, ss);
     cout << ss.str() << " head_pose\n";
+
+    Isometry3dTime world_to_cameraT = Isometry3dTime( msg->utime, world_to_camera);
+    pc_vis_->pose_to_lcm_from_list(9999, world_to_cameraT);
   }
     
-  Isometry3dTime world_to_cameraT = Isometry3dTime( msg->utime, world_to_camera);
-  pc_vis_->pose_to_lcm_from_list(9999, world_to_cameraT);
-    
-  // Pull the trigger and render scene:
-  
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
   
+  // Pull the trigger and render scene:
   simexample->createScene(link_names, link_tfs_e);
+  simexample->mergePolygonMeshToCombinedMesh( aff_mesh_);
+  if (verbose_){ // Visualize the entire world thats about to be renderered:
+    Eigen::Isometry3d null_pose;
+    null_pose.setIdentity();
+    Isometry3dTime null_poseT = Isometry3dTime(msg->utime, null_pose);  
+    pc_vis_->pose_to_lcm_from_list(9994, null_poseT);
+    pc_vis_->mesh_to_lcm_from_list(9993, simexample->getCombinedMesh() , msg->utime , msg->utime);
+  }
+  simexample->addScene();
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());

@@ -49,7 +49,7 @@ class SimExample
     typedef boost::shared_ptr<const SimExample> ConstPtr;
 	
     SimExample (int argc, char** argv,
-		int height,int width, boost::shared_ptr<lcm::LCM> &lcm_, bool output_color_);
+		int height,int width, boost::shared_ptr<lcm::LCM> &lcm_, int output_color_mode_);
     void initializeGL (int argc, char** argv);
     
     Scene::Ptr scene_;
@@ -72,7 +72,10 @@ class SimExample
     // NOTE: generalised to allow rendering of any set of objects. link = object
     void createScene (std::vector<std::string> object_names,
                       std::vector<Eigen::Isometry3d> object_tfs);
-    
+
+    void mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB);
+    // Actually upload to GPU
+    void addScene ();
     void doSim (Eigen::Isometry3d pose_in);
 
     void write_score_image(const float* score_buffer,std::string fname);
@@ -87,20 +90,30 @@ class SimExample
                                       float camera_cx_in,
                                       float camera_cy_in);
 
+    pcl::PolygonMesh::Ptr getCombinedMesh(){ return combined_mesh_ptr_; }
+
+    // r,g,b are assumed to be in the range 0->255 where 0,0,0 is white and 1,1,1 black
+    void setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b );
+
+    
+    // Duplicates the list in collections renderer:
+    // assumed to be 3xN colors
+    std::vector < int > colors_;       
+    
   private:
     uint16_t t_gamma[2048];  
 
     // either output a color mash or a grey mask
-    bool output_color_;
+    bool output_color_mode_;
     
-    // Duplicates the list in collections renderer:
-    // assumed to be 3xN colors
-    std::vector < float > colors_;       
     
     // of platter, usually 640x480
     int width_;
     int height_;
     boost::shared_ptr<lcm::LCM> lcm_;
+    
+    
+    pcl::PolygonMesh::Ptr combined_mesh_ptr_;
 };
 
 

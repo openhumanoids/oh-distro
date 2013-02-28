@@ -9,5 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/rgbd_primitives)
+
 add_subdirectory(src/rgbd_simulation)
 add_subdirectory(src/tools)
