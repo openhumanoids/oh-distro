@@ -11,10 +11,11 @@ ifeq "$(BUILD_PREFIX)" ""
 BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
+PWD = $(shell pwd)
 
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
-CLASSPATH = drake/drake.jar:$(BUILD_PREFIX)/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar
+CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar
 
 
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
@@ -34,6 +35,7 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	jar -cf $@ $(CLASSFILES) 
 
 %.class : %.java
+	echo $(CLASSPATH)
 	javac $< -cp $(CLASSPATH)
 
 drake:
