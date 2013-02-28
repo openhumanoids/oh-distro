@@ -5,8 +5,8 @@ pointcloud-tools
 motion_estimate
 lidar-passthrough
 rgbd_simulation
+image_io_utils
 image-passthrough
-image-compress
 local_map
 map_store
 opencv-utils
