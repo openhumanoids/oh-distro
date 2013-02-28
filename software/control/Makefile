@@ -14,12 +14,13 @@ endif
 
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
+CLASSPATH = drake/drake.jar:$(BUILD_PREFIX)/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar
 
 
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
 
-all: $(BUILD_PREFIX)/share/java/drc_control.jar
+all: drake $(BUILD_PREFIX)/share/java/drc_control.jar
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
@@ -30,10 +31,13 @@ all: $(BUILD_PREFIX)/share/java/drc_control.jar
 	@# Place additional commands here if you have any
 
 $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
-	jar -cf $@ $(CLASSFILES)
+	jar -cf $@ $(CLASSFILES) 
 
 %.class : %.java
-	javac $<
+	javac $< -cp $(CLASSPATH)
+
+drake:
+#  matlab -nosplash -nodesktop -r "cd drake; configure; make; cd ../matlab; write_drc_control_setup;"
 
 clean:
 	-rm $(CLASSFILES)
