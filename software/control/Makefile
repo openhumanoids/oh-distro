@@ -37,7 +37,8 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	javac $< -cp $(CLASSPATH)
 
 drake:
-#  matlab -nosplash -nodesktop -r "cd drake; configure; make; cd ../matlab; write_drc_control_setup;"
+	echo "\nBuilding drake\n";
+	matlab -nosplash -nodesktop -r "make"
 
 clean:
 	-rm $(CLASSFILES)
