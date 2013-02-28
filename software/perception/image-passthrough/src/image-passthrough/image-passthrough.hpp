@@ -78,10 +78,16 @@ class SimExample
     void addScene ();
     void doSim (Eigen::Isometry3d pose_in);
 
-    void write_score_image(const float* score_buffer,std::string fname);
-    void write_depth_image(const float* depth_buffer,std::string fname);
-    void write_depth_image_uint(const float* depth_buffer,std::string fname);
-    void write_rgb_image(const uint8_t* rgb_buffer,std::string fname);
+    void write_score_image(const float* score_buffer,std::string fname, int64_t utime);
+    void write_depth_image(const float* depth_buffer,std::string fname, int64_t utime);
+    void write_depth_image_uint(const float* depth_buffer,std::string fname, int64_t utime);
+
+    // Get the GL depth buffer, invert it, color mask it. always 3 colors
+    uint8_t* getDepthBuffer();
+    
+    
+    // Get the GL color buffer, invert it and output either gray (red channel) or rgb
+    uint8_t* getColorBuffer(int n_colors_);
 
     void setCameraIntrinsicsParameters (int camera_width_in,
                                       int camera_height_in,
@@ -103,8 +109,8 @@ class SimExample
   private:
     uint16_t t_gamma[2048];  
 
-    // either output a color mash or a grey mask
-    bool output_color_mode_;
+    // either output a (0) color mash or (1) grey mask or (2) a binary b/w mask
+    int output_color_mode_;
     
     
     // of platter, usually 640x480
@@ -112,8 +118,9 @@ class SimExample
     int height_;
     boost::shared_ptr<lcm::LCM> lcm_;
     
-    
     pcl::PolygonMesh::Ptr combined_mesh_ptr_;
+    
+    uint8_t* img_buffer_;
 };
 
 

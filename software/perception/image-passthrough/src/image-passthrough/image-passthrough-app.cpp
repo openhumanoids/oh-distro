@@ -1,34 +1,48 @@
 // Todo:
 // - read the calibration from bot-param
-// - support rendering primitive for the fingers
-// - a method to split non-triangle polygon meshes into triangles
+// - support rendering primitives for the fingers
+// - why does TriangleModelMesh not work????
 //
-// Mask Values:
-// 0 - free (black)
+// Current Mask Values:
+// 0 - free (black - by default)
 // 64-??? affordances
 // 128-??? joints
 
 // Also, I've removed renderering of the head.
 
 // TIMING INFORMATIONG
-// TODO: BIGGEST IMPROVEMENT WILL BE FROM USING TRIANGLES ONLY... COULD DO THIS MYSELF....
-// TODO: Can significantly reduce the latency by transmitting the image timestamp directly 
-// to this program - which will be quicker than waiting for the message to show up alone.
 // TODO: - Improve mergePolygonMesh() code avoiding mutliple conversions and keeping the polygon list
 //       - Improve scene.draw() by giving it directly what it need - to avoid conversion.
 //       - One of these can vastly increase the rendering speed:
 // BENCHMARK as of jan 2013:
-// - with convex hull models: (about 20Hz)
-//   component solve fk  , createScene  render  , sendOuput
+// - with convex hull models: (about 20Hz, sending mesh as GL_POLYGONS)
+//   component solve fk  , createScene  render  , sendOutput
 //   fraction: 0.00564941, 0.0688681  , 0.185647, 0.739836, 
 //   time sec: 0.00031   , 0.003779   , 0.010187, 0.040597,
 // - with original models: (including complex head model) (about 5Hz)
-//   component solve fk  , createScene  render  , sendOuput
+//   component solve fk  , createScene  render  , sendOutput
 //   fraction: 0.0086486 , 0.799919   , 0.072785, 0.118647, 
 //   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243, 
 // - These numbers are for RGB. Outputing Gray reduces sendOutput by half
 //   so sending convex works at about 35Hz
 
+
+// BENCHMARK as of feb 2013: (1024x544pixels, Greyscale)
+// - with convex hull models: (excluding complex head model) (about 33Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
+//   component solve fk  , createScene  render  , sendOutput
+//   fraction: 0.0154348, 0.116463, 0.324849, 0.543253, 
+//   time sec: 0.000473, 0.003569, 0.009955, 0.016648, 
+// - with original models: (excluding complex head model) (about 20Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
+//   component solve fk, createScene, render, sendOutput
+//   fraction: 0.0103196 0.331993 0.230543 0.427145, 
+//   time sec: 0.000526 0.016922 0.011751 0.021772,   ... creating Scene is much quicker
+//
+// BENCHMARK as of feb 2013: (1024x544pixels, Greyscale and ZLIB compression)
+// - with convex hull models: (about 50Hz)
+// - with original models: (excluding complex head model) (about 40Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
+//   component solve fk, createScene, render, sendOutput
+//   fraction: 0, 0.0146542, 0.459086, 0.384564, 0.141696, 
+//   time sec: 0, 0.000375, 0.011748, 0.009841, 0.003626, ... creating Scene is much quicker AND transmission as zip images is quick
 
 #include <iostream>
 #include <Eigen/Dense>
@@ -41,13 +55,13 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic affordance meshes
+#include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 
-#define DO_TIMING_PROFILE FALSE
+#define DO_TIMING_PROFILE TRUE
 #include <ConciseArgs>
 
 #define PCL_VERBOSITY_LEVEL L_ERROR
@@ -62,7 +76,8 @@ using namespace boost::assign; // bring 'operator+()' into scope
 
 class Pass{
   public:
-    Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, std::string camera_channel_);
+    Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
+         std::string camera_channel_, int output_color_mode_, bool use_convex_hulls);
     
     ~Pass(){
     }
@@ -73,6 +88,9 @@ class Pass{
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
     void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    
+    int width_, height_;
+    
     
     std::string camera_channel_;
 
@@ -86,6 +104,9 @@ class Pass{
     
     boost::shared_ptr<rgbd_primitives>  prim_;
     pcl::PolygonMesh::Ptr aff_mesh_ ;
+    
+    image_io_utils*  imgutils_;
+    
 
     // Last robot state: this is used to extract link positions:
     drc::robot_state_t last_rstate_;
@@ -102,18 +123,24 @@ class Pass{
     std::string urdf_xml_string_; 
     
     int output_color_mode_;
+    bool use_convex_hulls_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 };
 
-Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_):          
-    lcm_(lcm_),urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_){
+Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
+    int output_color_mode_, bool use_convex_hulls_):          
+    lcm_(lcm_), output_color_mode_(output_color_mode_), use_convex_hulls_(use_convex_hulls_), 
+    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_) {
 
-  lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
   lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
   urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
+  ////////////////////////////////////////////////////////
+
+  lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
+  
   
   // Vis Config:
   float colors_b[] ={0.0,0.0,0.0};
@@ -131,16 +158,32 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   verbose_ =false;  
 
   // Construct the simulation method - with camera params as of Jan 2013:
-  int width = 1024;
-  int height = 544;
+  width_ = 1024;
+  height_ = 544;
   double fx = 610.1778; 
   double fy = 610.1778;
   double cx = 512.5;
   double cy = 272.5;
-  output_color_mode_=1; // 0 =rgb, 1=grayscale mask, 2=binary black/white grayscale mask
-  simexample = SimExample::Ptr (new SimExample (argc, argv, height,width , lcm_, output_color_mode_));
+/*
+  std::string key_prefix_str = "cameras."+vCHANNEL_LEFT+".intrinsic_cal";
+  left_camera_params.width = bot_param_get_int_or_fail(state->param, (key_prefix_str+".width").c_str());
+  left_camera_params.height = bot_param_get_int_or_fail(state->param,(key_prefix_str+".height").c_str());
+  left_camera_params.fx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fx").c_str());
+  left_camera_params.fy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fy").c_str());
+  left_camera_params.cx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cx").c_str());
+  left_camera_params.cy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cy").c_str());
+  left_camera_params.k1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k1").c_str());
+  left_camera_params.k2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k2").c_str());
+  left_camera_params.k3 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k3").c_str());
+  left_camera_params.p1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p1").c_str());
+  left_camera_params.p2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p2").c_str());  
+  */
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
+
   
-  simexample->setCameraIntrinsicsParameters (width, height, fx, fy, cx, cy);
+  simexample = SimExample::Ptr (new SimExample (argc, argv, height_, width_ , lcm_, output_color_mode_));
+  
+  simexample->setCameraIntrinsicsParameters (width_, height_, fx, fy, cx, cy);
   
   pcl::PolygonMesh::Ptr aff_mesh_ptr_temp(new pcl::PolygonMesh());
   aff_mesh_ = aff_mesh_ptr_temp;   
@@ -162,8 +205,15 @@ void Pass::sendOutput(int64_t utime){
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
   }
-  simexample->write_rgb_image (simexample->rl_->getColorBuffer (), camera_channel_ );  
-  //simexample->write_depth_image (simexample->rl_->getDepthBuffer (), camera_channel_ );  
+
+  //imgutils_->sendImage( simexample->getDepthBuffer(), utime, width_, height_, 3, string( camera_channel_ +  "_DEPTH") );
+  if (output_color_mode_==0){
+    // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
+    imgutils_->sendImage( simexample->getColorBuffer(3), utime, width_, height_, 3, string( camera_channel_ +  "_MASK") );
+  }else{
+    //imgutils_->sendImage( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASK")  );
+    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASKZIPPED")  );
+  }
   
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
@@ -245,10 +295,8 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
           shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
           
           mesh_link_names.push_back( it->first );
-          // Verify the existance so the file:
-          bool get_convex_hull_path = false;
-          
-          mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, get_convex_hull_path) );
+          // Verify the existance of the file:
+          mesh_file_paths.push_back( gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_) );
         }
       }
     }
@@ -426,8 +474,9 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   // Pull the trigger and render scene:
   simexample->createScene(link_names, link_tfs_e);
+  
   simexample->mergePolygonMeshToCombinedMesh( aff_mesh_);
-  if (verbose_){ // Visualize the entire world thats about to be renderered:
+  if (verbose_){ // Visualize the entire world thats about to be renderered: NBNB THIS IS REALLY USEFUL FOR DEBUGGING
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
     Isometry3dTime null_poseT = Isometry3dTime(msg->utime, null_pose);  
@@ -458,16 +507,22 @@ int
 main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   string camera_channel="CAMERALEFT";
+  int output_color_mode=1; // 0 =rgb, 1=grayscale mask, 2=binary black/white grayscale mask
+  bool use_convex_hulls=false;
   parser.add(camera_channel, "c", "camera_channel", "Camera channel");
+  parser.add(output_color_mode, "o", "output_color_mode", "0rgb |1grayscale |2b/w");
+  parser.add(use_convex_hulls, "u", "use_convex_hulls", "Use convex hull models");
   parser.parse();
   cout << camera_channel << " is camera_channel\n"; 
+  cout << output_color_mode << " is output_color_mode\n"; 
+  cout << use_convex_hulls << " is use_convex_hulls\n"; 
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(argc,argv, lcm, camera_channel);
+  Pass app(argc,argv, lcm, camera_channel,output_color_mode, use_convex_hulls);
   cout << "image-passthrough ready" << endl << endl;
   while(0 == lcm->handle());
   return 0;

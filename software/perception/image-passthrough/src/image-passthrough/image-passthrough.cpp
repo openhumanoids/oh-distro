@@ -77,6 +77,9 @@ SimExample::SimExample(int argc, char** argv,
       127, 127, 255,
       127, 255, 127,
       127, 127, 255;  
+      
+  // A buffer for local operations (inversion, applying color mask etc
+  img_buffer_= new uint8_t[rl_->getWidth() * rl_->getHeight() * 3];      
 }
 
 // display_tic_toc: a helper function which accepts a set of 
@@ -197,7 +200,6 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   if ( meshA->cloud.fields.size()  !=0){
     pcl::fromROSMsg(meshA->cloud, cloudA);
   }
-  
   int original_size = cloudA.points.size() ;
 
   //cout << original_size << " is the cloud before (insize) size\n";
@@ -216,24 +218,74 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
     }
     meshA->polygons.push_back(apoly_in);
   } 
-  
   cloudA += cloudB;
-  
   pcl::toROSMsg (cloudA, meshA->cloud);
-
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
-  
   return true;
+}
+
+
+// a SIMPLE mesh with 2 triangles
+pcl::PolygonMesh::Ptr setSampleMesh(){
+  pcl::PolygonMesh mesh;   
+  pcl::PolygonMesh::Ptr mesh_ptr (new pcl::PolygonMesh (mesh));  
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  std::vector <pcl::Vertices> verts;
+
+  pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6;
+  pt1.x = 1; pt1.y = 2; pt1.z = 0;  
+  pt2.x = 1; pt2.y = 2; pt2.z = 2; 
+  pt3.x = 1; pt3.y = 1; pt3.z = 5;
+  pt1.r =55.0;  pt1.g = 125.0; pt1.b = 50.0;
+  pt2.r =55.0;  pt2.g = 125.0; pt2.b = 50.0;
+  pt3.r =55.0;  pt3.g = 125.0; pt3.b = 50.0;
+  pts->points.push_back(pt1);
+  pts->points.push_back(pt2);
+  pts->points.push_back(pt3);
+  pcl::Vertices vert;
+  vert.vertices.push_back( 0 ); vert.vertices.push_back(1); vert.vertices.push_back(2);
+  verts.push_back(vert);  
+
+  pt4.x =  1; pt4.y = -2; pt4.z = 0;
+  pt5.x =  1; pt5.y =  8; pt5.z = 0;
+  pt6.x =  0; pt6.y =  8; pt6.z = 0;
+  pt4.r =55.0; pt4.g = 5.0; pt4.b = 50.0;
+  pt5.r =55.0; pt5.g = 5.0; pt5.b = 50.0;
+  pt6.r =55.0; pt6.g = 5.0; pt6.b = 50.0;
+  pts->points.push_back(pt4);
+  pts->points.push_back(pt5);
+  pts->points.push_back(pt6);
+  pcl::Vertices vertB;
+  vertB.vertices.push_back( 3); vertB.vertices.push_back(4); vertB.vertices.push_back(5);
+  verts.push_back(vertB);    
+
+  mesh_ptr->polygons = verts;
+  pcl::toROSMsg (*pts, mesh_ptr->cloud);  
+  return mesh_ptr;    
 }
 
 
 // cat meshB onto combined_mesh_ptr_
 void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
+  //  scene_->clear();   // delete contents of scene model
+  //pcl::PolygonMesh combined_mesh;
+  //pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh(combined_mesh));
+  //combined_mesh_ptr_ = combined_mesh_ptr_temp;
+  
   mergePolygonMesh(combined_mesh_ptr_,meshB);  
+  
+  // For Testing:
+  /*
+  pcl::PolygonMesh  mesh_object;   
+  pcl::io::loadPolygonFile ( "/home/mfallon/drc/software/models/mit_gazebo_models/mit_robot/meshes/utorso.obj" , mesh_object);
+  pcl::PolygonMesh::Ptr mesh (new pcl::PolygonMesh (mesh_object ));
+  setPolygonMeshColor(mesh, 255,0,0 );
+  mergePolygonMesh(combined_mesh_ptr_,mesh);  
+  */
+  //pcl::PolygonMesh::Ptr simple_mesh = setSampleMesh();
+  //mergePolygonMesh(combined_mesh_ptr_,simple_mesh);  
 }
-
-
 
 void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
                                   std::vector< std::string > file_paths_in){
@@ -326,9 +378,18 @@ SimExample::createScene (std::vector<std::string> object_names,
     
 void
 SimExample::addScene (){    
+/* 
+  for (size_t i=0; i < combined_mesh_ptr_->polygons.size(); i++){
+    if (combined_mesh_ptr_->polygons[i].vertices.size() >3){
+      cout << combined_mesh_ptr_->polygons[i].vertices.size() << " is not a triangle\n"; 
+    }
+  }
+  */
+  
   // NB: using triangles would make things much quicker....
-  //  TriangleMeshModel::Ptr combined_model = TriangleMeshModel::Ptr (new TriangleMeshModel (combined_mesh_ptr_));
-  PolygonMeshModel::Ptr combined_model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_));
+  //TriangleMeshModel::Ptr combined_model = TriangleMeshModel::Ptr (new TriangleMeshModel (combined_mesh_ptr_)); // doesnt work. havent figured out why
+  //PolygonMeshModel::Ptr combined_model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_)); // works
+  PolygonMeshModel::Ptr combined_model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_TRIANGLES, combined_mesh_ptr_));
   scene_->add(combined_model);   
 }
 
@@ -372,7 +433,7 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
 }
 
 void
-SimExample::write_score_image(const float* score_buffer, std::string fname)
+SimExample::write_score_image(const float* score_buffer, std::string fname, int64_t utime)
 {
   int npixels = rl_->getWidth() * rl_->getHeight();
   uint8_t* score_img = new uint8_t[npixels * 3];
@@ -409,7 +470,7 @@ SimExample::write_score_image(const float* score_buffer, std::string fname)
 }
 
 void
-SimExample::write_depth_image(const float* depth_buffer, std::string fname)
+SimExample::write_depth_image(const float* depth_buffer, std::string fname, int64_t utime)
 {
   int npixels = rl_->getWidth() * rl_->getHeight();
   uint8_t* depth_img = new uint8_t[npixels * 3];
@@ -526,8 +587,14 @@ SimExample::write_depth_image(const float* depth_buffer, std::string fname)
 }
 
 
+
+
+
+
+
+
 void
-SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
+SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname, int64_t utime)
 {
   int npixels = rl_->getWidth() * rl_->getHeight();
   unsigned short * depth_img = new unsigned short[npixels ];
@@ -582,98 +649,117 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
 }
 
 
-void
-SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
+
+
+uint8_t* 
+SimExample::getDepthBuffer()
 {
-  std::string channel = fname + "_MASK";
-
-  bool do_timing=false;
-  std::vector<int64_t> tic_toc;
-  if (do_timing){
-    tic_toc.push_back(_timestamp_now());
-  }
-  
+  const float* depth_buffer =  rl_->getDepthBuffer ();
   int npixels = rl_->getWidth() * rl_->getHeight();
-  int n_colors;
-  int8_t pixelformat;
-  uint8_t* img_buff;
-  if (output_color_mode_==0){
-    n_colors = 3;
-    img_buff = new uint8_t[npixels * n_colors];
-    for (int y = 0; y <  rl_->getHeight(); ++y)
-    {
-      for (int x = 0; x < rl_->getWidth(); ++x)
-      {
-        int px= y*rl_->getWidth() + x ;
-        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
-        img_buff [3* (px) +0] = rgb_buffer[3*px_in+0];
-        img_buff [3* (px) +1] = rgb_buffer[3*px_in+1];
-        img_buff [3* (px) +2] = rgb_buffer[3*px_in+2];      
-      }
-    }
-  }else{
-    n_colors=1;
-    img_buff = new uint8_t[npixels * n_colors];
-    for (int y = 0; y <  rl_->getHeight(); ++y)
-    {
-      for (int x = 0; x < rl_->getWidth(); ++x)
-      {
-        int px= y*rl_->getWidth() + x ;
-        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
-        img_buff [1* (px) +0] = rgb_buffer[3*px_in+0]; // only use the red value
-      }
-    }
-  }
-  
-  if (do_timing==1){
-    tic_toc.push_back(_timestamp_now());
-  }
-  
-  int isize =rl_->getWidth()*rl_->getHeight();
-  if (1==1){ 
-    bot_core_image_t image;
-    image.utime =0;
-    image.width =rl_->getWidth();
-    image.height=rl_->getHeight();
-    image.row_stride =n_colors*rl_->getWidth();
-    if (n_colors==1){
-      image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY;
-    }else{
-      image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
-    }
-    image.size =n_colors*isize;
-    image.data = img_buff;
-    image.nmetadata =0;
-    image.metadata = NULL;
-    bot_core_image_t_publish( lcm_->getUnderlyingLCM(), channel.c_str(), &image);  
-  } else {  
-    bot_core::image_t lcm_img;
-    lcm_img.utime =0;//current_utime;
-    lcm_img.width =rl_->getWidth();
-    lcm_img.height =rl_->getHeight();
-    lcm_img.nmetadata =0;
-    lcm_img.row_stride=n_colors*rl_->getWidth();
-    if (n_colors==1){
-      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_GRAY;
-    }else{
-      lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-    }
-    lcm_img.size =n_colors*isize;
-    lcm_img.data.assign(img_buff, img_buff + ( n_colors*isize));
-    lcm_->publish(channel.c_str(), &lcm_img);
-  }
 
-  if (do_timing==1){
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"write_rgb_image");
+  //this loop isn't used
+  //float min_depth = depth_buffer[0];
+  //float max_depth = depth_buffer[0];
+  //for (int i=1; i<npixels; i++) // 
+  //{
+  //  if (depth_buffer[i] < min_depth) min_depth = depth_buffer[i];
+  //  if (depth_buffer[i] > max_depth) max_depth = depth_buffer[i];
+  //}
+
+  for (int y = 0; y <  rl_->getHeight(); ++y)
+  {
+    for (int x = 0; x < rl_->getWidth(); ++x)
+    {
+      int i= y*rl_->getWidth() + x ;
+      int i_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
+    
+    
+      float zn = 0.7;
+      float zf = 20.0;
+      float d = depth_buffer[i_in];
+      float z = -zf*zn/((zf-zn)*(d - zf/(zf-zn)));
+      float b = 0.075;
+      float f = 580.0;
+      uint16_t kd = static_cast<uint16_t>(1090 - b*f/z*8);
+      if (kd < 0) kd = 0;
+      else if (kd>2047) kd = 2047;
+
+      int pval = t_gamma[kd];
+      int lb = pval & 0xff;
+      switch (pval>>8) {
+        case 0:
+            img_buffer_[3*i+2] = 255;
+            img_buffer_[3*i+1] = 255-lb;
+            img_buffer_[3*i+0] = 255-lb;
+            break;
+        case 1:
+            img_buffer_[3*i+2] = 255;
+            img_buffer_[3*i+1] = lb;
+            img_buffer_[3*i+0] = 0;
+            break;
+        case 2:
+            img_buffer_[3*i+2] = 255-lb;
+            img_buffer_[3*i+1] = 255;
+            img_buffer_[3*i+0] = 0;
+            break;
+        case 3:
+            img_buffer_[3*i+2] = 0;
+            img_buffer_[3*i+1] = 255;
+            img_buffer_[3*i+0] = lb;
+            break;
+        case 4:
+            img_buffer_[3*i+2] = 0;
+            img_buffer_[3*i+1] = 255-lb;
+            img_buffer_[3*i+0] = 255;
+            break;
+        case 5:
+            img_buffer_[3*i+2] = 0;
+            img_buffer_[3*i+1] = 0;
+            img_buffer_[3*i+0] = 255-lb;
+            break;
+        default:
+            img_buffer_[3*i+2] = 0;
+            img_buffer_[3*i+1] = 0;
+            img_buffer_[3*i+0] = 0;
+            break;
+      }
+    }
   }
-  
-  // Write to file: (with rgb flipped)
-  //IplImage *cv_ipl = cvCreateImage( cvSize(rl_->getWidth() ,rl_->getHeight()), 8, 3);
-  //cv::Mat cv_mat(cv_ipl);
-  //cv_mat.data = img_buff ;
-  //cv::imwrite(fname, cv_mat);       
-  delete [] img_buff;
+  return img_buffer_;  
 }
 
 
+
+
+
+uint8_t*
+SimExample::getColorBuffer(int n_colors_)
+{
+  int npixels = rl_->getWidth() * rl_->getHeight();
+  const uint8_t* rgb_buffer =  rl_->getColorBuffer ();
+
+  if (n_colors_==3){
+    for (int y = 0; y <  rl_->getHeight(); ++y)
+    {
+      for (int x = 0; x < rl_->getWidth(); ++x)
+      {
+        int px= y*rl_->getWidth() + x ;
+        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
+        img_buffer_ [3* (px) +0] = rgb_buffer[3*px_in+0];
+        img_buffer_ [3* (px) +1] = rgb_buffer[3*px_in+1];
+        img_buffer_ [3* (px) +2] = rgb_buffer[3*px_in+2];      
+      }
+    }
+  }else{
+    for (int y = 0; y <  rl_->getHeight(); ++y)
+    {
+      for (int x = 0; x < rl_->getWidth(); ++x)
+      {
+        int px= y*rl_->getWidth() + x ;
+        int px_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
+        img_buffer_ [1* (px) +0] = rgb_buffer[3*px_in+0]; // only use the red value
+      }
+    }
+  }
+  return img_buffer_;
+}
