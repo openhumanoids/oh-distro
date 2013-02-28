@@ -112,7 +112,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["drc_vehicle"]=70009;
   model_map_["mit_cordless_drill"]=70010;
   model_map_["saucepan"]=70011;  
-  model_map_["simple_cylinder"]=70012;  
+  model_map_["duff_beer"]=70012;  
   //model_map_["mit_drc_robot"]=7012; //dont send this
   
   storeAffordances();
@@ -120,12 +120,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   // obj_cfg: id name type reset
   // pts_cfg: id name type reset objcoll usergb rgb
   pc_vis_ = new pointcloud_vis( lcm_publish_.getUnderlyingLCM());
-  for( map<std::string, int>::iterator ii=model_map_.begin(); ii!=model_map_.end(); ++ii){
-    gzerr << (*ii).first << ": " << (*ii).second << endl;
-    stringstream name_out ;
-    name_out << "Oracle - " << (*ii).first;
-    pc_vis_->obj_cfg_list.push_back( obj_cfg( (*ii).second  ,name_out.str(),5,1) );
-  }
+  pc_vis_->obj_cfg_list.push_back( obj_cfg( 70000 , "Oracle",5,1) );
 }
 
 
@@ -342,7 +337,7 @@ void OraclePlugin::storeAffordances(){
     AffordancePlus affp;
     affp.aff =a;
     affp.offset = offset;
-    aff_map_["simple_cylinder_link"]=affp;
+    aff_map_["duff_beer_link"]=affp;
   }        
     
     
@@ -469,6 +464,12 @@ void OraclePlugin::OnUpdate(){
     affcol.map_id=0; // id of the local map - duplication of the above?
     affcol.naffs=0;
   
+
+    std::vector<Isometry3dTime> world_to_linksT;
+    std::vector< int64_t > world_to_link_utimes;
+    std::vector< std::string > link_names;
+    int64_t counter =0;
+
     
     BOOST_FOREACH( physics::ModelPtr model, all_models ){
       if (model){
@@ -483,8 +484,6 @@ void OraclePlugin::OnUpdate(){
           physics::Link_V all_links = model->GetLinks();
           //gzerr << "model_id: " << model_id << " with " << all_links.size() << " links\n";
 
-          int64_t counter =0;
-          std::vector<Isometry3dTime> world_to_linksT;
           BOOST_FOREACH( physics::LinkPtr link, all_links ){
             if (link){
               //gzerr << "which link: "<< link->GetName() <<"\n";
@@ -510,10 +509,12 @@ void OraclePlugin::OnUpdate(){
               
               Isometry3dTime world_to_linkT(curr_time+counter, world_to_link);
               world_to_linksT.push_back(world_to_linkT);
+              world_to_link_utimes.push_back( curr_time+counter);
               counter++;
               
-
               std::string affname = model->GetName() + "_" +link->GetName();
+              link_names.push_back( affname  );
+
               if ( link->GetName().compare( "steering_wheel" ) == 0){
                 gzerr<< "got steering_wheel\n"; 
                 affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
@@ -533,7 +534,7 @@ void OraclePlugin::OnUpdate(){
                   affcol.affs.push_back ( getAffordance(  "mit_cordless_drill_link_handle",  world_to_link) );
                 }
               }
-              if ( model->GetName().compare( "simple_cylinder" ) == 0){
+              if ( model->GetName().compare( "duff_beer" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
@@ -547,10 +548,15 @@ void OraclePlugin::OnUpdate(){
               
             }
           }
-          pc_vis_->pose_collection_to_lcm_from_list(model_id, world_to_linksT); // all links in world frame
         }
       }
     }
+
+    pc_vis_->pose_collection_to_lcm_from_list(70000, world_to_linksT); // all links in world frame
+    
+    // Link names:
+    //pc_vis_->text_collection_to_lcm(70001, 70000, "Oracle [Labels]", link_names, world_to_link_utimes );    
+    
     
     affcol.naffs = affcol.affs.size();
     lcm_publish_.publish( ("AFFORDANCE_ORACLE") , &affcol);        
