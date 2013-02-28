@@ -7,9 +7,9 @@
       <ode>
         <solver>
           <type>quick</type>
-          <dt>0.0005</dt>
-          <iters>2000</iters>
-          <sor>1.0</sor>
+          <dt>0.00033</dt>
+          <iters>500</iters>
+          <sor>1.2</sor>
         </solver>
         <constraints>
           <cfm>0.0</cfm>
