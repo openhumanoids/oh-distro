@@ -1,7 +1,17 @@
+// Todo:
+// - read the calibration from bot-param
+// - support rendering primitive for the fingers
+// - a method to split non-triangle polygon meshes into triangles
+//
+// Mask Values:
 // 0 - free (black)
 // 64-??? affordances
 // 128-??? joints
 
+// Also, I've removed renderering of the head.
+
+// TIMING INFORMATIONG
+// TODO: BIGGEST IMPROVEMENT WILL BE FROM USING TRIANGLES ONLY... COULD DO THIS MYSELF....
 // TODO: Can significantly reduce the latency by transmitting the image timestamp directly 
 // to this program - which will be quicker than waiting for the message to show up alone.
 // TODO: - Improve mergePolygonMesh() code avoiding mutliple conversions and keeping the polygon list
@@ -18,7 +28,7 @@
 //   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243, 
 // - These numbers are for RGB. Outputing Gray reduces sendOutput by half
 //   so sending convex works at about 35Hz
-// Also, I've removed renderering of the head.
+
 
 #include <iostream>
 #include <Eigen/Dense>
@@ -77,7 +87,6 @@ class Pass{
     boost::shared_ptr<rgbd_primitives>  prim_;
     pcl::PolygonMesh::Ptr aff_mesh_ ;
 
-    
     // Last robot state: this is used to extract link positions:
     drc::robot_state_t last_rstate_;
     bool init_rstate_;    
@@ -107,22 +116,18 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   urdf_subscription_on_ = true;
   
   // Vis Config:
+  float colors_b[] ={0.0,0.0,0.0};
+  std::vector<float> colors_v;
+  colors_v.assign(colors_b,colors_b+4*sizeof(float));
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9999,"iPass - Pose - Left",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9998,"iPass - Frames",5,1) );
-  
-  float colors_b[] ={0.0,0.0,0.0};
-  std::vector<float> colors_v;
-  colors_v.assign(colors_b,colors_b+4*sizeof(float));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"iPass - Pose - Left Original",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"iPass - Sim Cloud"     ,1,1, 9995,0, colors_v ));
-  
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"iPass - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
-  
-  
   verbose_ =false;  
 
   // Construct the simulation method - with camera params as of Jan 2013:
@@ -137,10 +142,8 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   
   simexample->setCameraIntrinsicsParameters (width, height, fx, fy, cx, cy);
   
-  
   pcl::PolygonMesh::Ptr aff_mesh_ptr_temp(new pcl::PolygonMesh());
-  aff_mesh_ = aff_mesh_ptr_temp;
-    
+  aff_mesh_ = aff_mesh_ptr_temp;   
 }
 
 // same as bot_timestamp_now():
@@ -154,33 +157,18 @@ int64_t _timestamp_now()
 
 // Output the simulated output to file/lcm:
 void Pass::sendOutput(int64_t utime){ 
-  
   bool do_timing=false;
   std::vector<int64_t> tic_toc;
   if (do_timing){
     tic_toc.push_back(_timestamp_now());
   }
   simexample->write_rgb_image (simexample->rl_->getColorBuffer (), camera_channel_ );  
-  if (do_timing==1){
-    tic_toc.push_back(_timestamp_now());
-  }
-  
   //simexample->write_depth_image (simexample->rl_->getDepthBuffer (), camera_channel_ );  
+  
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"sendOutput");
   }
-   
-  /*
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_out (new pcl::PointCloud<pcl::PointXYZRGB>);
-  // Save camera relative:
-  simexample->rl_->getPointCloud(pc_out,false,simexample->camera_->getPose () );
-  cout << *pc_out << " pc_out info\n";
-  pc_vis_->ptcld_to_lcm_from_list(9996, *pc_out, utime, utime);
-  */
-  
-  //pcl::PCDWriter writer;
-  //    writer.writeBinary (  string ("image_passthrough.pcd")  , *pc_out);
 }
 
 
@@ -250,7 +238,7 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
       if(it->second->visual){
         std::cout << it->first<< " link"
           << it->second->visual->geometry->type << " type [visual only]\n";
-        
+
         int type = it->second->visual->geometry->type;
         enum {SPHERE, BOX, CYLINDER, MESH}; 
         if  (type == MESH){
@@ -265,7 +253,6 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
       }
     }
     simexample->setPolygonMeshs(mesh_link_names, mesh_file_paths );
-    
     
     //////////////////////////////////////////////////////////////////
     // Get a urdf Model from the xml string and get all the joint names.
@@ -291,41 +278,6 @@ void Pass::urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
 }
 
 
-
-  // Construct model view within opengl simulator:
-// cd ~/projects/kmcl/models/table_models
-// rgbd-sim-terminal-demo 1 ~/Desktop/drc_mesh_rgbd/utorso.obj 
-
-//- for each object:
-//-- determine the joint position with forward kinematics
-//-- add to model
-
-//-- render in rgbd_simulation ... done
-//-- publish a mask with depth and binary ... done
-
-// Sample Rendering Code - I think this worked for rendering colour!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/*
-  // 1. Read the model files in:
-  pcl::PolygonMesh mesh;
-  pcl::io::loadPolygonFile(  "/home/mfallon/Desktop/drc_mesh_rgbd/l_hand.obj"    ,mesh);
-  pcl::PolygonMesh::Ptr mesh_ptr (new pcl::PolygonMesh(mesh));
-  //state->model = mesh_ptr;  
-  std::cout << "file has been read\n";
-
-  // transform
-  Eigen::Vector3f world_trans(1 , 0 , 0 ); 
-  pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud;  
-  pcl::fromROSMsg(mesh_ptr->cloud, mesh_cloud);
-  Eigen::Quaternionf world_rot (1 ,0,0,0);
-  pcl::transformPointCloud (mesh_cloud, mesh_cloud,world_trans, world_rot);  
-  pcl::toROSMsg (mesh_cloud, mesh_ptr->cloud);  
-
-
-  TriangleMeshModel::Ptr model = TriangleMeshModel::Ptr(new TriangleMeshModel(mesh_ptr));
-  scene_->add(model); 
-  model_ptr = mesh_ptr;  
-
-*/
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (!urdf_parsed_){      return;    }
   if(urdf_subscription_on_){
@@ -338,8 +290,6 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   init_rstate_=true; // both urdf parsed and robot state handled... ready to handle data
 }  
   
-
-// Initially we will transmit a mask 1-for-1 with the image
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
   if (!urdf_parsed_){
@@ -364,7 +314,6 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
                                                last_rstate_.origin_position.rotation.y, last_rstate_.origin_position.rotation.z);
   world_to_body.rotate(quat);    
 
-  
   // 1. Determine the Camera in World Frame:
   // 1a. Solve for Forward Kinematics
   // TODO: use gl_robot routine instead of replicating this here:
@@ -512,7 +461,6 @@ main( int argc, char** argv ){
   parser.add(camera_channel, "c", "camera_channel", "Camera channel");
   parser.parse();
   cout << camera_channel << " is camera_channel\n"; 
-  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){

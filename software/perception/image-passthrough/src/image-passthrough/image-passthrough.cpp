@@ -7,66 +7,47 @@ using namespace boost::assign; // bring 'operator+=()' into scope
 #define DO_TIMING_PROFILE FALSE
 
 SimExample::SimExample(int argc, char** argv,
-	int height,int width, boost::shared_ptr<lcm::LCM> &lcm_,
+	int height_,int width_, boost::shared_ptr<lcm::LCM> &lcm_,
         int output_color_mode_):
-        height_(height), width_(width), lcm_(lcm_), output_color_mode_(output_color_mode_){
-
+        height_(height_), width_(width_), lcm_(lcm_), output_color_mode_(output_color_mode_){
   initializeGL (argc, argv);
   
   // 1. construct member elements:
   camera_ = Camera::Ptr (new Camera ());
   scene_ = Scene::Ptr (new Scene ());
 
-  //rl_ = RangeLikelihoodGLSL::Ptr(new RangeLikelihoodGLSL(1, 1, height, width, scene_, 0));
-  rl_ = RangeLikelihood::Ptr (new RangeLikelihood (1, 1, height, width, scene_));
+  rl_ = RangeLikelihood::Ptr (new RangeLikelihood (1, 1, height_, width_, scene_));
   // rl_ = RangeLikelihood::Ptr(new RangeLikelihood(10, 10, 96, 96, scene_));
-  // rl_ = RangeLikelihood::Ptr(new RangeLikelihood(1, 1, height_, width_, scene_));
+  //rl_ = RangeLikelihoodGLSL::Ptr(new RangeLikelihoodGLSL(1, 1, height, width, scene_, 0));
 
-  // Actually corresponds to default parameters:
-  rl_->setCameraIntrinsicsParameters (width_,height_, 576.09757860,
-            576.09757860, 321.06398107, 242.97676897);
+  // I think it just affects the quantisation - but should look at depth created later.
   rl_->setCameraDepthLimits (0.05, 20.0); // kinect = 0.7, 20.0
   rl_->setComputeOnCPU (false);
   rl_->setSumOnCPU (true);
   rl_->setUseColor (true);  
   
   if (1==0){ // set world at launch:
-  // 2. read mesh and setup model:
-  std::cout << "About to read: " << argv[2] << std::endl;
-  pcl::PolygonMesh combined_mesh;	// (new pcl::PolygonMesh);
-  pcl::io::loadPolygonFile (argv[2], combined_mesh);
-  pcl::PolygonMesh::Ptr combined_mesh_ptr_temp (new pcl::PolygonMesh (combined_mesh));
-  combined_mesh_ptr_ = combined_mesh_ptr_temp;
-  
-  // Not sure if PolygonMesh assumes triangles if to, TODO: Ask a developer
-  PolygonMeshModel::Ptr model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_));
-  scene_->add (model);
-  
-  std::cout << "Just read " << argv[2] << std::endl;
-  std::cout << combined_mesh.polygons.size () << " polygons and "
-	    << combined_mesh.cloud.data.size () << " triangles\n";  
+    // 2. read mesh and setup model:
+    std::cout << "About to read: " << argv[2] << std::endl;
+    pcl::PolygonMesh combined_mesh;	// (new pcl::PolygonMesh);
+    pcl::io::loadPolygonFile (argv[2], combined_mesh);
+    pcl::PolygonMesh::Ptr combined_mesh_ptr_temp (new pcl::PolygonMesh (combined_mesh));
+    combined_mesh_ptr_ = combined_mesh_ptr_temp;
+    // Not sure if PolygonMesh assumes triangles if to, TODO: Ask a developer
+    PolygonMeshModel::Ptr model = PolygonMeshModel::Ptr (new PolygonMeshModel (GL_POLYGON, combined_mesh_ptr_));
+    scene_->add (model);
+    std::cout << "Just read " << argv[2] << std::endl;
+    std::cout << combined_mesh.polygons.size () << " polygons and "
+              << combined_mesh.cloud.data.size () << " triangles\n";  
   }
-	    
-  // works well for MIT CSAIL model 3rd floor:
-  //camera_->set(4.04454, 44.9377, 1.1, 0.0, 0.0, -2.00352);
-
-  // works well for MIT CSAIL model 2nd floor:
-//  camera_->set (27.4503, 37.383, 4.30908, 0.0, 0.0654498, -2.25802);
-
-  // works for small files:
-  //camera_->set(-5.0, 0.0, 1.0, 0.0, 0.0, 0.0);
-  camera_->set(0.471703, 1.59862, 3.10937, 0, 0.418879, -12.2129);
-  camera_->setPitch(0.418879); // not sure why this is here:
   
-  for (int i=0; i<2048; i++)
-  {
+  for (int i=0; i<2048; i++){
     float v = i/2048.0;
     v = powf(v, 3)* 6;
     t_gamma[i] = v*6*256;
   }  
   
-  
-  // Duplicates the list in collections renderer:
+  // Duplicates the list in collections renderer: (except this is now ints
   colors_+= 
       51, 160, 44,  //0
       166, 206, 227,
@@ -96,7 +77,6 @@ SimExample::SimExample(int argc, char** argv,
       127, 127, 255,
       127, 255, 127,
       127, 127, 255;  
-  
 }
 
 // display_tic_toc: a helper function which accepts a set of 
@@ -140,7 +120,6 @@ void SimExample::setCameraIntrinsicsParameters (int camera_width_in, int camera_
 Eigen::Isometry3f SimExample::isometryDoubleToFloat(Eigen::Isometry3d pose_in){
   Eigen::Quaterniond r(pose_in.rotation());
   Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
-  //Eigen::Quaternionf rf(r.x() , r.y() , r.y() , r.z() );
 
   Eigen::Isometry3f pose_out;
   pose_out.setIdentity();
@@ -265,18 +244,15 @@ void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
     mesh_struct.file_path = file_paths_in[i];
     mesh_struct.polygon_mesh = getPolygonMesh(mesh_struct.file_path);          
     
-    
-    if(output_color_mode_==0){
-      // Set the mesh to a false color:
+    if(output_color_mode_==0){ // Set the mesh to a false color:
       int j =i%(colors_.size()/3);
       setPolygonMeshColor(mesh_struct.polygon_mesh, colors_[j*3], colors_[j*3+1], colors_[j*3+2] );
-    }else if(output_color_mode_==1){
+    }else if(output_color_mode_==1){ // set link mesh in link range
       setPolygonMeshColor(mesh_struct.polygon_mesh, LINK_OFFSET + (int) i ,
                           0,0 );
-    }else{      
+    }else{ // black or white
       setPolygonMeshColor(mesh_struct.polygon_mesh, 255,0,0 ); // last two are not used
     }
-    
     polymesh_map_.insert(make_pair( link_names_in[i] , mesh_struct));
   }
     
@@ -289,11 +265,8 @@ void SimExample::setPolygonMeshs (std::vector< std::string > link_names_in,
   }  
 }
 
-
-
 // same as bot_timestamp_now():
-int64_t _timestamp_now()
-{
+int64_t _timestamp_now(){
     struct timeval tv;
     gettimeofday (&tv, NULL);
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
@@ -324,7 +297,6 @@ SimExample::createScene (std::vector<std::string> object_names,
       continue; 
     }
       
-    
     std::map<std::string, PolygonMeshStruct >::iterator it;
     it=polymesh_map_.find(  object_names[i] );
     if (it == polymesh_map_.end() ){ // the element has a visual link but is not a mesh ... skip for now
@@ -398,9 +370,6 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
        
   delete [] reference;
 }
-
-
-
 
 void
 SimExample::write_score_image(const float* score_buffer, std::string fname)
@@ -616,6 +585,8 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
 void
 SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
 {
+  std::string channel = fname + "_MASK";
+
   bool do_timing=false;
   std::vector<int64_t> tic_toc;
   if (do_timing){
@@ -640,7 +611,6 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
         img_buff [3* (px) +2] = rgb_buffer[3*px_in+2];      
       }
     }
-    
   }else{
     n_colors=1;
     img_buff = new uint8_t[npixels * n_colors];
@@ -655,16 +625,11 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
     }
   }
   
-  
-  
-  
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
   }
   
-  std::string channel = fname + "_COLOR";
   int isize =rl_->getWidth()*rl_->getHeight();
-
   if (1==1){ 
     bot_core_image_t image;
     image.utime =0;
@@ -681,7 +646,6 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
     image.nmetadata =0;
     image.metadata = NULL;
     bot_core_image_t_publish( lcm_->getUnderlyingLCM(), channel.c_str(), &image);  
-  
   } else {  
     bot_core::image_t lcm_img;
     lcm_img.utime =0;//current_utime;
@@ -695,9 +659,6 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
       lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
     }
     lcm_img.size =n_colors*isize;
-    //copy(msg->data.begin(), msg->data.end(), singleimage_data);
-    //lcm_img.data = *depth_img;//.assign(singleimage_data, singleimage_data + ( n_colors*isize));
-
     lcm_img.data.assign(img_buff, img_buff + ( n_colors*isize));
     lcm_->publish(channel.c_str(), &lcm_img);
   }
@@ -707,14 +668,11 @@ SimExample::write_rgb_image(const uint8_t* rgb_buffer, std::string fname)
     display_tic_toc(tic_toc,"write_rgb_image");
   }
   
-  
-
   // Write to file: (with rgb flipped)
   //IplImage *cv_ipl = cvCreateImage( cvSize(rl_->getWidth() ,rl_->getHeight()), 8, 3);
   //cv::Mat cv_mat(cv_ipl);
   //cv_mat.data = img_buff ;
-  //cv::imwrite(fname, cv_mat);     
-  
+  //cv::imwrite(fname, cv_mat);       
   delete [] img_buff;
 }
 
