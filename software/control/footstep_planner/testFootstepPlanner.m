@@ -8,9 +8,9 @@ r = r.setInitialState(xstar);
 biped = Biped(r);
 
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
-poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0]];
+% poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0]];
 % poses = [1;1;0;0;0;-pi/4];
-% poses = [1.5;0;0;0;0;0];
+poses = [1.5;0;0;0;0;0];
 xtraj = biped.roughWalkingPlan(xstar, poses, struct('plotting', true, ...
   'interactive', true));
 

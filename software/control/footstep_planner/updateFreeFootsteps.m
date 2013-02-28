@@ -1,4 +1,4 @@
-function [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps)
+function [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, heightfun)
 
 max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
 
@@ -29,16 +29,25 @@ X = locate_step_centers(x_flat);
 function [c, ceq] = nonlcon(x_flat)
   X = locate_step_centers(x_flat);
   [Xright, Xleft] = biped.stepLocations(X);
+  Xright(3,:) = heightfun(Xright(1:2,:));
+  Xleft(3,:) = heightfun(Xleft(1:2,:));
   [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
   [d_l, r_l] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
   [d_alt_r, r_alt_r] = stepDistance(Xright(:,1:end-1), Xleft(:,2:end), 0);
   [d_alt_l, r_alt_l] = stepDistance(Xleft(:,1:end-1), Xright(:,2:end), 0);
-  c = [d_r - biped.max_step_length;
-       d_l - biped.max_step_length;
-       d_alt_r - max_diag_dist;
-       d_alt_l - max_diag_dist;
-       r_r - biped.max_step_rot;
-       r_l - biped.max_step_rot];
+  height_diff = [abs(Xright(3,ndx_r(1:end-1)) - Xright(3,ndx_r(2:end)))';
+                 abs(Xleft(3,ndx_l(1:end-1)) - Xleft(3,ndx_l(2:end)))'];
+  
+%   obs_dist = [sum((Xright(1:2,ndx_r) - repmat(obs_center, 1, length(ndx_r))).^2)';
+%     sum((Xleft(1:2,ndx_l) - repmat(obs_center, 1, length(ndx_l))).^2)'];
+  c = [d_r' - biped.max_step_length;
+       d_l' - biped.max_step_length;
+       d_alt_r' - max_diag_dist;
+       d_alt_l' - max_diag_dist;
+       r_r' - biped.max_step_rot;
+       r_l' - biped.max_step_rot;
+       height_diff - 0.5];
+%        -obs_dist + obs_radius];
   ceq = 0;
 end
 

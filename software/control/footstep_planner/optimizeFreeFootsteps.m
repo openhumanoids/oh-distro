@@ -16,7 +16,7 @@ for p = poses
     [~, fixed_steps{j,2}] = biped.stepLocations(X(:,j));
   end
 end
-X = updateFreeFootsteps(X, biped, fixed_steps);
+X = updateFreeFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
 
 
 done = false;
@@ -33,7 +33,7 @@ drag_ndx = 1;
 
 while 1
   modified = 0;
-  [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps);
+  [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
   if outputflag ~= 1 && outputflag ~= 2
     modified = 1;
   end
@@ -82,8 +82,25 @@ while 1
   
   [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
   figure(22)
+%   rectangle('Position', [.25, .25, .5, .5], 'Curvature', [1,1], 'FaceColor', 'k');
+  cla
+%   rectangle('Position', [.5, -.25, .5, .5], 'FaceColor', 'k');
+%   rectangle('Position', [.7, -.05, .1, .1], 'FaceColor', 'w');
+  hold on
   plotFootstepPlan(X, Xright, Xleft);
+  hold on
+  for j = 1:length(ndx_r)
+    if ~isempty(fixed_steps{ndx_r(j), 1})
+      plot(Xright(1,j), Xright(2,j), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
+    end
+  end
+  for j = 1:length(ndx_l)
+    if~isempty(fixed_steps{ndx_l(j), 2})
+      plot(Xleft(1,j), Xleft(2,j), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+    end
+  end
   drawnow
+  hold off
   if (~interactive && ~modified) || (done)
     break
   end
@@ -123,5 +140,11 @@ end
 function mouse_up_handler(hFig)
   set(hFig, 'WindowButtonMotionFcn', '');
 end
+
+  function h = heightfun(xy)
+    h = zeros(1, length(xy(1,:)));
+%     h(xy(1,:) > 0.5 & xy(1,:) < 1 & xy(2,:) > -0.25 & xy(2,:) < 0.25) = -0.6;
+%     h(xy(1,:) > 0.7 & xy(1,:) < .8 & xy(2,:) > -0.05 & xy(2,:) < 0.05) = 0;
+  end
 
 end

@@ -1,8 +1,10 @@
 function plotFootstepPlan(X, Xright, Xleft)
+
 % X = traj.eval(linspace(0,1));
 
 plot(Xright(1,:), Xright(2,:), 'go',...
   Xleft(1,:), Xleft(2,:), 'ro')
+
 
 hold on
 if ~isempty(X)
