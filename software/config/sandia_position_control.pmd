@@ -41,11 +41,11 @@ group "core" {
 
 group "drake" {
     cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
        host = "localhost";
     }
     cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "localhost";
     }
 }
