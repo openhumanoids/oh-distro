@@ -56,4 +56,5 @@ classdef GraspState < LCMCoordinateFrameWCoder & Singleton
             obj.setDefaultChannel('COMMITTED_GRASP_SEED');
         end
     end
+    
 end
