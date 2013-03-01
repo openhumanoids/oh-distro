@@ -12,6 +12,7 @@
 
 #include <ConciseArgs>
 
+
 using namespace std;
 using namespace Eigen;
 
@@ -22,7 +23,7 @@ class Pass{
     ~Pass(){
     }
     
-    void doTest();
+    void doTest(std::string fname);
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -54,11 +55,11 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   verbose_ =false;  
 }
 
-void Pass::doTest(){
-
+void Pass::doTest(std::string fname){
   double length = 0.5;
   double radius = 0.05;
   
+  // transform to be applied to object:
   Eigen::Isometry3d transform;
   Eigen::Quaterniond quat = Eigen::Quaterniond(1,0,0,0);
   transform.setIdentity();
@@ -72,14 +73,15 @@ void Pass::doTest(){
   transform.translation()  << -0.18,-0.3,-0.4;
   pcl::PolygonMesh::Ptr mesh_cube = prim_->getCubeWithTransform(transform, 0.1, 0.2,0.5);
     
+  // Visualise:
   int64_t pose_id =0;
   Eigen::Isometry3d null_pose;
   null_pose.setIdentity();
   Isometry3dTime null_poseT = Isometry3dTime(pose_id, null_pose);
-  
   pc_vis_->pose_to_lcm_from_list(9995, null_poseT);
   pc_vis_->mesh_to_lcm_from_list(9996, mesh_cylinder, pose_id , pose_id);
   pc_vis_->mesh_to_lcm_from_list(9997, mesh_cube, pose_id , pose_id);
+  
 }
 
 
@@ -102,7 +104,7 @@ main( int argc, char** argv ){
   
   //app.prim_(4.0,4.0, 10.0, 32,1);
   
-  app.doTest();
+  app.doTest(camera_channel);
   
   
 

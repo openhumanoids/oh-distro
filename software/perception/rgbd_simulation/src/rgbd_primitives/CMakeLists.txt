@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(rgbd_primitives)
 
+
 set(PCL_LIBRARIES  pcl_io-1.6)
 
 add_library(rgbd_primitives SHARED rgbd_primitives.cpp)

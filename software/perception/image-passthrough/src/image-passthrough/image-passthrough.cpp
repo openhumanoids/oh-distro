@@ -432,232 +432,15 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
   delete [] reference;
 }
 
-void
-SimExample::write_score_image(const float* score_buffer, std::string fname, int64_t utime)
-{
-  int npixels = rl_->getWidth() * rl_->getHeight();
-  uint8_t* score_img = new uint8_t[npixels * 3];
 
-  float min_score = score_buffer[0];
-  float max_score = score_buffer[0];
-  for (int i=1; i<npixels; i++)
-  {
-    if (score_buffer[i] < min_score) min_score = score_buffer[i];
-    if (score_buffer[i] > max_score) max_score = score_buffer[i];
-  }
-
-  for (int y = 0; y <  height_; ++y)
-  {
-    for (int x = 0; x < width_; ++x)
-    {
-      int i = y*width_ + x ;
-      int i_in= (height_-1 -y) *width_ + x ; // flip up
-
-      float d = (score_buffer[i_in]-min_score)/(max_score-min_score);
-      score_img[3*i+0] = 0;
-      score_img[3*i+1] = d*255;
-      score_img[3*i+2] = 0;
-    }
-  }
-
-  // Write to file:
-  IplImage *cv_ipl = cvCreateImage( cvSize(width_ ,height_), 8, 3);
-  cv::Mat cv_mat(cv_ipl);
-  cv_mat.data = score_img;
-  cv::imwrite(fname, cv_mat);     
-  
-  delete [] score_img;
-}
-
-void
-SimExample::write_depth_image(const float* depth_buffer, std::string fname, int64_t utime)
-{
-  int npixels = rl_->getWidth() * rl_->getHeight();
-  uint8_t* depth_img = new uint8_t[npixels * 3];
-
-  float min_depth = depth_buffer[0];
-  float max_depth = depth_buffer[0];
-  for (int i=1; i<npixels; i++)
-  {
-    if (depth_buffer[i] < min_depth) min_depth = depth_buffer[i];
-    if (depth_buffer[i] > max_depth) max_depth = depth_buffer[i];
-  }
-
-  for (int y = 0; y <  rl_->getHeight(); ++y)
-  {
-    for (int x = 0; x < rl_->getWidth(); ++x)
-    {
-      int i= y*rl_->getWidth() + x ;
-      int i_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
-    
-    
-      float zn = 0.7;
-      float zf = 20.0;
-      float d = depth_buffer[i_in];
-      float z = -zf*zn/((zf-zn)*(d - zf/(zf-zn)));
-      float b = 0.075;
-      float f = 580.0;
-      uint16_t kd = static_cast<uint16_t>(1090 - b*f/z*8);
-      if (kd < 0) kd = 0;
-      else if (kd>2047) kd = 2047;
-
-      int pval = t_gamma[kd];
-      int lb = pval & 0xff;
-      switch (pval>>8) {
-	case 0:
-	    depth_img[3*i+2] = 255;
-	    depth_img[3*i+1] = 255-lb;
-	    depth_img[3*i+0] = 255-lb;
-	    break;
-	case 1:
-	    depth_img[3*i+2] = 255;
-	    depth_img[3*i+1] = lb;
-	    depth_img[3*i+0] = 0;
-	    break;
-	case 2:
-	    depth_img[3*i+2] = 255-lb;
-	    depth_img[3*i+1] = 255;
-	    depth_img[3*i+0] = 0;
-	    break;
-	case 3:
-	    depth_img[3*i+2] = 0;
-	    depth_img[3*i+1] = 255;
-	    depth_img[3*i+0] = lb;
-	    break;
-	case 4:
-	    depth_img[3*i+2] = 0;
-	    depth_img[3*i+1] = 255-lb;
-	    depth_img[3*i+0] = 255;
-	    break;
-	case 5:
-	    depth_img[3*i+2] = 0;
-	    depth_img[3*i+1] = 0;
-	    depth_img[3*i+0] = 255-lb;
-	    break;
-	default:
-	    depth_img[3*i+2] = 0;
-	    depth_img[3*i+1] = 0;
-	    depth_img[3*i+0] = 0;
-	    break;
-      }
-    }
-  }
-
-  std::string channel = fname + "_DEPTH";
-  int n_colors = 3;
-  int isize =rl_->getWidth()*rl_->getHeight();
-  
-  if (1==1){  
-    bot_core_image_t image;
-    image.utime =0;
-    image.width =rl_->getWidth();
-    image.height=rl_->getHeight();
-    image.row_stride =n_colors*rl_->getWidth();
-    image.pixelformat =BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB;
-    image.size =n_colors*isize;
-    image.data = depth_img;
-    image.nmetadata =0;
-    image.metadata = NULL;
-    bot_core_image_t_publish( lcm_->getUnderlyingLCM(), channel.c_str(), &image);  
-  
-  } else {  
-    bot_core::image_t lcm_img;
-    lcm_img.utime =0;//current_utime;
-    lcm_img.width =rl_->getWidth();
-    lcm_img.height =rl_->getHeight();
-    lcm_img.nmetadata =0;
-    lcm_img.row_stride=n_colors*rl_->getWidth();
-    lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-    lcm_img.size =n_colors*isize;
-    //copy(msg->data.begin(), msg->data.end(), singleimage_data);
-    //lcm_img.data = *depth_img;//.assign(singleimage_data, singleimage_data + ( n_colors*isize));
-
-    lcm_img.data.assign(depth_img, depth_img + ( n_colors*isize));
-    lcm_->publish(channel.c_str(), &lcm_img);
-  }  
-  
-
-  // Write to file: (with rgb flipped)
-  //IplImage *cv_ipl = cvCreateImage( cvSize(width_ ,height_), 8, 3);
-  //cv::Mat cv_mat(cv_ipl);
-  //cv_mat.data = depth_img;
-  //cv::imwrite(fname, cv_mat);     
-  
-  delete [] depth_img;
-}
-
-
-
-
-
-
-
-
-void
-SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname, int64_t utime)
-{
-  int npixels = rl_->getWidth() * rl_->getHeight();
-  unsigned short * depth_img = new unsigned short[npixels ];
-
-  float min_depth = depth_buffer[0];
-  float max_depth = depth_buffer[0];
-  for (int i=1; i<npixels; i++)
-  {
-    if (depth_buffer[i] < min_depth) min_depth = depth_buffer[i];
-    if (depth_buffer[i] > max_depth) max_depth = depth_buffer[i];
-  }
-
-  for (int y = 0; y <  height_; ++y)
-  {
-    for (int x = 0; x < width_; ++x)
-    {
-      int i= y*width_ + x ;
-      int i_in= (height_-1 -y) *width_ + x ; // flip up down
-    
-      float zn = 0.7;
-      float zf = 20.0;
-      float d = depth_buffer[i_in];
-      
-      unsigned short z_new = (unsigned short)  floor( 1000*( -zf*zn/((zf-zn)*(d - zf/(zf-zn)))));
-      if (z_new < 0) z_new = 0;
-      else if (z_new>65535) z_new = 65535;
-      
-      if ( z_new < 18000){
-	  cout << z_new << " " << d << " " << x << "\n";  
-      }
-	
-      float z = 1000*( -zf*zn/((zf-zn)*(d - zf/(zf-zn))));
-      float b = 0.075;
-      float f = 580.0;
-      uint16_t kd = static_cast<uint16_t>(1090 - b*f/z*8);
-      if (kd < 0) kd = 0;
-      else if (kd>2047) kd = 2047;
-
-      int pval = t_gamma[kd];
-      int lb = pval & 0xff;
-      depth_img[i] = z_new;
-    }
-  }
-
-  // Write to file:
-  IplImage *cv_ipl = cvCreateImage( cvSize(width_ ,height_), IPL_DEPTH_16U, 1);
-  cv::Mat cv_mat(cv_ipl);
-  cv_mat.data =(uchar *) depth_img;
-  cv::imwrite(fname, cv_mat);     
-  
-  delete [] depth_img;
-}
-
-
-
-
+//////////////////////////// I-O ///////////////////////////////////////
 uint8_t* 
 SimExample::getDepthBuffer()
 {
   const float* depth_buffer =  rl_->getDepthBuffer ();
   int npixels = rl_->getWidth() * rl_->getHeight();
 
-  //this loop isn't used
+  //this loop isn't used - why is it here???
   //float min_depth = depth_buffer[0];
   //float max_depth = depth_buffer[0];
   //for (int i=1; i<npixels; i++) // 
@@ -672,8 +455,6 @@ SimExample::getDepthBuffer()
     {
       int i= y*rl_->getWidth() + x ;
       int i_in= (rl_->getHeight()-1 -y) *rl_->getWidth() + x ; // flip up down
-    
-    
       float zn = 0.7;
       float zf = 20.0;
       float d = depth_buffer[i_in];
@@ -728,10 +509,6 @@ SimExample::getDepthBuffer()
   return img_buffer_;  
 }
 
-
-
-
-
 uint8_t*
 SimExample::getColorBuffer(int n_colors_)
 {
@@ -763,3 +540,99 @@ SimExample::getColorBuffer(int n_colors_)
   }
   return img_buffer_;
 }
+
+
+//////////////////// EVERYTHING BELOW THIS IS DEPRECATED /////////////////////////////////////////
+//////////////////// REPLACE WITH FUNCTION CALLS TO RETURN THE FLIPPED BUFFER INSTEAD ////////////
+void
+SimExample::write_score_image(const float* score_buffer, std::string fname, int64_t utime)
+{
+  int npixels = rl_->getWidth() * rl_->getHeight();
+  uint8_t* score_img = new uint8_t[npixels * 3];
+
+  float min_score = score_buffer[0];
+  float max_score = score_buffer[0];
+  for (int i=1; i<npixels; i++)
+  {
+    if (score_buffer[i] < min_score) min_score = score_buffer[i];
+    if (score_buffer[i] > max_score) max_score = score_buffer[i];
+  }
+
+  for (int y = 0; y <  height_; ++y)
+  {
+    for (int x = 0; x < width_; ++x)
+    {
+      int i = y*width_ + x ;
+      int i_in= (height_-1 -y) *width_ + x ; // flip up
+
+      float d = (score_buffer[i_in]-min_score)/(max_score-min_score);
+      score_img[3*i+0] = 0;
+      score_img[3*i+1] = d*255;
+      score_img[3*i+2] = 0;
+    }
+  }
+
+  // Write to file:
+  IplImage *cv_ipl = cvCreateImage( cvSize(width_ ,height_), 8, 3);
+  cv::Mat cv_mat(cv_ipl);
+  cv_mat.data = score_img;
+  cv::imwrite(fname, cv_mat);     
+  
+  delete [] score_img;
+}
+
+void
+SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname, int64_t utime)
+{
+  int npixels = rl_->getWidth() * rl_->getHeight();
+  unsigned short * depth_img = new unsigned short[npixels ];
+
+  float min_depth = depth_buffer[0];
+  float max_depth = depth_buffer[0];
+  for (int i=1; i<npixels; i++)
+  {
+    if (depth_buffer[i] < min_depth) min_depth = depth_buffer[i];
+    if (depth_buffer[i] > max_depth) max_depth = depth_buffer[i];
+  }
+
+  for (int y = 0; y <  height_; ++y)
+  {
+    for (int x = 0; x < width_; ++x)
+    {
+      int i= y*width_ + x ;
+      int i_in= (height_-1 -y) *width_ + x ; // flip up down
+    
+      float zn = 0.7;
+      float zf = 20.0;
+      float d = depth_buffer[i_in];
+      
+      unsigned short z_new = (unsigned short)  floor( 1000*( -zf*zn/((zf-zn)*(d - zf/(zf-zn)))));
+      if (z_new < 0) z_new = 0;
+      else if (z_new>65535) z_new = 65535;
+      
+      if ( z_new < 18000){
+          cout << z_new << " " << d << " " << x << "\n";  
+      }
+        
+      float z = 1000*( -zf*zn/((zf-zn)*(d - zf/(zf-zn))));
+      float b = 0.075;
+      float f = 580.0;
+      uint16_t kd = static_cast<uint16_t>(1090 - b*f/z*8);
+      if (kd < 0) kd = 0;
+      else if (kd>2047) kd = 2047;
+
+      int pval = t_gamma[kd];
+      int lb = pval & 0xff;
+      depth_img[i] = z_new;
+    }
+  }
+
+  // Write to file:
+  IplImage *cv_ipl = cvCreateImage( cvSize(width_ ,height_), IPL_DEPTH_16U, 1);
+  cv::Mat cv_mat(cv_ipl);
+  cv_mat.data =(uchar *) depth_img;
+  cv::imwrite(fname, cv_mat);     
+  
+  delete [] depth_img;
+}
+

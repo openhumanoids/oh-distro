@@ -78,14 +78,12 @@ class SimExample
     void addScene ();
     void doSim (Eigen::Isometry3d pose_in);
 
+    // these ARE DEPRECIATED:
     void write_score_image(const float* score_buffer,std::string fname, int64_t utime);
-    void write_depth_image(const float* depth_buffer,std::string fname, int64_t utime);
     void write_depth_image_uint(const float* depth_buffer,std::string fname, int64_t utime);
 
     // Get the GL depth buffer, invert it, color mask it. always 3 colors
     uint8_t* getDepthBuffer();
-    
-    
     // Get the GL color buffer, invert it and output either gray (red channel) or rgb
     uint8_t* getColorBuffer(int n_colors_);
 

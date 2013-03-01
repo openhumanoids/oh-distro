@@ -1,7 +1,7 @@
 // Todo:
-// - read the calibration from bot-param
 // - support rendering primitives for the fingers
 // - why does TriangleModelMesh not work????
+// - use model_client to parse the urdf in advance of the lcm_handle
 //
 // Current Mask Values:
 // 0 - free (black - by default)
@@ -59,7 +59,6 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <lcm/lcm-cpp.hpp>
-#include <bot_lcmgl_client/lcmgl.h>
 
 #define DO_TIMING_PROFILE TRUE
 #include <ConciseArgs>
@@ -83,48 +82,43 @@ class Pass{
     }
     
   private:
+    // LCM:
     boost::shared_ptr<lcm::LCM> lcm_;
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
     void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
-    
-    int width_, height_;
-    
-    
-    std::string camera_channel_;
-
-    bot_lcmgl_t* lcmgl_;
-    pointcloud_vis* pc_vis_;
-    bool verbose_;
-    
-    // OpenGL:
-    void sendOutput(int64_t utime);
-    SimExample::Ptr simexample;
-    
-    boost::shared_ptr<rgbd_primitives>  prim_;
-    pcl::PolygonMesh::Ptr aff_mesh_ ;
-    
-    image_io_utils*  imgutils_;
-    
-
-    // Last robot state: this is used to extract link positions:
-    drc::robot_state_t last_rstate_;
-    bool init_rstate_;    
-
-    // New Stuff:
-    boost::shared_ptr<visualization_utils::GlKinematicBody> gl_robot_;
-    std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
-    
     bool urdf_parsed_;
     bool urdf_subscription_on_;
     lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
+    
+    // External Objects:
+    BotParam* botparam_;
+    pointcloud_vis* pc_vis_;
+    boost::shared_ptr<visualization_utils::GlKinematicBody> gl_robot_;
+    image_io_utils*  imgutils_; 
+    SimExample::Ptr simexample;
+    boost::shared_ptr<rgbd_primitives>  prim_; // this should be moved into the library
+
+    void sendOutput(int64_t utime);
+
+    // Config:
+    int width_, height_;
+    std::string camera_channel_;
+    
+    // State:
+    pcl::PolygonMesh::Ptr aff_mesh_ ;
+    drc::robot_state_t last_rstate_; // Last robot state: this is used to extract link positions:
+    bool init_rstate_;    
+    std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
+    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     std::string robot_name_;
     std::string urdf_xml_string_; 
     
+    // Settings:
+    bool verbose_;
     int output_color_mode_;
     bool use_convex_hulls_;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 };
 
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
@@ -132,6 +126,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
     lcm_(lcm_), output_color_mode_(output_color_mode_), use_convex_hulls_(use_convex_hulls_), 
     urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_) {
 
+  // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
   lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
@@ -139,10 +134,17 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   urdf_subscription_on_ = true;
   ////////////////////////////////////////////////////////
 
-  lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
+  // Get Camera Parameters:
+  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  std::string key_prefix_str = "cameras."+camera_channel_+".intrinsic_cal";
+  width_ = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
+  height_ = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
+  double fx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
+  double fy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
+  double cx = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
+  double cy = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());  
   
-  
-  // Vis Config:
+  // Visual I-O:
   float colors_b[] ={0.0,0.0,0.0};
   std::vector<float> colors_v;
   colors_v.assign(colors_b,colors_b+4*sizeof(float));
@@ -156,47 +158,22 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"iPass - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
   verbose_ =false;  
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ ); // Actually outputs the Mask Image:
 
-  // Construct the simulation method - with camera params as of Jan 2013:
-  width_ = 1024;
-  height_ = 544;
-  double fx = 610.1778; 
-  double fy = 610.1778;
-  double cx = 512.5;
-  double cy = 272.5;
-/*
-  std::string key_prefix_str = "cameras."+vCHANNEL_LEFT+".intrinsic_cal";
-  left_camera_params.width = bot_param_get_int_or_fail(state->param, (key_prefix_str+".width").c_str());
-  left_camera_params.height = bot_param_get_int_or_fail(state->param,(key_prefix_str+".height").c_str());
-  left_camera_params.fx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fx").c_str());
-  left_camera_params.fy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".fy").c_str());
-  left_camera_params.cx = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cx").c_str());
-  left_camera_params.cy = bot_param_get_double_or_fail(state->param, (key_prefix_str+".cy").c_str());
-  left_camera_params.k1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k1").c_str());
-  left_camera_params.k2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k2").c_str());
-  left_camera_params.k3 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".k3").c_str());
-  left_camera_params.p1 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p1").c_str());
-  left_camera_params.p2 = bot_param_get_double_or_fail(state->param, (key_prefix_str+".p2").c_str());  
-  */
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
-
-  
+  // Construct the simulation method:
   simexample = SimExample::Ptr (new SimExample (argc, argv, height_, width_ , lcm_, output_color_mode_));
-  
   simexample->setCameraIntrinsicsParameters (width_, height_, fx, fy, cx, cy);
-  
+  // Keep a mesh for the affordances:
   pcl::PolygonMesh::Ptr aff_mesh_ptr_temp(new pcl::PolygonMesh());
   aff_mesh_ = aff_mesh_ptr_temp;   
 }
 
 // same as bot_timestamp_now():
-int64_t _timestamp_now()
-{
+int64_t _timestamp_now(){
     struct timeval tv;
     gettimeofday (&tv, NULL);
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
-
 
 // Output the simulated output to file/lcm:
 void Pass::sendOutput(int64_t utime){ 
