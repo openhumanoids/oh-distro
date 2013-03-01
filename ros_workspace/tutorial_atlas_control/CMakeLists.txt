@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-include(cmake/pods.cmake)
-set(POD_NAME multisense_command)
+#include(cmake/pods.cmake)
+#set(POD_NAME multisense_command)
 
 rosbuild_init()
 
