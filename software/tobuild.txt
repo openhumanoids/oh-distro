@@ -13,7 +13,9 @@ camunits
 #hubo
 kinematics_model
 sensing
-control
+
+#disabled as its braking the build
+#control
 
 gfe
 perception
