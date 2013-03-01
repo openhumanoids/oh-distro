@@ -112,7 +112,8 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["drc_vehicle"]=70009;
   model_map_["mit_cordless_drill"]=70010;
   model_map_["saucepan"]=70011;  
-  model_map_["duff_beer"]=70012;  
+  model_map_["duff_beer"]=70012;
+  model_map_["steering_assembly"]=70013;    
   //model_map_["mit_drc_robot"]=7012; //dont send this
   
   storeAffordances();
@@ -132,7 +133,7 @@ void OraclePlugin::storeAffordances(){
     a.utime =0;
     a.map_id =0;
     a.uid =counter++;
-    a.otdf_type ="cylinder";
+    a.otdf_type ="steering_cyl";
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -165,7 +166,7 @@ void OraclePlugin::storeAffordances(){
     AffordancePlus affp;
     affp.aff =a;
     affp.offset = offset;
-    aff_map_["drc_vehicle_steering_wheel"]=affp;
+    aff_map_["drc_vehicle_polaris_ranger_ev::steering_wheel"]=affp;
   }
   
   
@@ -378,7 +379,53 @@ void OraclePlugin::storeAffordances(){
     affp.aff =a;
     affp.offset = offset;
     aff_map_["standpipe_standpipe"]=affp;
-  }        
+  }     
+
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="steering_cyl";
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.220000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.020000);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    //offset.translation()  << -0.085, 0.03, 0.20;
+    double ypr[3]={0,0,-1.571};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["steering_assembly_steering_wheel"]=affp;
+  }   
         
   
 }
@@ -477,8 +524,6 @@ void OraclePlugin::OnUpdate(){
         map< std::string  ,int>::iterator it;
         it=model_map_.find( model->GetName() );
         if ( it == model_map_.end() ){
-          //gzerr << "couldn't find this: "<< model->GetName() <<"\n";
-        }else{
           int model_id = model_map_.find(   model->GetName()  )->second;
           // physics::Link_V all_links = model->GetAllLinks(); deprecated in 1.4.0
           physics::Link_V all_links = model->GetLinks();
@@ -496,7 +541,7 @@ void OraclePlugin::OnUpdate(){
               world_to_link.translation()  << pose.pos.x, pose.pos.y, pose.pos.z;
               Eigen::Quaterniond quat = Eigen::Quaterniond( pose.rot.w, pose.rot.x , pose.rot.y , pose.rot.z);
               world_to_link.rotate(quat);    
-              
+
               //gzerr << model->GetName() << ", " << link->GetName() << " | "
               //      << pose.pos.x << " " << pose.pos.y << " " << pose.pos.z << " | "
               //      << pose.rot.w << " " << pose.rot.x << " " << pose.rot.y << " " << pose.rot.z << "\n";
@@ -514,15 +559,17 @@ void OraclePlugin::OnUpdate(){
               
               std::string affname = model->GetName() + "_" +link->GetName();
               link_names.push_back( affname  );
+              
+              if ( model->GetName().compare("drc_vehicle") == 0) {              
+                if ( link->GetName().compare( "polaris_ranger_ev::steering_wheel" ) == 0){
+                  //gzerr<< "got steering_wheel\n"; 
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                }
+                //if ( link->GetName().compare( "polaris_ranger_ev::hand_brake" ) == 0){                  
+                  //affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                //}
+              }
 
-              if ( link->GetName().compare( "steering_wheel" ) == 0){
-                gzerr<< "got steering_wheel\n"; 
-                affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
-              }
-              if ( link->GetName().compare( "hand_brake" ) == 0){
-                gzerr<< "got hand_brake\n"; 
-                affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
-              }
               if ( model->GetName().compare( "mit_coke_can" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
@@ -544,7 +591,11 @@ void OraclePlugin::OnUpdate(){
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
               }
-              
+              if ( model->GetName().compare( "steering_assembly" ) == 0){
+                if ( link->GetName().compare( "steering_wheel" ) == 0){
+                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                }
+              }
               
             }
           }
