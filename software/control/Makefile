@@ -39,8 +39,9 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	javac $< -cp $(CLASSPATH)
 
 drake:
-	echo "\nBuilding drake\n";
-	matlab -nosplash -nodesktop -r "make"
+#       commented out until the build server has matlab installed
+#	echo "\nBuilding drake\n";
+#	matlab -nosplash -nodesktop -r "make"
 
 clean:
 	-rm $(CLASSFILES)
