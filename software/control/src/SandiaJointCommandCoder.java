@@ -14,31 +14,37 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
     // SandiaHandplugin has a fixed order for joints, 
     //        so number of joints here is fixed
     int m_num_joints = 12;
+    int m_num_basejoints = 0;
 
-    int mode = 1; // mode==1: torque-only, mode==2: position-only, fixed gains
-    // TODO: add additional modes (e.g., position w/variable gains, mixed torque-position control
     
     drc.joint_command_t msg;
 
-    public SandiaJointCommandCoder(String robot_name,boolean floating, String side, String[] joint_name, double[] Kp, double[] Kd) throws Exception
+    
+    public SandiaJointCommandCoder(String robot_name,boolean floating,String side, String[] joint_name, double[] Kp, double[] Kd) throws Exception
     {
       this(robot_name,floating, side, joint_name);
-      
-      mode = 2;
+
       int j;
       for (int i=0; i<msg.num_joints; i++) {
         j = m_gazebo_joint_map.get(m_rev_drake_joint_map.get(i)).intValue();
         msg.kp_position[j] = Kp[i];
         msg.kd_position[j] = Kd[i];
-      }
-
+      }    
+  
     }
+    
     
     public SandiaJointCommandCoder(String robot_name,boolean floating, String side, String[] joint_name) throws Exception
     {
       if(floating)
       {
         m_num_joints = 18;
+        m_num_basejoints = 6;
+      }
+      else
+      {
+       m_num_joints = 12;
+       m_num_basejoints = 0;
       }
     
       if (joint_name.length != m_num_joints)
@@ -66,6 +72,7 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
       gazebo_joint_name[10] = side+"_f3_j1";
       gazebo_joint_name[11] = side+"_f3_j2";
       if(floating){
+
         gazebo_joint_name[12] = side+"_base_x";
         gazebo_joint_name[13] = side+"_base_y";
         gazebo_joint_name[14] = side+"_base_z";
@@ -108,7 +115,6 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
         msg.kp_velocity[i] = 0.0;
         msg.i_effort_min[i] = 0.0;
         msg.i_effort_max[i] = 0.0;
-        msg.effort[i] = 0.0;
       }
     }
     
@@ -121,18 +127,20 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
           int index;
           
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-          fdata.val = new double[m_num_joints];
+          fdata.val = new double[4*m_num_joints];
           fdata.t = (double)msg.utime / 1000000.0;
+          
           for (int i=0; i<m_num_joints; i++) {
             j = m_drake_joint_map.get(m_rev_gazebo_joint_map.get(i));
             if (j!=null) {
               index = j.intValue();
-              if (mode==1)
-                fdata.val[index] = msg.effort[i];
-              else if (mode==2)
-                fdata.val[index] = msg.position[i];
+              fdata.val[index] = msg.kp_position[i];
+              fdata.val[index+m_num_joints] = msg.kd_position[i];
+              fdata.val[index+2*m_num_joints] = msg.position[i];
+              fdata.val[index+3*m_num_joints] = msg.effort[i];
             }
           }
+          
           return fdata;
         }
       } catch (IOException ex) {
@@ -147,10 +155,10 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
       int j;
       for (int i=0; i<m_num_joints; i++) {
         j = m_gazebo_joint_map.get(m_rev_drake_joint_map.get(i)).intValue();
-        if (mode==1)
-          msg.effort[j] = d.val[i];
-        else if (mode==2)
-          msg.position[j] = d.val[i];
+        msg.kp_position[j] = d.val[i];
+        msg.kd_position[j] = d.val[i+m_num_joints];
+        msg.position[j]    = d.val[i+2*m_num_joints];
+        msg.effort[j]      = d.val[i+3*m_num_joints];
       }
       return msg;
     }
