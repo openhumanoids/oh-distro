@@ -551,11 +551,13 @@ void App::appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_
 }
 
 void App::publishRobotState(int64_t utime_in){
+
+ if(mode_.compare("hands") != 0){
   if(!init_recd_[0])
     return;
   if(!init_recd_[1])
     return;
-    
+ }
   
   
   drc::robot_state_t robot_state_msg;
@@ -695,7 +697,7 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 }
 
 int main(int argc, char **argv){
-  ConciseArgs parser(argc, argv, "lcm2ros");
+  ConciseArgs parser(argc, argv, "ros2lcm");
   string mode = "robot";
   bool control_only = false;
   parser.add(mode, "m", "mode", "Mode: robot, hands");
