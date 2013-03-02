@@ -1,23 +1,35 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 tf_solver
+
+# core tools widely used by mfallon:
 pointcloud-tools
+
 image_io_utils
+# core pose estimator
 motion_estimate
+# utility to filter lidar self detections
 lidar-passthrough
-rgbd_simulation
-map_store
+
+# core lidar tools (antone) and affordance store (fleder)
+world_model
+
+# library and module to apply object masks:
+rgbd_simulation 
 image-passthrough
-local_map
+
+# sudeep:
 opencv-utils
 tld-tracker
-world_model
 stereo-bm
-
 
 # some quick start examples:
 tutorials
 
-# maurice's stuff:
-#registeration
+
+# i think these are deprecated
+#map_store
+#local_map
+
+# maurice's sandbox:
 #mfallon_sandbox
