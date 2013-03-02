@@ -55,7 +55,7 @@ class OraclePlugin: public ModelPlugin{
     private: event::ConnectionPtr updateConnection;
     
     pointcloud_vis* pc_vis_;
-    map< std::string ,int> model_map_;
+    std::map< std::string ,int> model_map_;
    
     protected: double update_rate_;
     protected: double update_period_;
@@ -76,6 +76,7 @@ GZ_REGISTER_MODEL_PLUGIN(OraclePlugin)
 
 
 void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
+
   // Store the pointer to the model
   this->model = _parent;
   this->world = _parent->GetWorld();
@@ -115,7 +116,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["duff_beer"]=70012;
   model_map_["steering_assembly"]=70013;    
   //model_map_["mit_drc_robot"]=7012; //dont send this
-  
+    gzerr << "model_map_ " << model_map_.size()<<"\n";
   storeAffordances();
     
   // obj_cfg: id name type reset
@@ -126,8 +127,11 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
 
 
 
-void OraclePlugin::storeAffordances(){
+void OraclePlugin::storeAffordances()
+{
+
   int counter=0;
+  
   { 
     drc::affordance_t a;
     a.utime =0;
@@ -516,14 +520,13 @@ void OraclePlugin::OnUpdate(){
     std::vector< int64_t > world_to_link_utimes;
     std::vector< std::string > link_names;
     int64_t counter =0;
+      
 
-    
     BOOST_FOREACH( physics::ModelPtr model, all_models ){
       if (model){
-        //gzerr << "which link: "<< model->GetName() <<"\n";
-        map< std::string  ,int>::iterator it;
+        std::map< std::string,int>::iterator it;
         it=model_map_.find( model->GetName() );
-        if ( it == model_map_.end() ){
+        if ( it != model_map_.end() ){
           int model_id = model_map_.find(   model->GetName()  )->second;
           // physics::Link_V all_links = model->GetAllLinks(); deprecated in 1.4.0
           physics::Link_V all_links = model->GetLinks();
@@ -540,8 +543,9 @@ void OraclePlugin::OnUpdate(){
               world_to_link.setIdentity();
               world_to_link.translation()  << pose.pos.x, pose.pos.y, pose.pos.z;
               Eigen::Quaterniond quat = Eigen::Quaterniond( pose.rot.w, pose.rot.x , pose.rot.y , pose.rot.z);
-              world_to_link.rotate(quat);    
-
+              world_to_link.rotate(quat);   
+               
+               //gzerr << model->GetName() << ", " << link->GetName() << "\n";
               //gzerr << model->GetName() << ", " << link->GetName() << " | "
               //      << pose.pos.x << " " << pose.pos.y << " " << pose.pos.z << " | "
               //      << pose.rot.w << " " << pose.rot.x << " " << pose.rot.y << " " << pose.rot.z << "\n";
@@ -559,10 +563,10 @@ void OraclePlugin::OnUpdate(){
               
               std::string affname = model->GetName() + "_" +link->GetName();
               link_names.push_back( affname  );
-              
+
               if ( model->GetName().compare("drc_vehicle") == 0) {              
                 if ( link->GetName().compare( "polaris_ranger_ev::steering_wheel" ) == 0){
-                  //gzerr<< "got steering_wheel\n"; 
+                  gzerr<< "got steering_wheel\n"; 
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
                 //if ( link->GetName().compare( "polaris_ranger_ev::hand_brake" ) == 0){                  
@@ -607,8 +611,7 @@ void OraclePlugin::OnUpdate(){
     
     // Link names:
     //pc_vis_->text_collection_to_lcm(70001, 70000, "Oracle [Labels]", link_names, world_to_link_utimes );    
-    
-    
+
     affcol.naffs = affcol.affs.size();
     lcm_publish_.publish( ("AFFORDANCE_ORACLE") , &affcol);        
     
