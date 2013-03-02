@@ -84,7 +84,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
 
   boost::shared_ptr<fovis::StereoCalibration> stereo_calibration_;
   stereo_calibration_ = boost::shared_ptr<fovis::StereoCalibration>(config->load_stereo_calibration());
-  left_buf_size_ = stereo_calibration_->getWidth() * stereo_calibration_->getHeight();
+  left_buf_size_ = 3* stereo_calibration_->getWidth() * stereo_calibration_->getHeight();
   right_buf_size_ = left_buf_size_;
   left_buf_ = (uint8_t*) malloc(left_buf_size_);
   right_buf_ = (uint8_t*) malloc(right_buf_size_);  
@@ -96,7 +96,9 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
   estimator_ = new VoEstimator(lcm_ , botframes_);
 
-  lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
+  // DEPRECATED - assumes CAMERA is image_t type:
+  //lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
+  lcm_->subscribe("CAMERA",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LR",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LD",&StereoOdom::multisenseLDHandler,this);
   
@@ -192,6 +194,9 @@ void StereoOdom::updateMotion(){
   
 }
 
+
+
+
 void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  bot_core::image_t* msg){
   utime_prev_ = utime_cur_;
@@ -203,12 +208,60 @@ void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf,
   featureAnalysis();
 }
 
+/// Added for RGB-to-Gray:
+int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
+        int height, const uint8_t *src, int sstride)
+{
+  int i, j;
+  for (i=0; i<height; i++) {
+    uint8_t *drow = dest + i * dstride;
+    const uint8_t *srow = src + i * sstride;
+    for (j=0; j<width; j++) {
+      drow[j] = 0.2125 * srow[j*3+0] +
+        0.7154 * srow[j*3+1] +
+        0.0721 * srow[j*3+2];
+    }
+  }
+  return 0;
+}
+
 void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  multisense::images_t* msg){
   utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
-  memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
-  memcpy(right_buf_,  msg->images[1].data.data() , msg->images[1].size);
+  
+  int w = msg->images[0].width;
+  int h = msg->images[0].height;
+  
+  // extract image data
+  switch (msg->images[0].pixelformat) {
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+      memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
+      memcpy(right_buf_,  msg->images[1].data.data() , msg->images[1].size);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+      // image came in as raw RGB buffer.  convert to grayscale:
+      pixel_convert_8u_rgb_to_8u_gray(  left_buf_, w,          w, h, msg->images[0].data.data(),  w*3);
+      pixel_convert_8u_rgb_to_8u_gray(  right_buf_, w,          w, h, msg->images[1].data.data(),  w*3);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      fprintf(stderr, "MPEG not supported yet\n");
+      /*// for some reason msg->row_stride is 0, so we use msg->width instead.
+      jpeg_decompress_8u_gray(msg->data,
+                              msg->size,
+                              _images_buf,
+                              msg->width,
+                              msg->height,
+                              msg->width);
+      std::copy(_images_buf           , _images_buf+_buf_size   , _image_left_buf);
+      std::copy(_images_buf+_buf_size , _images_buf+2*_buf_size , _image_right_buf);
+      */
+      break;
+    default:
+      fprintf(stderr, "Unrecognized image format\n");
+      break;
+  }  
+  
   vo_->doOdometry(left_buf_,right_buf_);
   updateMotion();
   featureAnalysis();
@@ -221,7 +274,7 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
   cout << msg->images[0].width <<  msg->images[0].height << "\n";
   memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
   cout << "haven't added the disp handler\n";
-  exit(-1);
+  return;
   //memcpy(right_buf_,  msg->images[1].data.data() , msg->images[1].size);
   vo_->doOdometry(left_buf_,right_buf_);
   updateMotion();

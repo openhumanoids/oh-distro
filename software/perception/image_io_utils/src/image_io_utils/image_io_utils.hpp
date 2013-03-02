@@ -8,6 +8,7 @@
 #include <image_utils/jpeg.h>
 #include <lcm/lcm.h>
 #include <lcmtypes/bot_core.h>
+#include <lcmtypes/bot_core.hpp>
 
 class image_io_utils {
   public:
@@ -15,6 +16,7 @@ class image_io_utils {
     
     void unzipImageThenSend(const bot_core_image_t *msg, std::string channel);
     uint8_t* unzipImage(const bot_core_image_t *msg);
+    uint8_t* unzipImage(const bot_core::image_t *msg);
     
     void jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel);
 

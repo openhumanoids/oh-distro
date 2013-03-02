@@ -60,7 +60,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 
-#define DO_TIMING_PROFILE TRUE
+#define DO_TIMING_PROFILE FALSE
 #include <ConciseArgs>
 
 #define PCL_VERBOSITY_LEVEL L_ERROR
@@ -427,7 +427,8 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   
   
-  // Fix to rotate Camera into correct frame:
+  // NBNB I supply camera poses with x forward.
+  // This rotates typical camera (z forward) to the camera into correct frame:
   // TODO: Fix this or determine the cause:
   Eigen::Isometry3d fixrotation_pose;
   fixrotation_pose.setIdentity();

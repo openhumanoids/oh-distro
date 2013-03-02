@@ -47,6 +47,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <lcmtypes/multisense.h>
+#include <lcmtypes/multisense.hpp>
 
 
 using namespace pcl;
@@ -64,6 +65,10 @@ class pointcloud_lcm {
 
     void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    
+    // CPP:
+    void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
     // an integer decimation factor:
     void set_decimate(int decimate_in){ decimate_ = decimate_in; };

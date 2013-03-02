@@ -62,11 +62,17 @@ void image_io_utils::unzipImageThenSend(const bot_core_image_t *msg, std::string
   sendImage(img_buffer_, msg->utime, msg->width, msg->height, 1, string(channel + "_UNZIPPED")  );
 }
 
-
-// assumes a zipped gray scale image:
+// assumes a zipped gray scale image: 
 uint8_t* image_io_utils::unzipImage(const bot_core_image_t *msg){
   unsigned long dlen = msg->width*msg->height; // msg->depth.uncompressed_size;
   uncompress(img_buffer_, &dlen, msg->data, msg->size);
+  return img_buffer_;
+}
+
+// assumes a zipped gray scale image: CPP CPP CPP CPP
+uint8_t* image_io_utils::unzipImage(const bot_core::image_t *msg){
+  unsigned long dlen = msg->width*msg->height; // msg->depth.uncompressed_size;
+  uncompress(img_buffer_, &dlen, msg->data.data(), msg->size);
   return img_buffer_;
 }
 
