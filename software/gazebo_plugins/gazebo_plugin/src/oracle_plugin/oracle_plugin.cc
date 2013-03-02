@@ -566,7 +566,7 @@ void OraclePlugin::OnUpdate(){
 
               if ( model->GetName().compare("drc_vehicle") == 0) {              
                 if ( link->GetName().compare( "polaris_ranger_ev::steering_wheel" ) == 0){
-                  gzerr<< "got steering_wheel\n"; 
+                  //gzerr<< "got steering_wheel\n"; 
                   affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
                 }
                 //if ( link->GetName().compare( "polaris_ranger_ev::hand_brake" ) == 0){                  
