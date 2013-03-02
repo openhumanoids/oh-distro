@@ -6,16 +6,17 @@ image_io_utils
 motion_estimate
 lidar-passthrough
 rgbd_simulation
+map_store
 image-passthrough
 local_map
-map_store
 opencv-utils
 tld-tracker
 world_model
 stereo-bm
+
+
 # some quick start examples:
 tutorials
-
 
 # maurice's stuff:
 #registeration
