@@ -25,13 +25,13 @@ void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *use
     double bw_robot2base=  app->bw_cumsum_robot2base / (1024.0* elapsed_time );
     cout << "r "<<  bw_robot2base << " <----------> "<< bw_base2robot << " b [kB/s] w="<< bw_window << "sec\n";
      
-    drc_bandwidth_stats_t stats;
+    drc::bandwidth_stats_t stats;
     stats.utime = app->get_current_utime();
     stats.previous_utime = app->bw_init_utime;
     stats.bytes_from_robot = app->bw_cumsum_robot2base;
     stats.bytes_to_robot = app->bw_cumsum_base2robot;
-    drc_bandwidth_stats_t_publish(app->robot_lcm, "BW_STATS", &stats);
-    drc_bandwidth_stats_t_publish(app->base_lcm, "BW_STATS", &stats);
+    app->robot_lcm->publish("BW_STATS", &stats);
+    app->base_lcm->publish("BW_STATS", &stats);
      
     app->bw_init_utime = app->get_current_utime();
     app->bw_cumsum_robot2base = 0;
@@ -40,15 +40,15 @@ void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *use
         
   // Determine if the message should be dropped or sent (and then send)
   bool robot2base=true;
-  if (app->determine_resend_from_list(channel, app->get_current_utime(), robot2base )  ) {  
+  if (app->determine_resend_from_list(channel, app->get_current_utime(), robot2base, rbuf->data_size  )  ) {  
     if (robot2base){
       app->bw_cumsum_robot2base += rbuf->data_size;
-      lcm_publish (app->base_lcm, channel, rbuf->data, rbuf->data_size); 
+      lcm_publish (app->base_lcm->getUnderlyingLCM(), channel, rbuf->data, rbuf->data_size); 
       if (app->verbose)
         cout << "R2B " <<app->get_current_utime()<< "| "<<channel <<"\n";
     }else{
       app->bw_cumsum_base2robot += rbuf->data_size;
-      lcm_publish (app->robot_lcm, channel, rbuf->data, rbuf->data_size); 
+      lcm_publish (app->robot_lcm->getUnderlyingLCM(), channel, rbuf->data, rbuf->data_size); 
       if (app->verbose)
         cout << "B2R " <<app->get_current_utime()<< "| "<<channel <<"\n";
     }
@@ -57,17 +57,17 @@ void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *use
 
 
 void robot2base(KMCLApp& app ) { 
-  lcm_subscribe (app.robot_lcm, app.robot2base_subscription.c_str(), generic_handler, &app);
+  lcm_subscribe (app.robot_lcm->getUnderlyingLCM(), app.robot2base_subscription.c_str(), generic_handler, &app);
   cout << "robot to base subscribed\n";
   while (1)
-      lcm_handle(app.robot_lcm);    
+      lcm_handle(app.robot_lcm->getUnderlyingLCM());    
 }
 
 void base2robot(KMCLApp& app) { 
   sleep(1); // ... not necessary just for clarity
-  lcm_subscribe (app.base_lcm, app.base2robot_subscription.c_str(), generic_handler, &app);
+  lcm_subscribe (app.base_lcm->getUnderlyingLCM(), app.base2robot_subscription.c_str(), generic_handler, &app);
   cout << "base to robot subscribed\n";
   while (1)
-    lcm_handle(app.base_lcm);
+    lcm_handle(app.base_lcm->getUnderlyingLCM());
 }
 

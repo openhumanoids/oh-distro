@@ -110,7 +110,7 @@ private:
 
     Node node_;
     Node partner_;
-    lcm_t* lcm_;
+    boost::shared_ptr<lcm::LCM> lcm_;
 
     // maps channel to ring buffer
     std::map<std::string, MessageQueue > queues_;
@@ -195,11 +195,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     
     // outgoing 
-    lcm_subscribe(lcm_,
+    lcm_subscribe(lcm_->getUnderlyingLCM(),
                   node_ == BASE ?  app.base2robot_subscription.c_str() : app.robot2base_subscription.c_str(), lcm_outgoing_handler, this);
 
     cout << "subscribed" << std::endl;
-
     udp_driver_.reset(new goby::acomms::UDPDriver(&udp_service_));
 
     int max_frame_size = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
@@ -256,9 +255,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
 void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
 {
+  
     // Determine if the message should be dropped or sent (and then send)
     bool unused;
-    if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused))
+    if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused, rbuf->data_size))
     {
         std::vector<char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
         
@@ -279,9 +279,12 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
             q_it->second.messages.push_back(data);
         }    
 
+        
         cout << "queueing: " << app_.get_current_utime() << " | "
              << channel << " #" << queues_.find(channel)->second.message_count << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
-
+        // cout << app_.print_resend_list(); // print info sent in BW Stats msg
+        app_.send_resend_list();
+        app_.bw_cumsum_robot2base += rbuf->data_size;
 
     }
 }
@@ -396,7 +399,7 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
         {
             cout << "publishing: " << app_.get_current_utime() << " | "
                  << channel_id_.right.at(packet.channel()) << " #" << packet.message_number() << " | " << packet.data().size() << " bytes" << std::endl;
-            lcm_publish(lcm_, channel_id_.right.at(packet.channel()).c_str(),
+            lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
                         &packet.data()[0], packet.data().size());
         }
         else
@@ -458,7 +461,7 @@ void DRCShaper::try_decode(std::map<int, drc::ShaperPacket>& received_frags)
                 cout << "publishing: " << app_.get_current_utime() << " | "
                      << channel_id_.right.at(front.channel()) << " #" << front.message_number() << " | " << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
                 
-                lcm_publish(lcm_, channel_id_.right.at(front.channel()).c_str(),
+                lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(front.channel()).c_str(),
                             &buffer[0], buffer.size());
                 received_frags.clear();
                 return;
@@ -482,7 +485,7 @@ void DRCShaper::run()
 {
     while (1)
     {
-        int lcm_fd = lcm_get_fileno(lcm_);
+        int lcm_fd = lcm_get_fileno(lcm_->getUnderlyingLCM());
         fd_set fds;
         FD_ZERO(&fds);
         FD_SET(lcm_fd, &fds);
@@ -500,7 +503,7 @@ void DRCShaper::run()
             mac_.do_work();
         } else if(FD_ISSET(lcm_fd, &fds)) {
             // LCM has events ready to be processed.
-            lcm_handle(lcm_);
+            lcm_handle(lcm_->getUnderlyingLCM());
         }
     }
 }

@@ -3,8 +3,9 @@
 
 #include <boost/thread.hpp>
 
-#include <lcmtypes/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.h>
+#include <lcm/lcm-cpp.hpp>
+//#include <lcmtypes/bot_core.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
@@ -15,30 +16,40 @@ void base2robot(KMCLApp& app);
 // thread for robot to base
 void robot2base(KMCLApp& app);
 
-void utime_handler(const lcm_recv_buf_t* rbuf, const char* channel,
-                   const drc_utime_t* msg, void* user_data);
+//void utime_handler(const lcm_recv_buf_t* rbuf, const char* channel,
+//                   const drc::utime_t* msg, void* user_data);
+
 
 // Structure of which channels to resent and when
 struct Resend{
   Resend(std::string channel, double max_freq, bool robot2base, int64_t last_utime):
-    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime) {}
+    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime), queued_msgs(0), queued_bytes(0) {}
   std::string channel; // .. LCM channel
   double max_freq; // max freq of transmission
   int64_t last_utime; // last utime of transmission
   bool robot2base; // true r2b | false b2r
+  
+  int queued_msgs; // number of queued messaged
+  int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission ... used to determine outgoing bandwidth [added by mfallon Feb 2013]
 };
 
 ///////////////////////////////////////////////////////////////
 class KMCLApp{
   public:
-    KMCLApp(lcm_t* robot_lcm, lcm_t* base_lcm,
+    KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
             std::string task, bool base_only, bool bot_only);
     
     ~KMCLApp(){
     }
     
-    lcm_t* robot_lcm;
-    lcm_t* base_lcm;
+    boost::shared_ptr<lcm::LCM> robot_lcm;
+    boost::shared_ptr<lcm::LCM> base_lcm;
+    //lcm_t* robot_lcm;
+    //lcm_t* base_lcm;
+    
+    void utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                   const  drc::utime_t* msg); 
+    
     bool verbose;
     BotParam * bot_param;
     
@@ -55,7 +66,7 @@ class KMCLApp{
     bool base_only;
 
     void addResend( Resend resent_in ){  resendlist_.push_back(resent_in);    }
-    bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base);    
+    bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes);    
 
     void set_current_utime(int64_t current_utime_in){
         boost::mutex::scoped_lock lock(guard);
@@ -70,6 +81,8 @@ class KMCLApp{
     const std::vector<Resend>& resendlist() 
     { return resendlist_; }
     
+    std::string print_resend_list();
+    void send_resend_list();
     
     std::string parse_direction(std::string task, std::string direction, bool direction_bool);    
     
