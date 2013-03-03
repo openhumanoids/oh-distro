@@ -54,7 +54,7 @@ group "2.gazebo" {
 
 group "3.sensing" {
     cmd "icompress" {
-        exec = "drc-image-compress -j 50 -c CAMERALEFT";
+        exec = "drc-image-tool";
         host = "localhost";
     }
     cmd "maps-server" {
@@ -164,6 +164,10 @@ group "X.misc" {
         exec = "rosrun tutorial_atlas_control traj_gui.py";
         host = "localhost";
     }
+    cmd "bandwidth-scope" {
+        exec = "drc-bandwidth-scope";
+        host = "localhost";
+    }
 }
 
 group "X.motion"{
@@ -191,6 +195,7 @@ group "X.tracking" {
         host = "localhost";
     }
 }
+
 
 
 

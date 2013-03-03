@@ -66,7 +66,7 @@ group "2.head_control" {
 
 group "3.sensing" {
     cmd "icompress" {
-        exec = "drc-image-tool -m 0 -c CAMERALEFT";
+        exec = "drc-image-tool";
         host = "localhost";
     }
     cmd "maps-server" {
@@ -147,6 +147,10 @@ group "misc" {
     }
     cmd "maskunzip" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED";
+        host = "localhost";
+    }
+    cmd "bandwidth-scope" {
+        exec = "drc-bandwidth-scope";
         host = "localhost";
     }
 }
