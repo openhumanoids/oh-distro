@@ -20,6 +20,7 @@ add_subdirectory(src/registeration)
 add_subdirectory(src/tools)
 
 pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
+pods_install_python_script(drc-bandwidth-scope scripts/bandwidth_scope.py)
 
 
 
