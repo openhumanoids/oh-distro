@@ -8,10 +8,12 @@ struct bandwidth_stats_t
     int64_t previous_utime;
     int32_t bytes_from_robot;
     int32_t bytes_to_robot;
-// list of messages
-// - number of messages
-// - direction
-// - total bandwidth
-//    string      value;
+
+    int32_t num_channels;
+    string channels [num_channels];
+    
+    // this is just queued - not transmitted or additional transport overhead
+    int32_t queued_msgs [num_channels];
+    int32_t queued_bytes [num_channels];
 }
 
