@@ -256,7 +256,31 @@ ttape(end+1) = ttape(end)+.5;
 qtape(:,end+1) = q;
 if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
 
+com_pos.max(1)=-.9;
+heel_pos.min = [nan;nan;0];
+heel_pos.max = [nan;nan;0];
+r_hand_pos = [-.75;-.25;.55];
+l_hand_pos = [-.75;.25;.55];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
+com_pos.max(1)=-.9;
+heel_pos.min = [nan;nan;0];
+heel_pos.max = [nan;nan;0];
+r_hand_pos = [-.8;-.25;.6];
+l_hand_pos = [-.8;.25;.6];
+ikargs={r_hand,'default',r_hand_pos,l_hand,'default',l_hand_pos,r_knee,'default',r_knee_pos,l_knee,'default',l_knee_pos,r_foot,getContactPoints(r_foot,'toe'),r_toe_pos,l_foot,getContactPoints(l_foot,'toe'),l_toe_pos,0,com_pos,head,zeros(3,1),head_pos,r_foot,'heel',heel_pos,l_foot,'heel',heel_pos};
+q=inverseKin(r,q,ikargs{:},options);
+ttape(end+1) = ttape(end)+.5; 
+qtape(:,end+1) = q;
+if (draw_frames) v.draw(ttape(end),[q;0*q]); end 
+
 kinsol = doKinematics(r,q);
+heel_pos.min = [nan;nan;0];
+heel_pos.max = [nan;nan;0];
 rpts = forwardKin(r,kinsol,r_foot,getContactPoints(r_foot));
 lpts = forwardKin(r,kinsol,l_foot,getContactPoints(l_foot));
 pts = [rpts,lpts];  
@@ -284,7 +308,7 @@ qtape(:,end-1)=q;
 
 xtraj = PPTrajectory(foh(ttape,[qtape;0*qtape]));
 xtraj = setOutputFrame(xtraj,r.getStateFrame);
-v.playback(xtraj);
+v.playback(xtraj,struct('slider',true));
 
 %v.playbackAVI(xtraj,'fromProne.avi');
 
