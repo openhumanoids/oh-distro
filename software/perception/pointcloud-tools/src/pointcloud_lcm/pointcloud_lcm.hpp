@@ -40,14 +40,16 @@
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
 #include <lcmtypes/pointcloud_tools.h>
+#include <lcmtypes/pointcloud_tools.hpp>
+
 #include <lcmtypes/kinect_frame_msg_t.h>
 
 
 // Multisense Requires:
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include <lcmtypes/multisense.h>
-#include <lcmtypes/multisense.hpp>
+//#include <lcmtypes/multisense.h>
+//#include <lcmtypes/multisense.hpp>
 
 
 using namespace pcl;
@@ -63,11 +65,11 @@ class pointcloud_lcm {
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
-    void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
+    void unpack_multisense(const ptools_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
     // CPP:
-    void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+    void unpack_multisense(const ptools::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
     // an integer decimation factor:
@@ -81,8 +83,8 @@ class pointcloud_lcm {
     
     
     // Multisense Compress:
-    mutable std::vector<float> disparity_buff_;
-    mutable std::vector<cv::Vec3f> points_buff_;    
+    mutable std::vector<float> disparity_buf_;
+    mutable std::vector<cv::Vec3f> points_buf_;    
 };
 
 

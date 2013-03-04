@@ -264,7 +264,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 //    0, 0, 0, 606.034;
 //    0, 0, 14.2914745276283, 0]
 // cloud - output pcl cloud
-void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
+void pointcloud_lcm::unpack_multisense(const ptools_images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
 
@@ -282,13 +282,13 @@ void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<
   //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
   //imwrite(disparity_fname.str(),disparity_orig_temp); 
   
-  disparity_buff_.resize(h * w);
-  cv::Mat_<float> disparity(h, w, &(disparity_buff_[0]));
+  disparity_buf_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
   disparity = disparity_orig / 16.0;
     
   // Allocate buffer for reprojection output
-  points_buff_.resize(h * w);
-  cv::Mat_<cv::Vec3f> points(h, w, &(points_buff_[0]));
+  points_buf_.resize(h * w);
+  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
 
   // Do the reprojection in open space
   static const bool handle_missing_values = true;
@@ -317,7 +317,7 @@ void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<
 }
 
 
-void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+void pointcloud_lcm::unpack_multisense(const ptools::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
 
@@ -341,17 +341,25 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
   //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
   //imwrite(disparity_fname.str(),disparity_orig_temp); 
   
-  disparity_buff_.resize(h * w);
-  cv::Mat_<float> disparity(h, w, &(disparity_buff_[0]));
+  disparity_buf_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
   disparity = disparity_orig / 16.0;
     
   // Allocate buffer for reprojection output
-  points_buff_.resize(h * w);
-  cv::Mat_<cv::Vec3f> points(h, w, &(points_buff_[0]));
+  points_buf_.resize(h * w);
+  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
 
   // Do the reprojection in open space
   static const bool handle_missing_values = true;
   cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
+  
+  /*int vv =400; //l2r
+  int uu =512; //t2b
+  cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
+              << " " << points(vv,uu)[1]
+              << " " << points(vv,uu)[2]
+              << "\n";
+  */
   
   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   cloud->width    =(int) (w/ (double) decimate_) ;

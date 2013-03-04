@@ -1,0 +1,17 @@
+package ptools;
+
+// lcm type used in multisense. keep this in sink with those messages
+
+struct images_t
+{
+  int64_t  utime;
+
+  int32_t  n_images;
+  int16_t image_types[n_images];     
+  bot_core.image_t  images[n_images];
+ 
+  const int16_t LEFT=0;
+  const int16_t RIGHT=1;
+  const int16_t DISPARITY=2;  // assumed to be 32bit as in the multisense
+  const int16_t MASKZIPPED=3; // gray scale mask of left image, zipped with zlib
+}

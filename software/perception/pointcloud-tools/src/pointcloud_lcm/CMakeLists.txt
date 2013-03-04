@@ -8,8 +8,8 @@ add_library(pointcloud_lcm SHARED pointcloud_lcm.cpp)
 
 pods_use_pkg_config_packages(pointcloud_lcm ${PCL_LIBRARIES} lcm eigen3
    bot2-core  glib-2.0  kinect-utils opencv
-   lcmtypes_kinect
-   lcmtypes_multisense)
+   lcmtypes_kinect)
+#   lcmtypes_multisense)
 
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(pointcloud_lcm PROPERTIES SOVERSION 1)
