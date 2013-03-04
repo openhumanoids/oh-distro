@@ -264,7 +264,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 //    0, 0, 0, 606.034;
 //    0, 0, 14.2914745276283, 0]
 // cloud - output pcl cloud
-void pointcloud_lcm::unpack_multisense(const ptools_images_t *msg, cv::Mat_<double> repro_matrix, 
+void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
 
@@ -317,7 +317,7 @@ void pointcloud_lcm::unpack_multisense(const ptools_images_t *msg, cv::Mat_<doub
 }
 
 
-void pointcloud_lcm::unpack_multisense(const ptools::images_t *msg, cv::Mat_<double> repro_matrix, 
+void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
 
@@ -353,7 +353,8 @@ void pointcloud_lcm::unpack_multisense(const ptools::images_t *msg, cv::Mat_<dou
   static const bool handle_missing_values = true;
   cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
   
-  /*int vv =400; //l2r
+/*
+  int vv =400; //l2r
   int uu =512; //t2b
   cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
               << " " << points(vv,uu)[1]
