@@ -495,18 +495,18 @@ namespace surrogate_gui
       {
 				Eigen::Vector4f pt (subcloud->points[cylinderIndices->indices[i]].x, subcloud->points[cylinderIndices->indices[i]].y, subcloud->points[cylinderIndices->indices[i]].z, 0);
         double d_euclid = fabs (sqrt(pcl::sqrPointToLineDistance (pt, line_pt, line_dir)) - coefficients->values[6]);
-				inliers_distances[i] = d_euclid; 
+                                inliers_distances[i] = d_euclid; 
       }
-		
+                
     return cylinderIndices;
   }
 
   //==============sphere
   PointIndices::Ptr Segmentation::fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-					    boost::shared_ptr<set<int> >  subcloudIndices,
-					    const FittingParams& fp,
-					    double &x, double &y, double &z,
-					    double &radius)
+                                            boost::shared_ptr<set<int> >  subcloudIndices,
+                                            const FittingParams& fp,
+                                            double &x, double &y, double &z,
+                                            double &radius)
   {
     cout << "\n in fit sphere.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -533,7 +533,7 @@ namespace surrogate_gui
 
 #if 1
     pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>::Ptr model_sphere(new 
-									pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
+                                                                        pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
     model_sphere->setRadiusLimits(fp.minRadius, fp.maxRadius);
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_sphere);
     ransac.setDistanceThreshold(fp.distanceThreshold);
@@ -597,20 +597,20 @@ namespace surrogate_gui
 
 
   PointIndices::Ptr Segmentation::fitCircle3d(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-					      boost::shared_ptr<set<int> >  subcloudIndices,
-					      const FittingParams& fp,
-					      double &x, double &y, double &z,
-					      double &roll, double &pitch, double &yaw, 
-					      double &radius,
-					      std::vector<double> & inliers_distances)
+                                              boost::shared_ptr<set<int> >  subcloudIndices,
+                                              const FittingParams& fp,
+                                              double &x, double &y, double &z,
+                                              double &roll, double &pitch, double &yaw, 
+                                              double &radius,
+                                              std::vector<double> & inliers_distances)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
-		
+                
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
     SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (subcloud));
-		
+                
     // Create the RANSAC object
     RandomSampleConsensus<PointXYZRGB> sac(model, 0.01);
     // Algorithm tests
@@ -620,10 +620,10 @@ namespace surrogate_gui
 
     std::vector<int> sample;
     sac.getModel (sample);
-		
+                
     std::vector<int> inliers;
     sac.getInliers (inliers);
-		
+                
     Eigen::VectorXf coeff;
     sac.getModelCoefficients (coeff);
 
@@ -657,12 +657,12 @@ namespace surrogate_gui
   /**fits a plane to subcloudIndices in cloud.  currently, we assume
      the plane is oriented on the z axis*/
   PointIndices::Ptr Segmentation::fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-					      boost::shared_ptr<set<int> >  subcloudIndices,
-								const FittingParams& fp,
-					      double &x, double &y, double &z,
-					      double &roll, double &pitch, double &yaw, 
-					      double &width,
-					      double &length,  std::vector<double> & inliers_distances)
+                                              boost::shared_ptr<set<int> >  subcloudIndices,
+                                                                const FittingParams& fp,
+                                              double &x, double &y, double &z,
+                                              double &roll, double &pitch, double &yaw, 
+                                              double &width,
+                                              double &length,  std::vector<double> & inliers_distances)
   {
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -678,7 +678,7 @@ namespace surrogate_gui
     //cout << "\n subcloud centroid = " << centroid << endl;
     //end debugging
 
-		PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
+                PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
 
     //---normals
     pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
@@ -691,9 +691,9 @@ namespace surrogate_gui
 
     //create the segmentation object
     SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
-		seg.setOptimizeCoefficients(true);
-		seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
-		seg.setNormalDistanceWeight (0.1);
+                seg.setOptimizeCoefficients(true);
+                seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
+                seg.setNormalDistanceWeight (0.1);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (1000);
     seg.setDistanceThreshold (fp.distanceThreshold);
@@ -702,19 +702,19 @@ namespace surrogate_gui
     seg.setInputCloud(subcloud);
     seg.setInputNormals(subcloud_normals);
 
-		// convert FittingParams YPR to XYZ vector
-		Matrix3f Rx,Ry,Rz;
-		Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
-		Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
-		Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
-		Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
-		Vector3f thetaSeed =  Rz*Ry*Rx*Vector3f(1,0,0);  //TODO use this later
+                // convert FittingParams YPR to XYZ vector
+                Matrix3f Rx,Ry,Rz;
+                Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
+                Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
+                Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
+                Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
+                Vector3f thetaSeed =  Rz*Ry*Rx*Vector3f(1,0,0);  //TODO use this later
 
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
     PointIndices::Ptr planeIndices (new PointIndices);
-		seg.setAxis(seedDirection); 
-		seg.setEpsAngle(fp.maxAngle); // seg faults if too small
+                seg.setAxis(seedDirection); 
+                seg.setEpsAngle(fp.maxAngle); // seg faults if too small
     seg.segment(*planeIndices, *coefficients);
 
     cout << "Plane: ";
@@ -736,7 +736,7 @@ namespace surrogate_gui
     //writer.write ("table_objects.pcd", *subcloud, false);
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
-		
+                
     // iterate through possible rotations around normal to find best fit
     Vector3f center,ypr;
     Vector2f lengthWidth;
@@ -745,15 +745,15 @@ namespace surrogate_gui
     // TODO 3 passes with variable resolution
     for(float theta=-180;theta<180;theta++){
       lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
-				   theta*M_PI/180.0f, center,ypr);
+                                   theta*M_PI/180.0f, center,ypr);
       float area = lengthWidth[0]*lengthWidth[1];
       if(area<minArea){
-	minArea = area;
-	bestTheta=theta;
+        minArea = area;
+        bestTheta=theta;
       }
     }
     lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
-				 bestTheta*M_PI/180.0f, center,ypr);
+                                 bestTheta*M_PI/180.0f, center,ypr);
     
     
     // copy to output
@@ -773,29 +773,29 @@ namespace surrogate_gui
     
     // residuals 
     /* TODO
-			inliers_distances.clear ();
+                        inliers_distances.clear ();
     inliers_distances.resize (planeIndices->indices.size ());
     Eigen::Vector4f line_pt  (coefficients->values[0], coefficients->values[1], coefficients->values[2], 0);
     Eigen::Vector4f line_dir (coefficients->values[3], coefficients->values[4], coefficients->values[5], 0);
 
     for (size_t i = 0; i < planeIndices->indices.size (); ++i)
       {
-	Eigen::Vector4f pt (subcloud->points[planeIndices->indices[i]].x, subcloud->points[planeIndices->indices[i]].y, subcloud->points[planeIndices->indices[i]].z, 0);
+        Eigen::Vector4f pt (subcloud->points[planeIndices->indices[i]].x, subcloud->points[planeIndices->indices[i]].y, subcloud->points[planeIndices->indices[i]].z, 0);
         double d_euclid = fabs (sqrt(pcl::sqrPointToLineDistance (pt, line_pt, line_dir)) - coefficients->values[6]);
-	inliers_distances[i] = d_euclid; 
-	}*/
+        inliers_distances[i] = d_euclid; 
+        }*/
 
-		/* TODO
-			 - compute orientation
-			   - create function [width,length] = computeWidthLength(cloud, yaw)
-				 - compute orientation in 3 passes: -180:10:180, -10:1:10, -1:0.1:1
-			 - support multiple planes
-			 - compute residuals
-			 - final residuals is min of residuals for each plane
-			 - create new plane struct
-			 - return vector of planes
-			 - add number of instances to gui
-		*/
+                /* TODO
+                         - compute orientation
+                           - create function [width,length] = computeWidthLength(cloud, yaw)
+                                 - compute orientation in 3 passes: -180:10:180, -10:1:10, -1:0.1:1
+                         - support multiple planes
+                         - compute residuals
+                         - final residuals is min of residuals for each plane
+                         - create new plane struct
+                         - return vector of planes
+                         - add number of instances to gui
+                */
 
     return planeIndices;
   }
@@ -822,15 +822,15 @@ namespace surrogate_gui
       seg.segment(*nextSegmentIndices, *coefficients);
 
       /*if (nextSegmentIndices->indices.size() > min_plane_size)
-	segmentsFound.push_back(nextSegmentIndices); 
+        segmentsFound.push_back(nextSegmentIndices); 
       else
-	break;
+        break;
       */
 
       boost::shared_ptr<set<int> > remainingIndices (new set<int>(subcloudIndicesCopy->indices.begin(), subcloudIndicesCopy->indices.end()));
 
       for(uint i = 0; i < nextSegmentIndices->indices.size(); i++)
-	remainingIndices->erase(nextSegmentIndices->indices[i]);
+        remainingIndices->erase(nextSegmentIndices->indices[i]);
 
       subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(remainingIndices);
     }
@@ -849,8 +849,8 @@ namespace surrogate_gui
  * Rotates points to XY plane finds bounds and center, rotates center back to original rotation frame
  */
 Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, PointIndices::Ptr planeIndices, 
-				      float plane[4],Vector3f normal,float theta,
-				      Vector3f& center, Vector3f& ypr){
+                                      float plane[4],Vector3f normal,float theta,
+                                      Vector3f& center, Vector3f& ypr){
   
   float a = plane[0];
   float b = plane[1];
@@ -892,10 +892,11 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, Poi
   }
   
   Vector2f lengthWidth(maxY-minY,maxX-minX);
-  
+
+  Matrix3f rotI = rot.inverse();
   center = Vector3f( (minX+maxX)/2, (maxY+minY)/2, zh );
-  center = rot.inverse()*center;
-  ypr = rot2ypr(rot);
+  center = rotI*center;
+  ypr = rot2ypr(rotI);
   
   return lengthWidth;     
   
