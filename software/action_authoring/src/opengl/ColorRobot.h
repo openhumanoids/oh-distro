@@ -2,7 +2,7 @@
 #define ROBOT_LINK_H
 
 #include <opengl/opengl_object_gfe.h>
-#include <kinematics_model/kinematics_model_gfe.h>
+#include <kinematics/kinematics_model_gfe.h>
 #include <opengl/opengl_object_dae.h>
 #include <urdf/model.h>
 
@@ -16,7 +16,7 @@ protected:
 public:
     ColorRobot() : OpenGL_Object_GFE() { }
     ColorRobot(std::string urdfFilename) : OpenGL_Object_GFE(urdfFilename) { }
-    kinematics_model::Kinematics_Model_GFE getKinematicsModel()
+    kinematics::Kinematics_Model_GFE getKinematicsModel()
     {
         return _kinematics_model;
     }

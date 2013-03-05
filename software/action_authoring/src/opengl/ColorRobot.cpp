@@ -7,7 +7,7 @@ using namespace KDL;
 using namespace Eigen;
 using namespace drc;
 using namespace state;
-using namespace kinematics_model;
+using namespace kinematics;
 using namespace opengl;
 using namespace robot_opengl;
 
