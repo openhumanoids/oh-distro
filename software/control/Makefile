@@ -10,13 +10,15 @@ SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
 ifeq "$(BUILD_PREFIX)" ""
 BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/$$pfx/build; \
                if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
+SRC_BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/src/../$$pfx/build; \
+               if [ -d $$d ]; then echo $$d; exit 0; fi; done; echo `pwd`/build)
 endif
 PWD = $(shell pwd)
 
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
+SRCCLASSFILES = $(CLASSFILES:src/%=%)
 CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar
-
 
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
@@ -32,11 +34,14 @@ all: drake $(BUILD_PREFIX)/share/java/drc_control.jar
 	@# Place additional commands here if you have any
 
 $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
-	jar -cf $@ $(CLASSFILES) 
-
+	cd src; \
+	ls; \
+	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
+	cd ..; \
+  
 %.class : %.java
-	echo $(CLASSPATH)
-	javac $< -cp $(CLASSPATH)
+	echo $(CLASSPATH); \
+	javac $< -cp $(CLASSPATH); \
 
 drake:
 #       commented out until the build server has matlab installed
