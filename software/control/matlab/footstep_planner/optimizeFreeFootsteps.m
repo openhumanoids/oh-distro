@@ -16,7 +16,7 @@ for p = poses
     [~, fixed_steps{j,2}] = biped.stepLocations(X(:,j));
   end
 end
-X = updateFreeFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
+X = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
 
 
 done = false;
@@ -33,7 +33,7 @@ drag_ndx = 1;
 
 while 1
   modified = 0;
-  [X, outputflag] = updateFreeFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
+  [X, outputflag] = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
   if outputflag ~= 1 && outputflag ~= 2
     modified = 1;
   end
@@ -47,8 +47,8 @@ while 1
                sum(d_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
     rot = max(sum(r_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
               sum(r_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
-    if  ((dist > num_steps * biped.max_step_length / 2 ...
-          || rot > num_steps * biped.max_step_rot / 2) ...
+    if  ((dist > num_steps * biped.max_step_length * .4 ...
+          || rot > num_steps * biped.max_step_rot * .4) ...
          && num_steps > 1)
       j = ndx_fixed(n);
       fixed_steps(j+3:end+2,:) = fixed_steps(j+1:end,:);
