@@ -53,10 +53,28 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 
 	drc::affordance_t msg;
 	aff.toMsg(&msg);
+    msg.aff_store_control = drc::affordance_t::NEW;
+
 	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msg);
 
 	_accessMutex.unlock(); //========unlock
 }
+
+  /**delete the given affordance from the store
+   @aff affordance to delete from the store*/
+  void AffordanceUpWrapper::deleteAffordance(const AffordanceState &aff)
+  {
+    _accessMutex.lock(); //=========lock
+
+	drc::affordance_t msg;
+	aff.toMsg(&msg);
+    msg.aff_store_control = drc::affordance_t::DELETE;
+
+	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msg);
+	_accessMutex.unlock(); //========unlock
+  }
+
+
 
   /***/
   void AffordanceUpWrapper::updateTrackedAffordance(const AffordanceState &aff)
@@ -65,8 +83,9 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 
 	drc::affordance_t msg;
 	aff.toMsg(&msg);
-	_lcm->publish(AffordanceServer::AFFORDANCE_TRACK_CHANNEL, &msg);
+    msg.aff_store_control = drc::affordance_t::UPDATE;
 
+	_lcm->publish(AffordanceServer::AFFORDANCE_TRACK_CHANNEL, &msg);
 	_accessMutex.unlock(); //========unlock
   }
 

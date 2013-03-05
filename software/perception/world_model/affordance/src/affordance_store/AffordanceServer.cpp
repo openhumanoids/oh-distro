@@ -46,35 +46,78 @@ AffordanceServer::~AffordanceServer()
 void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
 						const drc::affordance_t *affordance)
 {
-	handle(affordance);
+  if (affordance->aff_store_control != drc::affordance_t::UPDATE)
+    {
+      cout << "\n expected track messages to be UPDATE's" << endl;
+      return; //todo : display system error
+    }
+
+	//copy the data into an AffordanceState
+	AffPtr aptr(new AffordanceState(affordance));
+
+	_serverMutex.lock(); //=======lock
+
+	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end())
+      {
+        cout << "\n how are we tracking an object we don't have a map for" << endl;
+        return; //todo: display system error
+      }
+
+	//get the relevant map
+	AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
+
+	if (scene->find(aptr->_uid) == scene->end())
+      {
+        cout << "\n how are we tracking an object that's not in the corresponding map" << endl;
+        return; //todo: display system error
+      }
+
+    (*scene)[aptr->_uid] = aptr; //actually update
+
+	_serverMutex.unlock(); //========unlock
 }
+
+
 
 void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-					      const drc::affordance_t *affordance)
-{
-	handle(affordance);
-}
-
-
-void AffordanceServer::handle(const drc::affordance_t *aff)
+                                              const drc::affordance_t *affordance)
 {
 	//copy the data into and AffordanceState
-	AffPtr aptr(new AffordanceState(aff));
+	AffPtr aptr(new AffordanceState(affordance));
 
 	_serverMutex.lock(); //=======lock
 
 	//do we have an entry for this map?
-	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end())
-		_mapIdToAffIdMaps[aptr->_map_id] = AffIdMap(new unordered_map<int32_t,AffPtr>());
+	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end()) //no map 
+      {
+        if (affordance->aff_store_control != drc::affordance_t::NEW) //not new ?
+          {
+            cout << "\naffServer: non-NEW msg : no such map" << endl; //todo: system error
+            return;
+          }
+        _mapIdToAffIdMaps[aptr->_map_id] = AffIdMap(new unordered_map<int32_t,AffPtr>()); //add map
+      }
 
 	//get the affordance for a particular map
 	AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
 
-	if (scene->find(aptr->_uid) == scene->end())
-	  aptr->_uid = _nextObjectUID++;
+	if (scene->find(aptr->_uid) == scene->end())  //object not found
+      {
+        if (affordance->aff_store_control != drc::affordance_t::NEW) //new object?
+          {
+            cout << "\naffServer: non-NEW msg : no such object" << endl;
+            return;
+          }
+        aptr->_uid = _nextObjectUID++; //set object id
+      }
 
+    
 	//set or modify the appropriate affordance
 	(*scene)[aptr->_uid] = aptr;
+
+    //delete if that's what the update was
+    if (affordance->aff_store_control == drc::affordance_t::DELETE)
+        (*scene).erase(aptr->_uid);
 
 	_serverMutex.unlock(); //========unlock
 }

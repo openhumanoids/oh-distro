@@ -39,6 +39,7 @@ public:
 
 	//-----------mutators
 	void addNewlyFittedAffordance(const AffordanceState &aff);
+	void deleteAffordance(const AffordanceState &aff);
 	void updateTrackedAffordance(const AffordanceState &aff);
 
 private:

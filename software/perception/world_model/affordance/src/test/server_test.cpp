@@ -48,10 +48,10 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		  s._params[AffordanceState::RADIUS_NAME] = (j == 10 ? 9999 : 1.41);
           s._params[AffordanceState::LENGTH_NAME] = 9;
           s.setType(AffordanceState::CYLINDER);
-		  wrapper.addNewlyFittedAffordance(s);
+          wrapper.addNewlyFittedAffordance(s);
 		}
 
-		if (j == 15)
+		if (j == 15 || j == 20)
 		{
 		  AffordanceState s;
 		  s._map_id 	 = 7;
@@ -60,7 +60,15 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		  s._params[AffordanceState::WIDTH_NAME] = 0;
 		  s._params[AffordanceState::HEIGHT_NAME] = 0;
           s.setType(AffordanceState::BOX);
-		  wrapper.addNewlyFittedAffordance(s);
+
+          if (j == 15)
+            wrapper.addNewlyFittedAffordance(s);
+          else
+            {
+              //need the actual uid now
+              s._uid = 1; //this will be the uid that it gets set to by affordance store.  
+              wrapper.deleteAffordance(s);
+            }
 		}
 	}
 }
