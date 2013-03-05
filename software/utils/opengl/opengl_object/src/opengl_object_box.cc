@@ -12,9 +12,10 @@ using namespace opengl;
  * class constructor
  */
 OpenGL_Object_Box::
-OpenGL_Object_Box() : OpenGL_Object(),
-                      _dimensions( 1.0, 1.0, 1.0 ),
-                      _dl( 0 ){
+OpenGL_Object_Box( string id,
+                    Vector3f dimensions ) : OpenGL_Object( id ),
+                                          _dimensions( dimensions ),
+                                          _dl( 0 ){
 
 }
 

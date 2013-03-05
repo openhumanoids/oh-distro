@@ -22,6 +22,8 @@ namespace opengl {
     virtual void draw( void );
 
   protected:
+    void _draw_collision_shape( btCollisionShape* collisionShape );
+
     collision::Collision_Detector * _collision_detector;
     OpenGL_Object_Cylinder _opengl_object_cylinder;
     OpenGL_Object_Sphere _opengl_object_sphere;

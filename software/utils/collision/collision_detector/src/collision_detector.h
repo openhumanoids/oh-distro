@@ -20,6 +20,7 @@
 #include <vector>
 #include <btBulletCollisionCommon.h>
 #include <Eigen/Dense>
+#include <kdl/frames.hpp>
 
 #include <collision/collision.h>
 #include <collision/collision_object.h>
@@ -53,6 +54,7 @@ namespace collision {
     std::vector< Collision > get_collisions( void );
 
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject );
+    void ray_test( KDL::Vector from, KDL::Vector to, Collision_Object*& collisionObject );
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject, Eigen::Vector3f &hit_pt);
     Collision_Object* find_collision_object_by_uid( int uid );
 

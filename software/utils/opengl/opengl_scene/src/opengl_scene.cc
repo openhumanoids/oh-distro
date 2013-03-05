@@ -49,9 +49,8 @@ operator=( const OpenGL_Scene& other ){
  */
 void
 OpenGL_Scene::
-draw( int width,
-      int height ){
-  _opengl_camera.apply_transform( width, height );
+draw( void ){
+  _opengl_camera.apply_transform();
   for( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
     if( _opengl_objects[ i ] != NULL ){
       _opengl_objects[ i ]->draw();

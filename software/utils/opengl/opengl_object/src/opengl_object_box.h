@@ -11,7 +11,7 @@
 namespace opengl {
   class OpenGL_Object_Box: public OpenGL_Object {
   public:
-    OpenGL_Object_Box();
+    OpenGL_Object_Box( std::string id = "N/A", Eigen::Vector3f dimensions = Eigen::Vector3f( 1.0, 1.0, 1.0 ) );
     virtual ~OpenGL_Object_Box();
     OpenGL_Object_Box( const OpenGL_Object_Box& other );
     OpenGL_Object_Box& operator=( const OpenGL_Object_Box& other );

@@ -3,6 +3,7 @@
 #include <algorithm> // using std::find
 
 using namespace std;
+using namespace KDL;
 using namespace Eigen;
 using namespace collision;
 
@@ -146,6 +147,25 @@ ray_test( Vector3f from,
   _collision_world.updateAabbs();
   _collision_world.rayTest( bt_from, bt_to, result );
  
+  collisionObject = NULL;
+  if( result.hasHit() ){
+    collisionObject = find_collision_object_by_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() );
+  }
+
+  return;
+}
+
+void
+Collision_Detector::
+ray_test( Vector from,
+          Vector to,
+          Collision_Object*& collisionObject ){
+  btVector3 bt_from( from( 0 ), from( 1 ), from( 2 ) );
+  btVector3 bt_to( to( 0 ), to( 1 ), to( 2 ) );
+  btCollisionWorld::ClosestRayResultCallback result( bt_from, bt_to );
+  _collision_world.updateAabbs();
+  _collision_world.rayTest( bt_from, bt_to, result );
+
   collisionObject = NULL;
   if( result.hasHit() ){
     collisionObject = find_collision_object_by_uid( result.m_collisionObject->getBroadphaseHandle()->getUid() );

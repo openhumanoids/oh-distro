@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <GL/gl.h>
 
 #include <kdl/frames.hpp>
 
@@ -21,18 +22,22 @@ namespace opengl {
     OpenGL_Camera( const OpenGL_Camera& other );
     OpenGL_Camera& operator=( const OpenGL_Camera& other );
 
-    void apply_transform( int width, int height );
-    void mouse_move( KDL::Vector2 mousePos, mouse_button_t mouseButton, int width, int height );  
-    void mouse_press( KDL::Vector2 mousePos, mouse_button_t mouseButton, int width, int height );
-    void mouse_release( KDL::Vector2 mousePos, mouse_button_t mouseButton, int width, int height );
-
+    void apply_transform( void );
+    void mouse_move( KDL::Vector2 mousePos, mouse_button_t mouseButton );  
+    void mouse_press( KDL::Vector2 mousePos, mouse_button_t mouseButton );
+    void mouse_release( KDL::Vector2 mousePos, mouse_button_t mouseButton );
+  
+    void set_viewport( unsigned int width, unsigned int height );
     void set_eye_position( KDL::Vector eyePosition );
     void set_target_position( KDL::Vector targetPosition );
     void set_field_of_view( double fieldOfView );
 
     KDL::Vector eye_position( void )const;
     KDL::Vector target_position( void )const;
-    KDL::Vector click_position( KDL::Vector2 mousePos, int width, int height );
+    KDL::Vector click_position( KDL::Vector2 mousePos );
+    void modelview_matrix( GLdouble modelviewMatrix[] );
+    void projection_matrix( GLdouble projectionMatrix[] );
+    void viewport( GLint viewport[] );
     KDL::Rotation eye_rotation( void )const;
     double field_of_view( void )const;
   

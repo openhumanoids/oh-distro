@@ -67,11 +67,12 @@ operator=( const OpenGL_Camera& other ){
  */
 void
 OpenGL_Camera::
-apply_transform( int width,
-                  int height ){
+apply_transform( void ){
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
-  gluPerspective( _field_of_view, ( double )( width ) / ( double )( height ), 0.01, 1000.0);
+  GLint viewport[ 4 ];
+  glGetIntegerv( GL_VIEWPORT, viewport );
+  gluPerspective( _field_of_view, ( double )( viewport[2] ) / ( double )( viewport[3] ), 0.01, 1000.0);
   glMatrixMode( GL_MODELVIEW );
 
   gluLookAt( _eye_position( 0 ), _eye_position( 1 ), _eye_position( 2 ),
@@ -87,9 +88,7 @@ apply_transform( int width,
 void
 OpenGL_Camera::
 mouse_move( Vector2 mousePos,
-            mouse_button_t mouseButton,
-            int width,
-            int height ){
+            mouse_button_t mouseButton ){
   if( mouseButton == OPENGL_MOUSE_BUTTON_LEFT ){
     Vector delta_mouse_pos( _mouse_press_pos(0) - mousePos(0), mousePos(1) - _mouse_press_pos(1), 0.0 );
     _eye_position = _prev_eye_position + _prev_eye_rotation.Inverse() * delta_mouse_pos * 0.01;
@@ -120,9 +119,7 @@ mouse_move( Vector2 mousePos,
 void
 OpenGL_Camera::
 mouse_press( Vector2 mousePos,
-              mouse_button_t mouseButton,
-              int width,
-              int height ){
+              mouse_button_t mouseButton ){
   _mouse_press_pos = mousePos;
   _prev_eye_position = _eye_position;
   _prev_target_position = _target_position;
@@ -137,9 +134,7 @@ mouse_press( Vector2 mousePos,
 void
 OpenGL_Camera::
 mouse_release( Vector2 mousePos,
-                mouse_button_t mouseButton,
-                int width,
-                int height ){
+                mouse_button_t mouseButton ){
   return;
 }
 
@@ -196,15 +191,13 @@ target_position( void )const{
   return _target_position;
 }
 
-
-
 /**
  * click_position
  * returns the position of where the mouse has clicked
  */
 Vector
 OpenGL_Camera::
-click_position( Vector2 mousePos, int width, int height ){
+click_position( Vector2 mousePos ){
   GLdouble modelview[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview );
   GLdouble projection[16];
@@ -225,6 +218,39 @@ click_position( Vector2 mousePos, int width, int height ){
   Vector eye_to_world = _eye_position - world;
   Vector click_position = _eye_position - eye_to_world * 10000; //( -_eye_position(2) / eye_to_world(2) );
   return click_position;
+}
+
+/**
+ * modeview_matrix
+ * fills in the current modelview matrix
+ */
+void
+OpenGL_Camera::
+modelview_matrix( GLdouble modelviewMatrix[] ){
+  glGetDoublev( GL_MODELVIEW_MATRIX, modelviewMatrix );
+  return;
+}   
+
+/**
+ * projection_matrix
+ * fills in the current projection matrix
+ */
+void
+OpenGL_Camera::
+projection_matrix( GLdouble projectionMatrix[] ){
+  glGetDoublev( GL_PROJECTION_MATRIX, projectionMatrix );
+  return;
+}
+
+/**
+ * viewport
+ * fills in the viewport
+ */
+void
+OpenGL_Camera::
+viewport( GLint viewport[] ){
+  glGetIntegerv( GL_VIEWPORT, viewport );
+  return;
 }
 
 /**

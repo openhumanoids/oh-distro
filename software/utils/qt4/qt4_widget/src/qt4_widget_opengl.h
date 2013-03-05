@@ -4,9 +4,16 @@
 #include <iostream>
 
 #include <QtOpenGL/QGLWidget>
+#include <QtCore/QTimer>
+
 #include <kdl/frames.hpp>
 
+#include <collision/collision_object.h>
+
+#include <interface/interface_handler.h>
+
 #include <opengl/opengl_scene.h>
+#include <opengl/opengl_object_collision_detector.h>
 
 namespace qt4 {
   class Qt4_Widget_OpenGL: public QGLWidget {
@@ -17,21 +24,31 @@ namespace qt4 {
     Qt4_Widget_OpenGL( const Qt4_Widget_OpenGL& other );
     Qt4_Widget_OpenGL& operator=( const Qt4_Widget_OpenGL& other );
 
+    void add_collision_object( collision::Collision_Object& collisionObject );
+
     opengl::OpenGL_Scene& opengl_scene( void );
     const opengl::OpenGL_Scene& opengl_scene( void )const;
+    interface::Interface_Handler& interface_handler( void );
+
+  protected slots:
+    void _handle_update_timer( void );
 
   protected:
     virtual void initializeGL();
     virtual void resizeGL( int width, int height );
     virtual void paintGL();
 
+    virtual void mouseIdleEvent( void );
     virtual void mouseMoveEvent( QMouseEvent * event );
     virtual void mousePressEvent( QMouseEvent * event );
     virtual void mouseReleaseEvent( QMouseEvent * event );
 
     virtual void raycast( const KDL::Vector eyePosition, const KDL::Vector clickPosition );
 
-    opengl::OpenGL_Scene _opengl_scene;
+    QTimer                                    _update_timer;
+    interface::Interface_Handler              _interface_handler;
+    opengl::OpenGL_Scene                      _opengl_scene;
+    opengl::OpenGL_Object_Collision_Detector  _opengl_object_collision_detector;
 
   private:
 

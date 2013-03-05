@@ -15,7 +15,7 @@ namespace opengl {
     OpenGL_Scene( const OpenGL_Scene& other );
     OpenGL_Scene& operator=( const OpenGL_Scene& other );
 
-    void draw( int width, int height );
+    void draw( void );
     void add_object( OpenGL_Object& openglObject );
     void clear_objects( void );
 

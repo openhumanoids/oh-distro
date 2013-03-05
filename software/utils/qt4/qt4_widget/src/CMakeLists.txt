@@ -17,7 +17,7 @@ pods_install_headers(qt4_widget_opengl.h
 pods_install_libraries(qt4_widget)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl)
+set(REQUIRED_PACKAGES interface collision_detector collision_object opengl_scene opengl_object opengl_camera bullet QtCore QtGui QtOpenGL glu gl)
 pods_use_pkg_config_packages(qt4_widget ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

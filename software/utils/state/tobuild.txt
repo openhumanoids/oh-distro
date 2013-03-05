@@ -1,10 +1,5 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
-drc_utils
-collision
-kinematics
-opengl
-#interface
-qt4
-visualization_utils
+# mypod1
+state
