@@ -22,32 +22,39 @@ classdef ZMPwalkingPlanner < DrakeSystem
             obj.C = sparse([1 0 0 0;0 1 0 0]);
             obj.g = g;
             % M and N are for dense formulation of optimization
-            obj.M = zeros(2*obj.window_size,4);
+            obj.Mbar = zeros(4*obj.window_size,4); % Mbar = [I;A;A^2;...;A^(n-1)]
+            obj.Nbar = zeros(4*obj.window_size,2*obj.window_size);
+            obj.M = zeros(2*obj.window_size,4); % M = [C;CA;CA^2;...;CA^(N-1)];
             obj.N = zeros(2*obj.window_size);
             obj.M(1:2,:) = obj.C;
+            obj.Mbar(1:4,:) = eye(4);
             obj.N(1:2,:) = zeros(2,2*obj.window_size);
+            obj.Nbar(1:4,:) = zeros(4,2*obj.window_size);
             for i = 2:obj.window_size
                 obj.M((i-1)*2+(1:2),:) = obj.M((i-2)*2+(1:2),:)*obj.A;
+                obj.Mbar((i-1)*4+(1:4),:) = obj.Mbar((i-2)*4+(1:4),:)*obj.A;
                 obj.N((i-1)*2+(1:2),1:2) = obj.M((i-2)*2+(1:2),:)*obj.B;
                 obj.N((i-1)*2+(1:2),3:end) = obj.N((i-2)*2+(1:2),1:end-2);
+                obj.Nbar((i-1)*4+(1:4),1:2) = obj.Mbar((i-2)*4+(1:4),:)*obj.B;
+                obj.Nbar((i-1)*4+(1:4),3:end) = obj.Nbar((i-2)*4+(1:4),1:end-2);
             end
             toc
         end
         
         function com_pos = output(obj,t,~,u)
-            % u = [current planar com, contact positions in the preview
+            % u = [current planar com, contact planar positions in the preview
             % window, active_contact_flag,com height in the preview window]
-            profile on
-            tic
+%             profile on
+%             tic
             com_x0 = u(1);
             com_y0 = u(2);
             comdot_x0 = u(3);
             comdot_y0 = u(4);
-            contact_pos = reshape(u(4+(1:obj.window_size*obj.max_contact_pts*3)),3,obj.max_contact_pts,obj.window_size);
-            active_contact_flag = logical(reshape(u(4+obj.window_size*obj.max_contact_pts*3+...
+            contact_pos = reshape(u(4+(1:obj.window_size*obj.max_contact_pts*2)),2,obj.max_contact_pts,obj.window_size);
+            active_contact_flag = logical(reshape(u(4+obj.window_size*obj.max_contact_pts*2+...
                 (1:obj.window_size*obj.max_contact_pts)),obj.max_contact_pts,obj.window_size));
 %             num_active_contact = sum(active_contact_flag,1);
-            z_com = reshape(u(4+obj.window_size*obj.max_contact_pts*4+(1:obj.window_size)),1,[]);
+            z_com = reshape(u(4+obj.window_size*obj.max_contact_pts*3+(1:obj.window_size)),1,[]);
             t_breaks = linspace(t,t+obj.dt*(obj.window_size-1),obj.window_size);
             z_com_pp = spline(t_breaks,z_com);
             zddot_com = ppval(fnder(z_com_pp,2),t_breaks);
@@ -92,12 +99,15 @@ classdef ZMPwalkingPlanner < DrakeSystem
             
             [sol,fval,exitflag] = cplexqp(H,f,[],[],Aeq,beq,lb,ub,[1/obj.max_contact_pts*ones(n_weights,1);zeros(2*obj.window_size,1)]);
             
-            comddot_sol = reshape(sol(n_weights+(1:2*obj.window_size)),2,obj.window_size);
-            com_sol = reshape(x0y+N*reshape(comddot_sol,[],1),2,obj.window_size);
-            com_pos = com_sol(:,1);
-            toc
-            profile off
-            profile viewer
+            comddot_sol = sol(n_weights+(1:2*obj.window_size));
+            LIP_state_sol = reshape(obj.Mbar*[com_x0;com_y0;comdot_x0;comdot_y0]+obj.Nbar*comddot_sol,4,obj.window_size);
+            com_pos = [LIP_state_sol(1:2,2);z_com(2)];
+%             comdot_sol = [LIP_state_sol(3:4,2);z_com
+%             com_sol = [com_sol;z_com];
+%             com_pos = com_sol(:,2);
+%             toc
+%             profile off
+%             profile viewer
         end
     end
     properties
@@ -110,5 +120,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
         g;
         M;
         N;
+        Mbar;
+        Nbar;
     end
 end
