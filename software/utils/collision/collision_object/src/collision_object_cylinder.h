@@ -1,15 +1,3 @@
-/**
- * @file collision_object_cylinder.h
- * @author Thomas Howard
- * @namespace collision
- * 
- * @section DESCRIPTION
- * 
- * A class used to describe a cylinder-shaped collision object.  The 
- *  cylinder is aligned along the local Z-axis and takes as arguments
- *  the radius and height of the cylinder.
- */
-
 #ifndef COLLISION_COLLISION_OBJECT_CYLINDER_H
 #define COLLISION_COLLISION_OBJECT_CYLINDER_H
 
@@ -24,9 +12,7 @@
 namespace collision {
   class Collision_Object_Cylinder : public Collision_Object {
   public:
-    Collision_Object_Cylinder( std::string id );
-    Collision_Object_Cylinder( std::string id, double radius, double height );
-    Collision_Object_Cylinder( std::string id, double radius, double height, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    Collision_Object_Cylinder( std::string id = "N/A", double radius = 1.0, double height = 0.1, Eigen::Vector3f position = Eigen::Vector3f(), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
     ~Collision_Object_Cylinder();
 
 

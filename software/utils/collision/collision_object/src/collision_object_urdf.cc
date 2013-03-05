@@ -1,9 +1,9 @@
 #include <path_util/path_util.h>
-#include <collision_detection/collision_object_box.h>
-#include <collision_detection/collision_object_cylinder.h>
-#include <collision_detection/collision_object_sphere.h>
-#include <collision_detection/collision_object_convex_hull.h>
-#include <collision_detection/collision_object_gfe.h>
+#include <collision/collision_object_box.h>
+#include <collision/collision_object_cylinder.h>
+#include <collision/collision_object_sphere.h>
+#include <collision/collision_object_convex_hull.h>
+#include <collision/collision_object_urdf.h>
 
 using namespace std;
 using namespace boost;
@@ -11,26 +11,26 @@ using namespace Eigen;
 using namespace urdf;
 using namespace KDL;
 using namespace drc;
-using namespace kinematics_model;
-using namespace collision_detection;
+using namespace kinematics;
+using namespace collision;
 
 /**
- * Collision_Object_GFE
+ * Collision_Object_URDF
  * class constructor
  */
-Collision_Object_GFE::
-Collision_Object_GFE( string id ) : Collision_Object( id ),
+Collision_Object_URDF::
+Collision_Object_URDF( string id ) : Collision_Object( id ),
                                     _collision_objects(),
                                     _kinematics_model() {
   _load_collision_objects();
 }
 
 /**
- * Collision_Object_GFE
+ * Collision_Object_URDF
  * class constructor with id and urdf filename
  */
-Collision_Object_GFE::
-Collision_Object_GFE( string id,
+Collision_Object_URDF::
+Collision_Object_URDF( string id,
                       string urdfFilename ) : Collision_Object( id ),
                                               _collision_objects(),
                                               _kinematics_model( urdfFilename ){
@@ -38,11 +38,11 @@ Collision_Object_GFE( string id,
 } 
 
 /**
- * Collision_Object_GFE
+ * Collision_Object_URDF
  * class constructor with id, dimension, position, and orientation arguments
  */
-Collision_Object_GFE::
-Collision_Object_GFE( string id,
+Collision_Object_URDF::
+Collision_Object_URDF( string id,
                       string urdfFilename,
                       robot_state_t& robotState ) : Collision_Object( id ),
                                                     _collision_objects(),
@@ -51,22 +51,22 @@ Collision_Object_GFE( string id,
 }
 
 /**
- * Collision_Object_GFE
+ * Collision_Object_URDF
  * copy constructor
  */
-Collision_Object_GFE::
-Collision_Object_GFE( const Collision_Object_GFE& other ): Collision_Object( other ),
+Collision_Object_URDF::
+Collision_Object_URDF( const Collision_Object_URDF& other ): Collision_Object( other ),
                                                             _collision_objects( other._collision_objects ),
                                                             _kinematics_model( other._kinematics_model ) {
   _load_collision_objects();
 }   
 
 /**
- * ~Collision_Object_GFE
+ * ~Collision_Object_URDF
  * class destructor
  */
-Collision_Object_GFE::
-~Collision_Object_GFE(){
+Collision_Object_URDF::
+~Collision_Object_URDF(){
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
       delete _collision_objects[ i ];
@@ -81,26 +81,24 @@ Collision_Object_GFE::
  * sets the kinematics model to the robot state
  */
 void
-Collision_Object_GFE::
-set( robot_state_t& robotState ){
-  _kinematics_model.set( robotState );
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
-      double qx, qy, qz, qw;
-      frame.M.GetQuaternion( qx, qy, qz, qw );      
-      _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
-                                              Vector4f( qx, qy, qz, qw ) );
-    }
-  }
+Collision_Object_URDF::
+set( void ){
   return;
 }
+
+void 
+Collision_Object_URDF::
+set_transform( const Eigen::Vector3f position, 
+                const Eigen::Vector4f orientation ){
+  return;
+}
+
 
 /**
  * matches_uid
  */
 Collision_Object*
-Collision_Object_GFE::
+Collision_Object_URDF::
 matches_uid( unsigned int uid ){
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     vector< btCollisionObject* > bt_collision_object_vector = _collision_objects[ i ]->bt_collision_objects();
@@ -117,10 +115,32 @@ matches_uid( unsigned int uid ){
  * kinematics_model
  * returns a reference to the Kinematics_Model class
  */
-const Kinematics_Model_GFE&
-Collision_Object_GFE::
+const Kinematics_Model_URDF&
+Collision_Object_URDF::
 kinematics_model( void )const{
   return _kinematics_model;
+}
+
+/**
+ * position
+ * returns the position of the collision object
+ */
+Vector3f
+Collision_Object_URDF::
+position( void )const{
+  Vector3f position;
+  return position;
+}
+
+/**
+ * orientation
+ * returns the orientation of the collision object
+ */
+Vector4f
+Collision_Object_URDF::
+orientation( void )const{
+  Vector4f orientation;
+  return orientation;
 }
 
 /** 
@@ -128,7 +148,7 @@ kinematics_model( void )const{
  * returns a std::vector of btCollisionObject pointers
  */
 vector< btCollisionObject* >
-Collision_Object_GFE::
+Collision_Object_URDF::
 bt_collision_objects( void ){
   vector< btCollisionObject* > bt_collision_objects;
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
@@ -146,7 +166,7 @@ bt_collision_objects( void ){
  * return a std::vector of const btCollisionObject pointers
  */
 vector< const btCollisionObject* >
-Collision_Object_GFE::
+Collision_Object_URDF::
 bt_collision_objects( void )const{
   vector< const btCollisionObject* > bt_collision_objects;
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
@@ -164,7 +184,7 @@ bt_collision_objects( void )const{
  * iterates through all of the links and loads collision objects based on the link type
  */
 void
-Collision_Object_GFE::
+Collision_Object_URDF::
 _load_collision_objects( void ){
   vector< shared_ptr< Link > > links;
   _kinematics_model.model().getLinks( links );

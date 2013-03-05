@@ -23,9 +23,7 @@
 namespace collision {
   class Collision_Object_Sphere : public Collision_Object {
   public:
-    Collision_Object_Sphere( std::string id );
-    Collision_Object_Sphere( std::string id, double radius );
-    Collision_Object_Sphere( std::string id, double radius, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    Collision_Object_Sphere( std::string id = "N/A", double radius = 1.0, Eigen::Vector3f position = Eigen::Vector3f(), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
     Collision_Object_Sphere( const Collision_Object_Sphere& other );
     ~Collision_Object_Sphere();
 

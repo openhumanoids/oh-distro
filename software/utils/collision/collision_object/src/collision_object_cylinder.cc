@@ -6,30 +6,6 @@ using namespace collision;
 
 /**
  * Collision_Object_Cylinder
- * class constructor
- */
-Collision_Object_Cylinder::
-Collision_Object_Cylinder( string id ) : Collision_Object( id ),
-                                        _bt_collision_object(),
-                                        _bt_cylinder_shape( btVector3( 0.5, 0.0, 0.5 ) ){
-  _bt_collision_object.setCollisionShape( &_bt_cylinder_shape );
-}
-
-/**
- * Collision_Object_Cylinder
- * class constructor with id and dimension arguments
- */
-Collision_Object_Cylinder::
-Collision_Object_Cylinder( string id,
-                            double radius,
-                            double height ) : Collision_Object( id ),
-                                              _bt_collision_object(),
-                                              _bt_cylinder_shape( btVector3( radius, 0.0, height / 2.0) ){
-  _bt_collision_object.setCollisionShape( &_bt_cylinder_shape );
-}
-
-/**
- * Collision_Object_Cylinder
  * class constructor with id, dimension, position, and orientation arguments
  */
 Collision_Object_Cylinder::
@@ -52,9 +28,6 @@ Collision_Object_Cylinder::
 ~Collision_Object_Cylinder(){
 
 }
-
-
-
 
 /**
  * position

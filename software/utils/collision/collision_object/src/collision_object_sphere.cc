@@ -6,29 +6,6 @@ using namespace collision;
 
 /**
  * Collision_Object_Sphere
- * class constructor
- */
-Collision_Object_Sphere::
-Collision_Object_Sphere( string id ) : Collision_Object( id ),
-                                      _bt_collision_object(),
-                                      _bt_sphere_shape( 0.5 ){
-  _bt_collision_object.setCollisionShape( &_bt_sphere_shape );
-}
-
-/**
- * Collision_Object_Sphere
- * class constructor with id and dimension arguments
- */
-Collision_Object_Sphere::
-Collision_Object_Sphere( string id,
-                          double radius ) : Collision_Object( id ),
-                                            _bt_collision_object(),
-                                            _bt_sphere_shape( (btScalar)(radius) ){
-  _bt_collision_object.setCollisionShape( &_bt_sphere_shape );
-}
-
-/**
- * Collision_Object_Sphere
  * class constructor with id, dimension, position, and orientation arguments
  */
 Collision_Object_Sphere::
