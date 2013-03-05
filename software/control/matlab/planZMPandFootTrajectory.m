@@ -1,4 +1,4 @@
-function [zmptraj,lfoottraj,rfoottraj,step_times] = planZMPandFootTrajectory(biped,q0, Xright, Xleft,step_time)
+function [zmptraj,lfoottraj,rfoottraj,step_times,supporttraj] = planZMPandFootTrajectory(biped,q0, Xright, Xleft,step_time)
 
 r = biped.manip;
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
@@ -54,6 +54,9 @@ bRightStep = true;
 istep_r = 1;
 istep_l = 1;
 
+rfootsupport = [1 1];
+lfootsupport = [1 1];
+
 while 1
   lf = repmat(lfootpos(:,end), 1, 4);
   rf = repmat(rfootpos(:,end), 1, 4);
@@ -67,6 +70,8 @@ while 1
       rf(1:3, i) = rf(1:3, i) - offset(1:3);
     end
     stepzmp = [repmat(lfootCenter(lf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
+    rfootsupport = [rfootsupport 0 0 1 1 1]; 
+    lfootsupport = [lfootsupport 1 1 1 1 1]; 
     istep_r = istep_r + 1;
   else
     lf = interp1([0; 1], [Xleft(:, istep_l), Xleft(:, istep_l+1)]', [0, .5, 1, 1]')';
@@ -77,6 +82,8 @@ while 1
       lf(1:3, i) = lf(1:3, i) - offset(1:3);
     end
     stepzmp = [repmat(rfootCenter(rf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
+    rfootsupport = [rfootsupport 1 1 1 1 1]; 
+    lfootsupport = [lfootsupport 0 0 1 1 1]; 
     istep_l = istep_l + 1;
   end
   rfootpos = [rfootpos, rf, rf(:,end)];
@@ -92,5 +99,11 @@ end
 zmptraj = PPTrajectory(foh(ts,zmp));
 lfoottraj = PPTrajectory(foh(ts,lfootpos));
 rfoottraj = PPTrajectory(foh(ts,rfootpos));
+
+% create support body trajectory
+supporttraj = repmat(0*ts,length(r.getLinkNames),1);
+supporttraj(strcmp(biped.r_foot_name,r.getLinkNames),:) = rfootsupport;
+supporttraj(strcmp(biped.l_foot_name,r.getLinkNames),:) = lfootsupport;
+supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(r));
 
 end
