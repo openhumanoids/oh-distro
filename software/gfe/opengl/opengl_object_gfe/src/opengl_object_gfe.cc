@@ -1,5 +1,7 @@
 #include <path_util/path_util.h>
 
+#include <opengl/opengl_object_box.h>
+#include <opengl/opengl_object_cylinder.h>
 #include <opengl/opengl_object_dae.h>
 #include <opengl/opengl_object_gfe.h>
 
@@ -10,7 +12,7 @@ using namespace KDL;
 using namespace Eigen;
 using namespace drc;
 using namespace state;
-using namespace kinematics_model;
+using namespace kinematics;
 using namespace opengl;
 
 /**
@@ -22,6 +24,8 @@ OpenGL_Object_GFE() : OpenGL_Object(),
                       _kinematics_model(),
                       _opengl_objects() {
   _load_opengl_objects();
+  State_GFE state_gfe;
+  set( state_gfe );
 }
 
 /**
@@ -33,6 +37,8 @@ OpenGL_Object_GFE( std::string urdfFilename ) : OpenGL_Object(),
                                                 _kinematics_model( urdfFilename ),
                                                 _opengl_objects() {
   _load_opengl_objects();
+  State_GFE state_gfe;
+  set( state_gfe );
 }
 
 /**
@@ -128,8 +134,10 @@ _load_opengl_objects( void ){
         shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->visual->geometry );
       } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
         shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
+        _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
       } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
         shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
+        _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, Vector2f( cylinder->radius, cylinder->length ) ) );
       } else if ( links[ i ]->visual->geometry->type == Geometry::MESH ){
         shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
         std::string model_filename = mesh->filename;
@@ -143,6 +151,12 @@ _load_opengl_objects( void ){
     }
   }
   return;
+}
+
+Kinematics_Model_GFE&
+OpenGL_Object_GFE::
+kinematics_model( void ){
+  return _kinematics_model;
 }
 
 /**
