@@ -845,6 +845,9 @@ namespace surrogate_gui
 
 #endif  
 
+/* calculates bounding box, center, and orientation of plane given theta
+ * Rotates points to XY plane finds bounds and center, rotates center back to original rotation frame
+ */
 Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, PointIndices::Ptr planeIndices, 
 				      float plane[4],Vector3f normal,float theta,
 				      Vector3f& center, Vector3f& ypr){
