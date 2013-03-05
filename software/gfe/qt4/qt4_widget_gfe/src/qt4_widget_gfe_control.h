@@ -7,11 +7,12 @@
 #include <QtGui/QLabel>
 #include <QtGui/QSlider>
 #include <QtGui/QWidget>
+#include <QtGui/QTabWidget>
 
 #include <state/state_gfe.h>
 
 namespace qt4 {
-  class Qt4_Widget_GFE_Control: public QWidget {
+  class Qt4_Widget_GFE_Control: public QTabWidget {
     Q_OBJECT
   public:
     Qt4_Widget_GFE_Control( QWidget * parent = 0 );
@@ -21,6 +22,9 @@ namespace qt4 {
 
   signals:
     void state_update( state::State_GFE& );
+
+  public slots:
+    void update_state( state::State_GFE& );
 
   protected slots:
 
