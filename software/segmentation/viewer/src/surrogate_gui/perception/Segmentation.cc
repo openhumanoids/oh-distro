@@ -348,7 +348,7 @@ namespace surrogate_gui
      the cylinder is oriented on the z axis*/
   PointIndices::Ptr Segmentation::fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
-								const FittingParams& fp,
+					      const FittingParams& fp,
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
 					      double &radius,
@@ -391,18 +391,18 @@ namespace surrogate_gui
     seg.setInputCloud(subcloud);
     seg.setInputNormals(subcloud_normals);
 
-		// convert FittingParams YPR to XYZ vector
-		Matrix3f Rx,Ry,Rz;
-		Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
-		Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
-		Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
-		Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
+    // convert FittingParams YPR to XYZ vector
+    Matrix3f Rx,Ry,Rz;
+    Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
+    Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
+    Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
+    Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
 
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
     PointIndices::Ptr cylinderIndices (new PointIndices);
-		seg.setAxis(seedDirection); 
-		seg.setEpsAngle(fp.maxAngle); // seg faults if too small
+    seg.setAxis(seedDirection); 
+    seg.setEpsAngle(fp.maxAngle); // seg faults if too small
     seg.segment(*cylinderIndices, *coefficients);
 
     cout << "Cylinder: ";
@@ -426,9 +426,9 @@ namespace surrogate_gui
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
 		
-		// find direction's largest component x, y, or z
-		int maxIndex = 0;
-		for(int i=1;i<3;i++) if(fabs(direction[i]) > fabs(direction[maxIndex])) maxIndex=i;
+    // find direction's largest component x, y, or z
+    int maxIndex = 0;
+    for(int i=1;i<3;i++) if(fabs(direction[i]) > fabs(direction[maxIndex])) maxIndex=i;
 
     // project points on to line and find endpoints
     Vector3f pMin, pMax;    
@@ -445,10 +445,10 @@ namespace surrogate_gui
 
       // find end points
       if(i==0){
-				pMin = pMax = p;
+	pMin = pMax = p;
       }else{ 
-				if(p[maxIndex]<pMin[maxIndex]) pMin = p;
-				if(p[maxIndex]>pMax[maxIndex]) pMax = p;
+	if(p[maxIndex]<pMin[maxIndex]) pMin = p;
+	if(p[maxIndex]>pMax[maxIndex]) pMax = p;
       }
     }
 
@@ -476,11 +476,11 @@ namespace surrogate_gui
   }
 
   //==============sphere
-    PointIndices::Ptr Segmentation::fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-					      boost::shared_ptr<set<int> >  subcloudIndices,
-								const FittingParams& fp,
-					      double &x, double &y, double &z,
-					      double &radius)
+  PointIndices::Ptr Segmentation::fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					    boost::shared_ptr<set<int> >  subcloudIndices,
+					    const FittingParams& fp,
+					    double &x, double &y, double &z,
+					    double &radius)
   {
     cout << "\n in fit sphere.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -507,7 +507,7 @@ namespace surrogate_gui
 
 #if 1
     pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>::Ptr model_sphere(new 
-			       pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
+									pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
     model_sphere->setRadiusLimits(fp.minRadius, fp.maxRadius);
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_sphere);
     ransac.setDistanceThreshold(fp.distanceThreshold);
@@ -515,9 +515,9 @@ namespace surrogate_gui
     ransac.computeModel();
     PointIndices::Ptr sphereIndices (new PointIndices); //TODO set
     /*vector<int> inliers;
-    ransac.getInliers(inliers);
-    PointCloud<PointXYZRGB>::Ptr outputcloud
-    pcl::copyPointCloud<pcl::pointXYZRGB>(*subcloud,inliers,*outputcloud);*/
+      ransac.getInliers(inliers);
+      PointCloud<PointXYZRGB>::Ptr outputcloud
+      pcl::copyPointCloud<pcl::pointXYZRGB>(*subcloud,inliers,*outputcloud);*/
     Eigen::VectorXf coeff;
     ransac.getModelCoefficients(coeff);
     cout << "SampleConsensusModelSphere: ";
@@ -569,63 +569,131 @@ namespace surrogate_gui
 #endif
   }
 
-	PointIndices::Ptr Segmentation::fitCircle3d(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+
+  PointIndices::Ptr Segmentation::fitCircle3d(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
-								const FittingParams& fp,
+					      const FittingParams& fp,
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
 					      double &radius,
 					      std::vector<double> & inliers_distances)
-	{
-		cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
+  {
+    cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 		
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
-		SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (subcloud));
+    SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (subcloud));
 		
-		// Create the RANSAC object
-		RandomSampleConsensus<PointXYZRGB> sac(model, 0.01);
-		// Algorithm tests
-		bool result = sac.computeModel ();
+    // Create the RANSAC object
+    RandomSampleConsensus<PointXYZRGB> sac(model, 0.01);
+    // Algorithm tests
+    bool result = sac.computeModel ();
 
-		cout << "convergence: " << result << endl;
+    cout << "convergence: " << result << endl;
 
-		std::vector<int> sample;
-		sac.getModel (sample);
+    std::vector<int> sample;
+    sac.getModel (sample);
 		
-		std::vector<int> inliers;
-		sac.getInliers (inliers);
+    std::vector<int> inliers;
+    sac.getInliers (inliers);
 		
-		Eigen::VectorXf coeff;
-		sac.getModelCoefficients (coeff);
+    Eigen::VectorXf coeff;
+    sac.getModelCoefficients (coeff);
 
     x = coeff[0];
     y = coeff[1];
     z = coeff[2];
     radius = coeff[3];
 
-		// convert direction to ypr
-		Vector3f base(&coeff[0]);
+    // convert direction to ypr
+    Vector3f base(&coeff[0]);
     Vector3f direction(&coeff[4]);  
-		// flip if z is negative to simplify math
+    // flip if z is negative to simplify math
     if(direction.z()<0) direction = -direction;
     roll = 0;
     pitch = acos(direction.z());
     yaw = atan2(direction.y(), direction.x());
 
-		//TODO
-		// inliers
-		// fitting params
-		// inlier distance
-		// set inliers
-		PointIndices::Ptr circle3dIndices (new PointIndices);
+    //TODO
+    // inliers
+    // fitting params
+    // inlier distance
+    // set inliers
+    PointIndices::Ptr circle3dIndices (new PointIndices);
 
-		return circle3dIndices;
+    return circle3dIndices;
 
 
-	}
+  }
 
+  //-----------------------------------------------------------------------------------------------
+  // fit planes
+  PointIndices::Ptr Segmentation::fitPlanes(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+					      boost::shared_ptr<set<int> >  subcloudIndices,
+					      const FittingParams& fp,
+					      double &x, double &y, double &z,
+					      double &roll, double &pitch, double &yaw, 
+					      double &radius,
+					      double &length,  std::vector<double> & inliers_distances)
+  {
+
+    //PclSurrogateUtils::toPclIndices(subcloudIndices);
+
+    PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
+
+    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
+    NormalEstimation<PointXYZRGB, pcl::Normal> ne;
+    ne.setSearchMethod (tree);
+    ne.setInputCloud (subcloud);
+    ne.setKSearch (50);
+    PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
+    ne.compute (*subcloud_normals);
+
+    SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
+    seg.setNormalDistanceWeight (0.1);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setMaxIterations (1000);
+    seg.setDistanceThreshold (0.02);
+
+    uint min_plane_size = (int) (0.2 * subcloud->points.size());
+    if (min_plane_size > 500 || min_plane_size < 300)
+      min_plane_size = 500;
+
+    int maxNumSegments = 10; 
+
+    for (uint i = 0; i < maxNumSegments && subcloud->points.size() > min_plane_size; i++){
+
+      seg.setInputCloud(subcloud);
+      seg.setIndices(subcloudIndicesCopy);
+
+      ModelCoefficients::Ptr coefficients(new ModelCoefficients);
+      PointIndices::Ptr nextSegmentIndices (new PointIndices);
+      seg.segment(*nextSegmentIndices, *coefficients);
+
+      /*if (nextSegmentIndices->indices.size() > min_plane_size)
+	segmentsFound.push_back(nextSegmentIndices); 
+      else
+	break;
+      */
+
+      boost::shared_ptr<set<int> > remainingIndices (new set<int>(subcloudIndicesCopy->indices.begin(), subcloudIndicesCopy->indices.end()));
+
+      for(uint i = 0; i < nextSegmentIndices->indices.size(); i++)
+	remainingIndices->erase(nextSegmentIndices->indices[i]);
+
+      subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(remainingIndices);
+    }
+
+
+    ///////////////////// FIXME //////////////////////////////////// 
+    PointIndices::Ptr planeIndices (new PointIndices);
+    return planeIndices;
+  }
 
 
 
