@@ -8,7 +8,6 @@ Qt4_Widget_GFE_Object::
 Qt4_Widget_GFE_Object( QWidget * parent ) : Qt4_Widget_OpenGL( parent ),
                                             _opengl_object_gfe() {
   State_GFE state_gfe;
-  state_gfe.from_urdf();
   _opengl_object_gfe.set( state_gfe );
   opengl_scene().add_object( _opengl_object_gfe );
 }
