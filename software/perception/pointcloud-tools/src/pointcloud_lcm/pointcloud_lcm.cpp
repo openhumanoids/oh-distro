@@ -353,14 +353,14 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
   static const bool handle_missing_values = true;
   cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
   
-/*
-  int vv =400; //l2r
+
+/*  int vv =400; //l2r
   int uu =512; //t2b
   cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
               << " " << points(vv,uu)[1]
               << " " << points(vv,uu)[2]
               << "\n";
-  */
+*/  
   
   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   cloud->width    =(int) (w/ (double) decimate_) ;
