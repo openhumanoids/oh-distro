@@ -7,6 +7,5 @@ collision
 opengl
 state
 interface
-state
 qt4
 visualization_utils
