@@ -142,7 +142,6 @@ classdef Biped
       rfootpos = [rfoot0, rfoot0];
       lfootpos = [lfoot0, lfoot0];
 
-
       p0 = feetCenter(rfoot0, lfoot0);
       pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
       width = sqrt(sum((rfoot0 - lfoot0) .^ 2));
