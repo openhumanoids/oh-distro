@@ -1,4 +1,4 @@
-group "core" {
+group "1.core" {
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
@@ -21,7 +21,7 @@ group "core" {
     }
 }
 
-group "ros" {
+group "2.ros_driver" {
     cmd "rviz" {
         exec = "rosrun rviz rviz";
         host = "localhost";
@@ -48,9 +48,7 @@ group "ros" {
     }
 }
 
-
-
-group "head_ctrl" {
+group "3.spin_rate" {
     cmd "fast" {
         exec = "$HOME/drc/ros_workspace/multisense_command/scripts/multisense_command.py speed 2.156";
         host = "localhost";
@@ -65,19 +63,24 @@ group "head_ctrl" {
     }
 }
 
-group "processing" {
-    cmd "imagesplit" {
-        exec = "drc-image-splitter  -c CAMERA";
+group "4.processing" {
+    cmd "robotstate_upgrade" {
+        exec = "old-robot-state-upgrade ";
         host = "localhost";
     }
-    cmd "reg_vo" {
-        exec = "drc-reg-vo -b stereo -pPOSE_HEAD -m 1";
+    cmd "vo" {
+        exec = "drc-fovision-odometry -c stereo -i 1";
+        host = "localhost";
+    }
+    cmd "image_out" {
+        exec = "drc-multisense-image-tool -s";
+        host = "localhost";
+    }
+    cmd "glview" {
+        exec = "multisense-glview";
         host = "localhost";
     }
 }
-
-
-
 
 
 group "misc" {
@@ -92,13 +95,4 @@ group "zold" {
         exec = "camview --plugin-path $HOME/other_projects/camunits-plugins-mfallon/ -c $HOME/drc/config/stereo2disparity_sim.camview";
         host = "localhost";
     }
-}
-
-
-script "startup simulation" {
-    start group "core";
-    wait ms 1000;
-    start group "gazebo";
-    wait ms 5000;
-    start group "sensing";
 }
