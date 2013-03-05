@@ -14,12 +14,9 @@ main( int argc,
   State_GFE state_gfe;
   cout << state_gfe << endl;
 
-  state_gfe.from_urdf();
-  cout << state_gfe << endl;
-  
   robot_state_t robot_state;
   robot_state.num_joints = 0;
-  state_gfe.from_lcm( robot_state );
+  state_gfe.from_lcm( &robot_state );
   cout << state_gfe << endl;
 
   return 0;

@@ -8,38 +8,70 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <urdf/model.h>
 
+#include <state/state.h>
 #include <state/state_gfe_joint.h>
+#include <state/state_gfe_arm.h>
+#include <state/state_gfe_leg.h>
 
 namespace state {
-  class State_GFE {
+  typedef enum {
+    STATE_GFE_BACK_LBZ_JOINT,
+    STATE_GFE_BACK_MBY_JOINT,
+    STATE_GFE_BACK_UBX_JOINT,
+    STATE_GFE_NECK_AY_JOINT,
+    STATE_GFE_HEAD_IMU_JOINT,
+    STATE_GFE_HOKUYO_JOINT,
+    STATE_GFE_IMU_JOINT,
+    NUM_STATE_GFE_JOINTS
+  } state_gfe_joint_t;
+
+  class State_GFE : public State {
   public:
     State_GFE();
     ~State_GFE();
     State_GFE( const State_GFE& other );
     State_GFE& operator=( const State_GFE& other );
-  
-    bool from_xml_string( std::string xmlString );
-    bool from_urdf( std::string urdfFilename = "/mit_gazebo_models/mit_robot/model.urdf" );
-    bool from_lcm( const drc::robot_state_t& robotState );
-    void to_lcm( drc::robot_state_t& robotState )const;
 
-    void set_id( std::string id );
-    void set_time( unsigned long long time );
+    static State_GFE interpolate( const State_GFE& first, const State_GFE& second, unsigned long long time );
+ 
+    bool from_lcm( const drc::robot_state_t& robotState ); 
+    bool from_lcm( const drc::robot_state_t* robotState );
+    void to_lcm( drc::robot_state_t* robotState )const;
+
+    bool from_urdf( std::string filename );
+
+    virtual void set_time( unsigned long long time );
     void set_pose( const KDL::Frame& pose );
 
-    std::string id( void )const;
-    unsigned long long time( void )const;
     KDL::Frame pose( void )const;
-    std::map< std::string, State_GFE_Joint > joints( void )const;
+    std::map< std::string, State_GFE_Joint > joints( void )const;;
     std::map< std::string, double > joint_angles( void )const; 
+    State_GFE_Arm& left_arm( void );
+    const State_GFE_Arm& left_arm( void )const;
+    State_GFE_Arm& right_arm( void );
+    const State_GFE_Arm& right_arm( void )const;
+    State_GFE_Hand& left_hand( void );
+    const State_GFE_Hand& left_hand( void )const;
+    State_GFE_Hand& right_hand( void );
+    const State_GFE_Hand& right_hand( void )const;
+    State_GFE_Leg& left_leg( void );
+    const State_GFE_Leg& left_leg( void )const;
+    State_GFE_Leg& right_leg( void );
+    const State_GFE_Leg& right_leg( void )const;
+    State_GFE_Joint& joint( state_gfe_joint_t joint );
+    const State_GFE_Joint& joint( state_gfe_joint_t joint )const;
     State_GFE_Joint& joint( std::string id );
     const State_GFE_Joint& joint( std::string id )const;
  
   protected:
-    std::string _id;
-    unsigned long long _time;
     KDL::Frame _pose;
-    std::map< std::string, State_GFE_Joint > _joints;
+    State_GFE_Arm _left_arm;
+    State_GFE_Arm _right_arm;
+    State_GFE_Hand _left_hand;
+    State_GFE_Hand _right_hand;
+    State_GFE_Leg _left_leg;
+    State_GFE_Leg _right_leg;
+    State_GFE_Joint _joints[ NUM_STATE_GFE_JOINTS ];
 
   private:
     

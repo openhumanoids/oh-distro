@@ -11,16 +11,7 @@ int
 main( int argc, 
       char* argv[] )
 {
-  State_GFE state_gfe;
-  cout << state_gfe << endl;
-
-  state_gfe.from_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot_PnC/model.urdf" ) );
-  cout << state_gfe << endl;
-  
-  robot_state_t robot_state;
-  robot_state.num_joints = 0;
-  state_gfe.from_lcm( robot_state );
-  cout << state_gfe << endl;
-
+  State_GFE_Joint state_gfe_joint;
+  cout << "state_gfe_joint: " << state_gfe_joint << endl;
   return 0;
 }
