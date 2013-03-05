@@ -41,7 +41,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
             toc
         end
         
-        function com_pos = output(obj,t,~,u)
+        function [com_pos,zmp_pos,comddot] = output(obj,t,~,u)
             % u = [current planar com, contact planar positions in the preview
             % window, active_contact_flag,com height in the preview window]
 %             profile on
@@ -99,9 +99,15 @@ classdef ZMPwalkingPlanner < DrakeSystem
             
             [sol,fval,exitflag] = cplexqp(H,f,[],[],Aeq,beq,lb,ub,[1/obj.max_contact_pts*ones(n_weights,1);zeros(2*obj.window_size,1)]);
             
+            if(exitflag<=0)
+                error('ZMP planning is not successful')
+            end
             comddot_sol = sol(n_weights+(1:2*obj.window_size));
             LIP_state_sol = reshape(obj.Mbar*[com_x0;com_y0;comdot_x0;comdot_y0]+obj.Nbar*comddot_sol,4,obj.window_size);
             com_pos = [LIP_state_sol(1:2,2);z_com(2)];
+            zmp_sol = reshape(obj.M*[com_x0;com_y0;comdot_x0;comdot_y0]+N*comddot_sol,2,obj.window_size);
+            zmp_pos = zmp_sol(:,1);
+            comddot = comddot_sol(:,1);
 %             comdot_sol = [LIP_state_sol(3:4,2);z_com
 %             com_sol = [com_sol;z_com];
 %             com_pos = com_sol(:,2);
