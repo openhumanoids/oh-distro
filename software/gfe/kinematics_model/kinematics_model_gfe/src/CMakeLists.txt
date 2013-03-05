@@ -4,13 +4,13 @@ add_library(kinematics_model_gfe SHARED
 
 # make the header public
 # install it to include/kinematics_model_gfe
-pods_install_headers(kinematics_model_gfe.h DESTINATION kinematics_model)
+pods_install_headers(kinematics_model_gfe.h DESTINATION kinematics)
 
 # make the library public
 pods_install_libraries(kinematics_model_gfe)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES state_gfe kinematics_model forward-kinematics orocos-kdl kdl-parser path-util urdf)
+set(REQUIRED_PACKAGES state_gfe state kinematics_model forward-kinematics orocos-kdl kdl-parser path-util urdf)
 pods_use_pkg_config_packages(kinematics_model_gfe ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

@@ -1,9 +1,17 @@
 #include <fstream>
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+#include <kdl/chainiksolvervel_pinv_nso.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/chainiksolverpos_nr.hpp>
+#include <kdl/chainiksolverpos_lma.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 
+#include <state/state_gfe_arm.h>
+#include <state/state_gfe_leg.h>
 #include <path_util/path_util.h>
-#include <kinematics_model/kinematics_model.h>
-#include <kinematics_model/kinematics_model_gfe.h>
+#include <kinematics/kinematics_model.h>
+#include <kinematics/kinematics_model_gfe.h>
 
 using namespace std;
 using namespace boost;
@@ -12,7 +20,7 @@ using namespace KDL;
 using namespace kdl_parser;
 using namespace drc;
 using namespace state;
-using namespace kinematics_model;
+using namespace kinematics;
 
 /** 
  * Kinematics_Model
@@ -22,9 +30,25 @@ Kinematics_Model_GFE::
 Kinematics_Model_GFE() : _model(),
                           _tree(),
                           _fk_solver( NULL ),
+                          _iksolverpos_left_arm( NULL ),
+                          _iksolverpos_right_arm( NULL ),
+                          _iksolverpos_left_leg( NULL ),
+                          _iksolverpos_right_leg( NULL ),
                           _world_to_body(),
-                          _joint_frames(){
-  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot/model.urdf" ) ) ){
+                          _link_frames(),
+                          _left_arm_chain(),
+                          _right_arm_chain(),
+                          _left_leg_chain(),
+                          _right_leg_chain(),
+                          _min_joint_limits_left_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                          _max_joint_limits_left_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                          _min_joint_limits_right_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                          _max_joint_limits_right_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                          _min_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                          _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                          _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                          _max_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ){
+  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot_PnC/model.urdf" ) ) ){
     cout << "could not load urdf" << endl;
   }
 }
@@ -37,8 +61,24 @@ Kinematics_Model_GFE::
 Kinematics_Model_GFE( string urdfFilename ) : _model(),
                                             _tree(),
                                             _fk_solver( NULL ),
+                                            _iksolverpos_left_arm( NULL ),
+                                            _iksolverpos_right_arm( NULL ),
+                                            _iksolverpos_left_leg( NULL ),
+                                            _iksolverpos_right_leg( NULL ),
                                             _world_to_body(),
-                                            _joint_frames(){
+                                            _link_frames(),
+                                            _left_arm_chain(),
+                                            _right_arm_chain(),
+                                            _left_leg_chain(),
+                                            _right_leg_chain(),
+                                            _min_joint_limits_left_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                                            _max_joint_limits_left_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                                            _min_joint_limits_right_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                                            _max_joint_limits_right_arm( NUM_STATE_GFE_ARM_JOINTS ),
+                                            _min_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                                            _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                                            _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
+                                            _max_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ){
   if( !load_urdf( getModelsPath() + urdfFilename ) ) {
     cout << "could not load urdf " << endl;
   }
@@ -53,7 +93,19 @@ Kinematics_Model_GFE( const Kinematics_Model_GFE& other ) : _model( other._model
                                                             _tree( other._tree),
                                                             _fk_solver( new TreeFkSolverPos_recursive( _tree ) ),
                                                             _world_to_body( other._world_to_body ),
-                                                            _joint_frames( other._joint_frames ){
+                                                            _link_frames( other._link_frames ),
+                                                            _left_arm_chain( other._left_arm_chain ),
+                                                            _right_arm_chain( other._right_arm_chain ),
+                                                            _left_leg_chain( other._left_leg_chain ),
+                                                            _right_leg_chain( other._right_leg_chain ),
+                                                            _min_joint_limits_left_arm( other._min_joint_limits_left_arm ),
+                                                            _max_joint_limits_left_arm( other._max_joint_limits_left_arm ),
+                                                            _min_joint_limits_right_arm( other._min_joint_limits_right_arm ),
+                                                            _max_joint_limits_right_arm( other._max_joint_limits_right_arm ),
+                                                            _min_joint_limits_left_leg( other._min_joint_limits_left_leg ),
+                                                            _max_joint_limits_left_leg( other._max_joint_limits_left_leg ),
+                                                            _min_joint_limits_right_leg( other._min_joint_limits_right_leg ),
+                                                            _max_joint_limits_right_leg( other._max_joint_limits_right_leg ){
 }
 
 /**
@@ -66,6 +118,154 @@ Kinematics_Model_GFE::
     delete _fk_solver;
     _fk_solver = NULL;
   } 
+}
+
+/**
+ * inverse_kinematics_left_arm
+ * solves for the left arm state given a target pose
+ */
+bool
+Kinematics_Model_GFE::
+inverse_kinematics_left_arm( const State_GFE& robotState,
+                              const Frame& utorsoToHandPose,
+                              State_GFE_Arm& leftArmState ){
+  JntArray in_left_arm_angles( NUM_STATE_GFE_ARM_JOINTS );
+  JntArray out_left_arm_angles( NUM_STATE_GFE_ARM_JOINTS );
+ 
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    in_left_arm_angles( i ) = 0.5 * ( _min_joint_limits_left_arm( i ) + _max_joint_limits_left_arm( i ) );
+  } 
+
+  if( _iksolverpos_left_arm != NULL ){
+    if( _iksolverpos_left_arm->CartToJnt( in_left_arm_angles, utorsoToHandPose, out_left_arm_angles ) < 0 ){
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    if( ( out_left_arm_angles( i ) < _min_joint_limits_left_arm( i ) ) || ( out_left_arm_angles( i ) > _max_joint_limits_left_arm( i )  ) ){
+      return false;
+    }
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    leftArmState.joint( ( state_gfe_arm_joint_t )( i ) ).set_position( out_left_arm_angles( i ) );
+  }
+
+  return true;
+}
+
+/**
+ * inverse_kinematics_right_arm
+ * solves for the right arm state given a target pose
+ */
+bool
+Kinematics_Model_GFE::
+inverse_kinematics_right_arm( const State_GFE& robotState,
+                              const Frame& utorsoToHandPose,
+                              State_GFE_Arm& rightArmState ){
+  JntArray in_right_arm_angles( NUM_STATE_GFE_ARM_JOINTS );
+  JntArray out_right_arm_angles( NUM_STATE_GFE_ARM_JOINTS );
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    in_right_arm_angles( i ) = 0.5 * ( _min_joint_limits_right_arm( i ) + _max_joint_limits_right_arm( i ) );
+  }
+
+  if( _iksolverpos_right_arm != NULL ){
+    if( _iksolverpos_right_arm->CartToJnt( in_right_arm_angles, utorsoToHandPose, out_right_arm_angles ) < 0 ){
+      return false;
+    } 
+  } else {
+    return false;
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    if( ( out_right_arm_angles( i ) < _min_joint_limits_right_arm( i ) ) || ( out_right_arm_angles( i ) > _max_joint_limits_right_arm( i )  ) ){
+      return false;
+    } 
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+    rightArmState.joint( ( state_gfe_arm_joint_t )( i ) ).set_position( out_right_arm_angles( i ) );
+  }
+
+  return true;
+}
+
+/**
+ * inverse_kinematics_left_leg
+ * solves for the left leg state given a target pose
+ */
+bool
+Kinematics_Model_GFE::
+inverse_kinematics_left_leg( const State_GFE& robotState,
+                              const Frame& pelvisToFootPose,
+                              State_GFE_Leg& leftLegState ){
+  JntArray in_left_leg_angles( NUM_STATE_GFE_LEG_JOINTS );
+  JntArray out_left_leg_angles( NUM_STATE_GFE_LEG_JOINTS );
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    in_left_leg_angles( i ) = 0.5 * ( _min_joint_limits_left_leg( i ) + _max_joint_limits_left_leg( i ) );
+  }
+
+  if( _iksolverpos_left_leg != NULL ){
+    if( _iksolverpos_left_leg->CartToJnt( in_left_leg_angles, pelvisToFootPose, out_left_leg_angles ) < 0 ){
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    if( ( out_left_leg_angles( i ) < _min_joint_limits_left_leg( i ) ) || ( out_left_leg_angles( i ) > _max_joint_limits_left_leg( i )  ) ){
+      return false;
+    }
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    leftLegState.joint( ( state_gfe_leg_joint_t )( i ) ).set_position( out_left_leg_angles( i ) );
+  }
+
+  return true;
+}
+
+/**
+ * inverse_kinematics_right_leg
+ * solves for the right leg state given a target pose
+ */
+bool
+Kinematics_Model_GFE::
+inverse_kinematics_right_leg( const State_GFE& robotState,
+                              const Frame& pelvisToFootPose,
+                              State_GFE_Leg& rightLegState ){
+  JntArray in_right_leg_angles( NUM_STATE_GFE_LEG_JOINTS );
+  JntArray out_right_leg_angles( NUM_STATE_GFE_LEG_JOINTS );
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    in_right_leg_angles( i ) = 0.5 * ( _min_joint_limits_right_leg( i ) + _max_joint_limits_right_leg( i ) );
+  }
+
+  if( _iksolverpos_right_leg != NULL ){
+    if( _iksolverpos_right_leg->CartToJnt( in_right_leg_angles, pelvisToFootPose, out_right_leg_angles ) < 0 ){
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    if( ( out_right_leg_angles( i ) < _min_joint_limits_right_leg( i ) ) || ( out_right_leg_angles( i ) > _max_joint_limits_right_leg( i )  ) ){
+      return false;
+    }
+  }
+
+  for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+    rightLegState.joint( ( state_gfe_leg_joint_t )( i ) ).set_position( out_right_leg_angles( i ) );
+  }
+
+  return true;
 }
 
 /**
@@ -83,6 +283,90 @@ load_xml_string( string xmlString ){
   }
 
   _fk_solver = new TreeFkSolverPos_recursive( _tree );
+
+  if( !_tree.getChain( "utorso", "l_hand", _left_arm_chain ) ){
+    cout << "could not get left arm chain" << endl;
+    return false;
+  } else {
+    _iksolverpos_left_arm = new ChainIkSolverPos_LMA( _left_arm_chain );
+  }
+
+  if( !_tree.getChain( "utorso", "r_hand", _right_arm_chain ) ){
+    cout << "could not get left arm chain" << endl;
+    return false;
+  } else {
+    _iksolverpos_right_arm = new ChainIkSolverPos_LMA( _right_arm_chain );
+  }
+
+  if( !_tree.getChain( "pelvis", "l_foot", _left_leg_chain ) ){
+    cout << "could not get left foot chain" << endl;
+    return false;
+  } else {
+    _iksolverpos_left_leg = new ChainIkSolverPos_LMA( _left_leg_chain );
+  }
+  
+  if( !_tree.getChain( "pelvis", "r_foot", _right_leg_chain ) ){
+    cout << "could not get right foot chain" << endl;
+    return false;
+  } else {
+    _iksolverpos_right_leg = new ChainIkSolverPos_LMA( _right_leg_chain );
+  }
+
+  _min_joint_limits_left_arm( STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->lower;
+  _min_joint_limits_left_arm( STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->lower;
+  _min_joint_limits_left_arm( STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->lower;
+  _min_joint_limits_left_arm( STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "l_arm_elx" )->limits->lower;
+  _min_joint_limits_left_arm( STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->lower;
+  _min_joint_limits_left_arm( STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->lower;
+
+  _max_joint_limits_left_arm( STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->upper;
+  _max_joint_limits_left_arm( STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->upper;
+  _max_joint_limits_left_arm( STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->upper;
+  _max_joint_limits_left_arm( STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "l_arm_elx" )->limits->upper;
+  _max_joint_limits_left_arm( STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->upper;
+  _max_joint_limits_left_arm( STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->upper;  
+
+  _min_joint_limits_right_arm( STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
+  _min_joint_limits_right_arm( STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->lower;
+  _min_joint_limits_right_arm( STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->lower;
+  _min_joint_limits_right_arm( STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "r_arm_elx" )->limits->lower;
+  _min_joint_limits_right_arm( STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->lower;
+  _min_joint_limits_right_arm( STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->lower;
+
+  _max_joint_limits_right_arm( STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->upper;
+  _max_joint_limits_right_arm( STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->upper;
+  _max_joint_limits_right_arm( STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->upper;
+  _max_joint_limits_right_arm( STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "r_arm_elx" )->limits->upper;
+  _max_joint_limits_right_arm( STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->upper;
+  _max_joint_limits_right_arm( STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->upper;
+
+  _min_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_lax" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_lhy" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_mhx" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_uay" )->limits->lower;
+  _min_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_uhz" )->limits->lower;
+
+  _max_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_lax" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "l_leg_lhy" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "l_leg_mhx" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "l_leg_uay" )->limits->upper;
+  _max_joint_limits_left_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "l_leg_uhz" )->limits->upper;
+
+  _min_joint_limits_right_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "r_leg_kny" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_lax" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_lhy" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_mhx" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_uay" )->limits->lower;
+  _min_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_uhz" )->limits->lower;
+
+  _max_joint_limits_right_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "r_leg_kny" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "r_leg_lax" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_LHY_JOINT ) = _model.getJoint( "r_leg_lhy" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_MHX_JOINT ) = _model.getJoint( "r_leg_mhx" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_UAY_JOINT ) = _model.getJoint( "r_leg_uay" )->limits->upper;
+  _max_joint_limits_right_leg( STATE_GFE_LEG_UHZ_JOINT ) = _model.getJoint( "r_leg_uhz" )->limits->upper;
 
   return true;
 }
@@ -119,8 +403,8 @@ Kinematics_Model_GFE::
 set( const drc::robot_state_t& robotState ){
   Kinematics_Model::drc_position_3d_t_to_kdl_frame( robotState.origin_position, _world_to_body );
  
-  _joint_frames.clear();
-  _joint_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
+  _link_frames.clear();
+  _link_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
 
   map< string, double > joint_angles;
   for( unsigned int i = 0; i < robotState.num_joints; i++ ){
@@ -129,23 +413,29 @@ set( const drc::robot_state_t& robotState ){
 
   _update_joint( joint_angles, _world_to_body, _tree.getRootSegment() );
 
-  for( map< string, Frame >::iterator it = _joint_frames.begin(); it != _joint_frames.end(); it++ ){
+  for( map< string, Frame >::iterator it = _link_frames.begin(); it != _link_frames.end(); it++ ){
     it->second = _world_to_body * it->second;
   }
 
   return;
 }
 
+/**
+ * set
+ * updates the robot state in the kinematics model using the state::State_GFE class
+ */
 void
 Kinematics_Model_GFE::
 set( State_GFE& stateGFE ){
-  _joint_frames.clear();
-  _joint_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
-  
+  _link_frames.clear();
+  _link_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
+ 
+  _world_to_body = stateGFE.pose();
+ 
   map< string, double > joint_angles = stateGFE.joint_angles();
   _update_joint( joint_angles, _world_to_body, _tree.getRootSegment() );
 
-  for( map< string, Frame >::iterator it = _joint_frames.begin(); it != _joint_frames.end(); it++ ){
+  for( map< string, Frame >::iterator it = _link_frames.begin(); it != _link_frames.end(); it++ ){
     it->second = _world_to_body * it->second;
   }
   return;
@@ -178,13 +468,143 @@ tree( void )const{
 Frame
 Kinematics_Model_GFE::
 link( string linkName )const{
-  map< string, Frame >::const_iterator joint_frame_iterator = _joint_frames.find( linkName );
-  if( joint_frame_iterator != _joint_frames.end() ){
+  map< string, Frame >::const_iterator joint_frame_iterator = _link_frames.find( linkName );
+  if( joint_frame_iterator != _link_frames.end() ){
     return joint_frame_iterator->second;
   } else {
     cout << "could not find frame " << linkName << endl;
     return Frame();
   }
+}
+
+/**
+ * link_frames
+ * returns a map of link frames
+ */
+map< string, Frame >
+Kinematics_Model_GFE::
+link_frames( void )const{
+  return _link_frames;
+}
+
+/**
+ * min_joint_limits_left_arm
+ * returns the JntArry that contains the min joint angles for the left arm
+ */
+const JntArray&
+Kinematics_Model_GFE::
+min_joint_limits_left_arm( void )const{
+  return _min_joint_limits_left_arm;
+}
+
+/**
+ * max_joint_limits_left_arm
+ * returns the JntArry that contains the max joint angles for the left arm
+ */
+const JntArray&
+Kinematics_Model_GFE::
+max_joint_limits_left_arm( void )const{
+  return _max_joint_limits_left_arm;
+}
+
+/**
+ * min_joint_limits_right_arm
+ * returns the JntArry that contains the min joint angles for the right arm
+ */
+const JntArray&
+Kinematics_Model_GFE::
+min_joint_limits_right_arm( void )const{
+  return _min_joint_limits_right_arm;
+}
+
+/**
+ * max_joint_limits_right_arm
+ * returns the JntArry that contains the max joint angles for the right arm
+ */
+const JntArray&
+Kinematics_Model_GFE::
+max_joint_limits_right_arm( void )const{
+  return _max_joint_limits_right_arm;
+}
+
+/**
+ * min_joint_limits_left_leg
+ * returns the JntArry that contains the min joint angles for the left leg
+ */
+const JntArray&
+Kinematics_Model_GFE::
+min_joint_limits_left_leg( void )const{
+  return _min_joint_limits_left_leg;
+}
+
+/**
+ * max_joint_limits_left_leg
+ * returns the JntArry that contains the max joint angles for the left leg
+ */
+const JntArray&
+Kinematics_Model_GFE::
+max_joint_limits_left_leg( void )const{
+  return _max_joint_limits_left_leg;
+}
+
+/**
+ * min_joint_limits_right_leg
+ * returns the JntArry that contains the min joint angles for the right leg
+ */
+const JntArray&
+Kinematics_Model_GFE::
+min_joint_limits_right_leg( void )const{
+  return _min_joint_limits_right_leg;
+}
+
+/**
+ * max_joint_limits_right_leg
+ * returns the JntArry that contains the max joint angles for the right leg
+ */
+const JntArray&
+Kinematics_Model_GFE::
+max_joint_limits_right_leg( void )const{
+  return _max_joint_limits_right_leg;
+}
+
+/**
+ * left_arm_chain
+ * returns a const reference to the left arm chain
+ */
+const Chain&
+Kinematics_Model_GFE::
+left_arm_chain( void )const{
+  return _left_arm_chain;
+}
+
+/**
+ * right_arm_chain
+ * returns a const reference to the right arm chain
+ */
+const Chain&
+Kinematics_Model_GFE::
+right_arm_chain( void )const{
+  return _right_arm_chain;
+}
+
+/**
+ * left_leg_chain
+ * returns a const reference to the left leg chain
+ */
+const Chain&
+Kinematics_Model_GFE::
+left_leg_chain( void )const{
+  return _left_leg_chain;
+}
+
+/**
+ * right_leg_chain
+ * returns a const reference to the right leg chain
+ */
+const Chain&
+Kinematics_Model_GFE::
+right_leg_chain( void )const{
+  return _right_leg_chain;
 }
 
 /**
@@ -205,12 +625,15 @@ _update_joint( map< string, double >& jointAngles,
     } else {
       joint_frame = parentFrame * jointIterator->second.segment.pose( this_joint->second );
     }
-    _joint_frames.insert( make_pair( jointIterator->first, joint_frame ) );
+    _link_frames.insert( make_pair( jointIterator->first, joint_frame ) );
+  } else {
+    joint_frame = parentFrame * jointIterator->second.segment.pose( 0.0 );
+    _link_frames.insert( make_pair( jointIterator->first, joint_frame ) );
   }
-
   for( vector< SegmentMap::const_iterator >::const_iterator child = jointIterator->second.children.begin(); child != jointIterator->second.children.end(); child++ ){
     _update_joint( jointAngles, joint_frame, *child );
   }
+
   return;
 }
 
@@ -218,10 +641,83 @@ _update_joint( map< string, double >& jointAngles,
  * operator<<
  * ostream operator
  */
-namespace kinematics_model {
+namespace kinematics {
   ostream&
   operator<<( ostream& out,
               const Kinematics_Model_GFE& other ){
+    out << endl;
+    // display the left arm chain
+    out << "  l_arm_chain: ";
+    for( unsigned int i = 0; i < other.left_arm_chain().getNrOfSegments(); i++ ){
+      out << other.left_arm_chain().getSegment( i ).getJoint().getName();
+      if( i != ( other.left_arm_chain().getNrOfSegments() - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the left arm limits
+    out << "  l_arm_limits: ";
+    for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+      out << "("  << other.min_joint_limits_left_arm()( i ) << "," << other.max_joint_limits_left_arm()( i ) << ")";
+      if( i != ( NUM_STATE_GFE_ARM_JOINTS - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the right arm chain
+    out << "  r_arm_chain: ";
+    for( unsigned int i = 0; i < other.right_arm_chain().getNrOfSegments(); i++ ){
+      out << other.right_arm_chain().getSegment( i ).getJoint().getName();
+      if( i != ( other.right_arm_chain().getNrOfSegments() - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the right arm limits
+    out << "  r_arm_limits: ";
+    for( unsigned int i = 0; i < NUM_STATE_GFE_ARM_JOINTS; i++ ){
+      out << "("  << other.min_joint_limits_right_arm()( i ) << "," << other.max_joint_limits_right_arm()( i ) << ")";
+      if( i != ( NUM_STATE_GFE_ARM_JOINTS - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the left leg chain
+    out << "  l_leg_chain: ";
+    for( unsigned int i = 0; i < other.left_leg_chain().getNrOfSegments(); i++ ){
+      out << other.left_leg_chain().getSegment( i ).getJoint().getName();
+      if( i != ( other.left_leg_chain().getNrOfSegments() - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the left leg limits
+    out << "  l_leg_limits: ";
+    for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+      out << "("  << other.min_joint_limits_left_leg()( i ) << "," << other.max_joint_limits_left_leg()( i ) << ")";
+      if( i != ( NUM_STATE_GFE_LEG_JOINTS - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the right leg chain
+    out << "  r_leg_chain: ";
+    for( unsigned int i = 0; i < other.right_leg_chain().getNrOfSegments(); i++ ){
+      out << other.right_leg_chain().getSegment( i ).getJoint().getName();
+      if( i != ( other.right_leg_chain().getNrOfSegments() - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
+    // display the right leg limits
+    out << "  r_leg_limits: ";
+    for( unsigned int i = 0; i < NUM_STATE_GFE_LEG_JOINTS; i++ ){
+      out << "("  << other.min_joint_limits_right_leg()( i ) << "," << other.max_joint_limits_right_leg()( i ) << ")";
+      if( i != ( NUM_STATE_GFE_LEG_JOINTS - 1 ) ){
+        out << ",";
+      }
+    }
+    out << endl;
     return out;
   }
 } 
