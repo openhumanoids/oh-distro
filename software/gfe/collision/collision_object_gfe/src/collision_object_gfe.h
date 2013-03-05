@@ -19,7 +19,8 @@
 #include <Eigen/Dense>
 
 #include <lcmtypes/drc_lcmtypes.hpp>
-#include <kinematics_model/kinematics_model_gfe.h>
+#include <state/state_gfe.h>
+#include <kinematics/kinematics_model_gfe.h>
 #include <collision/collision_object.h>
 
 namespace collision {
@@ -32,10 +33,11 @@ namespace collision {
     ~Collision_Object_GFE();
 
     virtual void set( drc::robot_state_t& robotState );
+    virtual void set( state::State_GFE& stateGFE );
 
     virtual Collision_Object * matches_uid( unsigned int uid );
  
-    const kinematics_model::Kinematics_Model_GFE& kinematics_model( void )const; 
+    const kinematics::Kinematics_Model_GFE& kinematics_model( void )const; 
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
     virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 
@@ -47,7 +49,7 @@ namespace collision {
     void _load_collision_objects( void );
   
     std::vector< Collision_Object* > _collision_objects;
-    kinematics_model::Kinematics_Model_GFE _kinematics_model;
+    kinematics::Kinematics_Model_GFE _kinematics_model;
 
   private:
 

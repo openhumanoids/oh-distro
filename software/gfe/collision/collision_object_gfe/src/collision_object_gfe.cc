@@ -11,7 +11,8 @@ using namespace Eigen;
 using namespace urdf;
 using namespace KDL;
 using namespace drc;
-using namespace kinematics_model;
+using namespace state;
+using namespace kinematics;
 using namespace collision;
 
 /**
@@ -23,6 +24,8 @@ Collision_Object_GFE( string id ) : Collision_Object( id ),
                                     _collision_objects(),
                                     _kinematics_model() {
   _load_collision_objects();
+  State_GFE state_gfe;
+  set( state_gfe );
 }
 
 /**
@@ -35,6 +38,8 @@ Collision_Object_GFE( string id,
                                               _collision_objects(),
                                               _kinematics_model( xmlString ){
   _load_collision_objects();
+  State_GFE state_gfe;
+  set( state_gfe );
 } 
 
 /**
@@ -48,6 +53,8 @@ Collision_Object_GFE( string id,
                                                     _collision_objects(),
                                                     _kinematics_model( xmlString ) {
   _load_collision_objects();
+  State_GFE state_gfe;
+  set( state_gfe );
 }
 
 /**
@@ -89,6 +96,26 @@ set( robot_state_t& robotState ){
       Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
       double qx, qy, qz, qw;
       frame.M.GetQuaternion( qx, qy, qz, qw );      
+      _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
+                                              Vector4f( qx, qy, qz, qw ) );
+    }
+  }
+  return;
+}
+
+/**
+ * set
+ * sets the kinematics model to the robot state
+ */
+void
+Collision_Object_GFE::
+set( State_GFE& stateGFE ){
+  _kinematics_model.set( stateGFE );
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
+      double qx, qy, qz, qw;
+      frame.M.GetQuaternion( qx, qy, qz, qw );
       _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
                                               Vector4f( qx, qy, qz, qw ) );
     }

@@ -5,7 +5,7 @@
 using namespace std;
 using namespace Eigen;
 using namespace drc;
-using namespace kinematics_model;
+using namespace kinematics;
 using namespace collision;
 
 int 
