@@ -59,13 +59,13 @@ classdef Biped
     
     function [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)
       q0 = x0(1:end/2);
-      [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
+      [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj, q0, Xright, Xleft, obj.step_time);
       xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
     end
     
     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft)
       q0 = x0(1:end/2);
-      [zmptraj, lfoottraj, rfoottraj] = planZMPandFootTrajectory(obj.manip, q0, Xright, Xleft, obj.step_time);
+      [zmptraj, lfoottraj, rfoottraj] = planZMPandFootTrajectory(obj, q0, Xright, Xleft, obj.step_time);
       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
       xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
     end

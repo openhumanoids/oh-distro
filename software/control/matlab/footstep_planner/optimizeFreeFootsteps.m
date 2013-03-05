@@ -39,7 +39,6 @@ while 1
   end
   [Xright, Xleft] = biped.stepLocations(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
-  
   [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
   [d_l, r_l] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
   for n = 1:(length(ndx_fixed)-1)
