@@ -1,4 +1,4 @@
-function [X, outputflag] = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, heightfun)
+function [X, exitflag] = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, heightfun)
 
 max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
 
@@ -27,10 +27,10 @@ A = sparse(A);
 b = repmat([biped.max_step_length / 2; biped.max_step_length / 2; biped.max_step_rot / 2], ncon / 3, 1);
          
 
-[x_flat, ~, outputflag] = fmincon(@cost, x_flat,A,b,[],[],...
+[x_flat,fval,exitflag,output,lambda,grad] = fmincon(@cost, x_flat,A,b,[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
-  optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off'));
-
+  optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off', 'TolX', 0.01));
+grad
 
 X = locate_step_centers(x_flat);
 
