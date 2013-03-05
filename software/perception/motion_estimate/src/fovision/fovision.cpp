@@ -3,7 +3,7 @@
 FoVision::FoVision(boost::shared_ptr<lcm::LCM> &lcm_,
   boost::shared_ptr<fovis::StereoCalibration> kcal):
   lcm_(lcm_), kcal_(kcal), odom_(kcal_->getLeftRectification(),  
-  FoVision::getDefaultOptions()), //depth_producer_(kcal_.get()),
+  FoVision::getDefaultOptions()), //stereo_depth_(kcal_.get()),
   pose_(Eigen::Isometry3d::Identity())
 {
 //  fovis::CameraIntrinsicsParameters rgb_params = kcal_->getParameters().rgb_params;
@@ -11,8 +11,11 @@ FoVision::FoVision(boost::shared_ptr<lcm::LCM> &lcm_,
 //  depth_data_ = new float[rgb_params.width * rgb_params.height];
 
   fovis::VisualOdometryOptions vo_opts = getDefaultOptions();  
-
-  depth_producer_ = new fovis::StereoDepth(kcal_.get(), vo_opts);
+  // typical left/right stereo
+  stereo_depth_ = new fovis::StereoDepth(kcal_.get(), vo_opts);
+  // left/disparity from multisense
+  stereo_disparity_= new fovis::StereoDisparity( kcal_.get(), vo_opts);
+  
  // converted_depth_data_= new float[rgb_params.width * rgb_params.height];  
 }
 
@@ -31,16 +34,16 @@ FoVision::FoVision(boost::shared_ptr<lcm::LCM> &lcm_):
 
 FoVision::~FoVision()
 {
-  delete depth_image_; // mfallon edit
-  delete [] depth_data_;
+  delete stereo_depth_;
+  delete stereo_disparity_;
 }
 
 
 
 // Typical Stereo:
 void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf){
-  depth_producer_->setRightImage(right_buf);
-  odom_.processFrame(left_buf, depth_producer_);
+  stereo_depth_->setRightImage(right_buf);
+  odom_.processFrame(left_buf, stereo_depth_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
   printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
           me->getNumInliers(),
@@ -51,16 +54,9 @@ void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf){
 }
 
 // Left and Disparity:
-void FoVision::doOdometry(uint8_t *left_buf,uint16_t *disparity_buf){
-//  const uint8_t* gray = gray_in;
-  std::cout << "not working yet\n";
-  return;
-  // Kinect:
-  //depth_producer_.setDisparityData(disparity);
-  //odom_.processFrame(gray, &depth_producer_);
-
-  //depth_producer_->setDisparityData(disparity_buf);
-  //odom_.processFrame(left_buf, depth_producer_);
+void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf){
+  stereo_disparity_->setDisparityData(disparity_buf);
+  odom_.processFrame(left_buf, stereo_disparity_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
   printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
           me->getNumInliers(),

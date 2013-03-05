@@ -31,6 +31,15 @@ public:
   ~VoFeatures();
 
   void setFeatures(const fovis::FeatureMatch* matches, int num_matches, int64_t utime);
+  
+  void setReferenceImage(uint8_t *left_ref_buf){    
+    left_ref_buf_ = left_ref_buf; 
+  }
+  void setCurrentImage(uint8_t *left_cur_buf){    
+    left_cur_buf_ = left_cur_buf; 
+  }
+  
+  /*
   void setReferenceImages(uint8_t *left_ref_buf,uint8_t *right_ref_buf){    
     left_ref_buf_ = left_ref_buf; 
     right_ref_buf_ = right_ref_buf;   
@@ -39,6 +48,8 @@ public:
     left_cur_buf_ = left_cur_buf; 
     right_cur_buf_ = right_cur_buf;   
   }
+  */
+  
   void setReferenceCameraPose(Eigen::Isometry3d ref_camera_pose){    
     ref_camera_pose_ = ref_camera_pose;
   }
@@ -69,15 +80,17 @@ private:
   // All the incoming data and state:
   Eigen::Isometry3d ref_camera_pose_, cur_camera_pose_;
   int64_t utime_;
-  // pointers to reference images: (only used of visual output):
-  uint8_t *left_ref_buf_, *right_ref_buf_;
+  // pointers to reference image: (only used of visual output):
+  uint8_t *left_ref_buf_;
   std::vector<ImageFeature> features_ref_;
   std::vector<int> features_ref_indices_; // 0 outlier, 1 inlier
-  // pointers to reference images: (only used of visual output):
-  uint8_t *left_cur_buf_, *right_cur_buf_;
+  // pointers to reference image: (only used of visual output):
+  uint8_t *left_cur_buf_;
   std::vector<ImageFeature> features_cur_;
   std::vector<int> features_cur_indices_;
 
+  // no longer used:
+  // uint8_t *right_ref_buf_, *right_cur_buf_;
 };
 
 #endif

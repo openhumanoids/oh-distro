@@ -34,7 +34,8 @@ pods_use_pkg_config_packages(drc-fovision-odometry eigen3
   vofeatures
   voestimator
   fovision
-  pointcloud_vis)
+  pointcloud_vis
+  opencv)
 pods_install_executables(drc-fovision-odometry)
 
 

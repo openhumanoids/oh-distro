@@ -29,7 +29,7 @@ public:
     
     ~FoVision();
     void doOdometry(uint8_t *left_buf,uint8_t *right_buf);
-    void doOdometry(uint8_t *left_buf,uint16_t *disparity_buf);
+    void doOdometry(uint8_t *left_buf,float *disparity_buf);
     void fovis_stats();
     
     Eigen::Isometry3d getMotionEstimate(){ 
@@ -85,9 +85,14 @@ private:
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<fovis::StereoCalibration> kcal_;
     fovis::VisualOdometry odom_;
-    //fovis::PrimeSenseDepth depth_producer_;
-    fovis::StereoDepth* depth_producer_;
-    fovis::DepthImage* depth_image_;
+    
+    // Depth Sources:
+    fovis::StereoDepth* stereo_depth_; // typical left/right stereo
+    fovis::StereoDisparity* stereo_disparity_; // left/disparity from multisense
+
+    //fovis::PrimeSenseDepth depth_producer_; // disparity from Freenect
+    //fovis::DepthImage* depth_image_; // depth from OpenNI
+    
     float* depth_data_;
     Eigen::Isometry3d pose_;
     fovis::StereoCalibration* default_config();

@@ -7,7 +7,8 @@ pointcloud-tools
 
 image_io_utils
 # core pose estimator
-motion_estimate
+# currently disabled as the VO requires a newer version of fovis not in trunk yet
+#motion_estimate
 # utility to filter lidar self detections
 lidar-passthrough
 

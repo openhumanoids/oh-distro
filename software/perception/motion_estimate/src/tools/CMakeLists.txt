@@ -33,8 +33,6 @@ pods_use_pkg_config_packages(drc-multisense-image-tool
                 opencv)
 pods_install_executables(drc-multisense-image-tool )
 
-
-
 add_executable(drc-vicon2pose vicon2pose.cpp  )
 pods_use_pkg_config_packages(drc-vicon2pose
                 lcmtypes_bot2-core
@@ -43,3 +41,8 @@ pods_use_pkg_config_packages(drc-vicon2pose
                 pointcloud_vis
                 opencv)
 pods_install_executables(drc-vicon2pose )
+
+add_executable(old-robot-state-upgrade old-robot-state-upgrade.cpp  )
+pods_use_pkg_config_packages(old-robot-state-upgrade
+                lcmtypes_multisense)
+pods_install_executables(old-robot-state-upgrade )

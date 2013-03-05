@@ -17,7 +17,11 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
+#include <opencv/cv.h> // for disparity 
+
 using namespace std;
+
+using namespace cv; // for disparity ops
 
 class StereoOdom{
   public:
@@ -29,10 +33,13 @@ class StereoOdom{
     }
 
   private:
+    int image_size_; // just the resolution of the image
     uint8_t* left_buf_;
-    int left_buf_size_;
     uint8_t* right_buf_;
-    int right_buf_size_;
+
+    // Is mutable necessary?
+    mutable std::vector<float> disparity_buf_;    
+    
     int64_t utime_cur_;
 
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -47,7 +54,6 @@ class StereoOdom{
     VoFeatures* features_;
     int64_t utime_prev_;
     uint8_t* left_buf_ref_; // copies of the reference images - probably can be extracted from fovis directly
-    uint8_t* right_buf_ref_; // no used for anything currently
     int64_t ref_utime_;
     Eigen::Isometry3d ref_camera_pose_; // [pose of the camera when the reference frames changed
     bool changed_ref_frames_;
@@ -84,12 +90,11 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
 
   boost::shared_ptr<fovis::StereoCalibration> stereo_calibration_;
   stereo_calibration_ = boost::shared_ptr<fovis::StereoCalibration>(config->load_stereo_calibration());
-  left_buf_size_ = 3* stereo_calibration_->getWidth() * stereo_calibration_->getHeight();
-  right_buf_size_ = left_buf_size_;
-  left_buf_ = (uint8_t*) malloc(left_buf_size_);
-  right_buf_ = (uint8_t*) malloc(right_buf_size_);  
-  left_buf_ref_ = (uint8_t*) malloc(left_buf_size_);  
-  right_buf_ref_ = (uint8_t*) malloc(right_buf_size_);  
+  image_size_ = stereo_calibration_->getWidth() * stereo_calibration_->getHeight();
+  left_buf_ = (uint8_t*) malloc(3*image_size_);
+  right_buf_ = (uint8_t*) malloc(3*image_size_);
+
+  left_buf_ref_ = (uint8_t*) malloc(3*image_size_); // used of feature output 
   
   vo_ = new FoVision(lcm_ , stereo_calibration_);
 
@@ -118,34 +123,10 @@ void StereoOdom::featureAnalysis(){
   /// Incremental Feature Output:
   if (counter%5 == 0 ){
     features_->setFeatures(vo_->getMatches(), vo_->getNumMatches() , utime_cur_);
-    features_->setCurrentImages(left_buf_, right_buf_);
+    features_->setCurrentImage(left_buf_);
+    //features_->setCurrentImages(left_buf_, right_buf_);
     features_->setCurrentCameraPose( estimator_->getCameraPose() );
     features_->doFeatureProcessing(1); // 1 = send the FEATURES_CUR
-
-
-//// Delete this:
-  stringstream ss;
-  ss << "Messaging traffic here";
-  drc::system_status_t status_msg;
-  status_msg.utime =  utime_cur_;
-  status_msg.system = 0;// use enums!!
-  status_msg.importance = 0;// use enums!!
-  status_msg.frequency = 1;// use enums!!
-  status_msg.value = ss.str();
-  lcm_->publish("SYSTEM_STATUS", &status_msg);
-{
-  stringstream ss;
-  ss << "Tracking message goes here";
-  drc::system_status_t status_msg;
-  status_msg.utime =  utime_cur_;
-  status_msg.system = 2;// use enums!!
-  status_msg.importance = 0;// use enums!!
-  status_msg.frequency = 1;// use enums!!
-  status_msg.value = ss.str();
-  lcm_->publish("SYSTEM_STATUS", &status_msg);
-}
-//// Delete this]
-
   }
   
   /// Reference Feature Output: ///////////////////////////////////////////////
@@ -156,7 +137,7 @@ void StereoOdom::featureAnalysis(){
       // was:      if(featuresA.size() > 50){ // if less than 50 features - dont bother writing
         cout << "ref frame from " << utime_prev_ << " at " << utime_cur_ <<  " with " <<vo_->getNumMatches()<<" matches\n";
         features_->setFeatures(vo_->getMatches(), vo_->getNumMatches() , ref_utime_);
-        features_->setReferenceImages(left_buf_ref_, right_buf_ref_);
+        features_->setReferenceImage(left_buf_ref_);
         features_->setReferenceCameraPose( ref_camera_pose_ );
         features_->doFeatureProcessing(0); // 0 = send the FEATURES_REF
       }
@@ -167,8 +148,8 @@ void StereoOdom::featureAnalysis(){
   if (vo_->getChangeReferenceFrames()){ // If we change reference frame, note the change for the next iteration.
     ref_utime_ = utime_cur_;
     ref_camera_pose_ = estimator_->getCameraPose(); // publish this pose when the 
-    std::copy( left_buf_ , left_buf_ + left_buf_size_  , left_buf_ref_); // Keep the image buffer to write with the features:
-    std::copy( right_buf_, right_buf_+ right_buf_size_  , right_buf_ref_);
+    // TODO: only copy gray data if its grey
+    std::copy( left_buf_ , left_buf_ + 3*image_size_  , left_buf_ref_); // Keep the image buffer to write with the features:
     changed_ref_frames_=true;
   }
   counter++;
@@ -194,20 +175,6 @@ void StereoOdom::updateMotion(){
   
 }
 
-
-
-
-void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf, 
-     const std::string& channel, const  bot_core::image_t* msg){
-  utime_prev_ = utime_cur_;
-  utime_cur_ = msg->utime;
-  memcpy(left_buf_,  msg->data.data() , msg->size/2);
-  memcpy(right_buf_,  msg->data.data() + msg->size/2 , msg->size/2);
-  vo_->doOdometry(left_buf_,right_buf_);
-  updateMotion();
-  featureAnalysis();
-}
-
 /// Added for RGB-to-Gray:
 int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
         int height, const uint8_t *src, int sstride)
@@ -223,6 +190,18 @@ int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
     }
   }
   return 0;
+}
+
+////// Camera handlers:
+void StereoOdom::imageHandler(const lcm::ReceiveBuffer* rbuf, 
+     const std::string& channel, const  bot_core::image_t* msg){
+  utime_prev_ = utime_cur_;
+  utime_cur_ = msg->utime;
+  memcpy(left_buf_,  msg->data.data() , msg->size/2);
+  memcpy(right_buf_,  msg->data.data() + msg->size/2 , msg->size/2);
+  vo_->doOdometry(left_buf_,right_buf_);
+  updateMotion();
+  featureAnalysis();
 }
 
 void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -269,14 +248,24 @@ void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf,
 
 void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  multisense::images_t* msg){
+  int w = msg->images[0].width;
+  int h = msg->images[0].height;
+  
   utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
-  cout << msg->images[0].width <<  msg->images[0].height << "\n";
   memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
-  cout << "haven't added the disp handler\n";
-  return;
-  //memcpy(right_buf_,  msg->images[1].data.data() , msg->images[1].size);
-  vo_->doOdometry(left_buf_,right_buf_);
+  
+  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
+  const uint8_t* raw_data = msg->images[1].data.data();
+  disparity_orig_temp.data = (uchar*) raw_data;   // ... is a simple assignment possible?  
+  cv::Mat_<float> disparity_orig(h, w);
+  disparity_orig = disparity_orig_temp;
+  disparity_buf_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
+  disparity = disparity_orig / 16.0;
+  
+  vo_->doOdometry(left_buf_,disparity_buf_.data() );
   updateMotion();
   featureAnalysis();
 }

@@ -232,9 +232,9 @@ void VoFeatures::writeReferenceImages(){
   img.data = left_ref_buf_;
   imwrite( ( ss.str() + "_left.png"), img);
 
-  Mat imgR = Mat::zeros( image_height_, image_width_,CV_8UC1);
-  imgR.data = right_ref_buf_;
-  imwrite( (ss.str() + "_right.png"), imgR);  
+  //Mat imgR = Mat::zeros( image_height_, image_width_,CV_8UC1);
+  //imgR.data = right_ref_buf_;
+  //imwrite( (ss.str() + "_right.png"), imgR);  
 }
 
 void VoFeatures::writeFeatures(std::vector<ImageFeature> features){
