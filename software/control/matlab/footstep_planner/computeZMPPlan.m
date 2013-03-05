@@ -1,4 +1,4 @@
-function xtraj = computeZMPPlan(biped, x0, zmptraj, lfoottraj, rfoottraj, ts)
+function [xtraj,qtraj] = computeZMPPlan(biped, x0, zmptraj, lfoottraj, rfoottraj, ts)
 
 q0 = x0(1:end/2);
 %% covert ZMP plan into COM plan using LIMP model
@@ -43,3 +43,4 @@ for i=1:length(ts)
 end
 
 xtraj = setOutputFrame(PPTrajectory(spline(ts,[q;0*q])),getOutputFrame(biped.manip));
+qtraj = PPTrajectory(spline(ts,q));
