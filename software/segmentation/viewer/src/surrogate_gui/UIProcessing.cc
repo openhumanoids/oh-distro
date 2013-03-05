@@ -312,7 +312,7 @@ namespace surrogate_gui
 		{
 			Rectangle2D *rect = &(getDisplayInfo()->rectangle2D);
 			rect->shouldDraw = 1;
-			rect->x0 = event->x;
+		rect->x0 = event->x;
 			rect->y0 = event->y;
 			rect->x1 = event->x;
 			rect->y1 = event->y;
@@ -362,7 +362,7 @@ namespace surrogate_gui
 				return 1;
 			}
 
-			suggestSegments();
+			//suggestSegments();
 			currObj->setDisplayFullPointSet(); //show full point set initially
 			bot_viewer_request_redraw(_surrogate_renderer._viewer);
 		}
@@ -1099,7 +1099,74 @@ namespace surrogate_gui
 
 	void UIProcessing::handleAffordancePubButtonPlane(const Segmentation::FittingParams& fp)
 	{
-	  handleAffordancePubButtonCylinder(fp); //placeholder TODO
+	  //todo: map_utime, map_id, object_id
+	  drc::affordance_t affordanceMsg;
+	  	  
+	  affordanceMsg.map_id = 0; 	  
+	  affordanceMsg.otdf_type = "box";
+
+          //geometrical properties
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
+	  double x,y,z,roll,pitch=0,yaw=0,width=0.5,length=0.5;
+	  std::vector<double> inliers_distances; 
+	  PointIndices::Ptr planeIndices 
+	    = Segmentation::fitPlane(_surrogate_renderer._display_info.cloud,
+																	currObj->indices, fp,
+					x,y,z,
+					roll,pitch,yaw,
+					width,
+					length, 
+					inliers_distances);
+
+	  affordanceMsg.params.push_back(x);
+	  affordanceMsg.param_names.push_back("x");
+	  
+	  affordanceMsg.params.push_back(y);
+	  affordanceMsg.param_names.push_back("y");
+
+	  affordanceMsg.params.push_back(z);
+	  affordanceMsg.param_names.push_back("z");
+
+	  affordanceMsg.params.push_back(roll);
+	  affordanceMsg.param_names.push_back("roll");
+
+	  affordanceMsg.params.push_back(pitch);
+	  affordanceMsg.param_names.push_back("pitch");
+
+	  affordanceMsg.params.push_back(yaw);
+	  affordanceMsg.param_names.push_back("yaw");
+
+	  affordanceMsg.params.push_back(width);
+	  affordanceMsg.param_names.push_back("lX"); 
+
+	  affordanceMsg.params.push_back(length);
+	  affordanceMsg.param_names.push_back("lY");
+
+	  affordanceMsg.params.push_back(0.01);
+	  affordanceMsg.param_names.push_back("lZ");
+
+	  affordanceMsg.nparams = affordanceMsg.params.size();
+
+	  //point cloud indices
+	  affordanceMsg.nptinds = planeIndices->indices.size();
+	  affordanceMsg.ptinds = vector<int>(planeIndices->indices.begin(),
+	  				     planeIndices->indices.end());
+
+	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
+	       << affordanceMsg.ptinds.size() << endl;
+
+	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.param_names.size() << endl;
+
+	  //todo : Set these
+	  //states: todo? is this used? states/state_names
+	  affordanceMsg.nstates = 0;
+	  
+	  cout << "\n about to publish" << endl;
+	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+	  cout << "\n ***published \n" << endl;
+	  
+	  return;
 	}
 
 	void UIProcessing::handleAffordancePubButtonLine(const Segmentation::FittingParams& fp)

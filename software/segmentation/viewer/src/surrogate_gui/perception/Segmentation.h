@@ -72,16 +72,14 @@ namespace surrogate_gui
 					      double &radius,
 					      std::vector<double> & inliers_distances);
 
-
-			static pcl::PointIndices::Ptr fitPlanes(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+			static pcl::PointIndices::Ptr fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 								  boost::shared_ptr<std::set<int> > subcloudIndices,
 									const FittingParams& fp,
 								  double &x, double &y, double &z,
 								  double &roll, double &pitch, double &yaw, 
-								  double &radius,
+								  double &width,
 								  double &height,
 								  std::vector<double> &inliers_distances);
-
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);

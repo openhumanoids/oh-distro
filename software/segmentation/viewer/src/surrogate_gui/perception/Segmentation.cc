@@ -627,23 +627,34 @@ namespace surrogate_gui
 
   }
 
-  //-----------------------------------------------------------------------------------------------
-  // fit planes
-  PointIndices::Ptr Segmentation::fitPlanes(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+  //==============plane
+  /**fits a plane to subcloudIndices in cloud.  currently, we assume
+     the plane is oriented on the z axis*/
+  PointIndices::Ptr Segmentation::fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 					      boost::shared_ptr<set<int> >  subcloudIndices,
-					      const FittingParams& fp,
+								const FittingParams& fp,
 					      double &x, double &y, double &z,
 					      double &roll, double &pitch, double &yaw, 
-					      double &radius,
+					      double &width,
 					      double &length,  std::vector<double> & inliers_distances)
   {
+    cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
+    cout << "\n cloud size = " << cloud->points.size() << endl;
 
-    //PclSurrogateUtils::toPclIndices(subcloudIndices);
-
-    PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
 
     PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
+    //debugging
+    //Eigen::Vector4f centroid4f;
+    //compute3DCentroid(*subcloud, centroid4f);
+    //PointXYZ centroid(centroid4f[0], centroid4f[1], centroid4f[2]);
+    
+    //cout << "\n subcloud centroid = " << centroid << endl;
+    //end debugging
+
+		PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
+
+    //---normals
     pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
     NormalEstimation<PointXYZRGB, pcl::Normal> ne;
     ne.setSearchMethod (tree);
@@ -652,14 +663,137 @@ namespace surrogate_gui
     PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
     ne.compute (*subcloud_normals);
 
+    //create the segmentation object
     SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
-    seg.setOptimizeCoefficients(true);
-    seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
-    seg.setNormalDistanceWeight (0.1);
+		seg.setOptimizeCoefficients(true);
+		seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
+		seg.setNormalDistanceWeight (0.1);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (1000);
-    seg.setDistanceThreshold (0.02);
+    seg.setDistanceThreshold (fp.distanceThreshold);
 
+    //set input
+    seg.setInputCloud(subcloud);
+    seg.setInputNormals(subcloud_normals);
+
+		// convert FittingParams YPR to XYZ vector
+		Matrix3f Rx,Ry,Rz;
+		Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
+		Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
+		Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
+		Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
+
+    //segment
+    ModelCoefficients::Ptr coefficients(new ModelCoefficients);
+    PointIndices::Ptr planeIndices (new PointIndices);
+		seg.setAxis(seedDirection); 
+		seg.setEpsAngle(fp.maxAngle); // seg faults if too small
+    seg.segment(*planeIndices, *coefficients);
+
+    cout << "Plane: ";
+    for(int i=0;i<coefficients->values.size();i++){
+      cout<<coefficients->values[i]<<", ";
+    }
+    cout<<endl;
+    // TODO can coeff be empty?
+
+		// calculate normal 
+		// plane: ax+by+cz+d=0
+		float a = coefficients->values[0];
+		float b = coefficients->values[1];
+		float c = coefficients->values[2];
+		float d = coefficients->values[3];
+		Vector3f p0(0,0,-d/c);     // origin
+		Vector3f p1(1,0,-(a+d)/c); // x vector
+		Vector3f p2(0,1,-(b+d)/c); // y vector
+		Vector3f normal = (p1-p0).cross(p2-p0); // normal
+		normal = normal/normal.norm(); // normalize to unit vector
+
+    // calculate roll, pitch, and yaw
+    Vector3f base=p0; 
+    Vector3f direction=normal;
+    // flip if z is negative to simplify math
+    if(direction.z()<0) direction = -direction;
+		// this assumes no yaw.  TODO fix
+    roll = sin(direction.y());
+    pitch = sin(direction.x());
+    yaw = 0;
+    
+    //writer.write ("table_objects.pcd", *subcloud, false);
+
+    cout << "\n segmentation coefficients:\n" << *coefficients << endl;
+		
+		// find direction's largest component x, y, or z
+		int maxIndex = 0;
+		for(int i=1;i<3;i++) if(fabs(direction[i]) > fabs(direction[maxIndex])) maxIndex=i;
+
+		// calculate extent (assume aligned along XY TODO: fix)
+    // project points on to line and find endpoints
+    Vector3f xMin, xMax;    
+    Vector3f yMin, yMax;    
+    for(int i=0; i<planeIndices->indices.size();i++){ // for each inlier
+
+      // extract point and project to plane
+      int index = planeIndices->indices[i];
+      PointXYZRGB& pt = subcloud->at(index);
+			float correctedZ = -(a*pt.x + b*pt.y + d)/c; // move z to plane
+      Vector3f p(pt.x,pt.y,correctedZ);
+
+      // find end points
+      if(i==0){
+				xMin = xMax = yMin = yMax = p;
+      }else{ 
+				if(p.x()<xMin.x()) xMin = p;
+				if(p.x()>xMax.x()) xMax = p;
+				if(p.y()<yMin.y()) yMin = p;
+				if(p.y()>yMax.y()) yMax = p;
+      }
+    }
+		
+    // copy results to output
+		x = (xMin[0]+xMax[0])/2;
+		y = (yMin[1]+yMax[1])/2;
+		z =  -(a*x + b*y + d)/c;
+		width = xMax[0]-xMin[0];
+		length = yMax[1]-yMin[1]; // TODO take into account deltaZ
+
+		cout << "xyz_rpy_w_l:" << base.transpose() << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
+
+    // residuals 
+    /* TODO
+			inliers_distances.clear ();
+    inliers_distances.resize (planeIndices->indices.size ());
+    Eigen::Vector4f line_pt  (coefficients->values[0], coefficients->values[1], coefficients->values[2], 0);
+    Eigen::Vector4f line_dir (coefficients->values[3], coefficients->values[4], coefficients->values[5], 0);
+
+    for (size_t i = 0; i < planeIndices->indices.size (); ++i)
+      {
+	Eigen::Vector4f pt (subcloud->points[planeIndices->indices[i]].x, subcloud->points[planeIndices->indices[i]].y, subcloud->points[planeIndices->indices[i]].z, 0);
+        double d_euclid = fabs (sqrt(pcl::sqrPointToLineDistance (pt, line_pt, line_dir)) - coefficients->values[6]);
+	inliers_distances[i] = d_euclid; 
+	}*/
+
+		/* TODO
+			 - compute orientation
+			   - create function [width,length] = computeWidthLength(cloud, yaw)
+				 - compute orientation in 3 passes: -180:10:180, -10:1:10, -1:0.1:1
+			 - support multiple planes
+			 - compute residuals
+			 - final residuals is min of residuals for each plane
+			 - create new plane struct
+			 - return vector of planes
+			 - add number of instances to gui
+		*/
+
+    return planeIndices;
+  }
+
+
+
+
+
+
+#if 0
     uint min_plane_size = (int) (0.2 * subcloud->points.size());
     if (min_plane_size > 500 || min_plane_size < 300)
       min_plane_size = 500;
@@ -693,9 +827,11 @@ namespace surrogate_gui
     ///////////////////// FIXME //////////////////////////////////// 
     PointIndices::Ptr planeIndices (new PointIndices);
     return planeIndices;
-  }
+
+}
 
 
+#endif  
 
 
 
