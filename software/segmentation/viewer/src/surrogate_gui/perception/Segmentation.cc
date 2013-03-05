@@ -27,6 +27,8 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/io/pcd_io.h>
 
+#include <bot_core/rotations.h>
+
 using namespace std;
 using namespace pcl;
 using namespace Eigen;
@@ -34,7 +36,31 @@ using namespace Eigen;
 namespace surrogate_gui
 {
 
-
+  Matrix3f ypr2rot(Vector3f ypr){
+    double rpy[]={ypr[2],ypr[1],ypr[0]};
+    double q[4];
+    double mat[9];
+    bot_roll_pitch_yaw_to_quat(rpy,q);
+    int rc=bot_quat_to_matrix(q,mat);
+    Matrix3d mat2(mat);
+    for(int j=0;j<3;j++){
+      for(int i=0;i<3;i++){
+	mat2(j,i) = mat[j*3+i];
+      }
+    }
+    return mat2.cast<float>();
+  }
+  
+  Vector3f rot2ypr(Matrix3f mat){
+    Matrix3d mat2 = mat.transpose().cast<double>(); //convert from col-major to row-major
+    double* mat3 = mat2.data();
+    double q[4];
+    double rpy[3];
+    int rc=bot_matrix_to_quat(mat3,q);
+    bot_quat_to_roll_pitch_yaw(q,rpy);
+    return Vector3f(rpy[2],rpy[1],rpy[0]);
+  }
+  
 	vector<PointIndices::Ptr> Segmentation::segment(const PointCloud<PointXYZRGB>::ConstPtr cloud,
 							boost::shared_ptr<set<int> >  subcloudIndices)
 	{
@@ -445,10 +471,10 @@ namespace surrogate_gui
 
       // find end points
       if(i==0){
-	pMin = pMax = p;
+				pMin = pMax = p;
       }else{ 
-	if(p[maxIndex]<pMin[maxIndex]) pMin = p;
-	if(p[maxIndex]>pMax[maxIndex]) pMax = p;
+				if(p[maxIndex]<pMin[maxIndex]) pMin = p;
+				if(p[maxIndex]>pMax[maxIndex]) pMax = p;
       }
     }
 
@@ -467,11 +493,11 @@ namespace surrogate_gui
 
     for (size_t i = 0; i < cylinderIndices->indices.size (); ++i)
       {
-	Eigen::Vector4f pt (subcloud->points[cylinderIndices->indices[i]].x, subcloud->points[cylinderIndices->indices[i]].y, subcloud->points[cylinderIndices->indices[i]].z, 0);
+				Eigen::Vector4f pt (subcloud->points[cylinderIndices->indices[i]].x, subcloud->points[cylinderIndices->indices[i]].y, subcloud->points[cylinderIndices->indices[i]].z, 0);
         double d_euclid = fabs (sqrt(pcl::sqrPointToLineDistance (pt, line_pt, line_dir)) - coefficients->values[6]);
-	inliers_distances[i] = d_euclid; 
+				inliers_distances[i] = d_euclid; 
       }
-
+		
     return cylinderIndices;
   }
 
@@ -682,6 +708,7 @@ namespace surrogate_gui
 		Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
 		Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
 		Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
+		Vector3f thetaSeed =  Rz*Ry*Rx*Vector3f(1,0,0);  //TODO use this later
 
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
@@ -697,68 +724,53 @@ namespace surrogate_gui
     cout<<endl;
     // TODO can coeff be empty?
 
-		// calculate normal 
-		// plane: ax+by+cz+d=0
-		float a = coefficients->values[0];
-		float b = coefficients->values[1];
-		float c = coefficients->values[2];
-		float d = coefficients->values[3];
-		Vector3f p0(0,0,-d/c);     // origin
-		Vector3f p1(1,0,-(a+d)/c); // x vector
-		Vector3f p2(0,1,-(b+d)/c); // y vector
-		Vector3f normal = (p1-p0).cross(p2-p0); // normal
-		normal = normal/normal.norm(); // normalize to unit vector
+    // calculate normal 
+    // plane: ax+by+cz+d=0
+    float a = coefficients->values[0];
+    float b = coefficients->values[1];
+    float c = coefficients->values[2];
+    float d = coefficients->values[3];
+    Vector3f normal(a,b,c);
+    normal.normalize();
 
-    // calculate roll, pitch, and yaw
-    Vector3f base=p0; 
-    Vector3f direction=normal;
-    // flip if z is negative to simplify math
-    if(direction.z()<0) direction = -direction;
-		// this assumes no yaw.  TODO fix
-    roll = sin(direction.y());
-    pitch = sin(direction.x());
-    yaw = 0;
-    
     //writer.write ("table_objects.pcd", *subcloud, false);
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
 		
-		// find direction's largest component x, y, or z
-		int maxIndex = 0;
-		for(int i=1;i<3;i++) if(fabs(direction[i]) > fabs(direction[maxIndex])) maxIndex=i;
-
-		// calculate extent (assume aligned along XY TODO: fix)
-    // project points on to line and find endpoints
-    Vector3f xMin, xMax;    
-    Vector3f yMin, yMax;    
-    for(int i=0; i<planeIndices->indices.size();i++){ // for each inlier
-
-      // extract point and project to plane
-      int index = planeIndices->indices[i];
-      PointXYZRGB& pt = subcloud->at(index);
-			float correctedZ = -(a*pt.x + b*pt.y + d)/c; // move z to plane
-      Vector3f p(pt.x,pt.y,correctedZ);
-
-      // find end points
-      if(i==0){
-				xMin = xMax = yMin = yMax = p;
-      }else{ 
-				if(p.x()<xMin.x()) xMin = p;
-				if(p.x()>xMax.x()) xMax = p;
-				if(p.y()<yMin.y()) yMin = p;
-				if(p.y()>yMax.y()) yMax = p;
+    // iterate through possible rotations around normal to find best fit
+    Vector3f center,ypr;
+    Vector2f lengthWidth;
+    float minArea=numeric_limits<float>::max();
+    float bestTheta;
+    // TODO 3 passes with variable resolution
+    for(float theta=-180;theta<180;theta++){
+      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+				   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+	minArea = area;
+	bestTheta=theta;
       }
     }
-		
-    // copy results to output
-		x = (xMin[0]+xMax[0])/2;
-		y = (yMin[1]+yMax[1])/2;
-		z =  -(a*x + b*y + d)/c;
-		width = xMax[0]-xMin[0];
-		length = yMax[1]-yMin[1]; // TODO take into account deltaZ
-
-		cout << "xyz_rpy_w_l:" << base.transpose() << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
-
+    lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+				 bestTheta*M_PI/180.0f, center,ypr);
+    
+    
+    // copy to output
+    x = center.x();
+    y = center.y();
+    z = center.z();
+    yaw = ypr[0];
+    pitch = ypr[1];
+    roll = ypr[2];
+    length = lengthWidth[0];
+    width = lengthWidth[1];
+    
+    cout << "xyz_rpy_w_l:" << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
+    
+    
+    
+    
     // residuals 
     /* TODO
 			inliers_distances.clear ();
@@ -833,7 +845,58 @@ namespace surrogate_gui
 
 #endif  
 
-
+Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, PointIndices::Ptr planeIndices, 
+				      float plane[4],Vector3f normal,float theta,
+				      Vector3f& center, Vector3f& ypr){
+  
+  float a = plane[0];
+  float b = plane[1];
+  float c = plane[2];
+  float d = plane[3];
+  
+  // compute rotation matrix to horizontal
+  Vector3f axis = normal.cross(Vector3f(0,0,1)).normalized();
+  float angle = acos(normal.dot(Vector3f(0,0,1)));
+  Matrix3f rot;
+  rot = AngleAxisf(theta,Vector3f(0,0,1))*AngleAxisf(angle,axis);
+  
+  float minX,maxX,minY,maxY;
+  float zh;
+  
+  // compute length line
+  for(int i=0; i<planeIndices->indices.size();i++){ // for each inlier
+    
+    // extract point and project to plane
+    int index = planeIndices->indices[i];
+    PointXYZRGB& pt = subcloud->at(index);
+    float correctedZ = -(a*pt.x + b*pt.y + d)/c; // move z to plane
+    Vector3f p(pt.x,pt.y,correctedZ);
+    
+    // rotate to horizontal plane
+    Vector3f ph = rot*p;
+    
+    // find extremes
+    if(i==0){
+      minX=maxX=ph[0];
+      minY=maxY=ph[1];
+      zh = ph[2];
+    }else{
+      minX=min(ph[0],minX);
+      maxX=max(ph[0],maxX);
+      minY=min(ph[1],minY);
+      maxY=max(ph[1],maxY);
+    }
+  }
+  
+  Vector2f lengthWidth(maxY-minY,maxX-minX);
+  
+  center = Vector3f( (minX+maxX)/2, (maxY+minY)/2, zh );
+  center = rot.inverse()*center;
+  ypr = rot2ypr(rot);
+  
+  return lengthWidth;     
+  
+}
 
 
 	//==================

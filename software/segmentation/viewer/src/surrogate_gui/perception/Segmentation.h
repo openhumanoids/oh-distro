@@ -88,6 +88,12 @@ namespace surrogate_gui
 			static double getPlaneFitStatistics(pcl::ModelCoefficients::Ptr planeCoeffs,
 											    const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 											    pcl::PointIndices::Ptr planeIndices);
+
+			static Eigen::Vector2f getLengthWidth(pcl::PointCloud<pcl::PointXYZRGB>::Ptr subcloud, 
+																						pcl::PointIndices::Ptr planeIndices, 
+																						float plane[4],Eigen::Vector3f normal, float theta,
+																						Eigen::Vector3f& center, Eigen::Vector3f& ypr);
+
 	}; //class Segmentation
 
 } //namespace surrogate_gui
