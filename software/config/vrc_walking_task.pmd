@@ -111,15 +111,19 @@ group "5.base" {
         exec = "drc-joints2frames -r base";
         host = "localhost";
     }
+    cmd "param_server" {
+        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.12.68:1267?ttl=0'";
+        host = "localhost";
+    }
 }
 
 group "6.drake_base" {
     cmd "footstep_planner" {
-       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1'); cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=0'); cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
        host = "localhost";
     }
     cmd "base_planner" {
-       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=1')\" ";
+       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.12.68:1268?ttl=0')\" ";
        host = "localhost";
     }
 }
@@ -134,7 +138,7 @@ group "misc" {
         host = "localhost";
     }
     cmd "base_spy" {
-        exec = "bot-spy -l 'udpm://239.255.12.68:1268?ttl=1'";
+        exec = "bot-spy -l 'udpm://239.255.12.68:1268?ttl=0'";
         host = "localhost";
     }
     cmd "teleop" {
