@@ -309,6 +309,10 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _scrubber = new DefaultValueSlider(Qt::Horizontal, this);
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
+
+    _toleranceBox = new QDoubleSpinBox();
+    rightsidelayout->addWidget(_toleranceBox);
+
     //    rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(_segmentedButton);
     rightsidelayout->addWidget(_liveWidgets);

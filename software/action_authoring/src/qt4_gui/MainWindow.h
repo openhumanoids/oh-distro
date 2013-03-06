@@ -140,6 +140,7 @@ private:
     QtSegmentControl *_segmentedButton;
     QWidget *_liveWidgets;
     QWidget *_authoringWidgets;
+    QDoubleSpinBox* _toleranceBox;
 
     // TODO: temporary
     opengl::OpenGL_Object_Coordinate_Axis point_contact_axis;

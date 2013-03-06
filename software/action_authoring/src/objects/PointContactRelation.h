@@ -11,10 +11,21 @@ namespace action_authoring
 /**todo: add comment*/
 class PointContactRelation : public RelationState
 {
+    typedef enum
+    {
+        EQUAL = 0,
+        LT = 1,
+        GT = 2
+    } InequalityType;
+
     //------------fields
 private:
     Eigen::Vector3f _point1;
     Eigen::Vector3f _point2;
+    InequalityType _x_relation;
+    InequalityType _y_relation;
+    InequalityType _z_relation;
+    double _tolerance; 
 
     //------------Constructor--------
 public:
@@ -30,6 +41,12 @@ public:
     {
         return _point2;
     }
+
+    double getTolerance() { return _tolerance; }
+    InequalityType getXInequality() { return _x_relation; }
+    InequalityType getYInequality() { return _y_relation; }
+    InequalityType getZInequality() { return _z_relation; }
+
     //mutators
     void setPoint1(Eigen::Vector3f p1)
     {
@@ -39,6 +56,10 @@ public:
     {
         _point2 = p2;
     }
+    void setTolerance(double tol) { _tolerance = tol; }
+    void setXInequality(InequalityType t) { _x_relation = t; }
+    void setYInequality(InequalityType t) { _y_relation = t; }
+    void setZInequality(InequalityType t) { _z_relation = t; }
 
     virtual std::string getPrompt() const;
     virtual std::string getState() const;
