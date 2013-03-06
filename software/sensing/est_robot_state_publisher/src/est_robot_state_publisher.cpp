@@ -28,6 +28,7 @@ public:
   
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * TRUE_state_msg);
   void handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
+  void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
 
 private:
   void outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
@@ -42,6 +43,10 @@ private:
   KDL::Frame  _T_world_head;
   bool _initPoseHead;  
   bool _ground_truth_mode;
+  
+  /// used for Trigger based message demand:
+  drc::robot_state_t _last_est_state;    
+  void sendTriggerOutput();
 };
 
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
@@ -55,7 +60,8 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
 
   _lcm->subscribe("TRUE_ROBOT_STATE", &StatePub::handleRobotStateMsg, this); //
   _lcm->subscribe("POSE_HEAD",&StatePub::handlePoseHeadMsg,this);
-
+  _lcm->subscribe("TRIGGER",&StatePub::triggerHandler,this);
+  
   // Parse KDL tree
   KDL::Tree tree;
   if (!kdl_parser::treeFromString(  model_->getURDFString() ,tree)){
@@ -63,6 +69,8 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
     return;
   }
   fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+  
+  _last_est_state.utime = 0; // used to indicate no message recieved yet
 }
 
 
@@ -106,6 +114,9 @@ void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
                                                 msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
   T_world_head = T_world_body * T_body_head; 
   sendPose(T_world_head, msgout.utime, "POSE_HEAD");   
+  
+  // Keep this for the trigger:
+  _last_est_state = msgout;  
 }
 
 
@@ -126,17 +137,33 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
   T_world_body.M.GetQuaternion(body_origin.rotation.x,body_origin.rotation.y,body_origin.rotation.z,body_origin.rotation.w);
 
   // EST is TRUE with sensor estimated position
-  drc::robot_state_t msg;
-  msg = *TRUE_state_msg;
-  msg.origin_position = body_origin;
-  _lcm->publish("EST_ROBOT_STATE", &msg);
+  drc::robot_state_t msgout;
+  msgout = *TRUE_state_msg;
+  msgout.origin_position = body_origin;
+  _lcm->publish("EST_ROBOT_STATE", &msgout);
 
   // Publish robot's root link position as a curtesy - prob no necessary:
-  sendPose(body_origin, msg.utime, "POSE_BODY");   
+  sendPose(body_origin, msgout.utime, "POSE_BODY");   
+  
+  // Keep this for the trigger:
+  _last_est_state = msgout;
 }
 
 void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   const std::string& chan, const drc::robot_state_t * TRUE_state_msg){
+  
+  /* This prints out the joint ordering - so they can be copied to drc_robot.cfg and kept in sync:
+  cout << "[";
+  for (size_t i=0; i < TRUE_state_msg->num_joints; i++){
+    cout << "\"" << TRUE_state_msg->joint_name[i]  << "\"" ;
+    if (i < TRUE_state_msg->num_joints - 1)
+      cout << ", ";
+      
+    if ( (i+1)%7==0)
+      cout << "\n";
+  }
+  cout << "];\n";
+  */
   
   // call a routine that calculates the transforms the joint_state_t* TRUE_state_msg.
   map<string, double> jointpos_in;
@@ -195,6 +222,25 @@ void StatePub::handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::stri
   // std::cout<< "head x,y,z in world frame:" <<_T_world_head.p[0] <<" , " <<_T_world_head.p[1] <<" , "<< _T_world_head.p[2] <<std::endl;
 };
 
+
+// This function can also be used to publish on 
+// a regular basis e.g. if set to publish at 1Hz
+void StatePub::sendTriggerOutput(){
+  
+  if (_last_est_state.utime==0){     return;   } // if no msg recieved yet then ignore output command
+  drc::minimal_robot_state_t msgout;
+  msgout.utime = _last_est_state.utime;
+  msgout.origin_position = _last_est_state.origin_position;
+  msgout.num_joints = _last_est_state.num_joints;
+  msgout.joint_position = _last_est_state.joint_position;
+  _lcm->publish("EST_ROBOT_STATE_MINIMAL", &msgout);        
+  cout << "Sending Triggered Message\n";
+}
+
+void StatePub::triggerHandler(const lcm::ReceiveBuffer* rbuf, 
+                    const std::string& channel, const  bot_core::pose_t* msg){
+  sendTriggerOutput();
+}
 
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
