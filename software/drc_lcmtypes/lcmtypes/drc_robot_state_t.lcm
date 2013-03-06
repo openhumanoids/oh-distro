@@ -1,5 +1,8 @@
 package drc;
 
+// if you make changes to this message, map them to 
+// the compariable changes in minimal_robot_state_t
+
 struct robot_state_t
 {
     int64_t utime;
