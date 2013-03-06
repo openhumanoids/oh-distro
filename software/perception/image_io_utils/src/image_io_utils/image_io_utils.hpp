@@ -15,6 +15,7 @@ class image_io_utils {
     image_io_utils (lcm_t* publish_lcm_, int width_, int height_);
     
     void unzipImageThenSend(const bot_core_image_t *msg, std::string channel);
+    void unzipImageThenSend(const bot_core::image_t *msg, std::string channel);
     uint8_t* unzipImage(const bot_core_image_t *msg);
     uint8_t* unzipImage(const bot_core::image_t *msg);
     
