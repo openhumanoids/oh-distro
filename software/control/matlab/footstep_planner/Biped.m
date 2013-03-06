@@ -19,7 +19,7 @@ classdef Biped
         options = struct();
       end
       defaults = struct('step_time', 3,... % s
-        'max_step_length', .3,... % m
+        'max_step_length', .6,... % m
         'max_step_rot', pi/8,... % rad
         'r_foot_name', 'r_foot',...
         'l_foot_name', 'l_foot',...
@@ -56,18 +56,11 @@ classdef Biped
         drawnow
       end
     end
-    
-    function [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft)
-      q0 = x0(1:end/2);
-      [zmptraj, lfoottraj, rfoottraj, ts] = planZMPandFootTrajectory(obj, q0, Xright, Xleft, obj.step_time);
-      xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
-    end
-    
     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft)
       q0 = x0(1:end/2);
-      [zmptraj, lfoottraj, rfoottraj] = planZMPandFootTrajectory(obj, q0, Xright, Xleft, obj.step_time);
+      [zmptraj, foottraj, contact_ref, ts] = planHeelToeZMPTraj(obj, q0, Xright, Xleft, obj.step_time);
       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-      xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
+      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
     end
     
     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
@@ -76,14 +69,6 @@ classdef Biped
       end
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
       [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft);
-    end
-    
-    function [xtraj, ts] = roughWalkingPlan(obj, x0, poses, options)
-      if nargin < 4
-        options = struct();
-      end
-      [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
-      [xtraj, ts] = roughWalkingPlanFromSteps(obj, x0, Xright, Xleft);
     end
     
     function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
