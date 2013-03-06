@@ -4,9 +4,9 @@ function make
 % environment variable 'BUILD_PREFIX' has been set.
 
 p = cd('drake');
-
+options.autoconfig=1;
 %% configure drake
-configure;
+configure(options);
 
 %% build drake
 make;

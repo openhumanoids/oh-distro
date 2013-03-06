@@ -15,6 +15,9 @@ SRC_BUILD_PREFIX=$(shell for pfx in ./ .. ../.. ../../..; do d=`pwd`/src/../$$pf
 endif
 PWD = $(shell pwd)
 
+# The following line is needed to get make to always run the MATLAB make
+.PHONY: matlabfoo
+MATLAB = $(shell which matlab)
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
 SRCCLASSFILES = $(CLASSFILES:src/%=%)
@@ -22,6 +25,17 @@ CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)
 
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
 $(VERBOSE).SILENT:
+
+define build-drake
+echo "Checking to see if you have MATLAB installed and in your PATH...";\
+if [ -z $(MATLAB) ]; then\
+	echo "You do not appear to have MATLAB installed, or it is not in your PATH. Skipping Drake build.";\
+else\
+	echo "You appear to have an available MATLAB, so I'll try to build Drake now...";\
+	matlab -nosplash -nodesktop -r "make;exit";\
+	echo "All done configuring and building Drake.";\
+fi
+endef
 
 all: drake $(BUILD_PREFIX)/share/java/drc_control.jar
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
@@ -43,10 +57,8 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	echo $(CLASSPATH); \
 	javac $< -cp $(CLASSPATH); \
 
-drake:
-#       commented out until the build server has matlab installed
-#	echo "\nBuilding drake\n";
-#	matlab -nosplash -nodesktop -r "make"
+drake: matlabfoo
+	#@$(build-drake)
 
 clean:
 	-rm $(CLASSFILES)
