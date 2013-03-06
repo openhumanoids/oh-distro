@@ -742,8 +742,9 @@ namespace surrogate_gui
     Vector2f lengthWidth;
     float minArea=numeric_limits<float>::max();
     float bestTheta;
-    // TODO 3 passes with variable resolution
-    for(float theta=-180;theta<180;theta++){
+
+    // first pass: 10 degree increments
+    for(float theta=-180;theta<180;theta+=10){
       lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
                                    theta*M_PI/180.0f, center,ypr);
       float area = lengthWidth[0]*lengthWidth[1];
@@ -752,6 +753,29 @@ namespace surrogate_gui
         bestTheta=theta;
       }
     }
+
+    // second pass: 1 degree increments
+    for(float theta=bestTheta-10;theta<bestTheta+10;theta+=1){
+      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+                                   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+        minArea = area;
+        bestTheta=theta;
+      }
+    }
+
+    // third pass: 0.1 degree increments
+    for(float theta=bestTheta-1;theta<bestTheta+1;theta+=0.1){
+      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+                                   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+        minArea = area;
+        bestTheta=theta;
+      }
+    }
+
     lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
                                  bestTheta*M_PI/180.0f, center,ypr);
     
