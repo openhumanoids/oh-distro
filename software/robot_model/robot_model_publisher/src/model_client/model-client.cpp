@@ -117,7 +117,7 @@ void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_ur
   // Received robot urdf string. Store it internally and get all available joints.
   robot_name_      = msg->robot_name;
   urdf_xml_string_ = msg->urdf_xml_string;
-  std::cout<< "\nReceived urdf_xml_string of robot [" 
+  std::cout<< "Received urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << std::endl;
 
   // Get a urdf Model from the xml string and get all the joint names.
@@ -134,7 +134,7 @@ void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_ur
       joint_names_.push_back(it->first);
   }
   links_map_ =  robot_model.links_;
-
+  
   std::cout<< "Number of Joints: " << joint_names_.size() <<std::endl;  
   urdf_parsed_  = true;
 }
