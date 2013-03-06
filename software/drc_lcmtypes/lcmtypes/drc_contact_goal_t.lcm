@@ -19,6 +19,10 @@ struct contact_goal_t
 
 	vector_3d_t ground_plane_pt; // only used for ON_GROUND_PLANE
 	double ground_plane_pt_radius; // only used for ON_GROUND_PLANE
+    const int32_t REL_EQUAL=0, REL_LESS_THAN=1, REL_GREATER_THAN=2;
+    int32_t x_relation;
+    int32_t y_relation;
+    int32_t z_relation;
 
 	// int32_t num_robot_contact_pts;
 	// vector_3d_t robot_contact_pts[num_robot_contact_pts]; // in the frame of link_name
