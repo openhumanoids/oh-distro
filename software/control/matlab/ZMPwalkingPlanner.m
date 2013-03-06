@@ -41,7 +41,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
             toc
         end
         
-        function [com_pos,zmp_pos,comddot] = output(obj,t,~,u)
+        function [com_pos,zmp_pos,comddot,com_preview,zmp_preview] = output(obj,t,~,u)
             % u = [current planar com, contact planar positions in the preview
             % window, active_contact_flag,com height in the preview window]
 %             profile on
@@ -92,7 +92,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
             beq = [x0y; ones(obj.window_size,1)];
             lb = [0.1*ones(n_weights,1);-inf(2*obj.window_size,1)];
             ub = inf(n_weights+2*obj.window_size,1);
-            R_u = 0.1*eye(2*obj.window_size);
+            R_u = 1*eye(2*obj.window_size);
             H = 2*([zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)]'...
                 *(N'*N+R_u)*[zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)]);
             f = (x0y-reshape(support_center,[],1))'*N*[zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)];
@@ -102,12 +102,13 @@ classdef ZMPwalkingPlanner < DrakeSystem
             if(exitflag<=0)
                 error('ZMP planning is not successful')
             end
-            comddot_sol = sol(n_weights+(1:2*obj.window_size));
-            LIP_state_sol = reshape(obj.Mbar*[com_x0;com_y0;comdot_x0;comdot_y0]+obj.Nbar*comddot_sol,4,obj.window_size);
-            com_pos = [LIP_state_sol(1:2,2);z_com(2)];
-            zmp_sol = reshape(obj.M*[com_x0;com_y0;comdot_x0;comdot_y0]+N*comddot_sol,2,obj.window_size);
-            zmp_pos = zmp_sol(:,1);
-            comddot = comddot_sol(:,1);
+            comddot_preview = sol(n_weights+(1:2*obj.window_size));
+            LIP_state_preview = reshape(obj.Mbar*[com_x0;com_y0;comdot_x0;comdot_y0]+obj.Nbar*comddot_preview,4,obj.window_size);
+            com_preview = LIP_state_preview(1:2,:);
+            com_pos = [LIP_state_preview(1:2,2);z_com(2)];
+            zmp_preview = reshape(obj.M*[com_x0;com_y0;comdot_x0;comdot_y0]+N*comddot_preview,2,obj.window_size);
+            zmp_pos = zmp_preview(:,1);
+            comddot = comddot_preview(:,1);
 %             comdot_sol = [LIP_state_sol(3:4,2);z_com
 %             com_sol = [com_sol;z_com];
 %             com_pos = com_sol(:,2);
