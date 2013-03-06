@@ -9,8 +9,9 @@ biped = Biped(r);
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0]];
 % poses = [1;1;0;0;0;-pi/4];
-poses = [1;0;0;0;0;0];
+% poses = [1;0;0;0;0;0];
+poses = [0;1;0;0;0;pi/2];
 xtraj = biped.walkingPlan(xstar, poses, struct('plotting', true, ...
-  'interactive', false));
+  'interactive', true, 'heel_toe', true));
 
 biped.visualizer.playback(xtraj, struct('slider', true));

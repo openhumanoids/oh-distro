@@ -19,7 +19,7 @@ classdef Biped
         options = struct();
       end
       defaults = struct('step_time', 3,... % s
-        'max_step_length', .6,... % m
+        'max_step_length', .3,... % m
         'max_step_rot', pi/8,... % rad
         'r_foot_name', 'r_foot',...
         'l_foot_name', 'l_foot',...
@@ -35,17 +35,6 @@ classdef Biped
     end
     
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
-      defaults = struct('interactive', false,...
-        'plotting', true);
-      if nargin < 3
-        options = struct();
-      end
-      fields = fieldnames(defaults);
-      for i = 1:length(fields)
-        if ~isfield(options, fields{i})
-          options.(fields{i}) = defaults.(fields{i});
-        end
-      end
       q0 = x0(1:end/2);
       [start_pos, obj.step_width] = obj.feetPosition(q0);
       [Xright, Xleft] = optimizeFreeFootsteps([start_pos, poses], obj, options.interactive);
@@ -56,19 +45,35 @@ classdef Biped
         drawnow
       end
     end
-    function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft)
+    function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options)
       q0 = x0(1:end/2);
-      [zmptraj, foottraj, contact_ref, ts] = planHeelToeZMPTraj(obj, q0, Xright, Xleft, obj.step_time);
-      ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
+      if isfield(options, 'heel_toe') && options.heel_toe
+        [zmptraj, foottraj, contact_ref] = planHeelToeZMPTraj(obj, q0, Xright, Xleft, obj.step_time);
+        ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
+        xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
+      else
+        [zmptraj,lfoottraj,rfoottraj] = planZMPandFootTrajectory(biped,q0, Xright, Xleft, obj.step_time);
+        ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
+        xtraj = computeZMPPlan(biped, x0, zmptraj, lfoottraj, rfoottraj, ts);
+      end
     end
     
     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
       if nargin < 4
         options = struct();
       end
+      defaults = struct('heel_toe', false, 'interactive', true, 'plotting', true);
+      fields = fieldnames(defaults);
+      for i = 1:length(fields)
+        if ~isfield(options, fields{i})
+          options.(fields{i}) = defaults.(fields{i});
+        end
+      end
+      if options.heel_toe
+        obj.max_step_length = 0.6;
+      end
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
-      [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft);
+      [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options);
     end
     
     function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
