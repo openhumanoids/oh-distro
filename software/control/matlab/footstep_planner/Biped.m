@@ -52,9 +52,9 @@ classdef Biped
         ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
         xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
       else
-        [zmptraj,lfoottraj,rfoottraj] = planZMPandFootTrajectory(biped,q0, Xright, Xleft, obj.step_time);
+        [zmptraj,lfoottraj,rfoottraj] = planZMPandFootTrajectory(obj ,q0, Xright, Xleft, obj.step_time);
         ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-        xtraj = computeZMPPlan(biped, x0, zmptraj, lfoottraj, rfoottraj, ts);
+        xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
       end
     end
     

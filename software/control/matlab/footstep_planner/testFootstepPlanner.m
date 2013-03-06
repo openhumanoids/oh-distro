@@ -12,6 +12,6 @@ biped = Biped(r);
 % poses = [1;0;0;0;0;0];
 poses = [0;1;0;0;0;pi/2];
 xtraj = biped.walkingPlan(xstar, poses, struct('plotting', true, ...
-  'interactive', true, 'heel_toe', true));
+  'interactive', true, 'heel_toe', false));
 
 biped.visualizer.playback(xtraj, struct('slider', true));
