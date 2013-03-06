@@ -21,6 +21,7 @@ add_subdirectory(src/tools)
 
 pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
 pods_install_python_script(drc-bandwidth-scope scripts/bandwidth_scope.py)
+pods_install_python_script(drc-network-trigger scripts/send_a_trigger.py)
 
 
 

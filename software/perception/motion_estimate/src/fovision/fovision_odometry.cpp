@@ -102,8 +102,8 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
   estimator_ = new VoEstimator(lcm_ , botframes_);
 
   // DEPRECATED - assumes CAMERA is image_t type:
-  //lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
-  lcm_->subscribe("CAMERA",&StereoOdom::multisenseLRHandler,this);
+  lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
+  //lcm_->subscribe("CAMERA",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LR",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LD",&StereoOdom::multisenseLDHandler,this);
   
