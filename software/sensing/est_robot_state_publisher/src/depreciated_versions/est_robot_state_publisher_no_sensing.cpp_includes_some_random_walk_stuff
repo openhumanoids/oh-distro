@@ -257,7 +257,7 @@ void Handler::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       T_body_head= transform_it->second;
     }
     else{
-      //std::cout<< "fk position does not exist" <<std::endl;
+      std::cout<< "fk position does not exist" <<std::endl;
     }
     
     T_head_body = T_body_head.Inverse();

@@ -12,11 +12,8 @@ lcmtypes_build()
 set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 
 add_executable(est_robot_state_publisher src/est_robot_state_publisher.cpp)
-pods_use_pkg_config_packages(est_robot_state_publisher lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+pods_use_pkg_config_packages(est_robot_state_publisher
+  model-client lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 pods_install_executables(est_robot_state_publisher)
 
-add_executable(est_robot_state_publisher_no_sensing src/est_robot_state_publisher_no_sensing.cpp)
-pods_use_pkg_config_packages(est_robot_state_publisher_no_sensing lcm lcmtypes_drc_lcmtypes model-client
-    ${REQUIRED_PACKAGES})
-pods_install_executables(est_robot_state_publisher_no_sensing)
 
