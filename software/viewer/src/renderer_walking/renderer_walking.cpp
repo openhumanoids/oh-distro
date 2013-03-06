@@ -434,9 +434,9 @@ static void send_new_lidar_rate (RendererWalking *self){
   msg.linear_velocity.y = 0.0;
   msg.linear_velocity.z = 0.0;
 
-  fprintf(stderr,"\nSending ROTATING_SCAN_RATE_CMD message %f\n",self->lidar_rate);//, self->active);
-  drc_twist_timed_t_publish(self->lc, "ROTATING_SCAN_RATE_CMD", &msg);
-  bot_viewer_set_status_bar_message(self->viewer, "Sent ROTATING_SCAN_RATE_CMD [%f Hz]",self->lidar_rate);
+  fprintf(stderr,"\nSending SCAN_RATE_CMD message %f\n",self->lidar_rate);//, self->active);
+  drc_twist_timed_t_publish(self->lc, "SCAN_RATE_CMD", &msg);
+  bot_viewer_set_status_bar_message(self->viewer, "Sent SCAN_RATE_CMD [%f Hz]",self->lidar_rate);
 }
 
 
