@@ -64,7 +64,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, bool s
   joint_cmd_pub_ = nh_.advertise<osrf_msgs::JointCommands>("/atlas/joint_commands",10, true);
 
   /// Spinning Laser control:
-  lcm_->subscribe("ROTATING_SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
+  lcm_->subscribe("SCAN_RATE_CMD",&LCM2ROS::rot_scan_rate_cmd_Callback,this);
   rot_scan_cmd_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
   
   /// Sandia Hands joint command API

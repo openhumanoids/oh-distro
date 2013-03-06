@@ -579,9 +579,8 @@ void App::publishRobotState(int64_t utime_in){
   robot_state_msg.origin_twist.angular_velocity.x =ground_truth_odom_.twist.twist.angular.x;
   robot_state_msg.origin_twist.angular_velocity.y =ground_truth_odom_.twist.twist.angular.y;
   robot_state_msg.origin_twist.angular_velocity.z =ground_truth_odom_.twist.twist.angular.z;
-  int i,j;
-  for(i = 0; i < 6; i++)  {
-    for(j = 0; j < 6; j++) {
+  for(int i = 0; i < 6; i++)  {
+    for(int j = 0; j < 6; j++) {
       robot_state_msg.origin_cov.position_cov[i][j] = 0;
       robot_state_msg.origin_cov.twist_cov[i][j] = 0;
     }
