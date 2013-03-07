@@ -19,7 +19,7 @@ lcmtypes_build()
 
 SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g")
 
-set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe qt4_widget
+set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe kinematics_model_gfe qt4_widget
   collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf
   libxml-2.0)
 
