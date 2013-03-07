@@ -32,7 +32,7 @@ if [ -z $(MATLAB) ]; then\
 	echo "You do not appear to have MATLAB installed, or it is not in your PATH. Skipping Drake build.";\
 else\
 	echo "You appear to have an available MATLAB, so I'll try to build Drake now...";\
-	matlab -nosplash -nodesktop -r "make;exit";\
+	matlab -nosplash -nodesktop -r "setenv('BUILD_PREFIX','$(BUILD_PREFIX)'); make;exit";\
 	echo "All done configuring and building Drake.";\
 fi
 endef
@@ -52,13 +52,13 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	ls; \
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
 	cd ..; \
-  
+
 %.class : %.java
 	echo $(CLASSPATH); \
 	javac $< -cp $(CLASSPATH); \
 
 drake: matlabfoo
-	#@$(build-drake)
+	@$(build-drake)
 
 clean:
 	-rm $(CLASSFILES)
