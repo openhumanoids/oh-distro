@@ -302,6 +302,9 @@ map< string, State_GFE_Joint >
 State_GFE::
 joints( void )const{
   map< string, State_GFE_Joint > joints;
+  for (uint i = 0; i < NUM_STATE_GFE_JOINTS; i++) {
+      joints[_joints[i].id()] = _joints[i];
+  }
   return joints;
 }
 
