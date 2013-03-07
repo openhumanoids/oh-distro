@@ -7,11 +7,10 @@ classdef ZMPwalkingPlanner < DrakeSystem
             % @param window, the time breaks in the preview window
             % @param foot step, the foot step trajectory
             % @height, the COM height in the preview window
-            tic
             obj = obj@DrakeSystem(0,...
                 0,...
-                2+window_size*(max_contact_pts*3+1),... % number of inputs are the current planar COM, the position of the contact points, and the com height
-                3*window_size,...% number of outputs, com positions in the previe window
+                4+window_size*(max_contact_pts*3+1),... % number of inputs are the current planar COM, the position of the contact points, and the com height
+                3,...% number of outputs, com positions in the next time step
                 true,...
                 true);
             obj.window_size = window_size;
@@ -23,7 +22,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
             obj.g = g;
             % M and N are for dense formulation of optimization
             obj.Mbar = zeros(4*obj.window_size,4); % Mbar = [I;A;A^2;...;A^(n-1)]
-            obj.Nbar = zeros(4*obj.window_size,2*obj.window_size);
+            obj.Nbar = zeros(4*obj.window_size,2*obj.window_size); % Nbar = [0 0 ... 0;B 0 .. 0; AB B 0 ... 0;...]
             obj.M = zeros(2*obj.window_size,4); % M = [C;CA;CA^2;...;CA^(N-1)];
             obj.N = zeros(2*obj.window_size);
             obj.M(1:2,:) = obj.C;
@@ -38,7 +37,6 @@ classdef ZMPwalkingPlanner < DrakeSystem
                 obj.Nbar((i-1)*4+(1:4),1:2) = obj.Mbar((i-2)*4+(1:4),:)*obj.B;
                 obj.Nbar((i-1)*4+(1:4),3:end) = obj.Nbar((i-2)*4+(1:4),1:end-2);
             end
-            toc
         end
         
         function [com_pos,zmp_pos,comddot,com_preview,zmp_preview] = output(obj,t,~,u)
@@ -92,7 +90,7 @@ classdef ZMPwalkingPlanner < DrakeSystem
             beq = [x0y; ones(obj.window_size,1)];
             lb = [0.1*ones(n_weights,1);-inf(2*obj.window_size,1)];
             ub = inf(n_weights+2*obj.window_size,1);
-            R_u = 1*eye(2*obj.window_size);
+            R_u = 0.0001*eye(2*obj.window_size);
             H = 2*([zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)]'...
                 *(N'*N+R_u)*[zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)]);
             f = (x0y-reshape(support_center,[],1))'*N*[zeros(2*obj.window_size,n_weights) eye(2*obj.window_size)];
