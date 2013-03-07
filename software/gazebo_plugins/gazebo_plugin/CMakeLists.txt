@@ -9,8 +9,11 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-# build two LCM test programs
 #add_subdirectory(src/hokuyospin_plugin)
 add_subdirectory(src/oracle_plugin)
 
+add_subdirectory(src/rateset_plugin)
+
+# pops the oracle collections over to the affordance_collection message
 pods_install_python_script(drc-oracle2collection scripts/oracle2collection.py)
+
