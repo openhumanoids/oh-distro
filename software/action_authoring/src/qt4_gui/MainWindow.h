@@ -47,6 +47,7 @@
 #include <action_authoring/RelationState.h>
 #include <action_authoring/PointContactRelation.h>
 #include <action_authoring/OffsetRelation.h>
+#include <action_authoring/AffordanceManipMap.h>
 
 // File handling
 #include "UtilityFile.h"
@@ -55,7 +56,7 @@
 #include "GUIManipulators.h"
 
 //TODO : CHANGE TO ADD LOAD FUNCTIONALITY
-#define DATABASE 1
+//#define DATABASE 
 #ifdef DATABASE
 #include <action_authoring/DatabaseManager.h>
 #endif
@@ -71,8 +72,9 @@ public:
 };
 
 /**Represents the read-only state of the world and objects used for rendering that state*/
-struct WorldStateView
+  class WorldStateView : public AffordanceManipMap
 {
+ public:
     affordance::AffordanceUpWrapper affServerWrapper;  //used for reading affordances from the affordance server
     std::vector<affordance::AffConstPtr> affordances; //latest affordances read from the wrapper
     std::vector<affordance::ManipulatorStateConstPtr> manipulators; //robot manipulators
@@ -88,8 +90,31 @@ struct WorldStateView
     WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
         : affServerWrapper(theLcm), colorRobot(urdf_filename)
     { 
-      cout << "\n urdf_filename = " << urdf_filename << endl;
+      std::cout << "\n urdf_filename = " << urdf_filename << std::endl;
     }
+
+  //====================AffordanceManipMap interface
+ public:
+    virtual affordance::AffConstPtr getAffordance(const affordance::GlobalUID &affordanceUID) const
+      {
+         for (uint i = 0; i < affordances.size(); i++)
+          {
+            if (affordances[i]->getGlobalUniqueId() == affordanceUID)
+              return affordances[i];
+          }
+
+        throw std::runtime_error("WorldStateView: affordance not found w/ the given id");
+      }
+    
+    virtual affordance::ManipulatorStateConstPtr getManipulator(const affordance::GlobalUID &manipulatorUID) const
+      {
+        for (uint i = 0; i < manipulators.size(); i++)
+          {
+            if (manipulators[i]->getGlobalUniqueId() == manipulatorUID)
+              return manipulators[i];
+          }
+        throw std::runtime_error("WorldStateView: manipulator not found w/ the given id");
+      }
 
 };
 

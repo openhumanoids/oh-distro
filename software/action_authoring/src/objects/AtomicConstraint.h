@@ -28,8 +28,8 @@ public:
 
     //mutators
 public:
-    virtual void setAffordance(affordance::AffConstPtr affordance) = 0;
-    virtual void setManipulator(affordance::ManipulatorStateConstPtr manipulator) = 0;
+    virtual void setAffordance(const affordance::GlobalUID &affordanceUID) = 0;
+    virtual void setManipulator(const affordance::GlobalUID &manipulatorUID) = 0;
     virtual void setRelationState(RelationStatePtr relationState) = 0;
     virtual void setTimeLowerBound(double timeLowerBound) = 0;
     virtual void setTimeUpperBound(double timeUpperBound) = 0;

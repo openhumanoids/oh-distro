@@ -207,12 +207,14 @@ updateStateFromElements()
 
     if (_gui_robotJointType->currentIndex() >= 0)
     {
-        _constraint->getAtomicConstraint()->setManipulator(_manipulators[_gui_robotJointType->currentIndex()]);
+        _constraint->getAtomicConstraint()->setManipulator(
+                           _manipulators[_gui_robotJointType->currentIndex()]->getGlobalUniqueId());
     }
 
     if (_gui_affordanceType->currentIndex() >= 0)
     {
-        _constraint->getAtomicConstraint()->setAffordance(_affordances[_gui_affordanceType->currentIndex()]);
+        _constraint->getAtomicConstraint()->setAffordance(
+                 _affordances[_gui_affordanceType->currentIndex()]->getGlobalUniqueId());
     }
 
     setActive();

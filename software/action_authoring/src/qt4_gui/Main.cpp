@@ -10,6 +10,7 @@ using namespace std;
 using namespace state;
 using namespace action_authoring;
 using namespace affordance;
+using namespace boost;
 
 void runLcmHandleLoop(const shared_ptr<lcm::LCM> theLcm)
 {

@@ -6,32 +6,50 @@ using namespace affordance;
 using namespace boost;
 
 ManipulationConstraint::
-ManipulationConstraint(AffConstPtr affordance,
-                       ManipulatorStateConstPtr manipulator,
+ManipulationConstraint(GlobalUID affordanceUID,
+                       GlobalUID manipulatorUID,
+                       AffordanceManipMap *amMap,
                        RelationStatePtr relationState
     )
-    : _affordance(affordance),
-      _manipulator(manipulator),
-      _relationState(relationState)
+  :     
+  _amMap(amMap),
+  _relationState(relationState)
 {
-	_timeLowerBound = 0.0;
-	_timeUpperBound = 0.0;
+  setAffordance(affordanceUID);
+  setManipulator(manipulatorUID);
+  
+  _timeLowerBound = 0.0;
+  _timeUpperBound = 0.0;
 }
 
 ManipulationConstraint::
-ManipulationConstraint(AffConstPtr affordance,
-                       ManipulatorStateConstPtr manipulator,
+ManipulationConstraint(GlobalUID affordanceUID,
+                       GlobalUID manipulatorUID,
+                       AffordanceManipMap *amMap,
                        RelationStatePtr relationState,
                        double timeLowerBound,
-                       double timeUpperBound
-    )
-    : _affordance(affordance),
-      _manipulator(manipulator),
-      _relationState(relationState)
+                       double timeUpperBound)
+  :       _amMap(amMap),
+          _relationState(relationState)
 {
-	_timeLowerBound = timeLowerBound;
-	_timeUpperBound = timeUpperBound;
+  setAffordance(affordanceUID);
+  setManipulator(manipulatorUID);
+
+  _timeLowerBound = timeLowerBound;
+  _timeUpperBound = timeUpperBound;
 }
+
+
+void ManipulationConstraint::setAffordance(const affordance::GlobalUID &affordanceUID)
+    {
+      _affordanceUID = shared_ptr<GlobalUID>(new GlobalUID(affordanceUID));
+    }
+
+void ManipulationConstraint::setManipulator(const affordance::GlobalUID &manipulatorUID)
+{
+  _manipulatorUID = shared_ptr<GlobalUID>(new GlobalUID(manipulatorUID));
+}
+
 
 drc::contact_goal_t ManipulationConstraint::toLCM()
 {
@@ -42,9 +60,9 @@ drc::contact_goal_t ManipulationConstraint::toLCM()
     //TODO change contact type based on affordance
 	msg.contact_type = 0;
     printf("flag0\n");
-	msg.object_1_name = _manipulator->getLinkName();
+	msg.object_1_name = getManipulator()->getLinkName();
     printf("flag0.5\n");
-	msg.object_1_contact_grp = _manipulator->getContactGroupName();
+	msg.object_1_contact_grp = getManipulator()->getContactGroupName();
   
     //TODO remove hardcodes here!
     msg.contact_type = msg.ON_GROUND_PLANE;

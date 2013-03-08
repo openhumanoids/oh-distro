@@ -6,6 +6,7 @@ using namespace state;
 using namespace collision;
 using namespace action_authoring;
 using namespace affordance;
+using namespace boost;
 
 void
 GUIManipulators::

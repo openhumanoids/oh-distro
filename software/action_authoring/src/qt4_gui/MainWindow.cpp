@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 
+using namespace boost;
 using namespace std;
 using namespace opengl;
 using namespace state;
@@ -454,7 +455,8 @@ handleSaveAction()
             {
                 //	 if (_worldState.affordances[j]->getGUIDAsString() == all_constraints[i]->getAtomicConstraint()->getAffordance()->getGUIDAsString()) {
                 cout << "matched i, j " << i << ", " << j << endl;
-                all_constraints[i]->getAtomicConstraint()->setAffordance(_worldState.affordances[j]);
+                all_constraints[i]->getAtomicConstraint()->setAffordance(
+                                       _worldState.affordances[j]->getGlobalUniqueId());
             }
         }
     }
@@ -528,7 +530,10 @@ handleAddConstraint()
     ManipulatorStateConstPtr manip = _worldState.manipulators[0];
 
     PointContactRelationPtr relstate(new PointContactRelation());
-    AtomicConstraintPtr new_atomic(new ManipulationConstraint(left, manip, relstate));
+    AtomicConstraintPtr new_atomic(new ManipulationConstraint(left->getGlobalUniqueId(),
+                                                              manip->getGlobalUniqueId(), 
+                                                              &_worldState, //passed in as AffordanceManipMap interface
+                                                              relstate));
 
     ConstraintMacroPtr new_constraint(new ConstraintMacro("Untitled" + RandomString(5), new_atomic));
 
@@ -759,7 +764,9 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
         {
             //std::cout << " setting affordance" << std::endl;
             _authoringState._selected_affordance_guid = modelGUID;
-            _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(_worldState.affordances[i]);
+            _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setAffordance(
+                                                          _worldState.affordances[i]->getGlobalUniqueId());
+
             _authoringState._selected_gui_constraint->updateElementsFromState();
             wasAffordance = true;
             break;
@@ -774,7 +781,8 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
             {
                 //std::cout << " setting manipulator" << std::endl;
                 _authoringState._selected_manipulator_guid = modelGUID;
-                _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->setManipulator(_worldState.manipulators[i]);
+                _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()
+                  ->setManipulator(_worldState.manipulators[i]->getGlobalUniqueId());
                 _authoringState._selected_gui_constraint->updateElementsFromState();
                 break;
             }

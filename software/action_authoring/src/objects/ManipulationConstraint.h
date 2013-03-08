@@ -4,35 +4,38 @@
 #include <boost/shared_ptr.hpp>
 #include <affordance/AffordanceState.h>
 #include <affordance/ManipulatorState.h>
+#include "AffordanceManipMap.h"
 #include "RelationState.h"
 #include "AtomicConstraint.h"
 
 namespace action_authoring
 {
+  
 class ManipulationConstraint : public AtomicConstraint
 {
 
-    //----------Constructor
+  //----------Constructor
 public:
-    ManipulationConstraint(affordance::AffConstPtr affordance,
-                         affordance::ManipulatorStateConstPtr manipulator,
+  ManipulationConstraint(affordance::GlobalUID affordanceUID,
+                         affordance::GlobalUID manipulatorUID,
+                         AffordanceManipMap *amMap,
                          RelationStatePtr relationState);
-
-    ManipulationConstraint(affordance::AffConstPtr affordance,
-                         affordance::ManipulatorStateConstPtr manipulator,
+    
+  ManipulationConstraint(affordance::GlobalUID affordanceUID,
+                         affordance::GlobalUID manipulatorUID,
+                         AffordanceManipMap *amMap,
                          RelationStatePtr relationState,
                          double timeLowerBound,
-                         double timeUpperBound
-                         );
+                         double timeUpperBound);
 
     //----------Accessors
     affordance::AffConstPtr getAffordance() const
     {
-        return _affordance;
+      return _amMap->getAffordance(*_affordanceUID);
     }
     affordance::ManipulatorStateConstPtr getManipulator() const
     {
-        return _manipulator;
+      return _amMap->getManipulator(*_manipulatorUID);
     }
     RelationStatePtr getRelationState() const
     {
@@ -47,14 +50,10 @@ public:
         return _timeUpperBound;
     }
 
-    void setAffordance(affordance::AffConstPtr affordance)
-    {
-        _affordance = affordance;
-    }
-    void setManipulator(affordance::ManipulatorStateConstPtr manipulator)
-    {
-        _manipulator = manipulator;
-    }
+    //----mutators
+    void setAffordance(const affordance::GlobalUID &affordanceUID);
+    void setManipulator(const affordance::GlobalUID &manipulatorUID);
+
     void setRelationState(RelationStatePtr relationState)
     {
         _relationState = relationState;
@@ -72,8 +71,10 @@ public:
 
     //------------Fields
 private:
-    affordance::AffConstPtr _affordance;
-    affordance::ManipulatorStateConstPtr _manipulator;
+    boost::shared_ptr<affordance::GlobalUID> _affordanceUID;
+    boost::shared_ptr<affordance::GlobalUID> _manipulatorUID;
+    AffordanceManipMap *_amMap;
+    
     RelationStatePtr _relationState;
 
 }; // class ManipulationConstraint
