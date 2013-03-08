@@ -60,8 +60,32 @@ shared_ptr<const urdf::Link>
 ColorRobot::
 getLinkFromJointName(string joint_name)
 {
-    const urdf::Model &m = _kinematics_model.model();
-    return m.getLink(m.getJoint(joint_name)->child_link_name);
+
+  //cout << "(1) top of getLinkFromJointName" << endl;
+  const urdf::Model &m = _kinematics_model.model();
+
+  //cout << "(2) getting the joint w/ name = " << joint_name << endl;
+
+  shared_ptr<const urdf::Joint> j = m.getJoint(joint_name);
+
+  //cout << "(3) joint is null == " << (j == shared_ptr<const urdf::Joint>()) << endl;
+
+  if (j == shared_ptr<const urdf::Joint>()) //joint doesn't exist?
+    {
+      cout << "\n joint " << joint_name << " not found. please update the urdf" << endl;
+      return shared_ptr<const urdf::Link>(); //return "null" 
+    }
+  //cout << "(4) asking " << joint_name << " for child_link_name" << endl;
+
+  string name = j->child_link_name;
+
+  //cout << "(5) ------get linking w/ name = " << name << endl;
+
+  shared_ptr<const urdf::Link> result = m.getLink(name);
+
+  //cout << "\n--returning link--" << endl;
+  
+return result;
 }
 
 OpenGL_Object*

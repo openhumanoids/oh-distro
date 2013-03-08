@@ -18,8 +18,11 @@ createManipulators(WorldStateView &worldState, robot_opengl::SelectableOpenGLWid
     {
         const State_GFE_Joint &state_gfe_joint = it->second;
         std::string id = state_gfe_joint.id();
-        shared_ptr<const urdf::Link> link = worldState.colorRobot.getLinkFromJointName(id);
         
+        shared_ptr<const urdf::Link> link = worldState.colorRobot.getLinkFromJointName(id);
+        if (link == shared_ptr<const urdf::Link>())
+          continue; //need to fix the urdf
+
         // TODO mfleder
         // std::map<string, boost::shared_ptr<vector<boost::shared_ptr<Collision> > > > 
         // link->collision_groups

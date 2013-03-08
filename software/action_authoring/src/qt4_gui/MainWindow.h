@@ -87,7 +87,9 @@ struct WorldStateView
     /**initializes all the fields in the struct*/
     WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
         : affServerWrapper(theLcm), colorRobot(urdf_filename)
-    { }
+    { 
+      cout << "\n urdf_filename = " << urdf_filename << endl;
+    }
 
 };
 
