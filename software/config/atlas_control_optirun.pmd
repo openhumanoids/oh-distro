@@ -8,7 +8,7 @@ group "core" {
         host = "localhost";
     }
     cmd "pub" {
-        exec = "est_robot_state_publisher_no_sensing";
+        exec = "est_robot_state_publisher -g";
         host = "localhost";
     }
     cmd "r2l" {
@@ -23,22 +23,7 @@ group "core" {
         exec = "bot-param-server drc_robot.cfg";
         host = "localhost";
     }
-    cmd "viewer" {
-        exec = "drc-viewer";
-        host = "localhost";
-    }
 
-}
-
-group "drake" {
-    cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
-       host = "localhost";
-    }
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
-        host = "localhost";
-    }
 }
 
 
