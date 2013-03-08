@@ -354,7 +354,8 @@ void GazeboRosPubRobotState::UpdateChild()
     if(this->synchronization=="1")
     {
      // gzerr <<this->synchronization  << " ok!"<< std::endl;
-     this->world->SetPaused(true);
+//     this->world->SetPaused(true);
+        usleep(10000);
     }
   
   }
