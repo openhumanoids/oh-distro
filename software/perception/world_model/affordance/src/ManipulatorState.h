@@ -62,7 +62,6 @@ namespace affordance
   public:
     boost::shared_ptr<const urdf::Link> getLink() const;
     std::string getLinkName() const { return _link_name; }
-    std::string getGUIDAsString()  const;
     KDL::Frame getLinkFrame() const { return _link_frame; }
     void getCollisionContactPoints(std::vector<KDL::Frame> &pts) const;
     std::string getContactGroupName() const { return _contact_group_name; }

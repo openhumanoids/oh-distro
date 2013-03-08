@@ -41,12 +41,6 @@ GlobalUID ManipulatorState::getGlobalUniqueId() const
   return _guid;
 }
 
-string ManipulatorState::getGUIDAsString()  const 
-{
-  return ToString::toStr(getGlobalUniqueId().first) + "," 
-    + ToString::toStr(getGlobalUniqueId().second);
-}
-
 
 string ManipulatorState::getName() const
 {
