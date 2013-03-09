@@ -55,7 +55,7 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <rgbd_simulation/rgbd_primitives.hpp> // to create basic affordance meshes
+#include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <lcm/lcm-cpp.hpp>

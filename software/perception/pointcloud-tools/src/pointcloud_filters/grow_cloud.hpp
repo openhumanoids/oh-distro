@@ -62,10 +62,8 @@ typedef struct _BasicPlane
 
 
 class GrowCloud {
-    int x, y;
   public:
-    GrowCloud ();
-    GrowCloud (int,int);    
+    GrowCloud (); 
 
     inline void setInputCloud (const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &input)
     {
@@ -77,8 +75,6 @@ class GrowCloud {
     }    
 
     
-    void set_values (int,int);
-    int area () {return (x*y);}
     
     
     // function to 'grow' point cloud from a set of points, 
@@ -86,6 +82,10 @@ class GrowCloud {
     // @input: a point cloud with all points on a plane. points may be from disconnected clouds
     // @output: individual clouds    
     void doGrowCloud (vector<BasicPlane> &outstack);
+    
+    
+    // function to return a plane stack in string
+    void printPlaneStack (vector<BasicPlane> &planeStack,  std::stringstream &ss);
     
     
   protected:

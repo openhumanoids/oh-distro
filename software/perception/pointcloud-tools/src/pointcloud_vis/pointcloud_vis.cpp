@@ -361,6 +361,61 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
 
 
 
+bool pointcloud_vis::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
+  pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
+  // HACKY BUG FIX: 
+  // issue: if meshA->cloud contains no data, then it contains no cloud.fields
+  //        so it will complain and give a warning when we try to copy to cloudA
+  //        Failed to find match for field 'x'.
+  //        Failed to find match for field 'y'.
+  //        Failed to find match for field 'z'.
+  //        Failed to find match for field 'rgb'.  
+  // Instead dont try to copy if empty...
+  if ( meshA->cloud.fields.size()  !=0){
+    pcl::fromROSMsg(meshA->cloud, cloudA);
+  }
+  int original_size = cloudA.points.size() ;
+
+  //cout << original_size << " is the cloud before (insize) size\n";
+  //cout <<  meshA->polygons.size () << "polygons before\n";
+  
+  int N_polygonsB = meshB->polygons.size ();
+  pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
+  pcl::fromROSMsg(meshB->cloud, cloudB);
+  Eigen::Vector4f tmp;
+  for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
+    pcl::Vertices apoly_in = meshB->polygons[i];//[i];
+    int N_points = apoly_in.vertices.size ();
+    for(size_t j=0; j< N_points; j++){ // each point
+      // increment the vertex numbers by the size of the original clouds
+      apoly_in.vertices[j] += original_size; 
+    }
+    meshA->polygons.push_back(apoly_in);
+  } 
+  cloudA += cloudB;
+  pcl::toROSMsg (cloudA, meshA->cloud);
+  //cout <<  meshA->polygons.size () << "polygons after\n";
+  //cout << cloudA.points.size() << " is the cloud inside size\n";
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 void pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
@@ -727,7 +782,7 @@ void get_MeshInBox(pcl::PolygonMesh::Ptr meshin_ptr,
 
 
 bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
-  cout << "DEPRECATED: CONSIDER USING VERSION IN DRC IMAGE PASSTHROUGH\n";
+  cout << "DEPRECATED: CONSIDER USING VERSION ABOVE\n";
 
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
   pcl::fromROSMsg(meshA->cloud, cloudA);
@@ -946,101 +1001,3 @@ _matrix_vector_multiply_3x4_4d (const double m[12], const double v[4],
     result[1] = m[4]*v[0] + m[5]*v[1] + m[6] *v[2] + m[7] *v[3];
     result[2] = m[8]*v[0] + m[9]*v[1] + m[10]*v[2] + m[11]*v[3];
 }
-
-
-
-
-/*
-bool read_and_project_submaps(std::string file_path,std::string file_name_in, BasicPlane &one_plane, BasicPlane &one_plane000  ){
-  pcl::PCDReader reader;
-
-  // 1. read in a set of CONCAVE polygons
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-
-  string full_filename = file_path;
-  full_filename.append(file_name_in);
-  reader.read (full_filename, *cloud);
-  //std::cerr << pcd_files[i] << " has: " << cloud.points.size () << " data points." << std::endl;
-  
-  one_plane.name.assign(file_name_in);
-
-  sscanf(file_name_in.c_str(),"submap_%d_cloud_%d.pcd",&one_plane.major,&one_plane.minor);
-  
-  
-//   while(file_name_in.find("_")!=string::npos){
-//   file_name_in.replace(file_name_in.find("_"),1," ");
-//   }
-//   file_name_in.replace(file_name_in.find(".pcd"),4,"    ");
-//   string temp_str;
-//   istringstream iss4 (file_name_in,istringstream::in);
-//   //iss4>>one_plane.utime>>temp_str>>temp_str;
-
-  std::cout << "INFO: reading cloud: " << one_plane.name 
-    << " | " << one_plane.major << " | " << one_plane.minor<<"\n";
-  
-  
-   
-  // 2. Fit a plane to the points using RANSAC, extract plane coeffs:
-  pcl::ModelCoefficients::Ptr other_coeffs (new pcl::ModelCoefficients() );
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices() );
-  pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-  seg.setInputCloud (cloud);
-  seg.setOptimizeCoefficients (true); // Optional
-  seg.setModelType (pcl::SACMODEL_PLANE); // Mandatory
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (1000);
-  seg.setDistanceThreshold (0.05); // 0.01 for table data set
-  seg.segment (*inliers, *other_coeffs);    
-  
-  // 3. Project the model inliers (seems to be necessary for fitting convex hull)
-  pcl::ProjectInliers<pcl::PointXYZRGB> proj;
-  proj.setModelType (pcl::SACMODEL_PLANE);
-  proj.setInputCloud (cloud);
-  proj.setModelCoefficients (other_coeffs);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr  cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
-  proj.filter (*cloud_projected);    
-  one_plane.coeffs = (*other_coeffs);      
-  
-  // PCL bug: Colour Information Lost in reconstruction, manually put it in
-  // i think this bug is fixed in the more recent versions of PCL
-  for (size_t i=0;i<cloud_projected->size();i++){
-    cloud_projected->points[i].rgba  = cloud->points[0].rgba;
-  }
-  compute3DCentroid (*cloud_projected,one_plane.centroid);
-  one_plane.cloud = (*cloud_projected);
-  
-
-  // 4. Get the transform for the cloud to 0,0,0 and rotate onto x,y axis (from concave_hull.cpp in PCL)
-  one_plane.covariance_matrix;
-  computeCovarianceMatrix (one_plane.cloud, one_plane.centroid, one_plane.covariance_matrix);
-  EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
-  EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
-  pcl::eigen33 (one_plane.covariance_matrix, eigen_vectors, eigen_values);
-
-  one_plane.transform000.setIdentity ();
-  if (eigen_values[0] / eigen_values[2] < 1.0e-5){
-    //we have points laying on a plane, using 2d convex hull
-    //compute transformation bring eigen_vectors.col(i) to z-axis
-    eigen_vectors.col (2) = eigen_vectors.col (0).cross (eigen_vectors.col (1));
-    eigen_vectors.col (1) = eigen_vectors.col (2).cross (eigen_vectors.col (0));
-    one_plane.transform000 (0, 2) = eigen_vectors (0, 0);
-    one_plane.transform000 (1, 2) = eigen_vectors (1, 0);
-    one_plane.transform000 (2, 2) = eigen_vectors (2, 0);
-    one_plane.transform000 (0, 1) = eigen_vectors (0, 1);
-    one_plane.transform000 (1, 1) = eigen_vectors (1, 1);
-    one_plane.transform000 (2, 1) = eigen_vectors (2, 1);
-    one_plane.transform000 (0, 0) = eigen_vectors (0, 2);
-    one_plane.transform000 (1, 0) = eigen_vectors (1, 2);
-    one_plane.transform000 (2, 0) = eigen_vectors (2, 2);
-    one_plane.transform000 = one_plane.transform000.inverse ();
-  }else{
-    one_plane.transform000.setIdentity ();
-  }  
-  
-  
-  // 5. Get (and keep) the plane transformed back to 000:
-  one_plane000 = one_plane;
-  pcl::demeanPointCloud (one_plane000.cloud, one_plane000.centroid, one_plane000.cloud);
-  pcl::transformPointCloud (one_plane000.cloud, one_plane000.cloud, one_plane000.transform000);  
-}*/

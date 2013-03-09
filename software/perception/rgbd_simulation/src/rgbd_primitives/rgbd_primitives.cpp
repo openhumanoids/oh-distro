@@ -1,9 +1,16 @@
 #include "rgbd_primitives.hpp"
-
-//#include <iostream>
-
-
 #define PCL_VERBOSITY_LEVEL L_ERROR
+
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/variate_generator.hpp>
+
+// random numbers on range 0->1
+boost::variate_generator<boost::mt19937, boost::uniform_01<> >
+    rand01(boost::mt19937(time(0)),
+              boost::uniform_01<>());
+
+
 
 
 rgbd_primitives::rgbd_primitives(){
@@ -211,4 +218,65 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCube(double xdim, double ydim, double 
   pcl::toROSMsg (*pts, mesh_ptr->cloud);  
   //std::cout << *mesh_ptr << "\n";
   return mesh_ptr;
+}
+
+
+
+
+double areaOfTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1, pcl::PointXYZRGB p2){
+  // heron's formula
+  double d01 = sqrt( pow(p0.x-p1.x,2) + pow(p0.y-p1.y,2) + pow(p0.z-p1.z,2) );
+  double d02 = sqrt( pow(p0.x-p2.x,2) + pow(p0.y-p2.y,2) + pow(p0.z-p2.z,2) );
+  double d12 = sqrt( pow(p1.x-p2.x,2) + pow(p1.y-p2.y,2) + pow(p1.z-p2.z,2) );
+  double p = ( d01 + d02 + d12 ) /2.0;
+  return sqrt(p*(p- d01)*(p- d02)*(p- d12));
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgbd_primitives::sampleMesh(pcl::PolygonMesh::Ptr &mesh, double pts_per_msquared){
+  
+  int N_polygonsB = mesh->polygons.size ();
+  pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
+  pcl::fromROSMsg(mesh->cloud, cloudB);
+  Eigen::Vector4f tmp;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon N_polygonsB
+    pcl::Vertices apoly_in = mesh->polygons[i];
+    double area = areaOfTriangle(cloudB.points[ apoly_in.vertices[0] ] , 
+                                          cloudB.points[ apoly_in.vertices[1] ] ,
+                                          cloudB.points[ apoly_in.vertices[2] ]);
+    //std::cout << area << "\n";
+    // determine the number of points to sample on the surface:
+    int n_pts = floor(area*pts_per_msquared + 0.5);// rounding at .5
+    //std::cout << n_pts<< "\n";
+    for (size_t i=0;i <n_pts; i++){
+      pcl::PointXYZRGB     pt;
+      pt = samplePointInTriangle(  cloudB.points[ apoly_in.vertices[0] ] , 
+                                          cloudB.points[ apoly_in.vertices[1] ] ,
+                                          cloudB.points[ apoly_in.vertices[2] ] );
+      pts->points.push_back(pt);
+    }
+  } 
+  pts->width = pts->points.size();
+  pts->height = 1;
+  
+  return pts;
+}
+
+//% from wykobi library
+// sample a random point inside a triangle
+pcl::PointXYZRGB  rgbd_primitives::samplePointInTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1,
+                                             pcl::PointXYZRGB p2){
+  double a = rand01(); // 0-1
+  double b = rand01(); // 0-1
+  if ((a + b) > 1){
+    a=1-a;
+    b=1-b;
+  }
+  double c = (1 - a - b);
+  
+  pcl::PointXYZRGB pt;
+  pt.x = p0.x * a + p1.x * b + p2.x * c ;
+  pt.y = p0.y * a + p1.y * b + p2.y * c ;
+  pt.z = p0.z * a + p1.z * b + p2.z * c ;
+  return pt;
 }

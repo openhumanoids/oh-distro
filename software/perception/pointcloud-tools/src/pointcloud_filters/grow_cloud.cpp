@@ -5,23 +5,11 @@ using namespace pcl;
 using namespace pcl::octree;
 
 GrowCloud::GrowCloud () {
-  x = 5;
-  y = 5;
   verbose_lcm =0;
   verbose_text =0;
   pose_element_id =-1;
   pose_coll_id =-1;
 }
-
-GrowCloud::GrowCloud (int a, int b) {
-  x = a;
-  y = b;
-  verbose_lcm =0;
-  verbose_text =0;
-  pose_element_id =-1;
-  pose_coll_id =-1;
-}
-
  
 void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
 
@@ -35,7 +23,7 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
   pcl::PointIndices::Ptr searchstack (new pcl::PointIndices);
   int n_found_clouds=0;
   int step;
-  float search_radius = 0.3; // 40cm
+  float search_radius = 0.2; // 40cm
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr outcloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   while(incloud->size() >=0){
 /*    ptcoll_cfg.id = 2;
@@ -136,6 +124,15 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
       
     }
   }  
+}
   
   
+void GrowCloud::printPlaneStack (vector<BasicPlane> &planeStack,  std::stringstream &ss) {
+  for (size_t i=0; i < planeStack.size() ;  i++){
+    BasicPlane p = planeStack[i];
+    ss <<  p.coeffs.values[0] << ","
+       <<  p.coeffs.values[1] << ","
+       <<  p.coeffs.values[2] << ","       
+       <<  p.coeffs.values[3] << "\n";
+  }  
 }

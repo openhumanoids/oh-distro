@@ -65,7 +65,8 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   pcl::VoxelGrid<pcl::PointXYZRGB> sor;
   sor.setInputCloud (cloud);
   // for table dataset:  sor.setLeafSize (0.01, 0.01, 0.01);
-  sor.setLeafSize (0.1, 0.1, 0.1);
+  sor.setLeafSize (0.05, 0.05, 0.05);
+//  sor.setLeafSize (0.1, 0.1, 0.1);
   sor.filter (*cloud_filtered);
   if (verbose_text>0){
     cout << "PointCloud after filtering: " << cloud_filtered->width * cloud_filtered->height << " data points." << std::endl;
@@ -95,7 +96,7 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (1000);
+  seg.setMaxIterations (4000);
   seg.setDistanceThreshold (distance_threshold_); // 0.01 for table data set
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -284,16 +285,23 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
       proj.setModelCoefficients (coefficients);
       proj.filter (*cloud_projected);
       
-      //    pcl::ConvexHull<pcl::PointXYZRGB> chull;
-      pcl::ConcaveHull<pcl::PointXYZRGB> chull;
-      chull.setInputCloud (cloud_projected);
-      chull.setKeepInformation(true);
-      chull.setAlpha(0.5);  
-      // for arch way:
-      // 1.1 too few
-      // 0.7 a little to few but much better
       std::vector <pcl::Vertices> vertices;
-      chull.reconstruct (*cloud_hull,vertices);
+      if (1==1){ // convex:
+        pcl::ConvexHull<pcl::PointXYZRGB> chull;
+        chull.setInputCloud (cloud_projected);
+        chull.setDimension(2);
+        chull.reconstruct (*cloud_hull,vertices);
+      }else { // concave
+        pcl::ConcaveHull<pcl::PointXYZRGB> chull;
+        chull.setInputCloud (cloud_projected);
+        chull.setKeepInformation(true);
+        chull.setAlpha(0.5);  
+        // for arch way:
+        // 1.1 too few
+        // 0.7 a little to few but much better
+        chull.reconstruct (*cloud_hull,vertices);
+      }
+      
       //std::cout << "Hull has: " << cloud_hull->points.size () << " vertices." << std::endl;
       if (cloud_hull->points.size () ==0){
         cout <<"ERROR: CONVEX HULL HAS NO POINTS! - NEED TO RESOLVE THIS\n"; 

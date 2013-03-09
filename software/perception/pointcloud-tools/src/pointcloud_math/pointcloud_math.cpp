@@ -1,4 +1,5 @@
 #include "pointcloud_math.hpp"
+#include <iostream>
 
 
 void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out){
@@ -61,7 +62,7 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
 }
 
 
-Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
+Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d pose_in){
   Eigen::Quaterniond r(pose_in.rotation());
   Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
   //Eigen::Quaternionf rf(r.x() , r.y() , r.y() , r.z() );
@@ -72,6 +73,13 @@ Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
   pose_out.rotate(rf);
 
   return pose_out;
+
+}
+
+
+Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
+  std::cout <<"pointcloud_math::Isometry_d2f is depreciated use isometryDoubleToFloat\n";
+  return isometryDoubleToFloat(pose_in);
 }
 
 

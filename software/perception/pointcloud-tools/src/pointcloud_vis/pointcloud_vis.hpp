@@ -89,6 +89,9 @@ class pointcloud_vis {
     // assumed to be 3xN colors
     std::vector < float > colors;    
     
+    // Merge two PolygonMesh structures into the meshA
+    bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
+    
   private:
     lcm_t *publish_lcm_;
 
@@ -145,7 +148,8 @@ void get_MeshInBox(pcl::PolygonMesh::Ptr meshin_ptr,
 
 
 // Merge two PolygonMesh structures into the meshA
-bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
+// deprecated:
+//bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
 
 // Push a PolygonMesh to PCL. The polygonMesh is a PtCloud with a set of vertices for each mesh
 // the polygon is anchored using a single obj collection specified in Ptcoll_cfg

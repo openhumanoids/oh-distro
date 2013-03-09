@@ -188,6 +188,7 @@ void SimExample::setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, 
 }
 
 bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
+  std::cout << "================ SimExample::mergePolygonMesh IS DEPRECATED USED VERSION IN POINTCLOUD TOOLS================== \n";
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
   // HACKY BUG FIX: 
   // issue: if meshA->cloud contains no data, then it contains no cloud.fields

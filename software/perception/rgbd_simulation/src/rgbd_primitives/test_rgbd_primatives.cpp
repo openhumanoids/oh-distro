@@ -50,14 +50,16 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"RGBD Primitive - Cylinder"     ,7,1, 9995,0, colors_v ));
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9997,"RGBD Primitive - Cube"     ,7,1, 9995,0, colors_v ));
-  // 2 gives a wireframe
+  // 3 gives a wireframe
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9998,"RGBD Primitive - Random Points on Cylinder"     ,1,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9999,"RGBD Primitive - Random Points on Cube"     ,1,1, 9995,0, colors_v ));
   
   verbose_ =false;  
 }
 
 void Pass::doTest(std::string fname){
   double length = 0.5;
-  double radius = 0.05;
+  double radius = 0.25;
   
   // transform to be applied to object:
   Eigen::Isometry3d transform;
@@ -70,8 +72,8 @@ void Pass::doTest(std::string fname){
   pcl::PolygonMesh::Ptr mesh_cylinder = prim_->getCylinderWithTransform(transform, radius, radius, length);
   
   // cube:
-  transform.translation()  << -0.18,-0.3,-0.4;
-  pcl::PolygonMesh::Ptr mesh_cube = prim_->getCubeWithTransform(transform, 0.1, 0.2,0.5);
+  transform.translation()  << 0.18,0.8,0.0;
+  pcl::PolygonMesh::Ptr mesh_cube = prim_->getCubeWithTransform(transform, 0.21, 0.21,0.5);
     
   // Visualise:
   int64_t pose_id =0;
@@ -82,9 +84,16 @@ void Pass::doTest(std::string fname){
   pc_vis_->mesh_to_lcm_from_list(9996, mesh_cylinder, pose_id , pose_id);
   pc_vis_->mesh_to_lcm_from_list(9997, mesh_cube, pose_id , pose_id);
   
+  
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts =prim_->sampleMesh(mesh_cylinder, 100);
+  pc_vis_->ptcld_to_lcm_from_list(9998, *pts, pose_id , pose_id);  
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts2 =prim_->sampleMesh(mesh_cube, 100);
+  pc_vis_->ptcld_to_lcm_from_list(9999, *pts2, pose_id , pose_id);  
+   
 }
 
 
+ 
 int 
 main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
@@ -92,7 +101,7 @@ main( int argc, char** argv ){
   parser.add(camera_channel, "c", "camera_channel", "Camera channel");
   parser.parse();
   cout << camera_channel << " is camera_channel\n"; 
-  
+
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){

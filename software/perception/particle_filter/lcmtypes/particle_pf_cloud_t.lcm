@@ -1,0 +1,21 @@
+package particle;
+
+// eventually remove this type:
+struct pf_cloud_t
+{
+    int64_t utime;
+    int32_t nparticles;
+
+    double neff; // effective sample size 0->1
+    double resample_threshold; // 0->1 (fixed)
+
+    int8_t vo_estimate_status;
+    const int8_t ESTIMATE_VALID = 0;
+    const int8_t ESTIMATE_INSUFFICIENT_FEATURES = 1;
+    const int8_t ESTIMATE_DEGENERATE = 2;
+    const int8_t ESTIMATE_REPROJECTION_ERROR = 3;
+
+    double likelihoods[nparticles];
+    double weights[nparticles];
+    bot_core.pose_t particles[nparticles];
+}

@@ -27,6 +27,9 @@ class rgbd_primitives {
     pcl::PolygonMesh::Ptr getCylinder(double base, double top, double height, int slices, int stacks);
     pcl::PolygonMesh::Ptr getCube(double xdim, double ydim, double zdim);
 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr sampleMesh(pcl::PolygonMesh::Ptr &mesh, double pts_per_msquared);
+    pcl::PointXYZRGB samplePointInTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1,
+                                             pcl::PointXYZRGB p2);
   private:
 };
 

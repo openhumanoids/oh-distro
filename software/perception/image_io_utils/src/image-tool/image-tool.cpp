@@ -67,7 +67,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   width_ = 1024;
   height_ = 544;
   counter_=0;
-  last_img_.utime=0;
+  last_img_.utime=0; // used to indicate no message recieved yet
 }
 
 void Pass::sendOutput(){
