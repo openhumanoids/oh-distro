@@ -23,7 +23,7 @@ fptr = fopen([BUILD_PREFIX,'/config/drc_control_setup.m'],'w');
 fprintf(fptr,'\n\n% Setup javaclasspath\n');
 fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_drc_lcmtypes.jar'');\n',BUILD_PREFIX);
 fprintf(fptr,'javaaddpath(''%s/drake/drake.jar'');\n',pwd);
-fprintf(fptr,'javaaddpath(''%s/share/java/drc_control_util.jar'');\n',BUILD_PREFIX);
+fprintf(fptr,'javaaddpath(''%s/share/java/drc_control.jar'');\n',BUILD_PREFIX);
 
 % tell drake about ROS
 fprintf(fptr,'\n\n% Tell drake about ROS\n');
