@@ -5,48 +5,34 @@ options.dt = 0.002;
 r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 d = load('../data/atlas_fp.mat');
 xstar = d.xstar;
+
 nq = getNumDOF(r);
+nu = getNumInputs(r);
 x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 r = r.setInitialState(xstar);
+v = r.constructVisualizer;
+v.display_dt = 0.05;
 
 biped = Biped(r);
-poses = [0.25;0.5;0;0;0;0];
+poses = [1.0;0.5;0;0;0;-1.5];
 
 [rfoot, lfoot] = planFootsteps(biped, x0, poses, struct('plotting', true, 'interactive', false));
 [zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 0.8);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
-v = r.constructVisualizer;
-v.display_dt = 0.05;
 
-com_ctrl = SimpleZMPTracker(r,x0,zmptraj);
+% construct ZMP feedback controller
+com = getCOM(r,kinsol);
+limp = LinearInvertedPendulum(com(3));
+% get COM traj from desired ZMP traj
+comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
-options.support_accel = 'constraint';
-if 1 % use cplex input formulation
-  options.w = [1.0;1.0];
-  qp = QPController(r,options);
-else % use cvxgen CL formulation
-  qp = QPControllerCVX(r,com_ctrl.V,com_ctrl.com0(3),1.0,zeros(getNumInputs(r)),options);
-end
 
-ts = linspace(0,zmptraj.tspan(end),150);
+% time spacing of samples for IK
+ts = linspace(0,zmptraj.tspan(end),100);
 T = ts(end);
-
-% get corresponding COM trajectory
-com0 = getCOM(r,kinsol);
-limp = LinearInvertedPendulum(com0(3));
-comtraj = ZMPplanner(limp,com0(1:2),[0;0],zmptraj);
-
-figure(2); 
-clf; 
-subplot(2,1,1); hold on;
-fnplt(zmptraj(1));
-fnplt(comtraj(1));
-subplot(2,1,2); hold on;
-fnplt(zmptraj(2));
-fnplt(comtraj(2));
 
 % create desired joint trajectory
 cost = Point(r.getStateFrame,1);
@@ -66,6 +52,7 @@ options.q_nom = q0;
 rfoot_body = r.findLink('r_foot');
 lfoot_body = r.findLink('l_foot');
 
+htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
@@ -73,11 +60,36 @@ for i=1:length(ts)
   else
     q = q0;
   end
+  com = getCOM(r,q(:,i));
+  htraj = [htraj com(3)];
   v.draw(t,q(:,i));
 end
+htraj = PPTrajectory(spline(ts,htraj));
+
+figure(2); 
+clf; 
+subplot(3,1,1); hold on;
+fnplt(zmptraj(1));
+fnplt(comtraj(1));
+subplot(3,1,2); hold on;
+fnplt(zmptraj(2));
+fnplt(comtraj(2));
+subplot(3,1,3); hold on;
+fnplt(htraj);
+
+limp = LinearInvertedPendulum(htraj);
+[c, V] = ZMPtracker(limp,zmptraj);
+zmpdata = SharedDataHandle(struct('V',V,'h',com(3),'c',c));
+
+% instantiate QP controller
+options.slack_limit = 10.0;
+options.w = 1e-1;
+options.R = 1e-12*eye(nu);
+qp = QPController(r,zmpdata,options);
+
+% desired configuration trajectory
 qdes = setOutputFrame(PPTrajectory(spline(ts,q)),AtlasCoordinates(r));
 pd = SimplePDController(r);
-
 ins(1).system = 2;
 ins(1).input = 2;
 outs(1).system = 2;
@@ -85,36 +97,29 @@ outs(1).output = 1;
 pd = mimoCascade(qdes,pd,[],ins,outs);
 clear ins outs;
 
+% feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
 ins(2).input = 2;
-ins(3).system = 1;
-ins(3).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
+% walking foot support trajectory
 ins(1).system = 2;
 ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 2;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoCascade(supptraj,sys,[],ins,outs);
 clear ins outs;
 
-ins(1).system = 2;
-ins(1).input = 1;
+% feedback PD trajectory controller 
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
-
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(com_ctrl,sys,[],[],[],outs);
+sys = mimoFeedback(pd,sys,[],[],[],outs);
+clear outs;
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
 output_select(1).system=1;
@@ -126,15 +131,17 @@ playback(v,traj,struct('slider',true));
 
 for i=1:length(ts)
   x=traj.eval(ts(i));
-  q=x(1:getNumDOF(r)); qd=x(getNumDOF(r)+1:end);
+  q=x(1:getNumDOF(r)); 
   com(:,i)=getCOM(r,q);
 end
 
 figure(2);
-subplot(2,1,1);
+subplot(3,1,1);
 plot(ts,com(1,:),'r');
-subplot(2,1,2);
+subplot(3,1,2);
 plot(ts,com(2,:),'r');
+subplot(3,1,3);
+plot(ts,com(3,:),'r');
 
 keyboard;
 

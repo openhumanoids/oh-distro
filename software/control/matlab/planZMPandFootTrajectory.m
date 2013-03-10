@@ -43,7 +43,6 @@ function pos = feetCenter(rfootpos,lfootpos)
   pos = mean([rcen,lcen],2);
 end
 
-
 ts = [0, .5];
 step_times = [0];
 rfootpos = [rfoot0, rfoot0];
@@ -60,7 +59,7 @@ lfootsupport = [1 1];
 while 1
   lf = repmat(lfootpos(:,end), 1, 4);
   rf = repmat(rfootpos(:,end), 1, 4);
-  tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
+	tstep = ts(end) + [.1, .5, .95, .99, 1] * step_time;
   if bRightStep
     rf = interp1([0; 1], [Xright(:, istep_r), Xright(:, istep_r+1)]', [0, .5, 1, 1]')';
     rf(3,:) = rf(3,:) + [0, 0.05, 0, 0];
@@ -70,7 +69,7 @@ while 1
       rf(1:3, i) = rf(1:3, i) - offset(1:3);
     end
     stepzmp = [repmat(lfootCenter(lf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
-    rfootsupport = [rfootsupport 0 0 1 1 1]; 
+    rfootsupport = [rfootsupport 0 0 0.5 1 1]; 
     lfootsupport = [lfootsupport 1 1 1 1 1]; 
     istep_r = istep_r + 1;
   else
@@ -83,7 +82,7 @@ while 1
     end
     stepzmp = [repmat(rfootCenter(rf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
     rfootsupport = [rfootsupport 1 1 1 1 1]; 
-    lfootsupport = [lfootsupport 0 0 1 1 1]; 
+    lfootsupport = [lfootsupport 0 0 0.5 1 1]; 
     istep_l = istep_l + 1;
   end
   rfootpos = [rfootpos, rf, rf(:,end)];
@@ -96,14 +95,23 @@ while 1
     break
   end
 end
+
+% add a segment at the end to recover
+ts = [ts, ts(end)+2];
+rfootpos = [rfootpos,rfootpos(:,end)];
+lfootpos = [lfootpos,lfootpos(:,end)];
+zmp = [zmp,feetCenter(rfootpos(:,end),lfootpos(:,end))];
+rfootsupport = [rfootsupport 1]; 
+lfootsupport = [lfootsupport 1]; 
+
 zmptraj = PPTrajectory(foh(ts,zmp));
 lfoottraj = PPTrajectory(foh(ts,lfootpos));
 rfoottraj = PPTrajectory(foh(ts,rfootpos));
 
 % create support body trajectory
 supporttraj = repmat(0*ts,length(r.getLinkNames),1);
-supporttraj(strcmp(biped.r_foot_name,r.getLinkNames),:) = rfootsupport;
-supporttraj(strcmp(biped.l_foot_name,r.getLinkNames),:) = lfootsupport;
+supporttraj(strcmp('r_foot',r.getLinkNames),:) = rfootsupport;
+supporttraj(strcmp('l_foot',r.getLinkNames),:) = lfootsupport;
 supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(r));
 
 end
