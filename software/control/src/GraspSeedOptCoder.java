@@ -49,6 +49,11 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
 
     }
 
+    public int dim()
+    {
+      return -1;  // this class has a variable size (which technically shouldn't be allowed by an LCMCoder)
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
  

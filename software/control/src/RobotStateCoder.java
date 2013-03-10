@@ -66,6 +66,11 @@ public class RobotStateCoder implements drake.util.LCMCoder
       msg.contacts = new drc.contact_state_t();
       msg.contacts.num_contacts = 0;
     }
+    
+    public int dim()
+    {
+      return 2*(m_num_joints+m_num_floating_joints);
+    }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
     {

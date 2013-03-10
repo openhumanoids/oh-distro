@@ -1,48 +1,29 @@
-classdef FootstepPlanner
+classdef FootstepPlanner < DRCPlanner
   properties
     biped
-    state_listener
-    nav_goal_listener
     plan_publisher
   end
   
   methods
     function obj = FootstepPlanner(biped)
-
       typecheck(biped, 'Biped');
+      
+      robot_name = 'atlas';
+      obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(NavGoalCoder(robot_name)));
       
       obj.biped = biped;
       obj.biped.manip = enableIdealizedPositionControl(obj.biped.manip, true);
       obj.biped.manip = compile(obj.biped.manip);
 
       nx = obj.biped.manip.getNumStates();
-      robot_name = 'atlas';
       joint_names = obj.biped.manip.getStateFrame.coordinates(1:nx/2);
-      obj.state_listener = obj.biped.manip.getStateFrame();
-      obj.state_listener.subscribe('TRUE_ROBOT_STATE');
-
-      obj.nav_goal_listener = RobotNavGoalListener(robot_name, 'NAV_GOAL_TIMED');
-
       obj.plan_publisher = RobotPlanPublisher(robot_name, joint_names, true, 'CANDIDATE_ROBOT_PLAN');
+      
+      obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.manip.getStateFrame.lcmcoder,true);
     end
-
-    function run(obj)
-      x0 = [];
-      while 1
-        [x, t] = obj.state_listener.getNextMessage(1);
-        if ~isempty(x)
-          x0 = x;
-          x0(1:6)
-          t0 = t;
-          obj.biped.visualizer.draw(t0, x0);
-        end
-        g = obj.nav_goal_listener.getNextMessage(0);
-        if ~isempty(g) && ~isempty(x0)
-          [xtraj, ts] = obj.biped.roughWalkingPlan(x0, g, struct('plotting', true, ...
-  'interactive', true));
-          obj.plan_publisher.publish(ts, xtraj.eval(ts));
-        end
-      end
+    
+    function p = plan(obj,navgoal,data)
+      obj.biped.walkingPlan(data.x0,navgoal,struct('plotting', true,'interactive', true));
     end
   end
 end

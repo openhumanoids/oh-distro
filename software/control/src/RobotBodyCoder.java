@@ -26,6 +26,11 @@ public class RobotBodyCoder implements drake.util.LCMCoder
       msg.body_name = body_name;
       msg.body_flag = new int[m_num_bodies];
     }
+    
+    public int dim()
+    {
+      return m_num_bodies;
+    }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
     {

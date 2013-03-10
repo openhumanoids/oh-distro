@@ -16,6 +16,11 @@ public class COMGoalCoder implements drake.util.LCMCoder
       msg.com_goal = new drc.vector_3d_t();
     }
 
+    public int dim()
+    {
+      return 3;
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {

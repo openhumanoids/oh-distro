@@ -47,14 +47,14 @@ all: drake $(BUILD_PREFIX)/share/java/drc_control.jar
 	done
 	@# Place additional commands here if you have any
 
+java: $(BUILD_PREFIX)/share/java/drc_control.jar
+
 $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 	cd src; \
-	ls; \
 	jar -cf $(SRC_BUILD_PREFIX)/share/java/drc_control.jar $(SRCCLASSFILES); \
 	cd ..; \
 
 %.class : %.java
-	echo $(CLASSPATH); \
 	javac $< -cp $(CLASSPATH); \
 
 drake: matlabfoo

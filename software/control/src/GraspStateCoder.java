@@ -66,6 +66,11 @@ public class GraspStateCoder implements drake.util.LCMCoder
       pmsg.optimization_status = pmsg.SUCCESS; // is this field necessary?
     }
 
+    public int dim()
+    {
+      return 18+m_num_l_joints+m_num_r_joints;
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {

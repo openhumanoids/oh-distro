@@ -118,6 +118,11 @@ public class SandiaJointCommandCoder implements drake.util.LCMCoder
       }
     }
     
+    public int dim()
+    {
+      return 4*m_num_joints;
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {

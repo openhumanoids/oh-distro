@@ -111,6 +111,11 @@ public class JointCommandCoder implements drake.util.LCMCoder
       }
     }
     
+    public int dim()
+    {
+      return m_num_joints;
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {

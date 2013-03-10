@@ -27,6 +27,11 @@ public class JointAnglesCoder implements drake.util.LCMCoder
       msg.joint_position = new double[m_num_joints];
     }
 
+    public int dim()
+    {
+      return m_num_joints;
+    }
+    
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {

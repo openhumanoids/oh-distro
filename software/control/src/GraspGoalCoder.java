@@ -40,6 +40,11 @@ public class GraspGoalCoder implements drake.util.LCMCoder
         //System.out.println(msg);
     }
 
+    public int dim()
+    {
+      return 3+4+m_num_joints;
+    }
+
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       	try {

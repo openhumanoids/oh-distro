@@ -22,6 +22,11 @@ public class EndEffectorGoalCoder implements drake.util.LCMCoder
     msg.ee_goal_pos.rotation = new drc.quaternion_t();
   }
 
+  public int dim()
+  {
+    return 7;
+  }
+
   public drake.util.CoordinateFrameData decode(byte[] data)
   {
     try {
