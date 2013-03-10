@@ -287,7 +287,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       drc_nav_goal_timed_t msg;
       msg.utime = self->robot_utime; //bot_timestamp_now();
       msg.timeout = (int64_t) 1E6*self->goal_timeout;
-      msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
+      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
@@ -305,7 +305,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
     }else if (self->active ==3){
       drc_nav_goal_t msg;
       msg.utime = self->robot_utime; // bot_timestamp_now();
-      msg.robot_name = "wheeled_atlas"; // this should be set from robot state message
+      msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
       msg.goal_pos.translation.y = self->click_pos.y;
