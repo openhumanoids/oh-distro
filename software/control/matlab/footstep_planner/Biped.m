@@ -18,8 +18,8 @@ classdef Biped
       if nargin < 2
         options = struct();
       end
-      defaults = struct('step_time', 3,... % s
-        'max_step_length', .3,... % m
+      defaults = struct('step_time', 2,... % s
+        'max_step_length', .4,... % m
         'max_step_rot', pi/8,... % rad
         'r_foot_name', 'r_foot',...
         'l_foot_name', 'l_foot',...

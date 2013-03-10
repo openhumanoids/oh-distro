@@ -1,8 +1,8 @@
-function runQPWalking(goal_x, goal_y, goal_yaw)
+function runQPWalkingLCM(goal_x, goal_y, goal_yaw)
 
-if nargin < 3; goal_yaw = -1.57; end
-if nargin < 2; goal_y = 1.0; end
-if nargin < 1; goal_x = 0.5; end
+if nargin < 3; goal_yaw = 0.0; end
+if nargin < 2; goal_y = 0.5; end
+if nargin < 1; goal_x = 1.0; end
 
 options.floating = true;
 options.dt = 0.002;
@@ -10,6 +10,9 @@ r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.
 d = load('../data/atlas_fp.mat');
 xstar = d.xstar;
 r = r.setInitialState(xstar);
+% set initial conditions in gazebo
+state_frame = getStateFrame(r);
+state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
@@ -23,7 +26,7 @@ biped = Biped(r);
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
 [rfoot, lfoot] = planFootsteps(biped, x0, pose, struct('plotting', true, 'interactive', false));
-[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 0.8);
+[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 1.0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -84,8 +87,8 @@ limp = LinearInvertedPendulum(htraj);
 zmpdata = SharedDataHandle(struct('V',V,'h',com(3),'c',c));
 
 % instantiate QP controller
-options.slack_limit = 10.0;
-options.w = 1e-1;
+options.slack_limit = 100.0;
+options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
@@ -99,40 +102,50 @@ outs(1).output = 1;
 pd = mimoCascade(qdes,pd,[],ins,outs);
 clear ins outs;
 
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 2;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
-
 % walking foot support trajectory
 ins(1).system = 2;
 ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoCascade(supptraj,sys,[],ins,outs);
+sys = mimoCascade(supptraj,qp,[],ins,outs);
 clear ins outs;
 
-% feedback PD trajectory controller 
+% cascade PD outputs based on qdes trajectory
+ins(1).system = 1;
+ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 2;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],[],outs);
-clear outs;
+sys = mimoCascade(pd,sys,[],ins,outs);
+clear ins outs;
 
-S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
-output_select(1).system=1;
-output_select(1).output=1;
-sys = mimoCascade(sys,v,[],[],output_select);
-warning(S);
-traj = simulate(sys,[0 T],x0);
-playback(v,traj,struct('slider',true));
+
+state_frame.subscribe('TRUE_ROBOT_STATE');
+input_frame = getInputFrame(r);
+t_offset = -1;
+t= -1;
+traj = [];
+ts = [];
+disp('waiting...');
+while t<T
+  [x,tsim] = getNextMessage(state_frame,1);
+  if (~isempty(x))
+    if (t_offset == -1)
+      t_offset = tsim;
+    end
+    t=tsim-t_offset;
+    ts = [ts t];
+    traj = [traj x];
+    u = sys.output(t,[],[x;x]);
+    input_frame.publish(t,u,'JOINT_COMMANDS');
+  end
+end
 
 for i=1:length(ts)
-  x=traj.eval(ts(i));
+  x=traj(:,i);
   q=x(1:getNumDOF(r)); 
   com(:,i)=getCOM(r,q);
 end
@@ -145,6 +158,7 @@ plot(ts,com(2,:),'r');
 subplot(3,1,3);
 plot(ts,com(3,:),'r');
 
-keyboard;
+% options.timekeeper = 'drake/lcmTimeKeeper'; 
+% runLCM(sys,[],options);
 
 end
