@@ -5,9 +5,8 @@ public class FootstepPlanPublisher
 {
 	drc.ee_goal_sequence_t msg;
 	String channel_name;
-	String[] actuator_names;
 
-	public FootstepPlanPublisher(String robot_name, String[] actuator_names, String channel)
+	public FootstepPlanPublisher(String robot_name, String channel)
 	{
 		msg = new drc.ee_goal_sequence_t();
 		msg.robot_name = robot_name;
@@ -42,6 +41,7 @@ public class FootstepPlanPublisher
 		}
 		for (int i=0; i < x.length; i++) {
 			if (i < t.length) {
+        // rfoot plan comes before lfoot plan
 				msg.goals[i].utime = (long) (t[i]*1000000+msg.utime);
 				msg.goals[i].ee_name = "r_foot";
 			} else {
