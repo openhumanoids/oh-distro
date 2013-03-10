@@ -1,5 +1,6 @@
-function runQPWalkingLCM(goal_x, goal_y, goal_yaw)
+function runQPWalkingLCM(goal_x, goal_y, goal_yaw,lcm_plan)
 
+if nargin < 4; lcm_plan = true; end
 if nargin < 3; goal_yaw = 0.0; end
 if nargin < 2; goal_y = 0.5; end
 if nargin < 1; goal_x = 1.0; end
@@ -25,7 +26,27 @@ kinsol = doKinematics(r,q0);
 biped = Biped(r);
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
-[rfoot, lfoot] = planFootsteps(biped, x0, pose, struct('plotting', true, 'interactive', false));
+if ~lcm_plan
+  [rfoot, lfoot] = planFootsteps(biped, x0, pose, struct('plotting', true, 'interactive', false));
+else
+  plan_listener = FootstepPlanListener('atlas', 'COMMITTED_ROBOT_PLAN');
+
+  disp('Listening for plans...');
+  waiting = true;
+  foottraj = [];
+  while waiting
+    foottraj = plan_listener.getNextMessage(100);
+    if (~isempty(foottraj))
+      disp('Plan received.');
+      waiting = false;
+    end
+  end
+  
+  num_steps = size(foottraj,2)/2;
+  rfoot = foottraj(2:end,1:num_steps);
+  lfoot = foottraj(2:end,numsteps+(1:num_steps));
+end
+
 [zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 1.0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
