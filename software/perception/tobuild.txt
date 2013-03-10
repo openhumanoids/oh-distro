@@ -16,8 +16,8 @@ lidar-passthrough
 world_model
 
 # library and module to apply object masks:
-rgbd_simulation 
-image-passthrough
+#rgbd_simulation 
+#image-passthrough
 
 # sudeep:
 opencv-utils
