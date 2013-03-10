@@ -19,7 +19,7 @@ classdef FootstepPlanner < DRCPlanner
       joint_names = obj.biped.manip.getStateFrame.coordinates(1:nx/2);
       obj.plan_publisher = RobotPlanPublisher(robot_name, joint_names, true, 'CANDIDATE_ROBOT_PLAN');
       
-      obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.manip.getStateFrame.lcmcoder,true);
+      obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.manip.getStateFrame.lcmcoder,true,true);
     end
     
     function p = plan(obj,navgoal,data)

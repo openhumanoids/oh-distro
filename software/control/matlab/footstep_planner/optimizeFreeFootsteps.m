@@ -87,6 +87,8 @@ while 1
 %   rectangle('Position', [.7, -.05, .1, .1], 'FaceColor', 'w');
   hold on
   plotFootstepPlan(X, Xright, Xleft);
+  plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+  plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
   hold on
   for j = 1:length(ndx_r)
     if ~isempty(fixed_steps{ndx_r(j), 1})

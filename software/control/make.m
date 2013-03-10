@@ -29,9 +29,11 @@ fprintf(fptr,'javaaddpath(''%s'');\n',strtrim(lcmclasspath));
 fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_drc_lcmtypes.jar'');\n',BUILD_PREFIX);
 fprintf(fptr,'javaaddpath(''%s/drake/drake.jar'');\n',pwd);
 fprintf(fptr,'javaaddpath(''%s/share/java/drc_control.jar'');\n',BUILD_PREFIX);
+fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_visualization.jar'');\n',BUILD_PREFIX);
 
 % tell drake about ROS
-fprintf(fptr,'\n\n% Tell drake about ROS\n');
+fprintf(fptr,'\n\n% Set environment variables\n');
+fprintf(fptr,'setenv(''DRC_PATH'',''%s'');\n',fullfile(pwd,'..'));
 fprintf(fptr,'setenv(''ROS_ROOT'',''%s'');\n',getenv('ROS_ROOT'));
 fprintf(fptr,'setenv(''ROS_PACKAGE_PATH'',''%s'');\n',getenv('ROS_PACKAGE_PATH'));
 
@@ -42,6 +44,7 @@ fprintf(fptr,'setenv(''PATH_LICENSE_STRING'',''2069810742&Courtesy_License&&&USR
 % add the drake control matlab util directory into the matlab path:
 fprintf(fptr,'\n\n% Add drc control matlab utilities to the path\n');
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 
 fclose(fptr);
 

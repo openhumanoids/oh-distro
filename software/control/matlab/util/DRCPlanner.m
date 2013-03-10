@@ -97,7 +97,7 @@ classdef DRCPlanner
             utime=msg.utime;
           else
             [msg,tmsg] = obj.request_coder.decode(fd);
-            utime = long(msg.utime*1000000);
+            utime = int64(tmsg*1000000);
           end
           data=struct('utime',utime);
           has_required = true;
