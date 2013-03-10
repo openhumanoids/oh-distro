@@ -39,6 +39,10 @@ group "drake" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runFootstepPlanner;\"";
         host = "localhost";
     }
+    cmd "WalkingController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/footstep_planner']); runQPWalkingLCM;\"";
+        host = "localhost";
+    }
 }
 
 
