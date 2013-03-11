@@ -167,7 +167,7 @@ void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   
   // call a routine that calculates the transforms the joint_state_t* TRUE_state_msg.
   map<string, double> jointpos_in;
-  for (uint i=0; i< (uint) TRUE_state_msg->num_joints; i++) //cast to uint to suppress compiler warning
+  for (int i=0; i< TRUE_state_msg->num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(TRUE_state_msg->joint_name[i], TRUE_state_msg->joint_position[i]));
   map<string, KDL::Frame > cartpos_out;
 
