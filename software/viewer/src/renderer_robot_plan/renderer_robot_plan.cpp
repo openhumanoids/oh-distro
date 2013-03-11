@@ -125,8 +125,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->displayed_plan_index = w_plan;
     draw_state(viewer,super,w_plan);
   }
-  
-  /*if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock==NULL))
+
+ if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock==NULL))
       spawn_plan_execution_dock(self);
   else if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock!=NULL))
   {
@@ -145,7 +145,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
           gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
      
   }  
-  */
+
 }
 
 

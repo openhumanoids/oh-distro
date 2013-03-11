@@ -8,7 +8,9 @@ namespace renderer_robot_plan_gui_utils
   static gboolean on_cancel_button_clicked (GtkButton* button, void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
-    gtk_widget_destroy (self->plan_execution_dock);
+    //cout <<"ok " <<self->plan_execution_dock<< endl;
+    //gtk_widget_destroy(self->plan_execution_dock);
+    //cout <<"ok" << endl;
     self->plan_execution_dock= NULL;
    return TRUE;
   }
@@ -20,8 +22,8 @@ namespace renderer_robot_plan_gui_utils
     cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
     string channel = "COMMITTED_ROBOT_PLAN";
     //self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
-    gtk_widget_destroy (self->plan_execution_dock);
-    self->plan_execution_dock= NULL;
+    //gtk_widget_destroy(self->plan_execution_dock);
+    //self->plan_execution_dock= NULL;
     return TRUE;
   }
    

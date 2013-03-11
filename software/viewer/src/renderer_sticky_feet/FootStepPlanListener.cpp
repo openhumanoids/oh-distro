@@ -69,16 +69,26 @@ namespace renderer_sticky_feet
       jointpos_in =  _base_gl_stickyfoot_right->_current_jointpos;
       _base_gl_stickyfoot_right->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
       
+      
+      
+      
        Eigen::Vector3f whole_body_span;
       Eigen::Vector3f offset;
       _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-      _left_foot_offset << 0,0,whole_body_span[2];  
+      
+     MeshStruct foot_mesh_struct;
+     
+     KDL::Frame T_body_link = KDL::Frame::Identity();
+     _base_gl_stickyfoot_left->get_link_frame("l_foot",T_body_link );
+     _left_foot_offset << -T_body_link.p[0],-T_body_link.p[1],whole_body_span[2];  
+     
      MeshStruct mesh_struct;
      if(_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct))  
         _left_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);
 
       _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-      _right_foot_offset << 0,0,whole_body_span[2];
+       _base_gl_stickyfoot_right->get_link_frame("r_foot",T_body_link );
+      _right_foot_offset << -T_body_link.p[0],-T_body_link.p[1],whole_body_span[2];
      if(_base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct))  
         _right_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);     
 
