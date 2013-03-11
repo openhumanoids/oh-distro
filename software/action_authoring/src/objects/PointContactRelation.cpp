@@ -47,5 +47,6 @@ getState() const
     std::stringstream ss;
     ss << " point 1 : (" << _point1.x() << ", " << _point1.y() << ", " << _point1.z() << ") ";
     ss << " point 2 : (" << _point2.x() << ", " << _point2.y() << ", " << _point2.z() << ") ";
+    ss << " (tolerance: " << _tolerance << "; x : " << _x_relation << " y : " << _y_relation << " z: " << _z_relation << ")";
     return ss.str();
 }

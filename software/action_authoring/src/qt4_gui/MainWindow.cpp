@@ -14,6 +14,8 @@ using namespace affordance;
 //#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_PnC/model.urdf"
 //#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot/model.urdf"
 
+#define DEFAULT_TOLERANCE 0.25
+
 string RandomString(int len)
 {
     string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -314,23 +316,24 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     rightsidelayout->addWidget(_actionDescLabel);
 
     _toleranceBox = new QDoubleSpinBox();
+    _toleranceBox->setValue(DEFAULT_TOLERANCE);
     rightsidelayout->addWidget(_toleranceBox);
 
     _xInequality = new QComboBox();
     _yInequality = new QComboBox();
     _zInequality = new QComboBox();
 
-    _xInequality->insertItem(0, "=");
-    _xInequality->insertItem(0, "<");
     _xInequality->insertItem(0, ">");
+    _xInequality->insertItem(0, "<");
+    _xInequality->insertItem(0, "=");
 
-    _yInequality->insertItem(0, "=");
-    _yInequality->insertItem(0, "<");
     _yInequality->insertItem(0, ">");
+    _yInequality->insertItem(0, "<");
+    _yInequality->insertItem(0, "=");
 
-    _zInequality->insertItem(0, "=");
-    _zInequality->insertItem(0, "<");
     _zInequality->insertItem(0, ">");
+    _zInequality->insertItem(0, "<");
+    _zInequality->insertItem(0, "=");
 
     QWidget *inequalities = new QWidget(this);
     QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
@@ -1118,5 +1121,8 @@ handlePoint2PointChange() {
         prel->setZInequality((PointContactRelation::InequalityType)_zInequality->currentIndex());
 
     }
+
+    // update the prompt
+    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
 }
