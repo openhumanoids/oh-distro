@@ -192,6 +192,7 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
   object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        
+       
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)
    {   
@@ -201,6 +202,8 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
 
     it->second._otdf_instance->update();
     it->second._gl_object->set_state(it->second._otdf_instance);  
+ 
+
 
 
       //Request redraw

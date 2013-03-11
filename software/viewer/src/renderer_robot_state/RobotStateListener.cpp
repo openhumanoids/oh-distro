@@ -21,11 +21,11 @@ namespace renderer_robot_state
    _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     if(!lcm->good())
-      {
-	cerr << "\nLCM Not Good: Robot State Handler" << endl;
-	return;
-      }
-    
+    {
+      cerr << "\nLCM Not Good: Robot State Handler" << endl;
+      return;
+    }
+
     // Subscribe to Robot_Model.  Will unsubscribe once a single message has been received
     _urdf_subscription = lcm->subscribe("ROBOT_MODEL", 
 				       &RobotStateListener::handleRobotUrdfMsg,
@@ -51,7 +51,7 @@ namespace renderer_robot_state
 						 const string& chan, 
 						 const drc::robot_state_t* msg)						 
   {
-
+    
     //int64_t tic = bot_timestamp_now();
     if (!_urdf_parsed)
     {
@@ -66,11 +66,11 @@ namespace renderer_robot_state
     }
 
     _gl_robot->set_state(*msg);
-
     bot_viewer_request_redraw(_viewer);
-    
+
     //int64_t toc = bot_timestamp_now();
     //cout << bot_timestamp_useconds(toc-tic) << endl;
+    
   } // end handleMessage
 
 //-------------------------------------------------------------------------------------        
@@ -87,7 +87,7 @@ namespace renderer_robot_state
       cout<< "\nReceived urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << endl;
 
-
+      bot_gtk_gl_drawing_area_set_context(this->_viewer->gl_area); // Prevents conflict with cam renderer which messes with the gl context
       _gl_robot = shared_ptr<visualization_utils::InteractableGlKinematicBody>(new visualization_utils::InteractableGlKinematicBody(_urdf_xml_string,_collision_detector,true,_robot_name));
   
       cout<< "Number of Joints: " << _gl_robot->get_num_joints() <<endl;

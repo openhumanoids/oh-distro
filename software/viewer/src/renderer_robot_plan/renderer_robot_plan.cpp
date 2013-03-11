@@ -48,7 +48,8 @@ typedef struct _RendererRobotPlan
   Eigen::Vector3f ray_start;
   Eigen::Vector3f ray_end;
   std::string* selection;
-  
+  uint selected_plan_index;
+  uint displayed_plan_index;
   // Our only source of a free running clock:
   int64_t robot_utime;
   
@@ -92,10 +93,12 @@ static inline void jet_rgb(float value,float rgb[]){
 
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i){
+
   float c[3] = {0.3,0.3,0.6}; // light blue
   float alpha = 0.4;
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
-  if(self->use_colormap) {
+ 
+  if((self->use_colormap)&&(self->displayed_plan_index==-1)) {
   // Each model Jet: blue to red
   float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
   jet_rgb(j,c);
@@ -138,13 +141,10 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     glEnd();
     glPopMatrix();
   }
-  
-  
+
   int plan_size =   self->robotPlanListener->_gl_robot_list.size();
   if (plan_size ==0) // nothing to renderer
     return;
-  
-  
   
   //glColor3f(c[0],c[1],c[2]);
   
@@ -152,14 +152,18 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   
   if (plan_part==1){
     //printf("Show it all\n");
-  
     for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
     { 
+     //cout << "i:"<<i<< endl;
       draw_state(viewer,super,i);
     }
+    self->displayed_plan_index = -1;
+    
   }else{
     uint w_plan = (uint) round(plan_part* (plan_size -1));
     //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
+     
+    self->displayed_plan_index = w_plan;
     draw_state(viewer,super,w_plan);
   }
 }
@@ -244,27 +248,42 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   Eigen::Vector3f hit_pt;
   collision::Collision_Object * intersected_object = NULL;
   double shortest_distance = -1;
-   for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-  { 
-    if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
-    {
-     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
-     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-    }
-    
-    if( intersected_object != NULL ){
-      Eigen::Vector3f diff = (from-hit_pt);
-      double distance = diff.norm();
-      if(shortest_distance>0) {
-        if (distance < shortest_distance)
+  self->selected_plan_index= 0;
+
+  /*if(self->displayed_plan_index==-1)
+  {
+    for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
+    { 
+     // if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
+     // {
+      // self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
+       self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
+     // }
+      
+      if( intersected_object != NULL ){
+        Eigen::Vector3f diff = (from-hit_pt);
+        double distance = diff.norm();
+        if(shortest_distance>0) {
+          if (distance < shortest_distance)
+            shortest_distance = distance;
+            self->selected_plan_index=i;
+        }
+        else
           shortest_distance = distance;
+        intersected_object = NULL; 
       }
-      else
-        shortest_distance = distance;
-      intersected_object = NULL; 
-    }
-    
-  }//end for
+      
+    }//end for  
+  }
+  else {*/
+ if(self->displayed_plan_index!=-1) {
+    self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
+    if( intersected_object != NULL ){
+        Eigen::Vector3f diff = (from-hit_pt);
+        shortest_distance = diff.norm();
+        self->selected_plan_index=self->displayed_plan_index;
+   }
+  }
 
   //std::cout  << "RobotStateRenderer distance " << -1.0 << std::endl;
   return shortest_distance;
@@ -282,45 +301,15 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
 
-  Eigen::Vector3f from,to;
-  from << ray_start[0], ray_start[1], ray_start[2];
-
-  Eigen::Vector3f plane_normal,plane_pt;
-  plane_normal << 0,0,1;
-  plane_pt << 0,0,0;
-  double lambda1 = ray_dir[0] * plane_normal[0]+
-                   ray_dir[1] * plane_normal[1] +
-                   ray_dir[2] * plane_normal[2];
-   // check for degenerate case where ray is (more or less) parallel to plane
-    if (fabs (lambda1) < 1e-9) return 0;
-
-   double lambda2 = (plane_pt[0] - ray_start[0]) * plane_normal[0] +
-       (plane_pt[1] - ray_start[1]) * plane_normal[1] +
-       (plane_pt[2] - ray_start[2]) * plane_normal[2];
-   double t = lambda2 / lambda1;// =1;
-  
-  to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
- 
-  self->ray_start = from;
-  self->ray_end = to; 
-
   collision::Collision_Object * intersected_object = NULL;
-  for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-  { 
-    if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
-    {
-     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
-     self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object );
-    }
-    if( intersected_object != NULL ){
+  //self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->num_collisions();
+  self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
+  if( intersected_object != NULL ){
       std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
       std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
       (*self->selection)  = std::string(intersected_object->id().c_str());
-      self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
-    }
-//   else
-//   (*self->selection)  = " ";
-  }
+      self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
+   }
 
   bot_viewer_request_redraw(self->viewer);
 
@@ -448,9 +437,17 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     self->clicked = 0;	
   	self->selection = new std::string(" ");
     self->visualize_bbox = false;
+    
+    int plan_size =   self->robotPlanListener->_gl_robot_list.size();
+    double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
+    if ((plan_part==1)||(plan_size==0)){
+      self->displayed_plan_index = -1;
+    }else{
+      uint w_plan = (uint) round(plan_part* (plan_size -1));
+      self->displayed_plan_index = w_plan;
+    }
 
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
-    
         
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;

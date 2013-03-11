@@ -20,7 +20,7 @@ namespace renderer_robot_plan
     _viewer(viewer)
 
   {
-     _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+     //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     if(!lcm->good())
       {
@@ -38,7 +38,7 @@ namespace renderer_robot_plan
   }
   
   RobotPlanListener::~RobotPlanListener() {
-    _collision_detector->clear_collision_objects();
+   // _collision_detector->clear_collision_objects();
   }
 
 
@@ -49,20 +49,20 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const drc::robot_plan_t* msg)						 
   {
     if (!_urdf_parsed)
-      {
-	cout << "\n handleRobotPlanMsg: Waiting for urdf to be parsed" << endl;
-	return;
-      }
-   if(_urdf_subscription_on)
-     {
-       cout << "\n handleRobotPlanMsg: unsubscribing from _urdf_subscription" << endl;
-       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
-	 _urdf_subscription_on =  false; 	
+    {
+      cout << "\n handleRobotPlanMsg: Waiting for urdf to be parsed" << endl;
+      return;
+    }
+    if(_urdf_subscription_on)
+    {
+      cout << "\n handleRobotPlanMsg: unsubscribing from _urdf_subscription" << endl;
+      _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
+      _urdf_subscription_on =  false; 	
     }
    
-       // 0. Make Local copy to later output
-        revieved_plan_ = *msg;
-   
+   // 0. Make Local copy to later output
+    revieved_plan_ = *msg;
+
   	int max_num_states = 20;
   	int num_states = 0;
    	int inc = 1;
@@ -78,8 +78,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     int old_list_size = _gl_robot_list.size();
     if(old_list_size!=num_states){
       _gl_robot_list.clear();
-      _collision_detector.reset();
-      _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+      //_collision_detector.reset();
+      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
     int count=0;
     for (uint i = 0; i <(uint)num_states; i++)
@@ -90,9 +90,10 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
      if(old_list_size!=num_states){
       std::stringstream oss;
       oss << _robot_name << "_"<< count; 
-      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,_collision_detector,true,oss.str()));
+      //shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,_collision_detector,true,oss.str()));
+      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
       _gl_robot_list.push_back(new_object_ptr);
-      }
+      }      
       _gl_robot_list[i]->set_state(state_msg);
 
 	  count+=inc;
@@ -114,7 +115,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _urdf_xml_string = msg->urdf_xml_string;
     cout<< "\nReceived urdf_xml_string of robot [" 
 	<< msg->robot_name << "], storing it internally as a param" << endl;
-	      
+	
+	  //bot_gtk_gl_drawing_area_set_context(this->_viewer->gl_area); // Prevents conflict with cam renderer which messes with the gl context    
     _base_gl_robot = shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string));
     cout<< "Number of Joints: " << _base_gl_robot->get_num_joints() <<endl;
 
@@ -127,4 +129,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
 } //namespace renderer_robot_plan
 
-
+//      double tic = bot_timestamp_now();
+//      double toc = bot_timestamp_now();
+//      cout<< "elaspsed "<<(toc-tic)/1000000 << endl;

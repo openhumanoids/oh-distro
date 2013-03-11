@@ -69,7 +69,7 @@ namespace renderer_affordances
 
 int GraspOptStatusListener::getNextAvailableOptChannelId()
 {
-  for (int i=0;i<_worker_availability.size();i++)
+  for (uint i=0;i<_worker_availability.size();i++)
   {
      if((_worker_availability[i])&&(!_worker_reservation[i])){ // get the next available channel that has not been reserved.
          return i+1;  

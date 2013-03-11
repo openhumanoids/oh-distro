@@ -42,7 +42,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         glEnd();
         glPopMatrix();
         
-        if(self->dragging)
+        if((self->dragging)&&(*self->marker_selection==" "))
         {
          Eigen::Vector3f diff = self->ray_hit_drag - self->ray_hit;
          double length =diff.norm();
@@ -53,10 +53,9 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
          //--get rotation in angle/axis form
          double theta;
          Eigen::Vector3f axis;// = self->ray_hit-self->ray_start;
-         axis.normalize();
          diff.normalize();
          Eigen::Vector3f uz,ux;   uz << 0 , 0 , 1;ux << 1 , 0 , 0;
-         axis = ux.cross(diff);
+         axis = ux.cross(diff);axis.normalize();
          theta = acos(ux.dot(diff));
    
          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
@@ -156,6 +155,13 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RendererAffordances *self = (RendererAffordances*) ehandler->user;
+  
+    
+  if(self->dblclk_popup){   
+    fprintf(stderr, "Object DblClk Popup is Open. Closing \n");
+    gtk_widget_destroy(self->dblclk_popup);
+  }
+  
   if(self->selection_enabled==0){
     return -1.0;
   }
@@ -187,115 +193,8 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   self->ray_hit_t = t;
   self->ray_hit_drag = to;
   self->ray_hit = to;
-  collision::Collision_Object * intersected_object = NULL;
-  Eigen::Vector3f hit_pt;
-  double shortest_distance = -1;
-  (*self->object_selection)  = " ";
-  (*self->link_selection)  = " ";
-  (*self->stickyhand_selection)  = " ";
   
-  
-  typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-  // loop through object list and check if ray intersect any of them.
-  for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
-  {
-
-    if(it->second._gl_object) // to make sure that _gl_object is initialized 
-    {
-      it->second._gl_object->_collision_detector->num_collisions();
-      it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
-      
-      // Highlight all objects that intersect with ray
-      if(intersected_object != NULL ){
-            self->ray_hit = hit_pt;
-            self->ray_hit_t = (hit_pt - self->ray_start).norm();
-            Eigen::Vector3f diff = (from-hit_pt);
-            double distance = diff.norm();
-            if(shortest_distance>0) {
-              if (distance < shortest_distance)
-              {
-                shortest_distance = distance;
-                self->ray_hit = hit_pt;
-                self->ray_hit_drag = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                (*self->object_selection)  =  it->first;
-                (*self->link_selection)  = string(intersected_object->id().c_str());                
-              }
-            }
-            else {
-              shortest_distance = distance;
-              self->ray_hit = hit_pt;
-              self->ray_hit_drag = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
-              (*self->object_selection)  =  it->first;
-              (*self->link_selection)  = string(intersected_object->id().c_str()); 
-             }          
-
-            intersected_object = NULL;  
-      }
-      else {
-      // clear previous selections
-       string no_selection = " ";
-       it->second._gl_object->highlight_link(no_selection); 
-      }
-
-    }
-  }// end for
-
-
-  //loop through stick-hands list and check if ray intersect any of them.
-  typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-  for(sticky_hands_map_type_::iterator it = self->sticky_hands.begin(); it!=self->sticky_hands.end(); it++)
-  {
-  
-        KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
-        typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-        object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(it->second.object_name);
-        if(!obj_it->second._gl_object->get_link_geometry_frame(it->second.geometry_name,T_world_graspgeometry))
-            cerr << " failed to retrieve " << it->second.geometry_name<<" in object " << it->second.object_name <<endl;
-        else {
-            KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
-            Eigen::Vector3f from_geomframe,to_geomframe;
-            //convert to geometry frame.
-            rotate_eigen_vector_given_kdl_frame(from,T_graspgeometry_world,from_geomframe); 
-            rotate_eigen_vector_given_kdl_frame(to,T_graspgeometry_world,to_geomframe); 
-            Eigen::Vector3f hit_pt;
-            it->second._gl_hand->_collision_detector->num_collisions();
-            it->second._gl_hand->_collision_detector->ray_test( from_geomframe, to_geomframe, intersected_object,hit_pt);
-
-            if(intersected_object != NULL ){              
-              Eigen::Vector3f diff = (from_geomframe-hit_pt);
-              double distance = diff.norm();
-              if(shortest_distance>0) {
-                if (distance < shortest_distance)
-                {
-                  shortest_distance = distance;
-                  it->second._gl_hand->enable_whole_body_selection(true);
-                  (*self->object_selection)  =  " ";
-                  (*self->link_selection)  =  " ";
-                  (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name 
-                }
-              }
-              else{
-                shortest_distance = distance;
-                it->second._gl_hand->enable_whole_body_selection(true);
-                (*self->object_selection)  =  " ";
-                (*self->link_selection)  =  " ";
-                (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name                  
-              }
- 
-              intersected_object = NULL;
-            }
-            else {
-              // clear previous selections
-              string no_selection = " ";
-              it->second._gl_hand->highlight_link(no_selection); 
-            }
-      
-       }// end if
-  
-  }// end for
-
+  double shortest_distance = get_shortest_distance_between_objects_markers_stickyhands(self,from,to);
   return shortest_distance;
 }
 
@@ -312,6 +211,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       {
        string no_selection = " ";
        it->second._gl_object->highlight_link(no_selection); 
+       it->second._gl_object->highlight_marker(no_selection); 
       }
     }// end for
 
@@ -320,7 +220,8 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     for(sticky_hands_map_type_::iterator it = self->sticky_hands.begin(); it!=self->sticky_hands.end(); it++)
     {
       string no_selection = " ";
-      it->second._gl_hand->highlight_link(no_selection); 
+      it->second._gl_hand->highlight_link(no_selection);
+      it->second._gl_hand->highlight_marker(no_selection);  
     }// end for  
     
   //std::cout << "Aff ehandler->picking " << ehandler->picking << std::endl;
@@ -333,26 +234,32 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     gtk_widget_destroy(self->dblclk_popup);
   }
 
+
   self->clicked = 1;
 
   if((*self->stickyhand_selection)!=" "){
-    typedef map<string, StickyHandStruc > sticky_hands_map_type_;
     sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
     hand_it->second._gl_hand->enable_whole_body_selection(true); 
     hand_it->second._gl_hand->highlight_link((*self->stickyhand_selection));
     cout << "intersected stickyhand:" << (*self->stickyhand_selection) << " at: "<< self->ray_hit.transpose() << endl;
   }
   else if((*self->object_selection)!=" "){
-    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator obj_it = self->instantiated_objects.find((*self->object_selection));
-    obj_it->second._gl_object->highlight_link((*self->link_selection)); 
-    cout << "intersected an object's link: " << (*self->link_selection) << " at: " << self->ray_hit.transpose() << endl;
+    if((*self->marker_selection)!=" ") {
+      obj_it->second._gl_object->highlight_marker((*self->marker_selection));
+      cout << "intersected an object's marker: " << (*self->marker_selection) << " at: " << self->ray_hit.transpose() << endl;
+    }
+    else {
+      obj_it->second._gl_object->highlight_link((*self->link_selection)); 
+      cout << "intersected an object's link: " << (*self->link_selection) << " at: " << self->ray_hit.transpose() << endl;
+    }
   }
   
   
  //(event->button==3) -- Right Click
   //cout << "current selection:" << (*self->link_selection)  <<  endl;
-  if(((*self->link_selection)  != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){
+  if((((*self->link_selection)  != " ") || ((*self->marker_selection)  != " ")) &&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
+  {
     //spawn_object_geometry_dblclk_popup(self);
     // draw circle for angle specification around the axis.
     self->dragging = 1;
@@ -365,6 +272,14 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     spawn_sticky_hand_dblclk_popup(self);
     std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
     return 1;// consumed if pop up comes up.
+  }
+  else if(((*self->marker_selection)  != " "))
+  {
+    self->dragging = 1;
+    object_instance_map_type_::iterator it = self->instantiated_objects.find((*self->object_selection));            
+    KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
+    self->marker_offset_on_press << self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[2]-T_world_object_future.p[2]; 
+    return 1;// consumed
   }
 
   bot_viewer_request_redraw(self->viewer);
@@ -391,6 +306,8 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //if picking release picking (Important)
+
+    
   bot_viewer_request_redraw(self->viewer);
   return 1;
 }
@@ -403,10 +320,12 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   if((!self->dragging)||(ehandler->picking==0)||(self->selection_enabled==0)){
     return 0;
   }
-  if(self->show_popup_onrelease){
+  
+  if((self->show_popup_onrelease)||((*self->marker_selection)  != " ")){
     double t = self->ray_hit_t;
     self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
     //std::cout << "motion\n" << std::endl;
+    set_object_desired_state_on_marker_motion(self);
   }
   bot_viewer_request_redraw(self->viewer);
   return 1;
@@ -442,6 +361,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
      (*self->link_selection) = " ";
      (*self->object_selection) = " ";
      (*self->stickyhand_selection) = " ";
+     (*self->marker_selection) = " ";
      bot_viewer_request_redraw(self->viewer);
   }
   else if (! strcmp(name, PARAM_SELECTION)) {
@@ -592,6 +512,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->dragging = 0;
   self->show_popup_onrelease = 0;
 	self->link_selection = new string(" ");
+	self->marker_selection = new string(" ");
   self->object_selection = new string(" ");
   self->stickyhand_selection = new string(" ");
   self->instance_hold_otdf_type_ptr = new string(" ");

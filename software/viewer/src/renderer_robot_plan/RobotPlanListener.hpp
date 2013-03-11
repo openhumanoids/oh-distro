@@ -46,7 +46,7 @@ namespace renderer_robot_plan
 		       BotViewer *viewer);
     ~RobotPlanListener();
     
-    boost::shared_ptr<collision::Collision_Detector> _collision_detector;
+   // boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     //std::vector< boost::shared_ptr<visualization_utils::GlKinematicBody> >  _gl_robot_list;
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_robot_list;
     //-------------message callback

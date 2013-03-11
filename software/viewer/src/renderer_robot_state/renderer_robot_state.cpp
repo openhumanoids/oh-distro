@@ -33,6 +33,7 @@ using namespace collision;
 using namespace renderer_robot_state;
 
 
+
 typedef struct _RobotStateRendererStruc 
 {
   BotRenderer renderer;
@@ -52,6 +53,9 @@ typedef struct _RobotStateRendererStruc
   // transparency of the model:
   float alpha;
 } RobotStateRendererStruc;
+
+//#include "plan_execution_gui_utils.hpp" // TODO: just for testing (sisir, Mar 10), will move to robot plan renderer
+//using namespace renderer_robot_state_gui_utils;
 
 static void
 _renderer_free (BotRenderer *super)
@@ -95,7 +99,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   collision::Collision_Object * intersected_object = NULL;
   if(self->robotStateListener->_gl_robot) // to make sure that _gl_robot is initialized 
   {
-   self->robotStateListener->_gl_robot->_collision_detector->num_collisions();
+   //self->robotStateListener->_gl_robot->_collision_detector->num_collisions();
    self->robotStateListener->_gl_robot->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
   }
   if( intersected_object != NULL ){
@@ -121,33 +125,11 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
 
-  Eigen::Vector3f from,to;
-  from << ray_start[0], ray_start[1], ray_start[2];
-
-  Eigen::Vector3f plane_normal,plane_pt;
-  plane_normal << 0,0,1;
-  plane_pt << 0,0,0;
-  double lambda1 = ray_dir[0] * plane_normal[0]+
-                   ray_dir[1] * plane_normal[1] +
-                   ray_dir[2] * plane_normal[2];
-   // check for degenerate case where ray is (more or less) parallel to plane
-    if (fabs (lambda1) < 1e-9) return 0;
-
-   double lambda2 = (plane_pt[0] - ray_start[0]) * plane_normal[0] +
-       (plane_pt[1] - ray_start[1]) * plane_normal[1] +
-       (plane_pt[2] - ray_start[2]) * plane_normal[2];
-   double t = lambda2 / lambda1;// =1;
-  
-  to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
- 
-  self->ray_start = from;
-  self->ray_end = to; 
-
   collision::Collision_Object * intersected_object = NULL;
   if(self->robotStateListener->_gl_robot) // to make sure that _gl_robot is initialized 
   {
-   self->robotStateListener->_gl_robot->_collision_detector->num_collisions();
-   self->robotStateListener->_gl_robot->_collision_detector->ray_test( from, to, intersected_object );
+   //self->robotStateListener->_gl_robot->_collision_detector->num_collisions();
+   self->robotStateListener->_gl_robot->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
   }
   if( intersected_object != NULL ){
 //    std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
@@ -155,6 +137,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     (*self->selection)  = std::string(intersected_object->id().c_str());
     std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
     bot_viewer_request_redraw(self->viewer);
+   //spawn_plan_execution_dock(self);
     return 0;
   }
   else{
@@ -225,6 +208,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->robotStateListener->_gl_robot->highlight_link((*self->selection));
   //self->robotStateListener->_gl_robot->enable_whole_body_selection(self->selection_enabled);
    self->robotStateListener->_gl_robot->draw_body (c,alpha);
+
   }
 
 // int64_t toc = bot_timestamp_now();
