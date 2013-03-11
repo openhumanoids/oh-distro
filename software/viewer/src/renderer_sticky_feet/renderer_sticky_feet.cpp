@@ -292,7 +292,8 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm)
     self->dragging = 0;	
   	self->selection = new std::string(" ");
     self->marker_selection = new std::string(" ");
-    bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
+    //bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
+    bot_viewer_add_renderer_on_side(viewer,&self->renderer, render_priority, 0);
         
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;
