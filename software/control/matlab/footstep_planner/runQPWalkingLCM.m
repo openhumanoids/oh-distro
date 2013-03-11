@@ -1,9 +1,9 @@
-function runQPWalkingLCM(goal_x, goal_y, goal_yaw,lcm_plan)
+function runQPWalkingLCM(lcm_plan,goal_x, goal_y, goal_yaw)
 
-if nargin < 4; lcm_plan = true; end
-if nargin < 3; goal_yaw = pi/2; end
-if nargin < 2; goal_y = 1.0; end
-if nargin < 1; goal_x = 0.0; end
+if nargin < 4; goal_yaw = 0.0; end
+if nargin < 3; goal_y = 1.0; end
+if nargin < 2; goal_x = 0.0; end
+if nargin < 1; lcm_plan = true; end
 
 options.floating = true;
 options.dt = 0.002;
@@ -157,26 +157,38 @@ outs(1).output = 1;
 sys = mimoCascade(pd,sys,[],ins,outs);
 clear ins outs;
 
-% state_frame.subscribe('TRUE_ROBOT_STATE');
-% input_frame = getInputFrame(r);
-% t_offset = -1;
-% t= -1;
-% traj = [];
-% ts = [];
-% disp('waiting...');
-% while t<T
-%   [x,tsim] = getNextMessage(state_frame,1);
-%   if (~isempty(x))
-%     if (t_offset == -1)
-%       t_offset = tsim;
-%     end
-%     t=tsim-t_offset;
-%     ts = [ts t];
-%     traj = [traj x];
-%     u = sys.output(t,[],[x;x]);
-%     input_frame.publish(t,u,'JOINT_COMMANDS');
+% disp('Waiting for robot plan confirmation...');
+% plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
+% waiting = true;
+% while waiting
+%   rplan = plan_listener.getNextMessage(100);
+%   if (~isempty(rplan))
+%     % for now don't do anything with it, just use it as a flag
+%     disp('Plan confirmed. Executing...');
+%     waiting = false;
 %   end
 % end
+
+state_frame.subscribe('TRUE_ROBOT_STATE');
+input_frame = getInputFrame(r);
+t_offset = -1;
+t= -1;
+traj = [];
+ts = [];
+disp('waiting...');
+while true
+  [x,tsim] = getNextMessage(state_frame,1);
+  if (~isempty(x))
+    if (t_offset == -1)
+      t_offset = tsim;
+    end
+    t=tsim-t_offset;
+    ts = [ts t];
+    traj = [traj x];
+    u = sys.output(t,[],[x;x]);
+    input_frame.publish(t,u,'JOINT_COMMANDS');
+  end
+end
 % 
 % for i=1:length(ts)
 %   x=traj(:,i);
@@ -192,17 +204,8 @@ clear ins outs;
 % subplot(3,1,3);
 % plot(ts,com(3,:),'r');
 
-% disp('Waiting for robot plan confirmation...');
-% waiting = true;
-% while waiting
-%   rplan = rplan_listener.getNextMessage(100);
-%   if (~isempty(rplan))
-%     disp('Plan confirmed. Executing...');
-%     waiting = false;
-%   end
-% end
  
-options.timekeeper = 'drake/lcmTimeKeeper'; 
-runLCM(sys,[],options);
+% options.timekeeper = 'drake/lcmTimeKeeper'; 
+% runLCM(sys,[],options);
 
 end
