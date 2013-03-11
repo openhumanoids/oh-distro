@@ -21,7 +21,6 @@ x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-% biped = Biped(r);
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
 if ~lcm_plan
@@ -45,7 +44,6 @@ else
   rfoot(2,:) = -rfoot(2,:);
   lfoot = foottraj(3:end,find(foottraj(1,:)==0));
   lfoot(2,:) = -lfoot(2,:);
-
 end
 
 [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.0);

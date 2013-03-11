@@ -101,7 +101,7 @@ end
 zmp = [com0(1:3), feetCenter(footpos.right.orig(:,2), footpos.left.orig(:,2))];
 zmp = zmp(1:2,:);
 
-bRightStep = true;
+bRightStep = size(Xright,2) >= size(Xleft,2);
 istep = struct('right', 1, 'left', 1);
 
 footsupport.right = [1 1];
