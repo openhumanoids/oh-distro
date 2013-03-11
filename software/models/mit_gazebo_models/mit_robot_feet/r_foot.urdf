@@ -1,0 +1,75 @@
+<robot name="right_foot">
+
+  <link name="base">
+      <inertial>
+        <mass value="0.1"/>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+    </link>
+
+    <link name="r_talus">
+        <inertial>
+            <mass value="0.1" />
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/r_talus.dae" scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/r_talus.stl" scale="1 1 1" />
+            </geometry>
+        </collision>
+    </link>
+
+
+    <link name="r_foot">
+        <inertial>
+            <mass value="1.634" />
+            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
+            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/r_foot.dae" scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <geometry>
+                <mesh filename="package://mit_robot/meshes/r_foot.stl" scale="1 1 1" />
+            </geometry>
+        </collision>
+    </link>
+    
+    <joint name="r_leg_uay" type="revolute">
+        <origin xyz="0 0 0" rpy="0 -0 0" />
+        <axis xyz="0 1 0" />
+        <parent link="base" />
+        <child link="r_talus" />
+        <dynamics damping="0.1" friction="0" />
+        <limit effort="220" velocity="12" lower="-0.698" upper="0.698" />
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.698" soft_upper_limit="10.698" />
+    </joint>  
+    
+    <joint name="r_leg_lax" type="revolute">
+        <origin xyz="0 0 0" rpy="0 -0 0" />
+        <axis xyz="1 0 0" />
+        <parent link="r_talus" />
+        <child link="r_foot" />
+        <dynamics damping="0.1" friction="0" />
+        <limit effort="90" velocity="12" lower="-0.436" upper="0.436" />
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.436" soft_upper_limit="10.436" />
+    </joint>
+    
+
+    
+
+</robot>
