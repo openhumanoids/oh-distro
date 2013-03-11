@@ -5,11 +5,6 @@ function make
 
 p = cd('drake');
 options.autoconfig=1;
-%% configure drake
-configure(options);
-
-%% build drake
-make;
 
 cd(p);
 
@@ -48,5 +43,13 @@ fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 
 fclose(fptr);
 
+addpath([BUILD_PREFIX,'/config']);
+drc_control_setup;
+
+%% configure drake
+configure(options);
+
+%% build drake
+make;
 
 
