@@ -58,7 +58,7 @@ lfootsupport = [1 1];
 while 1
   lf = repmat(lfootpos(:,end), 1, 4);
   rf = repmat(rfootpos(:,end), 1, 4);
-	tstep = ts(end) + [.1, .5, .95, .99, 1] * step_time;
+	tstep = ts(end) + [.1, .5, .925, .975, 1] * step_time;
   if bRightStep
     rf = interp1([0; 1], [Xright(:, istep_r), Xright(:, istep_r+1)]', [0, .5, 1, 1]')';
     rf(3,:) = rf(3,:) + [0, 0.05, 0, 0];

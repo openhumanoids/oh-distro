@@ -22,7 +22,7 @@ com0 = getCOM(biped,q0);
 foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),...
   'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
 
-if ~options.flat_foot
+if true%~options.flat_foot
   group_pts = struct('left', struct(), 'right', struct());
   for g = {'toe', 'heel'}
     grp = g{1};
@@ -112,9 +112,8 @@ while 1
   step.left.orig = repmat(footpos.left.orig(:,end), 1, 5);
   step.right.orig = repmat(footpos.right.orig(:,end), 1, 5);
   
-  
 %   tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
-  tstep = ts(end) + [.1, .5, .95, .99, 1] * step_time;
+  tstep = ts(end) + [.1, .5, .925, .975, 1] * step_time;
   if bRightStep
     m_foot = 'right';
     s_foot = 'left';
@@ -122,7 +121,6 @@ while 1
     m_foot = 'left';
     s_foot = 'right';
   end
-  
   
   step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(:, istep.(m_foot)), step_locations.(m_foot)(:, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
   step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.05, 0, 0, 0];
@@ -180,21 +178,33 @@ while 1
   end
 end
 
+
+% add a segment at the end to recover
+ts = [ts, ts(end)+1];
+
 for f = {'right', 'left'}
   foot = f{1};
+  % add a segment at the end to recover
+  footpos.(foot).orig = [footpos.(foot).orig footpos.(foot).orig(:,end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
   if ~options.flat_foot
     for p = {'toe', 'heel'}
       pt = p{1};
       for b = {'lb', 'ub'}
         bound = b{1};
+        footpos.(foot).(pt).(bound) = [footpos.(foot).(pt).(bound) footpos.(foot).(pt).(bound)(:,end)]; % check this...
         foottraj.(foot).(pt).(bound) = PPTrajectory(foh(ts, footpos.(foot).(pt).(bound)));
       end
     end
   end
-end
-zmptraj = PPTrajectory(foh(ts,zmp));
+  footsupport.(foot) = [footsupport.(foot) 1];
 
+end
+
+% creat ZMP trajectory
+p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));
+zmp = [zmp,p(1:2)];
+zmptraj = PPTrajectory(foh(ts,zmp));
 
 % create support body trajectory
 supporttraj = repmat(0*ts,length(biped.getLinkNames),1);
@@ -203,3 +213,4 @@ supporttraj(strcmp(biped.l_foot_name,biped.getLinkNames),:) = footsupport.left;
 supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(biped));
 
 end
+

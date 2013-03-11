@@ -2,10 +2,10 @@ function runQPWalking(goal_x, goal_y, goal_yaw)
 
 if nargin < 3; goal_yaw = pi/2; end
 if nargin < 2; goal_y = 1.0; end
-if nargin < 1; goal_x = 0.0; end
+if nargin < 1; goal_x = 0.2; end
 
 options.floating = true;
-options.dt = 0.002;
+options.dt = 0.003;
 r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 d = load('../data/atlas_fp.mat');
 xstar = d.xstar;

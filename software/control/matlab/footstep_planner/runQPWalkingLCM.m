@@ -1,4 +1,4 @@
-function runQPWalkingLCM(lcm_plan,goal_x, goal_y, goal_yaw)
+function runQPWalkingLCM(lcm_plan, goal_x, goal_y, goal_yaw)
 
 if nargin < 4; goal_yaw = 0.0; end
 if nargin < 3; goal_y = 1.0; end
