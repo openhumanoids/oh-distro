@@ -82,7 +82,7 @@ while 1
     modified = 1;
   end
   
-  [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
+  [Xright, Xleft] = biped.stampedStepLocations(X, ndx_r, ndx_l);
   figure(22)
   cla
   hold on
