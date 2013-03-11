@@ -1,14 +1,13 @@
-function [zmptraj,lfoottraj,rfoottraj,step_times,supporttraj] = planZMPandFootTrajectory(biped,q0, Xright, Xleft,step_time)
+function [zmptraj,lfoottraj,rfoottraj,step_times,supporttraj] = planZMPandFootTrajectory(r,q0, Xright, Xleft,step_time)
 
-r = biped.manip;
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
-sizecheck(q0,[biped.manip.getNumDOF,1]);
+sizecheck(q0,[r.getNumDOF,1]);
 sizecheck(step_time,1);
 
 kinsol = doKinematics(r,q0);
-rfoot_body = findLink(r, biped.r_foot_name);
-lfoot_body = findLink(r, biped.l_foot_name);
+rfoot_body = findLink(r, r.r_foot_name);
+lfoot_body = findLink(r, r.l_foot_name);
 
 com0 = getCOM(r,q0);
 rfoot0 = forwardKin(r,kinsol,rfoot_body,[0;0;0],true);
