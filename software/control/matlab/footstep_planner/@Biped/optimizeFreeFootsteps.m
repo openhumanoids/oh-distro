@@ -137,7 +137,7 @@ function mouse_drag_handler(hFig, current_foot, closest_point)
   mouse_pt = get(ax, 'CurrentPoint');
   mouse_x = mouse_pt(1,1);
   mouse_y = mouse_pt(1,2);
-  fixed_steps{drag_ndx, current_foot} = [[mouse_x; mouse_y]; closest_point(3:end)];
+  fixed_steps{drag_ndx, current_foot} = [[mouse_x; mouse_y]; closest_point(3:6)];
 end
 
 function mouse_up_handler(hFig)
