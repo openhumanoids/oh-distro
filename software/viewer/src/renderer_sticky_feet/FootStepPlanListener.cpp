@@ -79,7 +79,7 @@ namespace renderer_sticky_feet
      MeshStruct foot_mesh_struct;
      
      KDL::Frame T_body_link = KDL::Frame::Identity();
-     _base_gl_stickyfoot_left->get_link_frame("l_foot",T_body_link );
+     _base_gl_stickyfoot_left->get_link_geometry_frame("l_foot_0",T_body_link );
      _left_foot_offset << -T_body_link.p[0],-T_body_link.p[1],whole_body_span[2];  
      
      MeshStruct mesh_struct;
