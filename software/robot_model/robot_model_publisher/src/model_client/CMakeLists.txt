@@ -1,6 +1,6 @@
 ################
 add_library(model-client  SHARED model-client.cpp)
-pods_use_pkg_config_packages(model-client lcmtypes_drc_lcmtypes)
+pods_use_pkg_config_packages(model-client urdf lcmtypes_drc_lcmtypes)
 
 
 target_link_libraries (model-client )
