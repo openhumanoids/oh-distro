@@ -19,11 +19,11 @@ group "core" {
         exec = "rosrun translators lcm2ros";
         host = "localhost";
     }
-    cmd "aff server" {
+    cmd "affserver" {
         exec = "affordance_server";
         host = "localhost";
     }
-    cmd "aff server" {
+    cmd "oracle2collection" {
         exec = "drc-oracle2collection";
         host = "localhost";
     }    
