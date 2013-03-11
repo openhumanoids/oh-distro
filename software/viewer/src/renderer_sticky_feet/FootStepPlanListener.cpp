@@ -126,9 +126,8 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
       KDL::Frame T_world_foot_pose;
       
-
       transformLCMToKDL(goal_msg.ee_goal_pos, T_world_foot_pose);
-      T_world_foot_pose = KDL::Frame::Identity();
+      //T_world_foot_pose = KDL::Frame::Identity();
       
       if(goal_msg.ee_name==_left_foot_name)
       {
