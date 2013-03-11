@@ -27,7 +27,7 @@ classdef SimplePDController < MIMODrakeSystem
       
 %     [Kp_q,Kd_q] = getQPpdGains(obj.manip);
        Kp_q = 200*eye(nq);
-       Kd_q = 15.0*eye(nq);
+       Kd_q = 20.0*eye(nq);
 %       Kp_q(1:6,1:6) = zeros(6); % ignore free body dofs
 %       Kd_q(1:6,1:6) = zeros(6); % ignore free body dofs
        Kp_q(1:2,1:2) = zeros(2); % ignore x,y

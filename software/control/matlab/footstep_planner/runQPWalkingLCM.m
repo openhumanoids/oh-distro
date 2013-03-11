@@ -1,12 +1,12 @@
 function runQPWalkingLCM(lcm_plan, goal_x, goal_y, goal_yaw)
 
 if nargin < 4; goal_yaw = 0.0; end
-if nargin < 3; goal_y = 1.0; end
-if nargin < 2; goal_x = 0.0; end
+if nargin < 3; goal_y = 0.0; end
+if nargin < 2; goal_x = 2.0; end
 if nargin < 1; lcm_plan = true; end
 
 options.floating = true;
-options.dt = 0.002;
+options.dt = 0.001;
 r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 d = load('../data/atlas_fp.mat');
 xstar = d.xstar;
@@ -41,9 +41,7 @@ else
   end
   
   rfoot = foottraj(3:end,find(foottraj(1,:)==1));
-  rfoot(2,:) = -rfoot(2,:);
   lfoot = foottraj(3:end,find(foottraj(1,:)==0));
-  lfoot(2,:) = -lfoot(2,:);
 end
 
 [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.0);
@@ -56,7 +54,7 @@ limp = LinearInvertedPendulum(com(3));
 comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
 % time spacing of samples for IK
-ts = linspace(0,zmptraj.tspan(end),100);
+ts = linspace(0,zmptraj.tspan(end),200);
 T = ts(end);
 
 % create desired joint trajectory
@@ -187,7 +185,7 @@ while true
     input_frame.publish(t,u,'JOINT_COMMANDS');
   end
 end
-% 
+
 % for i=1:length(ts)
 %   x=traj(:,i);
 %   q=x(1:getNumDOF(r)); 
