@@ -37,7 +37,7 @@ else\
 fi
 endef
 
-all: drake $(BUILD_PREFIX)/share/java/drc_control.jar
+all: $(BUILD_PREFIX)/share/java/drc_control.jar drake
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \
@@ -57,7 +57,7 @@ $(BUILD_PREFIX)/share/java/drc_control.jar: $(CLASSFILES)
 %.class : %.java
 	javac $< -cp $(CLASSPATH); \
 
-drake: matlabfoo
+drake: matlabfoo $(BUILD_PREFIX)/share/java/drc_control.jar
 	@$(build-drake)
 
 clean:

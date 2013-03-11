@@ -3,11 +3,6 @@ function make
 % This file is intended to be run from the Makefile.  It assumes that the 
 % environment variable 'BUILD_PREFIX' has been set.
 
-p = cd('drake');
-options.autoconfig=1;
-
-cd(p);
-
 %% write config/drc_control_setup.m
 
 BUILD_PREFIX=getenv('BUILD_PREFIX');
@@ -46,10 +41,15 @@ fclose(fptr);
 addpath([BUILD_PREFIX,'/config']);
 drc_control_setup;
 
+p = cd('drake');
+options.autoconfig=1;
+
 %% configure drake
 configure(options);
 
 %% build drake
 make;
+
+cd(p);
 
 
