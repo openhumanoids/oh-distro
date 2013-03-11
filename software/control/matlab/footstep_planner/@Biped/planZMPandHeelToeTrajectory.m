@@ -101,7 +101,8 @@ while 1
   step.right.orig = repmat(footpos.right.orig(:,end), 1, 5);
   
   
-  tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
+%   tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
+  tstep = ts(end) + [.1, .5, .95, .99, 1] * step_time;
   if bRightStep
     m_foot = 'right';
     s_foot = 'left';
@@ -119,7 +120,7 @@ while 1
     step.(m_foot).orig(1:3, i) = step.(m_foot).orig(1:3, i) - offs(1:3);
   end
   
-  if options.heel_toe
+  if ~options.flat_foot
     stepzmp = [footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),...
                footPoint(s_foot, 'toe', step.(s_foot).orig(:,1)),...
                repmat(mean([footPoint(s_foot, 'toe', step.(s_foot).orig(:,1)),...
@@ -150,7 +151,7 @@ while 1
   end
   istep.(m_foot) = istep.(m_foot) + 1;
   
-  footsupport.(m_foot) = [footsupport.(m_foot) 0 0 1 1 1]; 
+  footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1]; 
   footsupport.(s_foot) = [footsupport.(s_foot) 1 1 1 1 1]; 
   
   for f = {'right', 'left'}

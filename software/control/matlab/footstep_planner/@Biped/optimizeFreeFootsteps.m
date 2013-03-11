@@ -16,7 +16,7 @@ for p = poses
     [~, fixed_steps{j,2}] = biped.stepLocations(X(:,j));
   end
 end
-X = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
+[X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
 
 
 done = false;
@@ -31,12 +31,9 @@ uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done(
 
 drag_ndx = 1;
 
+
 while 1
   modified = 0;
-  [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
-  if outputflag ~= 1 && outputflag ~= 2
-    modified = 1;
-  end
   [Xright, Xleft] = biped.stepLocations(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
   [d_r, r_r] = biped.stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
@@ -81,10 +78,7 @@ while 1
   
   [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
   figure(22)
-%   rectangle('Position', [.25, .25, .5, .5], 'Curvature', [1,1], 'FaceColor', 'k');
   cla
-%   rectangle('Position', [.5, -.25, .5, .5], 'FaceColor', 'k');
-%   rectangle('Position', [.7, -.05, .1, .1], 'FaceColor', 'w');
   hold on
   plotFootstepPlan(X, Xright, Xleft);
   if exist('vs.obj_collection_t')
@@ -104,6 +98,12 @@ while 1
   end
   drawnow
   hold off
+  
+  [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
+    
+  if outputflag ~= 1 && outputflag ~= 2
+    modified = 1;
+  end
   if (~interactive && ~modified) || (done)
     break
   end

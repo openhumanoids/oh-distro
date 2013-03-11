@@ -12,7 +12,7 @@ r = r.setInitialState(xstar);
 % poses = [1;0;0;0;0;0];
 poses = [0;1;0;0;0;pi/2];
 xtraj = r.walkingPlan(xstar, poses, struct('plotting', true, ...
-  'interactive', true, 'heel_toe', true));
+  'interactive', true, 'flat_foot', true));
 
 visualizer = r.constructVisualizer();
 visualizer.playback(xtraj, struct('slider', true));

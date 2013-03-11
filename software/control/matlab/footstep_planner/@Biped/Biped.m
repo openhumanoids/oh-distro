@@ -54,14 +54,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       if nargin < 4
         options = struct();
       end
-      defaults = struct('heel_toe', false, 'interactive', true, 'plotting', true);
+      defaults = struct('flat_foot', true, 'interactive', true, 'plotting', true);
       fields = fieldnames(defaults);
       for i = 1:length(fields)
         if ~isfield(options, fields{i})
           options.(fields{i}) = defaults.(fields{i});
         end
       end
-      if options.heel_toe
+      if ~options.flat_foot
         obj.max_step_length = 0.6;
       end
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
