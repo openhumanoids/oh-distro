@@ -17,8 +17,8 @@ struct contact_goal_t
 	const int32_t ON_GROUND_PLANE=0, TOUCH=1, FORCE_CLOSURE=2;
 	int32_t contact_type;
 
-	vector_3d_t ground_plane_pt; // only used for ON_GROUND_PLANE
-	double ground_plane_pt_radius; // only used for ON_GROUND_PLANE
+	vector_3d_t target_pt; // only used for ON_GROUND_PLANE
+	double target_pt_radius; // only used for ON_GROUND_PLANE
     const int32_t REL_EQUAL=0, REL_LESS_THAN=1, REL_GREATER_THAN=2;
     int32_t x_relation;
     int32_t y_relation;
