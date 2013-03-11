@@ -32,7 +32,7 @@ namespace renderer_sticky_feet
       return;
     }
 
-
+     _last_plan_approved = false;
      _left_foot_name ="l_foot";
      _right_foot_name = "r_foot";
     if(!load_foot_urdfs())
@@ -102,7 +102,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
   
    // 0. Make Local copy to later output
     revieved_plan_ = *msg;
-
+    _last_plan_approved = false;
 
     _robot_name = msg->robot_name;
   	int num_goals = 0;

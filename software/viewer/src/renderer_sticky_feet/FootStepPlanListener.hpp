@@ -47,7 +47,8 @@ namespace renderer_sticky_feet
      std::string _right_foot_name;
      Eigen::Vector3f _left_foot_offset;
      Eigen::Vector3f _right_foot_offset;
-     int64_t _last_plan_msg_timestamp; 
+     int64_t _last_plan_msg_timestamp;
+     bool _last_plan_approved;  
    
     //FootStepPlanListener(RendererStickyFeet *parent_renderer);
     FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);

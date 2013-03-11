@@ -54,9 +54,6 @@ typedef struct _RobotStateRendererStruc
   float alpha;
 } RobotStateRendererStruc;
 
-//#include "plan_execution_gui_utils.hpp" // TODO: just for testing (sisir, Mar 10), will move to robot plan renderer
-//using namespace renderer_robot_state_gui_utils;
-
 static void
 _renderer_free (BotRenderer *super)
 {

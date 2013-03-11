@@ -25,6 +25,9 @@ namespace renderer_sticky_feet_gui_utils
     cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
     string channel = "COMMITTED_FOOTSTEP_PLAN";
     self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);
+    self->footStepPlanListener->_last_plan_approved = true;
+    gtk_widget_destroy (self->plan_approval_dock);
+    self->plan_approval_dock= NULL;
     //gtk_widget_destroy (pWindow);
     return TRUE;
   }
@@ -47,8 +50,6 @@ namespace renderer_sticky_feet_gui_utils
     gint pos_x, pos_y;
     gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
   
-    
-    
     gint root_x, root_y;
     gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
     
@@ -59,7 +60,7 @@ namespace renderer_sticky_feet_gui_utils
    // gint gdk_screen_height  (void);//Returns the height of the default screen in pixels.
     gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
 
-    gtk_window_set_title(GTK_WINDOW(window), "Plan Approval Control");
+    gtk_window_set_title(GTK_WINDOW(window), "Footstep Plan Approval Dock");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     
     BotGtkParamWidget *pw;

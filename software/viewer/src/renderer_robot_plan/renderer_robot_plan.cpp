@@ -1,20 +1,7 @@
-#include <iostream>
-#include <boost/function.hpp>
-
-#include <lcm/lcm.h>
-#include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-
-#include "lcmtypes/drc_lcmtypes.h"
-
-#include <GL/gl.h>
-#include <bot_vis/bot_vis.h>
-#include <bot_core/rotations.h>
-#include <gdk/gdkkeysyms.h>
-#include <Eigen/Dense>
 
 #include "renderer_robot_plan.hpp"
 #include "RobotPlanListener.hpp"
+#include "plan_execution_gui_utils.hpp" // TODO: just for testing (sisir, Mar 10), will move to robot plan renderer
 
 
 #define RENDERER_NAME "Robot Plan Display"
@@ -31,35 +18,7 @@
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
-
-typedef struct _RendererRobotPlan
-{
-  BotRenderer renderer;
-  BotViewer          *viewer;
-  BotGtkParamWidget *pw;
-  boost::shared_ptr<RobotPlanListener> robotPlanListener;
-  boost::shared_ptr<lcm::LCM> lcm;
-  int64_t max_draw_utime;
-  BotEventHandler ehandler;
-  bool selection_enabled;
-  bool clicked;
-  bool visualize_bbox;
-  bool use_colormap;
-  Eigen::Vector3f ray_start;
-  Eigen::Vector3f ray_end;
-  std::string* selection;
-  uint selected_plan_index;
-  uint displayed_plan_index;
-  // Our only source of a free running clock:
-  int64_t robot_utime;
-  
-  // Vicon seed planning collection settings:
-  int vicon_n_plan_samples;
-  double vicon_sample_period;
-  int8_t vicon_type;
-  
-  
-} RendererRobotPlan;
+using namespace renderer_robot_plan_gui_utils;
 
 static void
 _renderer_free (BotRenderer *super)
@@ -166,6 +125,27 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->displayed_plan_index = w_plan;
     draw_state(viewer,super,w_plan);
   }
+  
+  if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock==NULL))
+      spawn_plan_execution_dock(self);
+  else if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock!=NULL))
+  {
+      // move dock to account for viewer movement
+      gint root_x, root_y;
+      gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
+      gint width, height;
+      gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
+      
+      
+       gint pos_x, pos_y;
+      pos_x=root_x+0.5*width;    pos_y=root_y+0.75*height;
+      
+     gint current_pos_x, current_pos_y;
+     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>5)
+          gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
+     
+  }  
+  
 }
 
 

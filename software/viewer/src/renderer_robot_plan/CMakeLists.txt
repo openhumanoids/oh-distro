@@ -18,6 +18,7 @@ set_target_properties(renderer_robot_plan  PROPERTIES SOVERSION 1)
 pods_install_libraries(renderer_robot_plan )
 pods_install_headers(renderer_robot_plan.hpp
   RobotPlanListener.hpp
+  plan_execution_gui_utils.hpp
   DESTINATION renderer_robot_plan )
 
 
