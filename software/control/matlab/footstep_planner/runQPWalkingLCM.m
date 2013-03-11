@@ -48,7 +48,7 @@ else
 
 end
 
-[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(r, q0, rfoot, lfoot, 1.0);
+[zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -86,7 +86,7 @@ htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],rfoottraj.eval(t),lfoot_body,[0;0;0],lfoottraj.eval(t),options);
+    q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
   else
     q = q0;
   end

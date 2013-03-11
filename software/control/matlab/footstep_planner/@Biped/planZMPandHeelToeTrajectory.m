@@ -1,4 +1,10 @@
 function [zmptraj,foottraj,contact_ref,step_times,supporttraj] = planZMPandHeelToeTrajectory(biped,q0, Xright, Xleft,step_time,options)
+if nargin < 6
+  options = struct();
+end
+if ~isfield(options, 'flat_foot')
+  options.flat_foot = true;
+end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -16,15 +22,17 @@ com0 = getCOM(biped,q0);
 foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),...
   'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
 
-group_pts = struct('left', struct(), 'right', struct());
-for g = {'toe', 'heel'}
-  grp = g{1};
-  for f = {'right', 'left'}
-    foot = f{1};
-    group_pts.(foot).(grp) = foot_body.(foot).contact_pts(:,...
-      foot_body.(foot).collision_group{...
-          cellfun(@(x) strcmp(x, grp), ...
-           foot_body.(foot).collision_group_name)});
+if ~options.flat_foot
+  group_pts = struct('left', struct(), 'right', struct());
+  for g = {'toe', 'heel'}
+    grp = g{1};
+    for f = {'right', 'left'}
+      foot = f{1};
+      group_pts.(foot).(grp) = foot_body.(foot).contact_pts(:,...
+        foot_body.(foot).collision_group{...
+            cellfun(@(x) strcmp(x, grp), ...
+             foot_body.(foot).collision_group_name)});
+    end
   end
 end
 
@@ -39,12 +47,14 @@ for f = {'right', 'left'}
   foot_cen0.(foot) = mean(gc(1:3, k),2);
   offset.(foot).center = foot_cen0.(foot) - foot0.(foot)(1:3);
   
-  for g = {'toe', 'heel'}
-    grp = g{1};
-    gc = [group_pts.(foot).(grp)];
-    contact_ref.(foot).(grp) = mean(gc, 2);
-    contact_pos = forwardKin(biped, kinsol, foot_body.(foot), contact_ref.(foot).(grp), true);
-    offset.(foot).(grp) = contact_pos(1:3) - foot0.(foot)(1:3);
+  if ~options.flat_foot
+    for g = {'toe', 'heel'}
+      grp = g{1};
+      gc = [group_pts.(foot).(grp)];
+      contact_ref.(foot).(grp) = mean(gc, 2);
+      contact_pos = forwardKin(biped, kinsol, foot_body.(foot), contact_ref.(foot).(grp), true);
+      offset.(foot).(grp) = contact_pos(1:3) - foot0.(foot)(1:3);
+    end
   end
 end
 
@@ -75,13 +85,15 @@ footpos = struct('right', struct(), 'left', struct());
 footpos.right.orig = [foot0.right, foot0.right];
 footpos.left.orig = [foot0.left, foot0.left];
 
-for f = {'right', 'left'}
-  foot = f{1};
-  for g = {'toe', 'heel'}
-    grp = g{1};
-    for b = {'ub', 'lb'}
-      bound = b{1};
-      footpos.(foot).(grp).(bound) = footPoint(foot, grp, footpos.(foot).orig);
+if ~options.flat_foot
+  for f = {'right', 'left'}
+    foot = f{1};
+    for g = {'toe', 'heel'}
+      grp = g{1};
+      for b = {'ub', 'lb'}
+        bound = b{1};
+        footpos.(foot).(grp).(bound) = footPoint(foot, grp, footpos.(foot).orig);
+      end
     end
   end
 end
@@ -126,29 +138,30 @@ while 1
                repmat(mean([footPoint(s_foot, 'toe', step.(s_foot).orig(:,1)),...
                             footPoint(m_foot, 'heel', step.(m_foot).orig(:,1))], 2), 1, 3)];
     step.(m_foot).toe.lb = footPoint(m_foot, 'toe', step.(m_foot).orig(:,1:5)) ...
-                           - [zeros(3, 2), [0.1;0.1;0], zeros(3,2)];
+                           - [zeros(3, 2), [0.1;0;0], zeros(3,2)];
     step.(m_foot).toe.ub = footPoint(m_foot, 'toe', step.(m_foot).orig(:,1:5)) ...
                            + [zeros(3, 2), [0;0;0.1], zeros(3,2)];
     step.(m_foot).heel.lb = [footPoint(m_foot, 'heel', step.(m_foot).orig(:,1:5))];
     step.(m_foot).heel.ub = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))...
-                            + [[0.1;0.1;0.1], [0.1;0.1;0.1], zeros(3,3)];
+                            + [[0.1;0;0.1], [0.1;0;0.1], zeros(3,3)];
+   
+    for g = {'toe', 'heel'}
+      grp = g{1};
+      for b = {'lb', 'ub'}
+        bound = b{1};
+        step.(s_foot).(grp).(bound) = footPoint(s_foot, grp, step.(s_foot).orig(:,1:5));
+        footpos.(foot).(grp).(bound) = [footpos.(foot).(grp).(bound), step.(foot).(grp).(bound)];
+      end
+    end
   else
     stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),1,3),...
                repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
-    step.(m_foot).toe.lb = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
-    step.(m_foot).toe.ub = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
-    step.(m_foot).heel.lb = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
-    step.(m_foot).heel.ub = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
+    % step.(m_foot).toe.lb = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
+    % step.(m_foot).toe.ub = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
+    % step.(m_foot).heel.lb = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
+    % step.(m_foot).heel.ub = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
   end
     
- 
-  for g = {'toe', 'heel'}
-    grp = g{1};
-    for b = {'lb', 'ub'}
-      bound = b{1};
-      step.(s_foot).(grp).(bound) = footPoint(s_foot, grp, step.(s_foot).orig(:,1:5));
-    end
-  end
   istep.(m_foot) = istep.(m_foot) + 1;
   
   footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1]; 
@@ -157,13 +170,6 @@ while 1
   for f = {'right', 'left'}
     foot = f{1};
     footpos.(foot).orig = [footpos.(foot).orig, step.(foot).orig];
-    for g = {'toe', 'heel'}
-      grp = g{1};
-      for b = {'ub', 'lb'}
-        bound = b{1};
-        footpos.(foot).(grp).(bound) = [footpos.(foot).(grp).(bound), step.(foot).(grp).(bound)];
-      end
-    end
   end
   zmp = [zmp, stepzmp(1:2,:)];
   ts = [ts, tstep];
@@ -177,11 +183,13 @@ end
 for f = {'right', 'left'}
   foot = f{1};
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
-  for p = {'toe', 'heel'}
-    pt = p{1};
-    for b = {'lb', 'ub'}
-      bound = b{1};
-      foottraj.(foot).(pt).(bound) = PPTrajectory(foh(ts, footpos.(foot).(pt).(bound)));
+  if ~options.flat_foot
+    for p = {'toe', 'heel'}
+      pt = p{1};
+      for b = {'lb', 'ub'}
+        bound = b{1};
+        foottraj.(foot).(pt).(bound) = PPTrajectory(foh(ts, footpos.(foot).(pt).(bound)));
+      end
     end
   end
 end
