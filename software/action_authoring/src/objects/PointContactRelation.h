@@ -11,6 +11,7 @@ namespace action_authoring
 /**todo: add comment*/
 class PointContactRelation : public RelationState
 {
+public:
     typedef enum
     {
         EQUAL = 0,

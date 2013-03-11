@@ -56,6 +56,7 @@ getCollisionGroupForLink(const string &link_name,
     return cols;
 }
 
+/*
 shared_ptr<const urdf::Link>
 ColorRobot::
 getLinkFromJointName(string joint_name)
@@ -87,6 +88,7 @@ getLinkFromJointName(string joint_name)
   
 return result;
 }
+*/
 
 OpenGL_Object*
 ColorRobot::
@@ -103,4 +105,10 @@ getOpenGLObjectForLink(string link_name)
         }
     }
     return NULL;
+}
+
+void
+ColorRobot::
+getLinks(vector < shared_ptr< Link > >& links) {
+    _kinematics_model.model().getLinks(links);
 }

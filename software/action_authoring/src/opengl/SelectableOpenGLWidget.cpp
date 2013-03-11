@@ -21,9 +21,9 @@ SelectableOpenGLWidget::
 raycast(const Vector eyePosition,
         const Vector clickPosition)
 {
-    //    cout << " raycast (eyePosition:" << eyePosition(0) << ","
-    //	 << eyePosition(1) << "," << eyePosition(2) << ", clickPosition:"
-    //	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
+        cout << " raycast (eyePosition:" << eyePosition(0) << ","
+    	 << eyePosition(1) << "," << eyePosition(2) << ", clickPosition:"
+    	 << clickPosition(0) << "," << clickPosition(1) << "," << clickPosition(2) << ")" << endl;
 
     Collision_Object *intersected_object = NULL;
     Eigen::Vector3f hitPoint;

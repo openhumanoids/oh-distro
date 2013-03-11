@@ -167,7 +167,11 @@ private:
     QtSegmentControl *_segmentedButton;
     QWidget *_liveWidgets;
     QWidget *_authoringWidgets;
+
     QDoubleSpinBox* _toleranceBox;
+    QComboBox* _xInequality;
+    QComboBox* _yInequality;
+    QComboBox* _zInequality;
 
     // TODO: temporary
     opengl::OpenGL_Object_Coordinate_Axis point_contact_axis;
@@ -214,6 +218,7 @@ private slots:
     void nextKeyFrame();
     void publishActionToLCM();
     void changeMode();
+    void handlePoint2PointChange();
 };
 
 } //namespace action_authoring

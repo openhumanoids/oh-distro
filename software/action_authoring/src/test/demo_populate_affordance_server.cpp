@@ -39,7 +39,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
                         Eigen::Vector3f(0.75, 0.75, 0.0));
     box._params[AffordanceState::LENGTH_NAME] = 100;
     box._params[AffordanceState::WIDTH_NAME]  = 100;
-    box._params[AffordanceState::HEIGHT_NAME] = .00001;
+    box._params[AffordanceState::HEIGHT_NAME] = .01;
     box.setType(AffordanceState::BOX);
     wrapper.addNewlyFittedAffordance(box);
 

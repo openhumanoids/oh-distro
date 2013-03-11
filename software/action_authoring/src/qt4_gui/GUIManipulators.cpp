@@ -13,14 +13,16 @@ GUIManipulators::
 createManipulators(WorldStateView &worldState, robot_opengl::SelectableOpenGLWidget &targetWidget)
 {
     // read the joints from the robot state
-    std::map< std::string, State_GFE_Joint > joints = worldState.state_gfe.joints();
+    //std::map< std::string, State_GFE_Joint > joints = worldState.state_gfe.joints();
 
-    for (std::map< std::string, State_GFE_Joint >::const_iterator it = joints.begin(); it != joints.end(); it++)
+    //cout << "making mNAIPS for join  !!!" << joints.size() << endl;
+    
+    vector < shared_ptr< urdf::Link > > allLinks;
+    worldState.colorRobot.getLinks(allLinks);
+    
+    for (uint i = 0; i < allLinks.size(); i++)
     {
-        const State_GFE_Joint &state_gfe_joint = it->second;
-        std::string id = state_gfe_joint.id();
-        
-        shared_ptr<const urdf::Link> link = worldState.colorRobot.getLinkFromJointName(id);
+        shared_ptr<const urdf::Link> link = allLinks[i];
         if (link == shared_ptr<const urdf::Link>())
           continue; //need to fix the urdf
 

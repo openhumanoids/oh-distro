@@ -11,6 +11,8 @@ using namespace affordance;
 #define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
 #define IK_RESPONSE_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_STATE"
 #define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
+//#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_PnC/model.urdf"
+//#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot/model.urdf"
 
 string RandomString(int len)
 {
@@ -314,6 +316,33 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _toleranceBox = new QDoubleSpinBox();
     rightsidelayout->addWidget(_toleranceBox);
 
+    _xInequality = new QComboBox();
+    _yInequality = new QComboBox();
+    _zInequality = new QComboBox();
+
+    _xInequality->insertItem(0, "=");
+    _xInequality->insertItem(0, "<");
+    _xInequality->insertItem(0, ">");
+
+    _yInequality->insertItem(0, "=");
+    _yInequality->insertItem(0, "<");
+    _yInequality->insertItem(0, ">");
+
+    _zInequality->insertItem(0, "=");
+    _zInequality->insertItem(0, "<");
+    _zInequality->insertItem(0, ">");
+
+    QWidget *inequalities = new QWidget(this);
+    QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
+    inequalitiesLayout->addWidget(new QLabel("x-axis: "));
+    inequalitiesLayout->addWidget(_xInequality);
+    inequalitiesLayout->addWidget(new QLabel("y-axis: "));
+    inequalitiesLayout->addWidget(_yInequality);
+    inequalitiesLayout->addWidget(new QLabel("z-axis: "));
+    inequalitiesLayout->addWidget(_zInequality);
+    inequalities->setLayout(inequalitiesLayout);
+    rightsidelayout->addWidget(inequalities);
+
     //    rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(_segmentedButton);
     rightsidelayout->addWidget(_liveWidgets);
@@ -354,6 +383,12 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
     connect(loadfromcombo, SIGNAL(released()), this, SLOT(handleLoadActionCombo()));
+
+    connect(_toleranceBox, SIGNAL(valueChanged(double)), this, SLOT(handlePoint2PointChange()));
+    connect(_xInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
+    connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
+    connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
+
 }
 
 MainWindow::~MainWindow()
@@ -1016,6 +1051,9 @@ void
 MainWindow::
 updatePointVisualizer() 
 {
+    if (_authoringState._selected_gui_constraint == NULL)
+        return;
+
     // TODO: This should probably be abstracted into a class called
     // OpenGL_PointContactRelation or something
     RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
@@ -1059,4 +1097,26 @@ updateFilesListComboBox()
     {
         _filesList->insertItem(0, QString::fromStdString(names[i]));
     }
+}
+
+void
+MainWindow::
+handlePoint2PointChange() {
+    if (_authoringState._selected_gui_constraint == NULL)
+        return;
+
+    // get the currently selected constraint and verify its relation is of type POINT_CONTACT
+    RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+
+    if (rel->getRelationType() == RelationState::POINT_CONTACT) {
+        // update the relation
+        PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
+
+        prel->setTolerance(_toleranceBox->value());
+        prel->setXInequality((PointContactRelation::InequalityType)_xInequality->currentIndex());
+        prel->setYInequality((PointContactRelation::InequalityType)_yInequality->currentIndex());
+        prel->setZInequality((PointContactRelation::InequalityType)_zInequality->currentIndex());
+
+    }
+
 }
