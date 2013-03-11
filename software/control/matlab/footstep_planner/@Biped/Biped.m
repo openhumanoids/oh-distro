@@ -73,7 +73,24 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options);
     end
     
+    function [Xright, Xleft] = stampedStepLocations(obj, X, ndx_r, ndx_l)
+      % Return left and right foot poses, with time as the final entry in
+      % each pose
+      if nargin == 2
+        ndx_r = 1:length(X(1,:));
+        ndx_l = 1:length(X(1,:));
+      end
+      yaw = X(6,:)
+      time = 0:(length(X(1,:)) - 1) * obj.step_time / 2
+      X(7,:) = time;
+      foot_angle_r = obj.foot_angles(1) + yaw(ndx_r);
+      foot_angle_l = obj.foot_angles(2) + yaw(ndx_l);
+      Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(5, length(ndx_r))] .* (obj.step_width / 2);
+      Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(5, length(ndx_l))] .* (obj.step_width / 2);
+    end
+    
     function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
+      % Return left and right foot poses, with no time entry
       if nargin == 2
         ndx_r = 1:length(X(1,:));
         ndx_l = 1:length(X(1,:));

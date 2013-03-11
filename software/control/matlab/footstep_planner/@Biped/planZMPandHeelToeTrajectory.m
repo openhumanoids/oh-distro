@@ -41,7 +41,8 @@ contact_ref = struct('right', struct(), 'left', struct());
 offset = struct();
 for f = {'right', 'left'}
   foot = f{1};
-  gc = [group_pts.(foot).toe, group_pts.(foot).heel];
+  gc = foot_body.(foot).contact_pts;
+%   gc = [group_pts.(foot).toe, group_pts.(foot).heel];
   gc = forwardKin(biped, kinsol, foot_body.(foot), gc, true);
   k = convhull(gc(1:2,:)');
   foot_cen0.(foot) = mean(gc(1:3, k),2);
@@ -122,7 +123,7 @@ while 1
     s_foot = 'right';
   end
   
-  step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(:, istep.(m_foot)), step_locations.(m_foot)(:, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
+  step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(1:6, istep.(m_foot)), step_locations.(m_foot)(1:6, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
   step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.05, 0, 0, 0];
   for i = 1:length(step.(m_foot).orig(1,:))
     R = makehgtform('zrotate', step.(m_foot).orig(6,i));

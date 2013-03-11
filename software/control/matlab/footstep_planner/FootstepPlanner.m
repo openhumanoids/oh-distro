@@ -28,11 +28,14 @@ classdef FootstepPlanner < DRCPlanner
       options.heel_toe = false;
       [Xright, Xleft] = obj.biped.planFootsteps(data.x0, navgoal, options);
       
-      % note: assumes right foot comes first
-      tright = [0,((2:size(Xright,2))-1.5)*obj.biped.step_time];
-      tleft = ((1:size(Xleft,2))-1)*obj.biped.step_time;
+      tright = Xright(7,:);
+      tleft = Xleft(7,:);
       
-      obj.plan_publisher.publish(tright,Xright,tleft,Xleft);
+      % note: assumes right foot comes first
+%       tright = [0,((2:size(Xright,2))-1.5)*obj.biped.step_time];
+%       tleft = ((1:size(Xleft,2))-1)*obj.biped.step_time;
+      
+      obj.plan_publisher.publish(tright,Xright(1:6,:),tleft,Xleft(1:6,:));
     end
   end
 end

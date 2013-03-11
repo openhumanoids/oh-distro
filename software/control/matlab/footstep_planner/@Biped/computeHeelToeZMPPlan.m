@@ -38,12 +38,18 @@ for i=1:length(ts)
     cons = {biped,q(:,i-1),0,comtraj.eval(t)};
     for f = {'right', 'left'}
       foot = f{1};
-      for g = {'heel', 'toe'}
-        grp = g{1};
+      if ~isfield(foottraj.(foot), 'toe') && ~isfield(foottraj.(foot), 'heel')
         cons{end+1} = foot_body.(foot);
-        cons{end+1} = contact_ref.(foot).(grp);
-        cons{end+1} = struct('min', foottraj.(foot).(grp).lb.eval(t),...
-                             'max', foottraj.(foot).(grp).ub.eval(t));
+        cons{end+1} = [0;0;0];
+        cons{end+1} = foottraj.(foot).orig.eval(t);
+      else
+        for g = {'heel', 'toe'}
+          grp = g{1};
+          cons{end+1} = foot_body.(foot);
+          cons{end+1} = contact_ref.(foot).(grp);
+          cons{end+1} = struct('min', foottraj.(foot).(grp).lb.eval(t),...
+                               'max', foottraj.(foot).(grp).ub.eval(t));
+        end
       end
     end
     q(:,i) = inverseKin(cons{:},options);

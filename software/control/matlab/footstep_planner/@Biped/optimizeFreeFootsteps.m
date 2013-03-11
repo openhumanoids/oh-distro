@@ -34,10 +34,10 @@ drag_ndx = 1;
 
 while 1
   modified = 0;
-  [Xright, Xleft] = biped.stepLocations(X);
+  [Xright, Xleft] = biped.stampedStepLocations(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
-  [d_r, r_r] = biped.stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
-  [d_l, r_l] = biped.stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
+  [d_r, r_r] = biped.stepDistance(Xright(1:6,1:(end-1)), Xright(1:6,2:end), 0);
+  [d_l, r_l] = biped.stepDistance(Xleft(1:6,1:(end-1)), Xleft(1:6,2:end), 0);
   for n = 1:(length(ndx_fixed)-1)
     num_steps = ndx_fixed(n+1) - ndx_fixed(n);
     dist = max(sum(d_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
@@ -76,6 +76,12 @@ while 1
   ndx_r = int32([1, 2, 4:2:(total_steps-1), total_steps]);
   ndx_l = int32([1:2:(total_steps-1), total_steps]);
   
+  [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
+    
+  if outputflag ~= 1 && outputflag ~= 2
+    modified = 1;
+  end
+  
   [Xright, Xleft] = biped.stepLocations(X, ndx_r, ndx_l);
   figure(22)
   cla
@@ -98,12 +104,6 @@ while 1
   end
   drawnow
   hold off
-  
-  [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
-    
-  if outputflag ~= 1 && outputflag ~= 2
-    modified = 1;
-  end
   if (~interactive && ~modified) || (done)
     break
   end
