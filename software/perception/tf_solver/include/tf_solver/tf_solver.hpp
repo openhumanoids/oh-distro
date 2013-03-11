@@ -134,7 +134,7 @@ private:
 
     // calculates the transforms.
     std::map<std::string, double> jointpos_in;
-    for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
+    for (int i=0; i< msg->num_joints; i++) 
       jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
 
 
