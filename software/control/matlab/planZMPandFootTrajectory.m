@@ -48,7 +48,7 @@ rfootpos = [rfoot0, rfoot0];
 lfootpos = [lfoot0, lfoot0];
 zmp = [com0(1:2), feetCenter(rfootpos(:,2), lfootpos(:,2))];
 
-bRightStep = true;
+bRightStep = false;
 istep_r = 1;
 istep_l = 1;
 

@@ -22,15 +22,22 @@ public class FootstepPlanListener implements LCMSubscriber
     try {
       drc.ee_goal_sequence_t msg = new drc.ee_goal_sequence_t(dins);
       if (msg.robot_name.equals(m_robot_name)) {
-        // plan columns are t,xyz,rpy for t=0:T for right foot
-        // followed by t,xyz,rpy for t=0:T for left foot
-        plan = new double[7][msg.num_goals];
+        // plan columns are: left/right bit, t, xyz, rpy 
+        plan = new double[8][msg.num_goals];
 
         for (int i=0;i<msg.num_goals;i++) {
-          plan[0][i] = msg.goal_times[i];
-          plan[1][i] = msg.goals[i].ee_goal_pos.translation.x;
-          plan[2][i] = msg.goals[i].ee_goal_pos.translation.y;
-          plan[3][i] = msg.goals[i].ee_goal_pos.translation.z;
+          
+          if (msg.goals[i].ee_name.equals("r_foot")) {
+            plan[0][i] = 1;
+          }  
+          else { //if (msg.goals[i].ee_name.equals("l_foot")) {
+            plan[0][i] = 0;
+          }
+          
+          plan[1][i] = msg.goal_times[i];
+          plan[2][i] = msg.goals[i].ee_goal_pos.translation.x;
+          plan[3][i] = msg.goals[i].ee_goal_pos.translation.y;
+          plan[4][i] = msg.goals[i].ee_goal_pos.translation.z;
           
           // convert quaternion to euler
           // note: drake uses XYZ convention
@@ -46,9 +53,9 @@ public class FootstepPlanListener implements LCMSubscriber
                       2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
                       q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
           
-          plan[4][i] = rpy[0];
-          plan[5][i] = rpy[1];
-          plan[6][i] = rpy[2];
+          plan[5][i] = rpy[0];
+          plan[6][i] = rpy[1];
+          plan[7][i] = rpy[2];
         }
 
         m_has_new_message = true;

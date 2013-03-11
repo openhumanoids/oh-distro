@@ -1,9 +1,9 @@
 function runQPWalkingLCM(goal_x, goal_y, goal_yaw,lcm_plan)
 
 if nargin < 4; lcm_plan = true; end
-if nargin < 3; goal_yaw = 0.0; end
-if nargin < 2; goal_y = 0.5; end
-if nargin < 1; goal_x = 1.0; end
+if nargin < 3; goal_yaw = pi/2; end
+if nargin < 2; goal_y = 1.0; end
+if nargin < 1; goal_x = 0.0; end
 
 options.floating = true;
 options.dt = 0.002;
@@ -14,8 +14,6 @@ r = r.setInitialState(xstar);
 % set initial conditions in gazebo
 state_frame = getStateFrame(r);
 state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
-v = r.constructVisualizer;
-v.display_dt = 0.05;
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);
@@ -29,7 +27,8 @@ pose = [goal_x;goal_y;0;0;0;goal_yaw];
 if ~lcm_plan
   [rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
 else
-  footstep_plan_listener = FootstepPlanListener('atlas', 'COMMITTED_FOOTSTEP_PLAN');
+%   footstep_plan_listener = FootstepPlanListener('atlas', 'COMMITTED_FOOTSTEP_PLAN');
+  footstep_plan_listener = FootstepPlanListener('atlas', 'CANDIDATE_FOOTSTEP_PLAN');
 
   disp('Listening for footstep plans...');
   waiting = true;
@@ -42,9 +41,11 @@ else
     end
   end
   
-  num_steps = size(foottraj,2)/2;
-  rfoot = foottraj(2:end,1:num_steps);
-  lfoot = foottraj(2:end,numsteps+(1:num_steps));
+  rfoot = foottraj(3:end,find(foottraj(1,:)==1));
+  rfoot(2,:) = -rfoot(2,:);
+  lfoot = foottraj(3:end,find(foottraj(1,:)==0));
+  lfoot(2,:) = -lfoot(2,:);
+
 end
 
 [zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(r, q0, rfoot, lfoot, 1.0);
@@ -79,6 +80,8 @@ rfoot_body = r.findLink('r_foot');
 lfoot_body = r.findLink('l_foot');
 
 disp('Computing robot plan...');
+v = r.constructVisualizer;
+v.display_dt = 0.05;
 htraj = [];
 for i=1:length(ts)
   t = ts(i);
@@ -100,7 +103,7 @@ xtraj(1:getNumDOF(r),:) = q;
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
-plan_pub.publish(ts,xtraj,des_traj);
+plan_pub.publish(ts,xtraj);
 
 % figure(2); 
 % clf; 
@@ -189,15 +192,15 @@ clear ins outs;
 % subplot(3,1,3);
 % plot(ts,com(3,:),'r');
 
-disp('Waiting for robot plan confirmation...');
-waiting = true;
-while waiting
-  rplan = rplan_listener.getNextMessage(100);
-  if (~isempty(rplan))
-    disp('Plan confirmed. Executing...');
-    waiting = false;
-  end
-end
+% disp('Waiting for robot plan confirmation...');
+% waiting = true;
+% while waiting
+%   rplan = rplan_listener.getNextMessage(100);
+%   if (~isempty(rplan))
+%     disp('Plan confirmed. Executing...');
+%     waiting = false;
+%   end
+% end
  
 options.timekeeper = 'drake/lcmTimeKeeper'; 
 runLCM(sys,[],options);
