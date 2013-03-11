@@ -7,8 +7,8 @@ end
 
 drc_path= getenv('DRC_PATH');% set this in startup.m
 %filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/irobot_hand_drake.sdf'];
-r_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_right.urdf'];
-l_filename = [drc_path 'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_left.urdf'];
+r_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_right.urdf');
+l_filename = fullfile(drc_path,'models/mit_gazebo_models/mit_robot_hands/drake_urdfs/sandia_hand_drake_left.urdf');
 
 options=struct();
 options.ground =true;
