@@ -6,8 +6,10 @@
 class Handler
 {
 public:
-	~Handler() {}
+   Handler(){cnt=0;};
+	~Handler() {};
 	lcm::LCM lcm;
+  int cnt;
 
 	void listenToStateAndPublishPlanMessage(const lcm::ReceiveBuffer* rbuf,
 		const std::string& chan,
@@ -17,6 +19,7 @@ public:
 	 plan_msg.utime =  msg->utime;
 	 plan_msg.robot_name =  msg->robot_name;
 	 plan_msg.num_states = 50;
+	 plan_msg.num_bytes = 0;
 	 drc::robot_state_t state_msg;
 	 drc::position_3d_t body_origin;
 	 body_origin = msg->origin_position; 
@@ -33,18 +36,19 @@ public:
      {
        state_msg.joint_position[j] = -0.2*i;
      }
-//     if(state_msg.joint_name[j]=="LElbowPitch")
-//     {
-//       state_msg.joint_position[j] = i*0.3;
-//     }
-
     }
 	   
 	   
 	   plan_msg.plan.push_back(state_msg);
 	 }
 	
-		lcm.publish("CANDIDATE_ROBOT_PLAN", &plan_msg);
+	  cnt++;
+	  if(cnt>=100){
+     //publish at 1/100 the rate of robot state. 
+     cnt=0;
+ 		 lcm.publish("CANDIDATE_ROBOT_PLAN", &plan_msg);
+	  }
+	
 	}
 };
 
