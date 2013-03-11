@@ -1,4 +1,4 @@
-function [Xright, Xleft] = optimizeFreeFootsteps(poses, biped, interactive)
+function [Xright, Xleft] = optimizeFreeFootsteps(biped, poses, interactive)
 
 X = interp1([1:length(poses(1,:))]', poses', [1:0.5:length(poses(1,:))]')';
 total_steps = length(X(1,:));
@@ -16,7 +16,7 @@ for p = poses
     [~, fixed_steps{j,2}] = biped.stepLocations(X(:,j));
   end
 end
-X = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
+X = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
 
 
 done = false;
@@ -33,14 +33,14 @@ drag_ndx = 1;
 
 while 1
   modified = 0;
-  [X, outputflag] = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, @heightfun);
+  [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
   if outputflag ~= 1 && outputflag ~= 2
     modified = 1;
   end
   [Xright, Xleft] = biped.stepLocations(X);
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
-  [d_r, r_r] = stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
-  [d_l, r_l] = stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
+  [d_r, r_r] = biped.stepDistance(Xright(:,1:(end-1)), Xright(:,2:end), 0);
+  [d_l, r_l] = biped.stepDistance(Xleft(:,1:(end-1)), Xleft(:,2:end), 0);
   for n = 1:(length(ndx_fixed)-1)
     num_steps = ndx_fixed(n+1) - ndx_fixed(n);
     dist = max(sum(d_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
@@ -87,8 +87,10 @@ while 1
 %   rectangle('Position', [.7, -.05, .1, .1], 'FaceColor', 'w');
   hold on
   plotFootstepPlan(X, Xright, Xleft);
-  plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
-  plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+  if exist('vs.obj_collection_t')
+    plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+    plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+  end
   hold on
   for j = 1:length(ndx_r)
     if ~isempty(fixed_steps{ndx_r(j), 1})

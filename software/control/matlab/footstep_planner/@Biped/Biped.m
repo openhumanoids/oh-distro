@@ -1,7 +1,5 @@
-classdef Biped
+classdef Biped < TimeSteppingRigidBodyManipulator
   properties
-    manip
-    visualizer
     step_time
     max_step_length
     max_step_rot
@@ -12,9 +10,9 @@ classdef Biped
   end
   
   methods
-    function obj = Biped(manip, options)
-      obj.manip = manip;
-      obj.visualizer = obj.manip.constructVisualizer();
+    function obj = Biped(urdf,dt,options)
+      obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
+      
       if nargin < 2
         options = struct();
       end
@@ -37,7 +35,7 @@ classdef Biped
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
       q0 = x0(1:end/2);
       [start_pos, obj.step_width] = obj.feetPosition(q0);
-      [Xright, Xleft] = optimizeFreeFootsteps([start_pos, poses], obj, options.interactive);
+      [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
 
       if options.plotting
         figure(22)
@@ -47,15 +45,9 @@ classdef Biped
     end
     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options)
       q0 = x0(1:end/2);
-      if isfield(options, 'heel_toe') && options.heel_toe
-        [zmptraj, foottraj, contact_ref] = planHeelToeZMPTraj(obj, q0, Xright, Xleft, obj.step_time);
-        ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-        xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
-      else
-        [zmptraj,lfoottraj,rfoottraj] = planZMPandFootTrajectory(obj ,q0, Xright, Xleft, obj.step_time);
-        ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-        xtraj = computeZMPPlan(obj, x0, zmptraj, lfoottraj, rfoottraj, ts);
-      end
+      [zmptraj, foottraj, contact_ref] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
+      ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
+      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
     end
     
     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
@@ -89,18 +81,17 @@ classdef Biped
     end
     
     function [pos, width] = feetPosition(obj, q0)
-      typecheck(obj.manip,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
       typecheck(q0,'numeric');
-      sizecheck(q0,[obj.manip.getNumDOF,1]);
+      sizecheck(q0,[obj.getNumDOF,1]);
 
-      kinsol = doKinematics(obj.manip,q0);
-      rfoot_body = findLink(obj.manip,obj.r_foot_name);
-      lfoot_body = findLink(obj.manip,obj.l_foot_name);
+      kinsol = doKinematics(obj,q0);
+      rfoot_body = findLink(obj,obj.r_foot_name);
+      lfoot_body = findLink(obj,obj.l_foot_name);
 
-      rfoot0 = forwardKin(obj.manip,kinsol,rfoot_body,[0;0;0],true);
-      lfoot0 = forwardKin(obj.manip,kinsol,lfoot_body,[0;0;0],true);
+      rfoot0 = forwardKin(obj,kinsol,rfoot_body,[0;0;0],true);
+      lfoot0 = forwardKin(obj,kinsol,lfoot_body,[0;0;0],true);
 
-      gc = obj.manip.contactPositions(q0);
+      gc = obj.contactPositions(q0);
 
       % compute desired COM projection
       % assumes minimal contact model for now

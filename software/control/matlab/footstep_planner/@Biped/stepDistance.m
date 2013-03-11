@@ -1,4 +1,4 @@
-function [d, r] = stepDistance(X0, Xf, rescale)
+function [d, r] = stepDistance(obj, X0, Xf, rescale)
   d = sqrt(sum((X0(1:2,:) - Xf(1:2,:)) .^2, 1));
   if rescale
     theta = atan2(Xf(2,:) - X0(2,:), Xf(1,:) - X0(1,:));

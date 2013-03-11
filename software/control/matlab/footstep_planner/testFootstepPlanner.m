@@ -4,14 +4,15 @@ r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.
 d = load('../data/atlas_fp.mat');
 xstar = d.xstar;
 r = r.setInitialState(xstar);
-biped = Biped(r);
+% biped = Biped(r);
 
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0]];
 % poses = [1;1;0;0;0;-pi/4];
 % poses = [1;0;0;0;0;0];
 poses = [0;1;0;0;0;pi/2];
-xtraj = biped.walkingPlan(xstar, poses, struct('plotting', true, ...
-  'interactive', true, 'heel_toe', false));
+xtraj = r.walkingPlan(xstar, poses, struct('plotting', true, ...
+  'interactive', true, 'heel_toe', true));
 
-biped.visualizer.playback(xtraj, struct('slider', true));
+visualizer = r.constructVisualizer();
+visualizer.playback(xtraj, struct('slider', true));

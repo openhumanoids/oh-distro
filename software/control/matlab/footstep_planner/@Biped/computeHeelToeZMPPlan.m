@@ -3,8 +3,8 @@ function xtraj = computeHeelToeZMPPlan(biped, x0, zmptraj, foottraj, contact_ref
 q0 = x0(1:end/2);
 %% covert ZMP plan into COM plan using LIMP model
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-[com,Jcom] = getCOM(biped.manip,q0);
-comdot = Jcom*x0(getNumDOF(biped.manip)+(1:getNumDOF(biped.manip)));
+[com,Jcom] = getCOM(biped,q0);
+comdot = Jcom*x0(getNumDOF(biped)+(1:getNumDOF(biped)));
 limp = LinearInvertedPendulum(com(3,1));
 
 comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZMP)); ...
@@ -12,10 +12,10 @@ comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZ
 
 %% compute joint positions with inverse kinematics
 
-ind = getActuatedJoints(biped.manip);
-foot_body = struct('right', biped.manip.findLink(biped.r_foot_name), 'left', biped.manip.findLink(biped.l_foot_name));
+ind = getActuatedJoints(biped);
+foot_body = struct('right', biped.findLink(biped.r_foot_name), 'left', biped.findLink(biped.l_foot_name));
 
-cost = Point(biped.manip.getStateFrame,1);
+cost = Point(biped.getStateFrame,1);
 cost.pelvis_x = 0;
 cost.pelvis_y = 0;
 cost.pelvis_z = 0;
@@ -26,14 +26,16 @@ cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);
 options = struct();
-options.Q = diag(cost(1:biped.manip.getNumDOF));
+options.Q = diag(cost(1:biped.getNumDOF));
 options.q_nom = q0;
+
+visualizer = biped.constructVisualizer();
 
 disp('computing ik...')
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    cons = {biped.manip,q(:,i-1),0,comtraj.eval(t)};
+    cons = {biped,q(:,i-1),0,comtraj.eval(t)};
     for f = {'right', 'left'}
       foot = f{1};
       for g = {'heel', 'toe'}
@@ -49,7 +51,7 @@ for i=1:length(ts)
     q = q0;
   end
   q_d(:,i) = q(ind,i);
-  biped.visualizer.draw(t,q(:,i));
+  visualizer.draw(t,q(:,i));
 end
 
-xtraj = setOutputFrame(PPTrajectory(spline(ts,[q;0*q])),getOutputFrame(biped.manip));
+xtraj = setOutputFrame(PPTrajectory(spline(ts,[q;0*q])),getOutputFrame(biped));

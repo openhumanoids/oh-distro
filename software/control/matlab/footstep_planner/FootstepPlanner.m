@@ -12,14 +12,14 @@ classdef FootstepPlanner < DRCPlanner
       obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(NavGoalCoder(robot_name)));
       
       obj.biped = biped;
-      obj.biped.manip = enableIdealizedPositionControl(obj.biped.manip, true);
-      obj.biped.manip = compile(obj.biped.manip);
+      obj.biped = enableIdealizedPositionControl(obj.biped, true);
+      obj.biped = compile(obj.biped);
 
-      nx = obj.biped.manip.getNumStates();
-      joint_names = obj.biped.manip.getStateFrame.coordinates(1:nx/2);
+      nx = obj.biped.getNumStates();
+      joint_names = obj.biped.getStateFrame.coordinates(1:nx/2);
       obj.plan_publisher = FootstepPlanPublisher(robot_name, 'r_foot','l_foot', 'CANDIDATE_FOOTSTEP_PLAN');
       
-      obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.manip.getStateFrame.lcmcoder,true,true);
+      obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.getStateFrame.lcmcoder,true,true);
     end
     
     function plan(obj,navgoal,data)

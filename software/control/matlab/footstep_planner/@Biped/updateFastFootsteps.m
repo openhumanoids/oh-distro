@@ -1,4 +1,4 @@
-function [X, exitflag] = updateFastFootsteps(X, biped, fixed_steps, ndx_r, ndx_l, heightfun)
+function [X, exitflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, heightfun)
 
 max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
 
@@ -31,6 +31,7 @@ b = repmat([biped.max_step_length / 2; biped.max_step_length / 2; biped.max_step
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
   optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off', 'TolX', 0.01));
 grad
+exitflag
 
 X = locate_step_centers(x_flat);
 
@@ -51,7 +52,7 @@ end
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
-  [d, r] = stepDistance(X(:,1:(end-1)), X(:,2:end),1);
+  [d, r] = biped.stepDistance(X(:,1:(end-1)), X(:,2:end),1);
   c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
 
 %   
