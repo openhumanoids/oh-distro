@@ -50,6 +50,7 @@ namespace renderer_sticky_feet
       
       
       
+      
     Eigen::Vector3f whole_body_span;
     Eigen::Vector3f offset;
     MeshStruct mesh_struct;
@@ -127,6 +128,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       
 
       transformLCMToKDL(goal_msg.ee_goal_pos, T_world_foot_pose);
+      T_world_foot_pose = KDL::Frame::Identity();
       
       if(goal_msg.ee_name==_left_foot_name)
       {
