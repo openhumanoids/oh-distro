@@ -313,12 +313,12 @@ class GlKinematicBody
     bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom);
     bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
     bool get_joint_info(const std::string &joint_name, JointFrameStruct &jointinfo_struct);
+    void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
     
     void draw_whole_body_bbox(); 
     // Was protected: (mfallon changed this:
     std::string evalMeshFilePath(std::string file_path_expression, bool return_convex_hull_path =false);
-  protected:
-    void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
+  protected:    
     std::string exec(std::string cmd);
     std::string evalROSMeshFilePath(std::string file_path_expression);  
  };
