@@ -1,20 +1,6 @@
-#include <iostream>
-#include <boost/function.hpp>
-
-#include <lcm/lcm.h>
-#include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-
-#include "lcmtypes/drc_lcmtypes.h"
-
-#include <GL/gl.h>
-#include <bot_vis/bot_vis.h>
-#include <bot_core/rotations.h>
-#include <gdk/gdkkeysyms.h>
-#include <Eigen/Dense>
-
 #include "renderer_sticky_feet.hpp"
-
+#include "FootStepPlanListener.hpp" // need parent renderer struct which contains a FootStepPlanListener... circular dependency.
+#include "plan_approval_gui_utils.hpp"
 
 #define RENDERER_NAME "FootStep Plans & Sticky Feet"
 #define PARAM_AUTO_ADJUST_HT "Auto Adjust Height"
@@ -22,6 +8,8 @@
 using namespace std;
 using namespace boost;
 using namespace renderer_sticky_feet;
+using namespace renderer_sticky_feet_gui_utils;
+
 
 static void
 _renderer_free (BotRenderer *super)
@@ -35,7 +23,7 @@ _renderer_free (BotRenderer *super)
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i){
 
-  float c_blue[3] = {0.3,0.3,0.6}; // light blue
+  //float c_blue[3] = {0.3,0.3,0.6}; // light blue
   float c_green[3] = {0.3,0.5,0.3};  // green for right sticky feet
   float c_yellow[3] = {0.5,0.5,0.3}; //yellow for left sticky feet
   float alpha = 0.4;
@@ -61,6 +49,8 @@ string no_selection =  " ";
       self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
    else
       self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
+      
+  //self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_whole_body_bbox();
 }
 
 static void 
@@ -94,6 +84,26 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     { 
       //cout << "i:"<<i<< endl;
       draw_state(viewer,super,i);
+    }
+    
+    if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_approval_dock==NULL))
+        spawn_plan_approval_dock(self);
+    else if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_approval_dock!=NULL))
+    {
+        // move dock to account for viewer movement
+        gint root_x, root_y;
+        gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
+        gint width, height;
+        gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
+        
+        
+         gint pos_x, pos_y;
+        pos_x=root_x+0.5*width;    pos_y=root_y+0.25*height;
+        
+       gint current_pos_x, current_pos_y;
+       if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>5)
+            gtk_window_move(GTK_WINDOW(self->plan_approval_dock),pos_x,pos_y);
+       
     }
      
 
@@ -259,9 +269,8 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm)
 {
     RendererStickyFeet *self = (RendererStickyFeet*) calloc (1, sizeof (RendererStickyFeet));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
-    self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm, 
-												    viewer));
-
+   // self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self));
+    self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm,viewer));
     BotRenderer *renderer = &self->renderer;
 
     renderer->draw = _renderer_draw;

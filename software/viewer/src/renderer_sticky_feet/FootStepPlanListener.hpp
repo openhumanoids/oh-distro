@@ -1,9 +1,9 @@
 #ifndef RENDERER_STICKYFEET_FOOTSTEPPLANLISTENER_HPP
 #define RENDERER_STICKYFEET_FOOTSTEPPLANLISTENER_HPP
 
+#include <iostream>
 #include <boost/function.hpp>
 #include <map>
-
 #include "urdf/model.h"
 #include <kdl/tree.hpp>
 #include "kdl_parser/kdl_parser.hpp"
@@ -15,19 +15,20 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/file_access_utils.hpp>
 
-namespace renderer_sticky_feet 
+//#include "renderer_sticky_feet.hpp"
+
+
+namespace renderer_sticky_feet
 {
 
   class FootStepPlanListener
   {
     //--------fields
   private:
-
-    boost::shared_ptr<lcm::LCM> _lcm;    
-    
-    //get rid of this
+    //RendererStickyFeet* _parent_renderer;
     BotViewer *_viewer;
-
+    
+    boost::shared_ptr<lcm::LCM> _lcm;    
 
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_left;
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_right;
@@ -37,16 +38,18 @@ namespace renderer_sticky_feet
 
     std::string _left_urdf_xml_string;
     std::string _right_urdf_xml_string;
-    Eigen::Vector3f _left_foot_offset;
-    Eigen::Vector3f _right_foot_offset;
+
 
    //----------------constructor/destructor   
   public:
      std::string _robot_name;          
      std::string _left_foot_name; // foot ee names
      std::string _right_foot_name;
+     Eigen::Vector3f _left_foot_offset;
+     Eigen::Vector3f _right_foot_offset;
      int64_t _last_plan_msg_timestamp; 
    
+    //FootStepPlanListener(RendererStickyFeet *parent_renderer);
     FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
     ~FootStepPlanListener();
     
@@ -60,17 +63,19 @@ namespace renderer_sticky_feet
     
     std::vector< int >  _planned_stickyfeet_info_list; 
     
-
+    
+    void commit_footstep_plan(int64_t utime,string &channel);
      //-------------message callback
-  private:
+    private:
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
-			      const std::string& chan, 
-			      const drc::ee_goal_sequence_t* msg);
+		        const std::string& chan, 
+		        const drc::ee_goal_sequence_t* msg);
 
     bool load_foot_urdfs();
+
    
     
-}; //class FootStepPlanListener
+  }; //class FootStepPlanListener
 
 } //namespace renderer_sticky_feet
 

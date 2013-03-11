@@ -7,23 +7,26 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include "FootStepPlanListener.hpp"
 
-
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
 using namespace collision;
-namespace renderer_sticky_feet 
+
+namespace renderer_sticky_feet
 {
   //==================constructor / destructor
   
+//  FootStepPlanListener::FootStepPlanListener(RendererStickyFeet* parent_renderer):
+//    _parent_renderer(parent_renderer)
+   
   FootStepPlanListener::FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer):
-    _lcm(lcm),
-    _viewer(viewer)
-
+    _lcm(lcm),_viewer(viewer)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
-    if(!lcm->good())
+    
+    //_lcm = _parent_renderer->lcm;
+    if(!_lcm->good())
     {
       cerr << "\nLCM Not Good: Robot State Handler" << endl;
       return;
@@ -38,23 +41,25 @@ namespace renderer_sticky_feet
       _base_gl_stickyfoot_left =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
       _base_gl_stickyfoot_right =  shared_ptr<GlKinematicBody>(new GlKinematicBody(_right_urdf_xml_string));
 
-      
-      _left_foot_offset << 0,0,0;      
-      MeshStruct mesh_struct;
-      if(_base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct))
-      {
-        // cout <<  "mesh_struct.span_z: " <<mesh_struct.span_z << endl;
-        // cout <<  "mesh_struct.offset_z: " <<mesh_struct.offset_z << endl;
-        _left_foot_offset[2] = mesh_struct.span_z; // stick to ground
-      }
+            
+//      MeshStruct mesh_struct;
+//      if(_base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct))
+//      {
+//        // cout <<  "mesh_struct.span_z: " <<mesh_struct.span_z << endl;
+//        // cout <<  "mesh_struct.offset_z: " <<mesh_struct.offset_z << endl;
+//        cout <<  "mesh_struct.offset_x: " <<mesh_struct.offset_x << endl;
+//        cout <<  "mesh_struct.offset_y: " <<mesh_struct.offset_y << endl;
+//        cout <<  "mesh_struct.offset_z: " <<mesh_struct.offset_z << endl;
+//        _left_foot_offset[2] = 0; // stick to ground
+//      }
 
-      
-      _right_foot_offset << 0,0,0;   
-      if(_base_gl_stickyfoot_right->get_mesh_struct("r_foot_0", mesh_struct))
-      {
-        _right_foot_offset[2] = mesh_struct.span_z; // stick to ground
-      }
-      
+//      
+//      _right_foot_offset << 0,0,0;   
+//      if(_base_gl_stickyfoot_right->get_mesh_struct("r_foot_0", mesh_struct))
+//      {
+//        _right_foot_offset[2] = 0;  // stick to ground
+//      }
+//      
 
  
       std::map<std::string, double> jointpos_in;
@@ -63,6 +68,19 @@ namespace renderer_sticky_feet
       jointpos_in.clear();
       jointpos_in =  _base_gl_stickyfoot_right->_current_jointpos;
       _base_gl_stickyfoot_right->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
+      
+       Eigen::Vector3f whole_body_span;
+      Eigen::Vector3f offset;
+      _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+      _left_foot_offset << 0,0,whole_body_span[2];  
+     MeshStruct mesh_struct;
+     if(_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct))  
+        _left_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);
+
+      _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+      _right_foot_offset << 0,0,whole_body_span[2];
+     if(_base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct))  
+        _right_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);     
 
       lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
       _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
@@ -201,5 +219,43 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     return true;
   }
 
+ void FootStepPlanListener::commit_footstep_plan(int64_t utime,string &channel)
+ {
+    drc::ee_goal_sequence_t msg = revieved_plan_;
+    
+    int64_t old_utime = msg.utime;
+    msg.utime = utime;
+    int num_goals = 0;
+		num_goals = msg.num_goals;  
+     for (uint i = 0; i <(uint)num_goals; i++)
+    {
+        drc::ee_goal_t goal_msg  = msg.goals[i];
+        
+       KDL::Frame T_world_foot_pose = _gl_planned_stickyfeet_list[i]->_T_world_body;
+       
+      if(goal_msg.ee_name==_left_foot_name)
+      {
+        T_world_foot_pose.p[0] -= _left_foot_offset[0];  
+        T_world_foot_pose.p[1] -= _left_foot_offset[1]; 
+        T_world_foot_pose.p[2] -= _left_foot_offset[2];  
+        
+      }
+      else if(goal_msg.ee_name==_right_foot_name)
+      {
+       
+       // offset w.r.t to visual
+        T_world_foot_pose.p[0] -= _right_foot_offset[0];  
+        T_world_foot_pose.p[1] -= _right_foot_offset[1];  
+        T_world_foot_pose.p[2] -= _right_foot_offset[2];  
+      } 
+      
+      transformKDLToLCM(T_world_foot_pose,goal_msg.ee_goal_pos); 
+      msg.goals[i] =  goal_msg;
+      msg.goal_times[i]+=utime-old_utime;
+    }
+ 
+   _lcm->publish(channel, &msg);
+ 
+ }
 } //namespace renderer_sticky_feet
 

@@ -1,22 +1,35 @@
 #ifndef RENDERER_STICKYFEET_HPP
 #define RENDERER_STICKYFEET_HPP
 
+#include <iostream>
+#include <boost/function.hpp>
+
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc_lcmtypes.h"
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 #include <bot_vis/bot_vis.h>
 #include <bot_frames/bot_frames.h>
-#include "FootStepPlanListener.hpp"
+#include <bot_core/rotations.h>
+#include <gdk/gdkkeysyms.h>
+#include <Eigen/Dense>
+
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
+#include "FootStepPlanListener.hpp"
 
 using namespace std;
 using namespace boost;
 using namespace Eigen;
 using namespace visualization_utils;
 
-namespace renderer_sticky_feet 
-{
+namespace renderer_sticky_feet{
 
 
   typedef struct _RendererStickyFeet
@@ -47,6 +60,7 @@ namespace renderer_sticky_feet
 
     // Our only source of a free running clock:
     int64_t robot_utime;
+    GtkWidget *plan_approval_dock;
 
   } RendererStickyFeet;
 
@@ -150,20 +164,29 @@ namespace renderer_sticky_feet
   inline static void publish_traj_constraint(void *user, uint i, string &channel)
   {
       RendererStickyFeet *self = (RendererStickyFeet*) user;
-     KDL::Frame T_world_object = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
+     KDL::Frame T_world_foot_pose = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
      
      drc::traj_opt_constraint_t msg;
      msg.utime = self->robot_utime;
      msg.robot_name =  self->footStepPlanListener->_robot_name;
      
      msg.num_links = 1;
-     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::LEFT)
+     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::LEFT){
       msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
+      T_world_foot_pose.p[0] -= self->footStepPlanListener->_left_foot_offset[0]; 
+      T_world_foot_pose.p[1] -= self->footStepPlanListener->_left_foot_offset[1]; 
+      T_world_foot_pose.p[2] -= self->footStepPlanListener->_left_foot_offset[2];  
+     }
      else if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::RIGHT)
-      msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);
+     {  
+      msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
+      T_world_foot_pose.p[0] -= self->footStepPlanListener->_right_foot_offset[0]; 
+      T_world_foot_pose.p[1] -= self->footStepPlanListener->_right_foot_offset[1]; 
+      T_world_foot_pose.p[2] -= self->footStepPlanListener->_right_foot_offset[2];  
+     }
      
      drc::position_3d_t pose;
-     transformKDLToLCM(T_world_object,pose);
+     transformKDLToLCM(T_world_foot_pose,pose);
      msg.link_origin_position.push_back(pose);
      msg.link_timestamps.push_back(0.0);// where should this information come from?
      
@@ -243,7 +266,7 @@ namespace renderer_sticky_feet
   
   
 
-}
+}// end namespace
 
 
 void setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm);
