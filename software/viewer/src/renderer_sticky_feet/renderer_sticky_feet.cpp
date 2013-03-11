@@ -18,7 +18,7 @@
 
 #define RENDERER_NAME "FootStep Plans & Sticky Feet"
 #define PARAM_AUTO_ADJUST_HT "Auto Adjust Height"
-
+#define PARAM_CLEAR_FOOTSTEP_PLAN "Clear FootSteps"
 using namespace std;
 using namespace boost;
 using namespace renderer_sticky_feet;
@@ -152,7 +152,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   collision::Collision_Object * intersected_object = NULL;
   self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
   if( intersected_object != NULL ){
-      cout << self->selected_planned_footstep_index << endl;  
+      //cout << self->selected_planned_footstep_index << endl;  
       std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
     (*self->selection)  = self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_unique_name;
      std::cout << "intersected sticky foot:" << (*self->selection) <<  std::endl;
@@ -235,11 +235,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   if (! strcmp(name, PARAM_AUTO_ADJUST_HT)) {
     if (bot_gtk_param_widget_get_bool(pw, PARAM_AUTO_ADJUST_HT)) {
       self->ht_auto_adjust_enabled = 1;
-       cout << "TO BE IMPLEMENTED" << endl;
+      // cout << "TO BE IMPLEMENTED" << endl;
     }
     else{
       self->ht_auto_adjust_enabled = 0;
     }
+  }
+  else if(!strcmp(name, PARAM_CLEAR_FOOTSTEP_PLAN))
+  {
+    self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();
   }
 
   bot_viewer_request_redraw(self->viewer);
@@ -271,9 +275,8 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm)
     // C-style subscribe:
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
 
-    
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_CLEAR_FOOTSTEP_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_AUTO_ADJUST_HT, 0, NULL);
-//    bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
 //    bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
 //    bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
 

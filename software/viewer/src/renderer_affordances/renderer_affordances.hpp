@@ -167,6 +167,8 @@ typedef struct _RendererAffordances {
   Eigen::Vector3f ray_end;
   Eigen::Vector3f ray_hit;
   Eigen::Vector3f ray_hit_drag;
+  Eigen::Vector3f prev_ray_hit_drag;
+
   Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
   double ray_hit_t;
   std::string* link_selection;
@@ -680,6 +682,7 @@ typedef struct _RendererAffordances {
   inline static void set_object_desired_state_on_marker_motion(void *user)
   {
       RendererAffordances *self = (RendererAffordances*) user;
+      double gain = 1;
 
       std::string instance_name=  (*self->object_selection);
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
@@ -721,27 +724,27 @@ typedef struct _RendererAffordances {
           T_world_object_future.p[2] = dz;
         }    
         else if((*self->marker_selection)=="markers::base_roll"){
-          currentAngle = atan2(self->ray_hit[2]-T_world_object_future.p[2],self->ray_hit[1]-T_world_object_future.p[1]);
+          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object_future.p[2],self->prev_ray_hit_drag[1]-T_world_object_future.p[1]);
           angleTo = atan2(self->ray_hit_drag[2]-T_world_object_future.p[2],self->ray_hit_drag[1]-T_world_object_future.p[1]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if((*self->marker_selection)=="markers::base_pitch"){ 
-          currentAngle = atan2(self->ray_hit[0]-T_world_object_future.p[0],self->ray_hit[2]-T_world_object_future.p[2]);
+          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object_future.p[0],self->prev_ray_hit_drag[2]-T_world_object_future.p[2]);
           angleTo = atan2(self->ray_hit_drag[0]-T_world_object_future.p[0],self->ray_hit_drag[2]-T_world_object_future.p[2]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }    
         else if((*self->marker_selection)=="markers::base_yaw"){
-          currentAngle = atan2(self->ray_hit[1]-T_world_object_future.p[1],self->ray_hit[0]-T_world_object_future.p[0]);
+          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object_future.p[1],self->prev_ray_hit_drag[0]-T_world_object_future.p[0]);
           angleTo = atan2(self->ray_hit_drag[1]-T_world_object_future.p[1],self->ray_hit_drag[0]-T_world_object_future.p[0]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 0; axis[2]=1;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
@@ -815,13 +818,13 @@ typedef struct _RendererAffordances {
      
         Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
         //convert to joint dof marker frame .
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit,JointAxisFrame.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,JointAxisFrame.Inverse(),hit_markerframe); 
         rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,JointAxisFrame.Inverse(),hitdrag_markerframe); 
      
         double currentAngle, angleTo, dtheta;         
         currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
         angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
-        dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+        dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
 
         std::map<std::string, double> jointpos_in;
         jointpos_in = it->second._gl_object->_future_jointpos;
@@ -829,6 +832,9 @@ typedef struct _RendererAffordances {
         
         it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
       }
+      
+      self->prev_ray_hit_drag = self->ray_hit_drag; 
+          
   }   // end set_object_desired_state_on_marker_motion()
   
 //------------------------------------------------------------------------------- 
@@ -1000,7 +1006,7 @@ typedef struct _RendererAffordances {
          }// end if
     
     }// end for
-    
+    self->prev_ray_hit_drag = self->ray_hit_drag;
     return shortest_distance;
   }
   
