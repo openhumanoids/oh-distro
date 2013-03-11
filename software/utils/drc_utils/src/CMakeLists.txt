@@ -12,8 +12,8 @@ pods_install_headers(
 pods_install_libraries(drc-utils)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES bot2-core)
-#pods_use_pkg_config_packages(drc-utils ${REQUIRED_PACKAGES})
+set(REQUIRED_PACKAGES bot2-core lcm)
+pods_use_pkg_config_packages(drc-utils ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
