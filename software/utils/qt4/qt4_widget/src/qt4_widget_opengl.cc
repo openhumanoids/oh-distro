@@ -247,6 +247,7 @@ mousePressEvent( QMouseEvent * event ){
   case ( Qt::LeftButton ):
     _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_LEFT );
     _interface_handler.mouse_event( MOUSE_EVENT_CLICK, MOUSE_BUTTON_LEFT, event->x(), event->y() );
+    raycast( _opengl_scene.camera().eye_position(), _opengl_scene.camera().click_position( Vector2( event->x(), event->y() )  ) ); 
     break;
   case ( Qt::MidButton ):
     _opengl_scene.camera().mouse_press( Vector2( event->x(), event->y() ), OPENGL_MOUSE_BUTTON_MIDDLE );
@@ -259,6 +260,7 @@ mousePressEvent( QMouseEvent * event ){
   default:  
     break;
   }
+
   if( _interface_handler.intersected_object() != NULL ){
     cout << "selected object: " << _interface_handler.intersected_object()->id() << endl;
   }
