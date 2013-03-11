@@ -14,7 +14,7 @@ classdef DRCPlanner
   end
 
   methods 
-    p = plan(obj,request_msg,data)  % planners need to implement this
+    plan(obj,request_msg,data)  % planners need to implement this
     %  where request_msg is the plan_request_lcmtype and data is a structure 
     %  with fields containing the input names, populated with the
     %  corresponding lcmtypes
@@ -91,7 +91,6 @@ classdef DRCPlanner
         if isempty(fd)
           fprintf(1,'waiting... (t=%f)\n',toc);
         else
-          tic;
           if isempty(obj.request_coder)
             msg = obj.lcmtype_constructor.newInstance(fd);
             utime=msg.utime;
@@ -119,6 +118,7 @@ classdef DRCPlanner
           else
             disp('missing required inputs.  this plan request will be ignored.');
           end
+          tic;
         end
       end
     end
