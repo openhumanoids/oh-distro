@@ -11,11 +11,16 @@ classdef Biped < TimeSteppingRigidBodyManipulator
   
   methods
     function obj = Biped(urdf,dt,options)
+      if nargin < 3
+        options = struct();
+        options.floating = true;
+      end
+      if nargin < 2
+        dt = 0.002;
+      end
+      
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       
-      if nargin < 2
-        options = struct();
-      end
       defaults = struct('step_time', 2,... % s
         'max_step_length', .4,... % m
         'max_step_rot', pi/8,... % rad
