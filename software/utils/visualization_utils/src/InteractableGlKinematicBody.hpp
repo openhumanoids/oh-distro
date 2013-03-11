@@ -73,6 +73,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void init_otdf_collision_objects();
    void set_state(const drc::robot_state_t &msg); 
    void set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg); 
+   void set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);
    void set_state(boost::shared_ptr<otdf::ModelInterface> _otdf_instance);
    void update_urdf_collision_objects(void);
    void update_otdf_collision_objects(void);
@@ -102,7 +103,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
         else
            glColor4f(c[0],c[1],c[2],alpha);
 
-        if((whole_body_selection_enabled)&&(selected_link != " ")) {
+        if((whole_body_selection_enabled)&&(selected_link == _unique_name)){
           glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
         } 
         //int64_t tic = bot_timestamp_now();
@@ -153,7 +154,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
         else
            glColor4f(c[0],c[1],c[2],alpha);
 
-        if((whole_body_selection_enabled)&&(selected_link != " ")) {
+        if((whole_body_selection_enabled)&&(selected_link == _unique_name)) {
           glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link
         }
         
@@ -185,7 +186,13 @@ class InteractableGlKinematicBody: public GlKinematicBody
    };   
    void highlight_link(std::string &link_name)   {
        selected_link = link_name; 
+   };  
+   
+   void highlight_body(std::string &body_name)   {
+       selected_link = body_name; 
    };   
+   
+    
    void highlight_marker(std::string &marker_name)   {
        selected_marker = marker_name; 
    };   

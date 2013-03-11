@@ -428,6 +428,26 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint
 }//end void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
 
 
+
+void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in)
+{
+  _T_world_body  = T_world_body;
+
+  _current_jointpos.clear();
+  _current_jointpos = jointpos_in;   
+
+  run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  if(future_display_active)
+    run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+  else{
+    _T_world_body_future = _T_world_body; 
+    _future_jointpos =  _current_jointpos;
+  }
+  
+}//end void GlKinematicBody::set_state(const KDL::Frame &, const std::map<std::string, double> & )
+
+
+   
 // space and time visualization.
 void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {

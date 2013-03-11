@@ -52,6 +52,7 @@
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
+#include <visualization_utils/file_access_utils.hpp>
 
 #define RENDERER_NAME "Objects & StickyHands"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
@@ -276,7 +277,7 @@ typedef struct _RendererAffordances {
 //===============================================================================
 // FILE ACCESS
   
-  inline static bool get_xmlstring_from_file(const std::string& filename, std::string &xml_string)
+ /* inline static bool get_xmlstring_from_file(const std::string& filename, std::string &xml_string)
   {
     // get the entire file
     std::fstream xml_file(filename.c_str(), std::fstream::in);
@@ -356,7 +357,7 @@ typedef struct _RendererAffordances {
       return 0;
   } 
   
-    
+    */
 //===============================================================================
 // MISC. UTILS
 

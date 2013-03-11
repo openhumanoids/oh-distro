@@ -33,6 +33,7 @@
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
+#include <renderer_sticky_feet/renderer_sticky_feet.hpp>
 #include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
 
 
@@ -191,6 +192,7 @@ int main(int argc, char *argv[])
   setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm);
+  setup_renderer_sticky_feet(viewer, 0, lcm);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
 
   // Individual Renderers:

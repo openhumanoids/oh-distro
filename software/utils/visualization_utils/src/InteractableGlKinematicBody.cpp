@@ -14,6 +14,7 @@ void InteractableGlKinematicBody::init_vars(){
   whole_body_selection_enabled = false;
   selected_link = " ";
   _floatingbase_markers_boxsize = 0;
+  bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
 
 }
 
@@ -329,6 +330,24 @@ void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, cons
     
 } // end InteractableGlKinematicBody::set_state(const KDL::Frame, const drc::joint_angles_t)
 
+void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in)
+{
+    GlKinematicBody::set_state(T_world_body,jointpos_in);  //code re-use
+    update_urdf_collision_objects();
+    if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+        update_floatingbase_marker_collision_objects();  
+   }
+   
+    if(!jointdof_markers_initialized){
+      init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+      jointdof_markers_initialized = true; 
+    }
+    update_jointdof_marker_collision_objects();
+
+}// end InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in)
+
 void InteractableGlKinematicBody::update_urdf_collision_objects(void)
 {
  
@@ -603,7 +622,6 @@ void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_bod
 void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 {
    //_collision_detector_floatingbase_markers.reset();
-  bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
   _collision_detector_floatingbase_markers = shared_ptr<Collision_Detector>(new Collision_Detector()); 
 
   Eigen::Vector3f whole_body_span_dims,offset;

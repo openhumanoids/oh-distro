@@ -268,8 +268,10 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
             shortest_distance = distance;
             self->selected_plan_index=i;
         }
-        else
+        else {
           shortest_distance = distance;
+          self->selected_plan_index=i;
+         }
         intersected_object = NULL; 
       }
       

@@ -133,6 +133,40 @@ static inline void transformLCMToEigen(const drc::position_3d_t &t, Eigen::Affin
     transformKDLToEigen(k, e);
 };
 
+
+static inline void transformLCMToKDL(const drc::position_3d_t &t,  KDL::Frame &k)
+{
+   //TransformLCMToKDLFrame
+    k.p[0] =t.translation.x;
+    k.p[1] =t.translation.y;
+    k.p[2] =t.translation.z;
+    //  Eigen::Quaterniond q(t.rotation.w,t.rotation.x,t.rotation.y,t.rotation.z);
+    // q.normalize();
+    KDL::Rotation M;
+    //M =  KDL::Rotation::Quaternion(q.x(),q.y(),q.z(),q.w());
+    M =  KDL::Rotation::Quaternion(t.rotation.x,t.rotation.y,t.rotation.z,t.rotation.w);
+    k.M = M;
+};
+
+
+static inline void transformKDLToLCM(const KDL::Frame &k,drc::position_3d_t &t)
+{
+   //TransformLCMToKDLFrame
+    t.translation.x=k.p[0];
+    t.translation.y=k.p[1];
+    t.translation.z=k.p[2];
+    //  Eigen::Quaterniond q(t.rotation.w,t.rotation.x,t.rotation.y,t.rotation.z);
+    // q.normalize();
+    double x,y,z,w;
+    k.M.GetQuaternion(x,y,z,w);
+    t.rotation.x=x;
+    t.rotation.y=y;
+    t.rotation.z=z;
+    t.rotation.w=w;
+    
+};
+
+
 /// Converts a KDL frame into an Eigen transform
 static inline void transformEigenToKDL(const Eigen::Affine3d &e, KDL::Frame &k)
 {
