@@ -31,10 +31,43 @@ uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) set_done(
 
 drag_ndx = 1;
 
+plan_publisher = FootstepPlanPublisher('atlas', 'r_foot','l_foot', 'CANDIDATE_FOOTSTEP_PLAN');
+lc = lcm.lcm.LCM.getSingleton();
+aggregator = lcm.lcm.MessageAggregator();
+lc.subscribe('TRAJ_OPT_CONSTRAINT', aggregator);
+
 
 while 1
   modified = 0;
   [Xright, Xleft] = biped.stampedStepLocations(X);
+  con_msg = aggregator.getNextMessage(0);
+  if ~isempty(con_msg)
+    con_data = drc.traj_opt_constraint_t(con_msg.data);
+    origin_pos = con_data.link_origin_position(1);
+    [r p y] = quat2angle([origin_pos.rotation.x,...
+                             origin_pos.rotation.y,...
+                             origin_pos.rotation.z,...
+                             origin_pos.rotation.w]);
+    pos = [origin_pos.translation.x;...
+           origin_pos.translation.y;...
+           origin_pos.translation.z;...
+           r;p;y];
+    con_data.link_name(1)
+    if strcmp(con_data.link_name(1), biped.r_foot_name)
+      current_foot = 1;
+      dist = sum((Xright(1:3,ndx_r) - repmat(pos(1:3), 1, length(ndx_r))).^2,1);
+      [~, step_ndx] = min(dist);
+      fixed_steps{ndx_r(step_ndx), current_foot} = pos;
+    else
+      current_foot = 2;
+      dist = sum((Xleft(1:3,ndx_l) - repmat(pos(1:3), 1, length(ndx_l))).^2,1);
+      [~, step_ndx] = min(dist);
+      fixed_steps{ndx_l(step_ndx), current_foot} = pos;
+    end
+    fixed_steps
+  end
+  
+  
   ndx_fixed = find(any(cellfun(@(x) ~isempty(x),fixed_steps),2));
   [d_r, r_r] = biped.stepDistance(Xright(1:6,1:(end-1)), Xright(1:6,2:end), 0);
   [d_l, r_l] = biped.stepDistance(Xleft(1:6,1:(end-1)), Xleft(1:6,2:end), 0);
@@ -87,6 +120,7 @@ while 1
   cla
   hold on
   plotFootstepPlan(X, Xright, Xleft);
+  plan_publisher.publish(Xleft(7,:), Xleft(1:6,:), Xright(7,:), Xright(1:6,:));
   if exist('vs.obj_collection_t')
     plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
     plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);

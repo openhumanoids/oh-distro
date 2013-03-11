@@ -30,8 +30,8 @@ b = repmat([biped.max_step_length / 2; biped.max_step_length / 2; biped.max_step
 [x_flat,fval,exitflag,output,lambda,grad] = fmincon(@cost, x_flat,A,b,[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
   optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off', 'TolX', 0.01));
-grad
-exitflag
+% grad
+% exitflag
 
 X = locate_step_centers(x_flat);
 
