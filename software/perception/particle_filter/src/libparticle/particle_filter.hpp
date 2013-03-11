@@ -66,7 +66,12 @@ class ParticleFilter{
     //       1: use velocity to propogate pose (when vo fails)
     void MoveParticles(pf_state odom_diff, std::vector<double> propogate_var, double dtime,int mode);
 
+    // Specifically set these 3 dimensions used for VO
+    // depreciated: use SetDimension below
     void SetHeightPitchRoll(std::vector<double> height_pitch_roll);
+    
+    void SetState(std::vector<double> xyzypr,
+        std::vector<bool> set_xyzypr);
     
     void LogLikelihoodParticles(std::vector<float> loglikelihoods);
     

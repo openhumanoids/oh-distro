@@ -160,6 +160,10 @@ void Particle::MoveParticleDrift(rng *pRng, std::vector<double> move_var,double 
 
 
 void Particle::MoveParticle(rng *pRng, pf_state odom_diff,std::vector<double> move_var,double dtime){
+  // NB: this module doesn't propogate a delta velocity
+  // it calculates one from the elapsed time and a delta position whicch
+  // is assumed to have come from VO-type motion estimation
+  
   Eigen::Isometry3d odom_dpose = odom_diff.pose;
   state.pose = state.pose*odom_dpose;
   

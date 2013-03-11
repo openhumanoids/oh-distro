@@ -23,11 +23,11 @@ pods_install_pkg_config_file(particle
 
 
 
-# 
-# 
-# add_executable (kmcl-pf-example particle_filter_example.cpp )
-# target_link_libraries(kmcl-pf-example particle)
-# pods_use_pkg_config_packages(kmcl-pf-example   particle
-#   gsl  bot2-core lcmtypes_visualization lcmtypes_kmcl lcmtypes_bot2-core)
-# 
-# pods_install_executables(kmcl-pf-example)
+ 
+ 
+add_executable (particle-filter-example particle_filter_example.cpp )
+target_link_libraries(particle-filter-example particle)
+pods_use_pkg_config_packages(particle-filter-example   particle
+  gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
+  pointcloud_vis pointcloud_math)
+pods_install_executables(particle-filter-example)
