@@ -6,15 +6,16 @@ using namespace boost;
 using namespace visualization_utils;
 
 // copy constructor
-//GlKinematicBody::GlKinematicBody( const GlKinematicBody& other )x
+//GlKinematicBody::GlKinematicBody( const GlKinematicBody& other )
 //{
 //   *this = other;
 //}
 
 //constructor
-GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false)
+GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false)
 {  
-   cout << "GLKinematicBody Constructor" << endl;
+  //cout << "GLKinematicBody Constructor" << endl;
+
   // Get a urdf Model from the xml string and get all the joint names.
   urdf::Model model; 
   if (!model.initString(urdf_xml_string))
@@ -28,13 +29,16 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   typedef map<string, shared_ptr<urdf::Joint> > joints_mapType;
   for( joints_mapType::const_iterator it = model.joints_.begin(); it!= model.joints_.end(); it++)
   { 
-    if(it->second->type!=urdf::Joint::FIXED) // All joints that not of the type FIXED.
-    _joint_names_.push_back(it->first);
+    if(it->second->type!=urdf::Joint::FIXED){ // All joints that not of the type FIXED.
+      _joint_names_.push_back(it->first);
+      _current_jointpos.insert(make_pair(it->first, 0)); //initialize 
+      _future_jointpos.insert(make_pair(it->first, 0));
+    }
   }
   
   // get root link
   boost::shared_ptr<const urdf::Link> root_link=model.getRoot();
-
+  _root_name = root_link->name;
   if(!root_link->inertial){
    cerr << "WARNING: root link has no inertia, Adding small inertia" << endl;
    model.root_link_->inertial.reset(new urdf::Inertial);
@@ -91,16 +95,18 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
             BotWavefrontModel* wavefront_model;
             wavefront_model = bot_wavefront_model_create(file_path.c_str()); 
             
-            GLuint dl = glGenLists (1);
+            GLuint dl;
+            dl = glGenLists (1);
             glNewList (dl, GL_COMPILE);
             //glEnable(GL_LIGHTING);
             bot_wavefront_model_gl_draw(wavefront_model);
             //glDisable(GL_LIGHTING);
             glEndList ();
+           
             double minv[3];
             double maxv[3];
             bot_wavefront_model_get_extrema(wavefront_model, minv, maxv);
-            mesh_struct.displaylist = dl;
+            mesh_struct.displaylist = dl;            
             mesh_struct.span_x = maxv[0] - minv[0];
             mesh_struct.span_y = maxv[1] - minv[1];
             mesh_struct.span_z = maxv[2] - minv[2];
@@ -120,6 +126,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
           std::stringstream oss;
           oss << it->first << "_"<< iv; 
           string unique_geometry_name = oss.str();
+
             
          // populate data structures
           typedef std::map<std::string, MeshStruct> mesh_map_type_;
@@ -127,8 +134,14 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
           if(mesh_map_it==_mesh_map.end())
             _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));
 
-
         }//end  if  (type == MESH)
+        
+                  
+       if(it->first==_root_name){
+           std::stringstream oss;
+            oss << it->first << "_"<< iv; 
+          _unique_root_geometry_name = oss.str();
+       }
       
       }// end for all visuals in a visual group
       
@@ -137,9 +150,10 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
 }
 
-GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false)
+GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false)
 {  
- re_init(otdf_instance);
+ //re_init(otdf_instance);
+ set_state(otdf_instance); //calls re_init inside
 }
 
 
@@ -169,6 +183,8 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
   _otdf_links_map.clear();
   _mesh_map.clear(); 
   
+  boost::shared_ptr<const otdf::BaseEntity> root_link=otdf_instance->getRoot();
+  _root_name = root_link->name;
   std::string _urdf_xml_string = otdf::convertObjectInstanceToCompliantURDFstring(otdf_instance);
    
   // Parse KDL tree
@@ -240,6 +256,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
             mesh_struct.span_x = maxv[0] - minv[0];
             mesh_struct.span_y = maxv[1] - minv[1];
             mesh_struct.span_z = maxv[2] - minv[2];
+            // offset with respect to geometric center.
             mesh_struct.offset_x = (maxv[0] + minv[0])/2.0;
             mesh_struct.offset_y = (maxv[1] + minv[1])/2.0;
             mesh_struct.offset_z = (maxv[2] + minv[2])/2.0;
@@ -256,6 +273,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
           std::stringstream oss;
           oss << it->first << "_"<< iv; 
           string unique_geometry_name = oss.str();
+
             
          // populate data structures
           typedef std::map<std::string, MeshStruct> mesh_map_type_;
@@ -264,6 +282,14 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
             _mesh_map.insert(make_pair(unique_geometry_name, mesh_struct));    
 
         }//end  if  (type == MESH)
+        
+                  
+       if(it->first==_root_name){
+           std::stringstream oss;
+            oss << it->first << "_"<< iv; 
+          _unique_root_geometry_name = oss.str();
+       }
+
             
       }// end for visual_groups
 
@@ -275,6 +301,10 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
 
 void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_instance)
 {
+    // if future display is active
+    // retain future_display_flag
+    // and motion traj
+
     re_init(otdf_instance); // for otdf the morphology can change, so we must reinitialize
 
     std::map<std::string, double> jointpos_in;
@@ -288,7 +318,7 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
           double pos, vel; 
           otdf_instance->getJointState(joint->first, pos, vel); 
           dof_current_pos = pos;
-          jointpos_in.insert(make_pair(joint->first, dof_current_pos)); 
+          jointpos_in.insert(make_pair(joint->first, dof_current_pos));
        }
    }
     //Have to handle joint_patterns separately   
@@ -330,10 +360,19 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
                                          otdf_instance->getParam("pitch"),
                                          otdf_instance->getParam("yaw"));
                                          
-   _T_world_body  = T_world_body;                                    
-      
-    run_fk_and_update_otdf_link_shapes_and_tfs(jointpos_in,T_world_body,future_display_active);
+   _T_world_body  = T_world_body; 
+                         
 
+  _current_jointpos.clear();
+  _current_jointpos = jointpos_in;
+  run_fk_and_update_otdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+
+  if(future_display_active)
+    run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+  else{
+    _T_world_body_future = _T_world_body; 
+    _future_jointpos =  _current_jointpos;
+  } 
 }//end GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_instance)
 
 // ========================================================================= 
@@ -353,37 +392,60 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
   T_world_body.p[2]= msg.origin_position.translation.z;		    
   T_world_body.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
   _T_world_body  = T_world_body;  
-  run_fk_and_update_urdf_link_shapes_and_tfs(jointpos_in,T_world_body,future_display_active);
 
+  _current_jointpos.clear();
+  _current_jointpos = jointpos_in;
+  run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  if(future_display_active)
+    run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+  else{
+    _T_world_body_future = _T_world_body; 
+    _future_jointpos =  _current_jointpos;
+  }  
   
 }//end GlKinematicBody::set_state(const drc::robot_state_t &msg)
 
 void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
 {
-  _T_world_body  = T_world_body;  
+  _T_world_body  = T_world_body;
+
   std::map<std::string, double> jointpos_in;
   for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
-   
-  run_fk_and_update_urdf_link_shapes_and_tfs(jointpos_in,T_world_body,future_display_active);
+    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i]));
+    
+  _current_jointpos.clear();
+  _current_jointpos = jointpos_in;   
+
+  run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  if(future_display_active)
+    run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+  else{
+    _T_world_body_future = _T_world_body; 
+    _future_jointpos =  _current_jointpos;
+  }
+  
+  
 }//end void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
 
 
 // space and time visualization.
-void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in)
+void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {
- if(!future_display_active)
+ if(!future_display_active){
    future_display_active = true;
+  }
 //  std::map<std::string, double> jointpos_in;
 //  for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
 //    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
-
+    _future_jointpos.clear();
+    _future_jointpos = jointpos_in;
+    _T_world_body_future = T_world_body_future;
     if(is_otdf_instance)
-        run_fk_and_update_otdf_link_shapes_and_tfs(jointpos_in,T_world_body,future_display_active);
+        run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
     else
-        run_fk_and_update_urdf_link_shapes_and_tfs(jointpos_in,T_world_body,future_display_active);
+        run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
 
-}//end void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg)
+}//end void GlKinematicBody::set_future_state
 
 // ========================================================================= 
 
@@ -398,6 +460,9 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     _link_tfs.clear();
     _link_geometry_tfs.clear();
     _link_shapes.clear();
+
+    _joint_names.clear();
+    _joint_tfs.clear();
     }
     
     std::map<std::string, KDL::Frame > cartpos_out;
@@ -420,6 +485,97 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     typedef map<string, shared_ptr<urdf::Link> > links_mapType;      
     for( links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
     {  		
+    
+       map<string, KDL::Frame>::const_iterator transform_it;
+       transform_it=cartpos_out.find(it->first);
+    
+    // iterate over add all child joints and store joint origins and axes that are not of type fixed.
+    //  std::vector<boost::shared_ptr<Joint> > child_joints;
+      for (size_t i = 0; i < it->second->child_joints.size();i++)
+      {
+        if(it->second->child_joints[i]->type!=urdf::Joint::FIXED)
+        {
+          KDL::Frame T_parentlink_jointorigin;
+          T_parentlink_jointorigin.p[0]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.x;
+          T_parentlink_jointorigin.p[1]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.y;
+          T_parentlink_jointorigin.p[2]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.z;
+          double x,y,z,w;       
+          x= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.x;
+          y= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.y;
+          z= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.z; 
+          T_parentlink_jointorigin.M = KDL::Rotation::Quaternion(x,y,z,w);
+
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+            KDL::Frame T_body_parentlink =  transform_it->second;
+            KDL::Frame T_world_jointorigin =T_world_body*T_body_parentlink*T_parentlink_jointorigin;
+            JointFrameStruct jointInfo;
+            jointInfo.name=it->second->child_joints[i]->name;
+            if (!update_future_frame){
+              jointInfo.frame=T_world_jointorigin;
+              jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
+              jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
+              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
+              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              jointInfo.axis.Normalize();
+              jointInfo.type=it->second->child_joints[i]->type;
+              
+              //store
+              _joint_names.push_back(jointInfo.name);
+              _joint_tfs.push_back(jointInfo);
+              }
+              else{ // update future frame
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_joint_names.begin(), _joint_names.end(), jointInfo.name);
+                if (found != _joint_names.end()) {
+                    unsigned int index = found - _joint_names.begin();
+                    _joint_tfs[index].future_frame = T_world_jointorigin;
+                    jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
+                    jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
+                    jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
+                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                    _joint_tfs[index].future_axis.Normalize();
+                }
+              } // end if  (!update_future_frame)     
+            
+          }
+          else if(it->first ==_root_name){
+            KDL::Frame T_body_parentlink =  KDL::Frame::Identity();
+            KDL::Frame T_world_jointorigin =T_world_body*T_body_parentlink*T_parentlink_jointorigin;
+
+            JointFrameStruct jointInfo;
+            jointInfo.name=it->second->child_joints[i]->name;
+            if (!update_future_frame){
+              jointInfo.frame=T_world_jointorigin;
+              jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
+              jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
+              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
+              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              jointInfo.axis.Normalize();
+              jointInfo.type=it->second->child_joints[i]->type;
+              
+              //store
+              _joint_names.push_back(jointInfo.name);
+              _joint_tfs.push_back(jointInfo);
+              }
+              else{ // update future frame
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_joint_names.begin(), _joint_names.end(), jointInfo.name);
+                if (found != _joint_names.end()) {
+                    unsigned int index = found - _joint_names.begin();
+                    _joint_tfs[index].future_frame = T_world_jointorigin;
+                    jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
+                    jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
+                    jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
+                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                    _joint_tfs[index].future_axis.Normalize();
+                }
+              } // end if  (!update_future_frame)    
+          }
+           
+        }// end if (it->second->child_joints[i]->type!=urdf::Joint::FIXED)
+      }// end for all child joints
+    
 
       if(it->second->visual)
       {  
@@ -434,8 +590,8 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
           KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual, T_world_parentjoint;
 
 
-          map<string, KDL::Frame>::const_iterator transform_it;
-          transform_it=cartpos_out.find(it->first);
+          //map<string, KDL::Frame>::const_iterator transform_it;
+          //transform_it=cartpos_out.find(it->first);
 
           // usually find fails if base_link has a visual element.
           // Kdl based FK ignores the root link which must be set to body pose
@@ -567,7 +723,10 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     _link_geometry_names.clear();
     _link_tfs.clear();
     _link_geometry_tfs.clear();
-    _otdf_link_shapes.clear();    
+    _otdf_link_shapes.clear();
+    
+    _joint_names.clear();
+    _joint_tfs.clear();    
     }
 
     std::map<std::string, KDL::Frame > cartpos_out;
@@ -590,6 +749,98 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     typedef map<string, shared_ptr<otdf::Link> > links_mapType;      
     for( links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
     {  		
+      map<string, KDL::Frame>::const_iterator transform_it;
+      transform_it=cartpos_out.find(it->first);
+
+    // iterate over add all child joints and store joint origins and axes that are not of type fixed.
+    //  std::vector<boost::shared_ptr<Joint> > child_joints;
+      for (size_t i = 0; i < it->second->child_joints.size();i++)
+      {
+        if(it->second->child_joints[i]->type!=otdf::Joint::FIXED)
+        {
+          KDL::Frame T_parentlink_jointorigin;
+          T_parentlink_jointorigin.p[0]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.x;
+          T_parentlink_jointorigin.p[1]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.y;
+          T_parentlink_jointorigin.p[2]= it->second->child_joints[i]->parent_to_joint_origin_transform.position.z;
+          double x,y,z,w;       
+          x= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.x;
+          y= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.y;
+          z= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.z; 
+          T_parentlink_jointorigin.M = KDL::Rotation::Quaternion(x,y,z,w);
+
+          if(transform_it!=cartpos_out.end())// fk cart pos exists
+          {
+            KDL::Frame T_body_parentlink =  transform_it->second;
+            KDL::Frame T_world_jointorigin =T_world_body*T_body_parentlink*T_parentlink_jointorigin;
+            
+            JointFrameStruct jointInfo;
+            jointInfo.name=it->second->child_joints[i]->name;
+            if (!update_future_frame){
+              jointInfo.frame=T_world_jointorigin;
+              jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
+              jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
+              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
+              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              jointInfo.axis.Normalize();
+              jointInfo.type=it->second->child_joints[i]->type;
+              
+              //store
+              _joint_names.push_back(jointInfo.name);
+              _joint_tfs.push_back(jointInfo);
+              }
+              else{ // update future frame
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_joint_names.begin(), _joint_names.end(), jointInfo.name);
+                if (found != _joint_names.end()) {
+                    unsigned int index = found - _joint_names.begin();
+                    _joint_tfs[index].future_frame = T_world_jointorigin;
+                    jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
+                    jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
+                    jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
+                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                    _joint_tfs[index].future_axis.Normalize();
+                }
+              } // end if  (!update_future_frame)        
+            
+            
+          }
+          else if(it->first ==_root_name){
+            KDL::Frame T_body_parentlink =  KDL::Frame::Identity();
+            KDL::Frame T_world_jointorigin =T_world_body*T_body_parentlink*T_parentlink_jointorigin;
+
+            JointFrameStruct jointInfo;
+            jointInfo.name=it->second->child_joints[i]->name;
+            if (!update_future_frame){
+              jointInfo.frame=T_world_jointorigin;
+              jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
+              jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
+              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
+              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              jointInfo.axis.Normalize();
+              jointInfo.type=it->second->child_joints[i]->type;
+              
+              //store
+              _joint_names.push_back(jointInfo.name);
+              _joint_tfs.push_back(jointInfo);
+              }
+              else{ // update future frame
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_joint_names.begin(), _joint_names.end(), jointInfo.name);
+                if (found != _joint_names.end()) {
+                    unsigned int index = found - _joint_names.begin();
+                    _joint_tfs[index].future_frame = T_world_jointorigin;
+                    jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
+                    jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
+                    jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
+                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                    _joint_tfs[index].future_axis.Normalize();
+                }
+              } // end if  (!update_future_frame)     
+          }
+           
+        }// end if (it->second->child_joints[i]->type!=urdf::Joint::FIXED)
+      }// end for all child joints
+    
 
       if(it->second->visual)
       {  
@@ -603,8 +854,8 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
           KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual, T_world_parentjoint;
 
 
-          map<string, KDL::Frame>::const_iterator transform_it;
-          transform_it=cartpos_out.find(it->first);
+          //map<string, KDL::Frame>::const_iterator transform_it;
+          //transform_it=cartpos_out.find(it->first);
 
           // usually find fails if base_link has a visual element.
           // Kdl based FK ignores the root link which must be set to body pose
@@ -756,7 +1007,7 @@ bool GlKinematicBody::get_link_geometry_future_frame(const std::string &link_geo
       else 
       {  
        T_world_link = KDL::Frame::Identity();
-       std::cerr << "ERROR in GlKinematicBody::get_link_future_frame:"<< link_geometry_name << " not found in _link_geometry_names" << std::endl;
+       std::cerr << "ERROR in GlKinematicBody::get_link_geometry_future_frame:"<< link_geometry_name << " not found in _link_geometry_names" << std::endl;
        return false;
       }
 } 
@@ -862,6 +1113,21 @@ bool GlKinematicBody::get_link_geometry(const std::string &link_geometry_name, b
      return false; 
 }
 
+
+bool GlKinematicBody::get_joint_info(const std::string &joint_name, JointFrameStruct &jointinfo_struct)
+{
+    std::vector<std::string>::const_iterator found;
+    found = std::find (_joint_names.begin(), _joint_names.end(), joint_name);
+    if (found != _joint_names.end()) {
+        unsigned int index = found - _joint_names.begin();
+        jointinfo_struct = _joint_tfs[index]; 
+        return true;
+    }
+    else 
+     return false; 
+}
+
+
 bool GlKinematicBody::get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct) 
 {
   std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
@@ -903,7 +1169,8 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
-	     drawSphere(6,  radius);
+       glutSolidSphere(radius,36,36); 
+	    //drawSphere(6,  radius);
        glPopMatrix();
     
     }
@@ -996,7 +1263,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
   }
   else if  (type == urdf::Geometry::MESH)
     {
-    //cout << "MESH: " << nextTf.link_name << endl;
+    
     //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(link));
     
      /* size_t found1;
@@ -1015,10 +1282,12 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
         mesh_map_it=_mesh_map.find(nextTfname);
         if(mesh_map_it!=_mesh_map.end()) // exists in cache
         { 
-
+         
           if(!visualize_bbox)
           {
-            glCallList (mesh_map_it->second.displaylist);
+            //cout << mesh_map_it->first <<  " dl: " << mesh_map_it->second.displaylist<< endl;
+            glCallList (mesh_map_it->second.displaylist); 
+            //cout << glGetError() << endl;
           }
           else 
           {
@@ -1082,7 +1351,8 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
-	     drawSphere(6,  radius);
+       glutSolidSphere(radius,36,36);
+	     //drawSphere(6,  radius);
        glPopMatrix();
     
     }
@@ -1175,7 +1445,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
   }
   else if  (type == otdf::Geometry::MESH)
     {
-    //cout << "MESH: " << nextTf.link_name << endl;
+    //cout << "MESH: " << nextTfname << endl;
     //shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(link));
     
      /* size_t found1;
@@ -1254,6 +1524,22 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
 }
 
 
+void GlKinematicBody::draw_whole_body_bbox()
+{
+ 
+  Eigen::Vector3f whole_body_span_dims,offset;
+  get_whole_body_span_dims(whole_body_span_dims,offset); //bounding box for entire body
+  glPushMatrix();
+  glTranslatef(_T_world_body.p[0],_T_world_body.p[1],_T_world_body.p[2]);// world frame to body frame
+  //glTranslatef(xc,yc,zc);
+  glTranslatef(offset[0],offset[1],offset[2]);
+  glScalef(whole_body_span_dims[0],whole_body_span_dims[1],whole_body_span_dims[2]);
+  bot_gl_draw_cube_frame();
+  glPopMatrix();/**/
+
+}
+
+
 //===============================================================================================
 // MISC. UTILITIES 
 //
@@ -1322,4 +1608,146 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
   }
   
 //-------------------------------------------------------------------------------------  
+
+void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_dims,Eigen::Vector3f &offset)
+{
+
+ float global_min_x,global_max_x,global_min_y,global_max_y,global_min_z,global_max_z;
+ global_min_x=0;  global_max_x=0;  global_min_y=0;  global_max_y=0;  global_min_z=0;  global_max_z=0;  
+ whole_body_span_dims<<1,1,1;
+ offset<<0,0,0;
+ 
+ double xc = 0;   double yc = 0;   double zc = 0;
+ for (size_t i = 0;i < _link_geometry_tfs.size();i++){
+ 
+    KDL::Frame link_tf = _link_geometry_tfs[i].frame; // in world frame
+    
+    float min_x,max_x,min_y,max_y,min_z,max_z; // get span in link frame
+    min_x=0;  max_x=0;  min_y=0;  max_y=0;  min_z=0;  max_z=0;  
+    if(!is_otdf_instance)
+    {
+      int type = _link_shapes[i]->type ;
+
+      if (type == urdf::Geometry::SPHERE)
+      {
+        boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shapes[i]));	
+        double radius = sphere->radius;
+        min_x = -radius; min_y = -radius; min_z = -radius;
+        max_x =  radius; max_y =  radius; max_z =  radius;
+      }
+      else if  (type == urdf::Geometry::BOX)
+      {
+        boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shapes[i]));
+        min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
+        max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
+      }
+      else if  (type == urdf::Geometry::CYLINDER)
+      {
+        boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shapes[i]));
+        min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
+        max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
+      }
+      else if  (type == urdf::Geometry::MESH)
+      {
+        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
+        if(mesh_map_it!=_mesh_map.end()) // exists in cache
+        { 
+          // get the vertices for mesh_map_it->second
+          double xDim = mesh_map_it->second.span_x;
+          double yDim = mesh_map_it->second.span_y;
+          double zDim = mesh_map_it->second.span_z;
+           xc = mesh_map_it->second.offset_x;
+           yc = mesh_map_it->second.offset_y;
+           zc = mesh_map_it->second.offset_z;
+          min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
+          max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
+        }
+      }
+    }
+    else {
+      int type = _otdf_link_shapes[i]->type ;
+      
+      if (type == otdf::Geometry::SPHERE)
+      {
+        boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
+        double radius = sphere->radius;
+        min_x = -radius; min_y = -radius; min_z = -radius;
+        max_x =  radius; max_y =  radius; max_z =  radius;
+      }
+      else if  (type == otdf::Geometry::BOX)
+      {
+        boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_otdf_link_shapes[i]));
+        min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
+        max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
+      }
+      else if  (type == otdf::Geometry::CYLINDER)
+      {
+        boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
+        min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
+        max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
+      }
+      else if  (type == otdf::Geometry::MESH)
+      {
+        std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+        mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
+        if(mesh_map_it!=_mesh_map.end()) // exists in cache
+        { 
+          // get the vertices for mesh_map_it->second
+          double xDim = mesh_map_it->second.span_x;
+          double yDim = mesh_map_it->second.span_y;
+          double zDim = mesh_map_it->second.span_z;
+           xc = mesh_map_it->second.offset_x;
+           yc = mesh_map_it->second.offset_y;
+           zc = mesh_map_it->second.offset_z;
+          min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
+          max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
+        }
+      }
+      else if  (type == otdf::Geometry::TORUS)
+      {
+        boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_otdf_link_shapes[i]));
+        min_x = -torus->radius; min_y = -torus->radius; min_z = -torus->tube_radius;
+        max_x =  torus->radius; max_y =  torus->radius; max_z =  torus->tube_radius;
+      }
+      
+    
+    }// end if(!is_otdf_instance)    
+      
+    // corners in link frame
+    Eigen::Matrix<float, 3, 8> corners;
+    corners << min_x,min_x,min_x,min_x,max_x,max_x,max_x,max_x,
+               min_y,min_y,max_y,max_y,min_y,min_y,max_y,max_y,
+               min_z,max_z,min_z,max_z,min_z,max_z,min_z,max_z;
+
+    // transform eight corners to body frame
+     KDL::Vector corner, rotated_corner;
+   for(uint k=0;k<8;k++){
+       corner[0]=corners(0,k);corner[1]=corners(1,k);corner[2]=corners(2,k);
+       rotated_corner=(link_tf*corner)-_T_world_body.p; //T_world_link*T_link_corner - T_world_body
+       if(rotated_corner[0]<=global_min_x)
+          global_min_x = rotated_corner[0];
+       if(rotated_corner[1]<=global_min_y)
+          global_min_y = rotated_corner[1];
+       if(rotated_corner[2]<=global_min_z)
+          global_min_z = rotated_corner[2];   
+       if(rotated_corner[0]>=global_max_x)
+          global_max_x = rotated_corner[0];
+       if(rotated_corner[1]>=global_max_y)
+          global_max_y = rotated_corner[1];
+       if(rotated_corner[2]>=global_max_z)
+          global_max_z = rotated_corner[2]; 
+    }
+
+ }// end for _link_geometry_tfs
+
+  whole_body_span_dims[0]= global_max_x - global_min_x;
+  whole_body_span_dims[1]= global_max_y - global_min_y;
+  whole_body_span_dims[2]= global_max_z - global_min_z;
+  
+  offset[0] = 0.5*(global_max_x + global_min_x);
+  offset[1] = 0.5*(global_max_y + global_min_y);
+  offset[2] = 0.5*(global_max_z + global_min_z);
+  
+}
  

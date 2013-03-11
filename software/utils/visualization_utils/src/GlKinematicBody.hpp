@@ -51,11 +51,25 @@ struct  LinkFrameStruct
     KDL::Frame frame;
     KDL::Frame future_frame;
 }; 
+
+
+struct  JointFrameStruct
+{
+    JointFrameStruct():frame(KDL::Frame::Identity()), future_frame(KDL::Frame::Identity()){ }
+    std::string name;
+    KDL::Frame frame;
+    KDL::Frame future_frame;
+    KDL::Vector axis; // in world frame
+    KDL::Vector future_axis; // in future_world frame
+    int type;
+}; 
   
 class GlKinematicBody
 {
   protected: 
     std::string _urdf_xml_string; 
+    std::string _root_name;
+    std::string _unique_root_geometry_name;
     std::vector<std::string> _joint_names_;
     std::map<std::string, boost::shared_ptr<urdf::Link> > _links_map;
     std::map<std::string, boost::shared_ptr<otdf::Link> > _otdf_links_map;
@@ -69,21 +83,22 @@ class GlKinematicBody
     // adding support for multiple visual geometries for a given link 
     std::vector<std::string > _link_geometry_names; //_link name + id;
     std::vector<LinkFrameStruct> _link_geometry_tfs;
+    
+    
+    std::vector<std::string > _joint_names; 
+    std::vector<JointFrameStruct > _joint_tfs;
      
     std::map<std::string, MeshStruct > _mesh_map; // associates link geometry name with meshstruct
   //Avoids loading the same mesh multiple times.
     std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
     
-    //Displaying in space and time
-    //std::vector<>
-
-  
+ 
     bool visualize_bbox; 
     bool initialized;
     bool is_otdf_instance;
     bool accumulate_motion_trail;
     bool future_state_changing;
-    bool future_display_active;  // set when set_future_state is called.
+    bool future_display_active;  // set when set_future_state is called. Cleared when _T_world_body == _T_world_body_desired;
    public:
     // Constructors and destructor
     //GlKinematicBody( const GlKinematicBody& other );// copy constructor
@@ -95,8 +110,10 @@ class GlKinematicBody
     
     //object state
     KDL::Frame _T_world_body; //store position in the world
+    KDL::Frame _T_world_body_future; //store position in the world
     //Also store current jointangles map.
-    //std::map<std::string, double> &_current_joint_pos;
+    std::map<std::string, double> _current_jointpos;
+    std::map<std::string, double> _future_jointpos;
     std::vector<KDL::Frame> _desired_body_motion_history;
     
     // state can be set via robot_state_t, or urdf::Model,  or affordance_state_t,  or otdf::ModelInterface;
@@ -113,11 +130,9 @@ class GlKinematicBody
     void set_state(boost::shared_ptr<otdf::ModelInterface> _otdf_instance); 
     void run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::string, double> &jointpos_in,const KDL::Frame &T_world_body, bool update_future_frame);
     
+    
     void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);// ability to visualize in space and time, should work for both otdf and urdf.
 
-
-
-    
     void draw_link(boost::shared_ptr<urdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);
     void draw_link(boost::shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);
     void draw_link_current_and_future(float (&c)[3], float alpha,int link_shape_index, const LinkFrameStruct &nextTf)
@@ -129,7 +144,7 @@ class GlKinematicBody
         draw_link(nextLink,nextTf.name, nextTf.frame);
         //displays desired end state.
         if(future_display_active) {
-            glColor4f(0.5,0.5,0,0.15);
+            glColor4f(0.5,0.5,0,0.35);
             draw_link(nextLink,nextTf.name,nextTf.future_frame);
             glColor4f(c[0],c[1],c[2],alpha);
         }
@@ -140,7 +155,7 @@ class GlKinematicBody
         draw_link(nextLink,nextTf.name, nextTf.frame);
         if(future_display_active) {
            //displays desired end state.
-            glColor4f(0.5,0.5,0,0.15);
+            glColor4f(0.5,0.5,0,0.35);
             draw_link(nextLink,nextTf.name,nextTf.future_frame);
             glColor4f(c[0],c[1],c[2],alpha);
         }
@@ -227,6 +242,10 @@ class GlKinematicBody
     
     void clear_desired_body_motion_history()
     {
+      std::cout << "called clear_desired_body_motion_history() " << std::endl;
+      _T_world_body_future = _T_world_body;
+      _future_jointpos.clear();
+      _future_jointpos = _current_jointpos;
       _desired_body_motion_history.clear();
     };
 
@@ -243,6 +262,12 @@ class GlKinematicBody
     void set_future_state_changing(bool value)
     {
       future_state_changing=value;
+      if(value) // init to current pos on set
+      {
+        _T_world_body_future = _T_world_body; 
+        _future_jointpos =  _current_jointpos;
+      }
+        
     }
     
     void show_bbox(bool value)
@@ -286,12 +311,15 @@ class GlKinematicBody
     bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<urdf::Geometry> &link_geom);
     bool get_link_geometry(const std::string &link_geometry_name, boost::shared_ptr<otdf::Geometry> &link_geom);
     bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
+    bool get_joint_info(const std::string &joint_name, JointFrameStruct &jointinfo_struct);
     
+    void draw_whole_body_bbox(); 
     // Was protected: (mfallon changed this:
     std::string evalMeshFilePath(std::string file_path_expression, bool return_convex_hull_path =false);
   protected:
-     std::string exec(std::string cmd);
-     std::string evalROSMeshFilePath(std::string file_path_expression);  
+    void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
+    std::string exec(std::string cmd);
+    std::string evalROSMeshFilePath(std::string file_path_expression);  
  };
  
 } // end namespace 

@@ -6,6 +6,18 @@ using namespace boost;
 using namespace visualization_utils;
 using namespace collision;
 
+// Variable initialization
+void InteractableGlKinematicBody::init_vars(){
+  bodypose_adjustment_enabled =false;
+  jointdof_adjustment_enabled = false;
+  jointdof_markers_initialized = false;  
+  whole_body_selection_enabled = false;
+  selected_link = " ";
+  _floatingbase_markers_boxsize = 0;
+
+}
+
+
 // Copy constructors
 InteractableGlKinematicBody::InteractableGlKinematicBody( const InteractableGlKinematicBody& other, string unique_name): 
 GlKinematicBody(other),
@@ -13,13 +25,13 @@ link_selection_enabled(other.link_selection_enabled),
 _collision_detector(other._collision_detector),
 _unique_name(unique_name)
 { 
-  link_adjustment_enabled =false;
-  whole_body_selection_enabled = false;
-  selected_link = " ";
+  init_vars();
   if(is_otdf_instance)
     init_otdf_collision_objects();
   else
     init_urdf_collision_objects();
+    
+      
 }
 
 InteractableGlKinematicBody::InteractableGlKinematicBody( const GlKinematicBody& other, shared_ptr<Collision_Detector> col_detector, bool enable_selection, string unique_name):
@@ -28,14 +40,29 @@ link_selection_enabled(enable_selection),
 _collision_detector(col_detector),
 _unique_name(unique_name)
 { 
-  link_adjustment_enabled =false;
-  whole_body_selection_enabled = false;
-  selected_link = " ";
+  init_vars();
   if(is_otdf_instance)
     init_otdf_collision_objects();
   else
     init_urdf_collision_objects();
+
 }
+
+InteractableGlKinematicBody::InteractableGlKinematicBody( const GlKinematicBody& other, bool enable_selection, string unique_name):
+GlKinematicBody(other),
+link_selection_enabled(enable_selection),
+_unique_name(unique_name)
+{ 
+  _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+  init_vars();
+  if(is_otdf_instance)
+    init_otdf_collision_objects();
+  else
+    init_urdf_collision_objects();
+
+
+}
+
 
 // constructor for plain urdf
 InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
@@ -46,14 +73,13 @@ InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
   _collision_detector(col_detector),
   _unique_name(unique_name)
 {  
-  link_adjustment_enabled =false;
-  whole_body_selection_enabled = false;
-  selected_link = " ";
+  init_vars();
   init_urdf_collision_objects();
 }
 
 void InteractableGlKinematicBody::init_urdf_collision_objects()
 {
+
   // loop through all the links and add them to collision world.
   typedef map<string, shared_ptr<urdf::Link> > links_mapType;
   for(links_mapType::const_iterator it =  _links_map.begin(); it!= _links_map.end(); it++)
@@ -117,8 +143,8 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
           {
             shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
 
-          typedef std::map<std::string, MeshStruct > mesh_map_type_;
-          mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
+            typedef std::map<std::string, MeshStruct > mesh_map_type_;
+            mesh_map_type_::iterator mesh_map_it = _mesh_map.find(unique_geometry_name);
      
             Eigen::Vector3f dims;
             dims<<  mesh_map_it->second.span_x,mesh_map_it->second.span_y,mesh_map_it->second.span_z;
@@ -135,8 +161,11 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
       }// end for visuals in default visual group
     } // end if(it->second->visual)
   } // end for
-
+  
 }
+
+
+
 //======================================================================================================
 // constructor for otdf_instance
 InteractableGlKinematicBody::InteractableGlKinematicBody (shared_ptr<otdf::ModelInterface> otdf_instance,  
@@ -147,15 +176,13 @@ InteractableGlKinematicBody::InteractableGlKinematicBody (shared_ptr<otdf::Model
  _collision_detector(col_detector),
   _unique_name(unique_name)
 {  
-  link_adjustment_enabled =false;
-  whole_body_selection_enabled = false;
-  selected_link = " ";
+  init_vars(); 
   init_otdf_collision_objects();
+  
 }
 
 void InteractableGlKinematicBody::init_otdf_collision_objects()
 {
-
  // loop through all the links and add them to collision world.
   typedef map<string, shared_ptr<otdf::Link> > links_mapType;
   for(links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
@@ -255,6 +282,10 @@ InteractableGlKinematicBody::~InteractableGlKinematicBody()
 {
 
   // clear the collision world
+  if(_floatingbase_markers_boxsize!=0)
+    _collision_detector_floatingbase_markers->clear_collision_objects();
+  if(jointdof_markers_initialized)
+    _collision_detector_jointdof_markers->clear_collision_objects();
   //_collision_detector->clear_collision_objects(); // The parent program should handle this.
 }
 
@@ -265,6 +296,18 @@ void InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
 {
    GlKinematicBody::set_state(msg);  //code re-use
    update_urdf_collision_objects();
+   if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+      update_floatingbase_marker_collision_objects();  
+   }
+   
+    if(!jointdof_markers_initialized){
+      init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+      jointdof_markers_initialized = true; 
+    }
+    update_jointdof_marker_collision_objects(); 
+   
 } // end InteractableGlKinematicBody::set_state(const drc::robot_state_t)
 
 
@@ -272,6 +315,18 @@ void InteractableGlKinematicBody::set_state(const KDL::Frame &T_world_body, cons
 {
     GlKinematicBody::set_state(T_world_body,msg);  //code re-use
     update_urdf_collision_objects();
+    if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+      update_floatingbase_marker_collision_objects();  
+   }
+   
+    if(!jointdof_markers_initialized){
+      init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+      jointdof_markers_initialized = true; 
+    }
+    update_jointdof_marker_collision_objects();
+    
 } // end InteractableGlKinematicBody::set_state(const KDL::Frame, const drc::joint_angles_t)
 
 void InteractableGlKinematicBody::update_urdf_collision_objects(void)
@@ -386,8 +441,22 @@ void InteractableGlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterfa
     GlKinematicBody::set_state(otdf_instance);  //code re-use
     _collision_detector->clear_collision_objects();
     _collision_object_map.clear();
+
     init_otdf_collision_objects(); // reset collision objects with updated geometries
     update_otdf_collision_objects();
+    if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+      update_floatingbase_marker_collision_objects();  
+    }
+    
+    if(jointdof_markers_initialized)
+      _collision_detector_jointdof_markers->clear_collision_objects(); 
+    _dofmarkers_collision_object_map.clear();
+    init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+    jointdof_markers_initialized = true; 
+    update_jointdof_marker_collision_objects();/**/          
+    
 } // end InteractableGlKinematicBody::set_state(const drc::robot_state_t &msg)
 
 void InteractableGlKinematicBody::update_otdf_collision_objects(void)
@@ -503,122 +572,560 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
 }
 
 
+
+void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
+{
+  GlKinematicBody::set_future_state(T_world_body_future,jointpos_in);
+  
+   if(_root_name!="world"){
+      if(_floatingbase_markers_boxsize==0)
+        init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
+      update_floatingbase_marker_collision_objects();  
+   }
+   
+    if(!jointdof_markers_initialized){
+      init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
+      jointdof_markers_initialized = true; 
+    }
+    update_jointdof_marker_collision_objects();
+
+}//end void GlKinematicBody::set_future_state
+
+
+
 //==================================================================================================== 	  
-// drawing utils
+// utils for interactive markers
 
-void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
+
+//----------------------------------------------------------------------------------------------------------------
+// Floating Base Markers
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 {
-  double pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
+   //_collision_detector_floatingbase_markers.reset();
+  bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
+  _collision_detector_floatingbase_markers = shared_ptr<Collision_Detector>(new Collision_Detector()); 
 
-  double markersize = 0.15;
-  int type = _link_shape->type ;
-  enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
-  if (type == SPHERE)
-  {
-    boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_link_shape));	
-    double radius = sphere->radius;
-    double dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
-    draw_markers(pos,dims,markersize);  
-  }
-  else if  (type == BOX)
-  {
-    boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_link_shape));
-    double dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
-    draw_markers(pos,dims,markersize);
-  }
-  else if  (type == CYLINDER)
-  {
-    boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_link_shape));
-    double dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
-    draw_markers(pos,dims,markersize);  
-  }
-  else if  (type == MESH)
-  {
-    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-    mesh_map_it=_mesh_map.find(link_tf.name);
-    if(mesh_map_it!=_mesh_map.end()) // exists in cache
-    { 
-      // get the vertices for mesh_map_it->second
-      double xDim = mesh_map_it->second.span_x;
-      double yDim = mesh_map_it->second.span_y;
-      double zDim = mesh_map_it->second.span_z;
-      double xc = mesh_map_it->second.offset_x;
-      double yc = mesh_map_it->second.offset_y;
-      double zc = mesh_map_it->second.offset_z;
-      double dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
-      double newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
-      draw_markers(newpos,dims,markersize);  
-    }
-  }
-  else if  (type == TORUS)
-  {
-    boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_link_shape));
-    double dims[3] = {torus->radius+2*markersize,torus->radius+2*markersize,torus->tube_radius+2*markersize};
-    draw_markers(pos,dims,markersize);  
-  }
-}
+  Eigen::Vector3f whole_body_span_dims,offset;
+  GlKinematicBody::get_whole_body_span_dims(whole_body_span_dims,offset); //bounding box for entire body  
+
+  float dim[3] = {0.5*whole_body_span_dims[0]-offset[0], 0.5*whole_body_span_dims[1]-offset[1], 0.5*whole_body_span_dims[2]-offset[2]};
+  float maxspan= max(whole_body_span_dims[2],max(whole_body_span_dims[0],whole_body_span_dims[1]));
+  float markersize;
+  //cout << "maxspan: " << maxspan << endl;
+  if(maxspan<0.5)
+     markersize = 0.09;
+  else
+     markersize = 0.15;
+   float maxdim= max(dim[2],max(dim[0],dim[1]));
+   float rot_marker_inner_radius = maxdim+markersize;
+   float rot_marker_outer_radius = rot_marker_inner_radius+0.8*markersize;
+   float torus_radius = 0.5*(rot_marker_inner_radius+rot_marker_outer_radius);
+   float torus_tube_radius = 0.5*(rot_marker_outer_radius-rot_marker_inner_radius);
    
+  
+  Eigen::Vector3f box_dims;
+  box_dims<<  markersize,markersize,markersize;
+
+   // add collision objects for floating base markers
+   
+   
+  if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
+  {
      
+    shared_ptr<Collision_Object> base_x_object_ptr(new Collision_Object_Box("markers::base_x", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_x", base_x_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_x_object_ptr);
+    
+    shared_ptr<Collision_Object> base_y_object_ptr(new Collision_Object_Box("markers::base_y", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_y", base_y_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_y_object_ptr);
+  
+  }
+  if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
+  {    
+    shared_ptr<Collision_Object> base_z_object_ptr(new Collision_Object_Box("markers::base_z", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_z", base_z_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_z_object_ptr);
+  }
+  
+  if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT))
+  {    
+    shared_ptr<Collision_Object> base_roll_object_ptr(new Collision_Object_Torus("markers::base_roll",torus_radius,torus_tube_radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_roll", base_roll_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_roll_object_ptr);
+    
+    shared_ptr<Collision_Object> base_pitch_object_ptr(new Collision_Object_Torus("markers::base_pitch",torus_radius,torus_tube_radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_pitch", base_pitch_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_pitch_object_ptr);
+  }  
+
+  if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
+  {
+      
+    shared_ptr<Collision_Object> base_yaw_object_ptr(new Collision_Object_Torus("markers::base_yaw", torus_radius,torus_tube_radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+    _markers_collision_object_map.insert(make_pair("markers::base_yaw", base_yaw_object_ptr));
+    _collision_detector_floatingbase_markers->add_collision_object(&*base_yaw_object_ptr);
+    
+  }
+
+ 
+  // Store marker dims. Will be used later for drawing.  
+  _floatingbase_offset = offset;
+  _floatingbase_markers_boxsize=markersize;
+  _floatingbase_markers_torusdims<<  torus_radius,torus_tube_radius;
+
+}   
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
+{
+
+    Eigen::Vector3f p0,p;
+    p0 << _T_world_body_future.p[0] + _floatingbase_offset[0], _T_world_body_future.p[1] + _floatingbase_offset[1], _T_world_body_future.p[2] + _floatingbase_offset[2];
+    //p0 << _T_world_body.p[0] + _floatingbase_offset[0], _T_world_body.p[1] + _floatingbase_offset[1], _T_world_body.p[2] + _floatingbase_offset[2];
+    Eigen::Vector4f q0,q;
+    q0 << 0,0,0,1;
+    float rot_marker_outer_radius = _floatingbase_markers_torusdims[0]+_floatingbase_markers_torusdims[1];
+    double trans_marker_length;
+    if (_floatingbase_markers_boxsize > 0.1)
+      trans_marker_length = 1.2*rot_marker_outer_radius;
+    else
+      trans_marker_length = 1.4*rot_marker_outer_radius;  // for small objects
+      
+  if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
+  {      
+
+    shared_ptr<Collision_Object_Box> downcasted_object1(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
+    p=p0; p[0]+=trans_marker_length;
+    downcasted_object1->set_transform(p,q0);
+    
+    shared_ptr<Collision_Object_Box> downcasted_object2(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
+    p=p0; p[1]+=trans_marker_length;
+    downcasted_object2->set_transform(p,q0);
+  }  
+  if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+     (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
+  {     
+    shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
+    p=p0; p[2]+=trans_marker_length;
+    downcasted_object3->set_transform(p,q0);
+  }
+    
+    double axis[3];
+    double q_temp[4];
+  if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT))
+  {      
+    shared_ptr<Collision_Object_Torus> downcasted_object4(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_roll")->second));
+    axis[0] = 0; axis[1] = 1; axis[2] = 0;
+    bot_angle_axis_to_quat(M_PI/2, axis,q_temp);
+    q << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
+    downcasted_object4->set_transform(p0,q);
+    
+    shared_ptr<Collision_Object_Torus> downcasted_object5(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_pitch")->second));
+    axis[0] = 1; axis[1] = 0; axis[2] = 0;
+    bot_angle_axis_to_quat (M_PI/2, axis,q_temp);
+    q << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
+    downcasted_object5->set_transform(p0,q);
+  }
+  
+  if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
+  {          
+    shared_ptr<Collision_Object_Torus> downcasted_object6(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_yaw")->second));
+    downcasted_object6->set_transform(p0,q0);
+  }  
+}
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::draw_floatingbase_markers()
+{
+   //float pos[3] = {_T_world_body.p[0] + _floatingbase_offset[0], _T_world_body.p[1] + _floatingbase_offset[1], _T_world_body.p[2] + _floatingbase_offset[2]};
+   float pos[3] = {_T_world_body_future.p[0] + _floatingbase_offset[0], _T_world_body_future.p[1] + _floatingbase_offset[1], _T_world_body_future.p[2] + _floatingbase_offset[2]};
    
-void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
-{
-  double pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
+   float rot_marker_inner_radius = _floatingbase_markers_torusdims[0]-_floatingbase_markers_torusdims[1];
+   float rot_marker_outer_radius = _floatingbase_markers_torusdims[0]+_floatingbase_markers_torusdims[1];
+   draw_markers(pos,_floatingbase_markers_boxsize,rot_marker_inner_radius,rot_marker_outer_radius);
+} 
 
-  double markersize = 0.15;
-  int type = _link_shape->type ;
-  enum {SPHERE, BOX, CYLINDER, MESH}; 
-  if (type == SPHERE)
+//----------------------------------------------------------------------------------------------------------------
+// Joint Dof Markers
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::init_jointdof_marker_collision_objects()
+{
+
+  double dof_marker_inner_radius = 0.05;
+  double dof_marker_outer_radius = 0.1;
+  double torus_radius =0.5*(dof_marker_outer_radius+dof_marker_inner_radius); 
+  double torus_tube_radius =0.5*(dof_marker_outer_radius-dof_marker_inner_radius);
+  
+  _collision_detector_jointdof_markers.reset();
+  _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
+
+ for (size_t j = 0;j < _joint_tfs.size();j++)
   {
-    boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shape));	
-    double radius = sphere->radius;
-    double dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
-    draw_markers(pos,dims,markersize);  
-  }
-  else if  (type == BOX)
+    JointFrameStruct jointInfo = _joint_tfs[j];
+    int type = jointInfo.type;
+      
+    if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
+    {
+        std::stringstream oss;
+        oss << "markers::" <<  jointInfo.name;
+        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Torus(oss.str(),torus_radius,torus_tube_radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+        _dofmarkers_collision_object_map.insert(make_pair(oss.str(), object_ptr));
+        _collision_detector_jointdof_markers->add_collision_object(&*object_ptr);
+       
+     }//for revolute or continuous joints
+  }  
+  
+}
+
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
+{
+
+  Eigen::Vector3f p;
+  Eigen::Vector4f q;
+
+  for (size_t j = 0;j < _joint_tfs.size();j++)
   {
-    boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shape));
-    double dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
-    draw_markers(pos,dims,markersize);
-  }
-  else if  (type == CYLINDER)
-  {
-    boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shape));
-    double dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
-    draw_markers(pos,dims,markersize);  
-  }
-  else if  (type == MESH)
-  {
-    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
-    mesh_map_it=_mesh_map.find(link_tf.name);
-    if(mesh_map_it!=_mesh_map.end()) // exists in cache
-    { 
-      // get the vertices for mesh_map_it->second
-      double xDim = mesh_map_it->second.span_x;
-      double yDim = mesh_map_it->second.span_y;
-      double zDim = mesh_map_it->second.span_z;
-      double xc = mesh_map_it->second.offset_x;
-      double yc = mesh_map_it->second.offset_y;
-      double zc = mesh_map_it->second.offset_z;
-      double dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
-      double newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
-      draw_markers(newpos,dims,markersize);  
+    JointFrameStruct jointInfo = _joint_tfs[j];
+    Eigen::Vector3f joint_axis;
+    float pos[3];
+    if(future_display_active){
+      pos[0] = jointInfo.future_frame.p[0];  pos[1] = jointInfo.future_frame.p[1];  pos[2] = jointInfo.future_frame.p[2];
+      joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2]; // joint axis in future_world_frame;
     }
-  }
+    else {
+      pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
+      joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
+    }
 
-}        
+  
+    int type = jointInfo.type;
+      
+    if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
+    {
+        //--get rotation in angle/axis form
+        double theta;
+        Eigen::Vector3f axis;      
+        Eigen::Vector3f uz; uz << 0 , 0 , 1;
+        double arrow_length =0.2;
+        
+        Eigen::Vector3f u_body_to_joint;
+        //u_body_to_joint << _T_world_body.p[0]-jointInfo.frame.p[0], _T_world_body.p[1]-jointInfo.frame.p[1],_T_world_body.p[2]-jointInfo.frame.p[2]; 
+        u_body_to_joint << _T_world_body_future.p[0]-jointInfo.future_frame.p[0], _T_world_body_future.p[1]-jointInfo.future_frame.p[1],_T_world_body_future.p[2]-jointInfo.future_frame.p[2];
+        u_body_to_joint.normalize();
+        double normal = acos(u_body_to_joint.dot(joint_axis));
+        double flipped = acos(u_body_to_joint.dot(-joint_axis));
+        
+        
+        axis = uz.cross(joint_axis);
+        theta = acos(uz.dot(joint_axis));
+        
+        KDL::Frame JointAxisFrame;
+        JointAxisFrame.p[0] =pos[0]; JointAxisFrame.p[1] =pos[1]; JointAxisFrame.p[2] =pos[2];
+        KDL::Vector axis_temp;
+        axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
+        JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);
+        KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+        
+        
+        if(flipped>normal+1e-1) {
+//        glTranslatef(pos[0],pos[1],pos[2]);
+//        glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+//        glTranslatef(0,0,-2*arrow_length/3);
+//        gluDisk(quadric,0.05,0.1,36,1);
+          JointAxisOffset.p[2] =-2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          double x,y,z,w;
+          JointAxisFrame.M.GetQuaternion(x,y,z,w);
+          p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
+          q << x,y,z,w;
+          
+          std::stringstream oss;
+          oss << "markers::" <<  jointInfo.name;
+          shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
+          downcasted_object->set_transform(p,q);   
 
-void InteractableGlKinematicBody::draw_markers(double (&pos)[3], double (&dim)[3], double markersize)
+        }
+        else{
+//          glTranslatef(pos[0],pos[1],pos[2]);
+//          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+//          glTranslatef(0,0,2*arrow_length/3);
+//          gluDisk(quadric,0.05,0.1,36,1);
+          JointAxisOffset.p[2] = 2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          double x,y,z,w;
+          JointAxisFrame.M.GetQuaternion(x,y,z,w);
+          p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
+          q << x,y,z,w;
+          
+          std::stringstream oss;
+          oss << "markers::" <<  jointInfo.name;
+          shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
+          downcasted_object->set_transform(p,q);
+
+        }
+      
+     }//end if revolute or continuous joints
+
+  }//end for
+
+}
+
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::draw_jointdof_markers()
 {
-    glEnable(GL_LINE_SMOOTH); 
+  double dof_marker_inner_radius = 0.05;
+  double dof_marker_outer_radius = 0.1;
+  double length =0.2;//=diff.norm();
+  double head_width = 0.03; double head_length = 0.03;double body_width = 0.01;
+
+   glEnable(GL_LINE_SMOOTH); 
    GLUquadricObj* quadric = gluNewQuadric();
    gluQuadricDrawStyle(quadric, GLU_FILL);
    gluQuadricNormals(quadric, GLU_SMOOTH);
    gluQuadricOrientation(quadric, GLU_OUTSIDE);
    
+  for (size_t j = 0;j < _joint_tfs.size();j++)
+  {
+    JointFrameStruct jointInfo = _joint_tfs[j];
+  
+    Eigen::Vector3f joint_axis;
+    float pos[3];
+    if(future_display_active){
+      pos[0] = jointInfo.future_frame.p[0];  pos[1] = jointInfo.future_frame.p[1];  pos[2] = jointInfo.future_frame.p[2];
+      joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2]; // joint axis in future_world_frame;
+    }
+    else {
+      pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
+      joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
+    }
+    int type = jointInfo.type;
+    
+    
+      
+    if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
+    {
+    
+        //--get rotation in angle/axis form
+        double theta;
+        Eigen::Vector3f axis;      
+        Eigen::Vector3f ux,uz; ux << 1 , 0 , 0;uz << 0 , 0 , 1;
+        axis = ux.cross(joint_axis); // Required rotation to be align a arrow in the joint axis direction
+        theta = acos(ux.dot(joint_axis));
+             
+        float c_darkgrey[3] = {0.1,0.1,0.1};
+        float c_yellow[3] = {0.5,0.5,0.3};
+        float c_blue[3] = {0.3,0.3,0.6};
+        float c_red[3] = {0.6,0.3,0.3};
+
+        std::stringstream oss;
+        oss << "markers::" <<  jointInfo.name;
+
+        
+        Eigen::Vector3f u_body_to_joint;
+        //u_body_to_joint << _T_world_body.p[0]-jointInfo.frame.p[0], _T_world_body.p[1]-jointInfo.frame.p[1],_T_world_body.p[2]-jointInfo.frame.p[2]; 
+        u_body_to_joint << _T_world_body_future.p[0]-jointInfo.future_frame.p[0], _T_world_body_future.p[1]-jointInfo.future_frame.p[1],_T_world_body_future.p[2]-jointInfo.future_frame.p[2];
+        u_body_to_joint.normalize();
+        double normal = acos(u_body_to_joint.dot(joint_axis));
+        double flipped = acos(u_body_to_joint.dot(-joint_axis));
+        if(flipped>normal+1e-1) {
+          glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
+          glTranslatef(-length/2, 0,0); 
+          bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+          glPopMatrix();
+
+          glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+          if(selected_marker==oss.str())
+            glColor4f(0.7,0.1,0.1,1.0);
+          axis = uz.cross(joint_axis);
+          theta = acos(uz.dot(joint_axis));
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+          glTranslatef(0,0,-2*length/3);
+          gluDisk(quadric,dof_marker_inner_radius,dof_marker_outer_radius,36,1);
+          glPopMatrix();
+        }
+        else{
+          glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+          glTranslatef(length/2, 0,0);
+          bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+          glPopMatrix();
+
+          glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+          if(selected_marker==oss.str())
+            glColor4f(0.7,0.1,0.1,1.0);
+          axis = uz.cross(joint_axis);
+          theta = acos(uz.dot(joint_axis));
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+          glTranslatef(0,0,2*length/3);
+          gluDisk(quadric,dof_marker_inner_radius,dof_marker_outer_radius,36,1);
+          glPopMatrix();
+        }
+      
+     }//end if revolute or continuous joints
+      
+
+  }//end for
+
+} 
+
+//----------------------------------------------------------------------------------------------------------------
+
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<otdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
+{
+  float pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
+
+  float markersize = 0.15;
+  int type = _link_shape->type ;
+  //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
+  if (type == otdf::Geometry::SPHERE)
+  {
+    boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_link_shape));	
+    float radius = sphere->radius;
+    float dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+  }
+  else if  (type == otdf::Geometry::BOX)
+  {
+    boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_link_shape));
+    float dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+  }
+  else if  (type == otdf::Geometry::CYLINDER)
+  {
+    boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_link_shape));
+    float dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+  }
+  else if  (type == otdf::Geometry::MESH)
+  {
+    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    mesh_map_it=_mesh_map.find(link_tf.name);
+    if(mesh_map_it!=_mesh_map.end()) // exists in cache
+    { 
+      // get the vertices for mesh_map_it->second
+      float xDim = mesh_map_it->second.span_x;
+      float yDim = mesh_map_it->second.span_y;
+      float zDim = mesh_map_it->second.span_z;
+      float xc = mesh_map_it->second.offset_x;
+      float yc = mesh_map_it->second.offset_y;
+      float zc = mesh_map_it->second.offset_z;
+      float dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
+      float newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
+      float maxdim= max(dims[2],max(dims[0],dims[1]));
+      draw_markers(newpos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+    }
+  }
+  else if  (type == otdf::Geometry::TORUS)
+  {
+    boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_link_shape));
+    float dims[3] = {torus->radius+2*markersize,torus->radius+2*markersize,torus->tube_radius+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);   
+  }
+}
+
+     
+//----------------------------------------------------------------------------------------------------------------   
+void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<urdf::Geometry> &_link_shape,const LinkFrameStruct &link_tf)
+{
+  float pos[3] = {link_tf.frame.p[0],link_tf.frame.p[1],link_tf.frame.p[2]};
+
+  float markersize = 0.15;
+  int type = _link_shape->type ;
+  //enum {SPHERE, BOX, CYLINDER, MESH}; 
+  if (type == urdf::Geometry::SPHERE)
+  {
+    boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shape));	
+    float radius = sphere->radius;
+    float dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+  }
+  else if  (type == urdf::Geometry::BOX)
+  {
+    boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shape));
+    float dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+  }
+  else if  (type == urdf::Geometry::CYLINDER)
+  {
+    boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shape));
+    float dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
+    float maxdim= max(dims[2],max(dims[0],dims[1]));
+    draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);   
+  }
+  else if  (type == urdf::Geometry::MESH)
+  {
+    std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+    mesh_map_it=_mesh_map.find(link_tf.name);
+    if(mesh_map_it!=_mesh_map.end()) // exists in cache
+    { 
+      // get the vertices for mesh_map_it->second
+      float xDim = mesh_map_it->second.span_x;
+      float yDim = mesh_map_it->second.span_y;
+      float zDim = mesh_map_it->second.span_z;
+      float xc = mesh_map_it->second.offset_x;
+      float yc = mesh_map_it->second.offset_y;
+      float zc = mesh_map_it->second.offset_z;
+      float dims[3] = {0.5*xDim+2*markersize,0.5*yDim+2*markersize,0.5*zDim+2*markersize};
+      float newpos[3] = {pos[0]+xc,pos[1]+yc,pos[2]+zc}; // meshes have a visual offset.
+       
+      float maxdim= max(dims[2],max(dims[0],dims[1]));
+      draw_markers(newpos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
+    }
+  }
+
+}        
+//----------------------------------------------------------------------------------------------------------------
+void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_marker_boxsize, float rot_marker_inner_radius,float rot_marker_outer_radius)
+{
+   glEnable(GL_LINE_SMOOTH); 
+   GLUquadricObj* quadric = gluNewQuadric();
+   gluQuadricDrawStyle(quadric, GLU_FILL);
+   gluQuadricNormals(quadric, GLU_SMOOTH);
+   gluQuadricOrientation(quadric, GLU_OUTSIDE);
+
+   
+   double trans_marker_length;
+   if (trans_marker_boxsize > 0.1)
+     trans_marker_length = 1.2*rot_marker_outer_radius;
+   else
+     trans_marker_length = 1.4*rot_marker_outer_radius;  // for small objects
+     
+   
     float ORG[3] = {0.0, 0.0, 0.0};
-    float XP[3] = {dim[0], 0.0, 0.0};
-    float YP[3] = {0.0, dim[1], 0.0};
-    float ZP[3] = {0.0, 0.0, dim[2]};
+    float XP[3] = {trans_marker_length, 0.0, 0.0};
+    float YP[3] = {0.0, trans_marker_length, 0.0};
+    float ZP[3] = {0.0, 0.0, trans_marker_length};
 
 
     glPushMatrix();
@@ -639,46 +1146,87 @@ void InteractableGlKinematicBody::draw_markers(double (&pos)[3], double (&dim)[3
 
 
     double alpha=0.4;
-    double maxdim= max(dim[2],max(dim[0],dim[1]));
-    glPushMatrix();
-    glTranslatef(pos[0]+dim[0],pos[1],pos[2]);
+    
 
-    glScalef(markersize,markersize,markersize);
-    glColor4f(1.0, 0.0, 0.0,alpha);
-    bot_gl_draw_cube();
-    glPopMatrix();
+    if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
+    {
     
-    glPushMatrix();
-    glTranslatef(pos[0],pos[1],pos[2]);
-    glRotatef(90,0,1,0);   
-    gluDisk(quadric,maxdim+markersize,maxdim+2*markersize,36,1);
-    glPopMatrix();
+      glPushMatrix();
+      glTranslatef(pos[0]+trans_marker_length,pos[1],pos[2]);
+      glScalef(trans_marker_boxsize,trans_marker_boxsize,trans_marker_boxsize);
+      glColor4f(1.0, 0.0, 0.0,alpha);
+      if(selected_marker=="markers::base_x")
+        glColor4f(0.7,0.1,0.1,1.0);
+      bot_gl_draw_cube();
+      glPopMatrix();
+      
+      glPushMatrix();
+      glTranslatef(pos[0],pos[1]+trans_marker_length,pos[2]);
+      glColor4f(0.0, 1.0, 0.0,alpha);
+      if(selected_marker=="markers::base_y")
+        glColor4f(0.7,0.1,0.1,1.0);
+      glScalef(trans_marker_boxsize,trans_marker_boxsize,trans_marker_boxsize);
+      bot_gl_draw_cube();
+      glPopMatrix();
     
-    glPushMatrix();
-    glTranslatef(pos[0],pos[1]+dim[1],pos[2]);
-    glColor4f(0.0, 1.0, 0.0,alpha);
-    glScalef(markersize,markersize,markersize);
-    bot_gl_draw_cube();
-    glPopMatrix();
+    }
     
-    glPushMatrix();
-    glTranslatef(pos[0],pos[1],pos[2]);
-    glRotatef(90,1,0,0);
-    gluDisk(quadric,maxdim+markersize,maxdim+2*markersize,36,1);
-    glPopMatrix();
+    if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
+    {
+      
+      glPushMatrix();
+      glColor4f(0.0, 0.0, 1.0,alpha);
+      if(selected_marker=="markers::base_yaw")
+        glColor4f(0.7,0.1,0.1,1.0);
+      glTranslatef(pos[0],pos[1],pos[2]);
+      gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
+      glPopMatrix();   
+      
+    }
     
-    glPushMatrix();
-    glTranslatef(pos[0],pos[1],pos[2]+dim[2]);
-    glColor4f(0.0, 0.0, 1.0,alpha);
-    glScalef(markersize,markersize,markersize);
-    bot_gl_draw_cube();
-    glPopMatrix();
+    if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
+    {        
+      glPushMatrix();
+      glTranslatef(pos[0],pos[1],pos[2]+trans_marker_length);
+      glColor4f(0.0, 0.0, 1.0,alpha);
+      if(selected_marker=="markers::base_z")
+        glColor4f(0.7,0.1,0.1,1.0);
+      glScalef(trans_marker_boxsize,trans_marker_boxsize,trans_marker_boxsize);
+      bot_gl_draw_cube();
+      glPopMatrix();
+    }
     
-    glPushMatrix();
-    glTranslatef(pos[0],pos[1],pos[2]);
-    gluDisk(quadric,maxdim+markersize,maxdim+2*markersize,36,1);
-    glPopMatrix();
+    if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT))
+    {       
+      glPushMatrix();
+      glColor4f(1.0, 0.0, 0.0,alpha);
+      if(selected_marker=="markers::base_roll")
+        glColor4f(0.7,0.1,0.1,1.0);
+      glTranslatef(pos[0],pos[1],pos[2]);
+      glRotatef(90,0,1,0);   
+      gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
+      glPopMatrix();
+      
+      glPushMatrix();
+      glColor4f(0.0, 1.0, 0.0,alpha);
+      if(selected_marker=="markers::base_pitch")
+        glColor4f(0.7,0.1,0.1,1.0);
+      glTranslatef(pos[0],pos[1],pos[2]);
+      glRotatef(90,1,0,0);
+      gluDisk(quadric,rot_marker_inner_radius,rot_marker_outer_radius,36,1);
+      //glutSolidTorus(rot_marker_inner_radius,rot_marker_outer_radius,36,36);
+      glPopMatrix();
+    }
+
 
 } 
-                                       
+//----------------------------------------------------------------------------------------------------------------                                       
      
