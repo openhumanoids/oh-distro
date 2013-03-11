@@ -80,8 +80,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         ndx_r = 1:length(X(1,:));
         ndx_l = 1:length(X(1,:));
       end
-      yaw = X(6,:)
-      time = 0:(length(X(1,:)) - 1) * obj.step_time / 2
+      yaw = X(6,:);
+      time = (0:(length(X(1,:)) - 1)) * obj.step_time / 2;
       X(7,:) = time;
       foot_angle_r = obj.foot_angles(1) + yaw(ndx_r);
       foot_angle_l = obj.foot_angles(2) + yaw(ndx_l);
