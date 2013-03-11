@@ -43,8 +43,6 @@ public:
       return imgutils_->unzipImage(   &last_mask_ );
   }
   
-  
-  
 
   State() {
     mLcm.reset(new lcm::LCM());
@@ -85,9 +83,9 @@ private:
   bot::frames* botframes_cpp_;    
   pointcloud_vis* pc_vis_;
 
-  int64_t last_timeMin_;
-  protected:
-    State* mState;  
+  
+protected:
+  State* mState;
 public:
   DataProducer(State* iState);
   
@@ -123,31 +121,11 @@ void DataProducer::operator()() {
 
     // find time range of desired swath (from 45 to 135 degrees)
     int64_t timeMin, timeMax;
-    double ang_min = 10 *M_PI/180; // leading edge from the right hand side of sweep
-    double ang_max = 170 *M_PI/180;
-    //double ang_min = 45*degToRad;
-    //double ang_max= 135*degToRad;
+//      mState->mCollector->getLatestSwath(45*degToRad, 135*degToRad,
+//                                         timeMin, timeMax); // these didnt work
+    mState->mCollector->getLatestSwath(0*degToRad, 90*degToRad,
+                                        timeMin, timeMax);
     
-    int current_utime = drc::Clock::instance()->getCurrentTime();
-    //cout << ang_min << " min | " << ang_max << " max\n";
-         
-
-    
-    mState->mCollector->getLatestSwath(ang_min, ang_max,
-                                         timeMin, timeMax); // these didnt work
-    cout << timeMin << " timeMin | " << timeMax << " timeMax | "
-         << current_utime << " utime\n";
-    if (timeMin == last_timeMin_){
-      cout << "repeat\n";
-      // wait for timer expiration
-      boost::asio::io_service service;
-      boost::asio::deadline_timer timer(service);
-      timer.expires_from_now(boost::posix_time::seconds(1));
-      timer.wait();      
-      continue; 
-    }
-    last_timeMin_ = timeMin;
-    cout << "process\n";
     
     LocalMap::SpaceTimeBounds bounds;
     bounds.mTimeMin = timeMin;
@@ -168,6 +146,10 @@ void DataProducer::operator()() {
     bot_lcmgl_switch_buffer(lcmgl);
 
     
+    cout << timeMin << " is timeMin\n";
+    cout << timeMax << " is timeMax\n";
+    int current_utime = drc::Clock::instance()->getCurrentTime();
+    cout << current_utime << " is current_utime\n";
     
     
     //////////////////////// Output the input cloud (a cloud in world frame) ///////////////////
@@ -186,7 +168,7 @@ void DataProducer::operator()() {
       if (cloud2->points.size() > 0) {
         pcl::PCDWriter writer;
         stringstream ss2;
-        ss2 << "/home/mfallon/drc/software/perception/vehicle-tracker/data/vehicle_"
+        ss2 << "/home/mfallon/drc/software/perception/vehicle-tracker/scripts/vehicle_"
         << timeMax << ".pcd";
         writer.write (ss2.str(), *cloud2, false);
       }
@@ -238,7 +220,7 @@ void DataProducer::operator()() {
       projector(1,2) = height/2.0;
     }
     // create range image
-    Eigen::Isometry3f ref_pose_f = isometryDoubleToFloat(ref_pose);
+    Eigen::Isometry3f ref_pose_f = Isometry_d2f(ref_pose);
     maps::RangeImage rangeImage =
     localMap->getAsRangeImage(width, height, ref_pose_f, projector, bounds);
       
@@ -316,10 +298,14 @@ void DataProducer::operator()() {
       ofs << std::endl;
     }
     ofs.close();
+    std::cout << "Got range image" << std::endl;
 
-
-    
-
+    // wait for timer expiration
+    boost::asio::io_service service;
+    boost::asio::deadline_timer timer(service);
+    timer.expires_from_now(boost::posix_time::seconds(2));
+    timer.wait();
+    std::cout << "Timer expired." << std::endl;
   }
 }
 
