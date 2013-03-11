@@ -1,8 +1,8 @@
 function runQPWalking(goal_x, goal_y, goal_yaw)
 
-if nargin < 3; goal_yaw = -1.57; end
+if nargin < 3; goal_yaw = pi/2; end
 if nargin < 2; goal_y = 1.0; end
-if nargin < 1; goal_x = 0.5; end
+if nargin < 1; goal_x = 0.0; end
 
 options.floating = true;
 options.dt = 0.002;

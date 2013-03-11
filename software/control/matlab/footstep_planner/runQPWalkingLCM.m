@@ -29,15 +29,15 @@ pose = [goal_x;goal_y;0;0;0;goal_yaw];
 if ~lcm_plan
   [rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
 else
-  plan_listener = FootstepPlanListener('atlas', 'COMMITTED_ROBOT_PLAN');
+  footstep_plan_listener = FootstepPlanListener('atlas', 'COMMITTED_FOOTSTEP_PLAN');
 
-  disp('Listening for plans...');
+  disp('Listening for footstep plans...');
   waiting = true;
   foottraj = [];
   while waiting
-    foottraj = plan_listener.getNextMessage(100);
+    foottraj = footstep_plan_listener.getNextMessage(100);
     if (~isempty(foottraj))
-      disp('Plan received.');
+      disp('footstep plan received.');
       waiting = false;
     end
   end
@@ -78,6 +78,7 @@ options.q_nom = q0;
 rfoot_body = r.findLink('r_foot');
 lfoot_body = r.findLink('l_foot');
 
+disp('Computing robot plan...');
 htraj = [];
 for i=1:length(ts)
   t = ts(i);
@@ -92,17 +93,27 @@ for i=1:length(ts)
 end
 htraj = PPTrajectory(spline(ts,htraj));
 
-figure(2); 
-clf; 
-subplot(3,1,1); hold on;
-fnplt(zmptraj(1));
-fnplt(comtraj(1));
-subplot(3,1,2); hold on;
-fnplt(zmptraj(2));
-fnplt(comtraj(2));
-subplot(3,1,3); hold on;
-fnplt(htraj);
+% publish robot plan
+disp('Publishing robot plan...');
+xtraj = zeros(getNumStates(r),length(ts));
+xtraj(1:getNumDOF(r),:) = q;
+joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
+plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
+plan_pub.publish(ts,xtraj,des_traj);
 
+% figure(2); 
+% clf; 
+% subplot(3,1,1); hold on;
+% fnplt(zmptraj(1));
+% fnplt(comtraj(1));
+% subplot(3,1,2); hold on;
+% fnplt(zmptraj(2));
+% fnplt(comtraj(2));
+% subplot(3,1,3); hold on;
+% fnplt(htraj);
+
+disp('Computing ZMP controller...');
 limp = LinearInvertedPendulum(htraj);
 [c, V] = ZMPtracker(limp,zmptraj);
 zmpdata = SharedDataHandle(struct('V',V,'h',com(3),'c',c));
@@ -143,43 +154,52 @@ outs(1).output = 1;
 sys = mimoCascade(pd,sys,[],ins,outs);
 clear ins outs;
 
+% state_frame.subscribe('TRUE_ROBOT_STATE');
+% input_frame = getInputFrame(r);
+% t_offset = -1;
+% t= -1;
+% traj = [];
+% ts = [];
+% disp('waiting...');
+% while t<T
+%   [x,tsim] = getNextMessage(state_frame,1);
+%   if (~isempty(x))
+%     if (t_offset == -1)
+%       t_offset = tsim;
+%     end
+%     t=tsim-t_offset;
+%     ts = [ts t];
+%     traj = [traj x];
+%     u = sys.output(t,[],[x;x]);
+%     input_frame.publish(t,u,'JOINT_COMMANDS');
+%   end
+% end
+% 
+% for i=1:length(ts)
+%   x=traj(:,i);
+%   q=x(1:getNumDOF(r)); 
+%   com(:,i)=getCOM(r,q);
+% end
 
-state_frame.subscribe('TRUE_ROBOT_STATE');
-input_frame = getInputFrame(r);
-t_offset = -1;
-t= -1;
-traj = [];
-ts = [];
-disp('waiting...');
-while t<T
-  [x,tsim] = getNextMessage(state_frame,1);
-  if (~isempty(x))
-    if (t_offset == -1)
-      t_offset = tsim;
-    end
-    t=tsim-t_offset;
-    ts = [ts t];
-    traj = [traj x];
-    u = sys.output(t,[],[x;x]);
-    input_frame.publish(t,u,'JOINT_COMMANDS');
+% figure(2);
+% subplot(3,1,1);
+% plot(ts,com(1,:),'r');
+% subplot(3,1,2);
+% plot(ts,com(2,:),'r');
+% subplot(3,1,3);
+% plot(ts,com(3,:),'r');
+
+disp('Waiting for robot plan confirmation...');
+waiting = true;
+while waiting
+  rplan = rplan_listener.getNextMessage(100);
+  if (~isempty(rplan))
+    disp('Plan confirmed. Executing...');
+    waiting = false;
   end
 end
-
-for i=1:length(ts)
-  x=traj(:,i);
-  q=x(1:getNumDOF(r)); 
-  com(:,i)=getCOM(r,q);
-end
-
-figure(2);
-subplot(3,1,1);
-plot(ts,com(1,:),'r');
-subplot(3,1,2);
-plot(ts,com(2,:),'r');
-subplot(3,1,3);
-plot(ts,com(3,:),'r');
-
-% options.timekeeper = 'drake/lcmTimeKeeper'; 
-% runLCM(sys,[],options);
+ 
+options.timekeeper = 'drake/lcmTimeKeeper'; 
+runLCM(sys,[],options);
 
 end
