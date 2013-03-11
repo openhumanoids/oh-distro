@@ -1,4 +1,4 @@
-classdef Atlas < TimeSteppingRigidBodyManipulator
+classdef Atlas < Biped
   
   methods
     
@@ -16,7 +16,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator
       end
       
   
-      obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
+%       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
+      obj = obj@Biped(urdf,options.dt,options);
+
       
       if options.floating
         % could also do fixed point search here

@@ -23,11 +23,11 @@ x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-biped = Biped(r);
+% biped = Biped(r);
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
 if ~lcm_plan
-  [rfoot, lfoot] = planFootsteps(biped, x0, pose, struct('plotting', true, 'interactive', false));
+  [rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
 else
   plan_listener = FootstepPlanListener('atlas', 'COMMITTED_ROBOT_PLAN');
 
@@ -47,7 +47,7 @@ else
   lfoot = foottraj(2:end,numsteps+(1:num_steps));
 end
 
-[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 1.0);
+[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(r, q0, rfoot, lfoot, 1.0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller

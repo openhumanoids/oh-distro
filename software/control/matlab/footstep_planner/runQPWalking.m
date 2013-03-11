@@ -19,11 +19,11 @@ x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-biped = Biped(r);
+% biped = Biped(r); % no longer necessary, since Atlas is a Biped
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
-[rfoot, lfoot] = planFootsteps(biped, x0, pose, struct('plotting', true, 'interactive', false));
-[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(biped, q0, rfoot, lfoot, 0.8);
+[rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
+[zmptraj,lfoottraj,rfoottraj,~,supptraj] = planZMPandFootTrajectory(r, q0, rfoot, lfoot, 0.8);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
