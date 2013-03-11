@@ -20,6 +20,7 @@ classdef FootstepPlanner < DRCPlanner
       obj.plan_publisher = FootstepPlanPublisher(robot_name, 'r_foot','l_foot', 'CANDIDATE_FOOTSTEP_PLAN');
       
       obj = addInput(obj,'x0','TRUE_ROBOT_STATE',obj.biped.getStateFrame.lcmcoder,true,true);
+      obj = addInput(obj,'con', 'TRAJ_OPT_CONSTRAINT', drc.traj_opt_constraint_t, false, true);
     end
     
     function plan(obj,navgoal,data)
