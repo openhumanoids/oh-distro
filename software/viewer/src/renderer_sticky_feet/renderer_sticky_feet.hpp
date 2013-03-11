@@ -36,6 +36,7 @@ namespace renderer_sticky_feet
     Eigen::Vector3f ray_end;
     Eigen::Vector3f ray_hit;
     Eigen::Vector3f ray_hit_drag;
+    Eigen::Vector3f prev_ray_hit_drag;
     Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
     double ray_hit_t;
     
@@ -137,7 +138,8 @@ namespace renderer_sticky_feet
       
     }//end for      
     
-    
+   self->prev_ray_hit_drag = self->ray_hit_drag;                   
+   
     return shortest_distance;  
   }
 
@@ -173,6 +175,8 @@ namespace renderer_sticky_feet
   inline static void set_object_desired_state_on_marker_motion(void *user)
   {
       RendererStickyFeet *self = (RendererStickyFeet*) user;
+      
+      double gain = 1;
 
        uint i = self->selected_planned_footstep_index;
       // set desired state
@@ -181,7 +185,7 @@ namespace renderer_sticky_feet
       KDL::Frame DragRotation=KDL::Frame::Identity();       
       if(self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->is_bodypose_adjustment_enabled())
       {
-        cout << (*self->marker_selection) << endl;
+        //cout << (*self->marker_selection) << endl;
         if((*self->marker_selection)=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
           T_world_object.p[0] = dx;
@@ -195,27 +199,27 @@ namespace renderer_sticky_feet
           T_world_object.p[2] = dz;
         }    
         else if((*self->marker_selection)=="markers::base_roll"){
-          currentAngle = atan2(self->ray_hit[2]-T_world_object.p[2],self->ray_hit[1]-T_world_object.p[1]);
+          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object.p[2],self->prev_ray_hit_drag[1]-T_world_object.p[1]);
           angleTo = atan2(self->ray_hit_drag[2]-T_world_object.p[2],self->ray_hit_drag[1]-T_world_object.p[1]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
         else if((*self->marker_selection)=="markers::base_pitch"){ 
-          currentAngle = atan2(self->ray_hit[0]-T_world_object.p[0],self->ray_hit[2]-T_world_object.p[2]);
+          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object.p[0],self->prev_ray_hit_drag[2]-T_world_object.p[2]);
           angleTo = atan2(self->ray_hit_drag[0]-T_world_object.p[0],self->ray_hit_drag[2]-T_world_object.p[2]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }    
         else if((*self->marker_selection)=="markers::base_yaw"){
-          currentAngle = atan2(self->ray_hit[1]-T_world_object.p[1],self->ray_hit[0]-T_world_object.p[0]);
+          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object.p[1],self->prev_ray_hit_drag[0]-T_world_object.p[0]);
           angleTo = atan2(self->ray_hit_drag[1]-T_world_object.p[1],self->ray_hit_drag[0]-T_world_object.p[0]);
-          dtheta = 0.05*shortest_angular_distance(currentAngle,angleTo);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           KDL::Vector axis;
           axis[0] = 0; axis[1] = 0; axis[2]=1;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
@@ -226,6 +230,8 @@ namespace renderer_sticky_feet
         std::map<std::string, double> jointpos_in;
         jointpos_in = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
         self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_world_object,jointpos_in); 
+        
+        self->prev_ray_hit_drag = self->ray_hit_drag;
         
         string channel = "TRAJ_OPT_CONSTRAINT";
         publish_traj_constraint(self,i,channel);
