@@ -196,6 +196,10 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
   }
   if (self->dragging) {
     self->dragging = 0;
+    string channel = "TRAJ_OPT_CONSTRAINT";
+    uint i =  self->selected_planned_footstep_index;
+    publish_traj_constraint(self,i,channel);
+    
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //release picking(IMPORTANT)

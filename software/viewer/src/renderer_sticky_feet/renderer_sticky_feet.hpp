@@ -232,9 +232,9 @@ namespace renderer_sticky_feet
         self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_world_object,jointpos_in); 
         
         self->prev_ray_hit_drag = self->ray_hit_drag;
-        
-        string channel = "TRAJ_OPT_CONSTRAINT";
-        publish_traj_constraint(self,i,channel);
+//        
+//        string channel = "TRAJ_OPT_CONSTRAINT";
+//        publish_traj_constraint(self,i,channel);
       
       }
      
