@@ -57,7 +57,7 @@ string no_selection =  " ";
    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_marker(no_selection);
  }
    
-   if(self->footStepPlanListener->_planned_stickyfeet_info_list[i] == FootStepPlanListener::LEFT)
+   if(self->footStepPlanListener->_planned_stickyfeet_info_list[i] == FootStepPlanListener::RIGHT)
       self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
    else
       self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
