@@ -13,6 +13,8 @@
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
 
+#include <bot_vis/viewer.h>
+
 // TODO: slow sweep commands
 
 using namespace maps;
@@ -55,6 +57,7 @@ public:
     // for data requests
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image");
+    addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State");
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree");
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height");
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height");

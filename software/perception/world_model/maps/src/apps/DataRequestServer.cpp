@@ -47,6 +47,9 @@ struct Worker {
       case drc::data_request_t::CAMERA_IMAGE:
         sendCameraImageRequest();
         break;
+      case drc::data_request_t::MINIMAL_ROBOT_STATE:
+        sendMinimalRobotStateRequest();
+        break;
       case drc::data_request_t::OCTREE_SCENE:
         sendOctreeSceneRequest();
         break;
@@ -81,8 +84,13 @@ struct Worker {
   }
 
   void sendCameraImageRequest() {
-    mLcm->publish("TRIGGER", &mRequest);
+    mLcm->publish("TRIGGER_CAMERA", &mRequest);
     cout << "Sent camera image request" << endl;
+  }
+
+  void sendMinimalRobotStateRequest() {
+    mLcm->publish("TRIGGER_STATE", &mRequest);
+    cout << "Sent minimal robot state request" << endl;
   }
 
   void sendOctreeSceneRequest() {
