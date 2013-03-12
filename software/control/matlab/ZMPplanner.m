@@ -48,7 +48,7 @@ classdef ZMPplanner < DrakeSystem
             % u = [current planar com, contact planar positions in the preview
             % window, active_contact_flag,com height in the preview window]
 %             profile on
-            tic
+%             tic
             nx = 4;
             nu = 2;
             ny = 2;
@@ -188,7 +188,7 @@ classdef ZMPplanner < DrakeSystem
 %             com_sim_traj = simulate(sys_preview,t_breaks,x0);
 %             com_pos = [[eye(2) zeros(2)]*com_sim_traj.eval(t_breaks(2));z_com(2)];
 %             warning(S);
-              toc
+%               toc
 %               profile off
 %               profile viewer
         end
