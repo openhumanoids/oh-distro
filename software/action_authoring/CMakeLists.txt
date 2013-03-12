@@ -94,6 +94,8 @@ pods_install_executables(action_authoring_gui)
 add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server.cpp)
 target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance)
 
+pods_install_executables(demo_populate_aff_server)
+
 #=====action database 
 #add_executable(test_database_manager
 #  src/test/test_database_manager.cpp
