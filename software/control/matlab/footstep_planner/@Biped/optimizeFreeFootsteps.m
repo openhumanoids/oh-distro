@@ -114,7 +114,8 @@ while 1
     rot = max(sum(r_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
               sum(r_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
     if  ((dist > num_steps * biped.max_step_length * .4 ...
-          || rot > num_steps * biped.max_step_rot * .4))
+          || rot > num_steps * biped.max_step_rot * .4) ...
+        && (num_steps > 1 || n == length(ndx_fixed)-1 || n == 1))
       j = ndx_fixed(n);
       fixed_steps(j+3:end+2,:) = fixed_steps(j+1:end,:);
       fixed_steps([j+1,j+2],:) = repmat({[]}, 2, 2);
