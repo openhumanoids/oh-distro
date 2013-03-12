@@ -12,6 +12,9 @@ if (fptr==-1)
   error('couldn''t open %s for writing\n',[BUILD_PREFIX,'/config/drc_control_setup.m']);
 end
 
+% call pathdef (can't believe that i have to do this!)
+fprintf(fptr,'\n\npath(pathdef);\n');
+
 % setup javaclasspath
 fprintf(fptr,'\n\n% Setup javaclasspath\n');
 [~,lcmclasspath]=system('pkg-config lcm-java --variable=classpath');
