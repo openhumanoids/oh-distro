@@ -128,23 +128,23 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
  if((self->plan_execution_dock==NULL))
       spawn_plan_execution_dock(self);
-  else if((self->plan_execution_dock!=NULL))
-  {
-      // move dock to account for viewer movement
-      gint root_x, root_y;
-      gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
-      gint width, height;
-      gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
-      
-      
-       gint pos_x, pos_y;
-      pos_x=root_x+0.5*width;    pos_y=root_y+0.75*height;
-      
-     gint current_pos_x, current_pos_y;
-     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
-          gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
-     
-  }  
+//  else if((self->plan_execution_dock!=NULL))
+//  {
+//      // move dock to account for viewer movement
+//      gint root_x, root_y;
+//      gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
+//      gint width, height;
+//      gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
+//      
+//      
+//       gint pos_x, pos_y;
+//      pos_x=root_x+0.5*width;    pos_y=root_y+0.75*height;
+//      
+//     gint current_pos_x, current_pos_y;
+//     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
+//          gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
+//     
+//  }  
 
 }
 

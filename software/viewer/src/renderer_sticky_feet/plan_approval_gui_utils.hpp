@@ -31,7 +31,6 @@ namespace renderer_sticky_feet_gui_utils
     self->footStepPlanListener->_last_plan_approved = true;
     gtk_widget_destroy (self->plan_approval_dock);
     self->plan_approval_dock= NULL;
-    //gtk_widget_destroy (pWindow);
     return TRUE;
   }
    
@@ -40,8 +39,8 @@ namespace renderer_sticky_feet_gui_utils
   {
   
    RendererStickyFeet *self = (RendererStickyFeet*) user;
-    GtkWidget *window, *hbox;
 
+/*  GtkWidget *window; 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
     gtk_window_set_modal(GTK_WINDOW(window), FALSE);
@@ -65,7 +64,7 @@ namespace renderer_sticky_feet_gui_utils
 
     gtk_window_set_title(GTK_WINDOW(window), "Footstep Plan Approval Dock");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-
+   */
     
     GtkWidget  *approve_button, *cancel_button;
     approve_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_APPLY);
@@ -76,7 +75,7 @@ namespace renderer_sticky_feet_gui_utils
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Footstep Plan");
    
     
-   self->plan_approval_dock = window;    
+   //self->plan_approval_dock = window;    
    g_signal_connect (G_OBJECT (cancel_button),
                   "clicked",
                   G_CALLBACK (on_plan_cancel_button_clicked),
@@ -86,17 +85,26 @@ namespace renderer_sticky_feet_gui_utils
                   "clicked",
                   G_CALLBACK (on_plan_approve_button_clicked),
                   self);
+    GtkWidget *hbox;
+    hbox = gtk_hbox_new (FALSE, 0);
+    //GtkWidget * sep = gtk_vseparator_new ();  
+    GtkToolItem * sep = gtk_separator_tool_item_new ();
+    gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
+    GtkWidget * label = gtk_label_new ("Footsteps:");
+    gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);
+    gtk_box_pack_start (GTK_BOX (hbox), approve_button, FALSE, FALSE,0);
+    gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE,0);
 
-    hbox = gtk_hbox_new (TRUE, 3);
 
-    gtk_box_pack_start (GTK_BOX (hbox), approve_button, FALSE, FALSE, 3);
-    gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
+  GtkToolItem * toolitem = gtk_tool_item_new ();   
+  gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
+  gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
+  self->plan_approval_dock = GTK_WIDGET(toolitem);  
+  gtk_widget_show_all (self->plan_approval_dock);
 
-    gtk_container_add (GTK_CONTAINER (window), hbox);
-    
-    
-    gtk_widget_show_all(window);
-    gtk_window_set_focus(GTK_WINDOW(window), NULL);
+    //gtk_container_add (GTK_CONTAINER (window), hbox);
+    //gtk_widget_show_all(window);
+    //gtk_window_set_focus(GTK_WINDOW(window), NULL);
   }
 
   

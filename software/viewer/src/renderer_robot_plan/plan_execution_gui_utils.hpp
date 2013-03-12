@@ -21,16 +21,17 @@ namespace renderer_robot_plan_gui_utils
     cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
     string channel = "COMMITTED_ROBOT_PLAN";
     self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
-    gtk_widget_destroy(self->plan_execution_dock);
-    self->plan_execution_dock= NULL;
+ //   gtk_widget_destroy(self->plan_execution_dock);
+ //   self->plan_execution_dock= NULL;
     return TRUE;
   }
    
   static void spawn_plan_execution_dock  (void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
-    GtkWidget *window, *hbox;
 
+    
+/*    GtkWidget *window;
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
     gtk_window_set_modal(GTK_WINDOW(window), FALSE);
@@ -58,7 +59,7 @@ namespace renderer_robot_plan_gui_utils
     
     gtk_window_set_title(GTK_WINDOW(window), "Plan Execution Control Dock");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-
+*/
     
     GtkWidget  *execute_button, *pause_button, *cancel_button;
     execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY);
@@ -83,8 +84,6 @@ namespace renderer_robot_plan_gui_utils
     gtk_widget_set_can_focus (close_button,FALSE);*/
     //gtk_widget_grab_focus (GTK_WINDOW(self->viewer->window));
 
-
-   self->plan_execution_dock = window; 
    g_signal_connect (G_OBJECT (cancel_button),
                   "clicked",
                   G_CALLBACK (on_cancel_button_clicked),
@@ -93,16 +92,34 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_execute_button_clicked),
                   self);
-
-    hbox = gtk_hbox_new (TRUE, 3);
-
+     
+    GtkWidget *hbox;
+ hbox = gtk_hbox_new (FALSE, 0);
+    //GtkWidget * sep = gtk_vseparator_new ();  
+    GtkToolItem * sep = gtk_separator_tool_item_new ();
+    gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
+    GtkWidget * label = gtk_label_new ("RobotPlan:");
+    gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);
     gtk_box_pack_start (GTK_BOX (hbox), execute_button, FALSE, FALSE, 3);
     gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
     gtk_box_pack_end (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
+    
+    
+    GtkToolItem * toolitem = gtk_tool_item_new ();   
+    gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
+    gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
+    self->plan_execution_dock = GTK_WIDGET(toolitem);  
+    gtk_widget_show_all (self->plan_execution_dock);
 
-    gtk_container_add (GTK_CONTAINER (window), hbox);
+
+   /* 
+   
+
+   self->plan_execution_dock = window; 
+   gtk_container_add (GTK_CONTAINER (window), hbox);
     gtk_widget_show_all(window);
-    gtk_window_set_focus(GTK_WINDOW(window), NULL);
+    gtk_window_set_focus(GTK_WINDOW(window), NULL);*/
+    
     gtk_widget_set_can_focus (execute_button,false);
   }
 
