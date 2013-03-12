@@ -17,6 +17,9 @@
 
 //#include "renderer_sticky_feet.hpp"
 
+using namespace std;
+using namespace boost;
+using namespace visualization_utils;
 
 namespace renderer_sticky_feet
 {
@@ -63,6 +66,9 @@ namespace renderer_sticky_feet
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_planned_stickyfeet_list; 
     std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
         
+        
+    
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody>   _gl_on_motion_copy;
     int on_motion_footstep_index; // make markers for moving footsteps persistent across multiple plans
     int64_t on_motion_footstep_utime;
     
@@ -74,8 +80,21 @@ namespace renderer_sticky_feet
     
     std::vector< int >  _planned_stickyfeet_info_list; 
     
-    
+
     void commit_footstep_plan(int64_t utime,string &channel);
+    
+        
+    void create_sticky_foot_local_copy(int index){
+      _gl_on_motion_copy.reset();
+      _gl_on_motion_copy = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
+      map<string,double> jointpos_in;
+      jointpos_in = _gl_planned_stickyfeet_list[index]->_current_jointpos;    
+      _gl_on_motion_copy->set_state(_gl_planned_stickyfeet_list[index]->_T_world_body,jointpos_in);
+      _gl_on_motion_copy->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
+      on_motion_footstep_index=index;
+      on_motion_footstep_utime=_gl_planned_stickyfeet_timestamps[index];
+    };
+    
      //-------------message callback
     private:
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
@@ -83,6 +102,7 @@ namespace renderer_sticky_feet
 		        const drc::ee_goal_sequence_t* msg);
 
     bool load_foot_urdfs();
+
 
    
     

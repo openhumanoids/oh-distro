@@ -44,6 +44,7 @@ namespace renderer_sticky_feet{
     bool ht_auto_adjust_enabled;
     bool clicked;
     bool dragging;
+    bool adjust_via_localcopy;
 
     Eigen::Vector3f ray_start;
     Eigen::Vector3f ray_end;
@@ -74,14 +75,62 @@ namespace renderer_sticky_feet{
     Eigen::Vector3f hit_pt;
     double shortest_distance = -1;
     
- 
-    for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
-    { 
-    
-        if(self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->is_bodypose_adjustment_enabled())
-        {
+   if(!self->adjust_via_localcopy) 
+   {
+      for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
+      { 
+          if(self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->is_bodypose_adjustment_enabled())
+          {
 
-            self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+              self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+            
+            if(intersected_object != NULL ){
+                self->ray_hit = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    //(*self->selection)  =  ;
+                    self->selected_planned_footstep_index = i;
+                    (*self->marker_selection)  = string(intersected_object->id().c_str());
+                  }
+                }
+                else {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  //(*self->selection)  =  ;
+                  self->selected_planned_footstep_index = i;
+                  (*self->marker_selection)  = string(intersected_object->id().c_str());
+                 }
+            }
+            else {
+            // clear previous selections
+             string no_selection = " ";
+             self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_link(no_selection); 
+            }           
+          }  
+          
+     }//end for      
+   }
+   else
+   {
+
+    if(self->footStepPlanListener->_gl_on_motion_copy) // exists
+    {
+    
+      
+        if(self->footStepPlanListener->_gl_on_motion_copy->is_bodypose_adjustment_enabled())
+        {
+      
+            self->footStepPlanListener->_gl_on_motion_copy->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
           
           if(intersected_object != NULL ){
               self->ray_hit = hit_pt;
@@ -96,7 +145,8 @@ namespace renderer_sticky_feet{
                   self->ray_hit_drag = hit_pt;
                   self->ray_hit_t = (hit_pt - self->ray_start).norm();
                   //(*self->selection)  =  ;
-                  self->selected_planned_footstep_index = i;
+                  // TODO: adjust this index via a nearest neighbor search in time/ or with the desired_footstep_plan msg handler. Have a field that indicates NEW or UPDATE
+                  //self->selected_planned_footstep_index = self->footStepPlanListener->on_motion_footstep_index;
                   (*self->marker_selection)  = string(intersected_object->id().c_str());
                 }
               }
@@ -106,21 +156,27 @@ namespace renderer_sticky_feet{
                 self->ray_hit_drag = hit_pt;
                 self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 //(*self->selection)  =  ;
-                self->selected_planned_footstep_index = i;
+                // TODO: adjust this index via a nearest neighbor search in time
+                //self->selected_planned_footstep_index = self->footStepPlanListener->on_motion_footstep_index;
                 (*self->marker_selection)  = string(intersected_object->id().c_str());
                }
           }
           else {
           // clear previous selections
            string no_selection = " ";
-           self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_link(no_selection); 
+           self->footStepPlanListener->_gl_on_motion_copy->highlight_link(no_selection); 
           }  
                        
-        }  
-    
+        }
+        
+      }   
 
-      self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-
+   }// end else   
+  
+  for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
+  { 
+  
+     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
       if( intersected_object != NULL ){
         Eigen::Vector3f diff = (from-hit_pt);
         double distance = diff.norm();
@@ -154,7 +210,7 @@ namespace renderer_sticky_feet{
     }//end for      
     
    self->prev_ray_hit_drag = self->ray_hit_drag;                   
-   
+
     return shortest_distance;  
   }
 
@@ -194,12 +250,48 @@ namespace renderer_sticky_feet{
      msg.num_joints = 0;
      self->lcm->publish(channel, &msg);
   }
+  
+  
+  inline static void publish_traj_constraint_via_local_copy(void *user,string &channel)
+  {
+      RendererStickyFeet *self = (RendererStickyFeet*) user;
+     KDL::Frame T_world_foot_pose = self->footStepPlanListener->_gl_on_motion_copy->_T_world_body;
+     
+     drc::traj_opt_constraint_t msg;
+     msg.utime = self->robot_utime;
+     msg.robot_name =  self->footStepPlanListener->_robot_name;
+     
+     msg.num_links = 1;
+     size_t i= self->footStepPlanListener->on_motion_footstep_index;
+     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::LEFT){
+      msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
+      T_world_foot_pose.p[0] -= self->footStepPlanListener->_left_foot_offset[0]; 
+      T_world_foot_pose.p[1] -= self->footStepPlanListener->_left_foot_offset[1]; 
+      T_world_foot_pose.p[2] -= self->footStepPlanListener->_left_foot_offset[2];  
+     }
+     else if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::RIGHT)
+     {  
+      msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
+      T_world_foot_pose.p[0] -= self->footStepPlanListener->_right_foot_offset[0]; 
+      T_world_foot_pose.p[1] -= self->footStepPlanListener->_right_foot_offset[1]; 
+      T_world_foot_pose.p[2] -= self->footStepPlanListener->_right_foot_offset[2];  
+     }
+     
+     drc::position_3d_t pose;
+     transformKDLToLCM(T_world_foot_pose,pose);
+     msg.link_origin_position.push_back(pose);
+     msg.link_timestamps.push_back(0.0);// where should this information come from?
+     
+     msg.num_joints = 0;
+     self->lcm->publish(channel, &msg);
+  }
+  
 
 // ===================================================================
   inline static void set_object_desired_state_on_marker_motion(void *user)
   {
       RendererStickyFeet *self = (RendererStickyFeet*) user;
-     
+ 
       
       double gain = 1;
 
@@ -258,6 +350,8 @@ namespace renderer_sticky_feet{
         jointpos_in = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
         self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_world_object,jointpos_in); 
         
+
+        
         self->prev_ray_hit_drag = self->ray_hit_drag;
         
 //        string channel = "TRAJ_OPT_CONSTRAINT";
@@ -268,7 +362,48 @@ namespace renderer_sticky_feet{
   }   // end set_object_desired_state_on_marker_motion()  
 
   
-  
+  inline static void set_object_desired_state_on_marker_motion_via_local_copy(void *user)
+  {
+      RendererStickyFeet *self = (RendererStickyFeet*) user;
+
+      double gain = 1;
+      // set desired state
+      KDL::Frame T_world_object = self->footStepPlanListener->_gl_on_motion_copy->_T_world_body;
+      double currentAngle, angleTo,dtheta;       
+      KDL::Frame DragRotation=KDL::Frame::Identity();       
+
+        //cout << (*self->marker_selection) << endl;
+        if((*self->marker_selection)=="markers::base_x"){
+          double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+          T_world_object.p[0] = dx;
+        }
+        else if((*self->marker_selection)=="markers::base_y"){
+          double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+          T_world_object.p[1] = dy;
+        }
+        else if((*self->marker_selection)=="markers::base_yaw"){
+          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object.p[1],self->prev_ray_hit_drag[0]-T_world_object.p[0]);
+          angleTo = atan2(self->ray_hit_drag[1]-T_world_object.p[1],self->ray_hit_drag[0]-T_world_object.p[0]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 0; axis[2]=1;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+   
+   
+        T_world_object.M  = DragRotation.M*T_world_object.M;  
+        
+        std::map<std::string, double> jointpos_in;
+        jointpos_in = self->footStepPlanListener->_gl_on_motion_copy->_current_jointpos;
+        self->footStepPlanListener->_gl_on_motion_copy->set_state(T_world_object,jointpos_in); 
+        
+
+        self->prev_ray_hit_drag = self->ray_hit_drag;
+        
+        string channel = "TRAJ_OPT_CONSTRAINT";
+        publish_traj_constraint_via_local_copy(self,channel);
+
+  }   // end set_object_desired_state_on_marker_motion_via_duplicate()   
 
 }// end namespace
 

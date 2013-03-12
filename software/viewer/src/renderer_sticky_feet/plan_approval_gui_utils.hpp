@@ -13,7 +13,7 @@ namespace renderer_sticky_feet_gui_utils
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
     cout <<"Publishing on REJECTED_FOOTSTEP_PLAN" << endl;
-    string channel = "REJECTED_FOOTSTEP_PLAN";
+    string channel = "REJECTED_FOOTSTEP_PLAN";   
     self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);    
     self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();    
     gtk_widget_destroy (self->plan_approval_dock);
@@ -29,8 +29,8 @@ namespace renderer_sticky_feet_gui_utils
     string channel = "COMMITTED_FOOTSTEP_PLAN";
     self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);
     self->footStepPlanListener->_last_plan_approved = true;
-    gtk_widget_destroy (self->plan_approval_dock);
-    self->plan_approval_dock= NULL;
+    //gtk_widget_destroy (self->plan_approval_dock);
+    //self->plan_approval_dock= NULL;
     return TRUE;
   }
    

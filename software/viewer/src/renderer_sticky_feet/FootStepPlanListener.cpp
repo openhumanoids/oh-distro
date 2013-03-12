@@ -28,7 +28,7 @@ namespace renderer_sticky_feet
     //_lcm = _parent_renderer->lcm;
     if(!_lcm->good())
     {
-      cerr << "\nLCM Not Good: Robot State Handler" << endl;
+      cerr << "\nLCM Not Good: Robot FootStepPlan Handler" << endl;
       return;
     }
       on_motion_footstep_index=-1;
@@ -170,8 +170,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
 
     }//end for num of goals;
-    
-    
+
         
       if((on_motion_footstep_index!=-1)){
         int index= on_motion_footstep_index;  //use on_motion_footstep_utime to do a nearest neighbor search)
