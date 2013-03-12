@@ -196,8 +196,8 @@ int main(int argc, char *argv[])
 
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
-  //maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  //data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
