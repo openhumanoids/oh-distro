@@ -28,7 +28,7 @@ public:
   
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * TRUE_state_msg);
   void handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
-  void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
+  void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::data_request_t* msg);
 
 private:
   void outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
@@ -60,7 +60,7 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
 
   _lcm->subscribe("TRUE_ROBOT_STATE", &StatePub::handleRobotStateMsg, this); //
   _lcm->subscribe("POSE_HEAD",&StatePub::handlePoseHeadMsg,this);
-  _lcm->subscribe("TRIGGER",&StatePub::triggerHandler,this);
+  _lcm->subscribe("TRIGGER_STATE",&StatePub::triggerHandler,this);
   
   // Parse KDL tree
   KDL::Tree tree;
@@ -238,7 +238,7 @@ void StatePub::sendTriggerOutput(){
 }
 
 void StatePub::triggerHandler(const lcm::ReceiveBuffer* rbuf, 
-                    const std::string& channel, const  bot_core::pose_t* msg){
+                    const std::string& channel, const  drc::data_request_t* msg){
   sendTriggerOutput();
 }
 
