@@ -117,11 +117,10 @@ while 1
   end
   if modified
     figure(22)
-    cla
-    hold on
+    hold off
     plotFootstepPlan(X, Xright, Xleft);
-    plan_publisher.publish(Xleft(7,:), Xleft(1:6,:), Xright(7,:), Xright(1:6,:));
     hold on
+    plan_publisher.publish(Xleft(7,:), Xleft(1:6,:), Xright(7,:), Xright(1:6,:));
     for j = 1:length(ndx_r)
       if ~isempty(fixed_steps{ndx_r(j), 1})
         plot(Xright(1,j), Xright(2,j), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
@@ -132,15 +131,10 @@ while 1
         plot(Xleft(1,j), Xleft(2,j), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
       end
     end
-    drawnow
-    hold off
-    % if exist('vs.obj_collection_t')
-    %   plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
-    %   plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
-    % end
-    if (~interactive && ~modified) || (done)
-      break
-    end
+  end
+  drawnow
+  if (~interactive && ~modified) || (done)
+    break
   end
 end
 

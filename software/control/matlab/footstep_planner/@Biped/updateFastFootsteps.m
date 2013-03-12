@@ -54,11 +54,6 @@ function c = cost(x_flat)
   X = locate_step_centers(x_flat);
   [d, r] = biped.stepDistance(X(:,1:(end-1)), X(:,2:end),1);
   c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
-
-%   
-%   X = locate_step_centers(x_flat);
-%   deviation = atan2(X(2,2:end) - X(2,1:end-1), X(1,2:end) - X(1,1:end-1)) - X(6,1:end-1);
-%   c = sum(deviation .^ 2);
 end
 
 function X = locate_step_centers(x_flat)
