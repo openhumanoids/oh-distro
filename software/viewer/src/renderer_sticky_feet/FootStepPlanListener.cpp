@@ -58,31 +58,29 @@ namespace renderer_sticky_feet
        
     _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
     val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
-   
-    KDL::Frame T_body_l_meshframe = KDL::Frame::Identity();
-    T_body_l_meshframe.p[0] =   -mesh_struct.offset_x;
-    T_body_l_meshframe.p[1] =   -mesh_struct.offset_y;
-    T_body_l_meshframe.p[2] =   -mesh_struct.offset_z;
     
-    _left_foot_offset << -mesh_struct.offset_x,-mesh_struct.offset_y,whole_body_span[2]; 
-     if(_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct))  
-        _left_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);
-  
+ 
+     val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
+    _T_bodyframe_meshframe_left = KDL::Frame::Identity();
+    _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
+    _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
+    _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
+    
+    _T_bodyframe_groundframe_left = KDL::Frame::Identity();
+    _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
      
     _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-    val = _base_gl_stickyfoot_right->get_mesh_struct("r_foot_0", mesh_struct);
-    KDL::Frame T_body_r_meshframe = KDL::Frame::Identity();
-    T_body_r_meshframe.p[0] =   -mesh_struct.offset_x;
-    T_body_r_meshframe.p[1] =   -mesh_struct.offset_y;
-    T_body_r_meshframe.p[2] =   -mesh_struct.offset_z;
+    val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
+    _T_bodyframe_meshframe_right = KDL::Frame::Identity();
+    _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
+    _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
+    _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
     
-    _right_foot_offset << -mesh_struct.offset_x,-mesh_struct.offset_y,whole_body_span[2];
-    if(_base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct))  
-      _right_foot_offset[2] -= (0.5*(mesh_struct.span_z) + mesh_struct.offset_z);  
- 
-
-      lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
-      _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
+    _T_bodyframe_groundframe_right = KDL::Frame::Identity();
+    _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    
+    lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+    _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
 
   }
   
@@ -124,37 +122,41 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       oss << msg->robot_name << "_"<< goal_msg.ee_name << "_" << i;  // unique id atlas_l_foot_1/2/3 or atlas_r_foot_1/2/3 
      // cout << "names: "<< oss.str() << endl;
 
-      KDL::Frame T_world_foot_pose;
-      
-      transformLCMToKDL(goal_msg.ee_goal_pos, T_world_foot_pose);
-      //T_world_foot_pose = KDL::Frame::Identity();
+      KDL::Frame T_worldframe_meshframe;
+      transformLCMToKDL(goal_msg.ee_goal_pos, T_worldframe_meshframe);
       
       if(goal_msg.ee_name==_left_foot_name)
       {
+
+        KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
+        KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_left;
+
+      
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
         _planned_stickyfeet_info_list.push_back(FootStepPlanListener::LEFT);
         _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true);
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
-        T_world_foot_pose.p[0] += _left_foot_offset[0];  
-        T_world_foot_pose.p[1] += _left_foot_offset[1];  
-        T_world_foot_pose.p[2] += _left_foot_offset[2];  
-        _gl_planned_stickyfeet_list[i]->set_state(T_world_foot_pose,jointpos_in);       
+
+        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);       
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }
       else if(goal_msg.ee_name==_right_foot_name)
       {
+      
+
+        KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_right.Inverse();
+        KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_right;
+
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
         _planned_stickyfeet_info_list.push_back(FootStepPlanListener::RIGHT);
         _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
-        T_world_foot_pose.p[0] += _right_foot_offset[0];  
-        T_world_foot_pose.p[1] += _right_foot_offset[1];
-        T_world_foot_pose.p[2] += _right_foot_offset[2];         
-        _gl_planned_stickyfeet_list[i]->set_state(T_world_foot_pose,jointpos_in);
+        
+        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }  
       else{
@@ -234,25 +236,17 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     {
         drc::ee_goal_t goal_msg  = msg.goals[i];
         
-       KDL::Frame T_world_foot_pose = _gl_planned_stickyfeet_list[i]->_T_world_body;
-       
+       KDL::Frame T_worldframe_groundframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
+       KDL::Frame T_worldframe_meshframe;
       if(goal_msg.ee_name==_left_foot_name)
       {
-        T_world_foot_pose.p[0] -= _left_foot_offset[0];  
-        T_world_foot_pose.p[1] -= _left_foot_offset[1]; 
-        T_world_foot_pose.p[2] -= _left_foot_offset[2];  
-        
+        T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_left.Inverse())*_T_bodyframe_meshframe_left;
       }
       else if(goal_msg.ee_name==_right_foot_name)
       {
-       
-       // offset w.r.t to visual
-        T_world_foot_pose.p[0] -= _right_foot_offset[0];  
-        T_world_foot_pose.p[1] -= _right_foot_offset[1];  
-        T_world_foot_pose.p[2] -= _right_foot_offset[2];  
+        T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_right.Inverse())*_T_bodyframe_meshframe_right;
       } 
-      
-      transformKDLToLCM(T_world_foot_pose,goal_msg.ee_goal_pos); 
+      transformKDLToLCM(T_worldframe_meshframe,goal_msg.ee_goal_pos); 
       msg.goals[i] =  goal_msg;
       msg.goal_times[i]+=utime-old_utime;
     }

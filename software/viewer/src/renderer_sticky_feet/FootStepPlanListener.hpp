@@ -50,6 +50,11 @@ namespace renderer_sticky_feet
      int64_t _last_plan_msg_timestamp;
      bool _last_plan_approved;  
    
+     KDL::Frame _T_bodyframe_meshframe_left;
+     KDL::Frame _T_bodyframe_meshframe_right;
+     KDL::Frame _T_bodyframe_groundframe_left; 
+     KDL::Frame _T_bodyframe_groundframe_right;
+   
     //FootStepPlanListener(RendererStickyFeet *parent_renderer);
     FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
     ~FootStepPlanListener();
