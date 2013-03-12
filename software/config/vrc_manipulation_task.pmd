@@ -16,7 +16,7 @@ group "1.robot" {
         host = "localhost";
     }
     cmd "estpub" {
-        exec = "est_robot_state_publisher_no_sensing";
+        exec = "est_robot_state_publisher -g";
         host = "localhost";
     }
     cmd "r2l" {
@@ -173,6 +173,13 @@ group "X.misc" {
         host = "localhost";
     }
 }
+group "X.teleport" {
+    cmd "textured_steps" {
+        exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
+        host = "localhost";
+    }
+}
+
 
 group "X.motion"{
     cmd "estpub_sensing" {
