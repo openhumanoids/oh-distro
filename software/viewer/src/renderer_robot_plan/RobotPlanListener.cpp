@@ -24,8 +24,8 @@ namespace renderer_robot_plan
     //lcm ok?
     if(!lcm->good())
       {
-	cerr << "\nLCM Not Good: Robot State Handler" << endl;
-	return;
+	      cerr << "\nLCM Not Good: Robot State Handler" << endl;
+	      return;
       }
 
     // Subscribe to Robot_Model.  Will unsubscribe once a single message has been received

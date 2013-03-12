@@ -31,7 +31,8 @@ namespace renderer_sticky_feet
       cerr << "\nLCM Not Good: Robot State Handler" << endl;
       return;
     }
-
+      on_motion_footstep_index=-1;
+      on_motion_footstep_utime= 0;
      _last_plan_approved = false;
      _left_foot_name ="l_foot";
      _right_foot_name = "r_foot";
@@ -110,14 +111,18 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     if(old_list_size!=num_goals){
       _gl_planned_stickyfeet_list.clear();
       _planned_stickyfeet_info_list.clear();
+      _gl_planned_stickyfeet_timestamps.clear();
       //_collision_detector.reset();
       //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
    
     for (uint i = 0; i <(uint)num_goals; i++)
     {
-      drc::ee_goal_t goal_msg  = msg->goals[i];
-
+     
+    
+      drc::ee_goal_t goal_msg  = msg->goals[i];      
+      _gl_planned_stickyfeet_timestamps.push_back(msg->goal_times[i]);
+      
       std::stringstream oss;
       oss << msg->robot_name << "_"<< goal_msg.ee_name << "_" << i;  // unique id atlas_l_foot_1/2/3 or atlas_r_foot_1/2/3 
      // cout << "names: "<< oss.str() << endl;
@@ -163,7 +168,15 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
          cout << "ERROR: Unknown foot end effector StickyFeetRenderer::FootStepPlanListener" << goal_msg.ee_name << endl; 
       }             
 
+
     }//end for num of goals;
+    
+    
+        
+      if((on_motion_footstep_index!=-1)){
+        int index= on_motion_footstep_index;  //use on_motion_footstep_utime to do a nearest neighbor search)
+       _gl_planned_stickyfeet_list[index]->enable_bodypose_adjustment(true);
+      }
     
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);

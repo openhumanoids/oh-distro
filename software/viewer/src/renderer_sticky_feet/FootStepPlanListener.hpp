@@ -61,6 +61,11 @@ namespace renderer_sticky_feet
     
    // boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_planned_stickyfeet_list; 
+    std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
+        
+    int on_motion_footstep_index; // make markers for moving footsteps persistent across multiple plans
+    int64_t on_motion_footstep_utime;
+    
     
     enum _foot_type
     {

@@ -58,6 +58,7 @@ namespace renderer_sticky_feet{
     std::string* marker_selection;
     int selected_planned_footstep_index;
 
+    
     // Our only source of a free running clock:
     int64_t robot_utime;
     GtkWidget *plan_approval_dock;
@@ -198,6 +199,7 @@ namespace renderer_sticky_feet{
   inline static void set_object_desired_state_on_marker_motion(void *user)
   {
       RendererStickyFeet *self = (RendererStickyFeet*) user;
+     
       
       double gain = 1;
 
@@ -257,7 +259,7 @@ namespace renderer_sticky_feet{
         self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_world_object,jointpos_in); 
         
         self->prev_ray_hit_drag = self->ray_hit_drag;
-//        
+        
 //        string channel = "TRAJ_OPT_CONSTRAINT";
 //        publish_traj_constraint(self,i,channel);
       

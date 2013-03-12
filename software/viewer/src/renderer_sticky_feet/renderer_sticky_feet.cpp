@@ -45,10 +45,17 @@ string no_selection =  " ";
    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_marker(no_selection);
  }
    
-   if(self->footStepPlanListener->_planned_stickyfeet_info_list[i] == FootStepPlanListener::RIGHT)
-      self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
-   else
-      self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
+ if((*self->marker_selection)!=" "){ 
+   self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_marker((*self->marker_selection));
+ }
+ else{ 
+   self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_marker(no_selection);
+ }
+   
+ if(self->footStepPlanListener->_planned_stickyfeet_info_list[i] == FootStepPlanListener::RIGHT)
+    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
+ else
+    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
       
   //self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_whole_body_bbox();
 }
@@ -185,6 +192,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   else if(((*self->marker_selection)  != " "))
   {
     self->dragging = 1;
+
     KDL::Frame T_world_object = self->footStepPlanListener->_gl_planned_stickyfeet_list[self->selected_planned_footstep_index]->_T_world_body;
     self->marker_offset_on_press << self->ray_hit[0]-T_world_object.p[0],self->ray_hit[1]-T_world_object.p[1],self->ray_hit[2]-T_world_object.p[2]; 
     return 1;// consumed
@@ -213,6 +221,10 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     uint i =  self->selected_planned_footstep_index;
     publish_traj_constraint(self,i,channel);
     
+    //clear on release
+    self->footStepPlanListener->on_motion_footstep_index=-1;
+    self->footStepPlanListener->on_motion_footstep_utime= 0;
+    
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //release picking(IMPORTANT)
@@ -234,6 +246,10 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     double t = self->ray_hit_t;
     self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
     set_object_desired_state_on_marker_motion(self);
+          
+    // make markers persistent across multiple plans for moving footsteps seamlessly while plans update
+    self->footStepPlanListener->on_motion_footstep_index=self->selected_planned_footstep_index; 
+    self->footStepPlanListener->on_motion_footstep_utime= self->footStepPlanListener->_gl_planned_stickyfeet_timestamps[self->selected_planned_footstep_index];
   }
   bot_viewer_request_redraw(self->viewer);
   return 1;
