@@ -38,7 +38,7 @@ lc.subscribe('TRAJ_OPT_CONSTRAINT', aggregator);
 
 
 while 1
-  modified = 0;
+  X_old = X;
   [Xright, Xleft] = biped.stampedStepLocations(X);
   con_msg = aggregator.getNextMessage(0);
   if ~isempty(con_msg)
@@ -48,7 +48,7 @@ while 1
                              origin_pos.rotation.y,...
                              origin_pos.rotation.z,...
                              origin_pos.rotation.w]);
-    pos = [origin_pos.translation.x;...
+    pos = [origin_pos.translation.x;...untitled.fig
            origin_pos.translation.y;...
            origin_pos.translation.z;...
            r;p;y];
@@ -85,7 +85,6 @@ while 1
       fixed_steps([j+1,j+2],:) = repmat({[]}, 2, 2);
       X(:,j+3:end+2) = X(:,j+1:end);
       X(:,[j+1,j+2]) = interp1([0,1], X(:,[j,j+1])', [1/3, 2/3])';
-      modified = 1;
       if drag_ndx > j
         drag_ndx = drag_ndx + 2;
       end
@@ -98,7 +97,6 @@ while 1
       fixed_steps(end-1:end,:) = [];
       X(:,j+1:end-2) = X(:,j+3:end);
       X(:,end-1:end) = [];
-      modified = 1;
       if drag_ndx > j+1
         drag_ndx = drag_ndx - 2;
       end
@@ -110,36 +108,39 @@ while 1
   ndx_l = int32([1:2:(total_steps-1), total_steps]);
   
   [X, outputflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, @heightfun);
-    
-  if outputflag ~= 1 && outputflag ~= 2
-    modified = 1;
-  end
   
   [Xright, Xleft] = biped.stampedStepLocations(X, ndx_r, ndx_l);
-  figure(22)
-  cla
-  hold on
-  plotFootstepPlan(X, Xright, Xleft);
-  plan_publisher.publish(Xleft(7,:), Xleft(1:6,:), Xright(7,:), Xright(1:6,:));
-  if exist('vs.obj_collection_t')
-    plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
-    plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+  if isequal(size(X_old), size(X)) && all(all(abs(X_old - X) < 0.01))
+    modified = false;
+  else
+    modified = true;
   end
-  hold on
-  for j = 1:length(ndx_r)
-    if ~isempty(fixed_steps{ndx_r(j), 1})
-      plot(Xright(1,j), Xright(2,j), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
+  if modified
+    figure(22)
+    cla
+    hold on
+    plotFootstepPlan(X, Xright, Xleft);
+    plan_publisher.publish(Xleft(7,:), Xleft(1:6,:), Xright(7,:), Xright(1:6,:));
+    hold on
+    for j = 1:length(ndx_r)
+      if ~isempty(fixed_steps{ndx_r(j), 1})
+        plot(Xright(1,j), Xright(2,j), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
+      end
     end
-  end
-  for j = 1:length(ndx_l)
-    if~isempty(fixed_steps{ndx_l(j), 2})
-      plot(Xleft(1,j), Xleft(2,j), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+    for j = 1:length(ndx_l)
+      if~isempty(fixed_steps{ndx_l(j), 2})
+        plot(Xleft(1,j), Xleft(2,j), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+      end
     end
-  end
-  drawnow
-  hold off
-  if (~interactive && ~modified) || (done)
-    break
+    drawnow
+    hold off
+    % if exist('vs.obj_collection_t')
+    %   plot_lcm_poses(Xright(1:3,:)', Xright(6:-1:4,:)', 1, 'Foot Steps (right)', 4, 1, 0, -1);
+    %   plot_lcm_poses(Xleft(1:3,:)', Xleft(6:-1:4,:)', 2, 'Foot Steps (left)', 4, 1, 0, -1);
+    % end
+    if (~interactive && ~modified) || (done)
+      break
+    end
   end
 end
 
