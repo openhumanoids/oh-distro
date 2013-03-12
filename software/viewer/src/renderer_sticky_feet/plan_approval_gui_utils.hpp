@@ -62,10 +62,7 @@ namespace renderer_sticky_feet_gui_utils
 
     gtk_window_set_title(GTK_WINDOW(window), "Footstep Plan Approval Dock");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-    
-    BotGtkParamWidget *pw;
-    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-    
+
     
     GtkWidget  *approve_button, *cancel_button;
     approve_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_APPLY);

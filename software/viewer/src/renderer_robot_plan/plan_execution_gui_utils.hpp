@@ -8,9 +8,8 @@ namespace renderer_robot_plan_gui_utils
   static gboolean on_cancel_button_clicked (GtkButton* button, void *user)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
-    //cout <<"ok " <<self->plan_execution_dock<< endl;
-    //gtk_widget_destroy(self->plan_execution_dock);
-    //cout <<"ok" << endl;
+    self->robotPlanListener->_gl_robot_list.clear();
+    gtk_widget_destroy(self->plan_execution_dock);
     self->plan_execution_dock= NULL;
    return TRUE;
   }
@@ -21,9 +20,9 @@ namespace renderer_robot_plan_gui_utils
     cout <<"Robot plan approved" << endl;
     cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
     string channel = "COMMITTED_ROBOT_PLAN";
-    //self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
-    //gtk_widget_destroy(self->plan_execution_dock);
-    //self->plan_execution_dock= NULL;
+    self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
+    gtk_widget_destroy(self->plan_execution_dock);
+    self->plan_execution_dock= NULL;
     return TRUE;
   }
    
@@ -39,6 +38,7 @@ namespace renderer_robot_plan_gui_utils
     gtk_window_stick(GTK_WINDOW(window));
     //gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_NONE);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 150, 50);
     gint pos_x, pos_y;
 //    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
 //    pos_x-=75;    pos_y+=75;
@@ -55,7 +55,7 @@ namespace renderer_robot_plan_gui_utils
 
    // gint gdk_screen_height  (void);//Returns the height of the default screen in pixels.
     gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
-    gtk_window_set_default_size(GTK_WINDOW(window), 150, 50);
+    
     gtk_window_set_title(GTK_WINDOW(window), "Plan Execution Control Dock");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 
@@ -88,11 +88,11 @@ namespace renderer_robot_plan_gui_utils
    g_signal_connect (G_OBJECT (cancel_button),
                   "clicked",
                   G_CALLBACK (on_cancel_button_clicked),
-                  (gpointer) window);
+                  self);
    g_signal_connect (G_OBJECT (execute_button),
                   "clicked",
                   G_CALLBACK (on_execute_button_clicked),
-                  (gpointer) window);
+                  self);
 
     hbox = gtk_hbox_new (TRUE, 3);
 

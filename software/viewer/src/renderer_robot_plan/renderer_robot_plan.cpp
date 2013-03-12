@@ -126,9 +126,9 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     draw_state(viewer,super,w_plan);
   }
 
- if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock==NULL))
+ if((self->plan_execution_dock==NULL))
       spawn_plan_execution_dock(self);
-  else if((self->robotPlanListener->_gl_robot_list.size()>0)&&(self->plan_execution_dock!=NULL))
+  else if((self->plan_execution_dock!=NULL))
   {
       // move dock to account for viewer movement
       gint root_x, root_y;
@@ -141,7 +141,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       pos_x=root_x+0.5*width;    pos_y=root_y+0.75*height;
       
      gint current_pos_x, current_pos_y;
-     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>5)
+     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
           gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
      
   }  
@@ -258,7 +258,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
     }//end for  
   }
   else {*/
- if(self->displayed_plan_index!=-1) {
+ if((self->displayed_plan_index!=-1)&&(self->robotPlanListener->_gl_robot_list.size()>0)) {
     self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
     if( intersected_object != NULL ){
         Eigen::Vector3f diff = (from-hit_pt);
@@ -428,8 +428,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
       uint w_plan = (uint) round(plan_part* (plan_size -1));
       self->displayed_plan_index = w_plan;
     }
-
-    bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
+  
+    //bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
+    bot_viewer_add_renderer_on_side(viewer,&self->renderer, render_priority, 0);
         
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;
@@ -442,6 +443,6 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     ehandler->user = self;
 
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
-    
+   
 }
 

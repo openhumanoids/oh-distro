@@ -103,7 +103,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
           pos_x=root_x+0.5*width;    pos_y=root_y+0.25*height;
           
          gint current_pos_x, current_pos_y;
-         if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>5)
+         if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
               gtk_window_move(GTK_WINDOW(self->plan_approval_dock),pos_x,pos_y);
          
       }

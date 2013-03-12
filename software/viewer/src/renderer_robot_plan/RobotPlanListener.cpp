@@ -126,6 +126,24 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     }//  if(_urdf_parsed ==false) 
 
   } 
+  
+  
+  void RobotPlanListener::commit_robot_plan(int64_t utime,std::string &channel)
+  {
+    drc::robot_plan_t msg = revieved_plan_;
+    msg.utime = utime;
+       
+    int32_t num_states = 0;
+    num_states = msg.num_states;  
+    for (size_t i = 0; i < num_states; i++)
+    {
+        msg.plan[i].utime = utime;
+        //drc::robot_state_t state_msg  = msg.plan[i];
+    }
+    
+    _lcm->publish(channel, &msg);
+  }
+  
 
 } //namespace renderer_robot_plan
 

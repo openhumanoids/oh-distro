@@ -53,6 +53,8 @@ namespace renderer_robot_plan
     
     drc::robot_plan_t revieved_plan_;
     
+    void commit_robot_plan(int64_t utime,std::string &channel);
+    
   private:
     void handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
