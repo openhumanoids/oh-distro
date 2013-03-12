@@ -14,7 +14,7 @@ lc.subscribe('action_authoring_plan_action_request',monitor);
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
+r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
@@ -57,9 +57,9 @@ while (1)
           body=findLink(r,char(goal.object_1_name));
           collision_group = find(strcmpi(char(goal.object_1_contact_grp),body.collision_group_name));
           if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
-          p=[goal.ground_plane_pt.x; goal.ground_plane_pt.y; goal.ground_plane_pt.z];
-          pos.min=p-goal.ground_plane_pt_radius*[1;1;0];
-          pos.max=p+goal.ground_plane_pt_radius*[1;1;0];
+          p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
+          pos.min=p-goal.target_pt_radius*[1;1;0];
+          pos.max=p+goal.target_pt_radius*[1;1;0];
           ikargs={ikargs{:},body,collision_group,pos};
         end
       end
