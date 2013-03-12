@@ -12,7 +12,10 @@ namespace renderer_sticky_feet_gui_utils
   static gboolean on_plan_cancel_button_clicked (GtkButton* button, void *user)
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
-    self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();
+    cout <<"Publishing on REJECTED_FOOTSTEP_PLAN" << endl;
+    string channel = "REJECTED_FOOTSTEP_PLAN";
+    self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);    
+    self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();    
     gtk_widget_destroy (self->plan_approval_dock);
     self->plan_approval_dock= NULL;
    return TRUE;
