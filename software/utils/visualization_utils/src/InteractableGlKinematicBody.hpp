@@ -217,6 +217,10 @@ class InteractableGlKinematicBody: public GlKinematicBody
    };
    void set_bodypose_adjustment_type(int type){
     bodypose_adjustment_type= (_bodyadjust_type)type;
+    _collision_detector_floatingbase_markers->clear_collision_objects(); // reset markers
+    _markers_collision_object_map.clear();
+    init_floatingbase_marker_collision_objects(); 
+    update_floatingbase_marker_collision_objects();  
    }
    
    bool is_bodypose_adjustment_enabled()   { 
