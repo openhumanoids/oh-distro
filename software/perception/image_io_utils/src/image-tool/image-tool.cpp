@@ -16,6 +16,7 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -35,7 +36,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);   
+    void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::data_request_t* msg);   
 
     void sendOutput();
 
@@ -61,7 +62,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
     image_channel_(image_channel_), downsample_(downsample_){
 
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
-  lcm_->subscribe("TRIGGER",&Pass::triggerHandler,this);
+  lcm_->subscribe("TRIGGER_CAMERA",&Pass::triggerHandler,this);
 
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
   width_ = 1024;
@@ -107,7 +108,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 void Pass::triggerHandler(const lcm::ReceiveBuffer* rbuf, 
-                    const std::string& channel, const  bot_core::pose_t* msg){
+                    const std::string& channel, const  drc::data_request_t* msg){
   sendOutput();
 }
 
