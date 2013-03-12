@@ -34,7 +34,6 @@ namespace renderer_sticky_feet_gui_utils
     return TRUE;
   }
    
-   
   static void spawn_plan_approval_dock (void *user)
   {
   
