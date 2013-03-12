@@ -23,9 +23,9 @@ void InteractableGlKinematicBody::init_vars(){
 InteractableGlKinematicBody::InteractableGlKinematicBody( const InteractableGlKinematicBody& other, string unique_name): 
 GlKinematicBody(other),
 link_selection_enabled(other.link_selection_enabled),
-_collision_detector(other._collision_detector),
 _unique_name(unique_name)
 { 
+  _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
   init_vars();
   if(is_otdf_instance)
     init_otdf_collision_objects();
