@@ -7,7 +7,9 @@
 #include <boost/shared_ptr.hpp>
 
 #include <lcmtypes/drc/map_image_t.hpp>
-#include <zlib.h>
+#include <maps/RangeImageView.hpp>
+#include <maps/LcmTranslator.hpp>
+#include <pcl/range_image/range_image.h>
 
 #include "MeshRenderer.hpp"
 
@@ -47,13 +49,13 @@ struct RendererHeightMap {
 
   boost::shared_ptr<maps::MeshRenderer> mMeshRenderer;
 
-  drc::map_image_t mHeightMap;
-  drc::map_image_t mCostMap;
+  maps::RangeImageView mHeightMap;
+  maps::RangeImageView mCostMap;
   HeightMode mHeightMode;
 
   RendererHeightMap() {
-    mHeightMap.total_bytes = 0;
-    mCostMap.total_bytes = 0;
+    mHeightMap.setId(-1);
+    mCostMap.setId(-1);
   }
 
   void onMapImage(const lcm::ReceiveBuffer* iBuf,
@@ -63,60 +65,12 @@ struct RendererHeightMap {
       return;
     }
 
-    drc::map_image_t* mapImage = NULL;
+    maps::RangeImageView* mapImage = NULL;
+    if (!iChannel.compare("HEIGHT_MAP")) mapImage = &mHeightMap;
+    else if (!iChannel.compare("COST_MAP")) mapImage = &mCostMap;
+    else return;
 
-    if (!iChannel.compare("HEIGHT_MAP")) {
-      mapImage = &mHeightMap;
-    }
-    else if (!iChannel.compare("COST_MAP")) {
-      mapImage = &mCostMap;
-    }
-    else {
-      return;
-    }
-
-    *mapImage = *iMessage;
-
-    std::vector<uint8_t> bytes;
-
-    // uncompress if necessary
-    if (mapImage->compression == drc::map_image_t::COMPRESSION_ZLIB) {
-      bytes.resize(mapImage->row_bytes*mapImage->height);
-      unsigned long uncompressedSize = bytes.size();
-      int ret = uncompress(&bytes[0], &uncompressedSize,
-                           &mapImage->data[0], mapImage->total_bytes);
-      if (ret != Z_OK) {
-        std::cout << "CANNOT UNCOMPRESS" << std::endl;
-        std::cout << "RET=" << ret << std::endl;
-        std::cout << "COMPRESSED: " << mapImage->total_bytes << " bytes" << std::endl;
-        std::cout << "UNCOMPRESSED: " << uncompressedSize << " bytes" << std::endl;
-      }
-      mapImage->compression = drc::map_image_t::COMPRESSION_NONE;
-    }
-    else {
-      bytes = mapImage->data;
-    }
-
-    // convert from uint8 if necessary
-    if (mapImage->format == drc::map_image_t::FORMAT_GRAY_UINT8) {
-      int rowBytes = mapImage->row_bytes;
-      mapImage->row_bytes = sizeof(float)*mapImage->width;
-      mapImage->total_bytes = mapImage->row_bytes*mapImage->height;
-      mapImage->format = drc::map_image_t::FORMAT_GRAY_FLOAT32;
-      mapImage->data.resize(mapImage->total_bytes);
-      float* out = (float*)(&mapImage->data[0]);
-      for (int i = 0; i < mapImage->height; ++i) {
-        for (int j = 0; j < mapImage->width; ++j) {
-          uint8_t val = bytes[i*rowBytes+j];
-          out[i*mapImage->width+j] =
-            (val > 0) ? val : -std::numeric_limits<float>::max();
-        }
-      }
-    }
-    else {
-      mapImage->data = bytes;
-    }
-
+    maps::LcmTranslator::fromLcm(*iMessage, *mapImage);
     bot_viewer_request_redraw(mViewer);
   }
 
@@ -177,19 +131,21 @@ struct RendererHeightMap {
 
   static void draw(BotViewer *iViewer, BotRenderer *iRenderer) {
     RendererHeightMap *self = (RendererHeightMap*) iRenderer->user;
-    drc::map_image_t& img = self->mHeightMap;
-    if (img.total_bytes == 0) {
+    if (self->mHeightMap.getId() < 0) {
       return;
     }
 
+    pcl::RangeImage::Ptr img = self->mHeightMap.getRangeImage();
+
     // create vertex buffer
-    float* data = (float*)(&img.data[0]);
-    int numVertices = img.width*img.height;
+    float* data = img->getRangesArray();
+    int width(img->width), height(img->height);
+    int numVertices = width*height;
     std::vector<Eigen::Vector3f> vertices(numVertices);
     float minZ(1e10);
-    for (int i = 0; i < img.height; ++i) {
-      for (int j = 0; j < img.width; ++j) {
-        int idx = i*img.width + j;
+    for (int i = 0; i < height; ++i) {
+      for (int j = 0; j < width; ++j) {
+        int idx = i*width + j;
         vertices[idx] = Eigen::Vector3f(j,i,data[idx]);
         minZ = std::min(minZ, data[idx]);
       }
@@ -203,13 +159,13 @@ struct RendererHeightMap {
     // determine valid triangles
     std::vector<Eigen::Vector3i> faces;
     faces.reserve(2*numVertices);
-    for (int i = 0; i < img.height-1; i++) {
-      for (int j = 0; j < img.width-1; j++) {
-        int idx = i*img.width + j;
+    for (int i = 0; i < height-1; i++) {
+      for (int j = 0; j < width-1; j++) {
+        int idx = i*width + j;
         double z00 = data[idx];
         double z10 = data[idx+1];
-        double z01 = data[idx+img.width];
-        double z11 = data[idx+img.width+1];
+        double z01 = data[idx+width];
+        double z11 = data[idx+width+1];
         bool valid00 = z00 > -1e10;
         bool valid10 = z10 > -1e10;
         bool valid01 = z01 > -1e10;
@@ -226,38 +182,29 @@ struct RendererHeightMap {
         Eigen::Vector3f p11(j+1,i+1,z11);
 	  
         if (validSum == 4) {
-          faces.push_back(Eigen::Vector3i(idx, idx+1, idx+img.width));
-          faces.push_back(Eigen::Vector3i(idx+1+img.width, idx+1,
-                                          idx+img.width));
+          faces.push_back(Eigen::Vector3i(idx, idx+1, idx+width));
+          faces.push_back(Eigen::Vector3i(idx+1+width, idx+1, idx+width));
         }	  
         else {
           if (!valid00) {
-            faces.push_back(Eigen::Vector3i(idx+1, idx+img.width,
-                                            idx+1+img.width));
+            faces.push_back(Eigen::Vector3i(idx+1, idx+width, idx+1+width));
           }
           else if (!valid10) {
-            faces.push_back(Eigen::Vector3i(idx, idx+img.width,
-                                            idx+1+img.width));
+            faces.push_back(Eigen::Vector3i(idx, idx+width, idx+1+width));
           }
           else if (!valid01) {
-            faces.push_back(Eigen::Vector3i(idx, idx+1+img.width, idx+1));
+            faces.push_back(Eigen::Vector3i(idx, idx+1+width, idx+1));
           }
           else if (!valid11) {
-            faces.push_back(Eigen::Vector3i(idx, idx+img.width, idx+1));
+            faces.push_back(Eigen::Vector3i(idx, idx+width, idx+1));
           }
         }
       }
     }
 
-    // transform
-    Eigen::Affine3f meshToLocal;
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        meshToLocal(i,j) = img.transform[i][j];
-      }
-    }
-    meshToLocal = meshToLocal.inverse();  // TODO: NEED?
-
+    // transform and draw
+    Eigen::Projective3f meshToLocal =
+      self->mHeightMap.getTransform().inverse();
     self->mMeshRenderer->setData(vertices, faces, meshToLocal);
     self->mMeshRenderer->draw();
   }

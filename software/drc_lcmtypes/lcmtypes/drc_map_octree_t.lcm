@@ -17,6 +17,6 @@ struct map_octree_t
   // raw data
   byte data[num_bytes];
 
-  // transform from map to reference coords
-  transform_t transform;
+  // transform from reference to octree coords
+  float transform[4][4];
 }

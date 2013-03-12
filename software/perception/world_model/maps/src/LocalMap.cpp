@@ -2,12 +2,14 @@
 
 #include <pcl/range_image/range_image_planar.h>
 #include <pcl/common/transforms.h>
-#include <pcl/filters/voxel_grid.h>
 
 #include <octomap/octomap.h>
 
 #include "PointDataBuffer.hpp"
 #include "Utils.hpp"
+#include "PointCloudView.hpp"
+#include "OctreeView.hpp"
+#include "RangeImageView.hpp"
 
 using namespace maps;
 
@@ -38,9 +40,6 @@ LocalMap(const LocalMap::Spec& iSpec) {
   mSpec = iSpec;
   mPointData.reset(new PointDataBuffer());
   mPointData->setMaxLength(mSpec.mPointBufferSize);
-  mOctree.mTree.reset(new octomap::OcTree(mSpec.mResolution));
-  mOctree.mTransform = Eigen::Isometry3f::Identity();
-  mOctree.mTransform.translation() = 0.5f*(mSpec.mBoundMax + mSpec.mBoundMin);
   mStateId = 0;
 }
 
@@ -109,16 +108,12 @@ addData(const maps::PointSet& iPointSet) {
   maps::PointCloud refCloud;
   pcl::transformPointCloud(*iPointSet.mCloud, refCloud, xformToReference);
 
-  // transform points to octree coords
-  Eigen::Affine3f xformToOctree = mOctree.mTransform*xformToReference;
-  maps::PointCloud octCloud;
-  pcl::transformPointCloud(*iPointSet.mCloud, octCloud, xformToOctree);
-
-  Eigen::Affine3f referenceToOctree = xformToOctree*xformToReference.inverse();
-
   // set up new point cloud
   maps::PointCloud::Ptr outCloud(new maps::PointCloud());
   outCloud->is_dense = false;
+
+  const float minThresh2 = iPointSet.mMinRange*iPointSet.mMinRange;
+  const float maxThresh2 = iPointSet.mMaxRange*iPointSet.mMaxRange;
 
   // loop over all points
   Eigen::Vector3f refOrigin = xformToReference.translation();
@@ -126,13 +121,11 @@ addData(const maps::PointSet& iPointSet) {
 
     // check to see if the point is too close to the sensor
     Eigen::Vector3f refPt(refCloud[i].x, refCloud[i].y, refCloud[i].z);
-    if (refPt.squaredNorm() < 1e-2*1e-2) {
+    if ((refPt - refOrigin).squaredNorm() < minThresh2) {
       continue;
     }
 
-    // clip lidar ray against octree bounds
-    // TODO: should octree bounds be separate from other bounds?
-    // TODO: do we even need the ref bounds?
+    // clip lidar ray against bounds
     Eigen::Vector3f p1, p2;
     float t1, t2;
     if (!Utils::clipRay(refOrigin, refPt, mSpec.mBoundMin, mSpec.mBoundMax,
@@ -140,22 +133,7 @@ addData(const maps::PointSet& iPointSet) {
       continue;
     }
 
-    /* TODO: not using master octree at the moment
-    // add ray to octree
-    p1 = referenceToOctree*p1;
-    p2 = referenceToOctree*p2;
-    octomap::point3d octPt1(p1[0], p1[1], p1[2]), octPt2(p2[0], p2[1], p2[2]);
-    mOctree.mTree->insertRay(octPt1, octPt2, -1, true);
-
-    // remove return if it is on the boundary
-    if (t2 < 1.0f) {
-      mOctree.mTree->deleteNode(octPt2);
-    }
-    */
-
-    float range2 = (refPt-refOrigin).squaredNorm();
-    float thresh2 = iPointSet.mMaxRange*iPointSet.mMaxRange;
-    if (range2 >= thresh2) {
+    if ((refPt-refOrigin).squaredNorm() > maxThresh2) {
       continue;
     }
 
@@ -178,7 +156,6 @@ addData(const maps::PointSet& iPointSet) {
     maps::PointSet pointSet = iPointSet;
     pointSet.mCloud = outCloud;
     mPointData->add(pointSet);
-    mOctree.mTree->updateInnerOccupancy();
     ++mStateId;
   }
 
@@ -190,7 +167,7 @@ getPointData() const {
   return mPointData;
 }
 
-maps::PointCloud::Ptr LocalMap::
+PointCloudView::Ptr LocalMap::
 getAsPointCloud(const float iResolution,
                 const SpaceTimeBounds& iBounds) const {
   // interpret time bounds
@@ -201,73 +178,60 @@ getAsPointCloud(const float iResolution,
   Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
   Utils::crop(*cloud, *cloud, iBounds.mPlanes);
 
-  maps::PointCloud::Ptr cloudFinal(new maps::PointCloud());
-  if (iResolution > 0) {
-    pcl::VoxelGrid<maps::PointCloud::PointType> grid;
-    grid.setInputCloud(cloud);
-    grid.setLeafSize(iResolution,iResolution,iResolution);
-    grid.filter(*cloudFinal);
-  }
-  else {
-    cloudFinal = cloud;
-  }
-
-  return cloudFinal;
+  PointCloudView::Ptr view(new PointCloudView());
+  view->setResolution(iResolution);
+  view->set(cloud);
+  return view;
 }
 
-maps::Octree LocalMap::
+OctreeView::Ptr LocalMap::
 getAsOctree(const float iResolution, const bool iTraceRays,
             const Eigen::Vector3f& iOrigin,
             const SpaceTimeBounds& iBounds) const {
   int64_t timeMin(iBounds.mTimeMin), timeMax(iBounds.mTimeMax);
-  Octree oct;
-  oct.mTransform = Eigen::Isometry3f::Identity();
-  oct.mTransform.translation() = iOrigin;
-  oct.mTree.reset(new octomap::OcTree(iResolution));
-  std::vector<maps::PointSet> pointSets = mPointData->get(timeMin, timeMax);
-  for (int i = 0; i < pointSets.size(); ++i) {
-    maps::PointCloud::Ptr inCloud = pointSets[i].mCloud;
-    maps::PointCloud::Ptr outCloud(new maps::PointCloud());
-    Utils::crop(*inCloud, *outCloud, mSpec.mBoundMin, mSpec.mBoundMax);
-    Utils::crop(*outCloud, *outCloud, iBounds.mPlanes);
-    Eigen::Vector3f origin = oct.mTransform.translation();
-    if (iTraceRays) {
+  OctreeView::Ptr view(new OctreeView());
+  view->setTransform(Eigen::Projective3f(Eigen::Translation3f(-iOrigin)));
+  view->setResolution(iResolution);
+
+  if (!iTraceRays) {
+    maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
+    Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
+    Utils::crop(*cloud, *cloud, iBounds.mPlanes);
+    view->set(cloud);
+  }
+
+  else {
+    std::vector<maps::PointSet> pointSets = mPointData->get(timeMin, timeMax);
+    for (int i = 0; i < pointSets.size(); ++i) {
+      maps::PointCloud::Ptr inCloud = pointSets[i].mCloud;
+      maps::PointCloud::Ptr outCloud(new maps::PointCloud());
+      Utils::crop(*inCloud, *outCloud, mSpec.mBoundMin, mSpec.mBoundMax);
+      Utils::crop(*outCloud, *outCloud, iBounds.mPlanes);
       octomap::Pointcloud octCloud;    
       for (int j = 0; j < outCloud->points.size(); ++j) {
-        octomap::point3d pt(outCloud->points[j].x - origin(0),
-                            outCloud->points[j].y - origin(1),
-                            outCloud->points[j].z - origin(2));
+        octomap::point3d pt(outCloud->points[j].x - iOrigin(0),
+                            outCloud->points[j].y - iOrigin(1),
+                            outCloud->points[j].z - iOrigin(2));
         octCloud.push_back(pt);
       }
-      octomap::point3d octOrigin(-origin[0], -origin[1], -origin[2]);
-      oct.mTree->insertScan(octCloud, octOrigin);
+      octomap::point3d octOrigin(-iOrigin[0], -iOrigin[1], -iOrigin[2]);
+      view->getOctree()->insertScan(octCloud, octOrigin);
     }
-    else {
-      for (int j = 0; j < outCloud->points.size(); ++j) {
-        octomap::point3d pt(outCloud->points[j].x - origin(0),
-                            outCloud->points[j].y - origin(1),
-                            outCloud->points[j].z - origin(2));
-        oct.mTree->updateNode(pt, true);
-      }
-    }
+    view->getOctree()->prune();
   }
-  oct.mTree->prune();
-  return oct;
+
+  return view;
 }
 
-maps::RangeImage LocalMap::
+RangeImageView::Ptr LocalMap::
 getAsRangeImage(const int iWidth, const int iHeight,
-                const Eigen::Isometry3f& iPose,
-                const Eigen::Matrix4f& iProjector,
+                const Eigen::Projective3f& iProjector,
                 const SpaceTimeBounds& iBounds) const {
-  // TODO: can we do orthographic projection?
-  maps::PointCloud::Ptr cloud = getAsPointCloud(0, iBounds);
-  std::cout << "Cloud has " << cloud->size() << " points." << std::endl;
-  maps::RangeImage rangeImage;
-  pcl::RangeImagePlanar::Ptr img(new pcl::RangeImagePlanar());
-  img->createFromPointCloudWithFixedSize
-    (*cloud, iWidth, iHeight, iProjector(0,2), iProjector(1,2),
-     iProjector(0,0), iProjector(1,1), iPose);
-  rangeImage.mImage = img;
-  return rangeImage;
+  RangeImageView::Ptr view(new RangeImageView());
+  view->setSize(iWidth, iHeight);
+  PointCloudView::Ptr cloudView = getAsPointCloud(0, iBounds);
+  view->setSize(iWidth, iHeight);
+  view->setTransform(iProjector);
+  view->set(cloudView->getPointCloud());
+  return view;
 }

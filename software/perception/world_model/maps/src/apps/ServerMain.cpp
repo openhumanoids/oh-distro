@@ -15,6 +15,9 @@
 #include <lcmtypes/drc/twist_timed_t.hpp>
 
 #include <maps/MapManager.hpp>
+#include <maps/PointCloudView.hpp>
+#include <maps/OctreeView.hpp>
+#include <maps/RangeImageView.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/DataBlob.hpp>
@@ -26,7 +29,6 @@
 #include <pcl/common/transforms.h>
 #include <ConciseArgs>
 #include <octomap/octomap.h>
-
 
 using namespace std;
 using namespace maps;
@@ -46,25 +48,18 @@ struct ViewWorker {
 
   ~ViewWorker() {
     stop();
-    try { mThread.join(); }
-    catch (const boost::thread_interrupted&) {}
   }
 
-  bool start() {
-    if (mActive) {
-      return false;
-    }
+  void start() {
+    if (mActive) return;
+    if (mThread.joinable()) mThread.join();
     mActive = true;
     mThread = boost::thread(boost::ref(*this));
-    return true;
   }
 
-  bool stop() {
-    if (!mActive) {
-      return false;
-    }
+  void stop() {
     mActive = false;
-    return true;
+    mThread.join();
   }
 
   void operator()() {
@@ -83,7 +78,8 @@ struct ViewWorker {
       }
       if (localMap != NULL) {
 
-        MapView::Spec spec = LcmTranslator::fromLcm(mRequest);
+        ViewBase::Spec spec;
+        LcmTranslator::fromLcm(mRequest, spec);
 
         // get bounds
         LocalMap::SpaceTimeBounds bounds;
@@ -98,6 +94,7 @@ struct ViewWorker {
           bounds.mTimeMax += curTime;
         }
         if (spec.mRelativeLocation) {
+          // TODO: handle request transform
           Eigen::Isometry3f headToLocal;
           mFrames->getTransform("head", "local", curTime, headToLocal);
           float theta = atan2(headToLocal(1,0), headToLocal(0,0));
@@ -113,41 +110,55 @@ struct ViewWorker {
 
         // get and publish octree
         if (mRequest.type == drc::map_request_t::OCTREE) {
-          maps::Octree octree;
-          octree = localMap->getAsOctree(mRequest.resolution, false,
-                                         Eigen::Vector3f(0,0,0), bounds);
-          std::cout << "Publishing octomap..." << std::endl;
-          drc::map_octree_t octMsg = LcmTranslator::toLcm(octree);
+          OctreeView::Ptr octree =
+            localMap->getAsOctree(mRequest.resolution, false,
+                                  Eigen::Vector3f(0,0,0), bounds);
+          octree->setId(mRequest.view_id);
+          std::cout << "Publishing octree..." << std::endl;
+          drc::map_octree_t octMsg;
+          LcmTranslator::toLcm(*octree, octMsg);
           octMsg.utime = drc::Clock::instance()->getCurrentTime();
           octMsg.map_id = localMap->getId();
-          octMsg.view_id = mRequest.view_id;
           mLcm->publish("MAP_OCTREE", &octMsg);
           std::cout << "Sent octree at " << octMsg.num_bytes <<
-            " bytes" << std::endl;
+            " bytes (view " << octree->getId() << ")" << std::endl;
         }
 
+        // get and publish point cloud
         else if (mRequest.type == drc::map_request_t::POINT_CLOUD) {
-          maps::PointCloud::Ptr cloud =
+          PointCloudView::Ptr cloud =
             localMap->getAsPointCloud(mRequest.resolution, bounds);
-          drc::map_cloud_t msgCloud = LcmTranslator::toLcm(*cloud);
+          cloud->setId(mRequest.view_id);
+          drc::map_cloud_t msgCloud;
+          LcmTranslator::toLcm(*cloud, msgCloud);
           msgCloud.utime = drc::Clock::instance()->getCurrentTime();
           msgCloud.map_id = localMap->getId();
-          msgCloud.view_id = mRequest.view_id;
           msgCloud.blob.utime = msgCloud.utime;
           mLcm->publish("MAP_CLOUD", &msgCloud);
+          std::cout << "Sent point cloud at " << msgCloud.blob.num_bytes <<
+            " bytes (view " << cloud->getId() << ")" << std::endl;
         }
 
+        // get and publish range image
         else if (mRequest.type == drc::map_request_t::RANGE_IMAGE) {
-          maps::RangeImage image;
-          // TODO = localMap->getAsRangeImage(mRequest.resolution, bounds);
-          drc::map_image_t msgImg = LcmTranslator::toLcm(image);
+          Eigen::Projective3f projector;
+          for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+              projector(i,j) = mRequest.transform[i][j];
+            }
+          }
+          RangeImageView::Ptr image =
+            localMap->getAsRangeImage(mRequest.width, mRequest.height,
+                                      projector, bounds);
+          image->setId(mRequest.view_id);
+          drc::map_image_t msgImg;
+          LcmTranslator::toLcm(*image, msgImg);
           msgImg.utime = drc::Clock::instance()->getCurrentTime();
-          /* TODO
-             msgImg.map_id = localMap->getId();
-             msgImg.view_id = mRequest.view_id;
-             msgImg.blob.utime = msgImg.utime;
-          */
+          msgImg.map_id = localMap->getId();
+          msgImg.blob.utime = msgImg.utime;
           mLcm->publish("MAP_RANGE", &msgImg);
+          std::cout << "Sent range image at " << msgImg.blob.num_bytes <<
+            " bytes (view " << image->getId() << ")" << std::endl;
         }
 
         // one-shot request has 0 frequency
@@ -163,7 +174,6 @@ struct ViewWorker {
       timer.expires_from_now(boost::posix_time::
                              milliseconds(1000/mRequest.frequency));
       timer.wait();
-      std::cout << "Timer expired for view " << mRequest.view_id << std::endl;
     }
   }
 };
@@ -193,6 +203,7 @@ public:
     mFrames.reset(new BotFramesWrapper());
     mFrames->setLcm(mLcm);
     drc::Clock::instance()->setLcm(mLcm);
+    drc::Clock::instance()->setVerbose(false);
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
@@ -245,7 +256,8 @@ public:
   void onMapParams(const lcm::ReceiveBuffer* iBuf,
                    const std::string& iChannel,
                    const drc::map_params_t* iMessage) {
-    LocalMap::Spec spec = LcmTranslator::fromLcm(*iMessage);
+    LocalMap::Spec spec;
+    LcmTranslator::fromLcm(*iMessage, spec);
     int id = mManager->createMap(spec);
   }
 
@@ -299,8 +311,7 @@ public:
           std::cout << "Done creating dense map" << std::endl;
         }
         else if (drc::map_macro_t::GROUND_SCAN_MODE) {
-          // TODO:
-          // probably need to rework this; maybe a single thread for all time
+          // TODO: may need to rework this; maybe a single thread for all time
           // that can switch modes if it's interrupted by new macro
         }
         else {
@@ -320,11 +331,17 @@ public:
     if (item != mViewWorkers.end()) {
       if ((iRequest.type == drc::map_request_t::NONE) ||
           (!iRequest.active)) {
-        std::cout << "Stopping view " << iRequest.view_id << std::endl;
-        item->second->stop();
+        std::cout << "Removing view " << iRequest.view_id << std::endl;
+        ViewWorker::Ptr worker = item->second;
+        worker->stop();
+        mViewWorkers.erase(item);
+        worker.reset();
       }
-      else if (!item->second->mActive) {
-        item->second->start();
+      else {
+        item->second->mRequest = iRequest;
+        if (!item->second->mActive) {
+          item->second->start();
+        }
       }
     }
     else {
@@ -343,7 +360,7 @@ public:
   }
 };
 
-// TODO: use builder here
+// TODO: use collector here
 class DataConsumer {
 public:
   DataConsumer(State* iState) {
@@ -379,15 +396,16 @@ public:
       for (int i = 0; i < mapIds.size(); ++i) {
         LocalMap::Ptr localMap = mState->mManager->getMap(mapIds[i]);
         if (localMap != NULL) {
-          catalog.maps.push_back(LcmTranslator::toLcm(localMap->getSpec()));
+          drc::map_params_t params;
+          LcmTranslator::toLcm(localMap->getSpec(), params);
+          params.utime = catalog.utime;
+          catalog.maps.push_back(params);
         }
       }
       catalog.views.reserve(mState->mViewWorkers.size());
       ViewWorkerMap::const_iterator iter = mState->mViewWorkers.begin();
       for (; iter != mState->mViewWorkers.end(); ++iter) {
-        if (iter->second->mActive) {
-          catalog.views.push_back(iter->second->mRequest);
-        }
+        catalog.views.push_back(iter->second->mRequest);
       }
       catalog.num_views = catalog.views.size();
       catalog.num_maps = catalog.maps.size();
@@ -414,7 +432,7 @@ int main(const int iArgc, const char** iArgv) {
   State state;
 
   // parse arguments
-  string laserChannel = "ROTATING_SCAN";
+  string laserChannel = "SCAN";
   float publishPeriod = 3;
   float defaultResolution = 0.1;
   float timeWindowSeconds = 0;
@@ -466,10 +484,10 @@ int main(const int iArgc, const char** iArgv) {
   boost::thread catalogThread(catalogSender);
 
   // start publishing data
-  MapView::Spec viewSpec;
+  ViewBase::Spec viewSpec;
   viewSpec.mMapId = 1;  // TODO: could make this -1
   viewSpec.mViewId = 1;
-  viewSpec.mType = MapView::Spec::TypeOctree;
+  viewSpec.mType = ViewBase::TypeOctree;
   viewSpec.mResolution = defaultResolution;
   viewSpec.mFrequency = 1.0/publishPeriod;
   viewSpec.mTimeMin = viewSpec.mTimeMax = -1;
@@ -483,7 +501,10 @@ int main(const int iArgc, const char** iArgv) {
                                               Eigen::Vector3f(5,5,5));
   viewSpec.mActive = true;
   viewSpec.mRelativeLocation = true;
-  drc::map_request_t request = LcmTranslator::toLcm(viewSpec);
+  viewSpec.mWidth = viewSpec.mHeight = 0;
+  drc::map_request_t request;
+  LcmTranslator::toLcm(viewSpec, request);
+  request.utime = drc::Clock::instance()->getCurrentTime();
   state.addViewWorker(request);
 
   // main lcm loop

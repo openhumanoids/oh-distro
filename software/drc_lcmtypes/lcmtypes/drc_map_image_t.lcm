@@ -5,31 +5,15 @@ struct map_image_t
   // timestamp of this message
   int64_t utime;
 
-  // image sizes
-  int16_t width;
-  int16_t height;
-  int16_t channels;
-  int16_t row_bytes;
-  int32_t total_bytes;
+  // id of map
+  int64_t map_id;
 
-  // format of image
-  int8_t format;
+  // id of view
+  int64_t view_id;
 
-  // compression of image
-  int8_t compression;
+  // projective transform from reference to image coords
+  float transform[4][4];
 
-  // transform from reference (local) coords to image pixels
-  double transform[4][4];
-
-  // raw data samples
-  byte data[total_bytes];
-
-  // pixel formats (try to keep this to limited set)
-  const int8_t FORMAT_GRAY_UINT8        = 0;
-  const int8_t FORMAT_GRAY_FLOAT32      = 1;
-
-  // compression types
-  const int8_t COMPRESSION_NONE         = 0;
-  const int8_t COMPRESSION_ZLIB         = 1;
-  const int8_t COMPRESSION_JPEG         = 2;
+  // image data
+  map_blob_t blob;
 }

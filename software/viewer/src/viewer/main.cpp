@@ -19,8 +19,8 @@
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_heightmap/renderer_heightmap.hpp>
-#include <renderer_maps/renderer_maps.hpp>
-#include <renderer_lidartest/LidarTestRenderer.hpp>
+#include <renderer_maps/MapsRenderer.hpp>
+#include <renderer_data_control/DataControlRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 
 // Individual Renderers:
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
   heightmap_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  maps_add_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  lidartest_renderer_setup("Lidar Test", viewer, 0, lcm, bot_param, bot_frames);
+  maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);

@@ -26,6 +26,7 @@ public:
   void setTimeoutInterval(const int iMilliseconds);
   void useTimeMessages(const bool iVal);
   void useRealTimeWhenInvalid(const bool iVal);
+  void setVerbose(const bool iVal);
 
   virtual int64_t getCurrentTime() const = 0;
 
@@ -38,6 +39,7 @@ protected:
   int mTimeoutInterval;
   bool mUseTimeMessages;
   bool mUseRealTimeWhenInvalid;
+  bool mVerbose;
 };
  
 }

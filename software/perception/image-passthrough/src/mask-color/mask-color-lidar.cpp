@@ -8,6 +8,8 @@
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
+#include <maps/RangeImageView.hpp>
+#include <maps/PointCloudView.hpp>
 
 
 #include <drc_utils/Clock.hpp>

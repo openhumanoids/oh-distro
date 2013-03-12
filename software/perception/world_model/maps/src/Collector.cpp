@@ -4,6 +4,7 @@
 #include "MapManager.hpp"
 #include "PointDataBuffer.hpp"
 
+#include <set>
 #include <boost/thread.hpp>
 
 using namespace maps;
@@ -14,6 +15,7 @@ struct Collector::Helper {
   boost::shared_ptr<MapManager> mMapManager;
   boost::thread mConsumerThread;
   bool mRunning;
+  std::set<DataListener*> mDataListeners;
 
   static const float kPi;
 
@@ -25,6 +27,11 @@ struct Collector::Helper {
         SensorDataReceiver::SensorData data;
         if (mHelper->mDataReceiver->waitForData(data)) {
           mHelper->mMapManager->addData(*data.mPointSet);
+          std::set<DataListener*>::const_iterator iter =
+            mHelper->mDataListeners.begin();
+          for (; iter != mHelper->mDataListeners.end(); ++iter) {
+            (*iter)->notify(data);
+          }
         }
       }
     }
@@ -56,6 +63,7 @@ Collector() {
 
 Collector::
 ~Collector() {
+  mHelper->mDataListeners.clear();
   stop();
 }
 
@@ -84,6 +92,16 @@ stop() {
   try { mHelper->mConsumerThread.join(); }
   catch (const boost::thread_interrupted&) {}
   return true;
+}
+
+void Collector::
+addListener(const DataListener& iListener) {
+  mHelper->mDataListeners.insert(const_cast<DataListener*>(&iListener));
+}
+
+void Collector::
+removeListener(const DataListener& iListener) {
+  mHelper->mDataListeners.erase(const_cast<DataListener*>(&iListener));
 }
 
 boost::shared_ptr<SensorDataReceiver> Collector::

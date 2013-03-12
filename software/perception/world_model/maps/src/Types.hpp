@@ -5,14 +5,8 @@
 #include <Eigen/Geometry>
 
 // forward declaration
-namespace octomap {
-  class OcTree;
-}
 namespace lcm {
   class LCM;
-}
-namespace pcl {
-  class RangeImage;
 }
 
 namespace maps {
@@ -23,20 +17,16 @@ namespace maps {
 
   struct PointSet {
     int64_t mTimestamp;
+    float mMinRange;
     float mMaxRange;
     PointCloud::Ptr mCloud;
   };
 
-  struct Octree {
-    boost::shared_ptr<octomap::OcTree> mTree;
-    Eigen::Isometry3f mTransform;  // from map to reference coords
+  struct TriangleMesh {
+    std::vector<Eigen::Vector3f> mVertices;
+    std::vector<Eigen::Vector3i> mFaces;
+    typedef boost::shared_ptr<TriangleMesh> Ptr;    
   };
-
-  struct RangeImage {
-    boost::shared_ptr<pcl::RangeImage> mImage;
-    bool mOrthographic;
-  };
-
 }
 
 #endif

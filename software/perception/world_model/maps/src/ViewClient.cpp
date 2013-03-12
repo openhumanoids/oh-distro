@@ -3,12 +3,16 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <drc_utils/Clock.hpp>
 
+#include "PointCloudView.hpp"
+#include "OctreeView.hpp"
+#include "RangeImageView.hpp"
 #include "LcmTranslator.hpp"
 #include "ThreadSafeQueue.hpp"
 #include "Utils.hpp"
@@ -27,6 +31,7 @@ struct ViewClient::Worker {
     enum Type {
       TypeOctree,
       TypeCloud,
+      TypeRange,
       TypeCatalog
     };
     Type mType;
@@ -39,6 +44,7 @@ struct ViewClient::Worker {
   State mState;
   lcm::Subscription* mOctreeSubscription;
   lcm::Subscription* mCloudSubscription;
+  lcm::Subscription* mRangeSubscription;
   lcm::Subscription* mCatalogSubscription;
   ThreadSafeQueue<Message> mMessageQueue;
   boost::mutex mMutex;
@@ -49,6 +55,7 @@ struct ViewClient::Worker {
     mClient = iClient;
     mOctreeSubscription = NULL;
     mCloudSubscription = NULL;
+    mRangeSubscription = NULL;
     mCatalogSubscription = NULL;
     mState = StateIdle;
     mThread = boost::thread(boost::ref(*this));
@@ -58,6 +65,7 @@ struct ViewClient::Worker {
     boost::mutex::scoped_lock lock(mMutex);
     mLcm->unsubscribe(mOctreeSubscription);
     mLcm->unsubscribe(mCloudSubscription);
+    mLcm->unsubscribe(mRangeSubscription);
     mLcm->unsubscribe(mCatalogSubscription);
     mState = StateShutdown;
     mCondition.notify_one();
@@ -77,6 +85,8 @@ struct ViewClient::Worker {
       mLcm->subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
     mCloudSubscription =
       mLcm->subscribe(mClient->mCloudChannel, &Worker::onCloud, this);
+    mRangeSubscription =
+      mLcm->subscribe(mClient->mRangeChannel, &Worker::onRange, this);
     mCatalogSubscription =
       mLcm->subscribe(mClient->mCatalogChannel, &Worker::onCatalog, this);
     return true;
@@ -89,6 +99,7 @@ struct ViewClient::Worker {
     }
     mLcm->unsubscribe(mOctreeSubscription);
     mLcm->unsubscribe(mCloudSubscription);
+    mLcm->unsubscribe(mRangeSubscription);
     mLcm->unsubscribe(mCatalogSubscription);
     mMessageQueue.unblock();
     mState = StateIdle;
@@ -117,6 +128,18 @@ struct ViewClient::Worker {
     msg.mId = iMessage->view_id;
     boost::shared_ptr<drc::map_cloud_t>
       payload(new drc::map_cloud_t(*iMessage));
+    msg.mPayload = boost::static_pointer_cast<void>(payload);
+    mMessageQueue.push(msg);
+  }
+
+  void onRange(const lcm::ReceiveBuffer* iBuf,
+               const std::string& iChannel,
+               const drc::map_image_t* iMessage) {
+    Message msg;
+    msg.mType = Message::TypeRange;
+    msg.mId = iMessage->view_id;
+    boost::shared_ptr<drc::map_image_t>
+      payload(new drc::map_image_t(*iMessage));
     msg.mPayload = boost::static_pointer_cast<void>(payload);
     mMessageQueue.push(msg);
   }
@@ -160,26 +183,30 @@ struct ViewClient::Worker {
         bool changed = false;
         std::set<int64_t> catalogIds;
         for (int i = 0; i < catalog->views.size(); ++i) {
-          MapView::Spec spec = LcmTranslator::fromLcm(catalog->views[i]);
+          ViewBase::Spec spec;
+          LcmTranslator::fromLcm(catalog->views[i], spec);
           int64_t id = spec.mViewId;
           catalogIds.insert(id);
-          MapViewCollection::const_iterator item = mClient->mViews.find(id);
-          if (item == mClient->mViews.end()) {
-            mClient->mViews[id].reset(new MapView(spec));
+          SpecCollection::const_iterator item = mClient->mCatalog.find(id);
+          if ((item == mClient->mCatalog.end()) || (spec != item->second)) {
+            changed = true;
+          }
+          mClient->mCatalog[id] = spec;
+        }
+        for (ViewCollection::const_iterator iter = mClient->mViews.begin();
+             iter != mClient->mViews.end(); ) {
+          if (catalogIds.find(iter->second->getId()) == catalogIds.end()) {
+            mClient->mViews.erase(iter++);
             changed = true;
           }
           else {
-            if (spec != item->second->getSpec()) {
-              mClient->mViews[id] = item->second->clone(spec);
-              changed = true;
-            }
+            ++iter;
           }
         }
-        for (MapViewCollection::const_iterator iter = mClient->mViews.begin();
-             iter != mClient->mViews.end(); ) {
-          if (catalogIds.find(iter->second->getSpec().mViewId) ==
-              catalogIds.end()) {
-            mClient->mViews.erase(iter++);
+        for (SpecCollection::const_iterator iter = mClient->mCatalog.begin();
+             iter != mClient->mCatalog.end(); ) {
+          if (catalogIds.find(iter->second.mViewId) == catalogIds.end()) {
+            mClient->mCatalog.erase(iter++);
             changed = true;
           }
           else {
@@ -191,21 +218,22 @@ struct ViewClient::Worker {
       }
 
       // find view or insert new one for this id
-      MapViewCollection::const_iterator item = mClient->mViews.find(msg.mId);
-      if (item == mClient->mViews.end()) {
-        MapView::Spec spec;
+      SpecCollection::const_iterator item = mClient->mCatalog.find(msg.mId);
+      if (item == mClient->mCatalog.end()) {
+        ViewBase::Spec spec;
         spec.mViewId = msg.mId;
-        mClient->mViews[msg.mId].reset(new MapView(spec));
+        mClient->mCatalog[msg.mId] = spec;
         mClient->notifyCatalogListeners(true);
       }
-      MapViewPtr view = mClient->mViews[msg.mId];
+      ViewPtr view;
 
       // handle octree
       if (msg.mType == Message::TypeOctree) {
         boost::shared_ptr<drc::map_octree_t> payload =
           boost::static_pointer_cast<drc::map_octree_t>(msg.mPayload);
-        maps::Octree octree = LcmTranslator::fromLcm(*payload);
-        view->set(octree);
+        OctreeView* octreeView = new OctreeView();
+        LcmTranslator::fromLcm(*payload, *octreeView);
+        view.reset(octreeView);
         view->setUpdateTime(payload->utime);
       }
 
@@ -213,10 +241,24 @@ struct ViewClient::Worker {
       else if (msg.mType == Message::TypeCloud) {
         boost::shared_ptr<drc::map_cloud_t> payload =
           boost::static_pointer_cast<drc::map_cloud_t>(msg.mPayload);
-        maps::PointCloud::Ptr cloud = LcmTranslator::fromLcm(*payload);
-        view->set(*cloud);
+        PointCloudView* cloudView = new PointCloudView();
+        LcmTranslator::fromLcm(*payload, *cloudView);
+        view.reset(cloudView);
+        view->setUpdateTime(payload->utime);
+        std::cout << "GOT CLOUD " << cloudView->getPointCloud()->size() << std::endl;
+      }
+
+      // handle range image
+      else if (msg.mType == Message::TypeRange) { 
+        boost::shared_ptr<drc::map_image_t> payload =
+          boost::static_pointer_cast<drc::map_image_t>(msg.mPayload);
+        RangeImageView* rangeView = new RangeImageView();
+        LcmTranslator::fromLcm(*payload, *rangeView);
+        view.reset(rangeView);
         view->setUpdateTime(payload->utime);
       }
+
+      if (view != NULL) mClient->mViews[msg.mId] = view;
 
       // notify subscribers
       mClient->notifyDataListeners(msg.mId);
@@ -229,6 +271,7 @@ ViewClient() {
   setRequestChannel("MAP_REQUEST");
   setOctreeChannel("MAP_OCTREE");
   setCloudChannel("MAP_CLOUD");
+  setRangeChannel("MAP_RANGE");
   setCatalogChannel("MAP_CATALOG");
   mWorker.reset(new Worker(this));
 }
@@ -260,12 +303,18 @@ setCloudChannel(const std::string& iChannel) {
 }
 
 void ViewClient::
+setRangeChannel(const std::string& iChannel) {
+  mRangeChannel = iChannel;
+}
+
+void ViewClient::
 setCatalogChannel(const std::string& iChannel) {
   mCatalogChannel = iChannel;
 }
 
-int64_t ViewClient::request(const MapView::Spec& iSpec) {
-  drc::map_request_t message = LcmTranslator::toLcm(iSpec);
+int64_t ViewClient::request(const ViewBase::Spec& iSpec) {
+  drc::map_request_t message;
+  LcmTranslator::toLcm(iSpec, message);
   message.utime = drc::Clock::instance()->getCurrentTime();
   if (message.view_id < 0) {
     message.view_id = (Utils::rand64() >> 1);
@@ -274,25 +323,47 @@ int64_t ViewClient::request(const MapView::Spec& iSpec) {
   return message.view_id;
 }
 
-ViewClient::MapViewPtr ViewClient::
+ViewClient::ViewPtr ViewClient::
 getView(const int64_t iId) const {
-  MapViewCollection::const_iterator item = mViews.find(iId);
+  ViewCollection::const_iterator item = mViews.find(iId);
   if (item != mViews.end()) {
     return item->second;
   }
-  return MapViewPtr();
+  return ViewPtr();
 }
 
-std::vector<ViewClient::MapViewPtr> ViewClient::
+std::vector<ViewClient::ViewPtr> ViewClient::
 getAllViews() const {
-  std::vector<MapViewPtr> views;
+  std::vector<ViewPtr> views;
   views.reserve(mViews.size());
-  MapViewCollection::const_iterator iter;
+  ViewCollection::const_iterator iter;
   for (iter = mViews.begin(); iter != mViews.end(); ++iter) {
     views.push_back(iter->second);
   }
   return views;
 }
+
+bool ViewClient::
+getSpec(const int64_t iId, ViewBase::Spec& oSpec) const {
+  SpecCollection::const_iterator item = mCatalog.find(iId);
+  if (item == mCatalog.end()) {
+    return false;
+  }
+  oSpec = item->second;
+  return true;
+}
+
+std::vector<ViewBase::Spec> ViewClient::
+getAllSpecs() const {
+  std::vector<ViewBase::Spec> specs;
+  specs.reserve(mCatalog.size());
+  SpecCollection::const_iterator iter;
+  for (iter = mCatalog.begin(); iter != mCatalog.end(); ++iter) {
+    specs.push_back(iter->second);
+  }
+  return specs;
+}
+
 
 bool ViewClient::
 addListener(const Listener* iListener) {

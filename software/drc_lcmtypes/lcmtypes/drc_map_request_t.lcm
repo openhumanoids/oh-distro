@@ -37,6 +37,13 @@ struct map_request_t
   int8_t num_clip_planes;
   float clip_planes[num_clip_planes][4];
 
+  // transform applied (reference to view)
+  float transform[4][4];
+
+  // sizes (for image types)
+  int16_t width;
+  int16_t height;
+
   // enum for request types
   const int8_t NONE = 0;
   const int8_t POINT_CLOUD = 1;

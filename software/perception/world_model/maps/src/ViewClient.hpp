@@ -5,8 +5,7 @@
 #include <set>
 #include <map>
 #include <boost/shared_ptr.hpp>
-
-#include "MapView.hpp"
+#include "ViewBase.hpp"
 
 namespace lcm {
   class LCM;
@@ -16,8 +15,7 @@ namespace maps {
 
 class ViewClient {
 public:
-  typedef boost::shared_ptr<MapView> MapViewPtr;
-  typedef boost::shared_ptr<lcm::LCM> LcmPtr;
+  typedef boost::shared_ptr<ViewBase> ViewPtr;
 
   class Listener {
   public:
@@ -26,7 +24,8 @@ public:
   };
 
 protected:
-  typedef std::map<int64_t,MapViewPtr> MapViewCollection;
+  typedef std::map<int64_t,ViewPtr> ViewCollection;
+  typedef std::map<int64_t,ViewBase::Spec> SpecCollection;
 
   struct Worker;
 
@@ -34,16 +33,20 @@ public:
   ViewClient();
   virtual ~ViewClient();
 
-  void setLcm(const LcmPtr& iLcm);
+  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
   void setRequestChannel(const std::string& iChannel);
   void setOctreeChannel(const std::string& iChannel);
   void setCloudChannel(const std::string& iChannel);
+  void setRangeChannel(const std::string& iChannel);
   void setCatalogChannel(const std::string& iChannel);
 
-  int64_t request(const MapView::Spec& iSpec);
+  int64_t request(const ViewBase::Spec& iSpec);
 
-  MapViewPtr getView(const int64_t iId) const;
-  std::vector<MapViewPtr> getAllViews() const;
+  ViewPtr getView(const int64_t iId) const;
+  std::vector<ViewPtr> getAllViews() const;
+
+  bool getSpec(const int64_t iId, ViewBase::Spec& oSpec) const;
+  std::vector<ViewBase::Spec> getAllSpecs() const;
 
   bool addListener(const Listener* iListener);
   bool removeListener(const Listener* iListener);
@@ -61,11 +64,13 @@ protected:
   std::string mRequestChannel;
   std::string mOctreeChannel;
   std::string mCloudChannel;
+  std::string mRangeChannel;
   std::string mCatalogChannel;
-  LcmPtr mLcm;
+  boost::shared_ptr<lcm::LCM> mLcm;
 
   boost::shared_ptr<Worker> mWorker;
-  MapViewCollection mViews;
+  ViewCollection mViews;
+  SpecCollection mCatalog;
   std::set<Listener*> mListeners;
 };
 

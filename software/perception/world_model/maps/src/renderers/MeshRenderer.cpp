@@ -41,6 +41,7 @@ struct MeshRenderer::InternalState {
   float mScaleMinZ;
   float mScaleMaxZ;
   float mPointSize;
+  float mLineWidth;
   Eigen::Vector3f mRangeOrigin;
 
   // gl state
@@ -53,7 +54,7 @@ struct MeshRenderer::InternalState {
   bool mFirstDraw;
 
   // mesh data
-  Eigen::Affine3f mTransform;
+  Eigen::Projective3f mTransform;
   std::vector<float> mVertexBuffer;
   std::vector<float> mNormalBuffer;
   std::vector<uint32_t> mFaceBuffer;
@@ -127,6 +128,7 @@ MeshRenderer() {
   setColorAlpha(1.0);
   setScaleRange(0, 1);
   setPointSize(3);
+  setLineWidth(1);
   setRangeOrigin(Eigen::Vector3f(0,0,0));
 }
 
@@ -209,6 +211,11 @@ setPointSize(const float iSize) {
 }
 
 void MeshRenderer::
+setLineWidth(const float iWidth) {
+  mState->mLineWidth = iWidth;
+}
+
+void MeshRenderer::
 setRangeOrigin(const Eigen::Vector3f& iOrigin) {
   mState->mRangeOrigin = iOrigin;
 }
@@ -217,7 +224,7 @@ setRangeOrigin(const Eigen::Vector3f& iOrigin) {
 void MeshRenderer::
 setData(const std::vector<Eigen::Vector3f>& iVertices,
         const std::vector<Eigen::Vector3i>& iFaces,
-        const Eigen::Affine3f& iTransform) {
+        const Eigen::Projective3f& iTransform) {
   return setData(iVertices, std::vector<Eigen::Vector3f>(), iFaces, iTransform);
 }
 
@@ -225,7 +232,7 @@ void MeshRenderer::
 setData(const std::vector<Eigen::Vector3f>& iVertices,
         const std::vector<Eigen::Vector3f>& iNormals,
         const std::vector<Eigen::Vector3i>& iFaces,
-        const Eigen::Affine3f& iTransform) { 
+        const Eigen::Projective3f& iTransform) { 
   boost::mutex::scoped_lock lock(mState->mMutex);
 
   // vertices
@@ -426,6 +433,7 @@ draw() {
 
   // create index buffer and draw as triangles
   if (mState->mMeshMode != MeshModePoints) {
+    glLineWidth(mState->mLineWidth);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mState->mFaceBufferId);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                  mState->mFaceBuffer.size()*sizeof(uint32_t),

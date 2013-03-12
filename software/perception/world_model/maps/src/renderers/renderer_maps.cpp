@@ -20,7 +20,6 @@
 #include <pcl/common/transforms.h>
 
 #include <maps/ViewClient.hpp>
-#include <maps/MapView.hpp>
 #include <maps/Utils.hpp>
 
 #include "MeshRenderer.hpp"
@@ -86,8 +85,8 @@ struct ViewMetaData {
   bool mVisible;
   bool mRelative;
   Frustum mFrustum;
-  maps::MapView::TriangleMesh::Ptr mMesh;
-  maps::MapView::TriangleMesh::Ptr mSurfels;
+  // TODO maps::MapView::TriangleMesh::Ptr mMesh;
+  // maps::MapView::TriangleMesh::Ptr mSurfels;
   Eigen::Vector3f mColor;
 };
 
@@ -106,6 +105,7 @@ struct RendererMaps {
     void notifyData(const int64_t iViewId) {
       mRenderer->addViewMetaData(iViewId);
       ViewMetaData& data = mRenderer->mViewData[iViewId];
+      /* TODO
       if ((mRenderer->mMeshMode == MESH_MODE_FILLED) ||
           (mRenderer->mMeshMode == MESH_MODE_WIREFRAME)) {
         data.mMesh = mRenderer->mViewClient.getView(iViewId)->getAsMesh();
@@ -135,16 +135,17 @@ struct RendererMaps {
           data.mSurfels->mFaces.push_back(Eigen::Vector3i(4*i+1,4*i+3,4*i+2));
         }
       }
+      */
       bot_viewer_request_redraw(mRenderer->mViewer);
     }
 
     void notifyCatalog(const bool iChanged) {
       if (!mInitialized || iChanged) {
-        std::vector<maps::ViewClient::MapViewPtr> views =
+        std::vector<maps::ViewClient::ViewPtr> views =
           mRenderer->mViewClient.getAllViews();
         std::set<int64_t> catalogIds;
         for (size_t v = 0; v < views.size(); ++v) {
-          int64_t id = views[v]->getSpec().mViewId;
+          int64_t id = views[v]->getId();
           mRenderer->addViewMetaData(id);
           catalogIds.insert(id);
         }
@@ -209,6 +210,9 @@ struct RendererMaps {
     mMeshRenderer.reset(new maps::MeshRenderer());
     mMeshRenderer->setPointSize(3);
     mMeshRenderer->setCameraChannel("CAMERALEFT");
+    mMeshMode = MESH_MODE_POINTS;
+    mColorMode = COLOR_MODE_SOLID;
+    mInputMode = INPUT_MODE_CAMERA;
   }
 
   static void onParamWidgetChanged(BotGtkParamWidget* iWidget,
@@ -259,19 +263,19 @@ struct RendererMaps {
     }
 
     if (!strcmp(iName, PARAM_DATA_REQUEST) && (self->mBoxValid)) {
-      maps::MapView::Spec spec;
+      maps::ViewBase::Spec spec;
       spec.mMapId = -1;
       spec.mViewId = -1;
       spec.mActive = true;
       switch(self->mRequestType) {
       case REQUEST_TYPE_OCTREE:
-        spec.mType = maps::MapView::Spec::TypeOctree;
+        spec.mType = maps::ViewBase::TypeOctree;
         break;
       case REQUEST_TYPE_CLOUD:
-        spec.mType = maps::MapView::Spec::TypePointCloud;
+        spec.mType = maps::ViewBase::TypePointCloud;
         break;
       case REQUEST_TYPE_RANGE:
-        spec.mType = maps::MapView::Spec::TypeRangeImage;
+        spec.mType = maps::ViewBase::TypeRangeImage;
         break;
       default:
         return;
@@ -337,13 +341,13 @@ struct RendererMaps {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // clouds
-    std::vector<maps::ViewClient::MapViewPtr> views =
+    std::vector<maps::ViewClient::ViewPtr> views =
       self->mViewClient.getAllViews();
     for (size_t v = 0; v < views.size(); ++v) {
-      maps::ViewClient::MapViewPtr view = views[v];
+      maps::ViewClient::ViewPtr view = views[v];
 
       // try to find ancillary data for this view; add if it doesn't exist
-      int64_t id = view->getSpec().mViewId;
+      int64_t id = view->getId();
       self->addViewMetaData(id);
       ViewMetaData data = self->mViewData[id];
 
@@ -413,6 +417,7 @@ struct RendererMaps {
         self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModePoints);
         self->mMeshRenderer->setData(vertices, faces);
       }
+      /* TODO
       else if (self->mMeshMode == MESH_MODE_SURFELS) {
         if (data.mSurfels != NULL) {
           self->mMeshRenderer->setMeshMode(maps::MeshRenderer::MeshModeFilled);
@@ -431,7 +436,7 @@ struct RendererMaps {
         }
         self->mMeshRenderer->setData(data.mMesh->mVertices, data.mMesh->mFaces);
       }
-
+      */
       self->mMeshRenderer->draw();
     }
 
@@ -506,13 +511,12 @@ struct RendererMaps {
       mViewData[iId] = data;
     }
 
-    maps::MapView::Ptr mapView = mViewClient.getView(iId);
-    if (mapView != NULL) {
-      const std::vector<Eigen::Vector4f>& planes =
-        mapView->getSpec().mClipPlanes;
+    maps::ViewBase::Spec spec;
+    if (mViewClient.getSpec(iId, spec)) {
+      const std::vector<Eigen::Vector4f>& planes = spec.mClipPlanes;
       if (planes.size() != data.mFrustum.mPlanes.size()) {
-        mViewData[iId].mFrustum.mPlanes = mapView->getSpec().mClipPlanes;
-        mViewData[iId].mRelative = mapView->getSpec().mRelativeLocation;
+        mViewData[iId].mFrustum.mPlanes = spec.mClipPlanes;
+        mViewData[iId].mRelative = spec.mRelativeLocation;
       }
     }
 
@@ -573,13 +577,13 @@ struct RendererMaps {
     int64_t id = data->mId;
     DataMap::iterator item = data->mRenderer->mViewData.find(id);
     if (item != data->mRenderer->mViewData.end()) {
-      maps::MapView::Spec spec;
+      maps::ViewBase::Spec spec;
       spec.mMapId = 0;
       spec.mViewId = id;
       spec.mResolution = spec.mFrequency = 0;
       spec.mTimeMin = spec.mTimeMax = 0;
       spec.mActive = false;
-      spec.mType = maps::MapView::Spec::TypePointCloud;
+      spec.mType = maps::ViewBase::TypePointCloud;
       data->mRenderer->mViewClient.request(spec);
       bot_viewer_request_redraw (data->mRenderer->mViewer);
     }

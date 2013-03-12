@@ -2,6 +2,7 @@
 #define _maps_VoxelGrid_hpp_
 
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 
 // TODO TEMP
@@ -11,6 +12,8 @@ namespace maps {
 
 template<typename T>
 class VoxelGrid {
+public:
+  typedef boost::shared_ptr<VoxelGrid<T> > Ptr;
 public:
   VoxelGrid();
 

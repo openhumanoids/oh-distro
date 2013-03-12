@@ -1,7 +1,8 @@
-#ifndef _maps_Collector_h_
-#define _maps_Collector_h_
+#ifndef _maps_Collector_hpp_
+#define _maps_Collector_hpp_
 
 #include <boost/shared_ptr.hpp>
+#include "SensorDataReceiver.hpp"
 
 namespace lcm {
   class LCM;
@@ -14,12 +15,20 @@ class MapManager;
 
 class Collector {
 public:
+  struct DataListener {
+    virtual void notify(const SensorDataReceiver::SensorData& iData) = 0;
+  };
+
+public:
   Collector();
   ~Collector();
 
   void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
   bool start();
   bool stop();
+
+  void addListener(const DataListener& iListener);
+  void removeListener(const DataListener& iListener);
 
   boost::shared_ptr<SensorDataReceiver> getDataReceiver() const;
   boost::shared_ptr<MapManager> getMapManager() const;

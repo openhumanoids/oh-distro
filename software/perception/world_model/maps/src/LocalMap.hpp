@@ -6,14 +6,12 @@
 
 #include "Types.hpp"
 
-namespace octomap {
-  class OcTree;
-}
-
 namespace maps {
 
 class PointDataBuffer;
-template<typename T> class VoxelGrid;
+class PointCloudView;
+class OctreeView;
+class RangeImageView;
 
 class LocalMap {
 public:
@@ -81,21 +79,20 @@ public:
   const boost::shared_ptr<PointDataBuffer> getPointData() const;
 
   // export this entire representation as an ordinary point cloud
-  maps::PointCloud::Ptr
+  boost::shared_ptr<PointCloudView>
   getAsPointCloud(const float iResolution=0,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   // export this entire representation as an octree
-  maps::Octree
+  boost::shared_ptr<OctreeView>
   getAsOctree(const float iResolution, const bool iTraceRays=false,
               const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
   // export this entire representation as a range image
-  maps::RangeImage
+  boost::shared_ptr<RangeImageView>
   getAsRangeImage(const int iWidth, const int iHeight,
-                  const Eigen::Isometry3f& iPose,
-                  const Eigen::Matrix4f& iProjector,
+                  const Eigen::Projective3f& iProjector,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
 protected:
@@ -103,8 +100,6 @@ protected:
   Spec mSpec;
   bool mIsFrozen;
   boost::shared_ptr<PointDataBuffer> mPointData;
-  maps::Octree mOctree;
-  boost::shared_ptr<VoxelGrid<int16_t> > mGrid;
 };
 
 }

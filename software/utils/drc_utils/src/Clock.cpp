@@ -14,6 +14,7 @@ public:
     mCurrentTime = 0;
     mTimeSubscription = NULL;
     mLastMessageReceivedTime = 0;
+    mVerbose = true;
     update();
   }
 
@@ -31,8 +32,10 @@ public:
     if (mCurrentTime > 0) {
       int64_t dt = curRealTime - mLastMessageReceivedTime;
       if (dt > mTimeoutInterval*1000) {
-        std::cout << "drc::Clock: WARNING: last timestamp message received " <<
-          (dt/1e6) << " seconds ago" << std::endl;        
+        if (mVerbose) {
+          std::cout << "drc::Clock: WARNING: last timestamp message " <<
+            "received " << (dt/1e6) << " seconds ago" << std::endl;
+        }
       }
       return mCurrentTime;
     }
@@ -48,8 +51,10 @@ public:
     int64_t curRealTime = bot_timestamp_now();
     int64_t dt = curRealTime - mLastMessageReceivedTime;
     if ((mLastMessageReceivedTime > 0) && (dt > mTimeoutInterval*1000)) {
-      std::cout << "drc::Clock: WARNING: last timestamp message received " <<
-        (dt/1e6) << " seconds ago" << std::endl;
+      if (mVerbose) {
+        std::cout << "drc::Clock: WARNING: last timestamp message received " <<
+          (dt/1e6) << " seconds ago" << std::endl;
+      }
     }
     mLastMessageReceivedTime = curRealTime;
   }
@@ -128,4 +133,9 @@ useTimeMessages(const bool iVal) {
 void Clock::
 useRealTimeWhenInvalid(const bool iVal) {
   mUseRealTimeWhenInvalid = iVal;
+}
+
+void Clock::
+setVerbose(const bool iVal) {
+  mVerbose = iVal;
 }

@@ -9,20 +9,23 @@ namespace lcm {
   class LCM;
 }
 
-struct _BotParam;
-typedef _BotParam BotParam;
+typedef struct _BotParam BotParam;
+typedef struct _BotFrames BotFrames;
 
 namespace maps {
 
 class BotFramesWrapper {
-protected:
-  struct BotStructures;
-
 public:
   BotFramesWrapper(const BotParam* iParam=NULL);
   ~BotFramesWrapper();
 
   void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  void setBotParam(const BotParam* iParam);
+
+  BotFrames* getNative() const;
+
+  int64_t getLatestTimestamp(const std::string& iFrom,
+                             const std::string& iTo) const;
 
   bool getTransform(const std::string& iFrom, const std::string& iTo,
                     const int64_t iTimestamp, Eigen::Isometry3d& oTransform);
@@ -37,7 +40,8 @@ public:
 
 protected:
   boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<BotStructures> mBotStructures;
+  BotParam* mBotParam;
+  BotFrames* mBotFrames;
 };
 
 }

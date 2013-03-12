@@ -1,6 +1,12 @@
 #include "LcmTranslator.hpp"
 
 #include "DataBlob.hpp"
+#include "PointCloudView.hpp"
+#include "OctreeView.hpp"
+#include "RangeImageView.hpp"
+#include "Utils.hpp"
+
+#include <limits>
 #include <octomap/octomap.h>
 
 #include <lcmtypes/drc/map_params_t.hpp>
@@ -10,127 +16,204 @@
 #include <lcmtypes/drc/map_image_t.hpp>
 
 #include <pcl/common/transforms.h>
+#include <pcl/range_image/range_image_planar.h>
 
 using namespace maps;
 
-drc::map_params_t LcmTranslator::
-toLcm(const LocalMap::Spec& iSpec) {
-  drc::map_params_t msg;
-  msg.map_id = iSpec.mId;
-  msg.resolution = iSpec.mResolution;
+bool LcmTranslator::
+toLcm(const LocalMap::Spec& iSpec, drc::map_params_t& oMessage) {
+  oMessage.map_id = iSpec.mId;
+  oMessage.resolution = iSpec.mResolution;
   for (int i = 0; i < 3; ++i) {
-    msg.bound_min[i] = iSpec.mBoundMin[i];
-    msg.bound_max[i] = iSpec.mBoundMax[i];
+    oMessage.bound_min[i] = iSpec.mBoundMin[i];
+    oMessage.bound_max[i] = iSpec.mBoundMax[i];
   }
-  msg.buffer_size = iSpec.mPointBufferSize;
-  return msg;
+  oMessage.buffer_size = iSpec.mPointBufferSize;
+  return true;
 }
 
-LocalMap::Spec LcmTranslator::
-fromLcm(const drc::map_params_t& iMessage) {
-  LocalMap::Spec spec;
-  spec.mId = iMessage.map_id;
-  spec.mResolution = iMessage.resolution;
+bool LcmTranslator::
+fromLcm(const drc::map_params_t& iMessage, LocalMap::Spec& oSpec) {
+  oSpec.mId = iMessage.map_id;
+  oSpec.mResolution = iMessage.resolution;
   for (int i = 0; i < 3; ++i) {
-    spec.mBoundMin[i] = iMessage.bound_min[i];
-    spec.mBoundMax[i] = iMessage.bound_max[i];
+    oSpec.mBoundMin[i] = iMessage.bound_min[i];
+    oSpec.mBoundMax[i] = iMessage.bound_max[i];
   }
-  spec.mPointBufferSize = iMessage.buffer_size;
-  spec.mActive = true;
-  return spec;
+  oSpec.mPointBufferSize = iMessage.buffer_size;
+  oSpec.mActive = true;
+  return true;
 }
 
-drc::map_request_t LcmTranslator::
-toLcm(const MapView::Spec& iSpec) {
-  drc::map_request_t msg;
-  msg.map_id = iSpec.mMapId;
-  msg.view_id = iSpec.mViewId;
-  msg.active = iSpec.mActive;
-  msg.relative_time = iSpec.mRelativeTime;
-  msg.relative_location = iSpec.mRelativeLocation;
+bool LcmTranslator::
+toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
+  oMessage.map_id = iSpec.mMapId;
+  oMessage.view_id = iSpec.mViewId;
+  oMessage.active = iSpec.mActive;
+  oMessage.relative_time = iSpec.mRelativeTime;
+  oMessage.relative_location = iSpec.mRelativeLocation;
   switch (iSpec.mType) {
-  case MapView::Spec::TypeOctree:
-    msg.type = drc::map_request_t::OCTREE;
-    break;
-  case MapView::Spec::TypePointCloud:
-    msg.type = drc::map_request_t::POINT_CLOUD;
-    break;
-  case MapView::Spec::TypeRangeImage:
-    msg.type = drc::map_request_t::RANGE_IMAGE;
-    break;
+  case ViewBase::TypeOctree:
+    oMessage.type = drc::map_request_t::OCTREE; break;
+  case ViewBase::TypePointCloud:
+    oMessage.type = drc::map_request_t::POINT_CLOUD; break;
+  case ViewBase::TypeRangeImage:
+    oMessage.type = drc::map_request_t::RANGE_IMAGE; break;
   default:
     std::cout << "LcmTranslator: bad type given in map spec" << std::endl;
-    break;
+    return false;
   }
-  msg.resolution = iSpec.mResolution;
-  msg.frequency = iSpec.mFrequency;
-  msg.time_min = iSpec.mTimeMin;
-  msg.time_max = iSpec.mTimeMax;
-  msg.num_clip_planes = iSpec.mClipPlanes.size();
-  msg.clip_planes.resize(msg.num_clip_planes);
-  for (int i = 0; i < msg.num_clip_planes; ++i) {
-    msg.clip_planes[i].resize(4);
+  oMessage.resolution = iSpec.mResolution;
+  oMessage.frequency = iSpec.mFrequency;
+  oMessage.time_min = iSpec.mTimeMin;
+  oMessage.time_max = iSpec.mTimeMax;
+  oMessage.width = iSpec.mWidth;
+  oMessage.height = iSpec.mHeight;
+  oMessage.num_clip_planes = iSpec.mClipPlanes.size();
+  oMessage.clip_planes.resize(oMessage.num_clip_planes);
+  for (int i = 0; i < oMessage.num_clip_planes; ++i) {
+    oMessage.clip_planes[i].resize(4);
     for (int j = 0; j < 4; ++j) {
-      msg.clip_planes[i][j] = iSpec.mClipPlanes[i][j];
+      oMessage.clip_planes[i][j] = iSpec.mClipPlanes[i][j];
     }
   }
-  return msg;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oMessage.transform[i][j] = iSpec.mTransform(i,j);
+    }
+  }
+  return true;
 }
 
-MapView::Spec LcmTranslator::
-fromLcm(const drc::map_request_t& iMessage) {
-  MapView::Spec spec;
-  spec.mMapId = iMessage.map_id;
-  spec.mViewId = iMessage.view_id;
-  spec.mActive = iMessage.active;
-  spec.mRelativeTime = iMessage.relative_time;
-  spec.mRelativeLocation = iMessage.relative_location;
+bool LcmTranslator::
+fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
+  oSpec.mMapId = iMessage.map_id;
+  oSpec.mViewId = iMessage.view_id;
+  oSpec.mActive = iMessage.active;
+  oSpec.mRelativeTime = iMessage.relative_time;
+  oSpec.mRelativeLocation = iMessage.relative_location;
   switch (iMessage.type) {
   case drc::map_request_t::OCTREE:
-    spec.mType = MapView::Spec::TypeOctree;
-    break;
+    oSpec.mType = ViewBase::TypeOctree; break;
   case drc::map_request_t::POINT_CLOUD:
-    spec.mType = MapView::Spec::TypePointCloud;
-    break;
+    oSpec.mType = ViewBase::TypePointCloud; break;
   case drc::map_request_t::RANGE_IMAGE:
-    spec.mType = MapView::Spec::TypeRangeImage;
-    break;
+    oSpec.mType = ViewBase::TypeRangeImage; break;
   default:
     std::cout << "LcmTranslator: bad type given in map_request" << std::endl;
     break;
   }
-  spec.mResolution = iMessage.resolution;
-  spec.mFrequency = iMessage.frequency;
-  spec.mTimeMin = iMessage.time_min;
-  spec.mTimeMax = iMessage.time_max;
-  spec.mClipPlanes.resize(iMessage.num_clip_planes);
-  for (int i = 0; i < spec.mClipPlanes.size(); ++i) {
+  oSpec.mResolution = iMessage.resolution;
+  oSpec.mFrequency = iMessage.frequency;
+  oSpec.mTimeMin = iMessage.time_min;
+  oSpec.mTimeMax = iMessage.time_max;
+  oSpec.mWidth = iMessage.width;
+  oSpec.mHeight = iMessage.height;
+  oSpec.mClipPlanes.resize(iMessage.num_clip_planes);
+  for (int i = 0; i < oSpec.mClipPlanes.size(); ++i) {
     for (int j = 0; j < 4; ++j) {
-      spec.mClipPlanes[i][j] = iMessage.clip_planes[i][j];
+      oSpec.mClipPlanes[i][j] = iMessage.clip_planes[i][j];
     }
   }
-  return spec;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oSpec.mTransform(i,j) = iMessage.transform[i][j];
+    }
+  }
+  return true;
 }
 
-drc::map_cloud_t LcmTranslator::
-toLcm(const maps::PointCloud& iCloud) {
-  drc::map_cloud_t msg;
+bool LcmTranslator::
+toLcm(const maps::DataBlob& iBlob, drc::map_blob_t& oMessage) {
+  DataBlob::Spec spec = iBlob.getSpec();
+  oMessage.num_dims = spec.mDimensions.size();
+  oMessage.dimensions.resize(oMessage.num_dims);
+  oMessage.stride_bytes.resize(oMessage.num_dims);
+  std::copy(spec.mDimensions.begin(), spec.mDimensions.end(),
+            oMessage.dimensions.begin());
+  std::copy(spec.mStrideBytes.begin(), spec.mStrideBytes.end(),
+            oMessage.stride_bytes.begin());
+  switch (spec.mCompressionType) {
+  case DataBlob::CompressionTypeNone:
+    oMessage.compression = drc::map_blob_t::UNCOMPRESSED; break;
+  case DataBlob::CompressionTypeZlib:
+    oMessage.compression = drc::map_blob_t::ZLIB; break;
+  default:
+    std::cout << "LcmTranslator: bad compression type in blob" << std::endl;
+    return false;
+  }
+  switch(spec.mDataType) {
+  case DataBlob::DataTypeUint8:
+    oMessage.data_type = drc::map_blob_t::UINT8; break;
+  case DataBlob::DataTypeUint16:
+    oMessage.data_type = drc::map_blob_t::UINT16; break;
+  case DataBlob::DataTypeFloat32:
+    oMessage.data_type = drc::map_blob_t::FLOAT32; break;
+  case DataBlob::DataTypeInt32:
+  case DataBlob::DataTypeFloat64:
+  default:
+    std::cout << "LcmTranslator: unsupported blob data type" << std::endl;
+    return false;
+  }
+  oMessage.num_bytes = iBlob.getBytes().size();
+  oMessage.data = iBlob.getBytes();
+
+  return true;
+}
+
+bool LcmTranslator::
+fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob) {
+  DataBlob::Spec spec;
+  spec.mDimensions.resize(iMessage.dimensions.size());
+  std::copy(iMessage.dimensions.begin(), iMessage.dimensions.end(),
+            spec.mDimensions.begin());
+  spec.mStrideBytes.resize(iMessage.stride_bytes.size());
+  std::copy(iMessage.stride_bytes.begin(), iMessage.stride_bytes.end(),
+            spec.mStrideBytes.begin());
+  switch (iMessage.compression) {
+  case drc::map_blob_t::UNCOMPRESSED:
+    spec.mCompressionType = maps::DataBlob::CompressionTypeNone; break;
+  case drc::map_blob_t::ZLIB:
+    spec.mCompressionType = maps::DataBlob::CompressionTypeZlib; break;
+  default:
+    std::cout << "LcmTranslator: bad compression type in cloud" << std::endl;
+    return false;
+  }
+  switch (iMessage.data_type) {
+  case drc::map_blob_t::UINT8:
+    spec.mDataType = maps::DataBlob::DataTypeUint8; break;
+  case drc::map_blob_t::UINT16:
+    spec.mDataType = maps::DataBlob::DataTypeUint16; break;
+  case drc::map_blob_t::FLOAT32:
+    spec.mDataType = maps::DataBlob::DataTypeFloat32; break;
+  default:
+    std::cout << "LcmTranslator: bad blob data type" << std::endl;
+    return false;
+  }
+  oBlob.setData(iMessage.data, spec);
+
+  return true;
+}
+
+
+bool LcmTranslator::
+toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage) {
+  oMessage.view_id = iView.getId();
 
   // find extrema of cloud and transform points
   maps::PointCloud::PointType maxPoint, minPoint;
-  pcl::getMinMax3D(iCloud, minPoint, maxPoint);
-  Eigen::Vector3f offset(minPoint.x, minPoint.y, minPoint.z);
-  Eigen::Vector3f scale(maxPoint.x-minPoint.x, maxPoint.y-minPoint.y,
-                        maxPoint.z-minPoint.z);
+  pcl::getMinMax3D(*(iView.getPointCloud()), minPoint, maxPoint);
+  Eigen::Vector3f offset = minPoint.getVector3fMap();
+  Eigen::Vector3f scale = maxPoint.getVector3fMap() - offset;
   scale /= 255;
-  Eigen::Affine3f xform = Eigen::Affine3f::Identity();
+  Eigen::Affine3f normalizerInv = Eigen::Affine3f::Identity();
   for (int i = 0; i < 3; ++i) {
-    xform(i,i) = scale[i];
-    xform(i,3) = offset[i];
+    normalizerInv(i,i) = scale[i];
+    normalizerInv(i,3) = offset[i];
   }
-  xform = xform.inverse();
+  Eigen::Affine3f normalizer = normalizerInv.inverse();
   maps::PointCloud cloud;
-  pcl::transformPointCloud(iCloud, cloud, xform);
+  pcl::transformPointCloud(*(iView.getPointCloud()), cloud, normalizer);
 
   // store to blob
   int totalSize = cloud.points.size()*3;
@@ -153,151 +236,180 @@ toLcm(const maps::PointCloud& iCloud) {
   blob.setData(data, spec);
 
   // compress and convert
-  blob.convertTo(DataBlob::CompressionTypeZlib,
-                 DataBlob::DataTypeUint8);
+  blob.convertTo(DataBlob::CompressionTypeZlib, DataBlob::DataTypeUint8);
 
   // pack blob into message
-  // NOTE: map_id and view_id not set
-  msg.blob.num_dims = 2;
-  msg.blob.dimensions.resize(2);
-  msg.blob.stride_bytes.resize(2);
-  msg.blob.dimensions[0] = spec.mDimensions[0];
-  msg.blob.dimensions[1] = spec.mDimensions[1];
-  msg.blob.stride_bytes[0] = spec.mStrideBytes[0];
-  msg.blob.stride_bytes[1] = spec.mStrideBytes[1];
-  msg.blob.compression = drc::map_blob_t::ZLIB;
-  msg.blob.data_type = drc::map_blob_t::UINT8;
-  msg.blob.num_bytes = data.size();
-  msg.blob.data = data;
-  Eigen::Affine3f xformInv = xform.inverse();
+  if (!toLcm(blob, oMessage.blob)) return false;
+
+  // transform
+  Eigen::Projective3f fromRef = normalizer*iView.getTransform();
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      msg.transform[i][j] = xformInv(i,j);
+      oMessage.transform[i][j] = fromRef(i,j);
     }
   }
 
   // done
-  return msg;
+  // NOTE: map_id not set
+  return true;
 }
 
-maps::PointCloud::Ptr LcmTranslator::
-fromLcm(const drc::map_cloud_t& iMessage) {
-  maps::PointCloud::Ptr cloud(new maps::PointCloud());
+bool LcmTranslator::
+fromLcm(const drc::map_cloud_t& iMessage, PointCloudView& oView) {
 
-  // transform from cloud to reference coords
-  Eigen::Affine3f matx;
+  // transform from reference to cloud coords
+  Eigen::Projective3f xform;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      matx(i,j) = iMessage.transform[i][j];
+      xform(i,j) = iMessage.transform[i][j];
+    }
+  }
+  oView.setId(iMessage.view_id);
+  oView.setTransform(xform);
+
+  // data blob
+  DataBlob blob;
+  if (!fromLcm(iMessage.blob, blob)) return false;
+
+  // convert to point cloud
+  blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32);
+  float* raw = (float*)(&blob.getBytes()[0]);
+  maps::PointCloud& cloud = *(oView.getPointCloud());
+  cloud.resize(blob.getSpec().mDimensions[1]);
+  for (size_t i = 0; i < cloud.size(); ++i) {
+    cloud[i].x = raw[i*3 + 0];
+    cloud[i].y = raw[i*3 + 1];
+    cloud[i].z = raw[i*3 + 2];
+  }    
+
+  return true;
+}
+
+bool LcmTranslator::
+toLcm(const OctreeView& iView, drc::map_octree_t& oMessage) {
+  // NOTE: map_id not set here
+  oMessage.view_id = iView.getId();
+  std::ostringstream oss;
+  iView.getOctree()->writeBinaryConst(oss);
+  std::string str = oss.str();
+  Eigen::Projective3f xform = iView.getTransform();
+  oMessage.num_bytes = str.size();
+  oMessage.data.resize(oMessage.num_bytes);
+  std::copy(str.begin(), str.end(), oMessage.data.begin());
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oMessage.transform[i][j] = xform(i,j);
+    }
+  }
+  return true;
+}
+
+bool LcmTranslator::
+fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView) {
+  Eigen::Projective3f xform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      xform(i,j) = iMessage.transform[i][j];
+    }
+  }
+  oView.setId(iMessage.view_id);
+  oView.setTransform(xform);
+  std::string str(iMessage.data.begin(), iMessage.data.end());
+  std::stringstream ss(str);
+  oView.getOctree()->readBinary(ss);
+  return true;
+}
+
+bool LcmTranslator::
+toLcm(const RangeImageView& iView, drc::map_image_t& oMessage) {
+  oMessage.view_id = iView.getId();
+
+  // copy range array
+  pcl::RangeImage::Ptr rangeImage = iView.getRangeImage();
+  int numRanges = rangeImage->width * rangeImage->height;
+  float* inRanges = rangeImage->getRangesArray();
+  std::vector<uint8_t> data((uint8_t*)inRanges,
+                            (uint8_t*)inRanges + numRanges*sizeof(float));
+  float* outRanges = (float*)(&data[0]);
+
+  // find extremal values and transform
+  float zMin(std::numeric_limits<float>::infinity());
+  float zMax(-std::numeric_limits<float>::infinity());
+  for (int i = 0; i < numRanges; ++i) {
+    float val = outRanges[i];
+    if (fabs(val) == std::numeric_limits<float>::infinity()) continue;
+    zMin = std::min(zMin, val);
+    zMax = std::max(zMax, val);
+  }
+  if (zMin >= zMax) {
+    zMin = 0;
+    zMax = 1;
+  }
+  float zOffset(zMin), zScale(zMax-zMin);
+  zScale /= 2047;
+  for (int i = 0; i < numRanges; ++i) {
+    outRanges[i] = (outRanges[i]-zOffset)/zScale;
+  }
+
+  // store to blob
+  DataBlob::Spec spec;
+  spec.mDimensions.push_back(rangeImage->width);
+  spec.mDimensions.push_back(rangeImage->height);
+  spec.mStrideBytes.push_back(sizeof(float));
+  spec.mStrideBytes.push_back(rangeImage->width*sizeof(float));
+  spec.mCompressionType = DataBlob::CompressionTypeNone;
+  spec.mDataType = DataBlob::DataTypeFloat32;
+  DataBlob blob;
+  blob.setData(data, spec);
+
+  // compress and convert
+  blob.convertTo(DataBlob::CompressionTypeZlib, DataBlob::DataTypeUint16);
+  if (!toLcm(blob, oMessage.blob)) return false;
+
+  // transform from reference to image
+  // NOTE: this assumes depths, not ranges!
+  Eigen::Translation3f translation(0,0,-zOffset);
+  Eigen::Affine3f scale = Eigen::Affine3f::Identity();
+  scale(2,2) = 1/zScale;
+  Eigen::Projective3f xform = iView.getTransform();
+  xform = scale*translation*xform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      oMessage.transform[i][j] = xform(i,j);
     }
   }
 
+  return true;
+}
+
+bool LcmTranslator::
+fromLcm(const drc::map_image_t& iMessage, RangeImageView& oView) {
+
+  // transform from reference to image coords
+  Eigen::Projective3f xform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      xform(i,j) = iMessage.transform[i][j];
+    }
+  }
+  oView.setId(iMessage.view_id);
+  oView.setTransform(xform);
+
   // data blob
-  DataBlob::Spec spec;
-  const drc::map_blob_t& msgBlob = iMessage.blob;
-  spec.mDimensions.resize(msgBlob.dimensions.size());
-  std::copy(msgBlob.dimensions.begin(), msgBlob.dimensions.end(),
-            spec.mDimensions.begin());
-  spec.mStrideBytes.resize(msgBlob.stride_bytes.size());
-  std::copy(msgBlob.stride_bytes.begin(), msgBlob.stride_bytes.end(),
-            spec.mStrideBytes.begin());
-  switch (msgBlob.compression) {
-  case drc::map_blob_t::UNCOMPRESSED:
-    spec.mCompressionType = maps::DataBlob::CompressionTypeNone;
-    break;
-  case drc::map_blob_t::ZLIB:
-    spec.mCompressionType = maps::DataBlob::CompressionTypeZlib;
-    break;
-  default:
-    std::cout << "LcmTranslator: bad compression type in cloud" << std::endl;
-    break;
-  }
-  switch (msgBlob.data_type) {
-  case drc::map_blob_t::UINT8:
-    spec.mDataType = maps::DataBlob::DataTypeUint8;
-    break;
-  case drc::map_blob_t::UINT16:
-    spec.mDataType = maps::DataBlob::DataTypeUint16;
-    break;
-  case drc::map_blob_t::FLOAT32:
-    spec.mDataType = maps::DataBlob::DataTypeFloat32;
-    break;
-  default:
-    std::cout << "LcmTranslator: bad data type in cloud" << std::endl;
-    break;
-  }
   DataBlob blob;
-  blob.setData(msgBlob.data, spec);
+  if (!fromLcm(iMessage.blob, blob)) return false;
 
-  // convert to point cloud
-  blob.convertTo(maps::DataBlob::CompressionTypeNone,
-                 maps::DataBlob::DataTypeFloat32);
+  // convert to range image
+  blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32); 
   float* raw = (float*)(&blob.getBytes()[0]);
-  cloud->resize(spec.mDimensions[1]);
-  for (size_t i = 0; i < cloud->size(); ++i) {
-    (*cloud)[i].x = raw[i*3 + 0];
-    (*cloud)[i].y = raw[i*3 + 1];
-    (*cloud)[i].z = raw[i*3 + 2];
-  }    
+  std::vector<float> ranges(raw, raw+blob.getBytes().size()/sizeof(float));
+  for (int i = 0; i < ranges.size(); ++i) {
+    if (ranges[i] > 65000) ranges[i] = std::numeric_limits<float>::infinity();
+  }
+  oView.setSize(blob.getSpec().mDimensions[0], blob.getSpec().mDimensions[1]);
+  oView.set(ranges);
 
-  // transform and return
-  pcl::transformPointCloud(*cloud, *cloud, matx);
-  return cloud;
-}
-
-drc::map_octree_t LcmTranslator::
-toLcm(const maps::Octree& iTree) {
-  // NOTE: map_id and view_id not set here
-  drc::map_octree_t msg;
-  std::ostringstream oss;
-  iTree.mTree->writeBinaryConst(oss);
-  std::string str = oss.str();
-  Eigen::Isometry3f matx = iTree.mTransform.inverse();
-  msg.num_bytes = str.size();
-  msg.data.resize(msg.num_bytes);
-  std::copy(str.begin(), str.end(), msg.data.begin());
-  Eigen::Quaternionf q(matx.linear());
-  Eigen::Vector3f t(matx.translation());
-  msg.transform.translation.x = t[0];
-  msg.transform.translation.y = t[1];
-  msg.transform.translation.z = t[2];
-  msg.transform.rotation.w = q.w();
-  msg.transform.rotation.x = q.x();
-  msg.transform.rotation.y = q.y();
-  msg.transform.rotation.z = q.z();
-  return msg;
-}
-
-maps::Octree LcmTranslator::
-fromLcm(const drc::map_octree_t& iMessage) {
-  maps::Octree octree;
-  Eigen::Quaternionf q(iMessage.transform.rotation.w,
-                       iMessage.transform.rotation.x,
-                       iMessage.transform.rotation.y,
-                       iMessage.transform.rotation.z);
-  Eigen::Vector3f pos(iMessage.transform.translation.x,
-                      iMessage.transform.translation.y,
-                      iMessage.transform.translation.z);
-  octree.mTransform.linear() = q.matrix();
-  octree.mTransform.translation() = pos;
-  octree.mTransform = octree.mTransform.inverse();
-  std::string str(iMessage.data.begin(), iMessage.data.end());
-  std::stringstream ss(str);
-  octree.mTree.reset(new octomap::OcTree(0.1));
-  octree.mTree->readBinary(ss);
-  return octree;
-}
-
-drc::map_image_t LcmTranslator::
-toLcm(const maps::RangeImage& iImage) {
-  drc::map_image_t msg;
-  // TODO
-  return msg;
-}
-
-maps::RangeImage LcmTranslator::
-fromLcm(const drc::map_image_t& iMessage) {
-  maps::RangeImage image;
-  // TODO
-  return image;
+  // done
+  // NOTE: ids not set here
+  return true;
 }

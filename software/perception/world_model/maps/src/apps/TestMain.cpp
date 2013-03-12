@@ -9,6 +9,9 @@
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
+#include <maps/Utils.hpp>
+#include <maps/PointCloudView.hpp>
+#include <maps/RangeImageView.hpp>
 
 using namespace maps;
 using namespace std;
@@ -55,7 +58,8 @@ public:
       bounds.mTimeMax = timeMax;
 
       // get and publish point cloud corresponding to this time
-      maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
+      maps::PointCloud::Ptr cloud =
+        localMap->getAsPointCloud(0, bounds)->getPointCloud();
       bot_lcmgl_t* lcmgl = mState->mLcmGl;
       bot_lcmgl_color3f(lcmgl, 0, 1, 0);
       bot_lcmgl_point_size(lcmgl, 3);
@@ -79,17 +83,19 @@ public:
 
       // set up sample camera projection parameters
       int width(200), height(200);
-      Eigen::Matrix4f projector = Eigen::Matrix4f::Identity();
-      projector(0,0) = projector(1,1) = 50;  // focal length of 50 pixels
-      projector(0,2) = width/2.0;            // cop at center of image
-      projector(1,2) = height/2.0;
+      Eigen::Matrix3f calib = Eigen::Matrix3f::Identity();
+      calib(0,0) = calib(1,1) = 50;  // focal length of 50 pixels
+      calib(0,2) = width/2.0;        // cop at center of image
+      calib(1,2) = height/2.0;
 
       // create range image
-      maps::RangeImage rangeImage =
-        localMap->getAsRangeImage(width, height, pose, projector, bounds);
+      Eigen::Projective3f projector;
+      Utils::composeViewMatrix(projector, calib, pose, false);
+      RangeImageView::Ptr rangeImage =
+        localMap->getAsRangeImage(width, height, projector, bounds);
 
       // get and store range image pixel values
-      float* ranges = rangeImage.mImage->getRangesArray();
+      float* ranges = rangeImage->getRangeImage()->getRangesArray();
       std::ofstream ofs("/home/antone/ranges.txt");
       for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
@@ -113,6 +119,48 @@ public:
 
 
 int main() {
+  // set up matrices
+  Eigen::Matrix3f calib;
+  calib<<1000,3,450,0,2000,500,0,0,9;
+  Eigen::Quaternionf q(1,2,3,4);
+  q.normalize();
+  Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+  pose.translation() = Eigen::Vector3f(10,20,30);
+  pose.linear() = q.matrix();
+
+  // compose a matrix
+  Eigen::Projective3f matx;
+  bool isOrtho = true;
+  std::cout << "orig pose" << std::endl;
+  std::cout << pose.matrix() << std::endl;
+  std::cout << "orig calib" << std::endl;
+  std::cout << calib << std::endl;
+  Utils::composeViewMatrix(matx, calib, pose, isOrtho);
+  std::cout << "composed matrix" << std::endl;
+  std::cout << matx.matrix() << std::endl;
+
+  // factor that matrix
+  Utils::factorViewMatrix(matx, calib, pose, isOrtho);
+  std::cout << "pose" << std::endl;
+  std::cout << pose.matrix() << std::endl;
+  std::cout << "calib" << std::endl;
+  std::cout << calib << std::endl;
+  std::cout << "ortho? " << (isOrtho ? "yes" : "no") << std::endl;
+
+  // compose again; compare
+  Eigen::Projective3f matx2;
+  Utils::composeViewMatrix(matx2, calib, pose, isOrtho);
+  std::cout << "difference" << std::endl;
+  std::cout << (matx2.matrix()-matx.matrix()) << std::endl;
+  std::cout << "norm " << (matx2.matrix()-matx.matrix()).norm() << std::endl;
+
+  Utils::composeViewMatrix(matx2, calib, Eigen::Isometry3f::Identity(),
+                           isOrtho);
+  std::cout << "FOO\n" << matx2.matrix() << std::endl;
+
+  return 0;
+
+
   // create state object instance
   State state;
 
@@ -127,7 +175,7 @@ int main() {
   state.mActiveMapId = state.mCollector->getMapManager()->createMap(mapSpec);
 
   // start running wrapper
-  std::string laserChannel("ROTATING_SCAN");
+  std::string laserChannel("SCAN");
   state.mCollector->getDataReceiver()->
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,

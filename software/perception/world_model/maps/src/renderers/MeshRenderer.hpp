@@ -46,17 +46,20 @@ public:
   void setScaleRange(const float iMinZ, const float iMaxZ);
   void setColorAlpha(const float iAlpha);
   void setPointSize(const float iSize);
+  void setLineWidth(const float iWidth);
   void setRangeOrigin(const Eigen::Vector3f& iOrigin);
   // TODO void setTexture();
 
   void setData(const std::vector<Eigen::Vector3f>& iVertices,
                const std::vector<Eigen::Vector3f>& iNormals,
                const std::vector<Eigen::Vector3i>& iFaces,
-               const Eigen::Affine3f& iTransform=Eigen::Affine3f::Identity());
+               const Eigen::Projective3f& iTransform=
+               Eigen::Affine3f::Identity());
 
   void setData(const std::vector<Eigen::Vector3f>& iVertices,
                const std::vector<Eigen::Vector3i>& iFaces,
-               const Eigen::Affine3f& iTransform=Eigen::Affine3f::Identity());
+               const Eigen::Projective3f& iTransform=
+               Eigen::Projective3f::Identity());
 
   void draw();
 

@@ -38,7 +38,6 @@
 
 //-------pulling maps
 #include <maps/ViewClient.hpp>
-#include <maps/MapView.hpp>
 #include <boost/thread.hpp>
 
 

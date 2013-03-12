@@ -2,62 +2,59 @@ find_package(PkgConfig REQUIRED)
 add_definitions(-Wall)
 
 #####################################################################
-add_library(renderer_heightmap SHARED 
-  renderer_heightmap.cpp
-  MeshRenderer.cpp)
+add_library(renderer_data_control SHARED 
+  DataControlRenderer.cpp
+  RendererBase.cpp)
   
-set_target_properties(renderer_heightmap PROPERTIES SOVERSION 1)
+set_target_properties(renderer_data_control PROPERTIES SOVERSION 1)
 
-pods_use_pkg_config_packages(renderer_heightmap
-  lcmtypes_drc_lcmtypes eigen3
-  bot2-core bot2-vis bot2-frames maps)
+pods_use_pkg_config_packages(renderer_data_control
+  lcmtypes_drc_lcmtypes bot2-vis gtkmm-2.4)
 
-pods_install_headers(renderer_heightmap.hpp
-  DESTINATION renderer_heightmap)
+pods_install_headers(DataControlRenderer.hpp
+  DESTINATION renderer_data_control)
 
-pods_install_libraries(renderer_heightmap)
+pods_install_libraries(renderer_data_control)
   
-pods_install_pkg_config_file(renderer_heightmap
-    LIBS -lrenderer_heightmap 
-    REQUIRES bot2-core bot2-vis bot2-frames
+pods_install_pkg_config_file(renderer_data_control
+    LIBS -lrenderer_data_control
+    REQUIRES lcmtypes_drc_lcmtypes bot2-vis
     VERSION 0.0.1)
-
 
 #####################################################################
 add_library(renderer_maps SHARED 
-  renderer_maps.cpp
+  MapsRenderer.cpp
   MeshRenderer.cpp)
   
 set_target_properties(renderer_maps PROPERTIES SOVERSION 1)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 pods_use_pkg_config_packages(renderer_maps
-  lcmtypes_drc_lcmtypes eigen3
-  bot2-core bot2-vis bot2-frames
-  pcl_common-1.6 octomap zlib maps)
+  bot2-vis maps gtkmm-2.4)
 
-pods_install_headers(renderer_maps.hpp
+pods_install_headers(
+  MapsRenderer.hpp
   DESTINATION renderer_maps)
 
 pods_install_libraries(renderer_maps)
   
 pods_install_pkg_config_file(renderer_maps
     LIBS -lrenderer_maps
-    REQUIRES bot2-core bot2-vis bot2-frames 
+    REQUIRES bot2-vis maps 
     VERSION 0.0.1)
 
 
 #####################################################################
 add_library(renderer_lidartest SHARED 
   RendererBase.cpp
+  MeshRenderer.cpp
   LidarTestRenderer.cpp
 )
-  
+
 set_target_properties(renderer_lidartest PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(renderer_lidartest
   lcmtypes_drc_lcmtypes eigen3
-  bot2-core bot2-vis bot2-frames gtkmm-2.4 maps)
+  bot2-core bot2-vis bot2-frames jpeg-utils gtkmm-2.4 maps)
 
 pods_install_headers(LidarTestRenderer.hpp RendererBase.hpp
   DESTINATION renderer_lidartest)
@@ -69,7 +66,8 @@ pods_install_pkg_config_file(renderer_lidartest
     REQUIRES bot2-core bot2-vis bot2-frames
     VERSION 0.0.1)
 
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wno-unknown-pragmas")
+  
 
 #####################################################################
 # add_library(renderer_depthmap SHARED 

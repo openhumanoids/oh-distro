@@ -6,18 +6,18 @@ add_library(maps SHARED
   VoxelGrid.cpp
   BotFramesWrapper.cpp
   SensorDataReceiver.cpp
+  ViewBase.cpp
+  PointCloudView.cpp
+  OctreeView.cpp
+  RangeImageView.cpp
+  VoxelGridView.cpp
   LocalMap.cpp
   MapManager.cpp
-  MapView.cpp
   LcmTranslator.cpp
   ViewClient.cpp
   Collector.cpp
+  Surfelizer.cpp
 #  ViewServer.cpp
-#  MapWrapper.cpp
-#    SpatialQuery.cpp
-#    DeltaPublisher.cpp
-#    DeltaReceiver.cpp
-#    SpatialQueryWrapper.cpp
 )
 
 # make the header public
@@ -31,18 +31,18 @@ pods_install_headers(
   VoxelGrid.hpp
   BotFramesWrapper.hpp
   SensorDataReceiver.hpp
+  ViewBase.hpp
+  PointCloudView.hpp
+  OctreeView.hpp
+  RangeImageView.hpp
+  VoxelGridView.hpp
   LocalMap.hpp
   MapManager.hpp
-  MapView.hpp
   LcmTranslator.hpp
   ViewClient.hpp
   Collector.hpp
+  Surfelizer.hpp
 #  ViewServer.hpp
-#  MapWrapper.hpp
-#  SpatialQuery.hpp
-#  DeltaPublisher.hpp
-#  DeltaReceiver.hpp
-#  SpatialQueryWrapper.hpp
   DESTINATION maps
 )
 

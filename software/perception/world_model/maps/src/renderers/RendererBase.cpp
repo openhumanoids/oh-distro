@@ -137,9 +137,9 @@ struct RendererBase::InternalHelper {
   BotGtkParamWidget* mBotGtkParamWidget;
   BotEventHandler mBotEventHandler;
   Gtk::Container* mGtkContainer;
+  Gtk::DrawingArea* mGlDrawingArea;
 
   // other data
-  boost::shared_ptr<Gtk::Main> mGtkMain;
   std::list<lcm::Subscription*> mLcmSubscriptions;
   typedef std::unordered_map<std::string, WidgetBinding::Ptr> WidgetBindingMap;
   WidgetBindingMap mWidgetBindings;
@@ -157,6 +157,11 @@ struct RendererBase::InternalHelper {
     for (; iter != mLcmSubscriptions.end(); ++iter) {
       mLcm->unsubscribe(*iter);
     }
+  }
+
+  static Gtk::Main* getGtkMain() {
+    static Gtk::Main theMain(0,NULL);
+    return &theMain;
   }
 
   static void destroy(BotRenderer* iRenderer) {
@@ -257,7 +262,8 @@ RendererBase::
 RendererBase(const std::string& iName,
              BotViewer* iViewer, const int iPriority,
              const lcm_t* iLcm,
-             const BotParam* iParam, const BotFrames* iFrames) {
+             const BotParam* iParam, const BotFrames* iFrames,
+             const int iWhichSide) {
 
   // set initial state values
   mHelper.reset(new InternalHelper());
@@ -277,7 +283,7 @@ RendererBase(const std::string& iName,
 
   // other initializations
   drc::Clock::instance()->setLcm(mHelper->mLcm);
-  mHelper->mGtkMain.reset(new Gtk::Main(0, NULL));
+  mHelper->getGtkMain();
   
   // assign event handlers
   memset(&mHelper->mBotEventHandler, 0, sizeof(BotEventHandler));
@@ -302,6 +308,8 @@ RendererBase(const std::string& iName,
   gtk_widget_show(GTK_WIDGET(mHelper->mBotGtkParamWidget));
   mHelper->mGtkContainer =
     Glib::wrap(GTK_CONTAINER(mHelper->mBotGtkParamWidget));
+  mHelper->mGlDrawingArea =
+    Glib::wrap(GTK_DRAWING_AREA(mHelper->mBotViewer->gl_area));
 
   // register callbacks for saving/loading preferences
   g_signal_connect (G_OBJECT(iViewer), "load-preferences",
@@ -310,7 +318,8 @@ RendererBase(const std::string& iName,
                     G_CALLBACK(InternalHelper::savePreferences), this);
 
   // finally, register this renderer with the bot viewer
-  bot_viewer_add_renderer(iViewer, &mHelper->mBotRenderer, iPriority);
+  bot_viewer_add_renderer_on_side(iViewer, &mHelper->mBotRenderer,
+                                  iPriority, iWhichSide);
 }
 
 RendererBase::
@@ -340,6 +349,11 @@ getBotFrames() const {
 BotViewer* RendererBase::
 getBotViewer() const {
   return mHelper->mBotViewer;
+}
+
+Gtk::DrawingArea* RendererBase::
+getGlDrawingArea() const {
+  return mHelper->mGlDrawingArea;
 }
 
 Gtk::Container* RendererBase::
@@ -386,28 +400,33 @@ bind(W* iWidget, const std::string& iName, T& iData) {
 
 
 Gtk::ToggleButton* RendererBase::
-addToggle(const std::string& iName, bool& iData) {
+addToggle(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
   Gtk::ToggleButton* button = Gtk::manage(new Gtk::ToggleButton(iName));
   bind(button, iName, iData);
   button->set_active(iData);
-  mHelper->mGtkContainer->add(*button);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*button);
   button->show();
   return button;
 }
 
 Gtk::CheckButton* RendererBase::
-addCheck(const std::string& iName, bool& iData) {
+addCheck(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
   Gtk::CheckButton* button = Gtk::manage(new Gtk::CheckButton(iName));
   bind(button, iName, iData);
   button->set_active(iData);
-  mHelper->mGtkContainer->add(*button);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*button);
   button->show();
   return button;
 }
 
 Gtk::SpinButton* RendererBase::
 addSpin(const std::string& iName, double& iData,
-        const double iMin, const double iMax, const double iStep) {
+        const double iMin, const double iMax, const double iStep,
+        Gtk::Container* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -418,14 +437,17 @@ addSpin(const std::string& iName, double& iData,
   bind(spin, iName, iData);
   spin->set_value(iData);
   box->add(*spin);
-  mHelper->mGtkContainer->add(*box);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*box);
   box->show_all();
   return spin;
 }
 
 Gtk::SpinButton* RendererBase::
 addSpin(const std::string& iName, int& iData,
-        const int iMin, const int iMax, const int iStep) {
+        const int iMin, const int iMax, const int iStep,
+        Gtk::Container* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -435,14 +457,17 @@ addSpin(const std::string& iName, int& iData,
   bind(spin, iName, iData);
   spin->set_value(iData);
   box->add(*spin);
-  mHelper->mGtkContainer->add(*box);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*box);
   box->show_all();
   return spin;
 }
 
 Gtk::HScale* RendererBase::
 addSlider(const std::string& iName, double& iData,
-          const double iMin, const double iMax, const double iStep) {
+          const double iMin, const double iMax, const double iStep,
+          Gtk::Container* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -452,14 +477,17 @@ addSlider(const std::string& iName, double& iData,
   bind(slider, iName, iData);
   slider->set_value(iData);
   box->add(*slider);
-  mHelper->mGtkContainer->add(*box);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*box);
   box->show_all();
   return slider;
 }
 
 Gtk::HScale* RendererBase::
 addSlider(const std::string& iName, int& iData,
-          const int iMin, const int iMax, const int iStep) {
+          const int iMin, const int iMax, const int iStep,
+          Gtk::Container* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -468,14 +496,16 @@ addSlider(const std::string& iName, int& iData,
   bind(slider, iName, iData);
   slider->set_value(iData);
   box->add(*slider);
-  mHelper->mGtkContainer->add(*box);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*box);
   box->show_all();
   return slider;  
 }
 
 Gtk::ComboBox* RendererBase::
 addCombo(const std::string& iName, int& iData,
-         const std::vector<std::string>& iLabels) {
+         const std::vector<std::string>& iLabels, Gtk::Container* iContainer) {
   std::vector<int> ids(iLabels.size());
   for (size_t i = 0; i < iLabels.size(); ++i) { ids[i] = i; }
   return addCombo(iName, iData, iLabels, ids);
@@ -484,7 +514,7 @@ addCombo(const std::string& iName, int& iData,
 Gtk::ComboBox* RendererBase::
 addCombo(const std::string& iName, int& iData,
          const std::vector<std::string>& iLabels,
-         const std::vector<int>& iIndices) {
+         const std::vector<int>& iIndices, Gtk::Container* iContainer) {
   if (iIndices.size() != iLabels.size()) {
     return NULL;
   }
@@ -505,7 +535,9 @@ addCombo(const std::string& iName, int& iData,
   bind(combo, iName, iData);
   combo->set_active(iData);
   box->add(*combo);
-  mHelper->mGtkContainer->add(*box);
+  Gtk::Container* container = iContainer;
+  if (container == NULL) container = mHelper->mGtkContainer;
+  container->add(*box);
   box->show_all();
   return combo;
 }

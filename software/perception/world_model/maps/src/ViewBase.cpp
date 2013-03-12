@@ -1,0 +1,93 @@
+#include "ViewBase.hpp"
+
+using namespace maps;
+
+
+ViewBase::Spec::
+Spec() {
+  mMapId = mViewId = -1;
+  mActive = false;
+  mRelativeTime = false;
+  mRelativeLocation = false;
+  mType = TypePointCloud;
+  mResolution = 0;
+  mFrequency = 0;
+  mTimeMin = mTimeMax = -1;
+  mTransform = Eigen::Projective3f::Identity();
+  mWidth = mHeight = 0;
+}
+
+bool ViewBase::Spec::
+operator==(const Spec& iSpec) const {
+  bool eq = (mMapId == iSpec.mMapId) &&
+    (mViewId == iSpec.mViewId) &&
+    (mActive == iSpec.mActive) &&
+    (mRelativeTime == iSpec.mRelativeTime) &&
+    (mRelativeLocation == iSpec.mRelativeLocation) &&
+    (mType == iSpec.mType) &&
+    (mResolution == iSpec.mResolution) &&
+    (mFrequency == iSpec.mFrequency) &&
+    (mTimeMin == iSpec.mTimeMin) &&
+    (mTimeMax == iSpec.mTimeMax) &&
+    (mWidth == iSpec.mWidth) &&
+    (mHeight == iSpec.mHeight) &&
+    (mClipPlanes.size() == iSpec.mClipPlanes.size()) &&
+    (mTransform.matrix() == iSpec.mTransform.matrix());
+  if (!eq) {
+    return false;
+  }
+  for (int i = 0; i < mClipPlanes.size(); ++i) {
+    if (mClipPlanes[i] != iSpec.mClipPlanes[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ViewBase::Spec::
+operator!=(const Spec& iSpec) const {
+  return !(*this == iSpec);
+}
+
+
+
+ViewBase::
+ViewBase() {
+  mId = -1;
+  mTransform = Eigen::Projective3f::Identity();
+  mUpdateTime = -1;
+}
+
+ViewBase::
+~ViewBase() {
+}
+
+void ViewBase::
+setId(const int64_t iId) {
+  mId = iId;
+}
+
+const int64_t ViewBase::
+getId() const {
+  return mId;
+}
+
+void ViewBase::
+setTransform(const Eigen::Projective3f& iTransform) {
+  mTransform = iTransform;
+}
+
+const Eigen::Projective3f ViewBase::
+getTransform() const {
+  return mTransform;
+}
+
+void ViewBase::
+setUpdateTime(const int64_t iTime) {
+  mUpdateTime = iTime;
+}
+
+const int64_t ViewBase::
+getUpdateTime() const {
+  return mUpdateTime;
+}

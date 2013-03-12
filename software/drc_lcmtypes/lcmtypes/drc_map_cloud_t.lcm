@@ -11,7 +11,7 @@ struct map_cloud_t
   // id of view
   int64_t view_id;
 
-  // transform from map to reference coords
+  // transform from reference to cloud coords
   float transform[4][4];
 
   // the actual data

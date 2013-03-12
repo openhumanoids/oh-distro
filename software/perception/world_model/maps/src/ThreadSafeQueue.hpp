@@ -62,7 +62,9 @@ public:
 
   bool waitForData(T& oData) {
     boost::mutex::scoped_lock lock(mMutex);
-    mCondition.wait(lock);
+    while (mData.empty()) {
+      mCondition.wait(lock);
+    }
     if (!mData.empty()) {
       oData = mData.front();
       mData.pop_front();

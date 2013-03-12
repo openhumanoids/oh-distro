@@ -8,6 +8,10 @@
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
+#include <maps/Surfelizer.hpp>
+#include <maps/PointCloudView.hpp>
+#include <maps/RangeImageView.hpp>
+#include <maps/Utils.hpp>
 
 using namespace maps;
 using namespace std;
@@ -30,6 +34,18 @@ public:
 
   ~State() {
     bot_lcmgl_destroy(mLcmGl);
+  }
+};
+
+struct SurfelCreator: public Collector::DataListener {
+  State* mState;
+  Surfelizer mSurfelizer;
+  SurfelCreator() {
+    mSurfelizer.setScanRadius(2);
+    mSurfelizer.setPointRadius(2);
+  }
+  void notify(const SensorDataReceiver::SensorData& iData) {
+    mSurfelizer.addScan(*iData.mPointSet);
   }
 };
 
@@ -57,7 +73,8 @@ public:
 
       // get and publish point cloud corresponding to this time range
       // (for debugging)
-      maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
+      maps::PointCloud::Ptr cloud =
+        localMap->getAsPointCloud(0, bounds)->getPointCloud();
       bot_lcmgl_t* lcmgl = mState->mLcmGl;
       bot_lcmgl_color3f(lcmgl, 0, 1, 0);
       bot_lcmgl_point_size(lcmgl, 3);
@@ -81,17 +98,19 @@ public:
 
       // set up sample camera projection parameters
       int width(200), height(200);
-      Eigen::Matrix4f projector = Eigen::Matrix4f::Identity();
-      projector(0,0) = projector(1,1) = 50;  // focal length of 50 pixels
-      projector(0,2) = width/2.0;            // cop at center of image
-      projector(1,2) = height/2.0;
+      Eigen::Matrix3f calib = Eigen::Matrix3f::Identity();
+      calib(0,0) = calib(1,1) = 50;  // focal length of 50 pixels
+      calib(0,2) = width/2.0;            // cop at center of image
+      calib(1,2) = height/2.0;
 
       // create range image
-      maps::RangeImage rangeImage =
-        localMap->getAsRangeImage(width, height, pose, projector, bounds);
+      Eigen::Projective3f projector;
+      Utils::composeViewMatrix(projector, calib, pose, false);
+      RangeImageView::Ptr rangeImage =
+        localMap->getAsRangeImage(width, height, projector, bounds);
 
       // get range image pixel values and store to file
-      float* ranges = rangeImage.mImage->getRangesArray();
+      float* ranges = rangeImage->getRangeImage()->getRangesArray();
       std::ofstream ofs("/tmp/ranges.txt");
       for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
@@ -129,7 +148,7 @@ int main() {
   state.mActiveMapId = state.mCollector->getMapManager()->createMap(mapSpec);
 
   // start running wrapper
-  std::string laserChannel("ROTATING_SCAN");
+  std::string laserChannel("SCAN");
   state.mCollector->getDataReceiver()->
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
@@ -137,12 +156,18 @@ int main() {
   state.mCollector->start();
 
   // start producing data
+  /*
   DataProducer producer(&state);
   boost::thread producerThread(boost::ref(producer));
+  */
+
+  SurfelCreator creator;
+  creator.mState = &state;
+  state.mCollector->addListener(creator);
 
   // main lcm loop
   while (0 == state.mLcm->handle());
 
   // join pending threads
-  producerThread.join();
+  //producerThread.join();
 }

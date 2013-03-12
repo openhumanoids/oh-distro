@@ -148,9 +148,14 @@ public:
   planesFromPolyhedron(const std::vector<Eigen::Vector3f>& iVertices,
                        const std::vector<std::vector<int> >& iFaces);
 
-  static bool factorViewMatrix(const Eigen::Matrix4f& iMatrix,
-                               Eigen::Isometry3f& oPose,
+  static bool isOrthographic(const Eigen::Matrix4f& iMatrix);
+  static bool composeViewMatrix(Eigen::Projective3f& oMatrix,
+                                const Eigen::Matrix3f& iCalib,
+                                const Eigen::Isometry3f& iPose,
+                                const bool iIsOrthographic);
+  static bool factorViewMatrix(const Eigen::Projective3f& iMatrix,
                                Eigen::Matrix3f& oCalib,
+                               Eigen::Isometry3f& oPose,
                                bool& oIsOrthographic);
 
   static uint64_t rand64();

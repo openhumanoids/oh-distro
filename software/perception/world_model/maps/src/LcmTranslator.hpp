@@ -4,38 +4,49 @@
 namespace drc {
   class map_request_t;
   class map_params_t;
+  class map_blob_t;
   class map_cloud_t;
   class map_octree_t;
   class map_image_t;
 }
 
 #include "LocalMap.hpp"
-#include "MapView.hpp"
+#include "ViewBase.hpp"
 
 namespace maps {
+
+class DataBlob;
+class PointCloudView;
+class OctreeView;
+class RangeImageView;
 
 class LcmTranslator {
 public:
 
   // for map specification
-  static drc::map_params_t toLcm(const LocalMap::Spec& iSpec);
-  static LocalMap::Spec fromLcm(const drc::map_params_t& iMessage);
+  static bool toLcm(const LocalMap::Spec& iSpec, drc::map_params_t& oMessage);
+  static bool fromLcm(const drc::map_params_t& iMessage, LocalMap::Spec& oSpec);
 
   // for view request
-  static drc::map_request_t toLcm(const MapView::Spec& iSpec);
-  static MapView::Spec fromLcm(const drc::map_request_t& iMessage);
+  static bool toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage);
+  static bool fromLcm(const drc::map_request_t& iMessage,
+                      ViewBase::Spec& oSpec);
+
+  // for data blobs
+  static bool toLcm(const maps::DataBlob& iBlob, drc::map_blob_t& oMessage);
+  static bool fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob);
 
   // for point cloud
-  static drc::map_cloud_t toLcm(const maps::PointCloud& iCloud);
-  static maps::PointCloud::Ptr fromLcm(const drc::map_cloud_t& iMessage);
+  static bool toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage);
+  static bool fromLcm(const drc::map_cloud_t& iMessage, PointCloudView& oView);
 
   // for octree
-  static drc::map_octree_t toLcm(const maps::Octree& iTree);
-  static maps::Octree fromLcm(const drc::map_octree_t& iMessage);
+  static bool toLcm(const OctreeView& iView, drc::map_octree_t& oMessage);
+  static bool fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView);
 
   // for range image
-  static drc::map_image_t toLcm(const maps::RangeImage& iImage);
-  static maps::RangeImage fromLcm(const drc::map_image_t& iMessage);
+  static bool toLcm(const RangeImageView& iView, drc::map_image_t& oMessage);
+  static bool fromLcm(const drc::map_image_t& iMessage, RangeImageView& oView);
 };
 
 }

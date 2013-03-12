@@ -1309,14 +1309,14 @@ namespace surrogate_gui
 		}
 		if (stringsEqual(name, PARAM_NAME_PULL_MAP))
 		{
-			std::vector<maps::ViewClient::MapViewPtr> views = _mViewClient->getAllViews();
+			std::vector<maps::ViewClient::ViewPtr> views = _mViewClient->getAllViews();
 			cout << "Views:" << views.size() <<endl;
 			if (views.size() > 0) 
 			{
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
-					if(views[v]->getSpec().mViewId == 1) continue; // get rid of low rez map
+					if(views[v]->getId() == 1) continue; // get rid of low rez map
 					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
 					(*cloudFull) += *cloud;
 				}

@@ -36,8 +36,8 @@ public:
   bool removeChannel(const std::string& iSensorChannel);
 
   void setMaxBufferSize(const int iSize);
-  bool pop(SensorData& oData);
-  bool waitForData(SensorData& oData);
+  bool pop(SensorData& oData, const bool iNeedPose=true);
+  bool waitForData(SensorData& oData, const bool iNeedPose=true);
   void unblock();
 
   bool start();
