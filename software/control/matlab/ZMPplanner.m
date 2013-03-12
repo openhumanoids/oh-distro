@@ -130,9 +130,10 @@ classdef ZMPplanner < DrakeSystem
             if(exitflag<=0)
                 error('ZMP planning is not successful')
             end
+            % V = x'S1x+2*x'*S2+S3
             S1 = zeros(nx,nx,obj.window_size);
             S2 = zeros(nx,obj.window_size);
-            S3 = zeros(1,obj.window_size);
+%             S3 = zeros(1,obj.window_size);
             for i = obj.window_size-1:-1:1
                 Dn = -z_com(i)/(zddot_com(i)+obj.g)*eye(ny,nu);
                 P1 = (Dn'*Qy*Dn+R+obj.B'*S1(:,:,i+1)*obj.B);
@@ -140,8 +141,10 @@ classdef ZMPplanner < DrakeSystem
                 P3 = obj.B'*S2(:,i+1)-Dn'*Qy*support_center(:,i);
                 S1(:,:,i) = obj.A'*S1(:,:,i+1)*obj.A+obj.C'*Qy*obj.C+(P2'/P1)*P2;
                 S2(:,i) = obj.A'*S2(:,i+1)-obj.C'*Qy*support_center(:,i)-(P2'/P1)*P3;
-                S3(:,i) = S3(:,i+1)+support_center(:,i)'*Qy*support_center(:,i)+(P3'/P1)*P3;
+%                 S3(:,i) = S3(:,i+1)+support_center(:,i)'*Qy*support_center(:,i)+(P3'/P1)*P3;
             end
+            S1 = SharedDataHandle(S1);
+            S2 = SharedDataHandle(S2);
             if(obj.supportPolygonConstraints)
                 weights_sol = sol(1:n_weights);
                 comddot_preview = sol(n_weights+(1:nu*obj.window_size));
