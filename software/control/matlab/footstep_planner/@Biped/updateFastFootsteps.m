@@ -1,6 +1,5 @@
 function [X, exitflag] = updateFastFootsteps(biped, X, fixed_steps, ndx_r, ndx_l, heightfun)
 
-max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
 
 x_flat = reshape(X([1,2,6],:), 1, []);
 X = locate_step_centers(x_flat);
@@ -37,23 +36,12 @@ X = locate_step_centers(x_flat);
 
 function [c, ceq] = nonlcon(x_flat)
   X = locate_step_centers(x_flat);
-  [Xright, Xleft] = biped.stepLocations(X);
-  Xright(3,:) = heightfun(Xright(1:2,:));
-  Xleft(3,:) = heightfun(Xleft(1:2,:));
-  dist_alt_r = abs(Xright(:,1:end-1) - Xleft(:,2:end));
-  dist_alt_l = abs(Xleft(:,1:end-1) - Xright(:,2:end));
-  height_diff = [abs(Xright(3,ndx_r(1:end-1)) - Xright(3,ndx_r(2:end)))';
-                 abs(Xleft(3,ndx_l(1:end-1)) - Xleft(3,ndx_l(2:end)))'];
-  c = [reshape(dist_alt_r(1:2,:), [], 1) - max_diag_dist;
-      reshape(dist_alt_l(1:2,:), [], 1) - max_diag_dist;
-       height_diff - 0.5];
-  ceq = 0;
+  [c, ceq] = biped.stepNonLCon(X, ndx_r, ndx_l, heightfun);
 end
 
 function c = cost(x_flat)
   X = locate_step_centers(x_flat);
-  [d, r] = biped.stepDistance(X(:,1:(end-1)), X(:,2:end),1);
-  c = sum(d.^2 + (r .* (biped.max_step_length / biped.max_step_rot)).^2 + (d .* r .* (10 * biped.max_step_length / biped.max_step_rot)).^2);
+  c = biped.stepCost(X);
 end
 
 function X = locate_step_centers(x_flat)
