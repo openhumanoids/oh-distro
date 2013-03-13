@@ -75,7 +75,7 @@ void RateSetPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   if(!lcm_publish_.good()){ gzerr <<"ERROR: lcm is not good()" <<std::endl; }
 
   // Update rate of the publisher in Hz
-  this->update_rate_=20; // can increase if needed
+  this->update_rate_=1000; // can increase if needed
   if (this->update_rate_ > 0.0)
     this->update_period_ = 1.0/this->update_rate_;
   else
@@ -118,8 +118,8 @@ void RateSetPlugin::on_rate_set(const lcm::ReceiveBuffer* buf,
     // Store the new pose estimate:
     //gzerr << msg->utime << " is new rateset time\n";
     gzerr << "New rate. Will now aim for "<< 
-        1/( msg->pos[0]*20 +1)  << " times realtime\n";
-    fraction_sleep_ = msg->pos[0];
+        1/( msg->pos[0] +1)  << " times realtime\n";
+    fraction_sleep_ = msg->pos[0]/this->update_rate_;
 } 
 
 
