@@ -23,7 +23,7 @@ val = (1/ float(times) )-1
 
 msg = pose_t()
 msg.utime = 12345
-msg.pos = ( val/20.0, 0, 0)
+msg.pos = ( val, 0, 0)
 msg.orientation = (1, 0, 0, 0)
 
 lc = lcm.LCM()
