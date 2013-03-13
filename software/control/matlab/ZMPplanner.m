@@ -124,7 +124,6 @@ classdef ZMPplanner < DrakeSystem
 %             end
             R = 1e-1*eye(nu);
             R_u = 1e-1*eye(nu*preview_size);
-            R_u(end-nu+1:end,end-nu+1:end) = zeros(nu);
             Qy = eye(ny);
             
             Dn = -z_com(end)/(zddot_com(end)+obj.g)*eye(ny,nu);
