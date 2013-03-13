@@ -107,6 +107,23 @@ while (1)
           window_size = floor((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81,struct('supportPolygonConstraints',true));
           t_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+          contact_tol = 1e-4;
+          contact_pos = zeros(2,r.num_contacts, window_size);
+          contact_flag = false(r.num_contacts,window_size);
+          for i = 1:length(t_breaks)
+              ikargs = action_sequence.getIKArguments(t_breaks(i));
+              num_contacts = 0;
+              for j = 3:3:length(ikargs)
+                  for k = 1:size(ikargs{j}.max,2)
+                      if(ikargs{j}.max(3,k)<contact_tol)
+                          num_contacts = num_contact+1;
+                          contact_pos(:,num_contacts,i) = mean([ikargs{j}.max(1:2,k) ikargs{j}.min(1:2,k)],2);
+                          contact_flag(num_contacts,i) = true;
+                      end
+                  end
+              end
+          end
+%           com_plan = zmp_planner.planning(
       end
       if isempty(ikargs)
         q=options.q_nom;
