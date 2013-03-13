@@ -36,7 +36,7 @@ namespace renderer_sticky_feet
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_left;
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_right;
     
-    drc::ee_goal_sequence_t revieved_plan_;
+    drc::footstep_plan_t revieved_plan_;
      
 
     std::string _left_urdf_xml_string;
@@ -65,6 +65,7 @@ namespace renderer_sticky_feet
    // boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_planned_stickyfeet_list; 
     std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
+    std::vector< int32_t >  _gl_planned_stickyfeet_ids;
         
         
     
@@ -99,7 +100,7 @@ namespace renderer_sticky_feet
     private:
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		        const std::string& chan, 
-		        const drc::ee_goal_sequence_t* msg);
+		        const drc::footstep_plan_t* msg);
 
     bool load_foot_urdfs();
 

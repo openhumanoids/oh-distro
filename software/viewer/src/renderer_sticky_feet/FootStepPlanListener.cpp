@@ -94,7 +94,7 @@ namespace renderer_sticky_feet
 
 void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::ee_goal_sequence_t* msg)						 
+						 const drc::footstep_plan_t* msg)						 
   {
    cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
   
@@ -103,34 +103,38 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _last_plan_approved = false;
 
     _robot_name = msg->robot_name;
-  	int num_goals = 0;
-		num_goals = msg->num_goals;   
+  	int num_steps = 0;
+		num_steps = msg->num_steps;   
 
     //clear stored data
     int old_list_size = _gl_planned_stickyfeet_list.size();
-    if(old_list_size!=num_goals){
+    if(old_list_size!=num_steps){
       _gl_planned_stickyfeet_list.clear();
       _planned_stickyfeet_info_list.clear();
       _gl_planned_stickyfeet_timestamps.clear();
+      _gl_planned_stickyfeet_ids.clear();
       //_collision_detector.reset();
       //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
    
-    for (uint i = 0; i <(uint)num_goals; i++)
+    for (uint i = 0; i <(uint)num_steps; i++)
     {
      
     
-      drc::ee_goal_t goal_msg  = msg->goals[i];      
-      _gl_planned_stickyfeet_timestamps.push_back(msg->goal_times[i]);
+      drc::footstep_goal_t goal_msg  = msg->footstep_goals[i];      
+      // _gl_planned_stickyfeet_timestamps.push_back(msg->goal_times[i]);
+      _gl_planned_stickyfeet_timestamps.push_back(goal_msg.step_time);
+      _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
       
       std::stringstream oss;
-      oss << msg->robot_name << "_"<< goal_msg.ee_name << "_" << i;  // unique id atlas_l_foot_1/2/3 or atlas_r_foot_1/2/3 
+      oss << msg->robot_name << "_"<< goal_msg.id;
      // cout << "names: "<< oss.str() << endl;
 
       KDL::Frame T_worldframe_meshframe;
-      transformLCMToKDL(goal_msg.ee_goal_pos, T_worldframe_meshframe);
+      transformLCMToKDL(goal_msg.pos, T_worldframe_meshframe);
       
-      if(goal_msg.ee_name==_left_foot_name)
+      // if(goal_msg.ee_name==_left_foot_name)
+      if(!goal_msg.is_right_foot)
       {
 
         KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
@@ -147,7 +151,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
         _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);       
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }
-      else if(goal_msg.ee_name==_right_foot_name)
+      else
       {
       
 
@@ -164,10 +168,6 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
         _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }  
-      else{
-         cout << "ERROR: Unknown foot end effector StickyFeetRenderer::FootStepPlanListener" << goal_msg.ee_name << endl; 
-      }             
-
 
     }//end for num of goals;
 
@@ -238,29 +238,30 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
  void FootStepPlanListener::commit_footstep_plan(int64_t utime,string &channel)
  {
-    drc::ee_goal_sequence_t msg = revieved_plan_;
+    drc::footstep_plan_t msg = revieved_plan_;
     
     int64_t old_utime = msg.utime;
     msg.utime = utime;
-    int num_goals = 0;
-		num_goals = msg.num_goals;  
-     for (uint i = 0; i <(uint)num_goals; i++)
+    int num_steps = 0;
+		num_steps = msg.num_steps;  
+     for (uint i = 0; i <(uint)num_steps; i++)
     {
-        drc::ee_goal_t goal_msg  = msg.goals[i];
+        drc::footstep_goal_t goal_msg  = msg.footstep_goals[i];
         
        KDL::Frame T_worldframe_groundframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
        KDL::Frame T_worldframe_meshframe;
-      if(goal_msg.ee_name==_left_foot_name)
+      if(!goal_msg.is_right_foot)
       {
         T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_left.Inverse())*_T_bodyframe_meshframe_left;
       }
-      else if(goal_msg.ee_name==_right_foot_name)
+      else
       {
         T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_right.Inverse())*_T_bodyframe_meshframe_right;
       } 
-      transformKDLToLCM(T_worldframe_meshframe,goal_msg.ee_goal_pos); 
-      msg.goals[i] =  goal_msg;
-      msg.goal_times[i]+=utime-old_utime;
+      transformKDLToLCM(T_worldframe_meshframe,goal_msg.pos); 
+      goal_msg.step_time+=utime-old_utime;
+      msg.footstep_goals[i] =  goal_msg;
+      // msg.goal_times[i]+=utime-old_utime;
     }
  
    _lcm->publish(channel, &msg);

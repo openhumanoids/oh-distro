@@ -223,20 +223,26 @@ namespace renderer_sticky_feet{
       RendererStickyFeet *self = (RendererStickyFeet*) user;
      KDL::Frame T_world_foot_pose = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
      
-     drc::traj_opt_constraint_t msg;
+     // drc::traj_opt_constraint_t msg;
+     drc::footstep_plan_t msg;
+     drc::footstep_goal_t goal_msg;
      msg.utime = self->robot_utime;
      msg.robot_name =  self->footStepPlanListener->_robot_name;
+     goal_msg.utime = self->robot_utime;
+     goal_msg.robot_name = msg.robot_name;
+     msg.num_steps = 1;
      
-     msg.num_links = 1;
      if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::LEFT){
-      msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
+      goal_msg.is_right_foot = 0;
+      // msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
       T_world_foot_pose.p[0] -= self->footStepPlanListener->_left_foot_offset[0]; 
       T_world_foot_pose.p[1] -= self->footStepPlanListener->_left_foot_offset[1]; 
       T_world_foot_pose.p[2] -= self->footStepPlanListener->_left_foot_offset[2];  
      }
      else if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::RIGHT)
      {  
-      msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
+      goal_msg.is_right_foot = 1;
+      // msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
       T_world_foot_pose.p[0] -= self->footStepPlanListener->_right_foot_offset[0]; 
       T_world_foot_pose.p[1] -= self->footStepPlanListener->_right_foot_offset[1]; 
       T_world_foot_pose.p[2] -= self->footStepPlanListener->_right_foot_offset[2];  
@@ -244,10 +250,20 @@ namespace renderer_sticky_feet{
      
      drc::position_3d_t pose;
      transformKDLToLCM(T_world_foot_pose,pose);
-     msg.link_origin_position.push_back(pose);
-     msg.link_timestamps.push_back(0.0);// where should this information come from?
+     goal_msg.pos = pose;
+     goal_msg.step_time = 0.0; // Ignored on the other end
+     goal_msg.id = self->footStepPlanListener->_gl_planned_stickyfeet_ids[i];
+     goal_msg.fixed_x = 1;
+     goal_msg.fixed_y = 1;
+     goal_msg.fixed_z = 1;
+     goal_msg.fixed_roll = 1;
+     goal_msg.fixed_pitch = 1;
+     goal_msg.fixed_yaw = 1;
+     msg.footstep_goals.push_back(goal_msg);
+     // msg.link_origin_position.push_back(pose);
+     // msg.link_timestamps.push_back(0.0);// where should this information come from?
      
-     msg.num_joints = 0;
+     // msg.num_joints = 0;
      self->lcm->publish(channel, &msg);
   }
   
@@ -257,21 +273,30 @@ namespace renderer_sticky_feet{
       RendererStickyFeet *self = (RendererStickyFeet*) user;
      KDL::Frame T_world_foot_pose = self->footStepPlanListener->_gl_on_motion_copy->_T_world_body;
      
-     drc::traj_opt_constraint_t msg;
+     // drc::traj_opt_constraint_t msg;
+     // msg.utime = self->robot_utime;
+     // msg.robot_name =  self->footStepPlanListener->_robot_name;
+     drc::footstep_plan_t msg;
+     drc::footstep_goal_t goal_msg;
      msg.utime = self->robot_utime;
      msg.robot_name =  self->footStepPlanListener->_robot_name;
-     
-     msg.num_links = 1;
+     goal_msg.utime = self->robot_utime;
+     goal_msg.robot_name = msg.robot_name;
+     msg.num_steps = 1;
+ 
+     // msg.num_links = 1;
      size_t i= self->footStepPlanListener->on_motion_footstep_index;
      if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::LEFT){
-      msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
+      // msg.link_name.push_back(self->footStepPlanListener->_left_foot_name);
+      goal_msg.is_right_foot = 0;
       T_world_foot_pose.p[0] -= self->footStepPlanListener->_left_foot_offset[0]; 
       T_world_foot_pose.p[1] -= self->footStepPlanListener->_left_foot_offset[1]; 
       T_world_foot_pose.p[2] -= self->footStepPlanListener->_left_foot_offset[2];  
      }
      else if(self->footStepPlanListener->_planned_stickyfeet_info_list[i]== FootStepPlanListener::RIGHT)
      {  
-      msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
+      goal_msg.is_right_foot = 1;
+      // msg.link_name.push_back(self->footStepPlanListener->_right_foot_name);     
       T_world_foot_pose.p[0] -= self->footStepPlanListener->_right_foot_offset[0]; 
       T_world_foot_pose.p[1] -= self->footStepPlanListener->_right_foot_offset[1]; 
       T_world_foot_pose.p[2] -= self->footStepPlanListener->_right_foot_offset[2];  
@@ -279,10 +304,20 @@ namespace renderer_sticky_feet{
      
      drc::position_3d_t pose;
      transformKDLToLCM(T_world_foot_pose,pose);
-     msg.link_origin_position.push_back(pose);
-     msg.link_timestamps.push_back(0.0);// where should this information come from?
+     goal_msg.pos = pose;
+     goal_msg.step_time = 0.0; // Ignored on the other end
+     goal_msg.id = self->footStepPlanListener->_gl_planned_stickyfeet_ids[i];
+     goal_msg.fixed_x = 1;
+     goal_msg.fixed_y = 1;
+     goal_msg.fixed_z = 1;
+     goal_msg.fixed_roll = 1;
+     goal_msg.fixed_pitch = 1;
+     goal_msg.fixed_yaw = 1;
+     msg.footstep_goals.push_back(goal_msg);
+     // msg.link_origin_position.push_back(pose);
+     // msg.link_timestamps.push_back(0.0);// where should this information come from?
      
-     msg.num_joints = 0;
+     // msg.num_joints = 0;
      self->lcm->publish(channel, &msg);
   }
   
@@ -400,7 +435,7 @@ namespace renderer_sticky_feet{
 
         self->prev_ray_hit_drag = self->ray_hit_drag;
         
-        string channel = "TRAJ_OPT_CONSTRAINT";
+        string channel = "FOOTSTEP_PLAN_CONSTRAINT";
         publish_traj_constraint_via_local_copy(self,channel);
 
   }   // end set_object_desired_state_on_marker_motion_via_duplicate()   

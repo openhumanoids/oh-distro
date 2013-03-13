@@ -250,7 +250,7 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     self->dragging = 0;
 
     if(!self->adjust_via_localcopy) {
-      string channel = "TRAJ_OPT_CONSTRAINT";
+      string channel = "FOOTSTEP_PLAN_CONSTRAINT";
       uint i =  self->selected_planned_footstep_index;
       publish_traj_constraint(self,i,channel);
     }
@@ -355,7 +355,7 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm)
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->clicked = 0;	
     self->dragging = 0;	
-    self->adjust_via_localcopy = 0;
+    self->adjust_via_localcopy = 1;
   	self->selection = new std::string(" ");
     self->marker_selection = new std::string(" ");
     //bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
