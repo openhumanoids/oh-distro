@@ -1,0 +1,10 @@
+package drc;
+
+struct footstep_plan_t
+{
+	int64_t utime;
+	string robot_name;
+	int32_t num_steps;
+	footstep_goal_t footstep_goals[num_steps];
+}
+    

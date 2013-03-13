@@ -1,0 +1,17 @@
+package drc;
+
+struct footstep_goal_t
+{
+	int64_t utime;
+	string robot_name;
+	position_3d_t pos;
+	int64_t step_time;
+	int32_t id;
+	boolean is_right_foot;
+	boolean fixed_x;
+	boolean fixed_y;
+	boolean fixed_z;
+	boolean fixed_roll;
+	boolean fixed_pitch;
+	boolean fixed_yaw;
+}
