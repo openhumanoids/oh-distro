@@ -1,8 +1,15 @@
-function actionAuthoringServer(options)
-
+function actionAuthoringServer(IK)
+% IK = 1 means we only require an IK solution
+% IK = 2 meas that the we also do ZMP planning
 if(nargin<1)
-    options.IK = true;
-    options.sequence = false;
+    action_options.IK = true;
+    action_options.ZMP = false;
+elseif(IK == 1)
+    action_options.IK = true;
+    action_options.ZMP = false;
+elseif(IK == 0)
+    action_options.IK = false;
+    action_options.ZMP = true;
 end
 % listens for drc_action_sequence_t messages and, upon receipt, computes the
 % IK and publishes the robot_state_t
@@ -23,6 +30,7 @@ warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
+%%
 
 % load the "zero position"
 load('data/aa_atlas_fp.mat');
@@ -50,14 +58,10 @@ while (1)
   data = getNextMessage(monitor,timeout);
   if ~isempty(data)
     msg = drc.action_sequence_t(data);
-    % parse the action sequence
+    action_sequence = ActionSequence();
     
     q_bk = q;
     try
-      ikargs={};
-      if(options.sequence)
-          action_sequence = ActionSequence();
-      end
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
         if (goal.contact_type==goal.ON_GROUND_PLANE)
@@ -91,18 +95,21 @@ while (1)
           elseif(goal.z_relation == 2)
               pos.min(3) = max(pos.min(3),p(3));
           end
-          ikargs={ikargs{:},body,collision_group,pos};
-          if(options.sequence)
-              tspan = [goal.lb_completion_time goal.ub_completion_time];
-              action_constraint = ActionKinematicConstraint(body,collision_group,pos,tspan,body.linkname);
-              action_sequence = action_sequence.addKinematicConstraint(action_constraint);
-              
+          tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
+          action_constraint = ActionKinematicConstraint(body,collision_group,pos,tspan,body.linkname);
+          action_sequence = action_sequence.addKinematicConstraint(action_constraint);
+          for body_ind = 1:length(r.body)
+              body_contact_pts = r.body(body_ind).getContactPoints();
+              if(~isempty(body_contact_pts))
+                  above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,r.body(body_ind).linkname);
+                  action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
+              end 
           end
         end
       end
       % If the action sequence is specified, we need to solve the ZMP
       % planning and IK for the whole sequence.
-      if(options.sequence)
+      if(action_options.ZMP)
           dt = 0.01;
           window_size = floor((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81,struct('supportPolygonConstraints',true));
@@ -125,6 +132,7 @@ while (1)
           end
 %           com_plan = zmp_planner.planning(
       end
+      ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
       if isempty(ikargs)
         q=options.q_nom;
       else
