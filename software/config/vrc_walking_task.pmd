@@ -42,8 +42,8 @@ group "1.robot" {
 }
 
 group "2.gazebo" {
-    cmd "mit_world" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
+    cmd "walking_mit" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/test_walking.world";
         host = "localhost";
     }
     cmd "walking_qual" {

@@ -46,8 +46,12 @@ group "1.robot" {
 }
 
 group "2.gazebo" {
-    cmd "gazebo" {
+    cmd "manip_mit" {
         exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch";
+        host = "localhost";
+    }
+    cmd "manip_qual" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.0/worlds/qual_task_2.world";
         host = "localhost";
     }
 }
