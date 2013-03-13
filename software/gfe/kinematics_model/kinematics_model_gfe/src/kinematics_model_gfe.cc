@@ -12,7 +12,6 @@
 #include <path_util/path_util.h>
 #include <kinematics/kinematics_model.h>
 #include <kinematics/kinematics_model_gfe.h>
-
 using namespace std;
 using namespace boost;
 using namespace urdf;
@@ -404,7 +403,6 @@ set( const drc::robot_state_t& robotState ){
   Kinematics_Model::drc_position_3d_t_to_kdl_frame( robotState.origin_position, _world_to_body );
  
   _link_frames.clear();
-  _link_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
 
   map< string, double > joint_angles;
   for( unsigned int i = 0; i < robotState.num_joints; i++ ){
@@ -412,10 +410,6 @@ set( const drc::robot_state_t& robotState ){
   }
 
   _update_joint( joint_angles, _world_to_body, _tree.getRootSegment() );
-
-  for( map< string, Frame >::iterator it = _link_frames.begin(); it != _link_frames.end(); it++ ){
-    it->second = _world_to_body * it->second;
-  }
 
   return;
 }
@@ -428,16 +422,12 @@ void
 Kinematics_Model_GFE::
 set( State_GFE& stateGFE ){
   _link_frames.clear();
-  _link_frames.insert( make_pair( _model.getRoot()->name, KDL::Frame::Identity() ) );
  
   _world_to_body = stateGFE.pose();
  
   map< string, double > joint_angles = stateGFE.joint_angles();
   _update_joint( joint_angles, _world_to_body, _tree.getRootSegment() );
 
-  for( map< string, Frame >::iterator it = _link_frames.begin(); it != _link_frames.end(); it++ ){
-    it->second = _world_to_body * it->second;
-  }
   return;
 }
 
