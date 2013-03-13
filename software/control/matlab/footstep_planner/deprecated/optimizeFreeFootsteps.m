@@ -1,6 +1,7 @@
 function [Xright, Xleft] = optimizeFreeFootsteps(biped, poses, interactive)
 
 X = interp1([1:length(poses(1,:))]', poses', [1:0.5:length(poses(1,:))]')';
+
 total_steps = length(X(1,:));
 
 fixed_steps = repmat({[]}, total_steps, 2);
@@ -36,6 +37,7 @@ lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
 lc.subscribe('TRAJ_OPT_CONSTRAINT', aggregator);
 lc.subscribe('COMMITTED_FOOTSTEP_PLAN', aggregator);
+lc.subscribe('REJECTED_FOOTSTEP_PLAN', aggregator);
 
 
 while 1
@@ -67,7 +69,7 @@ while 1
         fixed_steps{ndx_l(step_ndx), current_foot} = pos;
       end
       fixed_steps
-    elseif strcmp(con_msg.channel, 'COMMITTED_FOOTSTEP_PLAN')
+    elseif strcmp(con_msg.channel, 'COMMITTED_FOOTSTEP_PLAN') || strcmp(con_msg.channel, 'REJECTED_FOOTSTEP_PLAN')
       [Xright, Xleft] = biped.stampedStepLocations(X, ndx_r, ndx_l);
       break
     end

@@ -9,9 +9,9 @@ r = r.setInitialState(xstar);
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0], [1;0;0;0;0;0]];
 % poses = [[0;1;0;0;0;pi/2], [1;1;0;0;0;0]];
 % poses = [1;1;0;0;0;-pi/4];
-poses = [1;0;0;0;0;0];
+% poses = [1;0;0;0;0;0];
 % poses = [0;1;0;0;0;pi/2];
-% poses = [1;1;0;0;0;0];
+poses = [1;1;0;0;0;0];
 % poses = [0;1;0;0;0;0];
 xtraj = r.walkingPlan(xstar, poses, struct('plotting', true, ...
   'interactive', true, 'flat_foot', true));

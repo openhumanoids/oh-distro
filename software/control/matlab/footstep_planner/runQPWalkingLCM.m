@@ -26,22 +26,20 @@ pose = [goal_x;goal_y;0;0;0;goal_yaw];
 if ~lcm_plan
   [rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
 else
-%   footstep_plan_listener = FootstepPlanListener('atlas', 'COMMITTED_FOOTSTEP_PLAN');
-  footstep_plan_listener = FootstepPlanListener('atlas', 'CANDIDATE_FOOTSTEP_PLAN');
-
+  footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
   disp('Listening for footstep plans...');
   waiting = true;
   foottraj = [];
   while waiting
-    foottraj = footstep_plan_listener.getNextMessage(100);
+    foottraj = footstep_plan_listener.getNextMessage(0);
     if (~isempty(foottraj))
       disp('footstep plan received.');
       waiting = false;
     end
   end
   
-  rfoot = foottraj(3:end,find(foottraj(1,:)==1));
-  lfoot = foottraj(3:end,find(foottraj(1,:)==0));
+  rfoot = foottraj(1:6,find(foottraj(15,:)==1));
+  lfoot = foottraj(1:6,find(foottraj(15,:)==0));
 end
 
 [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.0);

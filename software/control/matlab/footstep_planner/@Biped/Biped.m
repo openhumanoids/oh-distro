@@ -7,6 +7,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     l_foot_name
     foot_angles
     step_width
+    lc
   end
   
   methods
@@ -20,6 +21,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
+
+      obj.lc = lcm.lcm.LCM.getSingleton();
       
       defaults = struct('step_time', 1.0,... % s
         'max_step_length', .55,... % m
@@ -40,7 +43,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
       q0 = x0(1:end/2);
       [start_pos, obj.step_width] = obj.feetPosition(q0);
-      [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
+      % [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
+      [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses], options.interactive);
 
       if options.plotting
         figure(22)
@@ -73,33 +77,40 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options);
     end
     
-    function [Xright, Xleft] = stampedStepLocations(obj, X, ndx_r, ndx_l)
-      % Return left and right foot poses, with time as the final entry in
-      % each pose
+    function [Xright, Xleft] = stepGoals(obj, X, ndx_r, ndx_l)
       if nargin == 2
         ndx_r = 1:length(X(1,:));
         ndx_l = 1:length(X(1,:));
       end
       yaw = X(6,:);
-      time = (0:(length(X(1,:)) - 1)) * obj.step_time / 2;
-      X(7,:) = time;
       foot_angle_r = obj.foot_angles(1) + yaw(ndx_r);
       foot_angle_l = obj.foot_angles(2) + yaw(ndx_l);
-      Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(5, length(ndx_r))] .* (obj.step_width / 2);
-      Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(5, length(ndx_l))] .* (obj.step_width / 2);
+      Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(12, length(ndx_r))] .* (obj.step_width / 2);
+      Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(12, length(ndx_l))] .* (obj.step_width / 2);
+      Xright(end+1,:) = 1;
+      Xleft(end+1,:) = 0;
     end
     
     function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
-      % Return left and right foot poses, with no time entry
+      % Return left and right foot poses only
       if nargin == 2
         ndx_r = 1:length(X(1,:));
         ndx_l = 1:length(X(1,:));
       end
-      yaw = X(6,:);
-      foot_angle_r = obj.foot_angles(1) + yaw(ndx_r);
-      foot_angle_l = obj.foot_angles(2) + yaw(ndx_l);
-      Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(4, length(ndx_r))] .* (obj.step_width / 2);
-      Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(4, length(ndx_l))] .* (obj.step_width / 2);
+      [Xright, Xleft] = obj.stepGoals(X, ndx_r, ndx_l);
+      Xright = Xright(1:6,:);
+      Xleft = Xleft(1:6,:);
+    end
+
+    function [X] = stepCenters(obj, Xfoot, is_right_foot)
+      % Transform foot position into position of the footstep path center. Reverses biped.stepLocations
+      yaw = Xfoot(6,:);
+      if is_right_foot
+        foot_angle = obj.foot_angles(1) + yaw;
+      else
+        foot_angle = obj.foot_angles(2) + yaw;
+      end
+      X = Xfoot - [cos(foot_angle); sin(foot_angle); zeros(4, length(Xfoot(1,:)))] .* (obj.step_width / 2);
     end
     
     function [pos, width] = feetPosition(obj, q0)
@@ -142,12 +153,26 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         pos = mean([rcen,lcen],2);
       end
 
-      rfootpos = [rfoot0, rfoot0];
-      lfootpos = [lfoot0, lfoot0];
-
       p0 = feetCenter(rfoot0, lfoot0);
       pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
       width = sqrt(sum((rfoot0 - lfoot0) .^ 2));
+    end
+
+    function ndx = getStepNdx(obj, total_steps)
+      % Lead with the right foot, for no particular reason
+      ndx = struct('right', int32([1, 2, 4:2:(total_steps-1), total_steps]),...
+                   'left', int32([1:2:(total_steps-1), total_steps]));
+    end
+
+    function publish_footstep_plan(obj, X)
+      ndx = obj.getStepNdx(length(X(1,:)));
+      [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
+
+      msg = FootstepPlanPublisher.encodeFootstepPlan([Xright, Xleft]);
+      % figure(22);
+      % plotFootstepPlan([], Xright, Xleft)
+      % drawnow
+      obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
   end
 end
