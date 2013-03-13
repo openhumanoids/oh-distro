@@ -11,7 +11,7 @@ using namespace kinematics;
 using namespace opengl;
 using namespace robot_opengl;
 
-
+/*
 void
 ColorRobot::
 draw(void)
@@ -37,6 +37,7 @@ draw(void)
         }
     }
 }
+*/
 
 void
 ColorRobot::

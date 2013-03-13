@@ -21,7 +21,7 @@ public:
         return _kinematics_model;
     }
 
-    virtual void draw(void);
+    //virtual void draw(void);
     void setSelectedLink(std::string link_name);
     CollisionGroupPtr getCollisionGroupForLink(const std::string &link_name,
                                                const std::string &collisionGroupName = std::string("default"));

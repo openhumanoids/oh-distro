@@ -1045,7 +1045,7 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
     _worldState.state_gfe.from_lcm(*new_robot_state);
     _worldState.colorRobot.set(_worldState.state_gfe);
     // seems redundant but is necessary to get pose to work - don't remove!
-    _worldState.colorRobot.set(*new_robot_state);
+    //_worldState.colorRobot.set(*new_robot_state);
 
     handleAffordancesChanged();
 }
