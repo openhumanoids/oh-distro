@@ -120,11 +120,24 @@ public:
     // create depth image (badly named as DepthImage due to underlying pcl)
     Eigen::Projective3f projector;
     Utils::composeViewMatrix(projector, calib, pose, false);
-    DepthImageView::Ptr depthImage =
+    std::cout << "PROJECTOR\n" << projector.matrix() << std::endl;
+    DepthImageView::Ptr depthImageView =
       localMap->getAsDepthImage(width, height, projector, bounds);
 
+    // get point cloud from depth image view (in ref coords)
+    cloud = depthImageView->getAsPointCloud();
+    bot_lcmgl_color3f(lcmgl, 0, 0.5, 0);
+    bot_lcmgl_point_size(lcmgl, 3);
+    for (int i = 0; i < cloud->size(); ++i) {
+      maps::PointCloud::PointType point = (*cloud)[i];
+      bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+      bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
+      bot_lcmgl_end(lcmgl);
+    }
+    bot_lcmgl_switch_buffer(lcmgl);
+
     // get raw depth image pixel values and store to file
-    float* depths = depthImage->getRangeImage()->getRangesArray();
+    float* depths = depthImageView->getRangeImage()->getRangesArray();
     std::ofstream ofs("/tmp/depths.txt");
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
@@ -139,7 +152,7 @@ public:
     // note that the corresponding LcmTranslator::fromLcm() method
     // can be used by the receiver to decode the message when it arrives
     drc::map_image_t depthMsg;
-    LcmTranslator::toLcm(*depthImage, depthMsg);
+    LcmTranslator::toLcm(*depthImageView, depthMsg);
     mState->mBotWrapper->getLcm()->publish("DUMMY_DEPTH", &depthMsg);
   }
 };
