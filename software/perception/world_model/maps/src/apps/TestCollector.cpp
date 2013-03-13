@@ -46,8 +46,10 @@ public:
 class DataProducer : public Collector::DataListener {
 protected:
   State* mState;
+  int64_t mTimeMin;
+  int64_t mTimeMax;
 public:
-  DataProducer(State* iState) : mState(iState) {}
+  DataProducer(State* iState) : mState(iState), mTimeMin(0), mTimeMax(0) {}
 
   void notify(const SensorDataReceiver::SensorData& iData) {
     const float kPi = 4*atan(1);
@@ -59,9 +61,15 @@ public:
 
     // find time range of desired swath (from 45 to 135 degrees)
     // note that 0 and 180 degrees are equivalent
-    int64_t timeMin, timeMax;
-    mState->mCollector->getLatestSwath(45*kDegToRad, 135*kDegToRad,
-                                       timeMin, timeMax);
+    int64_t timeMin(0), timeMax(0);
+    if (!mState->mCollector->getLatestSwath(45*kDegToRad, 135*kDegToRad,
+                                            timeMin, timeMax)) return;
+
+    // if this time range overlaps the previous one, ignore
+    if ((timeMin <= mTimeMax) && (timeMax >= mTimeMin)) return;
+    mTimeMin = timeMin;
+    mTimeMax = timeMax;
+    std::cout << "got time range " << timeMin << " " << timeMax << std::endl;
 
     // create space-time bounds from desired time range
     // and a 6x6x6 data cube centered at (0,0,0)
