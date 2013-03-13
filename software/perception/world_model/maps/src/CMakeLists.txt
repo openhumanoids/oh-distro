@@ -4,12 +4,12 @@ add_library(maps SHARED
   Utils.cpp
   PointDataBuffer.cpp
   VoxelGrid.cpp
-  BotFramesWrapper.cpp
+  BotWrapper.cpp
   SensorDataReceiver.cpp
   ViewBase.cpp
   PointCloudView.cpp
   OctreeView.cpp
-  RangeImageView.cpp
+  DepthImageView.cpp
   VoxelGridView.cpp
   LocalMap.cpp
   MapManager.cpp
@@ -29,12 +29,12 @@ pods_install_headers(
   Utils.hpp
   PointDataBuffer.hpp
   VoxelGrid.hpp
-  BotFramesWrapper.hpp
+  BotWrapper.hpp
   SensorDataReceiver.hpp
   ViewBase.hpp
   PointCloudView.hpp
   OctreeView.hpp
-  RangeImageView.hpp
+  DepthImageView.hpp
   VoxelGridView.hpp
   LocalMap.hpp
   MapManager.hpp

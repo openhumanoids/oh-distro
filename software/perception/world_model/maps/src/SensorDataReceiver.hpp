@@ -4,11 +4,10 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
-namespace lcm { class LCM; }
-
 namespace maps {
 
 struct PointSet;
+class BotWrapper;
 
 class SensorDataReceiver {
 public:
@@ -27,7 +26,7 @@ public:
   SensorDataReceiver();
   ~SensorDataReceiver();
 
-  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
   bool addChannel(const std::string& iSensorChannel,
                   const SensorType iSensorType,
                   const std::string& iTransformFrom,

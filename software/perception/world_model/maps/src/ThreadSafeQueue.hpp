@@ -12,6 +12,7 @@ public:
 
   ThreadSafeQueue() {
     setMaxSize(-1);
+    mUnblock = false;
   }
 
   ~ThreadSafeQueue() {
@@ -62,7 +63,7 @@ public:
 
   bool waitForData(T& oData) {
     boost::mutex::scoped_lock lock(mMutex);
-    while (mData.empty()) {
+    while (!mUnblock && mData.empty()) {
       mCondition.wait(lock);
     }
     if (!mData.empty()) {
@@ -76,7 +77,9 @@ public:
   }
 
   void unblock() {
+    mUnblock = true;
     mCondition.notify_all();
+    mUnblock = false;
   }
 
 protected:
@@ -84,6 +87,7 @@ protected:
   std::deque<T> mData;
   boost::mutex mMutex;
   boost::condition_variable mCondition;
+  bool mUnblock;
 };
 
 #endif

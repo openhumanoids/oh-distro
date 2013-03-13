@@ -61,8 +61,8 @@ public:
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree");
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height");
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height");
-    addControl(drc::data_request_t::RANGE_MAP_SCENE, "Scene Range");
-    addControl(drc::data_request_t::RANGE_MAP_WORKSPACE, "Workspace Range");
+    addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth");
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth");
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));

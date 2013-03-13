@@ -1,5 +1,6 @@
 find_package(PkgConfig REQUIRED)
-add_definitions(-Wall)
+add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
+  -std=c++0x)
 
 #####################################################################
 add_library(renderer_data_control SHARED 
@@ -65,27 +66,4 @@ pods_install_pkg_config_file(renderer_lidartest
     LIBS -lrenderer_lidartest
     REQUIRES bot2-core bot2-vis bot2-frames
     VERSION 0.0.1)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wno-unknown-pragmas")
-  
-
-#####################################################################
-# add_library(renderer_depthmap SHARED 
-#   renderer_depthmap.cpp)
-  
-# set_target_properties(renderer_depthmap PROPERTIES SOVERSION 1)
-
-# pods_use_pkg_config_packages(renderer_depthmap
-#   drc-utils lcmtypes_drc_lcmtypes eigen3
-#   bot2-core bot2-vis bot2-frames)
-
-# pods_install_headers(renderer_depthmap.hpp
-#   DESTINATION renderer_depthmap)
-
-# pods_install_libraries(renderer_depthmap)
-  
-# pods_install_pkg_config_file(renderer_depthmap
-#     LIBS -lrenderer_depthmap 
-#     REQUIRES bot2-core bot2-vis bot2-frames 
-#     VERSION 0.0.1)
 

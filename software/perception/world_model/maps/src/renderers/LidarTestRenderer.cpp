@@ -16,6 +16,7 @@
 #include <maps/Collector.hpp>
 #include <maps/Surfelizer.hpp>
 #include <maps/Utils.hpp>
+#include <maps/BotWrapper.hpp>
 #include "MeshRenderer.hpp"
 
 using namespace maps;
@@ -133,11 +134,12 @@ public:
 
     // set up internal variables
     mSurfelParamsPrev.mSurfelMode = -1;
+    BotWrapper::Ptr botWrapper(new BotWrapper(getLcm(), getBotParam(),
+                                              getBotFrames()));
     mMeshRenderer.reset(new MeshRenderer());
-    mMeshRenderer->setLcm(getLcm());
-    mMeshRenderer->setBotParam(getBotParam());
+    mMeshRenderer->setBotObjects(getLcm(), getBotParam(), getBotFrames());
     mMeshRenderer->setCameraChannel("CAMERALEFT");
-    mCollector.setLcm(getLcm());
+    mCollector.setBotWrapper(botWrapper);
     mCollector.addListener(*this);
 
     // subscribe to lcm channels and set up data structures

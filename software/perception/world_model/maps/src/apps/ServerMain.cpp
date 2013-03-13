@@ -17,12 +17,12 @@
 #include <maps/MapManager.hpp>
 #include <maps/PointCloudView.hpp>
 #include <maps/OctreeView.hpp>
-#include <maps/RangeImageView.hpp>
+#include <maps/DepthImageView.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/DataBlob.hpp>
 #include <maps/LcmTranslator.hpp>
-#include <maps/BotFramesWrapper.hpp>
+#include <maps/BotWrapper.hpp>
 #include <maps/Utils.hpp>
 
 #include <drc_utils/Clock.hpp>
@@ -38,11 +38,10 @@ class State;
 struct ViewWorker {
   typedef boost::shared_ptr<ViewWorker> Ptr;
 
+  BotWrapper::Ptr mBotWrapper;
   bool mActive;
   drc::map_request_t mRequest;
   boost::shared_ptr<MapManager> mManager;
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<BotFramesWrapper> mFrames;
   boost::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
@@ -65,6 +64,7 @@ struct ViewWorker {
   void operator()() {
     mActive = true;
     while (mActive) {
+      auto lcm = mBotWrapper->getLcm();
       // get map
       LocalMap::Ptr localMap;
       if (mRequest.map_id <= 0) {
@@ -96,15 +96,17 @@ struct ViewWorker {
         if (spec.mRelativeLocation) {
           // TODO: handle request transform
           Eigen::Isometry3f headToLocal;
-          mFrames->getTransform("head", "local", curTime, headToLocal);
-          float theta = atan2(headToLocal(1,0), headToLocal(0,0));
-          Eigen::Matrix4f planeTransform = headToLocal.matrix();
-          Eigen::Matrix3f rotation;
-          rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-          planeTransform.topLeftCorner<3,3>() = rotation;
-          planeTransform = planeTransform.inverse().transpose();
-          for (int i = 0; i < bounds.mPlanes.size(); ++i) {
-            bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
+          if (mBotWrapper->getTransform("head", "local",
+                                        headToLocal, curTime)) {
+            float theta = atan2(headToLocal(1,0), headToLocal(0,0));
+            Eigen::Matrix4f planeTransform = headToLocal.matrix();
+            Eigen::Matrix3f rotation;
+            rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+            planeTransform.topLeftCorner<3,3>() = rotation;
+            planeTransform = planeTransform.inverse().transpose();
+            for (int i = 0; i < bounds.mPlanes.size(); ++i) {
+              bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
+            }
           }
         }
 
@@ -119,7 +121,7 @@ struct ViewWorker {
           LcmTranslator::toLcm(*octree, octMsg);
           octMsg.utime = drc::Clock::instance()->getCurrentTime();
           octMsg.map_id = localMap->getId();
-          mLcm->publish("MAP_OCTREE", &octMsg);
+          lcm->publish("MAP_OCTREE", &octMsg);
           std::cout << "Sent octree at " << octMsg.num_bytes <<
             " bytes (view " << octree->getId() << ")" << std::endl;
         }
@@ -134,21 +136,21 @@ struct ViewWorker {
           msgCloud.utime = drc::Clock::instance()->getCurrentTime();
           msgCloud.map_id = localMap->getId();
           msgCloud.blob.utime = msgCloud.utime;
-          mLcm->publish("MAP_CLOUD", &msgCloud);
+          lcm->publish("MAP_CLOUD", &msgCloud);
           std::cout << "Sent point cloud at " << msgCloud.blob.num_bytes <<
             " bytes (view " << cloud->getId() << ")" << std::endl;
         }
 
-        // get and publish range image
-        else if (mRequest.type == drc::map_request_t::RANGE_IMAGE) {
+        // get and publish depth image
+        else if (mRequest.type == drc::map_request_t::DEPTH_IMAGE) {
           Eigen::Projective3f projector;
           for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
               projector(i,j) = mRequest.transform[i][j];
             }
           }
-          RangeImageView::Ptr image =
-            localMap->getAsRangeImage(mRequest.width, mRequest.height,
+          DepthImageView::Ptr image =
+            localMap->getAsDepthImage(mRequest.width, mRequest.height,
                                       projector, bounds);
           image->setId(mRequest.view_id);
           drc::map_image_t msgImg;
@@ -156,8 +158,8 @@ struct ViewWorker {
           msgImg.utime = drc::Clock::instance()->getCurrentTime();
           msgImg.map_id = localMap->getId();
           msgImg.blob.utime = msgImg.utime;
-          mLcm->publish("MAP_RANGE", &msgImg);
-          std::cout << "Sent range image at " << msgImg.blob.num_bytes <<
+          lcm->publish("MAP_DEPTH", &msgImg);
+          std::cout << "Sent depth image at " << msgImg.blob.num_bytes <<
             " bytes (view " << image->getId() << ")" << std::endl;
         }
 
@@ -182,10 +184,9 @@ typedef std::unordered_map<int64_t,ViewWorker::Ptr> ViewWorkerMap;
 
 class State {
 public:
+  BotWrapper::Ptr mBotWrapper;
   boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
   boost::shared_ptr<MapManager> mManager;
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<BotFramesWrapper> mFrames;
   ViewWorkerMap mViewWorkers;
 
   lcm::Subscription* mRequestSubscription;
@@ -196,13 +197,11 @@ public:
   float mCatalogPublishPeriod;
 
   State() {
-    mLcm.reset(new lcm::LCM());
+    mBotWrapper.reset(new BotWrapper());
     mSensorDataReceiver.reset(new SensorDataReceiver());
-    mSensorDataReceiver->setLcm(mLcm);
+    mSensorDataReceiver->setBotWrapper(mBotWrapper);
     mManager.reset(new MapManager());
-    mFrames.reset(new BotFramesWrapper());
-    mFrames->setLcm(mLcm);
-    drc::Clock::instance()->setLcm(mLcm);
+    drc::Clock::instance()->setLcm(mBotWrapper->getLcm());
     drc::Clock::instance()->setVerbose(false);
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
@@ -212,10 +211,11 @@ public:
   }
 
   ~State() {
-    mLcm->unsubscribe(mRequestSubscription);
-    mLcm->unsubscribe(mMapParamsSubscription);
-    mLcm->unsubscribe(mMapCommandSubscription);
-    mLcm->unsubscribe(mMapMacroSubscription);
+    auto lcm = mBotWrapper->getLcm();
+    lcm->unsubscribe(mRequestSubscription);
+    lcm->unsubscribe(mMapParamsSubscription);
+    lcm->unsubscribe(mMapCommandSubscription);
+    lcm->unsubscribe(mMapMacroSubscription);
   }
 
   void onRequest(const lcm::ReceiveBuffer* iBuf,
@@ -270,6 +270,7 @@ public:
 
       void operator()() {
         // create single-scan dense map
+        auto lcm = mState->mBotWrapper->getLcm();
         if (mMacro.command == drc::map_macro_t::CREATE_DENSE_MAP) {
           std::cout << "About to create dense map" << std::endl;
 
@@ -284,7 +285,7 @@ public:
           rate.linear_velocity.x = 0.0;
           rate.linear_velocity.y = 0.0;
           rate.linear_velocity.z = 0.0;
-          mState->mLcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
+          lcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
 
           std::cout << "Creating new map..." << std::endl;
           LocalMap::Spec spec;
@@ -306,7 +307,7 @@ public:
 
           std::cout << "Resetting spindle speed..." << std::endl;
           rate.angular_velocity.x = 2*kPi;
-          mState->mLcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
+          lcm->publish("ROTATING_SCAN_RATE_CMD", &rate);
 
           std::cout << "Done creating dense map" << std::endl;
         }
@@ -346,14 +347,14 @@ public:
     }
     else {
       ViewWorker::Ptr worker(new ViewWorker());
+      worker->mBotWrapper = mBotWrapper;
       worker->mActive = false;
-      worker->mLcm = mLcm;
       worker->mManager = mManager;
       worker->mRequest = iRequest;
-      worker->mFrames = mFrames;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
-      mFrames->getTransform("head", "local", worker->mRequest.utime,
-                            worker->mInitialPose);
+      double mat[16];
+      mBotWrapper->getTransform("head", "local", worker->mInitialPose,
+                                worker->mRequest.utime);
       mViewWorkers[iRequest.view_id] = worker;
       worker->start();
     }
@@ -409,7 +410,7 @@ public:
       }
       catalog.num_views = catalog.views.size();
       catalog.num_maps = catalog.maps.size();
-      mState->mLcm->publish("MAP_CATALOG", &catalog);
+      mState->mBotWrapper->getLcm()->publish("MAP_CATALOG", &catalog);
 
       // wait to send next catalog
       boost::asio::io_service service;
@@ -430,6 +431,7 @@ int main(const int iArgc, const char** iArgv) {
 
   // instantiate state object
   State state;
+  auto lcm = state.mBotWrapper->getLcm();
 
   // parse arguments
   string laserChannel = "SCAN";
@@ -464,13 +466,13 @@ int main(const int iArgc, const char** iArgv) {
   mapSpec.mResolution = defaultResolution;
   int id = state.mManager->createMap(mapSpec);
   state.mRequestSubscription =
-    state.mLcm->subscribe("MAP_REQUEST", &State::onRequest, &state);
+    lcm->subscribe("MAP_REQUEST", &State::onRequest, &state);
   state.mRequestSubscription =
-    state.mLcm->subscribe("MAP_COMMAND", &State::onMapCommand, &state);
+    lcm->subscribe("MAP_COMMAND", &State::onMapCommand, &state);
   state.mRequestSubscription =
-    state.mLcm->subscribe("MAP_PARAMS", &State::onMapParams, &state);
+    lcm->subscribe("MAP_PARAMS", &State::onMapParams, &state);
   state.mRequestSubscription =
-    state.mLcm->subscribe("MAP_MACRO", &State::onMapMacro, &state);
+    lcm->subscribe("MAP_MACRO", &State::onMapMacro, &state);
 
   // start running data receiver
   state.mSensorDataReceiver->start();
@@ -508,7 +510,7 @@ int main(const int iArgc, const char** iArgv) {
   state.addViewWorker(request);
 
   // main lcm loop
-  while (0 == state.mLcm->handle());
+  while (0 == lcm->handle());
 
   // join pending threads
   catalogThread.join();

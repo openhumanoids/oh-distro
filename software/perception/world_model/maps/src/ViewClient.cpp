@@ -12,9 +12,10 @@
 
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
-#include "RangeImageView.hpp"
+#include "DepthImageView.hpp"
 #include "LcmTranslator.hpp"
 #include "ThreadSafeQueue.hpp"
+#include "BotWrapper.hpp"
 #include "Utils.hpp"
 
 using namespace maps;
@@ -31,20 +32,20 @@ struct ViewClient::Worker {
     enum Type {
       TypeOctree,
       TypeCloud,
-      TypeRange,
+      TypeDepth,
       TypeCatalog
     };
     Type mType;
     int64_t mId;
     boost::shared_ptr<void> mPayload;
   };
-
+  
   ViewClient* mClient;
-  LcmPtr mLcm;
+  BotWrapper::Ptr mBotWrapper;
   State mState;
   lcm::Subscription* mOctreeSubscription;
   lcm::Subscription* mCloudSubscription;
-  lcm::Subscription* mRangeSubscription;
+  lcm::Subscription* mDepthSubscription;
   lcm::Subscription* mCatalogSubscription;
   ThreadSafeQueue<Message> mMessageQueue;
   boost::mutex mMutex;
@@ -55,7 +56,7 @@ struct ViewClient::Worker {
     mClient = iClient;
     mOctreeSubscription = NULL;
     mCloudSubscription = NULL;
-    mRangeSubscription = NULL;
+    mDepthSubscription = NULL;
     mCatalogSubscription = NULL;
     mState = StateIdle;
     mThread = boost::thread(boost::ref(*this));
@@ -63,10 +64,10 @@ struct ViewClient::Worker {
 
   ~Worker() {
     boost::mutex::scoped_lock lock(mMutex);
-    mLcm->unsubscribe(mOctreeSubscription);
-    mLcm->unsubscribe(mCloudSubscription);
-    mLcm->unsubscribe(mRangeSubscription);
-    mLcm->unsubscribe(mCatalogSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
     mState = StateShutdown;
     mCondition.notify_one();
     mMessageQueue.unblock();
@@ -81,14 +82,14 @@ struct ViewClient::Worker {
     }
     mState = StateRunning;
     mCondition.notify_one();
-    mOctreeSubscription =
-      mLcm->subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
-    mCloudSubscription =
-      mLcm->subscribe(mClient->mCloudChannel, &Worker::onCloud, this);
-    mRangeSubscription =
-      mLcm->subscribe(mClient->mRangeChannel, &Worker::onRange, this);
-    mCatalogSubscription =
-      mLcm->subscribe(mClient->mCatalogChannel, &Worker::onCatalog, this);
+    mOctreeSubscription = mBotWrapper->getLcm()->
+      subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
+    mCloudSubscription = mBotWrapper->getLcm()->
+      subscribe(mClient->mCloudChannel, &Worker::onCloud, this);
+    mDepthSubscription = mBotWrapper->getLcm()->
+      subscribe(mClient->mDepthChannel, &Worker::onDepth, this);
+    mCatalogSubscription = mBotWrapper->getLcm()->
+      subscribe(mClient->mCatalogChannel, &Worker::onCatalog, this);
     return true;
   }
 
@@ -97,11 +98,10 @@ struct ViewClient::Worker {
     if (mState != StateRunning) {
       return false;
     }
-    mLcm->unsubscribe(mOctreeSubscription);
-    mLcm->unsubscribe(mCloudSubscription);
-    mLcm->unsubscribe(mRangeSubscription);
-    mLcm->unsubscribe(mCatalogSubscription);
-    mMessageQueue.unblock();
+    mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+    mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription); 
     mState = StateIdle;
     mCondition.notify_one();
     mMessageQueue.clear();
@@ -132,11 +132,11 @@ struct ViewClient::Worker {
     mMessageQueue.push(msg);
   }
 
-  void onRange(const lcm::ReceiveBuffer* iBuf,
+  void onDepth(const lcm::ReceiveBuffer* iBuf,
                const std::string& iChannel,
                const drc::map_image_t* iMessage) {
     Message msg;
-    msg.mType = Message::TypeRange;
+    msg.mType = Message::TypeDepth;
     msg.mId = iMessage->view_id;
     boost::shared_ptr<drc::map_image_t>
       payload(new drc::map_image_t(*iMessage));
@@ -245,16 +245,15 @@ struct ViewClient::Worker {
         LcmTranslator::fromLcm(*payload, *cloudView);
         view.reset(cloudView);
         view->setUpdateTime(payload->utime);
-        std::cout << "GOT CLOUD " << cloudView->getPointCloud()->size() << std::endl;
       }
 
-      // handle range image
-      else if (msg.mType == Message::TypeRange) { 
+      // handle depth image
+      else if (msg.mType == Message::TypeDepth) { 
         boost::shared_ptr<drc::map_image_t> payload =
           boost::static_pointer_cast<drc::map_image_t>(msg.mPayload);
-        RangeImageView* rangeView = new RangeImageView();
-        LcmTranslator::fromLcm(*payload, *rangeView);
-        view.reset(rangeView);
+        DepthImageView* depthView = new DepthImageView();
+        LcmTranslator::fromLcm(*payload, *depthView);
+        view.reset(depthView);
         view->setUpdateTime(payload->utime);
       }
 
@@ -271,7 +270,7 @@ ViewClient() {
   setRequestChannel("MAP_REQUEST");
   setOctreeChannel("MAP_OCTREE");
   setCloudChannel("MAP_CLOUD");
-  setRangeChannel("MAP_RANGE");
+  setDepthChannel("MAP_DEPTH");
   setCatalogChannel("MAP_CATALOG");
   mWorker.reset(new Worker(this));
 }
@@ -282,9 +281,9 @@ ViewClient::
 }
 
 void ViewClient::
-setLcm(const LcmPtr& iLcm) {
-  mLcm = iLcm;
-  mWorker->mLcm = iLcm;
+setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+  mBotWrapper = iWrapper;
+  mWorker->mBotWrapper = iWrapper;
 }
 
 void ViewClient::
@@ -303,8 +302,8 @@ setCloudChannel(const std::string& iChannel) {
 }
 
 void ViewClient::
-setRangeChannel(const std::string& iChannel) {
-  mRangeChannel = iChannel;
+setDepthChannel(const std::string& iChannel) {
+  mDepthChannel = iChannel;
 }
 
 void ViewClient::
@@ -319,7 +318,7 @@ int64_t ViewClient::request(const ViewBase::Spec& iSpec) {
   if (message.view_id < 0) {
     message.view_id = (Utils::rand64() >> 1);
   }
-  mLcm->publish(mRequestChannel, &message);
+  mBotWrapper->getLcm()->publish(mRequestChannel, &message);
   return message.view_id;
 }
 

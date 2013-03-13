@@ -59,11 +59,11 @@ struct Worker {
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
         sendHeightMapCorridorRequest();
         break;
-      case drc::data_request_t::RANGE_MAP_SCENE:
-        sendRangeMapSceneRequest();
+      case drc::data_request_t::DEPTH_MAP_SCENE:
+        sendDepthMapSceneRequest();
         break;
-      case drc::data_request_t::RANGE_MAP_WORKSPACE:
-        sendRangeMapWorkspaceRequest();
+      case drc::data_request_t::DEPTH_MAP_WORKSPACE:
+        sendDepthMapWorkspaceRequest();
         break;
       default:
         cout << "Unknown request type" << endl;
@@ -103,7 +103,7 @@ struct Worker {
     drc::map_request_t msg = prepareRequestMessage();
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.width = msg.height = 100;
-    msg.type = drc::map_request_t::RANGE_IMAGE;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
     pose.translation() = Eigen::Vector3f(0,0,10);
     pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
@@ -122,7 +122,7 @@ struct Worker {
     msg.view_id = drc::data_request_t::HEIGHT_MAP_CORRIDOR;
     msg.resolution = 0.02;
     msg.width = msg.height = 100;
-    msg.type = drc::map_request_t::RANGE_IMAGE;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[1][3] = 10;
     msg.clip_planes[2][3] = 1;
@@ -140,24 +140,24 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
-  void sendRangeMapSceneRequest() {
+  void sendDepthMapSceneRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.view_id = drc::data_request_t::RANGE_MAP_SCENE;
+    msg.view_id = drc::data_request_t::DEPTH_MAP_SCENE;
     msg.resolution = 0.1;
     msg.width = msg.height = 200;
-    msg.type = drc::map_request_t::RANGE_IMAGE;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = 0;
     Eigen::Projective3f projector = createProjector(160, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
-  void sendRangeMapWorkspaceRequest() {
+  void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.view_id = drc::data_request_t::RANGE_MAP_WORKSPACE;
+    msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
     msg.resolution = 0.02;
     msg.width = msg.height = 200;
-    msg.type = drc::map_request_t::RANGE_IMAGE;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
     for (int i = 0; i < 6; ++i) {
       msg.clip_planes[i][3] = 2;
     }

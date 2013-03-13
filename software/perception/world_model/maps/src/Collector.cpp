@@ -10,7 +10,7 @@
 using namespace maps;
 
 struct Collector::Helper {
-  boost::shared_ptr<lcm::LCM> mLcm;
+  boost::shared_ptr<BotWrapper> mBotWrapper;
   boost::shared_ptr<SensorDataReceiver> mDataReceiver;
   boost::shared_ptr<MapManager> mMapManager;
   boost::thread mConsumerThread;
@@ -68,9 +68,9 @@ Collector::
 }
 
 void Collector::
-setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
-  mHelper->mLcm = iLcm;
-  mHelper->mDataReceiver->setLcm(iLcm);
+setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+  mHelper->mBotWrapper = iWrapper;
+  mHelper->mDataReceiver->setBotWrapper(iWrapper);
 }  
 
 bool Collector::

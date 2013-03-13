@@ -16,6 +16,7 @@
 
 #include <maps/ViewClient.hpp>
 #include <maps/Utils.hpp>
+#include <maps/BotWrapper.hpp>
 #include "MeshRenderer.hpp"
 
 namespace maps {
@@ -127,13 +128,14 @@ public:
     // set up internal variables
     mBoxValid = false;
     mDragging = false;
-    mMeshRenderer.setLcm(getLcm());
-    mMeshRenderer.setBotParam(getBotParam());
+    mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
     mMeshRenderer.setCameraChannel("CAMERALEFT");
-    mViewClient.setLcm(getLcm());
+    BotWrapper::Ptr botWrapper(new BotWrapper(getLcm(), getBotParam(),
+                                              getBotFrames()));
+    mViewClient.setBotWrapper(botWrapper);
     mViewClient.setOctreeChannel("MAP_OCTREE");
     mViewClient.setCloudChannel("MAP_CLOUD");
-    mViewClient.setRangeChannel("MAP_RANGE");
+    mViewClient.setDepthChannel("MAP_DEPTH");
     mViewClient.addListener(this);
 
     // start listening for view data
@@ -192,8 +194,8 @@ public:
         addCombo("Input Mode", mInputMode, labels, ids, requestBox);
 
       ids = { ViewBase::TypeOctree, ViewBase::TypePointCloud,
-              ViewBase::TypeRangeImage };
-      labels = { "Octree", "Cloud", "Range" };
+              ViewBase::TypeDepthImage };
+      labels = { "Octree", "Cloud", "Depth" };
       mRequestType = ViewBase::TypeOctree;
       addCombo("Request Type", mRequestType, labels, ids, requestBox);
 
@@ -275,8 +277,8 @@ public:
     spec.mClipPlanes = mFrustum.mPlanes;
     spec.mRelativeLocation = mRequestRelativeLocation;
 
-    // compute range image transform from gl view parameters
-    if (spec.mType == ViewBase::TypeRangeImage) {
+    // compute depth image transform from gl view parameters
+    if (spec.mType == ViewBase::TypeDepthImage) {
       bool orthographic = Utils::isOrthographic(mProjectionMatrix.matrix());
       int idx = (orthographic ? 2 : 3);
       mProjectionMatrix(2, idx) = 1;

@@ -18,7 +18,7 @@ namespace maps {
 class DataBlob;
 class PointCloudView;
 class OctreeView;
-class RangeImageView;
+class DepthImageView;
 
 class LcmTranslator {
 public:
@@ -37,16 +37,18 @@ public:
   static bool fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob);
 
   // for point cloud
-  static bool toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage);
+  static bool toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
+                    const int iBits=8, const bool iCompress=true);
   static bool fromLcm(const drc::map_cloud_t& iMessage, PointCloudView& oView);
 
   // for octree
   static bool toLcm(const OctreeView& iView, drc::map_octree_t& oMessage);
   static bool fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView);
 
-  // for range image
-  static bool toLcm(const RangeImageView& iView, drc::map_image_t& oMessage);
-  static bool fromLcm(const drc::map_image_t& iMessage, RangeImageView& oView);
+  // for depth image
+  static bool toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
+                    const int iBits=16, const bool iCompress=true);
+  static bool fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView);
 };
 
 }

@@ -10,7 +10,7 @@ public:
   enum Type {
     TypePointCloud,
     TypeOctree,
-    TypeRangeImage,
+    TypeDepthImage,
     TypeVoxelGrid,
     TypeMesh,
     TypeSurfels,

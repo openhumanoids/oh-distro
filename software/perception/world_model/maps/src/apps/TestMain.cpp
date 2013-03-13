@@ -11,7 +11,8 @@
 #include <maps/Collector.hpp>
 #include <maps/Utils.hpp>
 #include <maps/PointCloudView.hpp>
-#include <maps/RangeImageView.hpp>
+#include <maps/DepthImageView.hpp>
+#include <maps/BotWrapper.hpp>
 
 using namespace maps;
 using namespace std;
@@ -19,17 +20,18 @@ using namespace std;
 
 class State {
 public:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  boost::shared_ptr<BotWrapper> mBotWrapper;
   boost::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
 
   State() {
-    mLcm.reset(new lcm::LCM());
+    mBotWrapper.reset(new BotWrapper());
     mCollector.reset(new Collector());
-    mCollector->setLcm(mLcm);
+    mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;
-    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "test-points");
+    mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
+                            "test-points");
   }
 
   ~State() {
@@ -88,23 +90,23 @@ public:
       calib(0,2) = width/2.0;        // cop at center of image
       calib(1,2) = height/2.0;
 
-      // create range image
+      // create depth image
       Eigen::Projective3f projector;
       Utils::composeViewMatrix(projector, calib, pose, false);
-      RangeImageView::Ptr rangeImage =
-        localMap->getAsRangeImage(width, height, projector, bounds);
+      DepthImageView::Ptr depthImage =
+        localMap->getAsDepthImage(width, height, projector, bounds);
 
-      // get and store range image pixel values
-      float* ranges = rangeImage->getRangeImage()->getRangesArray();
-      std::ofstream ofs("/home/antone/ranges.txt");
+      // get and store depth image pixel values
+      float* depths = depthImage->getRangeImage()->getRangesArray();
+      std::ofstream ofs("/home/antone/depths.txt");
       for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-          ofs << ranges[i*width + j] << " ";
+          ofs << depths[i*width + j] << " ";
         }
         ofs << std::endl;
       }
       ofs.close();
-      std::cout << "Got range image" << std::endl;
+      std::cout << "Got depth image" << std::endl;
 
       // wait for timer expiry
       boost::asio::io_service service;
@@ -187,7 +189,7 @@ int main() {
   boost::thread producerThread(boost::ref(producer));
 
   // main lcm loop
-  while (0 == state.mLcm->handle());
+  while (0 == state.mBotWrapper->getLcm()->handle());
 
   // join pending threads
   producerThread.join();

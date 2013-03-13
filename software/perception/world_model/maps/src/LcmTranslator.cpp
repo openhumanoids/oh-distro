@@ -3,7 +3,7 @@
 #include "DataBlob.hpp"
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
-#include "RangeImageView.hpp"
+#include "DepthImageView.hpp"
 #include "Utils.hpp"
 
 #include <limits>
@@ -16,7 +16,7 @@
 #include <lcmtypes/drc/map_image_t.hpp>
 
 #include <pcl/common/transforms.h>
-#include <pcl/range_image/range_image_planar.h>
+#include <pcl/range_image/range_image.h>
 
 using namespace maps;
 
@@ -57,8 +57,8 @@ toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
     oMessage.type = drc::map_request_t::OCTREE; break;
   case ViewBase::TypePointCloud:
     oMessage.type = drc::map_request_t::POINT_CLOUD; break;
-  case ViewBase::TypeRangeImage:
-    oMessage.type = drc::map_request_t::RANGE_IMAGE; break;
+  case ViewBase::TypeDepthImage:
+    oMessage.type = drc::map_request_t::DEPTH_IMAGE; break;
   default:
     std::cout << "LcmTranslator: bad type given in map spec" << std::endl;
     return false;
@@ -97,8 +97,8 @@ fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
     oSpec.mType = ViewBase::TypeOctree; break;
   case drc::map_request_t::POINT_CLOUD:
     oSpec.mType = ViewBase::TypePointCloud; break;
-  case drc::map_request_t::RANGE_IMAGE:
-    oSpec.mType = ViewBase::TypeRangeImage; break;
+  case drc::map_request_t::DEPTH_IMAGE:
+    oSpec.mType = ViewBase::TypeDepthImage; break;
   default:
     std::cout << "LcmTranslator: bad type given in map_request" << std::endl;
     break;
@@ -197,7 +197,8 @@ fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob) {
 
 
 bool LcmTranslator::
-toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage) {
+toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
+      const int iBits, const bool iCompress) {
   oMessage.view_id = iView.getId();
 
   // find extrema of cloud and transform points
@@ -205,7 +206,9 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage) {
   pcl::getMinMax3D(*(iView.getPointCloud()), minPoint, maxPoint);
   Eigen::Vector3f offset = minPoint.getVector3fMap();
   Eigen::Vector3f scale = maxPoint.getVector3fMap() - offset;
-  scale /= 255;
+  for (int k = 0; k < 3; ++k) {
+    scale[k] /= ((iBits <= 16) ? ((1 << iBits) - 1) : scale[k]);
+  }
   Eigen::Affine3f normalizerInv = Eigen::Affine3f::Identity();
   for (int i = 0; i < 3; ++i) {
     normalizerInv(i,i) = scale[i];
@@ -236,7 +239,13 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage) {
   blob.setData(data, spec);
 
   // compress and convert
-  blob.convertTo(DataBlob::CompressionTypeZlib, DataBlob::DataTypeUint8);
+  DataBlob::CompressionType compressionType =
+    iCompress ? DataBlob::CompressionTypeZlib : DataBlob::CompressionTypeNone;
+  DataBlob::DataType dataType;
+  if (iBits <= 8) dataType = DataBlob::DataTypeUint8;
+  else if (iBits <= 16) dataType = DataBlob::DataTypeUint16;
+  else dataType = DataBlob::DataTypeFloat32;
+  blob.convertTo(compressionType, dataType);
 
   // pack blob into message
   if (!toLcm(blob, oMessage.blob)) return false;
@@ -321,22 +330,23 @@ fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView) {
 }
 
 bool LcmTranslator::
-toLcm(const RangeImageView& iView, drc::map_image_t& oMessage) {
+toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
+      const int iBits, const bool iCompress) {
   oMessage.view_id = iView.getId();
 
-  // copy range array
-  pcl::RangeImage::Ptr rangeImage = iView.getRangeImage();
-  int numRanges = rangeImage->width * rangeImage->height;
-  float* inRanges = rangeImage->getRangesArray();
-  std::vector<uint8_t> data((uint8_t*)inRanges,
-                            (uint8_t*)inRanges + numRanges*sizeof(float));
-  float* outRanges = (float*)(&data[0]);
+  // copy depth array
+  pcl::RangeImage::Ptr depthImage = iView.getRangeImage();
+  int numDepths = depthImage->width * depthImage->height;
+  float* inDepths = depthImage->getRangesArray();
+  std::vector<uint8_t> data((uint8_t*)inDepths,
+                            (uint8_t*)inDepths + numDepths*sizeof(float));
+  float* outDepths = (float*)(&data[0]);
 
   // find extremal values and transform
   float zMin(std::numeric_limits<float>::infinity());
   float zMax(-std::numeric_limits<float>::infinity());
-  for (int i = 0; i < numRanges; ++i) {
-    float val = outRanges[i];
+  for (int i = 0; i < numDepths; ++i) {
+    float val = outDepths[i];
     if (fabs(val) == std::numeric_limits<float>::infinity()) continue;
     zMin = std::min(zMin, val);
     zMax = std::max(zMax, val);
@@ -346,24 +356,30 @@ toLcm(const RangeImageView& iView, drc::map_image_t& oMessage) {
     zMax = 1;
   }
   float zOffset(zMin), zScale(zMax-zMin);
-  zScale /= 2047;
-  for (int i = 0; i < numRanges; ++i) {
-    outRanges[i] = (outRanges[i]-zOffset)/zScale;
+  zScale /= ((iBits <= 16) ? ((1 << iBits) - 1) : zScale);
+  for (int i = 0; i < numDepths; ++i) {
+    outDepths[i] = (outDepths[i]-zOffset)/zScale;
   }
 
   // store to blob
   DataBlob::Spec spec;
-  spec.mDimensions.push_back(rangeImage->width);
-  spec.mDimensions.push_back(rangeImage->height);
+  spec.mDimensions.push_back(depthImage->width);
+  spec.mDimensions.push_back(depthImage->height);
   spec.mStrideBytes.push_back(sizeof(float));
-  spec.mStrideBytes.push_back(rangeImage->width*sizeof(float));
+  spec.mStrideBytes.push_back(depthImage->width*sizeof(float));
   spec.mCompressionType = DataBlob::CompressionTypeNone;
   spec.mDataType = DataBlob::DataTypeFloat32;
   DataBlob blob;
   blob.setData(data, spec);
 
   // compress and convert
-  blob.convertTo(DataBlob::CompressionTypeZlib, DataBlob::DataTypeUint16);
+  DataBlob::CompressionType compressionType =
+    iCompress ? DataBlob::CompressionTypeZlib : DataBlob::CompressionTypeNone;
+  DataBlob::DataType dataType;
+  if (iBits <= 8) dataType = DataBlob::DataTypeUint8;
+  else if (iBits <= 16) dataType = DataBlob::DataTypeUint16;
+  else dataType = DataBlob::DataTypeFloat32;
+  blob.convertTo(compressionType, dataType);
   if (!toLcm(blob, oMessage.blob)) return false;
 
   // transform from reference to image
@@ -383,7 +399,7 @@ toLcm(const RangeImageView& iView, drc::map_image_t& oMessage) {
 }
 
 bool LcmTranslator::
-fromLcm(const drc::map_image_t& iMessage, RangeImageView& oView) {
+fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
 
   // transform from reference to image coords
   Eigen::Projective3f xform;
@@ -399,15 +415,15 @@ fromLcm(const drc::map_image_t& iMessage, RangeImageView& oView) {
   DataBlob blob;
   if (!fromLcm(iMessage.blob, blob)) return false;
 
-  // convert to range image
+  // convert to depth image
   blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32); 
   float* raw = (float*)(&blob.getBytes()[0]);
-  std::vector<float> ranges(raw, raw+blob.getBytes().size()/sizeof(float));
-  for (int i = 0; i < ranges.size(); ++i) {
-    if (ranges[i] > 65000) ranges[i] = std::numeric_limits<float>::infinity();
+  std::vector<float> depths(raw, raw+blob.getBytes().size()/sizeof(float));
+  for (int i = 0; i < depths.size(); ++i) {
+    if (depths[i] > 65000) depths[i] = std::numeric_limits<float>::infinity();
   }
   oView.setSize(blob.getSpec().mDimensions[0], blob.getSpec().mDimensions[1]);
-  oView.set(ranges);
+  oView.set(depths);
 
   // done
   // NOTE: ids not set here

@@ -10,7 +10,8 @@
 
 #include "Types.hpp"
 #include "ThreadSafeQueue.hpp"
-#include "BotFramesWrapper.hpp"
+#include "BotWrapper.hpp"
+#include "Utils.hpp"
 
 #include <pcl/io/io.h>
 #include <bot_param/param_util.h>
@@ -47,7 +48,7 @@ struct SensorDataReceiver::Helper {
               mHelper->mSubscriptions.find(iter->mChannel);
             if (item != mHelper->mSubscriptions.end()) {
               boost::shared_ptr<SubscriptionInfo> info = item->second;
-              int64_t latestTime = mHelper->mBotFrames->getLatestTimestamp
+              int64_t latestTime = mHelper->mBotWrapper->getLatestTime
                 (info->mTransformFrom, info->mTransformTo);
               int64_t dataTime = iter->mPointSet->mTimestamp;
               if (dataTime <= latestTime) {
@@ -72,9 +73,7 @@ struct SensorDataReceiver::Helper {
   typedef std::unordered_map<std::string, boost::shared_ptr<SubscriptionInfo> >
   SubscriptionMap;
 
-  boost::shared_ptr<lcm::LCM> mLcm;
-  boost::shared_ptr<BotFramesWrapper> mBotFrames;
-  BotParam* mBotParam;
+  boost::shared_ptr<BotWrapper> mBotWrapper;
   SubscriptionMap mSubscriptions;
   bool mIsRunning;
   ThreadSafeQueue<SensorData> mDataBuffer;
@@ -86,18 +85,17 @@ struct SensorDataReceiver::Helper {
   bool getPose(const boost::shared_ptr<SubscriptionInfo>& iInfo,
                const int64_t iTimestamp,
                Eigen::Vector4f& oPosition, Eigen::Quaternionf& oOrientation) {
-    Eigen::Vector3f trans;
-    Eigen::Quaternionf rot;
-    if (!mBotFrames->getTransform(iInfo->mTransformFrom, iInfo->mTransformTo,
-                                  iTimestamp, trans, rot)) {
+    Eigen::Vector3f translation;
+    Eigen::Quaternionf rotation;
+    if (!mBotWrapper->getTransform(iInfo->mTransformFrom, iInfo->mTransformTo,
+                                   rotation, translation, iTimestamp)) {
       std::cerr << "SensorDataReceiver: cannot get transform from " <<
         iInfo->mTransformFrom << " to " << iInfo->mTransformTo << std::endl;
       return false;
     }
-
-    oPosition.head<3>() = trans;
+    oPosition.head<3>() = translation;
     oPosition[3] = 1;
-    oOrientation = rot;
+    oOrientation = rotation;
     return true;
   }
 
@@ -191,12 +189,8 @@ SensorDataReceiver::
 }
 
 void SensorDataReceiver::
-setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
-  mHelper->mLcm = iLcm;
-  lcm_t* lcm = mHelper->mLcm->getUnderlyingLCM();
-  mHelper->mBotParam = bot_param_get_global(lcm, 0);
-  mHelper->mBotFrames.reset(new BotFramesWrapper());
-  mHelper->mBotFrames->setLcm(mHelper->mLcm);
+setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper) {
+  mHelper->mBotWrapper = iWrapper;
   clearChannels();
 }
 
@@ -214,18 +208,19 @@ addChannel(const std::string& iSensorChannel,
   info->mRangeMax = 1e10;
 
   // get min and max values from config
+  BotParam* botParam = mHelper->mBotWrapper->getBotParam();
   char* lidarName =
-    bot_param_get_planar_lidar_name_from_lcm_channel(mHelper->mBotParam,
+    bot_param_get_planar_lidar_name_from_lcm_channel(botParam,
                                                      iSensorChannel.c_str());
   char prefix[1024];
   bot_param_get_planar_lidar_prefix(NULL, lidarName, prefix, sizeof(prefix));
   std::string key = std::string(prefix) + ".max_range";
   double val;
-  if (0 == bot_param_get_double(mHelper->mBotParam, key.c_str(), &val)) {
+  if (0 == bot_param_get_double(botParam, key.c_str(), &val)) {
     info->mRangeMax = val;
   }
   key = std::string(prefix) + ".min_range";
-  if (0 == bot_param_get_double(mHelper->mBotParam, key.c_str(), &val)) {
+  if (0 == bot_param_get_double(botParam, key.c_str(), &val)) {
     info->mRangeMin = val;
   }
   free(lidarName);
@@ -234,11 +229,11 @@ addChannel(const std::string& iSensorChannel,
   lcm::Subscription* sub = NULL;
   switch(iSensorType) {
   case SensorTypePlanarLidar:
-    sub = mHelper->mLcm->subscribe
+    sub = mHelper->mBotWrapper->getLcm()->subscribe
       (iSensorChannel, &SensorDataReceiver::Helper::onLidar, mHelper.get());
     break;
   case SensorTypePointCloud:
-    sub = mHelper->mLcm->subscribe
+    sub = mHelper->mBotWrapper->getLcm()->subscribe
       (iSensorChannel, &SensorDataReceiver::Helper::onCloud, mHelper.get());
     break;
   default:
@@ -259,7 +254,7 @@ clearChannels() {
   Helper::SubscriptionMap::const_iterator iter;
   for (iter = mHelper->mSubscriptions.begin();
        iter != mHelper->mSubscriptions.end(); ++iter) {
-    mHelper->mLcm->unsubscribe(iter->second->mSubscription);
+    mHelper->mBotWrapper->getLcm()->unsubscribe(iter->second->mSubscription);
   }
   mHelper->mSubscriptions.clear();
 }
@@ -272,7 +267,7 @@ removeChannel(const std::string& iSensorChannel) {
   if (item == mHelper->mSubscriptions.end()) {
     return false;
   }
-  mHelper->mLcm->unsubscribe(item->second->mSubscription);
+  mHelper->mBotWrapper->getLcm()->unsubscribe(item->second->mSubscription);
   mHelper->mSubscriptions.erase(item);
   return true;
 }

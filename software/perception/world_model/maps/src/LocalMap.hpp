@@ -11,7 +11,7 @@ namespace maps {
 class PointDataBuffer;
 class PointCloudView;
 class OctreeView;
-class RangeImageView;
+class DepthImageView;
 
 class LocalMap {
 public:
@@ -89,9 +89,9 @@ public:
               const Eigen::Vector3f& iOrigin=Eigen::Vector3f(0,0,0),
               const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
-  // export this entire representation as a range image
-  boost::shared_ptr<RangeImageView>
-  getAsRangeImage(const int iWidth, const int iHeight,
+  // export this entire representation as a depth image
+  boost::shared_ptr<DepthImageView>
+  getAsDepthImage(const int iWidth, const int iHeight,
                   const Eigen::Projective3f& iProjector,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 

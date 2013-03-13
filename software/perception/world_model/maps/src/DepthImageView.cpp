@@ -1,4 +1,4 @@
-#include "RangeImageView.hpp"
+#include "DepthImageView.hpp"
 
 #include <pcl/range_image/range_image.h>
 #include <pcl/io/io.h>
@@ -7,22 +7,22 @@
 using namespace maps;
 
 namespace pcl {
-class RangeImageProjective : public RangeImage {
+class DepthImageProjective : public RangeImage {
 public:
   typedef RangeImage BaseClass;
-  typedef boost::shared_ptr<RangeImageProjective> Ptr;
-  typedef boost::shared_ptr<const RangeImageProjective> ConstPtr;
+  typedef boost::shared_ptr<DepthImageProjective> Ptr;
+  typedef boost::shared_ptr<const DepthImageProjective> ConstPtr;
 
 public:
-  RangeImageProjective() {
+  DepthImageProjective() {
     mProjector = Eigen::Projective3f::Identity();
     mProjectorInv = Eigen::Projective3f::Identity();
     unobserved_point.range = std::numeric_limits<float>::infinity();
   }
-  ~RangeImageProjective() {}
+  ~DepthImageProjective() {}
 
-  RangeImage* getNew() const { return new RangeImageProjective(); }
-  Ptr makeShared() { return Ptr(new RangeImageProjective(*this)); }
+  RangeImage* getNew() const { return new DepthImageProjective(); }
+  Ptr makeShared() { return Ptr(new DepthImageProjective(*this)); }
 
   void setParams(const int iWidth, const int iHeight,
                  const Eigen::Projective3f& iTransform,
@@ -49,10 +49,10 @@ public:
   create(const PointCloudType& iCloud, const int iWidth, const int iHeight,
          const Eigen::Projective3f& iTransform,
          const CoordinateFrame iFrame=CAMERA_FRAME,
-         const float iNoiseLevel=0.0f, const float iMinRange=0.0f) {
+         const float iNoiseLevel=0.0f, const float iMinDepth=0.0f) {
     setParams(iWidth, iHeight, iTransform, iFrame);
     int top(height), right(-1), bottom(-1), left(width);
-    doZBuffer(iCloud, iNoiseLevel, iMinRange, top, right, bottom, left);
+    doZBuffer(iCloud, iNoiseLevel, iMinDepth, top, right, bottom, left);
     recalculate3DPointPositions();
   }
 
@@ -65,43 +65,40 @@ public:
     for (int y = 0; y < iHeight; ++y) {
       for (int x = 0; x < iWidth; ++x) {
         PointWithRange& curPoint = getPointNoCheck(x,y);
-        float range = iVals[y*iWidth+x];
-        if (!pcl_isfinite(range)) {
+        float depth = iVals[y*iWidth+x];
+        if (!pcl_isfinite(depth)) {
           curPoint = unobserved_point;
           continue;
         }
         Eigen::Vector3f pt;
-        calculate3DPoint(x, y, range, pt);
+        calculate3DPoint(x, y, depth, pt);
         curPoint.x = pt[0];
         curPoint.y = pt[1];
         curPoint.z = pt[2];
-        curPoint.range = range;
+        curPoint.range = depth;
       }
     }
   }
 
-  using RangeImage::calculate3DPoint;
-  using RangeImage::getImagePoint;
-
-  inline void calculate3DPoint(float iX, float iY, float iRange,
+  inline void calculate3DPoint(float iX, float iY, float iDepth,
                                Eigen::Vector3f& oPoint) const {
-    Eigen::Vector4f pt = mProjectorInv*Eigen::Vector4f(iX, iY, iRange, 1);
+    Eigen::Vector4f pt = mProjectorInv*Eigen::Vector4f(iX, iY, iDepth, 1);
     oPoint = pt.head<3>()/pt[3];
   }
 
   inline void getImagePoint(const Eigen::Vector3f& iPoint,
-                            float& oX, float& oY, float& oRange) const {
+                            float& oX, float& oY, float& oDepth) const {
     Eigen::Vector4f inPt(iPoint[0], iPoint[1], iPoint[2], 1);
     Eigen::Vector4f pt = mProjector*inPt;
     Eigen::Vector3f outPt = pt.head<3>()/pt[3];
     oX = outPt[0];
     oY = outPt[1];
-    oRange = outPt[2];
+    oDepth = outPt[2];
   }
       
   void getSubImage(int iOffsetX, int iOffsetY, int iWidth, int iHeight,
                    int iCombine, RangeImage& oImage) const {
-    RangeImageProjective& img = *(static_cast<RangeImageProjective*>(&oImage));
+    DepthImageProjective& img = *(static_cast<DepthImageProjective*>(&oImage));
     Eigen::Translation3f shift(-iOffsetX, -iOffsetY, 0);
     Eigen::Affine3f scale = Eigen::Affine3f::Identity();
     scale.linear() = Eigen::Scaling(1.0f/iCombine, 1.0f/iCombine, 1.0f);
@@ -112,7 +109,7 @@ public:
   }
 
   void getHalfImage(RangeImage& oImage) const {
-    RangeImageProjective& img = *(static_cast<RangeImageProjective*>(&oImage));
+    DepthImageProjective& img = *(static_cast<DepthImageProjective*>(&oImage));
     Eigen::Affine3f scale = Eigen::Affine3f::Identity();
     scale.linear() = Eigen::Scaling(0.5f, 0.5f, 1.0f);
     BaseClass::getHalfImage(img);
@@ -126,57 +123,57 @@ protected:
 };
 }
 
-RangeImageView::
-RangeImageView() {
-  mImage.reset(new pcl::RangeImageProjective());
+DepthImageView::
+DepthImageView() {
+  mImage.reset(new pcl::DepthImageProjective());
   mImage->width = mImage->height = 0;
 }
 
-RangeImageView::
-~RangeImageView() {
+DepthImageView::
+~DepthImageView() {
 }
 
-boost::shared_ptr<pcl::RangeImage> RangeImageView::
+boost::shared_ptr<pcl::RangeImage> DepthImageView::
 getRangeImage() const {
   return mImage;
 }
 
-void RangeImageView::
+void DepthImageView::
 setSize(const int iWidth, const int iHeight) {
   mImage->width = iWidth;
   mImage->height = iHeight;
 }
 
-void RangeImageView::
+void DepthImageView::
 set(const std::vector<float>& iData, const int iWidth, const int iHeight) {
   int width(iWidth), height(iHeight);
   if (width == 0) width = mImage->width;
   if (height == 0) height = mImage->height;
-  pcl::RangeImageProjective* img =
-    dynamic_cast<pcl::RangeImageProjective*>(mImage.get());
+  pcl::DepthImageProjective* img =
+    dynamic_cast<pcl::DepthImageProjective*>(mImage.get());
   img->create(iData, width, height, mTransform);
 }
 
-ViewBase::Ptr RangeImageView::
+ViewBase::Ptr DepthImageView::
 clone() const {
-  RangeImageView* view = new RangeImageView(*this);
+  DepthImageView* view = new DepthImageView(*this);
   view->mImage = view->mImage->makeShared();
   return Ptr(view);
 }
 
-const ViewBase::Type RangeImageView::
+const ViewBase::Type DepthImageView::
 getType() const {
-  return TypeRangeImage;
+  return TypeDepthImage;
 }
 
-void RangeImageView::
+void DepthImageView::
 set(const maps::PointCloud::Ptr& iCloud) {
-  pcl::RangeImageProjective* img =
-    dynamic_cast<pcl::RangeImageProjective*>(mImage.get());
+  pcl::DepthImageProjective* img =
+    dynamic_cast<pcl::DepthImageProjective*>(mImage.get());
   img->create(*iCloud, mImage->width, mImage->height, mTransform);
 }
 
-maps::PointCloud::Ptr RangeImageView::
+maps::PointCloud::Ptr DepthImageView::
 getAsPointCloud(const bool iTransform) const {
   maps::PointCloud::Ptr cloud(new maps::PointCloud());
   if (iTransform) {
@@ -186,14 +183,14 @@ getAsPointCloud(const bool iTransform) const {
     cloud->reserve(mImage->width*mImage->height);
     cloud->is_dense = false;
     bool ortho = Utils::isOrthographic(mTransform.matrix());
-    float* ranges = mImage->getRangesArray();
+    float* depths = mImage->getRangesArray();
     for (int i = 0, idx = 0; i < mImage->height; ++i) {
       for (int j = 0; j < mImage->width; ++j, ++idx) {
-        if (!pcl_isfinite(ranges[idx])) continue;
+        if (!pcl_isfinite(depths[idx])) continue;
         maps::PointCloud::PointType pt;
         pt.x = j;
         pt.y = i;
-        pt.z = ranges[idx];
+        pt.z = depths[idx];
         cloud->push_back(pt);
       }
     }
@@ -201,18 +198,18 @@ getAsPointCloud(const bool iTransform) const {
   return cloud;
 }
 
-maps::TriangleMesh::Ptr RangeImageView::
+maps::TriangleMesh::Ptr DepthImageView::
 getAsMesh(const bool iTransform) const {
   int width(mImage->width), height(mImage->height);
-  int numRanges = width*height;
-  float* ranges = mImage->getRangesArray();
+  int numDepths = width*height;
+  float* depths = mImage->getRangesArray();
   maps::TriangleMesh::Ptr mesh(new maps::TriangleMesh());
 
   // vertices
   mesh->mVertices.reserve((width+1)*(height+1));
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
-      float z = ranges[i*width+j];
+      float z = depths[i*width+j];
       if (iTransform) {
         Eigen::Vector3f pt;
         mImage->calculate3DPoint(j,i,z,pt);
@@ -226,14 +223,14 @@ getAsMesh(const bool iTransform) const {
 
   // faces
   std::vector<Eigen::Vector3i>& faces = mesh->mFaces;
-  faces.reserve(2*numRanges);
+  faces.reserve(2*numDepths);
   for (int i = 0; i < height-1; ++i) {
     for (int j = 0; j < width-1; ++j) {
       int idx = i*width + j;
-      double z00 = ranges[idx];
-      double z10 = ranges[idx+1];
-      double z01 = ranges[idx+width];
-      double z11 = ranges[idx+width+1];
+      double z00 = depths[idx];
+      double z10 = depths[idx+1];
+      double z01 = depths[idx+width];
+      double z11 = depths[idx+width+1];
       bool valid00 = fabs(z00) != std::numeric_limits<float>::infinity();
       bool valid10 = fabs(z10) != std::numeric_limits<float>::infinity();
       bool valid01 = fabs(z01) != std::numeric_limits<float>::infinity();
@@ -270,7 +267,7 @@ getAsMesh(const bool iTransform) const {
   return mesh;
 }
 
-bool RangeImageView::
+bool DepthImageView::
 getClosest(const Eigen::Vector3f& iPoint,
            Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
   // TODO: getClosest

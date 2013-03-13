@@ -137,6 +137,7 @@ struct RendererBase::InternalHelper {
   BotGtkParamWidget* mBotGtkParamWidget;
   BotEventHandler mBotEventHandler;
   Gtk::Container* mGtkContainer;
+  Gtk::Toolbar* mGtkToolbar;
   Gtk::DrawingArea* mGlDrawingArea;
 
   // other data
@@ -308,6 +309,8 @@ RendererBase(const std::string& iName,
   gtk_widget_show(GTK_WIDGET(mHelper->mBotGtkParamWidget));
   mHelper->mGtkContainer =
     Glib::wrap(GTK_CONTAINER(mHelper->mBotGtkParamWidget));
+  mHelper->mGtkToolbar =
+    Glib::wrap(GTK_TOOLBAR(iViewer->toolbar));
   mHelper->mGlDrawingArea =
     Glib::wrap(GTK_DRAWING_AREA(mHelper->mBotViewer->gl_area));
 
@@ -359,6 +362,11 @@ getGlDrawingArea() const {
 Gtk::Container* RendererBase::
 getGtkContainer() const {
   return mHelper->mGtkContainer;
+}
+
+Gtk::Toolbar* RendererBase::
+getGtkToolbar() const {
+  return mHelper->mGtkToolbar;
 }
 
 Gtk::Widget* RendererBase::

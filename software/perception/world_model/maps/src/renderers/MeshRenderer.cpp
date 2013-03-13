@@ -11,7 +11,7 @@
 #include <image_utils/pixels.h>
 #include <lcmtypes/bot_core/image_t.hpp>
 
-#include <maps/BotFramesWrapper.hpp>
+#include <maps/BotWrapper.hpp>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
@@ -23,13 +23,11 @@ using namespace maps;
 
 struct MeshRenderer::InternalState {
   // camera data
-  boost::shared_ptr<lcm::LCM> mLcm;
   std::string mCameraChannel;
   std::string mCameraFrame;
   lcm::Subscription* mCameraSubscription;
   bot_core::image_t mCameraImage; 
-  BotParam* mBotParam;
-  boost::shared_ptr<BotFramesWrapper> mBotFrames;
+  BotWrapper::Ptr mBotWrapper;
   BotCamTrans* mCamTrans;
   Eigen::Matrix4f mProjectionMatrix;
 
@@ -83,7 +81,8 @@ struct MeshRenderer::InternalState {
     }
 
     if (mCamTrans == NULL) {
-      mCamTrans = bot_param_get_new_camtrans(mBotParam, mCameraChannel.c_str());
+      mCamTrans = bot_param_get_new_camtrans
+        (mBotWrapper->getBotParam(), mCameraChannel.c_str());
       double K00 = bot_camtrans_get_focal_length_x(mCamTrans);
       double K11 = bot_camtrans_get_focal_length_y(mCamTrans);
       double K01 = bot_camtrans_get_skew(mCamTrans);
@@ -101,7 +100,8 @@ struct MeshRenderer::InternalState {
       std::string key("cameras.");
       key += (mCameraChannel + ".coord_frame");
       char* val = NULL;
-      if (bot_param_get_str(mBotParam, key.c_str(), &val) == 0) {
+      if (bot_param_get_str(mBotWrapper->getBotParam(),
+                            key.c_str(), &val) == 0) {
         mCameraFrame = val;
         free(val);
       }
@@ -117,7 +117,6 @@ MeshRenderer() {
 
   mState->mCameraSubscription = NULL;
   mState->mCamTrans = NULL;
-  mState->mBotParam = NULL;
   mState->mCameraImage.size = 0;
   mState->mNeedsUpdate = true;  //TODO: REPLACE WITH NOTIFY?
   mState->mFirstDraw = true;
@@ -134,9 +133,9 @@ MeshRenderer() {
 
 MeshRenderer::
 ~MeshRenderer() {
-  if (mState->mLcm != NULL) {
+  if (mState->mBotWrapper->getLcm() != NULL) {
     if (mState->mCameraSubscription != NULL) {
-      mState->mLcm->unsubscribe(mState->mCameraSubscription);
+      mState->mBotWrapper->getLcm()->unsubscribe(mState->mCameraSubscription);
     }
   }
   if (mState->mCamTrans != NULL) {
@@ -145,32 +144,22 @@ MeshRenderer::
 }
 
 void MeshRenderer::
-setLcm(const boost::shared_ptr<lcm::LCM> iLcm) {
-  mState->mLcm = iLcm;
-  if (mState->mBotParam == NULL) {
-    mState->mBotParam =
-      bot_param_get_global(mState->mLcm->getUnderlyingLCM(),0);
-  }
-  mState->mBotFrames.reset(new BotFramesWrapper(mState->mBotParam));
-  mState->mBotFrames->setLcm(mState->mLcm);
+setBotObjects(const boost::shared_ptr<lcm::LCM> iLcm,
+              const BotParam* iParam, const BotFrames* iFrames) {
+  mState->mBotWrapper.reset(new BotWrapper(iLcm, iParam, iFrames));
   setCameraChannel(mState->mCameraChannel);
-}
-
-void MeshRenderer::
-setBotParam(const BotParam* iBotParam) {
-  mState->mBotParam = (BotParam*)iBotParam;
 }
 
 void MeshRenderer::
 setCameraChannel(const std::string& iChannel) {
   mState->mCameraChannel = iChannel;
   if (mState->mCameraSubscription != NULL) {
-    mState->mLcm->unsubscribe(mState->mCameraSubscription);
+    mState->mBotWrapper->getLcm()->unsubscribe(mState->mCameraSubscription);
   }
-  if (mState->mLcm != NULL) {
+  if (mState->mBotWrapper->getLcm() != NULL) {
     mState->mCameraSubscription =
-      mState->mLcm->subscribe(mState->mCameraChannel,
-                              &InternalState::onCameraImage, mState.get());
+      mState->mBotWrapper->getLcm()->subscribe
+      (mState->mCameraChannel, &InternalState::onCameraImage, mState.get());
   }
 }
 
@@ -409,8 +398,8 @@ draw() {
              1.0/mState->mCameraImage.height,1);
     glMultMatrixf(mState->mProjectionMatrix.data());
     Eigen::Isometry3f localToCam;
-    mState->mBotFrames->getTransform("local", mState->mCameraFrame,
-                                     mState->mCameraImage.utime, localToCam);
+    mState->mBotWrapper->getTransform("local", mState->mCameraFrame,
+                                      localToCam, mState->mCameraImage.utime);
     glMultMatrixf(localToCam.data());
     glMultMatrixf(mState->mTransform.data());
 

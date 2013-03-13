@@ -16,6 +16,7 @@ typedef struct _GdkEventScroll GdkEventScroll;
 namespace Gtk {
   class Widget;
   class Container;
+  class Toolbar;
   class DrawingArea;
   class ToggleButton;
   class CheckButton;
@@ -48,6 +49,7 @@ protected:
   BotViewer* getBotViewer() const;
   Gtk::DrawingArea* getGlDrawingArea() const;
   Gtk::Container* getGtkContainer() const;
+  Gtk::Toolbar* getGtkToolbar() const;
   Gtk::Widget* getGtkWidget(const std::string& iName) const;
   int64_t now() const;
   void requestDraw();

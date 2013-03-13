@@ -7,11 +7,9 @@
 #include <boost/shared_ptr.hpp>
 #include "ViewBase.hpp"
 
-namespace lcm {
-  class LCM;
-}
-
 namespace maps {
+
+class BotWrapper;
 
 class ViewClient {
 public:
@@ -33,11 +31,11 @@ public:
   ViewClient();
   virtual ~ViewClient();
 
-  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
   void setRequestChannel(const std::string& iChannel);
   void setOctreeChannel(const std::string& iChannel);
   void setCloudChannel(const std::string& iChannel);
-  void setRangeChannel(const std::string& iChannel);
+  void setDepthChannel(const std::string& iChannel);
   void setCatalogChannel(const std::string& iChannel);
 
   int64_t request(const ViewBase::Spec& iSpec);
@@ -64,9 +62,9 @@ protected:
   std::string mRequestChannel;
   std::string mOctreeChannel;
   std::string mCloudChannel;
-  std::string mRangeChannel;
+  std::string mDepthChannel;
   std::string mCatalogChannel;
-  boost::shared_ptr<lcm::LCM> mLcm;
+  boost::shared_ptr<BotWrapper> mBotWrapper;
 
   boost::shared_ptr<Worker> mWorker;
   ViewCollection mViews;

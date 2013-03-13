@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include <pcl/common/distances.h>
+#include <maps/BotWrapper.hpp>
 
 
 using namespace std;
@@ -32,8 +33,9 @@ namespace surrogate_gui
 		_objTracker(),
 		_mViewClient(new maps::ViewClient())
 	{
-	       //--setup map wrapper
-	       _mViewClient->setLcm(lcm);
+	       //--setup view client
+	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(lcm));
+	       _mViewClient->setBotWrapper(wrapper);
 	       _mViewClient->start();
 	  
 		//===========================================

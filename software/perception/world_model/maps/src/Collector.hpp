@@ -4,14 +4,11 @@
 #include <boost/shared_ptr.hpp>
 #include "SensorDataReceiver.hpp"
 
-namespace lcm {
-  class LCM;
-}
-
 namespace maps {
 
 class SensorDataReceiver;
 class MapManager;
+class BotWrapper;
 
 class Collector {
 public:
@@ -23,7 +20,7 @@ public:
   Collector();
   ~Collector();
 
-  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
+  void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
   bool start();
   bool stop();
 

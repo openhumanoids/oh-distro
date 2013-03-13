@@ -1,5 +1,5 @@
-#ifndef _maps_RangeImageView_hpp_
-#define _maps_RangeImageView_hpp_
+#ifndef _maps_DepthImageView_hpp_
+#define _maps_DepthImageView_hpp_
 
 #include "ViewBase.hpp"
 
@@ -9,13 +9,14 @@ namespace pcl {
 
 namespace maps {
 
-class RangeImageView : public ViewBase {
+class DepthImageView : public ViewBase {
 public:
-  typedef boost::shared_ptr<RangeImageView> Ptr;
+  typedef boost::shared_ptr<DepthImageView> Ptr;
 public:
-  RangeImageView();
-  ~RangeImageView();
+  DepthImageView();
+  ~DepthImageView();
 
+  // NOTE: the returned "range image" actually consists of depth values
   boost::shared_ptr<pcl::RangeImage> getRangeImage() const;
   void setSize(const int iWidth, const int iHeight);
 

@@ -48,5 +48,5 @@ struct map_request_t
   const int8_t NONE = 0;
   const int8_t POINT_CLOUD = 1;
   const int8_t OCTREE = 2;
-  const int8_t RANGE_IMAGE = 3;
+  const int8_t DEPTH_IMAGE = 3;
 }

@@ -1,6 +1,5 @@
 #include "LocalMap.hpp"
 
-#include <pcl/range_image/range_image_planar.h>
 #include <pcl/common/transforms.h>
 
 #include <octomap/octomap.h>
@@ -9,7 +8,7 @@
 #include "Utils.hpp"
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
-#include "RangeImageView.hpp"
+#include "DepthImageView.hpp"
 
 using namespace maps;
 
@@ -223,11 +222,11 @@ getAsOctree(const float iResolution, const bool iTraceRays,
   return view;
 }
 
-RangeImageView::Ptr LocalMap::
-getAsRangeImage(const int iWidth, const int iHeight,
+DepthImageView::Ptr LocalMap::
+getAsDepthImage(const int iWidth, const int iHeight,
                 const Eigen::Projective3f& iProjector,
                 const SpaceTimeBounds& iBounds) const {
-  RangeImageView::Ptr view(new RangeImageView());
+  DepthImageView::Ptr view(new DepthImageView());
   view->setSize(iWidth, iHeight);
   PointCloudView::Ptr cloudView = getAsPointCloud(0, iBounds);
   view->setSize(iWidth, iHeight);

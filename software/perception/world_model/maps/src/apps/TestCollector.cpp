@@ -1,35 +1,41 @@
 #include <fstream>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
+
 #include <pcl/range_image/range_image.h>
+
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
+#include <lcmtypes/drc/map_image_t.hpp>
+#include <lcmtypes/drc/map_cloud_t.hpp>
+
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
-#include <maps/Surfelizer.hpp>
 #include <maps/PointCloudView.hpp>
-#include <maps/RangeImageView.hpp>
+#include <maps/DepthImageView.hpp>
+#include <maps/LcmTranslator.hpp>
 #include <maps/Utils.hpp>
+#include <maps/BotWrapper.hpp>
 
 using namespace maps;
 using namespace std;
 
-
 class State {
 public:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  BotWrapper::Ptr mBotWrapper;
   boost::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
 
   State() {
-    mLcm.reset(new lcm::LCM());
+    mBotWrapper.reset(new BotWrapper());
     mCollector.reset(new Collector());
-    mCollector->setLcm(mLcm);
+    mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;
-    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "test-points");
+    mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
+                            "test-collector");
   }
 
   ~State() {
@@ -37,101 +43,98 @@ public:
   }
 };
 
-struct SurfelCreator: public Collector::DataListener {
-  State* mState;
-  Surfelizer mSurfelizer;
-  SurfelCreator() {
-    mSurfelizer.setScanRadius(2);
-    mSurfelizer.setPointRadius(2);
-  }
-  void notify(const SensorDataReceiver::SensorData& iData) {
-    mSurfelizer.addScan(*iData.mPointSet);
-  }
-};
-
-class DataProducer {
+class DataProducer : public Collector::DataListener {
 protected:
   State* mState;
 public:
   DataProducer(State* iState) : mState(iState) {}
 
-  void operator()() {
-    const float kPi = 4*tan(1);
-    const float degToRad = kPi/180;
-    while (true) {
-      // get submap we created earlier
-      LocalMap::Ptr localMap =
-        mState->mCollector->getMapManager()->getMap(mState->mActiveMapId);
+  void notify(const SensorDataReceiver::SensorData& iData) {
+    const float kPi = 4*atan(1);
+    const float kDegToRad = kPi/180;
 
-      // find time range of desired swath (from 45 to 135 degrees)
-      int64_t timeMin, timeMax;
-      mState->mCollector->getLatestSwath(45*degToRad, 135*degToRad,
-                                         timeMin, timeMax);
-      LocalMap::SpaceTimeBounds bounds;
-      bounds.mTimeMin = timeMin;
-      bounds.mTimeMax = timeMax;
+    // get submap we created earlier
+    LocalMap::Ptr localMap =
+      mState->mCollector->getMapManager()->getMap(mState->mActiveMapId);
 
-      // get and publish point cloud corresponding to this time range
-      // (for debugging)
-      maps::PointCloud::Ptr cloud =
-        localMap->getAsPointCloud(0, bounds)->getPointCloud();
-      bot_lcmgl_t* lcmgl = mState->mLcmGl;
-      bot_lcmgl_color3f(lcmgl, 0, 1, 0);
-      bot_lcmgl_point_size(lcmgl, 3);
-      for (int i = 0; i < cloud->size(); ++i) {
-        maps::PointCloud::PointType point = (*cloud)[i];
-        bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-        bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
-        bot_lcmgl_end(lcmgl);
-      }
-      bot_lcmgl_switch_buffer(lcmgl);
+    // find time range of desired swath (from 45 to 135 degrees)
+    // note that 0 and 180 degrees are equivalent
+    int64_t timeMin, timeMax;
+    mState->mCollector->getLatestSwath(45*kDegToRad, 135*kDegToRad,
+                                       timeMin, timeMax);
 
-      // set up sample camera pose
-      Eigen::Vector3f trans(0,0,0);
-      Eigen::Matrix3f rot;
-      rot.col(0) = -Eigen::Vector3f::UnitY();
-      rot.col(1) = -Eigen::Vector3f::UnitZ();
-      rot.col(2) = Eigen::Vector3f::UnitX();
-      Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-      pose.linear() = rot;
-      pose.translation() = trans;
+    // create space-time bounds from desired time range
+    // and a 6x6x6 data cube centered at (0,0,0)
+    LocalMap::SpaceTimeBounds bounds;
+    bounds.mTimeMin = timeMin;
+    bounds.mTimeMax = timeMax;
+    bounds.mPlanes = Utils::planesFromBox(Eigen::Vector3f(-3,-3,-3),
+                                          Eigen::Vector3f(3,3,3));
 
-      // set up sample camera projection parameters
-      int width(200), height(200);
-      Eigen::Matrix3f calib = Eigen::Matrix3f::Identity();
-      calib(0,0) = calib(1,1) = 50;  // focal length of 50 pixels
-      calib(0,2) = width/2.0;            // cop at center of image
-      calib(1,2) = height/2.0;
+    // get point cloud corresponding to this time range
+    PointCloudView::Ptr cloudView = localMap->getAsPointCloud(0, bounds);
+    drc::map_cloud_t cloudMessage;
 
-      // create range image
-      Eigen::Projective3f projector;
-      Utils::composeViewMatrix(projector, calib, pose, false);
-      RangeImageView::Ptr rangeImage =
-        localMap->getAsRangeImage(width, height, projector, bounds);
+    // publish compressed point cloud view over dummy lcm channel
+    LcmTranslator::toLcm(*cloudView, cloudMessage);
+    mState->mBotWrapper->getLcm()->publish("DUMMY_CLOUD", &cloudMessage);
 
-      // get range image pixel values and store to file
-      float* ranges = rangeImage->getRangeImage()->getRangesArray();
-      std::ofstream ofs("/tmp/ranges.txt");
-      for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-          ofs << ranges[i*width + j] << " ";
-        }
-        ofs << std::endl;
-      }
-      ofs.close();
-      std::cout << "Got range image" << std::endl;
-
-      // wait for timer expiration
-      boost::asio::io_service service;
-      boost::asio::deadline_timer timer(service);
-      timer.expires_from_now(boost::posix_time::seconds(2));
-      timer.wait();
-      std::cout << "Timer expired." << std::endl;
+    // publish raw cloud as lcmgl
+    maps::PointCloud::Ptr cloud = cloudView->getPointCloud();    
+    bot_lcmgl_t* lcmgl = mState->mLcmGl;
+    bot_lcmgl_color3f(lcmgl, 0, 1, 0);
+    bot_lcmgl_point_size(lcmgl, 3);
+    for (int i = 0; i < cloud->size(); ++i) {
+      maps::PointCloud::PointType point = (*cloud)[i];
+      bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+      bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
+      bot_lcmgl_end(lcmgl);
     }
+    bot_lcmgl_switch_buffer(lcmgl);
+
+    // set up sample camera pose for depth image
+    Eigen::Vector3f trans(0,0,0);   // camera position wrt world
+    Eigen::Matrix3f rot;            // camera orientation wrt world
+    rot.col(0) = -Eigen::Vector3f::UnitY();
+    rot.col(1) = -Eigen::Vector3f::UnitZ();
+    rot.col(2) = Eigen::Vector3f::UnitX();
+    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+    pose.linear() = rot;
+    pose.translation() = trans;
+
+    // set up sample camera projection parameters for depth image
+    int width(200), height(200);
+    Eigen::Matrix3f calib = Eigen::Matrix3f::Identity();
+    calib(0,0) = calib(1,1) = 50;  // focal length of 50 pixels
+    calib(0,2) = width/2.0;        // cop at center of image
+    calib(1,2) = height/2.0;
+
+    // create depth image (badly named as DepthImage due to underlying pcl)
+    Eigen::Projective3f projector;
+    Utils::composeViewMatrix(projector, calib, pose, false);
+    DepthImageView::Ptr depthImage =
+      localMap->getAsDepthImage(width, height, projector, bounds);
+
+    // get raw depth image pixel values and store to file
+    float* depths = depthImage->getRangeImage()->getRangesArray();
+    std::ofstream ofs("/tmp/depths.txt");
+    for (int i = 0; i < height; ++i) {
+      for (int j = 0; j < width; ++j) {
+        ofs << depths[i*width + j] << " ";
+      }
+      ofs << std::endl;
+    }
+    ofs.close();
+    std::cout << "Got depth image" << std::endl;
+
+    // transmit compressed depth image over dummy lcm channel
+    // note that the corresponding LcmTranslator::fromLcm() method
+    // can be used by the receiver to decode the message when it arrives
+    drc::map_image_t depthMsg;
+    LcmTranslator::toLcm(*depthImage, depthMsg);
+    mState->mBotWrapper->getLcm()->publish("DUMMY_DEPTH", &depthMsg);
   }
 };
-
-
 
 int main() {
   // create state object instance
@@ -155,19 +158,9 @@ int main() {
                laserChannel, "local");
   state.mCollector->start();
 
-  // start producing data
-  /*
-  DataProducer producer(&state);
-  boost::thread producerThread(boost::ref(producer));
-  */
-
-  SurfelCreator creator;
-  creator.mState = &state;
-  state.mCollector->addListener(creator);
+  DataProducer producer(&state);;
+  state.mCollector->addListener(producer);
 
   // main lcm loop
-  while (0 == state.mLcm->handle());
-
-  // join pending threads
-  //producerThread.join();
+  while (0 == state.mBotWrapper->getLcm()->handle());
 }
