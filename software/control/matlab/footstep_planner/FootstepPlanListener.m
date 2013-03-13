@@ -50,4 +50,3 @@ classdef FootstepPlanListener
 		end
 	end
 end
-

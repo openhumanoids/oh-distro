@@ -5,6 +5,7 @@ classdef FootstepViewer
     active_ndx
     listener
     publisher
+    lc
   end
   
 % Plan: [x; y; z; roll; pitch; yaw; time; id; fixed_x;
@@ -17,6 +18,7 @@ classdef FootstepViewer
       drawnow
       obj.listener = FootstepPlanListener('CANDIDATE_FOOTSTEP_PLAN');
       obj.publisher = FootstepPlanPublisher('FOOTSTEP_PLAN_CONSTRAINT');
+      obj.lc = lcm.lcm.LCM.getSingleton();
       disp('initialized')
     end
     
