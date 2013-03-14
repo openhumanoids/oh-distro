@@ -59,7 +59,7 @@ classdef FootstepPlanPublisher
 			msg.is_right_foot = X(15);
 
 			if ~msg.is_right_foot
-				msg.id = msg.id + 1e9; % offset left foot IDs
+				msg.id = msg.id + 1e9 + 1; % offset left foot IDs
 			end
 		end
 

@@ -48,7 +48,7 @@ classdef FootstepPlanListener
 		         r;p;y];
 
 		  if ~goal_msg.is_right_foot
-		  	goal_msg.id = goal_msg.id - 1e9; % remove left foot ID offset
+		  	goal_msg.id = goal_msg.id - 1e9 - 1; % remove left foot ID offset
 		  end
 		  X = [pos; goal_msg.step_time / 1000000; goal_msg.id;
 		           goal_msg.fixed_x;
