@@ -44,8 +44,10 @@ def plot_data():
   global last_utime
   global channels
   front_block =0 # offset into the future (to ensure no recent data not viewed)
+  print "len of channels: %d" %  len(channels)
   if ( len(msgs.utimes) >1):
     plt.figure(1)
+    print "draw"
     ############################################################
     ax1.cla()
     cols = 'rgbkmcwrgbkmcwrgbkmcwrgbkmcwrgbkmcwrgbkmcw'
@@ -96,6 +98,7 @@ def plot_data():
 
 # Microstrain INS/IMU Sensor:
 def on_bw(channel, data):
+  print "SDfsdf"
   m = bandwidth_stats_t.decode(data)
   
   # this keys of first recieved time
@@ -120,15 +123,15 @@ def on_bw(channel, data):
   last_utime = m.utime
   
 #################################################################################
-
+channels=[]
 
 lc = lcm.LCM()
 print "started"
 last_utime=0
 first_utime=0
 plot_window=30*1000000 #3sec
-msgs = SensorData(13); bytes = SensorData(13);
-cumbytes = SensorData(13); 
+msgs = SensorData(17); bytes = SensorData(17);
+cumbytes = SensorData(17);
 
 left, bottom, width, height =0.07, 0.07, 0.395, 0.395
 box_ul = [left, 2*bottom+height, width, height]
