@@ -28,16 +28,18 @@ classdef FootstepPlanPublisher
 		  trans.y = X(2);
 		  trans.z = X(3);
 		  rot = drc.quaternion_t();
-		  q = angle2quat(X(4)+pi, X(5), X(6), 'ZYX');
+          q = angle2quat(X(4), X(5), X(6), 'XYZ');
+		  %q = angle2quat(X(4)+pi, X(5), X(6), 'ZYX');
 		  % q = rpy2quat([X(4), X(5), X(6)]);
 		  % disp('rpy')
 		  % [X(4), X(5), X(6)]
 		  % disp('quat')
 		  % q
-		  rot.x = q(1);
-		  rot.y = q(2);
-		  rot.z = q(3);
-		  rot.w = q(4);
+          rot.w = q(1);
+		  rot.x = q(2);
+		  rot.y = q(3);
+		  rot.z = q(4);
+		 
 		  msg.pos.translation = trans;
 		  msg.pos.rotation = rot;
 		  msg.step_time = int64(X(7) * 1000000);
