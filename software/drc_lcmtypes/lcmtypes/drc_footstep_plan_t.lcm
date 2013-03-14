@@ -6,5 +6,6 @@ struct footstep_plan_t
 	string robot_name;
 	int32_t num_steps;
 	footstep_goal_t footstep_goals[num_steps];
+	boolean is_new_plan; // Distinguish new plans from incremental updates
 }
     
