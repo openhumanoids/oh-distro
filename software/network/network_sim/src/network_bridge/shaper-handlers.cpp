@@ -47,7 +47,7 @@ struct MessageQueue
 std::string DebugStringNoData(const drc::ShaperPacket& a)
 {
     std::string s = a.ShortDebugString();
-    return s.substr(0, s.find("data:"));    
+    return s.substr(0, s.find("data:")) + " data.size(): " + goby::util::as<std::string>(a.data().length());    
 }
 
 template<typename Char>
@@ -391,8 +391,8 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     drc::ShaperPacket packet;
     packet.ParseFromString(msg.frame(0));
 
-    //    cout << "received: " << app_.get_current_utime() << " | "
-    //     << DebugStringNoData(packet) << std::endl;    
+    cout << "received: " << app_.get_current_utime() << " | "
+         << DebugStringNoData(packet) << std::endl;    
     
     receive_queue_[packet.channel()][packet.message_number()][packet.fragment()] = packet;
     if(packet.is_last_fragment())
@@ -407,12 +407,14 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
 	    
 	    check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
 				 &buffer[0], packet.data().size()));
+
+	    receive_queue_[packet.channel()][packet.message_number()].clear();
         }
         else
         {
             // try to reconstruct
             std::cout << "Trying to reconstruct message with last fragment: " << DebugStringNoData(packet) << std::endl;
-            
+	    
 	    //            std::cout << "Checking " << RECEIVE_MODULUS/2 << " assumed oldest message numbers" << std::endl;
             
             std::map<int, std::map<int, drc::ShaperPacket> >& this_queue = receive_queue_[packet.channel()];
@@ -424,12 +426,12 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             
             for(int i = begin; i != end; )
             {
-	      //                std::cout << "Check #" << i << ": ";
+	                      std::cout << "Check #" << i << ": ";
 
                 std::map<int, std::map<int, drc::ShaperPacket> >::iterator it = this_queue.find(i);
                 if(it == this_queue.end() || it->second.empty())
 		  {
-		    //		    std::cout << "Ok, packet has been processed." << std::endl;
+		    	    std::cout << "Ok, packet has been processed." << std::endl;
 		  }
 		    else
                 {
