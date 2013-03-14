@@ -85,6 +85,10 @@ group "3.sensing" {
         exec = "maps-heightmap-publisher";
         host = "localhost";
     }
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "localhost";
+    }
 }
 
 group "4.drake_robot" {
