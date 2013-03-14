@@ -31,8 +31,8 @@ namespace renderer_sticky_feet
       cerr << "\nLCM Not Good: Robot FootStepPlan Handler" << endl;
       return;
     }
-      on_motion_footstep_index=-1;
-      on_motion_footstep_utime= 0;
+      in_motion_footstep_id=-1;
+
      _last_plan_approved = false;
      _left_foot_name ="l_foot";
      _right_foot_name = "r_foot";
@@ -106,26 +106,37 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
   	int num_steps = 0;
 		num_steps = msg->num_steps;   
 
-    //clear stored data
-    int old_list_size = _gl_planned_stickyfeet_list.size();
-    if(old_list_size!=num_steps){
-      _gl_planned_stickyfeet_list.clear();
-      _planned_stickyfeet_info_list.clear();
-      _gl_planned_stickyfeet_timestamps.clear();
-      _gl_planned_stickyfeet_ids.clear();
-      //_collision_detector.reset();
-      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+		if(msg->is_new_plan)
+    {
+      // clear old motion copy
+      _gl_in_motion_copy.reset();
+      in_motion_footstep_id=-1;
     }
+    
+		int old_in_motion_footstep_id=in_motion_footstep_id; 		
+
+    //clear stored data
+    _gl_planned_stickyfeet_list.clear();
+    _planned_stickyfeet_info_list.clear();
+    _gl_planned_stickyfeet_timestamps.clear();
+    _gl_planned_stickyfeet_ids.clear();
+    
+    
+
+    
+    //cout << "utime: "<< msg->utime<< endl;
    
     for (uint i = 0; i <(uint)num_steps; i++)
     {
      
     
-      drc::footstep_goal_t goal_msg  = msg->footstep_goals[i];      
-      // _gl_planned_stickyfeet_timestamps.push_back(msg->goal_times[i]);
+      drc::footstep_goal_t goal_msg  = msg->footstep_goals[i]; 
       _gl_planned_stickyfeet_timestamps.push_back(goal_msg.step_time);
       _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
       
+      
+      cout << "id: "<< goal_msg.id<< endl;
+      cout << "timestamp: "<< goal_msg.step_time<< endl;
       std::stringstream oss;
       oss << msg->robot_name << "_"<< goal_msg.id;
      // cout << "names: "<< oss.str() << endl;
@@ -133,17 +144,19 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       KDL::Frame T_worldframe_meshframe;
       transformLCMToKDL(goal_msg.pos, T_worldframe_meshframe);
       
-      // if(goal_msg.ee_name==_left_foot_name)
+      StickyFeetInfoStruct info;
+       bool is_constrained = ((goal_msg.fixed_x)||(goal_msg.fixed_y)||(goal_msg.fixed_z)||(goal_msg.fixed_roll)||(goal_msg.fixed_pitch)||(goal_msg.fixed_yaw));
       if(!goal_msg.is_right_foot)
       {
 
         KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
         KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_left;
-
       
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
-        _planned_stickyfeet_info_list.push_back(FootStepPlanListener::LEFT);
+         info.foot_type = FootStepPlanListener::LEFT;
+         info.is_fixed=is_constrained;
+        _planned_stickyfeet_info_list.push_back(info);
         _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true);
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
@@ -160,7 +173,9 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
-        _planned_stickyfeet_info_list.push_back(FootStepPlanListener::RIGHT);
+         info.foot_type = FootStepPlanListener::RIGHT;
+         info.is_fixed=is_constrained;
+        _planned_stickyfeet_info_list.push_back(info);
         _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
@@ -168,15 +183,17 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
         _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }  
+      
+      
+//      if((old_in_motion_footstep_id!=-1)&&(old_in_motion_footstep_id == goal_msg.id))
+//      {      
+//        _gl_planned_stickyfeet_list[i]->enable_bodypose_adjustment(true); // make the current in_motion_footstep persistent across candidate plan publishes
+//      }
+      
+     
 
     }//end for num of goals;
 
-        
-      if((on_motion_footstep_index!=-1)){
-        int index= on_motion_footstep_index;  //use on_motion_footstep_utime to do a nearest neighbor search)
-       _gl_planned_stickyfeet_list[index]->enable_bodypose_adjustment(true);
-      }
-    
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage

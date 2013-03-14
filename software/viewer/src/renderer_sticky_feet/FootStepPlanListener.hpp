@@ -23,7 +23,12 @@ using namespace visualization_utils;
 
 namespace renderer_sticky_feet
 {
-
+  typedef struct _StickyFeetInfoStruct
+  {
+    int foot_type; // left or right
+    bool is_fixed;
+  } StickyFeetInfoStruct;
+  
   class FootStepPlanListener
   {
     //--------fields
@@ -41,6 +46,7 @@ namespace renderer_sticky_feet
 
     std::string _left_urdf_xml_string;
     std::string _right_urdf_xml_string;
+
 
 
    //----------------constructor/destructor   
@@ -62,48 +68,62 @@ namespace renderer_sticky_feet
     FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
     ~FootStepPlanListener();
     
-   // boost::shared_ptr<collision::Collision_Detector> _collision_detector;
+
+
+    // the cache
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_planned_stickyfeet_list; 
     std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
     std::vector< int32_t >  _gl_planned_stickyfeet_ids;
-        
-        
-    
-    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody>   _gl_on_motion_copy;
-    int on_motion_footstep_index; // make markers for moving footsteps persistent across multiple plans
-    int64_t on_motion_footstep_utime;
-    
-    
     enum _foot_type
     {
        LEFT=0, RIGHT
     } foot_type; 
     
-    std::vector< int >  _planned_stickyfeet_info_list; 
-    
+    std::vector< StickyFeetInfoStruct >  _planned_stickyfeet_info_list;
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody>   _gl_in_motion_copy;
 
+       
+
+    // methods
     void commit_footstep_plan(int64_t utime,string &channel);
-    
-        
     void create_sticky_foot_local_copy(int index){
-      _gl_on_motion_copy.reset();
-      _gl_on_motion_copy = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
+      _gl_in_motion_copy.reset();
+      _gl_in_motion_copy = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
       map<string,double> jointpos_in;
       jointpos_in = _gl_planned_stickyfeet_list[index]->_current_jointpos;    
-      _gl_on_motion_copy->set_state(_gl_planned_stickyfeet_list[index]->_T_world_body,jointpos_in);
-      _gl_on_motion_copy->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
-      on_motion_footstep_index=index;
-      on_motion_footstep_utime=_gl_planned_stickyfeet_timestamps[index];
+      _gl_in_motion_copy->set_state(_gl_planned_stickyfeet_list[index]->_T_world_body,jointpos_in);
+      _gl_in_motion_copy->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
+      in_motion_footstep_id=_gl_planned_stickyfeet_ids[index];
+    };
+    
+    bool is_motion_copy(int index){    
+      if(_gl_in_motion_copy)//exists
+        return (_gl_planned_stickyfeet_ids[index]==in_motion_footstep_id);  
+      else
+        return false;
+    };
+    
+    int get_motion_copy_index()
+    {  
+      std::vector<int32_t>::const_iterator found;
+      found = std::find (_gl_planned_stickyfeet_ids.begin(), _gl_planned_stickyfeet_ids.end(), in_motion_footstep_id); 
+      if(found != _gl_planned_stickyfeet_ids.end()) 
+      {  
+          int index = found - _gl_planned_stickyfeet_ids.begin();
+          return index;
+      }  
+      return  -1.0; 
     };
     
      //-------------message callback
     private:
+    
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		        const std::string& chan, 
 		        const drc::footstep_plan_t* msg);
 
     bool load_foot_urdfs();
-
+    int in_motion_footstep_id; // make markers for moving footsteps persistent across multiple plans
 
    
     
