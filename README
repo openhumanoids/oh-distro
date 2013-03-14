@@ -36,6 +36,7 @@ libqhull-dev
 libtinyxml-dev
 libglew1.6-dev
 libgtkmm-2.4-dev
+libboost-random1.46-dev
 Probably required: (to be confirmed)
     mesa-common-dev
     libgl1-mesa-dev
@@ -44,7 +45,7 @@ Probably required: (to be confirmed)
     libsuitesparse-dev
 
 >>>>> In one command <<<<<<
-sudo apt-get install cmake build-essential libglib2.0-dev openjdk-6-jdk python-dev  libgsl0-dev gsl-bin libusb-1.0-0-dev libgtk2.0-dev freeglut3-dev python-gtk2 libgtk2.0-dev libvtk5-dev gtk-doc-tools libqhull-dev libtinyxml-dev libglew1.6-dev libgtkmm-2.4-dev
+sudo apt-get install cmake build-essential libglib2.0-dev openjdk-6-jdk python-dev  libgsl0-dev gsl-bin libusb-1.0-0-dev libgtk2.0-dev freeglut3-dev python-gtk2 libgtk2.0-dev libvtk5-dev gtk-doc-tools libqhull-dev libtinyxml-dev libglew1.6-dev libgtkmm-2.4-dev libboost-random1.46-dev
 
 1a (OpenNI: required only for the externals/kinect):
 sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
