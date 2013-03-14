@@ -166,7 +166,7 @@ App::App(const std::string & stereo_in,
   
   if (!control_only_){
     // Laser:
-    rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/scan"), 10, &App::rotating_scan_cb,this);
+    rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 10, &App::rotating_scan_cb,this);
     // Porterbot
     scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
     scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
