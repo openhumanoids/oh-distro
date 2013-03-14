@@ -16,9 +16,9 @@
     </plugin>
     -->
   </gazebo>
+  <!-- MIT ADDONS MUST BE REMOVED -->
   <gazebo>
-  <!-- mit add on to be removed -->
-   <!-- mfallon, sisir: depreciating MIT's cheat [feb 2013]
+  <!-- mfallon, sisir: depreciating MIT's cheat [feb 2013]
     <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>200.0</updateRate>
@@ -28,8 +28,8 @@
    -->
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
-  <!-- END MIT ADD ON -->
   </gazebo>
+  <!-- MIT ADDONS END -->
     
   <link name="imu_link">
     <!-- imu -->
