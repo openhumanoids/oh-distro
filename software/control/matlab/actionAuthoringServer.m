@@ -7,7 +7,7 @@ if(nargin<1)
 elseif(IK == 1)
     action_options.IK = true;
     action_options.ZMP = false;
-elseif(IK == 0)
+elseif(IK == 2)
     action_options.IK = false;
     action_options.ZMP = true;
 end
@@ -69,34 +69,41 @@ while (1)
           collision_group = find(strcmpi(char(goal.object_1_contact_grp),body.collision_group_name));
           if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
           p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
-          pos.min=p-goal.target_pt_radius*[1;1;0];
-          pos.max=p+goal.target_pt_radius*[1;1;0];
+          pos = struct();
+          pos.max = inf(3,1);
+          pos.min = -inf(3,1);
           if(goal.x_relation == 0)
-              pos.min(1) = p(1);
-              pos.max(1) = p(1);
+              pos.min(1) = p(1)+goal.target_pt_radius;
+              pos.max(1) = p(1)-goal.target_pt_radius;
           elseif(goal.x_relation == 1)
-              pos.max(1) = min(pos.max(1),p(1));
+              pos.max(1) = p(1);
+              pos.min(1) = -inf;
           elseif(goal.x_relation == 2)
-              pos.min(1) = max(pos.min(1),p(1));
+              pos.min(1) = p(1);
+              pos.max(1) = inf;
           end
           if(goal.y_relation == 0)
-              pos.min(2) = p(2);
-              pos.max(2) = p(2);
+              pos.min(2) = p(2)-goal.target_pt_radius;
+              pos.max(2) = p(2)+goal.target_pt_radius;
           elseif(goal.y_relation == 1)
-              pos.max(2) = min(pos.max(2),p(2));
+              pos.max(2) = p(2);
+              pos.min(2) = -inf;
           elseif(goal.y_relation == 2)
-              pos.min(2) = max(pos.min(2),p(2));
+              pos.min(2) = p(2);
+              pos.max(2) = inf;
           end
-          if(goal.z_relation == 0)
-              pos.min(3) = p(3);
-              pos.max(3) = p(3);
-          elseif(goal.z_relation == 1)
-              pos.max(3) = min(pos.max(3),p(3));
-          elseif(goal.z_relation == 2)
-              pos.min(3) = max(pos.min(3),p(3));
-          end
+%           if(goal.z_relation == 0)
+%               pos.min(3) = p(3);
+%               pos.max(3) = p(3);
+%           elseif(goal.z_relation == 1)
+%               pos.max(3) = min(pos.max(3),p(3));
+%           elseif(goal.z_relation == 2)
+%               pos.min(3) = max(pos.min(3),p(3));
+%           end
+          pos.max(3) = 0;
+          pos.min(3) = 0;
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
-          action_constraint = ActionKinematicConstraint(body,collision_group,pos,tspan,body.linkname);
+          action_constraint = ActionKinematicConstraint(body,mean(body.getContactPoints(collision_group),2),pos,tspan,body.linkname);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
           for body_ind = 1:length(r.body)
               body_contact_pts = r.body(body_ind).getContactPoints();
@@ -111,9 +118,10 @@ while (1)
       % planning and IK for the whole sequence.
       if(action_options.ZMP)
           dt = 0.01;
-          window_size = floor((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
+          window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81,struct('supportPolygonConstraints',true));
           t_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+          t_breaks(end) = action_sequence.tspan(end);
           contact_tol = 1e-4;
           contact_pos = zeros(2,r.num_contacts, window_size);
           contact_flag = false(r.num_contacts,window_size);
@@ -123,14 +131,32 @@ while (1)
               for j = 3:3:length(ikargs)
                   for k = 1:size(ikargs{j}.max,2)
                       if(ikargs{j}.max(3,k)<contact_tol)
-                          num_contacts = num_contact+1;
+                          num_contacts = num_contacts+1;
                           contact_pos(:,num_contacts,i) = mean([ikargs{j}.max(1:2,k) ikargs{j}.min(1:2,k)],2);
                           contact_flag(num_contacts,i) = true;
                       end
                   end
               end
           end
-%           com_plan = zmp_planner.planning(
+          % solve the IK for the key time samples, then interpolate the COM
+          % height as the desired COM height
+          q_key_time_samples = zeros(r.getNumDOF(),length(action_sequence.key_time_samples));
+          com_key_time_samples = zeros(3,length(action_sequence.key_time_samples));
+          for i = 1:length(action_sequence.key_time_samples)
+              ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
+              if(isempty(ikargs))
+                  q_key_time_samples(:,i) = options.q_nom;
+              else
+                  q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
+              end
+              com_key_time_samples(:,i) = r.getCOM(q_key_time_samples(:,i));
+          end
+          com_height_traj = PPTrajectory(foh(action_sequence.key_time_samples,com_key_time_samples(3,:)));
+          com_height = com_height_traj.eval(t_breaks);
+          q0 = q;
+          com0 = r.getCOM(q0);
+          comdot0 = 0*com0;
+          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,active_contact_flag,com_height,t_breaks);
       end
       ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
       if isempty(ikargs)
