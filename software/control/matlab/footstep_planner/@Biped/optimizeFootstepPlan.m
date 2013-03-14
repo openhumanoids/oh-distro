@@ -1,4 +1,7 @@
-function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatefun, data)
+function [Xright, Xleft] = optimizeFootstepPlan(biped, x0, poses, outputfun, updatefun, data)
+q0 = x0(1:end/2);
+[start_pos, step_width] = biped.feetPosition(q0);
+poses = [start_pos, poses(:,end)];
 
   if nargin < 5
     interactive = false;

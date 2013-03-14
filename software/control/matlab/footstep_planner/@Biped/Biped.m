@@ -28,6 +28,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'max_step_length', .55,... % m
         'max_step_rot', pi/4,... % rad
         'r_foot_name', 'r_foot',...
+        'step_width', 0.22,...
         'l_foot_name', 'l_foot',...
         'foot_angles', [-pi/2, pi/2]);
       fields = fieldnames(defaults);
@@ -41,12 +42,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     end
     
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
-      q0 = x0(1:end/2);
-      [start_pos, obj.step_width] = obj.feetPosition(q0);
       % [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
 
       if ~options.interactive
-        [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses]);
+        [Xright, Xleft] = obj.optimizeFootstepPlan(x0, poses);
         return;
       end 
 
