@@ -358,9 +358,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                         msg_frag.set_is_last_fragment(enc_done);
                         send_queue_.push(msg_frag);
                     }                    
-                    it->second.messages.pop_back();
-                    break;
                 }
+		it->second.messages.pop_back();
+		break;
             }
             
             
