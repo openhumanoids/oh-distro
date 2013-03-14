@@ -28,7 +28,12 @@ classdef FootstepPlanPublisher
 		  trans.y = X(2);
 		  trans.z = X(3);
 		  rot = drc.quaternion_t();
-		  q = FootstepPlanPublisher.quatnormalize(angle2quat(X(4), X(5), X(6), 'XYZ'));
+		  q = angle2quat(X(4)+pi, X(5), X(6), 'ZYX');
+		  % q = rpy2quat([X(4), X(5), X(6)]);
+		  % disp('rpy')
+		  % [X(4), X(5), X(6)]
+		  % disp('quat')
+		  % q
 		  rot.x = q(1);
 		  rot.y = q(2);
 		  rot.z = q(3);
@@ -48,7 +53,7 @@ classdef FootstepPlanPublisher
 
 		function qout = quatnormalize(q)
 			norm = sqrt(q(1)^2 + q(2)^2 + q(3)^2 + q(4)^2);
-			qout = q ./ repmat(norm, 1, 4);
+			qout = q ./ (norm .* ones(size(q)));
 		end
 
 		function msg = encodeFootstepPlan(X)
