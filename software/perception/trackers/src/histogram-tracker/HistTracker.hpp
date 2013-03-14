@@ -101,7 +101,7 @@ class HistTracker {
     void update_prediction(const cv::Mat& img);
     bool update(cv::Mat& img, float scale); 
     cv::Mat get_belief(); 
-    void computeMaskROI(const cv::Mat& img, const cv::Mat& mask);
+    bool computeMaskROI(const cv::Mat& img, const cv::Mat& mask);
     void showHistogramInfo(cv::Mat& img);
     void plot_histogram(char* win); 
 };

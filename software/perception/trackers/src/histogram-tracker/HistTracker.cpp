@@ -31,13 +31,13 @@ HistTracker::internal_init() {
     return;
 }
 
-void 
+bool 
 HistTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask) { 
     std::vector<std::vector<cv::Point> > contours;
     findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
-    int minx = std::numeric_limits<int>::max(), miny = minx; 
-    int maxx = std::numeric_limits<int>::min(), maxy = maxx;
+    int minx = img.cols, miny = img.rows; 
+    int maxx = -1, maxy = -1;
     for (int j=0; j<contours.size(); j++) { 
         for (int k=0; k<contours[j].size(); k++) { 
             int x = contours[j][k].x; 
@@ -50,13 +50,21 @@ HistTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask) {
     }
     int rx = minx - 5, ry = miny - 5; 
     int rw = maxx-minx + 10, rh = maxy-miny + 10;
+    if (!(rx >=0 && rx + rw < img.cols && 
+          ry >=0 && ry + rh < img.rows) || rh <= 0 || rw <= 0)
+        return false;
+
     cv::Mat roi = cv::Mat(img, cv::Rect(rx, ry, rw, rh));
     roi.copyTo(object_roi);
-    return;
+    return true;
 }
 
 bool
 HistTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
+
+    // Compute mask roi for debug
+    if (!computeMaskROI(img, mask)) 
+        return false;
 
     // Convert to HSV space
     cv::Mat hsv; 
@@ -86,9 +94,6 @@ HistTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
     // Create debug histograms
     hue_info.createHistogramImage();
     val_info.createHistogramImage();
-    
-    // Compute mask roi for debug
-    computeMaskROI(img, mask);
 
     // cv::Mat display = img.clone();
     // showHistogramInfo(display);
@@ -131,21 +136,24 @@ HistTracker::update(cv::Mat& img, float scale) {
     hue_info.backProjectUnimodal(hue, hue_bp);
     val_info.backProjectUnimodal(val, val_bp);
 
-    cv::Mat bp;
-    multiply(hue_bp, val_bp, bp);
+    cv::Mat _bp;
+    multiply(hue_bp, val_bp, _bp);
 
     // Upsample image
-    cv::Mat _bp;
+    cv::Mat bp;
     if (scale == 1.f)
-        _bp = bp;
+        bp = _bp;
     else
-        cv::resize(bp, _bp, cv::Size(), 1.f/scale, 1.f/scale, cv::INTER_LINEAR);
+        cv::resize(_bp, bp, cv::Size(), 1.f/scale, 1.f/scale, cv::INTER_LINEAR);
 
     // cv::imshow( "Hue Belief", hue_bp * 255); 
     // cv::imshow( "Val Belief", val_bp * 255); 
-
     showHistogramInfo(img);
-    cv::imshow( "Belief", _bp * 255); 
+
+    cv::Mat bp3;
+    cv::cvtColor(bp * 200, bp3, CV_GRAY2BGR);
+    addWeighted(img, 0.5, bp3, 0.5, 0, img); 
+
     return true;
 }
 
