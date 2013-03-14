@@ -49,7 +49,6 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
       if interactive
         [data, changed, changelist] = updatefun(data);
         if changelist.plan_commit || changelist.plan_reject
-          [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
           done = true;
           break
         end
@@ -65,14 +64,13 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
           break
         end
       end
-      if done
-        break
-      end
+    end
+    if done
+      break
     end
 
     [X, outputflag] = updateFootstepPlan(biped, X, @heightfun);
     
-    [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
     if isequal(size(X_old), size(X)) && all(all(abs(X_old - X) < 0.01))
       modified = false;
     else
@@ -86,6 +84,12 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
       break
     end
   end
+
+  total_steps = length(X(1,:));
+  ndx = biped.getStepNdx(total_steps);
+  [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
+  Xright(3,:) = heightfun(Xright(1:2,:))
+  Xleft(3,:) = heightfun(Xleft(1:2,:))
 end
 
 function h = heightfun(xy)

@@ -49,34 +49,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses]);
         return;
       end 
-      lc = lcm.lcm.LCM.getSingleton();
-      aggregator = lcm.lcm.MessageAggregator();
-      lc.subscribe('REJECTED_FOOTSTEP_PLAN', aggregator);
-      lc.subscribe('COMMITTED_FOOTSTEP_PLAN', aggregator);
-      lc.subscribe('FOOTSTEP_PLAN_CONSTRAINT', aggregator);
-      function [data, changed, changelist] = updatefun(data)
-        changed = false;
-        changelist = struct('plan_con', false, 'plan_commit', false, 'plan_reject', false);
-        while 1
-          msg = aggregator.getNextMessage(10);
-          if isempty(msg)
-            break
-          end
-          if strcmp(msg.channel, 'REJECTED_FOOTSTEP_PLAN')
-            changelist.plan_reject = true;
-            changed = true;
-          elseif strcmp(msg.channel, 'COMMITTED_FOOTSTEP_PLAN')
-            changelist.plan_commit = true;
-            changed = true;
-          else
-            changelist.plan_con = true;
-            changed = true;
-            data.plan_con = drc.footstep_plan_t(msg.data);
-          end
-        end
-      end
-      [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses], @(X) obj.publish_footstep_plan(X), @updatefun, struct());
 
+      planner = FootstepPlanner(obj)
+      [Xright, Xleft] = planner.plan(poses(:,end), struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
       if options.plotting
         figure(22)
         plotFootstepPlan([], Xright, Xleft);

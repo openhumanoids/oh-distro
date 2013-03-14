@@ -6,7 +6,7 @@ classdef DRCPlanner
     request_coder;
     monitors;  % array of MessageMonitors
     coders;  % array of lcmCoders
-    constructors=[];  % array of lcm type constructors
+    constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     required=[];  % boolean array saying whether each message monitor is required
     updatable=[]; % boolean array saying whether each input should be updated during the plan
     name={};
@@ -43,6 +43,7 @@ classdef DRCPlanner
         obj.coders{n} = lcmtype_or_lcmcoder;
         lcmtype = obj.coders{n}.encode(0,zeros(obj.coders{n}.dim(),1));
       else
+        obj.coders{n} = [];
         [lcmtype,obj.constructors(n)]=DRCPlanner.parseLCMType(lcmtype_or_lcmcoder);
       end
       if (nargin<4) required = false; end
@@ -70,7 +71,8 @@ classdef DRCPlanner
           d = getMessage(obj.monitors{i});
           if ~isempty(d)
             if isempty(obj.coders{i})
-              data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
+              % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
+              data = setfield(data,obj.name{i},obj.constructors(i).newInstance(d));
             else
               data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
             end
@@ -92,7 +94,7 @@ classdef DRCPlanner
           fprintf(1,'waiting... (t=%f)\n',toc);
         else
           if isempty(obj.request_coder)
-            msg = obj.lcmtype_constructor.newInstance(fd);
+            msg = obj.request_constructor.newInstance(fd);
             utime=msg.utime;
           else
             [msg,tmsg] = obj.request_coder.decode(fd);
@@ -104,7 +106,8 @@ classdef DRCPlanner
             d = getMessage(obj.monitors{i});
             if ~isempty(d)
               if isempty(obj.coders{i})
-                data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
+                % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
+                data = setfield(data,obj.name{i},obj.constructors(i).newInstance(d));
               else
                 data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
               end

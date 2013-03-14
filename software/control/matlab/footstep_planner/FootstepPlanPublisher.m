@@ -57,6 +57,10 @@ classdef FootstepPlanPublisher
 			msg.fixed_pitch = X(13);
 			msg.fixed_yaw = X(14);
 			msg.is_right_foot = X(15);
+
+			if ~msg.is_right_foot
+				msg.id = msg.id + 1e9; % offset left foot IDs
+			end
 		end
 
 		function qout = quatnormalize(q)

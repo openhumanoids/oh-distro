@@ -23,6 +23,16 @@ classdef FootstepViewer
     end
     
     function run(obj)
+      % nav_goal_coder = NavGoalCoder('atlas');
+      % goal_msg = nav_goal_coder.encode([1;1;0;0;0;0]);
+      % obj.lc.publish('NAV_GOAL_TIMED', goal_msg);
+
+      % r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
+      % d = load('../data/atlas_fp.mat');
+      % xstar = d.xstar;
+      % r = r.setInitialState(xstar);
+      % state_coder = 
+
       set(obj.hFig, 'WindowButtonUpFcn', @(s, e) mouse_up_handler());
       set(obj.hFig, 'WindowButtonDownFcn', @(s, e) mouse_down_handler());
       uicontrol('style', 'pushbutton', 'String', 'Done', 'Callback', @(s, e) confirm_plan());

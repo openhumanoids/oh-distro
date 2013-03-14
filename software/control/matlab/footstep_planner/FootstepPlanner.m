@@ -1,7 +1,7 @@
 classdef FootstepPlanner < DRCPlanner
   properties
     biped
-    plan_publisher
+    % plan_publisher
     lc
   end
   
@@ -18,12 +18,12 @@ classdef FootstepPlanner < DRCPlanner
 
       nx = obj.biped.getNumStates();
       joint_names = obj.biped.getStateFrame.coordinates(1:nx/2);
-      obj.plan_publisher = FootstepPlanPublisher('CANDIDATE_FOOTSTEP_PLAN');
+      % obj.plan_publisher = FootstepPlanPublisher('CANDIDATE_FOOTSTEP_PLAN');
       
-      obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame.lcmcoder,true,true);
-      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t, false, true);
-      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t, false, true);
-      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t, false, true);
+      obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame().lcmcoder,true,true);
+      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
+      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
+      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
     end
     
     function [Xright, Xleft] = plan(obj,navgoal,data)
@@ -31,8 +31,8 @@ classdef FootstepPlanner < DRCPlanner
       options.plotting = true;
       options.interactive = true;
       options.heel_toe = false;
-      poses = [data.x0, navgoal];
-      [Xright, Xleft] = obj.biped.optimizeFootstepPlan(poses, @publish, @obj.updateData, data);
+      poses = [data.x0(1:6), navgoal];
+      [Xright, Xleft] = obj.biped.optimizeFootstepPlan(poses, @publish, @obj.updateData, data)
 
       function publish(X)
         [data, changed, changelist] = obj.updateData(data);
