@@ -34,8 +34,14 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
   bw_cumsum_base2robot = 0;
   
   //bot_param = bot_param_new_from_file("/home/mfallon/drc/software/config/drc_robot.cfg");
-  bot_param = bot_param_new_from_server(robot_lcm->getUnderlyingLCM(), 0);
-  
+  if (bot_only){
+    cout << "getting params from robot url\n";
+    bot_param = bot_param_new_from_server(robot_lcm->getUnderlyingLCM(), 0);
+  }else{ // if bot is not true, then get it from base
+    cout << "getting params from base url\n";
+    bot_param = bot_param_new_from_server(base_lcm->getUnderlyingLCM(), 0);
+  }
+
   if (bot_param == NULL) {
     std::cerr << "Couldn't get bot param from file " << std::endl;
     exit(-1);
@@ -169,27 +175,67 @@ void KMCLApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& c
 
 int main (int argc, char ** argv) {
   string task = "driving";
-  bool bot_only = false;
+  bool bot_only = true;
   bool base_only = false;
+  string role = "robot";
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(task, "t", "task","Task: driving, walking, manipulation");
-  opt.add(bot_only, "r", "robotonly", "If true, do not LCM connect base side.");
-  opt.add(base_only, "b", "baseonly", "If true, do not LCM connect robot side.");
+  opt.add(role, "r", "role", "Role: robot, base or both (local system mode)");
   opt.parse();
   std::cout << "task: " << task << "\n";
+  std::cout << "role: " << role << "\n";
+  if (role=="robot"){
+    bot_only = true;
+    base_only = false;
+  } else if (role=="base"){
+    bot_only = false;
+    base_only = true;
+  } else if (role=="both"){
+    bot_only = false;
+    base_only = false;
+  } else{
+    std::cout << "mode not understood\n";
+    exit(-1);
+  }  
   std::cout << "robot only: " << bot_only << "\n";
   std::cout << "base only: " << base_only << "\n";
 
-  boost::shared_ptr<lcm::LCM> robot_lcm(new lcm::LCM);
+
+  char* lcm_url_robot;
+  lcm_url_robot = getenv ( "LCM_URL_DRC_ROBOT" );
+  if (lcm_url_robot!=NULL){
+    printf ("The lcm_url_robot is: %s\n",lcm_url_robot);      
+  }else{
+    std::cout << lcm_url_robot << " environment variable has not been set ["<< lcm_url_robot <<"]\n";     
+    exit(-1);
+  }
+
+
+  char* lcm_url_base;
+  lcm_url_base = getenv ( "LCM_URL_DRC_BASE" );
+  if (lcm_url_base!=NULL){
+    printf ("The lcm_url_base is: %s\n",lcm_url_base);      
+  }else{
+    std::cout << lcm_url_base << " environment variable has not been set ["<< lcm_url_base <<"]\n";     
+    exit(-1);
+  }
+
+
+
+
+  boost::shared_ptr<lcm::LCM> robot_lcm(new lcm::LCM( lcm_url_robot )  );
   if(!robot_lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-  boost::shared_ptr<lcm::LCM> base_lcm(new lcm::LCM("udpm://239.255.12.68:1268?ttl=1")  );
+  boost::shared_ptr<lcm::LCM> base_lcm(new lcm::LCM( lcm_url_base )  );
   if(!base_lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
+
+
+
   
   KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,task,base_only,bot_only);
   boost::thread_group thread_group;
