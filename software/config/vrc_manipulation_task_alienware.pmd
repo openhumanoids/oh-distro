@@ -108,22 +108,22 @@ group "5.base" {
         host = "paladin-01";
     }
     cmd "param_server" {
-        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.76.68:1268?ttl=0'";
+        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "paladin-01";
     }
 }
 
 group "6.drake_base" {
     cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:1268?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
        host = "paladin-01";
     }
     cmd "footstep_planner" {
-       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:1268?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
        host = "paladin-01";
     }
     cmd "base_planner" {
-       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:1268?ttl=0')\" ";
+       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0')\" ";
        host = "paladin-01";
     }
 }
@@ -161,7 +161,7 @@ group "X.misc" {
         host = "paladin-02";
     }
     cmd "base_spy" {
-        exec = "bot-spy -l 'udpm://239.255.76.68:1268?ttl=0'";
+        exec = "bot-spy -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "paladin-01";
     }
     cmd "teleop" {
