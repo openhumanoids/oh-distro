@@ -58,6 +58,7 @@ public:
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image");
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State");
+    addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List");
     addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog");
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree");
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height");

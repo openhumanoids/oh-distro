@@ -50,6 +50,9 @@ struct Worker {
       case drc::data_request_t::MINIMAL_ROBOT_STATE:
         sendMinimalRobotStateRequest();
         break;
+      case drc::data_request_t::AFFORDANCE_LIST:
+        sendAffordanceListRequest();
+        break;
       case drc::data_request_t::MAP_CATALOG:
         sendMapViewCatalogRequest();
         break;
@@ -94,6 +97,11 @@ struct Worker {
   void sendMinimalRobotStateRequest() {
     mLcm->publish("TRIGGER_STATE", &mRequest);
     cout << "Sent minimal robot state request" << endl;
+  }
+
+  void sendAffordanceListRequest() {
+    mLcm->publish("TRIGGER_AFFORDANCES", &mRequest);
+    cout << "Sent affordance list request" << endl;
   }
 
   void sendMapViewCatalogRequest() {

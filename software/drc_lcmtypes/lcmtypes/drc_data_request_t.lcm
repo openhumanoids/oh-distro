@@ -10,10 +10,11 @@ struct data_request_t {
   // enum for data request type
   const int8_t CAMERA_IMAGE           = 1;
   const int8_t MINIMAL_ROBOT_STATE    = 2;
-  const int8_t MAP_CATALOG            = 3;
-  const int8_t OCTREE_SCENE           = 4;
-  const int8_t HEIGHT_MAP_SCENE       = 5;
-  const int8_t HEIGHT_MAP_CORRIDOR    = 6;
-  const int8_t DEPTH_MAP_SCENE        = 7;
-  const int8_t DEPTH_MAP_WORKSPACE    = 8;
+  const int8_t AFFORDANCE_LIST        = 3;
+  const int8_t MAP_CATALOG            = 4;
+  const int8_t OCTREE_SCENE           = 5;
+  const int8_t HEIGHT_MAP_SCENE       = 6;
+  const int8_t HEIGHT_MAP_CORRIDOR    = 7;
+  const int8_t DEPTH_MAP_SCENE        = 8;
+  const int8_t DEPTH_MAP_WORKSPACE    = 9;
 }
