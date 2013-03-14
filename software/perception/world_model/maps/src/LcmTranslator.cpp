@@ -337,7 +337,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   // copy depth array
   DepthImage::Type imageType = DepthImage::TypeDisparity;
   DepthImage::Ptr depthImage = iView.getDepthImage();
-  float invalidValue = depthImage->getInvalidValue(imageType);
+  float invalidValue = std::numeric_limits<float>::infinity();
   int numDepths = depthImage->getWidth() * depthImage->getHeight();
   std::vector<float> inDepths = depthImage->getData(imageType);
   std::vector<uint8_t> data((uint8_t*)(&inDepths[0]),
