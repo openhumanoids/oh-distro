@@ -89,8 +89,7 @@ classdef ZMPplanner < DrakeSystem
             D_val = reshape(repmat(-z_com./(zddot_com+obj.g),2,1),[],1);
             N = N+diag(D_val);
             active_contact_flag = logical(active_contact_flag);
-            % This for loop is ugly, try vectorize it later, or use sparse
-            % formulation
+
             for i = 1:preview_size
                 active_contact_pos = contact_pos(:,active_contact_flag(:,i),i);
                 support_vertices_ind_i = convhull(active_contact_pos(1,:),active_contact_pos(2,:));
