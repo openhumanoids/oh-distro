@@ -67,7 +67,11 @@ unsigned int floor_multiple_sixteen(unsigned int v)
     return lg;
 }
 
-
+void check_rc(int rc)
+{
+  if(rc == -1)
+    std::cout << "Error: previous operation failed!" << std::endl;
+}
 
 namespace drc
 {    
@@ -373,9 +377,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     msg->set_ack_requested(false);
     
     send_queue_.top().SerializeToString(msg->add_frame());
-    std::cout << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
-    std::cout << "Data size: " << send_queue_.top().data().size() << std::endl;
-    std::cout << "Encoded size: " << msg->frame(0).size() << std::endl;
+    //std::cout << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
+    // std::cout << "Data size: " << send_queue_.top().data().size() << std::endl;
+    // std::cout << "Encoded size: " << msg->frame(0).size() << std::endl;
     
     send_queue_.pop();
 
@@ -383,14 +387,12 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 }
 
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
-{
-//    cout << "received: " << msg.DebugString() << std::endl;
-    
+{    
     drc::ShaperPacket packet;
     packet.ParseFromString(msg.frame(0));
 
-    cout << "received: " << app_.get_current_utime() << " | "
-         << DebugStringNoData(packet) << std::endl;    
+    //    cout << "received: " << app_.get_current_utime() << " | "
+    //     << DebugStringNoData(packet) << std::endl;    
     
     receive_queue_[packet.channel()][packet.message_number()][packet.fragment()] = packet;
     if(packet.is_last_fragment())
@@ -399,15 +401,19 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
         {
             cout << "publishing: " << app_.get_current_utime() << " | "
                  << channel_id_.right.at(packet.channel()) << " #" << packet.message_number() << " | " << packet.data().size() << " bytes" << std::endl;
-            lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
-                        &packet.data()[0], packet.data().size());
+	    std::vector<unsigned char> buffer(packet.data().size());
+	    for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
+	      buffer[i] = packet.data()[i];
+	    
+	    check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
+				 &buffer[0], packet.data().size()));
         }
         else
         {
             // try to reconstruct
             std::cout << "Trying to reconstruct message with last fragment: " << DebugStringNoData(packet) << std::endl;
             
-            std::cout << "Checking " << RECEIVE_MODULUS/2 << " assumed oldest message numbers" << std::endl;
+	    //            std::cout << "Checking " << RECEIVE_MODULUS/2 << " assumed oldest message numbers" << std::endl;
             
             std::map<int, std::map<int, drc::ShaperPacket> >& this_queue = receive_queue_[packet.channel()];
 
@@ -418,12 +424,14 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             
             for(int i = begin; i != end; )
             {
-                std::cout << "Check #" << i << ": ";
+	      //                std::cout << "Check #" << i << ": ";
 
                 std::map<int, std::map<int, drc::ShaperPacket> >::iterator it = this_queue.find(i);
                 if(it == this_queue.end() || it->second.empty())
-                    std::cout << "Ok, packet has been processed." << std::endl;
-                else
+		  {
+		    //		    std::cout << "Ok, packet has been processed." << std::endl;
+		  }
+		    else
                 {
                     try_decode(it->second);
                     it->second.clear();
@@ -461,8 +469,8 @@ void DRCShaper::try_decode(std::map<int, drc::ShaperPacket>& received_frags)
                 cout << "publishing: " << app_.get_current_utime() << " | "
                      << channel_id_.right.at(front.channel()) << " #" << front.message_number() << " | " << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
                 
-                lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(front.channel()).c_str(),
-                            &buffer[0], buffer.size());
+                check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(front.channel()).c_str(),
+				     &buffer[0], buffer.size()));
                 received_frags.clear();
                 return;
             }
