@@ -120,7 +120,7 @@ group "5.base" {
         host = "localhost";
     }
     cmd "param_server" {
-        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.12.68:1267?ttl=0'";
+        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.12.68:1268?ttl=0'";
         host = "localhost";
     }
 }
