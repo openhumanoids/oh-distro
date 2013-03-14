@@ -59,11 +59,12 @@ getAsPointCloud(const bool iTransform) const {
     float invalidValue = mImage->getInvalidValue(DepthImage::TypeDisparity);
     for (int i = 0, idx = 0; i < mImage->getHeight(); ++i) {
       for (int j = 0; j < mImage->getWidth(); ++j, ++idx) {
-        if (depths[idx] == invalidValue) continue;
+        float z = depths[idx];
+        if (z == invalidValue) continue;
         maps::PointCloud::PointType pt;
         pt.x = j;
         pt.y = i;
-        pt.z = depths[idx];
+        pt.z = z;
         cloud->push_back(pt);
       }
     }

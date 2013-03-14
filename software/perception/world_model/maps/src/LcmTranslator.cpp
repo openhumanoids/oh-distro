@@ -335,7 +335,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   oMessage.view_id = iView.getId();
 
   // copy depth array
-  DepthImage::Type imageType = DepthImage::TypeDisparity;
+  DepthImage::Type imageType = DepthImage::TypeDepth;
   DepthImage::Ptr depthImage = iView.getDepthImage();
   float invalidValue = std::numeric_limits<float>::infinity();
   int numDepths = depthImage->getWidth() * depthImage->getHeight();
@@ -447,12 +447,13 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
 
   DepthImage img;
   img.setSize(blob.getSpec().mDimensions[0], blob.getSpec().mDimensions[1]);
-  img.setData(depths, DepthImage::TypeDisparity);
   img.setProjector(xform);
+  img.setData(depths, DepthImage::TypeDepth);
   oView.setId(iMessage.view_id);
   oView.set(img);
 
-  /* TODO TEMP
+  // TODO TEMP
+  /*
   std::cout << "PROJ TRANSLATE\n" << xform.matrix() << std::endl;
   std::ofstream ofs("/tmp/disparities_after.txt");
   for (int i = 0, idx = 0; i < img.getHeight(); ++i) {

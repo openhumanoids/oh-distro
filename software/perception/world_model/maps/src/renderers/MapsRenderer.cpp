@@ -19,9 +19,6 @@
 #include <maps/BotWrapper.hpp>
 #include "MeshRenderer.hpp"
 
-// TODO TEMP
-#include <fstream>
-
 namespace maps {
 
 class MapsRenderer : public RendererBase, ViewClient::Listener {
@@ -584,14 +581,10 @@ public:
     if (usePoints) {
       mesh.reset(new maps::TriangleMesh());
       maps::PointCloud::Ptr cloud = iView->getAsPointCloud(false);
-      std::ofstream ofs("/tmp/points_renderer.txt");
       mesh->mVertices.reserve(cloud->size());
       for (size_t i = 0; i < cloud->size(); ++i) {
         mesh->mVertices.push_back((*cloud)[i].getVector3fMap());
-        ofs << mesh->mVertices.back().transpose() << std::endl;
       }
-      ofs.close();
-      // TODO: TEMP
     }
 
     // set up mesh renderer
@@ -604,7 +597,6 @@ public:
     // draw this view's data
     glPushMatrix();
     Eigen::Projective3f transform = iView->getTransform();
-    std::cout << "RENDERER TRANSFORM\n" << transform.matrix() << std::endl;
     glMultMatrixf(transform.inverse().data());
     mMeshRenderer.draw();
     glPopMatrix();
