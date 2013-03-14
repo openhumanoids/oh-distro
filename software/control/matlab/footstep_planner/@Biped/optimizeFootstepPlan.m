@@ -7,7 +7,7 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
   end
 
   if nargin < 3
-    outputfun = @(X) X;
+    outputfun = @(X, hfun) X;
   end
 
   % Structure of X:
@@ -78,7 +78,7 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
     end
     % if modifed
       % biped.publish_footstep_plan(X);
-      outputfun(X);
+      outputfun(X, @heightfun);
     % end
     if (~interactive && ~modified) || (done)
       break
@@ -88,8 +88,8 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, poses, outputfun, updatef
   total_steps = length(X(1,:));
   ndx = biped.getStepNdx(total_steps);
   [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
-  Xright(3,:) = heightfun(Xright(1:2,:))
-  Xleft(3,:) = heightfun(Xleft(1:2,:))
+  Xright(3,:) = heightfun(Xright(1:2,:));
+  Xleft(3,:) = heightfun(Xleft(1:2,:));
 end
 
 function h = heightfun(xy)
