@@ -1,7 +1,12 @@
 close all
-ranges= load('/tmp/ranges.txt')
+ranges= load('/tmp/depths.txt')
 %ranges = flipud(ranges)
 
-%imagesc(ranges,[0 5])
-imagesc(ranges)
+imagesc(ranges,[0 1])
+%imagesc(ranges)
+
+%mesh(ranges)
+
+
+
 colorbar

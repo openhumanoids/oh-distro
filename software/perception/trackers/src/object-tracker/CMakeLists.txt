@@ -1,12 +1,30 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
  
+set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6)
+
+
+################
+add_library(major-plane-detect  SHARED major-plane-detect.cpp)
+pods_use_pkg_config_packages(major-plane-detect ${PCL_LIBRARIES}  eigen3)
+target_link_libraries (major-plane-detect boost_system 
+           ${REQUIRED_LIBS})
+set_target_properties(major-plane-detect PROPERTIES SOVERSION 1)
+pods_install_libraries(major-plane-detect)
+pods_install_headers( major-plane-detect.hpp DESTINATION major-plane-detect)
+pods_install_pkg_config_file(major-plane-detect
+  LIBS -lmajor-plane-detect
+  VERSION 0.0.1)
+  
+ 
 add_executable (object-tracker object-tracker.cpp )
 target_link_libraries(object-tracker particle)
 pods_use_pkg_config_packages(object-tracker   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   bot2-param-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_math opencv image_io_utils)
+  pointcloud_vis pointcloud_math opencv image_io_utils
+  maps bot2-lcmgl-client
+  ${PCL_LIBRARIES})
 pods_install_executables(object-tracker)
 
 

@@ -61,20 +61,27 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
   yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 }
 
+Eigen::Isometry3d isometryFloatToDouble(Eigen::Isometry3f pose_in){
+  Eigen::Quaternionf r(pose_in.rotation());
+  Eigen::Quaterniond rf(r.w() , r.x() , r.y() , r.z() );
+  Eigen::Isometry3d pose_out;
+  pose_out.setIdentity();
+  pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
+  pose_out.rotate(rf);
+  return pose_out;
+}
+
 
 Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d pose_in){
   Eigen::Quaterniond r(pose_in.rotation());
   Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
-  //Eigen::Quaternionf rf(r.x() , r.y() , r.y() , r.z() );
-
   Eigen::Isometry3f pose_out;
   pose_out.setIdentity();
   pose_out.translation()  << pose_in.translation().x() , pose_in.translation().y() , pose_in.translation().z();
   pose_out.rotate(rf);
-
   return pose_out;
-
 }
+
 
 
 Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){

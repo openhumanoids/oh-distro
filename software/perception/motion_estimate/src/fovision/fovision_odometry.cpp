@@ -250,8 +250,11 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  multisense::images_t* msg){
   int w = msg->images[0].width;
   int h = msg->images[0].height;
-  
-  utime_prev_ = utime_cur_;
+
+  cout <<"disparity mode distabled for now\n";
+  exit(-1);
+//disabledfornow
+/*  utime_prev_ = utime_cur_;
   utime_cur_ = msg->utime;
   memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
   
@@ -268,6 +271,7 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
   vo_->doOdometry(left_buf_,disparity_buf_.data() );
   updateMotion();
   featureAnalysis();
+*/
 }
 
 

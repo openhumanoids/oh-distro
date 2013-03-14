@@ -106,9 +106,11 @@ Eigen::Quaternionf euler_to_quat_f(double yaw, double pitch, double roll);
 
 void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
 
+
+// generic float to double converter: [remove if something in eigen works instead
+Eigen::Isometry3d isometryFloatToDouble(Eigen::Isometry3f );
 // generic double to float converter: [remove if something in eigen works instead
 Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d );
-
 Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d );
 
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss);

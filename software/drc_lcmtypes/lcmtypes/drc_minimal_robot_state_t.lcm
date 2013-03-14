@@ -8,7 +8,6 @@ struct minimal_robot_state_t
 {
     int64_t utime;
     position_3d_t origin_position;  
-    twist_t origin_twist;   
     int32_t num_joints;
     float joint_position [num_joints];
 }

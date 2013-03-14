@@ -27,7 +27,21 @@
     <!-- 4 surrounding cubes -->
     <include><name>sbox1</name><uri>model://simple_box</uri><pose>5 0 1.5 0 0 0</pose></include>
     <include><name>sbox3</name><uri>model://simple_box</uri><pose>0 -6.9 1.5 0 0 0</pose></include>
-    <include><name>sbox4</name><uri>model://simple_box</uri><pose>-8 0.5 1.5 0 0 0</pose></include>
+<!--    <include><name>sbox4</name><uri>model://simple_box</uri><pose>-8 0.5 1.5 0 0 0</pose></include> -->
+    <include><name>sbox4</name><uri>model://white_box</uri><pose>-8.5 0.5 1.5 0 0 -0.4</pose></include>
+
+    <include>
+      <name>vrc_standpipe</name>
+      <uri>model://vrc_standpipe</uri>
+      <pose>-6.5 0.0 1.2 1.571 0.1 -1.930</pose>
+    </include>
+
+    <include>
+      <name>mit_valve</name>
+      <uri>model://mit_valve</uri>
+      <pose>-7.0 -0.75 1.3 1.571 0.1 -1.930</pose>
+    </include>
+
     <include><name>sbox_l2</name><uri>model://simple_box</uri><pose>0 -10 1.5 0 0 0</pose></include>
     <include><name>sbox_l3</name><uri>model://simple_box</uri><pose>0 -15 1.5 0 0 0</pose></include>
     <include><name>sbox_l4</name><uri>model://simple_box</uri><pose>0 -20 1.5 0 0 0</pose></include>

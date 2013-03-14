@@ -8,6 +8,8 @@
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
+#include <maps/PointCloudView.hpp>
+#include <maps/BotWrapper.hpp>
 
 #include <drc_utils/Clock.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -17,14 +19,16 @@ using namespace std;
 
 class State {
 public:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  BotWrapper::Ptr mBotWrapper;
   boost::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
   
-  State( boost::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
+  State( boost::shared_ptr<lcm::LCM> &mLcm ) {
+    mBotWrapper.reset(new BotWrapper(mLcm));
     mCollector.reset(new Collector());
-    mCollector->setLcm(mLcm);
+    mCollector->setBotWrapper(mBotWrapper);
+//    mCollector->setLcm(mLcm);
     mActiveMapId = 0;
     mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "test-points");
     drc::Clock::instance()->setLcm(mLcm);
@@ -50,7 +54,7 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
 
-    int64_t last_timeMin_;
+    int64_t last_sweep_time_;
     std::string image_channel_;
     bool getSweep();
     
@@ -69,6 +73,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, State*
 
 
 bool Pass::getSweep(){
+  cout << "doing getSweep\n";
   
   // get submap we created earlier
   LocalMap::Ptr localMap =
@@ -85,11 +90,11 @@ bool Pass::getSweep(){
         
   mState->mCollector->getLatestSwath(ang_min, ang_max,
                                         timeMin, timeMax); // these didnt work
-  if (timeMin == last_timeMin_){
+  if (timeMin == last_sweep_time_){
     cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | repeat\n";
     return false; 
   }
-  last_timeMin_ = timeMin;
+  last_sweep_time_ = timeMin;
 
   cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | process\n";
   LocalMap::SpaceTimeBounds bounds;
@@ -98,7 +103,10 @@ bool Pass::getSweep(){
 
   // get and publish point cloud corresponding to this time range
   // (for debugging)
-  maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
+//  maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
+  maps::PointCloud::Ptr cloud =     localMap->getAsPointCloud(0, bounds)->getPointCloud();
+  
+  
   bot_lcmgl_t* lcmgl = mState->mLcmGl;
   bot_lcmgl_color3f(lcmgl, 0, 1, 0);
   bot_lcmgl_point_size(lcmgl, 3);

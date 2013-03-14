@@ -92,6 +92,8 @@ clear_collision_objects( void ){
 unsigned int 
 Collision_Detector::
 num_collisions( void ){
+  _collision_world.updateAabbs();
+
   _collision_world.performDiscreteCollisionDetection();
   unsigned int num_collisions = 0;
   for( unsigned int i = 0; i < _collision_world.getDispatcher()->getNumManifolds(); i++ ){
@@ -111,6 +113,8 @@ vector< Collision >
 Collision_Detector::
 get_collisions( void ){
   vector< Collision > collisions;
+  _collision_world.updateAabbs();
+
   _collision_world.performDiscreteCollisionDetection();
   for( unsigned int i = 0; i < _collision_world.getDispatcher()->getNumManifolds(); i++ ){
     btPersistentManifold * manifold = _collision_world.getDispatcher()->getManifoldByIndexInternal( i );

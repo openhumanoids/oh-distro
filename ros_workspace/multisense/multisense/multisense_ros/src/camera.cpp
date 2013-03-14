@@ -48,7 +48,7 @@ Camera::Camera(multisense_driver::MultisenseDriver* driver) :
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  // NB!!! this is hardcoded image types!!!!!!!! Need to have a parameter
+  // NB!!! this is hardcoded image types!!!!!!!! for some reason enums won't work
   multisense_msg_out_.image_types.push_back(0);// multisense::images_t::LEFT );
   multisense_msg_out_.image_types.push_back(2);// multisense::images_t::DISPARITY );
   multisense_msg_out_.images.push_back(left_msg_out_);

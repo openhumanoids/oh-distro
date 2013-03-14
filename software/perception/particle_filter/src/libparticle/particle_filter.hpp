@@ -94,6 +94,9 @@ class ParticleFilter{
     // Find the particle with largest weight:
     pf_state MaxWeight();
 
+    void SetParticleState(int i, pf_state particle_in_){ 
+      particleset[i].SetState(particle_in_);
+    }     
     
     pf_state GetParticleState(int i){ return particleset[i].GetState(); }     
     double GetParticleLogWeight(int i){ return particleset[i].GetLogWeight(); }     

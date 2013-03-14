@@ -1211,7 +1211,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
      glRotatef(theta * 180/3.141592654, 
        	 axis[0], axis[1], axis[2]); 
      glScalef(xDim,yDim,zDim);
-         bot_gl_draw_cube();
+     bot_gl_draw_cube();
         //cube();
     glPopMatrix();
   

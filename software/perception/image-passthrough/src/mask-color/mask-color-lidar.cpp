@@ -8,8 +8,10 @@
 #include <maps/MapManager.hpp>
 #include <maps/LocalMap.hpp>
 #include <maps/Collector.hpp>
-#include <maps/RangeImageView.hpp>
 #include <maps/PointCloudView.hpp>
+#include <maps/Utils.hpp>
+#include <maps/BotWrapper.hpp>
+#include <maps/DepthImageView.hpp>
 
 
 #include <drc_utils/Clock.hpp>
@@ -31,6 +33,7 @@ using namespace std;
 class State {
 public:
   boost::shared_ptr<lcm::LCM> mLcm;
+  BotWrapper::Ptr mBotWrapper;
   boost::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
@@ -48,10 +51,10 @@ public:
   
   
 
-  State() {
-    mLcm.reset(new lcm::LCM());
+  State( boost::shared_ptr<lcm::LCM> &mLcm  ): mLcm(mLcm) {
+    mBotWrapper.reset(new BotWrapper(mLcm));
     mCollector.reset(new Collector());
-    mCollector->setLcm(mLcm);
+    mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;
     mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "test-points");
     
@@ -110,8 +113,11 @@ DataProducer::DataProducer(State* iState) : mState(iState) {
   pc_vis_->obj_cfg_list.push_back( obj_cfg(91000,"Pose - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91001,"Cloud - Null"           ,1,1, 91000,1, { 0.0, 1.0, 1.0} ));
   
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(91002,"Pose - Camera",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91003,"Cloud from RI"           ,1,1, 91000,0, { 1.0, 0.0, 1.0} ));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(91002,"Pose - Camera [R]",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91003,"Cloud using in RI"           ,1,1, 91000,0, { 1.0, 0.0, 1.0} ));
+  
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(91004,"Pose - Camera",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(91005,"Cloud back from RI (at camera)"           ,1,1, 91004,0, { 1.0, 0.0, 1.0} ));
   
 }
 
@@ -125,16 +131,14 @@ void DataProducer::operator()() {
 
     // find time range of desired swath (from 45 to 135 degrees)
     int64_t timeMin, timeMax;
-    double ang_min = 10 *M_PI/180; // leading edge from the right hand side of sweep
-    double ang_max = 170 *M_PI/180;
+    double ang_min = 5 *M_PI/180; // leading edge from the right hand side of sweep
+    double ang_max = 180 *M_PI/180;
     //double ang_min = 45*degToRad;
     //double ang_max= 135*degToRad;
     
     int current_utime = drc::Clock::instance()->getCurrentTime();
     //cout << ang_min << " min | " << ang_max << " max\n";
          
-
-    
     mState->mCollector->getLatestSwath(ang_min, ang_max,
                                          timeMin, timeMax); // these didnt work
     cout << timeMin << " timeMin | " << timeMax << " timeMax | "
@@ -149,15 +153,14 @@ void DataProducer::operator()() {
       continue; 
     }
     last_timeMin_ = timeMin;
-    cout << "process\n";
-    
     LocalMap::SpaceTimeBounds bounds;
     bounds.mTimeMin = timeMin;
     bounds.mTimeMax = timeMax;
+    ///////////////////////////// Data Request Completed
+    
 
-    // get and publish point cloud corresponding to this time range
-    // (for debugging)
-    maps::PointCloud::Ptr cloud = localMap->getAsPointCloud(0, bounds);
+    // 1. get and publish point cloud corresponding to this time range
+    maps::PointCloud::Ptr cloud =     localMap->getAsPointCloud(0, bounds)->getPointCloud();
     bot_lcmgl_t* lcmgl = mState->mLcmGl;
     bot_lcmgl_color3f(lcmgl, 0, 1, 0);
     bot_lcmgl_point_size(lcmgl, 3);
@@ -170,12 +173,9 @@ void DataProducer::operator()() {
     bot_lcmgl_switch_buffer(lcmgl);
 
     
-    
-    
-    //////////////////////// Output the input cloud (a cloud in world frame) ///////////////////
+    // 2. Output the cloud in world frame - same as 1:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    cloud2 = localMap->getAsPointCloud(0, bounds);      
-
+    cloud2 =     localMap->getAsPointCloud(0, bounds)->getPointCloud();
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
     Isometry3dTime null_poseT = Isometry3dTime(current_utime, null_pose);
@@ -183,153 +183,122 @@ void DataProducer::operator()() {
     pc_vis_->ptcld_to_lcm_from_list(91001, *cloud2, current_utime, current_utime);      
     
     if(1==0){
-      cout << "buff\n";
-      cout << cloud2->points.size() << "\n";
       if (cloud2->points.size() > 0) {
         pcl::PCDWriter writer;
         stringstream ss2;
-        ss2 << "/home/mfallon/drc/software/perception/vehicle-tracker/data/vehicle_"
-        << timeMax << ".pcd";
+        ss2 << "/home/mfallon/drc/software/perception/vehicle-tracker/data/vehicle_"  << timeMax << ".pcd";
         writer.write (ss2.str(), *cloud2, false);
       }
     }
     
-
     
+    // 3. Create a depth image object:
     Eigen::Isometry3d ref_pose;
     botframes_cpp_->get_trans_with_utime( botframes_ ,  "CAMERA", "local", current_utime, ref_pose);   // ...? not sure what to use
-    
-    
-
-    
-    
-    
-/*    
-    // set up sample camera pose
-    Eigen::Vector3f trans(0,0,0);
-    Eigen::Matrix3f rot;
-    rot.col(0) = -Eigen::Vector3f::UnitY();
-    rot.col(1) = -Eigen::Vector3f::UnitZ();
-    rot.col(2) = Eigen::Vector3f::UnitX();
-    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-    pose.linear() = rot;
-    pose.translation() = trans;
-*/
-    
     // set up sample camera projection parameters
-    Eigen::Matrix4f projector = Eigen::Matrix4f::Identity();
+    Eigen::Matrix3f calib = Eigen::Matrix3f::Identity();
     int width=1024;
     int height=544;
+    double fx = 610.778; //focal length in pixels  will assume fx = fy for now
     if (1==0){ // default example
-      width = 200;
-      height = 200;
-      projector(0,0) = projector(1,1) = 50;  // focal length of 50 pixels
-      projector(0,2) = width/2.0;            // cop at center of image
-      projector(1,2) = height/2.0;
+      width = 200; height = 200;  fx = 50;
     }else if (1==0){ // correct
-      width =1024;
-      height =544;
-      projector(0,0) = projector(1,1) = 610.1778;  // focal length of 50 pixels
-      projector(0,2) = width/2.0;                  // cop at center of image
-      projector(1,2) = height/2.0;
+      width =1024; height =544; fx = 610.1778;
     }else{
-      width =256;//256;
-      height =136;
-      projector(0,0) = projector(1,1) = 152.54445;  // focal length of 50 pixels
-      projector(0,2) = width/2.0;                  // cop at center of image
-      projector(1,2) = height/2.0;
+      width =256;  
+      height =136; 
+      fx = 152.54445;
     }
-    // create range image
-    Eigen::Isometry3f ref_pose_f = isometryDoubleToFloat(ref_pose);
-    maps::RangeImage rangeImage =
-    localMap->getAsRangeImage(width, height, ref_pose_f, projector, bounds);
-      
-      
-    
+    double fy =fx;
+    double cx = width/2.0;
+    double cy = height/2.0;
+    calib(0,0) =calib(1,1) = fx ;  // focal length of 50 pixels
+    calib(0,2) =cx;                  // cop at center of image
+    calib(1,2) =cy;
 
+      Eigen::Projective3f projector;
+    Utils::composeViewMatrix(projector, calib, isometryDoubleToFloat(ref_pose), false);
+    DepthImageView::Ptr depthImageView = localMap->getAsDepthImage(width, height, projector, bounds);
       
+      
+    // Convert Pose from CV Camera Frame to Robot Camera Frame
     Eigen::Isometry3d fixrotation_pose;
     fixrotation_pose.setIdentity();
     fixrotation_pose.translation() << 0,0,0;    
     Eigen::Quaterniond fix_r = euler_to_quat(0.0*M_PI/180.0, -90.0*M_PI/180.0 , 90.0*M_PI/180.0);
     fixrotation_pose.rotate(fix_r);    
-    ref_pose = ref_pose*fixrotation_pose; 
+    Eigen::Isometry3d ref_pose_ROBOT = ref_pose*fixrotation_pose; 
     
 
-    
-    
-    
-
+    // 4. Convert Depth Image to Point Cloud and colourize using Mask (if available)
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud3 (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    for (int i = 0; i < height; ++i) {
-      for (int j = 0; j < width; ++j) {
-        Eigen::Vector3f point;
-        rangeImage.mImage->getPoint(j,i, point);
-        //cout << point[0] << ", " << point[1] << ", " << point[2] << "\n";
-        pcl::PointXYZRGB pt1;
-        pt1.x = point[0];       pt1.y = point[1];    pt1.z = point[2];  
-        pt1.r = 0;           pt1.g =0;          pt1.b =255;
-        cloud3->points.push_back(pt1);          
-      }
-    }
-  
-  int decimate_=4;
-    
-    
+    cloud3= depthImageView->getAsPointCloud();
+    int decimate_=4;
     if( mState->last_mask_.utime!=0){
       cout <<"got mask and depth\n";     
-    // cout <<"got mask and depth\n";
-    uint8_t* mask_buf =  mState->getMask();
-    //imgutils_->sendImage(mask_buf, msg->utime, 1024, 544, 1, string("UNZIPPED")  );
-
-    // Colorise the depth points using the mask
-    int j2=0;
-    int w = 1024;
-    int h = 544;
-    
-    for(int v=0; v<h; v=v+ decimate_) { // t2b
-      for(int u=0; u<w; u=u+decimate_ ) {  //l2r
-          if (mask_buf[v*w + u] > 0){ // if the mask is not black, apply it as red
-            cloud3->points[j2].r = 255;//mask_buf[v*w + u];
-            cloud3->points[j2].g = 0;//cloud3->points[j2].g/4;
-            cloud3->points[j2].b = 0;//cloud3->points[j2].b/4; // reduce other color for emphaise
-          }
-          j2++;
-      }
-    }         
-      
-      
+      uint8_t* mask_buf =  mState->getMask();
+      //imgutils_->sendImage(mask_buf, msg->utime, 1024, 544, 1, string("UNZIPPED")  );
+      // Colorise the depth points using the mask
+      int j2=0;
+      int w = 1024;
+      int h = 544;
+      for(int v=0; v<h; v=v+ decimate_) { // t2b
+        for(int u=0; u<w; u=u+decimate_ ) {  //l2r
+            if (mask_buf[v*w + u] > 0){ // if the mask is not black, apply it as red
+              cloud3->points[j2].r = 255;//mask_buf[v*w + u];
+              cloud3->points[j2].g = 0;//cloud3->points[j2].g/4;
+              cloud3->points[j2].b = 0;//cloud3->points[j2].b/4; // reduce other color for emphaise
+            }
+            j2++;
+        }
+      }         
     }
-    
-  
-
-    Isometry3dTime ref_poseT = Isometry3dTime(current_utime, ref_pose);
-    pc_vis_->pose_to_lcm_from_list(91002, ref_poseT);  
+    Isometry3dTime ref_pose_ROBOT_T = Isometry3dTime(current_utime, ref_pose_ROBOT);
+    pc_vis_->pose_to_lcm_from_list(91002, ref_pose_ROBOT_T);  
     pc_vis_->ptcld_to_lcm_from_list(91003, *cloud3, current_utime, current_utime);      
   
 
-    // get range image pixel values and store to file
-    float* ranges = rangeImage.mImage->getRangesArray();
-    std::ofstream ofs("/tmp/ranges.txt");
+    // 5. get depth image pixel values and store to file
+    float* depths = depthImageView->getRangeImage()->getRangesArray();
+    std::ofstream ofs("/tmp/depths.txt");
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
-        ofs << ranges[i*width + j] << " ";
+        ofs << depths[i*width + j] << " ";
       }
       ofs << std::endl;
     }
     ofs.close();
-
-
     
-
+    // 6. Reproject the depths into xyz and publish
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    for (int v = 0; v < height; ++v) { // rows t2b
+      for (int u = 0; u < width; ++u) { // cols l2r
+        pcl::PointXYZRGB pt;
+        pt.z = 1/ depths[v*width + u]; /// inversion currently required due to Matt's interperation of depth as 1/depth ;)
+        pt.x = ( pt.z * (u  - cx))/fx ;
+        pt.y = ( pt.z * (v  - cy))/fy ;
+        pt.r = 200.0; pt.g = 100.0; pt.b =100.0;
+        cloud4->points.push_back(pt);
+      }
+    }
+    Isometry3dTime ref_poseT = Isometry3dTime(current_utime, ref_pose);
+    pc_vis_->pose_to_lcm_from_list(91004, ref_poseT);  
+    pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime, current_utime);
+    
+    
   }
 }
 
 
 
 int main() {
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+  if(!lcm->good()){
+    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+  }  
+  
   // create state object instance
-  State state;
+  State state(lcm );
 
   // create new submap
   LocalMap::Spec mapSpec;

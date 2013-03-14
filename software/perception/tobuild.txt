@@ -7,8 +7,7 @@ pointcloud-tools
 
 image_io_utils
 # core pose estimator
-# currently disabled as the VO requires a newer version of fovis not in trunk yet
-#motion_estimate
+motion_estimate
 # utility to filter lidar self detections
 lidar-passthrough
 
@@ -16,8 +15,12 @@ lidar-passthrough
 world_model
 
 # library and module to apply object masks:
-#rgbd_simulation 
-#image-passthrough
+rgbd_simulation 
+image-passthrough
+
+# particle-filter based tracking
+particle_filter
+trackers
 
 # sudeep:
 opencv-utils

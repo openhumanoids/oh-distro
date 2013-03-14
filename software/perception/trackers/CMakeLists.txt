@@ -11,3 +11,6 @@ lcmtypes_build()
 
 add_subdirectory(src/icp_tutorial)
 add_subdirectory(src/vehicle-tracker)
+
+# particle filter based:
+add_subdirectory(src/object-tracker)

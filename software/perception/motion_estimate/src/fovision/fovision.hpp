@@ -88,7 +88,9 @@ private:
     
     // Depth Sources:
     fovis::StereoDepth* stereo_depth_; // typical left/right stereo
-    fovis::StereoDisparity* stereo_disparity_; // left/disparity from multisense
+// disabledfornow
+//    fovis::StereoDisparity* stereo_disparity_; // left/disparity from multisense
+
 
     //fovis::PrimeSenseDepth depth_producer_; // disparity from Freenect
     //fovis::DepthImage* depth_image_; // depth from OpenNI
