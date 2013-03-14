@@ -3,25 +3,21 @@
 
 #include "ViewBase.hpp"
 
-namespace pcl {
-  class RangeImage;
-}
-
 namespace maps {
+
+class DepthImage;
 
 class DepthImageView : public ViewBase {
 public:
   typedef boost::shared_ptr<DepthImageView> Ptr;
+
 public:
   DepthImageView();
   ~DepthImageView();
 
-  // NOTE: the returned "range image" actually consists of depth values
-  boost::shared_ptr<pcl::RangeImage> getRangeImage() const;
   void setSize(const int iWidth, const int iHeight);
-
-  void set(const std::vector<float>& iData,
-           const int iWidth=0, const int iHeight=0);
+  void set(const DepthImage& iImage);
+  boost::shared_ptr<DepthImage> getDepthImage() const;
 
   const Type getType() const;
   ViewBase::Ptr clone() const;
@@ -32,7 +28,7 @@ public:
                   Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal);
 
 protected:
-  boost::shared_ptr<pcl::RangeImage> mImage;
+  boost::shared_ptr<DepthImage> mImage;
 };
 
 }

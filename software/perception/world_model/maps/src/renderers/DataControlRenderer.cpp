@@ -58,6 +58,7 @@ public:
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
     addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image");
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State");
+    addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog");
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree");
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height");
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height");
@@ -135,7 +136,7 @@ public:
     rate.linear_velocity.x = 0.0;
     rate.linear_velocity.y = 0.0;
     rate.linear_velocity.z = 0.0;
-    getLcm()->publish("ROTATING_SCAN_RATE_CMD", &rate);
+    getLcm()->publish("SCAN_RATE_CMD", &rate);
   }
 
   void draw() {

@@ -4,6 +4,7 @@
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
 #include "DepthImageView.hpp"
+#include "DepthImage.hpp"
 #include "Utils.hpp"
 
 #include <limits>
@@ -16,7 +17,6 @@
 #include <lcmtypes/drc/map_image_t.hpp>
 
 #include <pcl/common/transforms.h>
-#include <pcl/range_image/range_image.h>
 
 using namespace maps;
 
@@ -335,11 +335,13 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   oMessage.view_id = iView.getId();
 
   // copy depth array
-  pcl::RangeImage::Ptr depthImage = iView.getRangeImage();
-  int numDepths = depthImage->width * depthImage->height;
-  float* inDepths = depthImage->getRangesArray();
-  std::vector<uint8_t> data((uint8_t*)inDepths,
-                            (uint8_t*)inDepths + numDepths*sizeof(float));
+  DepthImage::Type imageType = DepthImage::TypeDisparity;
+  DepthImage::Ptr depthImage = iView.getDepthImage();
+  float invalidValue = depthImage->getInvalidValue(imageType);
+  int numDepths = depthImage->getWidth() * depthImage->getHeight();
+  std::vector<float> inDepths = depthImage->getData(imageType);
+  std::vector<uint8_t> data((uint8_t*)(&inDepths[0]),
+                            (uint8_t*)(&inDepths[0]) + numDepths*sizeof(float));
   float* outDepths = (float*)(&data[0]);
 
   // find extremal values and transform
@@ -347,7 +349,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   float zMax(-std::numeric_limits<float>::infinity());
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
-    if (fabs(val) == std::numeric_limits<float>::infinity()) continue;
+    if (val == invalidValue) continue;
     zMin = std::min(zMin, val);
     zMax = std::max(zMax, val);
   }
@@ -358,15 +360,29 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   float zOffset(zMin), zScale(zMax-zMin);
   zScale /= ((iBits <= 16) ? ((1 << iBits) - 1) : zScale);
   for (int i = 0; i < numDepths; ++i) {
+    float val = outDepths[i];
+    if (val == invalidValue) continue;
     outDepths[i] = (outDepths[i]-zOffset)/zScale;
   }
 
+  // TODO TEMP
+  /*
+  std::ofstream ofs("/tmp/disparities_before.txt");
+  for (int i = 0, idx = 0; i < depthImage->getHeight(); ++i) {
+    for (int j = 0; j < depthImage->getWidth(); ++j, ++idx) {
+      ofs << outDepths[idx] << " ";
+    }
+    ofs << std::endl;
+  }
+  ofs.close();
+  */
+
   // store to blob
   DataBlob::Spec spec;
-  spec.mDimensions.push_back(depthImage->width);
-  spec.mDimensions.push_back(depthImage->height);
+  spec.mDimensions.push_back(depthImage->getWidth());
+  spec.mDimensions.push_back(depthImage->getHeight());
   spec.mStrideBytes.push_back(sizeof(float));
-  spec.mStrideBytes.push_back(depthImage->width*sizeof(float));
+  spec.mStrideBytes.push_back(depthImage->getWidth()*sizeof(float));
   spec.mCompressionType = DataBlob::CompressionTypeNone;
   spec.mDataType = DataBlob::DataTypeFloat32;
   DataBlob blob;
@@ -383,12 +399,9 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   if (!toLcm(blob, oMessage.blob)) return false;
 
   // transform from reference to image
-  // NOTE: this assumes depths, not ranges!
-  Eigen::Translation3f translation(0,0,-zOffset);
-  Eigen::Affine3f scale = Eigen::Affine3f::Identity();
-  scale(2,2) = 1/zScale;
   Eigen::Projective3f xform = iView.getTransform();
-  xform = scale*translation*xform;
+  oMessage.data_scale = zScale;
+  oMessage.data_shift = zOffset;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       oMessage.transform[i][j] = xform(i,j);
@@ -408,22 +421,48 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
       xform(i,j) = iMessage.transform[i][j];
     }
   }
-  oView.setId(iMessage.view_id);
-  oView.setTransform(xform);
 
   // data blob
   DataBlob blob;
   if (!fromLcm(iMessage.blob, blob)) return false;
 
   // convert to depth image
+  float maxVal;
+  switch(blob.getSpec().mDataType) {
+  case DataBlob::DataTypeUint8: maxVal = 254; break;
+  case DataBlob::DataTypeUint16: maxVal = 65534; break;
+  default: maxVal = std::numeric_limits<float>::infinity(); break;
+  }
   blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32); 
   float* raw = (float*)(&blob.getBytes()[0]);
   std::vector<float> depths(raw, raw+blob.getBytes().size()/sizeof(float));
   for (int i = 0; i < depths.size(); ++i) {
-    if (depths[i] > 65000) depths[i] = std::numeric_limits<float>::infinity();
+    if (depths[i] >= maxVal) {
+      depths[i] = std::numeric_limits<float>::infinity();
+    }
+    else {
+      depths[i] = iMessage.data_scale*depths[i] + iMessage.data_shift;
+    }
   }
-  oView.setSize(blob.getSpec().mDimensions[0], blob.getSpec().mDimensions[1]);
-  oView.set(depths);
+
+  DepthImage img;
+  img.setSize(blob.getSpec().mDimensions[0], blob.getSpec().mDimensions[1]);
+  img.setData(depths, DepthImage::TypeDisparity);
+  img.setProjector(xform);
+  oView.setId(iMessage.view_id);
+  oView.set(img);
+
+  /* TODO TEMP
+  std::cout << "PROJ TRANSLATE\n" << xform.matrix() << std::endl;
+  std::ofstream ofs("/tmp/disparities_after.txt");
+  for (int i = 0, idx = 0; i < img.getHeight(); ++i) {
+    for (int j = 0; j < img.getWidth(); ++j, ++idx) {
+      ofs << depths[idx] << " ";
+    }
+    ofs << std::endl;
+  }
+  ofs.close();
+  */
 
   // done
   // NOTE: ids not set here

@@ -23,6 +23,7 @@
 #include <maps/DepthImageView.hpp>
 #include <maps/PointCloudView.hpp>
 #include <maps/Utils.hpp>
+#include <maps/DepthImage.hpp>
 
 #include <lcmtypes/multisense.hpp>
 
@@ -240,7 +241,8 @@ bool Pass::getSweep(){
   
   
   // 6. Reproject the depths into xyz and publish
-  float* depths = depthImageView->getRangeImage()->getRangesArray();
+  std::vector<float> depths =
+    depthImageView->getDepthImage()->getData(DepthImage::TypeDisparity);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
   for (int v = 0; v < height; v=v+4) { // rows t2b //height
     for (int u = 0; u < width; u=u+4) { // cols l2r

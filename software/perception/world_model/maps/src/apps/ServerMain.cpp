@@ -24,6 +24,7 @@
 #include <maps/LcmTranslator.hpp>
 #include <maps/BotWrapper.hpp>
 #include <maps/Utils.hpp>
+#include <maps/Collector.hpp>
 
 #include <drc_utils/Clock.hpp>
 #include <pcl/common/transforms.h>
@@ -41,7 +42,7 @@ struct ViewWorker {
   BotWrapper::Ptr mBotWrapper;
   bool mActive;
   drc::map_request_t mRequest;
-  boost::shared_ptr<MapManager> mManager;
+  boost::shared_ptr<Collector> mCollector;
   boost::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
@@ -67,14 +68,15 @@ struct ViewWorker {
       auto lcm = mBotWrapper->getLcm();
       // get map
       LocalMap::Ptr localMap;
+      auto manager = mCollector->getMapManager();
       if (mRequest.map_id <= 0) {
-        vector<int64_t> ids = mManager->getAllMapIds(true);
+        vector<int64_t> ids = manager->getAllMapIds(true);
         if (ids.size() > 0) {
-          localMap = mManager->getMap(ids.back());
+          localMap = manager->getMap(ids.back());
         }
       }
       else {
-        localMap = mManager->getMap(mRequest.map_id);
+        localMap = manager->getMap(mRequest.map_id);
       }
       if (localMap != NULL) {
 
@@ -93,17 +95,16 @@ struct ViewWorker {
           bounds.mTimeMin += curTime;
           bounds.mTimeMax += curTime;
         }
+        Eigen::Isometry3f headToLocal = Eigen::Isometry3f::Identity();
         if (spec.mRelativeLocation) {
-          // TODO: handle request transform
-          Eigen::Isometry3f headToLocal;
           if (mBotWrapper->getTransform("head", "local",
                                         headToLocal, curTime)) {
             float theta = atan2(headToLocal(1,0), headToLocal(0,0));
-            Eigen::Matrix4f planeTransform = headToLocal.matrix();
             Eigen::Matrix3f rotation;
             rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-            planeTransform.topLeftCorner<3,3>() = rotation;
-            planeTransform = planeTransform.inverse().transpose();
+            headToLocal.linear() = rotation;
+            Eigen::Matrix4f planeTransform =
+              (headToLocal.inverse()).matrix().transpose();
             for (int i = 0; i < bounds.mPlanes.size(); ++i) {
               bounds.mPlanes[i] = planeTransform*bounds.mPlanes[i];
             }
@@ -149,6 +150,10 @@ struct ViewWorker {
               projector(i,j) = mRequest.transform[i][j];
             }
           }
+          std::cout << "TRANSFORM BEFORE\n" << projector.matrix() << std::endl;
+          if (spec.mRelativeLocation) projector = projector*headToLocal.inverse();
+          std::cout << "TRANSFORM AFTER\n" << projector.matrix() << std::endl;
+          std::cout << "ADJUSTMENT\n" << headToLocal.matrix() << std::endl;
           DepthImageView::Ptr image =
             localMap->getAsDepthImage(mRequest.width, mRequest.height,
                                       projector, bounds);
@@ -185,29 +190,29 @@ typedef std::unordered_map<int64_t,ViewWorker::Ptr> ViewWorkerMap;
 class State {
 public:
   BotWrapper::Ptr mBotWrapper;
-  boost::shared_ptr<SensorDataReceiver> mSensorDataReceiver;
-  boost::shared_ptr<MapManager> mManager;
+  boost::shared_ptr<Collector> mCollector;
   ViewWorkerMap mViewWorkers;
 
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
   lcm::Subscription* mMapCommandSubscription;
   lcm::Subscription* mMapMacroSubscription;
+  lcm::Subscription* mCatalogTriggerSubscription;
 
   float mCatalogPublishPeriod;
 
   State() {
     mBotWrapper.reset(new BotWrapper());
-    mSensorDataReceiver.reset(new SensorDataReceiver());
-    mSensorDataReceiver->setBotWrapper(mBotWrapper);
-    mManager.reset(new MapManager());
     drc::Clock::instance()->setLcm(mBotWrapper->getLcm());
     drc::Clock::instance()->setVerbose(false);
+    mCollector.reset(new Collector());
+    mCollector->setBotWrapper(mBotWrapper);
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
     mMapMacroSubscription = NULL;
-    mCatalogPublishPeriod = 10;
+    mCatalogTriggerSubscription = NULL;
+    mCatalogPublishPeriod = 0;
   }
 
   ~State() {
@@ -216,6 +221,7 @@ public:
     lcm->unsubscribe(mMapParamsSubscription);
     lcm->unsubscribe(mMapCommandSubscription);
     lcm->unsubscribe(mMapMacroSubscription);
+    lcm->unsubscribe(mCatalogTriggerSubscription);
   }
 
   void onRequest(const lcm::ReceiveBuffer* iBuf,
@@ -228,10 +234,11 @@ public:
                     const std::string& iChannel,
                     const drc::map_command_t* iMessage) {
     int64_t id = iMessage->map_id;
+    auto manager = mCollector->getMapManager();
     if (id < 0) {
-      vector<int64_t> ids = mManager->getAllMapIds(true);
+      vector<int64_t> ids = manager->getAllMapIds(true);
       if (ids.size() > 0) {
-        mManager->getMap(ids.back())->getId();
+        manager->getMap(ids.back())->getId();
       }
       else {
         std::cout << "Error: no maps available" << std::endl;
@@ -240,13 +247,13 @@ public:
     }
     switch (iMessage->command) {
     case drc::map_command_t::CLEAR:
-      mManager->clearMap(id);
+      manager->clearMap(id);
       break;
     case drc::map_command_t::STOP:
-      mManager->stopUpdatingMap(id);
+      manager->stopUpdatingMap(id);
       break;
     case drc::map_command_t::START:
-      mManager->startUpdatingMap(id);
+      manager->startUpdatingMap(id);
       break;
     default:
       break;
@@ -258,7 +265,7 @@ public:
                    const drc::map_params_t* iMessage) {
     LocalMap::Spec spec;
     LcmTranslator::fromLcm(*iMessage, spec);
-    int id = mManager->createMap(spec);
+    int id = mCollector->getMapManager()->createMap(spec);
   }
 
   void onMapMacro(const lcm::ReceiveBuffer* iBuf,
@@ -290,7 +297,7 @@ public:
           std::cout << "Creating new map..." << std::endl;
           LocalMap::Spec spec;
           spec.mResolution = 0.01;
-          int id = mState->mManager->createMap(spec);
+          int id = mState->mCollector->getMapManager()->createMap(spec);
 
           std::cout << "Waiting for accumulation..." << std::endl;
           int64_t baseTime = drc::Clock::instance()->getCurrentTime();
@@ -303,7 +310,7 @@ public:
           }
 
           std::cout << "Stopping accumulation..." << std::endl;
-          mState->mManager->stopUpdatingMap(id);
+          mState->mCollector->getMapManager()->stopUpdatingMap(id);
 
           std::cout << "Resetting spindle speed..." << std::endl;
           rate.angular_velocity.x = 2*kPi;
@@ -326,6 +333,11 @@ public:
     boost::thread thread(worker);
   }
 
+  void onCatalogTrigger(const lcm::ReceiveBuffer* iBuf,
+                        const std::string& iChannel,
+                        const drc::map_macro_t* iMessage) {
+    sendCatalog();
+  }
 
   void addViewWorker(const drc::map_request_t& iRequest) {
     ViewWorkerMap::const_iterator item = mViewWorkers.find(iRequest.view_id);
@@ -349,7 +361,7 @@ public:
       ViewWorker::Ptr worker(new ViewWorker());
       worker->mBotWrapper = mBotWrapper;
       worker->mActive = false;
-      worker->mManager = mManager;
+      worker->mCollector = mCollector;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
       double mat[16];
@@ -359,26 +371,32 @@ public:
       worker->start();
     }
   }
-};
 
-// TODO: use collector here
-class DataConsumer {
-public:
-  DataConsumer(State* iState) {
-    mState = iState;
-  }
-
-  void operator()() {
-    while(true) {
-      SensorDataReceiver::SensorData data;
-      if (mState->mSensorDataReceiver->waitForData(data)) {
-        mState->mManager->addData(*data.mPointSet);
+  void sendCatalog() {
+    std::cout << "sending catalog" << std::endl;
+    drc::map_catalog_t catalog;
+    catalog.utime = drc::Clock::instance()->getCurrentTime();
+    auto manager = mCollector->getMapManager();
+    std::vector<int64_t> mapIds = manager->getAllMapIds();
+    catalog.maps.reserve(mapIds.size());
+    for (int i = 0; i < mapIds.size(); ++i) {
+      LocalMap::Ptr localMap = manager->getMap(mapIds[i]);
+      if (localMap != NULL) {
+        drc::map_params_t params;
+        LcmTranslator::toLcm(localMap->getSpec(), params);
+        params.utime = catalog.utime;
+        catalog.maps.push_back(params);
       }
     }
+    catalog.views.reserve(mViewWorkers.size());
+    ViewWorkerMap::const_iterator iter = mViewWorkers.begin();
+    for (; iter != mViewWorkers.end(); ++iter) {
+      catalog.views.push_back(iter->second->mRequest);
+    }
+    catalog.num_views = catalog.views.size();
+    catalog.num_maps = catalog.maps.size();
+    mBotWrapper->getLcm()->publish("MAP_CATALOG", &catalog);
   }
-
-protected:
-  State* mState;
 };
 
 class CatalogSender {
@@ -388,38 +406,16 @@ public:
   }
 
   void operator()() {
+    if (mState->mCatalogPublishPeriod == 0) return;
     while(true) {
-      std::cout << "sending catalog" << std::endl;
-      drc::map_catalog_t catalog;
-      catalog.utime = drc::Clock::instance()->getCurrentTime();
-      std::vector<int64_t> mapIds = mState->mManager->getAllMapIds();
-      catalog.maps.reserve(mapIds.size());
-      for (int i = 0; i < mapIds.size(); ++i) {
-        LocalMap::Ptr localMap = mState->mManager->getMap(mapIds[i]);
-        if (localMap != NULL) {
-          drc::map_params_t params;
-          LcmTranslator::toLcm(localMap->getSpec(), params);
-          params.utime = catalog.utime;
-          catalog.maps.push_back(params);
-        }
-      }
-      catalog.views.reserve(mState->mViewWorkers.size());
-      ViewWorkerMap::const_iterator iter = mState->mViewWorkers.begin();
-      for (; iter != mState->mViewWorkers.end(); ++iter) {
-        catalog.views.push_back(iter->second->mRequest);
-      }
-      catalog.num_views = catalog.views.size();
-      catalog.num_maps = catalog.maps.size();
-      mState->mBotWrapper->getLcm()->publish("MAP_CATALOG", &catalog);
+      mState->sendCatalog();
 
       // wait to send next catalog
       boost::asio::io_service service;
       boost::asio::deadline_timer timer(service);
-      if (mState->mCatalogPublishPeriod > 0) {
-        int milli = mState->mCatalogPublishPeriod*1000;
-        timer.expires_from_now(boost::posix_time::milliseconds(milli));
-        timer.wait();
-      }
+      int milli = mState->mCatalogPublishPeriod*1000;
+      timer.expires_from_now(boost::posix_time::milliseconds(milli));
+      timer.wait();
     }
   }
 
@@ -435,14 +431,14 @@ int main(const int iArgc, const char** iArgv) {
 
   // parse arguments
   string laserChannel = "SCAN";
-  float publishPeriod = 3;
+  float publishPeriod = 0;
   float defaultResolution = 0.1;
   float timeWindowSeconds = 0;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
   opt.add(publishPeriod, "p", "publish_period",
-          "interval between map publications, in s");
+          "interval between map publications, in s (0 for none)");
   opt.add(defaultResolution, "r", "resolution",
           "resolution of default contextual map, in m");
   opt.add(state.mCatalogPublishPeriod, "c", "catalog",
@@ -450,13 +446,12 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(timeWindowSeconds, "w", "window",
           "time window of default contextual map, in s");
   opt.parse();
-  state.mSensorDataReceiver->
+  state.mCollector->getDataReceiver()->
     addChannel(laserChannel,
                SensorDataReceiver::SensorTypePlanarLidar,
                laserChannel, "local");
 
   // set up remaining parameters
-  state.mSensorDataReceiver->setMaxBufferSize(100);
   LocalMap::Spec mapSpec;
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
@@ -464,22 +459,20 @@ int main(const int iArgc, const char** iArgv) {
   mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*1e10;
   mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*1e10;
   mapSpec.mResolution = defaultResolution;
-  int id = state.mManager->createMap(mapSpec);
+  int id = state.mCollector->getMapManager()->createMap(mapSpec);
   state.mRequestSubscription =
     lcm->subscribe("MAP_REQUEST", &State::onRequest, &state);
-  state.mRequestSubscription =
+  state.mMapCommandSubscription =
     lcm->subscribe("MAP_COMMAND", &State::onMapCommand, &state);
-  state.mRequestSubscription =
+  state.mMapParamsSubscription =
     lcm->subscribe("MAP_PARAMS", &State::onMapParams, &state);
-  state.mRequestSubscription =
+  state.mMapMacroSubscription =
     lcm->subscribe("MAP_MACRO", &State::onMapMacro, &state);
+  state.mCatalogTriggerSubscription =
+    lcm->subscribe("TRIGGER_CATALOG", &State::onCatalogTrigger, &state);
 
   // start running data receiver
-  state.mSensorDataReceiver->start();
-
-  // start consuming data
-  DataConsumer consumer(&state);
-  boost::thread consumerThread(consumer);
+  state.mCollector->start();
 
   // start sending catalog
   CatalogSender catalogSender(&state);
@@ -507,14 +500,15 @@ int main(const int iArgc, const char** iArgv) {
   drc::map_request_t request;
   LcmTranslator::toLcm(viewSpec, request);
   request.utime = drc::Clock::instance()->getCurrentTime();
-  state.addViewWorker(request);
+  if (publishPeriod > 0) {
+    state.addViewWorker(request);
+  }
 
   // main lcm loop
   while (0 == lcm->handle());
 
   // join pending threads
   catalogThread.join();
-  consumerThread.join();
 
   return 0;
 }

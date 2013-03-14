@@ -7,17 +7,20 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <bot_frames/bot_frames.h>
 #include <drc_utils/Clock.hpp>
 #include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_macro_t.hpp>
+#include <lcmtypes/drc/data_request_t.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
 #include "MeshRenderer.hpp"
+
+// TODO TEMP
+#include <fstream>
 
 namespace maps {
 
@@ -48,8 +51,10 @@ protected:
     int64_t mId;
     bool mVisible;
     Eigen::Vector3f mColor;
+    std::string mLabel;
     boost::shared_ptr<Gtk::HBox> mBox;
     Gtk::ToggleButton* mToggleButton;
+    Eigen::Isometry3f mLatestTransform;
 
     void onCancelButton() {
       maps::ViewBase::Spec spec;
@@ -100,7 +105,6 @@ protected:
   Eigen::Isometry3f mModelViewMatrix;
   Eigen::Matrix4f mProjectionMatrix;
   std::vector<int> mViewport;
-
   float mBaseValue;
   bool mBoxValid;
   Frustum mFrustum;
@@ -110,6 +114,7 @@ protected:
 
   MeshRenderer mMeshRenderer;
   ViewClient mViewClient;
+  BotWrapper::Ptr mBotWrapper;
   
 public:
 
@@ -128,11 +133,10 @@ public:
     // set up internal variables
     mBoxValid = false;
     mDragging = false;
+    mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
     mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
     mMeshRenderer.setCameraChannel("CAMERALEFT");
-    BotWrapper::Ptr botWrapper(new BotWrapper(getLcm(), getBotParam(),
-                                              getBotFrames()));
-    mViewClient.setBotWrapper(botWrapper);
+    mViewClient.setBotWrapper(mBotWrapper);
     mViewClient.setOctreeChannel("MAP_OCTREE");
     mViewClient.setCloudChannel("MAP_CLOUD");
     mViewClient.setDepthChannel("MAP_DEPTH");
@@ -241,6 +245,21 @@ public:
 
   // view client callbacks
   void notifyData(const int64_t iViewId) {
+    addViewMetaData(iViewId);
+    DataMap::const_iterator item = mViewData.find(iViewId);
+    ViewClient::ViewPtr view = mViewClient.getView(iViewId);
+    if ((item != mViewData.end()) && (view != NULL)) {
+      Eigen::Isometry3f headToLocal;
+      if (mBotWrapper->getTransform("head", "local", headToLocal,
+                                    view->getUpdateTime())) {
+        Eigen::Matrix3f rotMatx = headToLocal.linear();
+        float theta = atan2(rotMatx(1,0), rotMatx(0,0));
+        Eigen::Matrix3f rotation;
+        rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+        headToLocal.linear() = rotation;
+        item->second->mLatestTransform = headToLocal;
+      }
+    }
     requestDraw();
   }
   void notifyCatalog(const bool iChanged) {
@@ -298,23 +317,19 @@ public:
 
     // recast bound planes and transform with respect to sensor head
     if (spec.mRelativeLocation) {
-      BotTrans t;
-      bot_frames_get_trans(getBotFrames(), "head", "local", &t);
-      Eigen::Vector3f pos(t.trans_vec[0], t.trans_vec[1], t.trans_vec[2]);
-      Eigen::Quaternionf q(t.rot_quat[0], t.rot_quat[1],
-                           t.rot_quat[2], t.rot_quat[3]);
-      Eigen::Matrix3f rotMatx = q.toRotationMatrix();
-      float theta = atan2(rotMatx(1,0), rotMatx(0,0));
-      Eigen::Matrix4f headToLocal = Eigen::Matrix4f::Identity();
-      headToLocal.topRightCorner<3,1>() = pos;
-      Eigen::Matrix3f rotation;
-      rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-      headToLocal.topLeftCorner<3,3>() = rotation;
-      Eigen::Matrix4f planeTransform = headToLocal.transpose();
-      for (size_t i = 0; i < spec.mClipPlanes.size(); ++i) {
-        spec.mClipPlanes[i] = planeTransform*spec.mClipPlanes[i];
+      Eigen::Isometry3f headToLocal;
+      if (mBotWrapper->getTransform("head", "local", headToLocal)) {
+        Eigen::Matrix3f rotMatx = headToLocal.linear();
+        float theta = atan2(rotMatx(1,0), rotMatx(0,0));
+        Eigen::Matrix3f rotation;
+        rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+        headToLocal.linear() = rotation;
+        Eigen::Matrix4f planeTransform = headToLocal.matrix().transpose();
+        for (size_t i = 0; i < spec.mClipPlanes.size(); ++i) {
+          spec.mClipPlanes[i] = planeTransform*spec.mClipPlanes[i];
+        }
+        spec.mTransform = spec.mTransform*headToLocal;
       }
-      spec.mTransform = spec.mTransform*headToLocal;
     }
     mViewClient.request(spec);
     mInputModeComboBox->set_active(InputModeCamera);
@@ -536,11 +551,7 @@ public:
     if (!data->mVisible) return;
 
     // set range origin
-    BotTrans t;
-    bot_frames_get_trans_with_utime(getBotFrames(), "head", "local",
-                                    iView->getUpdateTime(), &t);
-    Eigen::Vector3f pos(t.trans_vec[0], t.trans_vec[1], t.trans_vec[2]);
-    mMeshRenderer.setRangeOrigin(pos);
+    mMeshRenderer.setRangeOrigin(data->mLatestTransform.translation());
 
     // draw frustum
     ViewBase::Spec viewSpec;
@@ -549,8 +560,7 @@ public:
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
         if (viewSpec.mRelativeLocation) {
-          // TODO: rotate as well
-          glTranslatef(pos[0], pos[1], pos[2]);
+          glMultMatrixf(data->mLatestTransform.data());
         }
         Frustum frustum;
         frustum.mPlanes = viewSpec.mClipPlanes;
@@ -574,10 +584,14 @@ public:
     if (usePoints) {
       mesh.reset(new maps::TriangleMesh());
       maps::PointCloud::Ptr cloud = iView->getAsPointCloud(false);
+      std::ofstream ofs("/tmp/points_renderer.txt");
       mesh->mVertices.reserve(cloud->size());
       for (size_t i = 0; i < cloud->size(); ++i) {
         mesh->mVertices.push_back((*cloud)[i].getVector3fMap());
+        ofs << mesh->mVertices.back().transpose() << std::endl;
       }
+      ofs.close();
+      // TODO: TEMP
     }
 
     // set up mesh renderer
@@ -590,6 +604,7 @@ public:
     // draw this view's data
     glPushMatrix();
     Eigen::Projective3f transform = iView->getTransform();
+    std::cout << "RENDERER TRANSFORM\n" << transform.matrix() << std::endl;
     glMultMatrixf(transform.inverse().data());
     mMeshRenderer.draw();
     glPopMatrix();
@@ -629,50 +644,67 @@ public:
   void addViewMetaData(const int64_t iId) {
     // add new metadata if none exists for this id
     DataMap::const_iterator item = mViewData.find(iId);
-    if (item == mViewData.end()) {
-      ViewMetaData::Ptr data(new ViewMetaData());
-      data->mRenderer = this;
-      data->mId = iId;
-      data->mVisible = true;
-      if (data->mId != 1) {
-        data->mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                       (double)rand()/RAND_MAX,
-                                       (double)rand()/RAND_MAX);
-      }
-      else {
-        data->mColor = Eigen::Vector3f(1,0,0);
-      }
+    if (item != mViewData.end()) return;
 
-      // create widget and add to list
-      std::ostringstream oss;
-      oss << iId;
-      std::string name = oss.str();
-      data->mBox.reset(new Gtk::HBox());
-      data->mToggleButton =
-        Gtk::manage(new Gtk::ToggleButton("                    "));
-      Gdk::Color color;
-      color.set_rgb_p(data->mColor[0], data->mColor[1], data->mColor[2]);
-      data->mToggleButton->modify_bg(Gtk::STATE_ACTIVE, color);
-      color.set_rgb_p((data->mColor[0]+1)/2, (data->mColor[1]+1)/2,
-                      (data->mColor[2]+1)/2);
-      data->mToggleButton->modify_bg(Gtk::STATE_NORMAL, color);
-      data->mToggleButton->signal_toggled().connect
-        (sigc::mem_fun(*data, &ViewMetaData::onToggleButton));
-      data->mToggleButton->set_active(true);
-      data->mBox->pack_start(*(data->mToggleButton), false, false);
-      Gtk::Label* label = Gtk::manage(new Gtk::Label(name));
-      data->mBox->pack_start(*label, false, false);
-      if (iId != 1) {
-        Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
-        data->mBox->pack_start(*cancelButton, false, false);
-        cancelButton->signal_clicked().connect
-          (sigc::mem_fun(*data, &ViewMetaData::onCancelButton));
+    ViewMetaData::Ptr data(new ViewMetaData());
+    data->mRenderer = this;
+    data->mId = iId;
+    data->mVisible = true;
+    data->mLatestTransform = Eigen::Isometry3f::Identity();
+    if (data->mId != 1) {
+      data->mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
+                                     (double)rand()/RAND_MAX,
+                                     (double)rand()/RAND_MAX);
+      switch(iId) {
+      case drc::data_request_t::OCTREE_SCENE:
+        data->mLabel = "Octree Scene";  break;
+      case drc::data_request_t::HEIGHT_MAP_SCENE:
+        data->mLabel = "Heightmap Scene";  break;
+      case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
+        data->mLabel = "Heightmap Corridor";  break;
+      case drc::data_request_t::DEPTH_MAP_SCENE:
+        data->mLabel = "Depthmap Scene";  break;
+      case drc::data_request_t::DEPTH_MAP_WORKSPACE:
+        data->mLabel = "Depthmap Workspace";  break;
+      default:
+        data->mLabel = static_cast<std::ostringstream*>
+          (&(std::ostringstream() << data->mId) )->str();
+        break;
       }
-      mViewListBox->pack_start(*(data->mBox), false, false);
-      data->mBox->show_all();
-
-      mViewData[iId] = data;
     }
+    else {
+      data->mColor = Eigen::Vector3f(1,0,0);
+      data->mLabel = "Server Map";
+    }
+
+    // create widget and add to list
+    data->mBox.reset(new Gtk::HBox());
+    data->mToggleButton =
+      Gtk::manage(new Gtk::ToggleButton("                    "));
+    Gdk::Color color;
+    color.set_rgb_p(data->mColor[0], data->mColor[1], data->mColor[2]);
+    data->mToggleButton->modify_bg(Gtk::STATE_ACTIVE, color);
+    color.set_rgb_p((data->mColor[0]+1)/2, (data->mColor[1]+1)/2,
+                    (data->mColor[2]+1)/2);
+    data->mToggleButton->modify_bg(Gtk::STATE_PRELIGHT, color); 
+    color.set_rgb_p(0.8, 0.8, 0.8);
+    data->mToggleButton->modify_bg(Gtk::STATE_NORMAL, color);
+    data->mToggleButton->signal_toggled().connect
+      (sigc::mem_fun(*data, &ViewMetaData::onToggleButton));
+    data->mToggleButton->set_active(true);
+    data->mBox->pack_start(*(data->mToggleButton), false, false);
+    Gtk::Label* label = Gtk::manage(new Gtk::Label(data->mLabel));
+    data->mBox->pack_start(*label, false, false);
+    if (iId != 1) {
+      Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
+      data->mBox->pack_start(*cancelButton, false, false);
+      cancelButton->signal_clicked().connect
+        (sigc::mem_fun(*data, &ViewMetaData::onCancelButton));
+    }
+    mViewListBox->pack_start(*(data->mBox), false, false);
+    data->mBox->show_all();
+
+    mViewData[iId] = data;
   }
 
 };

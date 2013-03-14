@@ -1,164 +1,38 @@
 #include "DepthImageView.hpp"
 
-#include <pcl/range_image/range_image.h>
-#include <pcl/io/io.h>
+#include "DepthImage.hpp"
 #include "Utils.hpp"
 
 using namespace maps;
 
-namespace pcl {
-class DepthImageProjective : public RangeImage {
-public:
-  typedef RangeImage BaseClass;
-  typedef boost::shared_ptr<DepthImageProjective> Ptr;
-  typedef boost::shared_ptr<const DepthImageProjective> ConstPtr;
-
-public:
-  DepthImageProjective() {
-    mProjector = Eigen::Projective3f::Identity();
-    mProjectorInv = Eigen::Projective3f::Identity();
-    unobserved_point.range = std::numeric_limits<float>::infinity();
-  }
-  ~DepthImageProjective() {}
-
-  RangeImage* getNew() const { return new DepthImageProjective(); }
-  Ptr makeShared() { return Ptr(new DepthImageProjective(*this)); }
-
-  void setParams(const int iWidth, const int iHeight,
-                 const Eigen::Projective3f& iTransform,
-                 const CoordinateFrame iFrame) {
-    reset();
-    width = iWidth;
-    height = iHeight;
-    mProjector = iTransform;
-    mProjectorInv = mProjector.inverse();
-    Eigen::Matrix3f calib;
-    Eigen::Isometry3f pose;
-    bool ortho;
-    Utils::factorViewMatrix(mProjector, calib, pose, ortho);
-    is_dense = false;
-    getCoordinateFrameTransformation(iFrame, to_world_system_);
-    to_world_system_ = pose * to_world_system_;
-    to_range_image_system_ = to_world_system_.inverse(Eigen::Isometry);
-    points.clear();
-    points.resize(width*height, unobserved_point);
-  }
-
-  // create from point cloud and composite matrix
-  template <typename PointCloudType> void
-  create(const PointCloudType& iCloud, const int iWidth, const int iHeight,
-         const Eigen::Projective3f& iTransform,
-         const CoordinateFrame iFrame=CAMERA_FRAME,
-         const float iNoiseLevel=0.0f, const float iMinDepth=0.0f) {
-    setParams(iWidth, iHeight, iTransform, iFrame);
-    int top(height), right(-1), bottom(-1), left(width);
-    doZBuffer(iCloud, iNoiseLevel, iMinDepth, top, right, bottom, left);
-    recalculate3DPointPositions();
-  }
-
-  // create from array of values (assumed to be iWidth*iHeight in length)
-  void create(const std::vector<float>& iVals,
-              const int iWidth, const int iHeight,
-              const Eigen::Projective3f& iTransform,
-              const CoordinateFrame iFrame=CAMERA_FRAME) {
-    setParams(iWidth, iHeight, iTransform, iFrame);
-    for (int y = 0; y < iHeight; ++y) {
-      for (int x = 0; x < iWidth; ++x) {
-        PointWithRange& curPoint = getPointNoCheck(x,y);
-        float depth = iVals[y*iWidth+x];
-        if (!pcl_isfinite(depth)) {
-          curPoint = unobserved_point;
-          continue;
-        }
-        Eigen::Vector3f pt;
-        calculate3DPoint(x, y, depth, pt);
-        curPoint.x = pt[0];
-        curPoint.y = pt[1];
-        curPoint.z = pt[2];
-        curPoint.range = depth;
-      }
-    }
-  }
-
-  inline void calculate3DPoint(float iX, float iY, float iDepth,
-                               Eigen::Vector3f& oPoint) const {
-    Eigen::Vector4f pt = mProjectorInv*Eigen::Vector4f(iX, iY, iDepth, 1);
-    oPoint = pt.head<3>()/pt[3];
-  }
-
-  inline void getImagePoint(const Eigen::Vector3f& iPoint,
-                            float& oX, float& oY, float& oDepth) const {
-    Eigen::Vector4f inPt(iPoint[0], iPoint[1], iPoint[2], 1);
-    Eigen::Vector4f pt = mProjector*inPt;
-    Eigen::Vector3f outPt = pt.head<3>()/pt[3];
-    oX = outPt[0];
-    oY = outPt[1];
-    oDepth = outPt[2];
-  }
-      
-  void getSubImage(int iOffsetX, int iOffsetY, int iWidth, int iHeight,
-                   int iCombine, RangeImage& oImage) const {
-    DepthImageProjective& img = *(static_cast<DepthImageProjective*>(&oImage));
-    Eigen::Translation3f shift(-iOffsetX, -iOffsetY, 0);
-    Eigen::Affine3f scale = Eigen::Affine3f::Identity();
-    scale.linear() = Eigen::Scaling(1.0f/iCombine, 1.0f/iCombine, 1.0f);
-    BaseClass::getSubImage(iOffsetX, iOffsetY, iWidth, iHeight, iCombine, img);
-    img.image_offset_x_ = img.image_offset_y_ = 0;
-    img.mProjector = scale*shift*mProjector;
-    img.mProjectorInv = img.mProjector.inverse();
-  }
-
-  void getHalfImage(RangeImage& oImage) const {
-    DepthImageProjective& img = *(static_cast<DepthImageProjective*>(&oImage));
-    Eigen::Affine3f scale = Eigen::Affine3f::Identity();
-    scale.linear() = Eigen::Scaling(0.5f, 0.5f, 1.0f);
-    BaseClass::getHalfImage(img);
-    img.mProjector = scale*mProjector;
-    img.mProjectorInv = img.mProjector.inverse();
-  }
-      
-protected:
-  Eigen::Projective3f mProjector;
-  Eigen::Projective3f mProjectorInv;
-};
-}
-
 DepthImageView::
 DepthImageView() {
-  mImage.reset(new pcl::DepthImageProjective());
-  mImage->width = mImage->height = 0;
+  mImage.reset(new DepthImage());
 }
 
 DepthImageView::
 ~DepthImageView() {
 }
 
-boost::shared_ptr<pcl::RangeImage> DepthImageView::
-getRangeImage() const {
-  return mImage;
-}
-
 void DepthImageView::
 setSize(const int iWidth, const int iHeight) {
-  mImage->width = iWidth;
-  mImage->height = iHeight;
+  mImage->setSize(iWidth, iHeight);
 }
 
 void DepthImageView::
-set(const std::vector<float>& iData, const int iWidth, const int iHeight) {
-  int width(iWidth), height(iHeight);
-  if (width == 0) width = mImage->width;
-  if (height == 0) height = mImage->height;
-  pcl::DepthImageProjective* img =
-    dynamic_cast<pcl::DepthImageProjective*>(mImage.get());
-  img->create(iData, width, height, mTransform);
+set(const DepthImage& iImage) {
+  mImage.reset(new DepthImage(iImage));
+  setTransform(mImage->getProjector());
+}
+
+boost::shared_ptr<DepthImage> DepthImageView::
+getDepthImage() const {
+  return mImage;
 }
 
 ViewBase::Ptr DepthImageView::
 clone() const {
-  DepthImageView* view = new DepthImageView(*this);
-  view->mImage = view->mImage->makeShared();
-  return Ptr(view);
+  return Ptr(new DepthImageView(*this));
 }
 
 const ViewBase::Type DepthImageView::
@@ -168,25 +42,24 @@ getType() const {
 
 void DepthImageView::
 set(const maps::PointCloud::Ptr& iCloud) {
-  pcl::DepthImageProjective* img =
-    dynamic_cast<pcl::DepthImageProjective*>(mImage.get());
-  img->create(*iCloud, mImage->width, mImage->height, mTransform);
+  mImage->setProjector(mTransform);
+  mImage->create(iCloud);
 }
 
 maps::PointCloud::Ptr DepthImageView::
 getAsPointCloud(const bool iTransform) const {
   maps::PointCloud::Ptr cloud(new maps::PointCloud());
   if (iTransform) {
-    pcl::copyPointCloud(*mImage, *cloud);
+    cloud = mImage->getAsPointCloud();
   }
   else {
-    cloud->reserve(mImage->width*mImage->height);
+    cloud->reserve(mImage->getWidth()*mImage->getHeight());
     cloud->is_dense = false;
-    bool ortho = Utils::isOrthographic(mTransform.matrix());
-    float* depths = mImage->getRangesArray();
-    for (int i = 0, idx = 0; i < mImage->height; ++i) {
-      for (int j = 0; j < mImage->width; ++j, ++idx) {
-        if (!pcl_isfinite(depths[idx])) continue;
+    std::vector<float> depths = mImage->getData(DepthImage::TypeDisparity);
+    float invalidValue = mImage->getInvalidValue(DepthImage::TypeDisparity);
+    for (int i = 0, idx = 0; i < mImage->getHeight(); ++i) {
+      for (int j = 0; j < mImage->getWidth(); ++j, ++idx) {
+        if (depths[idx] == invalidValue) continue;
         maps::PointCloud::PointType pt;
         pt.x = j;
         pt.y = i;
@@ -200,9 +73,9 @@ getAsPointCloud(const bool iTransform) const {
 
 maps::TriangleMesh::Ptr DepthImageView::
 getAsMesh(const bool iTransform) const {
-  int width(mImage->width), height(mImage->height);
+  int width(mImage->getWidth()), height(mImage->getHeight());
   int numDepths = width*height;
-  float* depths = mImage->getRangesArray();
+  std::vector<float> depths = mImage->getData(DepthImage::TypeDisparity);
   maps::TriangleMesh::Ptr mesh(new maps::TriangleMesh());
 
   // vertices
@@ -211,8 +84,8 @@ getAsMesh(const bool iTransform) const {
     for (int j = 0; j < width; ++j) {
       float z = depths[i*width+j];
       if (iTransform) {
-        Eigen::Vector3f pt;
-        mImage->calculate3DPoint(j,i,z,pt);
+        Eigen::Vector3f pt = mImage->unproject(Eigen::Vector3f(j,i,z),
+                                               DepthImage::TypeDisparity);
         mesh->mVertices.push_back(pt);
       }
       else {
@@ -231,10 +104,10 @@ getAsMesh(const bool iTransform) const {
       double z10 = depths[idx+1];
       double z01 = depths[idx+width];
       double z11 = depths[idx+width+1];
-      bool valid00 = fabs(z00) != std::numeric_limits<float>::infinity();
-      bool valid10 = fabs(z10) != std::numeric_limits<float>::infinity();
-      bool valid01 = fabs(z01) != std::numeric_limits<float>::infinity();
-      bool valid11 = fabs(z11) != std::numeric_limits<float>::infinity();
+      bool valid00 = pcl_isfinite(z00);
+      bool valid10 = pcl_isfinite(z10);
+      bool valid01 = pcl_isfinite(z01);
+      bool valid11 = pcl_isfinite(z11);
       int validSum = (int)valid00 + (int)valid10 + (int)valid01 + (int)valid11;
       if (validSum < 3) continue;
 
@@ -270,6 +143,38 @@ getAsMesh(const bool iTransform) const {
 bool DepthImageView::
 getClosest(const Eigen::Vector3f& iPoint,
            Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
+  /* TODO
+  // TODO: maybe interpolate depths not disparities
+  Eigen::Vector3f proj = mImage->project(iPoint, DephImage::TypeDisparity);
+  const std::vector<float>& disparities =
+    mImage->getData(DepthImage::TypeDisparity);
+  int width(mImage->getWidth()), height(mImage->getHeight());
+  int xInt(proj[0]), yInt(proj[1]);
+  if ((xInt < 0) || (xInt >= width-1) || (yInt < 0) || (yInt >= height-1)) {
+    return false;
+  }
+  int idx = width*yInt + xInt;
+  float z00 = disparities[idx];
+  float z10 = disparities[idx+1];
+  float z01 = disparities[idx+width];
+  float z11 = disparities[idx+1+width];
+  float xFrac = proj[0]-xInt;
+  float yFrac = proj[0]-yInt;
+  if (xFrac >= yFrac) {
+  }
+  else {
+  }
+  float zInterp = z00 + xFrac*(z10 - z00) + yFrac*(z01 - z00) +
+    xFrac*yFrac*(z00 + z11 - z10 - z01);
+  if (zInterp == mImage->getInvalidValue()) return false;
+  oPoint = mImage->unproject(Eigen::Vector3f(proj[0], proj[1], zInterp),
+                             DepthImage::TypeDisparity);
+  Eigen::Vector3f p00 = mImage->unproject(Eigen::Vector3f(xInt, yInt, z00));
+  Eigen::Vector3f p10 = mImage->unproject(Eigen::Vector3f(xInt+1, yInt, z10));
+  Eigen::Vector3f p01 = mImage->unproject(Eigen::Vector3f(xInt, yInt+1, z01));
+  Eigen::Vector3f p11 = mImage->unproject(Eigen::Vector3f(xInt+1, yInt+1, z11));
+  // TODO: closest point
   // TODO: getClosest
-  return false;
+  */
+  return true;
 }

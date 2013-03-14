@@ -12,7 +12,7 @@
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImageView.hpp>
-
+#include <maps/DepthImage.hpp>
 
 #include <drc_utils/Clock.hpp>
 
@@ -259,7 +259,8 @@ void DataProducer::operator()() {
   
 
     // 5. get depth image pixel values and store to file
-    float* depths = depthImageView->getRangeImage()->getRangesArray();
+    std::vector<float> depths =
+      depthImageView->getDepthImage()->getData(DepthImage::TypeDisparity);
     std::ofstream ofs("/tmp/depths.txt");
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {

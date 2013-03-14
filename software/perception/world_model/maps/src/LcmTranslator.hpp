@@ -47,7 +47,7 @@ public:
 
   // for depth image
   static bool toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
-                    const int iBits=16, const bool iCompress=true);
+                    const int iBits=11, const bool iCompress=true);
   static bool fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView);
 };
 

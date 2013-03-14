@@ -16,4 +16,8 @@ struct map_image_t
 
   // image data
   map_blob_t blob;
+
+  // linear transformation to restore raw data values
+  float data_scale;
+  float data_shift;
 }

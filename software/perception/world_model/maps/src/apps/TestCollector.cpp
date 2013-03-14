@@ -2,8 +2,6 @@
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
-#include <pcl/range_image/range_image.h>
-
 #include <lcm/lcm-cpp.hpp>
 #include <bot_lcmgl_client/lcmgl.h>
 #include <lcmtypes/drc/map_image_t.hpp>
@@ -18,6 +16,7 @@
 #include <maps/LcmTranslator.hpp>
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
+#include <maps/DepthImage.hpp>
 
 using namespace maps;
 using namespace std;
@@ -117,10 +116,9 @@ public:
     calib(0,2) = width/2.0;        // cop at center of image
     calib(1,2) = height/2.0;
 
-    // create depth image (badly named as DepthImage due to underlying pcl)
+    // create depth image
     Eigen::Projective3f projector;
     Utils::composeViewMatrix(projector, calib, pose, false);
-    std::cout << "PROJECTOR\n" << projector.matrix() << std::endl;
     DepthImageView::Ptr depthImageView =
       localMap->getAsDepthImage(width, height, projector, bounds);
 
@@ -137,7 +135,8 @@ public:
     bot_lcmgl_switch_buffer(lcmgl);
 
     // get raw depth image pixel values and store to file
-    float* depths = depthImageView->getRangeImage()->getRangesArray();
+    std::vector<float> depths =
+      depthImageView->getDepthImage()->getData(DepthImage::TypeDisparity);
     std::ofstream ofs("/tmp/depths.txt");
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {

@@ -4,6 +4,7 @@ add_library(maps SHARED
   Utils.cpp
   PointDataBuffer.cpp
   VoxelGrid.cpp
+  DepthImage.cpp
   BotWrapper.cpp
   SensorDataReceiver.cpp
   ViewBase.cpp
@@ -29,6 +30,7 @@ pods_install_headers(
   Utils.hpp
   PointDataBuffer.hpp
   VoxelGrid.hpp
+  DepthImage.hpp
   BotWrapper.hpp
   SensorDataReceiver.hpp
   ViewBase.hpp
