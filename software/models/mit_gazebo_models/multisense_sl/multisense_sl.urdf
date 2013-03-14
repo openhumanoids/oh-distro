@@ -150,7 +150,7 @@
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40</updateRate>
-        <topicName>/multisense_sl/scan</topicName>
+        <topicName>/multisense_sl/laser/scan</topicName>
         <frameName>head_hokuyo_frame</frameName>
       </plugin>
     </sensor>
