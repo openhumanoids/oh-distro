@@ -44,7 +44,38 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       q0 = x0(1:end/2);
       [start_pos, obj.step_width] = obj.feetPosition(q0);
       % [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
-      [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses], options.interactive);
+
+      if ~options.interactive
+        [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses]);
+        return;
+      end 
+      lc = lcm.lcm.LCM.getSingleton();
+      aggregator = lcm.lcm.MessageAggregator();
+      lc.subscribe('REJECTED_FOOTSTEP_PLAN', aggregator);
+      lc.subscribe('COMMITTED_FOOTSTEP_PLAN', aggregator);
+      lc.subscribe('FOOTSTEP_PLAN_CONSTRAINT', aggregator);
+      function [data, changed, changelist] = updatefun(data)
+        changed = false;
+        changelist = struct('plan_con', false, 'plan_commit', false, 'plan_reject', false);
+        while 1
+          msg = aggregator.getNextMessage(10);
+          if isempty(msg)
+            break
+          end
+          if strcmp(msg.channel, 'REJECTED_FOOTSTEP_PLAN')
+            changelist.plan_reject = true;
+            changed = true;
+          elseif strcmp(msg.channel, 'COMMITTED_FOOTSTEP_PLAN')
+            changelist.plan_commit = true;
+            changed = true;
+          else
+            changelist.plan_con = true;
+            changed = true;
+            data.plan_con = drc.footstep_plan_t(msg.data);
+          end
+        end
+      end
+      [Xright, Xleft] = obj.optimizeFootstepPlan([start_pos, poses], @(X) obj.publish_footstep_plan(X), @updatefun, struct());
 
       if options.plotting
         figure(22)
@@ -164,11 +195,17 @@ classdef Biped < TimeSteppingRigidBodyManipulator
                    'left', int32([1:2:(total_steps-1), total_steps]));
     end
 
-    function publish_footstep_plan(obj, X)
+    function publish_footstep_plan(obj, X, t, isnew)
+      if nargin < 4
+        isnew = true;
+      end
+      if nargin < 3
+        t = now() * 24 * 60 * 60;
+      end
       ndx = obj.getStepNdx(length(X(1,:)));
       [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
 
-      msg = FootstepPlanPublisher.encodeFootstepPlan([Xright, Xleft]);
+      msg = FootstepPlanPublisher.encodeFootstepPlan([Xright, Xleft], t, isnew);
       % figure(22);
       % plotFootstepPlan([], Xright, Xleft)
       % drawnow

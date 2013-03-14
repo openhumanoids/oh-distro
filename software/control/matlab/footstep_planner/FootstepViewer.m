@@ -29,7 +29,7 @@ classdef FootstepViewer
       disp('running')
       selected_id = 0;
       while 1
-        new_plan = obj.listener.getNextMessage(0);
+        new_plan = obj.listener.getNextMessage(50);
         if ~isempty(new_plan)
           plan = new_plan;
           Xright = plan(:, plan(15,:)==1);

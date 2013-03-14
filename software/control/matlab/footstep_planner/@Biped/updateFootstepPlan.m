@@ -1,7 +1,44 @@
-function [X, exitflag] = updateFootstepPlan(biped, X, ndx_r, ndx_l, heightfun)
+function [X, exitflag] = updateFootstepPlan(biped, X, heightfun)
 
+%% Adjust the number of footsteps, if necessary
+[Xright, Xleft] = biped.stepLocations(X);
+
+ndx_fixed = find(any(X(9:14,:)));
+
+[d_r, r_r] = biped.stepDistance(Xright(1:6,1:(end-1)), Xright(1:6,2:end), 0);
+[d_l, r_l] = biped.stepDistance(Xleft(1:6,1:(end-1)), Xleft(1:6,2:end), 0);
+for n = 1:(length(ndx_fixed)-1)
+  num_steps = ndx_fixed(n+1) - ndx_fixed(n);
+  dist = max(sum(d_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
+             sum(d_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
+  rot = max(sum(r_r(ndx_fixed(n):(ndx_fixed(n+1)-1))),...
+            sum(r_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
+  if  ((dist > num_steps * biped.max_step_length * .4 ...
+        || rot > num_steps * biped.max_step_rot * .4) ...
+      && (num_steps > 1 || n == length(ndx_fixed)-1 || n == 1))
+    j = ndx_fixed(n);
+    X(:,j+3:end+2) = X(:,j+1:end);
+    X(:,[j+1,j+2]) = interp1([0,1], X(:,[j,j+1])', [1/3, 2/3])';
+    X(8,:) = int32(X(8,:));
+    X(7, :) = (0:length(X(1,:))-1) * biped.step_time / 2;
+    X(9:14,[j+1,j+2]) = 0;
+    break
+  elseif (dist < num_steps * biped.max_step_length * 0.15 ...
+          && rot < num_steps * biped.max_step_rot * 0.15) ...
+      && (num_steps > 2)
+    j = ndx_fixed(n);
+    X(:,j+1:end-2) = X(:,j+3:end);
+    X(:,end-1:end) = [];
+    X(7, :) = (0:length(X(1,:))-1) * biped.step_time / 2;
+    break
+  end
+end
+total_steps = length(X(1,:));
+ndx = biped.getStepNdx(total_steps);
+
+%% Set up and run the optimization problem
+  
 max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
-
 X_orig = X;
 
 x_flat = reshape(X([1,2,6],:), 1, []);
@@ -44,8 +81,8 @@ function [c, ceq] = nonlcon(x_flat)
   Xleft(3,:) = heightfun(Xleft(1:2,:));
   dist_alt_r = abs(Xright(:,1:end-1) - Xleft(:,2:end));
   dist_alt_l = abs(Xleft(:,1:end-1) - Xright(:,2:end));
-  height_diff = [abs(Xright(3,ndx_r(1:end-1)) - Xright(3,ndx_r(2:end)))';
-                 abs(Xleft(3,ndx_l(1:end-1)) - Xleft(3,ndx_l(2:end)))'];
+  height_diff = [abs(Xright(3,ndx.right(1:end-1)) - Xright(3,ndx.right(2:end)))';
+                 abs(Xleft(3,ndx.left(1:end-1)) - Xleft(3,ndx.left(2:end)))'];
   c = [reshape(dist_alt_r(1:2,:), [], 1) - max_diag_dist;
       reshape(dist_alt_l(1:2,:), [], 1) - max_diag_dist;
        height_diff - 0.5];
