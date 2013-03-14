@@ -27,6 +27,7 @@
     </plugin>
    -->
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
+    <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
   <!-- END MIT ADD ON -->
   </gazebo>
     
