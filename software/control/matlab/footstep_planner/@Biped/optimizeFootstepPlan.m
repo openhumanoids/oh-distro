@@ -1,7 +1,7 @@
 function [Xright, Xleft] = optimizeFootstepPlan(biped, x0, poses, outputfun, updatefun, data)
 q0 = x0(1:end/2);
 [start_pos, step_width] = biped.feetPosition(q0);
-poses = [start_pos, poses(:,end)];
+poses = [start_pos, poses];
 
   if nargin < 5
     interactive = false;
@@ -59,6 +59,7 @@ poses = [start_pos, poses(:,end)];
         % new_X = listener.getNextMessage(0);
         if changelist.plan_con
           new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
+          new_X = new_X(:,1);
           new_X(1:6) = biped.stepCenters(new_X(1:6), new_X(15));
           j = find(X(8,:) == new_X(8));
           X(:, j) = new_X(1:14);
