@@ -89,22 +89,44 @@ classdef ZMPplanner < DrakeSystem
             D_val = reshape(repmat(-z_com./(zddot_com+obj.g),2,1),[],1);
             N = N+diag(D_val);
             active_contact_flag = logical(active_contact_flag);
-
+            num_support_vertices = 0;
+            support_vertices_row = zeros(obj.max_contact_pts*preview_size*2,1);
+            support_vertices_col = zeros(obj.max_contact_pts*preview_size*2,1);
+            inner_support_vertices_val = zeros(obj.max_contact_pts*preview_size*2,1);
+            support_vertices_ind = 0;
+            convex_comb_row = zeros(obj.max_contact_pts*preview_size,1);
+            convex_comb_col = (1:obj.max_contact_pts*preview_size)';
+            convex_comb_val = ones(obj.max_contact_pts*preview_size,1);
             for i = 1:preview_size
                 active_contact_pos = contact_pos(:,active_contact_flag(:,i),i);
-                support_vertices_ind_i = convhull(active_contact_pos(1,:),active_contact_pos(2,:));
-                support_vertices{i} = active_contact_pos(1:2,support_vertices_ind_i);
-                convex_comb{i} = ones(1,length(support_vertices_ind_i));
                 support_center(:,i) = mean(active_contact_pos(1:2,:),2);
-                inner_support_vertices{i} = bsxfun(@plus,shrink_factor*support_vertices{i},(1-shrink_factor)*support_center(:,i));
+                support_vertices_ind_i = convhull(active_contact_pos(1,:),active_contact_pos(2,:));
+                num_support_vertices_ind_i = length(support_vertices_ind_i);
+                support_vertices_row(support_vertices_ind+(1:num_support_vertices_ind_i*2)) =...
+                    reshape([ones(1,num_support_vertices_ind_i);2*ones(1,num_support_vertices_ind_i)],[],1)+(i-1)*2;
+                support_vertices_col(support_vertices_ind+(1:num_support_vertices_ind_i*2)) = ...
+                    reshape(bsxfun(@plus,num_support_vertices+(1:num_support_vertices_ind_i),[0;0]),[],1);
+                inner_support_vertices_val(support_vertices_ind+(1:num_support_vertices_ind_i*2)) = ...
+                    reshape(bsxfun(@plus,shrink_factor*active_contact_pos(:,support_vertices_ind_i),(1-shrink_factor)*support_center(:,i)),[],1);
+                convex_comb_row(num_support_vertices+(1:num_support_vertices_ind_i)) = i*ones(num_support_vertices_ind_i,1);
+                num_support_vertices = num_support_vertices+num_support_vertices_ind_i;
+                support_vertices_ind = support_vertices_ind+2*num_support_vertices_ind_i;
+%                 support_vertices{i} = active_contact_pos(1:2,support_vertices_ind_i);
+%                 convex_comb{i} = ones(1,length(support_vertices_ind_i));
+                
             end
             x0Y = M*x0; % This is the effect of initial com on preview com
             x0X = Mbar*x0;
-            inner_support_vert_mat = blkdiag(inner_support_vertices{:});
-            n_weights = size(inner_support_vert_mat,2);
-            convex_comb_mat = blkdiag(convex_comb{:});
+            inner_support_vert_mat = sparse(support_vertices_row(1:support_vertices_ind),...
+                support_vertices_col(1:support_vertices_ind),inner_support_vertices_val(1:support_vertices_ind),...
+                2*preview_size,num_support_vertices);
+            n_weights = num_support_vertices;
+%             convex_comb_mat = blkdiag(convex_comb{:});
+            convex_comb_mat = sparse(convex_comb_row(1:num_support_vertices),...
+                convex_comb_col(1:num_support_vertices),convex_comb_val(1:num_support_vertices),...
+                preview_size,num_support_vertices);
             if(obj.supportPolygonConstraints)
-            Aeq = [inner_support_vert_mat -N;convex_comb_mat zeros(size(convex_comb_mat,1),nu*preview_size)];
+            Aeq = [inner_support_vert_mat -N;convex_comb_mat sparse(preview_size,nu*preview_size)];
             beq = [x0Y; ones(preview_size,1)];
             lb = [zeros(n_weights,1);-inf(nu*preview_size,1)];
             ub = [ones(n_weights,1);inf(nu*preview_size,1)];
@@ -144,12 +166,42 @@ classdef ZMPplanner < DrakeSystem
 %             end
 %             [sol,fval,exitflag] = cplexqp((H+H')/2,f,[],[],Aeq,beq,lb,ub,[1/obj.max_contact_pts*ones(n_weights,1);zeros(2*obj.window_size,1)]);
             if(obj.supportPolygonConstraints)
-                [sol,fval,exitflag] = cplexqp((H+H')/2,f,[],[],Aeq,beq,lb,ub,[1/obj.max_contact_pts*ones(n_weights,1);zeros(nu*preview_size,1)]);
+%                 tic
+%                 [sol,fval,exitflag] = cplexqp((H+H')/2,f,[],[],Aeq,beq,lb,ub,[1/obj.max_contact_pts*ones(n_weights,1);zeros(nu*preview_size,1)]);
+%                 toc
+%                 tic
+                model = struct();
+                model.A = Aeq;
+                model.obj = 2*f';
+                model.sense = '=';
+                model.rhs = beq;
+                model.lb = lb;
+                model.ub = ub;
+                model.Q = sparse((H+H')/2);
+                params = struct();
+                params.outputflag = 0;
+                toc
+                tic
+                results = gurobi(model,params);
+                toc
+%                 toc
             else
-                [sol,fval,exitflag] = cplexqp((H+H')/2,f,[],[]);
+%                 [sol,fval,exitflag] = cplexqp((H+H')/2,f,[],[]);
+                model = struct();
+                model.obj = 2*f;
+                model.A = sparse(1,length(f));
+                model.sense = '=';
+                model.rhs = 0;
+                model.Q = sparse((H+H')/2);
+                params = struct();
+                params.outputflag = 0;
+                results = gurobi(model,params);
             end
-            if(exitflag<=0)
-                error('ZMP planning is not successful')
+%             if(exitflag<=0)
+%                 error('ZMP planning is not successful')
+%             end
+            if(results.status ~= 'OPTIMAL')
+                error('ZMP planning is not successful');
             end
             % V = x'S1x+2*x'*S2+S3
             S1 = zeros(nx,nx,preview_size);
@@ -167,17 +219,20 @@ classdef ZMPplanner < DrakeSystem
 %                 S3(:,i) = S3(:,i+1)+support_center(:,i)'*Qy*support_center(:,i)+(P3'/P1)*P3;
             end
             if(obj.supportPolygonConstraints)
-                weights_sol = sol(1:n_weights);
-                comddot_preview = sol(n_weights+(1:nu*preview_size));
+%                 weights_sol = sol(1:n_weights);
+%                 comddot_preview1 = sol(n_weights+(1:nu*preview_size));
+                weights_sol = results.x(1:n_weights);
+                comddot_preview = results.x(n_weights+(1:nu*preview_size));
             else
-                comddot_preview = sol(1:nu*preview_size);
+%                 comddot_preview = sol(1:nu*preview_size);
+                comddot_preview = results.x((1:nu*preview_size));
             end
             LIP_state_preview = reshape(Mbar*x0+Nbar*comddot_preview,nx,preview_size);
             com_plan = [LIP_state_preview(1:2,:);z_com];
             planar_comdot_plan = LIP_state_preview(3:4,:);
             comddot_plan = [reshape(comddot_preview,2,[]);zddot_com];
             zmp_plan = reshape(M*x0+N*comddot_preview,ny,preview_size);
-            toc
+%             toc
 %             profile off
 %             profile viewer
         end
