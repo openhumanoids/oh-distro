@@ -35,7 +35,7 @@ using namespace boost;
 
 double yaw=0;
 double x=0;
-double y=0;
+double y=5;
 double z=0;
 
 struct Primitive
@@ -172,7 +172,7 @@ void StatePub::sendMesh(){
       cout << sampled_pts->points.size() << " sampled points output\n";
         pcl::PCDWriter writer;
         stringstream ss2;
-        ss2 << "/home/mfallon/drc/software/perception/vehicle-tracker/scripts/vehicle_sampled.pcd";
+        ss2 << "vehicle_sampled.pcd";
         writer.write (ss2.str(), *sampled_pts, false);
       }
     }
@@ -262,10 +262,14 @@ void StatePub::findPlanes (pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered
   std::cout << "[OUT] number of planes extracted: " << plane_stack.size() << "\n";
   visualizePlanes(plane_stack);
   
-  std::stringstream ss;
   GrowCloud grow;
-  grow.printPlaneStack(plane_stack, ss);
-  cout << ss.str() <<"\n";
+  std::stringstream ss;
+  grow.printPlaneStackCoeffs(plane_stack, ss);
+  cout << ss.str();
+
+  std::stringstream ss2;
+  grow.printPlaneStackHull(plane_stack, ss2);
+  cout << ss2.str();
 }
 
 
@@ -326,8 +330,8 @@ bool StatePub::readPCD(){
 
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string filename = "/home/mfallon/drc/software/perception/vehicle-tracker/scripts/chassis.txt";
-  string pcd_filename = "/home/mfallon/drc/software/perception/vehicle-tracker/scripts/vehicle_200000000.pcd";
+  string filename = "/home/mfallon/drc/software/perception/trackers/data/car_simulator/chassis.txt";
+  string pcd_filename = "/home/mfallon/drc/software/perception/trackers/data/car_simulator/vehicle_200000000.pcd";
   int pts_per_m_squared = 2000; // was 1000
   parser.add(filename, "f", "filename", "filename");
   parser.add(pcd_filename, "p", "pcd_filename", "pcd_filename");
