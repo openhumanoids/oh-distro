@@ -176,9 +176,13 @@ namespace renderer_sticky_feet{
     //drc::traj_opt_constraint_t msg;
     drc::footstep_plan_t msg;
     drc::footstep_goal_t goal_msg;
-    msg.utime = self->robot_utime;
-    msg.robot_name =  self->footStepPlanListener->_robot_name;
-    goal_msg.utime = self->robot_utime;
+    msg.robot_name =  self->footStepPlanListener->_robot_name;    
+
+    int64_t utime = self->robot_utime; // usually this should come from the ROBOT_UTIME subscription, which is broadcast from ros2lcm translator via gazebo.
+    utime = self->footStepPlanListener->_last_plan_msg_timestamp; // just for debugging use this; TODO: remove later
+    msg.utime = utime;
+    goal_msg.utime = utime;
+    
     goal_msg.robot_name = msg.robot_name;
     msg.num_steps = 1;
   
