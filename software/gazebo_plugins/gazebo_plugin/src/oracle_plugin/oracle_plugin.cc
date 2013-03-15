@@ -35,7 +35,7 @@ class OraclePlugin: public ModelPlugin{
   
     void storeAffordances();
   
-    drc::affordance_t getAffordance(std::string name, Eigen::Isometry3d pose);
+    bool sendAffordance(std::string name, Eigen::Isometry3d pose);
   
     // Called by the world update start event
     void OnUpdate();
@@ -138,6 +138,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="steering_cyl";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -180,6 +181,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -225,6 +227,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -271,6 +274,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -312,6 +316,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -352,6 +357,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -392,6 +398,7 @@ void OraclePlugin::storeAffordances()
     a.map_id =0;
     a.uid =counter++;
     a.otdf_type ="steering_cyl";
+    a.aff_store_control = drc::affordance_t::NEW;
     a.nparams =9;
 
     a.param_names.push_back("x");
@@ -436,13 +443,20 @@ void OraclePlugin::storeAffordances()
 
 
 
-drc::affordance_t OraclePlugin::getAffordance(
+bool OraclePlugin::sendAffordance(
         std::string name,
         Eigen::Isometry3d pose){
 
     // Find the affordance:
     AffordancePlus affp = aff_map_.find( name)->second;
     
+///    std::map< std::string, AffordancePlus >::iterator it;
+   // it=mymap.find(name);
+    
+    cout << aff_map_.find( name)->second.aff.otdf_type << " is the type\n";
+    cout << (int) aff_map_.find( name)->second.aff.aff_store_control << " is the type\n";
+    aff_map_.find( name)->second.aff.aff_store_control = drc::affordance_t::UPDATE;
+
     drc::affordance_t aff= affp.aff;
     // Update the xyzrpr:
     int ix = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "x"   ) );
@@ -464,7 +478,13 @@ drc::affordance_t OraclePlugin::getAffordance(
     aff.params[ipitch] = pitch ;
     aff.params[iyaw] = yaw ;
     
-    return aff;
+
+    if (aff.aff_store_control==0){
+      lcm_publish_.publish( ("AFFORDANCE_FIT_ORACLE") , &aff);        
+    }else{
+      lcm_publish_.publish( ("AFFORDANCE_TRACK_ORACLE") , &aff);        
+    }
+    return true;
 }  
 
 
@@ -566,38 +586,36 @@ void OraclePlugin::OnUpdate(){
 
               if ( model->GetName().compare("drc_vehicle") == 0) {              
                 if ( link->GetName().compare( "polaris_ranger_ev::steering_wheel" ) == 0){
-                  //gzerr<< "got steering_wheel\n"; 
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
                 //if ( link->GetName().compare( "polaris_ranger_ev::hand_brake" ) == 0){                  
-                  //affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                //  sendAffordance(affname,  world_to_link);
                 //}
               }
 
               if ( model->GetName().compare( "mit_coke_can" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
               }
               if ( model->GetName().compare( "mit_cordless_drill" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
-                  affcol.affs.push_back ( getAffordance(  "mit_cordless_drill_link_handle",  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
               }
               if ( model->GetName().compare( "duff_beer" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
               }
               if ( model->GetName().compare( "standpipe" ) == 0){
                 if ( link->GetName().compare( "standpipe" ) == 0){
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
               }
               if ( model->GetName().compare( "steering_assembly" ) == 0){
                 if ( link->GetName().compare( "steering_wheel" ) == 0){
-                  affcol.affs.push_back ( getAffordance(affname,  world_to_link) );
+                  sendAffordance(affname,  world_to_link);
                 }
               }
               

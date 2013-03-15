@@ -9,3 +9,6 @@ state
 interface
 qt4
 visualization_utils
+
+# simple tools for helping with the system and build
+tools
