@@ -34,7 +34,6 @@ classdef FootstepPlanner < DRCPlanner
       [Xright, Xleft] = obj.biped.optimizeFootstepPlan(data.x0, navgoal, @publish, @obj.updateData, data)
 
       function publish(X, htfun)
-        [data, changed, changelist] = obj.updateData(data);
         obj.biped.publish_footstep_plan(X, htfun, data.utime, isnew);
         isnew = false;
       end

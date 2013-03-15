@@ -1,10 +1,11 @@
-classdef DRCPlanner
+classdef DRCPlanner < handle
 
   properties (SetAccess=private,GetAccess=private)
     request_monitor;
     request_constructor;
     request_coder;
     monitors;  % array of MessageMonitors
+    last_msg_utimes; % the most recent utime for each monitor which was handled in updateData
     coders;  % array of lcmCoders
     constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     required=[];  % boolean array saying whether each message monitor is required
@@ -54,6 +55,7 @@ classdef DRCPlanner
       obj.monitors{n} = mon;
       obj.required(n) = required;
       obj.updatable(n) = updatable;
+      obj.last_msg_utimes(n) = -1;
       obj.name{n} = name;
     end
 
@@ -66,8 +68,10 @@ classdef DRCPlanner
       changed=false; changelist=struct();
       for i=1:length(obj.monitors)
         changelist = setfield(changelist,obj.name{i},false);
-        if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>data.utime)
+        % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>data.utime)
+        if (obj.updatable(i) && getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i))
           data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
+          obj.last_msg_utimes(i) = getLastTimestamp(obj.monitors{i});
           d = getMessage(obj.monitors{i});
           if ~isempty(d)
             if isempty(obj.coders{i})

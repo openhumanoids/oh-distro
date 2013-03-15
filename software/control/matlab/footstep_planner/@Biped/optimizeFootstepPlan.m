@@ -47,8 +47,8 @@ poses = [start_pos, poses(:,end)];
 
 
   while 1
+    X_old = X;
     while 1
-      X_old = X;
       if interactive
         [data, changed, changelist] = updatefun(data);
         if changelist.plan_commit || changelist.plan_reject
