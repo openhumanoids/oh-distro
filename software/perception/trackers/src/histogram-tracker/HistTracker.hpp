@@ -83,7 +83,7 @@ struct HistogramInfo {
 
 class HistTracker { 
  private: 
-    HistogramInfo hue_info, val_info;
+  HistogramInfo hue_info, val_info, sat_info;
     cv::Mat object_roi;
     cv::Mat backproj, belief;
 

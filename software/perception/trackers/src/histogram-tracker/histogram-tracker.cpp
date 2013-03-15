@@ -11,6 +11,8 @@
 #include <bot_param/param_client.h>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
+#include <lcmtypes/perception_image_roi_t.h>
+
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 // #include <particle/particle_filter.hpp>
 
@@ -120,6 +122,40 @@ static void on_affordance_frame (const lcm_recv_buf_t *rbuf, const char *channel
     return;
 }
 
+static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const perception_image_roi_t *msg, 
+                            void *user_data ) {
+    
+    std::cerr << "SEGMENTATION msg: " << msg->utime << " " << msg->roi.x << " " << msg->roi.y 
+	      << " " << msg->roi.width << " " << msg->roi.height << std::endl;
+
+    state_t* state = (state_t*) user_data; 
+    Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
+    cv::Mat1b mask = cv::Mat1b::zeros( state->img.rows , state->img.cols);
+
+    for (int y=msg->roi.y; y<msg->roi.y+msg->roi.height; y++)  
+      for (int x=msg->roi.x; x<msg->roi.x+msg->roi.width; x++) 
+	mask(y,x) = 255;
+
+    state->aff_utime = msg->utime; 
+    
+    if (!state->tracker) { 
+      std::cerr << "Tracker Not Initialized!" << std::endl;
+      assert(0);
+    }
+
+    cv::Mat maskd = mask.clone();
+    // Initialize with image and mask
+    state->tracker->initialize(state->img, mask);
+
+    if (options.vDEBUG) { 
+      cv::imshow("Captured Image", state->img);
+      cv::imshow("Captured Mask", maskd);
+    }
+
+    return;
+}
+
 
 static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                             const bot_core_image_t *msg, 
@@ -128,6 +164,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     if (!msg->width || !msg->height) return;
     
     state_t* state = (state_t*) user_data; 
+    if (!state->tracker) return;
 
     if (state->img.empty() || state->img.rows != msg->height || state->img.cols != msg->width) { 
         if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY) { 
@@ -191,6 +228,7 @@ int main(int argc, char ** argv) {
     // Subscriptions
     bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
     bot_core_image_t_subscribe(state->lcm, options.vAFFORDANCE_CHANNEL.c_str(), on_affordance_frame, (void*)state);
+    perception_image_roi_t_subscribe(state->lcm, "TLD_OBJECT_ROI", on_segmentation_frame, (void*)state);
 
     // Main lcm handle
     while(1) { 
@@ -204,8 +242,8 @@ int main(int argc, char ** argv) {
                 continue;
             }
             std::cerr << "Capturing Affordance : " << options.vAFFORDANCE_ID << std::endl;
-            cv::Mat mask = (state->aff_img == options.vAFFORDANCE_ID) * 255;
-
+            cv::Mat1b mask = (state->aff_img == options.vAFFORDANCE_ID);
+	    cv::Mat1b maskd = mask.clone();
             if (!state->tracker) { 
                 std::cerr << "Tracker Not Initialized!" << std::endl;
                 assert(0);
@@ -216,7 +254,7 @@ int main(int argc, char ** argv) {
 
             if (options.vDEBUG) { 
                 cv::imshow("Captured Image", state->img);
-                cv::imshow("Captured Mask", mask);
+                cv::imshow("Captured Mask", maskd);
             }
         }
     }
