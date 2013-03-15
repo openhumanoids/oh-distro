@@ -55,7 +55,7 @@ public:
   
 private:
     pcl::PolygonMesh::Ptr prim_mesh_ ;
-    boost::shared_ptr<rgbd_primitives>  prim_;
+    rgbd_primitives*  prim_;
       pointcloud_vis* pc_vis_;
 
   
@@ -87,6 +87,8 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string pcd_filename_,
     lcm_(lcm_), pcd_filename_(pcd_filename_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
   
   pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  prim_ = new rgbd_primitives();
+
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   float colors_b[] ={1.0,0.0,1.0};
