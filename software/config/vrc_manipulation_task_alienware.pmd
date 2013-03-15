@@ -39,10 +39,6 @@ group "1.robot" {
         exec = "drc-network-shaper -t manipulation -r robot";
         host = "paladin-02";
     }
-    cmd "oracle2coll" {
-        exec = "drc-oracle2collection";
-        host = "paladin-02";
-    }
 }
 
 group "2.gazebo" {
@@ -52,6 +48,10 @@ group "2.gazebo" {
     }
     cmd "manip_qual" {
         exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.0/worlds/qual_task_2.world";
+        host = "paladin-02";
+    }
+    cmd "walking_qual" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.0/worlds/qual_task_1.world";
         host = "paladin-02";
     }
 }
@@ -178,6 +178,10 @@ group "X.misc" {
     }
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
+        host = "paladin-02";
+    }
+    cmd "oracle2coll" {
+        exec = "drc-oracle2collection";
         host = "paladin-02";
     }
 }

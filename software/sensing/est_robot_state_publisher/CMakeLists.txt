@@ -19,7 +19,8 @@ pods_install_executables(est_robot_state_publisher)
 # Tool to recreate EST_ROBOT_STATE from  minimal version on the base station
 add_executable(minimal_to_est_robot_state src/minimal_to_est_robot_state.cpp)
 pods_use_pkg_config_packages(minimal_to_est_robot_state   model-client lcm 
-          bot2-param-client lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
+          bot2-param-client lcmtypes_drc_lcmtypes 
+          lcmtypes_bot2-core ${REQUIRED_PACKAGES})
 pods_install_executables(minimal_to_est_robot_state)
 
 

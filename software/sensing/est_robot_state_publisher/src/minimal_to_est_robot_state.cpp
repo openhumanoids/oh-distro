@@ -3,6 +3,7 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+#include <lcmtypes/bot_core.hpp>
 #include <boost/shared_ptr.hpp>
 #include <ConciseArgs>
 #include <bot_param/param_client.h>
@@ -17,6 +18,7 @@ public:
   boost::shared_ptr<lcm::LCM> lcm_;
   
   void handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::minimal_robot_state_t * msg);
+  void handleImageMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::image_t* msg);
 
 private:
   std::string output_channel_;
@@ -28,6 +30,7 @@ private:
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string output_channel_):
     lcm_(lcm_), output_channel_(output_channel_){
   lcm_->subscribe("EST_ROBOT_STATE_MINIMAL", &StatePub::handleMinimalRobotStateMsg, this);
+  lcm_->subscribe("CAMERALEFT_COMPRESSED", &StatePub::handleImageMsg, this);
   
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   std::string joint_names_root = "joint_names";
@@ -47,6 +50,13 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string output_channel
     cout << j << " " << joint_names_[j] <<"\n";
   } 
 }
+
+void StatePub::handleImageMsg(const lcm::ReceiveBuffer* rbuf,
+  const std::string& chan, const bot_core::image_t * msg){
+
+  lcm_->publish( "CAMERALEFT", msg);
+}
+
 
 void StatePub::handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   const std::string& chan, const drc::minimal_robot_state_t * msg){
@@ -95,7 +105,7 @@ void StatePub::handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string output_channel="EST_ROBOT_STATE_TEST";
+  string output_channel="EST_ROBOT_STATE";
   string role = "robot";
   parser.add(output_channel, "g", "output_channel", "Output reconstututed message as");
   parser.add(role, "r", "role","Role - robot or base [assumed]");  

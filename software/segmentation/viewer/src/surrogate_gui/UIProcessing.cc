@@ -969,6 +969,7 @@ namespace surrogate_gui
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
 	  affordanceMsg.nstates = 0;
+          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
@@ -1021,6 +1022,7 @@ namespace surrogate_gui
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
 	  affordanceMsg.nstates = 0;
+          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
@@ -1091,6 +1093,7 @@ namespace surrogate_gui
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
 	  affordanceMsg.nstates = 0;
+          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
@@ -1163,6 +1166,7 @@ namespace surrogate_gui
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
 	  affordanceMsg.nstates = 0;
+          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
