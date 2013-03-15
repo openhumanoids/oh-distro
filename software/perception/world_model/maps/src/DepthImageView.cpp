@@ -144,38 +144,39 @@ getAsMesh(const bool iTransform) const {
 bool DepthImageView::
 getClosest(const Eigen::Vector3f& iPoint,
            Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
-  /* TODO
-  // TODO: maybe interpolate depths not disparities
-  Eigen::Vector3f proj = mImage->project(iPoint, DephImage::TypeDisparity);
-  const std::vector<float>& disparities =
-    mImage->getData(DepthImage::TypeDisparity);
+  // TODO: interpolate depths not disparities
+  DepthImage::Type depthType = DepthImage::TypeDepth;
+  Eigen::Vector3f proj = mImage->project(iPoint, depthType);
+  const std::vector<float>& depths = mImage->getData(depthType);
   int width(mImage->getWidth()), height(mImage->getHeight());
   int xInt(proj[0]), yInt(proj[1]);
   if ((xInt < 0) || (xInt >= width-1) || (yInt < 0) || (yInt >= height-1)) {
     return false;
   }
-  int idx = width*yInt + xInt;
-  float z00 = disparities[idx];
-  float z10 = disparities[idx+1];
-  float z01 = disparities[idx+width];
-  float z11 = disparities[idx+1+width];
   float xFrac = proj[0]-xInt;
   float yFrac = proj[0]-yInt;
+
+  int idx = width*yInt + xInt;
+  float z00 = depths[idx];
+  float z11 = depths[idx+1+width];
+  typedef Eigen::Vector3f Vec3f;
+  Vec3f p00 = mImage->unproject(Vec3f(xInt, yInt, z00), depthType);
+  Vec3f p11 = mImage->unproject(Vec3f(xInt+1, yInt+1, z11), depthType);
+
   if (xFrac >= yFrac) {
+    float z3 = depths[idx+1];
+    float zInterp = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
+    Vec3f p3 = mImage->unproject(Vec3f(xInt+1, yInt, z3), depthType);
+    Eigen::Vector3f d1(p00-p3), d2(p11-p3);
+    oNormal = d1.cross(d2).normalized();
   }
   else {
+    float z3 = depths[idx+width];
+    float zInterp = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
+    Vec3f p3 = mImage->unproject(Vec3f(xInt, yInt+1, z3), depthType);
+    Eigen::Vector3f d1(p00-p3), d2(p11-p3);
+    oNormal = d2.cross(d1).normalized();
   }
-  float zInterp = z00 + xFrac*(z10 - z00) + yFrac*(z01 - z00) +
-    xFrac*yFrac*(z00 + z11 - z10 - z01);
-  if (zInterp == mImage->getInvalidValue()) return false;
-  oPoint = mImage->unproject(Eigen::Vector3f(proj[0], proj[1], zInterp),
-                             DepthImage::TypeDisparity);
-  Eigen::Vector3f p00 = mImage->unproject(Eigen::Vector3f(xInt, yInt, z00));
-  Eigen::Vector3f p10 = mImage->unproject(Eigen::Vector3f(xInt+1, yInt, z10));
-  Eigen::Vector3f p01 = mImage->unproject(Eigen::Vector3f(xInt, yInt+1, z01));
-  Eigen::Vector3f p11 = mImage->unproject(Eigen::Vector3f(xInt+1, yInt+1, z11));
-  // TODO: closest point
-  // TODO: getClosest
-  */
+
   return true;
 }

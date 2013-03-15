@@ -363,6 +363,13 @@ getAllSpecs() const {
   return specs;
 }
 
+void ViewClient::
+clearAll() {
+  mViews.clear();
+  mCatalog.clear();
+  notifyCatalogListeners(true);
+}
+
 
 bool ViewClient::
 addListener(const Listener* iListener) {

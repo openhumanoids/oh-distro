@@ -180,6 +180,10 @@ public:
     // view list box (will fill in dynamically)
     {
       mViewListBox = Gtk::manage(new Gtk::VBox());
+      Gtk::Button* clearButton = Gtk::manage(new Gtk::Button("Clear All"));
+      clearButton->signal_clicked().connect
+        (sigc::mem_fun(*this, &MapsRenderer::onClearViewsButton));
+      mViewListBox->pack_start(*clearButton, false, false);
       notebook->append_page(*mViewListBox, "Views");
     }
 
@@ -347,6 +351,10 @@ public:
       macro.command = drc::map_macro_t::CREATE_DENSE_MAP;
       getLcm()->publish("MAP_MACRO", &macro);
     }
+  }
+
+  void onClearViewsButton() {
+    mViewClient.clearAll();
   }
 
   bool mousePress(const GdkEventButton* iEvent,
