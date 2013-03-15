@@ -157,6 +157,13 @@ while (1)
           com0 = r.getCOM(q0);
           comdot0 = 0*com0;
           com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,active_contact_flag,com_height,t_breaks);
+          q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
+          q_zmp_plan(:,1) = q0;
+          for i = 2:length(t_brekas)
+              ikargs = action_sequence.getIKArguments(t_breaks(i));
+              ikargs = [ikargs,{0},{com_plan(:,i)}];
+              q_zmp_plan(:,i) = inverseKin(r,q_zmp_plan(:,i-1),ikargs{:},options);
+          end
       end
       ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
       if isempty(ikargs)
