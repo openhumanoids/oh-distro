@@ -38,21 +38,24 @@ class MajorPlane
     bot_lcmgl_t* mLcmGl;
 
     pointcloud_vis* pc_vis_;
+
+    // Determine the current estimate of the plane
+    bool getPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
     
   private:
 
     // Plane Detection:
-    int64_t last_sweep_time_;
     bool getSweep();
+    void findPlane();
+    int64_t last_sweep_time_;
     // Point Cloud of most recent sweep:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;    
-    bool findPlane();
     // pose of a point on the plane with pitch and yaw but roll =0
     Eigen::Isometry3d plane_pose_ ;
     // has the above value been set?
     bool plane_pose_set_;
 
-
+    int64_t  current_utime_;
 };
 
 

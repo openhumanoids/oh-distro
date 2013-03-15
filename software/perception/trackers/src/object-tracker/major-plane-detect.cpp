@@ -38,6 +38,7 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Tracker | Plane X"           ,1,1, 4451002,1, { 0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451005,"Tracker | Transform",5,1) );
 
+  current_utime_=0;
 }
 
 bool MajorPlane::getSweep(){
@@ -57,12 +58,12 @@ bool MajorPlane::getSweep(){
   mCollector->getLatestSwath(ang_min, ang_max,
                                         timeMin, timeMax); // these didnt work
   if (timeMin == last_sweep_time_){
-    // cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | repeat\n";
+    // cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | repeated swath\n";
     return false; 
   }
   last_sweep_time_ = timeMin;
 
-  cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | process\n";
+  cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | new process\n";
   LocalMap::SpaceTimeBounds bounds;
   bounds.mTimeMin = timeMin;
   bounds.mTimeMax = timeMax;
@@ -85,9 +86,12 @@ bool MajorPlane::getSweep(){
 }
 
 
-bool MajorPlane::findPlane(){
-  int64_t current_utime=-1;
-  //// make the above an argument
+void MajorPlane::findPlane(){
+  if (cloud_->points.size() < 20000){
+    cout << "Cloud is too small to detect plane [" << cloud_->points.size() << "]\n";
+    return;
+  }    
+  
 
   pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients ());
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
@@ -106,11 +110,11 @@ bool MajorPlane::findPlane(){
   if ( inliers->indices.size () == 0)
   {
     printf ("Could not estimate a planar model for the given dataset.\n");
-    return -1;
+    return;
   }
   
 
-  if (1==0){
+  if (1==1){
     // i think these numbers are incorrect:
     double pitch = atan(coeff->values[0]/coeff->values[2]);
     double roll =- atan(coeff->values[1]/coeff->values[2]);
@@ -118,7 +122,7 @@ bool MajorPlane::findPlane(){
         pow(coeff->values[1],2) + pow(coeff->values[2],2));
     double height = (coeff->values[2]*coeff->values[3]) / coeff_norm;
     
-    cout  <<  "\nRANSAC Floor Coefficients: " << coeff->values[0]
+    cout  <<  "New RANSAC Floor Coefficients: " << coeff->values[0]
       << " " << coeff->values[1] << " "  << coeff->values[2] << " " << coeff->values[3] << endl;
     cout << "Pitch: " << pitch << " (" << (pitch*180/M_PI) << "d). positive nose down\n";
     cout << "Roll : " << roll << " (" << (roll*180/M_PI) << "d). positive right side down\n";
@@ -154,9 +158,9 @@ bool MajorPlane::findPlane(){
   // Visualise hull:
   Eigen::Isometry3d null_pose;
   null_pose.setIdentity();
-  Isometry3dTime null_poseT = Isometry3dTime(current_utime, null_pose);
+  Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
   pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
-  pc_vis_->ptcld_to_lcm_from_list(4451003, *cloud_hull, current_utime, current_utime);          
+  pc_vis_->ptcld_to_lcm_from_list(4451003, *cloud_hull, current_utime_, current_utime_);          
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   normals_cloud->points.push_back( cloud_hull->points[0]);
@@ -170,7 +174,7 @@ bool MajorPlane::findPlane(){
   stringstream name_out2;
   int plane_id2 = 11212 ;
   ptcld_cfg pcfg2 = ptcld_cfg(plane_id2,   "Normal"    ,3,1, 4451002,1,{0.3,.1,0.1} );
-  pc_vis_->ptcld_to_lcm(pcfg2, *normals_cloud, current_utime, current_utime );   
+  pc_vis_->ptcld_to_lcm(pcfg2, *normals_cloud, current_utime_, current_utime_ );   
   
 
     
@@ -187,15 +191,23 @@ bool MajorPlane::findPlane(){
   plane_pose_f.translation() << centroid(0), centroid(1), centroid(2);
   pcl::transformPointCloud (*cloud_, *cloud_, plane_pose_f.inverse());
   
-  pc_vis_->ptcld_to_lcm_from_list(4451004, *cloud_, current_utime, current_utime);          
+  pc_vis_->ptcld_to_lcm_from_list(4451004, *cloud_, current_utime_, current_utime_);          
 
   
   plane_pose_ = isometryFloatToDouble(plane_pose_f);
-  Isometry3dTime plane_poseT = Isometry3dTime(current_utime,plane_pose_  );
+  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,plane_pose_  );
   pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
   
   plane_pose_set_=true;
-         
+}
 
 
+bool MajorPlane::getPlane( Eigen::Isometry3d &plane_pose , int64_t current_utime  ){
+  current_utime_ = current_utime;
+  if (getSweep()){
+    findPlane();
+  }
+  
+  plane_pose = plane_pose_;
+  return plane_pose_set_;
 }
