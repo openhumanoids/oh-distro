@@ -126,26 +126,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
 }
 
 
-void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  for (size_t i=0; i<num_particles_; i++) {
-    pf_state particle_state;
-    particle_state =pf->GetParticleState(i);
-    Eigen::Vector3d t(particle_state.pose.translation());
-    pcl::PointXYZRGB pt1;
-    pt1.x = t.x();       pt1.y = t.y();    pt1.z = t.z();  
-    pt1.r = 255; pt1.g = 0; pt1.b =0;
-    pts->points.push_back(pt1);
-  }  
-  Eigen::Isometry3d local_to_camera;
-  frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera);
-  
-  loglikelihoods = color_thres_->colorThreshold(pts, img_.data.data(), local_to_camera, img_.utime);
-  // to disable :   loglikelihoods.assign ( pts->points.size() ,0);    
-
-}
-
 
 void Pass::propogatePF(){
   std::vector <double> success_var { .0001,.0001, .000001, .000001 }; // not used
@@ -227,11 +207,33 @@ void Pass::propogatePF(){
 }
 
 
+void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  for (size_t i=0; i<num_particles_; i++) {
+    pf_state particle_state;
+    particle_state =pf->GetParticleState(i);
+    Eigen::Vector3d t(particle_state.pose.translation());
+    pcl::PointXYZRGB pt1;
+    pt1.x = t.x();       pt1.y = t.y();    pt1.z = t.z();  
+    pt1.r = 255; pt1.g = 0; pt1.b =0;
+    pts->points.push_back(pt1);
+  }  
+  Eigen::Isometry3d local_to_camera;
+  frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera);
+  
+  loglikelihoods = color_thres_->colorThreshold(pts, img_.data.data(), local_to_camera, img_.utime);
+  // to disable :   loglikelihoods.assign ( pts->points.size() ,0);    
+
+}
+
+
+
 void Pass::updatePF(){
-  std::vector<float> loglikelihoods;
   propogatePF();
   
   // Color Threshold Likelihood
+  std::vector<float> loglikelihoods;
   colorThresholdLikelihood(loglikelihoods);
   
   pf->LogLikelihoodParticles(loglikelihoods);
