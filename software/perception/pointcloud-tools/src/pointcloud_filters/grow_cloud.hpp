@@ -41,11 +41,11 @@ typedef struct _BasicPlane
   std::string name; // a unique name eg the file name
   int major; // which major plane 
   int minor; // which minor plane
-  //PointT cloud; 
+  //Hull of Plane (either convex or concave - depending on algorithm)
   pcl::PointCloud<pcl::PointXYZRGB> cloud ;
-//  double coeffs[4];
    pcl::ModelCoefficients coeffs;  
   Eigen::Vector4f centroid;
+
   // this number of points in the original soure cloud.
   // Used for voting when combining to a final cloud
   int n_source_points; 
@@ -84,9 +84,10 @@ class GrowCloud {
     void doGrowCloud (vector<BasicPlane> &outstack);
     
     
-    // function to return a plane stack in string
-    void printPlaneStack (vector<BasicPlane> &planeStack,  std::stringstream &ss);
-    
+    // function to return a plane stack's coeffs in string
+    void printPlaneStackCoeffs (vector<BasicPlane> &planeStack,  std::stringstream &ss);
+    // ditto for the bounding points 
+    void printPlaneStackHull (vector<BasicPlane> &planeStack,  std::stringstream &ss);
     
   protected:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr incloud;    

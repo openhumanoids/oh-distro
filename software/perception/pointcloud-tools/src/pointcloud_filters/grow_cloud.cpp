@@ -127,12 +127,26 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
 }
   
   
-void GrowCloud::printPlaneStack (vector<BasicPlane> &planeStack,  std::stringstream &ss) {
+void GrowCloud::printPlaneStackCoeffs (vector<BasicPlane> &planeStack,  std::stringstream &ss) {
   for (size_t i=0; i < planeStack.size() ;  i++){
     BasicPlane p = planeStack[i];
     ss <<  p.coeffs.values[0] << ","
        <<  p.coeffs.values[1] << ","
        <<  p.coeffs.values[2] << ","       
        <<  p.coeffs.values[3] << "\n";
+  }  
+}
+
+void GrowCloud::printPlaneStackHull (vector<BasicPlane> &planeStack,  std::stringstream &ss) {
+  for (size_t i=0; i < planeStack.size() ;  i++){
+    for (size_t j=0; j <planeStack[i].cloud.points.size(); j++){
+      pcl::PointXYZRGB pt = planeStack[i].cloud.points[j];
+      ss << pt.x << "," <<  pt.y << "," <<  pt.z ;
+      if (j != planeStack[i].cloud.points.size() -1){
+        ss << ","       ;
+      }else{
+        ss << "\n";
+      }
+    }
   }  
 }
