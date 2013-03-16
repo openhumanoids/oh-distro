@@ -22,17 +22,25 @@
     <!-- Basic environment -->
     <include><uri>model://sun</uri></include>
     <include><uri>model://ground_plane</uri></include>
+    <!-- walking qual -->
+    <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>-2.0 8.0 0.26 0 0 0</pose></include>
+    <include><name>simple_box_stage_2</name><uri>model://simple_box_stage</uri><pose>-6.0 20.5 0.26 0 0 0</pose></include>
+    <include><name>simple_box_steppingstone_r1</name><uri>model://simple_box_steppingstone</uri><pose>-4.0 13.5 0.26 0 0 0</pose></include>
+    <include><name>simple_box_steppingstone_r2</name><uri>model://simple_box_steppingstone</uri><pose>-4.0 14.8 0.26 0 0 0</pose></include>
+    <include><name>simple_box_steppingstone_l1</name><uri>model://simple_box_steppingstone</uri><pose>-4.9 14.15 0.26 0 0 0</pose></include>
+
+    <include><name>simple_box_squat_0</name><uri>model://simple_box_squat</uri><pose>-6.5 11.0 2.0 0 0 -1.571</pose></include>
+    <include><name>simple_box_squat_1</name><uri>model://simple_box_squat</uri><pose>-2   11.0 2.0 0 0 -1.571</pose></include>
+    <include><name>simple_box_squat_2</name><uri>model://simple_box_squat</uri><pose>-6.5 18.0 2.0 0 0 -1.571</pose></include>
+    <include><name>simple_box_squat_3</name><uri>model://simple_box_squat</uri><pose>-2   18.0 2.0 0 0 -1.571</pose></include>
 
 
 
     <!-- DRC specific components -->
-<!-- Walking at a height    
-    <include><uri>model://mit_robot_PnC</uri><pose>0.0 0 1.5 0 0 0</pose></include> -->
-<!-- Manipulation in front of the table -->
-    <include><uri>model://mit_robot_PnC</uri><pose>0.7 1.50 0.95 0 0 0</pose></include>
+<!-- Walking at a height     -->
+    <include><uri>model://mit_robot_PnC</uri><pose>-4.0 12.0 1.5 0 0 1.571</pose></include>
 
-    <include><uri>model://drc_vehicle</uri><pose>0.0 -2.55 0.1 0 0 3.142</pose></include>
-<!--    <include><uri>model://golf_cart</uri><pose>-3.5 0 0.1 0 0 -1.571</pose></include> -->
+<!--    <include><uri>model://drc_vehicle</uri><pose>0.0 -2.55 0.1 0 0 3.142</pose></include> -->
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
