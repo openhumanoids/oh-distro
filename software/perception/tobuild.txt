@@ -18,14 +18,15 @@ world_model
 rgbd_simulation 
 image-passthrough
 
-# particle-filter based tracking
-particle_filter
-trackers
-
 # sudeep:
 opencv-utils
 tld-tracker
 stereo-bm
+
+# particle-filter based tracking
+particle_filter
+trackers
+
 
 # some quick start examples:
 tutorials
