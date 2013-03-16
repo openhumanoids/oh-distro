@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<gazebo version="1.2">
+  <world name="default">
+    <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <update_rate>1000</update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <dt>0.001</dt>
+          <iters>40</iters>
+          <sor>1.0</sor>
+        </solver>
+        <constraints>
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.0</contact_surface_layer>
+        </constraints>
+      </ode>
+    </physics>
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://mit_wheeled_robot</uri>
+      <pose>0 0 1 0 0 0</pose>
+    </include>
+
+    <include><name>simple_box_l1</name><uri>model://simple_box</uri><pose>0 4 1 0 0 0</pose></include>
+    <include><name>simple_box_l2</name><uri>model://simple_box</uri><pose>5 4 1 0 0 0</pose></include>
+    <include><name>simple_box_l3</name><uri>model://simple_box</uri><pose>10 4 1 0 0 0</pose></include>
+    <include><name>simple_box_l4</name><uri>model://simple_box</uri><pose>15 4 1 0 0 0</pose></include>
+
+    <include><name>simple_box_r1</name><uri>model://simple_box</uri><pose>2 -4 1 0 0 0</pose></include>
+    <include><name>simple_box_r2</name><uri>model://simple_box</uri><pose>7 -4 1 0 0 0</pose></include>
+    <include><name>simple_box_r3</name><uri>model://simple_box</uri><pose>12 -4 1 0 0 0</pose></include>
+    <include><name>simple_box_r4</name><uri>model://simple_box</uri><pose>17 -4 1 0 0 0</pose></include>
+
+  </world>
+</gazebo>

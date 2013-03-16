@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+<gazebo version="1.2">
+  <world name="default">
+    <gui>
+    <camera name="user_camera">
+      <pose>-20 0 10 0 0.2 0</pose>
+    </camera>
+    </gui>
+
+    <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <update_rate>1000</update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <dt>0.001</dt>
+          <iters>40</iters>
+          <sor>1.0</sor>
+        </solver>
+        <constraints>
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.0</contact_surface_layer>
+        </constraints>
+      </ode>
+    </physics>
+
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://low_poly_golf_cart</uri>
+      <pose>0 -2 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://powerplant</uri>
+      <pose>350 65 -0.2 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://drc_robot</uri>
+      <pose>0 2 1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://drc_terrain</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+<!--
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://fire_hose</uri>
+      <pose>1 0 1 0.5 0.1 0.2</pose>
+    </include>
+    <include>
+      <uri>model://standpipe</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <road name="main_street">
+      <width>7.34</width>
+      <point>0 0 0</point>
+      <point>125 0 0</point>
+    </road>
+-->
+
+    <!--
+    <plugin filename="libRubblePlugin.so" name="rubble">
+      <bottom_right>110.0 -4 0.0</bottom_right>
+      <top_left>115.0 4.0 1.0</top_left>
+      <min_size>0.05 0.05 0.05</min_size>
+      <max_size>0.2 0.2 0.2</max_size>
+      <count>200</count>
+    </plugin>
+    -->
+  </world>
+</gazebo>
