@@ -85,6 +85,7 @@ private:
 
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string pcd_filename_, string urdf_file, int pts_per_m_squared_):
     lcm_(lcm_), pcd_filename_(pcd_filename_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
+  prim_ = new rgbd_primitives();
   
   pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
   prim_ = new rgbd_primitives();

@@ -157,11 +157,24 @@ HistTracker::update(cv::Mat& img, float scale) {
     cv::Mat_<float> _bp;
     multiply(hue_bp, val_bp, _bp);
     multiply(sat_bp, _bp, _bp);
+    normalize(_bp, _bp, 0, 1, CV_MINMAX);
+    
+    // for (int y=0; y<_bp.rows; y++)  
+    //   for (int x=0; x<_bp.cols; x++)
+    // 	std::cerr << _bp(y,x) << std::endl
+          
+    // // Apply bell curved mapping instead of linear scale
+    // float sigma2 = 0.5;
+    // cv::Mat_<float> bp_xmu = (1.f - _bp);
+    // multiply(bp_xmu, bp_xmu, bp_xmu);
+    // cv::exp(-bp_xmu / (sigma2), _bp);
+
     cv::Mat_<float> _bp8 = _bp * 255;
 
     cv::Mat bp8;
     _bp8.convertTo(bp8, CV_8UC1);
 
+    
     // Upsample image
     cv::Mat bp;
     if (scale == 1.f)
