@@ -46,6 +46,7 @@ drc_control_setup;
 
 p = cd('drake');
 options.autoconfig=1;
+system(['touch ',fullfile(strtok(userpath,':'),'pathdef.m')]);
 
 %% configure drake
 configure(options);
