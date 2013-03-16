@@ -39,10 +39,6 @@ group "1.robot" {
         exec = "drc-network-shaper -t manipulation -r robot";
         host = "localhost";
     }
-    cmd "oracle2coll" {
-        exec = "drc-oracle2collection";
-        host = "localhost";
-    }
 }
 
 group "2.gazebo" {
@@ -181,7 +177,7 @@ group "X.misc" {
         host = "localhost";
     }
 }
-group "X.teleport" {
+group "X.dev_tools" {
     cmd "textured_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
         host = "localhost";
