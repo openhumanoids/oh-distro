@@ -55,12 +55,13 @@ uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale im
 
 class App{
 public:
-  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_, bool control_only_);
+  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_, bool control_output_, bool perception_output_);
   ~App();
 
 private:
   string mode_;
-  bool control_only_; // dont publish perception data
+  bool control_output_; // publish control msgs to LCM
+  bool perception_output_; // publish control msgs to LCM
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
@@ -129,13 +130,13 @@ private:
 
 App::App(const std::string & stereo_in,
     const std::string & stereo_out,
-    ros::NodeHandle node_, string mode_, bool control_only_) :
+    ros::NodeHandle node_, string mode_, bool control_output_, bool perception_output_) :
     stereo_in_(stereo_in),
     stereo_out_(stereo_out),
     node_(node_),
     it_(node_),
     sync_(10),
-    mode_(mode_), control_only_(control_only_){
+    mode_(mode_), control_output_(control_output_), perception_output_(perception_output_){
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
@@ -143,28 +144,30 @@ App::App(const std::string & stereo_in,
   }
 
   // Clock:  
-  clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
+  if (control_output_){
+    clock_sub_ = node_.subscribe(string("/clock"), 10, &App::clock_cb,this);
 
-  // IMU:
-  torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 10, &App::torso_imu_cb,this);
-  head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 10, &App::head_imu_cb,this);
+    // IMU:
+    torso_imu_sub_ = node_.subscribe(string("/atlas/imu"), 10, &App::torso_imu_cb,this);
+    head_imu_sub_ = node_.subscribe(string("/multisense_sl/imu"), 10, &App::head_imu_cb,this);
 
-  // Robot State:
-  //rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-//  rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
-  joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  head_joint_states_sub_ = node_.subscribe(string("/multisense_sl/joint_states"), 1000, &App::head_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  l_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/l_hand/joint_states"), 1000, &App::l_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  r_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/r_hand/joint_states"), 1000, &App::r_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    // Robot State:
+    //rstate_sub_ = node_.subscribe("true_robot_state", 1000, &App::rstate_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+  //  rstate_sub_ = node_.subscribe("true_robot_state", 10, &App::rstate_cb,this);
+    joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    head_joint_states_sub_ = node_.subscribe(string("/multisense_sl/joint_states"), 1000, &App::head_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    l_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/l_hand/joint_states"), 1000, &App::l_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    r_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/r_hand/joint_states"), 1000, &App::r_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
 
-  ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-  l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
-  r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
+    ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
+    r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
+    
+    init_recd_[0]=false;
+    init_recd_[1]=false;
+  }
   
-  init_recd_[0]=false;
-  init_recd_[1]=false;
-  
-  if (!control_only_){
+  if (perception_output_){
     // Laser:
     rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 10, &App::rotating_scan_cb,this);
     // Porterbot
@@ -698,21 +701,33 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "ros2lcm");
   string mode = "robot";
-  bool control_only = false;
+  bool control_output = false;
+  bool perception_output = false;  
   parser.add(mode, "m", "mode", "Mode: robot, hands");
-  parser.add(control_only, "c", "control_only", "Publish control - ignore perception");
+  parser.add(control_output, "c", "control_output", "Publish control message");
+  parser.add(perception_output, "p", "perception_output", "Publish perception messages");
   parser.parse();
   cout << "Publish Mode: " << mode << "\n";   
-  cout << "Publish Control Data Only: " << control_only << "\n";   
+  cout << "Publish Control Messages: " << control_output << "\n";   
+  cout << "Publish Perception Messages: " << perception_output << "\n";   
   
+  if (control_output && perception_output){
+    cout << "must run to translators\ncontrol_output and perception_output cannot both be true\n";
+    return -1;
+  }else if(control_output){
+    ros::init(argc, argv, "ros2lcm_control");
+  }else if(perception_output){
+    ros::init(argc, argv, "ros2lcm_perception");
+  }else{
+    cout << "Please choose a mode: control_output or perception_output (but not both)\n";
+    return -1;
+  }
   
-  
-  ros::init(argc, argv, "ros2lcm");
   ros::CallbackQueue local_callback_queue;
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode, control_only);
+  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode, control_output, perception_output);
   std::cout << "ros2lcm translator ready\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
