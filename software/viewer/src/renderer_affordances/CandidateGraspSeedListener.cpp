@@ -82,6 +82,10 @@ namespace renderer_affordances
     _optimization_status = msg->optimization_status;
     KDL::Frame T_graspgeometry_lhand,T_graspgeometry_rhand, T_world_lhand,T_world_rhand;
     
+    //NOTE: the msg received from grasp opt is in a base frame and not l_hand/r_hand frame.
+    // For visualization of sticky hands it is important to keep in base frame as we are using the 
+    // same urdf that we used for optimization.
+          
     T_graspgeometry_lhand.p[0] = msg->l_hand_pose.translation.x;
     T_graspgeometry_lhand.p[1] = msg->l_hand_pose.translation.y;
     T_graspgeometry_lhand.p[2] = msg->l_hand_pose.translation.z;

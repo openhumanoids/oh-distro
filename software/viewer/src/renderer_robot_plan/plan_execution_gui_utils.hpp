@@ -11,6 +11,12 @@ namespace renderer_robot_plan_gui_utils
     self->robotPlanListener->_gl_robot_list.clear();
     gtk_widget_destroy(self->plan_execution_dock);
     self->plan_execution_dock= NULL;
+    cout <<"Robot plan terminated" << endl;
+    cout <<"Publishing on REJECTED_ROBOT_PLAN" << endl;
+    string channel = "REJECTED_ROBOT_PLAN";
+    self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
+    
+    
    return TRUE;
   }
   

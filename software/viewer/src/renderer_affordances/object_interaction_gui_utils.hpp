@@ -495,7 +495,7 @@ namespace renderer_affordances_gui_utils
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
-  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry,bool palmtouch_flag)
+  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry,bool pregrasp_flag)
   {
     drc::ee_goal_t goalmsg;
     goalmsg.robot_name = "atlas";
@@ -506,7 +506,7 @@ namespace renderer_affordances_gui_utils
     KDL::Frame T_world_ee,T_body_ee;
     
 // Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
-   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
+   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;  // this is actually in a base frame that is not l_hand/r_hand.
 //    KDL::Frame T_hand_palm = KDL::Frame::Identity();
 //    // this was there in urdf to make sure fingers are pointing in z axis.
 //    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
@@ -523,8 +523,8 @@ namespace renderer_affordances_gui_utils
     
     T_world_ee = T_world_geometry*T_geometry_palm;
           
-   if(palmtouch_flag){
-    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
+   if(pregrasp_flag){
+    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset; this should be T_palm_base
     KDL::Frame T_hand_offset = KDL::Frame::Identity();
     T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
     // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
@@ -565,7 +565,7 @@ namespace renderer_affordances_gui_utils
     goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
     goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
     for(int i = 0; i < goalmsg.num_chain_joints; i++){
-    if(!palmtouch_flag){
+    if(!pregrasp_flag){
       goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
     }
     else{

@@ -73,8 +73,20 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
   for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
   {
+    
+    double pos[3];
+    pos[0] = it->second._gl_object->_T_world_body.p[0]; 
+    pos[1] = it->second._gl_object->_T_world_body.p[1]; 
+    pos[2] = it->second._gl_object->_T_world_body.p[2]+0.0;  
+    std::stringstream oss;
+    oss << it->second.uid;
+    glColor4f(0,0,0,1);
+    bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
     it->second._gl_object->enable_link_selection(self->selection_enabled);
     it->second._gl_object->draw_body(c,alpha);
+
+
+
   }
   
   if(self->selection_hold_on) { 
