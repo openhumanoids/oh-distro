@@ -13,8 +13,7 @@ camunits
 #hubo
 sensing
 
-#disabled as its braking the build
-#control
+control
 
 gfe
 perception
@@ -35,3 +34,6 @@ plan
 
 # porterbot utils:
 porterbot
+
+# various scripts and tools e.g. BW plotting
+tools
