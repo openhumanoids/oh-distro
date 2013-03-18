@@ -1,0 +1,3 @@
+#!/bin/sh
+export PYTHONPATH=/home/drc/drc/software/build/lib/python2.7/site-packages:${PYTHONPATH}
+exec /usr/bin/python -m scripts/send_a_rateset.py $*
