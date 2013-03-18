@@ -1,8 +1,8 @@
 function runQPWalking(goal_x, goal_y, goal_yaw)
 
-if nargin < 3; goal_yaw = pi/2; end
-if nargin < 2; goal_y = 1.0; end
-if nargin < 1; goal_x = 0.2; end
+if nargin < 3; goal_yaw = 0.0; end
+if nargin < 2; goal_y = 0.0; end
+if nargin < 1; goal_x = 2.0; end
 
 options.floating = true;
 options.dt = 0.003;
@@ -22,7 +22,7 @@ kinsol = doKinematics(r,q0);
 % biped = Biped(r); % no longer necessary, since Atlas is a Biped
 pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
-[rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
+[rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', true));
 [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 0.8);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
@@ -81,9 +81,12 @@ fnplt(htraj);
 
 limp = LinearInvertedPendulum(htraj);
 [c, V] = ZMPtracker(limp,zmptraj);
-zmpdata = SharedDataHandle(struct('V',V,'h',com(3),'c',c));
+
+hddot = fnder(htraj,2);
+zmpdata = SharedDataHandle(struct('V',V,'h',htraj,'hddot',hddot,'c',c));
 
 % instantiate QP controller
+options.exclude_torso = true;
 options.slack_limit = 10.0;
 options.w = 1e-1;
 options.R = 1e-12*eye(nu);
@@ -145,6 +148,6 @@ plot(ts,com(2,:),'r');
 subplot(3,1,3);
 plot(ts,com(3,:),'r');
 
-keyboard;
+%keyboard;
 
 end

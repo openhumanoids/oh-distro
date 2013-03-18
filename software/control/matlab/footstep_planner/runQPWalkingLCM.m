@@ -42,7 +42,7 @@ else
   lfoot = foottraj(1:6,find(foottraj(15,:)==0));
 end
 
-[zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.0);
+[zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -52,7 +52,7 @@ limp = LinearInvertedPendulum(com(3));
 comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
 % time spacing of samples for IK
-ts = linspace(0,zmptraj.tspan(end),200);
+ts = linspace(0,zmptraj.tspan(end),100);
 T = ts(end);
 
 % create desired joint trajectory
@@ -113,11 +113,14 @@ plan_pub.publish(ts,xtraj);
 disp('Computing ZMP controller...');
 limp = LinearInvertedPendulum(htraj);
 [c, V] = ZMPtracker(limp,zmptraj);
-zmpdata = SharedDataHandle(struct('V',V,'h',com(3),'c',c));
+
+hddot = fnder(htraj,2);
+zmpdata = SharedDataHandle(struct('V',V,'h',htraj,'hddot',hddot,'c',c));
 
 % instantiate QP controller
+options.exclude_torso = true;
 options.slack_limit = 100.0;
-options.w = 1.0;
+options.w = 1.5;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
@@ -150,7 +153,7 @@ outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoCascade(pd,sys,[],ins,outs);
 clear ins outs;
-
+% 
 % disp('Waiting for robot plan confirmation...');
 % plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
 % waiting = true;

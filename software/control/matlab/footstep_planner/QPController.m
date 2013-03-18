@@ -37,55 +37,114 @@ classdef QPController < MIMODrakeSystem
       sizecheck(options.slack_limit,1);
       obj.slack_limit = options.slack_limit;
     end
+    
+    if (isfield(options,'exclude_torso'))
+      typecheck(options.exclude_torso,'logical');
+      
+      if options.exclude_torso
+        % free_dof we perform unconstrained minimization to compute 
+        % accelerations and solve for inputs (then threshold).
+        % these should be the joints for which the columns of the contact
+        % jacobian are zero. The remaining dofs are indexed in cnstr_dof.
+        % NOTE: this is highly atlas specific right now
+        jn = getJointNames(r);
+        torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
+                      ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
+                      ~cellfun(@isempty,strfind(jn(2:end),'back'));
+        B = getB(r);
+        obj.free_dof = find(torso);
+        obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
+        obj.free_inputs = find(B'*torso);
+        obj.con_inputs = find(B'*torso==0);
+      else
+        obj.free_dof = [];
+        obj.con_dof = (1:getNumDOF(r))';
+        obj.free_inputs = [];
+        obj.con_inputs = (1:getNumInputs(r))';
+      end
+    end
 
     nu = getNumInputs(r);
     if (~isfield(options,'R'))
-      obj.R = 0.00001*eye(nu);
+      obj.R = 1e-6*eye(nu);
     else
       typecheck(options.R,'double');
       sizecheck(options.R,[nu,nu]);
       obj.R = options.R;
     end
+    
+    if obj.solver==1 % use cplex
+      obj.solver_options = cplexoptimset('cplex');
+      obj.solver_options.diagnostics = 'on';
+      obj.solver_options.maxtime = 0.001;
+      % QP method: 
+      %   0 	Automatic (default)
+      %   1 	Primal Simplex
+      %   2 	Dual Simplex
+      %   3 	Network Simplex
+      %   4 	Barrier
+      %   5 	Sifting
+      %   6 	Concurrent
+      obj.solver_options.qpmethod = 4; 
       
-end
+    else % use gurobi
+      obj.solver_options.outputflag = 0; % not verbose
+      obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+%       obj.solver_options.presolve = 0;
+
+      if obj.solver_options.method == 2
+        obj.solver_options.bariterlimit = 18; % iteration limit
+        obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
+        obj.solver_options.barconvtol = 1e-4;
+      end
+
+    end    
+  end
     
   function y=mimoOutput(obj,t,~,varargin)
-    % alpha = [qdd; \bar{u}; z_1; ...; z_nc; beta_1; ...; beta_nc; ...; 
-    %           beta_{nc*nd}]
-    % where nc is the number of contact points, and nd is the (even) 
-    % number of direction vectors in the polyhedral friction cone
-    % approx. 
-
     tic;
-    zmpd = getData(obj.zmpdata);
-    h=zmpd.h; 
-    % linear inverted pendulum stuff
-    if isTI(zmpd.V)
-      S = zmpd.V.S;
-    else
-      S = zmpd.V.S.eval(t);
-    end
-    G = -h/9.81*eye(2); % zmp-input transfer matrix
-    % NOTE: should we include hddot in G as well?
-   
-    r = obj.robot;
-    nd = 4; % for friction cone approx, hard coded for now
-    dim = 3;
-    nu = getNumInputs(r);
-    nq = getNumDOF(r);
-    
     q_ddot_des = varargin{1};
     supports = varargin{2};
     x = varargin{3};
+
+    zmpd = getData(obj.zmpdata);
+    r = obj.robot;
+
+    %----------------------------------------------------------------------
+    % Set up problem dimensions -------------------------------------------
+    
+    nd = 4; % for friction cone approx, hard coded for now
+    dim = 3; % 3D
+    nu = getNumInputs(r);
+    nq = getNumDOF(r);
+    nq_free = length(obj.free_dof); 
+    nq_con = length(obj.con_dof); 
+    nu_con = length(obj.con_inputs);     
+
+    
+    %----------------------------------------------------------------------
+    % Compute kinematic and dynamic quantities ----------------------------
  
-    q = x(1:nq);
+    q = x(1:nq); 
     qd = x(nq+(1:nq));
     kinsol = doKinematics(r,q,true);
     
     [H,C,B] = manipulatorDynamics(r,q,qd);
+    
+    H_con = H(obj.con_dof,:); 
+    C_con = C(obj.con_dof);
+    B_con = B(obj.con_dof,obj.con_inputs);
+    
+    if nq_free > 0
+      H_free = H(obj.free_dof,:); 
+      C_free = C(obj.free_dof);
+      B_free = B(obj.free_dof,obj.free_inputs);
+    end
+    
     [xcom,J,dJ] = getCOM(r,kinsol);
-       
-    xlimp = [xcom(1:2); J(1:2,:)*qd];
+    J = J(1:2,:); % only need COM x-y
+    dJ = sparse(dJ(1:2,:)); % only need COM x-y
+    Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
 
     active_supports = find(supports~=0);
     if (isempty(active_supports))
@@ -108,22 +167,17 @@ end
       partial_idx = [];
     else
       % get support contact J, dJ for no-slip constraint
+      [~,Jp,dJp] = contactPositions(r,kinsol,active_supports);
       n_support_contacts=0;
-      %contact_pos = zeros(3,size(getBodyContacts(r,active_supports),2));
-      Jp = zeros(size(getBodyContacts(r,active_supports),2)*3,getNumDOF(r));
       partial_contacts = [];
       for i=1:length(active_supports)
         nC = size(getBodyContacts(r,active_supports(i)),2);
-        if nC>0
-          %[contact_pos(:,n_support_contacts+(1:nC)),Jp(3*n_support_contacts+(1:3*nC),:),dJp(3*n_support_contacts+(1:3*nC),:)] = forwardKin(r,kinsol,active_supports(i),getBodyContacts(r,active_supports(i)));
-          [~,Jp(3*n_support_contacts+(1:3*nC),:),dJp(3*n_support_contacts+(1:3*nC),:)] = forwardKin(r,kinsol,active_supports(i),getBodyContacts(r,active_supports(i)));
-          if any(partial_supports==i)
-            partial_contacts = [partial_contacts; (num_support_contacts+1:n_support_contacts + nC)];
-          end
-          n_support_contacts = n_support_contacts + nC;
+        if any(partial_supports==i)
+          partial_contacts = [partial_contacts; (n_support_contacts+1:n_support_contacts + nC)];
         end
+        n_support_contacts = n_support_contacts + nC;
       end
-
+      
       % get subset of active_contacts that are partial supports
       partial_contacts = intersect(active_contacts,partial_contacts);
       partial_idx = zeros(dim*length(partial_contacts),1);
@@ -131,110 +185,150 @@ end
         partial_idx((i-1)*dim+1:i*dim) = (partial_contacts(i)-1)*dim + (1:dim)';
       end
     end
-    
-    nf = nc+nc*nd;
-    nparams = nq+nu+nf+nc*dim;
-    
-    % handy index matrices
-    Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-    Iu = zeros(nu,nparams); Iu(:,nq+(1:nu)) = eye(nu);
-    Iz = zeros(nc,nparams); Iz(:,nq+nu+(1:nc)) = eye(nc);
-    Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq+nu+nc+(1:nc*nd)) = eye(nc*nd);
-    Ieps = zeros(nc*dim,nparams); 
-    Ieps(:,nq+nu+nc+nc*dim+(1:nc*dim)) = eye(nc*dim);
-    
-    lb = [-1e3*ones(1,nq) r.umin' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq) r.umax' 1e4*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
-    
+    Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
+
+    active_idx = zeros(dim*length(active_contacts),1);
+    for i=1:length(active_contacts);
+      active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
+    end
+    Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
+    Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
+    Jpdot = matGradMult(Jpdot_,qd);
+    Jpdot = Jpdot(:,obj.con_dof);
+
     % D_ is the parameterization of the polyhedral approximation of the 
     %    friction cone, in joint coordinates (figure 1 from Stewart96)
     %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
-    % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for the kth
-    % contact point
+    % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for 
+    % the kth contact point
     D = cell(1,nc);
     for k=1:nc
       for i=1:nd
-        D{k}(:,i) = D_{i}(active_contacts(k),:)'; 
+        D{k}(:,i) = D_{i}(active_contacts(k),obj.con_dof)'; 
       end
     end
     Dbar = [D{:}];
 
-    % compute linear constraints
+    
+    %----------------------------------------------------------------------
+    % Linear inverted pendulum stuff --------------------------------------
+        
+    if isTI(zmpd.V)
+      S = zmpd.V.S;
+      h = zmpd.h; 
+      hddot = 0;
+    else
+      S = zmpd.V.S.eval(t);
+      h = zmpd.h.eval(t); 
+      hddot = zmpd.hddot.eval(t);
+    end
+    G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
+    xlimp = [xcom(1:2); J*qd]; % state of LIP model
+
+    
+    %----------------------------------------------------------------------
+    % Free DOF cost function ----------------------------------------------
+
+    if nq_free > 0
+      % approximate quadratic cost for free dofs with the appropriate matrix block
+      Hqp_free = J(:,obj.free_dof)'*G'*obj.Qy*G*J(:,obj.free_dof) + obj.w*eye(nq_free);
+      fqp_free = xlimp'*obj.F'*obj.Qy*G*J(:,obj.free_dof) + ...
+                qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*G'*obj.Qy*G*J(:,obj.free_dof) + ...
+                xlimp'*S*obj.E*J(:,obj.free_dof) - obj.w*q_ddot_des(obj.free_dof)';
+
+      % solve for qdd_free unconstrained
+      qdd_free = -inv(Hqp_free)*fqp_free';
+    end
+        
+    
+    %----------------------------------------------------------------------
+    % Build handy index matrices ------------------------------------------
+    
+    nf = nc+nc*nd; % number of contact force variables
+    nparams = nq_con+nu_con+nf+nc*dim;
+    Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
+    Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
+    Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
+    Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
+    Ieps = zeros(nc*dim,nparams); 
+    Ieps(:,nq_con+nu_con+nc+nc*dim+(1:nc*dim)) = eye(nc*dim);
+    
+    
+    %----------------------------------------------------------------------
+    % Set up problem constraints ------------------------------------------
+
+    lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
+    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 1e4*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);
     Ain_ = cell(1,nc);
     bin_ = cell(1,nc);
 
-    % TODO: handle the case with no contacts
-    % CT dynamics 
-    Jz = Jz(active_contacts,:);
-    Aeq_{1} = H*Iqdd - B*Iu - Jz'*Iz - Dbar*Ibeta;
-    beq_{1} = -C;
-
-    % no-slip constraint
-    active_idx = zeros(dim*length(active_contacts),1);
-    for i=1:length(active_contacts);
-      active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
+    % constrained dynamics
+    if nc>0
+      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu - Jz'*Iz - Dbar*Ibeta;
+    else
+      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu;
     end
-    Jp = Jp(active_idx,:);
-    Jpdot = zeros(nc*dim,nq);
-    for i=1:nq
-      Jpdot(:,i) = dJp(active_idx,(i-1)*nq+(1:nq))*qd;
+    if nq_free > 0
+      beq_{1} = -C_con - H_con(:,obj.free_dof)*qdd_free;
+    else
+      beq_{1} = -C_con;
     end
+    % relative acceleration constraint
     Aeq_{2} = Jp*Iqdd + Ieps;
-    beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
+    beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
     
+    % linear friction constraints
     % TEMP: hard code mu
     mu = 1.0*ones(nc,1);
     for i=1:nc
-      Ain_{i} = -mu(i)*Iz(i,:) + ones(1,nd)*Ibeta((i-1)*nd+(1:nd),:);
+      Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
       bin_{i} = 0;
     end
-
+    
     % linear equality constraints: Aeq*alpha = beq
-    Aeq = sparse(blkdiag(Aeq_{:}) * repmat(eye(nparams),2,1));
+    Aeq = sparse(vertcat(Aeq_{:}));
     beq = vertcat(beq_{:});
       
     % linear inequality constraints: Ain*alpha <= bin
-    Ain = sparse(blkdiag(Ain_{:}) * repmat(eye(nparams),nc,1));
+    Ain = sparse(vertcat(Ain_{:}));
     bin = vertcat(bin_{:});
 
-    Jdot = zeros(dim,nq);
-    for i=1:nq
-      Jdot(:,i) = dJ(:,(i-1)*nq+(1:nq))*qd;
-    end
     
-    % minimize: 
-    %  quad(F*x+G*(Jdot*qd + J*qdd),Qy) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
-    % 
-    % the below is vectorized with constant terms dropped
+    %----------------------------------------------------------------------
+    % QP cost function ----------------------------------------------------
+    %
+    %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
-    J2 = J(1:2,:);
-    J2dot = Jdot(1:2,:);
+    Hqp = repmat(eye(nparams),2,1)'*vertcat(Iqdd'*J(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, obj.w*Iqdd'*Iqdd);
     
-    Hqp = repmat(eye(nparams),2,1)'*blkdiag(Iqdd'*J2'*G'*obj.Qy*G*J2*Iqdd, obj.w*Iqdd'*Iqdd)*repmat(eye(nparams),2,1);
+    fqp = horzcat(xlimp'*obj.F'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, ...
+          qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, ...
+          xlimp'*S*obj.E*J(:,obj.con_dof)*Iqdd, ...
+          -obj.w*q_ddot_des(obj.con_dof)'*Iqdd)*repmat(eye(nparams),4,1);
+
     % quadratic input cost
-    Hqp(nq+(1:nu),nq+(1:nu)) = obj.R;
+    Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
 
     % add cost term for transitional contacts
     qz = zeros(nc,1);
     qz(partial_contacts) = 1e-6*ones(length(partial_contacts),1);
     qbeta = zeros(nc*nd,1);
     qbeta(partial_idx) = 1e-6*ones(length(partial_idx),1);
-    Hqp(nq+nu+(1:nc),nq+nu+(1:nc)) = diag(qz);
-    Hqp(nq+nu+nc+(1:nc*nd),nq+nu+nc+(1:nc*nd)) = diag(qbeta);
+    Hqp(nq_con+nu_con+(1:nc),nq_con+nu_con+(1:nc)) = diag(qz);
+    Hqp(nq_con+nu_con+nc+(1:nc*nd),nq_con+nu_con+nc+(1:nc*nd)) = diag(qbeta);
     
     % quadratic slack var cost 
     Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
 
-    fqp = horzcat(xlimp'*obj.F'*obj.Qy*G*J2*Iqdd, ...
-          qd'*J2dot'*G'*obj.Qy*G*J2*Iqdd, ...
-          xlimp'*S*obj.E*J2*Iqdd, ...
-          -obj.w*q_ddot_des'*Iqdd)*repmat(eye(nparams),4,1);
+    %----------------------------------------------------------------------
+    % Solve QP ------------------------------------------------------------
         
-    if 0
-      % try selecting interior point method (QP_method=4?)
-      alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.options);
+    if obj.solver==1
+      % CURRENTLY CRASHES MATLAB ON MY MACHINE -sk
+      alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
     
     else
       model.Q = sparse(Hqp);
@@ -244,15 +338,31 @@ end
       model.sense = [repmat('=',length(beq),1); repmat('<',length(bin),1)];
       model.lb = lb;
       model.ub = ub;
-  
-      params.outputflag = 0; % not verbose
-      params.method = -1; % -1 auto, 2 barrier
 
-      result = gurobi(model,params);
+%       tic;
+      result = gurobi(model,obj.solver_options);
+%       toc
       alpha = result.x;
+%       dvals = result.pi;
     end
     
-    y=alpha(nq+(1:nu));
+    %----------------------------------------------------------------------
+    % Solve for free inputs -----------------------------------------------
+    if nq_free > 0
+      qdd = zeros(nq,1);
+      qdd(obj.free_dof) = qdd_free;
+      qdd(obj.con_dof) = alpha(1:nq_con);
+
+      u_free = B_free\(H_free*qdd + C_free);
+      u = zeros(nu,1);
+      u(obj.free_inputs) = u_free;
+      u(obj.con_inputs) = alpha(nq_con+(1:nu_con));
+
+      % saturate inputs
+      y = max(r.umin,min(r.umax,u));
+    else
+      y = alpha(nq+(1:nu));
+    end
     toc
    
   end
@@ -263,13 +373,17 @@ end
     zmpdata
     w = 1.0; % objective function weight
     slack_limit = 1.0; % maximum absolute magnitude of acceleration slack variable values
+    free_dof % dof for which we perform unconstrained minimization (i.e., dofs not in the kinematic chain to contact points)
+    con_dof 
+    free_inputs
+    con_inputs 
     R  % quadratic input cost matrix
     % LIP stuff
     A = [zeros(2),eye(2); zeros(2,4)]; % state transfer matrix
     E = [zeros(2); eye(2)]; % input transfer matrix
     F = [eye(2),zeros(2)]; % zmp-state transfer matrix
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
-    options = cplexoptimset('Diagnostics','on');
-    %options = cplexoptimset('MaxTime',0.01);
+    solver = 0; % 0: gurobi, 1:cplex
+    solver_options = struct();
   end
 end

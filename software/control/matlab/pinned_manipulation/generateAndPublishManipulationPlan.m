@@ -130,19 +130,19 @@ function generateAndPublishManipulationPlan(r,plan_pub,x0,rep_goal,lep_goal)
   ikoptions.Q = diag(cost(1:getNumDOF(r)));
   ikoptions.q_nom = q0;
 
-  %v = r.constructVisualizer();
+  v = r.constructVisualizer();
 
   q = q0;
   q_d = q(ind);
   for i=2:length(ts)
     t = ts(i);
     tic;
-%    q(:,i) = inverseKin(r,q(:,i-1),0,comgoal,rfoot_body,'heel',rfoot0, ...
-%        lfoot_body,'heel',lfoot0,r_hand_body,'default',r_hand_pos.eval(t), ...
-%        l_hand_body,'default',l_hand_pos.eval(t),ikoptions);
-    q(:,i) = inverseKin(r,q(:,i-1),0,[nan;nan;nan],rfoot_body,'heel',rfoot0, ...
+    q(:,i) = inverseKin(r,q(:,i-1),0,comgoal,rfoot_body,'heel',rfoot0, ...
         lfoot_body,'heel',lfoot0,r_hand_body,'default',r_hand_pos.eval(t), ...
-        l_hand_body,'default',l_hand_pos.eval(t),ikoptions);    
+        l_hand_body,'default',l_hand_pos.eval(t),ikoptions);
+%    q(:,i) = inverseKin(r,q(:,i-1),0,[nan;nan;nan],rfoot_body,'heel',rfoot0, ...
+%        lfoot_body,'heel',lfoot0,r_hand_body,'default',r_hand_pos.eval(t), ...
+%        l_hand_body,'default',l_hand_pos.eval(t),ikoptions);    
     toc;
 
     
@@ -150,7 +150,7 @@ function generateAndPublishManipulationPlan(r,plan_pub,x0,rep_goal,lep_goal)
 %         r_hand_body,'default',r_hand_pos.eval(t), ...
 %         l_hand_body,'default',l_hand_pos.eval(t),ikoptions);
     q_d(:,i) = q(ind,i);
-   % v.draw(t,q(:,i));
+    v.draw(t,q(:,i));
   end
   qd_frame = AtlasPositionRef(r);
   des_traj = setOutputFrame(PPTrajectory(spline(ts,q_d)),qd_frame);
