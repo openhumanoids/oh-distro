@@ -120,6 +120,8 @@ struct Worker {
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.width = msg.height = 100;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.clip_planes[4][3] = 3;
+    msg.clip_planes[5][3] = 0.3;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
     pose.translation() = Eigen::Vector3f(0,0,10);
     pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
@@ -143,6 +145,8 @@ struct Worker {
     msg.clip_planes[1][3] = 10;
     msg.clip_planes[2][3] = 1;
     msg.clip_planes[3][3] = 1;
+    msg.clip_planes[4][3] = 3;
+    msg.clip_planes[5][3] = 0.3;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
     pose.translation() = Eigen::Vector3f(0,0,10);
     pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;

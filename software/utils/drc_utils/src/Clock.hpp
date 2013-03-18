@@ -30,6 +30,8 @@ public:
 
   virtual int64_t getCurrentTime() const = 0;
 
+  virtual int64_t getCurrentWallTime() const = 0;
+
 protected:
   virtual void update() = 0;
 

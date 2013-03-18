@@ -44,6 +44,10 @@ public:
     }
   }
 
+  int64_t getCurrentWallTime() const {
+    return bot_timestamp_now();
+  }
+
   void onTime(const lcm::ReceiveBuffer* iBuf,
               const std::string& iChannel,
               const drc::utime_t* iMessage) {

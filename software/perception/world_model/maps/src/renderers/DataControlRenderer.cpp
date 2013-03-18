@@ -1,6 +1,8 @@
 #include "RendererBase.hpp"
 
 #include <iostream>
+#include <sstream>
+#include <thread>
 #include <unordered_map>
 
 #include <gtkmm.h>
@@ -12,6 +14,7 @@
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
 
 #include <bot_vis/viewer.h>
 
@@ -21,17 +24,67 @@ using namespace maps;
 
 class DataControlRenderer : public RendererBase {
 protected:
+  enum ChannelType {
+    ChannelTypeAnonymous,
+    ChannelTypeDepthImage,
+  };
+
   struct RequestControl {
     const int mId;
     bool mEnabled;
     double mPeriod;
-    typedef boost::shared_ptr<RequestControl> Ptr;
+    typedef std::shared_ptr<RequestControl> Ptr;
+  };
+
+  struct TimeKeeper {
+    int64_t mLastUpdateTime;
+    Gtk::Label* mLabel;
+    TimeKeeper() : mLastUpdateTime(-1), mLabel(NULL) {}
+  };
+
+  struct LastUpdateChecker {
+    DataControlRenderer* mRenderer;
+    std::thread mThread;
+    bool mIsRunning;
+
+    LastUpdateChecker(DataControlRenderer* iRenderer) : mRenderer(iRenderer) {
+      mThread = std::thread(std::ref(*this));
+    }
+
+    ~LastUpdateChecker() {
+      mIsRunning = false;
+      mThread.join();
+    }
+
+    void operator()() {
+      mIsRunning = true;
+      while (mIsRunning) {
+        int64_t currentTime = drc::Clock::instance()->getCurrentTime();
+        std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
+        for (iter = mRenderer->mTimeKeepers.begin();
+             iter != mRenderer->mTimeKeepers.end(); ++iter) {
+          int64_t lastUpdateTime = iter->second.mLastUpdateTime;
+          if (lastUpdateTime < 0) continue;
+          int dtSec = (currentTime - lastUpdateTime)/1000000;
+          if (dtSec > 0) {
+            std::string text = static_cast<std::ostringstream*>
+              (&(std::ostringstream() << dtSec) )->str();
+            iter->second.mLabel->set_text("(" + text + "s)");
+          }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      }
+    }
   };
 
 protected:
   Gtk::VBox* mRequestControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
+
+  std::shared_ptr<LastUpdateChecker> mUpdateChecker;
+  std::unordered_map<std::string, ChannelType> mChannels;
+  std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
 
 public:
 
@@ -47,6 +100,33 @@ public:
 
     // create and show ui widgets
     setupWidgets();
+
+    // create subscriptions and handlers
+    mUpdateChecker.reset(new LastUpdateChecker(this));
+  }
+
+  ~DataControlRenderer() {
+  }
+
+  void onMessage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
+    std::unordered_map<std::string, ChannelType>::const_iterator channelItem =
+      mChannels.find(iChannel);
+    if (channelItem == mChannels.end()) return;
+    std::string key = iChannel;
+    if (channelItem->second == ChannelTypeDepthImage) {
+      drc::map_image_t msg;
+      if (msg.decode(iBuf->data, 0, iBuf->data_size) < 0) {
+        std::cout << "Error decoding " << iChannel << std::endl;
+        return;
+      }
+      key += static_cast<std::ostringstream*>
+        (&(std::ostringstream() << msg.view_id) )->str();
+    }
+    else {
+    }
+    mTimeKeepers[key].mLastUpdateTime =
+      drc::Clock::instance()->getCurrentTime();
+    mTimeKeepers[key].mLabel->set_text("");
   }
 
   void setupWidgets() {
@@ -56,15 +136,25 @@ public:
 
     // for data requests
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
-    addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image");
-    addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State");
-    addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List");
-    addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog");
-    addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree");
-    addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height");
-    addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height");
-    addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth");
-    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth");
+    typedef drc::data_request_t dr;
+    addControl(drc::data_request_t::CAMERA_IMAGE, "Camera Image",
+               "CAMERALEFT_COMPRESSED", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
+               "EST_ROBOT_STATE", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
+               "AFFORDANCE_LIST", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog",
+               "MAP_CATALOG", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree",
+               "MAP_OCTREE", ChannelTypeAnonymous);
+    addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
+               "MAP_DEPTH", ChannelTypeDepthImage);
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
@@ -85,16 +175,19 @@ public:
     container->show_all();
   }
 
-  void addControl(const int iId, const std::string& iLabel) {
+  void addControl(const int iId, const std::string& iLabel,
+                  const std::string& iChannel, const ChannelType iChannelType) {
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
     Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
+    Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(""));
     spin->set_range(0, 10);
     spin->set_increments(1, 2);
     spin->set_digits(0);
     box->add(*check);
     box->add(*label);
+    box->add(*ageLabel);
     box->add(*spin);
     RequestControl::Ptr group(new RequestControl());
     group->mEnabled = false;
@@ -103,9 +196,21 @@ public:
     bind(spin, iLabel + " period", group->mPeriod);
     mRequestControlBox->add(*box);
     mRequestControls[iId] = group;
-  }
 
-  ~DataControlRenderer() {
+    std::string key = iChannel;
+    if (iChannelType == ChannelTypeDepthImage) {
+      key += static_cast<std::ostringstream*>
+        (&(std::ostringstream() << iId) )->str();
+    }
+    TimeKeeper timeKeeper;
+    timeKeeper.mLabel = ageLabel;
+    timeKeeper.mLastUpdateTime = -1;
+    mTimeKeepers[key] = timeKeeper;
+
+    if (mChannels.find(iChannel) == mChannels.end()) {
+      add(getLcm()->subscribe(iChannel, &DataControlRenderer::onMessage, this));
+      mChannels[iChannel] = iChannelType;
+    }
   }
 
   void onDataRequestButton() {
