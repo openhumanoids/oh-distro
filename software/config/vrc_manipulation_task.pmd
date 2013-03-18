@@ -20,7 +20,11 @@ group "1.robot" {
         host = "localhost";
     }
     cmd "r2l" {
-        exec = "rosrun translators ros2lcm";
+        exec = "rosrun translators ros2lcm -c";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm -p";
         host = "localhost";
     }
     cmd "l2r" {
