@@ -1,3 +1,0 @@
-/home/drc/drc/software/build/bin/drc-lcmscope
-/home/drc/drc/software/build/bin/drc-bandwidth-scope
-/home/drc/drc/software/build/bin/drc-set-sim-rate
