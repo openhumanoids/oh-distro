@@ -22,6 +22,8 @@ public:
 
   typedef boost::shared_ptr<DepthImage> Ptr;
 
+  struct Helper;
+
 public:
   DepthImage();
   ~DepthImage();
@@ -33,7 +35,7 @@ public:
   const float getInvalidValue(const Type iType) const;
 
   bool setData(const std::vector<float>& iData, const Type iType);
-  std::vector<float> getData(const Type iType) const;
+  const std::vector<float>& getData(const Type iType) const;
 
   void setOrthographic(const bool iVal);
   bool isOrthographic() const;
@@ -57,20 +59,7 @@ public:
                             const Type iType) const;
 
 protected:
-  void updateMatrices();
-  bool isValid(const float iValue);
-
-protected:
-  int mWidth;
-  int mHeight;
-  std::vector<float> mData;
-  Eigen::Isometry3f mPose;
-  Eigen::Isometry3f mPoseInv;
-  Eigen::Matrix3f mCalib;
-  Eigen::Matrix3f mCalibInv;
-  Eigen::Projective3f mProjector;
-  Eigen::Projective3f mProjectorInv;
-  bool mIsOrthographic;
+  std::shared_ptr<Helper> mHelper;
 };
 
 }

@@ -144,7 +144,6 @@ getAsMesh(const bool iTransform) const {
 bool DepthImageView::
 getClosest(const Eigen::Vector3f& iPoint,
            Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
-  // TODO: interpolate depths not disparities
   DepthImage::Type depthType = DepthImage::TypeDepth;
   Eigen::Vector3f proj = mImage->project(iPoint, depthType);
   const std::vector<float>& depths = mImage->getData(depthType);
@@ -167,14 +166,14 @@ getClosest(const Eigen::Vector3f& iPoint,
     float z3 = depths[idx+1];
     float zInterp = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
     Vec3f p3 = mImage->unproject(Vec3f(xInt+1, yInt, z3), depthType);
-    Eigen::Vector3f d1(p00-p3), d2(p11-p3);
+    Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d1.cross(d2).normalized();
   }
   else {
     float z3 = depths[idx+width];
     float zInterp = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
     Vec3f p3 = mImage->unproject(Vec3f(xInt, yInt+1, z3), depthType);
-    Eigen::Vector3f d1(p00-p3), d2(p11-p3);
+    Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d2.cross(d1).normalized();
   }
 

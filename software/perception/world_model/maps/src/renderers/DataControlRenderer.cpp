@@ -59,7 +59,7 @@ protected:
     void operator()() {
       mIsRunning = true;
       while (mIsRunning) {
-        int64_t currentTime = drc::Clock::instance()->getCurrentTime();
+        int64_t currentTime = drc::Clock::instance()->getCurrentWallTime();
         std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
         for (iter = mRenderer->mTimeKeepers.begin();
              iter != mRenderer->mTimeKeepers.end(); ++iter) {
@@ -125,7 +125,7 @@ public:
     else {
     }
     mTimeKeepers[key].mLastUpdateTime =
-      drc::Clock::instance()->getCurrentTime();
+      drc::Clock::instance()->getCurrentWallTime();
     mTimeKeepers[key].mLabel->set_text("");
   }
 
