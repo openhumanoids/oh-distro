@@ -6,6 +6,8 @@ pos(:,1) = pos(:,1) - 2
 ypr= rand(size(pos))/5
 plot_lcm_poses(pos, ypr, 8, 'Triads', 5, 1, 1, 9)
 
+
+
 % 2. Plot a set of points and lines
 pos= rand(12,3)
 cols=repmat( [1,0,0], size(pos)) % red
