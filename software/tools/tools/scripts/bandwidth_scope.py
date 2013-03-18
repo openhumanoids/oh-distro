@@ -25,10 +25,12 @@ class SensorData(object):
         self.nfields = nfields
         self.reset()
     def append(self, utime,v_in ):
-        #np_utimes = np.array(utime)
+        np_v = np.array(v_in)
+        if (self.v.shape[1] != np_v.size):
+          self.nfields = np_v.size
+          self.reset()
         np_utimes = np.array( (utime - first_utime)/1000000.0 )
         self.utimes = np.vstack((self.utimes , np_utimes ))
-        np_v = np.array(v_in)
         self.v = np.vstack((self.v , np_v ))
     def reset(self):
         # no sure how to support initialising a Nx0 array, so I'm initing a Nx1 array and skipping 1st row:
@@ -44,13 +46,12 @@ def plot_data():
   global last_utime
   global channels
   front_block =0 # offset into the future (to ensure no recent data not viewed)
-  print "len of channels: %d" %  len(channels)
+  #print "len of channels: %d" %  len(channels)
   if ( len(msgs.utimes) >1):
     plt.figure(1)
-    print "draw"
     ############################################################
     ax1.cla()
-    cols = 'rgbkmcwrgbkmcwrgbkmcwrgbkmcwrgbkmcwrgbkmcw'
+    cols = 'rgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmc'
     for i in range(len(channels)): 
       if(msgs.v[-1,i]>0):
         ax1.plot(msgs.utimes[1:], np.transpose(msgs.v[1:,i]),color=cols[i] , linewidth=1,label=channels[i])
@@ -98,7 +99,6 @@ def plot_data():
 
 # Microstrain INS/IMU Sensor:
 def on_bw(channel, data):
-  print "SDfsdf"
   m = bandwidth_stats_t.decode(data)
   
   # this keys of first recieved time
@@ -110,6 +110,7 @@ def on_bw(channel, data):
   for i in range(len(m.queued_bytes)): 
     this_bytes.append(m.queued_bytes[i]/1024.0)
   this_cumbytes = np.cumsum(this_bytes)
+  shape = msgs.v.shape
   msgs.append(m.utime,m.queued_msgs)
   bytes.append(m.utime,this_bytes)
   cumbytes.append(m.utime,this_cumbytes)

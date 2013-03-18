@@ -33,10 +33,13 @@ class SensorData(object):
         self.nfields = nfields
         self.reset()
     def append(self, utime,v_in ):
-        #np_utimes = np.array(utime)
+        np_v = np.array(v_in)
+        # reset if shape is different
+        if (self.v.shape[1] != np_v.size):
+          self.nfields = np_v.size
+          self.reset()
         np_utimes = np.array( (utime - first_utime)/1000000.0 )
         self.utimes = np.vstack((self.utimes , np_utimes ))
-        np_v = np.array(v_in)
         self.v = np.vstack((self.v , np_v ))
     def reset(self):
         # no sure how to support initialising a Nx0 array, so I'm initing a Nx1 array and skipping 1st row:
