@@ -37,7 +37,8 @@ struct Resend{
 class KMCLApp{
   public:
     KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
-            std::string task, bool base_only, bool bot_only);
+            std::string task, bool base_only, bool bot_only,
+            std::string config_file);
     
     ~KMCLApp(){
     }

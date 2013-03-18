@@ -10,6 +10,7 @@
 // 4 missing bytes = 4 (probably the channel OR that the fingerprint has be double counted here)
 
 #include "network-bridge.h"
+#include <path_util/path_util.h>
 
 #include <ConciseArgs>
 
@@ -23,7 +24,7 @@ const std::string KMCLApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
 KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
                  std::string task,
                  bool base_only,
-                 bool bot_only):
+                 bool bot_only, string config_file):
       robot_lcm(robot_lcm), base_lcm(base_lcm),
       task(task),base_only(base_only),bot_only(bot_only){
     verbose=false;
@@ -33,14 +34,22 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
   bw_cumsum_robot2base = 0;
   bw_cumsum_base2robot = 0;
   
+  fprintf(stderr,"Reading config from file\n");
+  std::string config_path = std::string(getConfigPath()) +'/' + std::string(config_file);
+  bot_param = bot_param_new_from_file(config_path.c_str());
+  if (bot_param == NULL) {
+    std::cerr << "Couldn't get bot param from file %s\n" << config_path << std::endl;
+    exit(-1);
+  }
+  
   //bot_param = bot_param_new_from_file("/home/mfallon/drc/software/config/drc_robot.cfg");
-  if (bot_only){
+  /*if (bot_only){
     cout << "getting params from robot url\n";
     bot_param = bot_param_new_from_server(robot_lcm->getUnderlyingLCM(), 0);
   }else{ // if bot is not true, then get it from base
     cout << "getting params from base url\n";
     bot_param = bot_param_new_from_server(base_lcm->getUnderlyingLCM(), 0);
-  }
+  }*/
 
   if (bot_param == NULL) {
     std::cerr << "Couldn't get bot param from file " << std::endl;
@@ -178,12 +187,15 @@ int main (int argc, char ** argv) {
   bool bot_only = true;
   bool base_only = false;
   string role = "robot";
+  string config_file ="drc_robot.cfg";
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(task, "t", "task","Task: driving, walking, manipulation");
+  opt.add(config_file, "c", "config_file", "Config Filename");
   opt.add(role, "r", "role", "Role: robot, base or both (local system mode)");
   opt.parse();
   std::cout << "task: " << task << "\n";
+  std::cout << "config_file: " << config_file<< "\n";
   std::cout << "role: " << role << "\n";
   if (role=="robot"){
     bot_only = true;
@@ -237,7 +249,7 @@ int main (int argc, char ** argv) {
 
 
   
-  KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,task,base_only,bot_only);
+  KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,task,base_only,bot_only,config_file);
   boost::thread_group thread_group;
 
   // Subscribe to robot time and use that to key the publishing of all messages in both directions:

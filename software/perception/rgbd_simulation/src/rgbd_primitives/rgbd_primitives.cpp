@@ -24,7 +24,7 @@ void set_color(pcl::PointXYZRGB &pt){
 }
 
 // Duplicates function in pointcloud_math - and surely this can be done in a functioncall
-Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d pose_in){
+Eigen::Isometry3f IsometryDoubleToFloat(Eigen::Isometry3d pose_in){
   
   Eigen::Quaterniond r(pose_in.rotation());
   Eigen::Quaternionf rf(r.w() , r.x() , r.y() , r.z() );
@@ -47,7 +47,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinderWithTransform(Eigen::Isometry3
   pcl::transformPointCloud (*cloud, *cloud,
         Eigen::Vector3f(0,0, -height/2.0), Eigen::Quaternionf(1.0, 0.0,0.0,0.0)); // !! modifies cloud
     
-  Eigen::Isometry3f pose_f = Isometry_d2f(transform);
+  Eigen::Isometry3f pose_f = IsometryDoubleToFloat(transform);
   Eigen::Quaternionf quat_f(pose_f.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
@@ -70,7 +70,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d tr
   pcl::transformPointCloud (*cloud, *cloud,
         Eigen::Vector3f( -xdim/2.0 , -ydim/2.0, -zdim/2.0), Eigen::Quaternionf(1.0, 0.0,0.0,0.0)); // !! modifies cloud
     
-  Eigen::Isometry3f pose_f = Isometry_d2f(transform);
+  Eigen::Isometry3f pose_f = IsometryDoubleToFloat(transform);
   Eigen::Quaternionf quat_f(pose_f.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud

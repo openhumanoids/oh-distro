@@ -24,7 +24,8 @@ def on_aff_track(channel, data):
   if (counter%100 ==0):
     print "TRK %d id from oracle republished [counter %d]" % (m.uid, counter)
   counter=counter+1
-  lc.publish("AFFORDANCE_TRACK", m.encode())
+  m.aff_store_control = 0
+  lc.publish("AFFORDANCE_FIT", m.encode())
 
 #################################################################################
 print "started"

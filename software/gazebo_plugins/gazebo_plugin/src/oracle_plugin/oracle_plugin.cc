@@ -115,6 +115,8 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["saucepan"]=70011;  
   model_map_["duff_beer"]=70012;
   model_map_["steering_assembly"]=70013;    
+  model_map_["mit_standpipe"]=70014;    
+  model_map_["mit_valve"]=70015;    
   //model_map_["mit_drc_robot"]=7012; //dont send this
     gzerr << "model_map_ " << model_map_.size()<<"\n";
   storeAffordances();
@@ -438,6 +440,99 @@ void OraclePlugin::storeAffordances()
     aff_map_["steering_assembly_steering_wheel"]=affp;
   }   
         
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.14000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.40000);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    //offset.translation()  << -0.085, 0.03, 0.20;
+    //double ypr[3]={0,0,-1.571};
+    //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    //offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["mit_standpipe_link"]=affp;
+  }   
+  
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+    a.nparams =9;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.30000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.040000);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    //offset.translation()  << -0.085, 0.03, 0.20;
+    //double ypr[3]={0,0,-1.571};
+    //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    //offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["mit_valve_wheel"]=affp;
+  }     
   
 }
 
@@ -618,6 +713,16 @@ void OraclePlugin::OnUpdate(){
                   sendAffordance(affname,  world_to_link);
                 }
               }
+              if ( model->GetName().compare( "mit_standpipe" ) == 0){
+                if ( link->GetName().compare( "link" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                }
+              }
+              if ( model->GetName().compare( "mit_valve" ) == 0){
+                if ( link->GetName().compare( "wheel" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                }
+              }
               
             }
           }
@@ -630,8 +735,8 @@ void OraclePlugin::OnUpdate(){
     // Link names:
     //pc_vis_->text_collection_to_lcm(70001, 70000, "Oracle [Labels]", link_names, world_to_link_utimes );    
 
-    affcol.naffs = affcol.affs.size();
-    lcm_publish_.publish( ("AFFORDANCE_ORACLE") , &affcol);        
+    //affcol.naffs = affcol.affs.size();
+    //lcm_publish_.publish( ("AFFORDANCE_ORACLE") , &affcol);        
     
     this->last_update_time_ = sim_time;
   }

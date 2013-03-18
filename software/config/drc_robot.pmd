@@ -39,7 +39,7 @@ group "1.robot" {
         host = "paladin-02";
     }
     cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r robot";
+        exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
         host = "paladin-02";
     }
 }
@@ -135,7 +135,7 @@ group "4.drake_robot" {
 
 group "5.base" {
     cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r base";
+        exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
         host = "paladin-01";
     }
     cmd "viewer" {

@@ -217,15 +217,19 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   pcl::PolygonMesh::Ptr aff_mesh_temp(new pcl::PolygonMesh());
   aff_mesh_ = aff_mesh_temp;
   for (int i=0; i < msg->naffs; i++){
-    Eigen::Quaterniond quat = euler_to_quat( msg->affs[i].params[5] , msg->affs[i].params[4] , msg->affs[i].params[3] );             
+    std::map<string,double> am;
+    for (size_t j=0; j< msg->affs[i].nparams; j++){
+      am[ msg->affs[i].param_names[j] ] = msg->affs[i].params[j];
+    }
+    Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
     Eigen::Isometry3d transform;
     transform.setIdentity();
-    transform.translation()  << msg->affs[i].params[0] , msg->affs[i].params[1], msg->affs[i].params[2];
+    transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
     transform.rotate(quat);  
     pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh());
-    combined_mesh_ptr_temp = prim_->getCylinderWithTransform(transform, msg->affs[i].params[6], msg->affs[i].params[6], msg->affs[i].params[7]);
+    combined_mesh_ptr_temp = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
     // demo of bounding boxes: (using radius as x and y dimensions
-    //combined_mesh_ptr_temp = prim_->getCubeWithTransform(transform, msg->affs[i].params[6], msg->affs[i].params[6], msg->affs[i].params[7]);
+    //combined_mesh_ptr_temp = prim_->getCubeWithTransform(transform,am.find("radius")->second, am.find("radius")->second, am.find("length")->second);
 
     if(output_color_mode_==0){
       // Set the mesh to a false color:
