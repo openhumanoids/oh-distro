@@ -14,7 +14,7 @@ add_subdirectory(src/joints2frames)
 add_subdirectory(src/voconfig)
 add_subdirectory(src/vofeatures)
 add_subdirectory(src/voestimator)
-#add_subdirectory(src/fovision)
+add_subdirectory(src/fovision)
 
 add_subdirectory(src/registeration)
 add_subdirectory(src/tools)
