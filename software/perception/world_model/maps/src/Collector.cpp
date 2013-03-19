@@ -153,6 +153,7 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
        iter != pointSets.rend(); ++iter) {
     float angle = mHelper->
       computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
+    if ((angle < iMinAngle) || (angle > iMaxAngle)) continue;
     if (angle > Helper::kPi) angle -= Helper::kPi;
     if (first) {
       anglePrev = angle;
