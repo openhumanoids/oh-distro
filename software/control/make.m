@@ -28,7 +28,7 @@ fprintf(fptr,'javaaddpath(''%s/share/java/lcmtypes_visualization.jar'');\n',BUIL
 fprintf(fptr,'\n\n% Set environment variables\n');
 fprintf(fptr,'setenv(''DRC_PATH'',''%s'');\n',fullfile(pwd,'..'));
 fprintf(fptr,'setenv(''ROS_ROOT'',''%s'');\n',getenv('ROS_ROOT'));
-fprintf(fptr,'setenv(''ROS_PACKAGE_PATH'',''%s'');\n',[fullfile(BUILD_PREFIX,'..','..','..','ros_workspace'),pathsep,getenv('ROS_PACKAGE_PATH')]);
+fprintf(fptr,'setenv(''ROS_PACKAGE_PATH'',''%s'');\n',[fullfile(BUILD_PREFIX,'..','..','ros_workspace'),pathsep,getenv('ROS_PACKAGE_PATH')]);
 
 % path license
 fprintf(fptr,'\n\n% Setup PATH LCP solver\n');
