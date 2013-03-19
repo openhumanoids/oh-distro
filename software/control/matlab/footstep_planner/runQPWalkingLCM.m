@@ -5,6 +5,9 @@ if nargin < 3; goal_y = 0.0; end
 if nargin < 2; goal_x = 2.0; end
 if nargin < 1; lcm_plan = true; end
 
+addpath(fullfile(pwd,'..','frames'));
+addpath(fullfile(getDrakePath,'examples','ZMP'));
+
 options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
