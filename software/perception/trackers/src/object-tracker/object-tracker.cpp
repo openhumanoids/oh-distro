@@ -306,11 +306,10 @@ void Pass::histogramThresholdLikelihood( std::vector<float> &loglikelihoods ){
 void Pass::updatePF(){
   propogatePF();
   
-  // Color Threshold Likelihood
+  // Likelihood Functions:
   std::vector<float> loglikelihoods;
-  //colorThresholdLikelihood(loglikelihoods);
-  
-  histogramThresholdLikelihood(loglikelihoods);
+  colorThresholdLikelihood(loglikelihoods);
+  //histogramThresholdLikelihood(loglikelihoods);
   
   pf_->LogLikelihoodParticles(loglikelihoods);
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);
