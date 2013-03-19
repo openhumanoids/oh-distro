@@ -53,10 +53,11 @@ getAsPointCloud(const bool iTransform) const {
     cloud = mImage->getAsPointCloud();
   }
   else {
+    DepthImage::Type depthType = DepthImage::TypeDisparity;
     cloud->reserve(mImage->getWidth()*mImage->getHeight());
     cloud->is_dense = false;
-    std::vector<float> depths = mImage->getData(DepthImage::TypeDisparity);
-    float invalidValue = mImage->getInvalidValue(DepthImage::TypeDisparity);
+    const std::vector<float>& depths = mImage->getData(depthType);
+    const float invalidValue = mImage->getInvalidValue(depthType);
     for (int i = 0, idx = 0; i < mImage->getHeight(); ++i) {
       for (int j = 0; j < mImage->getWidth(); ++j, ++idx) {
         float z = depths[idx];
@@ -76,28 +77,24 @@ maps::TriangleMesh::Ptr DepthImageView::
 getAsMesh(const bool iTransform) const {
   int width(mImage->getWidth()), height(mImage->getHeight());
   int numDepths = width*height;
-  std::vector<float> depths = mImage->getData(DepthImage::TypeDisparity);
+  DepthImage::Type depthType = DepthImage::TypeDisparity;
+  std::vector<float> depths = mImage->getData(depthType);
   maps::TriangleMesh::Ptr mesh(new maps::TriangleMesh());
 
   // vertices
   mesh->mVertices.reserve((width+1)*(height+1));
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
-      float z = depths[i*width+j];
-      if (iTransform) {
-        Eigen::Vector3f pt = mImage->unproject(Eigen::Vector3f(j,i,z),
-                                               DepthImage::TypeDisparity);
-        mesh->mVertices.push_back(pt);
-      }
-      else {
-        mesh->mVertices.push_back(Eigen::Vector3f(j,i,z));
-      }
+      Eigen::Vector3f pt(j,i,depths[i*width+j]);
+      if (iTransform) pt = mImage->unproject(pt, depthType);
+      mesh->mVertices.push_back(pt);
     }
   }
 
   // faces
   std::vector<Eigen::Vector3i>& faces = mesh->mFaces;
   faces.reserve(2*numDepths);
+  float invalidValue = mImage->getInvalidValue(depthType);
   for (int i = 0; i < height-1; ++i) {
     for (int j = 0; j < width-1; ++j) {
       int idx = i*width + j;
@@ -105,10 +102,10 @@ getAsMesh(const bool iTransform) const {
       double z10 = depths[idx+1];
       double z01 = depths[idx+width];
       double z11 = depths[idx+width+1];
-      bool valid00 = pcl_isfinite(z00);
-      bool valid10 = pcl_isfinite(z10);
-      bool valid01 = pcl_isfinite(z01);
-      bool valid11 = pcl_isfinite(z11);
+      bool valid00 = z00 != invalidValue;
+      bool valid10 = z10 != invalidValue;
+      bool valid01 = z01 != invalidValue;
+      bool valid11 = z11 != invalidValue;
       int validSum = (int)valid00 + (int)valid10 + (int)valid01 + (int)valid11;
       if (validSum < 3) continue;
 
