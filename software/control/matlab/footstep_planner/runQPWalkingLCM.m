@@ -5,6 +5,7 @@ if nargin < 3; goal_y = 0.0; end
 if nargin < 2; goal_x = 2.0; end
 if nargin < 1; lcm_plan = true; end
 
+addpath(fullfile(pwd,'..'));
 addpath(fullfile(pwd,'..','frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
