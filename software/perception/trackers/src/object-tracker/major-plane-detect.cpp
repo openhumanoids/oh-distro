@@ -4,7 +4,7 @@
 using namespace maps;
 using namespace std;
 
-MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
+MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm_(lcm_), verbose_lcm_(verbose_lcm_){
     mBotWrapper.reset(new BotWrapper(lcm_));
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
@@ -32,11 +32,11 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Tracker | NPose",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Tracker | Plane"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
-
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Tracker | Plane X"           ,1,1, 4451002,1, { 0.0, 0.0, 1.0} ));
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451005,"Tracker | Transform",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Plane Detect | NPose",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Plane Detect | Plane"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Plane Normal"           ,3,1, 4451002,1, { 0.3, 0.1, 0.1} ));
+  //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Plane X"           ,1,1, 4451002,1, { 0.0, 0.0, 1.0} ));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451005,"Plane Detect | Transform",5,1) );
 
   current_utime_=0;
 }
@@ -71,17 +71,18 @@ bool MajorPlane::getSweep(){
   // get and publish point cloud corresponding to this time range
   // (for debugging)
   cloud_ =     localMap->getAsPointCloud(0, bounds)->getPointCloud();
-  bot_lcmgl_t* lcmgl = mLcmGl;
-  bot_lcmgl_color3f(lcmgl, 1, 0.75, 0.75);
-  bot_lcmgl_point_size(lcmgl, 1);
-  for (int i = 0; i < cloud_->size(); ++i) {
-    maps::PointCloud::PointType point = (*cloud_)[i];
-    bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-    bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
-    bot_lcmgl_end(lcmgl);
+  if (verbose_lcm_ >=2){
+    bot_lcmgl_t* lcmgl = mLcmGl;
+    bot_lcmgl_color3f(lcmgl, 1, 0.75, 0.75);
+    bot_lcmgl_point_size(lcmgl, 1);
+    for (int i = 0; i < cloud_->size(); ++i) {
+      maps::PointCloud::PointType point = (*cloud_)[i];
+      bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+      bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
+      bot_lcmgl_end(lcmgl);
+    }
+    bot_lcmgl_switch_buffer(lcmgl);  
   }
-  bot_lcmgl_switch_buffer(lcmgl);  
-
   return true;
 }
 
@@ -155,27 +156,26 @@ void MajorPlane::findPlane(){
   Eigen::Vector4f centroid;
   compute3DCentroid (*cloud_projected,centroid);
         
-  // Visualise hull:
-  Eigen::Isometry3d null_pose;
-  null_pose.setIdentity();
-  Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
-  pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
-  pc_vis_->ptcld_to_lcm_from_list(4451003, *cloud_hull, current_utime_, current_utime_);          
-  
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  normals_cloud->points.push_back( cloud_hull->points[0]);
-  
-  pcl::PointXYZRGB pt;
-  pt.x= normals_cloud->points[0].x + coeff->values[0];
-  pt.y= normals_cloud->points[0].y + coeff->values[1];
-  pt.z= normals_cloud->points[0].z + coeff->values[2];
-  pt.r =0;      pt.g =255;      pt.b =0;
-  normals_cloud->points.push_back( pt );
-  stringstream name_out2;
-  int plane_id2 = 11212 ;
-  ptcld_cfg pcfg2 = ptcld_cfg(plane_id2,   "Normal"    ,3,1, 4451002,1,{0.3,.1,0.1} );
-  pc_vis_->ptcld_to_lcm(pcfg2, *normals_cloud, current_utime_, current_utime_ );   
-  
+  // Visualise hull and normal:
+  if (verbose_lcm_ >=1){
+    Eigen::Isometry3d null_pose;
+    null_pose.setIdentity();
+    Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
+    pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
+    pc_vis_->ptcld_to_lcm_from_list(4451003, *cloud_hull, current_utime_, current_utime_);          
+    
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    normals_cloud->points.push_back( cloud_hull->points[0]);
+    pcl::PointXYZRGB pt;
+    pt.x= normals_cloud->points[0].x + coeff->values[0];
+    pt.y= normals_cloud->points[0].y + coeff->values[1];
+    pt.z= normals_cloud->points[0].z + coeff->values[2];
+    pt.r =0;      pt.g =255;      pt.b =0;
+    normals_cloud->points.push_back( pt );
+    int plane_id2 = 11212 ;
+    ptcld_cfg pcfg2 = ptcld_cfg(plane_id2,   "Normal"    ,3,1, 4451002,1,{0.3,.1,0.1} );
+    pc_vis_->ptcld_to_lcm_from_list(4451004, *normals_cloud, current_utime_, current_utime_);          
+  }
 
     
     
@@ -190,8 +190,7 @@ void MajorPlane::findPlane(){
     
   plane_pose_f.translation() << centroid(0), centroid(1), centroid(2);
   pcl::transformPointCloud (*cloud_, *cloud_, plane_pose_f.inverse());
-  
-  pc_vis_->ptcld_to_lcm_from_list(4451004, *cloud_, current_utime_, current_utime_);          
+  //pc_vis_->ptcld_to_lcm_from_list(4451004, *cloud_, current_utime_, current_utime_);          
 
   
   plane_pose_ = isometryFloatToDouble(plane_pose_f);

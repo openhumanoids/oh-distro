@@ -3,11 +3,20 @@
 HistTracker::HistTracker() { 
     vTRACKING_MODE = DEFAULT; 
     internal_init(); 
+  mask_initialized_=false;
+  
+  
+          fx_ = 610.1778;
+          fy_ = 610.1778;
+          cx_ = 512.5;
+          cy_ = 272.5;
+  
 }
 
 HistTracker::HistTracker(int mode) { 
     vTRACKING_MODE = DEFAULT; 
     internal_init(); 
+  mask_initialized_=false;
 }
 
 HistTracker::~HistTracker() {
@@ -20,18 +29,18 @@ HistTracker::internal_init() {
   hue_info.size = 40, val_info.size = 40, sat_info.size = 40;
   hue_info.bin_dev = 5, val_info.bin_dev = 5, sat_info.bin_dev = 5;
 
-    hue_info.ranges[0] = 0, hue_info.ranges[1] = 180;
-    val_info.ranges[0] = 10, val_info.ranges[1] = 255;
-    sat_info.ranges[0] = 10, sat_info.ranges[1] = 255;
+  hue_info.ranges[0] = 0, hue_info.ranges[1] = 180;
+  val_info.ranges[0] = 10, val_info.ranges[1] = 255;
+  sat_info.ranges[0] = 10, sat_info.ranges[1] = 255;
 
-    hue_info.pranges = hue_info.ranges;
-    val_info.pranges = val_info.ranges;
-    sat_info.pranges = sat_info.ranges;
+  hue_info.pranges = hue_info.ranges;
+  val_info.pranges = val_info.ranges;
+  sat_info.pranges = sat_info.ranges;
 
-    hue_info.init();
-    val_info.init();
-    sat_info.init();
-    return;
+  hue_info.init();
+  val_info.init();
+  sat_info.init();
+  return;
 }
 
 bool 
@@ -64,6 +73,7 @@ HistTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask) {
 
 bool
 HistTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
+  
   hue_info = HistogramInfo();
   val_info = HistogramInfo();
   sat_info = HistogramInfo();
@@ -112,6 +122,7 @@ HistTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
     // showHistogramInfo(display);
 
     // cv::imshow("Initialize Histogram Tracker", display);
+    mask_initialized_ = true;
     return true;
 }
 
@@ -122,9 +133,14 @@ HistTracker::update_prediction(const cv::Mat& img) {
     return;
 }
 
-bool
-HistTracker::update(cv::Mat& img, float scale) { 
-    if (hue_info.histogram.empty() || val_info.histogram.empty()) return false;
+std::vector<float>
+HistTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & pts,
+        Eigen::Isometry3d local_to_camera) { 
+  std::vector<float> loglikelihoods;
+  loglikelihoods.assign ( pts.size() ,0);    
+  
+  
+    if (hue_info.histogram.empty() || val_info.histogram.empty()) return loglikelihoods;
  
     // Downsample image
     cv::Mat _img; 
@@ -182,16 +198,67 @@ HistTracker::update(cv::Mat& img, float scale) {
     else
         cv::resize(bp8, bp, cv::Size(), 1.f/scale, 1.f/scale, cv::INTER_LINEAR);
     
+    
+    /// Added mfallon:
+    cv::Moments m=cv::moments(bp8); 
+    //printf("moments %f %f %f %f %f %f %f %f\n",m.m00,m.m01,m.m20,m.m11,m.m02,m.m30,m.m21,m.m03); 
+    http://opencv.willowgarage.com/documentation/cpp/structural_analysis_and_shape_descriptors.html
+    int u_estimated = m.m10/m.m00;
+    int v_estimated = m.m01/m.m00;
+    std::cout << u_estimated << " and " << v_estimated << "\n";
+
+
+  // 2. Project particles into camera frame:
+  Eigen::Affine3d transform;
+  transform.setIdentity();
+  Eigen::Translation3d translation(local_to_camera.translation());
+  Eigen::Quaterniond quat(local_to_camera.rotation());
+  transform = transform * translation * quat;
+  for (size_t i = 0; i < pts.size (); ++i){
+    pts[i] = transform*pts[i];
+  }    
+    
+  // 3. Determine Likelihood in Image space:
+  
+  for (size_t i=0; i< pts.size(); i++) {
+    // u = pt.x fx/pt.z   ... project point to pixel
+    Eigen::Vector3d pt1 = pts[i];
+    int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
+    int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
+    int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
+    // Crude Binary Likelihood:
+    if (dist < 13){
+      loglikelihoods[i] =1; //was 1
+    }
+  }        
+    
+    
+    
+    
+    
     cv::Mat bp3;
     cv::cvtColor(bp8, bp3, CV_GRAY2BGR);
     addWeighted(img, 0.05, bp3, 0.95, 0, img); 
-
     // cv::imshow( "Hue Belief", hue_bp); 
     // cv::imshow( "Val Belief", val_bp); 
     // cv::imshow( "Sat Belief", val_bp); 
-    showHistogramInfo(img);
 
-    return true;
+    
+  for (size_t i=0; i< pts.size(); i++) {
+    Eigen::Vector3d pt1 = pts[i];
+    int u = floor( ((pt1[0] * fx_)/pt1[2])  +  512.5);
+    int v = floor( ((pt1[1] * fy_)/pt1[2]) + 272.5);
+    Point center( u, v );
+    circle( img, center, 3, Scalar(0,255,0), -1, 8, 0 );
+  }      
+  Point center( u_estimated, v_estimated );
+  circle( img, center, 10, Scalar(0,0,255), -1, 8, 0 );
+    
+    
+    
+    //showHistogramInfo(img);
+
+    return loglikelihoods;
 }
 
 cv::Mat 

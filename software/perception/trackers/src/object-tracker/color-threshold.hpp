@@ -22,7 +22,8 @@ class ColorThreshold
     ~ColorThreshold() {
     }
 
-    std::vector<float> colorThreshold(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts, uint8_t* img_data,
+    //std::vector<float> colorThreshold(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts, uint8_t* img_data,
+    std::vector<float> colorThreshold(std::vector< Eigen::Vector3d > & pts, uint8_t* img_data,
                                         Eigen::Isometry3d local_to_camera, int64_t current_utime);
     
     IplImage* GetThresholdedImage(IplImage* img);

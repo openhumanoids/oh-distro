@@ -24,7 +24,7 @@ class MajorPlane
     typedef boost::shared_ptr<MajorPlane> Ptr;
     typedef boost::shared_ptr<const MajorPlane> ConstPtr;
 	
-    MajorPlane (boost::shared_ptr<lcm::LCM> &lcm_);
+    MajorPlane (boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_);
 
     ~MajorPlane() {
       bot_lcmgl_destroy(mLcmGl);
@@ -43,6 +43,7 @@ class MajorPlane
     bool getPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
     
   private:
+    int verbose_lcm_; // 0 say nothing, 1 say important, 2 say lots
 
     // Plane Detection:
     bool getSweep();

@@ -36,7 +36,9 @@ pods_use_pkg_config_packages(object-tracker   particle
   bot2-param-client
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_math 
-    major-plane-detect color-threshold
+  opencv image_io_utils
+  major-plane-detect 
+  color-threshold tracker-histogram
   ${PCL_LIBRARIES})
 pods_install_executables(object-tracker)
 

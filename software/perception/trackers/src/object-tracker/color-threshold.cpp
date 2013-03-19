@@ -63,11 +63,12 @@ IplImage* ColorThreshold::GetThresholdedImage(IplImage* img){
 
 
 
-std::vector<float> ColorThreshold::colorThreshold(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts, uint8_t* img_data,
+//std::vector<float> ColorThreshold::colorThreshold(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts, uint8_t* img_data,
+std::vector<float> ColorThreshold::colorThreshold(std::vector< Eigen::Vector3d > & pts, uint8_t* img_data,
                                         Eigen::Isometry3d local_to_camera, int64_t current_utime){
   
   std::vector<float> loglikelihoods;
-  loglikelihoods.assign ( pts->points.size() ,0);    
+  loglikelihoods.assign ( pts.size() ,0);    
 
   Mat src= Mat::zeros( height_, width_  ,CV_8UC3);
   src.data = img_data;
@@ -95,19 +96,24 @@ std::vector<float> ColorThreshold::colorThreshold(pcl::PointCloud<pcl::PointXYZR
    cout << "green not seen - returning ["<< area <<"]\n"; 
    return loglikelihoods;
   }
+  
 
   // 2. Project particles into camera frame:
-  Eigen::Isometry3f pose_f = isometryDoubleToFloat(local_to_camera);
-  Eigen::Quaternionf pose_quat(pose_f.rotation());
-  pcl::transformPointCloud (*pts, *pts,
-      pose_f.translation(), pose_quat);  
+  Eigen::Affine3d transform;
+  transform.setIdentity();
+  Eigen::Translation3d translation(local_to_camera.translation());
+  Eigen::Quaterniond quat(local_to_camera.rotation());
+  transform = transform * translation * quat;
+  for (size_t i = 0; i < pts.size (); ++i){
+    pts[i] = transform*pts[i];
+  }
   
   // 3. Determine Likelihood in Image space:
-  for (size_t i=0; i< pts->points.size(); i++) {
+  for (size_t i=0; i< pts.size(); i++) {
     // u = pt.x fx/pt.z   ... project point to pixel
-    pcl::PointXYZRGB pt1 = pts->points[i];
-    int u = floor( ((pt1.x * fx_)/pt1.z) + cx_);
-    int v = floor( ((pt1.y * fy_)/pt1.z) + cy_);
+    Eigen::Vector3d pt1 = pts[i];
+    int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
+    int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
     int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
     // Crude Binary Likelihood:
     if (dist < 13){
@@ -123,16 +129,16 @@ std::vector<float> ColorThreshold::colorThreshold(pcl::PointCloud<pcl::PointXYZR
     null_pose.setIdentity();
     Isometry3dTime null_poseT = Isometry3dTime(current_utime, null_pose);
     pc_vis_->pose_to_lcm_from_list(4451000, null_poseT);  
-    pc_vis_->ptcld_to_lcm_from_list(4451001, *pts, current_utime, current_utime);  
+    //pc_vis_->ptcld_to_lcm_from_list(4451001, *pts, current_utime, current_utime);  
   }
     
   imgutils_->sendImage( (uint8_t*) imgColorThresh->imageData, current_utime, width_, 
                         height_, 1, "TRACKER_THRESH"  );
   cv::Mat imgMat(frame);
-  for (size_t i=0; i< pts->points.size(); i++) {
-    pcl::PointXYZRGB pt1 = pts->points[i];
-    int u = floor( ((pt1.x * fx_)/pt1.z)  +  512.5);
-    int v = floor( ((pt1.y * fy_)/pt1.z) + 272.5);
+  for (size_t i=0; i< pts.size(); i++) {
+    Eigen::Vector3d pt1 = pts[i];
+    int u = floor( ((pt1[0] * fx_)/pt1[2])  +  512.5);
+    int v = floor( ((pt1[1] * fy_)/pt1[2]) + 272.5);
     Point center( u, v );
     circle( imgMat, center, 3, Scalar(0,255,0), -1, 8, 0 );
   }  

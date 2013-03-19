@@ -181,7 +181,13 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     cv::Mat display = state->img.clone();
 
     double tic = bot_timestamp_now(); 
-    state->tracker->update(display, options.vSCALE);
+    
+    // mfallon added
+    std::vector< Eigen::Vector3d > pts;
+    Eigen::Isometry3d local_to_camera;
+    
+//    state->tracker->update(display, options.vSCALE);
+    state->tracker->update(display, options.vSCALE, pts, local_to_camera);
     if (++state->counter == 10) { 
         printf("===> HISTOGRAM BACKPROJECTION: %4.2f ms\n", (bot_timestamp_now() - tic) * 1e-3); 
         state->counter = 0;

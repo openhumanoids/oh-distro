@@ -10,6 +10,9 @@
 #include <glib.h>
 #include <opencv2/opencv.hpp>
 
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+
 using namespace cv;
 
 struct HistogramInfo { 
@@ -89,6 +92,14 @@ class HistTracker {
 
     enum TrackingMode { DEFAULT };
     TrackingMode vTRACKING_MODE; 
+    
+    // has mask been initialized:
+    bool mask_initialized_;
+    double fx_;
+    double fy_;
+    double cx_;
+    double cy_;
+    
 
  public: 
     pthread_mutex_t mutex;
@@ -98,8 +109,11 @@ class HistTracker {
     ~HistTracker();
     void internal_init(); 
     bool initialize(const cv::Mat& img, const cv::Mat& mask);
+    bool getMaskInitialized(){ return mask_initialized_; };
+    
     void update_prediction(const cv::Mat& img);
-    bool update(cv::Mat& img, float scale); 
+    std::vector<float> update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & pts,
+        Eigen::Isometry3d local_to_camera); 
     cv::Mat get_belief(); 
     bool computeMaskROI(const cv::Mat& img, const cv::Mat& mask);
     void showHistogramInfo(cv::Mat& img);
