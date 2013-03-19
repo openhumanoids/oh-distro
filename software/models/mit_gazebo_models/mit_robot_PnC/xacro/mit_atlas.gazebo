@@ -29,21 +29,14 @@
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
   </gazebo>
-  <!-- MIT ADDONS END -->
-    
+  <!-- MIT ADDONS END -->  
+  <!-- imu -->
   <link name="imu_link">
-    <!-- imu -->
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
     </inertial>
-    <collision group="default">
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
@@ -54,7 +47,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="pelvis"/>
     <child link="imu_link"/>
-    <origin rpy="0 0 0" xyz="0.05991527603 0 -0.01415"/>
+    <origin xyz="0.05991527603 0 -0.01415" rpy="0 0 0"/>
   </joint>
   <gazebo reference="imu_link">
     <!-- this is expected to be reparented to pelvis with appropriate offset
@@ -73,30 +66,135 @@
   </gazebo>
   <gazebo reference="l_leg_lax">
     <provideFeedback>1</provideFeedback>
+    <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="r_leg_lax">
     <provideFeedback>1</provideFeedback>
+    <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="r_foot">
-    <mu1>10.0</mu1>
-    <mu2>10.0</mu2>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
     <fdir1>1 0 0</fdir1>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.003</minDepth>
   </gazebo>
   <gazebo reference="l_foot">
-    <mu1>10.0</mu1>
-    <mu2>10.0</mu2>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
     <fdir1>1 0 0</fdir1>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.003</minDepth>
   </gazebo>
   <gazebo>
     <plugin filename="libgazebo_ros_p3d.so" name="gazebo_ros_p3d">
       <bodyName>pelvis</bodyName>
       <topicName>/ground_truth_odom</topicName>
       <alwaysOn>true</alwaysOn>
-      <updateRate>200.0</updateRate> <!--increased from 100-->
+      <updateRate>100.0</updateRate>
     </plugin>
+  </gazebo>
+
+  <!-- foot contact sensors -->
+  <gazebo reference="r_foot">
+    <!-- contact sensor -->
+    <sensor type="contact" name="r_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>r_foot_collision</collision>
+        <topic>/r_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+  <gazebo reference="l_foot">
+    <!-- contact sensor -->
+    <sensor type="contact" name="l_foot_contact_sensor">
+      <update_rate>1000.0</update_rate>
+      <always_on>1</always_on>
+      <contact>
+        <collision>l_foot_collision</collision>
+        <topic>/l_foot_contact</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="back_lbz">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="back_mby">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="back_ubx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_elx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_ely">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_mwx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_shx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_usy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_uwy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_kny">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_lhy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_mhx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_uay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_uhz">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="neck_ay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_elx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_ely">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_mwx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_shx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_usy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_uwy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_kny">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_lhy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_mhx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_uay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_uhz">
+    <cfmDamping>1</cfmDamping>
   </gazebo>
 </robot>

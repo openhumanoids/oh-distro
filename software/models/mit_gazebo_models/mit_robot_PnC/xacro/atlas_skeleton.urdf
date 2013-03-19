@@ -51,9 +51,9 @@
     </link>
     <link name="l_foot">
         <inertial>
-            <mass value="1.634" />
+            <mass value="0.817" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -133,9 +133,9 @@
           </geometry>
         </collision>
         <collision group="other">
-          <origin rpy="1.5707963267949 0 0" xyz="0 0.0940525 0.0"/>
+          <origin rpy="1.5707963267949 0 0" xyz="0 0.0940525 -0.01"/>
           <geometry>
-            <cylinder radius="0.045" length="0.188105"/>
+            <cylinder radius="0.044" length="0.188105"/>
           </geometry>
         </collision>
     </link>
@@ -177,9 +177,15 @@
             </geometry>
         </visual>
         <collision group="default">
-          <origin rpy="0 0 0" xyz="-0.00345 0.00295 -0.1913"/>
+          <origin rpy="0 -0.06 0" xyz="-0.01 0.00295 -0.260"/>
           <geometry>
-            <box size="0.1465 0.1205 0.476"/>
+            <cylinder radius="0.06" length="0.22"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0.18 0" xyz="0.01 0.00295 -0.07"/>
+          <geometry>
+            <cylinder radius="0.06" length="0.20"/>
           </geometry>
         </collision>
     </link>
@@ -216,9 +222,9 @@
     </link>
     <link name="l_talus">
         <inertial>
-            <mass value="0.1" />
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05" />
+            <mass value="0.817" />
+            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -302,9 +308,27 @@
             </geometry>
         </visual>
         <collision group="default">
-          <origin rpy="0 0 0" xyz="-0.0179 0.02085 -0.21"/>
+          <origin rpy="0 0 0" xyz="-0.0179 0.02085 -0.13"/>
           <geometry>
-            <box size="0.2 0.1865 0.26"/>
+            <cylinder radius="0.1" length="0.10"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 -0.3 0" xyz="-0.03 0.01 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0.3 0" xyz="-0.005 0.01 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="-0.25 0 0" xyz="-0.02 0.03 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
           </geometry>
         </collision>
     </link>
@@ -385,21 +409,27 @@
             </geometry>
         </visual>
         <collision group="default">
-          <origin rpy="0 0 0" xyz="0 0 0"/>
+          <origin rpy="1.5707963267949 0 0" xyz="0.046 0.0 -0.02"/>
           <geometry>
-            <sphere radius="0.129"/>
+            <cylinder radius="0.092" length="0.03"/>
           </geometry>
         </collision>
         <collision group="other">
-          <origin rpy="0 0 0" xyz="0 0.034 0.06"/>
+          <origin rpy="1.5707963267949 0 0" xyz="-0.03 0.0 -0.02"/>
           <geometry>
-            <cylinder radius="0.130" length="0.07"/>
+            <cylinder radius="0.092" length="0.03"/>
           </geometry>
         </collision>
         <collision group="other">
-          <origin rpy="0 0 0" xyz="0 -0.034 0.06"/>
+          <origin rpy="0 0 0" xyz="0 0.042 0.06"/>
           <geometry>
-            <cylinder radius="0.130" length="0.07"/>
+            <cylinder radius="0.130" length="0.022"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0 0" xyz="0 -0.042 0.06"/>
+          <geometry>
+            <cylinder radius="0.130" length="0.022"/>
           </geometry>
         </collision>
     </link>
@@ -455,9 +485,9 @@
     </link>
     <link name="r_foot">
         <inertial>
-            <mass value="1.634" />
+            <mass value="0.817" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -537,9 +567,9 @@
           </geometry>
         </collision>
         <collision group="other">
-          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0940525 0.0"/>
+          <origin rpy="1.5707963267949 0 0" xyz="0 -0.0940525 -0.01"/>
           <geometry>
-            <cylinder radius="0.045" length="0.188105"/>
+            <cylinder radius="0.044" length="0.188105"/>
           </geometry>
         </collision>
     </link>
@@ -581,9 +611,15 @@
             </geometry>
         </visual>
         <collision group="default">
-          <origin rpy="0 0 0" xyz="-0.00345 -0.00295 -0.1913"/>
+          <origin rpy="0 -0.06 0" xyz="-0.01 -0.00295 -0.260"/>
           <geometry>
-            <box size="0.1465 0.1205 0.476"/>
+            <cylinder radius="0.06" length="0.22"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0.18 0" xyz="0.01 -0.00295 -0.07"/>
+          <geometry>
+            <cylinder radius="0.06" length="0.20"/>
           </geometry>
         </collision>
     </link>
@@ -620,9 +656,9 @@
     </link>
     <link name="r_talus">
         <inertial>
-            <mass value="0.1" />
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05" />
+            <mass value="0.817" />
+            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -706,9 +742,27 @@
             </geometry>
         </visual>
         <collision group="default">
-          <origin rpy="0 0 0" xyz="-0.0179 -0.02085 -0.21"/>
+          <origin rpy="0 0 0" xyz="-0.0179 -0.02085 -0.13"/>
           <geometry>
-            <box size="0.2 0.1865 0.26"/>
+            <cylinder radius="0.1" length="0.10"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 -0.3 0" xyz="-0.03 -0.01 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0 0.3 0" xyz="-0.005 -0.01 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
+          </geometry>
+        </collision>
+        <collision group="other">
+          <origin rpy="0.25 0 0" xyz="-0.02 -0.03 -0.23"/>
+          <geometry>
+            <cylinder radius="0.07" length="0.15"/>
           </geometry>
         </collision>
     </link>
@@ -727,7 +781,7 @@
         <collision group="default">
           <origin rpy="0 -0 0" xyz="0.0446 0 0.1869"/>
           <geometry>
-            <box size="0.3188 0.24 0.3662"/>
+            <box size="0.3188 0.24 0.3162"/>
           </geometry>
         </collision>
         <collision group="other">
