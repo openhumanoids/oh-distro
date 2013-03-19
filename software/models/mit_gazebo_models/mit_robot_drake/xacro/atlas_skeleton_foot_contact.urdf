@@ -27,9 +27,9 @@
     </link>
     <link name="l_foot">
         <inertial>
-            <mass value="1.634" />
+            <mass value="0.817" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -129,9 +129,9 @@
     </link>
     <link name="l_talus">
         <inertial>
-            <mass value="0.1" />
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05" />
+            <mass value="0.817" />
+            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -246,9 +246,9 @@
     </link>
     <link name="r_foot">
         <inertial>
-            <mass value="1.634" />
+            <mass value="0.817" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -348,9 +348,9 @@
     </link>
     <link name="r_talus">
         <inertial>
-            <mass value="0.1" />
-            <origin xyz="0 0 0" rpy="0 -0 0" />
-            <inertia ixx="1.01674e-05" ixy="0" ixz="0" iyy="8.42775e-06" iyz="0" izz="1.30101e-05" />
+            <mass value="0.817" />
+            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
