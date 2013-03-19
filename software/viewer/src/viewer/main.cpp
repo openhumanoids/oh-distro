@@ -79,6 +79,21 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
 }
 
 
+static void on_collapse_all_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  BotViewer *viewer = (BotViewer*) user_data;
+  for (unsigned int i = 0; i < viewer->renderers->len; ++i) {
+    BotRenderer* renderer =
+      (BotRenderer*)g_ptr_array_index(viewer->renderers, i);
+
+    renderer->expanded = FALSE;
+    if (renderer->expander) {
+      gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
+                                 renderer->expanded);
+    }
+  }
+}
+
 // TBD - correct location for this code?
 static void on_top_view_clicked(GtkToggleToolButton *tb, void *user_data)
 {
@@ -217,6 +232,18 @@ int main(int argc, char *argv[])
   g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
 
   on_top_view_clicked(NULL, (void *) viewer);  
+
+  // add custom "collapse all" button
+  GtkToolItem *item = gtk_tool_button_new_from_stock (GTK_STOCK_CLEAR);
+  gtk_tool_button_set_label (GTK_TOOL_BUTTON (item), "Collapse All");
+  gtk_tool_item_set_is_important (GTK_TOOL_ITEM (item), TRUE);
+  gtk_tool_item_set_tooltip (GTK_TOOL_ITEM (item), viewer->tips,
+                             "Collapse all visible renderers", NULL);
+  gtk_toolbar_insert (GTK_TOOLBAR (viewer->toolbar), item, -1);
+  gtk_widget_show (GTK_WIDGET (item));
+  g_signal_connect (G_OBJECT (item), "clicked", 
+                    G_CALLBACK (on_collapse_all_clicked), viewer);
+
 
   // add custom renderer groups menu
   RendererGroupUtil groupUtil(viewer, bot_param);
