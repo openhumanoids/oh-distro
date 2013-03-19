@@ -600,14 +600,11 @@ public:
     mMeshRenderer.setColorMode((MeshRenderer::ColorMode)mColorMode);
     mMeshRenderer.setMeshMode((MeshRenderer::MeshMode)mMeshMode);
     if (usePoints) mMeshRenderer.setMeshMode(MeshRenderer::MeshModePoints);
-    mMeshRenderer.setData(mesh->mVertices, mesh->mFaces);
+    mMeshRenderer.setData(mesh->mVertices, mesh->mFaces,
+                          iView->getTransform().inverse());
 
     // draw this view's data
-    glPushMatrix();
-    Eigen::Projective3f transform = iView->getTransform();
-    glMultMatrixf(transform.inverse().data());
     mMeshRenderer.draw();
-    glPopMatrix();
   }
 
   Eigen::Vector4f computePlane(const double p1x, const double p1y,
