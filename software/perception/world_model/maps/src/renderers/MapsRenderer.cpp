@@ -132,7 +132,7 @@ public:
     mDragging = false;
     mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
     mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
-    mMeshRenderer.setCameraChannel("CAMERALEFT");
+    mMeshRenderer.setCameraChannel("CAMERALEFT_COMPRESSED");
     mViewClient.setBotWrapper(mBotWrapper);
     mViewClient.setOctreeChannel("MAP_OCTREE");
     mViewClient.setCloudChannel("MAP_CLOUD");
