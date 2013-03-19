@@ -59,7 +59,9 @@ while (1)
   if ~isempty(data)
     msg = drc.action_sequence_t(data);
     action_sequence = ActionSequence();
-    
+    if(action_options.ZMP)
+        action_sequence_ZMP = ActionSequence();
+    end
     q_bk = q;
     try
       for i=1:msg.num_contact_goals
@@ -103,7 +105,8 @@ while (1)
           pos.max(3) = 0;
           pos.min(3) = 0;
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
-          action_constraint = ActionKinematicConstraint(body,mean(body.getContactPoints(collision_group),2),pos,tspan,body.linkname);
+          collision_group_pt = mean(body.getContactPoints(collision_group),2);
+          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,body.linkname);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
           for body_ind = 1:length(r.body)
               body_contact_pts = r.body(body_ind).getContactPoints();
@@ -112,21 +115,47 @@ while (1)
                   action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
               end 
           end
+          if(action_options.ZMP)
+              % Solve the IK here to for each key time point (the starting of
+              % ending of each constraint). We agree that the constraint is
+              % active in the time interval [lb_completion_time,
+              % ub_completion_time) (Half closed half open)
+              ikargs = action_sequence.getIKArguments(tspan(1));
+              if isempty(ikargs)
+                q_lb_completion_time=options.q_nom;
+              else
+                % call IK
+                q_lb_completion_time = inverseKin(r,q,ikargs{:},options);
+              end
+              kinsol = doKinematics(r,q_lb_completion_time);
+              pos_lb_completion_time = struct();
+              pos_lb_completion_time.max = forwardKin(r,kinsol,body,collision_group_pt,false);
+              pos_lb_completion_time.min = forwardKin(r,kinsol,body,collision_group_pt,false);
+              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time,tspan,body.linkname);
+              action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
+              for body_ind = 1:length(r.body)
+                  body_contact_pts = r.body(body_ind).getContactPoints();
+                  if(~isempty(body_contact_pts))
+                      above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,r.body(body_ind).linkname);
+                      action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(above_ground_constraint);
+                  end 
+              end
+          end
         end
       end
       % If the action sequence is specified, we need to solve the ZMP
       % planning and IK for the whole sequence.
       if(action_options.ZMP)
           dt = 0.01;
-          window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
+          window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81,struct('supportPolygonConstraints',true));
-          t_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
-          t_breaks(end) = action_sequence.tspan(end);
+          t_breaks = action_sequence_ZMP.tspan(1)+dt*(0:window_size-1);
+          t_breaks(end) = action_sequence_ZMP.tspan(end);
           contact_tol = 1e-4;
           contact_pos = zeros(2,r.num_contacts, window_size);
           contact_flag = false(r.num_contacts,window_size);
           for i = 1:length(t_breaks)
-              ikargs = action_sequence.getIKArguments(t_breaks(i));
+              ikargs = action_sequence_ZMP.getIKArguments(t_breaks(i));
               num_contacts = 0;
               for j = 3:3:length(ikargs)
                   for k = 1:size(ikargs{j}.max,2)
@@ -156,7 +185,7 @@ while (1)
           q0 = q;
           com0 = r.getCOM(q0);
           comdot0 = 0*com0;
-          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,active_contact_flag,com_height,t_breaks);
+          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks);
           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
           q_zmp_plan(:,1) = q0;
           for i = 2:length(t_brekas)
