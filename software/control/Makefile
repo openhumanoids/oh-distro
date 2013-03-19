@@ -21,8 +21,9 @@ MATLAB = $(shell which matlab)
 JAVAFILES := $(wildcard src/*.java)
 CLASSFILES = $(JAVAFILES:%.java=%.class) 
 SRCCLASSFILES = $(CLASSFILES:src/%=%)
-ifeq "$(CLASSPATH)" ""
-   CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar
+CLASSPATH = $(PWD)/drake/drake.jar:/usr/local/share/java/lcm.jar:$(BUILD_PREFIX)/share/java/lcmtypes_drc_lcmtypes.jar:
+ifneq "$(WORKSPACE)" ""
+   CLASSPATH := $(CLASSPATH):$(WORKSPACE)/software/control/drake/drake.jar
 endif
 
 # build quietly by default.  For a verbose build, run "make VERBOSE=1"
