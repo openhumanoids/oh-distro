@@ -64,12 +64,13 @@ classdef QPController < MIMODrakeSystem
       end
     end
 
-    nu = getNumInputs(r);
+    obj.nu = getNumInputs(r);
+    obj.nq = getNumDOF(r);
     if (~isfield(options,'R'))
-      obj.R = 1e-6*eye(nu);
+      obj.R = 1e-6*eye(obj.nu);
     else
       typecheck(options.R,'double');
-      sizecheck(options.R,[nu,nu]);
+      sizecheck(options.R,[obj.nu,obj.nu]);
       obj.R = options.R;
     end
     
@@ -115,8 +116,8 @@ classdef QPController < MIMODrakeSystem
     
     nd = 4; % for friction cone approx, hard coded for now
     dim = 3; % 3D
-    nu = getNumInputs(r);
-    nq = getNumDOF(r);
+    nu = obj.nu;
+    nq = obj.nq;
     nq_free = length(obj.free_dof); 
     nq_con = length(obj.con_dof); 
     nu_con = length(obj.con_inputs);     
@@ -150,36 +151,41 @@ classdef QPController < MIMODrakeSystem
     if (isempty(active_supports))
       warning('QPController::No supporting bodies...');
     end
-    partial_supports = intersect(find(supports>0),find(supports<1));
+    partial_supports = find(supports>0 & supports<1);
    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = find(abs(phi)<0.005);
-    nc = length(active_contacts);
+    active_contacts = abs(phi)<0.005;
+    nc = sum(active_contacts);
 
     if nc==0
       % ignore supporting body spec, use any body in contact
       [~,Jp,dJp] = contactPositions(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = find(abs(phi)<0.005);
-      nc = length(active_contacts);
+      active_contacts = abs(phi)<0.005;
+      nc = sum(active_contacts);
       partial_contacts = [];
       partial_idx = [];
     else
       % get support contact J, dJ for no-slip constraint
       [~,Jp,dJp] = contactPositions(r,kinsol,active_supports);
-      n_support_contacts=0;
       partial_contacts = [];
-      for i=1:length(active_supports)
-        nC = size(getBodyContacts(r,active_supports(i)),2);
+      for i=active_supports'
+        nC = size(getBodyContacts(r,i),2);
         if any(partial_supports==i)
-          partial_contacts = [partial_contacts; (n_support_contacts+1:n_support_contacts + nC)];
+          partial_contacts = [partial_contacts; ones(nC,1)];
+        else
+          partial_contacts = [partial_contacts; zeros(nC,1)];
         end
-        n_support_contacts = n_support_contacts + nC;
       end
       
       % get subset of active_contacts that are partial supports
-      partial_contacts = intersect(active_contacts,partial_contacts);
+      % NOTE: currently this is always an empty set because the partial contact
+      % phase passes before the swing foot comes in  contact with the
+      % ground. 
+      partial_contacts = find(partial_contacts & active_contacts); 
+      active_contacts = find(active_contacts);
+
       partial_idx = zeros(dim*length(partial_contacts),1);
       for i=1:length(partial_contacts);
         partial_idx((i-1)*dim+1:i*dim) = (partial_contacts(i)-1)*dim + (1:dim)';
@@ -376,7 +382,9 @@ classdef QPController < MIMODrakeSystem
     free_dof % dof for which we perform unconstrained minimization (i.e., dofs not in the kinematic chain to contact points)
     con_dof 
     free_inputs
-    con_inputs 
+    con_inputs
+    nq
+    nu
     R  % quadratic input cost matrix
     % LIP stuff
     A = [zeros(2),eye(2); zeros(2,4)]; % state transfer matrix

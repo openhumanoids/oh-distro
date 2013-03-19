@@ -56,7 +56,7 @@ limp = LinearInvertedPendulum(com(3));
 comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
 % time spacing of samples for IK
-ts = linspace(0,zmptraj.tspan(end),100);
+ts = 0:0.1:zmptraj.tspan(end);
 T = ts(end);
 
 % create desired joint trajectory
