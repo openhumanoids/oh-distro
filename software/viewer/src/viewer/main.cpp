@@ -37,6 +37,7 @@
 
 
 #include "udp_util.h"
+#include "RendererGroupUtil.hpp"
 
 using namespace std;
 
@@ -216,6 +217,10 @@ int main(int argc, char *argv[])
   g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
 
   on_top_view_clicked(NULL, (void *) viewer);  
+
+  // add custom renderer groups menu
+  RendererGroupUtil groupUtil(viewer, bot_param);
+  groupUtil.setup();
   
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), vis_config_file.c_str() , NULL);
