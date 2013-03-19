@@ -271,21 +271,18 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         // if this is the first time we've seen this channel, create a new circular buffer for it
         if(q_it == queues_.end())
         {
-            // TODO: make circular buffer size configurable (currently 1, which isn't much of a buffer)
-            queues_.insert(std::make_pair(channel, MessageQueue(channel, 1, data)));
+            // TODO: make circular buffer size configurable (currently 100)
+            queues_.insert(std::make_pair(channel, MessageQueue(channel, 100, data)));
         }
         else
         {
-            ++q_it->second.message_count;
-            receive_mod(q_it->second.message_count);
-
             // add it to the end of the buffer
             q_it->second.messages.push_back(data);
         }    
 
         
         cout << "queueing: " << app_.get_current_utime() << " | "
-             << channel << " #" << queues_.find(channel)->second.message_count << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
+             << channel  << " | " << "qsize: " << queues_.find(channel)->second.messages.size() << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
         // cout << app_.print_resend_list(); // print info sent in BW Stats msg
         app_.send_resend_list();
         app_.bw_cumsum_robot2base += rbuf->data_size;
@@ -315,7 +312,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             
             if(it != queues_.end() && !it->second.messages.empty())
             {
-                std::vector<char>& qmsg = it->second.messages.back();
+                std::vector<char>& qmsg = it->second.messages.front();
+		++it->second.message_count;
+		receive_mod(it->second.message_count);
 
                 // int pos = 0;
                 // int fragment = 0;
@@ -353,17 +352,31 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                                              payload_size,
                                              fec_);
                     bool enc_done = false;
+		    std::vector<drc::ShaperPacket> encoded_fragments;
                     while (!enc_done)
                     {
                         std::vector<uint8_t> buffer(payload_size);
                         enc_done = encoder.getNextPacket(&buffer[0], &fragment);
                         msg_frag.set_data(&buffer[0], payload_size);
                         msg_frag.set_fragment(fragment);
-                        msg_frag.set_is_last_fragment(enc_done);
-                        send_queue_.push(msg_frag);
-                    }                    
+                        msg_frag.set_is_last_fragment(false);
+			encoded_fragments.push_back(msg_frag);
+                    }              
+		    std::sort(encoded_fragments.begin(), encoded_fragments.end());
+		    encoded_fragments.at(0).set_is_last_fragment(true);
+
+		    for(std::vector<drc::ShaperPacket>::const_reverse_iterator it = encoded_fragments.rbegin(),
+			  end = encoded_fragments.rend(); it != end; ++it)
+		      {
+			cout << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
+			send_queue_.push(*it);
+		      }
                 }
-		it->second.messages.pop_back();
+
+		cout << "dequeueing: " << app_.get_current_utime() << " | "
+		     << it->second.channel << " msg #" << it->second.message_count << " | " << "qsize: " << queues_.find(it->second.channel)->second.messages.size() << " | " << qmsg.size() << " bytes *" << xor_cs(qmsg) << std::endl;
+
+		it->second.messages.pop_front();
 		break;
             }
             
