@@ -145,34 +145,38 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
   if (pointSets.size() < 5) return false;
 
   bool first = true;
-  bool inside = false;
+  bool insidePrev = true;
   bool done = false;
+  bool started = false;
   float anglePrev;
   int64_t timePrev;
   for (std::vector<PointSet>::const_reverse_iterator iter = pointSets.rbegin();
        iter != pointSets.rend(); ++iter) {
     float angle = mHelper->
       computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
-    if ((angle < iMinAngle) || (angle > iMaxAngle)) continue;
     if (angle > Helper::kPi) angle -= Helper::kPi;
+
     if (first) {
       anglePrev = angle;
       timePrev = iter->mTimestamp;
       first = false;
     }
-    float deltaAngle = fabs(anglePrev-angle);
-    if (deltaAngle > (iMaxAngle-iMinAngle)/2) {
-      if (!inside) {
-        oEndTime = iter->mTimestamp;
-        inside = true;
-      } else {
-        oStartTime = timePrev;
-        done = true;
-        break;
-      }
+
+    bool inside = (angle >= iMinAngle) && (angle <= iMaxAngle);
+    bool jumped = fabs(anglePrev-angle) > (iMaxAngle-iMinAngle)/2;
+
+    if (!started && inside && (jumped || !insidePrev)) {
+      oEndTime = iter->mTimestamp;
+      started = true;
+    } else if (started && ((inside && jumped) || (!inside && insidePrev))) {
+      oStartTime = timePrev;
+      done = true;
+      break;
     }
+
     anglePrev = angle;
     timePrev = iter->mTimestamp;
+    insidePrev = inside;
   }
 
   return done;
