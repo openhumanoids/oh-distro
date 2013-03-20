@@ -13,7 +13,7 @@ lcmtypes_build()
 #pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 
-
+file(COPY scripts/drc-svn-stat.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
 pods_install_python_script(drc-bandwidth-scope scripts/bandwidth_scope.py)
