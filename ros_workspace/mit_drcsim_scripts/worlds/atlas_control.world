@@ -3,12 +3,12 @@
   <world name="default">
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
-      <update_rate>2000</update_rate>
+      <update_rate>1000</update_rate>
       <ode>
         <solver>
           <type>quick</type>
           <dt>0.00033</dt>
-          <iters>800</iters>
+          <iters>110</iters>
           <sor>1.2</sor>
         </solver>
         <constraints>
