@@ -1,9 +1,14 @@
-// simple tracker in color space
+// color threshold and plane are hard coded
 // 
+
+
+
+// TODO:
 // position (and orientation) of affordance
 // a plane of interest - currently largest
 // relative offset between plane and object
-// color of object
+// color of object (find automatically using mask)
+
 #include <iostream>
 #include <stdio.h>
 #include <signal.h>
@@ -84,6 +89,7 @@ class Pass{
     // Current status of plane estimation:
     Eigen::Isometry3d plane_pose_ ;
     bool plane_pose_set_;
+    std::vector<double> input_plane_;
     
     bool got_mask_;
     bool got_affs_;
@@ -178,7 +184,7 @@ void Pass::propogatePF(){
   //  std::vector <bool> set_xyzypr{ 1, 0, 0, 1, 1, 0};
   //  pf_->SetState(xyzypr, set_xyzypr);
   
-  if ( 1==0){//plane_pose_set_ ){
+  if ( plane_pose_set_ ){
     vector < pf_state > pfs;
     for (size_t i=0; i<num_particles_; i++) {
       pfs.push_back( pf_->GetParticleState(i)   );
@@ -284,21 +290,8 @@ void Pass::histogramThresholdLikelihood( std::vector<float> &loglikelihoods ){
         printf("===> HISTOGRAM BACKPROJECTION: %4.2f ms\n", (_timestamp_now() - tic) * 1e-3); 
     }
     cv::cvtColor(img, img, CV_BGR2RGB);
-    imgutils_->sendImage( (uint8_t*) img.data, img_.utime, width_, 
-                        height_, 3, "TRACKER_HIST"  );
+    imgutils_->sendImage( (uint8_t*) img.data, img_.utime, width_, height_, 3, "TRACKER_HIST"  );
   }
-  
-//            state->tracker->initialize(state->img, mask);
-  
-  /*
-    double tic = bot_timestamp_now(); 
-    state->tracker->update(display, options.vSCALE);
-    if (++state->counter == 10) { 
-        printf("===> HISTOGRAM BACKPROJECTION: %4.2f ms\n", (bot_timestamp_now() - tic) * 1e-3); 
-        state->counter = 0;
-    }
-  */
-  
 }
 
 
@@ -328,10 +321,12 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }
   img_= *msg;  
 
-  if (got_mask_ && got_affs_){
   // Ask the maps collector for a plane:
   plane_pose_set_ = major_plane_->getPlane(plane_pose_, msg->utime);
-  updatePF();
+  return;
+  
+  if (got_mask_ && got_affs_){
+    updatePF();
   }else{
     cout << "haven't got affs and aff mask yet\n"; 
   }
@@ -341,16 +336,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
-void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  bot_core::image_t* msg){
-  last_mask_= *msg;  
-  got_mask_=true;
-  //cout << "got mask\n";  
-}
-
-
 Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::vector<double> params ){
-  
   std::map<string,double> am;
   for (size_t j=0; j< param_names.size(); j++){
     am[ param_names[j] ] = params[j];
@@ -360,27 +346,54 @@ Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::v
   transform.setIdentity();
   transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
   transform.rotate(quat);  
-  
-  
-  cout << "digggidy\n";
-  
   return transform;
 }
 
 void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::affordance_collection_t* msg){
-  cout << "got affs\n";  
-  
-  
   if  ( !got_affs_ ) {
+    cout << "got affs\n";
     Eigen::Isometry3d reinit_pose = affordanceToIsometry3d( msg->affs[affordance_id_].param_names, msg->affs[affordance_id_].params );
     pf_ ->ReinitializeComplete(reinit_pose, pf_initial_var_);
-
-    got_affs_ =true;
-    
   }
-  
+  got_affs_ =true;  
 }
+
+
+
+void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf, 
+                        const std::string& channel, const  bot_core::image_t* msg){
+  last_mask_= *msg;  
+  if (!got_mask_){
+    cout << "got mask\n";  
+    
+    
+    /*
+     * 
+     * 251529000 timeMin | 254130000 timeMax | 254237000 utime | new process
+New RANSAC Floor Coefficients: 0.920891 -0.389821 0.000566057 6.52132
+Pitch 89.9676 | Yaw -22.9434
+Centroid: -7.14644 -0.151769 1.12628
+*/
+    
+    // the plane that the green object is on:
+  //  input_plane_ = {0.921108, -0.389307, 0.000358538, 6.52338}; 
+    // a second plane of the same for matching:
+//    std::vector<double> second_plane = {0.921117, -0.389286, -0.000399105, 6.52459};
+    
+    
+    std::vector<float> plane_coeffs = { 0.920891, -0.389821, 0.000566057, 6.52132};
+    Eigen::Vector4f centroid( -7.14644, -0.151769, 1.12628, 0);
+    
+//    setPlane
+    
+//    0.919775 -0.392445 -0.000469124 6.51755
+
+
+  }
+  got_mask_=true;
+}
+
 
 
 

@@ -42,6 +42,19 @@ class MajorPlane
     // Determine the current estimate of the plane
     bool getPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
     
+    // set the plane to be tracked:
+    void setPlane(std::vector<float> plane_coeffs, Eigen::Vector4f plane_centroid ){
+      pcl::ModelCoefficients::Ptr new_plane_coeffs(new pcl::ModelCoefficients ());
+      new_plane_coeffs->values = plane_coeffs;
+      plane_pose_ = determinePlanePose(new_plane_coeffs, plane_centroid);
+      plane_coeffs_ = new_plane_coeffs;
+      plane_pose_init_ = true;
+    };
+
+    // Given a plane coeff and a centroid, determine a pose on the plane at the centroid:
+    Eigen::Isometry3d determinePlanePose(pcl::ModelCoefficients::Ptr plane_coeffs,
+          Eigen::Vector4f centroid);
+    
   private:
     int verbose_lcm_; // 0 say nothing, 1 say important, 2 say lots
 
@@ -53,8 +66,9 @@ class MajorPlane
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;    
     // pose of a point on the plane with pitch and yaw but roll =0
     Eigen::Isometry3d plane_pose_ ;
+    pcl::ModelCoefficients::Ptr plane_coeffs_;
     // has the above value been set?
-    bool plane_pose_set_;
+    bool plane_pose_init_;
 
     int64_t  current_utime_;
 };
