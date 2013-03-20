@@ -40,28 +40,30 @@ classdef QPController < MIMODrakeSystem
     
     if (isfield(options,'exclude_torso'))
       typecheck(options.exclude_torso,'logical');
-      
-      if options.exclude_torso
-        % free_dof we perform unconstrained minimization to compute 
-        % accelerations and solve for inputs (then threshold).
-        % these should be the joints for which the columns of the contact
-        % jacobian are zero. The remaining dofs are indexed in cnstr_dof.
-        % NOTE: this is highly atlas specific right now
-        jn = getJointNames(r);
-        torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
-                      ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
-                      ~cellfun(@isempty,strfind(jn(2:end),'back'));
-        B = getB(r);
-        obj.free_dof = find(torso);
-        obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
-        obj.free_inputs = find(B'*torso);
-        obj.con_inputs = find(B'*torso==0);
-      else
-        obj.free_dof = [];
-        obj.con_dof = (1:getNumDOF(r))';
-        obj.free_inputs = [];
-        obj.con_inputs = (1:getNumInputs(r))';
-      end
+    else
+      options.exclude_torso = false;
+    end
+   
+    if options.exclude_torso
+      % free_dof we perform unconstrained minimization to compute 
+      % accelerations and solve for inputs (then threshold).
+      % these should be the joints for which the columns of the contact
+      % jacobian are zero. The remaining dofs are indexed in cnstr_dof.
+      % NOTE: this is highly atlas specific right now
+      jn = getJointNames(r);
+      torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
+                    ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
+                    ~cellfun(@isempty,strfind(jn(2:end),'back'));
+      B = getB(r);
+      obj.free_dof = find(torso);
+      obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
+      obj.free_inputs = find(B'*torso);
+      obj.con_inputs = find(B'*torso==0);
+    else
+      obj.free_dof = [];
+      obj.con_dof = (1:getNumDOF(r))';
+      obj.free_inputs = [];
+      obj.con_inputs = (1:getNumInputs(r))';
     end
 
     obj.nu = getNumInputs(r);
@@ -191,30 +193,32 @@ classdef QPController < MIMODrakeSystem
         partial_idx((i-1)*dim+1:i*dim) = (partial_contacts(i)-1)*dim + (1:dim)';
       end
     end
-    Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
+    
+    if nc > 0
+      Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
 
-    active_idx = zeros(dim*length(active_contacts),1);
-    for i=1:length(active_contacts);
-      active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
-    end
-    Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
-    Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
-    Jpdot = matGradMult(Jpdot_,qd);
-    Jpdot = Jpdot(:,obj.con_dof);
-
-    % D_ is the parameterization of the polyhedral approximation of the 
-    %    friction cone, in joint coordinates (figure 1 from Stewart96)
-    %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
-    % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for 
-    % the kth contact point
-    D = cell(1,nc);
-    for k=1:nc
-      for i=1:nd
-        D{k}(:,i) = D_{i}(active_contacts(k),obj.con_dof)'; 
+      active_idx = zeros(dim*length(active_contacts),1);
+      for i=1:length(active_contacts);
+        active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
-    end
-    Dbar = [D{:}];
+      Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
+      Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
+      Jpdot = matGradMult(Jpdot_,qd);
+      Jpdot = Jpdot(:,obj.con_dof);
 
+      % D_ is the parameterization of the polyhedral approximation of the 
+      %    friction cone, in joint coordinates (figure 1 from Stewart96)
+      %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
+      % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for 
+      % the kth contact point
+      D = cell(1,nc);
+      for k=1:nc
+        for i=1:nd
+          D{k}(:,i) = D_{i}(active_contacts(k),obj.con_dof)'; 
+        end
+      end
+      Dbar = [D{:}];
+    end
     
     %----------------------------------------------------------------------
     % Linear inverted pendulum stuff --------------------------------------
@@ -282,16 +286,19 @@ classdef QPController < MIMODrakeSystem
     else
       beq_{1} = -C_con;
     end
-    % relative acceleration constraint
-    Aeq_{2} = Jp*Iqdd + Ieps;
-    beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
     
-    % linear friction constraints
-    % TEMP: hard code mu
-    mu = 1.0*ones(nc,1);
-    for i=1:nc
-      Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
-      bin_{i} = 0;
+    if nc > 0
+      % relative acceleration constraint
+      Aeq_{2} = Jp*Iqdd + Ieps;
+      beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
+
+      % linear friction constraints
+      % TEMP: hard code mu
+      mu = 1.0*ones(nc,1);
+      for i=1:nc
+        Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
+        bin_{i} = 0;
+      end
     end
     
     % linear equality constraints: Aeq*alpha = beq
