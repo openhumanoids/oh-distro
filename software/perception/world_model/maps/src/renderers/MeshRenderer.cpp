@@ -27,6 +27,8 @@ struct MeshRenderer::InternalState {
   std::string mCameraFrame;
   lcm::Subscription* mCameraSubscription;
   bot_core::image_t mCameraImage; 
+  Eigen::Isometry3f mLocalToCamera;
+
   BotWrapper::Ptr mBotWrapper;
   BotCamTrans* mCamTrans;
   Eigen::Matrix4f mProjectionMatrix;
@@ -106,6 +108,9 @@ struct MeshRenderer::InternalState {
         free(val);
       }
     }
+
+    mBotWrapper->getTransform("local", mCameraFrame,
+                              mLocalToCamera, mCameraImage.utime);
 
     mNeedsUpdate = true;
   }
@@ -397,10 +402,7 @@ draw() {
     glScalef(1.0/mState->mCameraImage.width,
              1.0/mState->mCameraImage.height,1);
     glMultMatrixf(mState->mProjectionMatrix.data());
-    Eigen::Isometry3f localToCam;
-    mState->mBotWrapper->getTransform("local", mState->mCameraFrame,
-                                      localToCam, mState->mCameraImage.utime);
-    glMultMatrixf(localToCam.data());
+    glMultMatrixf(mState->mLocalToCamera.data());
     glMultMatrixf(mState->mTransform.data());
 
     // draw texture

@@ -61,7 +61,7 @@ public:
     // find time range of desired swath (from 45 to 135 degrees)
     // note that 0 and 180 degrees are equivalent
     int64_t timeMin(0), timeMax(0);
-    if (!mState->mCollector->getLatestSwath(45*kDegToRad, 135*kDegToRad,
+    if (!mState->mCollector->getLatestSwath(0*kDegToRad, 179.99*kDegToRad,
                                             timeMin, timeMax)) return;
 
     // if this time range overlaps the previous one, ignore
@@ -75,8 +75,8 @@ public:
     LocalMap::SpaceTimeBounds bounds;
     bounds.mTimeMin = timeMin;
     bounds.mTimeMax = timeMax;
-    bounds.mPlanes = Utils::planesFromBox(Eigen::Vector3f(-3,-3,-3),
-                                          Eigen::Vector3f(3,3,3));
+    bounds.mPlanes = Utils::planesFromBox(Eigen::Vector3f(-5,-5,-5),
+                                          Eigen::Vector3f(5,5,5));
 
     // get point cloud corresponding to this time range
     PointCloudView::Ptr cloudView = localMap->getAsPointCloud(0, bounds);
@@ -183,8 +183,6 @@ int main() {
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
   mapSpec.mActive = true;
-  mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*10;
-  mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*10;
   mapSpec.mResolution = 0.01;
   state.mActiveMapId = state.mCollector->getMapManager()->createMap(mapSpec);
 

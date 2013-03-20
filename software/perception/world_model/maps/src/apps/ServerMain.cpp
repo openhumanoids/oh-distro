@@ -430,7 +430,7 @@ int main(const int iArgc, const char** iArgv) {
   auto lcm = state.mBotWrapper->getLcm();
 
   // parse arguments
-  string laserChannel = "SCAN";
+  string laserChannel = "SCAN_FREE";
   float publishPeriod = 0;
   float defaultResolution = 0.1;
   float timeWindowSeconds = 0;

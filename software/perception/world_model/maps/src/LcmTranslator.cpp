@@ -359,23 +359,12 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   }
   float zOffset(zMin), zScale(zMax-zMin);
   zScale /= ((iBits <= 16) ? ((1 << iBits) - 1) : zScale);
+  // TODO: can change zscale if the range has too many bits
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
     if (val == invalidValue) continue;
     outDepths[i] = (outDepths[i]-zOffset)/zScale;
   }
-
-  // TODO TEMP
-  /*
-  std::ofstream ofs("/tmp/disparities_before.txt");
-  for (int i = 0, idx = 0; i < depthImage->getHeight(); ++i) {
-    for (int j = 0; j < depthImage->getWidth(); ++j, ++idx) {
-      ofs << outDepths[idx] << " ";
-    }
-    ofs << std::endl;
-  }
-  ofs.close();
-  */
 
   // store to blob
   DataBlob::Spec spec;
@@ -451,19 +440,6 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
   img.setData(depths, DepthImage::TypeDepth);
   oView.setId(iMessage.view_id);
   oView.set(img);
-
-  // TODO TEMP
-  /*
-  std::cout << "PROJ TRANSLATE\n" << xform.matrix() << std::endl;
-  std::ofstream ofs("/tmp/disparities_after.txt");
-  for (int i = 0, idx = 0; i < img.getHeight(); ++i) {
-    for (int j = 0; j < img.getWidth(); ++j, ++idx) {
-      ofs << depths[idx] << " ";
-    }
-    ofs << std::endl;
-  }
-  ofs.close();
-  */
 
   // done
   // NOTE: ids not set here
