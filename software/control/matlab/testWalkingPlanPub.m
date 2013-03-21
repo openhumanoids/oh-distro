@@ -1,29 +1,29 @@
-function runQPWalking(goal_x, goal_y, goal_yaw)
+function testWalkingPlanPub
 
-if nargin < 3; goal_yaw = 0.0; end
-if nargin < 2; goal_y = 0.0; end
-if nargin < 1; goal_x = 2.0; end
+if (nargin<1) num_steps = 2; end
+if (nargin<2) step_length = 0.6; end
+if (nargin<3) step_time = 0.8; end
 
 options.floating = true;
-options.dt = 0.003;
-r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
-d = load('../data/atlas_fp.mat');
-xstar = d.xstar;
-r = r.setInitialState(xstar);
+options.dt = 0.005;
+r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
+% set initial state to fixed point
+load('data/atlas_fp.mat');
+r = r.setInitialState(xstar);
+
 nq = getNumDOF(r);
 nu = getNumInputs(r);
+
 x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-% biped = Biped(r); % no longer necessary, since Atlas is a Biped
-pose = [goal_x;goal_y;0;0;0;goal_yaw];
-
-[rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', true));
-[zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 0.8);
+% create desired ZMP trajectory
+[zmptraj,lfoottraj,rfoottraj,supptraj] = ZMPandFootTrajectory(r,q0,num_steps,step_length,step_time);
+%[zmptraj,lfoottraj,rfoottraj,supptraj] = SteppingStonesTrajectory(r,q0,step_time);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -58,7 +58,7 @@ htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+    q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],rfoottraj.eval(t),lfoot_body,[0;0;0],lfoottraj.eval(t),options);
   else
     q = q0;
   end
@@ -80,10 +80,28 @@ subplot(3,1,3); hold on;
 fnplt(htraj);
 
 limp = LinearInvertedPendulum(htraj);
-[c, V] = ZMPtracker(limp,zmptraj);
+[~,V] = ZMPtracker(limp,zmptraj);
 
 hddot = fnder(htraj,2);
-zmpdata = SharedDataHandle(struct('V',V,'h',htraj,'hddot',hddot,'c',c));
+qtraj = PPTrajectory(spline(ts,q));
+
+walking_lis = WalkingPlanListener('COMMITTED_WALKING_PLAN');
+walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
+walking_pub.publish(struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj),0);
+clear V htraj hddot qtraj;
+
+while true
+  [walking_data,t] = walking_lis.getNextMessage(100);
+  if ~isempty(walking_data)
+    break;
+  end
+end
+qtraj = walking_data.qtraj;
+htraj = walking_data.htraj;
+hddot = walking_data.hddtraj;
+S = walking_data.Straj;
+
+zmpdata = SharedDataHandle(struct('S',S,'h',htraj,'hddot',hddot,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
@@ -93,7 +111,7 @@ options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
 % desired configuration trajectory
-qdes = setOutputFrame(PPTrajectory(spline(ts,q)),AtlasCoordinates(r));
+qdes = setOutputFrame(qtraj,AtlasCoordinates(r));
 pd = SimplePDController(r);
 ins(1).system = 2;
 ins(1).input = 2;
@@ -148,6 +166,7 @@ plot(ts,com(2,:),'r');
 subplot(3,1,3);
 plot(ts,com(3,:),'r');
 
-%keyboard;
+% keyboard;
 
 end
+

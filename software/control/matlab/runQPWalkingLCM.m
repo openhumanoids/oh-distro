@@ -11,8 +11,8 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
 options.dt = 0.001;
-r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
-d = load('../data/atlas_fp.mat');
+r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
+d = load('data/atlas_fp.mat');
 xstar = d.xstar;
 r = r.setInitialState(xstar);
 % set initial conditions in gazebo
@@ -116,15 +116,15 @@ plan_pub.publish(ts,xtraj);
 
 disp('Computing ZMP controller...');
 limp = LinearInvertedPendulum(htraj);
-[c, V] = ZMPtracker(limp,zmptraj);
+[~,V] = ZMPtracker(limp,zmptraj);
 
 hddot = fnder(htraj,2);
-zmpdata = SharedDataHandle(struct('V',V,'h',htraj,'hddot',hddot,'c',c));
+zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
 options.slack_limit = 100.0;
-options.w = 1.5;
+options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
