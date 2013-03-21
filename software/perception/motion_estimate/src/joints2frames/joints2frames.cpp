@@ -8,11 +8,6 @@
 #include <lcm/lcm.h>
 #include <iostream>
 
-//#include <pcl/io/pcd_io.h>
-//#include <pcl/point_types.h>
-//#include <lcmtypes/visualization.h>
-
-
 #include "joints2frames.hpp"
 #include <ConciseArgs>
 
@@ -20,8 +15,7 @@ using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
-
-
+#define DO_TIMING_PROFILE FALSE
 
 
 /////////////////////////////////////
@@ -31,39 +25,21 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show
           world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
           body_to_headT_(0, Eigen::Isometry3d::Identity()) {
 
-  l2f_list_ += "head","head_rightedhokuyo";
-  // "head_hokuyo"
-  //"left_camera_optical_frame","head_statichokuyo"
-
-  
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
-  //pc_vis_->obj_cfg_list.push_back( obj_cfg(6000,"Frames [Zero]",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
-  // pts: id name type reset objcoll usergb rgb
-  
-  lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
 
+  lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
   _urdf_subscription =   lcm_->subscribe("ROBOT_MODEL",&joints2frames::urdf_handler,this);  
 }
 
-
-
-Eigen::Quaterniond joints2frames::euler_to_quat(double yaw, double pitch, double roll) {
-  double sy = sin(yaw*0.5);
-  double cy = cos(yaw*0.5);
-  double sp = sin(pitch*0.5);
-  double cp = cos(pitch*0.5);
-  double sr = sin(roll*0.5);
-  double cr = cos(roll*0.5);
-  double w = cr*cp*cy + sr*sp*sy;
-  double x = sr*cp*cy - cr*sp*sy;
-  double y = cr*sp*cy + sr*cp*sy;
-  double z = cr*cp*sy - sr*sp*cy;
-  return Eigen::Quaterniond(w,x,y,z);
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
-
 
 void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (!_urdf_parsed){
@@ -71,44 +47,30 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     return;
   }
 
-  // This republishes "hokuyo_joint" as a transform 
-  // i.e. in the urdf: <joint name="hokuyo_joint" type="continuous">
-  // it assumes a fixed delta pose = [-0.0446,0,0.0880,0,0,0] ... 
-  // TODO: use the kinematics solver to solve for head -> hokuyo_link
-  for (size_t i=0; i< msg->num_joints; i++){
-    if (   msg->joint_name[i].compare( "hokuyo_joint" ) == 0 ){ // was head_hokuyo_link for DIY system previously
-        bot_core::rigid_transform_t tf;
-        tf.utime = msg->utime;
-        tf.trans[0] =-0.0446; // was zero previously
-        tf.trans[1] =0;
-        tf.trans[2] =0.0880; // was zero previously
-        Eigen::Quaterniond head_quat = euler_to_quat(0,0,msg->joint_position[i]);
-        tf.quat[0] =head_quat.w();
-        tf.quat[1] =head_quat.x();
-        tf.quat[2] =head_quat.y();
-        tf.quat[3] =head_quat.z();
-        lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);      
-      
-    }
-  }
+  
+  #if DO_TIMING_PROFILE
+    std::vector<int64_t> tic_toc;
+    tic_toc.push_back(_timestamp_now());
+  #endif
   
   
-  
-  //clear stored data
+  // 1. Solve for Forward Kinematics:
   _link_tfs.clear();
-
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
+  map<string, drc::transform_t > cartpos_out;
   for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
 
-  map<string, drc::transform_t > cartpos_out;
-
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  
   // Calculate forward position kinematics
   bool kinematics_status;
-  bool flatten_tree=true; // determines the absolute transforms with respect to robot origin.
-  //Otherwise returns relative transforms between joints.
-
+  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
   kinematics_status = _fksolver->JntToCart(jointpos_in,cartpos_out,flatten_tree);
   if(kinematics_status>=0){
     // cout << "Success!" <<endl;
@@ -117,7 +79,79 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     return;
   }
   
-  // 1. Extract World Pose:
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  
+  // 2a. Determine the required BOT_FRAMES transforms:
+  Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
+  bool body_to_head_found =false;
+  bool body_to_hokuyo_link_found = false;
+  for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
+    std::string joint = (*ii).first;
+    if (   (*ii).first.compare( "head" ) == 0 ){
+      body_to_head.setIdentity();
+      body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
+      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
+      body_to_head.rotate(quat);    
+      body_to_head_found=true;
+    }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
+      body_to_hokuyo_link.setIdentity();
+      body_to_hokuyo_link.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
+      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
+      body_to_hokuyo_link.rotate(quat);    
+      body_to_hokuyo_link_found=true;
+    }
+  }  
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  
+  // 2b. Republish the required BOT_FRAMES transforms:
+  if (body_to_head_found){
+    bot_core::rigid_transform_t tf;
+    tf.utime = msg->utime;
+    tf.trans[0] = body_to_head.translation().x();
+    tf.trans[1] = body_to_head.translation().y();
+    tf.trans[2] = body_to_head.translation().z();
+    Eigen::Quaterniond quat = Eigen::Quaterniond( body_to_head.rotation() );
+    tf.quat[0] = quat.w();
+    tf.quat[1] = quat.x();
+    tf.quat[2] = quat.y();
+    tf.quat[3] = quat.z();
+    lcm_->publish("BODY_TO_HEAD", &tf);     
+    
+    if (body_to_hokuyo_link_found){
+      Eigen::Isometry3d head_to_hokuyo_link = body_to_head.inverse() * body_to_hokuyo_link ;
+      
+      bot_core::rigid_transform_t tf;
+      tf.utime = msg->utime;
+      tf.trans[0] = head_to_hokuyo_link.translation().x();
+      tf.trans[1] = head_to_hokuyo_link.translation().y();
+      tf.trans[2] = head_to_hokuyo_link.translation().z();
+      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_hokuyo_link.rotation() );
+      tf.quat[0] = quat.w();
+      tf.quat[1] = quat.x();
+      tf.quat[2] = quat.y();
+      tf.quat[3] = quat.z();
+      lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);     
+    }
+  }
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+    display_tic_toc(tic_toc,"createScene");  
+  #endif
+
+    
+  if (!show_triads_){
+    return; 
+  }
+  
+  // 3. Extract World Pose:
   world_to_bodyT_.pose.setIdentity();
   world_to_bodyT_.pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
@@ -125,7 +159,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   world_to_bodyT_.pose.rotate(quat);    
   world_to_bodyT_.utime = msg->utime;
   
-  // Loop through joints and extract world positions:
+  // 4. Loop through joints and extract world positions:
   int counter =msg->utime;  
   std::vector<Isometry3dTime> body_to_jointTs, world_to_jointsT;
   std::vector< int64_t > body_to_joint_utimes;
@@ -146,38 +180,12 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     // convert to world positions
     Isometry3dTime world_to_jointT(counter, world_to_bodyT_.pose*body_to_joint);
     world_to_jointsT.push_back(world_to_jointT);
-    
-    // Also see if these joints are required to be published as BOT_FRAMES poses:
-    BOOST_FOREACH(string l2f, l2f_list_ ){
-      if ( l2f.compare( joint ) == 0 ){
-        //cout << "got : " << l2f << "\n";
-        bot_core::rigid_transform_t tf;
-        tf.utime = msg->utime;
-        tf.trans[0] = body_to_joint.translation().x();
-        tf.trans[1] = body_to_joint.translation().y();
-        tf.trans[2] = body_to_joint.translation().z();
-    
-        tf.quat[0] =quat.w();
-        tf.quat[1] =quat.x();
-        tf.quat[2] =quat.y();
-        tf.quat[3] =quat.z();
-        std::string l2f_upper ="BODY_TO_" + boost::to_upper_copy(l2f);
-        lcm_->publish(l2f_upper, &tf);      
-      }
-    }
     counter++;
   }
   
-  
-  //std::cout << body_to_jointTs.size() << " jts\n";
-  //pc_vis_->pose_collection_to_lcm_from_list(6000, body_to_jointTs); // all joints releative to body - publish if necessary
-  
-  if (show_triads_){
-    pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
-    if (show_labels_)
-      pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
-  }
-
+  pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
+  if (show_labels_)
+    pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
 }
 
 
@@ -187,7 +195,7 @@ void joints2frames::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::stri
   // Received robot urdf string. Store it internally and get all available joints.
   _robot_name      = msg->robot_name;
   _urdf_xml_string = msg->urdf_xml_string;
-  cout<< "\nReceived urdf_xml_string of robot [" 
+  cout<< "Received urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << endl;
 
   // Get a urdf Model from the xml string and get all the joint names.
@@ -232,7 +240,7 @@ int
 main(int argc, char ** argv){
   string role = "robot";
   bool labels = false;
-  bool triads = true;
+  bool triads = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
   opt.add(triads, "t", "triads","Frame Triads - show no not");

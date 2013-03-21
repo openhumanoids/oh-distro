@@ -37,8 +37,6 @@ class joints2frames{
     boost::shared_ptr<lcm::LCM> lcm_;
     pointcloud_vis* pc_vis_;
 
-    std::vector <std::string> l2f_list_;
-    
     Isometry3dTime world_to_bodyT_;
     Isometry3dTime body_to_headT_;
 
