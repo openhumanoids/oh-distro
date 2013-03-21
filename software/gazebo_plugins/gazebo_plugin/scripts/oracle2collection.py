@@ -18,13 +18,21 @@ def on_aff_fit(channel, data):
   counter=counter+1
   lc.publish("AFFORDANCE_FIT", m.encode())
 
+global init_list
+init_list =[1]
+
 def on_aff_track(channel, data):
-  global counter
   m = affordance_t.decode(data)
-  if (counter%100 ==0):
-    print "TRK %d id from oracle republished [counter %d]" % (m.uid, counter)
+  global counter, init_list
+  if m.uid in init_list:
+    #print "saw %d before" %(m.uid)
+    return
+  else:
+    init_list.append(m.uid)
+  print "TRK %d id from oracle republished [counter %d]" % (m.uid, counter)
   counter=counter+1
   m.aff_store_control = 0
+  m.uid=-1
   lc.publish("AFFORDANCE_FIT", m.encode())
 
 #################################################################################

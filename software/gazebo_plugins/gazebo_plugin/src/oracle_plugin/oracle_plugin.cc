@@ -465,9 +465,9 @@ void OraclePlugin::storeAffordances()
     a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
-    a.params.push_back(0.14000);
+    a.params.push_back(0.1000);
     a.param_names.push_back("length");
-    a.params.push_back(0.40000);
+    a.params.push_back(0.38000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     
@@ -476,7 +476,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    //offset.translation()  << -0.085, 0.03, 0.20;
+    offset.translation()  << 0,0, 0.30;
     //double ypr[3]={0,0,-1.571};
     //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     //offset.rotate(quat);
@@ -512,9 +512,9 @@ void OraclePlugin::storeAffordances()
     a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
-    a.params.push_back(0.30000);
+    a.params.push_back(0.150000);
     a.param_names.push_back("length");
-    a.params.push_back(0.040000);
+    a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     
@@ -523,7 +523,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    //offset.translation()  << -0.085, 0.03, 0.20;
+    offset.translation()  << 0, 0, 0.14;
     //double ypr[3]={0,0,-1.571};
     //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     //offset.rotate(quat);
@@ -533,6 +533,104 @@ void OraclePlugin::storeAffordances()
     affp.offset = offset;
     aff_map_["mit_valve_wheel"]=affp;
   }     
+  
+  
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="box";
+    a.aff_store_control = drc::affordance_t::NEW;
+    a.nparams =10;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+
+    a.param_names.push_back("lX");
+    a.params.push_back(3.00000);
+    a.param_names.push_back("lY");
+    a.params.push_back(3.00000);
+    a.param_names.push_back("lZ");
+    a.params.push_back(0.01000); 
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0);  // unknown
+    
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << 1.5,0,0;
+    double ypr[3]={0, 1.571,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["sbox4_chassis"]=affp; 
+  }     
+    
+  
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="box";
+    a.aff_store_control = drc::affordance_t::NEW;
+    a.nparams =10;
+
+    a.param_names.push_back("x");
+    a.params.push_back(0);
+    a.param_names.push_back("y");
+    a.params.push_back(0);
+    a.param_names.push_back("z");
+    a.params.push_back(0);
+
+    a.param_names.push_back("roll");
+    a.params.push_back( 0 );
+    a.param_names.push_back("pitch");
+    a.params.push_back( 0);
+    a.param_names.push_back("yaw");
+    a.params.push_back( 0 );
+// 0.01, 0.8 , 1.5 , - -1.571
+    a.param_names.push_back("lX");
+    a.params.push_back(0.8000);
+    a.param_names.push_back("lY");
+    a.params.push_back(1.5000);
+    a.param_names.push_back("lZ");
+    a.params.push_back(0.01); 
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0);  // unknown
+    
+    a.nstates =0;
+    a.nptinds =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  <<0,0, 1.0;
+    double ypr[3]={1.571,0,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlus affp;
+    affp.aff =a;
+    affp.offset = offset;
+    aff_map_["mit_table_link"]=affp; 
+  }       
   
 }
 
@@ -544,12 +642,12 @@ bool OraclePlugin::sendAffordance(
 
     // Find the affordance:
     AffordancePlus affp = aff_map_.find( name)->second;
-    
-///    std::map< std::string, AffordancePlus >::iterator it;
-   // it=mymap.find(name);
-    
+
+    /*
     cout << aff_map_.find( name)->second.aff.otdf_type << " is the type\n";
-    cout << (int) aff_map_.find( name)->second.aff.aff_store_control << " is the type\n";
+    cout << (int) aff_map_.find( name)->second.aff.aff_store_control << " is the control\n";
+    cout <<  name << " is combined link\n";
+    */
     aff_map_.find( name)->second.aff.aff_store_control = drc::affordance_t::UPDATE;
 
     drc::affordance_t aff= affp.aff;
@@ -696,6 +794,7 @@ void OraclePlugin::OnUpdate(){
               if ( model->GetName().compare( "mit_cordless_drill" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
                   sendAffordance(affname,  world_to_link);
+                  sendAffordance(   "mit_cordless_drill_link_handle"   ,  world_to_link);
                 }
               }
               if ( model->GetName().compare( "duff_beer" ) == 0){
@@ -720,6 +819,16 @@ void OraclePlugin::OnUpdate(){
               }
               if ( model->GetName().compare( "mit_valve" ) == 0){
                 if ( link->GetName().compare( "wheel" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                }
+              }
+              if ( model->GetName().compare( "sbox4" ) == 0){
+                if ( link->GetName().compare( "chassis" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                }
+              }
+              if ( model->GetName().compare( "mit_table" ) == 0){
+                if ( link->GetName().compare( "link" ) == 0){
                   sendAffordance(affname,  world_to_link);
                 }
               }
