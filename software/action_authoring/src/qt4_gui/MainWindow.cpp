@@ -965,7 +965,8 @@ publishActionToLCM()
 
     // TODO: get the actual name and the proper time
     actionSequence.utime = 0;
-    actionSequence.robot_name = "foo bar robot";
+    actionSequence.robot_name = "atlas";
+    actionSequence.q0.robot_name = "atlas";
     _worldState.state_gfe.to_lcm(&(actionSequence.q0));
 
     actionSequence.num_contact_goals = (int) contact_goals.size();
