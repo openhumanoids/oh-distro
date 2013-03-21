@@ -1,0 +1,20 @@
+package drc;
+
+struct walking_plan_t
+{
+	int64_t utime;
+	string robot_name;
+
+	int32_t n_qtraj_bytes;
+  byte qtraj[n_qtraj_bytes];
+
+	int32_t n_htraj_bytes;
+  byte htraj[n_htraj_bytes];
+
+	int32_t n_hddtraj_bytes;
+  byte hddtraj[n_hddtraj_bytes];
+
+	int32_t n_Straj_bytes;
+  byte Straj[n_Straj_bytes];
+}
+
