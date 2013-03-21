@@ -162,10 +162,10 @@ void ParticleFilter::SetHeightPitchRoll(std::vector<double> height_pitch_roll){
 }
 
 
-void ParticleFilter::SetState(std::vector<double> xyzypr,
+void ParticleFilter::applyPlaneConstraint(std::vector<double> xyzypr,
         std::vector<bool> set_xyzypr){
-  // Set the HPR at fixed values:
-  // should this be done outsite the particle filter class?
+  // Set the HPR at fixed values in world frame
+  std::cout << "deprecated - use more general method with Identity plane_pose\n";
   for(int i = 0; i < N_p ; ++i) {
     pf_state state = particleset[i].GetState();
     double current_ypr[3];
@@ -184,6 +184,35 @@ void ParticleFilter::SetState(std::vector<double> xyzypr,
 
     ipose.rotate(revised_quat);
     state.pose = ipose;
+    particleset[i].SetState(state);  
+  }
+}
+
+
+void ParticleFilter::applyPlaneConstraint(std::vector<double> xyzypr,
+        std::vector<bool> set_xyzypr, Eigen::Isometry3d plane_pose){
+
+  for(int i = 0; i < N_p ; ++i) {  
+    pf_state state = particleset[i].GetState();
+    state.pose = plane_pose.inverse() * state.pose ;
+  
+    double current_ypr[3];
+    quat_to_euler(  Eigen::Quaterniond( state.pose.rotation()) , current_ypr[0], current_ypr[1], current_ypr[2]);
+    if (set_xyzypr[3]){ current_ypr[0] = xyzypr[3]; }
+    if (set_xyzypr[4]){ current_ypr[1] = xyzypr[4]; }
+    if (set_xyzypr[5]){ current_ypr[2] = xyzypr[5]; }
+    Eigen::Quaterniond revised_quat = euler_to_quat( current_ypr[0], current_ypr[1], current_ypr[2]);             
+    
+    Eigen::Isometry3d ipose;
+    ipose.setIdentity();
+    ipose.translation() << state.pose.translation();
+    if (set_xyzypr[0]){ ipose.translation().x() = xyzypr[0]; }
+    if (set_xyzypr[1]){ ipose.translation().y() = xyzypr[1]; }
+    if (set_xyzypr[2]){ ipose.translation().z() = xyzypr[2]; }
+
+    ipose.rotate(revised_quat);
+    state.pose = ipose;    
+    state.pose = plane_pose * state.pose;
     particleset[i].SetState(state);  
   }
 }
