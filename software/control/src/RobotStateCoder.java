@@ -167,6 +167,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
         return fdata;
       }
+      return null;
     }
 
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
