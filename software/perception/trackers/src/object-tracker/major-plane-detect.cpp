@@ -9,7 +9,7 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   mCollector.reset(new Collector());
   mCollector->setBotWrapper(mBotWrapper);
   mActiveMapId = 0;
-  mLcmGl = bot_lcmgl_init(lcm_->getUnderlyingLCM(), "test-points");
+  mLcmGl = bot_lcmgl_init(lcm_->getUnderlyingLCM(), "major-plane-detect");
   drc::Clock::instance()->setLcm(lcm_);  
 
   // create new submap
@@ -46,8 +46,8 @@ bool MajorPlane::getSweep(){
 
   // find time range of desired swath (from 45 to 135 degrees)
   int64_t timeMin, timeMax;
-  double ang_min = 5.0 *M_PI/180; // leading edge from the right hand side of sweep
-  double ang_max = 175.0 *M_PI/180;
+  double ang_min = 0.0 *M_PI/180; // leading edge from the right hand side of sweep
+  double ang_max = 179.99 *M_PI/180;
   // 0 and 180 fails
   
   int current_utime = drc::Clock::instance()->getCurrentTime();
@@ -72,7 +72,7 @@ bool MajorPlane::getSweep(){
   if (verbose_lcm_ >=2){
     bot_lcmgl_t* lcmgl = mLcmGl;
     bot_lcmgl_color3f(lcmgl, 1, 0.75, 0.75);
-    bot_lcmgl_point_size(lcmgl, 1);
+    bot_lcmgl_point_size(lcmgl, 2); //1
     for (int i = 0; i < cloud_->size(); ++i) {
       maps::PointCloud::PointType point = (*cloud_)[i];
       bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
@@ -120,17 +120,15 @@ void MajorPlane::findPlane(){
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
   seg.setDistanceThreshold (0.01); // was 0.01m
-  //pcl::PointCloud<pcl::PointXYZ>::Ptr cloudptr (new pcl::PointCloud<pcl::PointXYZ> (cloudfloor));
   seg.setInputCloud (cloud_);
   seg.segment (*inliers, *new_plane_coeffs);
-  if ( inliers->indices.size () == 0)
-  {
+  if ( inliers->indices.size () == 0){
     printf ("Could not estimate a planar model for the given dataset.\n");
     return;
   }
   
   if (1==0){
-    // i think these numbers are incorrect:
+    // i think these numbers are incorrect - hPR is illdefined
     double pitch = atan(new_plane_coeffs->values[0]/new_plane_coeffs->values[2]);
     double roll =- atan(new_plane_coeffs->values[1]/new_plane_coeffs->values[2]);
     double new_plane_coeffs_norm = sqrt(pow(new_plane_coeffs->values[0],2) +
