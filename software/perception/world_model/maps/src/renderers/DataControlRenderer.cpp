@@ -144,7 +144,7 @@ public:
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
                "AFFORDANCE_LIST", ChannelTypeAnonymous);
     addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog",
-               "MAP_CATALOG", ChannelTypeDepthImage);
+               "MAP_CATALOG", ChannelTypeAnonymous);
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree",
                "MAP_OCTREE", ChannelTypeAnonymous);
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height",

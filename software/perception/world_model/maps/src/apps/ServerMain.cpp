@@ -150,10 +150,9 @@ struct ViewWorker {
               projector(i,j) = mRequest.transform[i][j];
             }
           }
-          std::cout << "TRANSFORM BEFORE\n" << projector.matrix() << std::endl;
-          if (spec.mRelativeLocation) projector = projector*headToLocal.inverse();
-          std::cout << "TRANSFORM AFTER\n" << projector.matrix() << std::endl;
-          std::cout << "ADJUSTMENT\n" << headToLocal.matrix() << std::endl;
+          if (spec.mRelativeLocation) {
+            projector = projector*headToLocal.inverse();
+          }
           DepthImageView::Ptr image =
             localMap->getAsDepthImage(mRequest.width, mRequest.height,
                                       projector, bounds);
@@ -334,8 +333,7 @@ public:
   }
 
   void onCatalogTrigger(const lcm::ReceiveBuffer* iBuf,
-                        const std::string& iChannel,
-                        const drc::map_macro_t* iMessage) {
+                        const std::string& iChannel) {
     sendCatalog();
   }
 
@@ -469,7 +467,7 @@ int main(const int iArgc, const char** iArgv) {
   state.mMapMacroSubscription =
     lcm->subscribe("MAP_MACRO", &State::onMapMacro, &state);
   state.mCatalogTriggerSubscription =
-    lcm->subscribe("TRIGGER_CATALOG", &State::onCatalogTrigger, &state);
+    lcm->subscribe("TRIGGER_MAP_CATALOG", &State::onCatalogTrigger, &state);
 
   // start running data receiver
   state.mCollector->start();
