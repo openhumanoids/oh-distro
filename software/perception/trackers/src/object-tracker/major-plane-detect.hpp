@@ -49,6 +49,7 @@ class MajorPlane
       plane_pose_ = determinePlanePose(new_plane_coeffs, plane_centroid);
       plane_coeffs_ = new_plane_coeffs;
       plane_pose_init_ = true;
+      cout << "[PLANE] Have initialized the plane tracker\n";
     };
 
     // Given a plane coeff and a centroid, determine a pose on the plane at the centroid:

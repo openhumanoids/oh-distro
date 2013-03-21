@@ -93,7 +93,7 @@ std::vector<float> ColorThreshold::colorThreshold(std::vector< Eigen::Vector3d >
   if ((area> min_area) && (u_estimated>0 && v_estimated>0)){
     // Valid measurement
   }else{
-   cout << "green not seen - returning ["<< area <<"]\n"; 
+   cout << "color not seen - returning ["<< area <<"]\n"; 
    return loglikelihoods;
   }
   

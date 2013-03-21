@@ -1,9 +1,24 @@
-// color threshold and plane are hard coded
-// 
+// Red Valve:
+// object-tracker  -a 0 -c -p -l 0
+// fails with hist tracker. why?
 
+/// Hist tracker:
+// Duff Can:
+// object-tracker  -a 2 -g -p -l 1
+// Green Valve
+// object-tracker  -a 1 -g -p -l 0
+
+
+// color threshold and plane are hard coded
+// hist tracker fails if mask is not entirely inside the image
+// particle-to-uv incorrectly functions if facing in wrong direction from tracker (pixels projected into mirror positons)
+// determine the projection between the object and the plane or have it provided explicitly by user
+// need to have plane affordances published
+// have plane tracker drill down into X planes rather than just 1
 
 
 // TODO:
+// 
 // position (and orientation) of affordance
 // a plane of interest - currently largest
 // relative offset between plane and object
@@ -15,6 +30,7 @@
 #include <math.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/config/no_tr1/complex.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -42,12 +58,16 @@ int affordance_vis_offset =0;
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
-            int num_particles_, int affordance_id_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, int num_particles_);
     
     ~Pass(){
     }    
+    
+    void init_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, 
+                       bool use_plane_tracker, int plane_affordance_id);
+    
   private:
+    
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     std::string image_channel_;
@@ -72,38 +92,44 @@ class Pass{
     int width_;
     int height_;
     double fx_, fy_, cx_, cy_;
+    bot_core::image_t img_;  
+    int64_t last_utime_;    
+    bool got_mask_;
+    bool got_affs_;    
     
     int counter_;
     pointcloud_vis* pc_vis_;
     image_io_utils*  imgutils_;
     
+    // Particle Filter Variables:
     ParticleFilter* pf_; 
     int num_particles_;
-    int affordance_id_; // id of the affordance we want to track
     std::vector<double> pf_initial_var_;
     std::vector <double> pf_drift_var_;
   
-    bot_core::image_t img_;  
-    int64_t last_utime_;    
-       
-    // Current status of plane estimation:
-    Eigen::Isometry3d plane_pose_ ;
-    bool plane_pose_set_;
-    std::vector<double> input_plane_;
-    
-    bool got_mask_;
-    bool got_affs_;
-  protected:    
+    // Tracker Configuration:
+    int affordance_id_; // id of the affordance we want to track
+    int plane_affordance_id_;
     MajorPlane* major_plane_;    
     ColorThreshold* color_tracker_;
-    
     HistTracker* histogram_tracker_;
+    bool use_plane_tracker_;
+    bool use_color_tracker_;
+    bool use_histogram_tracker_;
+    
+    // Plane Tracking Variables:
+    Eigen::Isometry3d plane_pose_ ; // Current status of plane estimation:
+    bool plane_pose_set_;
+    std::vector<double> input_plane_;
+    // The relative position of the plane and which dimensions to constrain:
+    std::vector <double> plane_relative_xyzypr_; 
+    std::vector <bool> plane_relative_xyzypr_set_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
-    int num_particles_, int affordance_id_): 
+    int num_particles_): 
     lcm_(lcm_), image_channel_(image_channel_), 
-    num_particles_(num_particles_), affordance_id_(affordance_id_){
+    num_particles_(num_particles_){
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
@@ -120,9 +146,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451000,"Tracker | NPose",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451001,"Tracker | Particles"           ,1,1, 4451000,1, { 0.0, 1.0, 0.0} ));
 
-  stringstream ss;
-  ss << "Tracker | Pose of Aff " << affordance_id_;
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451006 +  affordance_id_  , ss.str() ,5,1) );
   
   std::string key_prefix_str = "cameras."+ image_channel_ +".intrinsic_cal";
   width_ = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
@@ -163,6 +186,18 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
 }
 
 
+void Pass::init_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, bool use_plane_tracker, int plane_affordance_id){
+  affordance_id_ = affordance_id;
+  use_color_tracker_ = use_color_tracker;
+  use_histogram_tracker_ = use_histogram_tracker;
+  use_plane_tracker_ = use_plane_tracker;
+  plane_affordance_id_ = plane_affordance_id;
+  
+  stringstream ss;
+  ss << "Tracker | Pose of Aff " << affordance_id_;
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451006 +  affordance_id_  , ss.str() ,5,1) );
+}
+
 
 void Pass::propogatePF(){
   
@@ -178,52 +213,11 @@ void Pass::propogatePF(){
   odom_diff.velocity.setIdentity();
   pf_->MoveParticles(odom_diff,pf_drift_var_,elapsed_time,1); //the 1 signifies failed motion estimation
   
-  // Apply a constraint onto the XY plane at 0,0,0
-  // with freedom of rotation in that plane
-  //  std::vector <double> xyzypr{ -6.0, 0, 0., 0., 0., 0.};
-  //  std::vector <bool> set_xyzypr{ 1, 0, 0, 1, 1, 0};
-  //  pf_->SetState(xyzypr, set_xyzypr);
-  
-  if ( plane_pose_set_ ){
-    vector < pf_state > pfs;
-    for (size_t i=0; i<num_particles_; i++) {
-      pfs.push_back( pf_->GetParticleState(i)   );
-    }
-      
-    for (size_t i=0; i<num_particles_; i++) {
-      pfs[i].pose = plane_pose_.inverse() * pfs[i].pose ;
+  if (use_plane_tracker_){
+    if ( plane_pose_set_ ){
+      pf_->applyPlaneConstraint(plane_relative_xyzypr_, plane_relative_xyzypr_set_, plane_pose_);
     }  
-    
-    std::vector <double> xyzypr{ 0, 0, 0.25, 0., 0., 0.};
-    std::vector <bool> set_xyzypr{ 0, 0, 1, 0, 1, 1};
-    
-    for(int i = 0; i < num_particles_ ; ++i) {
-      double current_ypr[3];
-      quat_to_euler(  Eigen::Quaterniond( pfs[i].pose.rotation()) , current_ypr[0], current_ypr[1], current_ypr[2]);
-      if (set_xyzypr[3]){ current_ypr[0] = xyzypr[3]; }
-      if (set_xyzypr[4]){ current_ypr[1] = xyzypr[4]; }
-      if (set_xyzypr[5]){ current_ypr[2] = xyzypr[5]; }
-      Eigen::Quaterniond revised_quat = euler_to_quat( current_ypr[0], current_ypr[1], current_ypr[2]);             
-      
-      Eigen::Isometry3d ipose;
-      ipose.setIdentity();
-      ipose.translation() << pfs[i].pose.translation();
-      if (set_xyzypr[0]){ ipose.translation().x() = xyzypr[0]; }
-      if (set_xyzypr[1]){ ipose.translation().y() = xyzypr[1]; }
-      if (set_xyzypr[2]){ ipose.translation().z() = xyzypr[2]; }
-
-      ipose.rotate(revised_quat);
-      pfs[i].pose = ipose;
-    }  
-    
-    for (size_t i=0; i<num_particles_; i++) {
-      pfs[i].pose = plane_pose_ * pfs[i].pose;
-    }  
-    
-    for (size_t i=0; i<num_particles_; i++) {
-      pf_->SetParticleState(i, pfs[i]);
-    }  
-  }  
+  }
   
   
   vector < Isometry3dTime > pf_poses;
@@ -232,8 +226,6 @@ void Pass::propogatePF(){
     pf_poses.push_back(   Isometry3dTime ( img_.utime+i, pf.pose )    );
   }  
   pc_vis_->pose_collection_to_lcm_from_list(4451006 + affordance_id_, pf_poses);
-
-  
 }
 
 
@@ -248,7 +240,6 @@ void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
     pts.push_back(t);
   }    
   loglikelihoods = color_tracker_->colorThreshold(pts, img_.data.data(), local_to_camera, img_.utime);
-  // to disable :   loglikelihoods.assign ( pts->points.size() ,0);    
 }
 
 
@@ -301,8 +292,11 @@ void Pass::updatePF(){
   
   // Likelihood Functions:
   std::vector<float> loglikelihoods;
-  colorThresholdLikelihood(loglikelihoods);
-  //histogramThresholdLikelihood(loglikelihoods);
+  loglikelihoods.assign ( num_particles_ ,0);    
+  if (use_color_tracker_)
+    colorThresholdLikelihood(loglikelihoods);
+  if (use_histogram_tracker_)
+    histogramThresholdLikelihood(loglikelihoods);
   
   pf_->LogLikelihoodParticles(loglikelihoods);
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);
@@ -323,14 +317,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
   // Ask the maps collector for a plane:
   plane_pose_set_ = major_plane_->getPlane(plane_pose_, msg->utime);
-  return;
-  
   if (got_mask_ && got_affs_){
     updatePF();
   }else{
     cout << "haven't got affs and aff mask yet\n"; 
   }
-  
   
   last_utime_ = msg->utime;
 }
@@ -349,12 +340,103 @@ Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::v
   return transform;
 }
 
+
+std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vector<double> params ){
+  // Ridiculously hacky way of converting from plane affordance to plane coeffs.
+  // the x-direction of the plane pose is along the axis - hence this
+  
+  std::map<string,double> am;
+  for (size_t j=0; j< param_names.size(); j++){
+    am[ param_names[j] ] = params[j];
+  }
+  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
+  Eigen::Isometry3d transform;
+  transform.setIdentity();
+  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
+  transform.rotate(quat);  
+
+  Eigen::Isometry3d ztransform;
+  ztransform.setIdentity();
+  ztransform.translation()  << 0 ,0, 1; // determine a point 1m in the z direction... use this as the normal
+  ztransform = transform*ztransform;
+  float a =(float) ztransform.translation().x() -  transform.translation().x();
+  float b =(float) ztransform.translation().y() -  transform.translation().y();
+  float c =(float) ztransform.translation().z() -  transform.translation().z();
+  float d = - (a*am.find("x")->second + b*am.find("y")->second + c*am.find("z")->second);
+  
+  /*
+  cout << "pitch : " << 180.*am.find("pitch")->second/M_PI << "\n";
+  cout << "yaw   : " << 180.*am.find("yaw")->second/M_PI << "\n";
+  cout << "roll   : " << 180.*am.find("roll")->second/M_PI << "\n";   
+  obj_cfg oconfig = obj_cfg(1251000,"Tracker | Affordance Pose Z",5,1);
+  Isometry3dTime reinit_poseT = Isometry3dTime ( 0, ztransform );
+  pc_vis_->pose_to_lcm(oconfig,reinit_poseT);
+  */
+
+  std::vector<float> plane = { a,b,c,d};
+  return plane;
+}
+
+Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vector<double> params ){
+  std::map<string,double> am;
+  for (size_t j=0; j< param_names.size(); j++){
+    am[ param_names[j] ] = params[j];
+  }
+
+  Eigen::Vector4f plane_centroid( am.find("x")->second, am.find("y")->second , 
+        am.find("z")->second, 0); // last element held at zero
+  return plane_centroid;
+}
+
+
 void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::affordance_collection_t* msg){
   if  ( !got_affs_ ) {
     cout << "got affs\n";
     Eigen::Isometry3d reinit_pose = affordanceToIsometry3d( msg->affs[affordance_id_].param_names, msg->affs[affordance_id_].params );
     pf_ ->ReinitializeComplete(reinit_pose, pf_initial_var_);
+    
+    obj_cfg oconfig = obj_cfg(1451000,"Tracker | Affordance Pose",5,1);
+    Isometry3dTime reinit_poseT = Isometry3dTime ( 0, reinit_pose );
+    pc_vis_->pose_to_lcm(oconfig,reinit_poseT);
+    
+    
+    
+    std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
+    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
+    major_plane_->setPlane(p_coeffs, p_centroid);    
+    plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};
+    plane_relative_xyzypr_set_  = { 0, 0, 1, 0, 1, 1};
+    
+    
+    cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
+    pcl::ModelCoefficients::Ptr new_p_coeffs(new pcl::ModelCoefficients ());
+    new_p_coeffs->values = p_coeffs;
+    Eigen::Isometry3d p = major_plane_->determinePlanePose(new_p_coeffs, p_centroid);
+    obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance Plane",5,1);
+    Isometry3dTime pT = Isometry3dTime ( 0, p );
+    pc_vis_->pose_to_lcm(oconfig2,pT);
+
+    
+        
+    /*
+    if (plane_affordance_id_ ==0){
+      // Plane with valve and wheel on it
+      std::vector<float> plane_coeffs = { 0.920891, -0.389821, 0.000566057, 6.52132};
+      Eigen::Vector4f plane_centroid( -7.14644, -0.151769, 1.12628, 0); // last element held at zero
+      major_plane_->setPlane(plane_coeffs, plane_centroid);    
+      plane_relative_xyzypr_  = { 0, 0, 0.25, 0., 0., 0.};
+      plane_relative_xyzypr_set_  = { 0, 0, 1, 0, 1, 1};
+    }else if(plane_affordance_id_==1){
+      // Table plane:
+      std::vector<float> plane_coeffs = {-0.00466229, -0.000804597, 0.999989, -1.01261};
+      Eigen::Vector4f plane_centroid( 1.49616, 1.79947, 1.02105, 0); // last element held at zero
+      major_plane_->setPlane(plane_coeffs, plane_centroid);    
+      plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};
+      plane_relative_xyzypr_set_  = { 0, 0, 1, 0, 1, 1};
+      // xyz_rpy_w_l:1.49616 1.79947 1.02105 -0.000754216 0.00466083 -3.13113 0.816344 1.50757
+    }
+    */
   }
   got_affs_ =true;  
 }
@@ -366,30 +448,6 @@ void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf,
   last_mask_= *msg;  
   if (!got_mask_){
     cout << "got mask\n";  
-    
-    
-    /*
-     * 
-     * 251529000 timeMin | 254130000 timeMax | 254237000 utime | new process
-New RANSAC Floor Coefficients: 0.920891 -0.389821 0.000566057 6.52132
-Pitch 89.9676 | Yaw -22.9434
-Centroid: -7.14644 -0.151769 1.12628
-*/
-    
-    // the plane that the green object is on:
-  //  input_plane_ = {0.921108, -0.389307, 0.000358538, 6.52338}; 
-    // a second plane of the same for matching:
-//    std::vector<double> second_plane = {0.921117, -0.389286, -0.000399105, 6.52459};
-    
-    
-    std::vector<float> plane_coeffs = { 0.920891, -0.389821, 0.000566057, 6.52132};
-    Eigen::Vector4f centroid( -7.14644, -0.151769, 1.12628, 0);
-    
-//    setPlane
-    
-//    0.919775 -0.392445 -0.000469124 6.51755
-
-
   }
   got_mask_=true;
 }
@@ -398,24 +456,38 @@ Centroid: -7.14644 -0.151769 1.12628
 
 
 int main(int argc, char ** argv) {
-  string channel = "CAMERALEFT";
-  int num_particles = 100;
+  string image_channel = "CAMERALEFT";
+  int num_particles = 300;
   int affordance_id = 0;
+  bool use_color_tracker =false;
+  bool use_histogram_tracker =false;
+  bool use_plane_tracker =false;  
+  int plane_affordance_id=0;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(channel, "c", "channel","channel");
+  opt.add(image_channel, "i", "image_channel","image_channel");
   opt.add(num_particles, "n", "num_particles","num particles");
   opt.add(affordance_id, "a", "affordance_id","Affordance ID");
+  opt.add(use_color_tracker, "c", "use_color_tracker","Use Color Tracker");
+  opt.add(use_histogram_tracker, "g", "use_histogram_tracker","Use Histogram Tracker");
+  opt.add(use_plane_tracker, "p", "use_plane_tracker","Use Plane Tracker");
+  opt.add(plane_affordance_id, "l", "plane_affordance_id","Plane Affordance ID");
   opt.parse();
-  std::cout << "channel: " << channel << "\n";    
+  std::cout << "image_channel: " << image_channel << "\n";    
   std::cout << "num_particles: " << num_particles << "\n";    
   std::cout << "affordance_id: " << affordance_id << "\n";    
+  std::cout << "use_color_tracker: " << use_color_tracker << "\n";    
+  std::cout << "use_histogram_tracker: " << use_histogram_tracker << "\n";    
+  std::cout << "plane_affordance_id: " << plane_affordance_id << "\n";    
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm, channel, num_particles, affordance_id);
+  Pass app(lcm, image_channel, num_particles);
+  app.init_tracking(affordance_id, use_color_tracker, use_histogram_tracker,
+      use_plane_tracker, plane_affordance_id);
+  
   cout << "Tracker ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;

@@ -229,8 +229,7 @@ void MajorPlane::findPlane(){
   
   cout  <<  "New RANSAC Floor Coefficients: " << new_plane_coeffs->values[0]
       << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
-  cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " << centroid(2) << "\n";
-  cout << "Centroid: " << centroid << "\n";
+  cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " << centroid(2) << "\n"; // last element held at zero
   
   plane_pose_ = new_plane_pose;
   // Visualise the points transformed by the new plane

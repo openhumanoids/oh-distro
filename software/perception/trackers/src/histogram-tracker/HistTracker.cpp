@@ -136,9 +136,9 @@ HistTracker::update_prediction(const cv::Mat& img) {
 std::vector<float>
 HistTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & pts,
         Eigen::Isometry3d local_to_camera) { 
-  std::vector<float> loglikelihoods;
-  loglikelihoods.assign ( pts.size() ,0);    
-  
+    // Assign uniform likelihoods:
+    std::vector<float> loglikelihoods;
+    loglikelihoods.assign ( pts.size() ,0);    
   
     if (hue_info.histogram.empty() || val_info.histogram.empty()) return loglikelihoods;
  
@@ -199,7 +199,8 @@ HistTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & 
         cv::resize(bp8, bp, cv::Size(), 1.f/scale, 1.f/scale, cv::INTER_LINEAR);
     
     
-    /// Added mfallon:
+    /// Use the confidence mask to determine the object location: (very basic algorithm, added mfallon)
+    // 1. Use image moments to determine ML object location:
     cv::Moments m=cv::moments(bp8); 
     //printf("moments %f %f %f %f %f %f %f %f\n",m.m00,m.m01,m.m20,m.m11,m.m02,m.m30,m.m21,m.m03); 
     http://opencv.willowgarage.com/documentation/cpp/structural_analysis_and_shape_descriptors.html
@@ -207,35 +208,31 @@ HistTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & 
     int v_estimated = m.m01/m.m00;
     std::cout << u_estimated << " and " << v_estimated << "\n";
 
-
-  // 2. Project particles into camera frame:
-  Eigen::Affine3d transform;
-  transform.setIdentity();
-  Eigen::Translation3d translation(local_to_camera.translation());
-  Eigen::Quaterniond quat(local_to_camera.rotation());
-  transform = transform * translation * quat;
-  for (size_t i = 0; i < pts.size (); ++i){
-    pts[i] = transform*pts[i];
-  }    
-    
-  // 3. Determine Likelihood in Image space:
-  
-  for (size_t i=0; i< pts.size(); i++) {
-    // u = pt.x fx/pt.z   ... project point to pixel
-    Eigen::Vector3d pt1 = pts[i];
-    int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
-    int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
-    int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
-    // Crude Binary Likelihood:
-    if (dist < 13){
-      loglikelihoods[i] =1; //was 1
-    }
-  }        
-    
-    
-    
-    
-    
+    // 2. Project particles into camera frame:
+    Eigen::Affine3d transform;
+    transform.setIdentity();
+    Eigen::Translation3d translation(local_to_camera.translation());
+    Eigen::Quaterniond quat(local_to_camera.rotation());
+    transform = transform * translation * quat;
+    for (size_t i = 0; i < pts.size (); ++i){
+      pts[i] = transform*pts[i];
+    }    
+      
+    // 3. Determine Likelihood in Image space:
+    for (size_t i=0; i< pts.size(); i++) {
+      // u = pt.x fx/pt.z   ... project point to pixel
+      Eigen::Vector3d pt1 = pts[i];
+      int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
+      int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
+      int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
+      // Crude Binary Likelihood:
+      if (dist < 13){
+        loglikelihoods[i] =1; //was 1
+      }
+    }        
+      
+      
+    /// Visualization:
     cv::Mat bp3;
     cv::cvtColor(bp8, bp3, CV_GRAY2BGR);
     addWeighted(img, 0.05, bp3, 0.95, 0, img); 
@@ -243,20 +240,17 @@ HistTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & 
     // cv::imshow( "Val Belief", val_bp); 
     // cv::imshow( "Sat Belief", val_bp); 
 
-    
-  for (size_t i=0; i< pts.size(); i++) {
-    Eigen::Vector3d pt1 = pts[i];
-    int u = floor( ((pt1[0] * fx_)/pt1[2])  +  512.5);
-    int v = floor( ((pt1[1] * fy_)/pt1[2]) + 272.5);
-    Point center( u, v );
-    circle( img, center, 3, Scalar(0,255,0), -1, 8, 0 );
-  }      
-  Point center( u_estimated, v_estimated );
-  circle( img, center, 10, Scalar(0,0,255), -1, 8, 0 );
-    
-    
-    
-    //showHistogramInfo(img);
+    for (size_t i=0; i< pts.size(); i++) { // draw particles on image
+      Eigen::Vector3d pt1 = pts[i];
+      int u = floor( ((pt1[0] * fx_)/pt1[2])  +  512.5);
+      int v = floor( ((pt1[1] * fy_)/pt1[2]) + 272.5);
+      Point center( u, v );
+      circle( img, center, 3, Scalar(0,255,0), -1, 8, 0 );
+    }      
+    Point center( u_estimated, v_estimated );
+    circle( img, center, 10, Scalar(0,0,255), -1, 8, 0 );
+      
+    showHistogramInfo(img);
 
     return loglikelihoods;
 }
