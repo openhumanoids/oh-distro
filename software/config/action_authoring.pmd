@@ -1,15 +1,15 @@
 group "action_authoring" {
     cmd "IkServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/actionAuthoringIKServer']);\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']);actionAuthoringIKServer;\"";
        host = "localhost";
     }
 
-    cmd "AffordanceServer" {
+    cmd "ActionAuthoringGUI" {
        exec = "action_authoring_gui";
        host = "localhost";
     }
 
-    cmd "ActionAuthoring" {
+    cmd "AffordanceServer" {
        exec = "demo_populate_aff_server";
        host = "localhost";
     }
