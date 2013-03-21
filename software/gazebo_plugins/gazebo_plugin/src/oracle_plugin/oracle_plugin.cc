@@ -606,8 +606,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back( 0);
     a.param_names.push_back("yaw");
     a.params.push_back( 0 );
-// 0.01, 0.8 , 1.5 , - -1.571
     a.param_names.push_back("lX");
+
     a.params.push_back(0.8000);
     a.param_names.push_back("lY");
     a.params.push_back(1.5000);

@@ -19,7 +19,7 @@ def on_aff_fit(channel, data):
   lc.publish("AFFORDANCE_FIT", m.encode())
 
 global init_list
-init_list =[1]
+init_list =[]
 
 def on_aff_track(channel, data):
   m = affordance_t.decode(data)
