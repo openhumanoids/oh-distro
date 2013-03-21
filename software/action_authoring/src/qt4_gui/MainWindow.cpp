@@ -10,6 +10,7 @@ using namespace affordance;
 
 #define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
 #define IK_RESPONSE_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_STATE"
+#define IK_TRAJECTORY_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_PLAN"
 #define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
 //#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_PnC/model.urdf"
 //#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot/model.urdf"
