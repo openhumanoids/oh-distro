@@ -24,7 +24,7 @@ class rgbd_primitives {
     pcl::PolygonMesh::Ptr getCylinderWithTransform(Eigen::Isometry3d transform, double base, double top, double height);
     pcl::PolygonMesh::Ptr getCubeWithTransform(Eigen::Isometry3d transform, double xdim, double ydim, double zdim);
 
-    pcl::PolygonMesh::Ptr getCylinder(double base, double top, double height, int slices, int stacks);
+    pcl::PolygonMesh::Ptr getCylinder(double base, double top, double base_height, double top_height, int slices, int stacks);
     pcl::PolygonMesh::Ptr getCube(double xdim, double ydim, double zdim);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr sampleMesh(pcl::PolygonMesh::Ptr &mesh, double pts_per_msquared);

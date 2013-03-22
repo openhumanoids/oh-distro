@@ -65,6 +65,7 @@
 
 #define PCL_VERBOSITY_LEVEL L_ERROR
 
+// offset of affordance in mask labelling:
 #define AFFORDANCE_OFFSET 64
 
 using namespace std;
@@ -207,6 +208,10 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   //state->model = mesh_ptr;  
   return mesh_ptr;
 }
+
+
+
+
 
 
 

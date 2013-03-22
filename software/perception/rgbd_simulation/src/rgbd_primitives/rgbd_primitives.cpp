@@ -23,6 +23,47 @@ void set_color(pcl::PointXYZRGB &pt){
  pt.b = 50.0;
 }
 
+
+// Duplicates function in pointcloud_math
+bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB){
+  pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
+  // HACKY BUG FIX: 
+  // issue: if meshA->cloud contains no data, then it contains no cloud.fields
+  //        so it will complain and give a warning when we try to copy to cloudA
+  //        Failed to find match for field 'x'.
+  //        Failed to find match for field 'y'.
+  //        Failed to find match for field 'z'.
+  //        Failed to find match for field 'rgb'.  
+  // Instead dont try to copy if empty...
+  if ( meshA->cloud.fields.size()  !=0){
+    pcl::fromROSMsg(meshA->cloud, cloudA);
+  }
+  int original_size = cloudA.points.size() ;
+
+  //cout << original_size << " is the cloud before (insize) size\n";
+  //cout <<  meshA->polygons.size () << "polygons before\n";
+  
+  int N_polygonsB = meshB->polygons.size ();
+  pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
+  pcl::fromROSMsg(meshB->cloud, cloudB);
+  Eigen::Vector4f tmp;
+  for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
+    pcl::Vertices apoly_in = meshB->polygons[i];//[i];
+    int N_points = apoly_in.vertices.size ();
+    for(size_t j=0; j< N_points; j++){ // each point
+      // increment the vertex numbers by the size of the original clouds
+      apoly_in.vertices[j] += original_size; 
+    }
+    meshA->polygons.push_back(apoly_in);
+  } 
+  cloudA += cloudB;
+  pcl::toROSMsg (cloudA, meshA->cloud);
+  //cout <<  meshA->polygons.size () << "polygons after\n";
+  //cout << cloudA.points.size() << " is the cloud inside size\n";
+  return true;
+}
+
+
 // Duplicates function in pointcloud_math - and surely this can be done in a functioncall
 Eigen::Isometry3f IsometryDoubleToFloat(Eigen::Isometry3d pose_in){
   
@@ -37,9 +78,18 @@ Eigen::Isometry3f IsometryDoubleToFloat(Eigen::Isometry3d pose_in){
 }
 
 
+
 pcl::PolygonMesh::Ptr rgbd_primitives::getCylinderWithTransform(Eigen::Isometry3d transform, double base, double top, double height){
 
-  pcl::PolygonMesh::Ptr mesh_cylinder = getCylinder(base ,top , height, 36,1);
+  pcl::PolygonMesh::Ptr mesh_cylinder = getCylinder(base ,top , 0, height, 36,1);
+  bool add_lids=true; // TODO: add as an argument
+  if (add_lids){
+    pcl::PolygonMesh::Ptr mesh_base_lid = getCylinder(base ,0 , 0, 0, 36,1);
+    mergePolygonMesh(mesh_cylinder, mesh_base_lid);
+    pcl::PolygonMesh::Ptr mesh_top_lid = getCylinder(base ,0 , height, height, 36,1);
+    mergePolygonMesh(mesh_cylinder, mesh_top_lid);
+  }
+  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::fromROSMsg(mesh_cylinder->cloud, *cloud);  
   
@@ -82,17 +132,20 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d tr
 
 
 
-// create a polygon mesh of a cylinder (clones gluCylinder)
-// TODO: add top and bottom discs
-// base Specifies the radius of the cylinder at z = 0.
-// top Specifies the radius of the cylinder at z = height.
-// height Specifies the height of the cylinder.
-// slices Specifies the number of subdivisions around the z axis.
-// stacks Specifies the number of subdivisions along the z axis.
-// This method will return a cylinder if a radius is set to zero
-// This method will return a pyramid if the slices is set to 4
-// stacks not used
-pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, double height, int slices, int stacks){ 
+// create a polygon mesh of a cylinder (similar to clones gluCylinder)
+// This actually creates a triangle fan in a ring. 
+// It can be used for 
+// - cylinders
+// - cones (if a radius is set to zero)
+// - pyramids (if slices set to 4) 
+// - discs (if base_height and top_height are equal and a radius is zero)
+// @base Specifies the radius of the cylinder at z = base_height (usually zero)
+// @top Specifies the radius of the cylinder at z = top_height.
+// @base_height Specifies the base height of the cylinder.
+// @top_height Specifies the top height of the cylinder.
+// @slices Specifies the number of subdivisions around the z axis.
+// @stacks - not used
+pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, double base_height, double top_height, int slices, int stacks){ 
   pcl::PolygonMesh mesh;   
   pcl::PolygonMesh::Ptr mesh_ptr (new pcl::PolygonMesh (mesh));  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -102,9 +155,9 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, doub
   int i_int=0;
   for (double i=0,  i_int=0;i< 2*M_PI; i=i+ delta, i_int++){
     pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6;
-    pt1.x = base*cos(i);       pt1.y = base*sin(i);  pt1.z = 0;  
-    pt2.x =  top*cos(i);       pt2.y =  top*sin(i); pt2.z = height; 
-    pt3.x = base*cos(i+delta); pt3.y = base*sin(i+delta);  pt3.z = 0;
+    pt1.x = base*cos(i);       pt1.y = base*sin(i);       pt1.z = base_height;  
+    pt2.x =  top*cos(i);       pt2.y =  top*sin(i);       pt2.z = top_height; 
+    pt3.x = base*cos(i+delta); pt3.y = base*sin(i+delta); pt3.z = base_height;
     set_color(pt1); set_color(pt2); set_color(pt3);
     pts->points.push_back(pt1);
     pts->points.push_back(pt2);
@@ -113,9 +166,9 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, doub
     vert.vertices.push_back(i_int*6 ); vert.vertices.push_back(i_int*6+1); vert.vertices.push_back(i_int*6+2);
     verts.push_back(vert);
     
-    pt4.x = base*cos(i+delta)  ; pt4.y = base*sin(i+delta); pt4.z = 0;
-    pt5.x =  top*cos(i+delta)  ; pt5.y =  top*sin(i+delta); pt5.z = height;
-    pt6.x =  top*cos(i)        ; pt6.y =  top*sin(i); pt6.z = height;
+    pt4.x = base*cos(i+delta)  ; pt4.y = base*sin(i+delta); pt4.z = base_height;
+    pt5.x =  top*cos(i+delta)  ; pt5.y =  top*sin(i+delta); pt5.z = top_height;
+    pt6.x =  top*cos(i)        ; pt6.y =  top*sin(i);       pt6.z = top_height;
     set_color(pt4); set_color(pt5); set_color(pt6);
     pts->points.push_back(pt4);
     pts->points.push_back(pt5);

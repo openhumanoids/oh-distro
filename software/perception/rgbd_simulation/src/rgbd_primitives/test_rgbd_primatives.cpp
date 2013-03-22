@@ -48,16 +48,28 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
   colors_v.assign(colors_b,colors_b+4*sizeof(float));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"RGBD Primatives - Null",5,1) );
   
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"RGBD Primitive - Cylinder"     ,7,1, 9995,0, colors_v ));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9997,"RGBD Primitive - Cube"     ,7,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9986,"RGBD Primitive - Cylinder"     ,7,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9987,"RGBD Primitive - Cube"     ,7,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9988,"RGBD Primitive - Disc"     ,7,1, 9995,0, colors_v ));
   // 3 gives a wireframe
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9998,"RGBD Primitive - Random Points on Cylinder"     ,1,1, 9995,0, colors_v ));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9999,"RGBD Primitive - Random Points on Cube"     ,1,1, 9995,0, colors_v ));
+  
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9996,"RGBD Primitive - Points on Cylinder"     ,1,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9997,"RGBD Primitive - Points on Cube"     ,1,1, 9995,0, colors_v ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9998,"RGBD Primitive - Points on Disc"     ,1,1, 9995,0, colors_v ));
+
   
   verbose_ =false;  
 }
 
 void Pass::doTest(std::string fname){
+
+  // Visualise:
+  int64_t pose_id =0;
+  Eigen::Isometry3d null_pose;
+  null_pose.setIdentity();
+  Isometry3dTime null_poseT = Isometry3dTime(pose_id, null_pose);
+  pc_vis_->pose_to_lcm_from_list(9995, null_poseT);
+  
   double length = 0.5;
   double radius = 0.25;
   
@@ -70,26 +82,26 @@ void Pass::doTest(std::string fname){
 
   // cylinder:
   pcl::PolygonMesh::Ptr mesh_cylinder = prim_->getCylinderWithTransform(transform, radius, radius, length);
+  pc_vis_->mesh_to_lcm_from_list(9986, mesh_cylinder, pose_id , pose_id);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts =prim_->sampleMesh(mesh_cylinder, 400);
+  pc_vis_->ptcld_to_lcm_from_list(9996, *pts, pose_id , pose_id);  
   
   // cube:
   transform.translation()  << 0.18,0.8,0.0;
   pcl::PolygonMesh::Ptr mesh_cube = prim_->getCubeWithTransform(transform, 0.21, 0.21,0.5);
-    
-  // Visualise:
-  int64_t pose_id =0;
-  Eigen::Isometry3d null_pose;
-  null_pose.setIdentity();
-  Isometry3dTime null_poseT = Isometry3dTime(pose_id, null_pose);
-  pc_vis_->pose_to_lcm_from_list(9995, null_poseT);
-  pc_vis_->mesh_to_lcm_from_list(9996, mesh_cylinder, pose_id , pose_id);
-  pc_vis_->mesh_to_lcm_from_list(9997, mesh_cube, pose_id , pose_id);
+  pc_vis_->mesh_to_lcm_from_list(9987, mesh_cube, pose_id , pose_id);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts2 =prim_->sampleMesh(mesh_cube, 400);
+  pc_vis_->ptcld_to_lcm_from_list(9997, *pts2, pose_id , pose_id);  
+
+  transform.translation()  << 0.18,-0.8,0.0;
+  pcl::PolygonMesh::Ptr mesh_disc = prim_->getCylinderWithTransform(transform, radius, 0.0, 0);
+  pc_vis_->mesh_to_lcm_from_list(9988, mesh_disc, pose_id , pose_id);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts3 =prim_->sampleMesh(mesh_disc, 400); // NB: disc sampled for both top and bottom lid - givine twice the density
+  pc_vis_->ptcld_to_lcm_from_list(9998, *pts3, pose_id , pose_id);  
+ 
   
   
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts =prim_->sampleMesh(mesh_cylinder, 100);
-  pc_vis_->ptcld_to_lcm_from_list(9998, *pts, pose_id , pose_id);  
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts2 =prim_->sampleMesh(mesh_cube, 100);
-  pc_vis_->ptcld_to_lcm_from_list(9999, *pts2, pose_id , pose_id);  
-   
+  
 }
 
 
