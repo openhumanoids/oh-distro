@@ -72,7 +72,7 @@ unsigned int floor_multiple_sixteen(unsigned int v)
 void check_rc(int rc)
 {
     if(rc == -1)
-        glog.is(VERBOSE) && glog << "Error: previous operation failed!" << std::endl;
+        glog.is(WARN) && glog << group("publish") << "Error: LCM publish failed!" << std::endl;
 }
 
 namespace drc
@@ -167,9 +167,11 @@ private:
     std::map<int, std::map<int,  ReceiveMessageParts> > receive_queue_;    
     
     static double fec_;
+
+    int channel_buffer_size_;
 };
 
-double DRCShaper::fec_ = 1.5; // TODO: make configurable or auto-adapt
+double DRCShaper::fec_ = 1; // TODO: make configurable or auto-adapt
 
 
 void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
@@ -212,21 +214,26 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       partner_(node == BASE ? ROBOT : BASE),
       lcm_(node == BASE ? app.base_lcm : app.robot_lcm),
       last_send_type_(0),
-      largest_id_(0)
+      largest_id_(0),
+      channel_buffer_size_(100)
 {
     assert(floor_multiple_sixteen(1025) == 1024);
     
     glog.set_name("drc-network-shaper");
+    glog.add_group("ch-push", goby::common::Colors::blue);
+    glog.add_group("ch-pop", goby::common::Colors::magenta);
+    glog.add_group("fragment-push", goby::common::Colors::yellow);
+    glog.add_group("fragment-pop", goby::common::Colors::cyan);
+    glog.add_group("tx", goby::common::Colors::blue);
+    glog.add_group("rx", goby::common::Colors::magenta);
+    glog.add_group("publish", goby::common::Colors::green);
+    glog.add_group("rx-cleanup", goby::common::Colors::lt_green);
 
-
-    if(app.cl_cfg.verbose)
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
-    else
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
+    goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
     
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
-
+    
     
     const std::vector<Resend>& resendlist = app.resendlist();
 
@@ -276,7 +283,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         goby::acomms::connect(&udp_driver_->signal_receive, this, &DRCShaper::udp_data_receive);
         goby::acomms::connect(&udp_driver_->signal_data_request, this, &DRCShaper::data_request_handler);
 
-        std::cout << "Starting UDP driver with configuration: " << cfg.ShortDebugString() << std::endl;
+        glog.is(VERBOSE) && glog << "Starting UDP driver with configuration: " << cfg.ShortDebugString() << std::endl;
         udp_driver_->startup(cfg);
         free(robot_host);
         free(base_host);
@@ -296,9 +303,20 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         cfg.add_slot()->CopyFrom(slot);
 
         goby::acomms::bind(mac_, *udp_driver_);
-        std::cout << "Starting MAC with configuration: " << cfg.ShortDebugString() << std::endl;
+        glog.is(VERBOSE) && glog << "Starting MAC with configuration: " << cfg.ShortDebugString() << std::endl;
         mac_.startup(cfg);
     }
+
+    channel_buffer_size_ = bot_param_get_int_or_fail(app.bot_param, "network.channel_buffer_size");
+
+    double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
+    fec_ = 1/(1-expected_packet_loss_percent/100);
+    glog.is(VERBOSE) && glog << "Forward error correction: " << fec_ << std::endl;
+
+    if(app.cl_cfg.verbose)
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+    else
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
 }
 
 
@@ -316,8 +334,7 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         // if this is the first time we've seen this channel, create a new circular buffer for it
         if(q_it == queues_.end())
         {
-            // TODO: make circular buffer size configurable (currently 100)
-            queues_.insert(std::make_pair(channel, MessageQueue(channel, 100, data)));
+            queues_.insert(std::make_pair(channel, MessageQueue(channel, channel_buffer_size_, data)));
         }
         else
         {
@@ -326,7 +343,7 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         }    
 
         
-        glog.is(VERBOSE) && glog << "queueing: " << app_.get_current_utime() << " | "
+        glog.is(VERBOSE) && glog << group("ch-push") << "queueing: " << app_.get_current_utime() << " | "
              << channel  << " | " << "qsize: " << queues_.find(channel)->second.messages.size() << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
         // glog.is(VERBOSE) && glog << app_.print_resend_list(); // print info sent in BW Stats msg
         app_.send_resend_list();
@@ -381,7 +398,8 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                     msg_frag.set_data(&qmsg[0], qmsg.size());
                     msg_frag.set_fragment(0);
                     msg_frag.set_is_last_fragment(true);
-                    send_queue_.push(msg_frag);
+                    for(int i = 0, n = std::ceil(fec_); i < n; ++i)
+                        send_queue_.push(msg_frag);
                 }
                 else
                 {                
@@ -413,12 +431,12 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 		    for(std::vector<drc::ShaperPacket>::const_reverse_iterator it = encoded_fragments.rbegin(),
                             end = encoded_fragments.rend(); it != end; ++it)
                     {
-			glog.is(VERBOSE) && glog << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
+			glog.is(VERBOSE) && glog << group("fragment-push") << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
 			send_queue_.push(*it);
                     }
                 }
 
-		glog.is(VERBOSE) && glog << "dequeueing: " << app_.get_current_utime() << " | "
+		glog.is(VERBOSE) && glog << group("ch-pop") << "dequeueing: " << app_.get_current_utime() << " | "
 		     << it->second.channel << " msg #" << it->second.message_count << " | " << "qsize: " << queues_.find(it->second.channel)->second.messages.size() << " | " << qmsg.size() << " bytes *" << xor_cs(qmsg) << std::endl;
 
 		it->second.messages.pop_front();
@@ -435,9 +453,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     msg->set_ack_requested(false);
     
     send_queue_.top().SerializeToString(msg->add_frame());
-    //glog.is(VERBOSE) && glog << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
-    // glog.is(VERBOSE) && glog << "Data size: " << send_queue_.top().data().size() << std::endl;
-    // glog.is(VERBOSE) && glog << "Encoded size: " << msg->frame(0).size() << std::endl;
+    glog.is(VERBOSE) && glog << group("tx") << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
+    glog.is(VERBOSE) && glog << group("tx") << "Data size: " << send_queue_.top().data().size() << std::endl;
+    glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << msg->frame(0).size() << std::endl;
     
     send_queue_.pop();
 
@@ -449,12 +467,12 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     drc::ShaperPacket packet;
     packet.ParseFromString(msg.frame(0));
 
-    glog.is(VERBOSE) && glog << "received: " << app_.get_current_utime() << " | "
+    glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
 
     if(packet.is_last_fragment() && packet.fragment() == 0)
     {
-        glog.is(VERBOSE) && glog << "publishing: " << app_.get_current_utime() << " | "
+        glog.is(VERBOSE) && glog << group("publish") << "publishing: " << app_.get_current_utime() << " | "
                                  << channel_id_.right.at(packet.channel()) << " #" << packet.message_number() << " | " << packet.data().size() << " bytes" << std::endl;
         std::vector<unsigned char> buffer(packet.data().size());
         for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
@@ -484,20 +502,21 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             }
             else
             {
-                glog.is(VERBOSE) && glog << "Cleanup on Message #" << i << ": " << std::endl;
                 int expected = it->second.expected();
                 int received = it->second.size();
                 if(it->second.decoder_done())
                 {                
                     glog.is(VERBOSE) &&
-                        glog << "Received enough to decode message : received " << received
+                        glog << group("rx-cleanup") << "Received enough fragments to decode message " << i << " from channel: "
+                             << channel_id_.right.at(packet.channel()) << " - received " << received
                              << " of " << expected << std::endl;
                 }
                 else
                 {
                     glog.is(WARN) &&
-                        glog << "Not enough packets received to decode message: received " << received
-                             << " of " << expected << std::endl;                    
+                        glog <<  group("rx-cleanup") <<  "Not enough fragments received for message " << i << " from channel: "
+                             << channel_id_.right.at(packet.channel()) << " - received " << received
+                             << " of " << expected << std::endl;
                 }
                 this_queue.erase(it);
             }
@@ -519,7 +538,8 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             {
                 std::vector<unsigned char> buffer(packet.message_size());
                 message_parts.get_decoded(&buffer);
-                glog.is(VERBOSE) && glog << "publishing: " << app_.get_current_utime()
+                glog.is(VERBOSE) && glog << group("publish")
+                                         << "publishing: " << app_.get_current_utime()
                                          << " | " << channel_id_.right.at(packet.channel())
                                          << " #" << packet.message_number() << " | "
                                          << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
@@ -554,10 +574,10 @@ void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& messa
         case 0: return;
         case 1:
             decoder_done_ = true;
-            glog.is(VERBOSE) && glog << "Decoder done!" << std::endl;
+            glog.is(VERBOSE) && glog << group("rx") << "Decoder done!" << std::endl;
             return;
         default:
-            glog.is(VERBOSE) && glog << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
+            glog.is(WARN) && glog << group("rx") << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
             return;
     }    
 }
