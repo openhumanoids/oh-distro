@@ -67,6 +67,13 @@ class pointcloud_vis {
     void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
     void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
 
+    // Plot a set of point clouds relative to a specific pose
+    void ptcld_collection_to_lcm_from_list(int id, std::vector< pcl::PointCloud<pcl::PointXYZRGB> > &clouds,
+            int64_t obj_id, int64_t ptcld_id);
+    void ptcld_collection_to_lcm(ptcld_cfg pcfg, std::vector< pcl::PointCloud<pcl::PointXYZRGB> > &clouds,
+            int64_t obj_id, int64_t ptcld_id);
+
+    
     void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
             int64_t obj_id, int64_t ptcld_id);
     void ptcld_to_lcm(ptcld_cfg pcfg, pcl::PointCloud<pcl::PointXYZRGB> &cloud,

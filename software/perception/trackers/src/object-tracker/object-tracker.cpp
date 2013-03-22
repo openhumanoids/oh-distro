@@ -101,6 +101,10 @@ class Pass{
     pointcloud_vis* pc_vis_;
     image_io_utils*  imgutils_;
     
+    // Current Camera Pose:
+    Eigen::Isometry3d local_to_camera_;
+    Eigen::Isometry3d head_to_local_;
+    
     // Particle Filter Variables:
     ParticleFilter* pf_; 
     int num_particles_;
@@ -180,7 +184,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   histogram_tracker_ = new HistTracker();
   
   // Plane Detection:
-  major_plane_ = new MajorPlane( lcm_, 1);
+  major_plane_ = new MajorPlane( lcm_, 2);
   plane_pose_.setIdentity();
   plane_pose_set_ = false;
 }
@@ -230,8 +234,6 @@ void Pass::propogatePF(){
 
 
 void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
-  Eigen::Isometry3d local_to_camera;
-  frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera);
   std::vector< Eigen::Vector3d > pts;
   for (size_t i=0; i<num_particles_; i++) {
     pf_state particle_state;
@@ -239,7 +241,7 @@ void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
     Eigen::Vector3d t(particle_state.pose.translation());
     pts.push_back(t);
   }    
-  loglikelihoods = color_tracker_->colorThreshold(pts, img_.data.data(), local_to_camera, img_.utime);
+  loglikelihoods = color_tracker_->colorThreshold(pts, img_.data.data(), local_to_camera_, img_.utime);
 }
 
 
@@ -265,8 +267,6 @@ void Pass::histogramThresholdLikelihood( std::vector<float> &loglikelihoods ){
   } 
 
   if (histogram_tracker_->getMaskInitialized() ){
-    Eigen::Isometry3d local_to_camera;
-    frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera);
     std::vector< Eigen::Vector3d > pts;
     for (size_t i=0; i<num_particles_; i++) {
       pf_state particle_state;
@@ -276,7 +276,7 @@ void Pass::histogramThresholdLikelihood( std::vector<float> &loglikelihoods ){
     }        
       
     double tic = _timestamp_now(); 
-    loglikelihoods = histogram_tracker_->update(img, scale, pts, local_to_camera);
+    loglikelihoods = histogram_tracker_->update(img, scale, pts, local_to_camera_);
     if (counter_%10 ==0){ 
         printf("===> HISTOGRAM BACKPROJECTION: %4.2f ms\n", (_timestamp_now() - tic) * 1e-3); 
     }
@@ -315,8 +315,18 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }
   img_= *msg;  
 
+  // Update the camera and head poses
+  frames_cpp_->get_trans_with_utime( botframes_ , "local", "CAMERA"  , img_.utime, local_to_camera_);
+  frames_cpp_->get_trans_with_utime( botframes_ , "head", "local"  , img_.utime, head_to_local_);
+  
+  
   // Ask the maps collector for a plane:
-  plane_pose_set_ = major_plane_->getPlane(plane_pose_, msg->utime);
+  // true if we got a new sweep, make a box 5x5x5m centered around the robot's head
+  // cout << "head_to_local_: " << head_to_local_.translation() << "\n";
+  if (major_plane_->getSweep(head_to_local_.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
+    plane_pose_set_ = major_plane_->trackPlane(plane_pose_, msg->utime);  
+  }
+  
   if (got_mask_ && got_affs_){
     updatePF();
   }else{

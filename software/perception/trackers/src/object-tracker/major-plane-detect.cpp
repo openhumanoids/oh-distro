@@ -1,6 +1,9 @@
 #include "major-plane-detect.hpp"
 #include <iostream>
 
+#include <pointcloud_tools/filter_planes.hpp>
+
+
 using namespace maps;
 using namespace std;
 
@@ -12,13 +15,14 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   mLcmGl = bot_lcmgl_init(lcm_->getUnderlyingLCM(), "major-plane-detect");
   drc::Clock::instance()->setLcm(lcm_);  
 
-  // create new submap
+  // create new submap - this keeps all the points in this range
   LocalMap::Spec mapSpec;
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
   mapSpec.mActive = true;
-  mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*10;
-  mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*10;
+  // enabling these creates a box thats fixed in world frame
+  //mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*10;
+  //mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*10;
   mapSpec.mResolution = 0.01;
   mActiveMapId = mCollector->getMapManager()->createMap(mapSpec);
   // start running wrapper
@@ -30,16 +34,16 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Plane Detect | NPose",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Plane Detect | Plane"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Plane Normal"           ,3,1, 4451002,1, { 0.3, 0.1, 0.1} ));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Plane Detect | Null Pose",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Plane Detect | Tracked Plane"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Tracked Normal"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
   //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Plane X"           ,1,1, 4451002,1, { 0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451005,"Plane Detect | Transform",5,1) );
 
   current_utime_=0;
 }
 
-bool MajorPlane::getSweep(){
+bool MajorPlane::getSweep( Eigen::Vector3f bounds_center, Eigen::Vector3f bounds_size){
 
   // get submap we created earlier
   LocalMap::Ptr localMap = mCollector->getMapManager()->getMap(mActiveMapId);
@@ -53,18 +57,29 @@ bool MajorPlane::getSweep(){
   int current_utime = drc::Clock::instance()->getCurrentTime();
   //cout << ang_min << " min | " << ang_max << " max\n";
         
-  mCollector->getLatestSwath(ang_min, ang_max,
+  bool gotFirstSweep = mCollector->getLatestSwath(ang_min, ang_max,
                                         timeMin, timeMax); // these didnt work
-  if (timeMin == last_sweep_time_){
+  if (!gotFirstSweep){ // have not properly init'ed the collector - not a full sweep yet
+    // cout << "not prop init yet\n"; 
+    return false;
+  }
+  
+  if (timeMin == last_sweep_time_){ // Is the sweep the same as last time?
     // cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | repeated swath\n";
     return false; 
   }
   last_sweep_time_ = timeMin;
-
   cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | new process\n";
+
+  
   LocalMap::SpaceTimeBounds bounds;
   bounds.mTimeMin = timeMin;
   bounds.mTimeMax = timeMax;
+  // Also add constraints to that the points are around the robot:
+  // axis aligned box thats 6x6x6m
+//  bounds.mPlanes = Utils::planesFromBox(   Eigen::Vector3f(-3,-3,-3),
+//                                          Eigen::Vector3f(3,3,3));
+  bounds.mPlanes = Utils::planesFromBox( bounds_center - bounds_size, bounds_center + bounds_size );
 
   // get and publish point cloud corresponding to this time range
   // (for debugging)
@@ -81,6 +96,7 @@ bool MajorPlane::getSweep(){
     }
     bot_lcmgl_switch_buffer(lcmgl);  
   }
+  
   return true;
 }
 
@@ -102,13 +118,169 @@ Eigen::Isometry3d MajorPlane::determinePlanePose(pcl::ModelCoefficients::Ptr pla
 
 
 
-void MajorPlane::findPlane(){
-  if (cloud_->points.size() < 20000){
+
+// input: plane coeffs and a point on the new plane
+// output: true if the overlap, false otherwise
+bool matchPlaneToPrevious(pcl::ModelCoefficients::Ptr old_plane_coeffs, pcl::ModelCoefficients::Ptr new_plane_coeffs, 
+        Eigen::Vector4f new_centroid){
+  // If we have already found a plane, then compare it with the new one
+  double max_angle_diff = 10; // if the planes are within X degrees
+  double max_project_dist = 0.3; // max distance between point on plane and previous plane
+  
+  double top=new_plane_coeffs->values[0]*old_plane_coeffs->values[0] + new_plane_coeffs->values[1]*old_plane_coeffs->values[1] +
+          new_plane_coeffs->values[2]*old_plane_coeffs->values[2];
+  double angle=acos(top)* 180.0 / M_PI;
+  if (angle > 90)
+    angle = 180 -angle;
+  
+  if (angle > max_angle_diff){
+      cout << "[PLANE] the plane-to-plane angle is: " << angle << "\n";
+      cout << "PLANE NOT FOUND - INTER PLANE ANGLE IS LARGE\n"; 
+      return false;
+  }
+  
+  // Project centroid onto the main plane and see if distance is small.
+  // if it isnt they are on parallel but not the same plane eg two parallel walls
+  double top_d = old_plane_coeffs->values[0]*new_centroid(0) +
+        old_plane_coeffs->values[1]*new_centroid(1) +
+        old_plane_coeffs->values[2]*new_centroid(2) +
+        old_plane_coeffs->values[3];
+  double dist = pow(old_plane_coeffs->values[0],2) +
+  pow(old_plane_coeffs->values[1],2) + pow(old_plane_coeffs->values[2],2);
+  dist = fabs(top_d)/sqrt(dist);      
+  if (dist > max_project_dist){
+      cout << "[PLANE]  the centroid-to-plane dist is: " << dist << "\n";
+      cout << "PLANE NOT FOUND - DISTANCE BETWEEN PLANES IS LARGE\n"; 
+      return false;
+  }
+  
+  return true;
+}
+
+
+
+void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Eigen::Vector4f new_plane_centroid,
+                   pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_plane_hull ){
+  
+
+  Eigen::Isometry3d new_plane_pose = determinePlanePose(new_plane_coeffs, new_plane_centroid);
+  plane_pose_ = new_plane_pose;
+  plane_coeffs_ = new_plane_coeffs;
+  plane_pose_init_=true;  
+  
+  
+  // Visualise hull and normal:
+  if (verbose_lcm_ >=1){
+    Eigen::Isometry3d null_pose;
+    null_pose.setIdentity();
+    Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
+    pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
+    pc_vis_->ptcld_to_lcm_from_list(4451003, *new_plane_hull, current_utime_, current_utime_);          
+    
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    normals_cloud->points.push_back( new_plane_hull->points[0]);
+    pcl::PointXYZRGB pt;
+    pt.x= normals_cloud->points[0].x + 0.2*new_plane_coeffs->values[0];
+    pt.y= normals_cloud->points[0].y + 0.2*new_plane_coeffs->values[1];
+    pt.z= normals_cloud->points[0].z + 0.2*new_plane_coeffs->values[2];
+    pt.r =0;      pt.g =255;      pt.b =0;
+    normals_cloud->points.push_back( pt );
+    pc_vis_->ptcld_to_lcm_from_list(4451004, *normals_cloud, current_utime_, current_utime_);          
+  }  
+  
+  
+  cout  <<  "New Plane Coefficients: " << new_plane_coeffs->values[0]
+      << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
+  cout << "Centroid: " << new_plane_centroid(0) << " " << new_plane_centroid(1) << " " << new_plane_centroid(2) << "\n"; // last element held at zero
+
+  // Visualise a pose on the plane
+  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,new_plane_pose  );
+  pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
+    
+  
+}
+
+
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+
+void MajorPlane::matchToAllPlanes(){
+  int64_t tic = _timestamp_now(); 
+
+  
+  if (cloud_->points.size() < 5000){ //20000 originally
+    cout << "Cloud is too small to detect plane [" << cloud_->points.size() << "]\n";
+    return;
+  }
+  
+  // 2. Extract the major planes and send them to lcm:
+  int plane_fitter_id_ =1;
+  FilterPlanes filtp;
+  filtp.setInputCloud(cloud_);
+  filtp.setPoseIDs(plane_fitter_id_,current_utime_);
+  filtp.setLCM(lcm_->getUnderlyingLCM());
+  filtp.setDistanceThreshold(0.02); // simulated lidar
+  filtp.setStopProportion(0.050);  //was 0.1
+  filtp.setStopCloudSize(200);
+  vector<BasicPlane> plane_stack; 
+  filtp.filterPlanes(plane_stack);
+  std::cout << "[OUT] number of planes extracted: " << plane_stack.size() << "\n";
+  
+  GrowCloud grow;
+  grow.visualizePlanes(plane_stack, pc_vis_, 5000000 );
+  
+  if (1==0){ // visualize all the planes found
+    std::stringstream ss;
+    grow.printPlaneStackCoeffs(plane_stack, ss);
+    cout << ss.str();
+    
+    for (size_t i=0; i <plane_stack.size() ; i++){
+      cout << i << ": " << plane_stack[i].n_source_points << "\n";
+    }
+    for (size_t i=0; i <plane_stack.size() ; i++){
+      cout << i << ": " << plane_stack[i].centroid << " centroid\n";
+    }
+  }
+
+  // for each plane compare to old, if true  
+  int found_match=-1;
+  for (size_t i=0; i < plane_stack.size() ; i++){
+    pcl::ModelCoefficients::Ptr plane_stack_coeffs(new pcl::ModelCoefficients ( plane_stack[i].coeffs   ));
+    if (matchPlaneToPrevious(plane_coeffs_, plane_stack_coeffs , plane_stack[i].centroid)){
+      found_match=i;
+      cout << "[PLANE] Found a match at plane " << i << "\n";
+      break;   
+    }
+  }
+  
+  if (found_match == -1){
+    cout << "[PLANE] Didn't find a match in " << plane_stack.size() << " planes\n";
+    return;
+  }
+  
+  pcl::ModelCoefficients::Ptr new_plane_coeffs(new pcl::ModelCoefficients ( plane_stack[found_match].coeffs   ));
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB> (  plane_stack[found_match].cloud ) );
+  storeNewPlane( new_plane_coeffs, plane_stack[found_match].centroid , cloud_hull);
+
+  
+  cout << "[PLANE] Time to analyse planes: " << ((double)((_timestamp_now() - tic) / 1E6)) << "\n";
+}
+
+
+
+
+void MajorPlane::matchToLargestPlane(){
+  if (cloud_->points.size() < 5000){
     cout << "Cloud is too small to detect plane [" << cloud_->points.size() << "]\n";
     return;
   }    
   
-
+  
   pcl::ModelCoefficients::Ptr new_plane_coeffs(new pcl::ModelCoefficients ());
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 
@@ -119,7 +291,7 @@ void MajorPlane::findPlane(){
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.01); // was 0.01m
+  seg.setDistanceThreshold (0.02); // was 0.01m
   seg.setInputCloud (cloud_);
   seg.segment (*inliers, *new_plane_coeffs);
   if ( inliers->indices.size () == 0){
@@ -128,14 +300,14 @@ void MajorPlane::findPlane(){
   }
   
   if (1==0){
-    // i think these numbers are incorrect - hPR is illdefined
+    // i think these numbers are incorrect - HPR is illdefined
     double pitch = atan(new_plane_coeffs->values[0]/new_plane_coeffs->values[2]);
     double roll =- atan(new_plane_coeffs->values[1]/new_plane_coeffs->values[2]);
     double new_plane_coeffs_norm = sqrt(pow(new_plane_coeffs->values[0],2) +
         pow(new_plane_coeffs->values[1],2) + pow(new_plane_coeffs->values[2],2));
     double height = (new_plane_coeffs->values[2]*new_plane_coeffs->values[3]) / new_plane_coeffs_norm;
     
-    cout  <<  "New RANSAC Floor Coefficients: " << new_plane_coeffs->values[0]
+    cout  <<  "New Plane Coefficients: " << new_plane_coeffs->values[0]
       << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
     cout << "Pitch: " << pitch << " (" << (pitch*180/M_PI) << "d). positive nose down\n";
     cout << "Roll : " << roll << " (" << (roll*180/M_PI) << "d). positive right side down\n";
@@ -167,89 +339,29 @@ void MajorPlane::findPlane(){
         
   Eigen::Vector4f centroid;
   compute3DCentroid (*cloud_projected,centroid);
-        
-  if (plane_pose_init_){
-    // If we have already found a plane, then compare it with the new one
-    double max_angle_diff = 10; // if the planes are within X degrees
-    double max_project_dist = 0.7; // max distance between point on plane and previous plane
-    
-    double top=new_plane_coeffs->values[0]*plane_coeffs_->values[0] + new_plane_coeffs->values[1]*plane_coeffs_->values[1] +
-            new_plane_coeffs->values[2]*plane_coeffs_->values[2];
-    double angle=acos(top)* 180.0 / M_PI;
-    if (angle > 90)
-      angle = 180 -angle;
-    
-    cout << "the plane-to-plane angle is: " << angle << "\n";
-    if (angle > max_angle_diff){
-       cout << "PLANE NOT FOUND - INTER PLANE ANGLE IS LARGE\n"; 
-       return;
-    }
-    
-    // Project centroid onto the main plane and see if distance is small.
-    // if it isnt they are on parallel but not the same plane eg two parallel walls
-    double top_d = plane_coeffs_->values[0]*centroid(0) +
-          plane_coeffs_->values[1]*centroid(1) +
-          plane_coeffs_->values[2]*centroid(2) +
-          plane_coeffs_->values[3];
-    double dist = pow(plane_coeffs_->values[0],2) +
-    pow(plane_coeffs_->values[1],2) + pow(plane_coeffs_->values[2],2);
-    dist = fabs(top_d)/sqrt(dist);      
-    cout << "the centroid-to-plane dist is: " << dist << "\n";
-    if (dist > max_project_dist){
-       cout << "PLANE NOT FOUND - DISTANCE BETWEEN PLANES IS LARGE\n"; 
-       return;
-    }
+
+  cout  <<  "Plane Coefficients: " << new_plane_coeffs->values[0]
+    << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
+  
+  
+  if (!matchPlaneToPrevious(plane_coeffs_,  new_plane_coeffs, centroid)){
+    return;
   }
   
-  
-  // Visualise hull and normal:
-  if (verbose_lcm_ >=1){
-    Eigen::Isometry3d null_pose;
-    null_pose.setIdentity();
-    Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
-    pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
-    pc_vis_->ptcld_to_lcm_from_list(4451003, *cloud_hull, current_utime_, current_utime_);          
-    
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    normals_cloud->points.push_back( cloud_hull->points[0]);
-    pcl::PointXYZRGB pt;
-    pt.x= normals_cloud->points[0].x + new_plane_coeffs->values[0];
-    pt.y= normals_cloud->points[0].y + new_plane_coeffs->values[1];
-    pt.z= normals_cloud->points[0].z + new_plane_coeffs->values[2];
-    pt.r =0;      pt.g =255;      pt.b =0;
-    normals_cloud->points.push_back( pt );
-    int plane_id2 = 11212 ;
-    ptcld_cfg pcfg2 = ptcld_cfg(plane_id2,   "Normal"    ,3,1, 4451002,1,{0.3,.1,0.1} );
-    pc_vis_->ptcld_to_lcm_from_list(4451004, *normals_cloud, current_utime_, current_utime_);          
-  }  
-  
-  Eigen::Isometry3d new_plane_pose = determinePlanePose(new_plane_coeffs, centroid);
-  
-  cout  <<  "New RANSAC Floor Coefficients: " << new_plane_coeffs->values[0]
-      << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
-  cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " << centroid(2) << "\n"; // last element held at zero
-  
-  plane_pose_ = new_plane_pose;
-  // Visualise the points transformed by the new plane
-  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,plane_pose_  );
-  pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
-  
-  Eigen::Isometry3f plane_pose_f;
-  plane_pose_f = isometryDoubleToFloat(plane_pose_);
-  pcl::transformPointCloud (*cloud_, *cloud_, plane_pose_f.inverse());
-  //pc_vis_->ptcld_to_lcm_from_list(4451004, *cloud_, current_utime_, current_utime_);          
-
-  
-  plane_coeffs_ = new_plane_coeffs;
-  plane_pose_init_=true;
+  storeNewPlane( new_plane_coeffs, centroid , cloud_hull);
 }
 
 
-bool MajorPlane::getPlane( Eigen::Isometry3d &plane_pose , int64_t current_utime  ){
+bool MajorPlane::trackPlane( Eigen::Isometry3d &plane_pose , int64_t current_utime  ){
   current_utime_ = current_utime;
-  if (getSweep()){
-    findPlane();
+  
+  if (plane_pose_init_){
+    //matchToLargestPlane(); 
+    matchToAllPlanes();
+  }else{
+    cout << "[Plane] Init Plane hasn't been set, refusing to track it\n";
   }
+  
   
   plane_pose = plane_pose_;
   return plane_pose_init_;

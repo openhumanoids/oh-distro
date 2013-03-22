@@ -13,6 +13,7 @@
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImageView.hpp>
 #include <maps/PointCloudView.hpp>
+#include <maps/Utils.hpp>
 
 #include <drc_utils/Clock.hpp>
 
@@ -39,8 +40,16 @@ class MajorPlane
 
     pointcloud_vis* pc_vis_;
 
+    // Get a sweep of lidar
+    // True if we have a new sweep, different from before
+    bool getSweep( Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0),  Eigen::Vector3f bounds_size = Eigen::Vector3f(1e10, 1e10, 1e10) );
+    
+    
     // Determine the current estimate of the plane
-    bool getPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
+    bool trackPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
+
+    
+    
     
     // set the plane to be tracked:
     void setPlane(std::vector<float> plane_coeffs, Eigen::Vector4f plane_centroid ){
@@ -52,6 +61,11 @@ class MajorPlane
       cout << "[PLANE] Have initialized the plane tracker\n";
     };
 
+    
+    
+    void storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Eigen::Vector4f new_plane_centroid,
+                   pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_plane_hull );
+    
     // Given a plane coeff and a centroid, determine a pose on the plane at the centroid:
     Eigen::Isometry3d determinePlanePose(pcl::ModelCoefficients::Ptr plane_coeffs,
           Eigen::Vector4f centroid);
@@ -59,9 +73,13 @@ class MajorPlane
   private:
     int verbose_lcm_; // 0 say nothing, 1 say important, 2 say lots
 
-    // Plane Detection:
-    bool getSweep();
-    void findPlane();
+    // Determine if the old plane matches the largest plane in the current sweep:
+    void matchToLargestPlane();
+    
+    // Determine if the old plane matches any of the planes in the current sweep:
+    // more expensive than matchToLargestPlane
+    void matchToAllPlanes();
+    
     int64_t last_sweep_time_;
     // Point Cloud of most recent sweep:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_;    

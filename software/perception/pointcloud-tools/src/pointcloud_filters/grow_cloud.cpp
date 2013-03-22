@@ -4,6 +4,8 @@ using namespace std;
 using namespace pcl;
 using namespace pcl::octree;
 
+
+
 GrowCloud::GrowCloud () {
   verbose_lcm =0;
   verbose_text =0;
@@ -85,7 +87,7 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
       //cout << "to continue enter int ";
       //cin >> step;
     }else{
-      if( outcloud->points.size() > 10){ // 10 points minimum
+      if( outcloud->points.size() > min_cloud_size_){ // minimum size of the cloud
 /*	ptcoll_cfg.id = 4+n_found_clouds;
 	ptcoll_cfg.reset=false;
 	ptcoll_cfg.name ="Found Cloud";
@@ -100,7 +102,7 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
 	//one_plane.utime
 	//one_plane.major
 	//one_plane.minor
-	//compute3DCentroid (*cloud_projected,one_plane.centroid);
+	compute3DCentroid (*outcloud,one_plane.centroid);
 	one_plane.cloud = (*outcloud);
 	outstack.push_back(one_plane);
 	
@@ -127,6 +129,7 @@ void GrowCloud::doGrowCloud (vector<BasicPlane> &outstack) {
 }
   
   
+  
 void GrowCloud::printPlaneStackCoeffs (vector<BasicPlane> &planeStack,  std::stringstream &ss) {
   for (size_t i=0; i < planeStack.size() ;  i++){
     BasicPlane p = planeStack[i];
@@ -149,4 +152,49 @@ void GrowCloud::printPlaneStackHull (vector<BasicPlane> &planeStack,  std::strin
       }
     }
   }  
+}
+
+
+
+
+void GrowCloud::visualizePlanes(vector<BasicPlane> &plane_stack,pointcloud_vis* pc_vis, int null_id  ){
+  obj_cfg ocfg = obj_cfg(null_id,"Plane Detect | Null Pose",5,0);
+  Isometry3dTime null_poseT_ = Isometry3dTime(0, Eigen::Isometry3d::Identity() );
+  pc_vis->pose_to_lcm(ocfg, null_poseT_);
+
+  float colors_a[] ={0.3,0.8,0.1};
+  std::vector<float> colors_a_v;
+  colors_a_v.assign(colors_a,colors_a+4*sizeof(float));
+  float colors_b[] ={0.3,0.8,0.1};
+  std::vector<float> colors_b_v;
+  colors_b_v.assign(colors_b,colors_b+4*sizeof(float));
+  
+  std::vector < pcl::PointCloud<pcl::PointXYZRGB> > clouds;
+  for (size_t i = 0; i< plane_stack.size() ; i++){
+    clouds.push_back(  plane_stack[i].cloud  );
+  } 
+  ptcld_cfg pcfg = ptcld_cfg(null_id+1,    "Plane Detect | Extracted Planes"  ,3,1, null_id,1,colors_a_v );
+  pc_vis->ptcld_collection_to_lcm(pcfg, clouds, null_poseT_.utime, null_poseT_.utime );
+
+  std::vector < pcl::PointCloud<pcl::PointXYZRGB> > normal_clouds;
+  for (size_t i=0;i<plane_stack.size();i++){
+    BasicPlane plane = plane_stack[i];
+    if (plane.cloud.points.size() ==0 ){
+      cout <<"ERROR: CONVEX HULL HAS NO POINTS! - NEED TO RESOLVE THIS\n"; 
+      continue;
+    }
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr normal_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    normal_cloud->points.push_back( plane.cloud.points[0]);
+    pcl::PointXYZRGB pt;
+    pt.x= plane.cloud.points[0].x + 0.2*plane.coeffs.values[0];
+    pt.y= plane.cloud.points[0].y + 0.2*plane.coeffs.values[1];
+    pt.z= plane.cloud.points[0].z + 0.2*plane.coeffs.values[2];
+    pt.r =0;      pt.g =255;      pt.b =0;
+    normal_cloud->points.push_back( pt );
+    normal_clouds.push_back( *normal_cloud );
+  } 
+  ptcld_cfg pcfg2 = ptcld_cfg(null_id +2,    "Plane Detect | Extracted Normals"    ,3,1, null_id,1, colors_b_v  );
+  pc_vis->ptcld_collection_to_lcm(pcfg2, normal_clouds, null_poseT_.utime, null_poseT_.utime );        
+  
+  
 }

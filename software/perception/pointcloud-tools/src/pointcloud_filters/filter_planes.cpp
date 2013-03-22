@@ -39,6 +39,7 @@ FilterPlanes::FilterPlanes () {
   // works well with kinect data
   distance_threshold_=0.045; 
   stop_proportion_=0.1; //
+  stop_cloud_size_ = 100;
   
 }
 
@@ -96,7 +97,8 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (4000);
+  seg.setMaxIterations (100); // was 4000
+  
   seg.setDistanceThreshold (distance_threshold_); // 0.01 for table data set
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -197,7 +199,7 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
     }
     
  
-    if (inliers->indices.size () < 100) // stop when the plane is only a few points
+    if (inliers->indices.size () <  stop_cloud_size_) // stop when the plane is only a few points
     {
       //std::cerr << "No remaining planes in this set" << std::endl;
       break;
@@ -239,6 +241,7 @@ bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
     
     GrowCloud grow;
     grow.setInputCloud(cloud_p);
+    grow.setMinCloudSize(stop_cloud_size_); // useing stop cloud size here too
     grow.setLCM(publish_lcm);
     grow.doGrowCloud(*grown_stack_ptr);
     

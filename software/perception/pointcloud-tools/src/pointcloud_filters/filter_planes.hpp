@@ -61,6 +61,11 @@ class FilterPlanes {
     virtual inline void setStopProportion(double stop_proportion_in){
       stop_proportion_ = stop_proportion_in;
     }
+    
+    virtual inline void setStopCloudSize(int stop_cloud_size_in){
+      stop_cloud_size_ = stop_cloud_size_in;
+    }
+    
 
     // Filter out the major planes in a kinect PointCloud
     // send these planes to the lcm-viewer coloured by their mean colour
@@ -90,6 +95,8 @@ class FilterPlanes {
     double distance_threshold_;
     // fraction at which we stop: [0,1]
     double stop_proportion_;
+    // number of points at which we should stop:
+    int stop_cloud_size_;
 };
 
 

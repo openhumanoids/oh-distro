@@ -26,7 +26,8 @@
 #include "pcl/PolygonMesh.h"
 #include "pcl/octree/octree.h"
 
-//#include <kmcl/kmcl_utils.hpp>
+
+#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
 using namespace std;
 typedef pcl::PointXYZRGB PointT;
@@ -83,11 +84,16 @@ class GrowCloud {
     // @output: individual clouds    
     void doGrowCloud (vector<BasicPlane> &outstack);
     
+    virtual inline void setMinCloudSize(int min_cloud_size_in){
+      min_cloud_size_ = min_cloud_size_in;
+    }    
     
     // function to return a plane stack's coeffs in string
     void printPlaneStackCoeffs (vector<BasicPlane> &planeStack,  std::stringstream &ss);
     // ditto for the bounding points 
     void printPlaneStackHull (vector<BasicPlane> &planeStack,  std::stringstream &ss);
+    
+    void visualizePlanes(vector<BasicPlane> &plane_stack,pointcloud_vis* pc_vis_ , int null_id );
     
   protected:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr incloud;    
@@ -100,6 +106,9 @@ class GrowCloud {
     int verbose_text;
     int verbose_lcm;
     lcm_t *publish_lcm;     
+    
+    // settings:
+    int min_cloud_size_;
 };
 
 #endif  //#ifndef _GROW_CLOUD_HPP_
