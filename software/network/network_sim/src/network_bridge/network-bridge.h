@@ -33,25 +33,37 @@ struct Resend{
   int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission ... used to determine outgoing bandwidth [added by mfallon Feb 2013]
 };
 
+
+struct CommandLineConfig
+{
+    std::string task;
+    bool base_only;
+    bool bot_only;
+    std::string config_file;
+    bool enable_gui;
+    std::string role;
+    bool verbose;
+};
+    
+
 ///////////////////////////////////////////////////////////////
 class KMCLApp{
   public:
     KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
-            std::string task, bool base_only, bool bot_only,
-            std::string config_file);
+            const CommandLineConfig& cl_cfg);
     
     ~KMCLApp(){
     }
     
     boost::shared_ptr<lcm::LCM> robot_lcm;
     boost::shared_ptr<lcm::LCM> base_lcm;
-    //lcm_t* robot_lcm;
+    const CommandLineConfig& cl_cfg;
+     //lcm_t* robot_lcm;
     //lcm_t* base_lcm;
     
     void utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                    const  drc::utime_t* msg); 
     
-    bool verbose;
     BotParam * bot_param;
     
     std::string robot2base_subscription;
@@ -62,10 +74,7 @@ class KMCLApp{
     // Size in ??? of the culumative bandwidth this period:
     int bw_cumsum_base2robot;
     int bw_cumsum_robot2base;
-
-    bool bot_only;
-    bool base_only;
-
+    
     void addResend( Resend resent_in ){  resendlist_.push_back(resent_in);    }
     bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes);    
 
@@ -90,7 +99,6 @@ class KMCLApp{
     static const std::string B2R_CHANNEL;
     static const std::string R2B_CHANNEL;
   private:
-    std::string task;
     std::vector<Resend> resendlist_;    
     
     int64_t current_utime;   

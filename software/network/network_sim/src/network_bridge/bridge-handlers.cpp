@@ -12,7 +12,7 @@ using namespace std;
 void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
 {
   KMCLApp* app = (KMCLApp*) user_data;
-  if (app->verbose)
+  if (app->cl_cfg.verbose)
         printf ("%.3f Channel %-20s size %d\n", rbuf->recv_utime / 1000000.0,
                 channel, rbuf->data_size);
         
@@ -44,12 +44,12 @@ void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *use
     if (robot2base){
       app->bw_cumsum_robot2base += rbuf->data_size;
       lcm_publish (app->base_lcm->getUnderlyingLCM(), channel, rbuf->data, rbuf->data_size); 
-      if (app->verbose)
+      if (app->cl_cfg.verbose)
         cout << "R2B " <<app->get_current_utime()<< "| "<<channel <<"\n";
     }else{
       app->bw_cumsum_base2robot += rbuf->data_size;
       lcm_publish (app->robot_lcm->getUnderlyingLCM(), channel, rbuf->data, rbuf->data_size); 
-      if (app->verbose)
+      if (app->cl_cfg.verbose)
         cout << "B2R " <<app->get_current_utime()<< "| "<<channel <<"\n";
     }
   }        

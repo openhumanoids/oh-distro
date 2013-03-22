@@ -5,6 +5,7 @@
 #include <boost/bimap.hpp>
 #include <boost/circular_buffer.hpp>
 
+#include "goby/common/logger.h"
 #include "goby/acomms/modemdriver/udp_driver.h"
 #include "goby/acomms/connect.h"
 #include "goby/acomms/bind.h"
@@ -18,12 +19,13 @@
 using namespace boost; 
 using namespace std;
 
+using goby::glog;
+using namespace goby::common::logger;
+
 enum { RECEIVE_MODULUS = 16 };    
 enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };
 
 enum Node { BASE = 1, ROBOT = 2};
-
-
 
 struct MessageQueue
 {
@@ -69,8 +71,8 @@ unsigned int floor_multiple_sixteen(unsigned int v)
 
 void check_rc(int rc)
 {
-  if(rc == -1)
-    std::cout << "Error: previous operation failed!" << std::endl;
+    if(rc == -1)
+        glog.is(VERBOSE) && glog << "Error: previous operation failed!" << std::endl;
 }
 
 namespace drc
@@ -128,11 +130,47 @@ private:
     
     std::priority_queue<drc::ShaperPacket> send_queue_;
 
-    // maps channel id to (map of message_number to (map of fragment number to fragment))
-    std::map<int, std::map<int, std::map<int, drc::ShaperPacket> > > receive_queue_;
+    class ReceiveMessageParts
+    {
+    public:
+        ReceiveMessageParts()
+            : decoder_done_(false)
+            {  }
+        
+        void add_fragment(const drc::ShaperPacket& fragment);
+        bool decoder_done() { return decoder_done_; }
+        void get_decoded(std::vector<unsigned char>* buffer)
+            {
+                decoder_->getObject(&(*buffer)[0]);
+            }
 
-    double fec_;
+        int expected()
+            {
+                if(fragments_.size())
+                    return ceil(fragments_.begin()->second.message_size()*fec_ /
+                                fragments_.begin()->second.data().size());
+                else
+                    return -1;
+            }
+        
+        
+        std::map<int, drc::ShaperPacket>::size_type size() { return fragments_.size(); }
+        
+        
+      private:
+        bool decoder_done_;
+        boost::shared_ptr<ldpc_dec_wrapper> decoder_;
+        std::map<int, drc::ShaperPacket> fragments_;
+    };
+    
+    // maps channel id to (map of message_number to MessageParts)
+    std::map<int, std::map<int,  ReceiveMessageParts> > receive_queue_;    
+    
+    static double fec_;
 };
+
+double DRCShaper::fec_ = 1.5; // TODO: make configurable or auto-adapt
+
 
 void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
 {
@@ -145,20 +183,19 @@ void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void 
 //
 void robot2base(KMCLApp& app)
 {
-    if(app.base_only == app.bot_only)
+    if(app.cl_cfg.base_only == app.cl_cfg.bot_only)
         throw(std::runtime_error("Must choose only one of base only (-b) or robot only (-r) when running drc_network_shaper"));
     
-    if(!app.base_only)
+    if(!app.cl_cfg.base_only)
     {
         DRCShaper robot_shaper(app, ROBOT);
         robot_shaper.run();
     }
 }
 
-void base2robot(KMCLApp& app) { 
-    sleep(1); // ... not necessary just for clarity
-
-    if(!app.bot_only)
+void base2robot(KMCLApp& app)
+{
+    if(!app.cl_cfg.bot_only)
     {
         DRCShaper base_shaper(app, BASE);
         base_shaper.run();
@@ -175,11 +212,20 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       partner_(node == BASE ? ROBOT : BASE),
       lcm_(node == BASE ? app.base_lcm : app.robot_lcm),
       last_send_type_(0),
-      largest_id_(0),
-      fec_(1.5) // TODO: make configurable or auto-adapt
+      largest_id_(0)
 {
     assert(floor_multiple_sixteen(1025) == 1024);
+    
+    glog.set_name("drc-network-shaper");
 
+
+    if(app.cl_cfg.verbose)
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+    else
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
+    
+    if(app.cl_cfg.enable_gui)
+        goby::glog.enable_gui();
 
     
     const std::vector<Resend>& resendlist = app.resendlist();
@@ -189,7 +235,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     {
         if(!channel_id_.left.count(resendlist[i].channel))
         {
-            std::cout << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
+            glog.is(VERBOSE) && glog << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
             channel_id_.insert(boost::bimap<std::string, int>::value_type(resendlist[i].channel, current_id));
             ++current_id;
         }
@@ -202,7 +248,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     lcm_subscribe(lcm_->getUnderlyingLCM(),
                   node_ == BASE ?  app.base2robot_subscription.c_str() : app.robot2base_subscription.c_str(), lcm_outgoing_handler, this);
 
-    cout << "subscribed" << std::endl;
+    glog.is(VERBOSE) && glog << "subscribed" << std::endl;
     udp_driver_.reset(new goby::acomms::UDPDriver(&udp_service_));
 
     int max_frame_size = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
@@ -235,7 +281,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         free(robot_host);
         free(base_host);
     }
-        
     {
         int target_rate_bps = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
 
@@ -281,9 +326,9 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         }    
 
         
-        cout << "queueing: " << app_.get_current_utime() << " | "
+        glog.is(VERBOSE) && glog << "queueing: " << app_.get_current_utime() << " | "
              << channel  << " | " << "qsize: " << queues_.find(channel)->second.messages.size() << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
-        // cout << app_.print_resend_list(); // print info sent in BW Stats msg
+        // glog.is(VERBOSE) && glog << app_.print_resend_list(); // print info sent in BW Stats msg
         app_.send_resend_list();
         app_.bw_cumsum_robot2base += rbuf->data_size;
 
@@ -304,8 +349,8 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             if(last_send_type_ > largest_id_)
                 last_send_type_ = 0;
             
-	    //            std::cout << "Checking channel id: " << last_send_type_ << std::endl;          
-            //            std::cout << "Name: " << channel_id_.right.at(last_send_type_) << std::endl;
+	    //            glog.is(VERBOSE) && glog << "Checking channel id: " << last_send_type_ << std::endl;          
+            //            glog.is(VERBOSE) && glog << "Name: " << channel_id_.right.at(last_send_type_) << std::endl;
             
             std::map<std::string, MessageQueue >::iterator it =
                 queues_.find(channel_id_.right.at(last_send_type_));
@@ -342,7 +387,7 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
                 {                
 		    payload_size = floor_multiple_sixteen(msg->max_frame_bytes()-overhead);
                     while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
-		      payload_size = floor_multiple_sixteen(payload_size-1);
+                        payload_size = floor_multiple_sixteen(payload_size-1);
 
                     if(payload_size == 0)
                         throw(std::runtime_error("udp_frame_size_bytes is too small for LDPC error correction, use a larger value"));
@@ -366,14 +411,14 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 		    encoded_fragments.at(0).set_is_last_fragment(true);
 
 		    for(std::vector<drc::ShaperPacket>::const_reverse_iterator it = encoded_fragments.rbegin(),
-			  end = encoded_fragments.rend(); it != end; ++it)
-		      {
-			cout << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
+                            end = encoded_fragments.rend(); it != end; ++it)
+                    {
+			glog.is(VERBOSE) && glog << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
 			send_queue_.push(*it);
-		      }
+                    }
                 }
 
-		cout << "dequeueing: " << app_.get_current_utime() << " | "
+		glog.is(VERBOSE) && glog << "dequeueing: " << app_.get_current_utime() << " | "
 		     << it->second.channel << " msg #" << it->second.message_count << " | " << "qsize: " << queues_.find(it->second.channel)->second.messages.size() << " | " << qmsg.size() << " bytes *" << xor_cs(qmsg) << std::endl;
 
 		it->second.messages.pop_front();
@@ -390,13 +435,13 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     msg->set_ack_requested(false);
     
     send_queue_.top().SerializeToString(msg->add_frame());
-    //std::cout << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
-    // std::cout << "Data size: " << send_queue_.top().data().size() << std::endl;
-    // std::cout << "Encoded size: " << msg->frame(0).size() << std::endl;
+    //glog.is(VERBOSE) && glog << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
+    // glog.is(VERBOSE) && glog << "Data size: " << send_queue_.top().data().size() << std::endl;
+    // glog.is(VERBOSE) && glog << "Encoded size: " << msg->frame(0).size() << std::endl;
     
     send_queue_.pop();
 
-//    std::cout << "Data request msg (with data): " << msg->DebugString() << std::endl;
+//    glog.is(VERBOSE) && glog << "Data request msg (with data): " << msg->DebugString() << std::endl;
 }
 
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
@@ -404,105 +449,118 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     drc::ShaperPacket packet;
     packet.ParseFromString(msg.frame(0));
 
-    cout << "received: " << app_.get_current_utime() << " | "
+    glog.is(VERBOSE) && glog << "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
-    
-    receive_queue_[packet.channel()][packet.message_number()][packet.fragment()] = packet;
-    if(packet.is_last_fragment())
+
+    if(packet.is_last_fragment() && packet.fragment() == 0)
     {
-        if(packet.fragment() == 0)
-        {
-            cout << "publishing: " << app_.get_current_utime() << " | "
-                 << channel_id_.right.at(packet.channel()) << " #" << packet.message_number() << " | " << packet.data().size() << " bytes" << std::endl;
-	    std::vector<unsigned char> buffer(packet.data().size());
-	    for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
-	      buffer[i] = packet.data()[i];
+        glog.is(VERBOSE) && glog << "publishing: " << app_.get_current_utime() << " | "
+                                 << channel_id_.right.at(packet.channel()) << " #" << packet.message_number() << " | " << packet.data().size() << " bytes" << std::endl;
+        std::vector<unsigned char> buffer(packet.data().size());
+        for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
+            buffer[i] = packet.data()[i];
 	    
-	    check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
-				 &buffer[0], packet.data().size()));
-
-	    receive_queue_[packet.channel()][packet.message_number()].clear();
-        }
-        else
-        {
-            // try to reconstruct
-            std::cout << "Trying to reconstruct message with last fragment: " << DebugStringNoData(packet) << std::endl;
-	    
-	    //            std::cout << "Checking " << RECEIVE_MODULUS/2 << " assumed oldest message numbers" << std::endl;
-            
-            std::map<int, std::map<int, drc::ShaperPacket> >& this_queue = receive_queue_[packet.channel()];
-
-            int begin = packet.message_number()-3*RECEIVE_MODULUS/4;
-            receive_mod(begin);
-            int end = packet.message_number()-RECEIVE_MODULUS/4;
-            receive_mod(end);
-            
-            for(int i = begin; i != end; )
-            {
-	                      std::cout << "Check #" << i << ": ";
-
-                std::map<int, std::map<int, drc::ShaperPacket> >::iterator it = this_queue.find(i);
-                if(it == this_queue.end() || it->second.empty())
-		  {
-		    	    std::cout << "Ok, packet has been processed." << std::endl;
-		  }
-		    else
-                {
-                    try_decode(it->second);
-                    it->second.clear();
-                }
-                
-                ++i;
-                receive_mod(i);
-            }
-
-            std::map<int, drc::ShaperPacket>& received_frags = this_queue[packet.message_number()];
-            try_decode(received_frags);            
-        }
-        
+        check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(),
+                             &buffer[0], packet.data().size()));
     }
-}
-
-
-void DRCShaper::try_decode(std::map<int, drc::ShaperPacket>& received_frags)
-{
-    const drc::ShaperPacket& front = received_frags.begin()->second;
-    ldpc_dec_wrapper decoder(front.message_size(), front.data().size(), fec_);
-    
-    for(std::map<int, drc::ShaperPacket>::iterator it = received_frags.begin(),
-            end = received_frags.end(); it != end; ++it)
+    else
     {
-        int dec_done = decoder.processPacket(reinterpret_cast<uint8_t*>(&it->second.mutable_data()->at(0)), it->second.fragment());
-        if (dec_done != 0)
+        std::map<int, ReceiveMessageParts>& this_queue = receive_queue_[packet.channel()];
+        // do cleanup on oldest 1/2 messages
+        int begin = packet.message_number()-3*RECEIVE_MODULUS/4;
+        receive_mod(begin);
+        int end = packet.message_number()-RECEIVE_MODULUS/4;
+        receive_mod(end);
+            
+        for(int i = begin; i != end; )
         {
-            if (dec_done == 1)
+            //glog.is(VERBOSE) && glog << "Cleanup on Message #" << i << ": " << std::endl;
+
+            std::map<int, ReceiveMessageParts>::iterator it = this_queue.find(i);
+            
+            if(it == this_queue.end() || it->second.size() == 0)
             {
-                std::vector<unsigned char> buffer(front.message_size());
-                decoder.getObject(&buffer[0]);
-
-
-                cout << "publishing: " << app_.get_current_utime() << " | "
-                     << channel_id_.right.at(front.channel()) << " #" << front.message_number() << " | " << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
-                
-                check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(front.channel()).c_str(),
-				     &buffer[0], buffer.size()));
-                received_frags.clear();
-                return;
+                // glog.is(VERBOSE) && glog << "Ok, packet has been processed." << std::endl;
             }
             else
             {
-                std::cout << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
-                received_frags.clear();
-                return;
+                glog.is(VERBOSE) && glog << "Cleanup on Message #" << i << ": " << std::endl;
+                int expected = it->second.expected();
+                int received = it->second.size();
+                if(it->second.decoder_done())
+                {                
+                    glog.is(VERBOSE) &&
+                        glog << "Received enough to decode message : received " << received
+                             << " of " << expected << std::endl;
+                }
+                else
+                {
+                    glog.is(WARN) &&
+                        glog << "Not enough packets received to decode message: received " << received
+                             << " of " << expected << std::endl;                    
+                }
+                this_queue.erase(it);
+            }
+
+            ++i;
+            receive_mod(i);
+        }
+
+        ReceiveMessageParts& message_parts = this_queue[packet.message_number()];
+        if(message_parts.decoder_done())
+        {
+            // already done and published, just add for statistics
+            message_parts.add_fragment(packet);            
+        }
+        else
+        {
+            message_parts.add_fragment(packet);
+            if(message_parts.decoder_done())
+            {
+                std::vector<unsigned char> buffer(packet.message_size());
+                message_parts.get_decoded(&buffer);
+                glog.is(VERBOSE) && glog << "publishing: " << app_.get_current_utime()
+                                         << " | " << channel_id_.right.at(packet.channel())
+                                         << " #" << packet.message_number() << " | "
+                                         << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
+                
+                check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.channel()).c_str(), 
+                                     &buffer[0], buffer.size()));
             }
         }
-    }
-    
-    int expected = ceil(front.message_size()*fec_ / front.data().size());
-    int received = received_frags.size();
-    std::cout << "Not enough packets received to decode: received " << received << " of " << expected << std::endl;    
+    }    
 }
 
+void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& message)
+{
+    fragments_[message.fragment()] = message;
+    
+    if(!decoder_)
+    {
+        decoder_.reset(new ldpc_dec_wrapper(message.message_size(),
+                                            message.data().size(),
+                                            DRCShaper::fec_));
+    }
+
+    if(decoder_done_)
+        return;
+    
+    int dec_done = decoder_->processPacket(
+        reinterpret_cast<uint8_t*>(&fragments_[message.fragment()].mutable_data()->at(0)),
+        message.fragment());
+
+    switch(dec_done)
+    {
+        case 0: return;
+        case 1:
+            decoder_done_ = true;
+            glog.is(VERBOSE) && glog << "Decoder done!" << std::endl;
+            return;
+        default:
+            glog.is(VERBOSE) && glog << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
+            return;
+    }    
+}
 
 void DRCShaper::run()
 {
