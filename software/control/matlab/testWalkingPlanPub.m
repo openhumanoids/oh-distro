@@ -87,7 +87,7 @@ qtraj = PPTrajectory(spline(ts,q));
 
 walking_lis = WalkingPlanListener('COMMITTED_WALKING_PLAN');
 walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-walking_pub.publish(struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj),0);
+walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj));
 clear V htraj hddot qtraj;
 
 while true
