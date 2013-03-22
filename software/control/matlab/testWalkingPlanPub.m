@@ -1,11 +1,11 @@
 function testWalkingPlanPub
 
-if (nargin<1) num_steps = 2; end
+if (nargin<1) num_steps = 10; end
 if (nargin<2) step_length = 0.6; end
 if (nargin<3) step_time = 0.8; end
 
 options.floating = true;
-options.dt = 0.005;
+options.dt = 0.003;
 r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 v = r.constructVisualizer;
 v.display_dt = 0.05;
@@ -101,24 +101,17 @@ htraj = walking_data.htraj;
 hddot = walking_data.hddtraj;
 S = walking_data.Straj;
 
-zmpdata = SharedDataHandle(struct('S',S,'h',htraj,'hddot',hddot,'ti_flag',false));
+zmpdata = SharedDataHandle(struct('S',S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
 options.slack_limit = 10.0;
-options.w = 1e-1;
+options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
-% desired configuration trajectory
-qdes = setOutputFrame(qtraj,AtlasCoordinates(r));
-pd = SimplePDController(r);
-ins(1).system = 2;
-ins(1).input = 2;
-outs(1).system = 2;
-outs(1).output = 1;
-pd = mimoCascade(qdes,pd,[],ins,outs);
-clear ins outs;
+% pd controller to follow desired traj
+pd = SimplePDController(r,zmpdata);
 
 % feedback QP controller with atlas
 ins(1).system = 1;

@@ -92,6 +92,7 @@ for i=1:length(ts)
   htraj = [htraj com(3)];
   v.draw(t,q(:,i));
 end
+qtraj = PPTrajectory(spline(ts,q));
 htraj = PPTrajectory(spline(ts,htraj));
 
 % publish robot plan
@@ -119,7 +120,7 @@ limp = LinearInvertedPendulum(htraj);
 [~,V] = ZMPtracker(limp,zmptraj);
 
 hddot = fnder(htraj,2);
-zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'ti_flag',false));
+zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
@@ -128,15 +129,8 @@ options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
-% desired configuration trajectory
-qdes = setOutputFrame(PPTrajectory(spline(ts,q)),AtlasCoordinates(r));
-pd = SimplePDController(r);
-ins(1).system = 2;
-ins(1).input = 2;
-outs(1).system = 2;
-outs(1).output = 1;
-pd = mimoCascade(qdes,pd,[],ins,outs);
-clear ins outs;
+% pd controller to follow desired traj
+pd = SimplePDController(r,zmpdata);
 
 % walking foot support trajectory
 ins(1).system = 2;

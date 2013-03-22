@@ -52,8 +52,8 @@ classdef QPController < MIMODrakeSystem
       % NOTE: this is highly atlas specific right now
       jn = getJointNames(r);
       torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
-                    ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
-                    ~cellfun(@isempty,strfind(jn(2:end),'back'));
+                ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
+                ~cellfun(@isempty,strfind(jn(2:end),'back'));
       B = getB(r);
       obj.free_dof = find(torso);
       obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
