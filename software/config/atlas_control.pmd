@@ -4,7 +4,7 @@ group "core" {
         host = "localhost";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -u ../models/mit_gazebo_models/mit_robot/model.urdf";
         host = "localhost";
     }
     cmd "pub" {

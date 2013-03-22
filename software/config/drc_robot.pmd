@@ -23,7 +23,7 @@ group "1.robot" {
         host = "paladin-02";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "paladin-02";
     }
     cmd "estpub" {
@@ -42,10 +42,6 @@ group "1.robot" {
         exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
         host = "paladin-02";
     }
-    cmd "sheriff_obs" {
-        exec = "bot-procman-sheriff -o";
-        host = "paladin-02";
-    }
 }
 
 group "2.gazebo" {
@@ -62,11 +58,31 @@ group "2.gazebo" {
         host = "paladin-02";
     }
     cmd "qual_manip" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.0/worlds/qual_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_2.world";
         host = "paladin-02";
     }
     cmd "qual_walking" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.0/worlds/qual_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_1.world";
+        host = "paladin-02";
+    }
+    cmd "qual_3" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
+        host = "paladin-02";
+    }
+    cmd "qual_4" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_4.world";
+        host = "paladin-02";
+    }
+    cmd "vrc_driving" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_1.world";
+        host = "paladin-02";
+    }
+    cmd "vrc_2" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_2.world";
+        host = "paladin-02";
+    }
+    cmd "vrc_3" {
+        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
         host = "paladin-02";
     }
 }
@@ -151,7 +167,7 @@ group "5.base" {
         host = "paladin-01";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_PnC/model.urdf";
+        exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "paladin-01";
     }
     cmd "aff_server" {
@@ -226,11 +242,15 @@ group "robot.misc" {
         host = "paladin-02";
     }
     cmd "maskunzip" {
-        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED";
+        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "paladin-02";
     }
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
+        host = "paladin-02";
+    }
+    cmd "sheriff_obs" {
+        exec = "bot-procman-sheriff -o";
         host = "paladin-02";
     }
 }
