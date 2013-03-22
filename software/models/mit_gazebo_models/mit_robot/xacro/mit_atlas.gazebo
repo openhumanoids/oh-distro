@@ -9,19 +9,27 @@
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
     </plugin>
+    <!--
     <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
     </plugin>
-
-    <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>500.0</updateRate>
-      <topicName>true_robot_state</topicName>
-      <synchronization>false</synchronization>
-    </plugin>
-
+    -->
   </gazebo>
+  <!-- MIT ADDONS MUST BE REMOVED -->
+  <gazebo>
+  <!-- mfallon, sisir: depreciating MIT's cheat [feb 2013]
+    <plugin name="gazebo_ros_pub_robot_controller" filename="libgazebo_ros_pub_robot_state.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>200.0</updateRate>
+        <topicName>true_robot_state</topicName>
+        <synchronization>false</synchronization>
+    </plugin>
+   -->
+    <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
+    <plugin filename="librateset_plugin.so" name="rateset_plugin"/> 
+  </gazebo>
+  <!-- MIT ADDONS END -->  
   <!-- imu -->
   <link name="imu_link">
     <inertial>
@@ -29,12 +37,6 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
     </inertial>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
@@ -42,25 +44,19 @@
       </geometry>
     </visual>
   </link>
-  <!-- use a zero limit revolute joint rather than fixed to prevent lumping -->
-  <joint name="imu_joint" type="revolute">
+  <joint name="imu_joint" type="fixed">
     <parent link="pelvis"/>
     <child link="imu_link"/>
     <origin xyz="0.05991527603 0 -0.01415" rpy="0 0 0"/>
-    <limit effort="0" lower="0" upper="0" velocity="0"/>
-    <safety_controller k_position="0" k_velocity="0" soft_lower_limit="0" soft_upper_limit="0"/>
-    <axis xyz="0 0 1"/>
   </joint>
-  <gazebo>
-    <plugin filename="libgazebo_ros_imu.so" name="atlas_imu">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>imu_link</bodyName>
-      <topicName>imu</topicName>
-      <gaussianNoise>0.0</gaussianNoise>
-      <xyzOffsets>0 0 0</xyzOffsets>
-      <rpyOffsets>0 0 0</rpyOffsets>
-    </plugin>
+  <gazebo reference="imu_link">
+    <!-- this is expected to be reparented to pelvis with appropriate offset
+         when imu_link is reduced by fixed joint reduction -->
+    <!-- todo: this is working with gazebo 1.4, need to write a unit test -->
+    <sensor name="imu_sensor" type="imu">
+      <always_on>1</always_on>
+      <update_rate>1000.0</update_rate>
+    </sensor>
   </gazebo>
   <gazebo reference="l_arm_mwx">
     <provideFeedback>1</provideFeedback>
@@ -70,27 +66,38 @@
   </gazebo>
   <gazebo reference="l_leg_lax">
     <provideFeedback>1</provideFeedback>
+    <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="r_leg_lax">
     <provideFeedback>1</provideFeedback>
+    <cfmDamping>1</cfmDamping>
   </gazebo>
   <gazebo reference="r_foot">
-    <mu1>10.0</mu1>
-    <mu2>10.0</mu2>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
     <fdir1>1 0 0</fdir1>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.003</minDepth>
   </gazebo>
   <gazebo reference="l_foot">
-    <mu1>10.0</mu1>
-    <mu2>10.0</mu2>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
     <fdir1>1 0 0</fdir1>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.003</minDepth>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_p3d.so" name="gazebo_ros_p3d">
+      <bodyName>pelvis</bodyName>
+      <topicName>/ground_truth_odom</topicName>
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+    </plugin>
   </gazebo>
 
-  <!-- contact sensor -->
+  <!-- foot contact sensors -->
   <gazebo reference="r_foot">
+    <!-- contact sensor -->
     <sensor type="contact" name="r_foot_contact_sensor">
       <update_rate>1000.0</update_rate>
       <always_on>1</always_on>
@@ -101,6 +108,7 @@
     </sensor>
   </gazebo>
   <gazebo reference="l_foot">
+    <!-- contact sensor -->
     <sensor type="contact" name="l_foot_contact_sensor">
       <update_rate>1000.0</update_rate>
       <always_on>1</always_on>
@@ -109,5 +117,84 @@
         <topic>/l_foot_contact</topic>
       </contact>
     </sensor>
+  </gazebo>
+
+  <gazebo reference="back_lbz">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="back_mby">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="back_ubx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_elx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_ely">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_mwx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_shx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_usy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_arm_uwy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_kny">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_lhy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_mhx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_uay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="l_leg_uhz">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="neck_ay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_elx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_ely">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_mwx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_shx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_usy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_arm_uwy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_kny">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_lhy">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_mhx">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_uay">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_leg_uhz">
+    <cfmDamping>1</cfmDamping>
   </gazebo>
 </robot>
