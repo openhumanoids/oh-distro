@@ -15,8 +15,7 @@
   <node pkg="sandia_hand_teleop" type="simple_grasp.py" name="simple_grasp_right" ns="sandia_hands/r_hand"/>
 
   <!-- Robot Description -->
-<!--  <param name="robot_description" textfile="$(find atlas_sandia_hands)/atlas_sandia_hands.urdf"/>-->
-  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot_PnC/model.urdf"/>
+  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model.urdf"/>
 
   <!-- Use sim time -->
   <param name="/use_sim_time" type="bool" value="true"/>

@@ -15,9 +15,7 @@
   <node name="gazebo" pkg="mit_drcsim_scripts" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" /> 
 
   <!-- Robot Description -->
-  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot_PnC/model.urdf"/>
-<!--  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model.urdf"/> -->
-
+  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model.urdf"/>
 
 
   <node pkg="robot_state_publisher" type="state_publisher" name="sandia_hands_l_hand_robot_state_publisher">
