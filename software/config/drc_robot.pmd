@@ -46,43 +46,43 @@ group "1.robot" {
 
 group "2.gazebo" {
     cmd "mit_manip" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "paladin-02";
     }
     cmd "mit_walking" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "paladin-02";
     }
     cmd "mit_driving" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
         host = "paladin-02";
     }
     cmd "qual_manip" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_2.world";
         host = "paladin-02";
     }
     cmd "qual_walking" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_1.world";
         host = "paladin-02";
     }
-    cmd "qual_3" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
+    cmd "qual_climbing" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
         host = "paladin-02";
     }
-    cmd "qual_4" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_4.world";
+    cmd "qual_ladder" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_4.world";
         host = "paladin-02";
     }
     cmd "vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_1.world";
         host = "paladin-02";
     }
-    cmd "vrc_2" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_2.world";
+    cmd "vrc_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_2.world";
         host = "paladin-02";
     }
-    cmd "vrc_3" {
-        exec = "roslaunch mit_drcsim_scripts atlas_test_world.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
+    cmd "vrc_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
         host = "paladin-02";
     }
 }
