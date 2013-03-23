@@ -1,10 +1,17 @@
-all:
+
+SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
+
+SUBDIRS = atlas_gazebo_msgs translators mit_drcsim_plugins keyboard_teleop keyboard_driving multisense_command
+
+all: $(SUBDIRS)
 	echo Making MITs ROS DRC repo
-	make -C atlas_gazebo_msgs
-	make -C translators
-	make -C mit_drcsim_plugins
-	make -C keyboard_teleop
-	make -C keyboard_driving
-	make -C multisense_command
+	@for subdir in $(SUBDIRS); do \
+		$(MAKE) -C $$subdir ; \
+	done
 	echo "===Finished making MIT's ROS DRC repo===";
 
+
+clean:
+	@for subdir in $(SUBDIRS); do \
+		$(MAKE) -C $$subdir clean; \
+	done
