@@ -28,7 +28,7 @@
       <uri>model://ground_plane</uri>
     </include>
     <include>
-      <uri>model://mit_robot_PnC</uri>
+      <uri>model://mit_robot</uri>
     </include>
     <!-- Table stuff -->
 <!--		<include>-->
