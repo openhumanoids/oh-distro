@@ -10,3 +10,4 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 add_subdirectory(src/constraint_app)
+add_subdirectory(src/matlab_mex)
