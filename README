@@ -91,9 +91,8 @@ For Ubuntu, add these lines to "/etc/sysctl.conf":
 6. drc sim on wiki followed by...
 =============================================
 sudo apt-get install ros-fuerte-image-pipeline
-make -C atlas_gazebo_msgs
-make -C keyboard_teleop
-make -C ROS2LCM_translator
+cd ~/drc/ros_workspace
+make
 
 7. DRAKE (LOCOMOTION GROUP CODEBASE)
 ====================================
