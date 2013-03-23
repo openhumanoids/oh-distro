@@ -143,7 +143,7 @@ tic
 toc
 
 q = [q0 reshape(q,nq,options.nSample)];
-keyboard;
+%keyboard;
 end
 
 function [f,G] = ik(w,obj,nq,nT,nF,nG,Qv,Q,body_ind,body_pos,do_rot,q0,q_nom,velocity_mat)

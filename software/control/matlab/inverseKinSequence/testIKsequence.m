@@ -1,8 +1,9 @@
 function testIKsequence()
 options.floating = true;
 options.dt = 0.001;
-p = Atlas('/home/hongkai/drc/software/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
-load('/home/hongkai/drc/software/control/matlab/data/atlas_fp.mat');
+
+p = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+load('../../../control/matlab/data/atlas_fp.mat');
 p = p.setInitialState(xstar);
 
 ks = ActionSequence();
@@ -31,5 +32,7 @@ ks = ks.addKinematicConstraint(kc3);
 options = struct('nSample',2);
 options.q_nom = q0;
 options.Q = eye(nq);
-[qtraj,info] = inverseKinSequence(p,q0,ks,options);
+[q,t,info] = inverseKinSequence(p,q0,ks,options);
+disp(q)
+disp(t)
 end
