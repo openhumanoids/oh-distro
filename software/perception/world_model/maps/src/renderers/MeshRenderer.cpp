@@ -349,8 +349,12 @@ draw() {
   }
 
   // create color buffer
-  if ((mState->mColorMode != ColorModeCamera) &&
-      (mState->mColorMode != ColorModeTexture)) {
+  if (mState->mColorMode == ColorModeFlat) {
+    glColor4f(mState->mColor[0], mState->mColor[1], mState->mColor[2],
+              mState->mColorAlpha);
+  }
+  else if ((mState->mColorMode != ColorModeCamera) &&
+           (mState->mColorMode != ColorModeTexture)) {
     int numVertices = mState->mColorBuffer.size()/4;
     Eigen::Vector3f color = mState->mColor;
     float invDenom1 = 1/(mState->mMaxZ - mState->mMinZ);
@@ -406,12 +410,15 @@ draw() {
     glMultMatrixf(mState->mTransform.data());
 
     // draw texture
+    GLfloat color[] = {mState->mColor[0], mState->mColor[1], mState->mColor[2],
+                       mState->mColorAlpha};
     glColor4ub(255,255,255,255*mState->mColorAlpha);
     glBindTexture(GL_TEXTURE_2D, mState->mCameraTextureId);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, mState->mCameraImage.width,
                  mState->mCameraImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
                  &mState->mCameraImage.data[0]);
