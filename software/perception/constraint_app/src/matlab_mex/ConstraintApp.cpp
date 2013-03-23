@@ -91,12 +91,15 @@ void ConstraintApp::AffordanceFitHandler(const drc_affordance_t *msg)
 {
   m_log << "got a new affordance fit" << std::endl;
 
-  KDL::Frame obj_expressedIn_world(GetFrameFromParams(msg));
+  m_currentEstimate.base_expressedIn_world = GetFrameFromParams(msg);
+  m_currentLinks.clear();
+
+  m_log << "  reset the base pose to " << m_currentEstimate.base_expressedIn_world << std::endl;
 }
 
 KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
 {
-  std::string names[] = { "x", "y", "z", "r", "p", "w" };
+  std::string names[] = { "x", "y", "z", "roll", "pitch", "yaw" };
   double xyzrpw[6];
   int found = 0;
 

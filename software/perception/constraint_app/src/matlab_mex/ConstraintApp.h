@@ -9,10 +9,24 @@
 #include <kdl/frames.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 #include <forward_kinematics/treefksolverposfull_recursive.hpp>
+#include <map>
+#include <vector>
+#include <string>
 
 class ConstraintApp
 {
 public:
+  typedef std::vector<double> JointVector;
+  class Configuration {
+  public:
+    KDL::Frame base_expressedIn_world;
+    JointVector joints;
+  };
+  class Link {
+  public:
+    KDL::Frame link_expresedIn_base;
+  };
+  typedef std::map<std::string, Link> LinkMap;
 
   ConstraintApp();
   virtual ~ConstraintApp();
@@ -68,10 +82,13 @@ protected:
 
   std::ofstream m_log;
 
+  Configuration m_currentEstimate;
+  LinkMap m_currentLinks;
+
+ protected:
   void main();
   int lcm_handle_timeout(lcm_t* lcm, int ms);
   KDL::Frame GetFrameFromParams(const drc_affordance_t *msg);
-
 };
 
 #endif
