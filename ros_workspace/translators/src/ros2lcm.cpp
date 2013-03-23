@@ -30,11 +30,12 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
 #include <rosgraph_msgs/Clock.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Wrench.h>
+#include <atlas_msgs/ForceTorqueSensors.h>
+
 // deprecated:
 //#include <atlas_gazebo_msgs/RobotState.h>
-#include <nav_msgs/Odometry.h>
-
-#include <geometry_msgs/Wrench.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
@@ -79,14 +80,13 @@ private:
   void r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
   void head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
   void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in); 
-  void appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_in, std::string sensor_name);
+  void appendLimbSensor(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in);
   void publishRobotState(int64_t utime_in);
   bool init_recd_[2]; // have recived gt [0], robot joints [1]
 
-  ros::Subscriber l_foot_contact_sub_,r_foot_contact_sub_;  
-  void r_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg);  
-  void l_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg);  
-  geometry_msgs::Wrench r_foot_contact_, l_foot_contact_;
+  ros::Subscriber end_effector_sensors_sub_;  
+  void end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& msg);  
+  atlas_msgs::ForceTorqueSensors end_effector_sensors_;
   
   ros::Subscriber ground_truth_odom_sub_;  
   void ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg);  
@@ -160,8 +160,7 @@ App::App(const std::string & stereo_in,
     r_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/r_hand/joint_states"), 1000, &App::r_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
 
     ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-    l_foot_contact_sub_ = node_.subscribe(string("/atlas/l_foot_contact"), 10, &App::l_foot_contact_cb,this);
-    r_foot_contact_sub_ = node_.subscribe(string("/atlas/r_foot_contact"), 10, &App::r_foot_contact_cb,this);
+    end_effector_sensors_sub_ = node_.subscribe(string("/atlas/force_torque_sensors"), 10, &App::end_effector_sensors_cb,this);
     
     init_recd_[0]=false;
     init_recd_[1]=false;
@@ -263,7 +262,8 @@ void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"HEAD_IMU");
-  //send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
+  send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
+//  send_imu_as_pose(msg,"POSE_HEAD");
 }
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
@@ -493,11 +493,8 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 }
 
 
-void App::r_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg){
-  r_foot_contact_ = *msg;
-}
-void App::l_foot_contact_cb(const geometry_msgs::WrenchConstPtr& msg){
-  l_foot_contact_ = *msg;
+void App::end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& msg){
+  end_effector_sensors_ = *msg;
 }
 void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
   ground_truth_odom_ = *msg;
@@ -542,15 +539,47 @@ void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointStat
   }
 }
 
-void App::appendContact(drc::robot_state_t& msg_out , geometry_msgs::Wrench msg_in, std::string sensor_name){
-  drc::vector_3d_t f_left;
-  f_left.x = msg_in.force.x;f_left.y = msg_in.force.y;f_left.z = msg_in.force.z;
-  drc::vector_3d_t t_left;
-  t_left.x = msg_in.torque.x; t_left.y = msg_in.torque.y; t_left.z = msg_in.torque.z;
-
-  msg_out.contacts.id.push_back(sensor_name);
-  msg_out.contacts.contact_force.push_back(f_left);
-  msg_out.contacts.contact_torque.push_back(t_left);  
+void App::appendLimbSensor(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
+  {
+    drc::vector_3d_t l_foot_force;
+    l_foot_force.x = msg_in.l_foot.force.x; l_foot_force.y = msg_in.l_foot.force.y; l_foot_force.z = msg_in.l_foot.force.z;
+    drc::vector_3d_t l_foot_torque;
+    l_foot_torque.x = msg_in.l_foot.torque.x; l_foot_torque.y = msg_in.l_foot.torque.y; l_foot_torque.z = msg_in.l_foot.torque.z;
+    msg_out.contacts.id.push_back("l_foot");
+    msg_out.contacts.contact_force.push_back(l_foot_force);
+    msg_out.contacts.contact_torque.push_back(l_foot_torque);  
+  }
+  
+  {
+    drc::vector_3d_t r_foot_force;
+    r_foot_force.x = msg_in.r_foot.force.x; r_foot_force.y = msg_in.r_foot.force.y; r_foot_force.z = msg_in.r_foot.force.z;
+    drc::vector_3d_t r_foot_torque;
+    r_foot_torque.x = msg_in.r_foot.torque.x; r_foot_torque.y = msg_in.r_foot.torque.y; r_foot_torque.z = msg_in.r_foot.torque.z;
+    msg_out.contacts.id.push_back("r_foot");
+    msg_out.contacts.contact_force.push_back(r_foot_force);
+    msg_out.contacts.contact_torque.push_back(r_foot_torque);  
+  }
+  
+  {
+    drc::vector_3d_t l_hand_force;
+    l_hand_force.x = msg_in.l_hand.force.x; l_hand_force.y = msg_in.l_hand.force.y; l_hand_force.z = msg_in.l_hand.force.z;
+    drc::vector_3d_t l_hand_torque;
+    l_hand_torque.x = msg_in.l_hand.torque.x; l_hand_torque.y = msg_in.l_hand.torque.y; l_hand_torque.z = msg_in.l_hand.torque.z;
+    msg_out.contacts.id.push_back("l_hand");
+    msg_out.contacts.contact_force.push_back(l_hand_force);
+    msg_out.contacts.contact_torque.push_back(l_hand_torque);  
+  }
+    
+  {
+    drc::vector_3d_t r_hand_force;
+    r_hand_force.x = msg_in.r_hand.force.x; r_hand_force.y = msg_in.r_hand.force.y; r_hand_force.z = msg_in.r_hand.force.z;
+    drc::vector_3d_t r_hand_torque;
+    r_hand_torque.x = msg_in.r_hand.torque.x; r_hand_torque.y = msg_in.r_hand.torque.y; r_hand_torque.z = msg_in.r_hand.torque.z;
+    msg_out.contacts.id.push_back("r_hand");
+    msg_out.contacts.contact_force.push_back(r_hand_force);
+    msg_out.contacts.contact_torque.push_back(r_hand_torque);  
+  }    
+  
 }
 
 void App::publishRobotState(int64_t utime_in){
@@ -596,9 +625,8 @@ void App::publishRobotState(int64_t utime_in){
   appendJointStates(robot_state_msg, r_hand_joint_states_);
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
-  // ground contact states
-  appendContact(robot_state_msg, l_foot_contact_, "l_foot_contact");
-  appendContact(robot_state_msg, r_foot_contact_, "r_foot_contact");
+  // Limb Sensor states
+  appendLimbSensor(robot_state_msg, end_effector_sensors_);
   robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
     
   lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);    
