@@ -2,22 +2,19 @@
 #define FOOTSTEPS_H_
 
 #include "TwoLegsEstimate_types.h"
+#include <vector>
 
 namespace TwoLegs {
 
 class Footsteps {
 	private:
-		//std::vector<int> footstep_list;
+		footstep active_step;
+		std::vector<footstep> footstep_hist;
 		int thisisatestvariable;
+		
 	public:
-		Footsteps() {
-			std::cout << "New Footsteps object created" << std::endl;
-		}
-		void addFootstep(transformation const &RelativeFrameLocation, int foot) 
-		{
-			std::cout << "addFootstep function was called for Footsteps class" << std::endl;
-			
-		}
+		Footsteps();
+		void addFootstep(state const &RelativeFrameLocation, int foot);
 	
 };
 

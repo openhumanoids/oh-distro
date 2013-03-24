@@ -4,6 +4,8 @@
 #include <Eigen/Dense>
 #include <iostream>
 
+//#include "TwoLegOdometry.h"
+
 #define LEFTFOOT  0
 #define RIGHTFOOT 1
 
@@ -22,7 +24,7 @@ namespace TwoLegs {
 	typedef struct {
 		state footprintlocation;
 		int foot;
-	} footprint;
+	} footstep;
 	
 }
 
