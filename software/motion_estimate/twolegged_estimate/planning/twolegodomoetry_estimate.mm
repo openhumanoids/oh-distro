@@ -1,7 +1,9 @@
 <map version="0.9.0">
 <!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->
 <node CREATED="1364052253127" ID="ID_724683500" MODIFIED="1364052265519" TEXT="twolegodomoetry_estimate">
-<node CREATED="1364052284649" ID="ID_836112003" MODIFIED="1364052288554" POSITION="right" TEXT="odometry">
+<node CREATED="1364098578938" ID="ID_144988245" MODIFIED="1364098580402" POSITION="right" TEXT="main">
+<node CREATED="1364098546549" ID="ID_347558829" MODIFIED="1364098559603" TEXT="LCM_Odometry_handler">
+<node CREATED="1364052284649" ID="ID_836112003" MODIFIED="1364098607114" TEXT="TwoLegOdometry">
 <node CREATED="1364052291037" ID="ID_1212650550" MODIFIED="1364052292800" TEXT="parameters">
 <node CREATED="1364052365815" ID="ID_1214166058" MODIFIED="1364052370894" TEXT="initialization"/>
 </node>
@@ -28,8 +30,7 @@
       Use this status to determine which elements of the odometry state to use in estimating the pelvis position
     </p>
   </body>
-</html>
-</richcontent>
+</html></richcontent>
 <node CREATED="1364054305489" ID="ID_892577915" MODIFIED="1364054309001" TEXT="last footstep"/>
 <node CREATED="1364054302920" ID="ID_1380005965" MODIFIED="1364054305105" TEXT="active foot"/>
 </node>
@@ -53,8 +54,7 @@
       this function must update the internal states, based on information which is passed in as parameters
     </p>
   </body>
-</html>
-</richcontent>
+</html></richcontent>
 <node CREATED="1364063521518" ID="ID_620065103" MODIFIED="1364063538235" TEXT="footprint + leg transforms"/>
 </node>
 <node CREATED="1364063540603" ID="ID_388195928" MODIFIED="1364063555555" TEXT="addNewFootprint"/>
@@ -72,10 +72,26 @@
 </node>
 <node CREATED="1364067579430" ID="ID_1001988418" MODIFIED="1364067585640" TEXT="addVectors()"/>
 <node CREATED="1364067604626" ID="ID_75502862" MODIFIED="1364067611870" TEXT="publishResults()"/>
+<node CREATED="1364097145749" ID="ID_1936999098" MODIFIED="1364097175700" TEXT="run() -- maybe?">
+<richcontent TYPE="NOTE"><html>
+  <head>
+    
+  </head>
+  <body>
+    <p>
+      Need to decide on an execution architecture
+    </p>
+  </body>
+</html></richcontent>
 </node>
 </node>
-<node CREATED="1364054451472" ID="ID_1613661588" MODIFIED="1364054458205" POSITION="right" TEXT="noise and uncertainty"/>
-<node CREATED="1364052316237" ID="ID_1786376600" MODIFIED="1364052318149" POSITION="right" TEXT="Use case"/>
+<node CREATED="1364054451472" ID="ID_1613661588" MODIFIED="1364054458205" TEXT="noise and uncertainty">
+<node CREATED="1364052316237" ID="ID_1786376600" MODIFIED="1364052318149" TEXT="Use case"/>
+</node>
+</node>
+<node CREATED="1364098566505" ID="ID_1209427874" MODIFIED="1364098570288" TEXT="LCM functions"/>
+</node>
+</node>
 <node CREATED="1364054160434" ID="ID_336407214" MODIFIED="1364054163329" POSITION="left" TEXT="types">
 <node CREATED="1364054327069" ID="ID_795171560" MODIFIED="1364054335395" TEXT="state"/>
 <node CREATED="1364054166802" ID="ID_1005264666" MODIFIED="1364054168096" TEXT="foot"/>
@@ -85,8 +101,10 @@
 </node>
 <node CREATED="1364054261953" ID="ID_1571488529" MODIFIED="1364054265660" POSITION="left" TEXT="requires">
 <node CREATED="1364054267022" ID="ID_1131917519" MODIFIED="1364054271008" TEXT="Eigen"/>
-<node CREATED="1364054496494" ID="ID_1944279972" MODIFIED="1364054500289" TEXT="lcmtypes"/>
-<node CREATED="1364055091462" ID="ID_12589149" MODIFIED="1364055094562" TEXT="QuaternionLib"/>
+<node CREATED="1364054496494" ID="ID_1944279972" MODIFIED="1364054500289" TEXT="lcmtypes">
+<node CREATED="1364149876696" ID="ID_1086144853" MODIFIED="1364149905061" TEXT="drc_robot_state_t"/>
+</node>
+<node COLOR="#338800" CREATED="1364055091462" ID="ID_12589149" MODIFIED="1364085209030" TEXT="QuaternionLib"/>
 </node>
 </node>
 </map>
