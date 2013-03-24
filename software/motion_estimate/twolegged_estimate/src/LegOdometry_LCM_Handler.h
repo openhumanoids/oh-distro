@@ -16,7 +16,7 @@
 #include <lcm/lcm.h>
 
 #include "TwoLegOdometry.h"
-//#include <lcmtypes/?ROBOTSOMETHING?.h>
+//#include <lcmtypes/drc_robot_state_t.h>
 
 class LegOdometry_Handler {
 private:
@@ -26,10 +26,12 @@ private:
 	// LCM stuff
 	const char* robot_pose_channel;
 	lcm_t* _lcm;
-	//void on_?fnc?(const ?type?* msg);
-	//void LegOdometry_Handler::on_?robot_state_update?_aux(const lcm_recv_buf_t* rbuf,
+	bool _finish;
+	// TODO
+	//void on_robot_state(const drc_robot_state_t* msg);
+	//void LegOdometry_Handler::on_robot_state_aux(const lcm_recv_buf_t* rbuf,
 	//                            const char* channel,
-	//                            const ?type?* msg,
+	//                            const drc_robot_state_t* msg,
 	//                            void* user_data)
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
@@ -40,8 +42,10 @@ public:
 	LegOdometry_Handler();
 	~LegOdometry_Handler();
 	
+	void finish() { _finish = true; }
+	
 	// Run the estimator, assuming the LCM connections have been set up correctly
-	void run();
+	void run(bool testingmode);
 	
 };
 

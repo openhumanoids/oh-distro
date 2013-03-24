@@ -15,6 +15,9 @@ class Footsteps {
 	public:
 		Footsteps();
 		void addFootstep(state const &RelativeFrameLocation, int foot);
+		
+		
+		int getLastStepState(state const &RelativeFrameLocation);
 	
 };
 

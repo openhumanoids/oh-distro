@@ -18,6 +18,7 @@ int main() {
 	
 	
 	// Do some stuff with the objects to test them. Preferably here you must call the internal testing functions of the different objects created..
+	_legs_motion_estimate->run(true); // true means it will operate in testing mode and not listen LCM messages
 	
 	
 	delete _leg_odo;
