@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include "TwoLegsEstimate_types.h"
+#include "Footsteps.h"
 
 using namespace std;
 using namespace TwoLegs;

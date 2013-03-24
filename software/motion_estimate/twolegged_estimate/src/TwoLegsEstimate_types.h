@@ -24,23 +24,6 @@ namespace TwoLegs {
 		int foot;
 	} footprint;
 	
-	
-	class Footsteps {
-		private:
-			//std::vector<int> footstep_list;
-			int thisisatestvariable;
-		public:
-			Footsteps() {
-				std::cout << "New Footsteps object created" << std::endl;
-			}
-			void addFootstep(transformation const &RelativeFrameLocation, int foot) 
-			{
-				std::cout << "addFootstep function was called for Footsteps class" << std::endl;
-				
-			}
-		
-	};
-	
 }
 
 #endif /*TWOLEGSESTIMATE_TYPES_H_*/
