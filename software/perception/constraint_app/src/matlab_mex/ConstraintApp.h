@@ -2,6 +2,7 @@
 #define CONSTRAINTAPP_H
 
 #include <boost/thread.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <iostream>
 #include <fstream>
 #include <lcmtypes/drc_lcmtypes.h>
@@ -12,6 +13,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include "PointObservation.h"
 
 class ConstraintApp
 {
@@ -24,9 +26,12 @@ public:
   };
   class Link {
   public:
-    KDL::Frame link_expresedIn_base;
+  Link(const KDL::Vector& lb) : link_expressedIn_base(lb) {}
+    KDL::Vector link_expressedIn_base;
   };
   typedef std::map<std::string, Link> LinkMap;
+  typedef PointObservation Observation;
+  typedef std::map<std::string, Observation> ObservationMap;
 
   ConstraintApp();
   virtual ~ConstraintApp();
@@ -52,6 +57,9 @@ public:
     boost::mutex::scoped_lock lock(m_counterMutex);
     return m_counter;
   }
+
+  bool WaitForObservations(unsigned int timeout_ms);
+  bool GetObservations(std::vector<double>& expectedObservations, std::vector<double>& actualObservations);
 
   static void AffordanceTrackCollectionHandlerAux(const lcm_recv_buf_t* rbuf,
 						      const char* channel,
@@ -82,8 +90,11 @@ protected:
 
   std::ofstream m_log;
 
+  boost::mutex m_dataMutex;
+  boost::condition_variable m_dataCondition;
   Configuration m_currentEstimate;
   LinkMap m_currentLinks;
+  ObservationMap m_currentObservations;
 
  protected:
   void main();

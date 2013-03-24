@@ -3,6 +3,9 @@
 #include <inttypes.h>
 #include <sys/select.h>
 typedef int SOCKET;
+#include <kdl/frames.hpp>
+#include <kdl/frames_io.hpp>
+#include <boost/thread/thread_time.hpp>
 
 //input: "AFFORDANCE_TRACK_COLLECTION" has incoming 3d points from sudeep
 //       includes a "segment" string which is the "id" and a 3d point to track for each "affordance"
@@ -80,21 +83,61 @@ void ConstraintApp::AffordanceTrackCollectionHandler(const drc_affordance_track_
 {
   m_log << "got a new track collection" << std::endl;
 
+  boost::mutex::scoped_lock lock(m_dataMutex);
+
+  for ( int i = 0; i < msg->ntracks; i++ ) {
+    drc_affordance_track_t* track = &msg->tracks[i];
+    
+    std::string segmentName(track->segment);
+    KDL::Vector track_expressedIn_world(track->position.x, track->position.y, track->position.z);
+    KDL::Vector track_expressedIn_base(m_currentEstimate.base_expressedIn_world.Inverse() * track_expressedIn_world);
+    
+    if ( m_currentLinks.find(segmentName) == m_currentLinks.end() ) {
+      //this track is a new one
+      m_currentLinks.insert(std::pair<std::string, Link>(segmentName, Link(track_expressedIn_base)));
+      m_log << "  creating a new link for segment \"" << segmentName << "\"" << std::endl
+	    << "    world pose: " << track_expressedIn_world << std::endl
+	    << "     base pose: " << track_expressedIn_base << std::endl;
+    } else {
+      //this track is already known, just add this report as an observation
+      ObservationMap::iterator existingObs(m_currentObservations.find(segmentName));
+      Observation newobs(track_expressedIn_world);
+      if ( existingObs == m_currentObservations.end() ) {
+	//we have not yet observed this link, so add it
+	m_currentObservations.insert(std::pair<std::string, Observation>(segmentName, newobs));
+	m_log << "  new observation for segment \"" << segmentName << "\"" << std::endl
+	      << "    world pose: " << track_expressedIn_world << std::endl;
+      } else {
+	//we've observed, and have not yet processed. just update the observation
+	existingObs->second = newobs;
+	m_log << "  repeat observation for segment \"" << segmentName << "\"" << std::endl
+	      << "    world pose: " << track_expressedIn_world << std::endl;
+      }
+    }
+  }
+
+  m_dataCondition.notify_all();
+
+  /*
   m_log << "sent a new (empty) estimate of joint angles" << std::endl;
   drc_affordance_joint_angles_t aja;
   aja.utime = msg->utime;
   aja.uid = msg->uid;
   drc_affordance_joint_angles_t_publish(m_lcm, "AFFORDANCE_JOINT_ANGLES", &aja);
+  */
 }
 
 void ConstraintApp::AffordanceFitHandler(const drc_affordance_t *msg)
 {
   m_log << "got a new affordance fit" << std::endl;
 
+  boost::mutex::scoped_lock lock(m_dataMutex);
   m_currentEstimate.base_expressedIn_world = GetFrameFromParams(msg);
   m_currentLinks.clear();
+  m_currentObservations.clear();
 
-  m_log << "  reset the base pose to " << m_currentEstimate.base_expressedIn_world << std::endl;
+  m_log << "  reset the base pose to " << std::endl
+	<< m_currentEstimate.base_expressedIn_world << std::endl;
 }
 
 KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
@@ -123,4 +166,55 @@ KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
   ret.p[2] = xyzrpw[2];
   ret.M = KDL::Rotation::RPY(xyzrpw[3], xyzrpw[4], xyzrpw[5]);
   return ret;
+}
+
+bool ConstraintApp::WaitForObservations(unsigned int timeout_ms)
+{
+  m_log << "ConstraintApp::WaitForObservations, timeout = " << timeout_ms << std::endl;
+
+  boost::mutex::scoped_lock lock(m_dataMutex);
+
+  if ( !m_currentObservations.empty() ) return true;
+
+  boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(timeout_ms);
+  m_dataCondition.timed_wait(lock, timeout);
+
+  return !m_currentObservations.empty();
+}
+
+bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations, std::vector<double>& actualObservations)
+{
+  boost::mutex::scoped_lock lock(m_dataMutex);
+
+  m_log << "ConstraintApp::GetObservations" << std::endl;
+
+  actualObservations.clear();
+  actualObservations.reserve(m_currentObservations.size()*3);
+  expectedObservations.clear();
+  expectedObservations.reserve(m_currentObservations.size()*3);
+
+  for ( ObservationMap::const_iterator iter = m_currentObservations.begin(); iter != m_currentObservations.end(); ++iter ) {
+    actualObservations.push_back(iter->second.obs_expressedIn_world[0]);
+    actualObservations.push_back(iter->second.obs_expressedIn_world[1]);
+    actualObservations.push_back(iter->second.obs_expressedIn_world[2]);
+
+    LinkMap::const_iterator linkIter = m_currentLinks.find(iter->first);
+    if ( linkIter == m_currentLinks.end() ) {
+      m_log << "ERROR: unable to find a corresponding link for observation " << iter->first << std::endl;
+      return false;
+    }
+
+    KDL::Vector expected = m_currentEstimate.base_expressedIn_world * linkIter->second.link_expressedIn_base;
+    expectedObservations.push_back(expected[0]);
+    expectedObservations.push_back(expected[1]);
+    expectedObservations.push_back(expected[2]);
+
+    m_log << "   added observation for " << iter->first << std::endl
+	  << "      obs: " << iter->second.obs_expressedIn_world << std::endl
+	  << "      exp: " << expected << std::endl;
+  }
+
+  m_currentObservations.clear();
+
+  return true;
 }
