@@ -1,14 +1,15 @@
 function test()
     addpath('../pod-build/lib');
+    addpath('../matlab/bailey');
 
     clear functions;
     
-    ptr = cam_initialize()
+    ptr = cam_initialize();
     
     fprintf('running...\n');
     
     try 
-        for i = 1:3
+        while(true)
             success = cam_waitForObservations(ptr, 1000);
             if success
                 fprintf('got new data\n');
