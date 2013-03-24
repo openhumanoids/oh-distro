@@ -1,1 +1,0 @@
-/usr/bin/c++   -O3 -DNDEBUG    CMakeFiles/test_driver.dir/src/test_driver.cpp.o  -o bin/test_driver -rdynamic -L/home/dehann/drc/software/motion_estimate/twolegged_estimate/pod-build/lib -L/home/dehann/drc/software/build/lib 
