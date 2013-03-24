@@ -25,4 +25,4 @@ add_executable(test_driver src/LegOdometry_LCM_Handler.cpp src/Footsteps.cpp src
 pods_use_pkg_config_packages(test_driver lcm lcmtypes_${POD_NAME})
 
 # make exeutables public
-pods_install_executables(send_message listener)
+#pods_install_executables(send_message listener)
