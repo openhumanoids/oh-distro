@@ -4,6 +4,12 @@ import os
 import time
 import random
 import numpy
+import termios, atexit
+from select import select
+
+def kbhit():
+    dr,dw,de = select([sys.stdin], [], [], 0)
+    return dr <> []
 
 myhome = os.environ.get("HOME")
 
@@ -64,13 +70,16 @@ print 'Sending a bunch of initial points'
 lc.publish("AFFORDANCE_TRACK_COLLECTION", atc.encode())
 
 # 3. Send some noisy observations
-for j in range(2):
+for j in range(3):
     atc = affordance_track_collection_t()
     atc.utime = timestamp_now()
     atc.uid = 0
-    atc.ntracks = len(track_ids)
+    count = 0
+    atc.ntracks = 0
 
-    for i in range(atc.ntracks):
+    for i in range(len(track_ids)):
+        if j == 2 and i == 1:
+            continue
         track = affordance_track_t()
         track.segment = str(track_ids[i])
         v = vector_3d_t()
@@ -79,7 +88,14 @@ for j in range(2):
         v.z = track_means[i,2] + random.uniform(-0.1,0.1)
         track.position = v
         atc.tracks.append(track)
+        atc.ntracks +=1 
+        print 'queueing observation for segment', track.segment
 
     print 'Sending a bunch of noisy observations'
     lc.publish("AFFORDANCE_TRACK_COLLECTION", atc.encode())
+
+    print 'waiting...'
+    while ( not kbhit() ):
+        pass
+    sys.stdin.read(1)
 

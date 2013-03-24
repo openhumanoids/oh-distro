@@ -26,8 +26,9 @@ public:
   };
   class Link {
   public:
-  Link(const KDL::Vector& lb) : link_expressedIn_base(lb) {}
+  Link(const KDL::Vector& lb, const int _id) : link_expressedIn_base(lb), id(_id) {}
     KDL::Vector link_expressedIn_base;
+    int id;
   };
   typedef std::map<std::string, Link> LinkMap;
   typedef PointObservation Observation;
@@ -59,7 +60,9 @@ public:
   }
 
   bool WaitForObservations(unsigned int timeout_ms);
-  bool GetObservations(std::vector<double>& expectedObservations, std::vector<double>& actualObservations);
+  bool GetObservations(std::vector<double>& expectedObservations, 
+		       std::vector<double>& actualObservations,
+		       std::vector<int>& observationIds);
 
   static void AffordanceTrackCollectionHandlerAux(const lcm_recv_buf_t* rbuf,
 						      const char* channel,
@@ -95,6 +98,8 @@ protected:
   Configuration m_currentEstimate;
   LinkMap m_currentLinks;
   ObservationMap m_currentObservations;
+
+  int m_nextLinkId;
 
  protected:
   void main();

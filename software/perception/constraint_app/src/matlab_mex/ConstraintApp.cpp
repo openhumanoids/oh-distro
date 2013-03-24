@@ -25,7 +25,7 @@ typedef int SOCKET;
 //    perform the update step.  use the relative poses as expected observations, use new data as new observations.
 
 //NB: use tail -f cam.log to view output from the ConstraintApp::main thread
-ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0), m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary)
+ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0), m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary),  m_nextLinkId(0)
 {
   
   m_lcm = lcm_create(NULL);
@@ -94,7 +94,7 @@ void ConstraintApp::AffordanceTrackCollectionHandler(const drc_affordance_track_
     
     if ( m_currentLinks.find(segmentName) == m_currentLinks.end() ) {
       //this track is a new one
-      m_currentLinks.insert(std::pair<std::string, Link>(segmentName, Link(track_expressedIn_base)));
+      m_currentLinks.insert(std::pair<std::string, Link>(segmentName, Link(track_expressedIn_base, m_nextLinkId++)));
       m_log << "  creating a new link for segment \"" << segmentName << "\"" << std::endl
 	    << "    world pose: " << track_expressedIn_world << std::endl
 	    << "     base pose: " << track_expressedIn_base << std::endl;
@@ -182,16 +182,21 @@ bool ConstraintApp::WaitForObservations(unsigned int timeout_ms)
   return !m_currentObservations.empty();
 }
 
-bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations, std::vector<double>& actualObservations)
+bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations, 
+				    std::vector<double>& actualObservations,
+				    std::vector<int>& observationIds)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 
   m_log << "ConstraintApp::GetObservations" << std::endl;
 
   actualObservations.clear();
-  actualObservations.reserve(m_currentObservations.size()*3);
   expectedObservations.clear();
+  observationIds.clear();
+
+  actualObservations.reserve(m_currentObservations.size()*3);
   expectedObservations.reserve(m_currentObservations.size()*3);
+  observationIds.reserve(m_currentObservations.size());
 
   for ( ObservationMap::const_iterator iter = m_currentObservations.begin(); iter != m_currentObservations.end(); ++iter ) {
     actualObservations.push_back(iter->second.obs_expressedIn_world[0]);
@@ -209,9 +214,12 @@ bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations, s
     expectedObservations.push_back(expected[1]);
     expectedObservations.push_back(expected[2]);
 
+    observationIds.push_back(linkIter->second.id);
+
     m_log << "   added observation for " << iter->first << std::endl
 	  << "      obs: " << iter->second.obs_expressedIn_world << std::endl
-	  << "      exp: " << expected << std::endl;
+	  << "      exp: " << expected << std::endl
+	  << "       id: " << linkIter->second.id << std::endl;
   }
 
   m_currentObservations.clear();
