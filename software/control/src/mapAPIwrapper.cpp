@@ -3,7 +3,8 @@
 #include <mex.h>
 
 #include <Eigen/Dense>
-#include <lcm/lcm-cpp.hpp>
+#include <lcm/lcm.h>
+#include <boost/thread/thread.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/BotWrapper.hpp>
@@ -12,13 +13,15 @@
 #include <lcmtypes/drc/data_request_t.hpp>
 
 using namespace Eigen;
+using namespace maps;
 
 struct ViewWrapperData {
+  lcm_t* lcm;
   ViewClient* view_client;
   boost::thread* lcm_thread;
-}
+};
 
-void lcmThreadMain(lcm::LCM* lcm) {
+void lcmThreadMain(lcm_t* lcm) {
   while(0 == lcm->handle()) {
     if (boost::this_thread::interruption_requested()) return;
   }
@@ -41,11 +44,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->view_client = new ViewClient();
 
     // create lcm instance, and fork listener thread
-    lcm::LCM lcm; 
-    if (!lcm.good()) mexErrMsgIdandTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
-    pdata->lcm_thread = new boost::thread(lcmThreadMain,&lcm);
+    pdata->lcm = lcm_create(NULL); 
+    if (!pdata->lcm) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
+    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata->lcm);
 
-    BotWrapper::Ptr botWrapper(new BotWrapper(lcm, NULL, NULL));
+    BotWrapper::Ptr botWrapper(new BotWrapper(pdata->lcm, NULL, NULL));
     pdata->view_client->setBotWrapper(botWrapper);
 
     // start listening for view data
@@ -71,11 +74,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     delete pdata->view_client;
     pdata->lcm_thread->interrupt();
     delete pdata->lcm_thread;
+    lcm_destroy(pdata->lcm);
     delete pdata;
     return;
   } 
 
-  ViewPtr vptr = pdata->view_client->getView(drc::data_request_t::HEIGHTMAP_SCENE);
+  ViewClient::ViewPtr vptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
   if (!vptr) { // check if null
     mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","could not get the heightmap view\n");
   }
@@ -91,7 +95,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map<MatrixXd> normal(mxGetPr(pnormal),3,N);
 
   for (int i=0; i<N; i++) {
-    if (!vptr->getClosest(pos.col(i),closest_terrain_pos.col(i),normal.col(i))) {
+    if (!vptr->getClosest(pos.col(i).cast<float>(),closest_terrain_pos.col(i).cast<float>(),normal.col(i)).cast<float>()) {
       // returns false if off the grid		   
       closest_terrain_pos(0,i) = NAN;
       closest_terrain_pos(1,i) = NAN;

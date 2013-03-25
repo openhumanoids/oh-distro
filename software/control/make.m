@@ -52,19 +52,22 @@ system(['touch ',fullfile(strtok(userpath,':'),'pathdef.m')]);
 configure(options);
 
 %% build drake
-make;
+%make;
 
 cd(p);
 
 %% build drc drake mexfiles
-[~,flags]=system('pkg-config --cflags --libs maps eigen3 lcm');
-%mexPrint(['src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,' ',flags]);
+
+[~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
+incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
+
+[~,libs]=system('pkg-config --libs maps eigen3 lcm');
+libs = regexprep(libs,'-pthread','-lpthread');
+
+cmdstr = ['mex src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,' ',incs,' ',libs];
+disp(cmdstr);
+%eval(cmdstr);
 
 end
 
-
-function mexPrint(varargin)
-  disp(['mex ',sprintf('%s ',varargin{:})]);
-  mex(varargin{:});
-end
 
