@@ -45,12 +45,6 @@ void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf){
   stereo_depth_->setRightImage(right_buf);
   odom_.processFrame(left_buf, stereo_depth_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
-  printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
-          me->getNumInliers(),
-          me->getNumReprojectionFailures(),
-          me->getNumMatches(),
-          (int) odom_.getTargetFrame()->getNumKeypoints(),
-          me->getMeanInlierReprojectionError());
 }
 
 // Left and Disparity:
@@ -58,12 +52,6 @@ void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf){
   stereo_disparity_->setDisparityData(disparity_buf);
   odom_.processFrame(left_buf, stereo_disparity_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
-  printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
-          me->getNumInliers(),
-          me->getNumReprojectionFailures(),
-          me->getNumMatches(),
-          (int) odom_.getTargetFrame()->getNumKeypoints(),
-          me->getMeanInlierReprojectionError());
 }
 
 void FoVision::fovis_stats(){

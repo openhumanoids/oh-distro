@@ -304,7 +304,7 @@ void Pass::sendSweepDepthImage(){
   images.image_types.push_back( 4 ); // multisense::images_t::DEPTH_MM );
   images.images.push_back( img_ );
   images.images.push_back(disparity_);
-  lcm_->publish("MULTISENSE_LD", &images);        
+  lcm_->publish("LIDARSWEEP_LD", &images);        
 }
 
 
@@ -331,12 +331,13 @@ void Pass::sendSweepCloud(){
     pc_vis_->ptcld_to_lcm_from_list(91001, *cloud_, current_utime_, current_utime_);      
     
   // Write as a PCD file:
-    if(1==0){
+    if(1==1){
       if (cloud_->points.size() > 0) {
         pcl::PCDWriter writer;
         stringstream ss2;
         ss2 << "/tmp/sweep_cloud_"  << current_utime_ << ".pcd";
         writer.write (ss2.str(), *cloud_, false);
+        cout << "finished writing PCD to:\n" << ss2.str() <<"\n";
       }
     }
 
