@@ -10,7 +10,6 @@ classdef DRCController
     controller_data; % optional shared data handle reference
     
     controller_input_frames; % lcm frames w/coders for controller inputs
-    controller_input_names; 
     n_input_frames;
     controller_output_frame;
     
@@ -43,14 +42,9 @@ classdef DRCController
       if typecheck(sys.getInputFrame,'MultiCoordinateFrame')
         obj.controller_input_frames = sys.getInputFrame.frame;
         obj.n_input_frames = length(obj.controller_input_frames);
-        obj.controller_input_names = cell(obj.n_input_frames,1);
-        for i=1:obj.n_input_frames
-          obj.controller_input_names{i} = obj.controller_input_frames{i}.name;
-        end
       else
         obj.controller_input_frames = obj.controller.getInputFrame();
-        obj.n_input_frames = 1; 
-        obj.controller_input_names = obj.controller.getInputFrame.name;
+        obj.n_input_frames = 1;        
       end
       obj.controller_output_frame = obj.controller.getOutputFrame();
       
@@ -170,13 +164,7 @@ classdef DRCController
      
         tt = max(input_frame_time);
         if any(tt >= obj.t_final)
-          if obj.n_input_frames > 1
           data = setfield(data,obj.timed_transition,input_frame_data);
-            
-          else
-            data = struct();
-            data = setfield(data,obj.timed_transition,input_frame_data);
-          end
           break;
         end
         
