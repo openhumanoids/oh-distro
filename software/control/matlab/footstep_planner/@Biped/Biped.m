@@ -25,7 +25,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj.lc = lcm.lcm.LCM.getSingleton();
       
       defaults = struct('step_time', 1.0,... % s
-        'max_step_length', .55,... % m
+        'max_step_length', .65,... % m
         'max_step_rot', pi/4,... % rad
         'r_foot_name', 'r_foot',...
         'step_width', 0.22,...

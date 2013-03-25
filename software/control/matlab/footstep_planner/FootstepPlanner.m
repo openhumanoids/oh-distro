@@ -13,8 +13,8 @@ classdef FootstepPlanner < DRCPlanner
       obj = obj@DRCPlanner('NAV_GOAL_TIMED',JLCMCoder(NavGoalCoder(robot_name)));
       
       obj.biped = biped;
-      obj.biped = enableIdealizedPositionControl(obj.biped, true);
-      obj.biped = compile(obj.biped);
+%       obj.biped = enableIdealizedPositionControl(obj.biped, true);
+%       obj.biped = compile(obj.biped);
 
       nx = obj.biped.getNumStates();
       joint_names = obj.biped.getStateFrame.coordinates(1:nx/2);

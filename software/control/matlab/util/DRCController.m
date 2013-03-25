@@ -154,6 +154,9 @@ classdef DRCController
             end
             t=tsim-t_offset;
 
+            %%% TEMP HACK FOR QUAL 1 %%%
+            x(3) = x(3)-1.0;
+            %%% TEMP HACK FOR QUAL 1 %%%
             input_frame_data{i} = x;
             input_frame_time(i) = t;
           end
@@ -161,7 +164,7 @@ classdef DRCController
      
         tt = max(input_frame_time);
         if any(tt >= obj.t_final)
-          data = setfield(data,obj.timed_transition,tt);
+          data = setfield(data,obj.timed_transition,input_frame_data);
           break;
         end
         

@@ -139,18 +139,18 @@ outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins outs;
-% 
-% disp('Waiting for robot plan confirmation...');
-% plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
-% waiting = true;
-% while waiting
-%   rplan = plan_listener.getNextMessage(100);
-%   if (~isempty(rplan))
-%     % for now don't do anything with it, just use it as a flag
-%     disp('Plan confirmed. Executing...');
-%     waiting = false;
-%   end
-% end
+
+disp('Waiting for robot plan confirmation...');
+plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
+waiting = true;
+while waiting
+  rplan = plan_listener.getNextMessage(100);
+  if (~isempty(rplan))
+    % for now don't do anything with it, just use it as a flag
+    disp('Plan confirmed. Executing...');
+    waiting = false;
+  end
+end
 
 state_frame.subscribe('TRUE_ROBOT_STATE');
 input_frame = getInputFrame(r);

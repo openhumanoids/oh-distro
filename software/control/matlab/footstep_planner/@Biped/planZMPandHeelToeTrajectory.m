@@ -163,7 +163,8 @@ while 1
     
   istep.(m_foot) = istep.(m_foot) + 1;
   
-  footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1]; 
+%   footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1];
+  footsupport.(m_foot) = [footsupport.(m_foot) 0 0 1 1 1]; 
   footsupport.(s_foot) = [footsupport.(s_foot) 1 1 1 1 1]; 
   
   for f = {'right', 'left'}
