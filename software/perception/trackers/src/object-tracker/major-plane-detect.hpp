@@ -42,14 +42,21 @@ class MajorPlane
 
     // Get a sweep of lidar
     // True if we have a new sweep, different from before
-    bool getSweep( Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0),  Eigen::Vector3f bounds_size = Eigen::Vector3f(1e10, 1e10, 1e10) );
+    bool getSweep( Eigen::Vector3f bounds_center = Eigen::Vector3f(0,0,0),  
+			Eigen::Vector3f bounds_size = Eigen::Vector3f(1e10, 1e10, 1e10) );
     
+    // Return the cloud calculated from the sweep above
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getSweepCloud(){
+      return cloud_; 
+    }
     
     // Determine the current estimate of the plane
     bool trackPlane(Eigen::Isometry3d &plane_pose , int64_t current_utime_);
 
     
-    
+    std::vector<float> getPlaneCoeffs(){
+      return plane_coeffs_->values; 
+    }
     
     // set the plane to be tracked:
     void setPlane(std::vector<float> plane_coeffs, Eigen::Vector4f plane_centroid ){
@@ -60,6 +67,24 @@ class MajorPlane
       plane_pose_init_ = true;
       cout << "[PLANE] Have initialized the plane tracker\n";
     };
+
+    
+   pcl::PointCloud<pcl::PointXYZRGB>::Ptr getSweepCloudWithoutPlane(float dist_threshold){
+     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZRGB>);
+     
+     for (size_t i=0; i < cloud_->points.size() ; i++ ){
+        pcl::PointXYZRGB pt = cloud_->points[i]; 
+        float top =plane_coeffs_->values[0]* pt.x + plane_coeffs_->values[1]* pt.y + 
+                    plane_coeffs_->values[2]* pt.z + plane_coeffs_->values[3];
+        float bottom = sqrt (plane_coeffs_->values[0]* plane_coeffs_->values[0] + plane_coeffs_->values[1]*plane_coeffs_->values[1] +
+                              plane_coeffs_->values[2]* plane_coeffs_->values[2] );
+        float dist = fabs(top/bottom);
+        if (dist > dist_threshold){
+          cloud_out->points.push_back(pt);
+        }
+     }
+     return cloud_out;
+   }
 
     
     

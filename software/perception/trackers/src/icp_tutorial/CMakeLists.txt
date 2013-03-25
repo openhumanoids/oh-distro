@@ -23,3 +23,43 @@ pods_install_executables(drc-icp-tutorial)
 #pods_use_pkg_config_packages(drc-ndt-tutorial ${PCL_LIBRARIES})
 #target_link_libraries (drc-ndt-tutorial ${REQUIRED_LIBS})
 #pods_install_executables(drc-ndt-tutorial)
+
+
+
+################ LIBRARIES ###############################
+add_library(icp-tracker  SHARED icp-tracker.cpp)
+pods_use_pkg_config_packages(icp-tracker ${PCL_LIBRARIES} bot2-lcmgl-client maps eigen3
+     pointcloud_filters)
+target_link_libraries (icp-tracker boost_system 
+           ${REQUIRED_LIBS})
+set_target_properties(icp-tracker PROPERTIES SOVERSION 1)
+pods_install_libraries(icp-tracker)
+pods_install_headers( icp-tracker.hpp DESTINATION trackers)
+pods_install_pkg_config_file(icp-tracker
+  LIBS -licp-tracker
+  VERSION 0.0.1)
+
+
+
+################ APPS ###############################
+
+add_executable(drc-icp-tracker-standalone-app icp-tracker-standalone-app.cpp)
+pods_use_pkg_config_packages(drc-icp-tracker-standalone-app 
+  icp-tracker
+  bot2-param-client bot2-lcmgl-client
+  bot2-frames  bot2-frames_cpp 
+  pointcloud_filters  pointcloud_vis pointcloud_lcm ${PCL_LIBRARIES})
+pods_install_executables(drc-icp-tracker-standalone-app)
+
+
+
+
+add_executable (drc-icp-tracker-app icp-tracker-app.cpp )
+pods_use_pkg_config_packages(drc-icp-tracker-app
+   bot2-core lcmtypes_visualization  lcmtypes_bot2-core
+  bot2-param-client
+  bot2-frames  bot2-frames_cpp
+  pointcloud_vis pointcloud_math 
+  icp-tracker major-plane-detect
+  ${PCL_LIBRARIES})
+pods_install_executables(drc-icp-tracker-app)

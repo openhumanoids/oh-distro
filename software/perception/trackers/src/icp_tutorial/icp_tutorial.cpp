@@ -209,7 +209,10 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   pcl::VoxelGrid<PointT> grid;
   if (downsample)
   {
-    grid.setLeafSize (0.05, 0.05, 0.05);
+// for grill:
+    grid.setLeafSize (0.001, 0.001, 0.001);
+// original for larger clouds: e.g. car:
+//    grid.setLeafSize (0.05, 0.05, 0.05);
     grid.setInputCloud (cloud_src);
     grid.filter (*src);
 
@@ -244,20 +247,24 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   // Instantiate our custom point representation (defined above) ...
   MyPointRepresentation point_representation;
   // ... and weight the 'curvature' dimension so that it is balanced against x, y, and z
-  float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-  point_representation.setRescaleValues (alpha);
+//  float alpha[4] = {1.0, 1.0, 1.0, 1.0};
+//  point_representation.setRescaleValues (alpha);
 
   //
   // Align
   pcl::IterativeClosestPointNonLinear<PointNormalT, PointNormalT> reg; 
 //  pcl::IterativeClosestPointNonLinear<PointNormalT, PointNormalT> reg;
-  reg.setTransformationEpsilon (1e-6); // stopping condition
+//  reg.setTransformationEpsilon (1e-6); // stopping condition
   
   // Set the maximum distance between two correspondences (src<->tgt) to 10cm
   // Note: adjust this based on the size of your datasets
-  reg.setMaxCorrespondenceDistance (0.1); 
+//  reg.setMaxCorrespondenceDistance (0.1);
   // 0.1 is a little jumpy but   // was 0.1
   // 0.2 for closer alignment
+
+  // drill:
+  reg.setMaxCorrespondenceDistance (0.01);  
+
   // Set the point representation
   reg.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
 
@@ -270,7 +277,7 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   // Run the same optimization in a loop and visualize the results
   Eigen::Matrix4f Ti = Eigen::Matrix4f::Identity (), prev, targetToSource;
   PointCloudWithNormals::Ptr reg_result = points_with_normals_src;
-  reg.setMaximumIterations (2); //was 2
+  reg.setMaximumIterations (20); //was 2
   for (int i = 0; i < 300; ++i)// was 30
   {
     PCL_INFO ("Iteration Nr. %d.\n", i);
@@ -296,6 +303,8 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
     // visualize current state
     showCloudsRight(points_with_normals_tgt, points_with_normals_src);
   }
+
+  cout << Ti << " tf found by icp drc\n";
 
         //
   // Get the transformation from target to source

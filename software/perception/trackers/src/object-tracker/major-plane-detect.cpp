@@ -20,7 +20,7 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
   mapSpec.mActive = true;
-  // enabling these creates a box thats fixed in world frame
+  // enabling these fixes the box in world frame
   //mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*10;
   //mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*10;
   mapSpec.mResolution = 0.01;
@@ -48,17 +48,16 @@ bool MajorPlane::getSweep( Eigen::Vector3f bounds_center, Eigen::Vector3f bounds
   // get submap we created earlier
   LocalMap::Ptr localMap = mCollector->getMapManager()->getMap(mActiveMapId);
 
-  // find time range of desired swath (from 45 to 135 degrees)
+  // find time range of desired swath
   int64_t timeMin, timeMax;
   double ang_min = 0.0 *M_PI/180; // leading edge from the right hand side of sweep
-  double ang_max = 179.99 *M_PI/180;
-  // 0 and 180 fails
+  double ang_max = 179.99 *M_PI/180; // 0 and 180 fails
   
   int current_utime = drc::Clock::instance()->getCurrentTime();
   //cout << ang_min << " min | " << ang_max << " max\n";
         
   bool gotFirstSweep = mCollector->getLatestSwath(ang_min, ang_max,
-                                        timeMin, timeMax); // these didnt work
+                                        timeMin, timeMax);
   if (!gotFirstSweep){ // have not properly init'ed the collector - not a full sweep yet
     // cout << "not prop init yet\n"; 
     return false;
@@ -71,7 +70,6 @@ bool MajorPlane::getSweep( Eigen::Vector3f bounds_center, Eigen::Vector3f bounds
   last_sweep_time_ = timeMin;
   cout << timeMin << " timeMin | " << timeMax << " timeMax | " << current_utime << " utime | new process\n";
 
-  
   LocalMap::SpaceTimeBounds bounds;
   bounds.mTimeMin = timeMin;
   bounds.mTimeMax = timeMax;
@@ -324,7 +322,7 @@ void MajorPlane::matchToLargestPlane(){
   // c Project the model inliers (seems to be necessary to fitting convex hull
   pcl::ProjectInliers<pcl::PointXYZRGB> proj;
   proj.setModelType (pcl::SACMODEL_PLANE);
-  proj.setInputCloud (cloud_);
+  proj.setInputCloud (cloud_); // TODO: pussible bug - this doesn't seem to be setting the inliers - but the full cloud
   proj.setModelCoefficients (new_plane_coeffs);
   proj.filter (*cloud_projected);
   
