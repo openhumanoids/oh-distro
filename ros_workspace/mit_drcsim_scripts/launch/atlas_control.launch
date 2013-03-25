@@ -1,8 +1,8 @@
 <launch>
 
   <arg name="gzname" default="gazebo"/>
-  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control.world" />
-<!--  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control_qual_1.world" />-->
+<!--  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control.world" />-->
+  <arg name="gzworld" default="$(find mit_drcsim_scripts)/worlds/atlas_control_qual_1.world" />
 
   <!-- start gazebo with the Atlas -->
 <!--  <node name="gazebo" pkg="atlas_utils" type="run_$(arg gzname)" args="$(arg gzworld)" output="screen" />-->

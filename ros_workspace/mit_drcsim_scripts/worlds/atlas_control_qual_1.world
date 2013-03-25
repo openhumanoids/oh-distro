@@ -3,12 +3,12 @@
   <world name="default">
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
-      <update_rate>2000</update_rate>
+      <update_rate>1000</update_rate>
       <ode>
         <solver>
           <type>quick</type>
           <dt>0.00033</dt>
-          <iters>500</iters>
+          <iters>100</iters>
           <sor>1.2</sor>
         </solver>
         <constraints>
@@ -214,7 +214,7 @@
       <!-- stepping stones -->
 <!--      <pose>16.8 8.25 2.0 0 0 0</pose>-->
       <!-- starting gate --> 
-      <pose>0 0 2.0 0 0 0</pose> 
+      <pose>0 0 1.93 0 0 0</pose> 
     </include>
 
 
