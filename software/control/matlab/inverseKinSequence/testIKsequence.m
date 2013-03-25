@@ -1,9 +1,8 @@
 function testIKsequence()
 options.floating = true;
 options.dt = 0.001;
-
-p = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
-load('../../../control/matlab/data/atlas_fp.mat');
+p = Atlas('/home/hongkai/drc/software/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+load('/home/hongkai/drc/software/control/matlab/data/atlas_fp.mat');
 p = p.setInitialState(xstar);
 
 ks = ActionSequence();
@@ -29,10 +28,12 @@ kc2 = ActionKinematicConstraint(l_foot,l_foot_contact_pts,l_foot_contact_pos,tsp
 ks = ks.addKinematicConstraint(kc2);
 kc3 = ActionKinematicConstraint(r_hand,r_hand_contact_pts,r_hand_contact_pos+[0.2;0.05;0.7],[tspan(end) tspan(end)],'rhand_ee_goal');
 ks = ks.addKinematicConstraint(kc3);
-options = struct('nSample',2);
+options = struct('nSample',5);
+options.MajorIterationsLimit = 500;
 options.q_nom = q0;
-options.Q = eye(nq);
-[q,t,info] = inverseKinSequence(p,q0,ks,options);
-disp(q)
-disp(t)
+options.Q = 1*eye(nq);
+options.Qv = 1*eye(nq);
+options.Qa = 5*eye(nq);
+options.quasiStaticFlag = true;
+[qtraj,info] = inverseKinSequence(p,q0,ks,options);
 end

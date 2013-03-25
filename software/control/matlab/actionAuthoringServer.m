@@ -148,7 +148,7 @@ while (1)
       if(action_options.ZMP)
           dt = 0.01;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
-          zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81,struct('supportPolygonConstraints',true));
+          zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);
           t_breaks = action_sequence_ZMP.tspan(1)+dt*(0:window_size-1);
           t_breaks(end) = action_sequence_ZMP.tspan(end);
           contact_tol = 1e-4;
@@ -185,6 +185,10 @@ while (1)
           q0 = q;
           com0 = r.getCOM(q0);
           comdot0 = 0*com0;
+          zmp_options = struct();
+          zmp_options.supportPolygonConstraints = true;
+          zmp_options.shrink_factor = 0.8;
+          zmp_options.useQP = true;
           com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks);
           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
           q_zmp_plan(:,1) = q0;
