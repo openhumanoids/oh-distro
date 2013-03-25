@@ -51,6 +51,9 @@ classdef ZMPplanner < DrakeSystem
             if(~isfield(options,'supportPolygonConstraints'))
                 options.supportPolygonConstraints = true;
             end
+            if(~isfield(options,'penalizeZMP'))
+                options.penalizeZMP = false;
+            end
             nx = 4;
             nu = 2;
             ny = 2;
@@ -158,7 +161,11 @@ classdef ZMPplanner < DrakeSystem
     %                 error('The ti system at the end is not stable')
     %             end
                 R_u = 1e-1*eye(nu*preview_size);
-                Q_zmp = 0*eye(ny*preview_size);
+                if(options.penalizeZMP)
+                    Q_zmp = eye(ny*preview_size);
+                else
+                    Q_zmp = zeros(ny*preview_size);
+                end
                 pickUmat = [sparse(nu*preview_size,n_weights) speye(nu*preview_size)];
                 Mbarf = Mbar(end-nx+1:end,:);
                 Nbarf = Nbar(end-nx+1:end,:);
@@ -202,21 +209,27 @@ classdef ZMPplanner < DrakeSystem
                 % For LP formulation, add a slack variable to penalize the
                 % L_infinity norm of u. The TILQR cost cannot be added at
                 % the end since that incurs quadratic cost
-                Aeq = [inner_support_vert_mat -N sparse(2*preview_size,2);convex_comb_mat sparse(preview_size,preview_size*nu+2)];
-                Aineq = [inner_support_vert_mat sparse(2*preview_size,nu*preview_size) -spones(ones(2*preview_size,1)) sparse(2*preview_size,1);...
-                    inner_support_vert_mat sparse(2*preview_size,nu*preview_size) spones(ones(2*preview_size,1)) sparse(2*preview_size,1);...
-                    sparse(nu*preview_size,n_weights) speye(nu*preview_size) sparse(nu*preview_size,1) -spones(ones(nu*preview_size,1));...
-                    sparse(nu*preview_size,n_weights) speye(nu*preview_size) sparse(nu*preview_size,1) spones(ones(nu*preview_size,1))];
-                model = struct();
-                model.A = [Aeq;Aineq];
-%                 model.rhs = [x0Y;ones(preview_size,1);support_center(:);support_center(:)];
-                model.rhs = [x0Y;ones(preview_size,1);support_center(:);support_center(:);zeros(2*nu*preview_size,1)];
-                model.lb = [zeros(n_weights,1);-inf(nu*(preview_size-1),1);-inf;-inf;0;0];
-                model.ub = [ones(n_weights,1);inf(nu*(preview_size-1),1);inf;inf;inf;inf];
-                model.obj = [zeros(n_weights+nu*preview_size,1);1;1];
-                model.sense = strcat(repmat('=',1,3*preview_size),repmat('<',1,2*preview_size),repmat('>',1,2*preview_size),repmat('<',1,nu*preview_size),repmat('>',1,nu*preview_size));
-                params = struct();
-                params.outputflag = 0;
+                if(options.supportPolygonConstraints)
+                    Aeq = [inner_support_vert_mat -N sparse(2*preview_size,2);convex_comb_mat sparse(preview_size,preview_size*nu+2)];
+                    Aineq = [inner_support_vert_mat sparse(2*preview_size,nu*preview_size) -spones(ones(2*preview_size,1)) sparse(2*preview_size,1);...
+                        inner_support_vert_mat sparse(2*preview_size,nu*preview_size) spones(ones(2*preview_size,1)) sparse(2*preview_size,1);...
+                        sparse(nu*preview_size,n_weights) speye(nu*preview_size) sparse(nu*preview_size,1) -spones(ones(nu*preview_size,1));...
+                        sparse(nu*preview_size,n_weights) speye(nu*preview_size) sparse(nu*preview_size,1) spones(ones(nu*preview_size,1))];
+                    model = struct();
+                    model.A = [Aeq;Aineq];
+%                   model.rhs = [x0Y;ones(preview_size,1);support_center(:);support_center(:)];
+                    model.rhs = [x0Y;ones(preview_size,1);support_center(:);support_center(:);zeros(2*nu*preview_size,1)];
+                    model.lb = [zeros(n_weights,1);-inf(nu*(preview_size-1),1);-inf;-inf;0;0];
+                    model.ub = [ones(n_weights,1);inf(nu*(preview_size-1),1);inf;inf;inf;inf];
+                    if(options.penalizeZMP)
+                        model.obj = [zeros(n_weights+nu*preview_size,1);1;1];
+                    end
+                    model.sense = strcat(repmat('=',1,3*preview_size),repmat('<',1,2*preview_size),repmat('>',1,2*preview_size),repmat('<',1,nu*preview_size),repmat('>',1,nu*preview_size));
+                    params = struct();
+                    params.outputflag = 0;
+                else
+                    error('Not implemented yet')
+                end
                 results = gurobi(model,params);
                 if(~strcmp(results.status, 'OPTIMAL'))
                     error('ZMP planning is not successful');

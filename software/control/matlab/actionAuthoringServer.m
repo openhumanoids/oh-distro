@@ -189,6 +189,7 @@ while (1)
           zmp_options.supportPolygonConstraints = true;
           zmp_options.shrink_factor = 0.8;
           zmp_options.useQP = true;
+          zmp_options.penalizeZMP = true;
           com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks);
           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
           q_zmp_plan(:,1) = q0;
