@@ -31,25 +31,21 @@ group "core" {
 }
 
 group "drake" {
-    cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
-       host = "localhost";
-    }
-    cmd "ResetRobotConfig" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); resetRobotConfig;\"";
-        host = "localhost";
-    }
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
         host = "localhost";
     }
-    cmd "WalkingController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runQPWalkingLCM;\"";
+    cmd "ZMPWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
         host = "localhost";
     }
-    cmd "Simulator (gazebo stand-in)" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']); r=Atlas; options.floating = true; options.dt = 0.002; r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options); d = load('data/atlas_fp.mat'); xstar = d.xstar; r = r.setInitialState(xstar); runLCM(r);\"";
+    cmd "StateMachine" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQaul1StateMachine;\"";
         host = "localhost";
+    }
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       host = "localhost";
     }
 }
 
