@@ -1,6 +1,6 @@
 function testWalkingPlanPub
 
-if (nargin<1) num_steps = 10; end
+if (nargin<1) num_steps = 2; end
 if (nargin<2) step_length = 0.6; end
 if (nargin<3) step_time = 0.8; end
 
@@ -87,79 +87,71 @@ qtraj = PPTrajectory(spline(ts,q));
 
 walking_lis = WalkingPlanListener('COMMITTED_WALKING_PLAN');
 walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj));
-clear V htraj hddot qtraj;
-
-while true
-  [walking_data,t] = walking_lis.getNextMessage(100);
-  if ~isempty(walking_data)
-    break;
-  end
-end
-qtraj = walking_data.qtraj;
-htraj = walking_data.htraj;
-hddot = walking_data.hddtraj;
-S = walking_data.Straj;
-
-zmpdata = SharedDataHandle(struct('S',S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'ti_flag',false));
-
-% instantiate QP controller
-options.exclude_torso = true;
-options.slack_limit = 10.0;
-options.w = 1.0;
-options.R = 1e-12*eye(nu);
-qp = QPController(r,zmpdata,options);
-
-% pd controller to follow desired traj
-pd = SimplePDController(r,zmpdata);
-
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 2;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
-
-% walking foot support trajectory
-ins(1).system = 2;
-ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoCascade(supptraj,sys,[],ins,outs);
-clear ins outs;
-
-% feedback PD trajectory controller 
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],[],outs);
-clear outs;
-
-S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
-output_select(1).system=1;
-output_select(1).output=1;
-sys = mimoCascade(sys,v,[],[],output_select);
-warning(S);
-traj = simulate(sys,[0 T],x0);
-playback(v,traj,struct('slider',true));
-
-for i=1:length(ts)
-  x=traj.eval(ts(i));
-  q=x(1:getNumDOF(r)); 
-  com(:,i)=getCOM(r,q);
-end
-
-figure(2);
-subplot(3,1,1);
-plot(ts,com(1,:),'r');
-subplot(3,1,2);
-plot(ts,com(2,:),'r');
-subplot(3,1,3);
-plot(ts,com(3,:),'r');
-
+keyboard;
+walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
+% clear V htraj hddot qtraj supptraj;
+% 
 % keyboard;
+% 
+% while true
+%   [walking_data,t] = walking_lis.getNextMessage(100);
+%   if ~isempty(walking_data)
+%     break;
+%   end
+% end
+% qtraj = walking_data.qtraj;
+% htraj = walking_data.htraj;
+% hddot = walking_data.hddtraj;
+% S = walking_data.Straj;
+% supptraj = walking_data.supptraj;
+% 
+% zmpdata = SharedDataHandle(struct('S',S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'supptraj',supptraj,'ti_flag',false));
+% 
+% % instantiate QP controller
+% options.exclude_torso = true;
+% options.slack_limit = 10.0;
+% options.w = 1.0;
+% options.R = 1e-12*eye(nu);
+% qp = QPController(r,zmpdata,options);
+% 
+% % feedback QP controller with atlas
+% ins(1).system = 1;
+% ins(1).input = 1;
+% outs(1).system = 2;
+% outs(1).output = 1;
+% sys = mimoFeedback(qp,r,[],[],ins,outs);
+% clear ins outs;
+% 
+% % feedback PD trajectory controller 
+% pd = SimplePDController(r,zmpdata);
+% outs(1).system = 2;
+% outs(1).output = 1;
+% sys = mimoFeedback(pd,sys,[],[],[],outs);
+% clear outs;
+% 
+% S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
+% output_select(1).system=1;
+% output_select(1).output=1;
+% sys = mimoCascade(sys,v,[],[],output_select);
+% warning(S);
+% traj = simulate(sys,[0 T],x0);
+% playback(v,traj,struct('slider',true));
+% 
+% for i=1:length(ts)
+%   x=traj.eval(ts(i));
+%   q=x(1:getNumDOF(r)); 
+%   com(:,i)=getCOM(r,q);
+% end
+% 
+% figure(2);
+% subplot(3,1,1);
+% plot(ts,com(1,:),'r');
+% subplot(3,1,2);
+% plot(ts,com(2,:),'r');
+% subplot(3,1,3);
+% plot(ts,com(3,:),'r');
+% 
+% % keyboard;
 
 end
 

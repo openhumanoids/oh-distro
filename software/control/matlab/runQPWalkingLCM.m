@@ -120,7 +120,7 @@ limp = LinearInvertedPendulum(htraj);
 [~,V] = ZMPtracker(limp,zmptraj);
 
 hddot = fnder(htraj,2);
-zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'ti_flag',false));
+zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'supptraj',supptraj,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
@@ -129,27 +129,15 @@ options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 
-% pd controller to follow desired traj
+% cascade PD qtraj controller 
 pd = SimplePDController(r,zmpdata);
-
-% walking foot support trajectory
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoCascade(supptraj,qp,[],ins,outs);
-clear ins outs;
-
-% cascade PD outputs based on qdes trajectory
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 2;
 ins(2).input = 2;
 outs(1).system = 2;
 outs(1).output = 1;
-sys = mimoCascade(pd,sys,[],ins,outs);
+sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins outs;
 % 
 % disp('Waiting for robot plan confirmation...');

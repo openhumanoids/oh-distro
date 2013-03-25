@@ -46,7 +46,13 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_qtraj_bytes = length(msg.qtraj); 
 
-      msg.n_htraj_bytes + msg.n_hddtraj_bytes + msg.n_Straj_bytes + msg.n_qtraj_bytes
+      supptraj = data.supptraj;
+      save('supptraj_r.mat','supptraj');
+      fid = fopen('supptraj_r.mat','r');
+      msg.supptraj = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_supptraj_bytes = length(msg.supptraj); 
+
       obj.lc.publish(obj.channel, msg);
 		end
 

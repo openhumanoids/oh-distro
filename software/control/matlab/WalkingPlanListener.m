@@ -50,7 +50,13 @@ classdef WalkingPlanListener
         matdata = load('qtraj_w.mat');
         qtraj=matdata.qtraj;
 
-        x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'Straj',Straj);
+        fid = fopen('supptraj_w.mat','w');
+        fwrite(fid,typecast(msg.supptraj,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load('supptraj_w.mat');
+        supptraj=matdata.supptraj;
+
+        x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'Straj',Straj,'supptraj',supptraj);
 			end
     end
 	end

@@ -84,37 +84,25 @@ limp = LinearInvertedPendulum(htraj);
 [~,V] = ZMPtracker(limp,zmptraj);
 
 hddot = fnder(htraj,2);
-zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'ti_flag',false));
+zmpdata = SharedDataHandle(struct('S',V.S,'h',htraj,'hddot',hddot,'qtraj',qtraj,'supptraj',supptraj,'ti_flag',false));
 
 % instantiate QP controller
 options.exclude_torso = true;
 options.slack_limit = 10.0;
-options.w = 1e-1;
+options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
-
-% pd controller to follow desired traj
-pd = SimplePDController(r,zmpdata);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 2;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
-% walking foot support trajectory
-ins(1).system = 2;
-ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoCascade(supptraj,sys,[],ins,outs);
-clear ins outs;
-
-% feedback PD trajectory controller 
+% feedback PD qtraj controller 
+pd = SimplePDController(r,zmpdata);
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],[],outs);

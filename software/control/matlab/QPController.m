@@ -14,9 +14,8 @@ classdef QPController < MIMODrakeSystem
     end
     
     qddframe = AtlasCoordinates(r);
-    supportframe = AtlasBody(r);
 
-    input_frame = MultiCoordinateFrame({qddframe,supportframe,r.getStateFrame});
+    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
     output_frame = r.getInputFrame();
     obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[.005;0]); % sets controller update rate
@@ -105,12 +104,18 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    tic;
+%     tic;
     q_ddot_des = varargin{1};
-    supports = varargin{2};
-    x = varargin{3};
-
+    x = varargin{2};
+    
     zmpd = getData(obj.zmpdata);
+
+    if zmpd.ti_flag
+      supports = zmpd.supptraj;
+    else
+      supports = zmpd.supptraj.eval(t);
+    end
+    
     r = obj.robot;
 
     %----------------------------------------------------------------------
@@ -376,7 +381,7 @@ classdef QPController < MIMODrakeSystem
     else
       y = alpha(nq+(1:nu));
     end
-    toc
+%     toc
    
   end
   end

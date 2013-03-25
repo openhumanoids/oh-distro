@@ -8,10 +8,11 @@ classdef SimplePDController < DrakeSystem
   end
   
   methods
-    function obj = SimplePDController(r,controller_data)
+    function obj = SimplePDController(r,controller_data,Kp,Kd)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
-
+      
+      
       input_frame = r.getStateFrame;
       coords = AtlasCoordinates(r);
       obj = obj@DrakeSystem(0,0,input_frame.dim,coords.dim,true,true);
@@ -20,10 +21,24 @@ classdef SimplePDController < DrakeSystem
 
       obj.controller_data = controller_data;
       obj.nq = getNumDOF(r);
-      obj.Kp = 200*eye(obj.nq);
-      obj.Kd = 20.0*eye(obj.nq);
-      obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
-      obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+
+      if nargin>3
+        typecheck(Kd,'double');
+        sizecheck(Kd,[obj.nq obj.nq]);
+        obj.Kd = Kd;
+      else
+        obj.Kd = 20.0*eye(obj.nq);
+        obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+      end
+      if nargin>2
+        typecheck(Kp,'double');
+        sizecheck(Kp,[obj.nq obj.nq]);
+        obj.Kp = Kp;
+      else
+        obj.Kp = 200*eye(obj.nq);
+        obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
+      end
+  
     end
    
   	function y=output(obj,t,~,x)
