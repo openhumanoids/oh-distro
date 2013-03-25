@@ -1,0 +1,15 @@
+package drc;
+
+struct robot_plan_constraint_checked_t
+{
+    string robot_name;    
+    int32_t num_states;
+    robot_plan_t robot_plan;
+    const int8_t NOT_OK=0, OK=1;
+    int32_t num_constraints;
+    int8_t constraints_satisfied[num_constraints][num_states];
+    int8_t  CoM_constraint_satisfied;
+}
+
+
+
