@@ -30,6 +30,8 @@ warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
+robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...
+                                           'ACTION_AUTHORING_ROBOT_PLAN');
 %%
 
 % load the "zero position"
@@ -63,6 +65,10 @@ while (1)
         action_sequence_ZMP = ActionSequence();
     end
     q_bk = q;
+    % Get initial conditions from msg.q0
+    msg.q0.robot_name = 'atlas'; % To match robot_state_coder.lcmcoder
+    x0 = robot_state_coder.lcmcoder.jcoder.decode(msg.q0).val;
+    q = x0(1:getNumDOF(r));
     try
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
@@ -180,6 +186,7 @@ while (1)
               end
               com_key_time_samples(:,i) = r.getCOM(q_key_time_samples(:,i));
           end
+          % TODO: Publish constraint satisfaction message here
           com_height_traj = PPTrajectory(foh(action_sequence.key_time_samples,com_key_time_samples(3,:)));
           com_height = com_height_traj.eval(t_breaks);
           q0 = q;
@@ -190,14 +197,18 @@ while (1)
           zmp_options.shrink_factor = 0.8;
           zmp_options.useQP = true;
           zmp_options.penalizeZMP = true;
-          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks);
+          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks,zmp_options);
           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
           q_zmp_plan(:,1) = q0;
-          for i = 2:length(t_brekas)
+          for i = 2:length(t_breaks)
               ikargs = action_sequence.getIKArguments(t_breaks(i));
               ikargs = [ikargs,{0},{com_plan(:,i)}];
               q_zmp_plan(:,i) = inverseKin(r,q_zmp_plan(:,i-1),ikargs{:},options);
           end
+
+          % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
+          publish(robot_plan_publisher, t_breaks, ...
+                  [q_zmp_plan; zeros(size(q_zmp_plan))]);
       end
       ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
       if isempty(ikargs)
@@ -211,7 +222,6 @@ while (1)
       q=q_bk;
       continue;
     end
-    
     % publish robot state message
     x = [q;0*q];
     v.draw(0,x);
@@ -219,3 +229,4 @@ while (1)
   end
 end
 
+end 
