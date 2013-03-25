@@ -9,7 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/icp_tutorial)
+add_subdirectory(src/icp-tracker)
 add_subdirectory(src/vehicle-tracker)
 add_subdirectory(src/tools)
 
