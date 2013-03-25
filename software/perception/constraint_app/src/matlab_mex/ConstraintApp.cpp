@@ -25,7 +25,9 @@ typedef int SOCKET;
 //    perform the update step.  use the relative poses as expected observations, use new data as new observations.
 
 //NB: use tail -f cam.log to view output from the ConstraintApp::main thread
-ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0), m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary),  m_nextLinkId(0)
+ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0), 
+				 m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary),  
+				 m_wasReset(true), m_nextLinkId(0)
 {
   
   m_lcm = lcm_create(NULL);
@@ -44,6 +46,8 @@ ConstraintApp::~ConstraintApp()
   delete m_mainThread;
 
   lcm_destroy(m_lcm);
+
+  m_log << "ConstraintApp::~ConstraintApp" << std::endl;
 }
 
 void ConstraintApp::main()
@@ -135,6 +139,7 @@ void ConstraintApp::AffordanceFitHandler(const drc_affordance_t *msg)
   m_currentEstimate.base_expressedIn_world = GetFrameFromParams(msg);
   m_currentLinks.clear();
   m_currentObservations.clear();
+  m_wasReset = true;
 
   m_log << "  reset the base pose to " << std::endl
 	<< m_currentEstimate.base_expressedIn_world << std::endl;
@@ -182,8 +187,43 @@ bool ConstraintApp::WaitForObservations(unsigned int timeout_ms)
   return !m_currentObservations.empty();
 }
 
-bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations, 
-				    std::vector<double>& actualObservations,
+bool ConstraintApp::GetExpectedObservations(const std::vector<double>& state,
+					    const std::vector<int>& observationIds,
+					    std::vector<double>& observations)
+{
+  boost::mutex::scoped_lock lock(m_dataMutex);
+
+  m_log << "ConstraintApp::GetExpectedObservations" << std::endl;
+
+  observations.clear();
+  observations.reserve(observationIds.size()*3);
+
+  for ( std::vector<int>::const_iterator iter = observationIds.begin(); iter != observationIds.end(); ++iter ) {
+
+    //find the id; TODO: need to make this a search tree
+    LinkMap::const_iterator linkIter;
+    for ( linkIter = m_currentLinks.begin(); linkIter != m_currentLinks.end(); ++linkIter ) {
+      if ( linkIter->second.id == *iter ) break;
+    }
+
+    if ( linkIter == m_currentLinks.end() ) {
+      m_log << "ERROR: unable to find corresponding link " << *iter;
+      return false;
+    }
+
+    KDL::Frame base_expressedIn_world(VectorToFrame(state));
+    KDL::Vector expected = base_expressedIn_world * linkIter->second.link_expressedIn_base;
+    observations.push_back(expected[0]);
+    observations.push_back(expected[1]);
+    observations.push_back(expected[2]);
+
+    m_log << "   added expected observation for " << linkIter->first << ", id=" << *iter << std::endl
+	  << "      exp: " << expected << std::endl;
+  }
+  return true;
+}
+
+bool ConstraintApp::GetObservations(std::vector<double>& actualObservations,
 				    std::vector<int>& observationIds)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
@@ -191,11 +231,9 @@ bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations,
   m_log << "ConstraintApp::GetObservations" << std::endl;
 
   actualObservations.clear();
-  expectedObservations.clear();
   observationIds.clear();
 
   actualObservations.reserve(m_currentObservations.size()*3);
-  expectedObservations.reserve(m_currentObservations.size()*3);
   observationIds.reserve(m_currentObservations.size());
 
   for ( ObservationMap::const_iterator iter = m_currentObservations.begin(); iter != m_currentObservations.end(); ++iter ) {
@@ -209,20 +247,69 @@ bool ConstraintApp::GetObservations(std::vector<double>& expectedObservations,
       return false;
     }
 
-    KDL::Vector expected = m_currentEstimate.base_expressedIn_world * linkIter->second.link_expressedIn_base;
-    expectedObservations.push_back(expected[0]);
-    expectedObservations.push_back(expected[1]);
-    expectedObservations.push_back(expected[2]);
-
     observationIds.push_back(linkIter->second.id);
 
     m_log << "   added observation for " << iter->first << std::endl
 	  << "      obs: " << iter->second.obs_expressedIn_world << std::endl
-	  << "      exp: " << expected << std::endl
 	  << "       id: " << linkIter->second.id << std::endl;
   }
 
   m_currentObservations.clear();
 
   return true;
+}
+
+bool ConstraintApp::GetResetAndClear()
+{
+  boost::mutex::scoped_lock lock(m_dataMutex);
+  bool ret = m_wasReset;
+  m_wasReset = false;
+  return ret;
+}
+
+KDL::Frame ConstraintApp::VectorToFrame(const std::vector<double>& state)
+{
+  KDL::Frame res;
+  
+  if ( state.size() != 6 ) {
+    m_log << "ERROR: improper number of elements while setting state" << std::endl;
+    return KDL::Frame();
+  }
+
+  res.p[0] = state[0];
+  res.p[1] = state[1];
+  res.p[2] = state[2];
+
+  res.M = KDL::Rotation::RPY(state[3], state[4], state[5]);
+
+  return res;
+}
+
+std::vector<double> ConstraintApp::FrameToVector(const KDL::Frame& frame)
+{
+  std::vector<double> state;
+  state.reserve(6);
+
+  state.push_back(frame.p[0]);
+  state.push_back(frame.p[1]);
+  state.push_back(frame.p[2]);
+  double r,p,w;
+  frame.M.GetRPY(r,p,w);
+  state.push_back(r);
+  state.push_back(p);
+  state.push_back(w);
+
+  return state;
+}
+
+void ConstraintApp::GetCurrentStateEstimate(std::vector<double>& state)
+{
+  boost::mutex::scoped_lock lock(m_dataMutex);
+  state = FrameToVector(m_currentEstimate.base_expressedIn_world);
+}
+
+void ConstraintApp::SetCurrentStateEstimate(const std::vector<double>& state)
+{
+  boost::mutex::scoped_lock lock(m_dataMutex);
+  m_currentEstimate.base_expressedIn_world = VectorToFrame(state);
 }

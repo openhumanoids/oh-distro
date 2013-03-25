@@ -48,8 +48,8 @@ lc.publish("AFFORDANCE_FIT", aff_fit.encode())
 # 2. Send some sample "initial points" (i.e., the fit)
 track_ids = [10, 20, 30]
 track_means = numpy.matrix([[ 1.2, 1.2, 1.2 ],
-                            [ 0.0, 0.0, 0.0 ],
-                            [ 5.0, 5.0, 5.0 ]])
+                            [ 0.9, 0.8, 0.9 ],
+                            [ 1.5, 1.0, 1.1 ]])
 
 atc = affordance_track_collection_t()
 atc.utime = timestamp_now()
@@ -83,9 +83,10 @@ for j in range(3):
         track = affordance_track_t()
         track.segment = str(track_ids[i])
         v = vector_3d_t()
-        v.x = track_means[i,0] + random.uniform(-0.1,0.1)
-        v.y = track_means[i,1] + random.uniform(-0.1,0.1)
-        v.z = track_means[i,2] + random.uniform(-0.1,0.1)
+        var = 0.01*0.01;
+        v.x = track_means[i,0] + random.gauss(0.0,var)
+        v.y = track_means[i,1] + random.gauss(0.0,var)
+        v.z = track_means[i,2] + random.gauss(0.0,var)
         track.position = v
         atc.tracks.append(track)
         atc.ntracks +=1 

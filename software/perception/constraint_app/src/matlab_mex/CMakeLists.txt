@@ -12,7 +12,7 @@ FIND_LIBRARY(MATLAB_MEX_LIBRARY mex ${MATLAB_BIN} )
 FIND_LIBRARY(MATLAB_MX_LIBRARY  mx  ${MATLAB_BIN} )
 FIND_LIBRARY(MATLAB_ENG_LIBRARY eng ${MATLAB_BIN} )
 FIND_FILE(MATLAB_STDC libstdc++.so.6 ${MATLAB_EXT_LIB} )  # need to link against matlab's version of libstdc++
-FIND_PATH(MATLAB_INCLUDE_DIR "mex.h" ${MATLAB_ROOT}"/extern/include" )
+FIND_PATH(MATLAB_INCLUDE_DIR "mex.h" ${MATLAB_ROOT}/extern/include )
 SET(MATLAB_LIBRARIES ${MATLAB_MEX_LIBRARY} ${MATLAB_MX_LIBRARY} ${MATLAB_ENG_LIBRARY} ${MATLAB_STDC})
 IF(MATLAB_INCLUDE_DIR AND MATLAB_LIBRARIES)
   SET(MATLAB_FOUND 1)
@@ -48,5 +48,9 @@ add_mex(cam_destroy mex_files)
 add_mex(cam_getCounter mex_files)
 add_mex(cam_getObservations mex_files)
 add_mex(cam_waitForObservations mex_files)
+add_mex(cam_getResetAndClear mex_files)
+add_mex(cam_getCurrentStateEstimate mex_files)
+add_mex(cam_setCurrentStateEstimate mex_files)
+add_mex(cam_getExpectedObservations mex_files)
 
 

@@ -60,9 +60,14 @@ public:
   }
 
   bool WaitForObservations(unsigned int timeout_ms);
-  bool GetObservations(std::vector<double>& expectedObservations, 
-		       std::vector<double>& actualObservations,
+  bool GetObservations(std::vector<double>& actualObservations,
 		       std::vector<int>& observationIds);
+  bool GetExpectedObservations(const std::vector<double>& state,
+			       const std::vector<int>& observationIds,
+			       std::vector<double>& observations);
+  bool GetResetAndClear();
+  void GetCurrentStateEstimate(std::vector<double>& state);
+  void SetCurrentStateEstimate(const std::vector<double>& state);
 
   static void AffordanceTrackCollectionHandlerAux(const lcm_recv_buf_t* rbuf,
 						      const char* channel,
@@ -98,6 +103,7 @@ protected:
   Configuration m_currentEstimate;
   LinkMap m_currentLinks;
   ObservationMap m_currentObservations;
+  bool m_wasReset;
 
   int m_nextLinkId;
 
@@ -105,6 +111,8 @@ protected:
   void main();
   int lcm_handle_timeout(lcm_t* lcm, int ms);
   KDL::Frame GetFrameFromParams(const drc_affordance_t *msg);
+  KDL::Frame VectorToFrame(const std::vector<double>& state);
+  std::vector<double> FrameToVector(const KDL::Frame& frame);
 };
 
 #endif

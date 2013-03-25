@@ -1,4 +1,4 @@
-function [x,P] = unscented_update(zfunc, dzfunc, x,P, z,R, varargin)
+function [x,P,ss,zs] = unscented_update(zfunc, dzfunc, x,P, z,R, varargin)
 %[x,P] = unscented_update(zfunc,dzfunc, x,P, z,R, ...)
 %
 % Algorithm implemented as described in: 
@@ -94,8 +94,7 @@ function S2 = force_spd(S1)
     L = u*sqrt(s);
     S2 = L*L';
 
-function x = repvec(x,N)
-x = x(:, ones(1,N));
+
 
 %
 %
