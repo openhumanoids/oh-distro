@@ -38,11 +38,11 @@ fprintf(fptr,'setenv(''PATH_LICENSE_STRING'',''2069810742&Courtesy_License&&&USR
 fprintf(fptr,'\n\n% Add drc control matlab utilities to the path\n');
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
 
 fclose(fptr);
 
-addpath([BUILD_PREFIX,'/config']);
-drc_control_setup;
+run([BUILD_PREFIX,'/config/drc_control_setup']);
 
 p = cd('drake');
 options.autoconfig=1;
@@ -56,4 +56,15 @@ make;
 
 cd(p);
 
+%% build drc drake mexfiles
+[~,flags]=system('pkg-config --cflags --libs maps eigen3 lcm');
+%mexPrint(['src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,' ',flags]);
+
+end
+
+
+function mexPrint(varargin)
+  disp(['mex ',sprintf('%s ',varargin{:})]);
+  mex(varargin{:});
+end
 
