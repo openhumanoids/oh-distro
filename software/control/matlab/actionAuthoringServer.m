@@ -53,6 +53,7 @@ options = struct();
 options.Q = diag(cost(1:r.getNumDOF));
 options.q_nom = q;
 
+contact_tol = 1e-4;
 v = r.constructVisualizer();
 
 timeout=10;
@@ -112,12 +113,12 @@ while (1)
           pos.min(3) = 0;
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
           collision_group_pt = mean(body.getContactPoints(collision_group),2);
-          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,body.linkname);
+          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,[body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
           for body_ind = 1:length(r.body)
               body_contact_pts = r.body(body_ind).getContactPoints();
               if(~isempty(body_contact_pts))
-                  above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,r.body(body_ind).linkname);
+                  above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
                   action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
               end 
           end
@@ -133,16 +134,23 @@ while (1)
                 % call IK
                 q_lb_completion_time = inverseKin(r,q,ikargs{:},options);
               end
+              % if the q_lb_completion_time is in contact, then replace the inequality contact constraint with the equality
+              % contact constraint
               kinsol = doKinematics(r,q_lb_completion_time);
-              pos_lb_completion_time = struct();
-              pos_lb_completion_time.max = forwardKin(r,kinsol,body,collision_group_pt,false);
-              pos_lb_completion_time.min = forwardKin(r,kinsol,body,collision_group_pt,false);
-              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time,tspan,body.linkname);
+              pos_lb_completion_time = forwardKin(r,kinsol,body,collision_group_pt,false);
+              if(pos_lb_completion_time(3,:)<contact_tol)
+                  pos_lb_completion_time_con = struct();
+                  pos_lb_completion_time_con.max = pos_lb_completion_time;
+                  pos_lb_completion_time_con.min = pos_lb_completion_time;
+                  action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+              else
+                  action_constraint_ZMP = action_constraint;
+              end
               action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
               for body_ind = 1:length(r.body)
                   body_contact_pts = r.body(body_ind).getContactPoints();
                   if(~isempty(body_contact_pts))
-                      above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,r.body(body_ind).linkname);
+                      above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
                       action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(above_ground_constraint);
                   end 
               end
