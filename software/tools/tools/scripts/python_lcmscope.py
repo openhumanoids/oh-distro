@@ -111,8 +111,8 @@ def plot_data():
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,0]), 'r', linewidth=1,label="p")
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,1]), 'm', linewidth=1,label="q")
     ax4.plot(angrate.utimes[1:], np.transpose(angrate.v[1:,2]), 'y', linewidth=1,label="r")
-    print len(ins_angrate.utimes[1:])
-    print len(np.transpose(ins_angrate.v[1:,0]))
+    #print len(ins_angrate.utimes[1:])
+    #print len(np.transpose(ins_angrate.v[1:,0]))
     ax4.plot(ins_angrate.utimes[1:], -1* np.transpose(ins_angrate.v[1:,0]), 'r:', linewidth=1,label="-g0")
     ax4.plot(ins_angrate.utimes[1:],     np.transpose(ins_angrate.v[1:,1]), 'm:', linewidth=1,label="g1")
     ax4.plot(ins_angrate.utimes[1:], -1* np.transpose(ins_angrate.v[1:,2]), 'y:', linewidth=1,label="-g2")
@@ -130,24 +130,26 @@ def plot_data():
     # VO time (skip 2nd one also as its always zero:)
     plt.figure(2)
     ax5.cla()
-    ax5.plot(lf_force.utimes[1:],     np.transpose(lf_force.v[1:,0]), 'b',  linewidth=1,label="Left X")
-    ax5.plot(lf_force.utimes[1:],     np.transpose(lf_force.v[1:,1]), 'b+', linewidth=1,label="Left Y")
-    ax5.plot(lf_force.utimes[1:],     np.transpose(lf_force.v[1:,2]), 'b:', linewidth=1,label="Left Z")
-    ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,0]), 'r',  linewidth=1,label="Right X")
-    ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,1]), 'r+', linewidth=1,label="Right Y")
-    ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,2]), 'r.', linewidth=1,label="Right Z")
-    ax5.legend(loc=2,prop={'size':10});   ax5.set_xlabel('Time '+ str(last_utime));   ax5.set_ylabel('Force [imaginary units]');   ax5.grid(True)
+    ax5.plot(lf_force.utimes[2:],     np.transpose(lf_force.v[2:,0]), 'b',  linewidth=1,label="Left")
+    #ax5.plot(lf_force.utimes[1:],     np.transpose(lf_force.v[1:,1]), 'b+', linewidth=1,label="Left Y")
+    #ax5.plot(lf_force.utimes[1:],     np.transpose(lf_force.v[1:,2]), 'b:', linewidth=1,label="Left Z")
+    ax5.plot(rf_force.utimes[2:],     np.transpose(rf_force.v[2:,0]), 'r',  linewidth=1,label="Right")
+    #ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,1]), 'r+', linewidth=1,label="Right Y")
+    #ax5.plot(rf_force.utimes[1:],     np.transpose(rf_force.v[1:,2]), 'r.', linewidth=1,label="Right Z")
+    ax5.legend(loc=2,prop={'size':10});   ax5.set_xlabel('Time '+ str(last_utime));   ax5.set_ylabel('Force [?? units]');   ax5.grid(True)
     ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block- first_utime)/1000000 )
+    ax5.set_ylim( -1200, 100 )
     # Vo angle rates:
     ax6.cla()
-    ax6.plot(lf_torque.utimes[1:],     np.transpose(lf_torque.v[1:,0]), 'b',  linewidth=1,label="Left X")
-    ax6.plot(lf_torque.utimes[1:],     np.transpose(lf_torque.v[1:,1]), 'b+', linewidth=1,label="Left Y")
-    ax6.plot(lf_torque.utimes[1:],     np.transpose(lf_torque.v[1:,2]), 'b:', linewidth=1,label="Left Z")
-    ax6.plot(rf_torque.utimes[1:],     np.transpose(rf_torque.v[1:,0]), 'r',  linewidth=1,label="Right X")
-    ax6.plot(rf_torque.utimes[1:],     np.transpose(rf_torque.v[1:,1]), 'r+', linewidth=1,label="Right Y")
-    ax6.plot(rf_torque.utimes[1:],     np.transpose(rf_torque.v[1:,2]), 'r.', linewidth=1,label="Right Z")
-    ax6.legend(loc=2,prop={'size':10});   ax6.set_xlabel('Time '+ str(last_utime));   ax6.set_ylabel('Torque [imaginary units]');   ax5.grid(True)
+    ax6.plot(lf_torque.utimes[2:],     np.transpose(lf_torque.v[2:,0]), 'b',  linewidth=1,label="Left X")
+    ax6.plot(lf_torque.utimes[2:],     np.transpose(lf_torque.v[2:,1]), 'b+', linewidth=1,label="Left Y")
+    ax6.plot(lf_torque.utimes[2:],     np.transpose(lf_torque.v[2:,2]), 'b:', linewidth=1,label="Left Z")
+    ax6.plot(rf_torque.utimes[2:],     np.transpose(rf_torque.v[2:,0]), 'r',  linewidth=1,label="Right X")
+    ax6.plot(rf_torque.utimes[2:],     np.transpose(rf_torque.v[2:,1]), 'r+', linewidth=1,label="Right Y")
+    ax6.plot(rf_torque.utimes[2:],     np.transpose(rf_torque.v[2:,2]), 'r.', linewidth=1,label="Right Z")
+    ax6.legend(loc=2,prop={'size':10});   ax6.set_xlabel('Time '+ str(last_utime));   ax6.set_ylabel('Torque [?? units]');   ax5.grid(True)
     ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax6.set_ylim( -1200, 100 )
     # VO angle delta - measured change in angle:
     ax7.cla()
     ax7.plot(vo_angdelta.utimes[1:],  np.transpose(vo_angdelta.v[1:,0]), 'r+', linewidth=1,label="roll")
@@ -167,7 +169,6 @@ def plot_data():
     
   if (len(utime_10hz_rate.utimes) >1):
     plt.figure(3)
-    print "draw3"
     ax9.cla()
     ax9.plot(utime_10hz_rate.utimes[2:],     np.transpose(utime_10hz_rate.v[2:,0]), 'b',  linewidth=1,label="10Hz samples")
     ax9.plot(utime_1hz_rate.utimes[2:],     np.transpose(utime_1hz_rate.v[2:,0]), 'r',  linewidth=1,label="1Hz samples")
@@ -244,10 +245,12 @@ def on_state(channel, data):
 ################################## DRC SPECIFIC #####################################################
 def on_robot_state(channel, data):
   m = robot_state_t.decode(data)
+  # assumes left foot, right foot
   lf_torque.append(m.utime,  [m.contacts.contact_torque[0].x, m.contacts.contact_torque[0].y , m.contacts.contact_torque[0].z  ] )
   rf_torque.append(m.utime,  [m.contacts.contact_torque[1].x, m.contacts.contact_torque[1].y , m.contacts.contact_torque[1].z  ] )
-  lf_force.append(m.utime,  [m.contacts.contact_force[0].x, m.contacts.contact_force[0].y , m.contacts.contact_force[0].z  ] )
-  rf_force.append(m.utime,  [m.contacts.contact_force[1].x, m.contacts.contact_force[1].y , m.contacts.contact_force[1].z  ] )
+  # ignore x,y, they are zero
+  lf_force.append(m.utime,  [m.contacts.contact_force[0].z])#, m.contacts.contact_force[0].y , m.contacts.contact_force[0].z  ] )
+  rf_force.append(m.utime,  [m.contacts.contact_force[1].z])#, m.contacts.contact_force[1].y , m.contacts.contact_force[1].z  ] )
   #print "EST_R_STATE     %.3f" % (m.utime)
 
 # Gazebo Simulated IMU:
@@ -301,7 +304,7 @@ ins_angrate = SensorData(3); ins_posaccel = SensorData(3); # raw ins angrates an
 vo_posdelta = SensorData(4); vo_posrate = SensorData(4); 
 vo_angdelta = SensorData(4); vo_angrate = SensorData(4);
 
-lf_force = SensorData(3); rf_force = SensorData(3); # left and right foot
+lf_force = SensorData(1); rf_force = SensorData(1); # left and right foot. z only ignore x&y
 lf_torque = SensorData(3); rf_torque = SensorData(3); # left and right foot
 
 utime_10hz_rate = SensorData(1); utime_1hz_rate = SensorData(1); 
@@ -341,7 +344,7 @@ def lcm_thread():
   #sub4 = lc.subscribe("KINECT_REL_ODOMETRY", on_relvo)
 
   # DRC msgs
-  #sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
+  sub5 = lc.subscribe("EST_ROBOT_STATE", on_robot_state)
   #sub6 = lc.subscribe("HEAD_IMU", on_imu)
   sub7 = lc.subscribe("ROBOT_UTIME", on_utime)
 

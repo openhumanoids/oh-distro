@@ -27,8 +27,8 @@
 #define PARAM_NAME_GRAPH_TIMESPAN "Time span"
 #define PARAM_NAME_FREEZE "Freeze"
 #define PARAM_NAME_SIZE "Size"
-#define PARAM_NAME_RENDER_PITCHROLL "P&R"
-#define PARAM_NAME_RENDER_PITCHROLL_HEAD "P&R Head"
+#define PARAM_NAME_RENDER_PITCH "Pitch"
+#define PARAM_NAME_RENDER_ROLL "Roll"
 #define PARAM_NAME_RENDER_HEIGHT "Height"
 #define PARAM_NAME_RENDER_STATS "BW"
 #define PARAM_NAME_RENDER_SPEED "Speed"
@@ -37,7 +37,8 @@
 #define REDRAW_THRESHOLD_UTIME 5000000
 
 // max number of points on the scrolling bar:
-#define MAX_POINTS 1000
+// was 1000 - but thats only one second of robot utimes
+#define MAX_POINTS 3000
 
 #define RENDERER_NAME "KMCL_Scrolling_Plots"
 
@@ -51,8 +52,8 @@ struct _RendererScrollingPlots {
 
     BotGtkParamWidget    *pw;
 
-    BotGlScrollPlot2d *pitchroll_plot;
-    BotGlScrollPlot2d *pitchroll_head_plot;
+    BotGlScrollPlot2d *pitch_plot;
+    BotGlScrollPlot2d *roll_plot;
     BotGlScrollPlot2d *height_plot;
     BotGlScrollPlot2d *bandwidth_plot;
     BotGlScrollPlot2d *speed_plot;
@@ -85,8 +86,8 @@ static void scrolling_plots_draw (BotViewer *viewer, BotRenderer *renderer)
     double gs_ts_min = gs_ts_max - 
         bot_gtk_param_widget_get_double (self->pw, PARAM_NAME_GRAPH_TIMESPAN);
 
-    bot_gl_scrollplot2d_set_xlim (self->pitchroll_plot, gs_ts_min, gs_ts_max);
-    bot_gl_scrollplot2d_set_xlim (self->pitchroll_head_plot, gs_ts_min, gs_ts_max);
+    bot_gl_scrollplot2d_set_xlim (self->pitch_plot, gs_ts_min, gs_ts_max);
+    bot_gl_scrollplot2d_set_xlim (self->roll_plot, gs_ts_min, gs_ts_max);
     bot_gl_scrollplot2d_set_xlim (self->height_plot, gs_ts_min, gs_ts_max); 
     bot_gl_scrollplot2d_set_xlim (self->bandwidth_plot, gs_ts_min, gs_ts_max);
     bot_gl_scrollplot2d_set_xlim (self->speed_plot, gs_ts_min, gs_ts_max);
@@ -97,14 +98,14 @@ static void scrolling_plots_draw (BotViewer *viewer, BotRenderer *renderer)
     int x = viewport[2] - plot_width;
     int y = viewport[1];
 
-    if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_PITCHROLL)) {
-        bot_gl_scrollplot2d_gl_render_at_window_pos (self->pitchroll_plot, 
+    if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_PITCH)) {
+        bot_gl_scrollplot2d_gl_render_at_window_pos (self->pitch_plot, 
                 x, y, plot_width, plot_height);
         y += plot_height;
     }
     
-    if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_PITCHROLL_HEAD)) {
-        bot_gl_scrollplot2d_gl_render_at_window_pos (self->pitchroll_head_plot, 
+    if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_RENDER_ROLL)) {
+        bot_gl_scrollplot2d_gl_render_at_window_pos (self->roll_plot, 
                 x, y, plot_width, plot_height);
         y += plot_height;
     }    
@@ -185,9 +186,9 @@ on_pose_body(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pos
     if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
     double rpy_in[3];
     bot_quat_to_roll_pitch_yaw (msg->orientation, rpy_in) ;
-    bot_gl_scrollplot2d_add_point (self->pitchroll_plot, "roll", 
+    bot_gl_scrollplot2d_add_point (self->roll_plot, "roll_body", 
                                 msg->utime * 1.0e-6, rpy_in[0]*180/M_PI);
-    bot_gl_scrollplot2d_add_point (self->pitchroll_plot, "pitch", 
+    bot_gl_scrollplot2d_add_point (self->pitch_plot, "pitch_body", 
                                 msg->utime * 1.0e-6, rpy_in[1]*180/M_PI);
     bot_gl_scrollplot2d_add_point (self->height_plot, "height_body",
                                 msg->utime * 1.0e-6, msg->pos[2]);
@@ -200,9 +201,9 @@ on_pose_head(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pos
     if (bot_gtk_param_widget_get_bool (self->pw, PARAM_NAME_FREEZE)) return;
     double rpy_in[3];
     bot_quat_to_roll_pitch_yaw (msg->orientation, rpy_in) ;
-    bot_gl_scrollplot2d_add_point (self->pitchroll_head_plot, "roll", 
+    bot_gl_scrollplot2d_add_point (self->roll_plot, "roll_head", 
                                 msg->utime * 1.0e-6, rpy_in[0]*180/M_PI);
-    bot_gl_scrollplot2d_add_point (self->pitchroll_head_plot, "pitch", 
+    bot_gl_scrollplot2d_add_point (self->pitch_plot, "pitch_head", 
                                 msg->utime * 1.0e-6, rpy_in[1]*180/M_PI);
     bot_gl_scrollplot2d_add_point (self->height_plot, "height_head",
                                 msg->utime * 1.0e-6, msg->pos[2]);
@@ -236,12 +237,12 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gtk_param_widget_add_int (self->pw, PARAM_NAME_SIZE,
       BOT_GTK_PARAM_WIDGET_SLIDER, 50, 800, 10, 150);
   bot_gtk_param_widget_add_double (self->pw, PARAM_NAME_GRAPH_TIMESPAN,
-      BOT_GTK_PARAM_WIDGET_SLIDER, 1, 180, 0.5, 5); // was 12 seconds
+      BOT_GTK_PARAM_WIDGET_SLIDER, 0.1, 10, 0.1, 1); // was 12 seconds
   bot_gtk_param_widget_add_booleans (self->pw,
       BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_NAME_FREEZE, 0, NULL);
   bot_gtk_param_widget_add_booleans (self->pw, 0,
-      PARAM_NAME_RENDER_PITCHROLL, 1,
-      PARAM_NAME_RENDER_PITCHROLL_HEAD, 1, NULL);
+      PARAM_NAME_RENDER_PITCH, 1,
+      PARAM_NAME_RENDER_ROLL, 1, NULL);
   bot_gtk_param_widget_add_booleans (self->pw, 0,
       PARAM_NAME_RENDER_HEIGHT, 1,
       PARAM_NAME_RENDER_STATS, 1,
@@ -259,18 +260,30 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   g_signal_connect (G_OBJECT (viewer), "save-preferences",
       G_CALLBACK (on_save_preferences), self);
 
-  // pitchroll plot
-  self->pitchroll_plot = bot_gl_scrollplot2d_new ();
-  bot_gl_scrollplot2d_set_title        (self->pitchroll_plot, "Body: Pitch [b] & Roll [m]");
-  bot_gl_scrollplot2d_set_text_color   (self->pitchroll_plot, 0.7, 0.7, 0.7, 1);
-  bot_gl_scrollplot2d_set_bgcolor      (self->pitchroll_plot, 0.1, 0.1, 0.1, 0.7);
-  bot_gl_scrollplot2d_set_border_color (self->pitchroll_plot, 1, 1, 1, 0.7);
-  bot_gl_scrollplot2d_set_ylim    (self->pitchroll_plot, -10, 10);
-  bot_gl_scrollplot2d_add_plot    (self->pitchroll_plot, "pitch", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->pitchroll_plot, "pitch", 0, 0, 1, 1);
-  bot_gl_scrollplot2d_add_plot    (self->pitchroll_plot, "roll", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->pitchroll_plot, "roll", 0.7, 0, 0.7, 1);
+  // Pitch plot
+  self->pitch_plot = bot_gl_scrollplot2d_new ();
+  bot_gl_scrollplot2d_set_title        (self->pitch_plot, "Pitch [d]");
+  bot_gl_scrollplot2d_set_text_color   (self->pitch_plot, 0.7, 0.7, 0.7, 1);
+  bot_gl_scrollplot2d_set_bgcolor      (self->pitch_plot, 0.1, 0.1, 0.1, 0.7);
+  bot_gl_scrollplot2d_set_border_color (self->pitch_plot, 1, 1, 1, 0.7);
+  bot_gl_scrollplot2d_set_ylim    (self->pitch_plot, 0, 60);
+  bot_gl_scrollplot2d_add_plot    (self->pitch_plot, "pitch_body", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->pitch_plot, "pitch_body", 0, 0, 1, 1);
+  bot_gl_scrollplot2d_add_plot    (self->pitch_plot, "pitch_head", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->pitch_plot, "pitch_head", 0, 1, 0, 1);
 
+  // Roll plot
+  self->roll_plot = bot_gl_scrollplot2d_new ();
+  bot_gl_scrollplot2d_set_title        (self->roll_plot, "Roll [d]");
+  bot_gl_scrollplot2d_set_text_color   (self->roll_plot, 0.7, 0.7, 0.7, 1);
+  bot_gl_scrollplot2d_set_bgcolor      (self->roll_plot, 0.1, 0.1, 0.1, 0.7);
+  bot_gl_scrollplot2d_set_border_color (self->roll_plot, 1, 1, 1, 0.7);
+  bot_gl_scrollplot2d_set_ylim    (self->roll_plot, -20, 20);
+  bot_gl_scrollplot2d_add_plot    (self->roll_plot, "roll_body", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->roll_plot, "roll_body", 0, 0, 1, 1);
+  bot_gl_scrollplot2d_add_plot    (self->roll_plot, "roll_head", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->roll_plot, "roll_head", 0, 1, 0, 1);    
+  
   self->height_plot = bot_gl_scrollplot2d_new ();
   bot_gl_scrollplot2d_set_title        (self->height_plot, "Height");
   bot_gl_scrollplot2d_set_text_color   (self->height_plot, 0.7, 0.7, 0.7, 1);
@@ -281,19 +294,6 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gl_scrollplot2d_set_color   (self->height_plot, "height_body", 0, 0, 1, 1);
   bot_gl_scrollplot2d_add_plot    (self->height_plot, "height_head", MAX_POINTS);
   bot_gl_scrollplot2d_set_color   (self->height_plot, "height_head", 0, 1, 0, 1);
-
-  // pitchroll plot
-  self->pitchroll_head_plot = bot_gl_scrollplot2d_new ();
-  bot_gl_scrollplot2d_set_title        (self->pitchroll_head_plot, "Head: Pitch [b] & Roll [m]");
-  bot_gl_scrollplot2d_set_text_color   (self->pitchroll_head_plot, 0.7, 0.7, 0.7, 1);
-  bot_gl_scrollplot2d_set_bgcolor      (self->pitchroll_head_plot, 0.1, 0.1, 0.1, 0.7);
-  bot_gl_scrollplot2d_set_border_color (self->pitchroll_head_plot, 1, 1, 1, 0.7);
-  bot_gl_scrollplot2d_set_ylim    (self->pitchroll_head_plot, -10, 10);
-  bot_gl_scrollplot2d_add_plot    (self->pitchroll_head_plot, "pitch", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->pitchroll_head_plot, "pitch", 0, 0, 1, 1);
-  bot_gl_scrollplot2d_add_plot    (self->pitchroll_head_plot, "roll", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->pitchroll_head_plot, "roll", 0.7, 0, 0.7, 1);  
-  
 
   // PF Stats plot
   self->bandwidth_plot = bot_gl_scrollplot2d_new ();
@@ -330,8 +330,8 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
     legloc = BOT_GL_SCROLLPLOT2D_TOP_RIGHT;
   }
   bot_gl_scrollplot2d_set_show_legend (self->speed_plot, legloc);
-  bot_gl_scrollplot2d_set_show_legend (self->pitchroll_plot, legloc);
-  bot_gl_scrollplot2d_set_show_legend (self->pitchroll_head_plot, legloc);
+  bot_gl_scrollplot2d_set_show_legend (self->pitch_plot, legloc);
+  bot_gl_scrollplot2d_set_show_legend (self->roll_plot, legloc);
   bot_gl_scrollplot2d_set_show_legend (self->bandwidth_plot, legloc);
 
 
@@ -365,8 +365,8 @@ on_param_widget_changed (BotGtkParamWidget *pw, const char *name,
             legloc = BOT_GL_SCROLLPLOT2D_TOP_RIGHT;
         }
         bot_gl_scrollplot2d_set_show_legend (self->speed_plot, legloc);
-        bot_gl_scrollplot2d_set_show_legend (self->pitchroll_plot, legloc);
-        bot_gl_scrollplot2d_set_show_legend (self->pitchroll_head_plot, legloc);
+        bot_gl_scrollplot2d_set_show_legend (self->pitch_plot, legloc);
+        bot_gl_scrollplot2d_set_show_legend (self->roll_plot, legloc);
         bot_gl_scrollplot2d_set_show_legend (self->height_plot, legloc);
         bot_gl_scrollplot2d_set_show_legend (self->bandwidth_plot, legloc);
     }
@@ -382,11 +382,11 @@ update_xaxis (RendererScrollingPlots *self, uint64_t utime)
 
     self->max_utime = utime;
     double timestamp = self->max_utime * 1e-6;
-    bot_gl_scrollplot2d_add_point (self->pitchroll_plot, "25000", timestamp, 2500.0);
-    bot_gl_scrollplot2d_add_point (self->pitchroll_plot, "0.5", timestamp, 0.5);
+    bot_gl_scrollplot2d_add_point (self->pitch_plot, "25000", timestamp, 2500.0);
+    bot_gl_scrollplot2d_add_point (self->pitch_plot, "0.5", timestamp, 0.5);
 
-    bot_gl_scrollplot2d_add_point (self->pitchroll_head_plot, "25000", timestamp, 2500.0);
-    bot_gl_scrollplot2d_add_point (self->pitchroll_head_plot, "0.5", timestamp, 0.5);
+    bot_gl_scrollplot2d_add_point (self->roll_plot, "25000", timestamp, 2500.0);
+    bot_gl_scrollplot2d_add_point (self->roll_plot, "0.5", timestamp, 0.5);
     
     //bot_gl_scrollplot2d_add_point (self->brake_plot, "0.5", timestamp, 0.5);
     //bot_gl_scrollplot2d_add_point (self->depth_plot, "2500", timestamp, 2500.0);

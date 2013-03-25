@@ -14,12 +14,12 @@ set(PCL_LIBRARIES  pcl_search-1.6 pcl_filters-1.6 pcl_features-1.6
   pcl_registration-1.6
   pcl_io-1.6)
 
-add_executable(drc-icp-tutorial icp_tutorial.cpp)
+add_executable(drc-icp-tutorial icp-tutorial.cpp)
 pods_use_pkg_config_packages(drc-icp-tutorial ${PCL_LIBRARIES})
 target_link_libraries (drc-icp-tutorial ${REQUIRED_LIBS})
 pods_install_executables(drc-icp-tutorial)
 
-#add_executable(drc-ndt-tutorial ndt_tutorial.cpp)
+#add_executable(drc-ndt-tutorial ndt-tutorial.cpp)
 #pods_use_pkg_config_packages(drc-ndt-tutorial ${PCL_LIBRARIES})
 #target_link_libraries (drc-ndt-tutorial ${REQUIRED_LIBS})
 #pods_install_executables(drc-ndt-tutorial)

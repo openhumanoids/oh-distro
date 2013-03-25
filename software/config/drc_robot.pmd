@@ -53,6 +53,10 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "paladin-02";
     }
+    cmd "mit_walking_bdi" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
+        host = "paladin-02";
+    }
     cmd "mit_driving" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
         host = "paladin-02";
@@ -272,6 +276,10 @@ group "base.misc" {
 group "robot.dev_tools" {
     cmd "teleport_to_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
+        host = "paladin-02";
+    }
+    cmd "teleport_to_000" {
+        exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[0.0, 0.0, 1.00]' '[0, 0, 0, 1]'";
         host = "paladin-02";
     }
     cmd "oracle2coll" {
