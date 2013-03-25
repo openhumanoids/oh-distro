@@ -65,9 +65,12 @@ while true
   % get COM traj from desired ZMP traj
   comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
+  if 1
+    [~,V] = ZMPtracker(limp,zmptraj);
+  end
+
   % time spacing of samples for IK
   ts = 0:0.1:zmptraj.tspan(end);
-  T = ts(end);
 
   % create desired joint trajectory
   cost = Point(r.getStateFrame,1);
@@ -104,7 +107,7 @@ while true
   end
   qtraj = PPTrajectory(spline(ts,q));
   htraj = PPTrajectory(spline(ts,htraj));
-
+  
   % publish robot plan
   disp('Publishing robot plan...');
   xtraj = zeros(getNumStates(r),length(ts));
@@ -114,12 +117,9 @@ while true
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
   plan_pub.publish(ts,xtraj);
 
-  disp('Computing ZMP controller...');
   if 0 % do proper TV linear system approach
+    disp('Computing ZMP controller...');
     limp = LinearInvertedPendulum(htraj);
-    [~,V] = ZMPtracker(limp,zmptraj);
-  else
-    % approximate but faster
     [~,V] = ZMPtracker(limp,zmptraj);
   end
 
