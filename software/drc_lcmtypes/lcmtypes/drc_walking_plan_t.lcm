@@ -14,7 +14,12 @@ struct walking_plan_t
 	int32_t n_hddtraj_bytes;
   byte hddtraj[n_hddtraj_bytes];
 
+	int32_t n_supptraj_bytes;
+  byte supptraj[n_supptraj_bytes];
+
 	int32_t n_Straj_bytes;
   byte Straj[n_Straj_bytes];
+  
+  //footstep_plan_t footstep_plan;
 }
 
