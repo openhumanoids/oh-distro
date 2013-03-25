@@ -12,8 +12,8 @@ include(cmake/pods.cmake)
 
 # automatically build LCM types.  This also defines a number of CMake
 # variables, see cmake/lcmtypes.cmake for details
-include(cmake/lcmtypes.cmake)
-lcmtypes_build()
+#include(cmake/lcmtypes.cmake)
+#lcmtypes_build()
 
 # to enable debug flags: cd pod-build; cmake -DCMAKE_BUILD_TYPE=Debug ..; cd ..
 
