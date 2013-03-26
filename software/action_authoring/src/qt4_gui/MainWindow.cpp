@@ -1154,6 +1154,8 @@ void MainWindow::setP2PFromCurrConstraint()
 
     // update the relation
     PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
+
+    //set the x,y,z relations
     string xiq = PCR::typeToStr(prel->getXInequality());
     string yiq = PCR::typeToStr(prel->getYInequality());
     string ziq = PCR::typeToStr(prel->getZInequality());
@@ -1168,4 +1170,7 @@ void MainWindow::setP2PFromCurrConstraint()
       _yInequality->setCurrentIndex(yIndex);
     if (zIndex != -1)
       _zInequality->setCurrentIndex(zIndex);
+
+    //set tolerance
+    _toleranceBox->setValue(prel->getTolerance());
 }
