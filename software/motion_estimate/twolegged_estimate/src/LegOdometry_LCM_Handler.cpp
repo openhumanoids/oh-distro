@@ -11,7 +11,7 @@
 #include <exception>
 
 
-#include "LegOdometry_LCM_Handler.h"
+#include "LegOdometry_LCM_Handler.hpp"
 
 using namespace TwoLegs;
 using namespace std;
