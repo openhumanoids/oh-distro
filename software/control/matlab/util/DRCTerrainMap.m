@@ -6,8 +6,8 @@ classdef DRCTerrainMap < RigidBodyTerrain
     end
     
     function [z,normal] = getHeight(obj,xy)
-      [p,normal] = mapAPIWrapper(obj.map_ptr,[xy;0*xy(1,:)]);
-      z=p(1,:);
+      [p,normal] = mapAPIwrapper(obj.map_ptr.getData(),[xy;0*xy(1,:)]);
+      z=p(3,:);
     end
     
     function writeWRL(obj,fptr)
