@@ -47,7 +47,7 @@ Kinematics_Model_GFE() : _model(),
                           _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _max_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ){
-  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot_PnC/model.urdf" ) ) ){
+  if( !load_urdf( getModelsPath() + string( "/mit_gazebo_models/mit_robot/model.urdf" ) ) ){
     cout << "could not load urdf" << endl;
   }
 }
@@ -640,6 +640,7 @@ namespace kinematics {
     out << "  l_arm_chain: ";
     for( unsigned int i = 0; i < other.left_arm_chain().getNrOfSegments(); i++ ){
       out << other.left_arm_chain().getSegment( i ).getJoint().getName();
+      out << "(" << other.left_arm_chain().getSegment( i ).getInertia().getMass() << "kg)";
       if( i != ( other.left_arm_chain().getNrOfSegments() - 1 ) ){
         out << ",";
       }
@@ -658,6 +659,7 @@ namespace kinematics {
     out << "  r_arm_chain: ";
     for( unsigned int i = 0; i < other.right_arm_chain().getNrOfSegments(); i++ ){
       out << other.right_arm_chain().getSegment( i ).getJoint().getName();
+      out << "(" << other.right_arm_chain().getSegment( i ).getInertia().getMass() << "kg)";
       if( i != ( other.right_arm_chain().getNrOfSegments() - 1 ) ){
         out << ",";
       }
@@ -676,6 +678,7 @@ namespace kinematics {
     out << "  l_leg_chain: ";
     for( unsigned int i = 0; i < other.left_leg_chain().getNrOfSegments(); i++ ){
       out << other.left_leg_chain().getSegment( i ).getJoint().getName();
+      out << "(" << other.left_leg_chain().getSegment( i ).getInertia().getMass() << "kg)";
       if( i != ( other.left_leg_chain().getNrOfSegments() - 1 ) ){
         out << ",";
       }
@@ -694,6 +697,7 @@ namespace kinematics {
     out << "  r_leg_chain: ";
     for( unsigned int i = 0; i < other.right_leg_chain().getNrOfSegments(); i++ ){
       out << other.right_leg_chain().getSegment( i ).getJoint().getName();
+      out << "(" << other.right_leg_chain().getSegment( i ).getInertia().getMass() << "kg)";
       if( i != ( other.right_leg_chain().getNrOfSegments() - 1 ) ){
         out << ",";
       }

@@ -30,6 +30,22 @@ main( int argc,
     cout << "could not solve inverse kinematics" << endl;
   }
 
+  const SegmentMap& segment_map = kinematics_model_gfe.tree().getSegments();
+  for ( map< string, TreeElement >::const_iterator it = segment_map.begin(); it != segment_map.end(); it++ ){
+    cout << (*it).first << ":" << endl;
+    const Segment& segment = (*it).second.segment;
+    cout << "  Name: " << segment.getName() << endl;
+    double roll = 0.0;
+    double pitch = 0.0;
+    double yaw = 0.0;
+    segment.getFrameToTip().M.GetRPY( roll, pitch, yaw );
+    cout << "  FrameToTip: xyz={" << segment.getFrameToTip().p[0] << "," << segment.getFrameToTip().p[1] << "," << segment.getFrameToTip().p[2] << "} rpy:{" << roll << "," << pitch << "," << yaw << "}" << endl;
+    cout << "  Joint Name: " << segment.getJoint().getName() << endl;
+    cout << "  Joint Type: " << segment.getJoint().getTypeName() << endl;
+    cout << "  Joint Origin: " << segment.getJoint().JointOrigin().x() << "," << segment.getJoint().JointOrigin().y() << "," << segment.getJoint().JointOrigin().z() << endl;
+    cout << "  Joint Axis: " << segment.getJoint().JointAxis().x() << "," << segment.getJoint().JointAxis().y() << "," << segment.getJoint().JointAxis().z() << endl;
+  }
+
   cout << endl << "end of kinematics-model-gfe-test" << endl << endl;
 
   return 0;
