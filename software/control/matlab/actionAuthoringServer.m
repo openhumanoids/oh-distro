@@ -75,8 +75,8 @@ while (1)
       for i=1:msg.num_contact_goals
         goal = msg.contact_goals(i);
         if (goal.contact_type==goal.ON_GROUND_PLANE)
-          body=findLink(r,char(goal.object_1_name));
-          collision_group = find(strcmpi(char(goal.object_1_contact_grp),body.collision_group_name));
+          body_ind=findLink(r,char(goal.object_1_name));
+          collision_group = find(strcmpi(char(goal.object_1_contact_grp),body_ind.collision_group_name));
           if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
           p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
           pos = struct();
@@ -108,30 +108,28 @@ while (1)
               pos.min(2) = -inf;
               pos.max(2) = inf;
           end
-          if(goal.z_relation == 0)
-              pos.min(3) = max([0,p(3)-goal.target_pt_radius]);
-              pos.max(3) = max([pos.min(3),p(3)+goal.target_pt_radius]);
-          elseif(goal.z_relation == 1)
-              pos.max(3) = p(3);
+          if(goal.contact_type == 0)
               pos.min(3) = 0;
-          elseif(goal.z_relation == 2)
-              pos.min(3) = max([0,p(2)]);
-              pos.max(3) = inf;
-          elseif(goal.z_relation == 3)
-              pos.min(3) = 0;
-              pos.max(3) = inf;
+              pos.max(3) = 0;
+          else
+              error('Not implemented yet')
           end
 %           if(goal.z_relation == 0)
-%               pos.min(3) = p(3);
-%               pos.max(3) = p(3);
+%               pos.min(3) = max([0,p(3)-goal.target_pt_radius]);
+%               pos.max(3) = max([pos.min(3),p(3)+goal.target_pt_radius]);
 %           elseif(goal.z_relation == 1)
-%               pos.max(3) = min(pos.max(3),p(3));
+%               pos.max(3) = p(3);
+%               pos.min(3) = 0;
 %           elseif(goal.z_relation == 2)
-%               pos.min(3) = max(pos.min(3),p(3));
+%               pos.min(3) = max([0,p(2)]);
+%               pos.max(3) = inf;
+%           elseif(goal.z_relation == 3)
+%               pos.min(3) = 0;
+%               pos.max(3) = inf;
 %           end
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
-          collision_group_pt = mean(body.getContactPoints(collision_group),2);
-          action_constraint = ActionKinematicConstraint(r,body,collision_group_pt,pos,tspan,[body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          collision_group_pt = mean(body_ind.getContactPoints(collision_group),2);
+          action_constraint = ActionKinematicConstraint(r,body_ind,collision_group_pt,pos,tspan,[body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
         end
       end
@@ -162,7 +160,10 @@ while (1)
                 q_key_time_samples(:,i)=options.q_nom;
               else
                 % call IK
-                q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
+                [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
+                if(info>10)
+                    warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+                end
               end
               % if the q_start_time is in contact, then replace the inequality contact constraint with the equality
               % contact constraint
@@ -170,28 +171,30 @@ while (1)
               com_key_time_samples(:,i) = getCOM(r,kinsol);
               j = 1;
               while(j<length(ikargs))
-                  body = ikargs{j};
-                  if(isnumeric(body))
-                      if(body == 0)
-                          body_pos_lb_time = ikargs{j+1};
-                          action_constraint_ZMP = actionKinematicConstraint(r,body,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
-                          j = j+2;
-                      end
+                  body_ind = ikargs{j};
+                  if(~isnumeric(body_ind))
+                      error('action sequence should only return numeric body_ind');
+                  end
+                  if(body_ind == 0)
+                      body_pos_lb_time = ikargs{j+1};
+                      action_constraint_ZMP = actionKinematicConstraint(r,body_ind,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
+                      j = j+2;
                   else
                       collision_group_pt = ikargs{j+1};
-                      pos_start_time = forwardKin(r,kinsol,body,collision_group_pt,false);
+                      pos_start_time = forwardKin(r,kinsol,body_ind,collision_group_pt,false);
                       
-                      if(pos_start_time(3,:)<contact_tol)
-                          if(i<length(action_sequence.key_time_samples))
-                              tspan = action_sequence.key_time_samples(i:i+1);
-                              pos_start_time_con = struct();
-                              pos_start_time_con.max = pos_start_time;
-                              pos_start_time_con.min = pos_start_time;
-                              action_constraint_ZMP = ActionKinematicConstraint(r,body,collision_group_pt,pos_start_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
-                          end
-                      else
-                        action_constraint_ZMP = ActionKinematicConstraint(r,body,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[body.linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
+                      contact_pos_ind = pos_start_time(3,:)<contact_tol;
+                      if(~isempty(contact_pos_ind)&&i<length(action_sequence.key_time_samples))
+                          tspan = action_sequence.key_time_samples(i:i+1);
+                          pos_start_time_con = struct();
+                          pos_start_time_con.max = pos_start_time(:,contact_pos_ind);
+                          pos_start_time_con.min = pos_start_time(:,contact_pos_ind);
+                          action_constraint_ZMP_grd_contact = ActionKinematicConstraint(r,body_ind,collision_group_pt(:,contact_pos_ind),pos_start_time_con,tspan,[r.body(body_ind).linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+                          action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP_grd_contact);
                       end
+                      
+                      action_constraint_ZMP = ActionKinematicConstraint(r,body_ind,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[r.body(body_ind).linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
+                      
                       j = j+3;
                   end
                   action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
@@ -217,10 +220,10 @@ while (1)
               ikargs = action_sequence_ZMP.getIKArguments(t_breaks(i));
               j = 1;
               while j<length(ikargs)
-                  if(isnumeric(ikargs{j}))
+                  if(ikargs{j} == 0)
                     j = j+2;
                   else
-                      contact_pos_ind = ikargs{j+2}.max(3,:)<contact_tol;
+                      contact_pos_ind = (ikargs{j+2}.max(3,:)<contact_tol)&(all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
                       contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_ind)];
                       j = j+3;
                   end
@@ -282,8 +285,12 @@ while (1)
           options.quasiStaticFlag = false;
           options.nSample = length(t_breaks)-1;
           [q_zmp_traj,inverse_kin_sequence_info] = inverseKinSequence(r, q0, action_sequence,options);
-          
-          q_zmp_plan = q_zmp_traj.eval(q_zmp_traj.getBreaks());
+          t_zmp_breaks = q_zmp_traj.getBreaks();
+          q_zmp_plan = q_zmp_traj.eval(t_zmp_breaks);
+          qdot_zmp_plan = q_zmp_traj.deriv(t_zmp_breaks);
+          xtraj = PPTrajectory(pchipDeriv(t_zmp_breaks,[q_zmp_plan;qdot_zmp_plan],[qdot_zmp_plan;0*qdot_zmp_plan]));
+          xtraj = xtraj.setOutputFrame(r.getStateFrame());
+          v.playback(xtraj,struct('slider',true));
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
           publish(robot_plan_publisher, q_zmp_traj.getBreaks(), ...
                   [q_zmp_plan; zeros(size(q_zmp_plan))]);
