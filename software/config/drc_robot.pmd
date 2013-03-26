@@ -167,10 +167,6 @@ group "4.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
         host = "localhost";
     }
-    cmd "StickyHandsServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
-       host = "localhost";
-    }
 }
 
 group "5.base" {
