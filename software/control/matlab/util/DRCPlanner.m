@@ -10,6 +10,7 @@ classdef DRCPlanner < handle
     constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     required=[];  % boolean array saying whether each message monitor is required
     updatable=[]; % boolean array saying whether each input should be updated during the plan
+    always_process=[]; % boolean array saying whether each message monitor should process new messages even if utime has not increased
     name={};
     %  plan(msg,data)
   end
@@ -36,7 +37,11 @@ classdef DRCPlanner < handle
       lc.subscribe(plan_request_channel,obj.request_monitor);
     end
     
-    function obj = addInput(obj,name,channel,lcmtype_or_lcmcoder,required,updatable)
+    function obj = addInput(obj,name,channel,lcmtype_or_lcmcoder,required,updatable,always_process)
+      % optional argument: always_process if true, then ignore utime field for this channel and always process messages as they come in; defaults to false
+      if nargin < 7
+        always_process = false;
+      end
       typecheck(name,'char');
       typecheck(channel,'char');
       n = length(obj.monitors)+1;
@@ -55,6 +60,7 @@ classdef DRCPlanner < handle
       obj.monitors{n} = mon;
       obj.required(n) = required;
       obj.updatable(n) = updatable;
+      obj.always_process(n) = always_process;
       obj.last_msg_utimes(n) = -1;
       obj.name{n} = name;
     end
@@ -69,10 +75,16 @@ classdef DRCPlanner < handle
       for i=1:length(obj.monitors)
         changelist = setfield(changelist,obj.name{i},false);
         % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>data.utime)
-        if (obj.updatable(i) && getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i))
+        if (obj.updatable(i) ...
+            && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i) ...
+                || obj.always_process(i)))
           data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
           obj.last_msg_utimes(i) = getLastTimestamp(obj.monitors{i});
-          d = getMessage(obj.monitors{i});
+          if obj.always_process(i)
+            d = getNextMessage(obj.monitors{i}, 1);
+          else
+            d = getMessage(obj.monitors{i});
+          end
           if ~isempty(d)
             if isempty(obj.coders{i})
               % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
