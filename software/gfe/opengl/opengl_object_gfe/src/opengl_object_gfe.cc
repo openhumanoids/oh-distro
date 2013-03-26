@@ -1,5 +1,6 @@
 #include <path_util/path_util.h>
 
+#include <opengl/opengl_object_sphere.h>
 #include <opengl/opengl_object_box.h>
 #include <opengl/opengl_object_cylinder.h>
 #include <opengl/opengl_object_dae.h>
@@ -22,7 +23,8 @@ using namespace opengl;
 OpenGL_Object_GFE::
 OpenGL_Object_GFE() : OpenGL_Object(),
                       _kinematics_model(),
-                      _opengl_objects() {
+                      _opengl_objects(),
+                      _opengl_object_coordinate_axis( true, false ) {
   _load_opengl_objects();
   State_GFE state_gfe;
   set( state_gfe );
@@ -35,7 +37,8 @@ OpenGL_Object_GFE() : OpenGL_Object(),
 OpenGL_Object_GFE::
 OpenGL_Object_GFE( std::string urdfFilename ) : OpenGL_Object(),
                                                 _kinematics_model( urdfFilename ),
-                                                _opengl_objects() {
+                                                _opengl_objects(),
+                                                _opengl_object_coordinate_axis() {
   _load_opengl_objects();
   State_GFE state_gfe;
   set( state_gfe );
@@ -57,7 +60,8 @@ OpenGL_Object_GFE::
 OpenGL_Object_GFE::
 OpenGL_Object_GFE( const OpenGL_Object_GFE& other ) : OpenGL_Object( other ),
                                                       _kinematics_model( other._kinematics_model ),
-                                                      _opengl_objects( other._opengl_objects ) {
+                                                      _opengl_objects( other._opengl_objects ),
+                                                      _opengl_object_coordinate_axis( other._opengl_object_coordinate_axis ) {
 
 }
 
@@ -75,6 +79,7 @@ operator=( const OpenGL_Object_GFE& other ) {
   _transform = other._transform;
   _kinematics_model = other._kinematics_model;
   _opengl_objects = other._opengl_objects;
+  _opengl_object_coordinate_axis = other._opengl_object_coordinate_axis;
   return (*this);
 }
 
@@ -112,6 +117,8 @@ draw( void ){
       if( _opengl_objects[ i ] != NULL ){
         _opengl_objects[ i ]->set_transform( _kinematics_model.link( _opengl_objects[ i ]->id() ) );
         _opengl_objects[ i ]->draw();
+//        _opengl_object_coordinate_axis.set_transform( _kinematics_model.link( _opengl_objects[ i ]->id() ) );
+//        _opengl_object_coordinate_axis.draw();
       }
     }
   }
@@ -129,15 +136,87 @@ _load_opengl_objects( void ){
   _kinematics_model.model().getLinks( links );
   string models_path = getModelsPath();
   for( unsigned int i = 0; i < links.size(); i++ ){
+    for( std::map< std::string, boost::shared_ptr<std::vector<boost::shared_ptr<Visual> > > >::iterator it = links[i]->visual_groups.begin(); it != links[i]->visual_groups.end(); it++ ){
+      for( unsigned int j = 0; j < it->second->size(); j++ ){
+        if( (*it->second)[ j ] != NULL ){
+          if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
+            shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[j]->geometry );
+            _opengl_objects.push_back( new OpenGL_Object_Sphere( links[i]->name, sphere->radius ) );
+            KDL::Frame offset;
+            offset.p[0] = (*it->second)[j]->origin.position.x;
+            offset.p[1] = (*it->second)[j]->origin.position.y;
+            offset.p[2] = (*it->second)[j]->origin.position.z;
+            offset.M = KDL::Rotation::Quaternion( (*it->second)[j]->origin.rotation.x,
+                                          (*it->second)[j]->origin.rotation.y,
+                                          (*it->second)[j]->origin.rotation.z,
+                                          (*it->second)[j]->origin.rotation.w );
+            _opengl_objects.back()->set_offset( offset );
+          } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
+            shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[j]->geometry );
+            _opengl_objects.push_back( new OpenGL_Object_Box( links[i]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
+            KDL::Frame offset;
+            offset.p[0] = (*it->second)[j]->origin.position.x;
+            offset.p[1] = (*it->second)[j]->origin.position.y;
+            offset.p[2] = (*it->second)[j]->origin.position.z;
+            offset.M = KDL::Rotation::Quaternion( (*it->second)[j]->origin.rotation.x,
+                                          (*it->second)[j]->origin.rotation.y,
+                                          (*it->second)[j]->origin.rotation.z,
+                                          (*it->second)[j]->origin.rotation.w );
+            _opengl_objects.back()->set_offset( offset );
+
+          } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
+            shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[j]->geometry );
+            _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, Vector2f( cylinder->radius, cylinder->length ) ) );
+            KDL::Frame offset;
+            offset.p[0] = (*it->second)[j]->origin.position.x;
+            offset.p[1] = (*it->second)[j]->origin.position.y;
+            offset.p[2] = (*it->second)[j]->origin.position.z;
+            offset.M = KDL::Rotation::Quaternion( (*it->second)[j]->origin.rotation.x,
+                                          (*it->second)[j]->origin.rotation.y,
+                                          (*it->second)[j]->origin.rotation.z,
+                                          (*it->second)[j]->origin.rotation.w );
+            _opengl_objects.back()->set_offset( offset );
+          }
+        }
+      }
+    }
     if( links[ i ]->visual != NULL ){
       if( links[ i ]->visual->geometry->type == Geometry::SPHERE ){
         shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->visual->geometry );
+        _opengl_objects.push_back( new OpenGL_Object_Sphere( links[ i ]->name, sphere->radius ) );
+        KDL::Frame offset;
+        offset.p[0] = links[ i ]->visual->origin.position.x;
+        offset.p[1] = links[ i ]->visual->origin.position.y;
+        offset.p[2] = links[ i ]->visual->origin.position.z;
+        offset.M = KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x,
+                                          links[ i ]->visual->origin.rotation.y,
+                                          links[ i ]->visual->origin.rotation.z,
+                                          links[ i ]->visual->origin.rotation.w );
+        _opengl_objects.back()->set_offset( offset );
       } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
         shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
+        KDL::Frame offset;
+        offset.p[0] = links[ i ]->visual->origin.position.x;
+        offset.p[1] = links[ i ]->visual->origin.position.y;
+        offset.p[2] = links[ i ]->visual->origin.position.z;
+        offset.M = KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x,
+                                          links[ i ]->visual->origin.rotation.y,
+                                          links[ i ]->visual->origin.rotation.z,
+                                          links[ i ]->visual->origin.rotation.w );
+        _opengl_objects.back()->set_offset( offset );
       } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
         shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, Vector2f( cylinder->radius, cylinder->length ) ) );
+        KDL::Frame offset;
+        offset.p[0] = links[ i ]->visual->origin.position.x;
+        offset.p[1] = links[ i ]->visual->origin.position.y;
+        offset.p[2] = links[ i ]->visual->origin.position.z;
+        offset.M = KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x,
+                                          links[ i ]->visual->origin.rotation.y,
+                                          links[ i ]->visual->origin.rotation.z,
+                                          links[ i ]->visual->origin.rotation.w );
+        _opengl_objects.back()->set_offset( offset );
       } else if ( links[ i ]->visual->geometry->type == Geometry::MESH ){
         shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
         std::string model_filename = mesh->filename;
@@ -147,6 +226,15 @@ _load_opengl_objects( void ){
         boost::replace_all(model_filename, "mit_drcsim_scripts/models/", "");
         model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "dae" );
         _opengl_objects.push_back( new OpenGL_Object_DAE( links[ i ]->name, model_filename ) );
+        KDL::Frame offset;
+        offset.p[0] = links[ i ]->visual->origin.position.x;
+        offset.p[1] = links[ i ]->visual->origin.position.y;
+        offset.p[2] = links[ i ]->visual->origin.position.z;
+        offset.M = KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x,
+                                          links[ i ]->visual->origin.rotation.y,
+                                          links[ i ]->visual->origin.rotation.z,
+                                          links[ i ]->visual->origin.rotation.w );
+        _opengl_objects.back()->set_offset( offset );
       }
     }
   }

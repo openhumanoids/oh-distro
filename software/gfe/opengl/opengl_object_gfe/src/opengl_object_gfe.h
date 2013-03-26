@@ -9,6 +9,7 @@
 #include <state/state_gfe.h>
 #include <kinematics/kinematics_model_gfe.h>
 #include <opengl/opengl_object.h>
+#include <opengl/opengl_object_coordinate_axis.h>
 
 namespace opengl {
   class OpenGL_Object_GFE: public OpenGL_Object {
@@ -31,6 +32,7 @@ namespace opengl {
     
     kinematics::Kinematics_Model_GFE _kinematics_model;
     std::vector< OpenGL_Object* > _opengl_objects;
+    OpenGL_Object_Coordinate_Axis _opengl_object_coordinate_axis;
 
   private:
 
