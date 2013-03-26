@@ -53,36 +53,52 @@ namespace renderer_sticky_feet
       
       
       
-    // Eigen::Vector3f whole_body_span;
-    // Eigen::Vector3f offset;
-    // MeshStruct mesh_struct;
-    //  bool val;
-       
-    // _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
-    // val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
-    
- 
-    //  val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
-    // _T_bodyframe_meshframe_left = KDL::Frame::Identity();
-    // _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
-    // _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
-    // _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
-    
-    // _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-    // // _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-    // _T_bodyframe_groundframe_left.p[2] = 0;
+      Eigen::Vector3f whole_body_span;
+      Eigen::Vector3f offset;
+      MeshStruct mesh_struct;
+      bool val;
+      _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
+      
+      val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
+      _T_bodyframe_groundframe_left = KDL::Frame::Identity();
+      _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);    
+      
+      _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+      val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct); 
+     _T_bodyframe_groundframe_right = KDL::Frame::Identity();
+     _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
      
-    // _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-    // val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
-    // _T_bodyframe_meshframe_right = KDL::Frame::Identity();
-    // _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
-    // _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
-    // _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
-    
-    // _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-    // // _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-    // _T_bodyframe_groundframe_right.p[2] = 0;
-    
+//     Eigen::Vector3f whole_body_span;
+//     Eigen::Vector3f offset;
+//     MeshStruct mesh_struct;
+//      bool val;
+//       
+//     _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
+//     val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
+//    
+// 
+//      val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
+//     _T_bodyframe_meshframe_left = KDL::Frame::Identity();
+//     _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
+//     _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
+//     _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
+//    
+//     _T_bodyframe_groundframe_left = KDL::Frame::Identity();
+//     _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+// 
+//     
+//     _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+//     val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
+//     _T_bodyframe_meshframe_right = KDL::Frame::Identity();
+//     _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
+//     _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
+//     _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
+//    
+//     _T_bodyframe_groundframe_right = KDL::Frame::Identity();
+//     _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+     
+     
+
     lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
 

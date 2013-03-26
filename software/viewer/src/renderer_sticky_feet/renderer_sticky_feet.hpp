@@ -113,6 +113,14 @@ namespace renderer_sticky_feet{
         closestPt = queryPt;
         closestNormal<< 0,0,1;
     }
+    
+    if(!isnan(closestPt[2])){
+        closestPt = queryPt;
+        closestNormal<< 0,0,1;
+    }
+    
+    
+    
 
     return closestPt[2];
 
