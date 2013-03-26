@@ -40,7 +40,7 @@ group "drake" {
         host = "localhost";
     }
     cmd "StateMachine" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQaul1StateMachine;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
         host = "localhost";
     }
     cmd "StickyHandsServer" {
