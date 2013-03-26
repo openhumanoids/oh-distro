@@ -54,6 +54,7 @@ operator=( const OpenGL_Object_Cylinder& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   _dimensions = other._dimensions;
   _quadric = NULL;
   _dl = 0;

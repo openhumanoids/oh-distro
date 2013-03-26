@@ -51,6 +51,7 @@ operator=( const OpenGL_Object_Box& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   _dimensions = other._dimensions;
   _dl = 0;
   return (*this);

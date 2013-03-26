@@ -20,14 +20,23 @@ OpenGL_Object_Collision_Detector::
 }
 
 OpenGL_Object_Collision_Detector::
-OpenGL_Object_Collision_Detector( const OpenGL_Object_Collision_Detector& other ) {
+OpenGL_Object_Collision_Detector( const OpenGL_Object_Collision_Detector& other ) : _collision_detector( other._collision_detector ),
+                                                                                    _opengl_object_cylinder( other._opengl_object_cylinder ),
+                                                                                    _opengl_object_sphere( other._opengl_object_sphere ){
 
 }
 
 OpenGL_Object_Collision_Detector&
 OpenGL_Object_Collision_Detector::
 operator=( const OpenGL_Object_Collision_Detector& other ) {
-
+  _id = other._id;
+  _visible = other._visible;
+  _color = other._color;
+  _transparency = other._transparency;
+  _transform = other._transform;
+  _offset = other._offset;
+  _opengl_object_cylinder = other._opengl_object_cylinder;
+  _opengl_object_sphere = other._opengl_object_sphere;
   return (*this);
 }
 

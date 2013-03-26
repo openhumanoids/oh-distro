@@ -36,6 +36,7 @@ operator=( const OpenGL_Object_Torus& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   _major_radius = other._major_radius;
   _minor_radius = other._minor_radius;
   _quadric = NULL;

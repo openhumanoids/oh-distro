@@ -5,11 +5,14 @@ using namespace Eigen;
 using namespace opengl;
 
 OpenGL_Object_Coordinate_Axis::
-OpenGL_Object_Coordinate_Axis() : OpenGL_Object(),
-                                  _scale( 0.1 ),
-                                  _opengl_object_torus(),
-                                  _quadric( NULL ),
-                                  _dl( 0 ){
+OpenGL_Object_Coordinate_Axis( bool drawTranslationAxes,
+                                bool drawRotationAxes ) : OpenGL_Object(),
+                                                          _scale( 0.1 ),
+                                                          _opengl_object_torus(),
+                                                          _quadric( NULL ),
+                                                          _dl( 0 ),
+                                                          _draw_translation_axes( drawTranslationAxes ),
+                                                          _draw_rotation_axes( drawRotationAxes ){
 
 }
 
@@ -22,7 +25,9 @@ OpenGL_Object_Coordinate_Axis::
 OpenGL_Object_Coordinate_Axis( const OpenGL_Object_Coordinate_Axis& other ) : OpenGL_Object( other ),
                                                                               _scale( other._scale ),
                                                                               _quadric( NULL ),
-                                                                              _dl( 0 ){
+                                                                              _dl( 0 ),
+                                                                              _draw_translation_axes( other._draw_translation_axes ),
+                                                                              _draw_rotation_axes( other._draw_rotation_axes ){
   
 }
 
@@ -34,9 +39,12 @@ operator=( const OpenGL_Object_Coordinate_Axis& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   _scale = other._scale;
   _quadric = NULL;
   _dl = 0;
+  _draw_translation_axes = other._draw_translation_axes;
+  _draw_rotation_axes = other._draw_rotation_axes;
   return (*this);
 }
 
@@ -84,44 +92,48 @@ _generate_dl( void ){
   glColor4f( 1.0, 1.0, 1.0, 1.0 );
   gluSphere( _quadric, _scale/20.0, 8, 8 );
   glPopMatrix();
-  // draw the red x-axis
-  glPushMatrix();
-  glColor4f( 1.0, 0.0, 0.0, 1.0 );
-  glRotatef( 90.0, 0.0, 1.0, 0.0 );
-  gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
-  glTranslatef( 0.0, 0.0, _scale );
-  gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
-  glPopMatrix();
-  // draw the green y-axis
-  glPushMatrix();
-  glColor4f( 0.0, 1.0, 0.0, 1.0 );
-  glRotatef( -90.0, 1.0, 0.0, 0.0 );
-  gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
-  glTranslatef( 0.0, 0.0, _scale );
-  gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
-  glPopMatrix();
-  // draw the blue z-axis
-  glPushMatrix();
-  glColor4f( 0.0, 0.0, 1.0, 1.0 );
-  gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
-  glTranslatef( 0.0, 0.0, _scale );
-  gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
-  glPopMatrix();
-  _opengl_object_torus.set_dimensions( _scale/1.5, _scale/40.0 );
-  // draw the roll ring
-  glPushMatrix();
-  glRotatef( 90.0, 0.0, 1.0, 0.0 );
-  _opengl_object_torus.draw( Vector3f( 1.0, 0.0, 0.0 ) );
-  glPopMatrix();
-  // draw the pitch ring
-  glPushMatrix();
-  glRotatef( 90.0, 1.0, 0.0, 0.0 );
-  _opengl_object_torus.draw( Vector3f( 0.0, 1.0, 0.0 ) );
-  glPopMatrix();
-  // draw the yaw ring
-  glPushMatrix();
-  _opengl_object_torus.draw( Vector3f( 0.0, 0.0, 1.0 ) );
-  glPopMatrix();
+  if( _draw_translation_axes ){
+    // draw the red x-axis
+    glPushMatrix();
+    glColor4f( 1.0, 0.0, 0.0, 1.0 );
+    glRotatef( 90.0, 0.0, 1.0, 0.0 );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+    // draw the green y-axis
+    glPushMatrix();
+    glColor4f( 0.0, 1.0, 0.0, 1.0 );
+    glRotatef( -90.0, 1.0, 0.0, 0.0 );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+    // draw the blue z-axis
+    glPushMatrix();
+    glColor4f( 0.0, 0.0, 1.0, 1.0 );
+    gluCylinder( _quadric, _scale/20.0, _scale/20.0, _scale, 8, 8 );
+    glTranslatef( 0.0, 0.0, _scale );
+    gluCylinder( _quadric, _scale/10.0, 0.0, _scale/5.0, 8, 8 );
+    glPopMatrix();
+    _opengl_object_torus.set_dimensions( _scale/1.5, _scale/40.0 );
+  }
+  if( _draw_rotation_axes ){
+    // draw the roll ring
+    glPushMatrix();
+    glRotatef( 90.0, 0.0, 1.0, 0.0 );
+    _opengl_object_torus.draw( Vector3f( 1.0, 0.0, 0.0 ) );
+    glPopMatrix();
+    // draw the pitch ring
+    glPushMatrix();
+    glRotatef( 90.0, 1.0, 0.0, 0.0 );
+    _opengl_object_torus.draw( Vector3f( 0.0, 1.0, 0.0 ) );
+    glPopMatrix();
+    // draw the yaw ring
+    glPushMatrix();
+    _opengl_object_torus.draw( Vector3f( 0.0, 0.0, 1.0 ) );
+    glPopMatrix();
+  }
   glEndList();
   return true;
 }

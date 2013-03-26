@@ -10,10 +10,11 @@ using namespace opengl;
  * class constructor
  */
 OpenGL_Object_Sphere::
-OpenGL_Object_Sphere() : OpenGL_Object(),
-                            _dimensions( 1.0 ),
-                            _quadric( NULL ),
-                            _dl( 0 ){
+OpenGL_Object_Sphere( string id,
+                      double radius ) : OpenGL_Object( id ),
+                                        _radius( radius ),
+                                        _quadric( NULL ),
+                                        _dl( 0 ){
 
 }
 
@@ -34,7 +35,7 @@ OpenGL_Object_Sphere::
  */
 OpenGL_Object_Sphere::
 OpenGL_Object_Sphere( const OpenGL_Object_Sphere& other ) : OpenGL_Object( other ),
-                                                                _dimensions( other._dimensions ),
+                                                                _radius( other._radius ),
                                                                 _quadric( NULL ),
                                                                 _dl( 0 ){
 
@@ -52,7 +53,8 @@ operator=( const OpenGL_Object_Sphere& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
-  _dimensions = other._dimensions;
+  _offset = other._offset;
+  _radius = other._radius;
   _quadric = NULL;
   _dl = 0;
   return (*this);
@@ -60,8 +62,8 @@ operator=( const OpenGL_Object_Sphere& other ) {
 
 void
 OpenGL_Object_Sphere::
-set( double dimensions ){
-  _dimensions = dimensions;
+set( double radius ){
+  _radius = radius;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
@@ -71,14 +73,14 @@ set( double dimensions ){
 
 /**
  * set
- * sets the transform and dimensions of the sphere
+ * sets the transform and radius of the sphere
  */
 void
 OpenGL_Object_Sphere::
 set( Frame transform,
-      double dimensions ){
+      double radius ){
   _transform = transform;
-  _dimensions = dimensions;
+  _radius = radius;
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
@@ -120,20 +122,20 @@ draw( Vector3f color ){
     if( _quadric == NULL ){
       _quadric = gluNewQuadric();
     }
-    gluSphere( _quadric, _dimensions, 16, 16 );
+    gluSphere( _quadric, _radius, 16, 16 );
     glPopMatrix();
   }
   return;
 }
 
 /**
- * dimensions
- * returns the dimensions of the sphere 
+ * radius
+ * returns the radius of the sphere 
  */
 double
 OpenGL_Object_Sphere::
-dimensions( void )const{
-  return _dimensions;
+radius( void )const{
+  return _radius;
 }
 
 /**
@@ -153,7 +155,7 @@ _generate_dl( void ){
   if( _quadric == NULL ){
     _quadric = gluNewQuadric();
   }
-  gluSphere( _quadric, _dimensions, 16, 16 );
+  gluSphere( _quadric, _radius, 16, 16 );
   glEndList();
   return true;
 }
@@ -172,7 +174,7 @@ namespace opengl {
     double qx, qy, qz, qw;
     other.transform().M.GetQuaternion( qx, qy, qz, qw );
     out << "rotation:{" << qw << ",{" << qx << "," << qy << "," << qz << "}} ";
-    out << "radius:{" << other.dimensions() << "} ";
+    out << "radius:{" << other.radius() << "} ";
     return out;
   }
 }

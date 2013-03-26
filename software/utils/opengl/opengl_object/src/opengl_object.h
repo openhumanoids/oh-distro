@@ -27,12 +27,14 @@ namespace opengl {
     virtual void setHighlighted(bool); 
     virtual void set_transparency( double transparency );
     virtual void set_transform( KDL::Frame transform );
-
+    virtual void set_offset( KDL::Frame transform );
+    
     std::string id( void )const;
     bool visible( void )const;
     Eigen::Vector3f color( void )const;
     double transparency( void )const;
     KDL::Frame transform( void )const;
+    KDL::Frame offset( void )const;
 
   protected:
     std::string _id;
@@ -40,6 +42,7 @@ namespace opengl {
     Eigen::Vector3f _color, _highlightColor;    
     double _transparency;
     KDL::Frame _transform;    
+    KDL::Frame _offset;
     bool _isHighlighted;
 
   private:

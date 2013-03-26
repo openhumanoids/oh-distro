@@ -20,6 +20,7 @@ OpenGL_Object(const string &id, bool isHighlighted, Vector3f highlightColor)
   _color( 1.0, 1.0, 1.0 ),
   _transparency( 1.0 ),
   _transform(),
+  _offset(),
   _highlightColor(highlightColor), 
   _isHighlighted(isHighlighted)
 {
@@ -44,6 +45,7 @@ OpenGL_Object( const OpenGL_Object& other ) : _id( other._id ),
                                               _color( other._color ),
                                               _transparency( other._transparency ),
                                               _transform( other._transform ),
+                                              _offset( other._offset ),
                                               _highlightColor( other._highlightColor ),
                                               _isHighlighted( other._isHighlighted ){    
 }
@@ -60,6 +62,7 @@ operator=( const OpenGL_Object& other ){
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   return (*this);
 }
 
@@ -70,10 +73,12 @@ operator=( const OpenGL_Object& other ){
 void
 OpenGL_Object::
 apply_transform( void ){
-  GLdouble m[] = { _transform( 0, 0 ), _transform( 1, 0 ), _transform( 2, 0 ), _transform( 3, 0 ), 
-                        _transform( 0, 1 ), _transform( 1, 1 ), _transform( 2, 1 ), _transform( 3, 1 ), 
-                        _transform( 0, 2 ), _transform( 1, 2 ), _transform( 2, 2 ), _transform( 3, 2 ), 
-                        _transform( 0, 3 ), _transform( 1, 3 ), _transform( 2, 3 ), _transform( 3, 3 ) };
+  Frame origin = _transform * _offset;
+
+  GLdouble m[] = { origin( 0, 0 ), origin( 1, 0 ), origin( 2, 0 ), origin( 3, 0 ), 
+                        origin( 0, 1 ), origin( 1, 1 ), origin( 2, 1 ), origin( 3, 1 ), 
+                        origin( 0, 2 ), origin( 1, 2 ), origin( 2, 2 ), origin( 3, 2 ), 
+                        origin( 0, 3 ), origin( 1, 3 ), origin( 2, 3 ), origin( 3, 3 ) };
   glMultMatrixd( m ); 
   return;
 }
@@ -160,6 +165,17 @@ set_transform( Frame transform ){
   return;
 }
 
+/**
+ * set_offset
+ * sets the offset of the opengl object
+ */
+void
+OpenGL_Object::
+set_offset( Frame offset ){
+  _offset = offset;
+  return;
+}
+
 string
 OpenGL_Object::
 id( void )const{
@@ -204,6 +220,16 @@ Frame
 OpenGL_Object::
 transform( void )const{
   return _transform;
+}
+
+/**
+ * offset
+ * returns the offset of the opengl object
+ */
+Frame
+OpenGL_Object::
+offset( void )const{
+  return _offset;
 }
 
 /**

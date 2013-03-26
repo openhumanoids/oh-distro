@@ -11,24 +11,24 @@
 namespace opengl {
   class OpenGL_Object_Sphere: public OpenGL_Object {
   public:
-    OpenGL_Object_Sphere();
+    OpenGL_Object_Sphere( std::string id = "N/A", double radius = 0.1 );
     virtual ~OpenGL_Object_Sphere();
     OpenGL_Object_Sphere( const OpenGL_Object_Sphere& other );
     OpenGL_Object_Sphere& operator=( const OpenGL_Object_Sphere& other );
 
-    void set( double dimensions );    
-    void set( KDL::Frame transform, double dimensions );
+    void set( double radius );    
+    void set( KDL::Frame transform, double radius );
 
     virtual void draw( void );
     virtual void draw( Eigen::Vector3f color );
     static void draw( double radius, Eigen::Vector3f color );
 
-    double dimensions( void )const;
+    double radius( void )const;
 
   protected:
     bool _generate_dl( void );
 
-    double _dimensions;
+    double _radius;
     GLUquadric * _quadric;
     GLuint _dl;
 

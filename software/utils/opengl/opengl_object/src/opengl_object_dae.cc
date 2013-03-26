@@ -62,6 +62,7 @@ operator=( const OpenGL_Object_DAE& other ) {
   _color = other._color;
   _transparency = other._transparency;
   _transform = other._transform;
+  _offset = other._offset;
   _v2_data = other._v2_data;
   _v3_data = other._v3_data;
   _v4_data = other._v4_data;
