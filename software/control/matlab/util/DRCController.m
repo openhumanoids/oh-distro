@@ -44,7 +44,7 @@ classdef DRCController
         obj.n_input_frames = length(obj.controller_input_frames);
       else
         obj.controller_input_frames = obj.controller.getInputFrame();
-        obj.n_input_frames = 1;        
+        obj.n_input_frames = 1; 
       end
       obj.controller_output_frame = obj.controller.getOutputFrame();
       
@@ -164,7 +164,16 @@ classdef DRCController
      
         tt = max(input_frame_time);
         if any(tt >= obj.t_final)
-          data = setfield(data,obj.timed_transition,input_frame_data);
+          % on timeout events, we pass back the latest input data
+          input_data = struct();
+          if obj.n_input_frames > 1
+            for i=1:obj.n_input_frames
+              input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
+            end
+          else
+            input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
+          end
+          data = setfield(data,obj.timed_transition,input_data);
           break;
         end
         

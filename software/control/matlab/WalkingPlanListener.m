@@ -26,34 +26,34 @@ classdef WalkingPlanListener
         % do we have to save to file to convert a byte stream to a
         % matlab binary?
         
-        fid = fopen('htraj_w.mat','w');
+        fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('htraj_w.mat');
+        matdata = load('tmp_w.mat');
         htraj=matdata.htraj;
 
-        fid = fopen('hddtraj_w.mat','w');
+        fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.hddtraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('hddtraj_w.mat');
+        matdata = load('tmp_w.mat');
         hddtraj=matdata.hddtraj;
 
-        fid = fopen('Straj_w.mat','w');
+        fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.Straj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('Straj_w.mat');
+        matdata = load('tmp_w.mat');
         Straj=matdata.Straj;
  
-        fid = fopen('qtraj_w.mat','w');
+        fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.qtraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('qtraj_w.mat');
+        matdata = load('tmp_w.mat');
         qtraj=matdata.qtraj;
 
-        fid = fopen('supptraj_w.mat','w');
+        fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.supptraj,'uint8'),'uint8');
         fclose(fid);
-        matdata = load('supptraj_w.mat');
+        matdata = load('tmp_w.mat');
         supptraj=matdata.supptraj;
 
         x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'Straj',Straj,'supptraj',supptraj);
