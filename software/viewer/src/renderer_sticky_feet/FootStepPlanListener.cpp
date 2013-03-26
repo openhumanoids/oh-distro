@@ -68,7 +68,8 @@ namespace renderer_sticky_feet
     _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
     
     _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-    _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    // _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    _T_bodyframe_groundframe_left.p[2] = 0;
      
     _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
     val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
@@ -78,7 +79,8 @@ namespace renderer_sticky_feet
     _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
     
     _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-    _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    // _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    _T_bodyframe_groundframe_right.p[2] = 0;
     
     lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
@@ -141,16 +143,17 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       oss << msg->robot_name << "_"<< goal_msg.id;
      // cout << "names: "<< oss.str() << endl;
 
-      KDL::Frame T_worldframe_meshframe;
-      transformLCMToKDL(goal_msg.pos, T_worldframe_meshframe);
+      // KDL::Frame T_worldframe_meshframe;
+      KDL::Frame T_worldframe_footframe;
+      transformLCMToKDL(goal_msg.pos, T_worldframe_footframe);
       
       StickyFeetInfoStruct info;
        bool is_constrained = ((goal_msg.fixed_x)||(goal_msg.fixed_y)||(goal_msg.fixed_z)||(goal_msg.fixed_roll)||(goal_msg.fixed_pitch)||(goal_msg.fixed_yaw));
       if(!goal_msg.is_right_foot)
       {
 
-        KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
-        KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_left;
+        // KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
+        // KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_left;
       
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
@@ -161,15 +164,15 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
 
-        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);       
+        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);       
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }
       else
       {
       
 
-        KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_right.Inverse();
-        KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_right;
+        // KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_right.Inverse();
+        // KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_right;
 
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
@@ -180,7 +183,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
          std::map<std::string, double> jointpos_in; 
          jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
         
-        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_groundframe,jointpos_in);
+        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);
         _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_D);
       }  
       
