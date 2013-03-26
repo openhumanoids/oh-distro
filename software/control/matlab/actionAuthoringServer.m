@@ -131,7 +131,7 @@ while (1)
 %           end
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
           collision_group_pt = mean(body.getContactPoints(collision_group),2);
-          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,[body.linkname,'_',char(goal.object_1_contact_grp),'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          action_constraint = ActionKinematicConstraint(r,body,collision_group_pt,pos,tspan,[body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
         end
       end
@@ -141,7 +141,7 @@ while (1)
       for body_ind = 1:length(r.body)
         body_contact_pts = r.body(body_ind).getContactPoints();
         if(~isempty(body_contact_pts))
-          above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
         end 
       end
@@ -174,7 +174,7 @@ while (1)
                   if(isnumeric(body))
                       if(body == 0)
                           body_pos_lb_time = ikargs{j+1};
-                          action_constraint_ZMP = actionKinematicConstraint(body,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
+                          action_constraint_ZMP = actionKinematicConstraint(r,body,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
                           j = j+2;
                       end
                   else
@@ -187,10 +187,10 @@ while (1)
                               pos_start_time_con = struct();
                               pos_start_time_con.max = pos_start_time;
                               pos_start_time_con.min = pos_start_time;
-                              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_start_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+                              action_constraint_ZMP = ActionKinematicConstraint(r,body,collision_group_pt,pos_start_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
                           end
                       else
-                        action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[body.linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
+                        action_constraint_ZMP = ActionKinematicConstraint(r,body,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[body.linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
                       end
                       j = j+3;
                   end
@@ -202,7 +202,7 @@ while (1)
         for body_ind = 1:length(r.body)
           body_contact_pts = r.body(body_ind).getContactPoints();
           if(~isempty(body_contact_pts))
-            above_ground_constraint = ActionKinematicConstraint.groundConstraint(r.body(body_ind),body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+            above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
             action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(above_ground_constraint);
           end 
         end
@@ -274,7 +274,7 @@ while (1)
           comdot_plan = [planar_comdot_plan;comdot_height_plan];
           com_traj = PPTrajectory(pchipDeriv(t_breaks,com_plan,comdot_plan));
           
-          com_constraint = ActionKinematicConstraint(0,zeros(3,1),com_traj, ...
+          com_constraint = ActionKinematicConstraint(r,0,zeros(3,1),com_traj, ...
                               action_sequence_ZMP.tspan,'com');
           action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(com_constraint);
           
