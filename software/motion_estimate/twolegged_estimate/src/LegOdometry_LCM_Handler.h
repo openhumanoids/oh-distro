@@ -13,10 +13,10 @@
 #ifndef LEGODOMETRY_LCM_HANDLER_H_
 #define LEGODOMETRY_LCM_HANDLER_H_
 
-#include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
 
 #include "TwoLegOdometry.h"
-//#include <lcmtypes/drc_robot_state_t.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 class LegOdometry_Handler {
 private:
@@ -25,9 +25,11 @@ private:
 	
 	// LCM stuff
 	const char* robot_pose_channel;
-	lcm_t* _lcm;
 	bool _finish;
 	// TODO
+    //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, 
+    //		const std::string& channel, const  drc::robot_state_t* msg);
+	
 	/*
 	void on_robot_state(const drc_robot_state_t* msg);
 	void on_robot_state_aux(const lcm_recv_buf_t* rbuf, 

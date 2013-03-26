@@ -10,10 +10,8 @@
 #include <iostream>
 #include <exception>
 
-#include <lcm/lcm.h>
 
 #include "LegOdometry_LCM_Handler.h"
-//#include <lcmtypes/drc_robot_state_t.h>
 
 using namespace TwoLegs;
 using namespace std;
@@ -37,7 +35,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	
 	delete _leg_odo;
 	
-	lcm_destroy(_lcm);
+//	lcm_destroy(_lcm);
 	
 	
 	cout << "Everything Destroyed in LegOdometry_Handler::~LegOdometry_Handler()" << endl;
@@ -46,7 +44,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 
 void LegOdometry_Handler::setupLCM() {
 	
-	_lcm = lcm_create(NULL);
+//	_lcm = lcm_create(NULL);
 	// TODO
 	// robot_pose_channel = "TRUE_ROBOT_STATE";
 	// drc_robot_state_t_subscribe(_lcm, robot_pose_channel, TwoLegOdometry::on_robot_state_aux, this);
@@ -80,7 +78,7 @@ void LegOdometry_Handler::run(bool testingmode) {
 			
 			
 			// receive images through LCM
-		    while(0 == lcm_handle(_lcm) && !_finish);
+//		    while(0 == lcm_handle(_lcm) && !_finish);
 		    
 		    
 		}
@@ -95,6 +93,12 @@ void LegOdometry_Handler::run(bool testingmode) {
 	return;
 }
 
+
+/*
+void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+   std::cout << msg->utime << " got a message\n";
+}
+*/
 
 /*
  * This has been copied and must be converted to the listen and respond to the correct LCM messages
