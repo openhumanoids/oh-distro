@@ -36,9 +36,12 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
  y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
  z = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2];
  Eigen::Vector3f queryPt(x,y,z);
+  //std::cout << "query" << queryPt.transpose()<<" " << z << std::endl;
   double current_height = get_support_surface_height_from_perception(self, queryPt);
-  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2] = current_height; // stick to support surface.
-  
+if(!isnan(current_height)){
+  //std::cout << "current_height" << current_height<< std::endl;
+  //self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2] = current_height; // stick to support surface. TODO:: account for offset
+  }
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->enable_link_selection(self->ht_auto_adjust_enabled);
 string no_selection =  " ";

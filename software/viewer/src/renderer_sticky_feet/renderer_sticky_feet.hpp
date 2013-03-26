@@ -85,16 +85,17 @@ namespace renderer_sticky_feet{
     
     
     // get average height mean.
-    //float zMean = 0;
-    //if (view != NULL) {
-    //  maps::PointCloud::Ptr cloud = view->getAsPointCloud();
-    //  for (int i = 0; i < cloud->size(); ++i) {
-    //    zMean += cloud->points[i].z;
-    //  }
-    //  if (cloud->size() > 0) {
-    //    zMean /= cloud->size();
-    //  }
-    //}
+    /*float zMean = 0;
+    if (view != NULL) {
+      maps::PointCloud::Ptr cloud = view->getAsPointCloud();
+      for (int i = 0; i < cloud->size(); ++i) {
+        zMean += cloud->points[i].z;
+      }
+      if (cloud->size() > 0) {
+        zMean /= cloud->size();
+      }
+    }*/
+
     //Eigen::Vector3f queryPt(query_x,query_y,zMean);  
     
     Eigen::Vector3f closestPt,closestNormal;
@@ -108,7 +109,11 @@ namespace renderer_sticky_feet{
         closestNormal<< 0,0,1;
       }
     }
-    
+    else {
+        closestPt = queryPt;
+        closestNormal<< 0,0,1;
+    }
+
     return closestPt[2];
 
   }
