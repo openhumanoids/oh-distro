@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <mutex>
 #include <unordered_map>
 
 #include <gtkmm.h>
@@ -61,15 +62,19 @@ protected:
       while (mIsRunning) {
         int64_t currentTime = drc::Clock::instance()->getCurrentWallTime();
         std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
-        for (iter = mRenderer->mTimeKeepers.begin();
-             iter != mRenderer->mTimeKeepers.end(); ++iter) {
-          int64_t lastUpdateTime = iter->second.mLastUpdateTime;
-          if (lastUpdateTime < 0) continue;
-          int dtSec = (currentTime - lastUpdateTime)/1000000;
-          if (dtSec > 0) {
-            std::string text = static_cast<std::ostringstream*>
-              (&(std::ostringstream() << dtSec) )->str();
-            iter->second.mLabel->set_text("(" + text + "s)");
+        {
+          std::lock_guard<std::mutex> lock(mRenderer->mTimeKeepersMutex);
+          for (iter = mRenderer->mTimeKeepers.begin();
+               iter != mRenderer->mTimeKeepers.end(); ++iter) {
+            int64_t lastUpdateTime = iter->second.mLastUpdateTime;
+            if (lastUpdateTime < 0) continue;
+            int dtSec = (currentTime - lastUpdateTime)/1000000;
+            if (dtSec > 0) {
+              std::string text = static_cast<std::ostringstream*>
+                (&(std::ostringstream() << dtSec) )->str();
+              text = "(" + text + "s)";
+              iter->second.mLabel->set_text(text);
+            }
           }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -85,6 +90,7 @@ protected:
   std::shared_ptr<LastUpdateChecker> mUpdateChecker;
   std::unordered_map<std::string, ChannelType> mChannels;
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
+  std::mutex mTimeKeepersMutex;
 
 public:
 
@@ -106,6 +112,8 @@ public:
   }
 
   ~DataControlRenderer() {
+    mUpdateChecker->mIsRunning = false;
+    mUpdateChecker.reset();
   }
 
   void onMessage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
@@ -124,9 +132,12 @@ public:
     }
     else {
     }
-    mTimeKeepers[key].mLastUpdateTime =
-      drc::Clock::instance()->getCurrentWallTime();
-    mTimeKeepers[key].mLabel->set_text("");
+    {
+      std::lock_guard<std::mutex> lock(mTimeKeepersMutex);
+      mTimeKeepers[key].mLastUpdateTime =
+        drc::Clock::instance()->getCurrentWallTime();
+      mTimeKeepers[key].mLabel->set_text("");
+    }
   }
 
   void setupWidgets() {
@@ -205,7 +216,10 @@ public:
     TimeKeeper timeKeeper;
     timeKeeper.mLabel = ageLabel;
     timeKeeper.mLastUpdateTime = -1;
-    mTimeKeepers[key] = timeKeeper;
+    {
+      std::lock_guard<std::mutex> lock(mTimeKeepersMutex);
+      mTimeKeepers[key] = timeKeeper;
+    }
 
     if (mChannels.find(iChannel) == mChannels.end()) {
       add(getLcm()->subscribe(iChannel, &DataControlRenderer::onMessage, this));
