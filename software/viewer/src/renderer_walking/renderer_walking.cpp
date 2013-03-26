@@ -24,7 +24,11 @@
 //#include <visualization/renderer_localize.h>
 
 #include <lcmtypes/drc_lcmtypes.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
+
+#include <maps/ViewClient.hpp>
+#include <maps/BotWrapper.hpp>
 
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "[G]oal (timed)"
@@ -129,6 +133,11 @@ int geom_ray_z_plane_intersect_3d(const point3d_t *ray_point,
 
 ////////////////////////////// END OF CODE COPIED IN FROM COMMON_UTILS
 
+struct PerceptionData {
+  maps::ViewClient mViewClient;
+  maps::BotWrapper::Ptr mBotWrapper;
+};
+
 typedef struct _RendererWalking {
   BotRenderer renderer;
   BotEventHandler ehandler;
@@ -136,7 +145,9 @@ typedef struct _RendererWalking {
   lcm_t *lc;
 
   BotGtkParamWidget *pw;
-
+  
+  PerceptionData *perceptionData;
+  
   int dragging;
   int active; //1 = relocalize, 2 = set person location
   int last_active; //1 = relocalize, 2 = set person location
@@ -229,13 +240,45 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   }
 
   point2d_t click_pt_local;
+  float zMean = 0;
+  
+  int iViewId = drc::data_request_t::HEIGHT_MAP_SCENE;
+  maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
+  if (view != NULL) {
+    maps::PointCloud::Ptr cloud = view->getAsPointCloud();
+    for (int i = 0; i < cloud->size(); ++i) {
+      zMean += cloud->points[i].z;
+    }
+    if (cloud->size() > 0) {
+      zMean /= cloud->size();
+    }
+  }
+      
   if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
-      POINT3D(ray_dir), 0, &click_pt_local)) {
+      POINT3D(ray_dir), zMean, &click_pt_local)) {
     bot_viewer_request_redraw(self->viewer);
     self->active = 0;
     return 0;
   }
-
+  Eigen::Vector3f queryPt(click_pt_local.x,click_pt_local.y,zMean);  
+  Eigen::Vector3f closestPt,closestNormal;
+    
+  if (view != NULL) {
+    if(!view->getClosest(queryPt,closestPt,closestNormal))
+    {
+      closestPt = queryPt;
+      closestNormal<< 0,0,1;
+    }
+  }
+  else {
+      closestPt = queryPt;
+      closestNormal<< 0,0,1;
+    }
+  
+  std::cout << "query: " << queryPt.transpose() << std::endl;
+  std::cout << "closestPt: " << closestPt.transpose() << std::endl;
+  std::cout << "closestNormal: " << closestNormal.transpose() << std::endl;
+  
   self->dragging = 1;
 
   self->drag_start_local = click_pt_local;
@@ -522,10 +565,12 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
 static void
 _free (BotRenderer *renderer)
 {
+  RendererWalking *self = (RendererWalking*) renderer;
+  delete self->perceptionData;
   free (renderer);
 }
 
-BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t *lcm)
+BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param, BotFrames * frames)
 {
   RendererWalking *self = (RendererWalking*) calloc (1, sizeof (RendererWalking));
   self->viewer = viewer;
@@ -550,6 +595,10 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
   
+  
+  self->perceptionData = new PerceptionData();
+  self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
+  self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
   
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
@@ -576,8 +625,9 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   return &self->renderer;
 }
 
-void setup_renderer_walking(BotViewer *viewer, int render_priority, lcm_t *lcm)
+void setup_renderer_walking(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
+    BotFrames * frames)
 {
-  bot_viewer_add_renderer_on_side(viewer, renderer_walking_new(viewer, render_priority, lcm),
+  bot_viewer_add_renderer_on_side(viewer, renderer_walking_new(viewer, render_priority, lcm, param, frames),
       render_priority , 0);
 }

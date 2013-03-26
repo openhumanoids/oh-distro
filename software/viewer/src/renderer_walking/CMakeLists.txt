@@ -22,4 +22,4 @@ pods_install_pkg_config_file(renderer_walking
 
 pods_use_pkg_config_packages(renderer_walking
   lcmtypes_drc_lcmtypes eigen3
-  bot2-core bot2-vis bot2-frames)
+  bot2-core bot2-vis bot2-frames maps)
