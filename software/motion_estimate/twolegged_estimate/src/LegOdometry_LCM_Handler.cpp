@@ -9,8 +9,11 @@
 
 #include <iostream>
 #include <exception>
+//#include <stdio.h>
+//#include <inttypes.h>
 
 
+//#include "lcmtypes/drc_lcmtypes.hpp"
 #include "LegOdometry_LCM_Handler.hpp"
 
 using namespace TwoLegs;
@@ -48,6 +51,8 @@ void LegOdometry_Handler::setupLCM() {
 	// TODO
 	// robot_pose_channel = "TRUE_ROBOT_STATE";
 	// drc_robot_state_t_subscribe(_lcm, robot_pose_channel, TwoLegOdometry::on_robot_state_aux, this);
+	
+	//lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
 	
 	return;
 }
@@ -93,9 +98,8 @@ void LegOdometry_Handler::run(bool testingmode) {
 	return;
 }
 
-
 /*
-void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg) {
    std::cout << msg->utime << " got a message\n";
 }
 */

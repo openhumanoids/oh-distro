@@ -14,9 +14,14 @@
 #define LEGODOMETRY_LCM_HANDLER_HPP_
 
 #include <lcm/lcm-cpp.hpp>
+#include <string>
 
 #include "TwoLegOdometry.h"
+//#include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
+
+
+#include <lcm/lcm.h>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -24,10 +29,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/std/vector.hpp>
 
+#include <map>
+
+#include "urdf/model.h"
+
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
-	
+	boost::shared_ptr<lcm::LCM> lcm_;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -44,6 +53,8 @@ private:
 	*/
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
 	void setupLCM();
+	
+	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 				
 	
 public:
