@@ -56,7 +56,7 @@ while true
   q0 = x0(1:nq);
   kinsol = doKinematics(r,q0);
 
-  [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
+  [zmptraj,foottraj,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
   zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
   % construct ZMP feedback controller

@@ -2,6 +2,8 @@ function [Xright, Xleft] = optimizeFootstepPlan(biped, x0, poses, outputfun, upd
 q0 = x0(1:end/2);
 [start_pos, step_width] = biped.feetPosition(q0);
 poses = [start_pos, poses];
+poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
+poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
 
   if nargin < 5
     interactive = false;
@@ -60,7 +62,9 @@ poses = [start_pos, poses];
         if changelist.plan_con
           new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
           new_X = new_X(:,1);
-          new_X(1:6) = biped.stepCenters(new_X(1:6), new_X(15));
+          new_X(1:6) = biped.footOrig2Contact(new_X(1:6), 'center', new_X(end));
+          new_X(1:6) = biped.footCenter2StepCenter(new_X(1:6), new_X(end));
+          % new_X(1:6) = biped.stepCenters(new_X(1:6), new_X(15));
           j = find(X(8,:) == new_X(8));
           X(:, j) = new_X(1:14);
           X(7, :) = (0:length(X(1,:))-1) * biped.step_time / 2;
@@ -91,7 +95,10 @@ poses = [start_pos, poses];
 
   total_steps = length(X(1,:));
   ndx = biped.getStepNdx(total_steps);
-  [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
+
+  Xright = biped.stepCenter2FootCenter(X(:, ndx.right), 1);
+  Xleft = biped.stepCenter2FootCenter(X(:, ndx.left), 0);
+  % [Xright, Xleft] = biped.stepGoals(X, ndx.right, ndx.left);
   Xright(3,:) = heightfun(Xright(1:2,:));
   Xleft(3,:) = heightfun(Xleft(1:2,:));
 end

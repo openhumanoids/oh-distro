@@ -1,4 +1,4 @@
-function [zmptraj,foottraj,contact_ref,step_times,supporttraj] = planZMPandHeelToeTrajectory(biped,q0, Xright, Xleft,step_time,options)
+function [zmptraj,foottraj,step_times,supporttraj] = planZMPandHeelToeTrajectory(biped,q0, Xright, Xleft,step_time,options)
 if nargin < 6
   options = struct();
 end
@@ -22,59 +22,16 @@ com0 = getCOM(biped,q0);
 foot0 = struct('right', forwardKin(biped,kinsol,foot_body.right,[0;0;0],true),...
   'left', forwardKin(biped,kinsol,foot_body.left,[0;0;0],true));
 
-if true%~options.flat_foot
-  group_pts = struct('left', struct(), 'right', struct());
-  for g = {'toe', 'heel'}
-    grp = g{1};
-    for f = {'right', 'left'}
-      foot = f{1};
-      group_pts.(foot).(grp) = foot_body.(foot).contact_pts(:,...
-        foot_body.(foot).collision_group{...
-            cellfun(@(x) strcmp(x, grp), ...
-             foot_body.(foot).collision_group_name)});
-    end
-  end
-end
-
-foot_cen0 = struct();
-contact_ref = struct('right', struct(), 'left', struct());
-offset = struct();
-for f = {'right', 'left'}
-  foot = f{1};
-  gc = foot_body.(foot).contact_pts;
-%   gc = [group_pts.(foot).toe, group_pts.(foot).heel];
-  gc = forwardKin(biped, kinsol, foot_body.(foot), gc, true);
-  k = convhull(gc(1:2,:)');
-  foot_cen0.(foot) = mean(gc(1:3, k),2);
-  offset.(foot).center = foot_cen0.(foot) - foot0.(foot)(1:3);
-  
-  if ~options.flat_foot
-    for g = {'toe', 'heel'}
-      grp = g{1};
-      gc = [group_pts.(foot).(grp)];
-      contact_ref.(foot).(grp) = mean(gc, 2);
-      contact_pos = forwardKin(biped, kinsol, foot_body.(foot), contact_ref.(foot).(grp), true);
-      offset.(foot).(grp) = contact_pos(1:3) - foot0.(foot)(1:3);
-    end
-  end
-end
-
 function fpos = footPoint(foot, grp, pos)
-  % Return the position in the lab frame of the center of the contact group
-  % [grp] with [foot] at position [pos]. For example, 
-  % footPoint('right','center',[0;0;0;0;0;0]) gives the position of the
-  % center of the right foot contact when that foot's origin is at O.
-  yaw = pos(6,:);
-  for j = 1:length(yaw)
-    offs = [cos(yaw(j)), -sin(yaw(j)), 0; sin(yaw(j)), cos(yaw(j)), 0; 0, 0, 1]...
-            * offset.(foot).(grp)(1:3);
-    fpos(:,j) = pos(1:3,j) + offs;
-  end
+  fpos = biped.footOrig2Contact(pos, grp, strcmp(foot, 'right'));
+  fpos = fpos(1:3, :);
 end
 
 function pos = feetCenter(rfootpos,lfootpos)
-  rcen = footPoint('right', 'center', rfootpos);
-  lcen = footPoint('left', 'center', lfootpos);
+  rcen = biped.footOrig2Contact(rfootpos, 'center', 1);
+  lcen = biped.footOrig2Contact(lfootpos, 'center', 0);
+  % rcen = footPoint('right', 'center', rfootpos);
+  % lcen = footPoint('left', 'center', lfootpos);
   pos = mean([rcen(1:3,:),lcen(1:3,:)],2);
 end
 
@@ -93,7 +50,8 @@ if ~options.flat_foot
       grp = g{1};
       for b = {'ub', 'lb'}
         bound = b{1};
-        footpos.(foot).(grp).(bound) = footPoint(foot, grp, footpos.(foot).orig);
+        footpos.(foot).(grp).(bound) = biped.footOrig2Contact(footpos.(foot).orig, grp, strcmp(foot, 'right'));
+        % footpos.(foot).(grp).(bound) = footPoint(foot, grp, footpos.(foot).orig);
       end
     end
   end
@@ -125,11 +83,6 @@ while 1
   
   step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(1:6, istep.(m_foot)), step_locations.(m_foot)(1:6, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
   step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.05, 0, 0, 0];
-  for i = 1:length(step.(m_foot).orig(1,:))
-    R = makehgtform('zrotate', step.(m_foot).orig(6,i));
-    offs = R * [offset.(m_foot).center; 1];
-    step.(m_foot).orig(1:3, i) = step.(m_foot).orig(1:3, i) - offs(1:3);
-  end
   
   if ~options.flat_foot
     stepzmp = [footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),...
@@ -155,10 +108,6 @@ while 1
   else
     stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),1,3),...
                repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
-    % step.(m_foot).toe.lb = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
-    % step.(m_foot).toe.ub = footPoint(m_foot, 'toe', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
-    % step.(m_foot).heel.lb = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))-repmat(0.01, 3,5);
-    % step.(m_foot).heel.ub = footPoint(m_foot, 'heel', step.(m_foot).orig(:,:))+repmat(0.01, 3,5);
   end
     
   istep.(m_foot) = istep.(m_foot) + 1;

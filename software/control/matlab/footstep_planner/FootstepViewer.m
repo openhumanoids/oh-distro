@@ -42,6 +42,7 @@ classdef FootstepViewer
         new_plan = obj.listener.getNextMessage(50);
         if ~isempty(new_plan)
           plan = new_plan;
+          plan([1:7, 9:end],:)
           Xright = plan(:, plan(15,:)==1);
           Xleft = plan(:, plan(15,:)==0);
           sfigure(obj.hFig);

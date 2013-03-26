@@ -3,9 +3,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     step_time
     max_step_length
     max_step_rot
+    min_foot_proximity
+    foot_contact_offsets
     r_foot_name
     l_foot_name
-    foot_angles
     step_width
     lc
   end
@@ -16,21 +17,17 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options = struct();
         options.floating = true;
       end
+      obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       if nargin < 2
         dt = 0.002;
       end
-      
-      obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
-
-      obj.lc = lcm.lcm.LCM.getSingleton();
-      
       defaults = struct('step_time', 1.0,... % s
         'max_step_length', .60,... % m
         'max_step_rot', pi/4,... % rad
+        'min_foot_proximity', 0.15,... % m
         'r_foot_name', 'r_foot',...
         'step_width', 0.22,...
-        'l_foot_name', 'l_foot',...
-        'foot_angles', [-pi/2, pi/2]);
+        'l_foot_name', 'l_foot');
       fields = fieldnames(defaults);
       for i = 1:length(fields)
         if ~isfield(options, fields{i})
@@ -39,6 +36,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
           obj.(fields{i}) = options.(fields{i});
         end
       end
+      
+
+      obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.foot_contact_offsets = obj.findContactOffsets();
     end
     
     function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
@@ -50,7 +51,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end 
 
       planner = FootstepPlanner(obj)
-      [Xright, Xleft] = planner.plan(poses(:,end), struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
+      [Xright, Xleft] = planner.plan(poses, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
       if options.plotting
         figure(22)
         plotFootstepPlan([], Xright, Xleft);
@@ -58,10 +59,13 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
     end
     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options)
+      % Xright and Xleft should be expressed as locations of the foot centers, not the foot origins
+      Xright = obj.footContact2Orig(Xright, 'center', 1);
+      Xleft = obj.footContact2Orig(Xleft, 'center', 0);
       q0 = x0(1:end/2);
-      [zmptraj, foottraj, contact_ref] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
+      [zmptraj, foottraj] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, contact_ref, ts);
+      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, ts);
     end
     
     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
@@ -81,43 +85,33 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
       [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options);
     end
-    
-    function [Xright, Xleft] = stepGoals(obj, X, ndx_r, ndx_l)
-      if nargin == 2
-        ndx_r = 1:length(X(1,:));
-        ndx_l = 1:length(X(1,:));
+
+    function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
+      if is_right_foot
+        offs = [0; -obj.step_width/2; 0];
+      else
+        offs = [0; obj.step_width/2; 0];
       end
-      yaw = X(6,:);
-      foot_angle_r = obj.foot_angles(1) + yaw(ndx_r);
-      foot_angle_l = obj.foot_angles(2) + yaw(ndx_l);
-      Xright = X(:,ndx_r) + [cos(foot_angle_r); sin(foot_angle_r); zeros(12, length(ndx_r))] .* (obj.step_width / 2);
-      Xleft = X(:,ndx_l) + [cos(foot_angle_l); sin(foot_angle_l); zeros(12, length(ndx_l))] .* (obj.step_width / 2);
-      Xright(end+1,:) = 1;
-      Xleft(end+1,:) = 0;
-    end
-    
-    function [Xright, Xleft] = stepLocations(obj, X, ndx_r, ndx_l)
-      % Return left and right foot poses only
-      if nargin == 2
-        ndx_r = 1:length(X(1,:));
-        ndx_l = 1:length(X(1,:));
+      for j = 1:length(Xc(1,:))
+        M = makehgtform('xrotate', Xc(4, j), 'yrotate', Xc(5, j), 'zrotate', Xc(6, j));
+        d = M * [offs; 1];
+        Xo(:,j) = [Xc(1:3,j) + d(1:3); Xc(4:end, j)];
       end
-      [Xright, Xleft] = obj.stepGoals(X, ndx_r, ndx_l);
-      Xright = Xright(1:6,:);
-      Xleft = Xleft(1:6,:);
     end
 
-    function [X] = stepCenters(obj, Xfoot, is_right_foot)
-      % Transform foot position into position of the footstep path center. Reverses biped.stepLocations
-      yaw = Xfoot(6,:);
+    function Xc = footCenter2StepCenter(obj, Xo, is_right_foot)
       if is_right_foot
-        foot_angle = obj.foot_angles(1) + yaw;
+        offs = [0; -obj.step_width/2; 0];
       else
-        foot_angle = obj.foot_angles(2) + yaw;
+        offs = [0; obj.step_width/2; 0];
       end
-      X = Xfoot - [cos(foot_angle); sin(foot_angle); zeros(4, length(Xfoot(1,:)))] .* (obj.step_width / 2);
+      for j = 1:length(Xo(1,:))
+        M = makehgtform('xrotate', Xo(4, j), 'yrotate', Xo(5, j), 'zrotate', Xo(6, j));
+        d = M * [offs; 1];
+        Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end, j)];
+      end
     end
-    
+
     function [pos, width] = feetPosition(obj, q0)
       typecheck(q0,'numeric');
       sizecheck(q0,[obj.getNumDOF,1]);
@@ -129,38 +123,14 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       rfoot0 = forwardKin(obj,kinsol,rfoot_body,[0;0;0],true);
       lfoot0 = forwardKin(obj,kinsol,lfoot_body,[0;0;0],true);
 
-      gc = obj.contactPositions(q0);
+      foot_centers = struct('right', obj.footOrig2Contact(rfoot0, 'center', 1),...
+                            'left', obj.footOrig2Contact(lfoot0, 'center', 0));
+      p0 = mean([foot_centers.right(1:3), foot_centers.left(1:3)], 2);
+      yaw = atan2(foot_centers.left(2) - foot_centers.right(2),...
+                  foot_centers.left(1) - foot_centers.right(1)) - pi/2;
+      pos = [p0; 0; 0; yaw];
+      width = sqrt(sum((foot_centers.right(1:2) - foot_centers.left(1:2)) .^ 2));
 
-      % compute desired COM projection
-      % assumes minimal contact model for now
-      k = convhull(gc(1:2,1:4)');
-      lfootcen0 = [mean(gc(1:2,k),2);0];
-      k = convhull(gc(1:2,5:8)');
-      rfootcen0 = [mean(gc(1:2,4+k),2);0];
-      roffset = rfootcen0 - rfoot0(1:3);
-      loffset = lfootcen0 - lfoot0(1:3);
-
-      function pos = rfootCenter(rfootpos)
-        yaw = rfootpos(6);
-        offset = [cos(yaw), -sin(yaw); sin(yaw), cos(yaw)] * roffset(1:2);
-        pos = rfootpos(1:2)+offset;
-      end    
-
-      function pos = lfootCenter(lfootpos)
-        yaw = lfootpos(6);
-        offset = [cos(yaw), -sin(yaw); sin(yaw), cos(yaw)] * loffset(1:2);
-        pos = lfootpos(1:2)+offset;
-      end
-
-      function pos = feetCenter(rfootpos,lfootpos)
-        rcen = rfootCenter(rfootpos);
-        lcen = lfootCenter(lfootpos);
-        pos = mean([rcen,lcen],2);
-      end
-
-      p0 = feetCenter(rfoot0, lfoot0);
-      pos = [p0; 0; 0; 0; atan2(lfoot0(2) - rfoot0(2), lfoot0(1) - rfoot0(1)) - pi/2];
-      width = sqrt(sum((rfoot0 - lfoot0) .^ 2));
     end
 
     function ndx = getStepNdx(obj, total_steps)
@@ -177,14 +147,24 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         t = now() * 24 * 60 * 60;
       end
       ndx = obj.getStepNdx(length(X(1,:)));
-      [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
+      % [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
+      Xright = obj.stepCenter2FootCenter(X(:, ndx.right), 1);
+      Xleft = obj.stepCenter2FootCenter(X(:, ndx.left), 0);
+      Xright(end+1, :) = 1;
+      Xleft(end+1, :) = 0;
+
       Xright(3,:) = htfun(Xright(1:2,:));
       Xleft(3,:) = htfun(Xleft(1:2,:));
 
+      % Xright and Xleft are expressed as position of the foot contact center, so we need to transform them into the position of the foot origin
+      for j = 1:length(Xright(1,:))
+        Xright(:,j) = obj.footContact2Orig(Xright(:,j), 'center', 1);
+      end
+      for j = 1:length(Xleft(1,:))
+        Xleft(:,j) = obj.footContact2Orig(Xleft(:,j), 'center', 0);
+      end
+
       msg = FootstepPlanPublisher.encodeFootstepPlan([Xright, Xleft], t, isnew);
-      % figure(22);
-      % plotFootstepPlan([], Xright, Xleft)
-      % drawnow
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
   end

@@ -1,7 +1,9 @@
 function [X, exitflag] = updateFootstepPlan(biped, X, heightfun)
 
 %% Adjust the number of footsteps, if necessary
-[Xright, Xleft] = biped.stepLocations(X);
+% [Xright, Xleft] = biped.stepLocations(X);
+Xright = biped.stepCenter2FootCenter(X, 1);
+Xleft = biped.stepCenter2FootCenter(X, 0);
 
 ndx_fixed = find(any(X(9:14,:)));
 
@@ -38,6 +40,7 @@ ndx = biped.getStepNdx(total_steps);
 
 %% Set up and run the optimization problem
   
+max_diag_dist_sq = (biped.max_step_length^2 + biped.step_width^2);
 max_diag_dist = sqrt(biped.max_step_length^2 + biped.step_width^2);
 X_orig = X;
 
@@ -76,15 +79,28 @@ X([1,2,6],:) = reshape(x_flat, 3, []);
 function [c, ceq] = nonlcon(x_flat)
   X = X_orig;
   X([1,2,6],:) = reshape(x_flat, 3, []);
-  [Xright, Xleft] = biped.stepLocations(X);
+  % [Xright, Xleft] = biped.stepLocations(X);
+  Xright = biped.stepCenter2FootCenter(X, 1);
+  Xleft = biped.stepCenter2FootCenter(X, 0);
   Xright(3,:) = heightfun(Xright(1:2,:));
   Xleft(3,:) = heightfun(Xleft(1:2,:));
-  dist_alt_r = abs(Xright(:,1:end-1) - Xleft(:,2:end));
-  dist_alt_l = abs(Xleft(:,1:end-1) - Xright(:,2:end));
+
+
+  dist_alt_r = sum((Xright(1:2,1:end-1) - Xleft(1:2,2:end)).^2, 1);
+  dist_alt_l = sum((Xleft(1:2,1:end-1) - Xright(1:2,2:end)).^2, 1);
+  % dist_alt_r = abs(Xright(:,1:end-1) - Xleft(:,2:end));
+  % dist_alt_l = abs(Xleft(:,1:end-1) - Xright(:,2:end));
+  
+
   height_diff = [abs(Xright(3,ndx.right(1:end-1)) - Xright(3,ndx.right(2:end)))';
                  abs(Xleft(3,ndx.left(1:end-1)) - Xleft(3,ndx.left(2:end)))'];
-  c = [reshape(dist_alt_r(1:2,:), [], 1) - max_diag_dist;
-      reshape(dist_alt_l(1:2,:), [], 1) - max_diag_dist;
+  % c = [reshape(dist_alt_r(1:2,:), [], 1) - max_diag_dist;
+  %     reshape(dist_alt_l(1:2,:), [], 1) - max_diag_dist;
+  %      height_diff - 0.5];
+  c = [dist_alt_r' - max_diag_dist_sq;
+       dist_alt_l' - max_diag_dist_sq;
+       -(dist_alt_r' - biped.min_foot_proximity^2);
+       -(dist_alt_l' - biped.min_foot_proximity^2);
        height_diff - 0.5];
   ceq = 0;
 end

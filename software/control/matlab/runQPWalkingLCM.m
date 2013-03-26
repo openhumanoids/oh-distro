@@ -46,7 +46,7 @@ else
   lfoot = foottraj(1:6,find(foottraj(15,:)==0));
 end
 
-[zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
+[zmptraj,foottraj,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller

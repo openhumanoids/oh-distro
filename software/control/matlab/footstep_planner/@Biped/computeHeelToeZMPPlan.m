@@ -1,4 +1,4 @@
-function xtraj = computeHeelToeZMPPlan(biped, x0, zmptraj, foottraj, contact_ref, ts)
+function xtraj = computeHeelToeZMPPlan(biped, x0, zmptraj, foottraj, ts)
 
 q0 = x0(1:end/2);
 %% covert ZMP plan into COM plan using LIMP model
@@ -46,6 +46,7 @@ for i=1:length(ts)
         for g = {'heel', 'toe'}
           grp = g{1};
           cons{end+1} = foot_body.(foot);
+          cons{end+1} = biped.foot_contact_offsets.(foot).(grp);
           cons{end+1} = contact_ref.(foot).(grp);
           cons{end+1} = struct('min', foottraj.(foot).(grp).lb.eval(t),...
                                'max', foottraj.(foot).(grp).ub.eval(t));
