@@ -69,6 +69,10 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_1.world";
         host = "paladin-02";
     }
+    cmd "qual_walking_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/atlas_control_qual_1.world";
+        host = "paladin-02";
+    }
     cmd "qual_climbing" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
         host = "paladin-02";
@@ -86,7 +90,7 @@ group "2.gazebo" {
         host = "paladin-02";
     }
     cmd "vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
+        exec = "roslaunch mit_drcsim_scripts mit.la unch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
         host = "paladin-02";
     }
 }
@@ -151,9 +155,21 @@ group "3.c.tracking" {
 }
 
 group "4.drake_robot" {
-    cmd "control_planner" {
-        exec = "matlab";
-        host = "paladin-02";
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+        host = "localhost";
+    }
+    cmd "ZMPWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+        host = "localhost";
+    }
+    cmd "StateMachine" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
+        host = "localhost";
+    }
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       host = "localhost";
     }
 }
 
