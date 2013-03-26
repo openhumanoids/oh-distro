@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
-  setup_renderer_walking(viewer, 0,lcm);
+  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
