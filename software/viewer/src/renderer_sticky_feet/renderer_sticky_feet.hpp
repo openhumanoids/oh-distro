@@ -24,6 +24,9 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include "FootStepPlanListener.hpp"
 
+#include <maps/ViewClient.hpp>
+#include <maps/BotWrapper.hpp>
+
 using namespace std;
 using namespace boost;
 using namespace Eigen;
@@ -31,6 +34,11 @@ using namespace visualization_utils;
 
 namespace renderer_sticky_feet{
 
+
+  struct PerceptionData {
+    maps::ViewClient mViewClient;
+    maps::BotWrapper::Ptr mBotWrapper;
+  };
 
   typedef struct _RendererStickyFeet
   {
@@ -44,6 +52,8 @@ namespace renderer_sticky_feet{
     bool ht_auto_adjust_enabled;
     bool clicked;
     bool dragging;
+    
+    PerceptionData *perceptionData;
 
     Eigen::Vector3f ray_start;
     Eigen::Vector3f ray_end;
@@ -65,7 +75,43 @@ namespace renderer_sticky_feet{
 
   } RendererStickyFeet;
 
+  inline static double get_support_surface_height_from_perception(void *user, Eigen::Vector3f &queryPt)
+  {
+    RendererStickyFeet *self = (RendererStickyFeet*) user;
+   
 
+    int iViewId = drc::data_request_t::HEIGHT_MAP_SCENE;
+    maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
+    
+    
+    // get average height mean.
+    //float zMean = 0;
+    //if (view != NULL) {
+    //  maps::PointCloud::Ptr cloud = view->getAsPointCloud();
+    //  for (int i = 0; i < cloud->size(); ++i) {
+    //    zMean += cloud->points[i].z;
+    //  }
+    //  if (cloud->size() > 0) {
+    //    zMean /= cloud->size();
+    //  }
+    //}
+    //Eigen::Vector3f queryPt(query_x,query_y,zMean);  
+    
+    Eigen::Vector3f closestPt,closestNormal;
+    closestPt = queryPt;
+    closestNormal<< 0,0,1;   
+    
+    if (view != NULL) {
+      if(!view->getClosest(queryPt,closestPt,closestNormal))
+      {
+        closestPt = queryPt;
+        closestNormal<< 0,0,1;
+      }
+    }
+    
+    return closestPt[2];
+
+  }
 
   inline static double get_shortest_distance_between_stickyfeet_and_markers (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
   {
@@ -278,6 +324,7 @@ namespace renderer_sticky_feet{
 }// end namespace
 
 
-void setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm);
+void setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
+    BotFrames * frames);
 
 #endif //RENDERER_STICKYFEET_HPP

@@ -15,6 +15,7 @@ static void
 _renderer_free (BotRenderer *super)
 {
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
+  delete self->perceptionData;
   free(self);
 }
 //================================= Drawing
@@ -30,6 +31,13 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float alpha = 0.4;
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
  
+ double x,y,z;
+ x = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0];
+ y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
+ z = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2];
+ Eigen::Vector3f queryPt(x,y,z);
+  double current_height = get_support_surface_height_from_perception(self, queryPt);
+  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2] = current_height; // stick to support surface.
   
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->enable_link_selection(self->ht_auto_adjust_enabled);
@@ -273,10 +281,18 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm)
+setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param,
+    BotFrames * frames)
 {
     RendererStickyFeet *self = (RendererStickyFeet*) calloc (1, sizeof (RendererStickyFeet));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
+    
+    self->perceptionData = new PerceptionData();
+    self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
+    self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
+    self->perceptionData->mViewClient.start();
+      
+    
    // self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self));
     self->footStepPlanListener = boost::shared_ptr<FootStepPlanListener>(new FootStepPlanListener(self->lcm,viewer));
     BotRenderer *renderer = &self->renderer;

@@ -274,7 +274,9 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
         drc::footstep_goal_t goal_msg  = msg.footstep_goals[i];
         
        // KDL::Frame T_worldframe_groundframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
-       KDL::Frame T_worldframe_footframe;
+       KDL::Frame T_worldframe_footframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
+       goal_msg.is_right_foot = (_planned_stickyfeet_info_list[i].foot_type== FootStepPlanListener::RIGHT);
+    
       // if(!goal_msg.is_right_foot)
       // {
       //   T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_left.Inverse())*_T_bodyframe_meshframe_left;
