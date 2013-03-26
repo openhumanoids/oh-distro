@@ -106,8 +106,19 @@ while 1
       end
     end
   else
-    stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),1,3),...
+    % Shift the ZMP by 2cm closer to the center of the feet
+    foot_center = footPoint(s_foot, 'center', step.(s_foot).orig(:,1));
+    step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
+    zmp_shift = (step_center(1:2) - foot_center(1:2));
+    zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.02; 
+    stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),1,3)+zmp_shift,...
                repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
+    disp('s_foot center')
+    footPoint(s_foot, 'center', step.(s_foot).orig(:))
+    disp('m_foot center')
+    footPoint(m_foot, 'center', step.(m_foot).orig(:))
+    disp('step zmp')
+    stepzmp
   end
     
   istep.(m_foot) = istep.(m_foot) + 1;
