@@ -32,7 +32,7 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
  
  
- // stick stickyfeet to the support supose if points exist below it. 
+ // update stickyfeet z offsets to the support surface if points exist below it. 
  double x,y,z;
  x = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0];
  y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
@@ -46,11 +46,34 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
       current_height += self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
     else
       current_height += self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
-            
-    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2] = current_height; // stick to support surface. TODO:: account for offset
-    if(self->footStepPlanListener->is_motion_copy(i))
-      self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[2] = current_height;
-  }
+      
+     KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
+     T_worldframe_footframe.p[2] = current_height; // stick to support surface. TODO:: account for offset
+    std::map<std::string, double> jointpos_in; 
+    jointpos_in =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
+     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);          
+  }         
+    
+  if(self->footStepPlanListener->is_motion_copy(i)){
+    x = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[0];
+    y = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[1];
+    z = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[2];
+    Eigen::Vector3f queryPt(x,y,z);
+    current_height = get_support_surface_height_from_perception(self, queryPt);
+    if(!isnan(current_height)&&(current_height!=queryPt[2])){
+      if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
+        current_height += self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
+      else
+        current_height += self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
+          
+      KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
+      T_worldframe_footframe.p[2] = current_height;
+      std::map<std::string, double> jointpos_in; 
+      jointpos_in =  self->footStepPlanListener->_gl_in_motion_copy->_current_jointpos;  
+      self->footStepPlanListener->_gl_in_motion_copy->set_state(T_worldframe_footframe,jointpos_in); 
+    }
+  }     
+
   
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->enable_link_selection(self->ht_auto_adjust_enabled);
