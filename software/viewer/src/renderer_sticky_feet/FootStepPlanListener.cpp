@@ -110,6 +110,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		num_steps = msg->num_steps;   
 
     if(_waiting_for_new_plan && !msg->is_new_plan) {
+      bot_viewer_request_redraw(_viewer);
       return;
     }
     _waiting_for_new_plan = false;

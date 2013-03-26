@@ -19,6 +19,7 @@ namespace renderer_sticky_feet_gui_utils
     gtk_widget_destroy (self->plan_approval_dock);
     self->plan_approval_dock= NULL;
     self->footStepPlanListener->_waiting_for_new_plan = true;
+    bot_viewer_request_redraw(self->viewer);
    return TRUE;
   }
   
@@ -33,6 +34,7 @@ namespace renderer_sticky_feet_gui_utils
     //gtk_widget_destroy (self->plan_approval_dock);
     //self->plan_approval_dock= NULL;
     self->footStepPlanListener->_waiting_for_new_plan = true;
+    bot_viewer_request_redraw(self->viewer);
     return TRUE;
   }
    
