@@ -95,16 +95,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
  
   int j;
   for (int i=0; i<N; i++) {
-    pos << (float) ppos[3*(i-1)], (float) ppos[3*(i-1)+1], (float) ppos[3*(i-1)+2];
+    pos << (float) ppos[3*i], (float) ppos[3*i+1], (float) ppos[3*i+2];
     if (vptr->getClosest(pos,closest_terrain_pos,normal)) {
 	for (j=0; j<3; j++) {
-	  pclosest_terrain_pos[3*(i-1)+j] = (double) closest_terrain_pos(j);
-	  pnormal[3*(i-1)+j] = (double) normal(j);
+	  pclosest_terrain_pos[3*i+j] = (double) closest_terrain_pos(j);
+	  pnormal[3*i+j] = (double) normal(j);
 	}
     } else { // returns false if off the grid		   
 	for (j=0; j<3; j++) {
-	  pclosest_terrain_pos[3*(i-1)+j] = NAN;
-	  pnormal[3*(i-1)+j] = NAN;
+	  pclosest_terrain_pos[3*i+j] = NAN;
+	  pnormal[3*i+j] = NAN;
 	}
     }
   }
