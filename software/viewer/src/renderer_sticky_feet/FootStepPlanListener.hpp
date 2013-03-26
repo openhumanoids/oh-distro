@@ -54,15 +54,16 @@ namespace renderer_sticky_feet
      std::string _robot_name;          
      std::string _left_foot_name; // foot ee names
      std::string _right_foot_name;
-     Eigen::Vector3f _left_foot_offset;
-     Eigen::Vector3f _right_foot_offset;
+     // Eigen::Vector3f _left_foot_offset;
+     // Eigen::Vector3f _right_foot_offset;
      int64_t _last_plan_msg_timestamp;
      bool _last_plan_approved;  
-   
-     KDL::Frame _T_bodyframe_meshframe_left;
-     KDL::Frame _T_bodyframe_meshframe_right;
-     KDL::Frame _T_bodyframe_groundframe_left; 
-     KDL::Frame _T_bodyframe_groundframe_right;
+     bool _waiting_for_new_plan;
+      
+     // KDL::Frame _T_bodyframe_meshframe_left;
+     // KDL::Frame _T_bodyframe_meshframe_right;
+     // KDL::Frame _T_bodyframe_groundframe_left; 
+     // KDL::Frame _T_bodyframe_groundframe_right;
    
     //FootStepPlanListener(RendererStickyFeet *parent_renderer);
     FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);

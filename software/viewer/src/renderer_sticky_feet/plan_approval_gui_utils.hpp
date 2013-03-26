@@ -18,6 +18,7 @@ namespace renderer_sticky_feet_gui_utils
     self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();    
     gtk_widget_destroy (self->plan_approval_dock);
     self->plan_approval_dock= NULL;
+    self->footStepPlanListener->_waiting_for_new_plan = true;
    return TRUE;
   }
   
@@ -31,6 +32,7 @@ namespace renderer_sticky_feet_gui_utils
     self->footStepPlanListener->_last_plan_approved = true;
     //gtk_widget_destroy (self->plan_approval_dock);
     //self->plan_approval_dock= NULL;
+    self->footStepPlanListener->_waiting_for_new_plan = true;
     return TRUE;
   }
    

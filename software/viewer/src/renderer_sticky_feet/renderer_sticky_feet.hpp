@@ -186,27 +186,27 @@ namespace renderer_sticky_feet{
     goal_msg.robot_name = msg.robot_name;
     msg.num_steps = 1;
   
-    KDL::Frame T_worldframe_groundframe = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
-    KDL::Frame T_worldframe_meshframe;
+    KDL::Frame T_worldframe_footframe = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
+    // KDL::Frame T_worldframe_meshframe;
     
     size_t i= (size_t)index;
     goal_msg.is_right_foot = (self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type== FootStepPlanListener::RIGHT);
     
-    if(!goal_msg.is_right_foot)
-    {
-      KDL::Frame T_groundframe_bodyframe=self->footStepPlanListener->_T_bodyframe_groundframe_left.Inverse();
-      KDL::Frame T_bodyframe_meshframe=self->footStepPlanListener->_T_bodyframe_meshframe_left;
-      T_worldframe_meshframe =  T_worldframe_groundframe*T_groundframe_bodyframe*T_bodyframe_meshframe;
-    }
-    else
-    {
-      KDL::Frame T_groundframe_bodyframe=self->footStepPlanListener->_T_bodyframe_groundframe_right.Inverse();
-      KDL::Frame T_bodyframe_meshframe=self->footStepPlanListener->_T_bodyframe_meshframe_right;
-      T_worldframe_meshframe =  T_worldframe_groundframe*T_groundframe_bodyframe*T_bodyframe_meshframe;
-    } 
+    // if(!goal_msg.is_right_foot)
+    // {
+    //   KDL::Frame T_groundframe_bodyframe=self->footStepPlanListener->_T_bodyframe_groundframe_left.Inverse();
+    //   KDL::Frame T_bodyframe_meshframe=self->footStepPlanListener->_T_bodyframe_meshframe_left;
+    //   T_worldframe_meshframe =  T_worldframe_groundframe*T_groundframe_bodyframe*T_bodyframe_meshframe;
+    // }
+    // else
+    // {
+    //   KDL::Frame T_groundframe_bodyframe=self->footStepPlanListener->_T_bodyframe_groundframe_right.Inverse();
+    //   KDL::Frame T_bodyframe_meshframe=self->footStepPlanListener->_T_bodyframe_meshframe_right;
+    //   T_worldframe_meshframe =  T_worldframe_groundframe*T_groundframe_bodyframe*T_bodyframe_meshframe;
+    // } 
     
     drc::position_3d_t pose;
-    transformKDLToLCM(T_worldframe_meshframe,pose); 
+    transformKDLToLCM(T_worldframe_footframe,pose); 
 
      goal_msg.pos = pose;
      goal_msg.step_time = 0.0; // Ignored on the other end

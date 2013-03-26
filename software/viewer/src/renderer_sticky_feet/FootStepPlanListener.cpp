@@ -34,6 +34,7 @@ namespace renderer_sticky_feet
       in_motion_footstep_id=-1;
 
      _last_plan_approved = false;
+     _waiting_for_new_plan = false;
      _left_foot_name ="l_foot";
      _right_foot_name = "r_foot";
     if(!load_foot_urdfs())
@@ -52,35 +53,35 @@ namespace renderer_sticky_feet
       
       
       
-    Eigen::Vector3f whole_body_span;
-    Eigen::Vector3f offset;
-    MeshStruct mesh_struct;
-     bool val;
+    // Eigen::Vector3f whole_body_span;
+    // Eigen::Vector3f offset;
+    // MeshStruct mesh_struct;
+    //  bool val;
        
-    _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
-    val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
+    // _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
+    // val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
     
  
-     val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
-    _T_bodyframe_meshframe_left = KDL::Frame::Identity();
-    _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
-    _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
-    _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
+    //  val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
+    // _T_bodyframe_meshframe_left = KDL::Frame::Identity();
+    // _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
+    // _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
+    // _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
     
-    _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-    // _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-    _T_bodyframe_groundframe_left.p[2] = 0;
+    // _T_bodyframe_groundframe_left = KDL::Frame::Identity();
+    // // _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    // _T_bodyframe_groundframe_left.p[2] = 0;
      
-    _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-    val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
-    _T_bodyframe_meshframe_right = KDL::Frame::Identity();
-    _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
-    _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
-    _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
+    // _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+    // val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
+    // _T_bodyframe_meshframe_right = KDL::Frame::Identity();
+    // _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
+    // _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
+    // _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
     
-    _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-    // _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-    _T_bodyframe_groundframe_right.p[2] = 0;
+    // _T_bodyframe_groundframe_right = KDL::Frame::Identity();
+    // // _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+    // _T_bodyframe_groundframe_right.p[2] = 0;
     
     lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
@@ -108,6 +109,10 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
   	int num_steps = 0;
 		num_steps = msg->num_steps;   
 
+    if(_waiting_for_new_plan && !msg->is_new_plan) {
+      return;
+    }
+    _waiting_for_new_plan = false;
 		if(msg->is_new_plan)
     {
       // clear old motion copy
@@ -268,17 +273,17 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     {
         drc::footstep_goal_t goal_msg  = msg.footstep_goals[i];
         
-       KDL::Frame T_worldframe_groundframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
-       KDL::Frame T_worldframe_meshframe;
-      if(!goal_msg.is_right_foot)
-      {
-        T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_left.Inverse())*_T_bodyframe_meshframe_left;
-      }
-      else
-      {
-        T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_right.Inverse())*_T_bodyframe_meshframe_right;
-      } 
-      transformKDLToLCM(T_worldframe_meshframe,goal_msg.pos); 
+       // KDL::Frame T_worldframe_groundframe = _gl_planned_stickyfeet_list[i]->_T_world_body;
+       KDL::Frame T_worldframe_footframe;
+      // if(!goal_msg.is_right_foot)
+      // {
+      //   T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_left.Inverse())*_T_bodyframe_meshframe_left;
+      // }
+      // else
+      // {
+      //   T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_right.Inverse())*_T_bodyframe_meshframe_right;
+      // } 
+      transformKDLToLCM(T_worldframe_footframe,goal_msg.pos); 
       goal_msg.step_time+=utime-old_utime;
       msg.footstep_goals[i] =  goal_msg;
       // msg.goal_times[i]+=utime-old_utime;
