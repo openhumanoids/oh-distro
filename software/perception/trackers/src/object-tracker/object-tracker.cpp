@@ -45,8 +45,8 @@
 
 #include <particle/particle_filter.hpp>
 #include <trackers/major-plane-detect.hpp>
-#include <trackers/color-threshold.hpp>
-#include <trackers/HistTracker.hpp>
+#include <trackers/color-tracker.hpp>
+#include <trackers/histogram-tracker.hpp>
 
 using namespace std;
 
@@ -80,8 +80,8 @@ class Pass{
     
     void updatePF();
     void propogatePF();
-    void colorThresholdLikelihood( std::vector<float> &loglikelihoods );
-    void histogramThresholdLikelihood( std::vector<float> &loglikelihoods );
+    void colorTrackerLikelihood( std::vector<float> &loglikelihoods );
+    void histogramTrackerLikelihood( std::vector<float> &loglikelihoods );
     
     
     BotParam* botparam_;
@@ -115,8 +115,8 @@ class Pass{
     int affordance_id_; // id of the affordance we want to track
     int plane_affordance_id_;
     MajorPlane* major_plane_;    
-    ColorThreshold* color_tracker_;
-    HistTracker* histogram_tracker_;
+    ColorTracker* color_tracker_;
+    HistogramTracker* histogram_tracker_;
     bool use_plane_tracker_;
     bool use_color_tracker_;
     bool use_histogram_tracker_;
@@ -179,9 +179,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   got_affs_ = false;
     
   // Color Tracking:
-  color_tracker_ = new ColorThreshold(lcm_, width_, height_, fx_, fy_, cx_, cy_);
+  color_tracker_ = new ColorTracker(lcm_, width_, height_, fx_, fy_, cx_, cy_);
   // Histogram Tracking:  
-  histogram_tracker_ = new HistTracker();
+  histogram_tracker_ = new HistogramTracker();
   
   // Plane Detection:
   major_plane_ = new MajorPlane( lcm_, 2);
@@ -233,7 +233,7 @@ void Pass::propogatePF(){
 }
 
 
-void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
+void Pass::colorTrackerLikelihood( std::vector<float> &loglikelihoods ){
   std::vector< Eigen::Vector3d > pts;
   for (size_t i=0; i<num_particles_; i++) {
     pf_state particle_state;
@@ -241,7 +241,7 @@ void Pass::colorThresholdLikelihood( std::vector<float> &loglikelihoods ){
     Eigen::Vector3d t(particle_state.pose.translation());
     pts.push_back(t);
   }    
-  loglikelihoods = color_tracker_->colorThreshold(pts, img_.data.data(), local_to_camera_, img_.utime);
+  loglikelihoods = color_tracker_->doColorTracker(pts, img_.data.data(), local_to_camera_, img_.utime);
 }
 
 
@@ -252,7 +252,7 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-void Pass::histogramThresholdLikelihood( std::vector<float> &loglikelihoods ){
+void Pass::histogramTrackerLikelihood( std::vector<float> &loglikelihoods ){
   cv::Mat img = cv::Mat( height_ , width_ , CV_8UC3, img_.data.data());
   cv::cvtColor(img, img, CV_RGB2BGR);
   int mask_id = AFFORDANCE_OFFSET + affordance_id_;
@@ -294,9 +294,9 @@ void Pass::updatePF(){
   std::vector<float> loglikelihoods;
   loglikelihoods.assign ( num_particles_ ,0);    
   if (use_color_tracker_)
-    colorThresholdLikelihood(loglikelihoods);
+    colorTrackerLikelihood(loglikelihoods);
   if (use_histogram_tracker_)
-    histogramThresholdLikelihood(loglikelihoods);
+    histogramTrackerLikelihood(loglikelihoods);
   
   pf_->LogLikelihoodParticles(loglikelihoods);
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);

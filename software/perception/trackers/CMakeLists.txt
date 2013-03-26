@@ -9,11 +9,13 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/major-plane-detect)
+add_subdirectory(src/color-tracker)
 add_subdirectory(src/icp-tracker)
-add_subdirectory(src/vehicle-tracker)
-add_subdirectory(src/tools)
-
-
 add_subdirectory(src/histogram-tracker)
+
 # particle filter based:
 add_subdirectory(src/object-tracker)
+
+add_subdirectory(src/vehicle-tracker)
+add_subdirectory(src/tools)
