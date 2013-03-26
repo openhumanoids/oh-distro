@@ -109,13 +109,13 @@ while (1)
               pos.max(2) = inf;
           end
           if(goal.z_relation == 0)
-              pos.min(3) = max(0,p(3)-goal.target_pt_radius);
-              pos.max(3) = p(3)+goal.target_pt_radius;
+              pos.min(3) = max([0,p(3)-goal.target_pt_radius]);
+              pos.max(3) = max([pos.min(3),p(3)+goal.target_pt_radius]);
           elseif(goal.z_relation == 1)
               pos.max(3) = p(3);
               pos.min(3) = 0;
           elseif(goal.z_relation == 2)
-              pos.min(3) = max(0,p(2));
+              pos.min(3) = max([0,p(2)]);
               pos.max(3) = inf;
           elseif(goal.z_relation == 3)
               pos.min(3) = 0;
@@ -129,9 +129,9 @@ while (1)
 %           elseif(goal.z_relation == 2)
 %               pos.min(3) = max(pos.min(3),p(3));
 %           end
-          tspan = [goal.start_time goal.end_time];
+          tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
           collision_group_pt = mean(body.getContactPoints(collision_group),2);
-          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,[body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,[body.linkname,'_',char(goal.object_1_contact_grp),'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
         end
       end
@@ -279,13 +279,13 @@ while (1)
           action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(com_constraint);
           
           options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
-          options.supportPolygonFlag = true;
+          options.quasiStaticFlag = false;
           options.nSample = length(t_breaks)-1;
-          q_zmp_traj = inverseKinSequence(r, q0, action_sequence,options);
+          [q_zmp_traj,inverse_kin_sequence_info] = inverseKinSequence(r, q0, action_sequence,options);
           
           q_zmp_plan = q_zmp_traj.eval(q_zmp_traj.getBreaks());
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
-          publish(robot_plan_publisher, q_zmp_plan.getBreaks(), ...
+          publish(robot_plan_publisher, q_zmp_traj.getBreaks(), ...
                   [q_zmp_plan; zeros(size(q_zmp_plan))]);
       end
       ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
