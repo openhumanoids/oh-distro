@@ -25,6 +25,7 @@ classdef ActionSequence
     end
     
     function ikargs = getIKArguments(obj,t)
+      % I should detect the redundant constraint here
       ikargs={};
       for i=1:length(obj.kincon)
         ikargs=horzcat(ikargs,getIKArguments(obj.kincon{i},t));

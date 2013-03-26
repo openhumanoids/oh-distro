@@ -39,7 +39,7 @@ classdef ZMPplanner < DrakeSystem
             end
         end
         
-        function [com_plan,planar_comdot_plan,comddot_plan,zmp_plan,S1,S2] = planning(obj,com0,comdot0,contact_pos,active_contact_flag,z_com,t_breaks,options)
+        function [com_plan,planar_comdot_plan,comddot_plan,zmp_plan,S1,S2] = planning(obj,com0,comdot0,contact_pos,z_com,t_breaks,options)
 %             profile on
 %             tic
             if(~isfield(options,'shrink_factor'))
@@ -94,7 +94,6 @@ classdef ZMPplanner < DrakeSystem
             support_center = zeros(2,preview_size);
             D_val = reshape(repmat(-z_com./(zddot_com+obj.g),2,1),[],1);
             N = N+diag(D_val);
-            active_contact_flag = logical(active_contact_flag);
             num_support_vertices = 0;
             support_vertices_row = zeros(obj.max_contact_pts*preview_size*2,1);
             support_vertices_col = zeros(obj.max_contact_pts*preview_size*2,1);
@@ -104,7 +103,7 @@ classdef ZMPplanner < DrakeSystem
             convex_comb_col = (1:obj.max_contact_pts*preview_size)';
             convex_comb_val = ones(obj.max_contact_pts*preview_size,1);
             for i = 1:preview_size
-                active_contact_pos = contact_pos(:,active_contact_flag(:,i),i);
+                active_contact_pos = contact_pos{i};
                 support_center(:,i) = mean(active_contact_pos(1:2,:),2);
                 support_vertices_ind_i = convhull(active_contact_pos(1,:),active_contact_pos(2,:));
                 num_support_vertices_ind_i = length(support_vertices_ind_i);

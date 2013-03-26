@@ -36,7 +36,8 @@ robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...
 
 % load the "zero position"
 load('data/aa_atlas_fp.mat');
-q = xstar(1:getNumDOF(r));
+nq = r.getNumDOF();
+q = xstar(1:nq);
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
@@ -131,33 +132,55 @@ while (1)
       % If the action sequence is specified, we need to solve the ZMP
       % planning and IK for the whole sequence.
       if(action_options.ZMP)
-        for i = 1:length(action_sequence.key_time_samples)-1
-          % Solve the IK here to for each key time point (the starting of
-          % ending of each constraint). We agree that the constraint is
-          % active in the time interval [lb_completion_time,
-          % ub_completion_time) (Half closed half open)
-          ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
-          if isempty(ikargs)
-            q_lb_completion_time=options.q_nom;
-          else
-            % call IK
-            q_lb_completion_time = inverseKin(r,q,ikargs{:},options);
+          num_key_time_samples = length(action_sequence.key_time_samples);
+          com_key_time_samples = zeros(3,num_key_time_samples);
+          q_key_time_samples = zeros(nq,num_key_time_samples);
+          for i = 1:length(action_sequence.key_time_samples)
+              % Solve the IK here to for each key time point (the starting of
+              % ending of each constraint). We agree that the constraint is
+              % active in the time interval [lb_completion_time,
+              % ub_completion_time) (Half closed half open)
+              ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
+              if isempty(ikargs)
+                q_key_time_samples(:,i)=options.q_nom;
+              else
+                % call IK
+                q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
+              end
+              % if the q_lb_completion_time is in contact, then replace the inequality contact constraint with the equality
+              % contact constraint
+              kinsol = doKinematics(r,q_key_time_samples(:,i));
+              com_key_time_samples(:,i) = getCOM(r,kinsol);
+              j = 1;
+              while(j<length(ikargs))
+                  body = ikargs{j};
+                  if(isnumeric(body))
+                      if(body == 0)
+                          body_pos_lb_time = ikargs{j+1};
+                          action_constraint_ZMP = actionKinematicConstraint(body,[0;0;0],body_pos_lb_time,[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],['com_at_',num2str(action_sequence.key_time_samples(i))]);
+                          j = j+2;
+                      end
+                  else
+                      collision_group_pt = ikargs{j+1};
+                      pos_lb_completion_time = forwardKin(r,kinsol,body,collision_group_pt,false);
+                      
+                      if(pos_lb_completion_time(3,:)<contact_tol)
+                          if(i<length(action_sequence.key_time_samples))
+                              tspan = action_sequence.key_time_samples(i:i+1);
+                              pos_lb_completion_time_con = struct();
+                              pos_lb_completion_time_con.max = pos_lb_completion_time;
+                              pos_lb_completion_time_con.min = pos_lb_completion_time;
+                              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+                          end
+                      else
+                        action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[body.linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
+                      end
+                      j = j+3;
+                  end
+                  action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
+              end
           end
-          % if the q_lb_completion_time is in contact, then replace the inequality contact constraint with the equality
-          % contact constraint
-          kinsol = doKinematics(r,q_lb_completion_time);
-          pos_lb_completion_time = forwardKin(r,kinsol,body,collision_group_pt,false);
-          tspan = action_sequence.key_time_samples(i:i+1);
-          if(pos_lb_completion_time(3,:)<contact_tol)
-            pos_lb_completion_time_con = struct();
-            pos_lb_completion_time_con.max = pos_lb_completion_time;
-            pos_lb_completion_time_con.min = pos_lb_completion_time;
-            action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
-          else
-            action_constraint_ZMP = action_constraint;
-          end
-          action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(action_constraint_ZMP);
-        end
+        
         tspan = action_sequence.tspan;
         for body_ind = 1:length(r.body)
           body_contact_pts = r.body(body_ind).getContactPoints();
@@ -166,40 +189,54 @@ while (1)
             action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(above_ground_constraint);
           end 
         end
+        
         dt = 0.01;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);
           t_breaks = action_sequence_ZMP.tspan(1)+dt*(0:window_size-1);
           t_breaks(end) = action_sequence_ZMP.tspan(end);
-          contact_tol = 1e-4;
-          contact_pos = zeros(2,r.num_contacts, window_size);
-          contact_flag = false(r.num_contacts,window_size);
+          contact_pos = cell(1,window_size);
           for i = 1:length(t_breaks)
               ikargs = action_sequence_ZMP.getIKArguments(t_breaks(i));
-              num_contacts = 0;
-              for j = 3:3:length(ikargs)
-                  for k = 1:size(ikargs{j}.max,2)
-                      if(ikargs{j}.max(3,k)<contact_tol)
-                          num_contacts = num_contacts+1;
-                          contact_pos(:,num_contacts,i) = mean([ikargs{j}.max(1:2,k) ikargs{j}.min(1:2,k)],2);
-                          contact_flag(num_contacts,i) = true;
-                      end
+              j = 1;
+              while j<length(ikargs)
+                  if(isnumeric(ikargs{j}))
+                    j = j+2;
+                  else
+                      contact_pos_ind = ikargs{j+2}.max(3,:)<contact_tol;
+                      contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_ind)];
+                      j = j+3;
                   end
               end
           end
+%           contact_pos = zeros(2,r.num_contacts, window_size);
+%           contact_flag = false(r.num_contacts,window_size);
+%           for i = 1:length(t_breaks)
+%               ikargs = action_sequence_ZMP.getIKArguments(t_breaks(i));
+%               num_contacts = 0;
+%               for j = 3:3:length(ikargs)
+%                   for k = 1:size(ikargs{j}.max,2)
+%                       if(ikargs{j}.max(3,k)<contact_tol)
+%                           num_contacts = num_contacts+1;
+%                           contact_pos(:,num_contacts,i) = mean([ikargs{j}.max(1:2,k) ikargs{j}.min(1:2,k)],2);
+%                           contact_flag(num_contacts,i) = true;
+%                       end
+%                   end
+%               end
+%           end
           % solve the IK for the key time samples, then interpolate the COM
           % height as the desired COM height
-          q_key_time_samples = zeros(r.getNumDOF(),length(action_sequence.key_time_samples));
-          com_key_time_samples = zeros(3,length(action_sequence.key_time_samples));
-          for i = 1:length(action_sequence.key_time_samples)
-              ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
-              if(isempty(ikargs))
-                  q_key_time_samples(:,i) = options.q_nom;
-              else
-                  q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
-              end
-              com_key_time_samples(:,i) = r.getCOM(q_key_time_samples(:,i));
-          end
+%           q_key_time_samples = zeros(r.getNumDOF(),length(action_sequence.key_time_samples));
+%           com_key_time_samples = zeros(3,length(action_sequence.key_time_samples));
+%           for i = 1:length(action_sequence.key_time_samples)
+%               ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
+%               if(isempty(ikargs))
+%                   q_key_time_samples(:,i) = options.q_nom;
+%               else
+%                   q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
+%               end
+%               com_key_time_samples(:,i) = r.getCOM(q_key_time_samples(:,i));
+%           end
           % TODO: Publish constraint satisfaction message here
           com_height_traj = PPTrajectory(foh(action_sequence.key_time_samples,com_key_time_samples(3,:)));
           com_height = com_height_traj.eval(t_breaks);
@@ -207,27 +244,31 @@ while (1)
           com0 = r.getCOM(q0);
           comdot0 = 0*com0;
           zmp_options = struct();
-          zmp_options.supportPolygonConstraints = true;
+          zmp_options.supportPolygonConstraints = false;
           zmp_options.shrink_factor = 0.8;
           zmp_options.useQP = true;
           zmp_options.penalizeZMP = true;
-          com_plan = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,contact_flag,com_height,t_breaks,zmp_options);
-          q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
-          q_zmp_plan(:,1) = q0;
+          [com_plan,planar_comdot_plan,~,zmp_plan] = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,com_height,t_breaks,zmp_options);
+%           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
+%           q_zmp_plan(:,1) = q0;
 
           % Add com constraints to action_sequence
-          com_traj = PPTrajectory(foh(t_breaks,com_plan));
+          comdot_height_plan = com_height_traj.deriv(t_breaks);
+          comdot_plan = [planar_comdot_plan;comdot_height_plan];
+          com_traj = PPTrajectory(pchipDeriv(t_breaks,com_plan,comdot_plan));
+          
           com_constraint = ActionKinematicConstraint(0,zeros(3,1),com_traj, ...
                               action_sequence_ZMP.tspan,'com');
           action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(com_constraint);
           
-          options.qtraj0 = PPTrajectory(spline(q_key_time_samples, ...
-                              action_sequence.key_time_samples));
+          options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
           options.supportPolygonFlag = true;
-          q_zmp_plan = inverseKinSequence(r, q0, action_sequence,options)
-
+          options.nSample = length(t_breaks)-1;
+          q_zmp_traj = inverseKinSequence(r, q0, action_sequence,options);
+          
+          q_zmp_plan = q_zmp_traj.eval(q_zmp_traj.getBreaks());
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
-          publish(robot_plan_publisher, t_breaks, ...
+          publish(robot_plan_publisher, q_zmp_plan.getBreaks(), ...
                   [q_zmp_plan; zeros(size(q_zmp_plan))]);
       end
       ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
