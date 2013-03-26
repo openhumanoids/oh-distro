@@ -66,7 +66,7 @@ poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
           new_X(1:6) = biped.footCenter2StepCenter(new_X(1:6), new_X(end));
           % new_X(1:6) = biped.stepCenters(new_X(1:6), new_X(15));
           j = find(X(8,:) == new_X(8));
-          X(:, j) = new_X(1:14);
+          X(1:14, j) = new_X(1:14);
           X(7, :) = (0:length(X(1,:))-1) * biped.step_time / 2;
         else
           break

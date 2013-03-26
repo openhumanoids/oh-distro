@@ -25,6 +25,10 @@ classdef FootstepPlanPublisher
 				t = now() * 24 * 60 * 60;
 			end
 			sizecheck(X, [15, 1]);
+
+			%%%% HACK for DRC Qual 1 %%%%%
+			X(3) = X(3) + 1;
+			%%%% end
 			msg = drc.footstep_goal_t();
 			msg.utime = t * 1000000;
 			msg.robot_name = 'atlas';
