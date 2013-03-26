@@ -28,12 +28,13 @@ private:
 	lcm_t* _lcm;
 	bool _finish;
 	// TODO
-	//void on_robot_state(const drc_robot_state_t* msg);
-	//void LegOdometry_Handler::on_robot_state_aux(const lcm_recv_buf_t* rbuf,
-	//                            const char* channel,
-	//                            const drc_robot_state_t* msg,
-	//                            void* user_data)
-	
+	/*
+	void on_robot_state(const drc_robot_state_t* msg);
+	void on_robot_state_aux(const lcm_recv_buf_t* rbuf, 
+							const char* channel, 
+							const drc_robot_state_t* msg, 
+							void* user_data);
+	*/
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
 	void setupLCM();
 				

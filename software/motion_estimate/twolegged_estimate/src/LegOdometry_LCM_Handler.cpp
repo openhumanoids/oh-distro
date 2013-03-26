@@ -102,7 +102,7 @@ void LegOdometry_Handler::run(bool testingmode) {
 
 void LegOdometry_Handler::on_robot_state(const drc_robot_state_t* msg) {
 
-	cout << "LCM robot pose event caught in LegOdometry_Handler object << endl;
+	cout << "LCM robot pose event caught in LegOdometry_Handler object" << endl;
 
 
 	//data.gyro_(0) = msg->gyro[0];
@@ -110,7 +110,7 @@ void LegOdometry_Handler::on_robot_state(const drc_robot_state_t* msg) {
 	// ?Propagate?(?,leg_odo);
 
 }
-  
+
 void LegOdometry_Handler::on_robot_state_aux(const lcm_recv_buf_t* rbuf,
                             const char* channel,
                             const drc_robot_state_t* msg,
