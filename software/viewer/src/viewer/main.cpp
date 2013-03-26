@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
   setup_renderer_robot_state(viewer, 0, lcm);
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm);
-  setup_renderer_sticky_feet(viewer, 0, lcm);
+  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames);
   setup_renderer_end_effector_goal(viewer, 0, lcm);
 
   // Individual Renderers:
