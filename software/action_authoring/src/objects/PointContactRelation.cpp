@@ -2,6 +2,46 @@
 #include <sstream>
 
 using namespace action_authoring;
+using namespace std;
+
+typedef PointContactRelation PCR;
+
+string PCR::EQUAL_STR = "=";
+string PCR::LESS_THAN_STR = "<";
+string PCR::GREATER_THAN_STR = ">";
+string PCR::UNDEFINED_STR = "UNDEFINED";
+
+string PCR::typeToStr(const PointContactRelation::InequalityType &type)
+{
+  switch(type)
+    {
+    case PCR::EQUAL:
+      return EQUAL_STR;
+    case PCR::LT:
+      return LESS_THAN_STR;
+    case PCR::GT:
+      return GREATER_THAN_STR;
+    case PCR::UNDEFINED:
+      return UNDEFINED_STR;
+    default:
+      throw runtime_error("PointContactRelation: unknown type passed to typeToStr");
+    }
+}
+
+PointContactRelation::InequalityType PointContactRelation::strToType(const std::string &s)
+{
+  if (s == LESS_THAN_STR)
+    return PointContactRelation::LT;
+  if (s == GREATER_THAN_STR)
+    return PointContactRelation::GT;
+  if (s == EQUAL_STR)
+    return PointContactRelation::EQUAL;
+  if (s == UNDEFINED_STR)
+    return PointContactRelation::UNDEFINED;
+
+  throw std::runtime_error("PointContactRelation: can't parse string: " + s);
+}
+
 
 PointContactRelation::PointContactRelation() : RelationState(RelationState::POINT_CONTACT)
 {

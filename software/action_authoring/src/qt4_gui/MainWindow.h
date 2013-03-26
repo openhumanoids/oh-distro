@@ -194,6 +194,7 @@ private:
                           const drc::robot_state_t *robot_state);
     void updatePointVisualizer();
     void updateFilesListComboBox();
+    void setP2PFromCurrConstraint(); //set point2Point from curr selection
 
 protected:
     virtual void  keyPressEvent(QKeyEvent *event);

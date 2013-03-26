@@ -3,6 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <action_authoring/RelationState.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <Eigen/Core>
 
 namespace action_authoring
@@ -14,10 +15,16 @@ class PointContactRelation : public RelationState
 public:
     typedef enum
     {
-        EQUAL = 0,
-        LT = 1,
-        GT = 2
+      EQUAL = drc::contact_goal_t::REL_EQUAL,
+      LT    = drc::contact_goal_t::REL_LESS_THAN,
+      GT    = drc::contact_goal_t::REL_GREATER_THAN,
+      UNDEFINED = drc::contact_goal_t::UNDEFINED
     } InequalityType;
+
+    static std::string EQUAL_STR, 
+      LESS_THAN_STR, 
+      GREATER_THAN_STR,
+      UNDEFINED_STR;
 
     //------------fields
 private:
@@ -32,6 +39,10 @@ private:
 public:
     PointContactRelation();
     PointContactRelation(Eigen::Vector3f p1, Eigen::Vector3f p2);
+
+    //---helper static methods
+    static InequalityType strToType(const std::string &s);
+    static std::string typeToStr(const InequalityType &type);
 
     //---------------Accessors
     Eigen::Vector3f getPoint1() const

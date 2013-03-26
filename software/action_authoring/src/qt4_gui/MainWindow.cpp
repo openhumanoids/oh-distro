@@ -17,6 +17,8 @@ using namespace affordance;
 
 #define DEFAULT_TOLERANCE 0.25
 
+typedef PointContactRelation PCR;
+
 string RandomString(int len)
 {
     string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -323,18 +325,23 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _xInequality = new QComboBox();
     _yInequality = new QComboBox();
     _zInequality = new QComboBox();
+    
+    _xInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
+    _xInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
+    _xInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
+    _xInequality->insertItem(0, PCR::EQUAL_STR.c_str());
 
-    _xInequality->insertItem(0, ">");
-    _xInequality->insertItem(0, "<");
-    _xInequality->insertItem(0, "=");
+    _yInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
+    _yInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
+    _yInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
+    _yInequality->insertItem(0, PCR::EQUAL_STR.c_str());
 
-    _yInequality->insertItem(0, ">");
-    _yInequality->insertItem(0, "<");
-    _yInequality->insertItem(0, "=");
+    _zInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
+    _zInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
+    _zInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
+    _zInequality->insertItem(0, PCR::EQUAL_STR.c_str());
 
-    _zInequality->insertItem(0, ">");
-    _zInequality->insertItem(0, "<");
-    _zInequality->insertItem(0, "=");
+    
 
     QWidget *inequalities = new QWidget(this);
     QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
@@ -707,7 +714,9 @@ setSelectedAction(Qt4ConstraintMacro *activator)
     std::cout << "getting mode states" << std::endl;
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
     std::cout << "done getting mode states" << std::endl;
-
+    
+    //update the inequality constraints display
+    setP2PFromCurrConstraint();
 }
 
 /*
@@ -1118,13 +1127,45 @@ handlePoint2PointChange() {
         PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
 
         prel->setTolerance(_toleranceBox->value());
-        prel->setXInequality((PointContactRelation::InequalityType)_xInequality->currentIndex());
-        prel->setYInequality((PointContactRelation::InequalityType)_yInequality->currentIndex());
-        prel->setZInequality((PointContactRelation::InequalityType)_zInequality->currentIndex());
-
+        prel->setXInequality(PointContactRelation::strToType(_xInequality->currentText().toStdString()));
+        prel->setYInequality(PointContactRelation::strToType(_yInequality->currentText().toStdString()));
+        prel->setZInequality(PointContactRelation::strToType(_zInequality->currentText().toStdString()));
     }
 
     // update the prompt
     _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
 
+}
+
+/**sets the inequality constraints menu (x-axis, ...) from the currently selected gui constraint*/
+void MainWindow::setP2PFromCurrConstraint()
+{
+    if (_authoringState._selected_gui_constraint == NULL)
+        return;
+
+    // get the currently selected constraint and verify its relation is of type POINT_CONTACT
+    RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+
+    if (rel->getRelationType() != RelationState::POINT_CONTACT) 
+      {
+        //set to undefined
+        return;
+      }
+
+    // update the relation
+    PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
+    string xiq = PCR::typeToStr(prel->getXInequality());
+    string yiq = PCR::typeToStr(prel->getYInequality());
+    string ziq = PCR::typeToStr(prel->getZInequality());
+
+    int xIndex = _xInequality->findText(xiq.c_str());
+    int yIndex = _yInequality->findText(yiq.c_str());
+    int zIndex = _zInequality->findText(ziq.c_str());    
+
+    if (xIndex != -1)
+      _xInequality->setCurrentIndex(xIndex);
+    if (yIndex != -1)
+      _yInequality->setCurrentIndex(yIndex);
+    if (zIndex != -1)
+      _zInequality->setCurrentIndex(zIndex);
 }

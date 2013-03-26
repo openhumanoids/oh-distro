@@ -19,7 +19,10 @@ struct contact_goal_t
 
 	vector_3d_t target_pt; // only used for ON_GROUND_PLANE
 	double target_pt_radius; // only used for ON_GROUND_PLANE
-    const int32_t REL_EQUAL=0, REL_LESS_THAN=1, REL_GREATER_THAN=2;
+    const int32_t REL_EQUAL          = 0, 
+                  REL_LESS_THAN      = 1, 
+                  REL_GREATER_THAN   = 2, 
+                  UNDEFINED          = 3;
     int32_t x_relation;
     int32_t y_relation;
     int32_t z_relation;
