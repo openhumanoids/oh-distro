@@ -3,7 +3,7 @@
 #include <mex.h>
 
 #include <Eigen/Dense>
-#include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
 #include <boost/thread/thread.hpp>
 
 #include <maps/ViewClient.hpp>
@@ -16,12 +16,12 @@ using namespace Eigen;
 using namespace maps;
 
 struct ViewWrapperData {
-  lcm_t* lcm;
+  boost::shared_ptr<lcm::LCM> lcm;
   ViewClient* view_client;
   boost::thread* lcm_thread;
 };
 
-void lcmThreadMain(lcm_t* lcm) {
+void lcmThreadMain(boost::shared_ptr<lcm::LCM>& lcm) {
   while(0 == lcm->handle()) {
     if (boost::this_thread::interruption_requested()) return;
   }
@@ -44,8 +44,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->view_client = new ViewClient();
 
     // create lcm instance, and fork listener thread
-    pdata->lcm = lcm_create(NULL); 
-    if (!pdata->lcm) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
+    pdata->lcm.reset(new lcm::LCM());  //lcm_create(NULL); 
+    if (!pdata->lcm->good()) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
     pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata->lcm);
 
     BotWrapper::Ptr botWrapper(new BotWrapper(pdata->lcm, NULL, NULL));
@@ -74,7 +74,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     delete pdata->view_client;
     pdata->lcm_thread->interrupt();
     delete pdata->lcm_thread;
-    lcm_destroy(pdata->lcm);
+    //    lcm_destroy(pdata->lcm);  // now handled by shared_ptr and lcm destructor
     delete pdata;
     return;
   } 
@@ -88,25 +88,31 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (mxGetM(prhs[1])!=3) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:BadInputs","pos must be 3xn\n"); 
 
   plhs[0] = mxCreateDoubleMatrix(3,N,mxREAL);
-  mxArray* pnormal = mxCreateDoubleMatrix(3,N,mxREAL);
+  mxArray* pmxNormal = mxCreateDoubleMatrix(3,N,mxREAL);
 
-  Map<MatrixXd> pos(mxGetPr(prhs[1]),3,N); 
-  Map<MatrixXd> closest_terrain_pos(mxGetPr(plhs[0]),3,N);
-  Map<MatrixXd> normal(mxGetPr(pnormal),3,N);
-
+  Vector3f pos, closest_terrain_pos, normal;
+  double *ppos = mxGetPr(prhs[1]), *pclosest_terrain_pos = mxGetPr(plhs[0]), *pnormal = mxGetPr(pmxNormal);
+ 
+  int j;
   for (int i=0; i<N; i++) {
-    if (!vptr->getClosest(pos.col(i).cast<float>(),closest_terrain_pos.col(i).cast<float>(),normal.col(i)).cast<float>()) {
-      // returns false if off the grid		   
-      closest_terrain_pos(0,i) = NAN;
-      closest_terrain_pos(1,i) = NAN;
-      closest_terrain_pos(2,i) = NAN;
+    pos << (float) ppos[3*(i-1)], (float) ppos[3*(i-1)+1], (float) ppos[3*(i-1)+2];
+    if (vptr->getClosest(pos,closest_terrain_pos,normal)) {
+	for (j=0; j<3; j++) {
+	  pclosest_terrain_pos[3*(i-1)+j] = (double) closest_terrain_pos(j);
+	  pnormal[3*(i-1)+j] = (double) normal(j);
+	}
+    } else { // returns false if off the grid		   
+	for (j=0; j<3; j++) {
+	  pclosest_terrain_pos[3*(i-1)+j] = NAN;
+	  pnormal[3*(i-1)+j] = NAN;
+	}
     }
   }
 
   if (nlhs>1) {
-    plhs[1] = pnormal;
+    plhs[1] = pmxNormal;
   } else {
-    mxDestroyArray(pnormal);
+    mxDestroyArray(pmxNormal);
   }
 }
 

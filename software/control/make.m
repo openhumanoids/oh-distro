@@ -53,7 +53,7 @@ system(['touch ',fullfile(strtok(userpath,':'),'pathdef.m')]);
 configure(options);
 
 %% build drake
-%make;
+make;
 
 cd(p);
 
@@ -65,9 +65,9 @@ incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
 [~,libs]=system('pkg-config --libs maps eigen3 lcm');
 libs = regexprep(libs,'-pthread','-lpthread');
 
-cmdstr = ['mex src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,' ',incs,' ',libs];
+cmdstr = ['mex src/mapAPIwrapper.cpp CFLAGS="\$CFLAGS -std=c++0x" -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
 disp(cmdstr);
-%eval(cmdstr);
+eval(cmdstr);
 
 end
 
