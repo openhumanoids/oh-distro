@@ -159,8 +159,8 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
       
       
-      cout << "id: "<< goal_msg.id<< endl;
-      cout << "timestamp: "<< goal_msg.step_time<< endl;
+      // cout << "id: "<< goal_msg.id<< endl;
+      // cout << "timestamp: "<< goal_msg.step_time<< endl;
       std::stringstream oss;
       oss << msg->robot_name << "_"<< goal_msg.id;
      // cout << "names: "<< oss.str() << endl;

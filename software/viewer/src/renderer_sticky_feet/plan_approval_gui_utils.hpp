@@ -103,6 +103,7 @@ namespace renderer_sticky_feet_gui_utils
   gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
   gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
   self->plan_approval_dock = GTK_WIDGET(toolitem);  
+  std::cout << "running gtk_widget_show_all in plan approval gui spawn\n";
   gtk_widget_show_all (self->plan_approval_dock);
 
     //gtk_container_add (GTK_CONTAINER (window), hbox);
