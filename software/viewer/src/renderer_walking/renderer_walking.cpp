@@ -155,6 +155,7 @@ typedef struct _RendererWalking {
   point2d_t drag_finish_local;
 
   point2d_t click_pos;
+  double support_surface_z;
   double theta;
   double goal_std;
   double goal_timeout; // no. seconds before this goal expires
@@ -185,7 +186,9 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
   //glColor3f(0, 1, 0);
   glColor3f(self->circle_color[0], self->circle_color[1], self->circle_color[2]);
   glPushMatrix();
-  glTranslatef(self->click_pos.x, self->click_pos.y, 0);
+  glTranslatef(self->click_pos.x, self->click_pos.y, self->support_surface_z);
+
+  glLineWidth(3);
 
   bot_gl_draw_circle(self->goal_std);
 
@@ -271,18 +274,15 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
     }
   }
   else {
-      closestPt = queryPt;
-      closestNormal<< 0,0,1;
-    }
-  
-  std::cout << "query: " << queryPt.transpose() << std::endl;
-  std::cout << "closestPt: " << closestPt.transpose() << std::endl;
-  std::cout << "closestNormal: " << closestNormal.transpose() << std::endl;
+    closestPt = queryPt;
+    closestNormal<< 0,0,1;
+  }
   
   self->dragging = 1;
 
   self->drag_start_local = click_pt_local;
   self->drag_finish_local = click_pt_local;
+  self->support_surface_z = closestPt[2];
 
   recompute_2d_goal_pose(self);
 
@@ -599,6 +599,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->perceptionData = new PerceptionData();
   self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
   self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
+  self->perceptionData->mViewClient.start();
   
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
