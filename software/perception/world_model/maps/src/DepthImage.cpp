@@ -78,6 +78,7 @@ struct DepthImage::Helper {
     mPose = Eigen::Isometry3f::Identity();
     mCalib = Eigen::Matrix3f::Identity();
     mProjector = Eigen::Projective3f::Identity();
+    mIsOrthographic = true;
     mDataCache.resize(3);
     mDataNeedsUpdate.resize(mDataCache.size());
     updateMatrices();

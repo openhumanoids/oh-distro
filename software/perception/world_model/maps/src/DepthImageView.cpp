@@ -159,20 +159,23 @@ getClosest(const Eigen::Vector3f& iPoint,
   Vec3f p00 = mImage->unproject(Vec3f(xInt, yInt, z00), depthType);
   Vec3f p11 = mImage->unproject(Vec3f(xInt+1, yInt+1, z11), depthType);
 
+  float zInterp = 0;
   if (xFrac >= yFrac) {
     float z3 = depths[idx+1];
-    float zInterp = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
+    zInterp = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
     Vec3f p3 = mImage->unproject(Vec3f(xInt+1, yInt, z3), depthType);
     Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d1.cross(d2).normalized();
   }
   else {
     float z3 = depths[idx+width];
-    float zInterp = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
+    zInterp = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
     Vec3f p3 = mImage->unproject(Vec3f(xInt, yInt+1, z3), depthType);
     Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d2.cross(d1).normalized();
   }
+
+  oPoint = mImage->unproject(Vec3f(proj[0], proj[1], zInterp), depthType);
 
   return true;
 }
