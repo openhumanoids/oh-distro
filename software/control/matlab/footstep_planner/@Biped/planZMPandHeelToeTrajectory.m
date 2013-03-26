@@ -107,18 +107,21 @@ while 1
     end
   else
     % Shift the ZMP by 2cm closer to the center of the feet
-    foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'))
+    foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
     step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
-    zmp_shift = (step_center(1:2) - foot_center(1:2));
-    zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.02; 
-    stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1)),1,3)+zmp_shift,...
+    zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
+    zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) .* 0.02; 
+    stepzmp = [repmat(footPoint(s_foot, 'center', step.(s_foot).orig(:,1))+zmp_shift,1,3),...
                repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
-    disp('s_foot center')
-    footPoint(s_foot, 'center', step.(s_foot).orig(:))
-    disp('m_foot center')
-    footPoint(m_foot, 'center', step.(m_foot).orig(:))
-    disp('step zmp')
-    stepzmp
+    plot_lcm_points((stepzmp + repmat([0;0;1], 1, length(stepzmp(1,:))))', zeros(size(stepzmp')), istep.right + istep.left, 'ZMP location', 1, true);
+%     disp('s_foot rpy')
+%     step.(s_foot).orig(4:6, 1)
+%     disp('s_foot center')
+%     footPoint(s_foot, 'center', step.(s_foot).orig(:))
+%     disp('m_foot center')
+%     footPoint(m_foot, 'center', step.(m_foot).orig(:))
+%     disp('step zmp')
+%     stepzmp
   end
     
   istep.(m_foot) = istep.(m_foot) + 1;

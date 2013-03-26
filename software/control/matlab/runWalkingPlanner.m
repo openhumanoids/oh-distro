@@ -74,12 +74,12 @@ while true
 
   % create desired joint trajectory
   cost = Point(r.getStateFrame,1);
-  cost.pelvis_x = 0;
-  cost.pelvis_y = 0;
-  cost.pelvis_z = 0;
-  cost.pelvis_roll = 1000;
-  cost.pelvis_pitch = 1000;
-  cost.pelvis_yaw = 0;
+  cost.base_x = 0;
+  cost.base_y = 0;
+  cost.base_z = 0;
+  cost.base_roll = 1000;
+  cost.base_pitch = 1000;
+  cost.base_yaw = 0;
   cost.back_mby = 100;
   cost.back_ubx = 100;
   cost = double(cost);
@@ -112,6 +112,9 @@ while true
   disp('Publishing robot plan...');
   xtraj = zeros(getNumStates(r),length(ts));
   xtraj(1:getNumDOF(r),:) = q;
+  %%%% TMP HACK FOR QUAL 1 %%%%%
+  xtraj(3,:) = xtraj(3,:)+ 1;
+  %%%% TMP HACK FOR QUAL 1 %%%%%
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');

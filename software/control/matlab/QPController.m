@@ -169,7 +169,7 @@ classdef QPController < MIMODrakeSystem
       % ignore supporting body spec, use any body in contact
       [~,Jp,dJp] = contactPositions(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = abs(phi)<0.005;
+      active_contacts = abs(phi)<0.01;
       nc = sum(active_contacts);
       partial_contacts = [];
       partial_idx = [];
@@ -191,7 +191,7 @@ classdef QPController < MIMODrakeSystem
       % phase passes before the swing foot comes in  contact with the
       % ground. 
       partial_contacts = find(partial_contacts & active_contacts); 
-      active_contacts = find(active_contacts);
+      active_contacts = find(active_contacts)
 
       partial_idx = zeros(dim*length(partial_contacts),1);
       for i=1:length(partial_contacts);

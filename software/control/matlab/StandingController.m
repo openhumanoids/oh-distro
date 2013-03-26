@@ -76,7 +76,7 @@ classdef StandingController < DRCController
 
         d = load('data/atlas_fp.mat');
         x0 = d.xstar;
-        x0([1;2;3;6]) = msg_data.AtlasState([1;2;3;6]);
+        x0([1;2;6]) = msg_data.AtlasState([1;2;6]);
         q0 = x0(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
         com = getCOM(r,kinsol);

@@ -1,5 +1,8 @@
 function runQual1StateMachine()
 
+addpath(fullfile(pwd,'frames'));
+addpath(fullfile(getDrakePath,'examples','ZMP'));
+
 % load atlas model
 options.floating = true;
 options.dt = 0.001;
