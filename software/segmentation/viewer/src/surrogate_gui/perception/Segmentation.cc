@@ -896,8 +896,7 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, Poi
     // extract point and project to plane
     int index = planeIndices->indices[i];
     PointXYZRGB& pt = subcloud->at(index);
-    float correctedZ = -(a*pt.x + b*pt.y + d)/c; // move z to plane
-    Vector3f p(pt.x,pt.y,correctedZ);
+    Vector3f p(pt.x,pt.y,pt.z);
     
     // rotate to horizontal plane
     Vector3f ph = rot*p;
