@@ -107,7 +107,7 @@ while 1
     end
   else
     % Shift the ZMP by 2cm closer to the center of the feet
-    foot_center = footPoint(s_foot, 'center', step.(s_foot).orig(:,1));
+    foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'))
     step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
     zmp_shift = (step_center(1:2) - foot_center(1:2));
     zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.02; 
