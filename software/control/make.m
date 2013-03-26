@@ -37,6 +37,7 @@ fprintf(fptr,'setenv(''PATH_LICENSE_STRING'',''2069810742&Courtesy_License&&&USR
 % add the drake control matlab util directory into the matlab path:
 fprintf(fptr,'\n\n% Add drc control matlab utilities to the path\n');
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','footstep_planner'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
 
