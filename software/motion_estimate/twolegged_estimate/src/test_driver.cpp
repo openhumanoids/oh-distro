@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "TwoLegOdometry.h"
-#include "LegOdometry_LCM_Handler.h"
+#include "LegOdometry_LCM_Handler.hpp"
 
 using namespace std;
 

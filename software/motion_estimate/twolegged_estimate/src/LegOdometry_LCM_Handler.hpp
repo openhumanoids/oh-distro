@@ -33,7 +33,7 @@ private:
 	const char* robot_pose_channel;
 	bool _finish;
 	// TODO
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 	
 	/*
 	void on_robot_state(const drc_robot_state_t* msg);
