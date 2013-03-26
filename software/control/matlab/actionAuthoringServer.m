@@ -91,6 +91,9 @@ while (1)
           elseif(goal.x_relation == 2)
               pos.min(1) = p(1);
               pos.max(1) = inf;
+          elseif(goal.x_relation == 3)
+              pos.min(1) = -inf;
+              pos.max(1) = inf;
           end
           if(goal.y_relation == 0)
               pos.min(2) = p(2)-goal.target_pt_radius;
@@ -101,6 +104,22 @@ while (1)
           elseif(goal.y_relation == 2)
               pos.min(2) = p(2);
               pos.max(2) = inf;
+          elseif(goal.y_relation == 3)
+              pos.min(2) = -inf;
+              pos.max(2) = inf;
+          end
+          if(goal.z_relation == 0)
+              pos.min(3) = max(0,p(3)-goal.target_pt_radius);
+              pos.max(3) = p(3)+goal.target_pt_radius;
+          elseif(goal.z_relation == 1)
+              pos.max(3) = p(3);
+              pos.min(3) = 0;
+          elseif(goal.z_relation == 2)
+              pos.min(3) = max(0,p(2));
+              pos.max(3) = inf;
+          elseif(goal.z_relation == 3)
+              pos.min(3) = 0;
+              pos.max(3) = inf;
           end
 %           if(goal.z_relation == 0)
 %               pos.min(3) = p(3);
@@ -110,9 +129,7 @@ while (1)
 %           elseif(goal.z_relation == 2)
 %               pos.min(3) = max(pos.min(3),p(3));
 %           end
-          pos.max(3) = 0;
-          pos.min(3) = 0;
-          tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
+          tspan = [goal.start_time goal.end_time];
           collision_group_pt = mean(body.getContactPoints(collision_group),2);
           action_constraint = ActionKinematicConstraint(body,collision_group_pt,pos,tspan,[body.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           action_sequence = action_sequence.addKinematicConstraint(action_constraint);
@@ -138,8 +155,8 @@ while (1)
           for i = 1:length(action_sequence.key_time_samples)
               % Solve the IK here to for each key time point (the starting of
               % ending of each constraint). We agree that the constraint is
-              % active in the time interval [lb_completion_time,
-              % ub_completion_time) (Half closed half open)
+              % active in the time interval [start_time,
+              % end_time) (Half closed half open)
               ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
               if isempty(ikargs)
                 q_key_time_samples(:,i)=options.q_nom;
@@ -147,7 +164,7 @@ while (1)
                 % call IK
                 q_key_time_samples(:,i) = inverseKin(r,q,ikargs{:},options);
               end
-              % if the q_lb_completion_time is in contact, then replace the inequality contact constraint with the equality
+              % if the q_start_time is in contact, then replace the inequality contact constraint with the equality
               % contact constraint
               kinsol = doKinematics(r,q_key_time_samples(:,i));
               com_key_time_samples(:,i) = getCOM(r,kinsol);
@@ -162,15 +179,15 @@ while (1)
                       end
                   else
                       collision_group_pt = ikargs{j+1};
-                      pos_lb_completion_time = forwardKin(r,kinsol,body,collision_group_pt,false);
+                      pos_start_time = forwardKin(r,kinsol,body,collision_group_pt,false);
                       
-                      if(pos_lb_completion_time(3,:)<contact_tol)
+                      if(pos_start_time(3,:)<contact_tol)
                           if(i<length(action_sequence.key_time_samples))
                               tspan = action_sequence.key_time_samples(i:i+1);
-                              pos_lb_completion_time_con = struct();
-                              pos_lb_completion_time_con.max = pos_lb_completion_time;
-                              pos_lb_completion_time_con.min = pos_lb_completion_time;
-                              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_lb_completion_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+                              pos_start_time_con = struct();
+                              pos_start_time_con.max = pos_start_time;
+                              pos_start_time_con.min = pos_start_time;
+                              action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,pos_start_time_con,tspan,[body.linkname,'_ground_contact_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
                           end
                       else
                         action_constraint_ZMP = ActionKinematicConstraint(body,collision_group_pt,ikargs{j+2},[action_sequence.key_time_samples(i) action_sequence.key_time_samples(i)],[body.linkname,'_at_',num2str(action_sequence.key_time_samples(i))]);
@@ -190,7 +207,7 @@ while (1)
           end 
         end
         
-        dt = 0.01;
+        dt = 0.1;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);
           t_breaks = action_sequence_ZMP.tspan(1)+dt*(0:window_size-1);
