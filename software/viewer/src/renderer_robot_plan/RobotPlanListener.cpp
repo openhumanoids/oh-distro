@@ -48,6 +48,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_plan_t* msg)						 
   {
+    cout << "\n received robot plan message\n";
 
     if (!_urdf_parsed)
     {

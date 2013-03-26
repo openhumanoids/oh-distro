@@ -79,7 +79,6 @@ namespace renderer_sticky_feet{
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
    
-
     int iViewId = drc::data_request_t::HEIGHT_MAP_SCENE;
     maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
     
@@ -114,14 +113,11 @@ namespace renderer_sticky_feet{
         closestNormal<< 0,0,1;
     }
     
-    if(!isnan(closestPt[2])){
+   /* if(isnan(closestPt[2])){
         closestPt = queryPt;
         closestNormal<< 0,0,1;
-    }
+    }*/
     
-    
-    
-
     return closestPt[2];
 
   }
