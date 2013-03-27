@@ -197,6 +197,23 @@ _load_collision_objects( void ){
   _kinematics_model.model().getLinks( links );
   string models_path = getModelsPath();
   for( unsigned int i = 0; i < links.size(); i++ ){
+    for( std::map< std::string, boost::shared_ptr<std::vector<boost::shared_ptr<Collision> > > >::iterator it = links[i]->collision_groups.begin(); it != links[i]->collision_groups.end(); it++ ){
+      for( unsigned int j = 0; j < it->second->size(); j++ ){
+        if( (*it->second)[ j ] != NULL ){
+          if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
+            shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[ j ]->geometry );
+            _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) ); 
+          } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
+            shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[ j ]->geometry );
+            _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+          } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
+            shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[ j ]->geometry );
+            _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+          }
+        }
+      }
+    }
+
     if( links[ i ]->collision != NULL ){
       if( links[ i ]->collision->geometry->type == Geometry::SPHERE ){
         shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->collision->geometry );
