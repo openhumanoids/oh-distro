@@ -52,7 +52,10 @@ void LegOdometry_Handler::setupLCM() {
 	// robot_pose_channel = "TRUE_ROBOT_STATE";
 	// drc_robot_state_t_subscribe(_lcm, robot_pose_channel, TwoLegOdometry::on_robot_state_aux, this);
 	
-	//lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
+	if(!lcm_.good())
+	  return;
+	
+	lcm_.subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
 	
 	return;
 }
@@ -73,6 +76,7 @@ void LegOdometry_Handler::run(bool testingmode) {
 			
 		}
 		
+		
 	}
 	else
 	{
@@ -81,7 +85,7 @@ void LegOdometry_Handler::run(bool testingmode) {
 		try
 		{
 			
-			
+			while(0 == lcm_.handle());
 			// receive images through LCM
 //		    while(0 == lcm_handle(_lcm) && !_finish);
 		    
@@ -98,11 +102,16 @@ void LegOdometry_Handler::run(bool testingmode) {
 	return;
 }
 
-/*
-void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg) {
-   std::cout << msg->utime << " got a message\n";
+
+//void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg) {
+
+void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
+												const std::string& channel, 
+												const  drc::robot_state_t* msg)
+{
+	std::cout << msg->utime << " got a message\n";
 }
-*/
+
 
 /*
  * This has been copied and must be converted to the listen and respond to the correct LCM messages

@@ -36,7 +36,9 @@
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
-	boost::shared_ptr<lcm::LCM> lcm_;
+	//boost::shared_ptr<lcm::LCM> lcm_;
+	lcm::LCM lcm_;
+	    
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -54,8 +56,8 @@ private:
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
 	void setupLCM();
 	
-	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
-				
+	//void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);	
 	
 public:
 	LegOdometry_Handler();
