@@ -64,11 +64,16 @@ struct ViewClient::Worker {
 
   ~Worker() {
     boost::mutex::scoped_lock lock(mMutex);
-    mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
+    if (mBotWrapper != NULL) {
+      if (mBotWrapper->getLcm() != NULL) {
+        mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
+      }
+    }
     mState = StateShutdown;
+    lock.unlock();
     mCondition.notify_one();
     mMessageQueue.unblock();
     try { mThread.join(); }
@@ -80,8 +85,12 @@ struct ViewClient::Worker {
     if (mState == StateRunning) {
       return false;
     }
+    if ((mBotWrapper == NULL) || (mBotWrapper->getLcm() == NULL)) {
+      return false;
+    }
     mState = StateRunning;
     mCondition.notify_one();
+    lock.unlock();
     mOctreeSubscription = mBotWrapper->getLcm()->
       subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
     mCloudSubscription = mBotWrapper->getLcm()->
@@ -98,11 +107,16 @@ struct ViewClient::Worker {
     if (mState != StateRunning) {
       return false;
     }
-    mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
-    mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription); 
+    if (mBotWrapper != NULL) {
+      if (mBotWrapper->getLcm() != NULL) {
+        mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+        mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
+      }
+    }
     mState = StateIdle;
+    lock.unlock();
     mCondition.notify_one();
     mMessageQueue.clear();
     return true;
