@@ -145,7 +145,7 @@ end
 
 
 % add a segment at the end to recover
-ts = [ts, ts(end)+1];
+ts = [ts, ts(end)+1.5];
 
 for f = {'right', 'left'}
   foot = f{1};

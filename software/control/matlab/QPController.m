@@ -191,7 +191,7 @@ classdef QPController < MIMODrakeSystem
       % phase passes before the swing foot comes in  contact with the
       % ground. 
       partial_contacts = find(partial_contacts & active_contacts); 
-      active_contacts = find(active_contacts)
+      active_contacts = find(active_contacts);
 
       partial_idx = zeros(dim*length(partial_contacts),1);
       for i=1:length(partial_contacts);

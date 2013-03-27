@@ -84,7 +84,7 @@ while true
   cost.base_pitch = 1000;
   cost.base_yaw = 0;
   cost.back_mby = 100;
-  cost.back_ubx = 100;
+  cost.back_ubx = 500;
   cost = double(cost);
   options = struct();
   options.Q = diag(cost(1:r.getNumDOF));
@@ -127,11 +127,23 @@ while true
   if 0 % do proper TV linear system approach
     disp('Computing ZMP controller...');
     limp = LinearInvertedPendulum(htraj);
-    [~,V] = ZMPtracker(limp,zmptraj);
+    [~,V] = ZMPtracker(limp,zmptraj); 
   end
 
   hddot = fnder(htraj,2);
 
+%   figure(2); 
+%   clf; 
+%   subplot(3,1,1); hold on;
+%   fnplt(zmptraj(1));
+%   fnplt(comtraj(1));
+%   subplot(3,1,2); hold on;
+%   fnplt(zmptraj(2));
+%   fnplt(comtraj(2));
+%   subplot(3,1,3); hold on;
+%   fnplt(htraj);
+  
+  
   disp('Waiting for robot plan confirmation...');
   plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
   reject_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
