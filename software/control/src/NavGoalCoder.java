@@ -14,7 +14,7 @@ public class NavGoalCoder implements drake.util.LCMCoder
     
     public int dim()
     {
-      return 6;
+      return 7;
     }
 
     public drake.util.CoordinateFrameData decode(byte[] data)
@@ -23,7 +23,7 @@ public class NavGoalCoder implements drake.util.LCMCoder
         drc.nav_goal_timed_t msg = new drc.nav_goal_timed_t(data);
 //        if (msg.robot_name.equals(m_robot_name)) {
           drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
-          fdata.val = new double[6];
+          fdata.val = new double[7];
           fdata.t = (double)msg.utime / 1000000.0;
           
           double q1= msg.goal_pos.rotation.x;
@@ -39,6 +39,7 @@ public class NavGoalCoder implements drake.util.LCMCoder
           fdata.val[3] = roll;
           fdata.val[4] = pitch;
           fdata.val[5] = yaw;
+          fdata.val[6] = msg.timeout / 1000000.0;
           return fdata;
 //        }
       } catch (IOException ex) {
@@ -73,6 +74,7 @@ public class NavGoalCoder implements drake.util.LCMCoder
       msg.goal_pos.rotation.y = (float) y;
       msg.goal_pos.rotation.z = (float) z;
       msg.goal_pos.rotation.w = (float) w;
+      msg.timeout = (long)(d.val[6] * 1000000);
       
       return msg;
     }
