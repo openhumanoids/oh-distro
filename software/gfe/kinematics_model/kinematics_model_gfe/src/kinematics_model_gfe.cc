@@ -57,7 +57,7 @@ Kinematics_Model_GFE() : _model(),
  * class constructor that loads from an xml file
  */
 Kinematics_Model_GFE::
-Kinematics_Model_GFE( string urdfFilename ) : _model(),
+Kinematics_Model_GFE( string xmlString ) : _model(),
                                             _tree(),
                                             _fk_solver( NULL ),
                                             _iksolverpos_left_arm( NULL ),
@@ -78,8 +78,8 @@ Kinematics_Model_GFE( string urdfFilename ) : _model(),
                                             _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                                             _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
                                             _max_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ){
-  if( !load_urdf( getModelsPath() + urdfFilename ) ) {
-    cout << "could not load urdf " << endl;
+  if( !load_xml_string( xmlString ) ) {
+    cout << "could not load xml string " << endl;
   }
 }
 
