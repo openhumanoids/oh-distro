@@ -28,7 +28,8 @@
 ///////////////////////////////////////////////////////////////
 class joints2frames{
   public:
-    joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_);
+    joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, 
+                  bool show_triads_, bool _standalone_head);
     
     ~joints2frames(){
     }
@@ -55,6 +56,8 @@ class joints2frames{
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
     bool _urdf_parsed;    
     std::vector<drc::link_transform_t> _link_tfs;
+    
+    bool _standalone_head;
     
     Eigen::Quaterniond  euler_to_quat(double yaw, double pitch, double roll);
 };    

@@ -20,8 +20,10 @@ using namespace boost::assign;
 
 /////////////////////////////////////
 
-joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_):
+joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_,
+  bool _standalone_head):
           lcm_(publish_lcm), _urdf_parsed(false), show_labels_(show_labels_), show_triads_(show_triads_),
+          _standalone_head(_standalone_head),
           world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
           body_to_headT_(0, Eigen::Isometry3d::Identity()) {
 
@@ -62,7 +64,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
 
-  
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
@@ -82,7 +83,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
-  
   
   // 2a. Determine the required BOT_FRAMES transforms:
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
@@ -104,7 +104,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       body_to_hokuyo_link_found=true;
     }
   }  
-  
+
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
@@ -139,6 +139,23 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       tf.quat[3] = quat.z();
       lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);     
     }
+  }
+  
+  if (_standalone_head){
+    // If publish from the head alone - then the head is the root linl:
+      Eigen::Isometry3d head_to_hokuyo_link = body_to_hokuyo_link ;
+      
+      bot_core::rigid_transform_t tf;
+      tf.utime = msg->utime;
+      tf.trans[0] = head_to_hokuyo_link.translation().x();
+      tf.trans[1] = head_to_hokuyo_link.translation().y();
+      tf.trans[2] = head_to_hokuyo_link.translation().z();
+      Eigen::Quaterniond quat = Eigen::Quaterniond( head_to_hokuyo_link.rotation() );
+      tf.quat[0] = quat.w();
+      tf.quat[1] = quat.x();
+      tf.quat[2] = quat.y();
+      tf.quat[3] = quat.z();
+      lcm_->publish("HEAD_TO_HOKUYO_LINK", &tf);     
   }
   
   #if DO_TIMING_PROFILE
@@ -241,10 +258,12 @@ main(int argc, char ** argv){
   string role = "robot";
   bool labels = false;
   bool triads = false;
+  bool standalone_head = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
+  opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
   opt.parse();
   if (labels){ // require triads if labels is to be published
     triads=true;
@@ -280,7 +299,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads);
+  joints2frames app(lcm,labels,triads, standalone_head);
   while(0 == lcm->handle());
   return 0;
 }
