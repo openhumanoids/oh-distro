@@ -93,11 +93,15 @@ set( robot_state_t& robotState ){
   _kinematics_model.set( robotState );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
+/*
       Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
       double qx, qy, qz, qw;
       frame.M.GetQuaternion( qx, qy, qz, qw );      
       _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
                                               Vector4f( qx, qy, qz, qw ) );
+*/
+      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
+      _collision_objects[ i ]->set_transform( frame );
     }
   }
   return;
@@ -113,11 +117,15 @@ set( State_GFE& stateGFE ){
   _kinematics_model.set( stateGFE );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
+/*
       Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
       double qx, qy, qz, qw;
       frame.M.GetQuaternion( qx, qy, qz, qw );
       _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
                                               Vector4f( qx, qy, qz, qw ) );
+*/
+      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
+      _collision_objects[ i ]->set_transform( frame );
     }
   }
   return;
@@ -202,13 +210,16 @@ _load_collision_objects( void ){
         if( (*it->second)[ j ] != NULL ){
           if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
             shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[ j ]->geometry );
-            _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) ); 
+            _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+            cout << *_collision_objects.back() << endl; 
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
             shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[ j ]->geometry );
             _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+            cout << *_collision_objects.back() << endl; 
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
             shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[ j ]->geometry );
             _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( (*it->second)[ j ]->origin.rotation.x, (*it->second)[ j ]->origin.rotation.y, (*it->second)[ j ]->origin.rotation.z, (*it->second)[ j ]->origin.rotation.w ), KDL::Vector( (*it->second)[ j ]->origin.position.x, (*it->second)[ j ]->origin.position.y, (*it->second)[ j ]->origin.position.z ) ) ) );
+            cout << *_collision_objects.back() << endl; 
           }
         }
       }
@@ -259,4 +270,9 @@ void Collision_Object_GFE::set_transform( const Eigen::Vector3f position, const 
   throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> set_transform");
 }
 
+void
+Collision_Object_GFE::
+set_transform( const Frame& transform ){
+  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> set_transform");
+}
 
