@@ -678,13 +678,13 @@ updateScrubber()
     
     _scrubber->setSelectedRange(selected_start_time, selected_end_time);
     _scrubber->update();
+    handleScrubberChange();
 }
 
 void
 MainWindow::
 handleScrubberChange()
 {
-  cout << "handle scrubber changed called" << endl;
   for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
     {
       double start_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeLowerBound() / _MaxEndTime;
@@ -807,7 +807,6 @@ rebuildGUIFromState(AuthoringState &state, WorldStateView &worldState)
     {
         setSelectedAction(state._all_gui_constraints[0].get()); // Qt ugliness requires .get
     }
-
 }
 
 /*
