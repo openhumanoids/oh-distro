@@ -71,6 +71,12 @@ void Collision_Object_Affordance::set_transform( const Eigen::Vector3f position,
   _obj->set_transform(position, orientation);
 }
 
+void Collision_Object_Affordance::set_transform( const KDL::Frame& transform )
+{
+  _obj->set_transform(transform);
+}
+
+
 Eigen::Vector3f Collision_Object_Affordance::position( void ) const
 {
   return _obj->position();
