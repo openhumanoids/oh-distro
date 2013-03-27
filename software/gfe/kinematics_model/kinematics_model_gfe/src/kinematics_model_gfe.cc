@@ -270,7 +270,6 @@ inverse_kinematics_right_leg( const State_GFE& robotState,
 string
 Kinematics_Model_GFE::
 urdf_filename_to_xml_string( string urdfFilename ){
-  cout << "This is the arguement to the conversion function: " << urdfFilename << endl;
   string xml_string;
   fstream xml_file( urdfFilename.c_str(), fstream::in );
   if( xml_file.is_open() ){
