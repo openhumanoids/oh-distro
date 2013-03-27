@@ -24,9 +24,8 @@ classdef FootstepPlanListener
 
 	methods(Static)
 		function X = decodeFootstepPlan(plan_msg)
-		  X = [];
 		  for j = 1:length(plan_msg.footstep_goals)
-		    X(:, end+1) = FootstepPlanListener.decodeFootstepGoal(plan_msg.footstep_goals(j));
+		    X(j) = FootstepPlanListener.decodeFootstepGoal(plan_msg.footstep_goals(j));
 		  end
 		end
 
@@ -42,24 +41,21 @@ classdef FootstepPlanListener
 		                        goal_msg.pos.rotation.z], 'XYZ');
 		  % disp('r p y:')
 		  % [r p y]
-		  pos = [goal_msg.pos.translation.x;...
+		  X.pos = [goal_msg.pos.translation.x;...
 		         goal_msg.pos.translation.y;...
 		         goal_msg.pos.translation.z;...
 		         r;p;y];
-
-		  if ~goal_msg.is_right_foot
-		  	goal_msg.id = goal_msg.id - 1e9 - 1; % remove left foot ID offset
-		  end
-		  X = [pos; goal_msg.step_time / 1000000; goal_msg.id;
-		           goal_msg.fixed_x;
-		           goal_msg.fixed_y;
-		           goal_msg.fixed_z;
-		           goal_msg.fixed_roll;
-		           goal_msg.fixed_pitch;
-		           goal_msg.fixed_yaw;
-		           goal_msg.is_right_foot];
+		  X.time = goal_msg.step_time / 1000000;
+		  X.id = goal_msg.id;
+		  X.pos_fixed = [goal_msg.fixed_x;
+					           goal_msg.fixed_y;
+					           goal_msg.fixed_z;
+					           goal_msg.fixed_roll;
+					           goal_msg.fixed_pitch;
+					           goal_msg.fixed_yaw];
+		  X.is_right_foot = goal_msg.is_right_foot;
 		  %%%% HACK for DRC Qual 1 %%%%%
-		  X(3) = X(3) - 1;
+		  X.pos(3) = X.pos(3) - 1;
 		  %%%% end
 		end
 	end

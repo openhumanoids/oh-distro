@@ -24,27 +24,20 @@ classdef FootstepPlanPublisher
 			if nargin < 2
 				t = now() * 24 * 60 * 60;
 			end
-			sizecheck(X, [15, 1]);
 
 			%%%% HACK for DRC Qual 1 %%%%%
-			X(3) = X(3) + 1;
+			X.pos(3) = X.pos(3) + 1;
 			%%%% end
 			msg = drc.footstep_goal_t();
 			msg.utime = t * 1000000;
 			msg.robot_name = 'atlas';
 			msg.pos = drc.position_3d_t();
 			trans = drc.vector_3d_t();
-			trans.x = X(1);
-			trans.y = X(2);
-			trans.z = X(3);
+			trans.x = X.pos(1);
+			trans.y = X.pos(2);
+			trans.z = X.pos(3);
 			rot = drc.quaternion_t();
-			q = angle2quat(X(4), X(5), X(6), 'XYZ');
-			%q = angle2quat(X(4)+pi, X(5), X(6), 'ZYX');
-			% q = rpy2quat([X(4), X(5), X(6)]);
-			% disp('rpy')
-			% [X(4), X(5), X(6)]
-			% disp('quat')
-			% q
+			q = angle2quat(X.pos(4), X.pos(5), X.pos(6), 'XYZ');
 			rot.w = q(1);
 			rot.x = q(2);
 			rot.y = q(3);
@@ -52,19 +45,15 @@ classdef FootstepPlanPublisher
 
 			msg.pos.translation = trans;
 			msg.pos.rotation = rot;
-			msg.step_time = int64((X(7) + t) * 1000000);
-			msg.id = int32(X(8));
-			msg.fixed_x = X(9);
-			msg.fixed_y = X(10);
-			msg.fixed_z = X(11);
-			msg.fixed_roll = X(12);
-			msg.fixed_pitch = X(13);
-			msg.fixed_yaw = X(14);
-			msg.is_right_foot = X(15);
-
-			if ~msg.is_right_foot
-				msg.id = msg.id + 1e9 + 1; % offset left foot IDs
-			end
+			msg.step_time = int64((X.time + t) * 1000000);
+			msg.id = int32(X.id);
+			msg.fixed_x = X.pos_fixed(1);
+			msg.fixed_y = X.pos_fixed(2);
+			msg.fixed_z = X.pos_fixed(3);
+			msg.fixed_roll = X.pos_fixed(4);
+			msg.fixed_pitch = X.pos_fixed(5);
+			msg.fixed_yaw = X.pos_fixed(6);
+			msg.is_right_foot = X.is_right_foot;
 		end
 
 		function qout = quatnormalize(q)
@@ -83,12 +72,12 @@ classdef FootstepPlanPublisher
 		    msg = drc.footstep_plan_t();
 		    msg.utime = t * 1000000;
 		    msg.robot_name = robot_name;
-		    msg.num_steps = size(X, 2);
+		    msg.num_steps = length(X);
 		    msg.is_new_plan = isnew;
   
-  		    goals = javaArray('drc.footstep_goal_t', size(X, 2));
-  		    for j = 1:length(X(1,:))
-  		    	new_goal = FootstepPlanPublisher.encodeFootstepGoal(X(:,j), t);
+  		    goals = javaArray('drc.footstep_goal_t', length(X));
+  		    for j = 1:length(X)
+  		    	new_goal = FootstepPlanPublisher.encodeFootstepGoal(X(j), t);
   		      goals(j) = new_goal;
   		    end
 		    msg.footstep_goals = goals;

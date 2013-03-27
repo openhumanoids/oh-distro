@@ -42,20 +42,19 @@ classdef FootstepViewer
         new_plan = obj.listener.getNextMessage(50);
         if ~isempty(new_plan)
           plan = new_plan;
-          plan([1:7, 9:end],:)
-          Xright = plan(:, plan(15,:)==1);
-          Xleft = plan(:, plan(15,:)==0);
+          Xpos = [plan.pos]
+          Xright = Xpos(:, [plan.is_right_foot] == 1);
+          Xleft = Xpos(:, [plan.is_right_foot] == 0);
           sfigure(obj.hFig);
           plotFootstepPlan([], Xright, Xleft);
           hold on
-          for j = 1:size(Xright, 2)
-            if any(Xright(9:14,j))
-              plot(Xright(1,j), Xright(2,j), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
-            end
-          end
-          for j = 1:size(Xleft, 2)
-            if any(Xleft(9:14,j))
-              plot(Xleft(1,j), Xleft(2,j), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+          for j = 1:length(plan)
+            if any(plan(j).pos_fixed)
+              if plan(j).is_right_foot
+                plot(plan(j).pos(1), plan(j).pos(2), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g')
+              else
+                plot(plan(j).pos(1), plan(j).pos(2), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+              end
             end
           end
           hold off
@@ -67,9 +66,9 @@ classdef FootstepViewer
         mouse_pt = get(ax, 'CurrentPoint');
         mouse_x = mouse_pt(1,1);
         mouse_y = mouse_pt(1,2);
-        dist = sum((plan(1:2,:) - repmat([mouse_x; mouse_y], 1, length(plan(1,:)))).^2,1);
+        dist = sum((Xpos(1:2,:) - repmat([mouse_x; mouse_y], 1, length(plan))).^2,1);
         [~, step_ndx] = min(dist);
-        selected_id = plan(8, step_ndx);
+        selected_id = plan(step_ndx).id;
         set(obj.hFig, 'WindowButtonMotionFcn', @(s, e) mouse_drag_handler(selected_id));
       end
         
@@ -79,10 +78,10 @@ classdef FootstepViewer
         mouse_pt = get(ax, 'CurrentPoint');
         mouse_x = mouse_pt(1,1);
         mouse_y = mouse_pt(1,2);
-        step_ndx = find(plan(8,:) == selected_id);
-        step = plan(:, step_ndx);
-        step(1:2) = [mouse_x; mouse_y];
-        step(9:10) = 1;
+        step_ndx = find([plan.id] == selected_id);
+        step = plan(step_ndx);
+        step.pos(1:2) = [mouse_x; mouse_y];
+        step.pos_fixed(1:3) = 1;
         obj.publisher.publish(step);
   %       fixed_steps{drag_ndx, current_foot} = [[mouse_x; mouse_y]; closest_point(3:6)];
       end

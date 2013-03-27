@@ -26,13 +26,14 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true, true);
     end
     
-    function [Xright, Xleft] = plan(obj,navgoal,data)
+    function X = plan(obj,navgoal,data)
       navgoal
+      time_limit = navgoal(7);
       isnew = true;
       options.plotting = true;
       options.interactive = true;
       options.heel_toe = false;
-      [Xright, Xleft] = obj.biped.optimizeFootstepPlan(data.x0, navgoal, @publish, @obj.updateData, data)
+      X = obj.biped.optimizeRLFootstepPlan(data.x0, navgoal, @publish, @obj.updateData, data)
 
       function publish(X, htfun)
         obj.biped.publish_footstep_plan(X, htfun, data.utime, isnew);

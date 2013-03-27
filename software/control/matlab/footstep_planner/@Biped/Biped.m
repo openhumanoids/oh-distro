@@ -17,10 +17,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options = struct();
         options.floating = true;
       end
-      obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       if nargin < 2
         dt = 0.002;
       end
+      obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       defaults = struct('step_time', 1.0,... % s
         'max_step_length', .60,... % m
         'max_step_rot', pi/4,... % rad
@@ -42,49 +42,44 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj.foot_contact_offsets = obj.findContactOffsets();
     end
     
-    function [Xright, Xleft] = planFootsteps(obj, x0, poses, options)
-      % [Xright, Xleft] = obj.optimizeFreeFootsteps([start_pos, poses], options.interactive);
-
-      if ~options.interactive
-        [Xright, Xleft] = obj.optimizeFootstepPlan(x0, poses);
-        return;
-      end 
-
-      planner = FootstepPlanner(obj)
-      [Xright, Xleft] = planner.plan(poses, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
-      if options.plotting
-        figure(22)
-        plotFootstepPlan([], Xright, Xleft);
-        drawnow
-      end
+    function X = planFootsteps(obj, x0, navgoal, options)
+      planner = FootstepPlanner(obj);
+      X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
-    function [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options)
-      % Xright and Xleft should be expressed as locations of the foot centers, not the foot origins
-      Xright = obj.footContact2Orig(Xright, 'center', 1);
-      Xleft = obj.footContact2Orig(Xleft, 'center', 0);
-      q0 = x0(1:end/2);
-      [zmptraj, foottraj] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
-      ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
-      xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, ts);
-    end
-    
-    function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
-      if nargin < 4
+%     function [xtraj, ts] = walkingPlanFromSteps(obj, x0, X, options)
+%       Xpos = [X.pos];
+%       Xright = Xpos(:, [X.is_right_foot] == 1);
+%       Xleft = Xpos(:, [X.is_right_foot] == 0);
+%       q0 = x0(1:end/2);
+%       [zmptraj, foottraj] = planZMPandHeelToeTrajectory(obj, q0, Xright, Xleft, obj.step_time, options);
+%       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
+%       xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, ts);
+%     end
+    function [xtraj, qtraj, htraj, V] = walkingPlan(obj, x0, qstar, navgoal, options)
+      if nargin < 5
         options = struct();
       end
-      defaults = struct('flat_foot', true, 'interactive', true, 'plotting', true);
-      fields = fieldnames(defaults);
-      for i = 1:length(fields)
-        if ~isfield(options, fields{i})
-          options.(fields{i}) = defaults.(fields{i});
-        end
-      end
-      if ~options.flat_foot
-        obj.max_step_length = 0.6;
-      end
-      [Xright, Xleft] = planFootsteps(obj, x0, poses, options);
-      [xtraj, ts] = walkingPlanFromSteps(obj, x0, Xright, Xleft, options);
+      X = obj.planFootsteps(x0, navgoal, options);
+      [xtraj, qtraj, htraj, V] = obj.walkingPlanFromSteps(x0, qstar, X, 1.3);
     end
+
+%     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
+%       if nargin < 4
+%         options = struct();
+%       end
+%       defaults = struct('flat_foot', true, 'interactive', true, 'plotting', true);
+%       fields = fieldnames(defaults);
+%       for i = 1:length(fields)
+%         if ~isfield(options, fields{i})
+%           options.(fields{i}) = defaults.(fields{i});
+%         end
+%       end
+%       if ~options.flat_foot
+%         obj.max_step_length = 0.6;
+%       end
+%       X = planFootsteps(obj, x0, poses, options);
+%       [xtraj, ts] = walkingPlanFromSteps(obj, x0, X, options);
+%     end
 
     function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
       if is_right_foot
@@ -112,7 +107,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
     end
 
-    function [pos, width] = feetPosition(obj, q0)
+    % function [pos, width] = feetPosition(obj, q0)
+    function foot_orig = feetPosition(obj, q0)
       typecheck(q0,'numeric');
       sizecheck(q0,[obj.getNumDOF,1]);
 
@@ -123,20 +119,29 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       rfoot0 = forwardKin(obj,kinsol,rfoot_body,[0;0;0],true);
       lfoot0 = forwardKin(obj,kinsol,lfoot_body,[0;0;0],true);
 
-      foot_centers = struct('right', obj.footOrig2Contact(rfoot0, 'center', 1),...
-                            'left', obj.footOrig2Contact(lfoot0, 'center', 0));
-      p0 = mean([foot_centers.right(1:3), foot_centers.left(1:3)], 2);
-      yaw = atan2(foot_centers.left(2) - foot_centers.right(2),...
-                  foot_centers.left(1) - foot_centers.right(1)) - pi/2;
-      pos = [p0; 0; 0; yaw];
-      width = sqrt(sum((foot_centers.right(1:2) - foot_centers.left(1:2)) .^ 2));
-
+      foot_orig = struct('right', rfoot0, 'left', lfoot0);
     end
 
     function ndx = getStepNdx(obj, total_steps)
       % Lead with the right foot, for no particular reason
       ndx = struct('right', int32([1, 2, 4:2:(total_steps-1), total_steps]),...
                    'left', int32([1:2:(total_steps-1), total_steps]));
+    end
+
+    function t = getStepTimes(obj, X)
+      % Assume the columns of X are already in order by time
+      nsteps = length(X(1,:));
+      t = zeros(1, nsteps);
+      t(3:end) = (1:nsteps-2) * obj.step_time;
+    end
+
+    function id = getNextStepID(obj)
+      persistent counter
+      if isempty(counter)
+        counter = 0;
+      end
+      counter = counter + 1;
+      id = counter;
     end
 
     function publish_footstep_plan(obj, X, htfun, t, isnew)
@@ -146,25 +151,18 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       if nargin < 3
         t = now() * 24 * 60 * 60;
       end
-      ndx = obj.getStepNdx(length(X(1,:)));
+      % ndx = obj.getStepNdx(length(X(1,:)));
       % [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
-      Xright = obj.stepCenter2FootCenter(X(:, ndx.right), 1);
-      Xleft = obj.stepCenter2FootCenter(X(:, ndx.left), 0);
-      Xright(end+1, :) = 1;
-      Xleft(end+1, :) = 0;
+      % Xright = obj.stepCenter2FootCenter(X(:, ndx.right), 1);
+      % Xleft = obj.stepCenter2FootCenter(X(:, ndx.left), 0);
+      % Xright(end+1, :) = 1;
+      % Xleft(end+1, :) = 0;
 
-      Xright(3,:) = htfun(Xright(1:2,:));
-      Xleft(3,:) = htfun(Xleft(1:2,:));
+      % Xright(3,:) = htfun(Xright(1:2,:));
+      % Xleft(3,:) = htfun(Xleft(1:2,:));
 
-      % Xright and Xleft are expressed as position of the foot contact center, so we need to transform them into the position of the foot origin
-      for j = 1:length(Xright(1,:))
-        Xright(:,j) = obj.footContact2Orig(Xright(:,j), 'center', 1);
-      end
-      for j = 1:length(Xleft(1,:))
-        Xleft(:,j) = obj.footContact2Orig(Xleft(:,j), 'center', 0);
-      end
 
-      msg = FootstepPlanPublisher.encodeFootstepPlan([Xright, Xleft], t, isnew);
+      msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew);
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
     end
   end
