@@ -49,6 +49,10 @@ void Collision_Object_Manipulator::set_transform( const Eigen::Vector3f position
   throw NotImplementedException("Collision_Object_Manipulator: set_transform");
 }
 
+void Collision_Object_Manipulator::set_transform( const KDL::Frame& transform ){
+  throw NotImplementedException("Collision_Object_Manipulator: set_transform");
+}
+
 Eigen::Vector3f Collision_Object_Manipulator::position( void ) const
 {
   throw NotImplementedException("Collision_Object_Manipulator: position()");
