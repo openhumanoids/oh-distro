@@ -174,7 +174,7 @@ _load_collision_objects( void ){
   while( _collision_objects.size() != _max_points ){
     char buffer[ 80 ];
     sprintf( buffer, "%06d", ( int )( _collision_objects.size() ) );
-    _collision_objects.push_back( new Collision_Object_Sphere( string( buffer ), 0.01 ) );
+    _collision_objects.push_back( new Collision_Object_Sphere( string( buffer ), 0.04 ) ); // used by lidar filtering
   }
   return;
 }
