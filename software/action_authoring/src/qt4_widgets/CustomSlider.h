@@ -61,7 +61,7 @@ protected:
     void paintEvent(QPaintEvent *ev)
     {
         QPainter painter(this);
-
+	
         if (_lowerbound >= 0 && _upperbound >=0)
         {
             int pos1 = getSliderPosition(_lowerbound);

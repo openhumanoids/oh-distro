@@ -44,18 +44,21 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
         _plannerButton = new QPushButton("");
         _plannerButton->setFlat(true);
         _plannerButton->setAutoFillBackground(false);
-
         setPlannerStatus(PLANNER_OK);
-        //_plannerButton->setIconSize();
         headerLayout->addWidget(_plannerButton);
+
         QPushButton *bindButton;
         bindButton = new QPushButton("unbound");
         bindButton->setFlat(true);
         bindButton->setMaximumWidth(70);
         headerLayout->addWidget(bindButton);
-        QPushButton *adjustButton = new QPushButton("adjust...");
-        adjustButton->setMaximumWidth(100);
-        headerLayout->addWidget(adjustButton);
+	
+	_constraintActiveButton = new QPushButton("");
+	_constraintActiveButton->setFlat(true);
+	_constraintActiveButton->setAutoFillBackground(false);
+	setConstraintActiveStatus(false);
+	headerLayout->addWidget(_constraintActiveButton);
+	
     }
 
     _headerArea->setLayout(headerLayout);
@@ -80,8 +83,8 @@ void TogglePanel::setPlannerStatus(PlannerStatus planner)
 {
     if (planner == PLANNER_OK)
     {
-        _plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOkButton));
-        _plannerButton->setText("planner: ok");
+       _plannerButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOkButton));
+       _plannerButton->setText("planner: ok");
     }
     else if (planner == PLANNER_UNKNOWN)
     {
@@ -99,6 +102,22 @@ void TogglePanel::setPlannerStatus(PlannerStatus planner)
         _plannerButton->setText("planner: warning");
     }
 }
+
+
+void TogglePanel::setConstraintActiveStatus(bool active)
+{
+    if (active)
+    {
+       _constraintActiveButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogYesButton));
+       _constraintActiveButton->setText("active");
+    }
+    else
+    {
+        _constraintActiveButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogNoButton));
+        _constraintActiveButton->setText("inactive");
+    }
+}
+
 
 void TogglePanel::setSelected(bool selected)
 {
@@ -169,4 +188,3 @@ TogglePanel::
 {
 
 }
-

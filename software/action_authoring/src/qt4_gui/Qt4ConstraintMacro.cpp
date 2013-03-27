@@ -115,25 +115,6 @@ getPanel()
     QWidget *boxcontainer = new QWidget();
     boxcontainer->setLayout(hbox);
     vbox->addWidget(boxcontainer);
-
-    // previous constraints checkboxes
-    /*
-    TogglePanel *checkboxGroup = new TogglePanel(_gui_panel, "constraints still in effect", false);
-    QGroupBox *checkboxGroupBox = new QGroupBox();
-    QHBoxLayout *checkboxGroupLayout = new QHBoxLayout();
-
-    for (int i = 0; i < _constraintIndex; i++)
-    {
-        QCheckBox *q1 = new QCheckBox(QString("previous constraint %1").arg(i));
-        q1->setChecked(true);
-        checkboxGroupLayout->addWidget(q1);
-    }
-
-    checkboxGroupBox->setLayout(checkboxGroupLayout);
-    checkboxGroup->addWidget(checkboxGroupBox);
-    vbox->addWidget(checkboxGroup);
-    */
-
     groupBox->setLayout(vbox);
 
     // MUST go before the QT connections have been made

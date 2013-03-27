@@ -23,6 +23,7 @@ private:
     QWidget *_widgetArea;
     QPushButton *icon;
     QPushButton *_plannerButton;
+    QPushButton *_constraintActiveButton;
     ExtendedQLabel *_headerTextLabel;
     QVBoxLayout *_widgetLayout;
     int _state;
@@ -36,8 +37,8 @@ public:
     void setSelected(bool selected);
     void setTitle(QString title);
     void setPlannerStatus(PlannerStatus p);
+    void setConstraintActiveStatus(bool active);
     QSize sizeHint();
-
     enum { OPEN, CLOSED };
 
 private slots:

@@ -224,6 +224,7 @@ private slots:
     void handlePoint2PointChange();
     void getContactGoals(std::vector<drc::contact_goal_t> *contact_goals);
     void requestIKSolution();
+    void handleScrubberChange();
 };
 
 } //namespace action_authoring

@@ -419,6 +419,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
     connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
 
+    connect(_scrubber, SIGNAL(valueChanged(int)), this, SLOT(handleScrubberChange()));
 
     //TODO remove demoware
     connect(testIKPublishButton, SIGNAL(released()), this, SLOT(requestIKSolution()));
@@ -679,6 +680,22 @@ updateScrubber()
     _scrubber->update();
 }
 
+void
+MainWindow::
+handleScrubberChange()
+{
+  cout << "handle scrubber changed called" << endl;
+  for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
+    {
+      double start_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeLowerBound() / _MaxEndTime;
+      double end_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound() / _MaxEndTime;
+      float scrubber_time = float(_scrubber->value()) / float((_scrubber->maximum() - _scrubber->minimum()));
+      bool active = scrubber_time >= start_time && scrubber_time < end_time;
+      _authoringState._all_gui_constraints[i]->getPanel()->setConstraintActiveStatus(active);
+    } 
+}
+
+
 /*
  * This function is connected to the activated() signal of all of the
  * Qt4ConstraintMacros. It is called whenever a piece of constraint state
@@ -716,7 +733,7 @@ setSelectedAction(Qt4ConstraintMacro *activator)
         else
         {
             _authoringState._all_gui_constraints[i]->setSelected(false);
-        }
+        } 
     }
 
     if (! noChange)
@@ -726,7 +743,6 @@ setSelectedAction(Qt4ConstraintMacro *activator)
         _moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
         _fbwd->setEnabled(selected_index != 0);
         _ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
-
     }
 
     // update the scrubber tick lines
