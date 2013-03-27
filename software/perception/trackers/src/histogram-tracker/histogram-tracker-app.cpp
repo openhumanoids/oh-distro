@@ -22,6 +22,7 @@
 // OpenCV, and Histogram tracker includes
 #include <opencv2/opencv.hpp>
 #include "histogram-tracker.hpp"
+#define AFFORDANCE_OFFSET 64
 
 
 struct HistogramTrackerOptions { 
@@ -248,7 +249,7 @@ int main(int argc, char ** argv) {
                 continue;
             }
             std::cerr << "Capturing Affordance : " << options.vAFFORDANCE_ID << std::endl;
-            cv::Mat1b mask = (state->aff_img == options.vAFFORDANCE_ID);
+            cv::Mat1b mask = (state->aff_img == AFFORDANCE_OFFSET + options.vAFFORDANCE_ID);
 	    cv::Mat1b maskd = mask.clone();
             if (!state->tracker) { 
                 std::cerr << "Tracker Not Initialized!" << std::endl;

@@ -32,7 +32,6 @@ HistogramTracker::internal_init() {
   hue_info.ranges[0] = 0, hue_info.ranges[1] = 180;
   val_info.ranges[0] = 10, val_info.ranges[1] = 255;
   sat_info.ranges[0] = 10, sat_info.ranges[1] = 255;
-#define AFFORDANCE_OFFSET 64
 
   hue_info.pranges = hue_info.ranges;
   val_info.pranges = val_info.ranges;
@@ -41,11 +40,15 @@ HistogramTracker::internal_init() {
   hue_info.init();
   val_info.init();
   sat_info.init();
+
+  // prediction window
+  pred_win = cv::Rect(0,0,0,0);
+
   return;
 }
 
 bool 
-HistogramTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask) { 
+HistogramTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask, cv::Rect& roi) { 
     std::vector<std::vector<cv::Point> > contours;
     findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
@@ -66,9 +69,12 @@ HistogramTracker::computeMaskROI(const cv::Mat& img, const cv::Mat& mask) {
     if (!(rx >=0 && rx + rw < img.cols && 
           ry >=0 && ry + rh < img.rows) || rh <= 0 || rw <= 0)
         return false;
+    
+    // Populate ROI for initializing prediction window for camshift
+    roi = cv::Rect(rx, ry, rw, rh);
 
-    cv::Mat roi = cv::Mat(img, cv::Rect(rx, ry, rw, rh));
-    roi.copyTo(object_roi);
+    cv::Mat roi_im = cv::Mat(img, roi);
+    roi_im.copyTo(object_roi);
     return true;
 }
 
@@ -82,7 +88,7 @@ HistogramTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
   internal_init();
 
     // Compute mask roi for debug
-    if (!computeMaskROI(img, mask)) 
+    if (!computeMaskROI(img, mask, pred_win)) 
         return false;
 
     // Convert to HSV space
@@ -124,6 +130,10 @@ HistogramTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
 
     // cv::imshow("Initialize Histogram Tracker", display);
     mask_initialized_ = true;
+
+    // Once mask is inialized, find the 
+    std::cerr << "Initialized: Prediction window " << pred_win.tl() << "->" << pred_win.br() << std::endl;
+
     return true;
 }
 
@@ -198,18 +208,8 @@ HistogramTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d
         bp = bp8;
     else
         cv::resize(bp8, bp, cv::Size(), 1.f/scale, 1.f/scale, cv::INTER_LINEAR);
-    
-    
-    /// Use the confidence mask to determine the object location: (very basic algorithm, added mfallon)
-    // 1. Use image moments to determine ML object location:
-    cv::Moments m=cv::moments(bp8); 
-    //printf("moments %f %f %f %f %f %f %f %f\n",m.m00,m.m01,m.m20,m.m11,m.m02,m.m30,m.m21,m.m03); 
-    http://opencv.willowgarage.com/documentation/cpp/structural_analysis_and_shape_descriptors.html
-    int u_estimated = m.m10/m.m00;
-    int v_estimated = m.m01/m.m00;
-    std::cout << u_estimated << " and " << v_estimated << "\n";
 
-    // 2. Project particles into camera frame:
+    // 1. Project particles into camera frame:
     Eigen::Affine3d transform;
     transform.setIdentity();
     Eigen::Translation3d translation(local_to_camera.translation());
@@ -218,39 +218,92 @@ HistogramTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d
     for (size_t i = 0; i < pts.size (); ++i){
       pts[i] = transform*pts[i];
     }    
-      
-    // 3. Determine Likelihood in Image space:
-    for (size_t i=0; i< pts.size(); i++) {
-      // u = pt.x fx/pt.z   ... project point to pixel
-      Eigen::Vector3d pt1 = pts[i];
-      int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
-      int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
-      int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
-      // Crude Binary Likelihood:
-      if (dist < 13){
-        loglikelihoods[i] =1; //was 1
-      }
-    }        
-      
-      
-    /// Visualization:
+
+    // 2. Estimate mean position and bounds of object from PF
+    if (pts.size()) { 
+        cv::Point2f est_obj_pos(0.f, 0.f); 
+        for (int j=0; j<pts.size(); j++) { 
+            int u = floor( ((pts[j][0] * fx_)/pts[j][2]) + cx_);
+            int v = floor( ((pts[j][1] * fy_)/pts[j][2]) + cy_);
+            est_obj_pos.x += u, est_obj_pos.y += v;
+        }
+        pred_win.x = est_obj_pos.x * 1.f / pts.size(), 
+            pred_win.y = est_obj_pos.y * 1.f / pts.size();
+        std::cerr << "Prior rect from PF : ";
+    } else {
+        std::cerr << "Prior rect from Prev Estimate : ";
+    }
+    std::cerr << pred_win.tl() << "->" << pred_win.br() << std::endl;            
+
+    // Visualization:
     cv::Mat bp3;
     cv::cvtColor(bp8, bp3, CV_GRAY2BGR);
-    addWeighted(img, 0.05, bp3, 0.95, 0, img); 
+    addWeighted(img, 0.4, bp3, 0.6, 0, img); 
     // cv::imshow( "Hue Belief", hue_bp); 
     // cv::imshow( "Val Belief", val_bp); 
     // cv::imshow( "Sat Belief", val_bp); 
 
+    // Done with using the input image
+    if (pred_win.x < 0 || pred_win.x > _bp.cols || pred_win.y < 0 || pred_win.y > _bp.rows) {
+        std::string str("=== > Prior suggests object is not in the scene, skipping tracking "); 
+        std::cerr << str << std::endl;
+        putText(img, cv::format("%s", str.c_str()), Point(5,20), 0, 0.5, cv::Scalar(200, 200, 200), 1);
+        return loglikelihoods;
+    }
+
+    // 3. Performs mean shift on the back projection, and recomputes window size
+    // updated window size can be used for depth estimation
+    cv::RotatedRect est_win = cv::CamShift(_bp, pred_win,
+                                           TermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ));
+    if( pred_win.area() <= 1 ) {
+        int cols = _bp.cols, rows = _bp.rows, r = (std::min(cols, rows) + 5)/6;
+        pred_win = Rect(pred_win.x - r, pred_win.y - r,
+                        pred_win.x + r, pred_win.y + r) &
+            cv::Rect(0, 0, cols, rows);
+    }
+    int u_estimated = est_win.center.x; 
+    int v_estimated = est_win.center.y;
+
+    // Check % increase in width/height (rule out possibilities)
+    std::cerr << "Posterior rect from CAMSHIFT : " 
+              << est_win.boundingRect().tl() << "->" << est_win.boundingRect().br() << std::endl;
+         
+    // Update prediction for next update to be current estimate
+    // Otherwise, use prediction from incoming particle predictions
+    pred_win = est_win.boundingRect();
+    std::cout << u_estimated << " and " << v_estimated << "\n";
+      
+    // 4. Determine Likelihood in Image space:
+    for (size_t i=0; i< pts.size(); i++) {
+        // u = pt.x fx/pt.z   ... project point to pixel
+        Eigen::Vector3d pt1 = pts[i];
+        int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
+        int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
+        int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
+        // Crude Binary Likelihood:
+        if (dist < 13){
+            loglikelihoods[i] =1; //was 1
+        }
+    }        
+
+
+    // Particles/Posterior Visualization:
     for (size_t i=0; i< pts.size(); i++) { // draw particles on image
       Eigen::Vector3d pt1 = pts[i];
       int u = floor( ((pt1[0] * fx_)/pt1[2])  +  512.5);
       int v = floor( ((pt1[1] * fy_)/pt1[2]) + 272.5);
       Point center( u, v );
-      circle( img, center, 3, Scalar(0,255,0), -1, 8, 0 );
+      circle( img, center, 2, Scalar(0,255,0), -1, 8, 0 );
     }      
     Point center( u_estimated, v_estimated );
-    circle( img, center, 10, Scalar(0,0,255), -1, 8, 0 );
-      
+    circle( img, center, 10, Scalar(0,0,255), 1, 8, CV_AA );
+
+    // Draw estimated window 
+    ellipse( img, est_win, cv::Scalar(0,255,0), 1, CV_AA );    
+
+    // Draw predicted window by PF pts
+    cv::rectangle( img, pred_win.tl(), pred_win.br(), cv::Scalar(0,0,255), 1, 8 );
+  
     showHistogramInfo(img);
 
     return loglikelihoods;
@@ -280,61 +333,10 @@ HistogramTracker::showHistogramInfo(cv::Mat& img) {
         cv::resize(val_info.histogram_img, pip_val, val_roi.size());
 	cv::resize(sat_info.histogram_img, pip_sat, sat_roi.size());
 
-    ConciseArgs opt(argc, (char**)argv);
-    opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
-    opt.add(options.vAFFORDANCE_CHANNEL, "a", "affordance-channel","Affordance Channel [CAMERALEFT_MASKZIPPED]");
-    opt.add(options.vSCALE, "s", "scale","Scale Factor");
-    opt.add(options.vAFFORDANCE_ID, "i", "id","Affordance ID");
-    opt.add(options.vDEBUG, "d", "debug","Debug mode");
-    opt.parse();
-  
-    std::cerr << "===========  Histogram Tracker ============" << std::endl;
-    std::cerr << "=> CAMERA CHANNEL : " << options.vCHANNEL << std::endl;
-    std::cerr << "=> AFFORDANCE CHANNEL : " << options.vAFFORDANCE_CHANNEL << std::endl;
-    std::cerr << "=> SCALE : " << options.vSCALE << std::endl;
-    std::cerr << "=> AFFORDANCE ID : " << options.vAFFORDANCE_ID << std::endl;
-    std::cerr << "=> DEBUG : " << options.vDEBUG << std::endl;
-    std::cerr << "=> Note: Hit 'c' to capture mask" << std::endl;
-    std::cerr << "===============================================" << std::endl;
-  
-    // Install signal handler to free data.
-    signal(SIGINT, INThandler);
-
-    // Param server, botframes
-    state = new state_t();
-
-    // Subscriptions
-    bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
-    bot_core_image_t_subscribe(state->lcm, options.vAFFORDANCE_CHANNEL.c_str(), on_affordance_frame, (void*)state);
-    perception_image_roi_t_subscribe(state->lcm, "TLD_OBJECT_ROI", on_segmentation_frame, (void*)state);
-
-    // Main lcm handle
-    while(1) { 
-        unsigned char c = cv::waitKey(1) & 0xff;
-        lcm_handle(state->lcm);
-        if (c == 'q') {
-            break;  
-        } else if ( c == 'c' ) { 
-            if (state->aff_img.empty()) { 
-                std::cerr << "AFFORDANCE IMAGE UNAVAILABLE" << std::endl;
-                continue;
-            }
-            std::cerr << "Capturing Affordance : " << options.vAFFORDANCE_ID << std::endl;
-            cv::Mat1b mask = (state->aff_img == AFFORDANCE_OFFSET + options.vAFFORDANCE_ID);
-	    cv::Mat1b maskd = mask.clone();
-            if (!state->tracker) { 
-                std::cerr << "Tracker Not Initialized!" << std::endl;
-                assert(0);
-            }
-
-            // Initialize with image and mask
-            state->tracker->initialize(state->img, mask);
-
-            if (options.vDEBUG) { 
-                cv::imshow("Captured Image", state->img);
-                cv::imshow("Captured Mask", maskd);
-            }
-        }
+        addWeighted(hue_roi, 0.5, pip_hist, 0.5, 0, hue_roi);
+        addWeighted(val_roi, 0.5, pip_val, 0.5, 0, val_roi);
+        addWeighted(sat_roi, 0.5, pip_sat, 0.5, 0, sat_roi);
+        addWeighted(obj_roi, 0.5, object_roi, 0.5, 0, obj_roi);
     }
     return;
 }

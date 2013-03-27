@@ -90,6 +90,9 @@ class HistogramTracker {
     cv::Mat object_roi;
     cv::Mat backproj, belief;
 
+    // Prediction window of object
+    cv::Rect pred_win;
+
     enum TrackingMode { DEFAULT };
     TrackingMode vTRACKING_MODE; 
     
@@ -115,7 +118,7 @@ class HistogramTracker {
     std::vector<float> update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d > & pts,
         Eigen::Isometry3d local_to_camera); 
     cv::Mat get_belief(); 
-    bool computeMaskROI(const cv::Mat& img, const cv::Mat& mask);
+    bool computeMaskROI(const cv::Mat& img, const cv::Mat& mask, cv::Rect& roi);
     void showHistogramInfo(cv::Mat& img);
     void plot_histogram(char* win); 
 };
