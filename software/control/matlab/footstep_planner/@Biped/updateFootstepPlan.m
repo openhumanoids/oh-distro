@@ -17,7 +17,7 @@ for n = 1:(length(ndx_fixed)-1)
             sum(r_l(ndx_fixed(n):(ndx_fixed(n+1)-1))));
   if  ((dist > num_steps * biped.max_step_length * .4 ...
         || rot > num_steps * biped.max_step_rot * .4) ...
-      && (num_steps > 1 || n == length(ndx_fixed)-1 || n == 1))
+      && (num_steps > 1))
     j = ndx_fixed(n);
     X(:,j+3:end+2) = X(:,j+1:end);
     X(:,[j+1,j+2]) = interp1([0,1], X(:,[j,j+1])', [1/3, 2/3])';

@@ -74,9 +74,10 @@ classdef StandingController < DRCController
       if isfield(msg_data,'AtlasState')
         r = obj.robot;
 
-        d = load('data/atlas_fp.mat');
-        x0 = d.xstar;
-        x0([1;2;6]) = msg_data.AtlasState([1;2;6]);
+        %d = load('data/atlas_fp.mat');
+        %x0 = d.xstar;
+        %x0([1;2;6]) = msg_data.AtlasState([1;2;6]);
+        x0 = msg_data.AtlasState;
         q0 = x0(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
         com = getCOM(r,kinsol);

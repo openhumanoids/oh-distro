@@ -45,7 +45,7 @@ classdef HarnessController < DRCController
       xstar = d.xstar;
     
       jn = getJointNames(r);
-      xstar(cellfun(@isempty,strfind(jn(2:end),'arm'))) = 0.0; 
+      xstar(cellfun(@isempty,strfind(jn(2:end),'arm')) & cellfun(@isempty,strfind(jn(2:end),'neck'))) = 0.0; 
       
       q0 = xstar(1:nq);
       kinsol = doKinematics(r,q0);

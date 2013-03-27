@@ -12,6 +12,8 @@ options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 
+
+
 while true 
 
   d = load('data/atlas_fp.mat');
@@ -22,6 +24,7 @@ while true
 
   nq = getNumDOF(r);
   x0 = xstar;
+  qstar = xstar(1:nq);
 
   pose = [goal_x;goal_y;0;0;0;goal_yaw];
 
@@ -85,7 +88,8 @@ while true
   cost = double(cost);
   options = struct();
   options.Q = diag(cost(1:r.getNumDOF));
-  options.q_nom = q0;
+%   options.q_nom = q0;
+  options.q_nom = qstar;
 
   rfoot_body = r.findLink('r_foot');
   lfoot_body = r.findLink('l_foot');
@@ -130,7 +134,9 @@ while true
 
   disp('Waiting for robot plan confirmation...');
   plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
+  reject_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
   waiting = true;
+  execute = true;
   while waiting
     rplan = plan_listener.getNextMessage(100);
     if (~isempty(rplan))
@@ -138,11 +144,19 @@ while true
       disp('Plan confirmed. Executing...');
       waiting = false;
     end
+    rplan = reject_listener.getNextMessage(100);
+    if (~isempty(rplan))
+      % for now don't do anything with it, just use it as a flag
+      disp('Plan rejected.');
+      waiting = false;
+      execute = false;
+    end
   end
 
-  walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-  walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
-
+  if execute
+    walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
+    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
+  end
 end
 
 end
