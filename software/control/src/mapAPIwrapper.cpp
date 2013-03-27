@@ -19,11 +19,15 @@ struct ViewWrapperData {
   boost::shared_ptr<lcm::LCM> lcm;
   ViewClient* view_client;
   boost::thread* lcm_thread;
+  bool b_interrupt_lcm;
 };
 
-void lcmThreadMain(boost::shared_ptr<lcm::LCM>& lcm) {
-  while(0 == lcm->handle()) {
-    if (boost::this_thread::interruption_requested()) return;
+void lcmThreadMain(struct ViewWrapperData* pdata) {
+  while(0 == pdata->lcm->handle()) {
+    if (pdata->b_interrupt_lcm) {
+      mexPrintf("interruption requested\n"); mexEvalString("drawnow");
+      break;
+    }
   }
 }
 
@@ -41,12 +45,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   if (nrhs<1) { // then it's ptr = mapAPIWrapper()
     pdata = new struct ViewWrapperData;
+    mexPrintf("creating view client\n"); mexEvalString("drawnow");
     pdata->view_client = new ViewClient();
 
     // create lcm instance, and fork listener thread
+    mexPrintf("creating lcm\n"); mexEvalString("drawnow");
     pdata->lcm.reset(new lcm::LCM());  //lcm_create(NULL); 
     if (!pdata->lcm->good()) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
-    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata->lcm);
+    mexPrintf("spawning LCM thread\n");
+    pdata->b_interrupt_lcm = false;
+    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
 
     BotWrapper::Ptr botWrapper(new BotWrapper(pdata->lcm, NULL, NULL));
     pdata->view_client->setBotWrapper(botWrapper);
@@ -63,7 +71,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     memcpy(mxGetData(plhs[0]),&pdata,sizeof(pdata));
 
     return;
-  } 
+  }
 
   // load the data ptr
   if (!mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
@@ -71,9 +79,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
   
   if (nrhs<2) { // then free the memory and exit
+    mexPrintf("stopping view client\n"); mexEvalString("drawnow");
+    pdata->view_client->stop();
+    mexPrintf("deleting view client\n"); mexEvalString("drawnow");
     delete pdata->view_client;
-    pdata->lcm_thread->interrupt();
+    mexPrintf("interrupting thread\n"); mexEvalString("drawnow");
+    //    pdata->lcm_thread->interrupt();
+    pdata->b_interrupt_lcm = true;
+    mexPrintf("joining thread\n"); mexEvalString("drawnow");
+    pdata->lcm_thread->join();
+    mexPrintf("destroying thread\n"); mexEvalString("drawnow");
     delete pdata->lcm_thread;
+    mexPrintf("done.\n"); mexEvalString("drawnow");
     //    lcm_destroy(pdata->lcm);  // now handled by shared_ptr and lcm destructor
     delete pdata;
     return;
@@ -81,7 +98,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   ViewClient::ViewPtr vptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
   if (!vptr) { // check if null
-    mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","could not get the heightmap view\n");
+    mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","Have not received height map via LCM yet.  Perhaps you still need to request it in the viewer?\n");
   }
 
   int N = mxGetN(prhs[1]);
