@@ -33,7 +33,7 @@ nq = obj.getNumDOF;
 if ~isfield(options,'use_mex') options.use_mex = exist('inverseKinmex')==3; end
 if(~isfield(options,'qdotf')) options.qdotf.ub = inf(nq,1); options.qdotf.lb = -inf(nq,1);end
 if(~isfield(options,'Qa')) options.Qa = eye(nq); end
-if(~isfield(options,'Qv')) options.Qv = eye(nq); end
+if(~isfield(options,'Qv')) options.Qv = zeros(nq); end
 if(~isfield(options,'q_nom')) options.q_nom = zeros(nq,1); options.Q = zeros(nq);end
 if(~isfield(options,'Q')) options.Q = eye(nq); end
 if(~isfield(options,'nSample')) options.nSample = 2; end
@@ -106,8 +106,9 @@ for i = 1:nSample
         minpos(isnan(minpos)) = -inf;
         maxpos(isnan(maxpos)) = inf;
         do_rot{i}(n) = (rows == 6);
-        iGfun = [iGfun;nF+repmat((1:rows*cols)',nq,1)];
-        jGvar = [jGvar;nq*(i-1)+reshape(repmat(1:nq,rows*cols,1),[],1)];
+        [col_G,row_G] = meshgrid(1:nq,1:rows*cols);
+        iGfun = [iGfun;nF+row_G(:)];
+        jGvar = [jGvar;nq*(i-1)+col_G(:)];
         nF = nF+rows*cols;
         support_polygon_flags{i}{n} = maxpos(3,:)<contact_tol;
         num_sequence_support_vertices{i}(n) = sum(support_polygon_flags{i}{n});
@@ -128,10 +129,6 @@ for i = 1:nSample
 end
 total_sequence_support_vertices = sum(cat(2,num_sequence_support_vertices{:}));
 % Suppose the joint angles are interpolated using cubic splines, then the
-% [qdot(1);...qdot(k-1)] = velocity_mat*[q(0);q(1);...;q(k)];
-% velocity_mat1_diag1 = reshape([2*dt(1)*ones(nq,1) repmat(dt(1:end-1).*(2+2*dt_ratio),nq,1) 2*dt(end)*ones(nq,1)],[],1);
-% velocity_mat1_diag2 = reshape([dt(1)*ones(nq,1) repmat(dt(1:end-1).*dt_ratio,nq,1)],[],1);
-% velocity_mat1_diag3 = reshape(repmat(dt,nq,1),[],1);
 velocity_mat1_diag1 = reshape([ones(nq,1) repmat(dt(1:end-1).*(2+2*dt_ratio),nq,1) ones(nq,1)],[],1);
 velocity_mat1_diag2 = reshape([zeros(nq,1) repmat(dt(1:end-1).*dt_ratio,nq,1)],[],1);
 velocity_mat1_diag3 = [reshape(repmat(dt(1:end-1),nq,1),[],1);zeros(nq,1)];
@@ -139,9 +136,7 @@ velocity_mat1 = sparse((1:nq*(nSample+1))',(1:nq*(nSample+1))',velocity_mat1_dia
     +sparse((1:nq*(nSample))',nq+(1:nq*nSample)',velocity_mat1_diag2,nq*(nSample+1),nq*(nSample+1))...
     +sparse(nq+(1:nq*nSample)',(1:nq*nSample)',velocity_mat1_diag3,nq*(nSample+1),nq*(nSample+1));
 
-% velocity_mat2_diag1 = reshape([-3*ones(nq,1) bsxfun(@times,3*ones(1,nSample-1)-3*dt_ratio.^2,ones(nq,1)) 3*ones(nq,1)],[],1);
-% velocity_mat2_diag2 = reshape([3*ones(nq,1) bsxfun(@times,3*dt_ratio.^2,ones(nq,1))],[],1);
-% velocity_mat2_diag3 = -3*ones(nq*nSample,1);
+
 velocity_mat2_diag1 = reshape([zeros(nq,1) bsxfun(@times,3*ones(1,nSample-1)-3*dt_ratio.^2,ones(nq,1)) zeros(nq,1)],[],1);
 velocity_mat2_diag2 = reshape([zeros(nq,1) bsxfun(@times,3*dt_ratio.^2,ones(nq,1))],[],1);
 velocity_mat2_diag3 = [-3*ones(nq*(nSample-1),1);zeros(nq,1)];
@@ -168,11 +163,6 @@ accel_mat2 = sparse((1:nq*(nSample+1))',(1:nq*(nSample+1))',accel_mat2_diag1)...
 accel_mat = accel_mat1+accel_mat2(:,nq+1:end-nq)*velocity_mat;
 accel_mat_qdot0 = accel_mat2(:,1:nq);
 accel_mat_qdotf = accel_mat2(:,end-nq+1:end);
-% Augment the constraint that the velocity at the two ends are zero,
-% [velocity_mat_row,velocity_mat_col,velocity_mat_val] = find(velocity_mat([1:nq,end-nq+1:end],nq+1:end));
-% iAfun = nF+velocity_mat_row;
-% jAvar = velocity_mat_col;
-% A = velocity_mat_val;
 A = [];
 iAfun = [];
 jAvar = [];

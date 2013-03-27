@@ -38,13 +38,13 @@ kc3 = ActionKinematicConstraint(p,r_hand,r_hand_contact_pts,r_hand_contact_pos+[
 ks = ks.addKinematicConstraint(kc3);
 kc4 = ActionKinematicConstraint(p,l_hand,l_hand_contact_pts,l_hand_contact_pos,[tspan(end) tspan(end)],'lhand_ee_goal');
 ks = ks.addKinematicConstraint(kc4);
-% kc5 = ActionKinematicConstraint(p,l_hand,l_hand_contact_pts,l_hand_contact_pos+[0.05;0.05;0.05],[0.7 0.7],'lhand_ee_goal2');
-% ks = ks.addKinematicConstraint(kc5);
-% kc6 = ActionKinematicConstraint(p,0,[0;0;0],com_pos,tspan,'com');
-% ks = ks.addKinematicConstraint(kc6);
-% r_toe = r_foot.getContactPoints('toe');
-% kc7 = ActionKinematicConstraint.groundConstraint(p,r_foot,r_toe,tspan,'toe_above_ground');
-% ks = ks.addKinematicConstraint(kc7);
+kc5 = ActionKinematicConstraint(p,l_hand,l_hand_contact_pts,l_hand_contact_pos+[0.05;0.05;0.05;0;0;0],[0.7 0.7],'lhand_ee_goal2');
+ks = ks.addKinematicConstraint(kc5);
+kc6 = ActionKinematicConstraint(p,0,[0;0;0],com_pos,tspan,'com');
+ks = ks.addKinematicConstraint(kc6);
+r_toe = r_foot.getContactPoints('toe');
+kc7 = ActionKinematicConstraint.groundConstraint(p,r_foot,r_toe,tspan,'toe_above_ground');
+ks = ks.addKinematicConstraint(kc7);
 cost = Point(p.getStateFrame,1);
 cost.pelvis_x = 100;
 cost.pelvis_y = 100;
@@ -54,7 +54,7 @@ cost.pelvis_pitch = 100;
 cost.pelvis_yaw = 100;
 cost = double(cost);
 Q = diag(cost(1:nq));
-options = struct('nSample',3);
+options = struct('nSample',2);
 options.MajorIterationsLimit = 500;
 options.qdotf.ub = zeros(nq,1);
 options.qdotf.lb = zeros(nq,1);
@@ -67,12 +67,12 @@ options.Qa = 5*Q;
 if(nargin>0)
     options.qtraj0 = qtraj0;
 end
-profile on
+% profile on
 tic
 [t_breaks,q,qdot,qddot,info] = inverseKinSequence(p,q0,qdot0,ks,options);
 toc
-profile off
-profile viewer
+% profile off
+% profile viewer
 xtraj = PPTrajectory(foh(t_breaks,[q;qdot]));
 xtraj = xtraj.setOutputFrame(p.getStateFrame());
 v = p.constructVisualizer();
