@@ -1,6 +1,11 @@
 group "action_authoring" {
-    cmd "IkServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']);actionAuthoringIKServer;\"";
+    cmd "IKServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(1);\"";
+       host = "localhost";
+    }
+
+    cmd "MotionPlanServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(2);\"";
        host = "localhost";
     }
 
