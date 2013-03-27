@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace KDL;
 using namespace collision;
 
 /**
@@ -53,10 +54,11 @@ set_transform( const Vector3f position,
   throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
 }
 
-
-
-
-
+void
+Collision_Object_Point_Cloud::
+set_transform( const Frame& transform ){
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
+}
 
 /**
  * Collision_Object_Point_Cloud

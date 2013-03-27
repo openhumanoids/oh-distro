@@ -31,6 +31,7 @@ namespace collision {
 
     bool load_chull_obj( std::string chullObjFilename );
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
+    virtual void set_transform( const KDL::Frame& transform );
  
     std::string chull_obj_filename( void )const; 
     virtual Eigen::Vector3f position( void )const;

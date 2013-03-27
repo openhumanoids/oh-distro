@@ -93,6 +93,11 @@ set_transform( const Eigen::Vector3f position,
   return;
 }
 
+void
+Collision_Object_URDF::
+set_transform( const Frame& transform ){
+  return;
+}
 
 /**
  * matches_uid

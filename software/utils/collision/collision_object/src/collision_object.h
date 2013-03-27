@@ -30,6 +30,7 @@ namespace collision {
     virtual void set_active( bool active );
     virtual void set_position( const Eigen::Vector3f position );
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation ) = 0;
+    virtual void set_transform( const KDL::Frame& transform ) = 0;
     virtual void set_offset( const KDL::Frame& offset ); 
  
     virtual Collision_Object* matches_uid( unsigned int uid );
