@@ -200,13 +200,13 @@ _load_collision_objects( void ){
     if( links[ i ]->collision != NULL ){
       if( links[ i ]->collision->geometry->type == Geometry::SPHERE ){
         shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius ) );
+        _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::BOX ){
         shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
+        _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ), Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::CYLINDER ){
         shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->collision->geometry );
-        _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length ) );
+        _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length, Frame( KDL::Rotation::Quaternion( links[ i ]->collision->origin.rotation.x, links[ i ]->collision->origin.rotation.y, links[ i ]->collision->origin.rotation.z, links[ i ]->collision->origin.rotation.w ), KDL::Vector( links[ i ]->collision->origin.position.x, links[ i ]->collision->origin.position.y, links[ i ]->collision->origin.position.z ) ) ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::MESH ){
         shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->collision->geometry );
         std::string model_filename = mesh->filename;
