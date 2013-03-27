@@ -8,14 +8,21 @@ using namespace collision;
 using namespace action_authoring;
 using namespace affordance;
 
-#define PLAN_ACTION_MESSAGE_CHANNEL "action_authoring_plan_action_request"
-#define IK_RESPONSE_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_STATE"
-#define IK_TRAJECTORY_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_PLAN"
+
+#define REQUEST_IK_SOLUTION_CHANNEL "REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE"
+#define REQUEST_MOTION_PLAN_CHANNEL "REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE"
+
+#define RESPONSE_IK_SOLUTION_CHANNEL "RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE"
+#define RESPONSE_MOTION_PLAN_CHANNEL "RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE"
+
+//#define IK_RESPONSES_MESSAGE_CHANNEL "REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE"
+//#define IK_TRAJECTORY_MESSAGE_CHANNEL "ACTION_AUTHORING_IK_ROBOT_PLAN"
+
 #define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
-//#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_PnC/model.urdf"
-//#define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot/model.urdf"
 
 #define DEFAULT_TOLERANCE 0.25
+
+#define ROBOT_NAME "atlas" //used for LCM messages that go to planning
 
 typedef PointContactRelation PCR;
 
@@ -132,15 +139,19 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
 {
     _theLcm = theLcm;
-	_theLcm->subscribe(IK_RESPONSE_MESSAGE_CHANNEL,
+	_theLcm->subscribe(RESPONSE_IK_SOLUTION_CHANNEL,
                        &MainWindow::updateRobotState, this);
 
     //point_contact_axis = new OpenGL_Object_Coordinate_Axis();
     //point_contact_axis2 = new OpenGL_Object_Coordinate_Axis();
 
     // setup the OpenGL scene
-    _worldState.state_gfe.from_urdf(ROBOT_URDF_MODEL_PATH); 
+	cout << "flag 1" << endl;
+    _worldState.state_gfe.from_urdf(ROBOT_URDF_MODEL_PATH);
+    cout << "flag 2" << endl;
     _worldState.colorRobot.set(_worldState.state_gfe);
+
+    cout << "flag3" << endl;
 
     _widget_opengl.setMinimumHeight(100);
     _widget_opengl.setMinimumWidth(500);
@@ -229,6 +240,13 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     //_moveDownButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowDown));
     QPushButton *addconstraintbutton = new QPushButton("+ add constraint");
     //    addconstraintbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileDialogNewFolder));
+    
+    //***********
+    // TODO : Remove demoware
+    //*********
+    QPushButton *testIKPublishButton = new QPushButton("Publish for IK");
+    //end demoware
+    
     constraint_toolbar->addWidget(deletebutton);
     constraint_toolbar->addSeparator();
     constraint_toolbar->addWidget(_moveUpButton);
@@ -236,6 +254,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     constraint_toolbar->addSeparator();
     constraint_toolbar->addWidget(addconstraintbutton);
     constraint_toolbar->addSeparator();
+    
+    //demoware
+    constraint_toolbar->addWidget(testIKPublishButton);
+    //end demoware
+
     vbox->addStretch(1);
     vbox->addWidget(constraint_toolbar);
 
@@ -379,7 +402,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     this->setLayout(layout);
 
     // wire up the buttons
-    connect(planbutton, SIGNAL(released()), this, SLOT(publishActionToLCM()));
+    connect(planbutton, SIGNAL(released()), this, SLOT(requestMotionPlan()));
     connect(_segmentedButton, SIGNAL(segmentSelected(int)), this, SLOT(changeMode()));
 
     connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
@@ -399,6 +422,11 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(_xInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
     connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
     connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
+
+
+    //TODO remove demoware
+    connect(testIKPublishButton, SIGNAL(released()), this, SLOT(requestIKSolution()));
+    //end demoware
 
 }
 
@@ -956,10 +984,9 @@ nextKeyFrame()
 
 void
 MainWindow::
-publishActionToLCM()
+getContactGoals(std::vector<drc::contact_goal_t> *contact_goals)
 {
     std::vector<Qt4ConstraintMacroPtr> all_gui_constraints = _authoringState._all_gui_constraints;
-    std::vector<drc::contact_goal_t> contact_goals;
 
     for (int i = 0; i < (int) all_gui_constraints.size(); i++)
     {
@@ -967,22 +994,51 @@ publishActionToLCM()
 
         for (int j = 0; j < (int) constraint_contact_goals.size(); j++)
         {
-            contact_goals.push_back(constraint_contact_goals[j]);
+            contact_goals->push_back(constraint_contact_goals[j]);
         }
     }
+}
+
+void
+MainWindow::
+requestMotionPlan()
+{
+    std::vector<drc::contact_goal_t> contact_goals;
+    MainWindow::getContactGoals(&contact_goals);
 
     drc::action_sequence_t actionSequence;
 
-    // TODO: get the actual name and the proper time
+    // TODO: get the proper time
     actionSequence.utime = 0;
-    actionSequence.robot_name = "atlas";
+    actionSequence.robot_name = ROBOT_NAME;
     _worldState.state_gfe.to_lcm(&(actionSequence.q0));
-    actionSequence.q0.robot_name = "atlas";
+    actionSequence.q0.robot_name = ROBOT_NAME;
 
     actionSequence.num_contact_goals = (int) contact_goals.size();
     actionSequence.contact_goals = contact_goals;
+    actionSequence.ik_time = 0;
+    _theLcm->publish(REQUEST_MOTION_PLAN_CHANNEL, &actionSequence);
+}
 
-    _theLcm->publish(PLAN_ACTION_MESSAGE_CHANNEL, &actionSequence);
+void
+MainWindow::
+requestIKSolution()
+{
+    std::vector<drc::contact_goal_t> contact_goals;
+    MainWindow::getContactGoals(&contact_goals);
+
+    drc::action_sequence_t actionSequence;
+
+    // TODO: get the proper time
+    actionSequence.utime = 0;
+    actionSequence.robot_name = ROBOT_NAME;
+    _worldState.state_gfe.to_lcm(&(actionSequence.q0));
+    actionSequence.q0.robot_name = ROBOT_NAME;
+
+    actionSequence.num_contact_goals = (int) contact_goals.size();
+    actionSequence.contact_goals = contact_goals;
+    actionSequence.ik_time = (float(_scrubber->value()) / float(_scrubber->maximum()) * _timeSum);
+    _theLcm->publish(REQUEST_IK_SOLUTION_CHANNEL, &actionSequence);
 }
 
 void
@@ -1174,3 +1230,4 @@ void MainWindow::setP2PFromCurrConstraint()
     //set tolerance
     _toleranceBox->setValue(prel->getTolerance());
 }
+

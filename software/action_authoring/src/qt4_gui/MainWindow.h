@@ -88,7 +88,7 @@ public:
 
     /**initializes all the fields in the struct*/
     WorldStateView(const boost::shared_ptr<lcm::LCM> &theLcm, std::string urdf_filename)
-        : affServerWrapper(theLcm), colorRobot(urdf_filename)
+      : affServerWrapper(theLcm), colorRobot(kinematics::Kinematics_Model_GFE::urdf_filename_to_xml_string(getModelsPath() + urdf_filename))
     { 
       std::cout << "\n urdf_filename = " << urdf_filename << std::endl;
     }
@@ -217,9 +217,11 @@ private slots:
     void mediaFastBackward();
     void mediaPlay();
     void nextKeyFrame();
-    void publishActionToLCM();
+    void requestMotionPlan();
     void changeMode();
     void handlePoint2PointChange();
+    void getContactGoals(std::vector<drc::contact_goal_t> *contact_goals);
+    void requestIKSolution();
 };
 
 } //namespace action_authoring

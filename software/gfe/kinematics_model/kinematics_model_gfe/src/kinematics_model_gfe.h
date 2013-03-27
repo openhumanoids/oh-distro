@@ -25,6 +25,8 @@ namespace kinematics {
     bool inverse_kinematics_left_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE_Leg& leftLegState ); 
     bool inverse_kinematics_right_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE_Leg& rightLegState );
 
+    static std::string urdf_filename_to_xml_string( std::string urdfFilename );
+
     bool load_xml_string( std::string xmlString ); 
     bool load_urdf( std::string urdf );
     void set( const drc::robot_state_t& robotState );  

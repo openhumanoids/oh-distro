@@ -34,12 +34,13 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     wrapper.addNewlyFittedAffordance(sphere);
 
     //box
+    float box_height = 0.01;
     AffordanceState box(uniqueObjId++, mapId,
-                        KDL::Frame(KDL::Vector(0.0, 0.0, 0.0)),
+                        KDL::Frame(KDL::Vector(0.0, 0.0, -box_height / 2.0)),
                         Eigen::Vector3f(0.75, 0.75, 0.0)); //color
     box._params[AffordanceState::LENGTH_NAME] = 100;
     box._params[AffordanceState::WIDTH_NAME]  = 100;
-    box._params[AffordanceState::HEIGHT_NAME] = .01;
+    box._params[AffordanceState::HEIGHT_NAME] = box_height;
     box.setType(AffordanceState::BOX);
     wrapper.addNewlyFittedAffordance(box);
 
