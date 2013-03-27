@@ -304,7 +304,7 @@ void DatabaseManager::addAffordanceStateToNode(AffConstPtr affordanceState, xmlN
 void DatabaseManager::addManipulatorStateToNode(ManipulatorStateConstPtr manipulatorState, xmlNodePtr node, ObjectToStorageUIDMappings &mappings)
 {
     xmlNodePtr manipulatorNode = makeChild(node, MANIPULATOR_STATE_NODE);
-    makeChild(manipulatorNode, NAME_NODE, manipulatorState->getName());
+    makeChild(manipulatorNode, NAME_NODE, manipulatorState->getLinkName());
     makeChild(manipulatorNode, UID_NODE, getStorageUID(manipulatorState, mappings));
     makeChild(manipulatorNode, GUID_PART_1_NODE, manipulatorState->getGlobalUniqueId().first);
     makeChild(manipulatorNode, GUID_PART_2_NODE, manipulatorState->getGlobalUniqueId().second);

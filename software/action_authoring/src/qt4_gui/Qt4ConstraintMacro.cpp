@@ -95,9 +95,9 @@ getPanel()
     QHBoxLayout *top_line_hbox = new QHBoxLayout();
     QWidget *top_line_container = new QWidget();
     top_line_hbox->addWidget(_gui_name);
-    top_line_hbox->addWidget(new QLabel("lower bound: "));
+    top_line_hbox->addWidget(new QLabel("start time: "));
     top_line_hbox->addWidget(_gui_time_lower_bound);
-    top_line_hbox->addWidget(new QLabel("upper bound: "));
+    top_line_hbox->addWidget(new QLabel("end time: "));
     top_line_hbox->addWidget(_gui_time_upper_bound);
     //    top_line_hbox->addWidget(new QPushButton("click to bind"));
     top_line_container->setLayout(top_line_hbox);
@@ -117,6 +117,7 @@ getPanel()
     vbox->addWidget(boxcontainer);
 
     // previous constraints checkboxes
+    /*
     TogglePanel *checkboxGroup = new TogglePanel(_gui_panel, "constraints still in effect", false);
     QGroupBox *checkboxGroupBox = new QGroupBox();
     QHBoxLayout *checkboxGroupLayout = new QHBoxLayout();
@@ -131,6 +132,7 @@ getPanel()
     checkboxGroupBox->setLayout(checkboxGroupLayout);
     checkboxGroup->addWidget(checkboxGroupBox);
     vbox->addWidget(checkboxGroup);
+    */
 
     groupBox->setLayout(vbox);
 

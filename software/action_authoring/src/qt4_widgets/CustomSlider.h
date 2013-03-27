@@ -10,8 +10,8 @@ public:
         : QSlider(orientation, parent),
           _tick_positions()
     {
-        _selected_range = -1;
-        //    connect(this, SIGNAL(valueChanged(int)), SLOT(VerifyDefaultValue(int)));
+        _upperbound = -1;
+	_lowerbound = -1;
     }
     void addTick(double tick_value)
     {
@@ -21,43 +21,57 @@ public:
     {
         _tick_positions.clear();
     }
-    void setSelectedRangeIndex(int i)
+    void setSelectedRange(float lowerbound, float upperbound)
     {
-        _selected_range = i;
+      if (lowerbound < 0.0)
+	{
+	  lowerbound = 0.0;
+	}
+      if (upperbound < lowerbound)
+	{
+	  upperbound = lowerbound;
+	}
+      if (upperbound > 1.0)
+	{
+	  upperbound = 1.0;
+	}
+
+      _lowerbound = lowerbound;
+      _upperbound = upperbound;
     }
 
 protected:
 
-    int getSliderPosition(int index)
+    int getSliderPosition(float num)
     {
-        if (index < 0)
+        if (num < 0.0)
         {
-            return 0;
+            return 0.0;
         }
 
-        if (index >= (int)_tick_positions.size())
+        if (num > 1.0)
         {
             return width();
         }
 
         return QStyle::sliderPositionFromValue(
-                   minimum(), maximum(), _tick_positions[index] * (maximum() - minimum()), width());
+                   minimum(), maximum(), num * (maximum() - minimum()), width());
     }
 
     void paintEvent(QPaintEvent *ev)
     {
         QPainter painter(this);
 
-        if (_selected_range >= 0)
+        if (_lowerbound >= 0 && _upperbound >=0)
         {
-            int pos1 = getSliderPosition(_selected_range - 1);
-            int pos2 = getSliderPosition(_selected_range);
+            int pos1 = getSliderPosition(_lowerbound);
+            int pos2 = getSliderPosition(_upperbound);
             painter.fillRect(pos1, 0, pos2 - pos1, height(), QColor("#90EE90"));
         }
 
         for (int i = 0; i < (int)_tick_positions.size(); i++)
         {
-            int position = getSliderPosition(i);
+	    int position = getSliderPosition(_tick_positions[i]);
             painter.drawLine(position, 0, position, height());
         }
 
@@ -65,6 +79,7 @@ protected:
     }
 
 private:
-    int _selected_range;
+    float _upperbound; // from 0.0 to 1.0
+    float _lowerbound; // from 0.0 to 1.0
     std::vector<double> _tick_positions; // from 0.0 to 1.0
 };

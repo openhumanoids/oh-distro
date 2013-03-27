@@ -141,17 +141,13 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _theLcm = theLcm;
 	_theLcm->subscribe(RESPONSE_IK_SOLUTION_CHANNEL,
                        &MainWindow::updateRobotState, this);
-
+	_newConstraintCounter = 0;
     //point_contact_axis = new OpenGL_Object_Coordinate_Axis();
     //point_contact_axis2 = new OpenGL_Object_Coordinate_Axis();
 
     // setup the OpenGL scene
-	cout << "flag 1" << endl;
     _worldState.state_gfe.from_urdf(ROBOT_URDF_MODEL_PATH);
-    cout << "flag 2" << endl;
     _worldState.colorRobot.set(_worldState.state_gfe);
-
-    cout << "flag3" << endl;
 
     _widget_opengl.setMinimumHeight(100);
     _widget_opengl.setMinimumWidth(500);
@@ -608,8 +604,10 @@ handleAddConstraint()
                                                               manip->getGlobalUniqueId(), 
                                                               &_worldState, //passed in as AffordanceManipMap interface
                                                               relstate));
-
-    ConstraintMacroPtr new_constraint(new ConstraintMacro("Untitled" + RandomString(5), new_atomic));
+    stringstream ss;
+    ss << _newConstraintCounter;
+    _newConstraintCounter += 1;
+    ConstraintMacroPtr new_constraint(new ConstraintMacro("UntitedConstraint" + ss.str(), new_atomic));
 
     // compute the number
     int index = _authoringState._all_gui_constraints.size();
@@ -652,23 +650,32 @@ MainWindow::
 updateScrubber()
 {
     // update the scrubber
-    _timeSum = 0.0;
+    _MaxEndTime = 0.0;
     vector<double> lengths;
     _scrubber->clearTicks();
 
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
     {
-        double max = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
-        lengths.push_back(_timeSum + max);
-        _timeSum += max;
+      double end_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
+      if (end_time > _MaxEndTime)
+	{
+	  _MaxEndTime = end_time;
+	}
     }
-
-    for (int i = 0; i < (int)lengths.size(); i++)
+    
+    for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
     {
-        _scrubber->addTick(lengths[i] / _timeSum);
-    }
+      float start_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeLowerBound();
+      float end_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
 
-    _scrubber->setSelectedRangeIndex(getSelectedGUIConstraintIndex());
+      _scrubber->addTick(start_time / _MaxEndTime);
+      _scrubber->addTick(end_time / _MaxEndTime);
+    }
+    
+    float selected_start_time = _authoringState._selected_gui_constraint->getConstraintMacro()->getTimeLowerBound() / _MaxEndTime;
+    float selected_end_time = _authoringState._selected_gui_constraint->getConstraintMacro()->getTimeUpperBound() / _MaxEndTime;
+    
+    _scrubber->setSelectedRange(selected_start_time, selected_end_time);
     _scrubber->update();
 }
 
@@ -974,7 +981,7 @@ nextKeyFrame()
     {
         acc += _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
 
-        if ((acc / _timeSum) > fraction)
+        if ((acc / _MaxEndTime) > fraction)
         {
             setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
             break;
@@ -1037,7 +1044,7 @@ requestIKSolution()
 
     actionSequence.num_contact_goals = (int) contact_goals.size();
     actionSequence.contact_goals = contact_goals;
-    actionSequence.ik_time = (float(_scrubber->value()) / float(_scrubber->maximum()) * _timeSum);
+    actionSequence.ik_time = (float(_scrubber->value()) / float(_scrubber->maximum()) * _MaxEndTime);
     _theLcm->publish(REQUEST_IK_SOLUTION_CHANNEL, &actionSequence);
 }
 

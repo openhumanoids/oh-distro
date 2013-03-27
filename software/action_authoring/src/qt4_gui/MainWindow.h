@@ -152,7 +152,7 @@ private:
     QComboBox *_filesList;
     DefaultValueSlider *_scrubber;
     QLabel *_actionDescLabel;
-    double _timeSum; // total length of time for all robot actions to complete. sum of all upperTimeBounds
+    double _MaxEndTime; // the length of time for all robot actions to complete. max of all upperTimeBounds
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget *_constraint_container;
     QVBoxLayout *_constraint_vbox;
@@ -172,6 +172,8 @@ private:
     QComboBox* _xInequality;
     QComboBox* _yInequality;
     QComboBox* _zInequality;
+
+    int _newConstraintCounter;
 
     // TODO: temporary
     opengl::OpenGL_Object_Coordinate_Axis point_contact_axis;
