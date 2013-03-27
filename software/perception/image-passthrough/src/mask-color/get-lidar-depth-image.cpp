@@ -231,7 +231,7 @@ void Pass::getSweepDepthImage(LocalMap::SpaceTimeBounds bounds){
 
 // Publish Various Representations of the Depth Image:
 void Pass::sendSweepDepthImage(){
-
+  {
   // a. Write raw depths to file
   if (1==0){
     std::ofstream ofs("/tmp/sweep_depths.txt");
@@ -244,6 +244,7 @@ void Pass::sendSweepDepthImage(){
     ofs.close();
   }
 
+  cout << "a\n";
 
   // b. Reproject the depth image into xyz, colourize, apply a mask and publish
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -253,6 +254,8 @@ void Pass::sendSweepDepthImage(){
     mask_buf = imgutils_->unzipImage( &last_mask_ );
   }
 
+  cout << "b\n";
+  
   for (int v = 0; v < height_; v=v+decimate) { // rows t2b //height
     for (int u = 0; u < width_; u=u+decimate) { // cols l2r
       pcl::PointXYZRGB pt;
@@ -260,9 +263,15 @@ void Pass::sendSweepDepthImage(){
       pt.z = 1/ depth_buf_[pixel]; /// inversion currently required due to Matt's interperation of depth as 1/depth ;)
       pt.x = ( pt.z * (u  - cx_))/fx_ ;
       pt.y = ( pt.z * (v  - cy_))/fy_ ;
-      pt.r = (float) img_.data[pixel*3];
-      pt.g = (float) img_.data[pixel*3+1];
-      pt.b = (float) img_.data[pixel*3+2];
+      if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_RGB){
+        pt.r = (float) img_.data[pixel*3];
+        pt.g = (float) img_.data[pixel*3+1];
+        pt.b = (float) img_.data[pixel*3+2];
+      }else if (img_.pixelformat == bot_core::image_t::PIXEL_FORMAT_GRAY){
+        pt.r = (float) img_.data[pixel];
+        pt.g = (float) img_.data[pixel];
+        pt.b = (float) img_.data[pixel];
+      }
 
       if (mask_init_){ // if we have a mask color the points by it
         if (mask_buf[pixel] > 0){ // if the mask is not 0 (black), apply it as red
@@ -275,10 +284,12 @@ void Pass::sendSweepDepthImage(){
       cloud4->points.push_back(pt);
     }
   }
+  cout << "c\n";
+  
   Isometry3dTime camera_pose_T = Isometry3dTime(current_utime_, camera_pose_);
   pc_vis_->pose_to_lcm_from_list(91004, camera_pose_T);  
   pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime_, current_utime_);  
-  
+}
 
   // c. publish in Depth Image mode:
   int n_bytes=2; // 2 bytes per value // different from before in driver
@@ -304,7 +315,8 @@ void Pass::sendSweepDepthImage(){
   images.image_types.push_back( 4 ); // multisense::images_t::DEPTH_MM );
   images.images.push_back( img_ );
   images.images.push_back(disparity_);
-  lcm_->publish("LIDARSWEEP_LD", &images);        
+  lcm_->publish("LIDARSWEEP_LD", &images);
+  //lcm_->publish("MULTISENSE_LD", &images);        
 }
 
 
@@ -367,11 +379,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
 
     // use the time and space bounds to get a new cloud
-    getSweepCloud(bounds);
+//    getSweepCloud(bounds);
     // use the time and space bounds to get a new depth image
     getSweepDepthImage(bounds);
 
-    sendSweepCloud();
+//    sendSweepCloud();
 
     sendSweepDepthImage();
   }

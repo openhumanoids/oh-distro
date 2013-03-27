@@ -156,9 +156,10 @@ void deque_to_cloud(deque<bot_core::planar_lidar_t > * laser_queue,
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
     double maxRange = 2.0;//just the area right in front of the user    29.7;
+    double minRange =0.0;
     double validBeamAngles[] ={-2.5,2.5}; // all of it both sides
     convertLidar(curr_msg.ranges, curr_msg.nranges, curr_msg.rad0,
-      curr_msg.radstep, lidar_cloud, maxRange,
+      curr_msg.radstep, lidar_cloud, minRange, maxRange,
       validBeamAngles[0], validBeamAngles[1]);
 
     for (size_t j=0; j< lidar_cloud->points.size() ; j++){

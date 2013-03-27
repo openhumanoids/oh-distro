@@ -1,5 +1,9 @@
 // Lidar Pass trough filter
-// TODO: get the urdf model from LCM:
+// TODO/Bugs:
+// - Timing of bullet collision detection seems quasi random.
+//   difficult to see how to optimize this as a result
+// - Collision is done by intersecting spheres with the model. The spheres size is set in collision_object_point_cloud.cc
+//   as of march 2013 it was increased from 0.01m to 0.04m
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -33,6 +37,12 @@ using namespace Eigen;
 using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
 
+// all ranges shorter than this are assumed to be with the head
+#define ASSUMED_HEAD 0.3//0.3
+// all ranges longer than this are assumed to be free
+#define ASSUMED_FAR 2.0// 2.0
+// set all collisions to this range
+#define COLLISION_RANGE 0.0
 
 class Pass{
   public:
@@ -123,72 +133,113 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   cout << "Finished setting up\n";
 }
 
+
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+
 void Pass::DoCollisionCheck(int64_t current_utime ){
-  // create a std::vector< Eigen::Vector3f > of points
+  // 1. create the list of points to be considered:
   vector< Vector3f > points;
-  int which=2; // 0 random points in a box [for testing], 1 a line [for testing], 2 the actual lidar returns
+  std::vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
+  int which=0; // 1 the actual lidar returns, 1 random points in a box [for testing], 2 a line [for testing], 3 a 2d grid for testing
   if (which==0){
+    for( unsigned int i = 0; i < scan_cloud_s2l_->points.size() ; i++ ){
+      if ( (lidar_msgout_.ranges[i] > ASSUMED_HEAD  ) &&(lidar_msgout_.ranges[i] < ASSUMED_FAR )){
+        Vector3f point(scan_cloud_s2l_->points[i].x, scan_cloud_s2l_->points[i].y, scan_cloud_s2l_->points[i].z );
+        points.push_back( point );
+        possible_indices.push_back(i);
+      }
+    }
+  }else if (which ==1){
     for( unsigned int i = 0; i < 500; i++ ){
       Vector3f point(last_rstate_.origin_position.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     last_rstate_.origin_position.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     last_rstate_.origin_position.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
       points.push_back( point );
+      possible_indices.push_back( points.size() - 1 );
     }
-  }else if(which==1){
+  }else if(which==2){
     for( unsigned int i = 0; i < 500; i++ ){
-      Vector3f point(-0.0, -1 + 0.005*i,-0.2);
+      Vector3f point(-0.0, -1 + 0.005*i,1.4);
       points.push_back( point );
+      possible_indices.push_back( points.size() - 1 );
     }
-  }else{
-    for( unsigned int i = 0; i < scan_cloud_s2l_->points.size() ; i++ ){
-      Vector3f point(scan_cloud_s2l_->points[i].x, scan_cloud_s2l_->points[i].y, scan_cloud_s2l_->points[i].z );
-      points.push_back( point );
+  }else if(which==3){
+    Vector3f bot_root(last_rstate_.origin_position.translation.x,last_rstate_.origin_position.translation.y,last_rstate_.origin_position.translation.z);
+    Vector3f offset( 0.,0.,0.45);
+    for( float i = -0.3; i < 0.3; i=i+0.02 ){
+      for( float j = -0.3; j < 0.3; j=j+0.02 ){
+        Vector3f point =  Vector3f(i,j,0.) + bot_root + offset;
+        points.push_back( point );
+        possible_indices.push_back( points.size() - 1 );
+        if (points.size() > n_collision_points_){
+          break; 
+        }
+      }
+      if (points.size() > n_collision_points_){
+        break; 
+      }      
     }
   }
   
+  
+  // 2. Do the filtering:
   // set the state of the collision objects
   collision_object_gfe_->set( last_rstate_ );
   //cout << "gfe obj size: " << collision_object_gfe_->bt_collision_objects().size() << "\n";
   collision_object_point_cloud_->set( points );
   // get the vector of collisions by running collision detection
+  //int64_t tic = _timestamp_now();
   vector< Collision > collisions = collision_detector_->get_collisions();
+  //cout << lidar_msgout_.ranges.size() << " and " << points.size() << " and " << scan_cloud_s2l_->points.size() << " " <<  (_timestamp_now() - tic)*1e-6 << " dt\n";;
   
-  // display the collisions (debugging purposes only)
-  // for( unsigned int j = 0; j < collisions.size(); j++ ){
-  //   cout << "collisions[" << j << "]: " << collisions[ j ] << endl;
-  // }
-
+  
+  // 3. Extract the incidices and modify the outgoing ranges as a result:
   vector< Vector3f > free_points;
   vector< Vector3f > colliding_points;      
   vector< unsigned int > filtered_point_indices;
   for( unsigned int j = 0; j < collisions.size(); j++ ){
     filtered_point_indices.push_back( atoi( collisions[ j ].second_id().c_str() ) );
   }
-
   for( unsigned int j = 0; j < points.size(); j++ ){
-    bool point_filtered = false;
     for( unsigned int k = 0; k < filtered_point_indices.size(); k++ ){
       if( j == filtered_point_indices[ k ] ){
-        point_filtered = true;
-        // Set filtered returns to max range
-        lidar_msgout_.ranges[j] = 35.0;
+        lidar_msgout_.ranges[  possible_indices[j] ] = COLLISION_RANGE;// 15.0; // Set filtered returns to max range
       }
     }
-    if( point_filtered ){
-      colliding_points.push_back( points[ j ] );
-    } else {
-      free_points.push_back( points[ j ] );
-    }
   }
+  for( unsigned int j = 0; j < lidar_msgout_.ranges.size(); j++ ){
+    if (lidar_msgout_.ranges[j] < ASSUMED_HEAD ){
+        lidar_msgout_.ranges[j] = COLLISION_RANGE;//20.0; // Set filtered returns to max range
+    }  
+  }
+  
+  // 4. Output channel is incoming channel appended with FREE
+  lcm_->publish( (lidar_channel_ + "_FREE") , &lidar_msgout_);        
 
+  ///////////////////////////////////////////////////////////////////////////
   if (verbose_){
+    for( unsigned int j = 0; j < points.size(); j++ ){
+      bool point_filtered = false;
+      for( unsigned int k = 0; k < filtered_point_indices.size(); k++ ){
+        if( j == filtered_point_indices[ k ] ){
+          point_filtered = true;
+        }
+      }
+      if( point_filtered ){
+        colliding_points.push_back( points[ j ] );
+      } else {
+        free_points.push_back( points[ j ] );
+      }
+    }    
+    
     cout << current_utime << " | total returns "<< scan_cloud_s2l_->points.size()  
         << " | colliding " << colliding_points.size() << " | free " << free_points.size() << endl;
-  }
-  // Output channel is incoming channel appended with FREE
-  lcm_->publish( (lidar_channel_ + "_FREE") , &lidar_msgout_);        
-  
-  if (verbose_){
     bot_lcmgl_point_size(lcmgl_, 4.5f);
     bot_lcmgl_color3f(lcmgl_, 0, 1, 0);
     for (int i = 0; i < free_points.size(); ++i) {
@@ -229,10 +280,12 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   // 1. Convert scan into simple XY point cloud:  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  double maxRange = 29.7;
-  double validBeamAngles[] ={-10,10}; // consider everything 
+  // consider everything - don't remove any points
+  double minRange =0.0;
+  double maxRange = 100.0;
+  double validBeamAngles[] ={-10,10}; 
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
-      msg->radstep, scan_cloud, maxRange,
+      msg->radstep, scan_cloud, minRange, maxRange,
       validBeamAngles[0], validBeamAngles[1]);  
   
   // 2. Project the scan into local frame:
@@ -264,6 +317,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
 
   DoCollisionCheck(msg->utime);
+  
   if (printf_counter_%80 ==0){
     cout << "Filtering: " << lidar_channel_ << " "  << msg->utime << "\n";
   }

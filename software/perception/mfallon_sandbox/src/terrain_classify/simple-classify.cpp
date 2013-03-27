@@ -83,9 +83,10 @@ void simple_classify::lidar_handler(const bot_core_planar_lidar_t *msg){
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   double maxRange = 29.7;//29.7;
+  double minRange =0.0;
   double validBeamAngles[] ={-10,10}; // consider everything
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
-      msg->radstep, lidar_cloud, maxRange,
+      msg->radstep, lidar_cloud, minRange, maxRange,
       validBeamAngles[0], validBeamAngles[1]);
 
   //  int64_t pose_id=msg->utime;

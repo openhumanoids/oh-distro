@@ -1,4 +1,9 @@
+// With an actual clipping:
 // drc-icp-tracker-standalone-app -o hd_drill_at_zero.pcd  -n ../origi/sweep_cloud_305798000.pcd 
+
+// With an actual alignment:
+//drc-icp-tracker-standalone-app -o hd_drill_at_zero.pcd  -n ../a_moved.pcd 
+
 // work in progress - v2
 
 
@@ -99,9 +104,19 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string new_cloud_file
   Eigen::Quaterniond quat = Eigen::Quaterniond(1,0,0,0);
   previous_pose.translation()  << 1.275, 1.3, 1.16277;
   previous_pose.rotate(quat);
-  
   Eigen::Vector3f boundbox_lower_left = Eigen::Vector3f(-0.15, -0.07, -0.135); //-0.135
   Eigen::Vector3f boundbox_upper_right = Eigen::Vector3f( 0.15, 0.18,  0.2);
+    
+  if(1==1){
+    Eigen::Isometry3d previous_pose= Eigen::Isometry3d::Identity();
+    //    <include><uri>model://mit_cordless_drill</uri><pose>1.3 1.3 1.02 0 0 -1.571</pose></include>
+    Eigen::Quaterniond quat = Eigen::Quaterniond(1,0,0,0);
+    previous_pose.translation()  <<0.5, -1.3, 1.16277;
+    previous_pose.rotate(quat);
+    Eigen::Vector3f boundbox_lower_left = Eigen::Vector3f(-0.15, -0.07, -0.135); //-0.135
+    Eigen::Vector3f boundbox_upper_right = Eigen::Vector3f( 0.15, 0.18,  0.2);
+  }  
+  
   icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);  
 
   Isometry3dTime previous_poseT = Isometry3dTime(0, previous_pose); 
@@ -171,11 +186,12 @@ drc::affordance_t StatePub::getAffordance(Eigen::Isometry3d &pose, int uid){
     a.param_names.push_back("radius");
     a.params.push_back(0.020000);
     a.param_names.push_back("length");
-    a.params.push_back(0.15);
+    a.params.push_back(0.13);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     a.nstates =0;
-    a.nptinds =0;
+    a.npoints =0;
+    a.nvertices=0;
 
   return a;
 }    

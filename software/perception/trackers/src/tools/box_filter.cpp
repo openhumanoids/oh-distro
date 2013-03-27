@@ -137,7 +137,7 @@ void StatePub::moveCloud(){
     Eigen::Isometry3f local_to_lidar;
     Eigen::Quaternionf quat = Eigen::Quaternionf(1,0,0,0);
     local_to_lidar.setIdentity();
-    local_to_lidar.translation()  << 1.275, 1.3, 1.16277;
+    local_to_lidar.translation()  << 1.2575, 1.3, 1.16;
     local_to_lidar.rotate(quat);
 
     
