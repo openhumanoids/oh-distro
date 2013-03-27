@@ -19,19 +19,20 @@
 #include <vector>
 #include <btBulletCollisionCommon.h>
 #include <Eigen/Dense>
+#include <kdl/tree.hpp>
 
 #include <collision/collision_object.h>
 
 namespace collision {
   class Collision_Object_Box : public Collision_Object {
   public:
-    Collision_Object_Box( std::string id );
-    Collision_Object_Box( std::string id, Eigen::Vector3f dims );
-    Collision_Object_Box( std::string id, Eigen::Vector3f dims, Eigen::Vector3f position, Eigen::Vector4f orientation );
+    Collision_Object_Box( std::string id = "N/A", Eigen::Vector3f dims = Eigen::Vector3f( 1.0, 1.0, 1.0 ), Eigen::Vector3f position = Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
+    Collision_Object_Box( std::string id, Eigen::Vector3f dims, const KDL::Frame& offset, const KDL::Frame& transform = KDL::Frame::Identity() );
     Collision_Object_Box( const Collision_Object_Box& other );
     ~Collision_Object_Box();
 
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
+    virtual void set_transform( const KDL::Frame& transform );
 
     virtual Eigen::Vector3f position( void )const;
     virtual Eigen::Vector4f orientation( void )const;

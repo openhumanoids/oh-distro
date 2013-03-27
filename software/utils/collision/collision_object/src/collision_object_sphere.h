@@ -24,13 +24,15 @@ namespace collision {
   class Collision_Object_Sphere : public Collision_Object {
   public:
     Collision_Object_Sphere( std::string id = "N/A", double radius = 1.0, Eigen::Vector3f position = Eigen::Vector3f(), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
+    Collision_Object_Sphere( std::string id, double radius, const KDL::Frame& offset, const KDL::Frame& transform = KDL::Frame::Identity() );
     Collision_Object_Sphere( const Collision_Object_Sphere& other );
     ~Collision_Object_Sphere();
 
     virtual void set_active( bool active );
     virtual void set_position( const Eigen::Vector3f position );
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
-  
+    virtual void set_transform( const KDL::Frame& transform ); 
+ 
     virtual Eigen::Vector3f position( void )const;
     virtual Eigen::Vector4f orientation( void )const;
     virtual std::vector< btCollisionObject* > bt_collision_objects( void );    

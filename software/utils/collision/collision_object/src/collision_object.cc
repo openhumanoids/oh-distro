@@ -2,6 +2,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace KDL;
 using namespace collision;
 
 /**
@@ -9,7 +10,11 @@ using namespace collision;
  * class constructor
  */
 Collision_Object::
-Collision_Object( string id, bool active ) : _id( id ), _active(active){
+Collision_Object( string id, 
+                  bool active,
+                  const Frame& offset ) : _id( id ), 
+                                          _active(active),
+                                          _offset( offset ){
 
 }
 
@@ -18,7 +23,9 @@ Collision_Object( string id, bool active ) : _id( id ), _active(active){
  * copy constructor
  */
 Collision_Object::
-Collision_Object( const Collision_Object& other ) : _id( other._id ){
+Collision_Object( const Collision_Object& other ) : _id( other._id ),
+                                                    _active( other._active ),
+                                                    _offset( other._offset ){
 
 }
 
@@ -38,12 +45,17 @@ void Collision_Object::set_position(const Vector3f position)
   set_transform(position, orientation());
 }
 
-
 void Collision_Object::set_active( bool active )
 {
   _active = active;
 }
 
+void
+Collision_Object::
+set_offset( const KDL::Frame& offset ){
+  _offset = offset;
+  return;
+}
 
 /**
  * matches_uid
@@ -70,6 +82,12 @@ string
 Collision_Object::
 id( void )const{
   return _id;
+}
+
+Frame
+Collision_Object::
+offset( void )const{
+  return _offset;
 }
 
 /**
