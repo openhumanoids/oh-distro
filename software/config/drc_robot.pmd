@@ -9,7 +9,7 @@ group "0.dev_deputies" {
     }
 }
 
-group "1.robot" {
+group "1.a.core" {
     cmd "pserver" {
         exec = "bot-param-server drc_robot.cfg";
         host = "paladin-02";
@@ -40,6 +40,29 @@ group "1.robot" {
     }
     cmd "netshaper" {
         exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
+        host = "paladin-02";
+    }
+}
+
+group "1.b.sensing" {
+    cmd "j2f" {
+        exec = "drc-joints2frames";
+        host = "paladin-02";
+    }
+    cmd "r2l_perception" {
+        exec = "rosrun translators ros2lcm -p";
+        host = "paladin-02";
+    }
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "paladin-02";
+    }
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "paladin-02";
+    }
+    cmd "lidarfilt" {
+        exec = "drc-lidar-passthrough";
         host = "paladin-02";
     }
 }
@@ -95,38 +118,15 @@ group "2.gazebo" {
     }
 }
 
-group "3.a.sensing" {
-    cmd "j2f" {
-        exec = "drc-joints2frames";
-        host = "paladin-02";
-    }
-    cmd "r2l_perception" {
-        exec = "rosrun translators ros2lcm -p";
-        host = "paladin-02";
-    }
+group "3.perception"{
     cmd "icompress" {
         exec = "drc-image-tool";
-        host = "paladin-02";
-    }
-    cmd "maps-server" {
-        exec = "maps-server";
         host = "paladin-02";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
         host = "paladin-02";
     }
-    cmd "data-request-server" {
-        exec = "data-request-server";
-        host = "paladin-02";
-    }
-    cmd "lidarfilt" {
-        exec = "drc-lidar-passthrough";
-        host = "paladin-02";
-    }
-}
-
-group "3.b.motion_est"{
     cmd "estpub_sensing" {
         exec = "est_robot_state_publisher";
         host = "paladin-02";
@@ -135,11 +135,6 @@ group "3.b.motion_est"{
         exec = "drc-fovision-odometry -i 2";
         host = "paladin-02";
     }
-}
-
-
-
-group "3.c.tracking" {
     cmd "stereo-bm" {
         exec = "stereo-bm";
         host = "paladin-02";
