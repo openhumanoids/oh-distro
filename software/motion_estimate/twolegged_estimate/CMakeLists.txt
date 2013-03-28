@@ -14,6 +14,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
+
 add_executable(test_driver src/LegOdometry_LCM_Handler.cpp src/Footsteps.cpp src/TwoLegOdometry.cpp src/test_driver.cpp)
-pods_use_pkg_config_packages(test_driver lcmtypes_drc_lcmtypes)
+pods_use_pkg_config_packages(test_driver model-client lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 

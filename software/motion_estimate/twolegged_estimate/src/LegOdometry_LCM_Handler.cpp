@@ -30,12 +30,15 @@ LegOdometry_Handler::LegOdometry_Handler() : _finish(false) {
 	// are set up with setupLCM()
 	setupLCM();
 	
+	// new dev stuff - This should be done in a such a manner to allow the 
+	model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_.getUnderlyingLCM(), 0));
+	
 	return;
 }
 
 LegOdometry_Handler::~LegOdometry_Handler() {
 	
-	
+	//delete model_;
 	delete _leg_odo;
 	
 //	lcm_destroy(_lcm);

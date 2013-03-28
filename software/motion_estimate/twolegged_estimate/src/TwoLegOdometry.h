@@ -1,8 +1,13 @@
 #ifndef TWOLEGODOMETRY_H_
 #define TWOLEGODOMETRY_H_
 
-#include "TwoLegsEstimate_types.h"
+
+#include "kdl/tree.hpp"
+#include "kdl_parser/kdl_parser.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
+
 #include "Footsteps.h"
+#include "TwoLegsEstimate_types.h"
 
 #define SCHMIDT_LEVEL	      0.7f
 #define TRANSITION_TIMEOUT    3000
@@ -20,6 +25,8 @@ class TwoLegOdometry {
 		long lcmutime;
 		long deltautime;
 		long transition_timespan;
+		
+		boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 		
 		// Convert the LCM message containing robot pose information to that which is requried by the leg odometry calculations
 		void parseRobotInput();

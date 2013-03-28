@@ -13,15 +13,13 @@
 #ifndef LEGODOMETRY_LCM_HANDLER_HPP_
 #define LEGODOMETRY_LCM_HANDLER_HPP_
 
-#include <lcm/lcm-cpp.hpp>
+
 #include <string>
+#include <map>
 
-#include "TwoLegOdometry.h"
-//#include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-
-
-#include <lcm/lcm.h>
+#include <lcm/lcm-cpp.hpp>
+#include <boost/shared_ptr.hpp>
+#include <model-client/model-client.hpp>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -29,30 +27,26 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/std/vector.hpp>
 
-#include <map>
+//#include <lcmtypes/bot_core.hpp>
 
-#include "urdf/model.h"
+#include <lcm/lcm.h>
+#include "lcmtypes/drc_lcmtypes.hpp"
+#include "TwoLegOdometry.h"
+
+//#include "urdf/model.h"
 
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
 	//boost::shared_ptr<lcm::LCM> lcm_;
 	lcm::LCM lcm_;
-	    
+	boost::shared_ptr<ModelClient> model_;
+	
 	
 	// LCM stuff
 	const char* robot_pose_channel;
 	bool _finish;
-	// TODO
-    //void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 	
-	/*
-	void on_robot_state(const drc_robot_state_t* msg);
-	void on_robot_state_aux(const lcm_recv_buf_t* rbuf, 
-							const char* channel, 
-							const drc_robot_state_t* msg, 
-							void* user_data);
-	*/
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
 	void setupLCM();
 	
