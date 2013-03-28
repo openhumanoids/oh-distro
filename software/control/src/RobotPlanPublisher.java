@@ -71,22 +71,11 @@ public class RobotPlanPublisher
       }
     }
     
-    public void publish(double[] t,double[][] x)
+    public LCMEncodable encode(double[] t, double[][] x)
     {
-      LCM lcm = LCM.getSingleton();
       msg.utime = 0; //System.nanoTime()/1000;
       //System.out.format("Time is %d\n",msg.utime);
       
-      if (t.length != msg.num_states) {
-        allocate(t.length);  // reallocate on-demand
-//        System.out.format("Error: Publish failed. RobotPlanPublisher was initialized with %d states, but trying to publish %d.\n",msg.num_states,t.length);
-//        return;
-      }
-      if (x[0].length != t.length) {
-        // todo: throw an exception here instead
-        System.out.format("Error: x[0].length=%d and t.length=%d\n",x[0].length,t.length);
-        return;
-      }
       for(int i = 0;i<msg.num_states;i++)
       {
         if (has_floating_base) {
@@ -119,6 +108,21 @@ public class RobotPlanPublisher
           //System.out.format("The %d's joint of %d's state has joint angle %f, joint velocity %f\n",j+1,i+1,msg.plan[i].joint_position[j],msg.plan[i].joint_velocity[j]);
         }
       }
-      lcm.publish(channel_name,msg);
+      return msg;
+    }
+    public void publish(double[] t,double[][] x)
+    {
+      if (t.length != msg.num_states) {
+        allocate(t.length);  // reallocate on-demand
+//        System.out.format("Error: Publish failed. RobotPlanPublisher was initialized with %d states, but trying to publish %d.\n",msg.num_states,t.length);
+//        return;
+      }
+      if (x[0].length != t.length) {
+        // todo: throw an exception here instead
+        System.out.format("Error: x[0].length=%d and t.length=%d\n",x[0].length,t.length);
+        return;
+      }
+      LCM lcm = LCM.getSingleton();
+      lcm.publish(channel_name,encode(t,x));
     }
 }
