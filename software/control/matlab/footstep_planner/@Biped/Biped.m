@@ -21,7 +21,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         dt = 0.002;
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
-      defaults = struct('step_time', 1.0,... % s
+      defaults = struct('step_time', 1.2,... % s
         'max_step_length', .60,... % m
         'max_step_rot', pi/4,... % rad
         'min_foot_proximity', 0.15,... % m
@@ -60,7 +60,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options = struct();
       end
       X = obj.planFootsteps(x0, navgoal, options);
-      [xtraj, qtraj, htraj, V, ts] = obj.walkingPlanFromSteps(x0, qstar, X, 1.3);
+      [xtraj, qtraj, htraj, V, ts] = obj.walkingPlanFromSteps(x0, qstar, X);
     end
 
 %     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)
