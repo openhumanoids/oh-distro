@@ -7,14 +7,11 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
   end
 
 
-  max_forward_step = 0.35;
+  max_forward_step = 0.25;
   max_backward_step = 0.15;
   max_step_width = 0.35;
-  min_step_width = 0.20;
-
-  y_max = max_step_width;
-  y_min = min_step_width;
-  y_mean = mean([y_max, y_min]);
+  min_step_width = 0.18;
+  nom_step_width = 0.2;
 
   x_max = max_forward_step;
   x_min = -max_backward_step;
@@ -27,7 +24,11 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
       u(2) = -u(2);
     end
     c(1, j) = abs(u(1) - x_mean) - (x_max - x_min) / 2;
-    c(2, j) = abs(u(2) - y_mean) - (y_max - y_min) / 2;
+    if u(2) >= nom_step_width
+      c(2, j) = u(2) - max_step_width;
+    else
+      c(2, j) = min_step_width - u(2);
+    end
     phi = pf(6, j) - p0(6, j);
     c(3, j) = abs(phi) - biped.max_step_rot;
   end
