@@ -10,7 +10,7 @@ Footsteps::Footsteps() {
 
 void Footsteps::addFootstep(state const &RelativeFrameLocation, int foot) 
 {
-	std::cout << "addFootstep function was called for Footsteps class" << std::endl;
+	//std::cout << "addFootstep function was called for Footsteps class" << std::endl;
 	
 	footstep new_footprint;
 	new_footprint.footprintlocation.position = RelativeFrameLocation.position;

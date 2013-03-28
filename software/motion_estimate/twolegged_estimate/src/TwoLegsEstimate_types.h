@@ -26,6 +26,12 @@ namespace TwoLegs {
 		int foot;
 	} footstep;
 	
+	typedef struct {
+	  float x;
+	  float y;
+	  float z;
+	} footforces;
+	
 }
 
 #endif /*TWOLEGSESTIMATE_TYPES_H_*/

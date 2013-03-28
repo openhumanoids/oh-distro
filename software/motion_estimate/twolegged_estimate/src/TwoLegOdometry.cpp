@@ -21,6 +21,22 @@ TwoLegOdometry::TwoLegOdometry()
 	footsteps.addFootstep(first,LEFTFOOT);
 	standing_foot = LEFTFOOT;
 	
+	foottransitionintermediateflag = true;
+	
+	// TODO - expected weight must be updated from live vehicle data and not be hard coded like this
+	expectedweight = 900.f;
+	
+	leftforces.x = 0.f;
+	leftforces.y = 0.f;
+	leftforces.z = 0.f;
+	
+	rightforces.x = 0.f;
+	rightforces.y = 0.f;
+	rightforces.z = 0.f;
+	
+	lcmutime = 0;
+	deltautime = 0;
+	transition_timespan = 0;
 }
 
 void TwoLegOdometry::parseRobotInput() {
@@ -77,7 +93,7 @@ void TwoLegOdometry::CalculateBodyStates(/*data*/) {
 }
 
 void TwoLegOdometry::FootTransitionLogic() {
-	
+	/*
 	if (DetemineIfFootTransistionRequired())
 	{
 #ifdef EARLY_DEV_COUTS
@@ -90,6 +106,7 @@ void TwoLegOdometry::FootTransitionLogic() {
 		setStandingFoot(secondary_foot());
 		
 	}
+	*/
 }
 
 // now this seems excessive and should maybe be a more general transform update thing used for legs and head and pelvis
@@ -115,8 +132,43 @@ int TwoLegOdometry::primary_foot() {
 	return standing_foot;
 }
 
-bool TwoLegOdometry::DetemineIfFootTransistionRequired() {
-	cout << "TwoLegOdometry::DetemineIfFootTransistionRequired() - NOT implemented" << endl;
+bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz) {
+	
+	deltautime =  utime - lcmutime;
+	lcmutime = utime;
+	leftforces.z = leftz;
+	rightforces.z = rightz;
+	
+	
+	if (getSecondaryFootZforce() - SCHMIDT_LEVEL*expectedweight > getPrimaryFootZforce()) {
+	  transition_timespan += deltautime;
+	}
+	else
+	{
+	  transition_timespan = 0.;
+	  foottransitionintermediateflag = true;
+	}
+	  
+	if (transition_timespan > TRANSITION_TIMEOUT && foottransitionintermediateflag) 
+	{
+		footsteps.addFootstep(getSecondaryFootState(),secondary_foot());
+	  setStandingFoot(secondary_foot());
+	  
+	  foottransitionintermediateflag = false;
+	  return true;
+	}
 	
 	return false;
+}
+
+float TwoLegOdometry::getPrimaryFootZforce() {
+  if (standing_foot == LEFTFOOT)
+    return leftforces.z;
+  return rightforces.z;
+}
+
+float TwoLegOdometry::getSecondaryFootZforce() {
+	if (standing_foot == LEFTFOOT)
+	    return rightforces.z;
+	  return leftforces.z;
 }

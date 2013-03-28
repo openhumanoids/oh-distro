@@ -84,11 +84,8 @@ void LegOdometry_Handler::run(bool testingmode) {
 		
 		try
 		{
-			
+			// This is the highest referrence point for the 
 			while(0 == lcm_.handle());
-			// receive images through LCM
-//		    while(0 == lcm_handle(_lcm) && !_finish);
-		    
 		    
 		}
 		catch (exception& e)
@@ -107,9 +104,21 @@ void LegOdometry_Handler::run(bool testingmode) {
 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
-												const  drc::robot_state_t* msg)
-{
-	std::cout << msg->utime << " got a message\n";
+												const  drc::robot_state_t* msg) {
+	
+	std::cout << msg->utime << ", ";
+	std::cout << msg->contacts.contact_force[0].z << ", ";
+	std::cout << msg->contacts.contact_force[1].z << ", ";
+	
+	//pass left and right leg forces and torques to TwoLegOdometry
+	// TODO temporary testing interface
+	
+	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+	std::cout << _leg_odo->primary_foot() << std:: endl;
+	
+	
+	
+	
 }
 
 

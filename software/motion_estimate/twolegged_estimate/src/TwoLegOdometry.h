@@ -4,12 +4,22 @@
 #include "TwoLegsEstimate_types.h"
 #include "Footsteps.h"
 
+#define SCHMIDT_LEVEL	      0.7f
+#define TRANSITION_TIMEOUT    3000
+
 namespace TwoLegs {
 
 class TwoLegOdometry {
 	private:
 		Footsteps footsteps;
 		int standing_foot;
+		bool foottransitionintermediateflag;
+		float expectedweight;
+		footforces leftforces;
+		footforces rightforces;
+		long lcmutime;
+		long deltautime;
+		long transition_timespan;
 		
 		// Convert the LCM message containing robot pose information to that which is requried by the leg odometry calculations
 		void parseRobotInput();
@@ -24,7 +34,9 @@ class TwoLegOdometry {
 		void setStandingFoot(int foot);
 		
 		void FootTransitionLogic();
-		bool DetemineIfFootTransistionRequired();
+		
+		float getPrimaryFootZforce();
+		float getSecondaryFootZforce();
 		
 	public:
 		TwoLegOdometry();
@@ -37,6 +49,9 @@ class TwoLegOdometry {
 		// Return which foot is which - these are based on the RIGHTFOOT and LEFTFOOT defines in TwoLegsEstiamte_types.h
 		int secondary_foot();
 		int primary_foot();
+		
+
+		bool DetectFootTransistion(long utime, float leftz, float rightz);
 };
 
 
