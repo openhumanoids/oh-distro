@@ -1,4 +1,6 @@
-function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, Xright, Xleft, step_time)
+function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, Xright, Xleft)
+
+step_time = biped.step_time
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
