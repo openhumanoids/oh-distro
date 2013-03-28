@@ -34,7 +34,7 @@ warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
-robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...  
+robot_plan_publisher =  RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 %%
 
@@ -266,6 +266,7 @@ while (1)
           com_height_traj = PPTrajectory(foh(action_sequence.key_time_samples,com_key_time_samples(3,:)));
           com_height = com_height_traj.eval(t_breaks);
           q0 = q;
+          qdot0 = zeros(size(q));
           com0 = r.getCOM(q0);
           comdot0 = 0*com0;
           zmp_options = struct();
@@ -289,16 +290,20 @@ while (1)
           options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
           options.quasiStaticFlag = false;
           options.nSample = length(t_breaks)-1;
-          [q_zmp_traj,inverse_kin_sequence_info] = inverseKinSequence(r, q0, action_sequence,options);
-          t_zmp_breaks = q_zmp_traj.getBreaks();
-          q_zmp_plan = q_zmp_traj.eval(t_zmp_breaks);
-          qdot_zmp_plan = q_zmp_traj.deriv(t_zmp_breaks);
+          [t_zmp_breaks, q_zmp_plan, qdot_zmp_plan, qddot_zmp_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
+
+          % Drake gui playback
           xtraj = PPTrajectory(pchipDeriv(t_zmp_breaks,[q_zmp_plan;qdot_zmp_plan],[qdot_zmp_plan;0*qdot_zmp_plan]));
           xtraj = xtraj.setOutputFrame(r.getStateFrame());
           v.playback(xtraj,struct('slider',true));
+
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
-          publish(robot_plan_publisher, q_zmp_traj.getBreaks(), ...
-                  [q_zmp_plan; zeros(size(q_zmp_plan))]);
+          constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
+                                       size(q_zmp_plan,2));
+
+          publish(robot_plan_publisher, t_zmp_breaks, ...
+                  [q_zmp_plan; qdot_zmp_plan], ...
+                  constraints_satisfied);
       end
       if(action_options.IK)
         ikargs = action_sequence.getIKArguments(ik_time);
@@ -311,7 +316,9 @@ while (1)
         end
       end
     catch ex
-      warning(ex.identifier,ex.message);
+      warning(ex.identifier, ...
+              [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
+              regexprep(ex.getReport,'\n','\n\t'));
       q=q_bk;
       continue;
     end
