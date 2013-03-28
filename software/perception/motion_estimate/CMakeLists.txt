@@ -19,11 +19,6 @@ add_subdirectory(src/fovision)
 add_subdirectory(src/registeration)
 add_subdirectory(src/tools)
 
-pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
-pods_install_python_script(drc-bandwidth-scope scripts/bandwidth_scope.py)
-pods_install_python_script(drc-network-trigger scripts/send_a_trigger.py)
-
-pods_install_python_script(drc-set-sim-rate scripts/send_a_rateset.py)
 
 
 
