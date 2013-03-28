@@ -15,7 +15,7 @@
 #include <string>
 #include "PointObservation.h"
 
-class ConstraintApp
+class ConstraintApp_RB_UKF : public ConstraintApp
 {
 public:
   typedef std::vector<double> JointVector;
@@ -30,12 +30,12 @@ public:
     KDL::Vector link_expressedIn_base;
     int id;
   };
-  typedef std::map<std::string, Link> LinkMap;
+  typedef std::map<int, Link> LinkMap;
   typedef PointObservation Observation;
-  typedef std::map<std::string, Observation> ObservationMap;
+  typedef std::map<int, Observation> ObservationMap;
 
-  ConstraintApp();
-  virtual ~ConstraintApp();
+  ConstraintApp_RB_UKF();
+  virtual ~ConstraintApp_RB_UKF();
 
   bool shouldStop() {
     bool ret;
@@ -73,7 +73,7 @@ public:
 						      const char* channel,
 						      const drc_affordance_track_collection_t* msg,
 						      void* user_data) {
-    ((ConstraintApp*) user_data)->AffordanceTrackCollectionHandler(msg);
+    ((ConstraintApp_RB_UKF*) user_data)->AffordanceTrackCollectionHandler(msg);
   }
   void AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg);
 
@@ -81,7 +81,7 @@ public:
 				      const char* channel,
 				      const drc_affordance_t* msg,
 				      void* user_data) {
-    ((ConstraintApp*) user_data)->AffordanceFitHandler(msg);
+    ((ConstraintApp_RB_UKF*) user_data)->AffordanceFitHandler(msg);
   }
   void AffordanceFitHandler(const drc_affordance_t *msg);
 

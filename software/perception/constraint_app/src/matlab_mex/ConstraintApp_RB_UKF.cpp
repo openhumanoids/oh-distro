@@ -1,4 +1,4 @@
-#include "ConstraintApp.h"
+#include "ConstraintApp_RB_UKF.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <sys/select.h>
@@ -24,8 +24,8 @@ typedef int SOCKET;
 //    add noise to the current best estimate of pose
 //    perform the update step.  use the relative poses as expected observations, use new data as new observations.
 
-//NB: use tail -f cam.log to view output from the ConstraintApp::main thread
-ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0), 
+//NB: use tail -f cam.log to view output from the ConstraintApp_RB_UKF::main thread
+ConstraintApp_RB_UKF::ConstraintApp_RB_UKF() : m_stopThreads(false), m_counter(0), 
 				 m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary),  
 				 m_wasReset(true), m_nextLinkId(0)
 {
@@ -37,20 +37,20 @@ ConstraintApp::ConstraintApp() : m_stopThreads(false), m_counter(0),
   drc_affordance_t_subscribe(m_lcm, "AFFORDANCE_FIT",
 			     AffordanceFitHandlerAux, this);
 
-  m_mainThread = new boost::thread(boost::bind(&ConstraintApp::main, this));
+  m_mainThread = new boost::thread(boost::bind(&ConstraintApp_RB_UKF::main, this));
 }
 
-ConstraintApp::~ConstraintApp() 
+ConstraintApp_RB_UKF::~ConstraintApp_RB_UKF() 
 {
   stopThreads();
   delete m_mainThread;
 
   lcm_destroy(m_lcm);
 
-  m_log << "ConstraintApp::~ConstraintApp" << std::endl;
+  m_log << "ConstraintApp_RB_UKF::~ConstraintApp_RB_UKF" << std::endl;
 }
 
-void ConstraintApp::main()
+void ConstraintApp_RB_UKF::main()
 {
   while ( !shouldStop() ) {
     {
@@ -60,7 +60,7 @@ void ConstraintApp::main()
   }
 }
 
-int ConstraintApp::lcm_handle_timeout(lcm_t* lcm, int ms)
+int ConstraintApp_RB_UKF::lcm_handle_timeout(lcm_t* lcm, int ms)
 {
     // setup the LCM file descriptor for waiting.
     SOCKET lcm_fd = lcm_get_fileno(lcm);
@@ -83,7 +83,7 @@ int ConstraintApp::lcm_handle_timeout(lcm_t* lcm, int ms)
     return 0;
 }
 
-void ConstraintApp::AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg)
+void ConstraintApp_RB_UKF::AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg)
 {
   m_log << "got a new track collection" << std::endl;
 
@@ -91,30 +91,36 @@ void ConstraintApp::AffordanceTrackCollectionHandler(const drc_affordance_track_
 
   for ( int i = 0; i < msg->ntracks; i++ ) {
     drc_affordance_track_t* track = &msg->tracks[i];
-    
-    std::string segmentName(track->segment);
+
+    if ( track->segment == "" ) {
+      m_log << "ERROR: received a segment name of \"" << track->segment 
+	    << "\" but I can only handle a single segment, segment must be = \"\"" << std::endl;
+      continue;
+    }
+
+    int trackId(track->id);
     KDL::Vector track_expressedIn_world(track->position.x, track->position.y, track->position.z);
     KDL::Vector track_expressedIn_base(m_currentEstimate.base_expressedIn_world.Inverse() * track_expressedIn_world);
     
-    if ( m_currentLinks.find(segmentName) == m_currentLinks.end() ) {
+    if ( m_currentLinks.find(trackId) == m_currentLinks.end() ) {
       //this track is a new one
-      m_currentLinks.insert(std::pair<std::string, Link>(segmentName, Link(track_expressedIn_base, m_nextLinkId++)));
-      m_log << "  creating a new link for segment \"" << segmentName << "\"" << std::endl
+      m_currentLinks.insert(std::pair<int, Link>(trackId, Link(track_expressedIn_base, m_nextLinkId++)));
+      m_log << "  creating a new link for id \"" << trackId << "\"" << std::endl
 	    << "    world pose: " << track_expressedIn_world << std::endl
 	    << "     base pose: " << track_expressedIn_base << std::endl;
     } else {
       //this track is already known, just add this report as an observation
-      ObservationMap::iterator existingObs(m_currentObservations.find(segmentName));
+      ObservationMap::iterator existingObs(m_currentObservations.find(trackId));
       Observation newobs(track_expressedIn_world);
       if ( existingObs == m_currentObservations.end() ) {
 	//we have not yet observed this link, so add it
-	m_currentObservations.insert(std::pair<std::string, Observation>(segmentName, newobs));
-	m_log << "  new observation for segment \"" << segmentName << "\"" << std::endl
+	m_currentObservations.insert(std::pair<int, Observation>(trackId, newobs));
+	m_log << "  new observation for segment \"" << trackId << "\"" << std::endl
 	      << "    world pose: " << track_expressedIn_world << std::endl;
       } else {
 	//we've observed, and have not yet processed. just update the observation
 	existingObs->second = newobs;
-	m_log << "  repeat observation for segment \"" << segmentName << "\"" << std::endl
+	m_log << "  repeat observation for id \"" << trackId << "\"" << std::endl
 	      << "    world pose: " << track_expressedIn_world << std::endl;
       }
     }
@@ -131,7 +137,7 @@ void ConstraintApp::AffordanceTrackCollectionHandler(const drc_affordance_track_
   */
 }
 
-void ConstraintApp::AffordanceFitHandler(const drc_affordance_t *msg)
+void ConstraintApp_RB_UKF::AffordanceFitHandler(const drc_affordance_t *msg)
 {
   m_log << "got a new affordance fit" << std::endl;
 
@@ -145,7 +151,7 @@ void ConstraintApp::AffordanceFitHandler(const drc_affordance_t *msg)
 	<< m_currentEstimate.base_expressedIn_world << std::endl;
 }
 
-KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
+KDL::Frame ConstraintApp_RB_UKF::GetFrameFromParams(const drc_affordance_t *msg)
 {
   std::string names[] = { "x", "y", "z", "roll", "pitch", "yaw" };
   double xyzrpw[6];
@@ -173,9 +179,9 @@ KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
   return ret;
 }
 
-bool ConstraintApp::WaitForObservations(unsigned int timeout_ms)
+bool ConstraintApp_RB_UKF::WaitForObservations(unsigned int timeout_ms)
 {
-  m_log << "ConstraintApp::WaitForObservations, timeout = " << timeout_ms << std::endl;
+  m_log << "ConstraintApp_RB_UKF::WaitForObservations, timeout = " << timeout_ms << std::endl;
 
   boost::mutex::scoped_lock lock(m_dataMutex);
 
@@ -187,13 +193,13 @@ bool ConstraintApp::WaitForObservations(unsigned int timeout_ms)
   return !m_currentObservations.empty();
 }
 
-bool ConstraintApp::GetExpectedObservations(const std::vector<double>& state,
+bool ConstraintApp_RB_UKF::GetExpectedObservations(const std::vector<double>& state,
 					    const std::vector<int>& observationIds,
 					    std::vector<double>& observations)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 
-  m_log << "ConstraintApp::GetExpectedObservations" << std::endl;
+  m_log << "ConstraintApp_RB_UKF::GetExpectedObservations" << std::endl;
 
   observations.clear();
   observations.reserve(observationIds.size()*3);
@@ -223,12 +229,12 @@ bool ConstraintApp::GetExpectedObservations(const std::vector<double>& state,
   return true;
 }
 
-bool ConstraintApp::GetObservations(std::vector<double>& actualObservations,
+bool ConstraintApp_RB_UKF::GetObservations(std::vector<double>& actualObservations,
 				    std::vector<int>& observationIds)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 
-  m_log << "ConstraintApp::GetObservations" << std::endl;
+  m_log << "ConstraintApp_RB_UKF::GetObservations" << std::endl;
 
   actualObservations.clear();
   observationIds.clear();
@@ -249,9 +255,9 @@ bool ConstraintApp::GetObservations(std::vector<double>& actualObservations,
 
     observationIds.push_back(linkIter->second.id);
 
-    m_log << "   added observation for " << iter->first << std::endl
+    m_log << "   added observation for id " << iter->first << std::endl
 	  << "      obs: " << iter->second.obs_expressedIn_world << std::endl
-	  << "       id: " << linkIter->second.id << std::endl;
+	  << "    my id: " << linkIter->second.id << std::endl;
   }
 
   m_currentObservations.clear();
@@ -259,7 +265,7 @@ bool ConstraintApp::GetObservations(std::vector<double>& actualObservations,
   return true;
 }
 
-bool ConstraintApp::GetResetAndClear()
+bool ConstraintApp_RB_UKF::GetResetAndClear()
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
   bool ret = m_wasReset;
@@ -267,7 +273,7 @@ bool ConstraintApp::GetResetAndClear()
   return ret;
 }
 
-KDL::Frame ConstraintApp::VectorToFrame(const std::vector<double>& state)
+KDL::Frame ConstraintApp_RB_UKF::VectorToFrame(const std::vector<double>& state)
 {
   KDL::Frame res;
   
@@ -285,7 +291,7 @@ KDL::Frame ConstraintApp::VectorToFrame(const std::vector<double>& state)
   return res;
 }
 
-std::vector<double> ConstraintApp::FrameToVector(const KDL::Frame& frame)
+std::vector<double> ConstraintApp_RB_UKF::FrameToVector(const KDL::Frame& frame)
 {
   std::vector<double> state;
   state.reserve(6);
@@ -302,13 +308,13 @@ std::vector<double> ConstraintApp::FrameToVector(const KDL::Frame& frame)
   return state;
 }
 
-void ConstraintApp::GetCurrentStateEstimate(std::vector<double>& state)
+void ConstraintApp_RB_UKF::GetCurrentStateEstimate(std::vector<double>& state)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
   state = FrameToVector(m_currentEstimate.base_expressedIn_world);
 }
 
-void ConstraintApp::SetCurrentStateEstimate(const std::vector<double>& state)
+void ConstraintApp_RB_UKF::SetCurrentStateEstimate(const std::vector<double>& state)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
   m_currentEstimate.base_expressedIn_world = VectorToFrame(state);
