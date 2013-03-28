@@ -104,7 +104,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    tic;
+%     tic;
     q_ddot_des = varargin{1};
     x = varargin{2};
     
@@ -299,7 +299,7 @@ classdef QPController < MIMODrakeSystem
 
       % linear friction constraints
       % TEMP: hard code mu
-      mu = 1.0*ones(nc,1);
+      mu = 0.8*ones(nc,1);
       for i=1:nc
         Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
         bin_{i} = 0;
@@ -381,7 +381,7 @@ classdef QPController < MIMODrakeSystem
     else
       y = alpha(nq+(1:nu));
     end
-    toc
+%     toc
    
   end
   end

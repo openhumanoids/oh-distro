@@ -20,9 +20,14 @@ q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
 % biped = Biped(r); % no longer necessary, since Atlas is a Biped
-pose = [goal_x;goal_y;0;0;0;goal_yaw];
+pose = [goal_x;goal_y;0;0;0;goal_yaw;10];
 
-[rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', true));
+X = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', true));
+
+fpos = [X.pos];
+ridx = [X.is_right_foot]==1;
+rfoot = fpos(:,ridx);
+lfoot = fpos(:,~ridx);
 [zmptraj,foottraj,~,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 0.8);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
