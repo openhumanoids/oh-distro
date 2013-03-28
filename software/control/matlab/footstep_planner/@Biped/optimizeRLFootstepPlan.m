@@ -14,6 +14,7 @@ function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefu
 
   [X, foot_goals] = biped.createInitialSteps(x0, poses);
 
+  last_publish_time = now();
   done = false;
 
   while 1
@@ -56,7 +57,10 @@ function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefu
     for j = 1:length(X)
       Xout(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
     end
-    outputfun(Xout, @heightfun);
+    if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
+      outputfun(Xout, @heightfun);
+      last_publish_time = now();
+    end
     if (~interactive && ~modified) || (done)
       break
     end
