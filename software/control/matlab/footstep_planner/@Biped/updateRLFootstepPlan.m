@@ -7,7 +7,7 @@ function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, 
 
 t = [X.time];
 
-if time_limit - t(end) > biped.step_time
+if time_limit - t(end) > 1 % we take the nav goal time limit as a number of steps, rather than seconds
 % if 1
   if X(end-1).is_right_foot
     goal = foot_goals.right;
@@ -95,8 +95,9 @@ function [c, ceq] = nonlcon(x_flat)
   Xpos([1,2,6], :) = reshape(x_flat, 3, []);
   % [Xright, Xleft] = biped.stepLocations(X);
 
-  c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
-       biped.checkStepOrientation(Xpos)];
+  % c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
+  %      biped.checkStepOrientation(Xpos)];
+  c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot])];
   ceq = 0;
 end
 

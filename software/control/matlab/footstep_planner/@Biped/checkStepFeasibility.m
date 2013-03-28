@@ -6,29 +6,28 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
     p0 = [p0(1, :); p0(2, :); zeros(3, size(p0, 2)); p0(3, :)];
   end
 
+
+  max_forward_step = 0.35;
+  max_backward_step = 0.15;
   max_step_width = 0.35;
   min_step_width = 0.20;
 
-  % theta=0 is the direction the stance foot is pointing
-  theta_max = 2*pi/3;
-  theta_min = pi/4;
-  theta_mean = mean([theta_min, theta_max]);
+  y_max = max_step_width;
+  y_min = min_step_width;
+  y_mean = mean([y_max, y_min]);
+
+  x_max = max_forward_step;
+  x_min = -max_backward_step;
+  x_mean = mean([x_max, x_min]);
 
   c = zeros(3, size(p0, 2));
   for j = 1:size(p0, 2)
-    theta = atan2(pf(2, j) - p0(2, j), pf(1, j) - p0(1, j)) - p0(6, j);
-    r = sqrt(sum((pf(1:2,j) - p0(1:2,j)).^2));
+    u = rotz(-p0(6, j)) * (pf(1:3, j) - p0(1:3, j));
     if ~p0_is_right_foot(j)
-      theta = -theta;
+      u(2) = -u(2);
     end
-
-    d = mod(theta - theta_mean, 2*pi);
-    if d > pi
-      d = 2*pi - d;
-    end
-    c(1, j) = d - (theta_max - theta_min) / 2;
-    c(2, j) = max(r - max_step_width, min_step_width - r);
-
+    c(1, j) = abs(u(1) - x_mean) - (x_max - x_min) / 2;
+    c(2, j) = abs(u(2) - y_mean) - (y_max - y_min) / 2;
     phi = pf(6, j) - p0(6, j);
     c(3, j) = abs(phi) - biped.max_step_rot;
   end
