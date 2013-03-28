@@ -75,7 +75,7 @@ namespace renderer_sticky_feet{
 
   } RendererStickyFeet;
 
-  inline static double get_support_surface_height_from_perception(void *user, Eigen::Vector3f &queryPt)
+  inline static bool get_support_surface_height_from_perception(void *user, Eigen::Vector3f &queryPt, double &height)
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
    
@@ -100,25 +100,29 @@ namespace renderer_sticky_feet{
     Eigen::Vector3f closestPt,closestNormal;
     closestPt = queryPt;
     closestNormal<< 0,0,1;   
+    height = queryPt[2];
     
     if (view != NULL) {
       if(!view->getClosest(queryPt,closestPt,closestNormal))
       {
         closestPt = queryPt;
         closestNormal<< 0,0,1;
+	height = queryPt[2];
+        return false;
       }
+
+      height = closestPt[2];
+      return true;
     }
-    else {
-        closestPt = queryPt;
-        closestNormal<< 0,0,1;
-    }
+
+    return false;
     
    /* if(isnan(closestPt[2])){
         closestPt = queryPt;
         closestNormal<< 0,0,1;
     }*/
     
-    return closestPt[2];
+//    return closestPt[2];
 
   }
 
