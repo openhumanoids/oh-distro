@@ -76,7 +76,9 @@ drc::contact_goal_t ManipulationConstraint::toLCM()
 		Eigen::Vector3f v = p->getPoint2();
         printf("flag2\n");
 
-        msg.target_pt_radius = p->getTolerance();
+        msg.x_offset = p->getXOffset();
+        msg.y_offset = p->getYOffset();
+        msg.z_offset = p->getZOffset();
         msg.x_relation = p->getXInequality();
         msg.y_relation = p->getYInequality();
         msg.z_relation = p->getZInequality();

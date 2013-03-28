@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+ #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 // QT includes
@@ -168,7 +168,9 @@ private:
     QWidget *_liveWidgets;
     QWidget *_authoringWidgets;
 
-    QDoubleSpinBox* _toleranceBox;
+    QDoubleSpinBox* _xOffset;
+    QDoubleSpinBox* _yOffset;
+    QDoubleSpinBox* _zOffset;
     QComboBox* _xInequality;
     QComboBox* _yInequality;
     QComboBox* _zInequality;
@@ -221,7 +223,16 @@ private slots:
     void nextKeyFrame();
     void requestMotionPlan();
     void changeMode();
-    void handlePoint2PointChange();
+
+    //offsets and inequalities
+    action_authoring::PointContactRelationPtr getCurrentPCR();
+    void handleXIneqChange();
+    void handleYIneqChange();
+    void handleZIneqChange();
+    void handleXOffsetChange();
+    void handleYOffsetChange();
+    void handleZOffsetChange();
+
     void getContactGoals(std::vector<drc::contact_goal_t> *contact_goals);
     void requestIKSolution();
     void handleScrubberChange();

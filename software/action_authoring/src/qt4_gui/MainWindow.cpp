@@ -20,11 +20,12 @@ using namespace affordance;
 
 #define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
 
-#define DEFAULT_TOLERANCE 0.25
+#define DEFAULT_OFFSET 0.0
 
 #define ROBOT_NAME "atlas" //used for LCM messages that go to planning
 
 typedef PointContactRelation PCR;
+typedef PointContactRelationPtr PcrPtr;
 
 string RandomString(int len)
 {
@@ -337,9 +338,17 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _scrubber->setRange(0, 1000);
     rightsidelayout->addWidget(_actionDescLabel);
 
-    _toleranceBox = new QDoubleSpinBox();
-    _toleranceBox->setValue(DEFAULT_TOLERANCE);
-    rightsidelayout->addWidget(_toleranceBox);
+    _xOffset = new QDoubleSpinBox();
+    _yOffset = new QDoubleSpinBox();
+    _zOffset = new QDoubleSpinBox();
+    
+    //todo
+    _xOffset->setValue(DEFAULT_OFFSET);
+    _yOffset->setValue(DEFAULT_OFFSET);
+    _zOffset->setValue(DEFAULT_OFFSET);
+    //    rightsidelayout->addWidget(_xOffset);
+    //rightsidelayout->addWidget(_yOffset);
+    //rightsidelayout->addWidget(_zOffset);
 
     _xInequality = new QComboBox();
     _yInequality = new QComboBox();
@@ -364,12 +373,19 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
     QWidget *inequalities = new QWidget(this);
     QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
+
     inequalitiesLayout->addWidget(new QLabel("x-axis: "));
     inequalitiesLayout->addWidget(_xInequality);
+    inequalitiesLayout->addWidget(_xOffset);
+    
     inequalitiesLayout->addWidget(new QLabel("y-axis: "));
     inequalitiesLayout->addWidget(_yInequality);
+    inequalitiesLayout->addWidget(_yOffset);
+
     inequalitiesLayout->addWidget(new QLabel("z-axis: "));
     inequalitiesLayout->addWidget(_zInequality);
+    inequalitiesLayout->addWidget(_zOffset);
+
     inequalities->setLayout(inequalitiesLayout);
     rightsidelayout->addWidget(inequalities);
 
@@ -414,10 +430,12 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
     connect(loadfromcombo, SIGNAL(released()), this, SLOT(handleLoadActionCombo()));
 
-    connect(_toleranceBox, SIGNAL(valueChanged(double)), this, SLOT(handlePoint2PointChange()));
-    connect(_xInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
-    connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
-    connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handlePoint2PointChange()));
+    connect(_xOffset, SIGNAL(valueChanged(double)), this, SLOT(handleXOffsetChange()));
+    connect(_yOffset, SIGNAL(valueChanged(double)), this, SLOT(handleYOffsetChange()));
+    connect(_zOffset, SIGNAL(valueChanged(double)), this, SLOT(handleZOffsetChange()));
+    connect(_xInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleXIneqChange()));
+    connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleYIneqChange()));
+    connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleZIneqChange()));
 
     connect(_scrubber, SIGNAL(valueChanged(int)), this, SLOT(handleScrubberChange()));
 
@@ -1191,29 +1209,96 @@ updateFilesListComboBox()
     }
 }
 
-void
-MainWindow::
-handlePoint2PointChange() {
-    if (_authoringState._selected_gui_constraint == NULL)
-        return;
 
-    // get the currently selected constraint and verify its relation is of type POINT_CONTACT
-    RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+/**Get the current point contact relation being edited or null if no 
+such PCR*/
+PointContactRelationPtr MainWindow::getCurrentPCR()
+{
+  if (_authoringState._selected_gui_constraint == NULL)
+    return PcrPtr();
+  
+  // get the currently selected constraint and verify its relation is of type POINT_CONTACT
+  RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
+  if (rel->getRelationType() != RelationState::POINT_CONTACT) 
+    return PcrPtr();
 
-    if (rel->getRelationType() == RelationState::POINT_CONTACT) {
-        // update the relation
-        PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
-
-        prel->setTolerance(_toleranceBox->value());
-        prel->setXInequality(PointContactRelation::strToType(_xInequality->currentText().toStdString()));
-        prel->setYInequality(PointContactRelation::strToType(_yInequality->currentText().toStdString()));
-        prel->setZInequality(PointContactRelation::strToType(_zInequality->currentText().toStdString()));
-    }
-
-    // update the prompt
-    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-
+  return boost::dynamic_pointer_cast<PointContactRelation>(rel);        
 }
+
+/**set the corresponding point contact relation to reflect the change
+in the inequality menu*/
+void MainWindow::handleXIneqChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setXInequality(PointContactRelation::strToType(_xInequality->currentText().toStdString()));
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
+/**set the corresponding point contact relation to reflect the change
+in the inequality menu*/
+void MainWindow::handleYIneqChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setYInequality(PointContactRelation::strToType(_yInequality->currentText().toStdString()));
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
+/**set the corresponding point contact relation to reflect the change
+in the inequality menu*/
+void MainWindow::handleZIneqChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setZInequality(PointContactRelation::strToType(_zInequality->currentText().toStdString()));
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
+ 
+/**set the corresponding point contact relation to reflect the change
+in the offset box*/
+void MainWindow::handleXOffsetChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setOffset(Eigen::Vector3f(_xOffset->value(),  //change only the x
+                                  prel->getYOffset(),
+                                  prel->getZOffset()));
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
+/**set the corresponding point contact relation to reflect the change
+in the offset box*/
+void MainWindow::handleYOffsetChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setOffset(Eigen::Vector3f(prel->getXOffset(),
+                                  _yOffset->value(),  //change only the y
+                                  prel->getZOffset()));
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
+
+/**set the corresponding point contact relation to reflect the change
+in the offset box*/
+void MainWindow::handleZOffsetChange()
+{
+  PcrPtr prel = getCurrentPCR();
+  if (prel == PcrPtr())
+    return;
+  prel->setOffset(Eigen::Vector3f(prel->getXOffset(),
+                                  prel->getYOffset(),
+                                  _zOffset->value()));  //change only the z
+  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
+}
+
 
 /**sets the inequality constraints menu (x-axis, ...) from the currently selected gui constraint*/
 void MainWindow::setP2PFromCurrConstraint()
@@ -1249,7 +1334,12 @@ void MainWindow::setP2PFromCurrConstraint()
     if (zIndex != -1)
       _zInequality->setCurrentIndex(zIndex);
 
-    //set tolerance
-    _toleranceBox->setValue(prel->getTolerance());
+    //set offset if any of the above got set
+    if (xIndex != -1 || yIndex != -1 || zIndex != -1)
+      {
+        _xOffset->setValue(prel->getXOffset());
+        _yOffset->setValue(prel->getYOffset());
+        _zOffset->setValue(prel->getZOffset());
+      }
 }
 

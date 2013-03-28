@@ -18,7 +18,10 @@ struct contact_goal_t
 	int32_t contact_type;
 
 	vector_3d_t target_pt; // only used for ON_GROUND_PLANE
-	double target_pt_radius; // only used for ON_GROUND_PLANE
+	double x_offset;
+    double y_offset;        
+    double z_offset;        
+    
     const int32_t REL_EQUAL          = 0, 
                   REL_LESS_THAN      = 1, 
                   REL_GREATER_THAN   = 2, 
