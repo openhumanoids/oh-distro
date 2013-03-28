@@ -19,12 +19,9 @@ classdef RigidBodyManipulator < Manipulator
   properties (Access=protected)
     B = [];
     featherstone = [];
+    terrain;
     mex_model_ptr = 0;
     dirty = true;
-    
-    terrain_height=zeros(20);  % height(i,j) = height at (xspacing * (i-1),-yspacing * (j-1))
-    T_terrain_to_world = [1,0,0,-10;0,1,0,10;0,0,1,0;0,0,0,1];  % translation from terrain coordinates to world coordinates
-    T_world_to_terrain;
   end
   
   methods
@@ -37,7 +34,7 @@ classdef RigidBodyManipulator < Manipulator
         if (nargin<2) options = struct(); end
         obj = addRobotFromURDF(obj,urdf_filename,zeros(3,1),zeros(3,1),options);
       end
-      obj = setTerrain(obj,zeros(20));  % default terrain is all zeros
+      obj.terrain = RigidBodyTerrain;
     end
     
     function checkDirty(obj)
@@ -62,41 +59,9 @@ classdef RigidBodyManipulator < Manipulator
       end
     end
     
-    function obj = setTerrain(obj,terrain_imagefile_or_heightmatrix,terrain_to_world_transform,varargin)
-      % usage:
-      %   setTerrain(obj,terrain,T)
-      %  or
-      %   setTerrain(obj,terrain,pos,size)
-      
-      if ischar(terrain_imagefile_or_heightmatrix)
-        a=imread(terrain_imagefile_or_heightmatrix);
-        terrain_height=double(rgb2gray(a))/255;
-      else
-        terrain_height = terrain_imagefile_or_heightmatrix;
-      end
-      
-      [m,n]=size(terrain_height);
-      if (nargin<3 || isempty(terrain_to_world_transform))
-        terrain_to_world_transform = [1,0,0,-(m-1)/2;0,1,0,(n-1)/2;0,0,1,0;0,0,0,1]; 
-      else
-        if sizecheck(terrain_to_world_transform,3)
-          % then it's setTerrain(obj,terrain,pos,size)
-          terrain_pos = terrain_to_world_transform(:);
-          if (nargin>3)
-            terrain_size=varargin{1}(:);
-            sizecheck(terrain_size,[3 1]);
-          else
-            terrain_size=[m-1;n-1;max(max(abs(terrain_height)))];
-          end
-          terrain_to_world_transform = [diag(terrain_size./[m-1;n-1;max(max(abs(terrain_height)))]), terrain_pos; 0 0 0 1]; 
-        end
-
-        sizecheck(terrain_to_world_transform,[4 4]);
-      end
-      
-      obj.terrain_height = terrain_height;
-      obj.T_terrain_to_world = terrain_to_world_transform;
-      obj.T_world_to_terrain = inv(terrain_to_world_transform);
+    function obj = setTerrain(obj,terrain)
+      typecheck(terrain,'RigidBodyTerrain');
+      obj.terrain = terrain;
     end
     
     function B = getB(obj)
@@ -230,36 +195,36 @@ classdef RigidBodyManipulator < Manipulator
       % todo: consider using quaternions)
       
       body1 = newBody(model);
-      body1.linkname = [rootlink.linkname,'_x'];
+      body1.linkname = ['base_x'];
       body1.robotnum=rootlink.robotnum;
       model.body = [model.body,body1];
       model = addJoint(model,body1.linkname,'prismatic',parent,body1,xyz,rpy,[1;0;0],0);
 
       body2=newBody(model);
-      body2.linkname = [rootlink.linkname,'_y'];
+      body2.linkname = ['base_y'];
       body2.robotnum=rootlink.robotnum;
       model.body = [model.body,body2];
       model = addJoint(model,body2.linkname,'prismatic',body1,body2,zeros(3,1),zeros(3,1),[0;1;0],0);
       
       body3=newBody(model);
-      body3.linkname = [rootlink.linkname,'_z'];
+      body3.linkname = ['base_z'];
       body3.robotnum=rootlink.robotnum;
       model.body = [model.body,body3];
       model = addJoint(model,body3.linkname,'prismatic',body2,body3,zeros(3,1),zeros(3,1),[0;0;1],0);
       
       body4=newBody(model);
-      body4.linkname = [rootlink.linkname,'_roll'];
+      body4.linkname = ['base_roll'];
       body4.robotnum=rootlink.robotnum;
       model.body = [model.body,body4];
       model = addJoint(model,body4.linkname,'revolute',body3,body4,zeros(3,1),zeros(3,1),[1;0;0],0);
       
       body5=newBody(model);
-      body5.linkname = [rootlink.linkname,'_pitch'];
+      body5.linkname = ['base_pitch'];
       body5.robotnum=rootlink.robotnum;
       model.body = [model.body,body5];
       model = addJoint(model,body5.linkname,'revolute',body4,body5,zeros(3,1),zeros(3,1),[0;1;0],0);
       
-      model = addJoint(model,[rootlink.linkname,'_yaw'],'revolute',body5,rootlink,zeros(3,1),zeros(3,1),[0;0;1],0);
+      model = addJoint(model,['base_yaw'],'revolute',body5,rootlink,zeros(3,1),zeros(3,1),[0;0;1],0);
     end
         
     function model = addSensor(model,sensor)
@@ -946,7 +911,7 @@ classdef RigidBodyManipulator < Manipulator
         body = parseVisual(body,node.getElementsByTagName('visual').item(0),model,options);
       end
       
-      if node.getElementsByTagName('collision').getLength()>0
+      if options.collision && node.getElementsByTagName('collision').getLength()>0
         collisionItem = 0;
         while(~isempty(node.getElementsByTagName('collision').item(collisionItem)))
           body = parseCollision(body,node.getElementsByTagName('collision').item(collisionItem),options);
