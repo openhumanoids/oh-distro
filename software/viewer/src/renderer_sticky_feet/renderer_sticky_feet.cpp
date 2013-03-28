@@ -155,6 +155,15 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
   { 
     //cout << "i:"<<i<< endl;
+    double pos[3];
+    pos[0] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0]; 
+    pos[1] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1]; 
+    pos[2] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2]+0.0;  
+    std::stringstream oss;
+    oss << i;
+    glColor4f(0,0,0,1);
+    bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, (oss.str()).c_str(),0);
+    
     draw_state(viewer,super,i);
   }
     
