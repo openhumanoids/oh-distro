@@ -58,8 +58,8 @@ options = struct('nSample',2);
 options.MajorIterationsLimit = 500;
 options.qdotf.ub = zeros(nq,1);
 options.qdotf.lb = zeros(nq,1);
-options.q_nom = q0;
-options.Q = Q;
+% options.q_nom = q0;
+% options.Q = Q;
 % options.Qv = 1*eye(nq);
 options.Qa = 5*Q;
 % options.quasiStaticFlag = true;
@@ -73,6 +73,7 @@ tic
 toc
 % profile off
 % profile viewer
+qtraj = PPTrajectory(pchipDeriv(t_breaks,q,qdot));
 xtraj = PPTrajectory(foh(t_breaks,[q;qdot]));
 xtraj = xtraj.setOutputFrame(p.getStateFrame());
 v = p.constructVisualizer();
