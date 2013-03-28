@@ -7,8 +7,8 @@ function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, 
 
 t = [X.time];
 
-% if time_limit - t(end) > biped.step_time
-if 1
+if time_limit - t(end) > biped.step_time
+% if 1
   if X(end-1).is_right_foot
     goal = foot_goals.right;
   else
