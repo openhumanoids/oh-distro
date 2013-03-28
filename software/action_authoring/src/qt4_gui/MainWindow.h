@@ -193,7 +193,7 @@ private:
     void updateFlyingManipulators();
     void updateRobotState(const lcm::ReceiveBuffer* rbuf, 
                           const std::string& channel,
-                          const drc::robot_state_t *robot_state);
+                          const drc::robot_state_constraint_checked_t *robot_state);
     void updatePointVisualizer();
     void updateFilesListComboBox();
     void setP2PFromCurrConstraint(); //set point2Point from curr selection

@@ -18,7 +18,11 @@ lc = lcm.lcm.LCM.getSingleton(); %('udpm://239.255.76.67:7667?ttl=1');
 
 % construct lcm input monitor
 monitor = drake.util.MessageMonitor(drc.action_sequence_t(),'utime');
-lc.subscribe('action_authoring_plan_action_request',monitor);
+if (IK==1)
+  lc.subscribe('REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE',monitor);
+elseif (IK==2)
+  lc.subscribe('REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE',monitor);
+end
 
 % construct lcm state publisher
 % todo: should really load model name from lcm
@@ -29,9 +33,9 @@ r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_m
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateCoder('atlas', joint_names)));
-robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...
-                                           'ACTION_AUTHORING_ROBOT_PLAN');
+robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
+robot_plan_publisher =  RobotPlanPublisher('atlas',joint_names,true, ...  
+  'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 %%
 
 % load the "zero position"
@@ -62,6 +66,7 @@ while (1)
   data = getNextMessage(monitor,timeout);
   if ~isempty(data)
     msg = drc.action_sequence_t(data);
+    ik_time = msg.ik_time;
     action_sequence = ActionSequence();
     if(action_options.ZMP)
         action_sequence_ZMP = ActionSequence();
@@ -83,8 +88,8 @@ while (1)
           pos.max = inf(3,1);
           pos.min = -inf(3,1);
           if(goal.x_relation == 0)
-              pos.min(1) = p(1)+goal.target_pt_radius;
-              pos.max(1) = p(1)-goal.target_pt_radius;
+              pos.min(1) = p(1)-goal.target_pt_radius;
+              pos.max(1) = p(1)+goal.target_pt_radius;
           elseif(goal.x_relation == 1)
               pos.max(1) = p(1);
               pos.min(1) = -inf;
@@ -295,22 +300,33 @@ while (1)
           publish(robot_plan_publisher, q_zmp_traj.getBreaks(), ...
                   [q_zmp_plan; zeros(size(q_zmp_plan))]);
       end
-      ikargs = action_sequence.getIKArguments(action_sequence.tspan(end));
-      if isempty(ikargs)
-        q=options.q_nom;
-      else
-        % call IK
-        q = inverseKin(r,q,ikargs{:},options);
+      if(action_options.IK)
+        ikargs = action_sequence.getIKArguments(ik_time);
+        if isempty(ikargs)
+          q=options.q_nom;
+          snopt_info = 1;
+        else
+          % call IK
+          [q,snopt_info] = inverseKin(r,q,ikargs{:},options);
+        end
       end
     catch ex
       warning(ex.identifier,ex.message);
       q=q_bk;
       continue;
     end
-    % publish robot state message
-    x = [q;0*q];
-    v.draw(0,x);
-    publish(robot_state_coder,0,x,'ACTION_AUTHORING_IK_ROBOT_STATE');
+      if(action_options.IK)
+        % publish robot state message
+        x = [q;0*q];
+        v.draw(0,x);
+        constraints_satisfied = ones(max(1,msg.num_contact_goals),1);
+        if (snopt_info == 13)
+          %kinsol = doKinematics(r,q,false);
+        end
+        publish(robot_state_coder,0,x, ...
+          'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE', ...
+          constraints_satisfied);
+      end
   end
 end
 

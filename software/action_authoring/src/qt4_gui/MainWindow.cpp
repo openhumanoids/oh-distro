@@ -1129,9 +1129,9 @@ void
 MainWindow::
 updateRobotState(const lcm::ReceiveBuffer* rbuf, 
                  const std::string& channel,
-                 const drc::robot_state_t *new_robot_state)
+                 const drc::robot_state_constraint_checked_t *new_robot_state)
 {
-    _worldState.state_gfe.from_lcm(*new_robot_state);
+    _worldState.state_gfe.from_lcm(new_robot_state->robot_state);
     _worldState.colorRobot.set(_worldState.state_gfe);
     // seems redundant but is necessary to get pose to work - don't remove!
     //_worldState.colorRobot.set(*new_robot_state);
