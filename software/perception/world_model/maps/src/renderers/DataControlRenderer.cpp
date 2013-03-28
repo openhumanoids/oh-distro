@@ -192,7 +192,7 @@ public:
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
     Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
-    Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(""));
+    Gtk::Label* ageLabel = new Gtk::Label("");
     spin->set_range(0, 10);
     spin->set_increments(1, 2);
     spin->set_digits(0);
