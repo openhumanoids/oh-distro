@@ -162,7 +162,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     std::stringstream oss;
     oss << i;
     glColor4f(0,0,0,1);
-    bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, (oss.str()).c_str(),0);
+    bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
     
     draw_state(viewer,super,i);
   }
