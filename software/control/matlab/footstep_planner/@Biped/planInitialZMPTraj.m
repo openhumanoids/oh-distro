@@ -60,10 +60,10 @@ while 1
   step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
   zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
   zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0; % 0.02
-  stance_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
-  stepzmp = [repmat(stance_center(1:3)+zmp_shift,1,3)...
+  s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
+  stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...
              repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
-%   plot_lcm_points((stepzmp + repmat([0;0;1], 1, length(stepzmp(1,:))))', zeros(size(stepzmp')), istep.right + istep.left, 'ZMP location', 1, true);
+  plot_lcm_points((stepzmp + repmat([0;0;1], 1, length(stepzmp(1,:))))', zeros(size(stepzmp')), istep.right + istep.left, 'ZMP location', 1, true);
     
   istep.(m_foot) = istep.(m_foot) + 1;
   
@@ -97,7 +97,7 @@ for f = {'right', 'left'}
 
 end
 
-% creat ZMP trajectory
+% create ZMP trajectory
 p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));
 zmp = [zmp,p(1:2)];
 zmptraj = PPTrajectory(foh(ts,zmp));

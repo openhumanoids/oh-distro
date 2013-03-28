@@ -55,12 +55,12 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 %       ts = zmptraj.tspan(1):0.05:zmptraj.tspan(end);
 %       xtraj = computeHeelToeZMPPlan(obj, x0, zmptraj, foottraj, ts);
 %     end
-    function [xtraj, qtraj, htraj, V] = walkingPlan(obj, x0, qstar, navgoal, options)
+    function [xtraj, qtraj, htraj, V, ts] = walkingPlan(obj, x0, qstar, navgoal, options)
       if nargin < 5
         options = struct();
       end
       X = obj.planFootsteps(x0, navgoal, options);
-      [xtraj, qtraj, htraj, V] = obj.walkingPlanFromSteps(x0, qstar, X, 1.3);
+      [xtraj, qtraj, htraj, V, ts] = obj.walkingPlanFromSteps(x0, qstar, X, 1.3);
     end
 
 %     function [xtraj, ts] = walkingPlan(obj, x0, poses, options)

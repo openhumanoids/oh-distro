@@ -1,4 +1,4 @@
-function [X] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefun, data)
+function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefun, data)
   
   interactive = true
   poses = navgoal(1:6);
@@ -39,6 +39,7 @@ function [X] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefun, 
       end
     end
     if done
+      Xout = X;
       break
     end
 
@@ -49,18 +50,16 @@ function [X] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefun, 
     else
       modified = true;
     end
-    % if modifed
-      % biped.publish_footstep_plan(X);
-      outputfun(X, @heightfun);
-    % end
+    
+    Xout = X;
+    % Convert from foot center to foot origin
+    for j = 1:length(X)
+      Xout(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
+    end
+    outputfun(Xout, @heightfun);
     if (~interactive && ~modified) || (done)
       break
     end
-  end
-
-  % Convert from foot center to foot origin
-  for j = 1:length(X)
-    X(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
   end
   
 end

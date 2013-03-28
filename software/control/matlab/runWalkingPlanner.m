@@ -27,9 +27,10 @@ while true
   qstar = xstar(1:nq);
 
   pose = [goal_x;goal_y;0;0;0;goal_yaw];
+  navgoal = [pose; 20];
 
   if ~lcm_plan
-    [rfoot, lfoot] = planFootsteps(r, x0, pose, struct('plotting', true, 'interactive', false));
+    footsteps = planFootsteps(r, x0, navgoal, struct('plotting', true, 'interactive', false));
   else
     footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
     disp('Listening for footstep plans...');
@@ -38,8 +39,8 @@ while true
 
 
     while waiting
-      foottraj = footstep_plan_listener.getNextMessage(0);
-      if (~isempty(foottraj))
+      footsteps = footstep_plan_listener.getNextMessage(0);
+      if (~isempty(footsteps))
         disp('footstep plan received.');
         waiting = false;
       end
@@ -51,71 +52,74 @@ while true
         x0=x;
       end
     end
-
-    rfoot = foottraj(1:6,find(foottraj(15,:)==1));
-    lfoot = foottraj(1:6,find(foottraj(15,:)==0));
   end
 
-  q0 = x0(1:nq);
-  kinsol = doKinematics(r,q0);
-
-  [zmptraj,foottraj,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
-  zmptraj = setOutputFrame(zmptraj,desiredZMP);
-
-  % construct ZMP feedback controller
-  com = getCOM(r,kinsol);
-  limp = LinearInvertedPendulum(com(3));
-  % get COM traj from desired ZMP traj
-  comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
-
-  if 1
-    [~,V] = ZMPtracker(limp,zmptraj);
-  end
-
-  % time spacing of samples for IK
-  ts = 0:0.1:zmptraj.tspan(end);
-
-  % create desired joint trajectory
-  cost = Point(r.getStateFrame,1);
-  cost.base_x = 0;
-  cost.base_y = 0;
-  cost.base_z = 0;
-  cost.base_roll = 1000;
-  cost.base_pitch = 1000;
-  cost.base_yaw = 0;
-  cost.back_mby = 100;
-  cost.back_ubx = 500;
-  cost = double(cost);
-  options = struct();
-  options.Q = diag(cost(1:r.getNumDOF));
-%   options.q_nom = q0;
-  options.q_nom = qstar;
-
-  rfoot_body = r.findLink('r_foot');
-  lfoot_body = r.findLink('l_foot');
-
-  disp('Computing robot plan...');
-  % v = r.constructVisualizer;
-  % v.display_dt = 0.05;
-  htraj = [];
-  for i=1:length(ts)
-    t = ts(i);
-    if (i>1)
-      q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
-    else
-      q = q0;
-    end
-    com = getCOM(r,q(:,i));
-    htraj = [htraj com(3)];
-  %   v.draw(t,q(:,i));
-  end
-  qtraj = PPTrajectory(spline(ts,q));
-  htraj = PPTrajectory(spline(ts,htraj));
+  [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps, 1.3);
   
+%   q0 = x0(1:nq);
+%   kinsol = doKinematics(r,q0);
+% 
+%   [zmptraj,foottraj,~,supptraj] = planZMPandHeelToeTrajectory(r, q0, rfoot, lfoot, 1.3);
+%   zmptraj = setOutputFrame(zmptraj,desiredZMP);
+% 
+%   % construct ZMP feedback controller
+%   com = getCOM(r,kinsol);
+%   limp = LinearInvertedPendulum(com(3));
+%   % get COM traj from desired ZMP traj
+%   comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
+% 
+%   if 1
+%     [~,V] = ZMPtracker(limp,zmptraj);
+%   end
+% 
+%   % time spacing of samples for IK
+%   ts = 0:0.1:zmptraj.tspan(end);
+% 
+%   % create desired joint trajectory
+%   cost = Point(r.getStateFrame,1);
+%   cost.base_x = 0;
+%   cost.base_y = 0;
+%   cost.base_z = 0;
+%   cost.base_roll = 1000;
+%   cost.base_pitch = 1000;
+%   cost.base_yaw = 0;
+%   cost.back_mby = 100;
+%   cost.back_ubx = 500;
+%   cost = double(cost);
+%   options = struct();
+%   options.Q = diag(cost(1:r.getNumDOF));
+% %   options.q_nom = q0;
+%   options.q_nom = qstar;
+% 
+%   rfoot_body = r.findLink('r_foot');
+%   lfoot_body = r.findLink('l_foot');
+% 
+%   disp('Computing robot plan...');
+%   % v = r.constructVisualizer;
+%   % v.display_dt = 0.05;
+%   htraj = [];
+%   for i=1:length(ts)
+%     t = ts(i);
+%     if (i>1)
+%       q(:,i) = inverseKin(r,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+%     else
+%       q = q0;
+%     end
+%     com = getCOM(r,q(:,i));
+%     htraj = [htraj com(3)];
+%   %   v.draw(t,q(:,i));
+%   end
+%   qtraj = PPTrajectory(spline(ts,q));
+%   htraj = PPTrajectory(spline(ts,htraj));
+%   matlab.mat
+%   % publish robot plan
+%   disp('Publishing robot plan...');
+%   xtraj = zeros(getNumStates(r),length(ts));
+%   xtraj(1:getNumDOF(r),:) = q;
+%   
+%   
   % publish robot plan
   disp('Publishing robot plan...');
-  xtraj = zeros(getNumStates(r),length(ts));
-  xtraj(1:getNumDOF(r),:) = q;
   %%%% TMP HACK FOR QUAL 1 %%%%%
   xtraj(3,:) = xtraj(3,:)+ 1;
   %%%% TMP HACK FOR QUAL 1 %%%%%

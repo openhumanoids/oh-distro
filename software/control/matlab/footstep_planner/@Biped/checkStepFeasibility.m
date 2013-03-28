@@ -6,12 +6,12 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
     p0 = [p0(1, :); p0(2, :); zeros(3, size(p0, 2)); p0(3, :)];
   end
 
-  max_step_width = 0.3;
-  min_step_width = 0.15;
+  max_step_width = 0.35;
+  min_step_width = 0.20;
 
   % theta=0 is the direction the stance foot is pointing
   theta_max = 2*pi/3;
-  theta_min = pi/8;
+  theta_min = pi/4;
   theta_mean = mean([theta_min, theta_max]);
 
   c = zeros(3, size(p0, 2));

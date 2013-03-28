@@ -1,15 +1,14 @@
-function [xtraj, qtraj, htraj, V] = walkingPlanFromSteps(biped, x0, qstar, X, step_time)
-
-nq = getNumDOF(biped);
-q0 = x0(1:nq);
-kinsol = doKinematics(biped,q0);
+function [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(biped, x0, qstar, X, step_time)
 
 Xpos = [X.pos];
 Xright = Xpos(:, [X.is_right_foot] == 1);
 Xleft = Xpos(:, [X.is_right_foot] == 0);
 
-q0 = x0(1:end/2);
-[zmptraj, foottraj] = biped.planInitialZMPTraj(q0, Xright, Xleft, step_time);
+nq = getNumDOF(biped);
+q0 = x0(1:nq);
+kinsol = doKinematics(biped,q0);
+
+[zmptraj,foottraj, supptraj] = planInitialZMPTraj(biped, q0, Xright, Xleft, step_time);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
@@ -34,7 +33,7 @@ cost.base_roll = 1000;
 cost.base_pitch = 1000;
 cost.base_yaw = 0;
 cost.back_mby = 100;
-cost.back_ubx = 100;
+cost.back_ubx = 500;
 cost = double(cost);
 options = struct();
 options.Q = diag(cost(1:biped.getNumDOF));
@@ -61,6 +60,5 @@ for i=1:length(ts)
 end
 qtraj = PPTrajectory(spline(ts,q));
 htraj = PPTrajectory(spline(ts,htraj));
-
 xtraj = zeros(getNumStates(biped),length(ts));
-xtraj(1:getNumDOF(r),:) = q;
+xtraj(1:getNumDOF(biped),:) = q;

@@ -166,7 +166,7 @@ classdef DRCController
         if any(tt >= obj.t_final)
           % on timeout events, we pass back the latest input data
           input_data = struct();
-          if ~strcmp(obj.name,'harnessed') % TMP HACK
+          if true%~strcmp(obj.name,'harnessed') % TMP HACK
             if obj.n_input_frames > 1
               for i=1:obj.n_input_frames
                 input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});

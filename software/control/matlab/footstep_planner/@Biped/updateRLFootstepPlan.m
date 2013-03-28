@@ -7,8 +7,14 @@ function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, 
 
 t = [X.time];
 
-if time_limit - t(end) > biped.step_time
-  c = biped.checkStepFeasibility(X(end-2).pos, X(end-1).pos, X(end-2).is_right_foot);
+% if time_limit - t(end) > biped.step_time
+if 1
+  if X(end-1).is_right_foot
+    goal = foot_goals.right;
+  else
+    goal = foot_goals.left;
+  end
+  c = biped.checkStepFeasibility(X(end-2).pos, goal, X(end-2).is_right_foot);
   if any(c > 0)
     if X(end-3).is_right_foot
       goal = foot_goals.right;
@@ -24,7 +30,13 @@ if time_limit - t(end) > biped.step_time
   end
 end
 if length(X) > 4
-  c = biped.checkStepFeasibility(X(end-3).pos, X(end).pos, X(end-3).is_right_foot);
+  if X(end).is_right_foot
+    goal = foot_goals.right;
+  else
+    goal = foot_goals.left;
+  end
+    
+  c = biped.checkStepFeasibility(X(end-3).pos, goal, X(end-3).is_right_foot);
   if all(c < 0)
     X = [X(1:end-3), X(end), X(end-1)];
   end
@@ -34,6 +46,10 @@ end
 
 t = num2cell(biped.getStepTimes([X.pos]));
 [X.time] = t{:};
+
+for j = 1:size(X, 2)
+  X(j).pos(3) = heightfun(X(j).pos(1:2));
+end
 
 X_orig = X;
   

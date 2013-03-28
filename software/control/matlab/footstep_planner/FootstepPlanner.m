@@ -28,12 +28,14 @@ classdef FootstepPlanner < DRCPlanner
     
     function X = plan(obj,navgoal,data)
       navgoal
+      %%% HACK for DRC Qual 1 
+      navgoal(3) = 0;
       time_limit = navgoal(7);
       isnew = true;
       options.plotting = true;
       options.interactive = true;
       options.heel_toe = false;
-      X = obj.biped.optimizeRLFootstepPlan(data.x0, navgoal, @publish, @obj.updateData, data)
+      X = obj.biped.optimizeRLFootstepPlan(data.x0, navgoal, @publish, @obj.updateData, data);
 
       function publish(X, htfun)
         obj.biped.publish_footstep_plan(X, htfun, data.utime, isnew);
