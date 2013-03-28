@@ -16,7 +16,7 @@ namespace renderer_affordances
     _worker_pool_ready(false),
     _num_workers(0) 
   {
- 
+    _last_statusmsg_stamp = bot_timestamp_now();
     _lcm = affordance_renderer->lcm; 
     
     //lcm ok?
