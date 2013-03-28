@@ -5,9 +5,8 @@ function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, 
   nom_step_width = 0.2;
   max_diag_dist = sqrt(max_step_width^2 + biped.max_step_length^2);
 
-t = [X.time];
 
-if time_limit - t(end) > 1 % we take the nav goal time limit as a number of steps, rather than seconds
+if time_limit - length(X) > 1 % we take the nav goal time limit as a number of steps, rather than seconds
 % if 1
   if X(end-1).is_right_foot
     goal = foot_goals.right;
@@ -79,7 +78,7 @@ b = repmat([max_diag_dist; max_diag_dist; biped.max_step_rot], ncon / 3, 1);
 
 [x_flat,fval,exitflag,output,lambda,grad] = fmincon(@cost, x_flat,A,b,[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
-  optimset('Algorithm', 'interior-point', 'MaxIter', 30, 'Display', 'off', 'TolX', 0.01));
+  optimset('Algorithm', 'interior-point', 'MaxIter', 30, 'Display', 'off', 'TolX', 0.01, 'TolCon', 0.01));
 % grad
 % exitflag
 

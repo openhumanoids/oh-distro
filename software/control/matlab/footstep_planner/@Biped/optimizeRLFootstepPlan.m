@@ -45,6 +45,12 @@ function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefu
     end
 
     [X, outputflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, @heightfun);
+
+    if outputflag == 1
+      % if the optimization was successful, lock down the total number of
+      % footsteps
+      time_limit = length(X);
+    end
     
     if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
       modified = false;
