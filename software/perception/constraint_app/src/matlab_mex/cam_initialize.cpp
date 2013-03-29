@@ -1,5 +1,6 @@
 #include "mex.h"
-#include "ConstraintApp.h"
+#include "ConstraintApp_RB_UKF.h"
+#include "ConstraintApp_MB.h"
 #include <vector>
 
 typedef std::vector<ConstraintApp*> ConstraintAppVector;
@@ -17,7 +18,8 @@ static void cleanup(void)
 
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
-  ConstraintApp* app(new ConstraintApp());
+  //ConstraintApp* app((ConstraintApp*)new ConstraintApp_RB_UKF());
+  ConstraintApp* app((ConstraintApp*)new ConstraintApp_MB());
 
   if ( nrhs ) {
     mexErrMsgTxt("too many parameters"); 

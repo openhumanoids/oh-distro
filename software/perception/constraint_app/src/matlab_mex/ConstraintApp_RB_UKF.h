@@ -1,5 +1,5 @@
-#ifndef CONSTRAINTAPP_H
-#define CONSTRAINTAPP_H
+#ifndef CONSTRAINTAPP_RB_UKF_H
+#define CONSTRAINTAPP_RB_UKF_H
 
 #include <boost/thread.hpp>
 #include <boost/thread/condition_variable.hpp>
@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include "PointObservation.h"
+#include "ConstraintApp.h"
 
 class ConstraintApp_RB_UKF : public ConstraintApp
 {
@@ -37,67 +38,20 @@ public:
   ConstraintApp_RB_UKF();
   virtual ~ConstraintApp_RB_UKF();
 
-  bool shouldStop() {
-    bool ret;
-    {
-      boost::mutex::scoped_lock lock(m_stopThreadsMutex);
-      ret = m_stopThreads;
-    }
-    return ret;
-  }
+  virtual bool WaitForObservations(unsigned int timeout_ms);
+  virtual bool GetObservations(std::vector<double>& actualObservations,
+			       std::vector<int>& observationIds);
+  virtual bool GetExpectedObservations(const std::vector<double>& state,
+				       const std::vector<int>& observationIds,
+				       std::vector<double>& observations);
+  virtual bool GetResetAndClear();
+  virtual void GetCurrentStateEstimate(std::vector<double>& state);
+  virtual void SetCurrentStateEstimate(const std::vector<double>& state);
 
-  void stopThreads() {
-    {
-      boost::mutex::scoped_lock lock(m_stopThreadsMutex);
-      m_stopThreads = true;
-    }
-    m_mainThread->join();
-  }
+  virtual void AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg);
+  virtual void AffordanceFitHandler(const drc_affordance_t *msg);
 
-  int getCounter() {
-    boost::mutex::scoped_lock lock(m_counterMutex);
-    return m_counter;
-  }
-
-  bool WaitForObservations(unsigned int timeout_ms);
-  bool GetObservations(std::vector<double>& actualObservations,
-		       std::vector<int>& observationIds);
-  bool GetExpectedObservations(const std::vector<double>& state,
-			       const std::vector<int>& observationIds,
-			       std::vector<double>& observations);
-  bool GetResetAndClear();
-  void GetCurrentStateEstimate(std::vector<double>& state);
-  void SetCurrentStateEstimate(const std::vector<double>& state);
-
-  static void AffordanceTrackCollectionHandlerAux(const lcm_recv_buf_t* rbuf,
-						      const char* channel,
-						      const drc_affordance_track_collection_t* msg,
-						      void* user_data) {
-    ((ConstraintApp_RB_UKF*) user_data)->AffordanceTrackCollectionHandler(msg);
-  }
-  void AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg);
-
-  static void AffordanceFitHandlerAux(const lcm_recv_buf_t* rbuf,
-				      const char* channel,
-				      const drc_affordance_t* msg,
-				      void* user_data) {
-    ((ConstraintApp_RB_UKF*) user_data)->AffordanceFitHandler(msg);
-  }
-  void AffordanceFitHandler(const drc_affordance_t *msg);
-
-protected:
-  boost::thread* m_mainThread;
-  volatile bool m_stopThreads;
-  boost::mutex m_stopThreadsMutex;
-
-  boost::mutex m_counterMutex;
-  volatile int m_counter;
-
-  boost::mutex m_lcmMutex;
-  lcm_t* m_lcm;
-
-  std::ofstream m_log;
-
+ protected:
   boost::mutex m_dataMutex;
   boost::condition_variable m_dataCondition;
   Configuration m_currentEstimate;
@@ -106,13 +60,6 @@ protected:
   bool m_wasReset;
 
   int m_nextLinkId;
-
- protected:
-  void main();
-  int lcm_handle_timeout(lcm_t* lcm, int ms);
-  KDL::Frame GetFrameFromParams(const drc_affordance_t *msg);
-  KDL::Frame VectorToFrame(const std::vector<double>& state);
-  std::vector<double> FrameToVector(const KDL::Frame& frame);
 };
 
 #endif

@@ -58,7 +58,8 @@ atc.ntracks = 2
 
 for i in range(atc.ntracks):
     track = affordance_track_t()
-    track.segment = str(track_ids[i])
+    track.segment = ""
+    track.id = track_ids[i]
     v = vector_3d_t()
     v.x = track_means[i,0]
     v.y = track_means[i,1]
@@ -81,7 +82,8 @@ for j in range(3):
         if j == 2 and i == 1:
             continue
         track = affordance_track_t()
-        track.segment = str(track_ids[i])
+        track.segment = ""
+        track.id = track_ids[i]
         v = vector_3d_t()
         var = 0.01*0.01;
         v.x = track_means[i,0] + random.gauss(0.0,var)
