@@ -13,3 +13,4 @@ include_directories(${LCMTYPES_INCLUDE_DIRS})
 
 # build two LCM test programs
 add_subdirectory(src)
+

@@ -58,17 +58,19 @@ public:
 	float currConf;
         int currpIdx, currnIdx;
 	bool learning;
+        float scale_factor; 
 
 	TLD();
 	virtual ~TLD();
 	void release();
 	void selectObject(cv::Mat img, cv::Rect * bb);
-	void processImage(cv::Mat img);
+	bool processImage(cv::Mat img);
 	void drawTemplates();
         void convert_to_img_patch(NormalizedPatch& patch); 
 	void writeToFile(const char * path);
-	void readFromFile(const char * path);
+	bool readFromFile(const char * path);
         cv::Mat currPosPatch();
+        cv::Rect BB(); 
 };
 
 } /* namespace tld */

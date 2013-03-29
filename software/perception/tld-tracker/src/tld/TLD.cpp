@@ -28,6 +28,7 @@
 #include "TLDUtil.h"
 #include <iostream>
 #include <cstdio>
+#include <bot_core/bot_core.h>
 
 using namespace std;
 
@@ -37,12 +38,12 @@ TLD::TLD() {
 	trackerEnabled = true;
 	detectorEnabled = true;
 	learningEnabled = true;
-	alternating = false;
+	alternating = true;
 	valid = false;
 	wasValid = false;
 	learning = false;
 	currBB = NULL;
-
+        scale_factor = 1.f;
         currpIdx = -1, currnIdx = -1;
 
 	detectorCascade = new DetectorCascade();
@@ -85,8 +86,24 @@ void TLD::selectObject(Mat img, Rect * bb) {
 	//Init detector cascade
 	detectorCascade->init();
 
-	currImg = img;
-	currBB = bb;
+        // if (scale_factor != 1.f) { 
+        //     int method = cv::INTER_LINEAR; //cv::INTER_AREA : cv::INTER_CUBIC;
+        //     cv::resize(img, currImg, cv::Size(), scale_factor, scale_factor, method);
+        //     std::cerr << "img: " << img.rows << "x" << img.cols << std::endl;
+        //     std::cerr << "input RECT: " << bb->tl() << " " << bb->br() << std::endl;
+        //     int w = bb->br().x - bb->tl().x; 
+        //     int h = bb->br().y - bb->tl().y; 
+        //     bb->x = ((bb->tl().x + bb->br().x) / 2 - w/2) * scale_factor;
+        //     bb->y = ((bb->tl().y + bb->br().y) / 2 - h/2) * scale_factor;
+        //     bb->width = w;
+        //     bb->height = h;
+        //     std::cerr << "resized RECT: " << bb->tl() << " " << bb->br() << std::endl;
+        //     std::cerr << "currimg: " << currImg.rows << "x" << currImg.cols << std::endl;
+        //     currBB = bb;
+        // } else { 
+            currImg = img;
+            currBB = bb;
+            //}
 	currConf = 1;
 	valid = true;
 
@@ -94,26 +111,44 @@ void TLD::selectObject(Mat img, Rect * bb) {
 
 }
 
-void TLD::processImage(Mat img) {
+bool TLD::processImage(Mat img) {
+        // if (scale_factor != 1.f) { 
+        //     int method = cv::INTER_LINEAR; //cv::INTER_AREA : cv::INTER_CUBIC;
+        //     cv::resize(img, img, cv::Size(), scale_factor, scale_factor, method);
+        // } else  
+        //     img = img;
+
 	storeCurrentData();
+
 	Mat grey_frame;
-	cvtColor( img,grey_frame, CV_RGB2GRAY );
+        if (img.channels() == 1) 
+            grey_frame = img.clone(); 
+        else 
+            cvtColor( img, grey_frame, CV_BGR2GRAY );
 	currImg = grey_frame; // Store new image , right after storeCurrentData();
 
+        int64_t tic = bot_timestamp_now(); 
 	if(trackerEnabled) {
 		medianFlowTracker->track(prevImg, currImg, prevBB);
 	}
+        printf("MEDIANFLOW (%s): %f ms\n", (medianFlowTracker->trackerBB != NULL) ? "GOOD":"NULL", 
+            (bot_timestamp_now() - tic) * 1e-3);
 
+        tic = bot_timestamp_now(); 
 	if(detectorEnabled && (!alternating || medianFlowTracker->trackerBB == NULL)) {
 		detectorCascade->detect(grey_frame);
 	}
-
+        printf("DETECT: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
+        tic = bot_timestamp_now(); 
 	fuseHypotheses();
+        printf("FUSE: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
 
+        tic = bot_timestamp_now(); 
 	learn();
-
+        printf("LEARN: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
+        
         // drawTemplates();
-
+        return (currBB != NULL);
 }
 
 void TLD::drawTemplates() { 
@@ -294,8 +329,8 @@ void TLD::initialLearning() {
 
                 Rect bb(x,y,w,h);
 
-                // Mat1b img_patch(currImg, bb);
-                // resize(img_patch, patch.img_patch, patch.img_patch.size());
+                Mat1b img_patch(currImg, bb);
+                resize(img_patch, patch.img_patch, patch.img_patch.size());
 
 	}
 
@@ -390,14 +425,14 @@ void TLD::learn() {
                 convert_to_img_patch(patch);
 		patches.push_back(patch);
 
-                int* boundary = &detectorCascade->windows[TLD_WINDOW_SIZE*idx];
-                int x,y,w,h;
-                tldExtractDimsFromArray(boundary, &x,&y,&w,&h);
+                // int* boundary = &detectorCascade->windows[TLD_WINDOW_SIZE*idx];
+                // int x,y,w,h;
+                // tldExtractDimsFromArray(boundary, &x,&y,&w,&h);
 
-                Rect bb(x,y,w,h);
+                // Rect bb(x,y,w,h);
 
-                Mat1b img_patch(currImg, bb);
-                resize(img_patch, patch.img_patch, patch.img_patch.size());
+                // Mat1b img_patch(currImg, bb);
+                // resize(img_patch, patch.img_patch, patch.img_patch.size());
 	}
 
 	detectorCascade->nnClassifier->learn(patches);
@@ -501,7 +536,7 @@ void TLD::convert_to_img_patch(NormalizedPatch& patch) {
     resize(patch.img_patch, patch.img_patch, cv::Size(TLD_IMG_PATCH_SIZE, TLD_IMG_PATCH_SIZE));
 }
 
-void TLD::readFromFile(const char * path) {
+bool TLD::readFromFile(const char * path) {
 	release();
 
 	NNClassifier * nn = detectorCascade->nnClassifier;
@@ -511,7 +546,8 @@ void TLD::readFromFile(const char * path) {
 
 	if(file == NULL) {
 		printf("Error: Model not found: %s\n", path);
-		exit(1);
+                return false;
+		// exit(1);
 	}
 
 	int MAX_LEN=255;
@@ -632,8 +668,17 @@ void TLD::readFromFile(const char * path) {
 	detectorCascade->initialised = true;
 
 	ec->initFeatureOffsets();
-
+        return true;
 }
 
+cv::Rect TLD::BB() {
+    float x = currBB->tl().x, y = currBB->tl().y;
+    float w = currBB->width, h = currBB->height;
+    float sw = w / scale_factor, sh = h / scale_factor;
+    cv::Rect bb(1.f/scale_factor * (x + w/2 - sw), 
+                1.f/scale_factor * (y + h/2 - sh), 
+                sw, sh); 
+    return bb;                
+}
 
 } /* namespace tld */

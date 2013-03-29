@@ -1,3 +1,7 @@
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgomp")
+
 include_directories(. ../cvblobs tracker)
 link_libraries(cvblobs)
 

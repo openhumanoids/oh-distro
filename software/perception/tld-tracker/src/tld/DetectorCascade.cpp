@@ -250,6 +250,7 @@ void DetectorCascade::detect(Mat img) {
 	varianceFilter->nextIteration(img); //Calculates integral images
 	ensembleClassifier->nextIteration(img);
 
+        int64_t st = cv::getTickCount();
 	#pragma omp parallel for
 	for (int i = 0; i < numWindows; i++) {
 
@@ -290,6 +291,8 @@ void DetectorCascade::detect(Mat img) {
 
 
 	}
+        int64_t end = cv::getTickCount() - st;
+        std::cerr << "DETECTcascade: " << end * 1e-6 << " " << numWindows << std::endl;; 
 	//Cluster
 	clustering->clusterConfidentIndices();
 
