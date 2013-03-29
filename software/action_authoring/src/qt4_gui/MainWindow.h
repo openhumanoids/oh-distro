@@ -220,6 +220,8 @@ private slots:
     void mediaFastForward();
     void mediaFastBackward();
     void mediaPlay();
+    void mediaForward();
+    void mediaBackward();
     void nextKeyFrame();
     void requestMotionPlan();
     void changeMode();

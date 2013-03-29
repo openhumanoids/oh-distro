@@ -269,7 +269,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
     // see http://www.qtcentre.org/wiki/index.php?title=Embedded_resources
     QPixmap pixmap1(":/trolltech/styles/commonstyle/images/media-skip-backward-32.png");
-    _fbwd->setEnabled(false);
     _fbwd->setIcon(QIcon(pixmap1));
     _fbwd->setIconSize(pixmap1.rect().size());
 
@@ -287,7 +286,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _fwd->setIconSize(pixmap4.rect().size());
 
     QPixmap pixmap5(":/trolltech/styles/commonstyle/images/media-skip-forward-32.png");
-    _ffwd->setEnabled(false);
     _ffwd->setIcon(QIcon(pixmap5));
     _ffwd->setIconSize(pixmap5.rect().size());
 
@@ -369,8 +367,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     _zInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
     _zInequality->insertItem(0, PCR::EQUAL_STR.c_str());
 
-    
-
     QWidget *inequalities = new QWidget(this);
     QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
 
@@ -420,6 +416,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
     connect(_ffwd, SIGNAL(released()), this, SLOT(mediaFastForward()));
     connect(_fbwd, SIGNAL(released()), this, SLOT(mediaFastBackward()));
+    connect(_fwd, SIGNAL(released()), this, SLOT(mediaForward()));
+    connect(_bwd, SIGNAL(released()), this, SLOT(mediaBackward()));
 
     connect(deletebutton, SIGNAL(released()), this, SLOT(handleDeleteConstraint()));
     connect(_moveUpButton, SIGNAL(released()), this, SLOT(handleMoveUp()));
@@ -443,6 +441,8 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(testIKPublishButton, SIGNAL(released()), this, SLOT(requestIKSolution()));
     //end demoware
 
+    //sets the enable/disable for media buttons
+    handleScrubberChange();
 }
 
 MainWindow::~MainWindow()
@@ -668,9 +668,7 @@ void
 MainWindow::
 updateScrubber()
 {
-    // update the scrubber
     _MaxEndTime = 0.0;
-    vector<double> lengths;
     _scrubber->clearTicks();
 
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
@@ -687,8 +685,8 @@ updateScrubber()
       float start_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeLowerBound();
       float end_time = _authoringState._all_gui_constraints[i]->getConstraintMacro()->getTimeUpperBound();
 
-      _scrubber->addTick(start_time / _MaxEndTime);
-      _scrubber->addTick(end_time / _MaxEndTime);
+      _scrubber->addMajorTick(start_time / _MaxEndTime);
+      _scrubber->addMajorTick(end_time / _MaxEndTime);
     }
     
     float selected_start_time = _authoringState._selected_gui_constraint->getConstraintMacro()->getTimeLowerBound() / _MaxEndTime;
@@ -710,7 +708,12 @@ handleScrubberChange()
       float scrubber_time = float(_scrubber->value()) / float((_scrubber->maximum() - _scrubber->minimum()));
       bool active = scrubber_time >= start_time && scrubber_time < end_time;
       _authoringState._all_gui_constraints[i]->getPanel()->setConstraintActiveStatus(active);
-    } 
+    }
+
+  _fwd->setEnabled(_scrubber->hasNextTick());
+  _bwd->setEnabled(_scrubber->hasPreviousTick());
+  _ffwd->setEnabled(_scrubber->hasNextMajorTick());
+  _fbwd->setEnabled(_scrubber->hasPreviousMajorTick());
 }
 
 
@@ -752,15 +755,6 @@ setSelectedAction(Qt4ConstraintMacro *activator)
         {
             _authoringState._all_gui_constraints[i]->setSelected(false);
         } 
-    }
-
-    if (! noChange)
-    {
-        // enable or disable media/move buttons
-        _moveUpButton->setEnabled(selected_index != 0);
-        _moveDownButton->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
-        _fbwd->setEnabled(selected_index != 0);
-        _ffwd->setEnabled(selected_index != (int)_authoringState._all_gui_constraints.size() - 1);
     }
 
     // update the scrubber tick lines
@@ -948,28 +942,34 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
     return;
 }
 
-
 void
 MainWindow::
 mediaFastForward()
 {
-    int i = getSelectedGUIConstraintIndex();
-    if (i >= 0 && i != (int)_authoringState._all_gui_constraints.size() - 1)
-    {
-        _authoringState._all_gui_constraints[i + 1]->setActiveExternal();
-    }
+    _scrubber->advanceToNextMajorTick();
 }
 
 void
 MainWindow::
 mediaFastBackward()
 {
-    int i = getSelectedGUIConstraintIndex();
-    if (i >= 0)
-    {
-        _authoringState._all_gui_constraints[i - 1]->setActiveExternal();
-    }
+    _scrubber->returnToPreviousMajorTick();
 }
+
+void
+MainWindow::
+mediaForward()
+{
+    _scrubber->advanceToNextTick();
+}
+
+void
+MainWindow::
+mediaBackward()
+{
+    _scrubber->returnToPreviousTick();
+}
+
 
 void
 MainWindow::
@@ -1016,7 +1016,7 @@ nextKeyFrame()
 
         if ((acc / _MaxEndTime) > fraction)
         {
-            setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
+	  //setSelectedAction(_authoringState._all_gui_constraints[i].get()); // todo ugly; have to because of qt
             break;
         }
     }
@@ -1151,10 +1151,28 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
 {
     _worldState.state_gfe.from_lcm(new_robot_state->robot_state);
     _worldState.colorRobot.set(_worldState.state_gfe);
+
     // seems redundant but is necessary to get pose to work - don't remove!
     //_worldState.colorRobot.set(*new_robot_state);
-
     handleAffordancesChanged();
+    for (int i = 0; i < new_robot_state->num_constraints && i < _authoringState._all_gui_constraints.size(); i++)
+    {
+      TogglePanel::PlannerStatus status;
+      int value  = new_robot_state->constraints_satisfied[i];
+      if (value == 0)
+      {
+	status = TogglePanel::PLANNER_NOT_OK;
+      }
+      else if ( value == 1)
+	{
+	  status = TogglePanel::PLANNER_OK;
+	}
+      else
+	{
+	  status = TogglePanel::PLANNER_UNKNOWN;
+	}
+	  _authoringState._all_gui_constraints[0]->getPanel()->setPlannerStatus(status);
+    }
 }
 
 void

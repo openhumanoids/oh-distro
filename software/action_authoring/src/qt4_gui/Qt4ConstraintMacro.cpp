@@ -6,7 +6,7 @@ using namespace action_authoring;
 
 Qt4ConstraintMacro::
 Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) :
-    _gui_panel(new TogglePanel(this, "test", true)),
+    _gui_panel(new TogglePanel(this, "")),
     _gui_name(new QLineEdit()),
     _gui_robotJointType(new QComboBox()),
     _gui_constraintType(new QComboBox()),
@@ -27,7 +27,7 @@ Qt4ConstraintMacro::
 ~Qt4ConstraintMacro()
 {
     //TODO; hack
-    std::cout << "destructive destructor destructing" << std::endl;
+    //    std::cout << "destructive destructor destructing" << std::endl;
     _gui_panel->setParent(NULL);
     //delete _gui_panel;
 }

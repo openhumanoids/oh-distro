@@ -42,6 +42,8 @@ public:
     }
     void setActiveExternal();
     std::string getModePrompt();
+    void setPlannerStatus(TogglePanel::PlannerStatus p);
+
 
 private:
     std::map<affordance::GlobalUID, int> _affordance1IndexMap;
@@ -58,7 +60,6 @@ private:
     QDoubleSpinBox *_gui_time_lower_bound;
     QDoubleSpinBox *_gui_time_upper_bound;
     ConstraintMacroPtr _constraint;
-
     // should be static
     std::vector<affordance::AffConstPtr> _affordances;
     std::vector<affordance::ManipulatorStateConstPtr> _manipulators;
@@ -69,7 +70,6 @@ signals:
 private slots:
     void updateStateFromElements();
     void setActive();
-
 };
 
 typedef boost::shared_ptr<Qt4ConstraintMacro> Qt4ConstraintMacroPtr;

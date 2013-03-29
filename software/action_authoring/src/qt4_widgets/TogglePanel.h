@@ -9,6 +9,7 @@ class TogglePanel : public QWidget
 {
     Q_OBJECT
 
+public:
     typedef enum
     {
         PLANNER_OK,
@@ -28,10 +29,11 @@ private:
     QVBoxLayout *_widgetLayout;
     int _state;
     QObject *_parent;
+    PlannerStatus _plannerStatus;
 
 public:
     ~TogglePanel();
-    TogglePanel(QObject *parent, QString headerText, bool hasStatus);
+    TogglePanel(QObject *parent, QString headerText);
     void addWidget(QWidget *widget);
     void addLayout(QLayout *layout);
     void setSelected(bool selected);

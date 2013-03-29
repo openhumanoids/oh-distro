@@ -1,11 +1,12 @@
 #include "TogglePanel.h"
 
 TogglePanel::
-TogglePanel(QObject *parent, QString headerText, bool hasStatus)
+TogglePanel(QObject *parent, QString headerText)
 {
     _headerText = headerText;
     _parent = parent;
     _state = CLOSED;
+    _plannerStatus = PLANNER_UNKNOWN;
 
     _headerArea = new QWidget;
     _widgetArea = new QWidget;
@@ -39,27 +40,28 @@ TogglePanel(QObject *parent, QString headerText, bool hasStatus)
     headerLayout->addWidget(_headerTextLabel); /*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 
     // see http://qt-project.org/doc/qt-4.8/qstyle.html#standardIcon
-    if (hasStatus)
-    {
-        _plannerButton = new QPushButton("");
-        _plannerButton->setFlat(true);
-        _plannerButton->setAutoFillBackground(false);
-        setPlannerStatus(PLANNER_OK);
-        headerLayout->addWidget(_plannerButton);
-
-        QPushButton *bindButton;
-        bindButton = new QPushButton("unbound");
-        bindButton->setFlat(true);
-        bindButton->setMaximumWidth(70);
-        headerLayout->addWidget(bindButton);
-	
-	_constraintActiveButton = new QPushButton("");
-	_constraintActiveButton->setFlat(true);
-	_constraintActiveButton->setAutoFillBackground(false);
-	setConstraintActiveStatus(false);
-	headerLayout->addWidget(_constraintActiveButton);
-	
-    }
+   
+    _plannerButton = new QPushButton("");
+    _plannerButton->setFlat(true);
+    _plannerButton->setAutoFillBackground(false);
+    setPlannerStatus(_plannerStatus);
+    headerLayout->addWidget(_plannerButton);
+    connect(_plannerButton, SIGNAL(clicked()), this, SLOT(changeState()));
+    
+    /*
+      QPushButton *bindButton;
+      bindButton = new QPushButton("unbound");
+      bindButton->setFlat(true);
+      bindButton->setMaximumWidth(70);
+      headerLayout->addWidget(bindButton);
+    */
+    
+    _constraintActiveButton = new QPushButton("");
+    _constraintActiveButton->setFlat(true);
+    _constraintActiveButton->setAutoFillBackground(false);
+    connect(_constraintActiveButton, SIGNAL(clicked()), this, SLOT(changeState()));
+    setConstraintActiveStatus(false);
+    headerLayout->addWidget(_constraintActiveButton);
 
     _headerArea->setLayout(headerLayout);
 
