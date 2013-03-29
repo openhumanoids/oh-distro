@@ -84,7 +84,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
 
-    int count=0;
+    int count=msg->num_states-1; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)num_states; i++)
     {
       drc::robot_state_t state_msg  = msg->plan[count];
@@ -95,19 +95,13 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       	oss << _robot_name << "_"<< count; 
       	//shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody	(*_base_gl_robot,_collision_detector,true,oss.str()));
       	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-      	_gl_robot_list.push_back(new_object_ptr);
+
+				_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
       }      
       
-			_gl_robot_list[i]->set_state(state_msg);
-			count+=inc;
+			_gl_robot_list[0]->set_state(state_msg);
+			count-=inc;
     }//end for num of states in robot_plan msg;
-    
-   
-		if (count-inc != msg->num_states-1) {
-	   	// always display the last state in the plan
-  	 	drc::robot_state_t state_msg  = msg->plan[msg->num_states-1];
-  	 	_gl_robot_list[num_states-1]->set_state(state_msg);
-		}
    	
 		_last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);
