@@ -17,5 +17,15 @@ Description:
   DRC specific routines for planning and control (with drake included as an external)
 
 Requirements: 
+	      g++-4.4
+
+How to get requirements:
+	      sudo apt-get update
+	      sudo apt-get install g++-4.4
+	      sudo rm /usr/local/MATLAB/R2013a/sys/os/glnxa64/libstdc++.so.6  # (don't worry, it's just a symlink)
+	      sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/4.4/libstdc++.so /usr/local/MATLAB/R2013a/sys/os/glnxa64/libstdc++.so.6
+	      # note: you might need to update the above paths slightly if you have a 
+	      # different version of MATLAB installed, or if you're not on a 64-bit 
+	      # linux machine
 
 License:      FILL-ME-IN

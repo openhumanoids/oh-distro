@@ -3,7 +3,8 @@
 #include <mex.h>
 
 #include <Eigen/Dense>
-#include <lcm/lcm-cpp.hpp>
+#include <lcm/lcm.h>
+//#include <lcm/lcm-cpp.hpp>
 #include <boost/thread/thread.hpp>
 
 #include <maps/ViewClient.hpp>
@@ -16,14 +17,16 @@ using namespace Eigen;
 using namespace maps;
 
 struct ViewWrapperData {
-  boost::shared_ptr<lcm::LCM> lcm;
+  //  boost::shared_ptr<lcm::LCM> lcm;
+  lcm_t* lcm;
   ViewClient* view_client;
   boost::thread* lcm_thread;
   bool b_interrupt_lcm;
 };
 
 void lcmThreadMain(struct ViewWrapperData* pdata) {
-  while(0 == pdata->lcm->handle()) {
+  //  while(0 == pdata->lcm->handle()) {
+  while (0 == lcm_handle(pdata->lcm)) {
     if (pdata->b_interrupt_lcm) {
       mexPrintf("interruption requested\n"); mexEvalString("drawnow");
       break;
@@ -50,8 +53,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     // create lcm instance, and fork listener thread
     mexPrintf("creating lcm\n"); mexEvalString("drawnow");
-    pdata->lcm.reset(new lcm::LCM());  //lcm_create(NULL); 
-    if (!pdata->lcm->good()) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
+    pdata->lcm = lcm_create(NULL);
+    if (!pdata->lcm)
+    //    pdata->lcm.reset(new lcm::LCM());  //lcm_create(NULL); 
+    //    if (!pdata->lcm->good()) 
+      mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
     mexPrintf("spawning LCM thread\n");
     pdata->b_interrupt_lcm = false;
     pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
@@ -91,7 +97,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mexPrintf("destroying thread\n"); mexEvalString("drawnow");
     delete pdata->lcm_thread;
     mexPrintf("done.\n"); mexEvalString("drawnow");
-    //    lcm_destroy(pdata->lcm);  // now handled by shared_ptr and lcm destructor
+    lcm_destroy(pdata->lcm);  
+    // delete lcm handled by shared_ptr and lcm destructor
     delete pdata;
     return;
   } 

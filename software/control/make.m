@@ -65,12 +65,22 @@ cd(p);
 incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
 
 [~,libs]=system('pkg-config --libs maps eigen3 lcm');
-libs = regexprep(libs,'-pthread','-lpthread');
+libs = strrep(libs,'-pthread','');%-lpthread');
 
-cmdstr = ['mex src/mapAPIwrapper.cpp CFLAGS="\$CFLAGS -std=c++0x" -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+%% link statically against libstdc++ (to avoid the matlab version found at runtime
+%[~,libgcc] = system('gcc -print-libgcc-file-name');
+%libgccpath = fileparts(libgcc);
+%libs = strrep(libs,'-lstdc++','');
+
+%libs = [fullfile(libgccpath,'libstdc++.so'),' ',libs];  
+
+				      
+cmdstr = ['mex -v src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+%cmdstr = ['mex -v src/mapAPIwrapper.cpp LDFLAGS=''\$LDFLAGS -static-libstdc++'' -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
 disp(cmdstr);
 eval(cmdstr);
 
 end
+
 
 
