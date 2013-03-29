@@ -1,4 +1,4 @@
-classdef SimplePDController < DrakeSystem
+classdef WalkingPDController < DrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -6,14 +6,17 @@ classdef SimplePDController < DrakeSystem
     Kd;
     dt;
     controller_data; % pointer to shared data handle containing qtraj, ti_flag
+    ikoptions;
+    rfoot_body;
+    lfoot_body;
+    robot;
   end
   
   methods
-    function obj = SimplePDController(r,controller_data,options)
+    function obj = WalkingPDController(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
-      
-      
+            
       input_frame = r.getStateFrame;
       coords = AtlasCoordinates(r);
       obj = obj@DrakeSystem(0,0,input_frame.dim,coords.dim,true,true);
@@ -32,7 +35,7 @@ classdef SimplePDController < DrakeSystem
         sizecheck(options.Kp,[obj.nq obj.nq]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = 200.0*eye(obj.nq);
+        obj.Kp = 150.0*eye(obj.nq);
         obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
       end        
         
@@ -41,7 +44,7 @@ classdef SimplePDController < DrakeSystem
         sizecheck(options.Kd,[obj.nq obj.nq]);
         obj.Kd = options.Kd;
       else
-        obj.Kd = 25.0*eye(obj.nq);
+        obj.Kd = 20.0*eye(obj.nq);
         obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
       end        
         
@@ -53,21 +56,41 @@ classdef SimplePDController < DrakeSystem
         obj.dt = 0.005;
       end
         
+      % setup IK parameters
+      cost = Point(r.getStateFrame,1);
+      cost.base_x = 0;
+      cost.base_y = 0;
+      cost.base_z = 0;
+      cost.base_roll = 1000;
+      cost.base_pitch = 1000;
+      cost.base_yaw = 0;
+      cost.back_mby = 100;
+      cost.back_ubx = 300;
+      cost = double(cost);
+      obj.ikoptions = struct();
+      obj.ikoptions.Q = diag(cost(1:obj.nq));
+      d = load('data/atlas_fp.mat');
+      obj.ikoptions.q_nom = d.xstar(1:obj.nq);
+
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
+
+      obj.rfoot_body = r.findLink(r.r_foot_name);
+      obj.lfoot_body = r.findLink(r.l_foot_name);
+      obj.robot = r;
+      
     end
    
   	function y=output(obj,t,~,x)
+      
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
 
       cdata = obj.controller_data.getData();
-
-      if cdata.ti_flag
-        q_des = cdata.qtraj;
-      else
-        q_des = cdata.qtraj.eval(t);
-      end
       
+      q_des = approximateIK(obj.robot,q,0,[cdata.comtraj.eval(t);nan], ...
+        obj.rfoot_body,[0;0;0],cdata.rfoottraj.eval(t), ...
+        obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
+
       err_q = q_des - q;
       y = obj.Kp*err_q - obj.Kd*qd;
     end

@@ -5,7 +5,8 @@ classdef WalkingController < DRCController
     function obj = WalkingController(name,r)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[],'supptraj',[],'ti_flag',false));
+      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[], ...
+        'comtraj',[],'rfoottraj',[],'lfoottraj',[],'supptraj',[],'ti_flag',false));
       
       % instantiate QP controller
       options.exclude_torso = false;
@@ -15,7 +16,7 @@ classdef WalkingController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-      pd = SimplePDController(r,ctrl_data);
+      pd = WalkingPDController(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 2;
@@ -60,11 +61,29 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('supptraj',matdata.supptraj);
 
       fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.comtraj,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('comtraj',matdata.comtraj);
+
+      fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.rfoottraj,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('rfoottraj',matdata.rfoottraj);
+
+      fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.lfoottraj,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('lfoottraj',matdata.lfoottraj);
+
+      fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.qtraj,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('qtraj',matdata.qtraj);
-      
+
       obj = setDuration(obj,matdata.qtraj.tspan(end),false); % set the controller timeout
     end
   end  

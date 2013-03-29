@@ -12,8 +12,6 @@ options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 
-
-
 while true 
 
   d = load('data/atlas_fp.mat');
@@ -53,7 +51,7 @@ while true
     end
   end
 
-  [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
+  [xtraj, qtraj, htraj, supptraj, comtraj,rfoottraj,lfoottraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
   disp('Publishing robot plan...');
@@ -108,7 +106,9 @@ while true
 
   if execute
     walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
+    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot, ...
+      'qtraj',qtraj,'supptraj',supptraj,'comtraj',comtraj,'rfoottraj',rfoottraj, ...
+      'lfoottraj',lfoottraj));
   end
 end
 
