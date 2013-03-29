@@ -39,7 +39,7 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
     std::string config_path = std::string(getConfigPath()) +'/' + std::string(cl_cfg.config_file);
     bot_param = bot_param_new_from_file(config_path.c_str());
     if (bot_param == NULL) {
-        std::cerr << "Couldn't get bot param from file %s\n" << config_path << std::endl;
+        std::cerr << "Couldn't get bot param from file " << config_path << std::endl;
         exit(-1);
     }
   
@@ -223,20 +223,20 @@ int main (int argc, char ** argv) {
 
     char* lcm_url_robot;
     lcm_url_robot = getenv ( "LCM_URL_DRC_ROBOT" );
+    
     if (lcm_url_robot!=NULL){
-        printf ("The lcm_url_robot is: %s\n",lcm_url_robot);      
+        printf ("The lcm_url_robot is: %s\n",lcm_url_robot);
     }else{
-        std::cout << lcm_url_robot << " environment variable has not been set ["<< lcm_url_robot <<"]\n";     
+        std::cout << "LCM_URL_DRC_ROBOT environment variable has not been set." << std::endl;
         exit(-1);
     }
-
 
     char* lcm_url_base;
     lcm_url_base = getenv ( "LCM_URL_DRC_BASE" );
     if (lcm_url_base!=NULL){
         printf ("The lcm_url_base is: %s\n",lcm_url_base);      
     }else{
-        std::cout << lcm_url_base << " environment variable has not been set ["<< lcm_url_base <<"]\n";     
+        std::cout << "LCM_URL_DRC_BASE environment variable has not been set." << std::endl;
         exit(-1);
     }
 
