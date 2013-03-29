@@ -139,8 +139,6 @@ HistogramTracker::initialize(const cv::Mat& img, const cv::Mat& mask) {
 
 void
 HistogramTracker::update_prediction(const cv::Mat& img) { 
-    
-
     return;
 }
 

@@ -43,9 +43,13 @@ struct state_t {
     BotParam* param;
     BotFrames* frames;
 
+    // image IO util for affordances
     image_io_utils* imgutils_aff;
 
+    // Img, affordance image
     cv::Mat img, aff_img;
+
+    // utimes for image, and affordance image
     int64_t img_utime, aff_utime;
 
     HistogramTracker* tracker;
@@ -53,12 +57,14 @@ struct state_t {
     int counter;
 
     state_t () {
+        // LCM, BotFrames, BotParam inits        
         lcm =  bot_lcm_get_global(NULL);
         param = bot_param_new_from_server(lcm, 1);
         frames = bot_frames_get_global (lcm, param);
+
+        // Initialize image IO utils
         imgutils_aff = new image_io_utils( lcm, 1024, 544);
         tracker = new HistogramTracker();
-
         counter = 0; 
     }
 
@@ -99,6 +105,7 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
       fprintf(stderr, "Unrecognized image format\n");
       break;
   }
+  return;
 }
 
 //--------------------------------------------
@@ -134,24 +141,26 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
     Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
     cv::Mat1b mask = cv::Mat1b::zeros( state->img.rows , state->img.cols);
 
+    // Assign to mask
     for (int y=msg->roi.y; y<msg->roi.y+msg->roi.height; y++)  
       for (int x=msg->roi.x; x<msg->roi.x+msg->roi.width; x++) 
 	mask(y,x) = 255;
 
     state->aff_utime = msg->utime; 
-    
+
+    // Ensure tracker is initialized    
     if (!state->tracker) { 
       std::cerr << "Tracker Not Initialized!" << std::endl;
       assert(0);
     }
 
-    cv::Mat maskd = mask.clone();
     // Initialize with image and mask
     state->tracker->initialize(state->img, mask);
 
     if (options.vDEBUG) { 
-      cv::imshow("Captured Image", state->img);
-      cv::imshow("Captured Mask", maskd);
+        cv::Mat maskd = mask.clone();
+        cv::imshow("Captured Image", state->img);
+        cv::imshow("Captured Mask", maskd);
     }
 
     return;
@@ -187,7 +196,6 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     std::vector< Eigen::Vector3d > pts;
     Eigen::Isometry3d local_to_camera;
     
-//    state->tracker->update(display, options.vSCALE);
     state->tracker->update(display, options.vSCALE, pts, local_to_camera);
     if (++state->counter == 10) { 
         printf("===> HISTOGRAM BACKPROJECTION: %4.2f ms\n", (bot_timestamp_now() - tic) * 1e-3); 
@@ -250,19 +258,17 @@ int main(int argc, char ** argv) {
             }
             std::cerr << "Capturing Affordance : " << options.vAFFORDANCE_ID << std::endl;
             cv::Mat1b mask = (state->aff_img == AFFORDANCE_OFFSET + options.vAFFORDANCE_ID);
-	    cv::Mat1b maskd = mask.clone();
             if (!state->tracker) { 
                 std::cerr << "Tracker Not Initialized!" << std::endl;
                 assert(0);
             }
-
-            // Initialize with image and mask
-            state->tracker->initialize(state->img, mask);
-
             if (options.vDEBUG) { 
+                cv::Mat1b maskd = mask.clone();
                 cv::imshow("Captured Image", state->img);
                 cv::imshow("Captured Mask", maskd);
             }
+            // Initialize with image and mask
+            state->tracker->initialize(state->img, mask);
         }
     }
 
