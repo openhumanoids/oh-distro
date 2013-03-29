@@ -1,1 +1,0 @@
-/home/avalenzu/Drake_hongkaidev/systems/plants/@RigidBodyManipulator/inverseKin.m
