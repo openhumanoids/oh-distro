@@ -65,6 +65,10 @@ group "1.b.sensing" {
         exec = "drc-lidar-passthrough";
         host = "paladin-02";
     }
+    cmd "icompress" {
+        exec = "drc-image-tool";
+        host = "paladin-02";
+    }
 }
 
 group "2.gazebo" {
@@ -119,10 +123,6 @@ group "2.gazebo" {
 }
 
 group "3.perception"{
-    cmd "icompress" {
-        exec = "drc-image-tool";
-        host = "paladin-02";
-    }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
         host = "paladin-02";
