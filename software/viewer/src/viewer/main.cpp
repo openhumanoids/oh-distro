@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
-/**/
+
   // add custon TOP VIEW button
   GtkWidget *top_view_button;
   top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);

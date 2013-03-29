@@ -83,24 +83,33 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       //_collision_detector.reset();
       //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     }
+
     int count=0;
     for (uint i = 0; i <(uint)num_states; i++)
     {
       drc::robot_state_t state_msg  = msg->plan[count];
 
-     //shared_ptr<visualization_utils::GlKinematicBody> new_object_ptr(new visualization_utils::GlKinematicBody(*_base_gl_robot));
-     if(old_list_size!=num_states){
-      std::stringstream oss;
-      oss << _robot_name << "_"<< count; 
-      //shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,_collision_detector,true,oss.str()));
-      shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-      _gl_robot_list.push_back(new_object_ptr);
+     	//shared_ptr<visualization_utils::GlKinematicBody> new_object_ptr(new visualization_utils::GlKinematicBody(*_base_gl_robot));
+     	if(old_list_size!=num_states){
+      	std::stringstream oss;
+      	oss << _robot_name << "_"<< count; 
+      	//shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody	(*_base_gl_robot,_collision_detector,true,oss.str()));
+      	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
+      	_gl_robot_list.push_back(new_object_ptr);
       }      
-      _gl_robot_list[i]->set_state(state_msg);
-
-	  count+=inc;
+      
+			_gl_robot_list[i]->set_state(state_msg);
+			count+=inc;
     }//end for num of states in robot_plan msg;
-    _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
+    
+   
+		if (count-inc != msg->num_states-1) {
+	   	// always display the last state in the plan
+  	 	drc::robot_state_t state_msg  = msg->plan[msg->num_states-1];
+  	 	_gl_robot_list[num_states-1]->set_state(state_msg);
+		}
+   	
+		_last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage
 
