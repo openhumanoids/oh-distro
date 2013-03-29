@@ -1,14 +1,21 @@
-function tunePDPinnedGazebo(dofnum,amplitude,tstep,T)
+function tunePDPinnedGazebo(dof,amplitude,tstep,T)
 %NOTEST
+% to run more efficiently, dofnum is a cell array string element from an
+% ordered set created in the running script -CC
 
 options.floating = false;
 options.dt = 0.001;
-r = Atlas('../urdf/atlas_minimal_contact.urdf',options);
+% r = Atlas('../urdf/atlas_minimal_contact.urdf',options);
+r=Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+
 
 % set initial state to fixed point
-load('../data/atlas_pinned_config.mat');
-
+% load('../data/atlas_pinned_config.mat');
+xstar=zeros(56,1);
 [jl_min,jl_max] = r.getJointLimits();
+dofnum = find(strcmp(r.getStateFrame.coordinates,dof));
+jl_min(dofnum)
+jl_max(dofnum)
 theta_mid = jl_min(dofnum) + (jl_max(dofnum)-jl_min(dofnum))/2;
 xstar(dofnum) = theta_mid;
 %xstar(25) = 1.5; % bend right knee
@@ -17,7 +24,7 @@ r = r.setInitialState(xstar);
 
 % set initial conditions in gazebo
 state_frame = r.getStateFrame();
-state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
+% state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
 state_frame.subscribe('EST_ROBOT_STATE');
 
 q_des = [];
@@ -30,7 +37,7 @@ end
 act_idx = r.getActuatedJoints();
 theta_des = q_des(act_idx,:);
 
-qd_frame = AtlasPositionRef(r);
+qd_frame = PinnedAtlasPositionRef(r);
 des_traj = setOutputFrame(PPTrajectory(zoh(0:tstep:T,theta_des)),qd_frame);
 
 t=0;
