@@ -66,6 +66,9 @@ public:
     while (!mUnblock && mData.empty()) {
       mCondition.wait(lock);
     }
+    if (mUnblock) {
+      mUnblock = false;
+    }
     if (!mData.empty()) {
       oData = mData.front();
       mData.pop_front();
@@ -79,7 +82,6 @@ public:
   void unblock() {
     mUnblock = true;
     mCondition.notify_all();
-    mUnblock = false;
   }
 
 protected:
