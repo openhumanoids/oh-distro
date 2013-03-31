@@ -117,6 +117,24 @@ static void on_top_view_clicked(GtkToggleToolButton *tb, void *user_data)
   bot_viewer_request_redraw(self);
 }
 
+static void
+destroy_renderers (BotViewer *viewer)
+{
+  for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+    BotRenderer *renderer =
+      (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+    if (renderer && renderer->destroy) {
+      std::cout << "Destroying renderer \"" << renderer->name <<
+        "\"..." << std::flush;
+      renderer->destroy(renderer);
+      std::cout << "Done" << std::endl;
+    }
+  }
+
+  g_ptr_array_free(viewer->renderers, TRUE);
+}
+
+
 int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
@@ -258,5 +276,10 @@ int main(int argc, char *argv[])
 
   //save the renderer params to the config file.
   bot_viewer_save_preferences(viewer, fname);
+
+  // clean up all renderers
+  destroy_renderers(viewer);
+
+  // remove reference
   bot_viewer_unref(viewer);
 }
