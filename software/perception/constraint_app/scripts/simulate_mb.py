@@ -41,12 +41,16 @@ aff_fit.uid = 0
 aff_fit.nparams     = 11
 aff_fit.params      = [1.0, 1.0, 1.0,    0.0,     0.0,   0.0,            1.0,           0.2,  4.0,  4.0,  4.0]
 aff_fit.param_names = ["x", "y", "z", "roll", "pitch", "yaw", "valve_radius", "tube_radius", "lX", "lY", "lZ"]
+aff_fit.nstates     = 2
+aff_fit.states      = [         0.1,                0.2]
+aff_fit.state_names = ["base_joint", "gate_valve_joint"]
 
 print 'Sending fit message'
 lc.publish("AFFORDANCE_FIT", aff_fit.encode())
 
 # 2. Send some sample "initial points" (i.e., the fit)
 track_ids = [10, 20, 30]
+track_segments = ["gate_valve", "base_link", "gate_valve"]
 track_means = numpy.matrix([[ 1.2, 1.2, 1.2 ],
                             [ 0.9, 0.8, 0.9 ],
                             [ 1.5, 1.0, 1.1 ]])
@@ -58,7 +62,8 @@ atc.ntracks = 2
 
 for i in range(atc.ntracks):
     track = affordance_track_t()
-    track.segment = ""
+    track.segment = track_segments[i]
+    print track.segment
     track.id = track_ids[i]
     v = vector_3d_t()
     v.x = track_means[i,0]
@@ -82,7 +87,7 @@ for j in range(3):
         if j == 2 and i == 1:
             continue
         track = affordance_track_t()
-        track.segment = ""
+        track.segment = track_segments[i]
         track.id = track_ids[i]
         v = vector_3d_t()
         var = 0.01*0.01;

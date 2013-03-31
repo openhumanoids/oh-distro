@@ -5,7 +5,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <iostream>
 #include <fstream>
-#include <lcmtypes/drc_lcmtypes.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <kdl/tree.hpp>
 #include <kdl/frames.hpp>
 #include <kdl_parser/kdl_parser.hpp>
@@ -48,8 +48,8 @@ public:
   virtual void GetCurrentStateEstimate(std::vector<double>& state);
   virtual void SetCurrentStateEstimate(const std::vector<double>& state);
 
-  virtual void AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg);
-  virtual void AffordanceFitHandler(const drc_affordance_t *msg);
+  virtual void AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *msg);
+  virtual void AffordanceFitHandler(const drc::affordance_t *msg);
 
  protected:
   boost::mutex m_dataMutex;

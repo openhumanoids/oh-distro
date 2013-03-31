@@ -7,12 +7,17 @@ typedef int SOCKET;
 //NB: use tail -f cam.log to view output from the ConstraintApp_RB_UKF::main thread
 ConstraintApp::ConstraintApp() : m_stopThreads(false), m_log("/tmp/cam.log", std::ios::trunc|std::ios::binary) 
 {
-  m_lcm = lcm_create(NULL);
+  //m_lcm = lcm_create(NULL);
+  m_lcm = new lcm::LCM();
   
+  m_lcm->subscribe("AFFORDANCE_TRACK_COLLECTION", &ConstraintApp::AffordanceTrackCollectionHandlerAux, this);
+  m_lcm->subscribe("AFFORDANCE_FIT", &ConstraintApp::AffordanceFitHandlerAux, this);
+  /*
   drc_affordance_track_collection_t_subscribe(m_lcm, "AFFORDANCE_TRACK_COLLECTION",
 					      AffordanceTrackCollectionHandlerAux, this);
   drc_affordance_t_subscribe(m_lcm, "AFFORDANCE_FIT",
 			     AffordanceFitHandlerAux, this);
+  */
   
   m_mainThread = new boost::thread(boost::bind(&ConstraintApp::main, this));
 }
@@ -22,7 +27,8 @@ ConstraintApp::~ConstraintApp()
   stopThreads();
   delete m_mainThread;
 
-  lcm_destroy(m_lcm);
+  //lcm_destroy(m_lcm);
+  delete m_lcm;
 
   m_log << "ConstraintApp::~ConstraintApp" << std::endl;
 }
@@ -31,7 +37,7 @@ void ConstraintApp::main() {
   while ( !shouldStop() ) {
     {
       boost::mutex::scoped_lock lock(m_lcmMutex);
-      lcm_handle_timeout(m_lcm, 500);
+      lcm_handle_timeout(m_lcm->getUnderlyingLCM(), 500);
     }
   }
 }
@@ -113,7 +119,7 @@ std::vector<double> ConstraintApp::FrameToVector(const KDL::Frame& frame)
   return state;
 }
 
-KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
+ConstraintApp::OptionalKDLFrame ConstraintApp::GetFrameFromParams(const drc::affordance_t *msg)
 {
   std::string names[] = { "x", "y", "z", "roll", "pitch", "yaw" };
   double xyzrpw[6];
@@ -129,8 +135,7 @@ KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
   }
 
   if ( found != 6 ) {
-    m_log << "unable to find all pose parameters" << std::endl;
-    return KDL::Frame();
+    return OptionalKDLFrame();
   }
 
   KDL::Frame ret;
@@ -138,5 +143,5 @@ KDL::Frame ConstraintApp::GetFrameFromParams(const drc_affordance_t *msg)
   ret.p[1] = xyzrpw[1];
   ret.p[2] = xyzrpw[2];
   ret.M = KDL::Rotation::RPY(xyzrpw[3], xyzrpw[4], xyzrpw[5]);
-  return ret;
+  return OptionalKDLFrame(ret);
 }

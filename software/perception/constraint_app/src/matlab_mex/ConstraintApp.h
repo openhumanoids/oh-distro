@@ -5,7 +5,9 @@
 #include <boost/thread/condition_variable.hpp>
 #include <iostream>
 #include <fstream>
-#include <lcmtypes/drc_lcmtypes.h>
+//#include <lcmtypes/drc_lcmtypes.h>
+#include <lcm/lcm-cpp.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <kdl/tree.hpp>
 #include <kdl/frames.hpp>
 #include <kdl_parser/kdl_parser.hpp>
@@ -16,6 +18,7 @@
 #include <kdl/frames.hpp>
 #include <kdl/frames_io.hpp>
 #include <boost/thread/thread_time.hpp>
+#include <boost/optional.hpp>
 
 class ConstraintApp
 {
@@ -34,29 +37,27 @@ class ConstraintApp
   virtual void GetCurrentStateEstimate(std::vector<double>& state) = 0;
   virtual void SetCurrentStateEstimate(const std::vector<double>& state) = 0;
 
-  static void AffordanceTrackCollectionHandlerAux(const lcm_recv_buf_t* rbuf,
-						  const char* channel,
-						  const drc_affordance_track_collection_t* msg,
-						  void* user_data) {
-    ((ConstraintApp*) user_data)->AffordanceTrackCollectionHandler(msg);
+  virtual void AffordanceTrackCollectionHandlerAux(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+						   const drc::affordance_track_collection_t *tracks) {
+    AffordanceTrackCollectionHandler(tracks);
   }
-  virtual void AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg) = 0;
+  virtual void AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *affordance) = 0;
 
-  static void AffordanceFitHandlerAux(const lcm_recv_buf_t* rbuf,
-				      const char* channel,
-				      const drc_affordance_t* msg,
-				      void* user_data) {
-    ((ConstraintApp*) user_data)->AffordanceFitHandler(msg);
+  virtual void AffordanceFitHandlerAux(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+				       const drc::affordance_t *affordance) {
+    AffordanceFitHandler(affordance);
   }
-  virtual void AffordanceFitHandler(const drc_affordance_t *msg) = 0;
+  virtual void AffordanceFitHandler(const drc::affordance_t *affordance) = 0;
+
+  typedef boost::optional<KDL::Frame> OptionalKDLFrame;
+  static OptionalKDLFrame GetFrameFromParams(const drc::affordance_t *msg);
+  static std::vector<double> FrameToVector(const KDL::Frame& frame);
 
  protected :
   bool shouldStop();
   void stopThreads();
   void main();
-  KDL::Frame GetFrameFromParams(const drc_affordance_t *msg);
-  KDL::Frame VectorToFrame(const std::vector<double>& state);
-  std::vector<double> FrameToVector(const KDL::Frame& frame);
+  KDL::Frame VectorToFrame(const std::vector<double>& state);  
   int lcm_handle_timeout(lcm_t* lcm, int ms);
 
  protected :
@@ -65,7 +66,8 @@ class ConstraintApp
   boost::mutex m_stopThreadsMutex;
 
   boost::mutex m_lcmMutex;
-  lcm_t* m_lcm;
+  //lcm_t* m_lcm;
+  lcm::LCM* m_lcm;
 
   std::ofstream m_log;
 };

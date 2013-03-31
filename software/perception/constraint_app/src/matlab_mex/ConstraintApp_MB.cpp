@@ -10,12 +10,32 @@ ConstraintApp_MB::~ConstraintApp_MB()
   m_log << "ConstraintApp_MB::~ConstraintApp_MB" << std::endl;
 }
 
-void ConstraintApp_MB::AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg)
+void ConstraintApp_MB::AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *msg)
 {
-  m_log << "got a new track collection" << std::endl;
-  /*
+  m_log << "got a new track collection for affordance with uid=" << msg->uid << std::endl;
+
   boost::mutex::scoped_lock lock(m_dataMutex);
 
+  AffordancePtrMap::iterator iter = m_affordances.find(msg->uid);
+  if ( iter == m_affordances.end() ) {
+    m_log << "ERROR: received track points for an affordance uid=" << msg->uid 
+	  << " for which no fit (model) has been received" << std::endl;
+    return;
+  }
+  Affordance::Ptr affordance(iter->second);
+  
+  for ( int i = 0; i < msg->ntracks; i++ ) {
+    const drc::affordance_track_t* track = &msg->tracks[i];
+    m_log << "  track: segment=" << track->segment << ", id=" << track->id << std::endl;
+  }
+
+  //TODO: if a track has been seen before, add this as a new observation for that track
+
+  //TODO: if a track has not been seen before, add a new link in the tree, relative to the sepcified segment
+
+  //TODO: when a new affordance fit is received, it should get a new unique identifier (perhaps for refernce by the matlab code
+
+  /*
   for ( int i = 0; i < msg->ntracks; i++ ) {
     drc_affordance_track_t* track = &msg->tracks[i];
 
@@ -64,7 +84,7 @@ void ConstraintApp_MB::AffordanceTrackCollectionHandler(const drc_affordance_tra
   */
 }
 
-void ConstraintApp_MB::AffordanceFitHandler(const drc_affordance_t *msg)
+void ConstraintApp_MB::AffordanceFitHandler(const drc::affordance_t *msg)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 
@@ -78,15 +98,4 @@ void ConstraintApp_MB::AffordanceFitHandler(const drc_affordance_t *msg)
     // a new fit for an existing affordance
     iter->second = Affordance::Ptr(new Affordance(m_log, *msg));
   }
-
-  /*
-
-  m_currentEstimate.base_expressedIn_world = GetFrameFromParams(msg);
-  m_currentLinks.clear();
-  m_currentObservations.clear();
-  m_wasReset = true;
-
-  m_log << "  reset the base pose to " << std::endl
-	<< m_currentEstimate.base_expressedIn_world << std::endl;
-  */
 }

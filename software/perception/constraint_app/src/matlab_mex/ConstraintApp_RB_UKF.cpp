@@ -27,20 +27,14 @@ ConstraintApp_RB_UKF::~ConstraintApp_RB_UKF()
   m_log << "ConstraintApp_RB_UKF::~ConstraintApp_RB_UKF" << std::endl;
 }
 
-void ConstraintApp_RB_UKF::AffordanceTrackCollectionHandler(const drc_affordance_track_collection_t *msg)
+void ConstraintApp_RB_UKF::AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *msg)
 {
   m_log << "got a new track collection" << std::endl;
 
   boost::mutex::scoped_lock lock(m_dataMutex);
 
   for ( int i = 0; i < msg->ntracks; i++ ) {
-    drc_affordance_track_t* track = &msg->tracks[i];
-
-    if ( track->segment == "" ) {
-      m_log << "ERROR: received a segment name of \"" << track->segment 
-	    << "\" but I can only handle a single segment, segment must be = \"\"" << std::endl;
-      continue;
-    }
+    const drc::affordance_track_t* track = &msg->tracks[i];
 
     int trackId(track->id);
     KDL::Vector track_expressedIn_world(track->position.x, track->position.y, track->position.z);
@@ -81,12 +75,17 @@ void ConstraintApp_RB_UKF::AffordanceTrackCollectionHandler(const drc_affordance
   */
 }
 
-void ConstraintApp_RB_UKF::AffordanceFitHandler(const drc_affordance_t *msg)
+void ConstraintApp_RB_UKF::AffordanceFitHandler(const drc::affordance_t *msg)
 {
   m_log << "got a new affordance fit" << std::endl;
 
   boost::mutex::scoped_lock lock(m_dataMutex);
-  m_currentEstimate.base_expressedIn_world = GetFrameFromParams(msg);
+  boost::optional<KDL::Frame> msgFrame(GetFrameFromParams(msg));
+  if ( !msgFrame ) {
+    m_log << "ERROR: unable to extract base pose from msg" << std::endl;
+    return;
+  }
+  m_currentEstimate.base_expressedIn_world = *msgFrame;
   m_currentLinks.clear();
   m_currentObservations.clear();
   m_wasReset = true;
@@ -110,8 +109,8 @@ bool ConstraintApp_RB_UKF::WaitForObservations(unsigned int timeout_ms)
 }
 
 bool ConstraintApp_RB_UKF::GetExpectedObservations(const std::vector<double>& state,
-					    const std::vector<int>& observationIds,
-					    std::vector<double>& observations)
+						   const std::vector<int>& observationIds,
+						   std::vector<double>& observations)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 
@@ -146,7 +145,7 @@ bool ConstraintApp_RB_UKF::GetExpectedObservations(const std::vector<double>& st
 }
 
 bool ConstraintApp_RB_UKF::GetObservations(std::vector<double>& actualObservations,
-				    std::vector<int>& observationIds)
+					   std::vector<int>& observationIds)
 {
   boost::mutex::scoped_lock lock(m_dataMutex);
 

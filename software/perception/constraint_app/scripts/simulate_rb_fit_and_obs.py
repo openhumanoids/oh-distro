@@ -58,7 +58,7 @@ atc.ntracks = 2
 
 for i in range(atc.ntracks):
     track = affordance_track_t()
-    track.segment = ""
+    track.segment = 'a'
     track.id = track_ids[i]
     v = vector_3d_t()
     v.x = track_means[i,0]
