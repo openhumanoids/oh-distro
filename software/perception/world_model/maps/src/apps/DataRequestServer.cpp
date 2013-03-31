@@ -118,8 +118,11 @@ struct Worker {
   void sendHeightMapSceneRequest() {
     drc::map_request_t msg = prepareRequestMessage();
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
-    msg.width = msg.height = 100;
+    msg.resolution = 0.05;
+    msg.width = 140;
+    msg.height = 200;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.clip_planes[0][3] = 2;
     msg.clip_planes[4][3] = 3;
     msg.clip_planes[5][3] = 0.3;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
