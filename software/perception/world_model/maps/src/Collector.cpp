@@ -148,8 +148,8 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
   bool insidePrev = true;
   bool done = false;
   bool started = false;
-  float anglePrev;
-  int64_t timePrev;
+  float anglePrev = 0;
+  int64_t timePrev = 0;
   for (std::vector<PointSet>::const_reverse_iterator iter = pointSets.rbegin();
        iter != pointSets.rend(); ++iter) {
     float angle = mHelper->
