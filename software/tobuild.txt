@@ -8,7 +8,6 @@ robot_model
 object_template_model
 kinematics
 utils
-camunits
 
 #hubo
 sensing
