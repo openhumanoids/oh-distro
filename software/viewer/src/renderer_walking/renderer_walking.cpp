@@ -263,26 +263,29 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
     self->active = 0;
     return 0;
   }
-  Eigen::Vector3f queryPt(click_pt_local.x,click_pt_local.y,zMean);  
-  Eigen::Vector3f closestPt,closestNormal;
+
+  Eigen::Vector3f intersectionPt(click_pt_local.x,click_pt_local.y,zMean);
+  Eigen::Vector3f dummyNormal(0,0,1);
     
   if (view != NULL) {
-    if(!view->getClosest(queryPt,closestPt,closestNormal))
+    Eigen::Vector3f origin(ray_start[0], ray_start[1], ray_start[2]);
+    Eigen::Vector3f direction(ray_dir[0], ray_dir[1], ray_dir[2]);
+    if(!view->intersectRay(origin, direction, intersectionPt, dummyNormal))
     {
-      closestPt = queryPt;
-      closestNormal<< 0,0,1;
+      intersectionPt<< click_pt_local.x,click_pt_local.y,zMean;
+      dummyNormal<< 0,0,1;
     }
   }
-  else {
-    closestPt = queryPt;
-    closestNormal<< 0,0,1;
-  }
+  std::cout << "Closest " << intersectionPt.transpose() << std::endl;
   
   self->dragging = 1;
 
+  click_pt_local.x = intersectionPt[0];
+  click_pt_local.y = intersectionPt[1];
+  self->support_surface_z = intersectionPt[2];
+
   self->drag_start_local = click_pt_local;
   self->drag_finish_local = click_pt_local;
-  self->support_surface_z = closestPt[2];
 
   recompute_2d_goal_pose(self);
 
@@ -385,7 +388,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
 
   point2d_t drag_pt_local;
   if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
-      POINT3D(ray_dir), 0, &drag_pt_local)) {
+      POINT3D(ray_dir), self->support_surface_z, &drag_pt_local)) {
     return 0;
   }
   self->drag_finish_local = drag_pt_local;
