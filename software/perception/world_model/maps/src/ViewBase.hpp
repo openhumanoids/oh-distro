@@ -62,11 +62,16 @@ public:
   getAsPointCloud(const bool iTransform=true) const = 0;
 
   virtual maps::TriangleMesh::Ptr
-  getAsMesh(const bool iTransform=true) const = 0;
+  getAsMesh(const bool iTransform=true) const;
 
   virtual bool getClosest(const Eigen::Vector3f& iPoint,
                           Eigen::Vector3f& oPoint,
-                          Eigen::Vector3f& oNormal) = 0;
+                          Eigen::Vector3f& oNormal) const;
+
+  virtual bool intersectRay(const Eigen::Vector3f& iOrigin,
+                            const Eigen::Vector3f& iDirection,
+                            Eigen::Vector3f& oPoint,
+                            Eigen::Vector3f& oNormal) const;
 
 protected:
   int64_t mId;

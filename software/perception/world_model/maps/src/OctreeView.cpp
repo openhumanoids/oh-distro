@@ -75,17 +75,3 @@ getAsPointCloud(const bool iTransform) const {
   }
   return cloud;
 }
-
-maps::TriangleMesh::Ptr OctreeView::
-getAsMesh(const bool iTransform) const {
-  maps::TriangleMesh::Ptr mesh;
-  // TODO
-  return mesh;
-}
-
-bool OctreeView::
-getClosest(const Eigen::Vector3f& iPoint,
-           Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
-  // TODO: getClosest
-  return false;
-}

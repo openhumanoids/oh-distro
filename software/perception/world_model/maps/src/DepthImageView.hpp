@@ -25,7 +25,15 @@ public:
   maps::PointCloud::Ptr getAsPointCloud(const bool iTransform=true) const;
   maps::TriangleMesh::Ptr getAsMesh(const bool iTransform=true) const;
   bool getClosest(const Eigen::Vector3f& iPoint,
-                  Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal);
+                  Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const;
+  bool intersectRay(const Eigen::Vector3f& iOrigin,
+                    const Eigen::Vector3f& iDirection,
+                    Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const;
+
+protected:
+  bool interpolate(const float iX, const float iY, float& oDepth) const;
+  bool unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
+                 Eigen::Vector3f& oNormal) const;
 
 protected:
   boost::shared_ptr<DepthImage> mImage;

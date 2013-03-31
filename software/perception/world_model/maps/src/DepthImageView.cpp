@@ -139,33 +139,65 @@ getAsMesh(const bool iTransform) const {
 }
 
 bool DepthImageView::
-getClosest(const Eigen::Vector3f& iPoint,
-           Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
-  DepthImage::Type depthType = DepthImage::TypeDepth;
-  Eigen::Vector3f proj = mImage->project(iPoint, depthType);
+interpolate(const float iX, const float iY, float& oDepth) const {
+  const DepthImage::Type depthType = DepthImage::TypeDepth;
   const std::vector<float>& depths = mImage->getData(depthType);
   int width(mImage->getWidth()), height(mImage->getHeight());
-  int xInt(proj[0]), yInt(proj[1]);
+  int xInt(iX), yInt(iY);
   if ((xInt < 0) || (xInt >= width-1) || (yInt < 0) || (yInt >= height-1)) {
     return false;
   }
-  float xFrac = proj[0]-xInt;
-  float yFrac = proj[0]-yInt;
+  float xFrac(iX-xInt), yFrac(iY-yInt);
 
   int idx = width*yInt + xInt;
   float z00 = depths[idx];
   float z11 = depths[idx+1+width];
   float invalidValue = mImage->getInvalidValue(depthType);
   if ((z00 == invalidValue) || (z11 == invalidValue)) return false;
-  typedef Eigen::Vector3f Vec3f;
-  Vec3f p00 = mImage->unproject(Vec3f(xInt, yInt, z00), depthType);
-  Vec3f p11 = mImage->unproject(Vec3f(xInt+1, yInt+1, z11), depthType);
 
-  float zInterp = 0;
+  oDepth = 0;
   if (xFrac >= yFrac) {
     float z3 = depths[idx+1];
     if (z3 == invalidValue) return false;
-    zInterp = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
+    oDepth = xFrac*(z3 - z00) + yFrac*(z11 - z3) + z00;
+  }
+  else {
+    float z3 = depths[idx+width];
+    if (z3 == invalidValue) return false;
+    oDepth = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
+  }
+
+  return true;
+}
+
+bool DepthImageView::
+getClosest(const Eigen::Vector3f& iPoint,
+           Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const {
+  DepthImage::Type depthType = DepthImage::TypeDepth;
+  Eigen::Vector3f proj = mImage->project(iPoint, depthType);
+  if (!interpolate(proj[0], proj[1], proj[2])) return false;
+  return unproject(proj, oPoint, oNormal);
+}
+
+bool DepthImageView::
+unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
+          Eigen::Vector3f& oNormal) const {
+  typedef Eigen::Vector3f Vec3f;
+  const DepthImage::Type depthType = DepthImage::TypeDepth;
+  Eigen::Vector3f outputPoint = mImage->unproject(iPoint, depthType);
+  int xInt(iPoint[0]), yInt(iPoint[1]);
+  int width = mImage->getWidth();
+  int idx = width*yInt + xInt;
+  const std::vector<float>& depths = mImage->getData(depthType);
+  Vec3f p00 = mImage->unproject(Vec3f(xInt, yInt, depths[idx]), depthType);
+  Vec3f p11 = mImage->unproject(Vec3f(xInt+1, yInt+1, depths[idx+1+width]),
+                                      depthType);
+  
+  float xFrac(iPoint[0]-xInt), yFrac(iPoint[1]-yInt);
+  float invalidValue = mImage->getInvalidValue(depthType);
+  if (xFrac >= yFrac) {
+    float z3 = depths[idx+1];
+    if (z3 == invalidValue) return false;
     Vec3f p3 = mImage->unproject(Vec3f(xInt+1, yInt, z3), depthType);
     Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d1.cross(d2).normalized();
@@ -173,13 +205,83 @@ getClosest(const Eigen::Vector3f& iPoint,
   else {
     float z3 = depths[idx+width];
     if (z3 == invalidValue) return false;
-    zInterp = xFrac*(z11 - z3) + yFrac*(z3 - z00) + z00;
     Vec3f p3 = mImage->unproject(Vec3f(xInt, yInt+1, z3), depthType);
     Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d2.cross(d1).normalized();
   }
 
-  oPoint = mImage->unproject(Vec3f(proj[0], proj[1], zInterp), depthType);
+  oPoint = outputPoint;
 
   return true;
+}
+
+bool DepthImageView::
+intersectRay(const Eigen::Vector3f& iOrigin,
+             const Eigen::Vector3f& iDirection,
+             Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const {
+  const DepthImage::Type depthType = DepthImage::TypeDepth;
+
+  // project origin and direction into image
+  Eigen::Vector3f origin = mImage->project(iOrigin, depthType);
+  Eigen::Vector3f pt = mImage->project(iOrigin+iDirection, depthType);
+  Eigen::Vector3f direction = pt-origin;
+  direction.normalize();
+
+  // check for perfectly orthogonal ray
+  if (fabs(fabs(direction[2])-1) < 1e-4) {
+    if (!interpolate(origin[0], origin[1], origin[2])) return false;
+    return unproject(origin, oPoint, oNormal);
+  }
+
+  Eigen::Vector3f startPt = origin;
+  Eigen::Vector3f endPt = startPt + 1000*direction;
+  
+  float dx(fabs(direction[0])), dy(fabs(direction[1]));
+  Eigen::Vector3f step(direction / ((dx > dy) ? dx : dy));
+
+  // clip ray segment to bounds of image
+  // TODO: 2d clip would be faster
+  float tMin, tMax;
+  int width = mImage->getWidth();
+  int height = mImage->getHeight();
+  if (!Utils::clipRay(startPt, endPt, Eigen::Vector3f(0,0,-1e10),
+                      Eigen::Vector3f(width-1, height-1, 1e10),
+                      startPt, endPt, tMin, tMax)) return false;
+
+  // walk along ray
+  // TODO: could make this faster using integer math
+  int numSteps = floor((endPt-startPt).norm()/step.norm()) + 1;
+  Eigen::Vector3f rayPt(startPt), rayPt1(startPt), rayPt2(startPt);
+  bool found = false;
+  bool initialized = false;
+  float zMesh, zMesh1, zMesh2;
+  bool signInit;
+  for (int i = 0; i < numSteps; ++i, rayPt += step) {
+    if (!interpolate(rayPt[0], rayPt[1], zMesh)) continue;
+    bool sign = rayPt[2] > zMesh;
+    if (!initialized) signInit = sign;
+    if ((initialized) && (sign != signInit)) {
+      rayPt2 = rayPt;
+      zMesh2 = zMesh;
+      found = true;
+      break;
+    }
+    else {
+      rayPt1 = rayPt;
+      zMesh1 = zMesh;
+    }
+    initialized = true;
+  }
+  if (!found) return false;
+
+  // we have now bounded the intersection to lie between meshPt1 and meshPt2
+  // now interpolate the intersection point in between
+  // TODO: this is approximate; it lies on the mesh but
+  //   not necessarily on the ray
+  float height1(fabs(rayPt1[2]-zMesh1)), height2(fabs(rayPt2[2]-zMesh2));
+  oPoint = rayPt1 + (rayPt2-rayPt1)*height1/(height1+height2);
+  oPoint = mImage->unproject(rayPt1, depthType);
+  return true;
+  if (!interpolate(oPoint[0], oPoint[1], oPoint[2])) return false;
+  return unproject(oPoint, oPoint, oNormal);
 }

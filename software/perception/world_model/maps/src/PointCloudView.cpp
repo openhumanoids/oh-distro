@@ -67,17 +67,3 @@ getAsPointCloud(const bool iTransform) const {
   */
   return cloud;
 }
-
-maps::TriangleMesh::Ptr PointCloudView::
-getAsMesh(const bool iTransform) const {
-  maps::TriangleMesh::Ptr mesh;
-  // TODO
-  return mesh;
-}
-
-bool PointCloudView::
-getClosest(const Eigen::Vector3f& iPoint,
-           Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) {
-  // TODO: getClosest
-  return false;
-}

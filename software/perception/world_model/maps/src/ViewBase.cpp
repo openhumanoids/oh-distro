@@ -91,3 +91,27 @@ const int64_t ViewBase::
 getUpdateTime() const {
   return mUpdateTime;
 }
+
+maps::TriangleMesh::Ptr ViewBase::
+getAsMesh(const bool iTransform) const {
+  // must override this in derived classes
+  maps::TriangleMesh::Ptr mesh;
+  return mesh;
+}
+
+
+bool ViewBase::getClosest(const Eigen::Vector3f& iPoint,
+                          Eigen::Vector3f& oPoint,
+                          Eigen::Vector3f& oNormal) const {
+  // must override this in derived classes
+  return false;
+}
+
+
+
+bool ViewBase::
+intersectRay(const Eigen::Vector3f& iOrigin, const Eigen::Vector3f& iDirection,
+             Eigen::Vector3f& oPoint, Eigen::Vector3f& oNormal) const {
+  // must override this in derived classes
+  return false;
+}
