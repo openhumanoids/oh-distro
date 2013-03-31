@@ -104,6 +104,7 @@ getTransform(const std::string& iFrom, const std::string& iTo,
       oTransform(i,j) = mat[idx];
     }
   }
+  return true;
 }
 
 bool BotWrapper::
