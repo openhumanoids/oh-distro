@@ -12,26 +12,35 @@
 //#include <stdio.h>
 //#include <inttypes.h>
 
-
-//#include "lcmtypes/drc_lcmtypes.hpp"
 #include "LegOdometry_LCM_Handler.hpp"
+
+
 
 using namespace TwoLegs;
 using namespace std;
 
-
-LegOdometry_Handler::LegOdometry_Handler() : _finish(false) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _finish(false), lcm_(lcm_) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	_leg_odo = new TwoLegOdometry();
+	
+	if(!lcm_->good())
+	  return;
+	
+	model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+	
+	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
+	
+	// Parse KDL tree
+	  if (!kdl_parser::treeFromString(  model_->getURDFString() ,tree)){
+	    std::cerr << "ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
+	    return;
+	  }
+	  std::cout << "Before\n";
+	  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
 
 	
-	// This class handles the interface between the LCM data broadcasts and the actual state estimation object. The LCM channels and interfaces
-	// are set up with setupLCM()
-	setupLCM();
-	
-	// new dev stuff - This should be done in a such a manner to allow the 
-	model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_.getUnderlyingLCM(), 0));
+	stillbusy = false;
 	
 	return;
 }
@@ -55,10 +64,6 @@ void LegOdometry_Handler::setupLCM() {
 	// robot_pose_channel = "TRUE_ROBOT_STATE";
 	// drc_robot_state_t_subscribe(_lcm, robot_pose_channel, TwoLegOdometry::on_robot_state_aux, this);
 	
-	if(!lcm_.good())
-	  return;
-	
-	lcm_.subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
 	
 	return;
 }
@@ -88,7 +93,8 @@ void LegOdometry_Handler::run(bool testingmode) {
 		try
 		{
 			// This is the highest referrence point for the 
-			while(0 == lcm_.handle());
+			//This is in main now...
+			//while(0 == lcm_->handle());
 		    
 		}
 		catch (exception& e)
@@ -109,41 +115,92 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 												const std::string& channel, 
 												const  drc::robot_state_t* msg) {
 	
+	/*
 	std::cout << msg->utime << ", ";
 	std::cout << msg->contacts.contact_force[0].z << ", ";
-	std::cout << msg->contacts.contact_force[1].z << ", ";
+	std::cout << msg->contacts.contact_force[1].z << ", ";*/
 	
 	//pass left and right leg forces and torques to TwoLegOdometry
 	// TODO temporary testing interface
 	
 	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+
 	std::cout << _leg_odo->primary_foot() << std:: endl;
+
 	
-	
+	getTransforms(msg);
 	
 	
 }
 
-
-/*
- * This has been copied and must be converted to the listen and respond to the correct LCM messages
- 
-
-void LegOdometry_Handler::on_robot_state(const drc_robot_state_t* msg) {
-
-	cout << "LCM robot pose event caught in LegOdometry_Handler object" << endl;
-
-
-	//data.gyro_(0) = msg->gyro[0];
-	// ..
-	// ?Propagate?(?,leg_odo);
-
+void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
+  bool kinematics_status;
+  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+  
+  // 1. Solve for Forward Kinematics:
+    _link_tfs.clear();
+    
+    // call a routine that calculates the transforms the joint_state_t* msg.
+    map<string, double> jointpos_in;
+    map<string, drc::transform_t > cartpos_out;
+    
+        
+    
+    for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
+      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+   
+    if (!stillbusy)
+    {
+    	//std::cout << "Trying to solve for Joints to Cartesian\n";
+    	stillbusy = true;
+    	kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
+    	stillbusy = false;
+    }
+    else
+    {
+    	std::cout << "JntToCart is still busy" << std::endl;
+    	// This should generate some type of error or serious warning
+    }
+    
+    //bot_core::rigid_transform_t tf;
+    //KDL::Frame T_body_head;
+    
+    
+    map<string, drc::transform_t >::iterator transform_it_lf;
+    map<string, drc::transform_t >::iterator transform_it_rf;
+    
+    transform_it_lf=cartpos_out.find("l_foot");
+    transform_it_rf=cartpos_out.find("r_foot");
+    
+    //T_body_head = KDL::Frame::Identity();
+	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+		// This gives us the translation from body to head
+	    std::cout << " LEFT: " << transform_it_lf->second.translation.x << ", " << transform_it_lf->second.translation.y << ", " << transform_it_lf->second.translation.z << std::endl;
+	    // Rotation in quaternion for body to head
+	    transform_it_lf->second.rotation;
+	    //std::cout << "ROTATION.x: " << transform_it->second.rotation.x << ", " << transform_it->second.rotation.y << std::endl;
+	  }else{
+	    std::cout<< "fk position does not exist" <<std::endl;
+	  }
+	  
+	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+  	    std::cout << "RIGHT: " << transform_it_rf->second.translation.x << ", " << transform_it_rf->second.translation.y << ", " << transform_it_rf->second.translation.z << std::endl;
+  	    transform_it_rf->second.rotation;
+	  }else{
+        std::cout<< "fk position does not exist" <<std::endl;
+  	  }
+    
+	  _leg_odo->setLegTransforms(transform_it_lf->second, transform_it_rf->second);
+	  
+	  
+    
 }
 
-void LegOdometry_Handler::on_robot_state_aux(const lcm_recv_buf_t* rbuf,
-                            const char* channel,
-                            const drc_robot_state_t* msg,
-                            void* user_data) {
-  (static_cast<LegOdometry_Handler *>(user_data))->on_robot_state(msg);
+// Not used yet
+void LegOdometry_Handler::drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out) {
+	out.translation.x = -in.translation.x;
+	out.translation.y = -in.translation.y;
+	out.translation.z = -in.translation.z;
+		
+	
 }
-*/

@@ -87,7 +87,7 @@ void TwoLegOdometry::CalculateBodyStates(/*data*/) {
 	updateInternalStates(/*data*/); // some data must be passed to this function
 	
 	// Determine whether to transition feet
-	FootTransitionLogic();
+	//FootTransitionLogic(); - depreciated
 	
 	return;
 }
@@ -171,4 +171,21 @@ float TwoLegOdometry::getSecondaryFootZforce() {
 	if (standing_foot == LEFTFOOT)
 	    return rightforces.z;
 	  return leftforces.z;
+}
+
+void TwoLegOdometry::setLegTransforms(const drc::transform_t &left, const drc::transform_t &right) {
+	pelvis_to_left = left;
+	pelvis_to_right = right;
+	
+	// TODO
+	// Only translation inverses are set in this function, 
+	// must still add the quaternions by inverting the vector portion of the quaternion
+	
+	left_to_pelvis.translation.x = left.translation.x;
+	left_to_pelvis.translation.y = left.translation.y;
+	left_to_pelvis.translation.z = left.translation.z;
+	
+	right_to_pelvis.translation.x = right.translation.x;
+	right_to_pelvis.translation.y = right.translation.y;
+	right_to_pelvis.translation.z = right.translation.z;
 }

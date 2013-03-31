@@ -8,6 +8,7 @@
 
 #include "Footsteps.h"
 #include "TwoLegsEstimate_types.h"
+#include "lcmtypes/drc_lcmtypes.hpp"
 
 #define SCHMIDT_LEVEL	      0.7f
 #define TRANSITION_TIMEOUT    3000
@@ -26,7 +27,11 @@ class TwoLegOdometry {
 		long deltautime;
 		long transition_timespan;
 		
-		boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+	    drc::transform_t pelvis_to_left;
+	    drc::transform_t left_to_pelvis;
+	    drc::transform_t pelvis_to_right;
+	    drc::transform_t right_to_pelvis;
+	    drc::transform_t local_to_pelvis;
 		
 		// Convert the LCM message containing robot pose information to that which is requried by the leg odometry calculations
 		void parseRobotInput();
@@ -46,6 +51,8 @@ class TwoLegOdometry {
 		float getSecondaryFootZforce();
 		
 	public:
+		
+		
 		TwoLegOdometry();
 		
 		// Testing function not dependent on LCM messages
@@ -57,8 +64,9 @@ class TwoLegOdometry {
 		int secondary_foot();
 		int primary_foot();
 		
-
 		bool DetectFootTransistion(long utime, float leftz, float rightz);
+		
+		void setLegTransforms(const drc::transform_t &left, const drc::transform_t &right);
 };
 
 
