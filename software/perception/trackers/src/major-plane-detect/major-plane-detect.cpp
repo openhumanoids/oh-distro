@@ -35,11 +35,12 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Plane Detect | Null Pose",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Plane Detect | Tracked Plane"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Tracked Normal"           ,3,1, 4451002,1, { 1.0, 0.0, 0.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451003,"Plane Detect | Tracked Plane"           ,3,1, 4451005,1, { 1.0, 0.0, 0.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Tracked Normal"           ,3,1, 4451005,1, { 1.0, 0.0, 0.0} ));
   //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(4451004,"Plane Detect | Plane X"           ,1,1, 4451002,1, { 0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451005,"Plane Detect | Transform",5,1) );
 
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_hull_ (new pcl::PointCloud<pcl::PointXYZRGB>() );
   current_utime_=0;
 }
 
@@ -100,16 +101,16 @@ bool MajorPlane::getSweep( Eigen::Vector3f bounds_center, Eigen::Vector3f bounds
 
 Eigen::Isometry3d MajorPlane::determinePlanePose(pcl::ModelCoefficients::Ptr plane_coeffs,
           Eigen::Vector4f centroid){
-  double run = sqrt(plane_coeffs->values[1]*plane_coeffs->values[1] +  plane_coeffs->values[0]*plane_coeffs->values[0]
+  double run = sqrt( plane_coeffs->values[0]*plane_coeffs->values[0] + plane_coeffs->values[1]*plane_coeffs->values[1] 
                         +  plane_coeffs->values[2]*plane_coeffs->values[2]);
   double yaw = atan2 ( plane_coeffs->values[1] , plane_coeffs->values[0]);
-  double pitch_x = acos( plane_coeffs->values[2]/ run);
+  double pitch = acos( plane_coeffs->values[2]/ run);
 //  cout << "Pitch " << (pitch_x*180/M_PI) << " | Yaw " << (yaw*180/M_PI) << "\n";
 
   Eigen::Isometry3d plane_pose;
   plane_pose.setIdentity();
   plane_pose.translation() << centroid(0), centroid(1), centroid(2);
-  Eigen::Quaterniond quat = euler_to_quat( yaw , pitch_x , 0 );             
+  Eigen::Quaterniond quat = euler_to_quat( yaw , pitch , 0 );             
   plane_pose.rotate( quat );
   return plane_pose;
 }
@@ -164,7 +165,17 @@ void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Ei
   Eigen::Isometry3d new_plane_pose = determinePlanePose(new_plane_coeffs, new_plane_centroid);
   plane_pose_ = new_plane_pose;
   plane_coeffs_ = new_plane_coeffs;
-  plane_pose_init_=true;  
+  plane_pose_init_=true;
+  // Store hull in the plane pose:
+  Eigen::Isometry3f plane_pose_i = new_plane_pose.cast<float>().inverse();
+  Eigen::Quaternionf quat_i = Eigen::Quaternionf ( plane_pose_i.rotation() );
+  plane_hull_ = new_plane_hull;
+  pcl::transformPointCloud (*plane_hull_, *plane_hull_,
+    plane_pose_i.translation(), quat_i); // !! modifies lidar_cloud  
+
+  // Visualise a pose on the plane
+  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,new_plane_pose  );
+  pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
   
   
   // Visualise hull and normal:
@@ -172,7 +183,6 @@ void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Ei
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
     Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
-    pc_vis_->pose_to_lcm_from_list(4451002, null_poseT);  
     pc_vis_->ptcld_to_lcm_from_list(4451003, *new_plane_hull, current_utime_, current_utime_);          
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr normals_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -190,10 +200,6 @@ void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Ei
   cout  <<  "New Plane Coefficients: " << new_plane_coeffs->values[0]
       << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
   cout << "Centroid: " << new_plane_centroid(0) << " " << new_plane_centroid(1) << " " << new_plane_centroid(2) << "\n"; // last element held at zero
-
-  // Visualise a pose on the plane
-  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,new_plane_pose  );
-  pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
     
   
 }

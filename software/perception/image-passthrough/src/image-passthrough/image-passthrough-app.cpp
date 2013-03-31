@@ -49,8 +49,10 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
+#include <lcm/lcm-cpp.hpp>
 
 #include "image-passthrough.hpp"
+
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/GlKinematicBody.hpp>
 
@@ -58,13 +60,15 @@
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
-#include <lcm/lcm-cpp.hpp>
+#include <path_util/path_util.h>
+#include <affordance/AffordanceUtils.hpp>
 
-#define DO_TIMING_PROFILE FALSE
+
+
 #include <ConciseArgs>
 
+#define DO_TIMING_PROFILE FALSE
 #define PCL_VERBOSITY_LEVEL L_ERROR
-
 // offset of affordance in mask labelling:
 #define AFFORDANCE_OFFSET 64
 
@@ -73,6 +77,9 @@ using namespace drc;
 using namespace Eigen;
 using namespace boost;
 using namespace boost::assign; // bring 'operator+()' into scope
+
+
+
 
 class Pass{
   public:
@@ -108,7 +115,8 @@ class Pass{
     std::string camera_channel_;
     
     // State:
-    pcl::PolygonMesh::Ptr aff_mesh_ ;
+    pcl::PolygonMesh::Ptr combined_aff_mesh_ ;
+    bool aff_mesh_filled_;
     drc::robot_state_t last_rstate_; // Last robot state: this is used to extract link positions:
     bool init_rstate_;    
     std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
@@ -120,6 +128,9 @@ class Pass{
     bool verbose_;
     int output_color_mode_;
     bool use_convex_hulls_;
+    
+    AffordanceUtils affutils;
+    bool affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
 };
 
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
@@ -162,11 +173,13 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ ); // Actually outputs the Mask Image:
 
   // Construct the simulation method:
-  simexample = SimExample::Ptr (new SimExample (argc, argv, height_, width_ , lcm_, output_color_mode_));
+  std::string path_to_shaders = string(getBasePath()) + "/bin/";
+  simexample = SimExample::Ptr (new SimExample (argc, argv, height_, width_ , lcm_, output_color_mode_, path_to_shaders));
   simexample->setCameraIntrinsicsParameters (width_, height_, fx, fy, cx, cy);
   // Keep a mesh for the affordances:
-  pcl::PolygonMesh::Ptr aff_mesh_ptr_temp(new pcl::PolygonMesh());
-  aff_mesh_ = aff_mesh_ptr_temp;   
+  pcl::PolygonMesh::Ptr combined_aff_mesh_ptr_temp(new pcl::PolygonMesh());
+  combined_aff_mesh_ = combined_aff_mesh_ptr_temp;   
+  aff_mesh_filled_=false;
 }
 
 // same as bot_timestamp_now():
@@ -212,42 +225,69 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 
 
 
-
-
-
-// Receive affordances and create a combined mesh in world frame
-// TODO: properly parse the affordances
-void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg){
-  cout << "got "<< msg->naffs <<" affs\n"; 
-  pcl::PolygonMesh::Ptr aff_mesh_temp(new pcl::PolygonMesh());
-  aff_mesh_ = aff_mesh_temp;
-  for (int i=0; i < msg->naffs; i++){
+bool Pass::affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
     std::map<string,double> am;
-    for (size_t j=0; j< msg->affs[i].nparams; j++){
-      am[ msg->affs[i].param_names[j] ] = msg->affs[i].params[j];
+    for (size_t j=0; j< aff.nparams; j++){
+      am[ aff.param_names[j] ] = aff.params[j];
     }
-    Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-    Eigen::Isometry3d transform;
-    transform.setIdentity();
-    transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-    transform.rotate(quat);  
-    pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh());
-    combined_mesh_ptr_temp = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
+
+    Eigen::Isometry3d transform = affutils.getPose(aff.param_names, aff.params);
+    
+    if (aff.otdf_type == "box"){
+      cout  << aff_uid << " is a box\n";
+      mesh_out = prim_->getCubeWithTransform(transform,am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second);
+    }else if(aff.otdf_type == "cylinder"){
+      cout  << aff_uid << " is a cylinder\n";
+      mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
+    }else if(aff.otdf_type == "steering_cyl"){
+      cout  << aff_uid << " is a steering_cyl\n";
+      mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
+    }else if(aff.otdf_type == "mesh"){
+      cout  << aff_uid << " is a mesh ["<< aff.points.size() << " and " << aff.triangles.size() << "]\n";
+      mesh_out = affutils.getMeshFromAffordance(aff.points, aff.triangles,transform);
+      
+    }else{
+      cout  << aff_uid << " is a not recognised ["<< aff.otdf_type <<"] not supported yet\n";
+    }
+    
     // demo of bounding boxes: (using radius as x and y dimensions
     //combined_mesh_ptr_temp = prim_->getCubeWithTransform(transform,am.find("radius")->second, am.find("radius")->second, am.find("length")->second);
 
     if(output_color_mode_==0){
       // Set the mesh to a false color:
-      int j =i%(simexample->colors_.size()/3);
-      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
+      int j =aff_uid%(simexample->colors_.size()/3);
+      simexample->setPolygonMeshColor(mesh_out, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
     }else if(output_color_mode_==1){
-      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, 
-                                      AFFORDANCE_OFFSET + i,0,0 ); // using red field as gray, last digits ignored
+      simexample->setPolygonMeshColor(mesh_out, 
+                                      AFFORDANCE_OFFSET + aff_uid,0,0 ); // using red field as gray, last digits ignored
     }else{
-      simexample->setPolygonMeshColor(combined_mesh_ptr_temp, 255,0,0 ); // white (last digits ignored
+      simexample->setPolygonMeshColor(mesh_out, 255,0,0 ); // white (last digits ignored
     }
-    simexample->mergePolygonMesh(aff_mesh_, combined_mesh_ptr_temp); 
+}    
+
+
+
+
+// Receive affordances and creates a combined mesh in world frame
+// TODO: properly parse the affordances
+void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg){
+  
+  if (msg->naffs ==0){
+    cout << "got "<< msg->naffs <<" affs [won't add anything]\n"; 
+    aff_mesh_filled_=false;
+    return;
   }
+  cout << "got "<< msg->naffs <<" affs\n"; 
+  
+  pcl::PolygonMesh::Ptr combined_aff_mesh_temp(new pcl::PolygonMesh());
+  combined_aff_mesh_ = combined_aff_mesh_temp;
+  for (size_t i=0; i < msg->affs.size(); i++){
+    affordance_t aff = msg->affs[i];
+    pcl::PolygonMesh::Ptr new_aff_mesh(new pcl::PolygonMesh());
+    affordanceInterpret(aff, i, new_aff_mesh );
+    simexample->mergePolygonMesh(combined_aff_mesh_, new_aff_mesh); 
+  }
+  aff_mesh_filled_=true;
 }
 
 
@@ -462,7 +502,9 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   // Pull the trigger and render scene:
   simexample->createScene(link_names, link_tfs_e);
   
-  simexample->mergePolygonMeshToCombinedMesh( aff_mesh_);
+  if(aff_mesh_filled_){
+    simexample->mergePolygonMeshToCombinedMesh( combined_aff_mesh_);
+  }
   if (verbose_){ // Visualize the entire world thats about to be renderered: NBNB THIS IS REALLY USEFUL FOR DEBUGGING
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();

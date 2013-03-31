@@ -9,6 +9,8 @@
 
 
 #define GEOM_EPSILON 1e-9
+#define PARAM_COLOR_ALPHA "Alpha"
+
 
 using namespace std;
 using namespace boost;
@@ -67,7 +69,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   }
 
   float c[3] = {0.3,0.3,0.6};
-  float alpha = 0.8;
+  //float alpha = 0.8;
 
   // Draw all OTDF objectes.
   typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
@@ -83,7 +85,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     glColor4f(0,0,0,1);
     bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
     it->second._gl_object->enable_link_selection(self->selection_enabled);
-    it->second._gl_object->draw_body(c,alpha);
+    it->second._gl_object->draw_body(c,self->alpha); // no using sliders
 
 
 
@@ -100,7 +102,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   float c_green[3] = {0.3,0.5,0.3}; 
   float c_yellow[3] = {0.5,0.5,0.3};
   float c_gray[3] = {0.3,0.3,0.3};
-  alpha = 0.6;
+  float alpha = 0.6;
   typedef map<string, StickyHandStruc > sticky_hands_map_type_;
   for(sticky_hands_map_type_::const_iterator hand_it = self->sticky_hands.begin(); hand_it!=self->sticky_hands.end(); hand_it++)
   {
@@ -390,7 +392,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }
   else if (! strcmp (name, PARAM_RHAND_URDF_SELECT)) {
    self->rhand_urdf_id = bot_gtk_param_widget_get_enum (self->pw, PARAM_RHAND_URDF_SELECT);
-  } 
+  }else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
+    self->alpha = (float) bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
+    bot_viewer_request_redraw(self->viewer);
+  }
 
 
 }
@@ -487,6 +492,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->otdf_id= 0; // default file
   self->lhand_urdf_id= 0; // default file
   self->rhand_urdf_id= 1; // default file
+  self->alpha = 1.0; // default opacity is full on
   bot_gtk_param_widget_add_separator (self->pw,"Objects");
   bot_gtk_param_widget_add_enumv (self->pw, PARAM_OTDF_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                          self->otdf_id,
@@ -499,6 +505,11 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   bot_gtk_param_widget_add_buttons(self->pw,PARAM_CLEAR, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
+  
+  bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA,
+                                  BOT_GTK_PARAM_WIDGET_SLIDER,
+                                  0, 1, 0.001, 1);   
+  
   bot_gtk_param_widget_add_separator (self->pw,"Sticky Hands");
   bot_gtk_param_widget_add_enumv (self->pw, PARAM_LHAND_URDF_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                          self->lhand_urdf_id,
@@ -520,6 +531,9 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
 	bool optpoolready = self->graspOptStatusListener->isOptPoolReady();
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
+        
+        
+        
   self->clicked = 0;	
   self->dragging = 0;
   self->show_popup_onrelease = 0;

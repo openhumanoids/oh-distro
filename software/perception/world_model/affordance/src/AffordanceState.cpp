@@ -141,9 +141,12 @@ void AffordanceState::clear()
   _map_id = 0;
   _uid = 0;
   
+  // mfallon: Should bounding box elements be set to something here?
+
   _params.clear();  
   _states.clear();
-  _ptinds.clear();
+  _points.clear();
+  _triangles.clear();
   
   _otdf_type = AffordanceState::UNKNOWN;
 }
@@ -225,14 +228,20 @@ void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
 /**used by constructor and copy constructor*/
 void AffordanceState::initHelper(const drc::affordance_t *msg)
 {
-  if (_states.size() != 0 || _params.size() != 0 || _ptinds.size() != 0)
+  if ((_states.size() != 0 || _params.size() != 0 ) || (_points.size() != 0 || _triangles.size() != 0 ) )
     throw ArgumentException("shouldn't call init if these fields aren't empty");
   
   _utime 	= msg->utime;
   _map_id 	= msg->map_id;
   _uid 	= msg->uid;
+
+  memcpy(_bounding_pos, msg->bounding_pos, 3*sizeof(float));
+  memcpy(_bounding_rpy, msg->bounding_rpy, 3*sizeof(float));
+  memcpy(_bounding_lwh, msg->bounding_lwh, 3*sizeof(float));
+
   _otdf_type 		= msg->otdf_type;
-  _ptinds 	= msg->ptinds;
+  _points 	= msg->points;
+  _triangles       = msg->triangles;
     
   //argument check
   if (supportedOtdfTypes.find(msg->otdf_type) == supportedOtdfTypes.end())
@@ -261,6 +270,7 @@ AffordanceState::~AffordanceState()
 
 //------methods-------
 /**convert this to a drc_affordacne_t lcm message*/
+// @comment: mfallon: wouldn't assignment be quicker here than push_back
 void AffordanceState::toMsg(drc::affordance_t *msg) const
 {
 	msg->utime 	= _utime;
@@ -268,9 +278,11 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	msg->uid 	= _uid;
 	msg->otdf_type		= _otdf_type;
 
+	memcpy(msg->bounding_pos, _bounding_pos, 3*sizeof(float));
+	memcpy(msg->bounding_rpy, _bounding_rpy, 3*sizeof(float));
+	memcpy(msg->bounding_lwh, _bounding_lwh, 3*sizeof(float));
 
 	unordered_map<string,double>::const_iterator iter;
-
 	//params
 	msg->nparams = _params.size();
 	for(iter = _params.begin(); iter != _params.end(); ++iter)
@@ -287,10 +299,14 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->states.push_back(iter->second);
 	}
 
-	//ptinds
-	msg->nptinds = _ptinds.size();
-	for(uint i = 0; i < _ptinds.size(); i++)
-		msg->ptinds.push_back(_ptinds[i]);
+	//points
+	msg->npoints = _points.size();
+	for(uint i = 0; i < _points.size(); i++)
+		msg->points.push_back(_points[i]);
+        //triangles
+        msg->ntriangles = _triangles.size();
+        for(uint i = 0; i < _triangles.size(); i++)
+                msg->triangles.push_back(_triangles[i]);
 }
 
 /**convert from this AffordanceState into a urdf xml string representation*/

@@ -69,8 +69,16 @@ pods_install_executables(affordance_server)
 
 target_link_libraries(affordance_server affordance ${REQUIRED_PACKAGES})
 
+
+#-----
+add_subdirectory(src/utils)
+add_subdirectory(src/demo)
+
+
 #------test
 add_executable(server_test src/test/server_test.cpp )		   
 target_link_libraries(server_test affordance ${REQUIRED_PACKAGES})
 add_executable(affordance_test src/test/affordance_test.cpp )		   
 target_link_libraries(affordance_test affordance ${REQUIRED_PACKAGES})
+
+

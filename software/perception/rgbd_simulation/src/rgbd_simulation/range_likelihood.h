@@ -46,13 +46,15 @@ namespace pcl
          * @param col_width  - width of the image for a single particle.
          * @param scene - a pointer to the scene that should be rendered when
          *                computing likelihoods.
+         * @param path_to_shaders - path to the directory where the shader files can be found.
          *
          */
         RangeLikelihood (int rows,
                          int cols,
                          int row_height,
                          int col_width,
-                         Scene::Ptr scene);
+                         Scene::Ptr scene, 
+			 std::string path_to_shaders ="");
 
         /**
          * Destroy the RangeLikelihood object and release any memory allocated.
@@ -177,6 +179,9 @@ namespace pcl
 
         void
         setupProjectionMatrix ();
+
+        // path to the location of the shader files
+        std::string path_to_shaders_;
 
         Scene::Ptr scene_;
         int rows_;

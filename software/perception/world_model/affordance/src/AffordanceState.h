@@ -51,7 +51,12 @@ namespace affordance
     /**{name --> value} maps*/
     boost::unordered_map<std::string, double> _params, //geometrical properties
                                              _states;
-    std::vector< int32_t > _ptinds;
+
+    float _bounding_pos[3];
+    float _bounding_rpy[3];
+    float _bounding_lwh[3];
+    std::vector< std::vector <float> > _points;
+    std::vector< std::vector <int> > _triangles;    
     
   private:
     /**type of affordance.  this is a relative otdf file name w/o

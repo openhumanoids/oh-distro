@@ -26,5 +26,6 @@ pods_use_pkg_config_packages(drc-major-plane-tracker
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_math 
   major-plane-detect 
+  affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(drc-major-plane-tracker)

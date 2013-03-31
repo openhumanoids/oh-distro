@@ -195,6 +195,9 @@ typedef struct _RendererAffordances {
   std::string* urdf_dir_name_ptr;
   std::vector<std::string> urdf_filenames; // otdf_template_names
 
+  // transparency of the object:
+  float alpha;  
+  
   std::string* instance_selection_ptr; 
   bool selection_hold_on;
   

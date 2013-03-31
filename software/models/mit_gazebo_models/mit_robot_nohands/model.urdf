@@ -947,7 +947,8 @@
     <child link="head"/>
     <dynamics damping="0.1" friction="0"/>
     <!-- per slides on sensor head kinematics 2012-12-14 -->
-    <limit effort="5" lower="-0.610865238" upper="1.13446401" velocity="12"/>
+<!--    <limit effort="5" lower="-0.610865238" upper="1.13446401" velocity="12"/> -->
+    <limit effort="5" lower="-0.610865238" upper="0" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.610865238" soft_upper_limit="11.13446401"/>
   </joint>
   <joint name="r_arm_elx" type="revolute">

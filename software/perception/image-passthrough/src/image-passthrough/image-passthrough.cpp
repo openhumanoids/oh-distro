@@ -8,7 +8,7 @@ using namespace boost::assign; // bring 'operator+=()' into scope
 
 SimExample::SimExample(int argc, char** argv,
 	int height_,int width_, boost::shared_ptr<lcm::LCM> &lcm_,
-        int output_color_mode_):
+        int output_color_mode_, std::string path_to_shaders):
         height_(height_), width_(width_), lcm_(lcm_), output_color_mode_(output_color_mode_){
   initializeGL (argc, argv);
   
@@ -16,7 +16,8 @@ SimExample::SimExample(int argc, char** argv,
   camera_ = Camera::Ptr (new Camera ());
   scene_ = Scene::Ptr (new Scene ());
 
-  rl_ = RangeLikelihood::Ptr (new RangeLikelihood (1, 1, height_, width_, scene_));
+  
+  rl_ = RangeLikelihood::Ptr (new RangeLikelihood (1, 1, height_, width_, scene_, path_to_shaders));
   // rl_ = RangeLikelihood::Ptr(new RangeLikelihood(10, 10, 96, 96, scene_));
   //rl_ = RangeLikelihoodGLSL::Ptr(new RangeLikelihoodGLSL(1, 1, height, width, scene_, 0));
 
@@ -175,12 +176,19 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 
 void SimExample::setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b ){
   pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
-  pcl::fromROSMsg(mesh->cloud, mesh_cloud_1st);
+  pcl::PointCloud<pcl::PointXYZ> cloudXYZ;  
+  pcl::fromROSMsg(mesh->cloud, cloudXYZ);
 
-  for (size_t i=0;i< mesh_cloud_1st.points.size() ; i++){
-    mesh_cloud_1st.points[i].r = r;
-    mesh_cloud_1st.points[i].g = g;
-    mesh_cloud_1st.points[i].b = b;
+  // this was pcl::PointXYZRGB omly until recently
+  for (size_t i=0;i< cloudXYZ.points.size() ; i++){
+    pcl::PointXYZRGB pt;
+    pt.x = cloudXYZ.points[i].x;
+    pt.y = cloudXYZ.points[i].y;
+    pt.z = cloudXYZ.points[i].z;
+    pt.r = r;
+    pt.g = g;
+    pt.b = b;
+    mesh_cloud_1st.points.push_back(pt);
   }
       
   // transform
@@ -209,7 +217,9 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   
   int N_polygonsB = meshB->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
+  
   pcl::fromROSMsg(meshB->cloud, cloudB);
+  
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshB->polygons[i];//[i];
@@ -224,6 +234,7 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   pcl::toROSMsg (cloudA, meshA->cloud);
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
+  
   return true;
 }
 
@@ -274,9 +285,9 @@ void SimExample::mergePolygonMeshToCombinedMesh( pcl::PolygonMesh::Ptr meshB){
   //pcl::PolygonMesh combined_mesh;
   //pcl::PolygonMesh::Ptr combined_mesh_ptr_temp(new pcl::PolygonMesh(combined_mesh));
   //combined_mesh_ptr_ = combined_mesh_ptr_temp;
-  
+
   mergePolygonMesh(combined_mesh_ptr_,meshB);  
-  
+
   // For Testing:
   /*
   pcl::PolygonMesh  mesh_object;   

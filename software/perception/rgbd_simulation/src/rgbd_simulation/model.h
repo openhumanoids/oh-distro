@@ -181,7 +181,7 @@ namespace pcl
         typedef boost::shared_ptr<TexturedQuad> Ptr;
         typedef boost::shared_ptr<const TexturedQuad> ConstPtr;
 
-        TexturedQuad (int width, int height);
+        TexturedQuad (int width, int height, std::string path_to_shaders ="");
         ~TexturedQuad ();
 
         void

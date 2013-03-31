@@ -117,6 +117,18 @@ static void on_top_view_clicked(GtkToggleToolButton *tb, void *user_data)
   bot_viewer_request_redraw(self);
 }
 
+// TBD - correct location for this?
+int start_spy_counter=0;
+static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  BotViewer *self = (BotViewer*) user_data;
+  if (start_spy_counter >0){ // is there a better way than this counter?
+    int i = system ("bot-spy &> /dev/null &");
+  }
+  start_spy_counter++;
+}
+
+
 static void
 destroy_renderers (BotViewer *viewer)
 {
@@ -134,12 +146,11 @@ destroy_renderers (BotViewer *viewer)
   g_ptr_array_free(viewer->renderers, TRUE);
 }
 
-
 int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
   
-  string config_file = "";
+  string config_file = ""; // leave this empty so force viewer to get it from the param server
   string role = "robot";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
@@ -241,7 +252,7 @@ int main(int argc, char *argv[])
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
 
-  // add custon TOP VIEW button
+  // add custom TOP VIEW button
   GtkWidget *top_view_button;
   top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(top_view_button), "Top View");
@@ -249,9 +260,19 @@ int main(int argc, char *argv[])
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(top_view_button), 4);
   gtk_widget_show(top_view_button);
   g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
-
   on_top_view_clicked(NULL, (void *) viewer);  
 
+  
+  // add custom TOP VIEW button
+  GtkWidget *start_spy_button;
+  start_spy_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_FIND);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(start_spy_button), "Bot Spy");
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(start_spy_button), viewer->tips, "Launch Bot Spy", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_spy_button), 4);
+  gtk_widget_show(start_spy_button);
+  g_signal_connect(G_OBJECT(start_spy_button), "clicked", G_CALLBACK(on_start_spy_clicked), viewer);
+  on_start_spy_clicked(NULL, (void *) viewer);    
+  
   // add custom "collapse all" button
   GtkToolItem *item = gtk_tool_button_new_from_stock (GTK_STOCK_CLEAR);
   gtk_tool_button_set_label (GTK_TOOL_BUTTON (item), "Collapse All");

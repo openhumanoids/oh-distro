@@ -179,8 +179,8 @@ void VoFeatures::drawFeaturesOnImage(cv::Mat &img, int which_image ){
     for (size_t j=0;j< features_ref_.size(); j++){
       if (features_ref_indices_[j]){
         cv::Point p0;
-        p0.x = features_ref_[j].uv[0]; 
-        p0.y = features_ref_[j].uv[1];
+        p0.x = features_ref_[j].base_uv[0]; 
+        p0.y = features_ref_[j].base_uv[1];
         cv::circle( img, p0, 5, color_out, 0 ); 
       }
     }  
@@ -188,8 +188,8 @@ void VoFeatures::drawFeaturesOnImage(cv::Mat &img, int which_image ){
     for (size_t j=0;j< features_cur_.size(); j++){
       if (features_cur_indices_[j]){
         cv::Point p0;
-        p0.x = features_cur_[j].uv[0]; 
-        p0.y = features_cur_[j].uv[1];
+        p0.x = features_cur_[j].base_uv[0]; 
+        p0.y = features_cur_[j].base_uv[1];
         cv::circle( img, p0, 5, color_out, 0 ); 
       }
     }  

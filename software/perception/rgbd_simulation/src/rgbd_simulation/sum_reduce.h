@@ -32,8 +32,9 @@ namespace pcl
          * \param width[in] the width of the input array.
          * \param width[in] the height of the input array.
          * \param levels[in] the number of levels to carry out the reduction.
+         * \param path_to_shaders[in] path to the directory where the shader files can be found.
          */
-        SumReduce (int width, int height, int levels);
+        SumReduce (int width, int height, int levels, std::string path_to_shaders ="");
 
         /** \brief Release any allocated resources. */
         ~SumReduce ();
@@ -51,6 +52,7 @@ namespace pcl
         int levels_;
         int width_;
         int height_;
+        std::string path_to_shaders_;
         gllib::Program::Ptr sum_program_;
     };
   } // namespace - simulation

@@ -89,8 +89,13 @@ class ParticleFilter{
     ///Calculates and Returns the Effective Sample Size.
     double GetESS(void) ;
     
-    // Find the mean of the weight particle set:
+    // Find the weight mean of the weight particle set:
     pf_state Integrate();
+    // Return the position and attitude:
+    Eigen::Isometry3d IntegratePose(){
+      pf_state mean_state = Integrate();
+      return mean_state.pose;
+    }
     pf_state IntegrateVelocity();
     
     // Find the mean of the weight particle set:

@@ -49,7 +49,8 @@ class SimExample
     typedef boost::shared_ptr<const SimExample> ConstPtr;
 	
     SimExample (int argc, char** argv,
-		int height_,int width_, boost::shared_ptr<lcm::LCM> &lcm_, int output_color_mode_);
+		int height_,int width_, boost::shared_ptr<lcm::LCM> &lcm_, int output_color_mode_,
+		std::string path_to_shaders ="");
     void initializeGL (int argc, char** argv);
     
     Scene::Ptr scene_;

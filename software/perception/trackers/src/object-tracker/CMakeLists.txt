@@ -13,7 +13,8 @@ pods_use_pkg_config_packages(object-tracker   particle
   pointcloud_vis pointcloud_math 
   opencv image_io_utils
   major-plane-detect 
-  color-tracker histogram-tracker
+  color-tracker histogram-tracker icp-tracker
+  affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(object-tracker)
 

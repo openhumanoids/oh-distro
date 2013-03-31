@@ -163,9 +163,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -206,8 +204,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.13);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -252,8 +250,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.11);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -297,8 +295,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.35000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -339,8 +337,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.23000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(0.39); // unknown
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -380,8 +378,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.23000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(0.39); // unknown
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -423,9 +421,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -470,9 +467,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.38000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -517,9 +513,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -566,9 +561,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01000); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -615,9 +609,8 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
-    
-    a.nstates =0;
-    a.nptinds =0;
+    a.nstates =0;    a.npoints =0;    a.ntriangles =0;
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();

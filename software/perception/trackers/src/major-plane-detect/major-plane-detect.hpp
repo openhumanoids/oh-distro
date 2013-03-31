@@ -58,6 +58,19 @@ class MajorPlane
       return plane_coeffs_->values; 
     }
     
+    // returns an Nx3 convex hull of XYZ points (in the hull pose frame)
+    std::vector< std::vector<float> > getPlaneHull(){
+      std::vector< std::vector<float> > points;
+      for (size_t i=0; i < plane_hull_->points.size() ; i++ ){
+        std::vector<float> point;
+        point.push_back( plane_hull_->points[i].x );
+        point.push_back( plane_hull_->points[i].y );
+        point.push_back( plane_hull_->points[i].z );
+        points.push_back(point);
+      }
+      return points; 
+    }
+    
     // set the plane to be tracked:
     void setPlane(std::vector<float> plane_coeffs, Eigen::Vector4f plane_centroid ){
       pcl::ModelCoefficients::Ptr new_plane_coeffs(new pcl::ModelCoefficients ());
@@ -65,19 +78,20 @@ class MajorPlane
       plane_pose_ = determinePlanePose(new_plane_coeffs, plane_centroid);
       plane_coeffs_ = new_plane_coeffs;
       plane_pose_init_ = true;
-      cout << "[PLANE] Have initialized the plane tracker\n";
+      // cout << "[PLANE] Have initialized the plane tracker\n";
     };
 
     
-   pcl::PointCloud<pcl::PointXYZRGB>::Ptr getSweepCloudWithoutPlane(float dist_threshold){
+   pcl::PointCloud<pcl::PointXYZRGB>::Ptr getSweepCloudWithoutPlane(float dist_threshold, 
+                                 pcl::ModelCoefficients::Ptr plane_coeffs){
      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZRGB>);
      
      for (size_t i=0; i < cloud_->points.size() ; i++ ){
         pcl::PointXYZRGB pt = cloud_->points[i]; 
-        float top =plane_coeffs_->values[0]* pt.x + plane_coeffs_->values[1]* pt.y + 
-                    plane_coeffs_->values[2]* pt.z + plane_coeffs_->values[3];
-        float bottom = sqrt (plane_coeffs_->values[0]* plane_coeffs_->values[0] + plane_coeffs_->values[1]*plane_coeffs_->values[1] +
-                              plane_coeffs_->values[2]* plane_coeffs_->values[2] );
+        float top =plane_coeffs->values[0]* pt.x + plane_coeffs->values[1]* pt.y + 
+                    plane_coeffs->values[2]* pt.z + plane_coeffs->values[3];
+        float bottom = sqrt (plane_coeffs->values[0]* plane_coeffs->values[0] + plane_coeffs->values[1]*plane_coeffs->values[1] +
+                              plane_coeffs->values[2]* plane_coeffs->values[2] );
         float dist = fabs(top/bottom);
         if (dist > dist_threshold){
           cloud_out->points.push_back(pt);
@@ -111,6 +125,7 @@ class MajorPlane
     // pose of a point on the plane with pitch and yaw but roll =0
     Eigen::Isometry3d plane_pose_ ;
     pcl::ModelCoefficients::Ptr plane_coeffs_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_hull_; // convex hull of the plane
     // has the above value been set?
     bool plane_pose_init_;
 

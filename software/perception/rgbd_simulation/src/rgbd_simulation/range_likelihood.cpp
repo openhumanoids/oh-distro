@@ -260,8 +260,8 @@ display_tic_toc (vector<double> &tic_toc,const string &fun_name)
   cout << "\ntotal_time_" << fun_name << " " << dtime << "\n";
 }
 
-pcl::simulation::RangeLikelihood::RangeLikelihood (int rows, int cols, int row_height, int col_width, Scene::Ptr scene) :
-      scene_(scene), rows_(rows), cols_(cols), row_height_(row_height), col_width_(col_width),
+pcl::simulation::RangeLikelihood::RangeLikelihood (int rows, int cols, int row_height, int col_width, Scene::Ptr scene, std::string path_to_shaders) :
+      scene_(scene), rows_(rows), cols_(cols), row_height_(row_height), col_width_(col_width), path_to_shaders_(path_to_shaders),
       depth_buffer_dirty_(true),
       color_buffer_dirty_(true),
       score_buffer_dirty_(true),
@@ -277,7 +277,7 @@ pcl::simulation::RangeLikelihood::RangeLikelihood (int rows, int cols, int row_h
       aggregate_on_cpu_ (false),
       use_instancing_ (false),
       use_color_ (true),
-      sum_reduce_ (cols * col_width, rows * row_height, max_level (col_width, row_height))
+      sum_reduce_ (cols * col_width, rows * row_height, max_level (col_width, row_height), path_to_shaders)
 {
   height_ = rows_ * row_height;
   width_ = cols_ * col_width;
@@ -407,17 +407,18 @@ pcl::simulation::RangeLikelihood::RangeLikelihood (int rows, int cols, int row_h
   glBindFramebuffer (GL_FRAMEBUFFER, 0);
 
   // Load shader
+  std::cout << "RangeLikelihoodGLSL will now read shaders files from " << path_to_shaders_ << "\n";
   likelihood_program_ = gllib::Program::Ptr (new gllib::Program ());
   // TODO: to remove file dependency include the shader source in the binary
-  if (!likelihood_program_->addShaderFile ("compute_score.vert", gllib::VERTEX))
+  if (!likelihood_program_->addShaderFile ( std::string(path_to_shaders_ + "compute_score.vert"), gllib::VERTEX))
   {
-    std::cout << "Failed loading vertex shader" << std::endl;
+    std::cout << "RangeLikelihoodGLSL: Failed loading vertex shader" << std::endl;
     exit (-1);
   }
 
-  if (!likelihood_program_->addShaderFile ("compute_score.frag", gllib::FRAGMENT))
+  if (!likelihood_program_->addShaderFile ( std::string(path_to_shaders_ + "compute_score.frag"), gllib::FRAGMENT))
   {
-    std::cout << "Failed loading fragment shader" << std::endl;
+    std::cout << "RangeLikelihoodGLSL: Failed loading fragment shader" << std::endl;
     exit (-1);
   }
 

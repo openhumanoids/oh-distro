@@ -35,7 +35,8 @@ target_link_libraries(drc-image-passthrough boost_system
            ${REQUIRED_LIBS})
 pods_use_pkg_config_packages(drc-image-passthrough collision_object_gfe
   bot2-vis visualization-utils
-  pointcloud_vis
+  pointcloud_vis path-util
   lcm   bot2-param-client image-passthrough  ${PKG_CONFIG_DEPS} 
-  rgbd_primitives image_io_utils)
+  rgbd_primitives image_io_utils
+  affordance-utils)
 pods_install_executables(drc-image-passthrough)

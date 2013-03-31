@@ -295,7 +295,7 @@ pcl::simulation::Quad::render ()
   glBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
-pcl::simulation::TexturedQuad::TexturedQuad (int width, int height) : width_ (width), height_ (height)
+pcl::simulation::TexturedQuad::TexturedQuad (int width, int height, std::string path_to_shaders) : width_ (width), height_ (height)
 {
   program_ = gllib::Program::loadProgramFromFile ("single_texture.vert", "single_texture.frag");
   program_->use ();

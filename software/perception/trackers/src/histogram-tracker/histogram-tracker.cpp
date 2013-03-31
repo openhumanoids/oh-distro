@@ -227,11 +227,11 @@ HistogramTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d
         }
         pred_win.x = est_obj_pos.x * 1.f / pts.size(), 
             pred_win.y = est_obj_pos.y * 1.f / pts.size();
-        std::cerr << "Prior rect from PF : ";
+        //std::cerr << "Prior rect from PF : ";
     } else {
-        std::cerr << "Prior rect from Prev Estimate : ";
+        //std::cerr << "Prior rect from Prev Estimate : ";
     }
-    std::cerr << pred_win.tl() << "->" << pred_win.br() << std::endl;            
+    //std::cerr << pred_win.tl() << "->" << pred_win.br() << std::endl;            
 
     // Visualization:
     cv::Mat bp3;
@@ -263,13 +263,13 @@ HistogramTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d
     int v_estimated = est_win.center.y;
 
     // Check % increase in width/height (rule out possibilities)
-    std::cerr << "Posterior rect from CAMSHIFT : " 
-              << est_win.boundingRect().tl() << "->" << est_win.boundingRect().br() << std::endl;
+    //std::cerr << "Posterior rect from CAMSHIFT : " 
+    //          << est_win.boundingRect().tl() << "->" << est_win.boundingRect().br() << std::endl;
          
     // Update prediction for next update to be current estimate
     // Otherwise, use prediction from incoming particle predictions
     pred_win = est_win.boundingRect();
-    std::cout << u_estimated << " and " << v_estimated << "\n";
+    //std::cout << u_estimated << " and " << v_estimated << "\n";
       
     // 4. Determine Likelihood in Image space:
     for (size_t i=0; i< pts.size(); i++) {

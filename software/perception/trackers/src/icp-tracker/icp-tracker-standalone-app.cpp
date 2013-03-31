@@ -191,7 +191,7 @@ drc::affordance_t StatePub::getAffordance(Eigen::Isometry3d &pose, int uid){
     a.params.push_back(1.0); // unknown
     a.nstates =0;
     a.npoints =0;
-    a.nvertices=0;
+    a.ntriangles=0;
 
   return a;
 }    

@@ -29,6 +29,7 @@ capture a sweep
 
 #include <trackers/major-plane-detect.hpp>
 #include <trackers/icp-tracker.hpp>
+#include <affordance/AffordanceUtils.hpp>
 
 using namespace std;
 
@@ -68,6 +69,7 @@ class Pass{
     
     // Plane Tracking Variables:
     Eigen::Isometry3d plane_pose_ ;
+    pcl::ModelCoefficients::Ptr plane_coeffs_;
     bool plane_pose_set_;
 
     ICPTracker* icp_tracker_;
@@ -76,7 +78,9 @@ class Pass{
 
 
     Eigen::Isometry3d object_pose_;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr affordance_cloud_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_bb_cloud_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_;
+    AffordanceUtils affutils;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int affordance_id_): 
@@ -90,7 +94,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
   lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
 
@@ -105,6 +109,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1010,"[ICPApp] Pose - Previous",5,0) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1011,"[ICPApp] Aff Cloud [at Prev]"     ,1,1, 1010,1, {1,0,0}));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1012,"[ICPApp] Bounding Box [Prev]"     ,4,1, 1010,1, {1,0,0}));
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"[ICPApp] Updated Pose",5,0) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1021,"[ICPApp] Aff Cloud [at Updated]"     ,1,1, 1020,1, {0,0.6,0}));
@@ -117,10 +122,10 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
   plane_pose_.setIdentity();
   plane_pose_set_ = false;
 
-  icp_tracker_ = new ICPTracker(lcm_, 0);
   
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr affordance_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  affordance_cloud_ = affordance_cloud_ptr;
+  icp_tracker_ = new ICPTracker(lcm_, 0);
+  pcl::ModelCoefficients::Ptr plane_coeffs_ptr_(new pcl::ModelCoefficients ());
+  plane_coeffs_ = plane_coeffs_ptr_;
   
 }
 
@@ -143,10 +148,12 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf,
   // true if we got a new sweep, make a box 5x5x5m centered around the robot's head
   // cout << "head_to_local_: " << head_to_local_.translation() << "\n";
   if (major_plane_->getSweep(head_to_local_.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
-    plane_pose_set_ = major_plane_->trackPlane(plane_pose_, msg->utime);  
+    //plane_pose_set_ = major_plane_->trackPlane(plane_pose_, msg->utime);  
     //std::vector<float> plane_coeffs_ = major_plane_->getPlaneCoeffs();  
     
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud = major_plane_->getSweepCloudWithoutPlane(0.03);
+    cout << *plane_coeffs_ << " plane\n";
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud = major_plane_->getSweepCloudWithoutPlane(0.03,
+          plane_coeffs_);
     
     
     
@@ -157,39 +164,24 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf,
     
     Isometry3dTime previous_object_poseT = Isometry3dTime(0, object_pose_); 
     pc_vis_->pose_to_lcm_from_list(1010, previous_object_poseT);
-    pc_vis_->ptcld_to_lcm_from_list(1011, *affordance_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
+    pc_vis_->ptcld_to_lcm_from_list(1011, *object_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
+    pc_vis_->ptcld_to_lcm_from_list(1012, *object_bb_cloud_,previous_object_poseT.utime, previous_object_poseT.utime);  
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr affordance_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    affordance_cloud_copy = affordance_cloud_;
-    icp_tracker_->doICPTracker( affordance_cloud_copy, new_cloud, object_pose_ );
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> ());
+    object_cloud_copy = object_cloud_;
+    icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
     object_pose_ = icp_tracker_->getUpdatedPose();
     //std::cout << object_pose_.translation().transpose() << " new xyz\n";
     //std::cout << object_pose_.rotation() << " new rot\n";
     
-    icp_tracker_->drawBoundingBox(object_pose_.cast<float>() );    
     Isometry3dTime   updated_object_pose_T =  Isometry3dTime( 0, object_pose_);
     pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
-    pc_vis_->ptcld_to_lcm_from_list(1021, *affordance_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+    pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
   }
 }
 
 
 
-
-
-
-Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::vector<double> params ){
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-  Eigen::Isometry3d transform;
-  transform.setIdentity();
-  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-  transform.rotate(quat);  
-  return transform;
-}
 
 
 std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vector<double> params ){
@@ -246,35 +238,49 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
                              const std::string& channel, const  drc::affordance_collection_t* msg){
   if  ( !got_affs_ ) {
     cout << "got affs\n";
+    drc::affordance_t a = msg->affs[affordance_id_];
+    object_pose_ = affutils.getPose( a.param_names, a.params );
+
+    Isometry3dTime pT =  Isometry3dTime( 0, object_pose_);
+    pc_vis_->pose_to_lcm_from_list(1010, pT);
     
-    object_pose_ = affordanceToIsometry3d( msg->affs[affordance_id_].param_names, msg->affs[affordance_id_].params );
+    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
+    pc_vis_->ptcld_to_lcm_from_list(1012, *object_bb_cloud_,pT.utime, pT.utime);  
     
+    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
+    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
+    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
+
+    
+    /*
     // Read Point Cloud and Define Pose and Bounding Box:
-    std::string hd_cloud_filename = "/home/mfallon/Desktop/drill_clouds/hd/hd_drill_at_zero.pcd";
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( hd_cloud_filename, *affordance_cloud_) == -1){ // load the file
+    std::string hd_cloud_filename = "/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill.pcd";
+    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( hd_cloud_filename, *object_cloud_) == -1){ // load the file
       cout << "Couldn't read " << hd_cloud_filename << ", quitting\n";
       exit(-1);
     } 
-    cout << "read HD cloud with " << affordance_cloud_->points.size() << " points\n";       
-    
-    Eigen::Vector3f boundbox_lower_left = Eigen::Vector3f(-0.15, -0.07, -0.135); //-0.135
-    Eigen::Vector3f boundbox_upper_right = Eigen::Vector3f( 0.15, 0.18,  0.2);
-    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
+    cout << "read HD cloud with " << object_cloud_->points.size() << " points\n";  
+    //Eigen::Vector3f boundbox_lower_left = Eigen::Vector3f( -0.15, -0.07, -0.135);
+    //Eigen::Vector3f boundbox_upper_right = Eigen::Vector3f( 0.15, 0.18,  0.2);
     icp_tracker_->drawBoundingBox( object_pose_.cast<float>() );    
-    
-    Isometry3dTime pT =  Isometry3dTime( 0, object_pose_);
-    pc_vis_->pose_to_lcm_from_list(1010, pT);
-    pc_vis_->ptcld_to_lcm_from_list(1011, *affordance_cloud_, pT.utime, pT.utime);
+    */
     
     
+    // TODO: convert a mesh affordance to a point cloud if required
+    object_cloud_ = affutils.getCloudFromAffordance(a.points);
+    pc_vis_->ptcld_to_lcm_from_list(1011, *object_cloud_, pT.utime, pT.utime);
+    
+    
+    
+    ///// PLANE CONSTRAINT
     std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
     Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
     
     cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
-    pcl::ModelCoefficients::Ptr new_p_coeffs(new pcl::ModelCoefficients ());
-    new_p_coeffs->values = p_coeffs;
-    Eigen::Isometry3d plane_pose = major_plane_->determinePlanePose(new_p_coeffs, p_centroid);
+    plane_coeffs_->values = p_coeffs;
+    cout << *plane_coeffs_ << " plane in\n";
+    Eigen::Isometry3d plane_pose = major_plane_->determinePlanePose(plane_coeffs_, p_centroid);
     obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance Plane",5,1);
     Isometry3dTime plane_poseT = Isometry3dTime ( 0, plane_pose );
     pc_vis_->pose_to_lcm(oconfig2,plane_poseT);

@@ -60,6 +60,6 @@ pods_use_pkg_config_packages(drc-icp-tracker-app
   bot2-param-client
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_math 
-  icp-tracker major-plane-detect
+  icp-tracker major-plane-detect affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(drc-icp-tracker-app)

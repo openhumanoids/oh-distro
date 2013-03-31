@@ -19,21 +19,23 @@ gfe
 perception
 action_authoring
 viewer
-segmentation
+#segmentation
 
 network
-#interface
 
 # requires drcsim/gazebo1.2 and ubuntu 12.04:
-# currently no used in gazebo1.3
 gazebo_plugins
 
 # disabled for now:
 #teleop
 plan
 
-# porterbot utils:
+# porterbot stuff:
 porterbot
 
 # various scripts and tools e.g. BW plotting
 tools
+
+
+# depreciate early viewer
+#interface

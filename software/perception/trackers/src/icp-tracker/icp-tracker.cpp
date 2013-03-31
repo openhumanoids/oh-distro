@@ -46,6 +46,7 @@ void ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_c
   boundingBoxFilter(new_cloud, previous_pose.cast<float>() ) ;
   //if (verbose_lcm_>=1){
   cout << "New to be aligned cloud contains: " << new_cloud->points.size() << "\n";
+  pc_vis_->pose_to_lcm_from_list(771000, null_poseT_);
   pc_vis_->ptcld_to_lcm_from_list(771001, *new_cloud, null_poseT_.utime, null_poseT_.utime);
   //}
 
@@ -130,7 +131,7 @@ void ICPTracker::boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud
 
 
 void ICPTracker::drawBoundingBox(Eigen::Isometry3f pose){
-
+  cout << "use the bounding box in affordance utils instead ===========\n";
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8;

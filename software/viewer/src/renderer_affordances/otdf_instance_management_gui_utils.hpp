@@ -62,7 +62,7 @@ namespace renderer_affordances_gui_utils
       }
      }
    msg.nstates =  cnt;
-   msg.nptinds = 0;
+   //msg.nptinds = 0;
    cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
    self->lcm->publish(channel, &msg);
 
