@@ -26,7 +26,7 @@ stereo-bm
 # particle-filter based tracking
 particle_filter
 # just unitl affordances fully fixed
-#trackers
+trackers
 
 
 # some quick start examples:
