@@ -1,6 +1,7 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 tf_solver
+camunits-drc
 
 # core tools widely used by mfallon:
 pointcloud-tools
@@ -25,7 +26,6 @@ stereo-bm
 
 # particle-filter based tracking
 particle_filter
-# just unitl affordances fully fixed
 trackers
 
 
@@ -36,6 +36,5 @@ tutorials
 # i think these are deprecated
 #map_store
 #local_map
-
 # maurice's sandbox:
 #mfallon_sandbox
