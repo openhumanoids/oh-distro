@@ -1,5 +1,6 @@
 find_package(PkgConfig REQUIRED)
 add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
+  -Wreturn-type -Wuninitialized -Wunused-variable
   -std=c++0x)
 
 #####################################################################
@@ -30,7 +31,7 @@ add_library(renderer_maps SHARED
 set_target_properties(renderer_maps PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(renderer_maps
-  bot2-vis maps gtkmm-2.4)
+  bot2-vis maps gtkmm-2.4 jpeg-utils)
 
 pods_install_headers(
   MapsRenderer.hpp
@@ -40,7 +41,7 @@ pods_install_libraries(renderer_maps)
   
 pods_install_pkg_config_file(renderer_maps
     LIBS -lrenderer_maps
-    REQUIRES bot2-vis maps 
+    REQUIRES bot2-vis maps
     VERSION 0.0.1)
 
 
