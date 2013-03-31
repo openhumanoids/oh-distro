@@ -153,11 +153,11 @@ struct RendererBase::InternalHelper {
   }
 
   ~InternalHelper() {
-    free(mBotRenderer.name);
     std::list<lcm::Subscription*>::iterator iter = mLcmSubscriptions.begin();
     for (; iter != mLcmSubscriptions.end(); ++iter) {
       mLcm->unsubscribe(*iter);
     }
+    free(mBotRenderer.name);
   }
 
   static Gtk::Main* getGtkMain() {
@@ -166,7 +166,7 @@ struct RendererBase::InternalHelper {
   }
 
   static void destroy(BotRenderer* iRenderer) {
-    RendererBase* renderer = reinterpret_cast<RendererBase*>(iRenderer);
+    RendererBase* renderer = reinterpret_cast<RendererBase*>(iRenderer->user);
     delete renderer;
   }
 
