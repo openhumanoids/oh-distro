@@ -17,7 +17,7 @@ clip(const Eigen::Vector3f& iOrigin, const Eigen::Vector3f& iDirection,
   float dist2 = Sgn*oEndPoint[Idx] + planeDist;
   if ((dist1 < 0) && (dist2 < 0)) return false;
   if ((dist1 >= 0) && (dist2 >= 0)) return true;
-  float t = (Sgn*iOrigin[Idx]+planeDist)/iDirection[Idx];
+  float t = -dist1/(Sgn*iDirection[Idx]);
   if (dist1 >= 0) {
     oMaxT = t;
     oEndPoint = iOrigin + iDirection*t;
@@ -42,8 +42,6 @@ clipRay(const Eigen::Vector3f& iOrigin, const Eigen::Vector3f& iEndPoint,
   oMaxT = 1;
   oOrigin = iOrigin;
   oEndPoint = iEndPoint;
-
-  float dist1, dist2, denom;
 
   // n'x = -d
   // x = o + r t
