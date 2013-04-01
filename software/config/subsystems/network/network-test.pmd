@@ -7,6 +7,10 @@ group "network-test" {
         exec = "drc-network-shaper -t manipulation -r base -c subsystems/network/network-test.cfg -v";
         host = "localhost";
     }   
+    cmd "nettest" {
+        exec = "drc-network-test";
+        host = "localhost";
+    }   
 }
 
 group "spy" {
@@ -15,7 +19,7 @@ group "spy" {
         host = "localhost";
     }
     cmd "bot_spy" {
-        exec = "bot-spy -l 'udpm://239.255.76.67:7668?ttl=0'";
+        exec = "bot-spy -l 'udpm://239.255.76.67:7667?ttl=0'";
         host = "localhost";
     }
 }
