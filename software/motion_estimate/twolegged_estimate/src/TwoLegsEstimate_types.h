@@ -11,6 +11,7 @@
 
 namespace TwoLegs {
 
+	
 	typedef struct {
 		Eigen::Vector3d position;
 		Eigen::Quaterniond orientation;
@@ -22,7 +23,7 @@ namespace TwoLegs {
 	} transformation;
 	
 	typedef struct {
-		state footprintlocation;
+		Eigen::Isometry3d footprintlocation;
 		int foot;
 	} footstep;
 	

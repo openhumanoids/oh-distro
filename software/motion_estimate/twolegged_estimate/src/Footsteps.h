@@ -1,8 +1,14 @@
 #ifndef FOOTSTEPS_H_
 #define FOOTSTEPS_H_
 
-#include "TwoLegsEstimate_types.h"
 #include <vector>
+
+#include <Eigen/Dense>
+
+#include "TwoLegsEstimate_types.h"
+
+#include "lcmtypes/drc_lcmtypes.hpp"
+
 
 namespace TwoLegs {
 
@@ -14,11 +20,15 @@ class Footsteps {
 		
 	public:
 		Footsteps();
-		void addFootstep(state const &RelativeFrameLocation, int foot);
+		void addFootstep(state RelativeFrameLocation, int foot);
 		
 		
 		int getLastStepState(state const &RelativeFrameLocation);
 	
+		Eigen::Isometry3d getLastStep();
+		
+		int lastFoot();
+		
 };
 
 }

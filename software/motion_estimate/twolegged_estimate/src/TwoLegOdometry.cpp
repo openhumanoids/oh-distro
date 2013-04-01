@@ -151,7 +151,14 @@ bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz
 	  
 	if (transition_timespan > TRANSITION_TIMEOUT && foottransitionintermediateflag) 
 	{
-		footsteps.addFootstep(getSecondaryFootState(),secondary_foot());
+		Eigen::Isometry3d transform;
+		
+
+		state temp;//getSecondaryInLocal()
+		
+		//test.translation() << ;
+		
+		footsteps.addFootstep(temp,secondary_foot());
 	  setStandingFoot(secondary_foot());
 	  
 	  foottransitionintermediateflag = false;
@@ -173,7 +180,7 @@ float TwoLegOdometry::getSecondaryFootZforce() {
 	  return leftforces.z;
 }
 
-void TwoLegOdometry::setLegTransforms(const drc::transform_t &left, const drc::transform_t &right) {
+void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right) {
 	pelvis_to_left = left;
 	pelvis_to_right = right;
 	
@@ -181,11 +188,85 @@ void TwoLegOdometry::setLegTransforms(const drc::transform_t &left, const drc::t
 	// Only translation inverses are set in this function, 
 	// must still add the quaternions by inverting the vector portion of the quaternion
 	
-	left_to_pelvis.translation.x = left.translation.x;
-	left_to_pelvis.translation.y = left.translation.y;
-	left_to_pelvis.translation.z = left.translation.z;
+	left_to_pelvis = left;
 	
-	right_to_pelvis.translation.x = right.translation.x;
-	right_to_pelvis.translation.y = right.translation.y;
-	right_to_pelvis.translation.z = right.translation.z;
+	//right_to_pelvis.translation() << right.translation.x, right.translation.y, right.translation.z;
+  right_to_pelvis = right;
+
+}
+
+Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
+	if (primary_foot() == LEFTFOOT)
+	{
+		if (footsteps.lastFoot() != LEFTFOOT) {
+		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";
+		}
+		return footsteps.getLastStep() * left_to_pelvis;
+		//return addTransforms(footsteps.getLastStep(), left_to_pelvis);
+		
+	}
+	else
+	{
+		if (footsteps.lastFoot() != RIGHTFOOT) {
+		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";	
+		}
+		return footsteps.getLastStep() * right_to_pelvis;
+		//return addTransforms(footsteps.getLastStep(), right_to_pelvis);
+	}
+}
+
+Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
+	
+	switch (secondary_foot()) {
+	case LEFTFOOT:
+		
+		return local_to_pelvis * pelvis_to_left;
+		//return addTransforms(local_to_pelvis, pelvis_to_left);
+		break;
+	case RIGHTFOOT:
+		return local_to_pelvis * pelvis_to_right;
+		//return addTransforms(local_to_pelvis, pelvis_to_right);
+		break;
+	default:
+		std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::getSecondaryFootTransform()" << std::endl;
+		Eigen::Isometry3d test;
+		test.translation() << -99999999999., -99999999999.,-99999999999.;
+		
+		return test;
+		break;
+	}
+	
+}
+
+Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
+	switch (primary_foot()) {
+		case LEFTFOOT:
+			return local_to_pelvis * pelvis_to_left;
+			//return addTransforms(local_to_pelvis, pelvis_to_left);
+			break;
+		case RIGHTFOOT:
+			return local_to_pelvis * pelvis_to_right;
+			//return addTransforms(local_to_pelvis, pelvis_to_right);
+			break;
+		default:
+			std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::getSecondaryFootTransform()" << std::endl;
+			Eigen::Isometry3d test;
+			test.translation() << -99999999999., -99999999999.,-99999999999.;
+			
+			return test;
+			break;
+		}
+	
+}
+
+drc::transform_t TwoLegOdometry::addTransforms(const drc::transform_t& lhs, const drc::transform_t& rhs) {
+	drc::transform_t add;
+	
+	add.translation.x = lhs.translation.x + rhs.translation.x;
+	add.translation.y = lhs.translation.y + rhs.translation.y;
+	add.translation.z = lhs.translation.z + rhs.translation.z;
+		
+	//TODO - implement the rotational addition operation
+	
+	return add;
 }

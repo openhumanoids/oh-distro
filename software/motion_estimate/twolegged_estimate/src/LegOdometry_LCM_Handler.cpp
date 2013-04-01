@@ -123,12 +123,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	//pass left and right leg forces and torques to TwoLegOdometry
 	// TODO temporary testing interface
 	
+
+	getTransforms(msg);
+	
 	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 
 	std::cout << _leg_odo->primary_foot() << std:: endl;
 
 	
-	getTransforms(msg);
 	
 	
 }
@@ -190,7 +192,15 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
         std::cout<< "fk position does not exist" <<std::endl;
   	  }
     
-	  _leg_odo->setLegTransforms(transform_it_lf->second, transform_it_rf->second);
+	  Eigen::Isometry3d left;
+	  Eigen::Isometry3d right;
+	  
+	  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
+	  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
+	  
+	  // TODO - Rotations must still be handled here. only the translation are currently done
+	  
+	  _leg_odo->setLegTransforms(left, right);
 	  
 	  
     

@@ -26,12 +26,18 @@ class TwoLegOdometry {
 		long lcmutime;
 		long deltautime;
 		long transition_timespan;
-		
+		/*
 	    drc::transform_t pelvis_to_left;
 	    drc::transform_t left_to_pelvis;
 	    drc::transform_t pelvis_to_right;
 	    drc::transform_t right_to_pelvis;
 	    drc::transform_t local_to_pelvis;
+	    */
+	    Eigen::Isometry3d pelvis_to_left;
+	    Eigen::Isometry3d left_to_pelvis;
+	    Eigen::Isometry3d pelvis_to_right;
+	    Eigen::Isometry3d right_to_pelvis;
+	    Eigen::Isometry3d local_to_pelvis;
 		
 		// Convert the LCM message containing robot pose information to that which is requried by the leg odometry calculations
 		void parseRobotInput();
@@ -66,7 +72,11 @@ class TwoLegOdometry {
 		
 		bool DetectFootTransistion(long utime, float leftz, float rightz);
 		
-		void setLegTransforms(const drc::transform_t &left, const drc::transform_t &right);
+		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
+		Eigen::Isometry3d getSecondaryInLocal();
+		Eigen::Isometry3d getPrimaryInLocal();
+		drc::transform_t addTransforms(const drc::transform_t& lhs, const drc::transform_t& rhs);
+		Eigen::Isometry3d getPelvisFromStep();
 };
 
 
