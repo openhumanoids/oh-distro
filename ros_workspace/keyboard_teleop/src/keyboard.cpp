@@ -75,7 +75,7 @@ class ErraticKeyboardTeleopNode
             
             ros::NodeHandle n_private("~");
             n_private.param("walk_vel", walk_vel_, 0.5);
-            n_private.param("run_vel", run_vel_, 1.0);
+            n_private.param("run_vel", run_vel_, 3.0);
             n_private.param("yaw_rate", yaw_rate_, 1.0);
             n_private.param("yaw_rate_run", yaw_rate_run_, 1.5);
         }
@@ -237,8 +237,8 @@ void ErraticKeyboardTeleopNode::keyboardLoop()
                 dirty = true;
                 break;
             case KEYCODE_E_CAP:
-                max_tv_forward =run_vel_;
-                max_tv_strafe =  0;
+                max_tv_forward = 0;
+                max_tv_strafe =  run_vel_;
                 speed = -1;
                 turn = 0;
                 dirty = true;

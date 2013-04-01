@@ -257,7 +257,7 @@ void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
 
 void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"TORSO_IMU");
-  //send_imu_as_pose(msg,"POSE_BODY_ORIENT");
+  send_imu_as_pose(msg,"POSE_BODY_ORIENT");
 }
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){

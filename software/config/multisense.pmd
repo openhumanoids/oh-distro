@@ -16,7 +16,7 @@ group "1.core" {
         host = "localhost";
     }
     cmd "j2f" {
-        exec = "drc-joints2frames";
+        exec = "drc-joints2frames -s";
         host = "localhost";
     }
 }
