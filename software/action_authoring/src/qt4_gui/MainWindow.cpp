@@ -618,6 +618,7 @@ handleAddConstraint()
     int index = _authoringState._all_gui_constraints.size();
     _authoringState._all_gui_constraints.push_back((Qt4ConstraintMacroPtr)new Qt4ConstraintMacro(new_constraint, index));
     rebuildGUIFromState(_authoringState, _worldState);
+    setSelectedAction(_authoringState._all_gui_constraints.back().get());
 }
 
 void

@@ -78,6 +78,9 @@ TogglePanel(QObject *parent, QString headerText)
     mainLayout->addWidget(_widgetArea);/*, 0, Qt::AlignTop | Qt:: AlignLeft);*/
 
     setLayout(mainLayout);
+
+    changeState();
+    
     //    show();
 }
 
