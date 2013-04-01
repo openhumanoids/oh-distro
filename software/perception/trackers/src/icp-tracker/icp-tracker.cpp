@@ -27,8 +27,6 @@ ICPTracker::ICPTracker(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_):
 
   pc_vis_->obj_cfg_list.push_back( obj_cfg(771010,"[ICP] Pose - New",5,0) );
   
-  pc_vis_->pose_to_lcm_from_list(771000, null_poseT_);
-
 }
 
 

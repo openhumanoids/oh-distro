@@ -133,8 +133,7 @@ bool matchPlaneToPrevious(pcl::ModelCoefficients::Ptr old_plane_coeffs, pcl::Mod
     angle = 180 -angle;
   
   if (angle > max_angle_diff){
-      cout << "[PLANE] the plane-to-plane angle is: " << angle << "\n";
-      cout << "PLANE NOT FOUND - INTER PLANE ANGLE IS LARGE\n"; 
+      cout << "[PLANE] the plane-to-plane angle is: " << angle << " | Too Large\n";
       return false;
   }
   
@@ -148,8 +147,7 @@ bool matchPlaneToPrevious(pcl::ModelCoefficients::Ptr old_plane_coeffs, pcl::Mod
   pow(old_plane_coeffs->values[1],2) + pow(old_plane_coeffs->values[2],2);
   dist = fabs(top_d)/sqrt(dist);      
   if (dist > max_project_dist){
-      cout << "[PLANE]  the centroid-to-plane dist is: " << dist << "\n";
-      cout << "PLANE NOT FOUND - DISTANCE BETWEEN PLANES IS LARGE\n"; 
+      cout << "[PLANE] the centroid-to-plane dist is: " << dist << " | Too Large\n";
       return false;
   }
   
@@ -173,13 +171,12 @@ void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Ei
   pcl::transformPointCloud (*plane_hull_, *plane_hull_,
     plane_pose_i.translation(), quat_i); // !! modifies lidar_cloud  
 
-  // Visualise a pose on the plane
-  Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,new_plane_pose  );
-  pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
-  
-  
-  // Visualise hull and normal:
   if (verbose_lcm_ >=1){
+    // Visualise a pose on the plane
+    Isometry3dTime plane_poseT = Isometry3dTime(current_utime_,new_plane_pose  );
+    pc_vis_->pose_to_lcm_from_list(4451005, plane_poseT);    
+    
+    // Visualise hull and normal:
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
     Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
@@ -197,11 +194,9 @@ void MajorPlane::storeNewPlane( pcl::ModelCoefficients::Ptr new_plane_coeffs, Ei
   }  
   
   
-  cout  <<  "New Plane Coefficients: " << new_plane_coeffs->values[0]
-      << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
-  cout << "Centroid: " << new_plane_centroid(0) << " " << new_plane_centroid(1) << " " << new_plane_centroid(2) << "\n"; // last element held at zero
-    
-  
+  //cout  <<  "New Plane Coefficients: " << new_plane_coeffs->values[0]
+  //    << " " << new_plane_coeffs->values[1] << " "  << new_plane_coeffs->values[2] << " " << new_plane_coeffs->values[3] << endl;
+  //cout << "Centroid: " << new_plane_centroid(0) << " " << new_plane_centroid(1) << " " << new_plane_centroid(2) << "\n"; // last element held at zero   
 }
 
 
@@ -218,7 +213,7 @@ void MajorPlane::matchToAllPlanes(){
 
   
   if (cloud_->points.size() < 5000){ //20000 originally
-    cout << "Cloud is too small to detect plane [" << cloud_->points.size() << "]\n";
+    cout << "[PLANE] Cloud is too small to detect plane [" << cloud_->points.size() << "]\n";
     return;
   }
   
@@ -233,21 +228,23 @@ void MajorPlane::matchToAllPlanes(){
   filtp.setStopCloudSize(200);
   vector<BasicPlane> plane_stack; 
   filtp.filterPlanes(plane_stack);
-  std::cout << "[OUT] number of planes extracted: " << plane_stack.size() << "\n";
+  std::cout << "[PLANE] number of planes extracted: " << plane_stack.size() << "\n";
   
-  GrowCloud grow;
-  grow.visualizePlanes(plane_stack, pc_vis_, 5000000 );
   
-  if (1==0){ // visualize all the planes found
-    std::stringstream ss;
-    grow.printPlaneStackCoeffs(plane_stack, ss);
-    cout << ss.str();
-    
-    for (size_t i=0; i <plane_stack.size() ; i++){
-      cout << i << ": " << plane_stack[i].n_source_points << "\n";
-    }
-    for (size_t i=0; i <plane_stack.size() ; i++){
-      cout << i << ": " << plane_stack[i].centroid << " centroid\n";
+  if (verbose_lcm_>=1){
+    GrowCloud grow;
+    grow.visualizePlanes(plane_stack, pc_vis_, 5000000 );
+    if (1==0){ // visualize all the planes found
+      std::stringstream ss;
+      grow.printPlaneStackCoeffs(plane_stack, ss);
+      cout << ss.str();
+      
+      for (size_t i=0; i <plane_stack.size() ; i++){
+	cout << i << ": " << plane_stack[i].n_source_points << "\n";
+      }
+      for (size_t i=0; i <plane_stack.size() ; i++){
+	cout << i << ": " << plane_stack[i].centroid << " centroid\n";
+      }
     }
   }
 

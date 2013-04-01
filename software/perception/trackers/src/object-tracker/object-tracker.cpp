@@ -62,7 +62,7 @@ int affordance_vis_offset =0;
 class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, 
-         int num_particles_, int tracker_instance_id_);
+         int num_particles_, int tracker_instance_id_, int verbose_);
     
     ~Pass(){
     }    
@@ -71,7 +71,7 @@ class Pass{
                        bool use_icp_tracker, bool use_plane_tracker, int plane_affordance_id);
     
   private:
-    
+    int verbose_;
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
@@ -151,9 +151,9 @@ class Pass{
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
-    int num_particles_, int tracker_instance_id_): 
+    int num_particles_, int tracker_instance_id_, int verbose_): 
     lcm_(lcm_), image_channel_(image_channel_), 
-    num_particles_(num_particles_), tracker_instance_id_(tracker_instance_id_){
+    num_particles_(num_particles_), tracker_instance_id_(tracker_instance_id_), verbose_(verbose_){
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
@@ -168,10 +168,10 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"[ICPApp] Pose - Null",5,0) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"[ICPApp] Pose - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"[ICPApp] New Sweep"     ,1,1, 1000,1, {0,0,1}));
   
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"[ICPApp] Updated Pose",5,0) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"[ICPApp] Updated Pose",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1021,"[ICPApp] Aff Cloud [at Updated]"     ,1,1, 1020,1, {0,0.6,0}));
   
   
@@ -326,7 +326,9 @@ void Pass::updatePF(){
   
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);
   double ESS = pf_->ConsiderResample();
-  std::cerr << "                              "<< ESS/num_particles_ << " ESS | " << img_.utime  << " utime\n";  
+  if(verbose_ >= 1){
+    std::cerr << ESS/num_particles_ << " ESS | " << img_.utime  << " utime\n";  
+  }
 }
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -387,10 +389,10 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }else{
     if (got_mask_ && got_initial_affordance_){
       updatePF();
+      publishUpdatedAffordance(); // updated at image frequency
     }else{
       cout << "haven't got affs and aff mask yet\n"; 
     }
-    publishUpdatedAffordance(); // updated at image frequency
   }
   
   last_utime_ = msg->utime;
@@ -482,23 +484,21 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     drc::affordance_t a = msg->affs[affordance_id_];
     object_pose_ = affutils.getPose( a.param_names, a.params );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
-    
-    Isometry3dTime object_poseT = Isometry3dTime ( aff_utime, object_pose_ );
-    pc_vis_->pose_to_lcm_from_list(affordance_vis_, object_poseT);
-    
-    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
-    pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
-    
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
     Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
-    
     // TODO: convert a mesh affordance to a point cloud if required
     object_cloud_ = affutils.getCloudFromAffordance(a.points);
-    pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
-    
     // cache the message and repeatedly update the position:
     last_affordance_msg_ = msg->affs[affordance_id_];
+
+    if( verbose_>=1 ){
+      Isometry3dTime object_poseT = Isometry3dTime ( aff_utime, object_pose_ );
+      pc_vis_->pose_to_lcm_from_list(affordance_vis_, object_poseT);
+      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
+      pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
+      pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
+    }
   }
   got_initial_affordance_ =true;  
 
@@ -508,19 +508,19 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
     Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
-    
     // TODO: this should be determined initally and retained:
     plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};
     plane_relative_xyzypr_set_  = { 0, 0, 1, 0, 1, 1};
-    
-    //cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
+    plane_pose_set_=true;
     plane_coeffs_->values = p_coeffs;
     plane_pose_ = major_plane_->determinePlanePose(plane_coeffs_, p_centroid);
-    obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance Plane",5,1);
-    Isometry3dTime pT = Isometry3dTime ( aff_utime, plane_pose_ );
-    pc_vis_->pose_to_lcm(oconfig2,pT);
     
-    plane_pose_set_=true;
+    if( verbose_>=1 ){
+      //cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
+      obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance Plane",5,1);
+      Isometry3dTime pT = Isometry3dTime ( aff_utime, plane_pose_ );
+      pc_vis_->pose_to_lcm(oconfig2,pT);
+    }
   }
 }
 
@@ -548,18 +548,19 @@ void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use
   tracker_initiated_ = true;
   got_initial_affordance_ = false;
   
-  stringstream ss2;
-  ss2 << "Tracker | Pose of Aff " << affordance_id_;
-  affordance_vis_ = 4451006 +  affordance_id_*10;
-  // obj: id name type reset
-  // pts: id name type reset objcoll usergb rgb  
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_, ss2.str() ,5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+1,"[ICPApp] Aff Cloud [at Prev]"     ,1,1, affordance_vis_,1, {1,0,0}));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+2,"[ICPApp] Bounding Box [Prev]"     ,4,1, affordance_vis_,1, {1,0,0}));
-  
-  stringstream ss;
-  ss << "Tracker | Particles of Aff " << affordance_id_;
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_+3  , ss.str() ,5,1) );
+  if( verbose_ >=1 ){
+    stringstream ss2;
+    ss2 << "Tracker | Pose of Aff " << affordance_id_;
+    affordance_vis_ = 4451006 +  affordance_id_*10;
+    // obj: id name type reset
+    // pts: id name type reset objcoll usergb rgb  
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_, ss2.str() ,5,1) );
+    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+1,"[ICPApp] Aff Cloud [at Prev]"     ,1,1, affordance_vis_,1, {1,0,0}));
+    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+2,"[ICPApp] Bounding Box [Prev]"     ,4,1, affordance_vis_,1, {1,0,0}));
+    stringstream ss;
+    ss << "Tracker | Particles of Aff " << affordance_id_;
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_+3  , ss.str() ,5,1) );
+  }
   
 }
 
@@ -618,7 +619,7 @@ int main(int argc, char ** argv) {
   bool use_histogram_tracker =false;
   bool use_plane_tracker =false;  
   bool use_icp_tracker =false;  
-  
+  int verbose = 0;
   int plane_affordance_id=-1;
   int tracker_instance_id=1; // id of this tracker instance. Plane Tracker==0, otherwise above that
   ConciseArgs opt(argc, (char**)argv);
@@ -631,6 +632,7 @@ int main(int argc, char ** argv) {
   opt.add(use_plane_tracker, "p", "use_plane_tracker","Use Plane Tracker");
   opt.add(plane_affordance_id, "l", "plane_affordance_id","Plane Affordance ID");
   opt.add(tracker_instance_id, "t", "tracker","Tracker ID");
+  opt.add(verbose, "v", "verbosity","0 none, 1 little, 2 debug");
   opt.parse();
   std::cout << "image_channel: " << image_channel << "\n";    
   std::cout << "num_particles: " << num_particles << "\n";    
@@ -639,13 +641,14 @@ int main(int argc, char ** argv) {
   std::cout << "use_histogram_tracker: " << use_histogram_tracker << "\n";    
   std::cout << "plane_affordance_id: " << plane_affordance_id << "\n";    
   std::cout << "tracker_instance_id: " << tracker_instance_id << " [id of this tracker process]\n";    
+  std::cout << "verbose: " << verbose << "\n";    
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm, image_channel, num_particles, tracker_instance_id);
+  Pass app(lcm, image_channel, num_particles, tracker_instance_id, verbose);
 
   if (affordance_id>=0){
     // if a valid id - initiate tracker on launch
