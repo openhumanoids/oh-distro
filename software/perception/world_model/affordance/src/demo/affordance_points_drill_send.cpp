@@ -188,14 +188,20 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
 
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
+  
+  char* pHome;
+  pHome = getenv ("HOME");  
+  string home = string(pHome);
+  cout << home << "\n";
+  
   if (uid==0){
-    getMeshAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply", points, triangles);
+    getMeshAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply"), points, triangles);
   }else if(uid==1){
-    getCloudAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd", points, triangles );
+    getCloudAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd"), points, triangles );
   }else if(uid==2){
-    getCloudAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd", points, triangles );
+    getCloudAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd"), points, triangles );
   }else{
-    getMeshAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply", points, triangles);
+    getMeshAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply"), points, triangles);
   }    
   a.points =points;
   a.npoints=points.size();
