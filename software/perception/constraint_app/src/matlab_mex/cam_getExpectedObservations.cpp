@@ -11,14 +11,15 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     mexErrMsgTxt("returns exactly 1 parameters"); 
   }
 
+  ConstraintApp* app(*(ConstraintApp**)mxGetData(prhs[0]));
+
+  int stateSize = app->GetStateSize();
   int stateCount = mxGetN(prhs[1]);
-  if ( mxGetM(prhs[1]) != 6 ) {
-    mexErrMsgTxt("state must be 6xN");
+  if ( mxGetM(prhs[1]) != stateSize ) {
+    mexErrMsgTxt("state must be SxN, where S is the size of the state");
   }
 
   int idSize = mxGetN(prhs[2]) * mxGetM(prhs[2]);
-
-  ConstraintApp* app(*(ConstraintApp**)mxGetData(prhs[0]));
 
   std::vector<int> ids(idSize);
   double* is((double*)mxGetData(prhs[2]));
@@ -30,8 +31,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 
   double* s((double*)mxGetData(prhs[1]));
   for ( int i = 0; i < stateCount; i++ ) {
-    std::vector<double> state(6), obs;
-    std::copy(s+i*6, s+i*6+6, state.begin());
+    std::vector<double> state(stateSize), obs;
+    std::copy(s+i*stateSize, s+i*stateSize+stateSize, state.begin());
     if ( !app->GetExpectedObservations(state, ids, obs) ) {
       mexErrMsgTxt("unable to find a link");
     }

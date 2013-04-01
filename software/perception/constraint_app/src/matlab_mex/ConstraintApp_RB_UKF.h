@@ -50,6 +50,7 @@ public:
 
   virtual void AffordanceTrackCollectionHandler(const drc::affordance_track_collection_t *msg);
   virtual void AffordanceFitHandler(const drc::affordance_t *msg);
+  virtual int GetStateSize() { return 6; }
 
  protected:
   boost::mutex m_dataMutex;

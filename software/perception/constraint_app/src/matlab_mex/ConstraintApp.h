@@ -49,6 +49,8 @@ class ConstraintApp
   }
   virtual void AffordanceFitHandler(const drc::affordance_t *affordance) = 0;
 
+  virtual int GetStateSize() = 0;
+
   typedef boost::optional<KDL::Frame> OptionalKDLFrame;
   static OptionalKDLFrame GetFrameFromParams(const drc::affordance_t *msg);
   static std::vector<double> FrameToVector(const KDL::Frame& frame);

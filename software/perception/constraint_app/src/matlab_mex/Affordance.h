@@ -27,19 +27,22 @@ class Affordance {
  public:
   class Joint {
   public:
-  Joint(const std::string& _name, const int& _num) : name(_name), num(_num), value(0.0) {}
-  Joint(const std::string& _name, const int& _num, const double& _value) : name(_name), num(_num), value(_value) {}
+  Joint(const std::string& _name, const int& _num) : name(_name), num(_num) {}
     std::string name;
     int num;
-    double value;
   };
 
   typedef boost::shared_ptr<Affordance> Ptr;
+  typedef std::vector<double> StateVector;
   
-  Affordance(std::ofstream& log, const drc::affordance_t& msg);
-  void GetState(std::vector<double>& state) const;
-  void UpdateStateFromMsg(const drc::affordance_t& msg);
-  void PrintState();
+  Affordance(std::ofstream& log, const drc::affordance_t& msg);  
+  bool GetStateFromMsg(const drc::affordance_t& msg, StateVector& state);
+  void PrintState(const StateVector& state);
+  KDL::Tree& GetTree() { return m_tree; }
+  bool GetSegmentExpressedInWorld(const std::string& segmentName, const StateVector& state, 
+				  KDL::Frame& segment_expressedIn_world);
+  bool DecodeState(const StateVector& state, KDL::Frame& root_expressedIn_world, KDL::JntArray& joints);
+  void PrintKdlTree() { PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0); }
 
  private:
   void PrintKdlTree(const KDL::Tree& tree, 
@@ -47,12 +50,11 @@ class Affordance {
 		    unsigned int depth); 
   void UpdateJointNames(const KDL::TreeElement* element = NULL);
   void PrintJointNames();
+  KDL::Frame GetFrameFromVector(const StateVector& state);
 
  private:
   std::ofstream& m_log;
   KDL::Tree m_tree;
-
-  KDL::Frame m_basepose; //pose of root link
 
   typedef boost::multi_index_container<
     Joint,
@@ -61,8 +63,7 @@ class Affordance {
       ordered_unique<member<Joint, std::string, &Joint::name> >
     > 
     > JointMultiIndex;
-  JointMultiIndex m_joints;
-    
+  JointMultiIndex m_joints;    
 };
 
 #endif
