@@ -77,28 +77,16 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		num_states = msg->num_states;   
 
     //clear stored data
-    int old_list_size = _gl_robot_list.size();
-    if(old_list_size!=num_states){
-      _gl_robot_list.clear();
-      //_collision_detector.reset();
-      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
-    }
+    _gl_robot_list.clear();
 
     int count=msg->num_states-1; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)num_states; i++)
     {
       drc::robot_state_t state_msg  = msg->plan[count];
-
-     	//shared_ptr<visualization_utils::GlKinematicBody> new_object_ptr(new visualization_utils::GlKinematicBody(*_base_gl_robot));
-     	if(old_list_size!=num_states){
-      	std::stringstream oss;
-      	oss << _robot_name << "_"<< count; 
-      	//shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody	(*_base_gl_robot,_collision_detector,true,oss.str()));
-      	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
-
-				_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
-      }      
-      
+    	std::stringstream oss;
+    	oss << _robot_name << "_"<< count; 
+    	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
+			_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
 			_gl_robot_list[0]->set_state(state_msg);
 			count-=inc;
     }//end for num of states in robot_plan msg;
