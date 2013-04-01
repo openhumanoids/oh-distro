@@ -192,6 +192,11 @@ on_pose_body(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pos
                                 msg->utime * 1.0e-6, rpy_in[1]*180/M_PI);
     bot_gl_scrollplot2d_add_point (self->height_plot, "height_body",
                                 msg->utime * 1.0e-6, msg->pos[2]);
+    
+    double speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
+    bot_gl_scrollplot2d_add_point (self->speed_plot, "speed_body",
+                                msg->utime * 1.0e-6, speed);
+    
 }
 
 static void
@@ -207,6 +212,10 @@ on_pose_head(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pos
                                 msg->utime * 1.0e-6, rpy_in[1]*180/M_PI);
     bot_gl_scrollplot2d_add_point (self->height_plot, "height_head",
                                 msg->utime * 1.0e-6, msg->pos[2]);
+
+    double speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
+    bot_gl_scrollplot2d_add_point (self->speed_plot, "speed_head",
+                                msg->utime * 1.0e-6, speed);  
 }
 
 
@@ -315,14 +324,13 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gl_scrollplot2d_set_text_color   (self->speed_plot, 0.7, 0.7, 0.7, 1);
   bot_gl_scrollplot2d_set_border_color (self->speed_plot, 1, 1, 1, 0.7);
   bot_gl_scrollplot2d_set_bgcolor (self->speed_plot, 0.1, 0.1, 0.1, 0.7);
-  bot_gl_scrollplot2d_set_ylim    (self->speed_plot, -0.5, 2);
-
-  bot_gl_scrollplot2d_add_plot    (self->speed_plot, "pfforward", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->speed_plot, "pfforward", 0.0, 0, 1.0, 1.0);
+  bot_gl_scrollplot2d_set_ylim    (self->speed_plot, -0.1, 3);
   bot_gl_scrollplot2d_add_plot    (self->speed_plot, "zero", MAX_POINTS);
   bot_gl_scrollplot2d_set_color   (self->speed_plot, "zero", 1, 1, 0, 1);
-  bot_gl_scrollplot2d_add_plot    (self->speed_plot, "voforward", MAX_POINTS);
-  bot_gl_scrollplot2d_set_color   (self->speed_plot, "voforward", 0.7, 0, 0.7, 1);
+  bot_gl_scrollplot2d_add_plot    (self->speed_plot, "speed_body", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->speed_plot, "speed_body", 0, 0, 1, 1);
+  bot_gl_scrollplot2d_add_plot    (self->speed_plot, "speed_head", MAX_POINTS);
+  bot_gl_scrollplot2d_set_color   (self->speed_plot, "speed_head", 0, 1, 0, 1);
 
   // legends?
   BotGlScrollPlot2dLegendLocation legloc = BOT_GL_SCROLLPLOT2D_HIDDEN;

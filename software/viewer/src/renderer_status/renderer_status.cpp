@@ -22,7 +22,7 @@
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
 
-#include <lcmtypes/drc_system_status_t.h>
+#include <lcmtypes/drc_lcmtypes.h>
 
 using namespace std;
 #define RENDERER_NAME "System_Status"
@@ -53,13 +53,11 @@ typedef struct
     drc_system_status_t_subscription_t *status_sub;
     
     // Information to be displayed:
-    int horz_pingnumber;
-    int horz_n_features;
-    int vert_pingnumber;
-    int vert_n_features;
-    double cur_hsd[3];
-    double cmd_hsd[3];
-    double altitude, pitch, roll;
+    double pitch, head_pitch;
+    double roll, head_roll;
+    double height, head_height;
+    int naffs;
+    double speed, head_speed, cmd_speed;
     
     deque<drc_system_status_t *> * sys_deque;
     vector< deque<drc_system_status_t *> * > deques;
@@ -106,6 +104,40 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
     cout << ss.str() <<"\n";*/
 }
 
+
+static void
+on_pose_body(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pose_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    double rpy_in[3];
+    bot_quat_to_roll_pitch_yaw (msg->orientation, rpy_in) ;
+    self->roll = rpy_in[0]*180/M_PI;
+    self->pitch = rpy_in[1]*180/M_PI;
+    //self->yaw = rpy_in[2]*180/M_PI;
+
+    self->height = msg->pos[2]; 
+    self->speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
+}
+
+static void
+on_pose_head(const lcm_recv_buf_t * buf, const char *channel, const bot_core_pose_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    double rpy_in[3];
+    bot_quat_to_roll_pitch_yaw (msg->orientation, rpy_in) ;
+    self->head_roll = rpy_in[0]*180/M_PI;
+    self->head_pitch = rpy_in[1]*180/M_PI;
+    //self->yaw = rpy_in[2]*180/M_PI;
+    
+    self->head_height = msg->pos[2];
+    self->head_speed = sqrt( msg->vel[0]*msg->vel[0] + msg->vel[1]*msg->vel[1] + msg->vel[2]*msg->vel[2] );
+}
+
+
+static void
+on_affordance_collection(const lcm_recv_buf_t * buf, const char *channel, const drc_affordance_collection_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    self->naffs = msg->naffs;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +166,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glTranslatef(0, gl_height, 0);
     glScalef(1, -1, 1);
 
-    void *font = GLUT_BITMAP_8_BY_13;
+    //void *font = GLUT_BITMAP_8_BY_13;
+    void *font = GLUT_BITMAP_9_BY_15;
     int line_height = 14;
 
     float colors[3][3] = {
@@ -146,13 +179,12 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 
     char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80];
 
-    sprintf(line1, "horz %d @ %d",self->horz_n_features, self->horz_pingnumber);
-    sprintf(line2, "vert %d @ %d",self->vert_n_features, self->vert_pingnumber);
-    sprintf(line3, "ptch %5.1f rl %5.1f",self->pitch,self->roll); // spare
-    sprintf(line4, " alt %5.2f wc %5.2f",self->altitude,(self->altitude+self->cur_hsd[2]) ); 
-    // water column = recon_altitude + recon_depth
-    sprintf(line5, " cur %3.0f %2.2f %5.2f",self->cur_hsd[0],self->cur_hsd[1],self->cur_hsd[2] );
-    sprintf(line6, " cmd %3.0f %4.0f %5.2f",self->cmd_hsd[0],self->cmd_hsd[1],self->cmd_hsd[2] );
+    sprintf(line1, "n affs %d",self->naffs);
+    sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
+    sprintf(line3, "  roll %5.1f hd %5.1f",self->roll,self->head_roll); 
+    sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
+    sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
+    sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
 
     //double x = hind * 110 + 120;
     double x = 0 ;// hind * 150 + 120;
@@ -161,9 +193,9 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glColor4f(0, 0, 0, 0.7);
     glBegin(GL_QUADS);
     glVertex2f(x, y - line_height);
-    glVertex2f(x + 19*8, y - line_height); // 19 is the number of chars in the box
+    glVertex2f(x + 21*9, y - line_height); // 21 is the number of chars in the box
 
-    glVertex2f(x + 19*8, y + 5 * line_height); // 19 is the number of chars in the box
+    glVertex2f(x + 21*9, y + 5 * line_height); // 21 is the number of chars in the box
     glVertex2f(x, y + 6 * line_height);
     glEnd();
 
@@ -399,11 +431,14 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->renderer.destroy = _destroy;
 
     self->sys_deque = new deque<drc_system_status_t *> ();
-
 //    deque<drc_system_status_t *> * adeque; = new deque<drc_system_status_t *> ();
     for (int i=0;i<3;i++){
       self->deques.push_back( new deque<drc_system_status_t *> () );
     }
+    
+    self->naffs=0;
+    self->pitch = self->head_pitch = self->roll = self->head_roll = 0;
+    self->height = self->head_height = self->speed = self->cmd_speed = 0;
 
     std::string channel_name ="SAM";
     self->msgchannels.push_back(channel_name);
@@ -414,6 +449,10 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
 
     self->status_sub = drc_system_status_t_subscribe(self->lcm, 
             "SYSTEM_STATUS", on_drc_system_status, self);    
+    bot_core_pose_t_subscribe(self->lcm,"POSE_BODY",on_pose_body,self);
+    bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
+    drc_affordance_collection_t_subscribe(self->lcm,"AFFORDANCE_COLLECTION",on_affordance_collection,self);
+    
     self->param_status[0] = PARAM_STATUS_0_DEFAULT;    
     self->param_status[1] = PARAM_STATUS_1_DEFAULT;    
     self->param_status[2] = PARAM_STATUS_2_DEFAULT;    
