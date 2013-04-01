@@ -17,7 +17,7 @@ TwoLegOdometry::TwoLegOdometry()
 	// This is just here initially for initial testing and setup of the code structure
 	// TODO
 	// Assuming the robot is standing still.
-	state first;
+	Eigen::Isometry3d first;
 	footsteps.addFootstep(first,LEFTFOOT);
 	standing_foot = LEFTFOOT;
 	
@@ -154,10 +154,11 @@ bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz
 		Eigen::Isometry3d transform;
 		
 
-		state temp;//getSecondaryInLocal()
-		
-		//test.translation() << ;
-		
+		Eigen::Isometry3d temp;
+		temp = getSecondaryInLocal();
+//#ifdef VERBOSE_DEBUG
+		std::cout << "Adding footstep with values: " << temp.translation().transpose() << std::endl;
+//#endif
 		footsteps.addFootstep(temp,secondary_foot());
 	  setStandingFoot(secondary_foot());
 	  
@@ -184,24 +185,35 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	pelvis_to_left = left;
 	pelvis_to_right = right;
 	
-	// TODO
-	// Only translation inverses are set in this function, 
-	// must still add the quaternions by inverting the vector portion of the quaternion
-	
-	left_to_pelvis = left;
-	
-	//right_to_pelvis.translation() << right.translation.x, right.translation.y, right.translation.z;
-  right_to_pelvis = right;
+	left_to_pelvis = left.inverse();
+	right_to_pelvis = right.inverse();
 
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
+	Eigen::Isometry3d returnval;
+	
+	//Eigen::Isometry3d testcase;
+	//Eigen::Isometry3d testcase2;
+	//Eigen::Isometry3d addresult;
+			
+	//testcase.translation() << 10,10,10;
+	//testcase2.translation() << 1,1,1;
+
+	
+	//std::cout << "TwoLegOdometry::getPelvisFromStep(): Last step=" << footsteps.getLastStep().translation().transpose() << std::endl;
+	//std::cout << "Test case: " << testcase.translation().transpose() << std::endl;
+	
+	//addresult = add(testcase,testcase2);
+	//std::cout << "Add case: " << addresult.translation().transpose() << std::endl;
+	
 	if (primary_foot() == LEFTFOOT)
 	{
 		if (footsteps.lastFoot() != LEFTFOOT) {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";
 		}
-		return footsteps.getLastStep() * left_to_pelvis;
+		returnval = add(footsteps.getLastStep(),left_to_pelvis);
+		
 		//return addTransforms(footsteps.getLastStep(), left_to_pelvis);
 		
 	}
@@ -210,63 +222,87 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 		if (footsteps.lastFoot() != RIGHTFOOT) {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";	
 		}
-		return footsteps.getLastStep() * right_to_pelvis;
+		returnval = add(footsteps.getLastStep(),right_to_pelvis);
 		//return addTransforms(footsteps.getLastStep(), right_to_pelvis);
 	}
+	
+	//std::cout << "returnval: " << returnval.translation().transpose() << std::endl;
+	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	
+	//std::cout << "pelvis to left: " << (pelvis_to_left*local_to_pelvis).translation().transpose() << std::endl;
+	
+	Eigen::Isometry3d returnval;
+	returnval.translation() << -99999999999., -99999999999.,-99999999999.;
+	
+	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): local_to_pelvis: " << local_to_pelvis.translation().transpose() << std::endl;
+	
 	switch (secondary_foot()) {
 	case LEFTFOOT:
-		
-		return local_to_pelvis * pelvis_to_left;
-		//return addTransforms(local_to_pelvis, pelvis_to_left);
+		returnval = add(add(getPrimaryInLocal(),left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
-		return local_to_pelvis * pelvis_to_right;
-		//return addTransforms(local_to_pelvis, pelvis_to_right);
+		returnval = add(add(getPrimaryInLocal(),right_to_pelvis),pelvis_to_left);
 		break;
 	default:
 		std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::getSecondaryFootTransform()" << std::endl;
-		Eigen::Isometry3d test;
-		test.translation() << -99999999999., -99999999999.,-99999999999.;
-		
-		return test;
 		break;
 	}
+	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): " << returnval.translation().transpose() << std::endl;
 	
+	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
-	switch (primary_foot()) {
-		case LEFTFOOT:
-			return local_to_pelvis * pelvis_to_left;
-			//return addTransforms(local_to_pelvis, pelvis_to_left);
-			break;
-		case RIGHTFOOT:
-			return local_to_pelvis * pelvis_to_right;
-			//return addTransforms(local_to_pelvis, pelvis_to_right);
-			break;
-		default:
-			std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::getSecondaryFootTransform()" << std::endl;
-			Eigen::Isometry3d test;
-			test.translation() << -99999999999., -99999999999.,-99999999999.;
-			
-			return test;
-			break;
-		}
+	return footsteps.getLastStep();
 	
 }
 
-drc::transform_t TwoLegOdometry::addTransforms(const drc::transform_t& lhs, const drc::transform_t& rhs) {
-	drc::transform_t add;
+void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
+	local_to_pelvis = transform;
+}
+
+
+Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
+	Eigen::Isometry3d add;
 	
-	add.translation.x = lhs.translation.x + rhs.translation.x;
-	add.translation.y = lhs.translation.y + rhs.translation.y;
-	add.translation.z = lhs.translation.z + rhs.translation.z;
-		
-	//TODO - implement the rotational addition operation
+	add.translation() = lhs.translation() + rhs.translation();
+	
+	//TODO - Test and confirm the correct rotation sequence has been followed here
+	add.rotate(lhs.rotation());
+	add.rotate(rhs.rotation());
 	
 	return add;
 }
+
+Eigen::Quaterniond TwoLegOdometry::mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs) {
+	Eigen::Quaterniond result;
+	
+	Eigen::Vector4d q;
+	Eigen::Vector4d p;
+	Eigen::Vector4d res;
+	//q*p - MARS Lab, Trawny Roumeliotis - Quaternion Algebra Tutorial Tech Report
+	q << rhs.x(), rhs.y(), rhs.z(), rhs.w();
+	
+	
+	Eigen::Matrix<double,4,4> Q;
+	
+	Q << 	q(3), q(2), -q(1), q(0),
+		   -q(2), q(3), q(0), q(1),
+		   q(1), -q(0), q(3), q(2),
+		   -q(0), -q(1), -q(2), q(3);
+	
+	p << lhs.x(), lhs.y(), lhs.z(), lhs.w();
+	
+	res = Q*p;
+	
+	result.w() = res(3);
+	result.x() = res(0);
+	result.y() = res(1);
+	result.z() = res(2);
+	
+	return result;
+}
+

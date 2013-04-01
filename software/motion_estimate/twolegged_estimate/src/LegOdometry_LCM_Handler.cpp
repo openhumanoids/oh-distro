@@ -126,10 +126,15 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 	getTransforms(msg);
 	
+	Eigen::Isometry3d currentPelvis;
+	currentPelvis = _leg_odo->getPelvisFromStep();
+	
+	//_leg_odo->setPelvisPosition(currentPelvis);
+	
 	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 
-	std::cout << _leg_odo->primary_foot() << std:: endl;
-
+	//std::cout << _leg_odo->primary_foot();// << std:: endl;
+	std::cout << "Latest Footstep: " << _leg_odo->getPrimaryInLocal().translation().transpose() << std::endl;
 	
 	
 	
@@ -167,7 +172,6 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
     //bot_core::rigid_transform_t tf;
     //KDL::Frame T_body_head;
     
-    
     map<string, drc::transform_t >::iterator transform_it_lf;
     map<string, drc::transform_t >::iterator transform_it_rf;
     
@@ -176,17 +180,20 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
     
     //T_body_head = KDL::Frame::Identity();
 	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
-		// This gives us the translation from body to head
+		// This gives us the translation from body to left foot
+#ifdef VERBOSE_DEBUG
 	    std::cout << " LEFT: " << transform_it_lf->second.translation.x << ", " << transform_it_lf->second.translation.y << ", " << transform_it_lf->second.translation.z << std::endl;
-	    // Rotation in quaternion for body to head
-	    transform_it_lf->second.rotation;
+#endif
+	    
 	    //std::cout << "ROTATION.x: " << transform_it->second.rotation.x << ", " << transform_it->second.rotation.y << std::endl;
 	  }else{
 	    std::cout<< "fk position does not exist" <<std::endl;
 	  }
 	  
 	  if(transform_it_lf!=cartpos_out.end()){// fk cart pos exists
+#ifdef VERBOSE_DEBUG
   	    std::cout << "RIGHT: " << transform_it_rf->second.translation.x << ", " << transform_it_rf->second.translation.y << ", " << transform_it_rf->second.translation.z << std::endl;
+#endif
   	    transform_it_rf->second.rotation;
 	  }else{
         std::cout<< "fk position does not exist" <<std::endl;
@@ -197,20 +204,14 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
 	  
 	  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
 	  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
-	  
-	  // TODO - Rotations must still be handled here. only the translation are currently done
+
+	  // TODO - Confirm the quaternion scale and vector ordering is correct and the ->second pointer is the correct use
+	  Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
+	  Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
+	  	  
+	  left.rotate(leftq);
+	  right.rotate(rightq);
 	  
 	  _leg_odo->setLegTransforms(left, right);
-	  
-	  
-    
 }
 
-// Not used yet
-void LegOdometry_Handler::drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out) {
-	out.translation.x = -in.translation.x;
-	out.translation.y = -in.translation.y;
-	out.translation.z = -in.translation.z;
-		
-	
-}

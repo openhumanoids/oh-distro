@@ -68,7 +68,7 @@ private:
 	void getTransforms(const drc::robot_state_t * msg);
 	void setupSolver();
 	
-	void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
+	//void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
 
 	
 public:

@@ -56,6 +56,8 @@ class TwoLegOdometry {
 		float getPrimaryFootZforce();
 		float getSecondaryFootZforce();
 		
+		Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
+		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 	public:
 		
 		
@@ -75,8 +77,9 @@ class TwoLegOdometry {
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
-		drc::transform_t addTransforms(const drc::transform_t& lhs, const drc::transform_t& rhs);
 		Eigen::Isometry3d getPelvisFromStep();
+		
+		void setPelvisPosition(Eigen::Isometry3d transform);
 };
 
 

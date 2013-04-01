@@ -8,7 +8,7 @@ Footsteps::Footsteps() {
 }
 
 
-void Footsteps::addFootstep(state RelativeFrameLocation, int foot) 
+void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot) 
 {
 	//std::cout << "addFootstep function was called for Footsteps class" << std::endl;
 	
@@ -23,10 +23,12 @@ void Footsteps::addFootstep(state RelativeFrameLocation, int foot)
 	active_step.footprintlocation.orientation = RelativeFrameLocation.rotation;
 	*/
 	
-	active_step.foot = foot;
+	new_footprint.foot = foot;
+	new_footprint.footprintlocation = RelativeFrameLocation;
 	
 	footstep_hist.push_back(new_footprint);
 	
+	active_step = new_footprint;
 }
 
 Eigen::Isometry3d Footsteps::getLastStep() {
