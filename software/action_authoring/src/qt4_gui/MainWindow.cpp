@@ -27,20 +27,6 @@ using namespace affordance;
 typedef PointContactRelation PCR;
 typedef PointContactRelationPtr PcrPtr;
 
-string RandomString(int len)
-{
-    string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    int pos;
-
-    while ((int)str.size() != len)
-    {
-        pos = ((rand() % (str.size() - 1)));
-        str.erase(pos, 1);
-    }
-
-    return str;
-}
-
 /*
  * Filler method to populate affordance and constraint lists until we get proper
  * data sources set up.
@@ -411,7 +397,7 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
     // wire up the buttons
     connect(planbutton, SIGNAL(released()), this, SLOT(requestMotionPlan()));
-    connect(_segmentedButton, SIGNAL(segmentSelected(int)), this, SLOT(changeMode()));
+    //connect(_segmentedButton, SIGNAL(segmentSelected(int)), this, SLOT(changeMode()));
 
     connect(_play, SIGNAL(released()), this, SLOT(mediaPlay()));
     connect(_ffwd, SIGNAL(released()), this, SLOT(mediaFastForward()));
@@ -1155,23 +1141,24 @@ updateRobotState(const lcm::ReceiveBuffer* rbuf,
     // seems redundant but is necessary to get pose to work - don't remove!
     //_worldState.colorRobot.set(*new_robot_state);
     handleAffordancesChanged();
+
     for (int i = 0; i < new_robot_state->num_constraints && i < _authoringState._all_gui_constraints.size(); i++)
     {
-      TogglePanel::PlannerStatus status;
-      int value  = new_robot_state->constraints_satisfied[i];
-      if (value == 0)
-      {
-	status = TogglePanel::PLANNER_NOT_OK;
-      }
-      else if ( value == 1)
-	{
-	  status = TogglePanel::PLANNER_OK;
-	}
-      else
-	{
-	  status = TogglePanel::PLANNER_UNKNOWN;
-	}
-	  _authoringState._all_gui_constraints[0]->getPanel()->setPlannerStatus(status);
+        TogglePanel::PlannerStatus status;
+        int value  = new_robot_state->constraints_satisfied[i];
+        if (value == 0)
+        {
+            status = TogglePanel::PLANNER_NOT_OK;
+        }
+        else if ( value == 1)
+        {
+            status = TogglePanel::PLANNER_OK;
+        }
+        else
+        {
+            status = TogglePanel::PLANNER_UNKNOWN;
+        }
+        _authoringState._all_gui_constraints[0]->getPanel()->setPlannerStatus(status);
     }
 }
 
