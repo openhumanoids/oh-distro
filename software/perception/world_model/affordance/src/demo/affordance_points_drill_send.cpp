@@ -189,13 +189,13 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
   if (uid==0){
-    getMeshAsLists("/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill_mfallonio.ply", points, triangles);
+    getMeshAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply", points, triangles);
   }else if(uid==1){
-    getCloudAsLists("/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill.pcd", points, triangles );
+    getCloudAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd", points, triangles );
   }else if(uid==2){
-    getCloudAsLists("/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill_sensed_smoothed.pcd", points, triangles );
+    getCloudAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd", points, triangles );
   }else{
-    getMeshAsLists("/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill_sensed_smoothed.ply", points, triangles);
+    getMeshAsLists("/home/mfallon/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply", points, triangles);
   }    
   a.points =points;
   a.npoints=points.size();
