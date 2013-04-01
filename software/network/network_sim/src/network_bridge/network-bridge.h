@@ -76,7 +76,7 @@ class KMCLApp{
     int bw_cumsum_robot2base;
     
     void addResend( Resend resent_in ){  resendlist_.push_back(resent_in);    }
-    bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes);    
+    bool determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand = 0);    
 
     void set_current_utime(int64_t current_utime_in){
         boost::mutex::scoped_lock lock(guard);

@@ -31,10 +31,12 @@ struct MessageQueue
 {
     MessageQueue(const std::string& ch,
                  int buffer_size,
-                 const std::vector<char>& initial_msg)
+                 const std::vector<char>& initial_msg,
+                 bool is_on_demand = false)
         : message_count(0),
           channel(ch),
-          messages(buffer_size, 1, initial_msg)
+          messages(buffer_size, 1, initial_msg),
+          on_demand(is_on_demand)
         {
             
         }
@@ -42,6 +44,7 @@ struct MessageQueue
     int message_count;
     std::string channel;
     boost::circular_buffer< std::vector<char> > messages;
+    bool on_demand;
 };
 
 
@@ -98,6 +101,25 @@ private:
     void udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg);
     void data_request_handler( goby::acomms::protobuf::ModemTransmission* msg);
 
+    void on_demand_handler(const lcm::ReceiveBuffer *rbuf,
+                           const std::string &channel,
+                           const drc::shaper_data_request_t *msg)
+        {
+            glog.is(VERBOSE) && glog << "On demand request for channel: " << msg->channel
+                                     << std::endl;
+
+            std::map<std::string, MessageQueue >::iterator it =
+                queues_.find(msg->channel);
+
+            if(!fill_send_queue(it, msg->priority))
+                glog.is(WARN) && glog << "Failed to fill request for channel: " << msg->channel
+                                      << std::endl;
+        }
+    
+    
+    bool fill_send_queue(std::map<std::string, MessageQueue >::iterator it,
+                         int priority = 1);
+    
     // wrap message number into the [0, RECEIVE_MODULUS) space
     void receive_mod(int& i)
         {
@@ -127,6 +149,8 @@ private:
     int last_send_type_;
 
     int largest_id_;
+
+    int max_frame_size_;
     
     std::priority_queue<drc::ShaperPacket> send_queue_;
 
@@ -171,7 +195,7 @@ private:
     int channel_buffer_size_;
 };
 
-double DRCShaper::fec_ = 1; // TODO: make configurable or auto-adapt
+double DRCShaper::fec_ = 1;
 
 
 void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
@@ -255,10 +279,13 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     lcm_subscribe(lcm_->getUnderlyingLCM(),
                   node_ == BASE ?  app.base2robot_subscription.c_str() : app.robot2base_subscription.c_str(), lcm_outgoing_handler, this);
 
+    // on_demand
+    lcm_->subscribe("SHAPER_DATA_REQUEST", &DRCShaper::on_demand_handler, this);
+    
     glog.is(VERBOSE) && glog << "subscribed" << std::endl;
     udp_driver_.reset(new goby::acomms::UDPDriver(&udp_service_));
 
-    int max_frame_size = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
+    max_frame_size_ = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
     {
         goby::acomms::protobuf::DriverConfig cfg;
         cfg.set_modem_id(node_);
@@ -268,7 +295,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         int robot_port = bot_param_get_int_or_fail(app.bot_param, "network.robot.udp_port");
         int base_port = bot_param_get_int_or_fail(app.bot_param, "network.base.udp_port");
         
-        cfg.SetExtension(UDPDriverConfig::max_frame_size, max_frame_size);
+        cfg.SetExtension(UDPDriverConfig::max_frame_size, max_frame_size_);
         
         UDPDriverConfig::EndPoint* local_endpoint =
             cfg.MutableExtension(UDPDriverConfig::local);
@@ -299,7 +326,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         goby::acomms::protobuf::ModemTransmission slot;
         slot.set_src(node_);
         slot.set_type(goby::acomms::protobuf::ModemTransmission::DATA);
-        slot.set_slot_seconds(static_cast<double>(max_frame_size)*8/target_rate_bps);
+        slot.set_slot_seconds(static_cast<double>(max_frame_size_)*8/target_rate_bps);
         cfg.add_slot()->CopyFrom(slot);
 
         goby::acomms::bind(mac_, *udp_driver_);
@@ -321,11 +348,11 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
 
 void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
-{
-  
+{  
     // Determine if the message should be dropped or sent (and then send)
     bool unused;
-    if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused, rbuf->data_size))
+    bool on_demand = false;
+    if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused, rbuf->data_size, &on_demand))
     {
         std::vector<char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
         
@@ -334,7 +361,8 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         // if this is the first time we've seen this channel, create a new circular buffer for it
         if(q_it == queues_.end())
         {
-            queues_.insert(std::make_pair(channel, MessageQueue(channel, channel_buffer_size_, data)));
+            int buffer_size = on_demand ? 1 : channel_buffer_size_;
+            queues_.insert(std::make_pair(channel, MessageQueue(channel, buffer_size, data, on_demand)));
         }
         else
         {
@@ -343,12 +371,12 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         }    
 
         
-        glog.is(VERBOSE) && glog << group("ch-push") << "queueing: " << app_.get_current_utime() << " | "
-             << channel  << " | " << "qsize: " << queues_.find(channel)->second.messages.size() << " | " << rbuf->data_size << " bytes *" << xor_cs(data) << std::endl;
-        // glog.is(VERBOSE) && glog << app_.print_resend_list(); // print info sent in BW Stats msg
-        app_.send_resend_list();
-        app_.bw_cumsum_robot2base += rbuf->data_size;
-
+        glog.is(VERBOSE) && glog << group("ch-push") << "queueing: " << app_.get_current_utime()
+                                 << " | " << channel  << " | "
+                                 << "qsize: " << queues_.find(channel)->second.messages.size()
+                                 << " | " << rbuf->data_size << " bytes *" << xor_cs(data)
+                                 << " | on_demand: " << std::boolalpha << on_demand 
+                                 << std::endl;
     }
 }
 
@@ -371,78 +399,12 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             
             std::map<std::string, MessageQueue >::iterator it =
                 queues_.find(channel_id_.right.at(last_send_type_));
-            
-            if(it != queues_.end() && !it->second.messages.empty())
+
+            if(it != queues_.end() && !it->second.on_demand) // don't queue up on_demand queues here
             {
-                std::vector<char>& qmsg = it->second.messages.front();
-		++it->second.message_count;
-		receive_mod(it->second.message_count);
-
-                // int pos = 0;
-                // int fragment = 0;
-
-                // TODO: get the correct overhead (in bytes)
-                int overhead = 31;
-                
-                int payload_size = msg->max_frame_bytes()-overhead;
-
-                drc::ShaperPacket msg_frag;
-                int16_t fragment = 0;
-                msg_frag.set_channel(channel_id_.left.at(it->second.channel));
-                msg_frag.set_message_number(it->second.message_count);
-                msg_frag.set_message_size(qmsg.size());
-                msg_frag.set_priority(1);
-
-                if(qmsg.size() <= payload_size)
-                {
-                    msg_frag.set_data(&qmsg[0], qmsg.size());
-                    msg_frag.set_fragment(0);
-                    msg_frag.set_is_last_fragment(true);
-                    for(int i = 0, n = std::ceil(fec_); i < n; ++i)
-                        send_queue_.push(msg_frag);
-                }
-                else
-                {                
-		    payload_size = floor_multiple_sixteen(msg->max_frame_bytes()-overhead);
-                    while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
-                        payload_size = floor_multiple_sixteen(payload_size-1);
-
-                    if(payload_size == 0)
-                        throw(std::runtime_error("udp_frame_size_bytes is too small for LDPC error correction, use a larger value"));
-                    
-                    ldpc_enc_wrapper encoder(reinterpret_cast<uint8_t*>(&qmsg[0]),
-                                             qmsg.size(),
-                                             payload_size,
-                                             fec_);
-                    bool enc_done = false;
-		    std::vector<drc::ShaperPacket> encoded_fragments;
-                    while (!enc_done)
-                    {
-                        std::vector<uint8_t> buffer(payload_size);
-                        enc_done = encoder.getNextPacket(&buffer[0], &fragment);
-                        msg_frag.set_data(&buffer[0], payload_size);
-                        msg_frag.set_fragment(fragment);
-                        msg_frag.set_is_last_fragment(false);
-			encoded_fragments.push_back(msg_frag);
-                    }              
-		    std::sort(encoded_fragments.begin(), encoded_fragments.end());
-		    encoded_fragments.at(0).set_is_last_fragment(true);
-
-		    for(std::vector<drc::ShaperPacket>::const_reverse_iterator it = encoded_fragments.rbegin(),
-                            end = encoded_fragments.rend(); it != end; ++it)
-                    {
-			glog.is(VERBOSE) && glog << group("fragment-push") << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
-			send_queue_.push(*it);
-                    }
-                }
-
-		glog.is(VERBOSE) && glog << group("ch-pop") << "dequeueing: " << app_.get_current_utime() << " | "
-		     << it->second.channel << " msg #" << it->second.message_count << " | " << "qsize: " << queues_.find(it->second.channel)->second.messages.size() << " | " << qmsg.size() << " bytes *" << xor_cs(qmsg) << std::endl;
-
-		it->second.messages.pop_front();
-		break;
+                if(fill_send_queue(it))
+                    break;
             }
-            
             
             // no data at all
             if(last_send_type_ == starting_send_type) return;
@@ -461,6 +423,87 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 
 //    glog.is(VERBOSE) && glog << "Data request msg (with data): " << msg->DebugString() << std::endl;
 }
+
+            
+bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator it,
+                                int priority /* = 1 */)
+{
+    if(it != queues_.end() && !it->second.messages.empty())
+    {
+        std::vector<char>& qmsg = it->second.messages.front();
+        ++it->second.message_count;
+        receive_mod(it->second.message_count);
+
+        // int pos = 0;
+        // int fragment = 0;
+
+        // TODO: get the correct overhead (in bytes)
+        int overhead = 31;
+                
+        int payload_size = max_frame_size_-overhead;
+
+        drc::ShaperPacket msg_frag;
+        int16_t fragment = 0;
+        msg_frag.set_channel(channel_id_.left.at(it->second.channel));
+        msg_frag.set_message_number(it->second.message_count);
+        msg_frag.set_message_size(qmsg.size());
+        msg_frag.set_priority(priority);
+
+        if(qmsg.size() <= payload_size)
+        {
+            msg_frag.set_data(&qmsg[0], qmsg.size());
+            msg_frag.set_fragment(0);
+            msg_frag.set_is_last_fragment(true);
+            for(int i = 0, n = std::ceil(fec_); i < n; ++i)
+                send_queue_.push(msg_frag);
+        }
+        else
+        {                
+            payload_size = floor_multiple_sixteen(max_frame_size_-overhead);
+            while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
+                payload_size = floor_multiple_sixteen(payload_size-1);
+
+            if(payload_size == 0)
+                throw(std::runtime_error("udp_frame_size_bytes is too small for LDPC error correction, use a larger value"));
+                    
+            ldpc_enc_wrapper encoder(reinterpret_cast<uint8_t*>(&qmsg[0]),
+                                     qmsg.size(),
+                                     payload_size,
+                                     fec_);
+            bool enc_done = false;
+            std::vector<drc::ShaperPacket> encoded_fragments;
+            while (!enc_done)
+            {
+                std::vector<uint8_t> buffer(payload_size);
+                enc_done = encoder.getNextPacket(&buffer[0], &fragment);
+                msg_frag.set_data(&buffer[0], payload_size);
+                msg_frag.set_fragment(fragment);
+                msg_frag.set_is_last_fragment(false);
+                encoded_fragments.push_back(msg_frag);
+            }              
+            std::sort(encoded_fragments.begin(), encoded_fragments.end());
+            encoded_fragments.at(0).set_is_last_fragment(true);
+
+            for(std::vector<drc::ShaperPacket>::const_reverse_iterator it = encoded_fragments.rbegin(),
+                    end = encoded_fragments.rend(); it != end; ++it)
+            {
+                glog.is(VERBOSE) && glog << group("fragment-push") << "pushing fragment to send: " << DebugStringNoData(*it) << std::endl;
+                send_queue_.push(*it);
+            }
+        }
+
+        glog.is(VERBOSE) && glog << group("ch-pop") << "dequeueing: " << app_.get_current_utime() << " | "
+                                 << it->second.channel << " msg #" << it->second.message_count << " | " << "qsize: " << queues_.find(it->second.channel)->second.messages.size() << " | " << qmsg.size() << " bytes *" << xor_cs(qmsg) << std::endl;
+
+        it->second.messages.pop_front();
+        return true;
+    }
+    else
+        return false;        
+}
+        
+
+
 
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
 {    

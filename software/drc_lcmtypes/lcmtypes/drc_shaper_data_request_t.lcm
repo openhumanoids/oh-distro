@@ -1,0 +1,7 @@
+package drc;
+
+struct shaper_data_request_t
+{
+    string channel;
+    int8_t priority;
+}

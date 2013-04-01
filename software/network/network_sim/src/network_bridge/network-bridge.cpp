@@ -110,7 +110,8 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 }
 
 // Determine if a specific message is to be sent or not:
-bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes){
+bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand /* = 0 */){
+    if(on_demand) *on_demand = false;
     for (size_t i=0; i < resendlist_.size() ; i++){
         if ( resendlist_[i].channel.compare(channel) == 0){
             if (resendlist_[i].max_freq ==0){
@@ -118,6 +119,13 @@ bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime,
                 resendlist_[i].queued_msgs++;
                 resendlist_[i].queued_bytes= resendlist_[i].queued_bytes + msg_bytes;
                 // cout << "always send " << channel << " message\n";
+                return true;
+            }
+            else if (resendlist_[i].max_freq < 0 ){ // on demand
+                robot2base = resendlist_[i].robot2base;
+                resendlist_[i].queued_msgs++;
+                resendlist_[i].queued_bytes= resendlist_[i].queued_bytes + msg_bytes;
+                if(on_demand) *on_demand = true;
                 return true;
             }
             double elapsed_time = (msg_utime - resendlist_[i].last_utime)/1E6;
