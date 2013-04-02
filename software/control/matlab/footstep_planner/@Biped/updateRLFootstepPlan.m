@@ -38,6 +38,11 @@ function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, options, hei
 % end
 
 X_orig = X;
+if options.yaw_fixed
+  for j = 1:length(X)
+    X(j).pos_fixed(6) = 1;
+  end
+end
   
 Xpos = [X.pos];
 x_flat = reshape(Xpos([1,2,6],:), 1, []);
