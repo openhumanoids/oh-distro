@@ -62,6 +62,9 @@ private:
 	boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 	std::vector<drc::link_transform_t> _link_tfs;
 	
+	// Drawing stuff
+	ObjectCollection* _obj;
+	
 	bool stillbusy;
 	int poseplotcounter;
 	int collectionindex;
