@@ -76,7 +76,7 @@ b = repmat([max_diag_dist; max_diag_dist; biped.max_step_rot], ncon / 3, 1);
 
 [x_flat,fval,exitflag,output,lambda,grad] = fmincon(@cost, x_flat,A,b,[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
-  optimset('Algorithm', 'interior-point', 'MaxIter', 30, 'Display', 'off', 'TolX', 0.01, 'TolCon', 0.01));
+  optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off', 'TolX', 0.01, 'TolCon', 0.01));
 % grad
 % exitflag
 

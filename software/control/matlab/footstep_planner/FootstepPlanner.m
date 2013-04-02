@@ -27,9 +27,11 @@ classdef FootstepPlanner < DRCPlanner
       goal_pos = [];
       options = struct();
       last_publish_time = now();
+      optimizer_halt = false;
       while 1
         [data, changed, changelist] = obj.updateData(data);
         if (changelist.goal && data.goal.is_new_goal) || isempty(goal_pos)
+          optimizer_halt = false;
           disp('got new goal');
           goal_pos = [data.goal.goal_pos.translation.x;
                       data.goal.goal_pos.translation.y;
@@ -50,10 +52,16 @@ classdef FootstepPlanner < DRCPlanner
           isnew = true;
         end
         if changelist.plan_reject 
+          optimizer_halt = true;
           disp('rejected')
           break;
         end
+        if changelist.plan_commit
+          disp('committed')
+          optimizer_halt = true;
+        end
         if changelist.plan_con
+          optimizer_halt = false;
           new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
           new_X = new_X(1);
           new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
@@ -62,7 +70,9 @@ classdef FootstepPlanner < DRCPlanner
           [X.time] = t{:};
         end
 
-        [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
+        if ~optimizer_halt
+          [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
+        end
         if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
           modified = false;
         else

@@ -26,11 +26,14 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
     c(1, j) = abs(u(1) - x_mean) - (x_max - x_min) / 2;
     x_feas_frac = max(0, 1 - abs(u(1) - x_mean) / ((x_max - x_min) / 2));
     if u(2) >= nom_step_width
-      c(2, j) = u(2) - interp1([0, 1], [nom_step_width, max_step_width], x_feas_frac);
+%       c(2, j) = u(2) - interp1([0, 1], [nom_step_width, max_step_width], x_feas_frac);
+      c(2, j) = u(2) - max_step_width;
     else
-      c(2, j) = interp1([0, 1], [nom_step_width, min_step_width], x_feas_frac) - u(2);
+      c(2, j) = min_step_width - u(2);
+%       c(2, j) = interp1([0, 1], [nom_step_width, min_step_width], x_feas_frac) - u(2);
     end
     phi = pf(6, j) - p0(6, j);
+%     c(3, j) = abs(phi) - biped.max_step_rot;
     c(3, j) = abs(phi) - interp1([0, 1], [0, biped.max_step_rot], x_feas_frac);
   end
   c = reshape(c, [], 1);
