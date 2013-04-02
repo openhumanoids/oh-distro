@@ -1,8 +1,7 @@
-function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefun, data)
+function [Xout] = optimizeRLFootstepPlan(biped, x0, goal_pos, options, outputfun, updatefun, data)
   
-  interactive = true
-  poses = navgoal(1:6);
-  time_limit = navgoal(7);
+  interactive = options.interactive
+  poses = goal_pos(1:6);
   % if nargin < 5
   %   interactive = false;
   % else
@@ -22,7 +21,11 @@ function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefu
     while 1
       if interactive
         [data, changed, changelist] = updatefun(data);
-        if changelist.plan_commit || changelist.plan_reject
+        if changelist.plan_commit || changelist.plan_reject 
+          done = true;
+          break
+        end
+        if changelist.goal && data.goal.is_new_goal
           done = true;
           break
         end
@@ -44,12 +47,12 @@ function [Xout] = optimizeRLFootstepPlan(biped, x0, navgoal, outputfun, updatefu
       break
     end
 
-    [X, outputflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, @heightfun);
+    [X, outputflag] = updateRLFootstepPlan(biped, X, foot_goals, options, @heightfun);
 
     if outputflag == 1
       % if the optimization was successful, lock down the total number of
       % footsteps
-      time_limit = length(X);
+      options.max_num_steps = length(X);
     end
     
     if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))

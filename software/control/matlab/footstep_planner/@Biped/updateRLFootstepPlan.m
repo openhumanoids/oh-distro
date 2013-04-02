@@ -1,13 +1,11 @@
-function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, time_limit, heightfun)
+function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, options, heightfun)
 
   max_step_width = 0.3;
   min_step_width = 0.15;
   nom_step_width = 0.2;
   max_diag_dist = sqrt(max_step_width^2 + biped.max_step_length^2);
 
-
-if time_limit - (length(X)-2) > 1 % we take the nav goal time limit as a number of steps, rather than seconds
-% if 1
+if options.max_num_steps - (length(X)-2) >= 1
   if X(end-1).is_right_foot
     goal = foot_goals.right;
   else
