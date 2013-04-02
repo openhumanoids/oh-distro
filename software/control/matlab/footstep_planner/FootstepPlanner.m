@@ -76,7 +76,7 @@ classdef FootstepPlanner < DRCPlanner
           for j = 1:length(X)
             Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
           end
-          publish(X, @heightfun);
+          publish(Xout, @heightfun);
           last_publish_time = now();
         end
       end
