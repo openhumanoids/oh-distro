@@ -50,6 +50,12 @@ OpenGL_Object_GFE( std::string urdfFilename ) : OpenGL_Object(),
  */
 OpenGL_Object_GFE::
 ~OpenGL_Object_GFE() {
+  for( unsigned int i = 0; i < _opengl_objects.size(); i++ ){
+    if( _opengl_objects[ i ] != NULL ){
+      delete _opengl_objects[ i ];
+      _opengl_objects[ i ] = NULL;
+    } 
+  }
   _opengl_objects.clear();
 }
 
@@ -141,7 +147,7 @@ _load_opengl_objects( void ){
         if( (*it->second)[ j ] != NULL ){
           if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
             shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[j]->geometry );
-            _opengl_objects.push_back( new OpenGL_Object_Sphere( links[i]->name, sphere->radius ) );
+            _opengl_objects.push_back( new OpenGL_Object_Sphere( links[i]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), sphere->radius ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
             offset.p[1] = (*it->second)[j]->origin.position.y;
@@ -153,7 +159,7 @@ _load_opengl_objects( void ){
             _opengl_objects.back()->set_offset( offset );
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
             shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[j]->geometry );
-            _opengl_objects.push_back( new OpenGL_Object_Box( links[i]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
+            _opengl_objects.push_back( new OpenGL_Object_Box( links[i]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
             offset.p[1] = (*it->second)[j]->origin.position.y;
@@ -166,7 +172,7 @@ _load_opengl_objects( void ){
 
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
             shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[j]->geometry );
-            _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, Vector2f( cylinder->radius, cylinder->length ) ) );
+            _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector2f( cylinder->radius, cylinder->length ) ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
             offset.p[1] = (*it->second)[j]->origin.position.y;
@@ -183,7 +189,7 @@ _load_opengl_objects( void ){
     if( links[ i ]->visual != NULL ){
       if( links[ i ]->visual->geometry->type == Geometry::SPHERE ){
         shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->visual->geometry );
-        _opengl_objects.push_back( new OpenGL_Object_Sphere( links[ i ]->name, sphere->radius ) );
+        _opengl_objects.push_back( new OpenGL_Object_Sphere( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), sphere->radius ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
         offset.p[1] = links[ i ]->visual->origin.position.y;
@@ -195,7 +201,7 @@ _load_opengl_objects( void ){
         _opengl_objects.back()->set_offset( offset );
       } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
         shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
-        _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
+        _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
         offset.p[1] = links[ i ]->visual->origin.position.y;
@@ -207,7 +213,7 @@ _load_opengl_objects( void ){
         _opengl_objects.back()->set_offset( offset );
       } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
         shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
-        _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, Vector2f( cylinder->radius, cylinder->length ) ) );
+        _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector2f( cylinder->radius, cylinder->length ) ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
         offset.p[1] = links[ i ]->visual->origin.position.y;
@@ -225,7 +231,7 @@ _load_opengl_objects( void ){
         // chomp model filename up to models/ *TODO UGLY HACK*
         boost::replace_all(model_filename, "mit_drcsim_scripts/models/", "");
         model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "dae" );
-        _opengl_objects.push_back( new OpenGL_Object_DAE( links[ i ]->name, model_filename ) );
+        _opengl_objects.push_back( new OpenGL_Object_DAE( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), model_filename ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
         offset.p[1] = links[ i ]->visual->origin.position.y;
