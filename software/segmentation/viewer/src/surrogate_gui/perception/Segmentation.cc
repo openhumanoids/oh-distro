@@ -708,8 +708,10 @@ namespace surrogate_gui
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 
-
-    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+    // if no points selected, use all, otherwise use selected points
+    PointCloud<PointXYZRGB>::Ptr subcloud;
+    if(subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
+    else subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
     //debugging
     //Eigen::Vector4f centroid4f;
