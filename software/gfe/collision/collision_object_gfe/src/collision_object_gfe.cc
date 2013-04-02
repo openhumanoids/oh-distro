@@ -24,6 +24,13 @@ Collision_Object_GFE( string id ) : Collision_Object( id ),
                                     _collision_objects(),
                                     _kinematics_model() {
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
   State_GFE state_gfe;
   set( state_gfe );
 }
@@ -38,6 +45,13 @@ Collision_Object_GFE( string id,
                                               _collision_objects(),
                                               _kinematics_model( xmlString ){
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
   State_GFE state_gfe;
   set( state_gfe );
 } 
@@ -53,6 +67,13 @@ Collision_Object_GFE( string id,
                                                     _collision_objects(),
                                                     _kinematics_model( xmlString ) {
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
   State_GFE state_gfe;
   set( state_gfe );
 }
@@ -66,6 +87,13 @@ Collision_Object_GFE( const Collision_Object_GFE& other ): Collision_Object( oth
                                                             _collision_objects( other._collision_objects ),
                                                             _kinematics_model( other._kinematics_model ) {
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
 }   
 
 /**
@@ -93,13 +121,6 @@ set( robot_state_t& robotState ){
   _kinematics_model.set( robotState );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
-/*
-      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
-      double qx, qy, qz, qw;
-      frame.M.GetQuaternion( qx, qy, qz, qw );      
-      _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
-                                              Vector4f( qx, qy, qz, qw ) );
-*/
       Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
       _collision_objects[ i ]->set_transform( frame );
     }
@@ -117,13 +138,6 @@ set( State_GFE& stateGFE ){
   _kinematics_model.set( stateGFE );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
-/*
-      Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
-      double qx, qy, qz, qw;
-      frame.M.GetQuaternion( qx, qy, qz, qw );
-      _collision_objects[ i ]->set_transform( Vector3f( frame.p[0], frame.p[1], frame.p[2] ),
-                                              Vector4f( qx, qy, qz, qw ) );
-*/
       Frame frame = _kinematics_model.link( _collision_objects[ i ]->id() );
       _collision_objects[ i ]->set_transform( frame );
     }
@@ -156,42 +170,6 @@ const Kinematics_Model_GFE&
 Collision_Object_GFE::
 kinematics_model( void )const{
   return _kinematics_model;
-}
-
-/** 
- * bt_collision_objects 
- * returns a std::vector of btCollisionObject pointers
- */
-vector< btCollisionObject* >
-Collision_Object_GFE::
-bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
-}
-
-/**
- * bt_collision_objects
- * return a std::vector of const btCollisionObject pointers
- */
-vector< const btCollisionObject* >
-Collision_Object_GFE::
-bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
 }
 
 /**
@@ -246,23 +224,6 @@ _load_collision_objects( void ){
     }
   }
   return;
-}
-
-
-
-
-/**orientation
-   get the world-frame orientation of the collision objects*/ 
-Vector4f Collision_Object_GFE::orientation() const
-{
-  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> orientation()");
-}
-
-/**orientation
-   get the world-frame orientation of the collision objects*/ 
-Vector3f Collision_Object_GFE::position() const
-{
-  throw std::runtime_error("Not Implemented: collision_object_gfe.cc --> position");
 }
 
 void Collision_Object_GFE::set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation ) 
