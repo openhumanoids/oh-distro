@@ -920,14 +920,16 @@ namespace surrogate_gui
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
-	  std::vector<double> inliers_distances; 
+	  std::vector<double> inliers_distances;
+          std::vector< vector<float> > inliers;
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
-																	currObj->indices, fp,
+                                        currObj->indices, fp,
 					x,y,z,
 					roll,pitch,yaw,
 					radius,
 					length, 
+                                        inliers,
 					inliers_distances);
 	
 	  affordanceMsg.params.push_back(x);
@@ -954,14 +956,23 @@ namespace surrogate_gui
 	  affordanceMsg.params.push_back(length);
 	  affordanceMsg.param_names.push_back("length");
 
+          // set bounding
+          affordanceMsg.bounding_pos[0] = x;
+          affordanceMsg.bounding_pos[1] = y;
+          affordanceMsg.bounding_pos[2] = z;
+          affordanceMsg.bounding_rpy[0] = roll;
+          affordanceMsg.bounding_rpy[1] = pitch;
+          affordanceMsg.bounding_rpy[2] = yaw;
+          affordanceMsg.bounding_lwh[0] = radius*2;
+          affordanceMsg.bounding_lwh[1] = radius*2;
+          affordanceMsg.bounding_lwh[2] = length;
 
-	  //point cloud indices
-	  affordanceMsg.nptinds = cylinderIndices->indices.size();
-	  affordanceMsg.ptinds = vector<int>(cylinderIndices->indices.begin(),
-	  				     cylinderIndices->indices.end());
+	  //inliers
+          affordanceMsg.npoints = inliers.size();
+          affordanceMsg.points = inliers;
+          affordanceMsg.ntriangles = 0;
 
-	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
-	       << affordanceMsg.ptinds.size() << endl;
+	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;
@@ -990,11 +1001,13 @@ namespace surrogate_gui
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 4; //8; //xyz,radius
 	  double x,y,z,radius;
+          std::vector< vector<float> > inliers;
 	  PointIndices::Ptr sphereIndices 
 	    = Segmentation::fitSphere(_surrogate_renderer._display_info.cloud,
-					 currObj->indices, fp,
-					x,y,z,
-					radius);
+                                      currObj->indices, fp,
+                                      x,y,z,
+                                      radius,
+                                      inliers);
 	      
 	  affordanceMsg.params.push_back(x);
 	  affordanceMsg.param_names.push_back("x");
@@ -1008,13 +1021,24 @@ namespace surrogate_gui
 	  affordanceMsg.params.push_back(radius);
 	  affordanceMsg.param_names.push_back("radius");
 
-	  //point cloud indices
-	  affordanceMsg.nptinds = sphereIndices->indices.size();
-	  affordanceMsg.ptinds = vector<int>(sphereIndices->indices.begin(),
-	  				     sphereIndices->indices.end());
+          // set bounding
+          affordanceMsg.bounding_pos[0] = x;
+          affordanceMsg.bounding_pos[1] = y;
+          affordanceMsg.bounding_pos[2] = z;
+          affordanceMsg.bounding_rpy[0] = 0;
+          affordanceMsg.bounding_rpy[1] = 0;
+          affordanceMsg.bounding_rpy[2] = 0;
+          affordanceMsg.bounding_lwh[0] = radius*2;
+          affordanceMsg.bounding_lwh[1] = radius*2;
+          affordanceMsg.bounding_lwh[2] = radius*2;
 
-	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
-	       << affordanceMsg.ptinds.size() << endl;
+	  //inliers
+          affordanceMsg.npoints = inliers.size();
+          affordanceMsg.points = inliers;
+          affordanceMsg.ntriangles = 0;
+
+	  //cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
+	  //     << affordanceMsg.ptinds.size() << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;
@@ -1043,6 +1067,7 @@ namespace surrogate_gui
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
+          std::vector< vector<float> > inliers;
 	  std::vector<double> inliers_distances; 
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCircle3d(_surrogate_renderer._display_info.cloud,
@@ -1050,6 +1075,7 @@ namespace surrogate_gui
 					x,y,z,
 					roll,pitch,yaw,
 					radius,
+                                        inliers,
 					inliers_distances);
 
 		length = 0.01; // a 3d circle is a cylinder with 1 cm length
@@ -1078,14 +1104,22 @@ namespace surrogate_gui
 	  affordanceMsg.params.push_back(length);
 	  affordanceMsg.param_names.push_back("length");
 
+          // set bounding
+          affordanceMsg.bounding_pos[0] = x;
+          affordanceMsg.bounding_pos[1] = y;
+          affordanceMsg.bounding_pos[2] = z;
+          affordanceMsg.bounding_rpy[0] = roll;
+          affordanceMsg.bounding_rpy[1] = pitch;
+          affordanceMsg.bounding_rpy[2] = yaw;
+          affordanceMsg.bounding_lwh[0] = radius*2;
+          affordanceMsg.bounding_lwh[1] = radius*2;
+          affordanceMsg.bounding_lwh[2] = 0;
 
-	  //point cloud indices
-	  affordanceMsg.nptinds = cylinderIndices->indices.size();
-	  affordanceMsg.ptinds = vector<int>(cylinderIndices->indices.begin(),
-	  				     cylinderIndices->indices.end());
-
-	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
-	       << affordanceMsg.ptinds.size() << endl;
+	  //inliers
+          affordanceMsg.npoints = inliers.size();
+          affordanceMsg.points = inliers;
+          affordanceMsg.ntriangles = 0;
+	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;
@@ -1113,15 +1147,17 @@ namespace surrogate_gui
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  double x,y,z,roll,pitch=0,yaw=0,width=0.5,length=0.5;
+          std::vector< vector<float> > inliers;
 	  std::vector<double> inliers_distances; 
 	  PointIndices::Ptr planeIndices 
 	    = Segmentation::fitPlane(_surrogate_renderer._display_info.cloud,
-																	currObj->indices, fp,
-					x,y,z,
-					roll,pitch,yaw,
-					width,
-					length, 
-					inliers_distances);
+                                     currObj->indices, fp,
+                                     x,y,z,
+                                     roll,pitch,yaw,
+                                     width,
+                                     length, 
+                                     inliers,
+                                     inliers_distances);
 
 	  affordanceMsg.params.push_back(x);
 	  affordanceMsg.param_names.push_back("x");
@@ -1152,13 +1188,24 @@ namespace surrogate_gui
 
 	  affordanceMsg.nparams = affordanceMsg.params.size();
 
-	  //point cloud indices
-	  affordanceMsg.nptinds = planeIndices->indices.size();
-	  affordanceMsg.ptinds = vector<int>(planeIndices->indices.begin(),
-	  				     planeIndices->indices.end());
+          // set bounding
+          affordanceMsg.bounding_pos[0] = x;
+          affordanceMsg.bounding_pos[1] = y;
+          affordanceMsg.bounding_pos[2] = z;
+          affordanceMsg.bounding_rpy[0] = roll;
+          affordanceMsg.bounding_rpy[1] = pitch;
+          affordanceMsg.bounding_rpy[2] = yaw;
+          affordanceMsg.bounding_lwh[0] = width;
+          affordanceMsg.bounding_lwh[1] = length;
+          affordanceMsg.bounding_lwh[2] = 0;
 
-	  cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
-	       << affordanceMsg.ptinds.size() << endl;
+          //inliers
+          affordanceMsg.npoints = inliers.size();
+          affordanceMsg.points = inliers;
+          affordanceMsg.ntriangles = 0;
+
+	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
+
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;

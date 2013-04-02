@@ -60,6 +60,30 @@ namespace surrogate_gui
     bot_quat_to_roll_pitch_yaw(q,rpy);
     return Vector3f(rpy[2],rpy[1],rpy[0]);
   }
+
+  void remove_xyzypr(const PointCloud<PointXYZRGB>::ConstPtr cloud,
+                     PointIndices::Ptr subcloudIndices,
+                     Vector3f xyz, Vector3f ypr, 
+                     vector<vector<float> >& points)
+  {
+    //point cloud indices
+    Matrix3f rot = ypr2rot(ypr).inverse(); 
+    points.resize(subcloudIndices->indices.size());
+    for(int i=0;i<points.size();i++){
+      int index = subcloudIndices->indices[i];
+      const PointXYZRGB& ptc = cloud->at(index);
+      Vector3f pt(ptc.x,ptc.y,ptc.z);
+      
+      // remove objects xyzypr from each inlier point and add to affordanceMsg
+      pt -= xyz;
+      pt = rot*pt;
+      points[i].resize(3);
+      points[i][0] = pt[0];
+      points[i][1] = pt[1];
+      points[i][2] = pt[2];
+    }
+  }
+               
   
   vector<PointIndices::Ptr> Segmentation::segment(const PointCloud<PointXYZRGB>::ConstPtr cloud,
               boost::shared_ptr<set<int> >  subcloudIndices)
@@ -378,7 +402,9 @@ namespace surrogate_gui
                 double &x, double &y, double &z,
                 double &roll, double &pitch, double &yaw, 
                 double &radius,
-                double &length,  std::vector<double> & inliers_distances)
+                double &length,  
+                std::vector< vector<float> > &inliers,
+                std::vector<double> & inliers_distances)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -485,6 +511,9 @@ namespace surrogate_gui
     z = center.z();
     length = (pMax-pMin).norm();
 
+    // remove xyzypr from inliers and copy to output
+    remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
+
     // residuals 
     inliers_distances.clear ();
     inliers_distances.resize (cylinderIndices->indices.size ());
@@ -506,7 +535,8 @@ namespace surrogate_gui
                                             boost::shared_ptr<set<int> >  subcloudIndices,
                                             const FittingParams& fp,
                                             double &x, double &y, double &z,
-                                            double &radius)
+                                            double &radius,
+                                            std::vector< std::vector<float> > &inliers)
   {
     cout << "\n in fit sphere.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -549,6 +579,11 @@ namespace surrogate_gui
     cout << "SampleConsensusModelSphere: ";
     for(int i=0;i<coeff.size();i++) cout << coeff[i] << ", ";
     cout << endl;
+
+    // remove xyzypr from inliers and copy to output
+    inliers.clear();
+    //TODO
+    //remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
 
     if(coeff.size()==4){
       x = coeff[0];
@@ -602,6 +637,7 @@ namespace surrogate_gui
                                               double &x, double &y, double &z,
                                               double &roll, double &pitch, double &yaw, 
                                               double &radius,
+                                              std::vector< std::vector<float> > &inliers,
                                               std::vector<double> & inliers_distances)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
@@ -621,8 +657,8 @@ namespace surrogate_gui
     std::vector<int> sample;
     sac.getModel (sample);
                 
-    std::vector<int> inliers;
-    sac.getInliers (inliers);
+    std::vector<int> inlierIndices;
+    sac.getInliers (inlierIndices);
                 
     Eigen::VectorXf coeff;
     sac.getModelCoefficients (coeff);
@@ -647,6 +683,10 @@ namespace surrogate_gui
     // inlier distance
     // set inliers
     PointIndices::Ptr circle3dIndices (new PointIndices);
+    // remove xyzypr from inliers and copy to output
+    inliers.clear();
+    //remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
+
 
     return circle3dIndices;
 
@@ -657,12 +697,13 @@ namespace surrogate_gui
   /**fits a plane to subcloudIndices in cloud.  currently, we assume
      the plane is oriented on the z axis*/
   PointIndices::Ptr Segmentation::fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-                                              boost::shared_ptr<set<int> >  subcloudIndices,
-                                                                const FittingParams& fp,
-                                              double &x, double &y, double &z,
-                                              double &roll, double &pitch, double &yaw, 
-                                              double &width,
-                                              double &length,  std::vector<double> & inliers_distances)
+                                           boost::shared_ptr<set<int> >  subcloudIndices,
+                                           const FittingParams& fp,
+                                           double &x, double &y, double &z,
+                                           double &roll, double &pitch, double &yaw, 
+                                           double &width, double& length,
+                                           std::vector< std::vector<float> > &inliers,
+                                           std::vector<double> & inliers_distances)
   {
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -789,6 +830,9 @@ namespace surrogate_gui
     roll = ypr[2];
     length = lengthWidth[0];
     width = lengthWidth[1];
+
+    // remove xyzypr from inliers and copy to output
+    remove_xyzypr(subcloud, planeIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
     
     cout << "xyz_rpy_w_l:" << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
     
