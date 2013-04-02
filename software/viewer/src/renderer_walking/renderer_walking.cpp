@@ -32,7 +32,7 @@
 
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "[G]oal (timed)"
-#define PARAM_GOAL_TIMEOUT "Number of steps "
+#define PARAM_MAX_NUM_STEPS "Number of steps "
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
 #define PARAM_NEW_MAP "New Map"
@@ -158,7 +158,7 @@ typedef struct _RendererWalking {
   double support_surface_z;
   double theta;
   double goal_std;
-  double goal_timeout; // no. seconds before this goal expires
+  int max_num_steps; // no. seconds before this goal expires
   heightmap_res_t heightmap_res;
 
   int64_t max_draw_utime;
@@ -330,9 +330,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       self->circle_color[1] = 0;
       self->circle_color[2] = 0;
     }else if (self->active ==2){
-      drc_nav_goal_timed_t msg;
+      drc_walking_goal_t msg;
       msg.utime = self->robot_utime; //bot_timestamp_now();
-      msg.timeout = (int64_t) 1E6*self->goal_timeout;
+      msg.max_num_steps = (int32_t) self->max_num_steps;
       msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
@@ -345,9 +345,10 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       msg.goal_pos.rotation.x = quat_out[1];
       msg.goal_pos.rotation.y = quat_out[2];
       msg.goal_pos.rotation.z = quat_out[3];
-      fprintf(stderr, "Sending NAV_GOAL_TIMED\n");
-      drc_nav_goal_timed_t_publish(self->lc, "NAV_GOAL_TIMED", &msg);
-      bot_viewer_set_status_bar_message(self->viewer, "Sent NAV_GOAL_TIMED");
+      msg.is_new_goal = true;
+      fprintf(stderr, "Sending WALKING_GOAL\n");
+      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &msg);
+      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
     }else if (self->active ==3){
       drc_nav_goal_t msg;
       msg.utime = self->robot_utime; // bot_timestamp_now();
@@ -422,7 +423,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     const GdkEventKey *event)
 {
   RendererWalking *self = (RendererWalking*) ehandler->user;
-  self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
+  self->max_num_steps = bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_NUM_STEPS);
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
 
   if ((event->keyval == 'r' || event->keyval == 'R') && self->active==0) {
@@ -522,7 +523,7 @@ static void update_heightmap (RendererWalking *self) {
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererWalking *self = (RendererWalking*) user;
-  self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
+  self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
   
@@ -531,7 +532,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 1);
   }else if(!strcmp(name, PARAM_GOAL_SEND)) {
-    fprintf(stderr,"\nClicked NAV_GOAL_TIMED\n");
+    fprintf(stderr,"\nClicked WALKING_GOAL\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 2);
   }else if(!strcmp(name, PARAM_GOAL_SEND_LEFT_HAND)) {
@@ -607,7 +608,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_double(self->pw, PARAM_GOAL_TIMEOUT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
