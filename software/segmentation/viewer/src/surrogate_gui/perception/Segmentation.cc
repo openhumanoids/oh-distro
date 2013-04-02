@@ -505,27 +505,21 @@ namespace surrogate_gui
     ne.compute (*subcloud_normals);
 
     pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>::Ptr model_sphere(new 
-                                                                        pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
+                         pcl::SampleConsensusModelSphere<pcl::PointXYZRGB>(subcloud));
     model_sphere->setRadiusLimits(fp.minRadius, fp.maxRadius);
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac(model_sphere);
     ransac.setDistanceThreshold(fp.distanceThreshold);
     //ransac.setSampleConsensusModel(pcl::SAC_MLESAC);
     ransac.computeModel();
-    PointIndices::Ptr sphereIndices (new PointIndices); //TODO set
-    /*vector<int> inliers;
-      ransac.getInliers(inliers);
-      PointCloud<PointXYZRGB>::Ptr outputcloud
+    PointIndices::Ptr sphereIndices (new PointIndices); 
+    ransac.getInliers(sphereIndices->indices);
+    /*PointCloud<PointXYZRGB>::Ptr outputcloud
       pcl::copyPointCloud<pcl::pointXYZRGB>(*subcloud,inliers,*outputcloud);*/
     Eigen::VectorXf coeff;
     ransac.getModelCoefficients(coeff);
     cout << "SampleConsensusModelSphere: ";
     for(int i=0;i<coeff.size();i++) cout << coeff[i] << ", ";
     cout << endl;
-
-    // remove xyzypr from inliers and copy to output
-    inliers.clear();
-    //TODO
-    //remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
 
     if(coeff.size()==4){
       x = coeff[0];
@@ -535,6 +529,9 @@ namespace surrogate_gui
     }else{
       //TODO can this happen?
     }
+    // remove xyzypr from inliers and copy to output
+    remove_xyzypr(subcloud, sphereIndices, Vector3f(x,y,z), Vector3f(0,0,0), inliers);
+
     return sphereIndices;
 
   }
@@ -566,8 +563,8 @@ namespace surrogate_gui
     std::vector<int> sample;
     sac.getModel (sample);
                 
-    std::vector<int> inlierIndices;
-    sac.getInliers (inlierIndices);
+    PointIndices::Ptr circle3dIndices (new PointIndices);
+    sac.getInliers (circle3dIndices->indices);
                 
     Eigen::VectorXf coeff;
     sac.getModelCoefficients (coeff);
@@ -587,15 +584,11 @@ namespace surrogate_gui
     yaw = atan2(direction.y(), direction.x());
 
     //TODO
-    // inliers
     // fitting params
     // inlier distance
-    // set inliers
-    PointIndices::Ptr circle3dIndices (new PointIndices);
-    // remove xyzypr from inliers and copy to output
-    inliers.clear();
-    //remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
 
+    // remove xyzypr from inliers and copy to output
+    remove_xyzypr(subcloud, circle3dIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
 
     return circle3dIndices;
 
@@ -654,13 +647,12 @@ namespace surrogate_gui
     seg.setInputCloud(subcloud);
     seg.setInputNormals(subcloud_normals);
 
-                // convert FittingParams YPR to XYZ vector
-                Matrix3f Rx,Ry,Rz;
-                Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
-                Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
-                Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
-                Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
-                Vector3f thetaSeed =  Rz*Ry*Rx*Vector3f(1,0,0);  //TODO use this later
+    // convert FittingParams YPR to XYZ vector
+    Matrix3f Rx,Ry,Rz;
+    Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
+    Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
+    Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
+    Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
 
     //segment
     ModelCoefficients::Ptr coefficients(new ModelCoefficients);
