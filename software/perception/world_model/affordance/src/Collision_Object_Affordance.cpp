@@ -49,6 +49,7 @@ Collision_Object_Affordance::Collision_Object_Affordance(AffConstPtr affordance)
 					 xyz, q);
     }
   else throw std::runtime_error("Collision_Object_Affordance constructor : unrecognized object");
+  _bt_collision_objects = _obj->bt_collision_objects();
 }
 
 Collision_Object_Affordance::~Collision_Object_Affordance()
@@ -74,28 +75,4 @@ void Collision_Object_Affordance::set_transform( const Eigen::Vector3f position,
 void Collision_Object_Affordance::set_transform( const KDL::Frame& transform )
 {
   _obj->set_transform(transform);
-}
-
-
-Eigen::Vector3f Collision_Object_Affordance::position( void ) const
-{
-  return _obj->position();
-}
-
-Eigen::Vector4f Collision_Object_Affordance::orientation( void ) const
-{
-  return _obj->orientation();
-}
-
-
-vector< btCollisionObject* > Collision_Object_Affordance::bt_collision_objects( void )
-{
-  vector< btCollisionObject* > bt_collision_objects = _obj->bt_collision_objects();
-  return bt_collision_objects;
-}
-
-vector< const btCollisionObject* > Collision_Object_Affordance::bt_collision_objects( void ) const
-{
-  vector< const btCollisionObject* > bt_collision_objects = ((const Collision_Object*)_obj)->bt_collision_objects();
-  return bt_collision_objects;
 }

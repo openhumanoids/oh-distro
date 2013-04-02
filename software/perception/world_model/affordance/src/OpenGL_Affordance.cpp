@@ -16,7 +16,7 @@ using namespace Eigen;
 OpenGL_Affordance::OpenGL_Affordance(AffConstPtr affordance, 
 				     bool isHighlighted,
 				     Eigen::Vector3f highlightColor)
-  : OpenGL_Object(affordance->getGUIDAsString(), isHighlighted, highlightColor),
+  : OpenGL_Object(affordance->getGUIDAsString(), KDL::Frame::Identity(), KDL::Frame::Identity(), isHighlighted, highlightColor),
     _frame(affordance->getFrame()),
     _color(affordance->getColor())
 {

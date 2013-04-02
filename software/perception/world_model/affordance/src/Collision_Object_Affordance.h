@@ -31,13 +31,8 @@ public:
 	//Collision_Object interface
 	virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
 	virtual void set_transform( const KDL::Frame& transform );
-	virtual Eigen::Vector3f position( void ) const;
-	virtual Eigen::Vector4f orientation( void ) const;
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 	
-
-	//---------useful methods
+        //---------useful methods
  public:
 	static bool isSupported(affordance::AffConstPtr affordance); //check if we support collision objects for this type of affordance
 

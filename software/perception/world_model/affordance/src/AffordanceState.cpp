@@ -264,7 +264,6 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
 
 AffordanceState::~AffordanceState()
 {
-	//
 }
 
 

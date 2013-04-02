@@ -8,6 +8,7 @@
 #ifndef MODEL_STATE_H
 #define MODEL_STATE_H
 
+#include <iostream>
 #include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>

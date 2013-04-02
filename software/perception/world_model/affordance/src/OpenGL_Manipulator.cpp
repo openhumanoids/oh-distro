@@ -19,7 +19,7 @@ using namespace Eigen;
 OpenGL_Manipulator::OpenGL_Manipulator(ManipulatorStateConstPtr manipulator, 
 				       bool isHighlighted,
 				       Eigen::Vector3f highlightColor)
-    : OpenGL_Object(manipulator->getGUIDAsString(), isHighlighted, highlightColor),
+    : OpenGL_Object(manipulator->getGUIDAsString(), KDL::Frame::Identity(), KDL::Frame::Identity(), isHighlighted, highlightColor),
       _color(manipulator->getColor())
 {
     manipulator->getCollisionContactPoints(_collisionPts);
