@@ -1,52 +1,41 @@
 function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, options, heightfun)
 
-  max_step_width = 0.3;
-  min_step_width = 0.15;
-  nom_step_width = 0.2;
+  max_step_width = 0.35;
   max_diag_dist = sqrt(max_step_width^2 + biped.max_step_length^2);
 
-if options.max_num_steps - (length(X)-2) >= 1
-  if X(end-1).is_right_foot
-    goal = foot_goals.right;
-  else
-    goal = foot_goals.left;
-  end
-  c = biped.checkStepFeasibility(X(end-2).pos, goal, X(end-2).is_right_foot);
-  if any(c > 0)
-    if X(end-3).is_right_foot
-      goal = foot_goals.right;
-    else
-      goal = foot_goals.left;
-    end
-    new_X.pos = interp1([0, 1], [X(end-3).pos, goal]', 0.5)';
-    new_X.time = 0;
-    new_X.id = biped.getNextStepID();
-    new_X.pos_fixed = zeros(6, 1);
-    new_X.is_right_foot = X(end-3).is_right_foot;
-    X = [X(1:end-2), new_X, X(end), X(end-1)];
-  end
-end
-if length(X) > 4
-  if X(end).is_right_foot
-    goal = foot_goals.right;
-  else
-    goal = foot_goals.left;
-  end
+% if options.max_num_steps - (length(X)-2) >= 1
+%   if X(end-1).is_right_foot
+%     goal = foot_goals.right;
+%   else
+%     goal = foot_goals.left;
+%   end
+%   c = biped.checkStepFeasibility(X(end-2).pos, goal, X(end-2).is_right_foot);
+%   if any(c > 0)
+%     if X(end-3).is_right_foot
+%       goal = foot_goals.right;
+%     else
+%       goal = foot_goals.left;
+%     end
+%     new_X.pos = interp1([0, 1], [X(end-3).pos, goal]', 0.5)';
+%     new_X.time = 0;
+%     new_X.id = biped.getNextStepID();
+%     new_X.pos_fixed = zeros(6, 1);
+%     new_X.is_right_foot = X(end-3).is_right_foot;
+%     X = [X(1:end-2), new_X, X(end), X(end-1)];
+%   end
+% end
+% if length(X) > 4
+%   if X(end).is_right_foot
+%     goal = foot_goals.right;
+%   else
+%     goal = foot_goals.left;
+%   end
     
-  c = biped.checkStepFeasibility(X(end-3).pos, goal, X(end-3).is_right_foot);
-  if all(c < 0)
-    X = [X(1:end-3), X(end), X(end-1)];
-  end
-end
-
-    
-
-t = num2cell(biped.getStepTimes([X.pos]));
-[X.time] = t{:};
-
-for j = 1:size(X, 2)
-  X(j).pos(3) = heightfun(X(j).pos(1:2));
-end
+%   c = biped.checkStepFeasibility(X(end-3).pos, goal, X(end-3).is_right_foot);
+%   if all(c < 0)
+%     X = [X(1:end-3), X(end), X(end-1)];
+%   end
+% end
 
 X_orig = X;
   
@@ -76,15 +65,46 @@ b = repmat([max_diag_dist; max_diag_dist; biped.max_step_rot], ncon / 3, 1);
 
 [x_flat,fval,exitflag,output,lambda,grad] = fmincon(@cost, x_flat,A,b,[],[],...
   reshape(lb([1,2,6],:), 1, []), reshape(ub([1,2,6],:), 1, []),@nonlcon,...
-  optimset('Algorithm', 'interior-point', 'MaxIter', 10, 'Display', 'off', 'TolX', 0.01, 'TolCon', 0.01));
+  optimset('Algorithm', 'interior-point', 'MaxIter', 30, 'Display', 'off', 'TolX', 0.01, 'TolCon', 0.01));
 % grad
 % exitflag
 
 X = X_orig;
 Xpos = [X.pos];
 Xpos([1,2,6], :) = reshape(x_flat, 3, []);
-Xpos = num2cell(Xpos, 1);
-[X.pos] = Xpos{:};
+Xposc = num2cell(Xpos, 1);
+[X.pos] = Xposc{:};
+
+if (exitflag == -2 && options.max_num_steps > length(X)) || options.min_num_steps > length(X) - 2
+  % Xpos
+  c = biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
+  c = reshape(c, 3, length(X)-1);
+  c = max(c, [], 1);
+  [~, ndx] = max(c);
+  % locate max constraint violation
+  ndx = min(ndx, length(X) - 2);
+  ndx = max(ndx, 2);
+  new_X(1).pos = interp1([0, 1], [X(ndx-1).pos, X(ndx+1).pos]', 0.5)';
+  new_X(2).pos = interp1([0, 1], [X(ndx).pos, X(ndx+2).pos]', 0.5)';
+  new_X(1).time = 0;
+  new_X(2).time = 0;
+  new_X(1).id = biped.getNextStepID();
+  new_X(2).id = biped.getNextStepID();
+  new_X(1).pos_fixed = zeros(6, 1);
+  new_X(2).pos_fixed = zeros(6, 1);
+  new_X(1).is_right_foot = X(ndx+1).is_right_foot;
+  new_X(2).is_right_foot = X(ndx).is_right_foot;
+  X = [X(1:ndx), new_X, X(ndx+1:end)];
+  t = num2cell(biped.getStepTimes([X.pos]));
+  [X.time] = t{:};
+end
+if (options.max_num_steps < length(X) && length(X) > 4)
+  X = [X(1:end-4), X(end-1:end)];
+end
+
+for j = 1:size(X, 2)
+  X(j).pos(3) = heightfun(X(j).pos(1:2));
+end
 
 function [c, ceq] = nonlcon(x_flat)
   X = X_orig;
@@ -92,9 +112,9 @@ function [c, ceq] = nonlcon(x_flat)
   Xpos([1,2,6], :) = reshape(x_flat, 3, []);
   % [Xright, Xleft] = biped.stepLocations(X);
 
-  c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
-       biped.checkStepOrientation(Xpos)];
-%   c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot])];
+%   c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
+%        biped.checkStepOrientation(Xpos)];
+  c = [biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot])];
   ceq = 0;
 end
 

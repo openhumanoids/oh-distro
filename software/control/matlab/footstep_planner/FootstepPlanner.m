@@ -30,7 +30,7 @@ classdef FootstepPlanner < DRCPlanner
       optimizer_halt = false;
       while 1
         [data, changed, changelist] = obj.updateData(data);
-        if (changelist.goal && data.goal.is_new_goal) || isempty(goal_pos)
+        if (changelist.goal && data.goal.is_new_goal) || isempty(X_old)
           optimizer_halt = false;
           disp('got new goal');
           goal_pos = [data.goal.goal_pos.translation.x;
@@ -45,6 +45,11 @@ classdef FootstepPlanner < DRCPlanner
           %%% end hack 
 
           [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos);
+        end
+        changelist
+        if changelist.goal || isempty(X_old)
+          optimizer_halt = false;
+          disp('got goal info')
           for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal'}
             options.(x{1}) = data.goal.(x{1});
           end
