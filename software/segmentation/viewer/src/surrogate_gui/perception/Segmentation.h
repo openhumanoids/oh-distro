@@ -41,12 +41,6 @@ namespace surrogate_gui
 			  FittingParams():yaw(0),pitch(0),roll(0),maxAngle(6.28),minRadius(0.01),maxRadius(0.30),distanceThreshold(0.09){}
 			};
 
-			static pcl::PointIndices::Ptr fitCylinderNew(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-								  boost::shared_ptr<std::set<int> > subcloudIndices,
-								  double &x, double &y, double &z,
-								  double &roll, double &pitch, double &yaw, 
-								  double &radius,
-								  double &height);
 			static pcl::PointIndices::Ptr fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 								  boost::shared_ptr<std::set<int> > subcloudIndices,
 									const FittingParams& fp,
