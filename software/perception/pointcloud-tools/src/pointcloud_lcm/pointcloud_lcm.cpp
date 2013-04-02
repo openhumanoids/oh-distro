@@ -96,6 +96,46 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
 }
 
 
+void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+
+  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  cloud->width   = msg->width;
+  cloud->height   = msg->height;
+  uint32_t num_points = msg->width * msg->height;
+  cloud->points.resize (num_points);
+  cloud->is_dense = false;//msg->is_dense;
+  uint8_t* cloud_data = reinterpret_cast<uint8_t*>(&cloud->points[0]);
+  uint32_t cloud_row_step = static_cast<uint32_t> (sizeof (pcl::PointXYZRGB) * cloud->width);
+  const uint8_t* msg_data = &msg->data[0];
+  memcpy (cloud_data, msg_data, msg->data_nbytes );
+
+  // 2. HACK/Workaround
+  // for some reason in pcl1.5/6, this callback results
+  // in RGB data whose offset is not correctly understood
+  // Instead of an offset of 12bytes, its offset is set to be 16
+  // this fix corrects for the issue:
+  sensor_msgs::PointCloud2 msg_cld;
+  pcl::toROSMsg(*cloud, msg_cld);
+  msg_cld.fields[3].offset = 16; // was 12 // 16 works for PCL Streaming
+  pcl::fromROSMsg (msg_cld, *cloud);
+
+  // Transform cloud to that its in robotic frame:
+  // Could also apply the cv->robotic transform directly
+  /*
+   * Removed in Sept 2012:
+   * double x_temp;
+  for(int j=0; j<cloud->points.size(); j++) {
+    x_temp = cloud->points[j].x;
+    cloud->points[j].x = cloud->points[j].z;
+    cloud->points[j].z = - cloud->points[j].y;
+    cloud->points[j].y = - x_temp;
+  }
+  */
+}
+
+
+
 
 void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){

@@ -75,7 +75,7 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     void trackerCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::tracker_command_t* msg);    
     std::string mask_channel_, image_channel_;
     
@@ -161,7 +161,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   mask_channel_="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel_ ,&Pass::maskHandler,this);
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this); 
+  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordancePlusHandler,this); 
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);   
   
   // Vis Config:
@@ -469,8 +469,8 @@ Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vecto
 }
 
 
-void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::affordance_collection_t* msg){
+void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   if (!tracker_initiated_){
     // If we haven't told tracker what do to, then ignore affordances
     return; 
@@ -481,21 +481,21 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
   // Bootstrap the filter off the user-provided pose:
   if  ( !got_initial_affordance_ ) {
     cout << "got initial affordance position\n";
-    drc::affordance_t a = msg->affs[affordance_id_];
-    object_pose_ = affutils.getPose( a.param_names, a.params );
+    drc::affordance_plus_t a = msg->affs_plus[affordance_id_];
+    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
-    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
-    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
+    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
+    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
     // TODO: convert a mesh affordance to a point cloud if required
     object_cloud_ = affutils.getCloudFromAffordance(a.points);
     // cache the message and repeatedly update the position:
-    last_affordance_msg_ = msg->affs[affordance_id_];
+    last_affordance_msg_ = msg->affs_plus[affordance_id_].aff;
 
     if( verbose_>=1 ){
       Isometry3dTime object_poseT = Isometry3dTime ( aff_utime, object_pose_ );
       pc_vis_->pose_to_lcm_from_list(affordance_vis_, object_poseT);
-      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
+      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
     }
@@ -505,8 +505,8 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
   // Update the tracked plane:
   if (use_plane_tracker_){
     //cout << "got updated plane position\n";
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
+    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[plane_affordance_id_].aff.param_names, msg->affs_plus[plane_affordance_id_].aff.params );
+    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[plane_affordance_id_].aff.param_names, msg->affs_plus[plane_affordance_id_].aff.params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
     // TODO: this should be determined initally and retained:
     plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};

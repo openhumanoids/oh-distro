@@ -29,27 +29,27 @@ class Pass{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     pointcloud_vis* pc_vis_;
     
     AffordanceUtils affutils;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordanceHandler,this);  
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   cout << "Finished setting up\n";
 }
 
 void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::affordance_collection_t* msg){
-  cout << "got "<< msg->affs.size() <<" affs\n";
-  for (size_t i=0; i < msg->affs.size() ; i++){
+                             const std::string& channel, const  drc::affordance_plus_collection_t* msg){
+  cout << "got "<< msg->affs_plus.size() <<" affs\n";
+  for (size_t i=0; i < msg->affs_plus.size() ; i++){
     int aff_id =i;
     int cfg_root = aff_id*10;
 
-    drc::affordance_t a = msg->affs[aff_id];
-    Eigen::Isometry3d pose = affutils.getPose( a.param_names, a.params );
+    drc::affordance_plus_t a = msg->affs_plus[aff_id];
+    Eigen::Isometry3d pose = affutils.getPose( a.aff.param_names, a.aff.params );
     // obj: id name type reset
     // pts: id name type reset objcoll usergb rgb
     
@@ -68,7 +68,7 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
         pc_vis_->mesh_to_lcm(pconfig, mesh, 0, 0);  
       }
       
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_cloud = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_cloud = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
       ptcld_cfg pconfig = ptcld_cfg(cfg_root+3,    string( "Affordance Bounding Box " + std::to_string(i))     ,4,1, cfg_root,1, {0.2,0,0.2} );
       pc_vis_->ptcld_to_lcm(pconfig, *bb_cloud, 0, 0);  
     }

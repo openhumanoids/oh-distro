@@ -34,7 +34,7 @@ class Pass{
     void doDemo();
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    drc::affordance_t getAffordance(std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getAffordance(std::vector<double> &xyzrpy, int uid);
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
@@ -153,7 +153,9 @@ bool getCloudAsLists(std::string filename,
 }
     
     
-drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){ 
+drc::affordance_plus_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
   drc::affordance_t a;
   a.utime =0;
   a.map_id =0;
@@ -183,8 +185,9 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
   a.params.push_back(1.0); // unknown
   a.nparams =a.params.size();
   a.nstates =0;
-  a.ntriangles =0;
-
+  
+  p.aff =a;
+  
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
   if (uid==0){
@@ -196,36 +199,50 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
   }else{
     getMeshAsLists("/home/mfallon/drc/software/perception/trackers/data_non_in_svn/drill_clouds/affordance_version/drill_sensed_smoothed.ply", points, triangles);
   }    
-  a.points =points;
-  a.npoints=points.size();
-  a.triangles = triangles;
-  a.ntriangles =a.triangles.size();
+  p.points =points;
+  p.npoints=points.size();
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
   
   
-  return a;
+  return p;
 }
 
 void Pass::doDemo(){
   std::vector<double> xyzrpy = {0 , 0 , 0, 0. , 0 , 1.571};
-  drc::affordance_t a0 = getAffordance(xyzrpy, 0);
+  drc::affordance_plus_t a0 = getAffordance(xyzrpy, 0);
   std::vector<double> xyzrpy1 = {0.5 , 0. , 0., 0., 0., 1.571};
-  drc::affordance_t a1 = getAffordance(xyzrpy1, 1);
+  drc::affordance_plus_t a1 = getAffordance(xyzrpy1, 1);
   std::vector<double> xyzrpy2 = {1. , 0. , 0., 0., 0. , 1.571};
-  drc::affordance_t a2 = getAffordance(xyzrpy2, 2);
+  drc::affordance_plus_t a2 = getAffordance(xyzrpy2, 2);
   std::vector<double> xyzrpy3 = {1.5 , 0 , 0., 0, 0 , 1.571};
-  drc::affordance_t a3 = getAffordance(xyzrpy3, 3);
+  drc::affordance_plus_t a3 = getAffordance(xyzrpy3, 3);
 
+  drc::affordance_plus_collection_t aff_plus_coll;
+  aff_plus_coll.name  = "Map Name";
+  aff_plus_coll.utime = 0;
+  aff_plus_coll.map_id =0;
+  
+  aff_plus_coll.affs_plus.push_back( a0);
+  aff_plus_coll.affs_plus.push_back( a1);
+  aff_plus_coll.affs_plus.push_back( a2);
+  aff_plus_coll.affs_plus.push_back( a3);
+  aff_plus_coll.naffs =aff_plus_coll.affs_plus.size();
+  lcm_->publish("AFFORDANCE_PLUS_COLLECTION",&aff_plus_coll);
+  
+  
   drc::affordance_collection_t aff_coll;
   aff_coll.name  = "Map Name";
   aff_coll.utime = 0;
   aff_coll.map_id =0;
   
-  aff_coll.affs.push_back( a0);
-  aff_coll.affs.push_back( a1);
-  aff_coll.affs.push_back( a2);
-  aff_coll.affs.push_back( a3);
+  aff_coll.affs.push_back( a0.aff);
+  aff_coll.affs.push_back( a1.aff);
+  aff_coll.affs.push_back( a2.aff);
+  aff_coll.affs.push_back( a3.aff);
   aff_coll.naffs =aff_coll.affs.size();
-  lcm_->publish("AFFORDANCE_COLLECTION",&aff_coll);
+  lcm_->publish("AFFORDANCE_COLLECTION",&aff_coll);  
+  
 }
 
 int main( int argc, char** argv ){

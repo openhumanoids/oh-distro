@@ -145,8 +145,8 @@ void AffordanceState::clear()
 
   _params.clear();  
   _states.clear();
-  _points.clear();
-  _triangles.clear();
+//  _points.clear();
+//  _triangles.clear();
   
   _otdf_type = AffordanceState::UNKNOWN;
 }
@@ -228,7 +228,7 @@ void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
 /**used by constructor and copy constructor*/
 void AffordanceState::initHelper(const drc::affordance_t *msg)
 {
-  if ((_states.size() != 0 || _params.size() != 0 ) || (_points.size() != 0 || _triangles.size() != 0 ) )
+  if ((_states.size() != 0 || _params.size() != 0 ))// || (_points.size() != 0 || _triangles.size() != 0 ) )
     throw ArgumentException("shouldn't call init if these fields aren't empty");
   
   _utime 	= msg->utime;
@@ -240,8 +240,8 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
   memcpy(_bounding_lwh, msg->bounding_lwh, 3*sizeof(float));
 
   _otdf_type 		= msg->otdf_type;
-  _points 	= msg->points;
-  _triangles       = msg->triangles;
+  //_points 	= msg->points;
+  //_triangles       = msg->triangles;
     
   //argument check
   if (supportedOtdfTypes.find(msg->otdf_type) == supportedOtdfTypes.end())
@@ -298,6 +298,7 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 		msg->states.push_back(iter->second);
 	}
 
+/*
 	//points
 	msg->npoints = _points.size();
 	for(uint i = 0; i < _points.size(); i++)
@@ -306,6 +307,7 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
         msg->ntriangles = _triangles.size();
         for(uint i = 0; i < _triangles.size(); i++)
                 msg->triangles.push_back(_triangles[i]);
+*/
 }
 
 /**convert from this AffordanceState into a urdf xml string representation*/

@@ -48,7 +48,7 @@ class Pass{
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
     std::string lidar_channel_;
 
-    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     
     BotParam* botparam_;
     BotFrames* botframes_;
@@ -91,7 +91,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
   lcm_->subscribe( lidar_channel_ ,&Pass::lidarHandler,this);
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -234,21 +234,21 @@ Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vecto
 
 
 
-void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::affordance_collection_t* msg){
+void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   if  ( !got_affs_ ) {
     cout << "got affs\n";
-    drc::affordance_t a = msg->affs[affordance_id_];
-    object_pose_ = affutils.getPose( a.param_names, a.params );
+    drc::affordance_plus_t a = msg->affs_plus[affordance_id_];
+    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
 
     Isometry3dTime pT =  Isometry3dTime( 0, object_pose_);
     pc_vis_->pose_to_lcm_from_list(1010, pT);
     
-    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.bounding_pos, a.bounding_rpy, a.bounding_lwh);
+    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
     pc_vis_->ptcld_to_lcm_from_list(1012, *object_bb_cloud_,pT.utime, pT.utime);  
     
-    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
-    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.bounding_lwh[0], a.bounding_lwh[1], a.bounding_lwh[2]);
+    Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
+    Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
 
     
@@ -273,8 +273,10 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     
     
     ///// PLANE CONSTRAINT
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
+    drc::affordance_plus_t a_plane = msg->affs_plus[plane_affordance_id_];
+    
+    std::vector<float> p_coeffs = affordanceToPlane(a_plane.aff.param_names, a_plane.aff.params );
+    Eigen::Vector4f p_centroid = affordanceToCentroid(a_plane.aff.param_names, a_plane.aff.params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
     
     cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";

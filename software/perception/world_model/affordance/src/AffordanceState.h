@@ -55,8 +55,8 @@ namespace affordance
     float _bounding_pos[3];
     float _bounding_rpy[3];
     float _bounding_lwh[3];
-    std::vector< std::vector <float> > _points;
-    std::vector< std::vector <int> > _triangles;    
+    //std::vector< std::vector <float> > _points;
+    //std::vector< std::vector <int> > _triangles;    
     
   private:
     /**type of affordance.  this is a relative otdf file name w/o

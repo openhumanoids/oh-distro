@@ -34,7 +34,7 @@ class Pass{
     void doDemo();
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    drc::affordance_t getAffordance(std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getAffordancePlus(std::vector<double> &xyzrpy, int uid);
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
@@ -154,7 +154,9 @@ bool getCloudAsLists(std::string filename,
 }
     
     
-drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){ 
+drc::affordance_plus_t Pass::getAffordancePlus(std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
   drc::affordance_t a;
   a.utime =0;
   a.map_id =0;
@@ -184,8 +186,15 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
   a.params.push_back(1.0); // unknown
   a.nparams =a.params.size();
   a.nstates =0;
-  a.ntriangles =0;
 
+  a.bounding_pos[0]=xyzrpy[0]; a.bounding_pos[1]=xyzrpy[1]; a.bounding_pos[2]=xyzrpy[2]; 
+  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
+  a.bounding_lwh[0]=0.36;       a.bounding_lwh[1]=0.33;      a.bounding_lwh[2]=0.3; 
+  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
+  // a.bounding_lwh = { 0.3, 0.36, 0.4};
+  
+  p.aff = a;
+  
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
   
@@ -203,27 +212,21 @@ drc::affordance_t Pass::getAffordance(std::vector<double> &xyzrpy, int uid){
   }else{
     getMeshAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply"), points, triangles);
   }    
-  a.points =points;
-  a.npoints=points.size();
-  a.triangles = triangles;
-  a.ntriangles =a.triangles.size();
+  p.points =points;
+  p.npoints=points.size();
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
   
-  a.bounding_pos[0]=xyzrpy[0]; a.bounding_pos[1]=xyzrpy[1]; a.bounding_pos[2]=xyzrpy[2]; 
-  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
-  a.bounding_lwh[0]=0.36;       a.bounding_lwh[1]=0.33;      a.bounding_lwh[2]=0.3; 
-  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
-  // a.bounding_lwh = { 0.3, 0.36, 0.4};
-  
-  return a;
+  return p;
 }
 
 void Pass::doDemo(){
   std::vector<double> xyzrpy = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
   
   int which = 3; //0 1 2 3 
-  drc::affordance_t a0 = getAffordance(xyzrpy, which);
+  drc::affordance_plus_t a0 = getAffordancePlus(xyzrpy, which);
 
-  a0.uid =10;
+  a0.aff.uid =10;
   lcm_->publish("AFFORDANCE_FIT",&a0);
 }
 

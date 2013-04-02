@@ -99,9 +99,10 @@ void Pass::publishUpdatedAffordance(){
   last_tracked_aff_msg_.aff_store_control =  drc::affordance_t::UPDATE;
   affutils.setXYZRPYFromPlane(last_tracked_aff_msg_.param_names, last_tracked_aff_msg_.params, major_plane_->getPlaneCoeffs(), plane_pose_.translation() );
   // Update the affordance hull:
-  std::vector< std::vector<float> > points = major_plane_->getPlaneHull();
-  last_tracked_aff_msg_.points = points;
-  last_tracked_aff_msg_.npoints = points.size();
+  std::cout << "publishUpdatedAffordance AFFORDANCE update: points\n";
+  //std::vector< std::vector<float> > points = major_plane_->getPlaneHull();
+  //last_tracked_aff_msg_.points = points;
+  //last_tracked_aff_msg_.npoints = points.size();
   lcm_->publish("AFFORDANCE_TRACK", &last_tracked_aff_msg_);
 }
 

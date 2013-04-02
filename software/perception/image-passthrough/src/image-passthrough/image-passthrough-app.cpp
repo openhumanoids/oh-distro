@@ -243,8 +243,9 @@ bool Pass::affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonM
       cout  << aff_uid << " is a steering_cyl\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
     }else if(aff.otdf_type == "mesh"){
-      cout  << aff_uid << " is a mesh ["<< aff.points.size() << " and " << aff.triangles.size() << "]\n";
-      mesh_out = affutils.getMeshFromAffordance(aff.points, aff.triangles,transform);
+      cout << "mesh not supported now as we need to use affordance_plus_t to provide it\n";
+      //cout  << aff_uid << " is a mesh ["<< aff.points.size() << " and " << aff.triangles.size() << "]\n";
+      //mesh_out = affutils.getMeshFromAffordance(aff.points, aff.triangles,transform);
       
     }else{
       cout  << aff_uid << " is a not recognised ["<< aff.otdf_type <<"] not supported yet\n";

@@ -40,6 +40,7 @@
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
 #include <lcmtypes/pointcloud_tools.h>
+#include <lcmtypes/pointcloud_tools.hpp>
 #include <lcmtypes/kinect_frame_msg_t.h>
 
 
@@ -58,6 +59,9 @@ class pointcloud_lcm {
     pointcloud_lcm (lcm_t* publish_lcm);
 
     void unpack_pointcloud2(const ptools_pointcloud2_t *msg,
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    
+    void unpack_pointcloud2(const ptools::pointcloud2_t *msg,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,

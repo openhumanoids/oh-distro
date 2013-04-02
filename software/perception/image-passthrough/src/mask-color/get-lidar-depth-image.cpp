@@ -284,11 +284,18 @@ void Pass::sendSweepDepthImage(){
       cloud4->points.push_back(pt);
     }
   }
+  cloud4->width = cloud4->points.size();
+  cloud4->height =1;
   cout << "c\n";
+  
+  
   
   Isometry3dTime camera_pose_T = Isometry3dTime(current_utime_, camera_pose_);
   pc_vis_->pose_to_lcm_from_list(91004, camera_pose_T);  
   pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime_, current_utime_);  
+  
+  pc_vis_->pointcloud2_to_lcm(*cloud4,"RANGE_IMAGE_POINTS",current_utime_);
+  
 }
 
   // c. publish in Depth Image mode:

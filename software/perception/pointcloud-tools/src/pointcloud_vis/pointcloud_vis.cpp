@@ -415,13 +415,26 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
   sensor_msgs::PointCloud2 senor_cloud;
   //pcl::fromROSMsg (*msg, cloud);
   pcl::toROSMsg(cloud, senor_cloud);
+  
+  cout <<"1\n";
 
   ptools_pointcloud2_t pc;
   pc.utime = cloud_utime;//(int64_t) floor(msg->header.stamp.toSec()  * 1E6);
+  pc.seq =0;
+  pc.frame_id = "NA";
+  pc.is_bigendian=0;
   pc.height = senor_cloud.height;
   pc.width = senor_cloud.width;
-  pc.nfields = senor_cloud.fields.size();
+  
+  cout << senor_cloud.height << " and " << senor_cloud.width << "\n";
+  cout <<"2\n";
 
+  cout <<"2\n";
+  pc.data_nbytes = (int) senor_cloud.data.size();
+  uint8_t* raw_data = new uint8_t [ pc.data_nbytes];
+  
+  
+  pc.nfields = senor_cloud.fields.size();
   ptools_pointfield_t* fields = new ptools_pointfield_t[pc.nfields];
   for (size_t i=0;i < senor_cloud.fields.size();i++){
     //cout << " field: " << msg->fields[i].name << " " << (int) msg->fields[i].datatype << "\n";
@@ -431,18 +444,26 @@ void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud
     fields[i].count =senor_cloud.fields[i].count;
   }
   pc.fields = fields;
-  // pc.nfields =0;
-  // pc.fields = NULL;
-  //  pc.data_nbytes = 0;
-  //  pc.data = NULL;
-
-  pc.data_nbytes = (int) senor_cloud.data.size();
-  uint8_t* raw_data = new uint8_t [ pc.data_nbytes];
+  
   copy(senor_cloud.data.begin(), senor_cloud.data.end(), raw_data);
   pc.data = raw_data;
 
+  /*
+  pc.nfields =0;
+  pc.fields = NULL;
+  pc.data_nbytes = 0;
+  pc.data = NULL;
+  */
+  cout <<"3\n";
+
+  
+  cout <<"4\n";
+  
+  
+  cout <<"5\n";
+
   ptools_pointcloud2_t_publish(publish_lcm_, channel.c_str() ,&pc);
-  delete[] raw_data;
+//  delete[] raw_data;
 
 }
 
