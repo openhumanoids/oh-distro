@@ -114,6 +114,9 @@ namespace surrogate_gui
 		//affordance publish button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUB, NULL);
 
+		//affordance save cloud button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_SAVE_CLOUD, NULL);
+
 		// master reset button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
 
@@ -878,6 +881,30 @@ namespace surrogate_gui
 		_surrogate_renderer.getTrackInfo()->displayTrackingCloud 	= true;
 	}
 
+  void UIProcessing::handleSaveCloudButton(BotGtkParamWidget *pw)
+  {
+    // generate filename based on time
+    char filename[100];
+    time_t ttime = time(NULL);
+    tm* tmtime = localtime(&ttime);
+    strftime(filename, 100, "cloud_%y%m%d-%H%M%S.pcd", tmtime);
+
+    // extract subcloud
+    pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud = _surrogate_renderer._display_info.cloud;
+    ObjectPointsPtr currObj = getCurrentObjectSelected();
+
+    PointCloud<PointXYZRGB>::ConstPtr subcloud;
+    if(currObj->indices->size()==0) subcloud = cloud;  // if nothing selected, output everything
+    else subcloud = PclSurrogateUtils::extractIndexedPoints(currObj->indices, cloud);
+
+    // write subcloud
+    cout << "Write cloud: " << filename << endl;
+    pcl::PCDWriter writer;
+    writer.write (filename, *subcloud, false);
+
+  }
+
+
   void UIProcessing::handleAffordancePubButton(BotGtkParamWidget *pw)
   {
 		Segmentation::FittingParams fp;
@@ -1407,6 +1434,12 @@ namespace surrogate_gui
 		if (stringsEqual(name, PARAM_NAME_AFFORDANCE_PUB))
 		{
 			handleAffordancePubButton(pw);
+			//return;
+		}
+
+		if (stringsEqual(name, PARAM_NAME_SAVE_CLOUD))
+		{
+			handleSaveCloudButton(pw);
 			//return;
 		}
 

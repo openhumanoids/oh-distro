@@ -101,6 +101,7 @@ namespace surrogate_gui
 
 			void handleMouseModeAdjust(BotEventHandler *default_handler, BotGtkParamWidget *pw); //user clicks on MouseMode drop-down menu
 			void handleTrackLiveButton(BotGtkParamWidget *pw);
+			void handleSaveCloudButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp);
