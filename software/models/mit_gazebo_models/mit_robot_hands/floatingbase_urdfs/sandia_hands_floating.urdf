@@ -267,7 +267,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="right_f0_fixed_accel">
@@ -275,7 +275,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f0_0">
@@ -285,7 +285,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -348,7 +348,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -394,7 +394,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f0_2">
@@ -404,7 +404,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -464,7 +464,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="right_f0_base" type="fixed">
@@ -476,18 +476,18 @@
     <axis xyz="0 0 1"/>
     <parent link="right_f0_base"/>
     <child link="right_f0_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="right_f0_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="right_f0_0"/>
     <child link="right_f0_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="right_f0_j2" type="revolute">
@@ -496,8 +496,8 @@
     <child link="right_f0_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="right_f0_fixed_accel" type="fixed">
     <parent link="right_f0_base"/>
@@ -514,22 +514,6 @@
     <child link="right_f0_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="right_f0_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f0_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f0_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f0_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="right_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="right_f0_j0"/>
     <actuator name="right_f0_j0_motor"/>
@@ -545,6 +529,47 @@
     <actuator name="right_f0_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="right_f0_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f0_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f0_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f0_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f0_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f0_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f0_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="right_f1_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -553,7 +578,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="right_f1_fixed_accel">
@@ -561,7 +586,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f1_0">
@@ -571,7 +596,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -634,7 +659,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -680,7 +705,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f1_2">
@@ -690,7 +715,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -750,7 +775,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="right_f1_base" type="fixed">
@@ -762,18 +787,18 @@
     <axis xyz="0 0 1"/>
     <parent link="right_f1_base"/>
     <child link="right_f1_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="right_f1_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="right_f1_0"/>
     <child link="right_f1_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="right_f1_j2" type="revolute">
@@ -782,8 +807,8 @@
     <child link="right_f1_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="right_f1_fixed_accel" type="fixed">
     <parent link="right_f1_base"/>
@@ -800,22 +825,6 @@
     <child link="right_f1_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="right_f1_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f1_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f1_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f1_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="right_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="right_f1_j0"/>
     <actuator name="right_f1_j0_motor"/>
@@ -831,6 +840,47 @@
     <actuator name="right_f1_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="right_f1_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f1_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f1_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f1_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f1_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f1_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f1_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="right_f2_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -839,7 +889,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="right_f2_fixed_accel">
@@ -847,7 +897,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f2_0">
@@ -857,7 +907,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -920,7 +970,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -966,7 +1016,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f2_2">
@@ -976,7 +1026,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -1036,7 +1086,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="right_f2_base" type="fixed">
@@ -1048,18 +1098,18 @@
     <axis xyz="0 0 1"/>
     <parent link="right_f2_base"/>
     <child link="right_f2_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="right_f2_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="right_f2_0"/>
     <child link="right_f2_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="right_f2_j2" type="revolute">
@@ -1068,8 +1118,8 @@
     <child link="right_f2_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="right_f2_fixed_accel" type="fixed">
     <parent link="right_f2_base"/>
@@ -1086,22 +1136,6 @@
     <child link="right_f2_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="right_f2_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f2_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f2_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f2_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="right_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="right_f2_j0"/>
     <actuator name="right_f2_j0_motor"/>
@@ -1117,6 +1151,47 @@
     <actuator name="right_f2_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="right_f2_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f2_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f2_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f2_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f2_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f2_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f2_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="right_f3_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -1125,7 +1200,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="right_f3_fixed_accel">
@@ -1133,7 +1208,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f3_0">
@@ -1143,7 +1218,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -1206,7 +1281,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -1252,7 +1327,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="right_f3_2">
@@ -1262,7 +1337,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -1322,7 +1397,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="right_f3_base" type="fixed">
@@ -1334,18 +1409,18 @@
     <axis xyz="0 0 1"/>
     <parent link="right_f3_base"/>
     <child link="right_f3_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="right_f3_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="right_f3_0"/>
     <child link="right_f3_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="right_f3_j2" type="revolute">
@@ -1354,8 +1429,8 @@
     <child link="right_f3_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="right_f3_fixed_accel" type="fixed">
     <parent link="right_f3_base"/>
@@ -1372,22 +1447,6 @@
     <child link="right_f3_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="right_f3_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f3_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f3_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="right_f3_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="right_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="right_f3_j0"/>
     <actuator name="right_f3_j0_motor"/>
@@ -1403,6 +1462,51 @@
     <actuator name="right_f3_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="right_f3_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f3_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f3_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f3_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="right_f3_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f3_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_f3_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="right_palm">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
   <link name="left_base_x">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -1655,7 +1759,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="left_f0_fixed_accel">
@@ -1663,7 +1767,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f0_0">
@@ -1673,7 +1777,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -1736,7 +1840,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -1782,7 +1886,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f0_2">
@@ -1792,7 +1896,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -1852,7 +1956,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="left_f0_base" type="fixed">
@@ -1864,18 +1968,18 @@
     <axis xyz="0 0 -1"/>
     <parent link="left_f0_base"/>
     <child link="left_f0_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="left_f0_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="left_f0_0"/>
     <child link="left_f0_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="left_f0_j2" type="revolute">
@@ -1884,8 +1988,8 @@
     <child link="left_f0_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="left_f0_fixed_accel" type="fixed">
     <parent link="left_f0_base"/>
@@ -1902,22 +2006,6 @@
     <child link="left_f0_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="left_f0_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f0_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f0_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f0_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="left_f0_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="left_f0_j0"/>
     <actuator name="left_f0_j0_motor"/>
@@ -1933,6 +2021,47 @@
     <actuator name="left_f0_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="left_f0_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f0_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f0_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f0_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f0_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f0_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f0_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="left_f1_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -1941,7 +2070,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="left_f1_fixed_accel">
@@ -1949,7 +2078,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f1_0">
@@ -1959,7 +2088,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -2022,7 +2151,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -2068,7 +2197,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f1_2">
@@ -2078,7 +2207,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -2138,7 +2267,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="left_f1_base" type="fixed">
@@ -2150,18 +2279,18 @@
     <axis xyz="0 0 -1"/>
     <parent link="left_f1_base"/>
     <child link="left_f1_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="left_f1_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="left_f1_0"/>
     <child link="left_f1_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="left_f1_j2" type="revolute">
@@ -2170,8 +2299,8 @@
     <child link="left_f1_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="left_f1_fixed_accel" type="fixed">
     <parent link="left_f1_base"/>
@@ -2188,22 +2317,6 @@
     <child link="left_f1_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="left_f1_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f1_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f1_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f1_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="left_f1_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="left_f1_j0"/>
     <actuator name="left_f1_j0_motor"/>
@@ -2219,6 +2332,47 @@
     <actuator name="left_f1_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="left_f1_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f1_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f1_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f1_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f1_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f1_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f1_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="left_f2_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -2227,7 +2381,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="left_f2_fixed_accel">
@@ -2235,7 +2389,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f2_0">
@@ -2245,7 +2399,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -2308,7 +2462,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -2354,7 +2508,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f2_2">
@@ -2364,7 +2518,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -2424,7 +2578,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="left_f2_base" type="fixed">
@@ -2436,18 +2590,18 @@
     <axis xyz="0 0 -1"/>
     <parent link="left_f2_base"/>
     <child link="left_f2_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="left_f2_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="left_f2_0"/>
     <child link="left_f2_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="left_f2_j2" type="revolute">
@@ -2456,8 +2610,8 @@
     <child link="left_f2_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="left_f2_fixed_accel" type="fixed">
     <parent link="left_f2_base"/>
@@ -2474,22 +2628,6 @@
     <child link="left_f2_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="left_f2_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f2_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f2_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f2_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="left_f2_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="left_f2_j0"/>
     <actuator name="left_f2_j0_motor"/>
@@ -2505,6 +2643,47 @@
     <actuator name="left_f2_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="left_f2_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f2_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f2_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f2_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f2_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f2_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f2_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
   <link name="left_f3_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -2513,7 +2692,7 @@
       <!-- (2.303 - 1.303) / 4 -->
       <origin xyz="0 0 0"/>
       <!-- model as sphere with radius of 1cm -->
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
     </inertial>
   </link>
   <link name="left_f3_fixed_accel">
@@ -2521,7 +2700,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f3_0">
@@ -2531,7 +2710,7 @@
       <!-- F1 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.011505" ixy="0" ixz="0" iyy="0.011505" iyz="0" izz="0.0011925"/>
+      <inertia ixx="0.00011505" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.000011925"/>
     </inertial>
     <!-- begin simple shape approximation of f0 -->
     <collision group="default">
@@ -2594,7 +2773,7 @@
       <!-- F2 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+      <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
     </inertial>
     <!-- begin simple shape approximation of f1 -->
     <collision group="default">
@@ -2640,7 +2819,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <link name="left_f3_2">
@@ -2650,7 +2829,7 @@
       <!-- F3 -->
       <origin xyz="0 0 0"/>
       <!-- solid cylinder -->
-      <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+      <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
     </inertial>
     <!-- begin simple shape approximation of f2 -->
     <collision group="default">
@@ -2710,7 +2889,7 @@
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
     </inertial>
   </link>
   <joint name="left_f3_base" type="fixed">
@@ -2722,18 +2901,18 @@
     <axis xyz="0 0 -1"/>
     <parent link="left_f3_base"/>
     <child link="left_f3_0"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="11" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="left_f3_j1" type="revolute">
     <axis xyz="0 0 1"/>
     <parent link="left_f3_0"/>
     <child link="left_f3_1"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
+    <dynamics damping="30.0"/>
     <origin rpy="1.57079632679 0 0" xyz="0.028 0 0"/>
   </joint>
   <joint name="left_f3_j2" type="revolute">
@@ -2742,8 +2921,8 @@
     <child link="left_f3_2"/>
     <origin rpy="0 0 0" xyz="0.05 0 0"/>
     <safety_controller k_position="1000.0" k_velocity="1000.0" soft_lower_limit="-11.57079" soft_upper_limit="11.57079"/>
-    <dynamics damping="0.01"/>
-    <limit effort="1" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
+    <dynamics damping="30.0"/>
+    <limit effort="28" lower="-1.57079632679" upper="1.57079632679" velocity="1"/>
   </joint>
   <joint name="left_f3_fixed_accel" type="fixed">
     <parent link="left_f3_base"/>
@@ -2760,22 +2939,6 @@
     <child link="left_f3_2_accel"/>
     <origin rpy="-1.57079632679 0 0" xyz="0.04 0 0"/>
   </joint>
-  <gazebo reference="left_f3_base">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f3_0">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f3_1">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
-  <gazebo reference="left_f3_2">
-    <mu1>0.9</mu1>
-    <mu2>0.9</mu2>
-  </gazebo>
   <transmission name="left_f3_j0" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="left_f3_j0"/>
     <actuator name="left_f3_j0_motor"/>
@@ -2791,6 +2954,51 @@
     <actuator name="left_f3_j2_motor"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <gazebo reference="left_f3_base">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f3_0">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>1.0</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f3_1">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f3_2">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>0.1</maxVel>
+    <minDepth>0.0</minDepth>
+  </gazebo>
+  <gazebo reference="left_f3_j0">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f3_j1">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_f3_j2">
+    <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="left_palm">
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
   <gazebo>
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="libFloatingSandiaHandPlugin.so" name="floating_sandia_hand_plugin"/>

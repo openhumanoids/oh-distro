@@ -99,7 +99,15 @@ while (1)
       q_key_time_samples = zeros(nq,num_key_time_samples);
       for i = 1:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
-          
+          if(isempty(ikargs))
+              q_key_time_samples(:,i) = options.q_nom;
+          else
+              [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
+              if(info>10)
+                warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+              end
+              action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
+          end
       end
 
       % If the action sequence is specified, we need to solve the ZMP
@@ -295,70 +303,70 @@ end
 function kc = getConstraintFromGoal(r,goal)
 if(goal.contact_type == goal.ON_GROUND_PLANE)
     body_ind=findLink(r,char(goal.object_1_name));
-          collision_group = find(strcmpi(char(goal.object_1_contact_grp),body_ind.collision_group_name));
-          if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
-          p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
-          offset = [goal.x_offset; goal.y_offset; goal.z_offset];
-          pos = struct();
-          pos.max = inf(3,1);
-          pos.min = -inf(3,1);
-          p = p + offset;
-          if(goal.x_relation == 0)
-              pos.min(1) = p(1);
-              pos.max(1) = p(1);
-          elseif(goal.x_relation == 1)
-              pos.max(1) = p(1);
-              pos.min(1) = -inf;
-          elseif(goal.x_relation == 2)
-              pos.min(1) = p(1);
-              pos.max(1) = inf;
-          elseif(goal.x_relation == 3)
-              pos.min(1) = -inf;
-              pos.max(1) = inf;
+      collision_group = find(strcmpi(char(goal.object_1_contact_grp),body_ind.collision_group_name));
+      if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
+      p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
+      offset = [goal.x_offset; goal.y_offset; goal.z_offset];
+      pos = struct();
+      pos.max = inf(3,1);
+      pos.min = -inf(3,1);
+      p = p + offset;
+      if(goal.x_relation == 0)
+          pos.min(1) = p(1);
+          pos.max(1) = p(1);
+      elseif(goal.x_relation == 1)
+          pos.max(1) = p(1);
+          pos.min(1) = -inf;
+      elseif(goal.x_relation == 2)
+          pos.min(1) = p(1);
+          pos.max(1) = inf;
+      elseif(goal.x_relation == 3)
+          pos.min(1) = -inf;
+          pos.max(1) = inf;
+      end
+      if(goal.y_relation == 0)
+          pos.min(2) = p(2);
+          pos.max(2) = p(2);
+      elseif(goal.y_relation == 1)
+          pos.max(2) = p(2);
+          pos.min(2) = -inf;
+      elseif(goal.y_relation == 2)
+          pos.min(2) = p(2);
+          pos.max(2) = inf;
+      elseif(goal.y_relation == 3)
+          pos.min(2) = -inf;
+          pos.max(2) = inf;
+      end
+      if(goal.z_relation == 0)
+          pos.min(3) = p(3);
+          pos.max(3) = p(3);
+      elseif(goal.z_relation == 1)
+          pos.max(3) = p(3);
+          pos.min(3) = -inf;
+      elseif(goal.z_relation == 2)
+          pos.min(3) = p(3);
+          pos.max(3) = inf;
+      elseif(goal.z_relation == 3)
+          pos.min(3) = -inf;
+          pos.max(3) = inf;
+      end
+      tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
+      collision_group_pts = body_ind.getContactPoints(collision_group);
+      % If we have multiple contact points in the contact group, we
+      % would also constrain that all those contact points are in
+      % contact
+      num_pts = size(collision_group_pts,2);
+      if(num_pts>1)
+          collision_group_pts = [mean(coolision_group_pts,2) collision_group_pts];
+          pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
+          pos.max(1:2,2:end) = inf(2,num_pts);
+          pos.min = bsxfun(@times,pos.min,ones(1,num_pts+1));
+          pos.min(1:2,2:end) = -inf(2,num_pts);
+          if(size(pos.max,2) == 6)
+              pos.max(4:6,2:end) = inf(3,num_pts);
+              pos.min(4:6,2:end) = -inf(3,num_pts);
           end
-          if(goal.y_relation == 0)
-              pos.min(2) = p(2);
-              pos.max(2) = p(2);
-          elseif(goal.y_relation == 1)
-              pos.max(2) = p(2);
-              pos.min(2) = -inf;
-          elseif(goal.y_relation == 2)
-              pos.min(2) = p(2);
-              pos.max(2) = inf;
-          elseif(goal.y_relation == 3)
-              pos.min(2) = -inf;
-              pos.max(2) = inf;
-          end
-          if(goal.z_relation == 0)
-              pos.min(3) = p(3);
-              pos.max(3) = p(3);
-          elseif(goal.z_relation == 1)
-              pos.max(3) = p(3);
-              pos.min(3) = -inf;
-          elseif(goal.z_relation == 2)
-              pos.min(3) = p(3);
-              pos.max(3) = inf;
-          elseif(goal.z_relation == 3)
-              pos.min(3) = -inf;
-              pos.max(3) = inf;
-          end
-          tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
-          collision_group_pts = body_ind.getContactPoints(collision_group);
-          % If we have multiple contact points in the contact group, we
-          % would also constrain that all those contact points are in
-          % contact
-          num_pts = size(collision_group_pts,2);
-          if(num_pts>1)
-              collision_group_pts = [mean(coolision_group_pts,2) collision_group_pts];
-              pos.max = bsxfun(@times,pos.max,ones(1,num_pts+1));
-              pos.max(1:2,2:end) = inf(2,num_pts);
-              pos.min = bsxfun(@times,pos.min,ones(1,num_pts+1));
-              pos.min(1:2,2:end) = -inf(2,num_pts);
-              if(size(pos.max,2) == 6)
-                  pos.max(4:6,2:end) = inf(3,num_pts);
-                  pos.min(4:6,2:end) = -inf(3,num_pts);
-              end
-          end
-          kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,[body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+      end
+      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,[body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
 end
 end
