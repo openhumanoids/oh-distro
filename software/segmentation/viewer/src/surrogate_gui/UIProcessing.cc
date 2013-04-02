@@ -1063,9 +1063,7 @@ namespace surrogate_gui
           affordanceMsg.npoints = inliers.size();
           affordanceMsg.points = inliers;
           affordanceMsg.ntriangles = 0;
-
-	  //cout << "\n numPtsInds = " << affordanceMsg.nptinds << " | ptinds.size() = " 
-	  //     << affordanceMsg.ptinds.size() << endl;
+	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
 	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
 	       << affordanceMsg.param_names.size() << endl;
@@ -1076,7 +1074,7 @@ namespace surrogate_gui
           affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE", &affordanceMsg);
+	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
 	  cout << "\n ***published \n" << endl;
 	  
 	  return;
