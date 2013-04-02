@@ -42,6 +42,12 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	
 	stillbusy = false;
 	
+	// This is for viewing results in the collections_viewer. check delete of new memory
+	lcm_viewer = lcm_create(NULL);
+	
+	poseplotcounter = 0;
+	collectionindex = 100;
+	
 	return;
 }
 
@@ -50,7 +56,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	//delete model_;
 	delete _leg_odo;
 	
-//	lcm_destroy(_lcm);
+	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
 	
 	
 	cout << "Everything Destroyed in LegOdometry_Handler::~LegOdometry_Handler()" << endl;
@@ -125,7 +131,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 
 	getTransforms(msg);
-	
+
 	Eigen::Isometry3d currentPelvis;
 	currentPelvis = _leg_odo->getPelvisFromStep();
 	
@@ -133,11 +139,37 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 
-	//std::cout << _leg_odo->primary_foot();// << std:: endl;
-	std::cout << "Latest Footstep: " << _leg_odo->getPrimaryInLocal().translation().transpose() << std::endl;
+	/*
+	if (_leg_odo->primary_foot() == LEFTFOOT)
+		 std::cout << "LEFT  ";// << std:: endl;
+	else
+		std::cout << "RIGHT ";
+	//std::cout << std::endl;
+	*/
+	std::cout << _leg_odo->primary_foot() << ", ";
+	//std::cout << _leg_odo->getPrimaryInLocal().translation().transpose() << ", ";
+	std::cout << "Pelvis is at   : ";
+	std::cout << currentPelvis.translation().transpose() << ", ";
+	
+	//std::cout << _leg_odo->pelvis_to_left.translation().transpose() << ", ";
+	//std::cout << _leg_odo->left_to_pelvis.translation().transpose() << ", ";
+	
+	//std::cout << "Secondary is at: " << _leg_odo->getSecondaryInLocal().translation().transpose() << std::endl;
+	std::cout << std::endl;
 	
 	
+	// here comes the drawing of poses
+	ObjectCollection obj(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
+	//LinkCollection link(2, std::string("Links"));
 	
+	if (poseplotcounter%100 == 0)
+	{
+		// TODO - This is highly inefficient
+			Viewer viewer(lcm_viewer);
+			currentPelvis.translation().x();
+			obj.add(collectionindex, isam::Pose3d(currentPelvis.translation().x(),-currentPelvis.translation().y(),-currentPelvis.translation().z(),0,0,0));
+			viewer.sendCollection(obj, true);
+	}
 }
 
 void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
@@ -212,6 +244,7 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
 	  left.rotate(leftq);
 	  right.rotate(rightq);
 	  
-	  _leg_odo->setLegTransforms(left, right);
+	  // TODo - ensure the ordering is correct here
+	  _leg_odo->setLegTransforms(right, left);
 }
 

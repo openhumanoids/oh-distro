@@ -38,6 +38,10 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include "TwoLegOdometry.h"
 
+// So that we can draw pretty pictures and figure out what the transforms are doing
+#include "visualization/viewer.hpp"
+#include "visualization/pointcloud.hpp"
+#include <isam/isam.h>
 //#include "bot-core.h"
 
 //#include "urdf/model.h"
@@ -46,6 +50,8 @@ class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
 	boost::shared_ptr<lcm::LCM> lcm_;
+	
+	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -57,6 +63,8 @@ private:
 	std::vector<drc::link_transform_t> _link_tfs;
 	
 	bool stillbusy;
+	int poseplotcounter;
+	int collectionindex;
 	
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation

@@ -28,7 +28,7 @@ class Footsteps {
 		Eigen::Isometry3d getLastStep();
 		
 		int lastFoot();
-		
+		void reset();
 };
 
 }

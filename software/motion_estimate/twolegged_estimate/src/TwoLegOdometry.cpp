@@ -156,9 +156,9 @@ bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz
 
 		Eigen::Isometry3d temp;
 		temp = getSecondaryInLocal();
-//#ifdef VERBOSE_DEBUG
+#ifdef VERBOSE_DEBUG
 		std::cout << "Adding footstep with values: " << temp.translation().transpose() << std::endl;
-//#endif
+#endif
 		footsteps.addFootstep(temp,secondary_foot());
 	  setStandingFoot(secondary_foot());
 	  
@@ -185,8 +185,12 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	pelvis_to_left = left;
 	pelvis_to_right = right;
 	
-	left_to_pelvis = left.inverse();
-	right_to_pelvis = right.inverse();
+	
+	// TODO - do the rotation assignments for for the inverse directions
+	left_to_pelvis.translation() = -left.translation();
+	//left_to_pelvis.rotation() = left.inverse().rotation();
+	right_to_pelvis.translation() = -right.translation();
+	//right_to_pelvis.rotation() = right.rotation();
 
 }
 
@@ -212,8 +216,10 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 		if (footsteps.lastFoot() != LEFTFOOT) {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";
 		}
-		returnval = add(footsteps.getLastStep(),left_to_pelvis);
-		
+		//returnval = add(footsteps.getLastStep(),left_to_pelvis);
+		returnval = add(footsteps.getLastStep(),pelvis_to_left);
+				
+		//std::cout << " left  ";
 		//return addTransforms(footsteps.getLastStep(), left_to_pelvis);
 		
 	}
@@ -222,7 +228,9 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 		if (footsteps.lastFoot() != RIGHTFOOT) {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";	
 		}
-		returnval = add(footsteps.getLastStep(),right_to_pelvis);
+		//returnval = add(footsteps.getLastStep(),right_to_pelvis);
+		returnval = add(footsteps.getLastStep(),pelvis_to_right);
+		//std::cout << " right ";
 		//return addTransforms(footsteps.getLastStep(), right_to_pelvis);
 	}
 	
@@ -304,5 +312,17 @@ Eigen::Quaterniond TwoLegOdometry::mult(Eigen::Quaterniond lhs, Eigen::Quaternio
 	result.z() = res(2);
 	
 	return result;
+}
+
+void TwoLegOdometry::ResetInitialConditions() {
+	// this function assumes the pelvis is at the 0 position.
+	// The left foot is used as the initial condition for the system.
+	
+	Eigen::Vector3d zero;
+	zero << 0.,0.,0.;
+	
+	local_to_pelvis.translation() = zero;
+	
+	footsteps.reset();
 }
 

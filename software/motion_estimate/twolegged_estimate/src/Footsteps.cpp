@@ -32,7 +32,10 @@ void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot)
 }
 
 Eigen::Isometry3d Footsteps::getLastStep() {
-	//drc::transform_t trans;
+	//if (active_step.foot==LEFTFOOT)
+	  //std::cout << " left  ";
+	//else
+	  //std::cout << " right ";
 	
 	return active_step.footprintlocation;
 		
@@ -43,4 +46,9 @@ Eigen::Isometry3d Footsteps::getLastStep() {
 
 int Footsteps::lastFoot() {
 	return active_step.foot;
+}
+
+void Footsteps::reset() {
+	footstep_hist.clear();
+	
 }

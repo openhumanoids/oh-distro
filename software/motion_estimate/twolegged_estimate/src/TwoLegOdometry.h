@@ -26,6 +26,8 @@ class TwoLegOdometry {
 		long lcmutime;
 		long deltautime;
 		long transition_timespan;
+		
+		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
 	    drc::transform_t pelvis_to_left;
 	    drc::transform_t left_to_pelvis;
@@ -33,12 +35,7 @@ class TwoLegOdometry {
 	    drc::transform_t right_to_pelvis;
 	    drc::transform_t local_to_pelvis;
 	    */
-	    Eigen::Isometry3d pelvis_to_left;
-	    Eigen::Isometry3d left_to_pelvis;
-	    Eigen::Isometry3d pelvis_to_right;
-	    Eigen::Isometry3d right_to_pelvis;
-	    Eigen::Isometry3d local_to_pelvis;
-		
+	    
 		// Convert the LCM message containing robot pose information to that which is requried by the leg odometry calculations
 		void parseRobotInput();
 		
@@ -55,11 +52,17 @@ class TwoLegOdometry {
 		
 		float getPrimaryFootZforce();
 		float getSecondaryFootZforce();
+		void ResetInitialConditions();
 		
 		Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 	public:
-		
+		Eigen::Isometry3d pelvis_to_left;
+	    Eigen::Isometry3d left_to_pelvis;
+	    Eigen::Isometry3d pelvis_to_right;
+	    Eigen::Isometry3d right_to_pelvis;
+	    Eigen::Isometry3d local_to_pelvis;
+				
 		
 		TwoLegOdometry();
 		
