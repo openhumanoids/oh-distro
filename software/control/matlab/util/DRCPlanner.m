@@ -1,22 +1,19 @@
 classdef DRCPlanner < handle
 
   properties (SetAccess=private,GetAccess=private)
-    request_monitor;
-    request_constructor;
-    request_coder;
     monitors;  % array of MessageMonitors
     last_msg_utimes; % the most recent utime for each monitor which was handled in updateData
     coders;  % array of lcmCoders
     constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     required=[];  % boolean array saying whether each message monitor is required
     updatable=[]; % boolean array saying whether each input should be updated during the plan
-    always_process=[]; % boolean array saying whether each message monitor should process new messages even if utime has not increased
+    can_trigger=[]; % boolean array saying whether each input can trigger a new plan
     name={};
     %  plan(msg,data)
   end
 
   methods 
-    plan(obj,request_msg,data)  % planners need to implement this
+    plan(obj,data)  % planners need to implement this
     %  where request_msg is the plan_request_lcmtype and data is a structure 
     %  with fields containing the input names, populated with the
     %  corresponding lcmtypes
@@ -24,24 +21,13 @@ classdef DRCPlanner < handle
   end
   
   methods
-    function obj = DRCPlanner(plan_request_channel,plan_request_lcmtype_or_lcmcoder)
-      typecheck(plan_request_channel,'char');
-      if typecheck(plan_request_lcmtype_or_lcmcoder,'LCMCoder')
-        obj.request_coder = plan_request_lcmtype_or_lcmcoder;
-        lcmtype = obj.request_coder.encode(0,zeros(obj.request_coder.dim(),1));
-      else
-        [lcmtype,obj.request_constructor]=DRCPlanner.parseLCMType(plan_request_lcmtype_or_lcmcoder);
-      end
-      obj.request_monitor = drake.util.MessageMonitor(lcmtype,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe(plan_request_channel,obj.request_monitor);
+    function obj = DRCPlanner()
     end
     
-    function obj = addInput(obj,name,channel,lcmtype_or_lcmcoder,required,updatable,always_process)
-      % optional argument: always_process if true, then ignore utime field for this channel and always process messages as they come in; defaults to false
-      if nargin < 7
-        always_process = false;
-      end
+    function obj = addInput(obj,name,channel,lcmtype_or_lcmcoder,required,updatable,can_trigger)
+      if (nargin<5) required = false; end
+      if (nargin<6) updatable = true; end
+      if (nargin<7) can_trigger = false; end
       typecheck(name,'char');
       typecheck(channel,'char');
       n = length(obj.monitors)+1;
@@ -52,15 +38,14 @@ classdef DRCPlanner < handle
         obj.coders{n} = [];
         [lcmtype,obj.constructors(n)]=DRCPlanner.parseLCMType(lcmtype_or_lcmcoder);
       end
-      if (nargin<4) required = false; end
-      if (nargin<5) updatable = true; end
       mon = drake.util.MessageMonitor(lcmtype,'utime');
+      % mon = lcm.lcm.MessageAggregator();
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe(channel,mon);
       obj.monitors{n} = mon;
       obj.required(n) = required;
       obj.updatable(n) = updatable;
-      obj.always_process(n) = always_process;
+      obj.can_trigger(n) = can_trigger;
       obj.last_msg_utimes(n) = -1;
       obj.name{n} = name;
     end
@@ -74,17 +59,21 @@ classdef DRCPlanner < handle
       changed=false; changelist=struct();
       for i=1:length(obj.monitors)
         changelist = setfield(changelist,obj.name{i},false);
-        % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>data.utime)
-        if (obj.updatable(i) ...
-            && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i) ...
-                || obj.always_process(i)))
-          data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
+        % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>=data.utime)
+        % if obj.updatable(i)
+        if obj.updatable(i) && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i))
+        % if (obj.updatable(i) ...
+        %     && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i) ...
+        %         || obj.always_process(i)))
+          % data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
           obj.last_msg_utimes(i) = getLastTimestamp(obj.monitors{i});
-          if obj.always_process(i)
-            d = getNextMessage(obj.monitors{i}, 1);
-          else
-            d = getMessage(obj.monitors{i});
-          end
+          % d = getNextMessage(obj.monitors{i}, 0);
+          d = getMessage(obj.monitors{i});
+          % if obj.always_process(i)
+          %   d = getNextMessage(obj.monitors{i}, 1);
+          % else
+          %   d = getMessage(obj.monitors{i});
+          % end
           if ~isempty(d)
             if isempty(obj.coders{i})
               % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
@@ -93,6 +82,7 @@ classdef DRCPlanner < handle
               data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
             end
             changelist = setfield(changelist,obj.name{i},true);
+            changed = true;
           end
         end
       end
@@ -104,41 +94,31 @@ classdef DRCPlanner < handle
       % note: this method will never return (hit ctrl-c to cancel)
       
       tic;
+      data = struct('utime', 0);
       while (1)
-        fd = getNextMessage(obj.request_monitor,1000);
-        if isempty(fd)
-          fprintf(1,'waiting... (t=%f)\n',toc);
-        else
-          if isempty(obj.request_coder)
-            msg = obj.request_constructor.newInstance(fd);
-            utime=msg.utime;
-          else
-            [msg,tmsg] = obj.request_coder.decode(fd);
-            utime = int64(tmsg*1000000);
-          end
-          data=struct('utime',utime);
+        [data, changed, changelist] = obj.updateData(data);
+        if changed
+          triggered = false;
           has_required = true;
-          for i=1:length(obj.monitors)
-            d = getMessage(obj.monitors{i});
-            if ~isempty(d)
-              if isempty(obj.coders{i})
-                % data = setfield(data,obj.name{i},obj.lcmtype_constructor.newInstance(d));
-                data = setfield(data,obj.name{i},obj.constructors(i).newInstance(d));
-              else
-                data = setfield(data,obj.name{i},obj.coders{i}.decode(d));
-              end
-            elseif obj.required(i)
-              fprintf(1,'required input %s has not been received yet.\n',obj.name{i});
+          for i = 1:length(obj.name)
+            n = obj.name{i};
+            if ~isfield(data, n) && obj.required(i)
               has_required = false;
             end
+            if isfield(changelist, n) && changelist.(n) && obj.can_trigger(i)
+              triggered = true;
+            end
           end
-          if has_required
-            plan(obj,msg,data);
-          else
+          if has_required && triggered
+            disp('planning now')
+            plan(obj,data)
+            tic
+          elseif triggered && ~has_required
             disp('missing required inputs.  this plan request will be ignored.');
           end
-          tic;
         end
+        pause(1);
+        fprintf(1, 'waiting... (t=%f)\n', toc);
       end
     end
 
