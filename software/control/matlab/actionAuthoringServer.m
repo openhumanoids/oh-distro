@@ -32,7 +32,6 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
 robot_plan_publisher =  RobotPlanConstraintCheckedPublisher('atlas',joint_names,true, ...  
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
@@ -45,12 +44,12 @@ q = xstar(1:nq);
 
 % setup IK prefs
 cost = Point(r.getStateFrame,1);
-cost.pelvis_x = 0;
-cost.pelvis_y = 0;
-cost.pelvis_z = 0;
-cost.pelvis_roll = 1000;
-cost.pelvis_pitch = 1000;
-cost.pelvis_yaw = 0;
+cost.base_x = 0;
+cost.base_y = 0;
+cost.base_z = 0;
+cost.base_roll = 1000;
+cost.base_pitch = 1000;
+cost.base_yaw = 0;
 cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);
@@ -62,6 +61,7 @@ contact_tol = 1e-4;
 v = r.constructVisualizer();
 
 timeout=10;
+display('Listening ...');
 while (1)
   data = getNextMessage(monitor,timeout);
   if ~isempty(data)
@@ -84,12 +84,14 @@ while (1)
           collision_group = find(strcmpi(char(goal.object_1_contact_grp),body_ind.collision_group_name));
           if isempty(collision_group) error('couldn''t find collision group %s on body %s',char(goal.object_1_contact_grp),char(goal.object_1_name)); end
           p=[goal.target_pt.x; goal.target_pt.y; goal.target_pt.z];
+          offset = [goal.x_offset; goal.y_offset; goal.z_offset];
           pos = struct();
           pos.max = inf(3,1);
           pos.min = -inf(3,1);
+          p = p + offset;
           if(goal.x_relation == 0)
-              pos.min(1) = p(1)-goal.target_pt_radius;
-              pos.max(1) = p(1)+goal.target_pt_radius;
+              pos.min(1) = p(1);
+              pos.max(1) = p(1);
           elseif(goal.x_relation == 1)
               pos.max(1) = p(1);
               pos.min(1) = -inf;
@@ -101,8 +103,8 @@ while (1)
               pos.max(1) = inf;
           end
           if(goal.y_relation == 0)
-              pos.min(2) = p(2)-goal.target_pt_radius;
-              pos.max(2) = p(2)+goal.target_pt_radius;
+              pos.min(2) = p(2);
+              pos.max(2) = p(2);
           elseif(goal.y_relation == 1)
               pos.max(2) = p(2);
               pos.min(2) = -inf;
@@ -113,25 +115,38 @@ while (1)
               pos.min(2) = -inf;
               pos.max(2) = inf;
           end
-          if(goal.contact_type == 0)
-              pos.min(3) = 0;
-              pos.max(3) = 0;
-          else
-              error('Not implemented yet')
+          if(goal.z_relation == 0)
+              pos.min(3) = p(3);
+              pos.max(3) = p(3);
+          elseif(goal.z_relation == 1)
+              pos.max(3) = p(3);
+              pos.min(3) = -inf;
+          elseif(goal.z_relation == 2)
+              pos.min(3) = p(3);
+              pos.max(3) = inf;
+          elseif(goal.z_relation == 3)
+              pos.min(3) = -inf;
+              pos.max(3) = inf;
           end
-%           if(goal.z_relation == 0)
-%               pos.min(3) = max([0,p(3)-goal.target_pt_radius]);
-%               pos.max(3) = max([pos.min(3),p(3)+goal.target_pt_radius]);
-%           elseif(goal.z_relation == 1)
-%               pos.max(3) = p(3);
-%               pos.min(3) = 0;
-%           elseif(goal.z_relation == 2)
-%               pos.min(3) = max([0,p(2)]);
-%               pos.max(3) = inf;
-%           elseif(goal.z_relation == 3)
-%               pos.min(3) = 0;
-%               pos.max(3) = inf;
-%           end
+            %if(goal.contact_type == 0)
+              %pos.min(3) = 0;
+              %pos.max(3) = 0;
+            %else
+              %error('Not implemented yet')
+            %end
+            %           if(goal.z_relation == 0)
+            %               pos.min(3) = max([0,p(3)]);
+            %               pos.max(3) = max([pos.min(3),p(3)]);
+            %           elseif(goal.z_relation == 1)
+            %               pos.max(3) = p(3);
+            %               pos.min(3) = 0;
+            %           elseif(goal.z_relation == 2)
+            %               pos.min(3) = max([0,p(2)]);
+            %               pos.max(3) = inf;
+            %           elseif(goal.z_relation == 3)
+            %               pos.min(3) = 0;
+            %               pos.max(3) = inf;
+            %           end
           tspan = [goal.lower_bound_completion_time goal.upper_bound_completion_time];
           collision_group_pt = mean(body_ind.getContactPoints(collision_group),2);
           action_constraint = ActionKinematicConstraint(r,body_ind,collision_group_pt,pos,tspan,[body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
@@ -285,7 +300,7 @@ while (1)
           
           com_constraint = ActionKinematicConstraint(r,0,zeros(3,1),com_traj, ...
                               action_sequence_ZMP.tspan,'com');
-          action_sequence_ZMP = action_sequence_ZMP.addKinematicConstraint(com_constraint);
+          action_sequence = action_sequence.addKinematicConstraint(com_constraint);
           
           options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
           options.quasiStaticFlag = false;
