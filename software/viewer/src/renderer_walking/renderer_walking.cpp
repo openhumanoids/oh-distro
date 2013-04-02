@@ -31,7 +31,8 @@
 #include <maps/BotWrapper.hpp>
 
 #define RENDERER_NAME "Walking"
-#define PARAM_GOAL_SEND "[G]oal (timed)"
+#define PARAM_GOAL_SEND "Walking Goal"
+#define PARAM_FIX_YAW "Fix footstep yaw"
 #define PARAM_MAX_NUM_STEPS "Number of steps "
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
@@ -147,6 +148,10 @@ typedef struct _RendererWalking {
   BotGtkParamWidget *pw;
   
   PerceptionData *perceptionData;
+
+  bool has_walking_msg;
+  bool fix_step_yaw;
+  drc_walking_goal_t last_walking_msg;
   
   int dragging;
   int active; //1 = relocalize, 2 = set person location
@@ -333,6 +338,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       drc_walking_goal_t msg;
       msg.utime = self->robot_utime; //bot_timestamp_now();
       msg.max_num_steps = (int32_t) self->max_num_steps;
+      msg.min_num_steps = (int32_t) 0;
       msg.robot_name = "atlas"; // this should be set from robot state message
 
       msg.goal_pos.translation.x = self->click_pos.x;
@@ -346,6 +352,8 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       msg.goal_pos.rotation.y = quat_out[2];
       msg.goal_pos.rotation.z = quat_out[3];
       msg.is_new_goal = true;
+      self->has_walking_msg = true;
+      self->last_walking_msg = msg;
       fprintf(stderr, "Sending WALKING_GOAL\n");
       drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &msg);
       bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
@@ -431,7 +439,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     activate(self,1);
    // bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'g' || event->keyval == 'G') && self->active==0) {
-    printf("\n[G]oal (timed) key registered\n");
+    printf("\nWalking Goal key registered\n");
     activate(self,2);
     //bot_viewer_request_pick (viewer, ehandler);
   }else if ((event->keyval == 'l' || event->keyval == 'L') && self->active==0) {
@@ -522,10 +530,31 @@ static void update_heightmap (RendererWalking *self) {
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
+  bool msg_changed = false;
   RendererWalking *self = (RendererWalking*) user;
-  self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
+  if (bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS) != self->max_num_steps) {
+    msg_changed = true;
+    self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
+  }
+
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
+  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_FIX_YAW) != self->fix_step_yaw) {
+    msg_changed = true;
+    self->fix_step_yaw = bot_gtk_param_widget_get_bool(self->pw, PARAM_FIX_YAW);
+  }
+
+  if (msg_changed) {
+    if (self->has_walking_msg) {
+      self->last_walking_msg.utime = self->robot_utime; //bot_timestamp_now();
+      self->last_walking_msg.max_num_steps = self->max_num_steps;
+      self->last_walking_msg.is_new_goal = false;
+      self->last_walking_msg.yaw_fixed = self->fix_step_yaw;
+      fprintf(stderr, "Sending WALKING_GOAL\n");
+      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
+      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+    }
+  }
   
   if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
@@ -598,7 +627,9 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
 
   self->lc = lcm; //globals_get_lcm_full(NULL,1);
-  
+
+  self->has_walking_msg = false;
+  self->fix_step_yaw = false;
   
   self->perceptionData = new PerceptionData();
   self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
@@ -610,6 +641,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FIX_YAW, 0, NULL);
+  bot_gtk_param_widget_set_bool(self->pw, PARAM_FIX_YAW, self->fix_step_yaw);
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
