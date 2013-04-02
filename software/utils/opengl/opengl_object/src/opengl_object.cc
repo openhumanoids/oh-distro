@@ -13,14 +13,18 @@ using namespace opengl;
  * class constructor
  */
 OpenGL_Object::
-OpenGL_Object(const string &id, bool isHighlighted, Vector3f highlightColor)
+OpenGL_Object(const string &id,
+                const Frame& transform,
+                const Frame& offset, 
+                bool isHighlighted, 
+                Vector3f highlightColor)
   :
   _id( id ),
   _visible( true ),
   _color( 1.0, 1.0, 1.0 ),
   _transparency( 1.0 ),
-  _transform(),
-  _offset(),
+  _transform( transform ),
+  _offset( offset ),
   _highlightColor(highlightColor), 
   _isHighlighted(isHighlighted)
 {
@@ -133,6 +137,16 @@ void
 OpenGL_Object::
 set_color( Vector3f color ){
   _color = color;
+  return;
+}
+
+void
+OpenGL_Object::
+set_color( Vector4f color ){
+  _color(0) = color(0);
+  _color(1) = color(1);
+  _color(2) = color(2);
+  _transparency = color(3);
   return;
 }
 

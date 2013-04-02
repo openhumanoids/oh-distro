@@ -11,19 +11,10 @@ using namespace Eigen;
 using namespace opengl;
 
 OpenGL_Object_DAE::
-OpenGL_Object_DAE() : OpenGL_Object(),
-                      _v2_data(), 
-                      _v3_data(),
-                      _v4_data(),
-                      _index_data(),
-                      _geometry_data(),
-                      _dl( 0 ) {
-
-}
-
-OpenGL_Object_DAE::
 OpenGL_Object_DAE( string id,
-                    string filename ) : OpenGL_Object( id ),
+                    const Frame& transform,
+                    const Frame& offset,
+                    string filename ) : OpenGL_Object( id, transform, offset ),
                                         _v2_data(),
                                         _v3_data(),
                                         _v4_data(),
@@ -36,11 +27,34 @@ OpenGL_Object_DAE( string id,
 OpenGL_Object_DAE::
 ~OpenGL_Object_DAE() 
 {
-  if( _dl != 0 && glIsList( _dl ) == GL_TRUE )
-    {
-      glDeleteLists( _dl, 0 );
-      _dl = 0;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  for( map< string, vector< Vector2f* > >::iterator it1 = _v2_data.begin(); it1 != _v2_data.end(); it1++ ){
+    for ( vector< Vector2f* >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++){
+      if( (*it2) != NULL ){
+        delete (*it2 );
+        (*it2) = NULL;
+      }
     }
+  }
+  for( map< string, vector< Vector3f* > >::iterator it1 = _v3_data.begin(); it1 != _v3_data.end(); it1++ ){
+    for ( vector< Vector3f* >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++){
+      if( (*it2) != NULL ){
+        delete (*it2 );
+        (*it2) = NULL;
+      }
+    }
+  }
+  for( map< string, vector< Vector4f* > >::iterator it1 = _v4_data.begin(); it1 != _v4_data.end(); it1++ ){
+    for ( vector< Vector4f* >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++){
+      if( (*it2) != NULL ){
+        delete (*it2 );
+        (*it2) = NULL;
+      }
+    }
+  }
 }
 
 OpenGL_Object_DAE::
@@ -70,6 +84,50 @@ operator=( const OpenGL_Object_DAE& other ) {
   _geometry_data = other._geometry_data;
   _dl = 0;
   return (*this);
+}
+
+void 
+OpenGL_Object_DAE::
+set_color( Vector3f color ){
+  _color = color;
+  for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
+    vector< Vector4f* > * color_data = NULL;
+    vector< unsigned int > * index_data = NULL;
+    for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
+      if ( it2->first == "COLOR" ){
+        map< string, vector< Vector4f* > >::iterator color_iterator = _v4_data.find( it2->second );
+        if( color_iterator != _v4_data.end() ){
+          color_data = &color_iterator->second;
+        }
+      }
+    }
+    map< string, vector< unsigned int > >::iterator index_iterator = _index_data.find( it1->first );
+    if( index_iterator != _index_data.end() ){
+      index_data = &index_iterator->second;
+    }
+    if( ( color_data != NULL ) && ( index_data != NULL ) ){
+      for( unsigned int i = 0; i < ( index_data->size() / 4 ); i++ ){
+        unsigned int color_index = (*index_data)[ 4 * i + 3 ];
+        (*(*color_data)[ color_index ])( 0 ) = color( 0 );
+        (*(*color_data)[ color_index ])( 1 ) = color( 1 );
+        (*(*color_data)[ color_index ])( 2 ) = color( 2 );
+      }
+    }
+  }
+  if( glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
+void 
+OpenGL_Object_DAE::
+set_color( Vector4f color ){
+  Vector3f rgb( color( 0 ), color( 1 ), color( 2 ) );
+  set_color( rgb );
+  set_transparency( color( 3 ) );
+  return;
 }
 
 void
@@ -102,14 +160,14 @@ draw( Vector3f color ){
     glPushMatrix();
     apply_transform();
     for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
-      vector< Vector3f > * vertex_data = NULL;
-      vector< Vector3f > * normal_data = NULL;
-      vector< Vector2f > * texcoord_data = NULL;
-      vector< Vector4f > * color_data = NULL;
+      vector< Vector3f* > * vertex_data = NULL;
+      vector< Vector3f* > * normal_data = NULL;
+      vector< Vector2f* > * texcoord_data = NULL;
+      vector< Vector4f* > * color_data = NULL;
       vector< unsigned int > * index_data = NULL;
       for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
         if( it2->first == "NORMAL" ){
-          map< string, vector< Vector3f > >::iterator normal_iterator = _v3_data.find( it2->second );
+          map< string, vector< Vector3f* > >::iterator normal_iterator = _v3_data.find( it2->second );
           if( normal_iterator != _v3_data.end() ){
             normal_data = &normal_iterator->second;
           }
@@ -118,18 +176,18 @@ draw( Vector3f color ){
           map< string, string >::const_iterator vertex_name_iterator = it1->second.find( it2->second );
           if( vertex_name_iterator != it1->second.end() ){
             vertex_name = vertex_name_iterator->second;
-            map< string, vector< Vector3f > >::iterator vertex_iterator = _v3_data.find( vertex_name );
+            map< string, vector< Vector3f* > >::iterator vertex_iterator = _v3_data.find( vertex_name );
             if( vertex_iterator != _v3_data.end() ){
               vertex_data = &vertex_iterator->second;
             }
           }
         }  else if ( it2->first == "TEXCOORD" ){
-          map< string, vector< Vector2f > >::iterator texcoord_iterator = _v2_data.find( it2->second );
+          map< string, vector< Vector2f* > >::iterator texcoord_iterator = _v2_data.find( it2->second );
           if( texcoord_iterator != _v2_data.end() ){
             texcoord_data = &texcoord_iterator->second;
           }
         } else if ( it2->first == "COLOR" ){
-          map< string, vector< Vector4f > >::iterator color_iterator = _v4_data.find( it2->second );
+          map< string, vector< Vector4f* > >::iterator color_iterator = _v4_data.find( it2->second );
           if( color_iterator != _v4_data.end() ){
             color_data = &color_iterator->second;
           }
@@ -150,12 +208,12 @@ draw( Vector3f color ){
                       color( 1 ),
                       color( 2 ),
                       transparency() );
-          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                      (*normal_data)[ normal_index ]( 1 ),
-                      (*normal_data)[ normal_index ]( 2 ) );
-          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                      (*vertex_data)[ vertex_index ]( 1 ),
-                      (*vertex_data)[ vertex_index ]( 2 ) );
+          glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                      (*(*normal_data)[ normal_index ])( 1 ),
+                      (*(*normal_data)[ normal_index ])( 2 ) );
+          glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                      (*(*vertex_data)[ vertex_index ])( 1 ),
+                      (*(*vertex_data)[ vertex_index ])( 2 ) );
         }
         glEnd();
       } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( texcoord_data != NULL ) && ( index_data != NULL ) ){
@@ -164,12 +222,12 @@ draw( Vector3f color ){
           unsigned int vertex_index = (*index_data)[ 3 * i + 0 ];
           unsigned int normal_index = (*index_data)[ 3 * i + 1 ];
           glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
-          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                      (*normal_data)[ normal_index ]( 1 ),
-                      (*normal_data)[ normal_index ]( 2 ) );
-          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                      (*vertex_data)[ vertex_index ]( 1 ),
-                      (*vertex_data)[ vertex_index ]( 2 ) );
+          glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                      (*(*normal_data)[ normal_index ])( 1 ),
+                      (*(*normal_data)[ normal_index ])( 2 ) );
+          glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                      (*(*vertex_data)[ vertex_index ])( 1 ),
+                      (*(*vertex_data)[ vertex_index ])( 2 ) );
         }
         glEnd();
       } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
@@ -178,12 +236,12 @@ draw( Vector3f color ){
           unsigned int vertex_index = (*index_data)[ 2 * i + 0 ];
           unsigned int normal_index = (*index_data)[ 2 * i + 1 ];
           glColor4f( color( 0 ), color( 1 ), color( 2 ), transparency() );
-          glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                      (*normal_data)[ normal_index ]( 1 ),
-                      (*normal_data)[ normal_index ]( 2 ) );
-          glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                      (*vertex_data)[ vertex_index ]( 1 ),
-                      (*vertex_data)[ vertex_index ]( 2 ) );
+          glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                      (*(*normal_data)[ normal_index ])( 1 ),
+                      (*(*normal_data)[ normal_index ])( 2 ) );
+          glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                      (*(*vertex_data)[ vertex_index ])( 1 ),
+                      (*(*vertex_data)[ vertex_index ])( 2 ) );
         }
         glEnd();
       }
@@ -204,14 +262,14 @@ _generate_dl( void ){
   _dl = glGenLists( 1 );
   glNewList( _dl, GL_COMPILE );
   for( map< string, map< string, string > >::const_iterator it1 = _geometry_data.begin(); it1 != _geometry_data.end(); it1++ ){
-    vector< Vector3f > * vertex_data = NULL;
-    vector< Vector3f > * normal_data = NULL;
-    vector< Vector2f > * texcoord_data = NULL;
-    vector< Vector4f > * color_data = NULL;
+    vector< Vector3f* > * vertex_data = NULL;
+    vector< Vector3f* > * normal_data = NULL;
+    vector< Vector2f* > * texcoord_data = NULL;
+    vector< Vector4f* > * color_data = NULL;
     vector< unsigned int > * index_data = NULL;
     for( map< string, string >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ ){
       if( it2->first == "NORMAL" ){
-        map< string, vector< Vector3f > >::iterator normal_iterator = _v3_data.find( it2->second );
+        map< string, vector< Vector3f* > >::iterator normal_iterator = _v3_data.find( it2->second );
         if( normal_iterator != _v3_data.end() ){
           normal_data = &normal_iterator->second;
         }
@@ -220,18 +278,18 @@ _generate_dl( void ){
         map< string, string >::const_iterator vertex_name_iterator = it1->second.find( it2->second );
         if( vertex_name_iterator != it1->second.end() ){
           vertex_name = vertex_name_iterator->second;
-          map< string, vector< Vector3f > >::iterator vertex_iterator = _v3_data.find( vertex_name );
+          map< string, vector< Vector3f* > >::iterator vertex_iterator = _v3_data.find( vertex_name );
           if( vertex_iterator != _v3_data.end() ){
             vertex_data = &vertex_iterator->second;
           }
         }
       } else if ( it2->first == "TEXCOORD" ){
-        map< string, vector< Vector2f > >::iterator texcoord_iterator = _v2_data.find( it2->second );
+        map< string, vector< Vector2f* > >::iterator texcoord_iterator = _v2_data.find( it2->second );
         if( texcoord_iterator != _v2_data.end() ){
           texcoord_data = &texcoord_iterator->second;
         }
       } else if ( it2->first == "COLOR" ){
-        map< string, vector< Vector4f > >::iterator color_iterator = _v4_data.find( it2->second );
+        map< string, vector< Vector4f* > >::iterator color_iterator = _v4_data.find( it2->second );
         if( color_iterator != _v4_data.end() ){
           color_data = &color_iterator->second;
         }
@@ -248,16 +306,16 @@ _generate_dl( void ){
         unsigned int vertex_index = (*index_data)[ 4 * i + 0 ];
         unsigned int normal_index = (*index_data)[ 4 * i + 1 ];
         unsigned int color_index = (*index_data)[ 4 * i + 3 ];
-        glColor4f( (*color_data)[ color_index ]( 0 ),
-                    (*color_data)[ color_index ]( 1 ),
-                    (*color_data)[ color_index ]( 2 ),
-                    (*color_data)[ color_index ]( 3 ) * transparency() );
-        glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                    (*normal_data)[ normal_index ]( 1 ),
-                    (*normal_data)[ normal_index ]( 2 ) );
-        glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                    (*vertex_data)[ vertex_index ]( 1 ),
-                    (*vertex_data)[ vertex_index ]( 2 ) );
+        glColor4f( (*(*color_data)[ color_index ])( 0 ),
+                    (*(*color_data)[ color_index ])( 1 ),
+                    (*(*color_data)[ color_index ])( 2 ),
+                    (*(*color_data)[ color_index ])( 3 ) * transparency() );
+        glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                    (*(*normal_data)[ normal_index ])( 1 ),
+                    (*(*normal_data)[ normal_index ])( 2 ) );
+        glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                    (*(*vertex_data)[ vertex_index ])( 1 ),
+                    (*(*vertex_data)[ vertex_index ])( 2 ) );
       }
       glEnd();
     } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( texcoord_data != NULL ) && ( index_data != NULL ) ){
@@ -266,12 +324,12 @@ _generate_dl( void ){
         unsigned int vertex_index = (*index_data)[ 3 * i + 0 ];
         unsigned int normal_index = (*index_data)[ 3 * i + 1 ];
         glColor4f( _color( 0 ), _color( 1 ), _color( 2 ), transparency() );
-        glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                    (*normal_data)[ normal_index ]( 1 ),
-                    (*normal_data)[ normal_index ]( 2 ) );
-        glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                    (*vertex_data)[ vertex_index ]( 1 ),
-                    (*vertex_data)[ vertex_index ]( 2 ) );
+        glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                    (*(*normal_data)[ normal_index ])( 1 ),
+                    (*(*normal_data)[ normal_index ])( 2 ) );
+        glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                    (*(*vertex_data)[ vertex_index ])( 1 ),
+                    (*(*vertex_data)[ vertex_index ])( 2 ) );
       }
       glEnd();
     } else if( ( vertex_data != NULL ) && ( normal_data != NULL ) && ( index_data != NULL ) ){
@@ -280,12 +338,12 @@ _generate_dl( void ){
         unsigned int vertex_index = (*index_data)[ 2 * i + 0 ];
         unsigned int normal_index = (*index_data)[ 2 * i + 1 ];
         glColor4f( _color( 0 ), _color( 1 ), _color( 2 ), transparency() );
-        glNormal3f( (*normal_data)[ normal_index ]( 0 ),
-                    (*normal_data)[ normal_index ]( 1 ),
-                    (*normal_data)[ normal_index ]( 2 ) );
-        glVertex3f( (*vertex_data)[ vertex_index ]( 0 ),
-                    (*vertex_data)[ vertex_index ]( 1 ),
-                    (*vertex_data)[ vertex_index ]( 2 ) );
+        glNormal3f( (*(*normal_data)[ normal_index ])( 0 ),
+                    (*(*normal_data)[ normal_index ])( 1 ),
+                    (*(*normal_data)[ normal_index ])( 2 ) );
+        glVertex3f( (*(*vertex_data)[ vertex_index ])( 0 ),
+                    (*(*vertex_data)[ vertex_index ])( 1 ),
+                    (*(*vertex_data)[ vertex_index ])( 2 ) );
       }
       glEnd();
     } 
@@ -297,7 +355,7 @@ _generate_dl( void ){
 void
 OpenGL_Object_DAE::
 _load_opengl_object( string filename ){
-  xmlDoc * doc = NULL;
+  xmlDocPtr doc = NULL;
   xmlNodePtr root = NULL;
   doc = xmlReadFile( filename.c_str(), NULL, 0 );
   if( doc != NULL ){
@@ -311,8 +369,10 @@ _load_opengl_object( string filename ){
             if( l2->type == XML_ELEMENT_NODE ){
               if( xmlStrcmp( l2->name, ( const xmlChar * )( "geometry" ) ) == 0 ){
                 string geometry_id = "N/A";
-                if( xmlGetProp( l2, ( const xmlChar * )( "id" ) ) != NULL ){
-                  geometry_id = ( char * )( xmlGetProp( l2, ( const xmlChar * )( "id" ) ) );
+                xmlChar* l2_prop = xmlGetProp( l2, ( const xmlChar * )( "id" ) );
+                if( l2_prop != NULL ){
+                  geometry_id = ( char* )( l2_prop );
+                  xmlFree( l2_prop );
                 }
                 xmlNodePtr l3 = NULL;
                 for( l3 = l2->children; l3; l3 = l3->next ){
@@ -330,21 +390,29 @@ _load_opengl_object( string filename ){
                             unsigned int accessor_count = 0;
                             unsigned int accessor_stride = 0;
                             vector< Vector3f > vertices;
-                            if( xmlGetProp( l4, ( const xmlChar * )( "id" ) ) != NULL ){
-                              source_id = ( char* )( xmlGetProp( l4, ( const xmlChar * )( "id" ) ) );
+                            xmlChar* l4_prop = xmlGetProp( l4, ( const xmlChar * )( "id" ) );
+                            if( l4_prop != NULL ){
+                              source_id = ( char* )( l4_prop );
+                              xmlFree( l4_prop );
                             }                       
                             xmlNodePtr l5 = NULL;
                             for( l5 = l4->children; l5; l5 = l5->next ){
                               if( l5->type == XML_ELEMENT_NODE ){
                                 if( xmlStrcmp( l5->name, ( const xmlChar * )( "float_array" ) ) == 0 ){
-                                  if( xmlGetProp( l5, ( const xmlChar * )( "id" ) ) != NULL ){
-                                    float_array_id = ( char* )( xmlGetProp( l5, ( const xmlChar * )( "id" ) ) );
+                                  xmlChar* l5_prop = xmlGetProp( l5, ( const xmlChar * )( "id" ) );
+                                  if( l5_prop != NULL ){
+                                    float_array_id = ( char* )( l5_prop );
+                                    xmlFree( l5_prop );
                                   }         
-                                  if( xmlGetProp( l5, ( const xmlChar * )( "count" ) ) != NULL ){
-                                    float_array_count = atoi( ( char * )( xmlGetProp( l5, ( const xmlChar * )( "count" ) ) ) );
+                                  l5_prop = xmlGetProp( l5, ( const xmlChar * )( "count" ) );
+                                  if( l5_prop != NULL ){
+                                    float_array_count = atoi( ( char * )( l5_prop ) );
+                                    xmlFree( l5_prop );
                                   }
-                                  string l5_content = ( char* )( xmlNodeGetContent( l5 ) );
-                                  boost::split( float_array_content_vector, l5_content, boost::is_any_of("\n "));
+                                  xmlChar* l5_content = xmlNodeGetContent( l5 );
+                                  string l5_content_string = ( char* )( l5_content );
+                                  xmlFree( l5_content );
+                                  boost::split( float_array_content_vector, l5_content_string, boost::is_any_of("\n "));
                                   for( unsigned int i = 0; i < float_array_content_vector.size(); i++ ){
                                     if( float_array_content_vector[ i ] == "" ){
                                       float_array_content_vector.erase( float_array_content_vector.begin() + i );
@@ -356,11 +424,15 @@ _load_opengl_object( string filename ){
                                   for( l6 = l5->children; l6; l6 = l6->next ){
                                     if( l6->type == XML_ELEMENT_NODE ){
                                       if( xmlStrcmp( l6->name, ( const xmlChar * )( "accessor" ) ) == 0 ){
-                                        if( xmlGetProp( l6, ( const xmlChar * )( "stride" ) ) != NULL ){
-                                          accessor_stride = atoi( ( char * )( xmlGetProp( l6, ( const xmlChar * )( "stride" ) ) ) );
+                                        xmlChar* l6_prop = xmlGetProp( l6, ( const xmlChar * )( "stride" ) );
+                                        if( l6_prop != NULL ){
+                                          accessor_stride = atoi( ( char * )( l6_prop ) );
+                                          xmlFree( l6_prop );
                                         }
-                                        if( xmlGetProp( l6, ( const xmlChar * )( "count" ) ) != NULL ){
-                                          accessor_count = atoi( ( char * )( xmlGetProp( l6, ( const xmlChar * )( "count" ) ) ) );
+                                        l6_prop = xmlGetProp( l6, ( const xmlChar * )( "count" ) );
+                                        if( l6_prop != NULL ){
+                                          accessor_count = atoi( ( char * )( l6_prop ) );
+                                          xmlFree( l6_prop );
                                         } 
                                       }
                                     }
@@ -369,26 +441,26 @@ _load_opengl_object( string filename ){
                               }
                             } // L5
                             if( accessor_stride == 2 ){
-                              vector< Vector2f > vertex_vector;
+                              vector< Vector2f* > vertex_vector;
                               for( unsigned int i = 0; i < accessor_count; i++ ){
-                                Vector2f vertex( strtof( float_array_content_vector[ 2 * i + 0 ].c_str(), NULL ),
+                                Vector2f * vertex = new Vector2f( strtof( float_array_content_vector[ 2 * i + 0 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 2 * i + 1 ].c_str(), NULL ) );
                                 vertex_vector.push_back( vertex );
                               }
                               _v2_data.insert( make_pair( "#" + source_id, vertex_vector ) );
                             } else if( accessor_stride == 3 ){
-                              vector< Vector3f > vertex_vector;
+                              vector< Vector3f* > vertex_vector;
                               for( unsigned int i = 0; i < accessor_count; i++ ){
-                                Vector3f vertex( strtof( float_array_content_vector[ 3 * i + 0 ].c_str(), NULL ),
+                                Vector3f * vertex = new Vector3f( strtof( float_array_content_vector[ 3 * i + 0 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 3 * i + 1 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 3 * i + 2 ].c_str(), NULL ) );
                                 vertex_vector.push_back( vertex );
                               }
                               _v3_data.insert( make_pair( "#" + source_id, vertex_vector ) );
                             } else if ( accessor_stride == 4 ){
-                              vector< Vector4f > vertex_vector;
+                              vector< Vector4f* > vertex_vector;
                               for( unsigned int i = 0; i < accessor_count; i++ ){
-                                Vector4f vertex( strtof( float_array_content_vector[ 4 * i + 0 ].c_str(), NULL ),
+                                Vector4f * vertex = new Vector4f( strtof( float_array_content_vector[ 4 * i + 0 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 4 * i + 1 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 4 * i + 2 ].c_str(), NULL ),
                                                   strtof( float_array_content_vector[ 4 * i + 3 ].c_str(), NULL ) );
@@ -398,16 +470,20 @@ _load_opengl_object( string filename ){
                             }
                           } else if ( xmlStrcmp( l4->name, ( const xmlChar * )( "vertices" ) ) == 0 ){
                             string vertices_id = "N/A";
-                            if( xmlGetProp( l4, ( const xmlChar * )( "id" ) ) != NULL ){
-                              vertices_id = ( char* )( xmlGetProp( l4, ( const xmlChar * )( "id" ) ) );
+                            xmlChar* l4_prop = xmlGetProp( l4, ( const xmlChar * )( "id" ) );
+                            if( l4_prop != NULL ){
+                              vertices_id = ( char* )( l4_prop );
+                              xmlFree( l4_prop );
                             }
                             xmlNodePtr l5 = NULL;
                             for( l5 = l4->children; l5; l5 = l5->next ){
                               if( l5->type == XML_ELEMENT_NODE ){
                                 if( xmlStrcmp( l5->name, ( const xmlChar * )( "input" ) ) == 0 ){
                                   string source = "N/A";
-                                  if( xmlGetProp( l5, ( const xmlChar * )( "source" ) ) != NULL ){
-                                    source = ( char* )( xmlGetProp( l5, ( const xmlChar * )( "source" ) ) );
+                                  xmlChar* l5_prop = xmlGetProp( l5, ( const xmlChar * )( "source" ) );
+                                  if( l5_prop != NULL ){
+                                    source = ( char* )( l5_prop );
+                                    xmlFree( l5_prop );
                                   }
                                   triangles_map.insert( make_pair( "#" + vertices_id, source ) ); 
                                 } 
@@ -420,17 +496,23 @@ _load_opengl_object( string filename ){
                                 if( xmlStrcmp( l5->name, ( const xmlChar * )( "input" ) ) == 0 ){
                                   string semantic = "N/A";
                                   string source = "N/A";
-                                  if( xmlGetProp( l5, ( const xmlChar * )( "semantic" ) ) != NULL ){
-                                    semantic = ( char* )( xmlGetProp( l5, ( const xmlChar * )( "semantic" ) ) );
+                                  xmlChar* l5_prop = xmlGetProp( l5, ( const xmlChar * )( "semantic" ) );
+                                  if( l5_prop != NULL ){
+                                    semantic = ( char* )( l5_prop );
+                                    xmlFree( l5_prop );
                                   }
-                                  if( xmlGetProp( l5, ( const xmlChar * )( "source" ) ) != NULL ){
-                                    source = ( char* )( xmlGetProp( l5, ( const xmlChar * )( "source" ) ) );
+                                  l5_prop = xmlGetProp( l5, ( const xmlChar * )( "source" ) );
+                                  if( l5_prop != NULL ){
+                                    source = ( char* )( l5_prop );
+                                    xmlFree( l5_prop );
                                   }
                                   triangles_map.insert( make_pair( semantic, source ) );
                                 } else if( xmlStrcmp( l5->name, ( const xmlChar * )( "p" ) ) == 0 ){
                                   vector< string > int_array_content_vector;
-                                  string l5_content = ( char* )( xmlNodeGetContent( l5 ) ); 
-                                  boost::split( int_array_content_vector, l5_content, boost::is_any_of(" ") );
+                                  xmlChar* l5_content = xmlNodeGetContent( l5 ); 
+                                  string l5_content_string = ( char* )( l5_content );
+                                  xmlFree( l5_content );
+                                  boost::split( int_array_content_vector, l5_content_string, boost::is_any_of(" ") );
                                   for( unsigned int i = 0; i < int_array_content_vector.size(); i++ ){
                                     if( int_array_content_vector[ i ] == "" ){
                                       int_array_content_vector.erase( int_array_content_vector.begin() + i );

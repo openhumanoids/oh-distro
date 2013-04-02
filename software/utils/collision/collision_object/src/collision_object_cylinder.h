@@ -16,14 +16,8 @@ namespace collision {
     Collision_Object_Cylinder( std::string id, double radius, double height, const KDL::Frame& offset, const KDL::Frame& transform = KDL::Frame::Identity() );
     ~Collision_Object_Cylinder();
 
-    virtual Eigen::Vector3f position( void )const ;
-    virtual Eigen::Vector4f orientation( void )const;
-
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
     virtual void set_transform( const KDL::Frame& transform );  
-
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 
   protected:
     btCollisionObject       _bt_collision_object;

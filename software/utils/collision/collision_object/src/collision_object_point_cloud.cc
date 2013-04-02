@@ -22,42 +22,13 @@ Collision_Object_Point_Cloud( string id,
                                                           _points(),
                                                           _collision_objects() {
   _load_collision_objects();
-}
-
-
-
-/**orientation
-   get the world-frame orientation of the collision objects*/ 
-Vector4f Collision_Object_Point_Cloud::orientation() const
-{
-  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> orientation()");
-}
-
-/**position
-   get the world-frame orientation of the collision objects*/ 
-Vector3f Collision_Object_Point_Cloud::position() const
-{
-  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> position()");
-}
-
-
-
-/** 
- * set_transform
- * sets the world-frame position and orientation of the collision object
- */
-void
-Collision_Object_Point_Cloud::
-set_transform( const Vector3f position,
-                const Vector4f orientation )
-{
-  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
-}
-
-void
-Collision_Object_Point_Cloud::
-set_transform( const Frame& transform ){
-  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
 }
 
 /**
@@ -97,7 +68,7 @@ set( vector< Vector3f >& points ){
   _points = points;
   for( unsigned int i = 0; i < _points.size(); i++ ){
     if( i < _collision_objects.size() ){
-      _collision_objects[ i ]->set_position( _points[ i ] );
+      _collision_objects[ i ]->set_transform( _points[ i ], Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
       _collision_objects[ i ]->set_active( true );
     } else {
       cout << "adding too many points to the point cloud collision object" << endl;
@@ -109,6 +80,24 @@ set( vector< Vector3f >& points ){
     }
   }
   return;
+}
+
+/** 
+ * set_transform
+ * sets the world-frame position and orientation of the collision object
+ */
+void
+Collision_Object_Point_Cloud::
+set_transform( const Vector3f position,
+                const Vector4f orientation )
+{
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
+}
+
+void
+Collision_Object_Point_Cloud::
+set_transform( const Frame& transform ){
+  throw std::runtime_error("Not Implemented: collision_object_point_cloud.cc --> set_transform");
 }
 
 /**
@@ -126,42 +115,6 @@ matches_uid( unsigned int uid ){
     }
   }
   return NULL;
-}
-
-/** 
- * bt_collision_objects 
- * returns a std::vector of btCollisionObject pointers
- */
-vector< btCollisionObject* >
-Collision_Object_Point_Cloud::
-bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
-}
-
-/**
- * bt_collision_objects
- * return a std::vector of const btCollisionObject pointers
- */
-vector< const btCollisionObject* >
-Collision_Object_Point_Cloud::
-bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
 }
 
 /**

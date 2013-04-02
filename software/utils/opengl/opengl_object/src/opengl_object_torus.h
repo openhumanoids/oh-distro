@@ -9,7 +9,7 @@
 namespace opengl {
   class OpenGL_Object_Torus: public OpenGL_Object {
   public:
-    OpenGL_Object_Torus( double majorRadius = 0.1, double minorRadius = 0.01 );
+    OpenGL_Object_Torus( std::string id = "N/A", const KDL::Frame& transform = KDL::Frame::Identity(), const KDL::Frame& offset = KDL::Frame::Identity(), double majorRadius = 0.1, double minorRadius = 0.01 );
     ~OpenGL_Object_Torus();
     OpenGL_Object_Torus( const OpenGL_Object_Torus& other );
     OpenGL_Object_Torus& operator=( const OpenGL_Object_Torus& other );

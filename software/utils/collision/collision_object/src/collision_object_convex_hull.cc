@@ -17,7 +17,7 @@ Collision_Object_Convex_Hull( string id ) : Collision_Object( id ),
                                             _bt_convex_hull_shape(),
                                             _chull_obj_filename( "N/A" ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-//  _bt_convex_hull_shape.setMargin( 0.01 );
+  _bt_collision_objects.push_back( &_bt_collision_object );
 }
 
 /**
@@ -31,7 +31,7 @@ Collision_Object_Convex_Hull( string id,
                                                   _bt_convex_hull_shape(),
                                                   _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-//  _bt_convex_hull_shape.setMargin( 0.01 );
+  _bt_collision_objects.push_back( &_bt_collision_object );
   _load_chull_obj();
 }
 
@@ -48,7 +48,7 @@ Collision_Object_Convex_Hull( string id,
                                                         _bt_convex_hull_shape(),
                                                         _chull_obj_filename( chullObjFilename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-//  _bt_convex_hull_shape.setMargin( 0.01 );
+  _bt_collision_objects.push_back( &_bt_collision_object );
   set_transform( position, orientation );
   _load_chull_obj();
 }
@@ -63,8 +63,6 @@ Collision_Object_Convex_Hull( const Collision_Object_Convex_Hull& other ): Colli
                                                                             _bt_convex_hull_shape(),
                                                                             _chull_obj_filename( other._chull_obj_filename ) {
   _bt_collision_object.setCollisionShape( &_bt_convex_hull_shape );
-//  _bt_convex_hull_shape.setMargin( 0.01 );
-  set_transform( other.position(), other.orientation() );
   _load_chull_obj();
 }   
 
@@ -122,57 +120,6 @@ string
 Collision_Object_Convex_Hull::
 chull_obj_filename( void )const{
   return _chull_obj_filename;
-}
-
-/**
- * position
- * returns the position of the collision object
- */
-Vector3f
-Collision_Object_Convex_Hull::
-position( void )const{
-  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
-                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
-                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
-  return position;
-}
-
-/**
- * orientation
- * returns the orientation of the collision object
- */
-Vector4f
-Collision_Object_Convex_Hull::
-orientation( void )const{
-  Vector4f orientation( _bt_collision_object.getWorldTransform().getRotation().getX(),
-                        _bt_collision_object.getWorldTransform().getRotation().getY(),
-                        _bt_collision_object.getWorldTransform().getRotation().getZ(),
-                        _bt_collision_object.getWorldTransform().getRotation().getW() );
-  return orientation;
-}
-
-/** 
- * bt_collision_objects 
- * returns a std::vector of btCollisionObject pointers
- */
-vector< btCollisionObject* >
-Collision_Object_Convex_Hull::
-bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  bt_collision_objects.push_back( &_bt_collision_object );
-  return bt_collision_objects;
-}
-
-/**
- * bt_collision_objects
- * return a std::vector of const btCollisionObject pointers
- */
-vector< const btCollisionObject* >
-Collision_Object_Convex_Hull::
-bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  bt_collision_objects.push_back( &_bt_collision_object );
-  return bt_collision_objects;
 }
 
 /**

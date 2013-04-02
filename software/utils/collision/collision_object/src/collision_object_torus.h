@@ -15,13 +15,8 @@ namespace collision {
     Collision_Object_Torus( std::string id = "N/A", double majorRadius = 1.0, double minorRadius = 0.1, Eigen::Vector3f position = Eigen::Vector3f(), Eigen::Vector4f orientation = Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) );
     ~Collision_Object_Torus();
 
-    virtual Eigen::Vector3f position( void )const ;
-    virtual Eigen::Vector4f orientation( void )const;
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation );
     virtual void set_transform( const KDL::Frame& transform );
-
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 
   protected:
     btCollisionObject       _bt_collision_object;

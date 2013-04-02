@@ -1,4 +1,4 @@
-#include <collision/collision_object_box.h>
+#include <collision/collision_object_plane.h>
 
 using namespace std;
 using namespace Eigen;
@@ -6,54 +6,54 @@ using namespace KDL;
 using namespace collision;
 
 /**
- * Collision_Object_Box
+ * Collision_Object_Plane
  * class constructor with id, dimension, position, and orientation arguments
  */
-Collision_Object_Box::
-Collision_Object_Box( string id,
-                      Vector3f dims,
+Collision_Object_Plane::
+Collision_Object_Plane( string id,
+                      double height,
                       Vector3f position,
                       Vector4f orientation ) : Collision_Object( id ),
                                                 _bt_collision_object(),
-                                                _bt_box_shape( btVector3( dims.x()/2.0, dims.y()/2.0, dims.z()/2.0 ) ){
+                                                _bt_plane_shape( btVector3( 0.0, 0.0, 1.0 ), height ){
   set_transform( position, orientation );
-  _bt_collision_object.setCollisionShape( &_bt_box_shape );
+  _bt_collision_object.setCollisionShape( &_bt_plane_shape );
   _bt_collision_objects.push_back( &_bt_collision_object );
 }
 
 /**
- * Collision_Object_Box
+ * Collision_Object_Plane
  * class constructor with id, dimension, position, and orientation arguments
  */
-Collision_Object_Box::
-Collision_Object_Box( string id,
-                      Vector3f dims,
+Collision_Object_Plane::
+Collision_Object_Plane( string id,
+                      double height,
                       const Frame& offset,
                       const Frame& transform ) : Collision_Object( id, true, offset ),
                                                 _bt_collision_object(),
-                                                _bt_box_shape( btVector3( dims.x()/2.0, dims.y()/2.0, dims.z()/2.0 ) ){
+                                                _bt_plane_shape( btVector3( 0.0, 0.0, 1.0 ), height ){
   set_transform( transform );
-  _bt_collision_object.setCollisionShape( &_bt_box_shape );
+  _bt_collision_object.setCollisionShape( &_bt_plane_shape );
   _bt_collision_objects.push_back( &_bt_collision_object );
 }
 
 /**
- * Collision_Object_Box
+ * Collision_Object_Plane
  * copy constructor 
  */
-Collision_Object_Box::
-Collision_Object_Box( const Collision_Object_Box& other ) : Collision_Object( other ),
+Collision_Object_Plane::
+Collision_Object_Plane( const Collision_Object_Plane& other ) : Collision_Object( other ),
                                                             _bt_collision_object(),
-                                                            _bt_box_shape( btVector3( other.bt_box_shape().getImplicitShapeDimensions().x() + other.bt_box_shape().getMargin(), other.bt_box_shape().getImplicitShapeDimensions().y() + other.bt_box_shape().getMargin(), other.bt_box_shape().getImplicitShapeDimensions().z() + other.bt_box_shape().getMargin() ) ){
-  _bt_collision_object.setCollisionShape( &_bt_box_shape );
+                                                            _bt_plane_shape( other.bt_plane_shape().getPlaneNormal(), other.bt_plane_shape().getPlaneConstant() ){
+  _bt_collision_object.setCollisionShape( &_bt_plane_shape );
 }
 
 /**
- * ~Collision_Object_Box
+ * ~Collision_Object_Plane
  * class destructor
  */
-Collision_Object_Box::
-~Collision_Object_Box(){
+Collision_Object_Plane::
+~Collision_Object_Plane(){
 
 }
 
@@ -62,7 +62,7 @@ Collision_Object_Box::
  * sets the world-frame position and orientation of the collision object
  */
 void
-Collision_Object_Box::
+Collision_Object_Plane::
 set_transform( const Vector3f position,
                 const Vector4f orientation ){
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( orientation.x(), orientation.y(), orientation.z(), orientation.w() ),
@@ -71,7 +71,7 @@ set_transform( const Vector3f position,
 }
 
 void
-Collision_Object_Box::
+Collision_Object_Plane::
 set_transform( const Frame& transform ){
   Frame origin = transform * _offset;
   double qx = 0.0;
@@ -84,19 +84,19 @@ set_transform( const Frame& transform ){
 }
 
 /**
- * bt_box_shape
- * return a reference to the bt_box_shape
+ * bt_plane_shape
+ * return a reference to the bt_plane_shape
  */
-const btBoxShape&
-Collision_Object_Box::
-bt_box_shape( void )const{
-  return _bt_box_shape;
+const btStaticPlaneShape&
+Collision_Object_Plane::
+bt_plane_shape( void )const{
+  return _bt_plane_shape;
 }
 
 namespace collision {
   ostream&
   operator<<( ostream& out,
-              const Collision_Object_Box& other ){
+              const Collision_Object_Plane& other ){
     out << "id:{" << other.id().c_str() << "} ";
     out << "bt_collision_objects[" << other.bt_collision_objects().size() << "]:{";
     for( unsigned int i = 0; i < other.bt_collision_objects().size(); i++ ){
@@ -106,7 +106,7 @@ namespace collision {
         out << "N/A";
       }
       out << ":{pos:(" << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().x() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().y() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getOrigin().z() << "),(" << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getX() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getY() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getZ() << "," << other.bt_collision_objects()[ i ]->getWorldTransform().getRotation().getW() << ")}";
-      out << ",box:(" << other.bt_box_shape().getImplicitShapeDimensions().x() + other.bt_box_shape().getMargin() << "," << other.bt_box_shape().getImplicitShapeDimensions().y() + other.bt_box_shape().getMargin() << "," << other.bt_box_shape().getImplicitShapeDimensions().z() + other.bt_box_shape().getMargin() << ")";
+      out << ",plane:((" << other.bt_plane_shape().getPlaneNormal().x() + other.bt_plane_shape().getMargin() << "," << other.bt_plane_shape().getPlaneNormal().y() + other.bt_plane_shape().getMargin() << "," << other.bt_plane_shape().getPlaneNormal().z() + other.bt_plane_shape().getMargin() << ")," << other.bt_plane_shape().getPlaneConstant() << ")";
       if( i != ( other.bt_collision_objects().size() - 1 ) ){
         out << ",";
       }

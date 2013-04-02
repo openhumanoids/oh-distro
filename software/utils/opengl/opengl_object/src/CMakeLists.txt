@@ -1,6 +1,7 @@
 # Create a shared library libopengl_object.so with a single source file
 add_library(opengl_object SHARED
             opengl_object.cc
+            opengl_object_plane.cc
             opengl_object_box.cc
             opengl_object_sphere.cc
             opengl_object_cylinder.cc
@@ -13,6 +14,7 @@ add_library(opengl_object SHARED
 # install it to include/opengl_object
 pods_install_headers(opengl_object.h
                       opengl_object_box.h
+                      opengl_object_plane.h
                       opengl_object_sphere.h
                       opengl_object_cylinder.h 
                       opengl_object_torus.h 

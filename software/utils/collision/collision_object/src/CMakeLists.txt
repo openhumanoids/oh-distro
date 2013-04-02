@@ -2,6 +2,7 @@
 add_library(collision_object SHARED
               collision_object.cc
               collision_object_box.cc
+              collision_object_plane.cc
               collision_object_cone.cc
               collision_object_cylinder.cc
               collision_object_torus.cc
@@ -14,6 +15,7 @@ add_library(collision_object SHARED
 # install it to include/collision_object
 pods_install_headers(collision_object.h
                       collision_object_box.h
+                      collision_object_plane.h
                       collision_object_cone.h
                       collision_object_cylinder.h
                       collision_object_torus.h

@@ -23,6 +23,13 @@ Collision_Object_URDF( string id ) : Collision_Object( id ),
                                     _collision_objects(),
                                     _kinematics_model() {
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  } 
 }
 
 /**
@@ -35,6 +42,13 @@ Collision_Object_URDF( string id,
                                               _collision_objects(),
                                               _kinematics_model( urdfFilename ){
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
 } 
 
 /**
@@ -48,6 +62,13 @@ Collision_Object_URDF( string id,
                                                     _collision_objects(),
                                                     _kinematics_model( urdfFilename ) {
   _load_collision_objects();
+  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
+    if( _collision_objects[ i ] != NULL ){
+      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
+        _bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
+      }
+    }
+  }
 }
 
 /**
@@ -124,64 +145,6 @@ const Kinematics_Model_URDF&
 Collision_Object_URDF::
 kinematics_model( void )const{
   return _kinematics_model;
-}
-
-/**
- * position
- * returns the position of the collision object
- */
-Vector3f
-Collision_Object_URDF::
-position( void )const{
-  Vector3f position;
-  return position;
-}
-
-/**
- * orientation
- * returns the orientation of the collision object
- */
-Vector4f
-Collision_Object_URDF::
-orientation( void )const{
-  Vector4f orientation;
-  return orientation;
-}
-
-/** 
- * bt_collision_objects 
- * returns a std::vector of btCollisionObject pointers
- */
-vector< btCollisionObject* >
-Collision_Object_URDF::
-bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
-}
-
-/**
- * bt_collision_objects
- * return a std::vector of const btCollisionObject pointers
- */
-vector< const btCollisionObject* >
-Collision_Object_URDF::
-bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
-    if( _collision_objects[ i ] != NULL ){
-      for( unsigned int j = 0; j < _collision_objects[ i ]->bt_collision_objects().size(); j++ ){
-        bt_collision_objects.push_back( _collision_objects[ i ]->bt_collision_objects()[ j ] );
-      } 
-    }
-  }
-  return bt_collision_objects;
 }
 
 /**

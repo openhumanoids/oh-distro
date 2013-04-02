@@ -28,7 +28,6 @@ namespace collision {
     virtual ~Collision_Object();
   
     virtual void set_active( bool active );
-    virtual void set_position( const Eigen::Vector3f position );
     virtual void set_transform( const Eigen::Vector3f position, const Eigen::Vector4f orientation ) = 0;
     virtual void set_transform( const KDL::Frame& transform ) = 0;
     virtual void set_offset( const KDL::Frame& offset ); 
@@ -36,16 +35,14 @@ namespace collision {
     virtual Collision_Object* matches_uid( unsigned int uid );
 
     std::string id( void )const;
-    virtual Eigen::Vector3f position( void )const = 0;
-    virtual Eigen::Vector4f orientation( void )const = 0;
-    virtual KDL::Frame offset( void )const;
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void ) = 0;    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const = 0;
+    virtual std::vector< btCollisionObject* >& bt_collision_objects( void );    
+    virtual const std::vector< btCollisionObject* >& bt_collision_objects( void )const;
 
   protected:
     std::string _id;
     bool _active;
     KDL::Frame _offset;
+    std::vector< btCollisionObject* > _bt_collision_objects;
   private:
 
   };

@@ -53,6 +53,7 @@ Collision_Object_Torus( string id,
 
   set_transform( position, orientation );
   _bt_collision_object.setCollisionShape( &_bt_torus_shape );
+  _bt_collision_objects.push_back( &_bt_collision_object );
 }
 
 /**
@@ -63,39 +64,6 @@ Collision_Object_Torus::
 ~Collision_Object_Torus(){
 
 }
-
-
-
-
-/**
- * position
- * returns the position of the collision object
- */
-Vector3f
-Collision_Object_Torus::
-position( void )const{
-  Vector3f position( _bt_collision_object.getWorldTransform().getOrigin().getX(),
-                      _bt_collision_object.getWorldTransform().getOrigin().getY(),
-                      _bt_collision_object.getWorldTransform().getOrigin().getZ() );
-  return position;
-}
-
-/**
- * orientation
- * returns the orientation of the collision object
- */
-Vector4f
-Collision_Object_Torus::
-orientation( void )const{
-  Vector4f orientation( _bt_collision_object.getWorldTransform().getRotation().getX(),
-                        _bt_collision_object.getWorldTransform().getRotation().getY(),
-                        _bt_collision_object.getWorldTransform().getRotation().getZ(),
-                        _bt_collision_object.getWorldTransform().getRotation().getW() );
-  return orientation;
-}
-
-
-
 
 /** 
  * set_transform
@@ -121,28 +89,4 @@ set_transform( const Frame& transform ){
   origin.M.GetQuaternion( qx, qy, qz, qs );
   _bt_collision_object.setWorldTransform( btTransform( btQuaternion( qx, qy, qz, qs ), btVector3( origin.p[0], origin.p[1], origin.p[2] ) ) );
   return;
-}
-
-/** 
- * bt_collision_objects 
- * returns a std::vector of btCollisionObject pointers
- */
-vector< btCollisionObject* >
-Collision_Object_Torus::
-bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  bt_collision_objects.push_back( &_bt_collision_object );
-  return bt_collision_objects;
-}
-
-/**
- * bt_collision_objects
- * return a std::vector of const btCollisionObject pointers
- */
-vector< const btCollisionObject* >
-Collision_Object_Torus::
-bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  bt_collision_objects.push_back( &_bt_collision_object );
-  return bt_collision_objects;
 }

@@ -11,6 +11,8 @@ namespace opengl {
   class OpenGL_Object {
   public:
     OpenGL_Object(const std::string &id = "N/A",
+                   const KDL::Frame& transform = KDL::Frame::Identity(),
+                   const KDL::Frame& offset = KDL::Frame::Identity(),
 		   bool isHighlighted = false, 
 		   Eigen::Vector3f highlightColor = Eigen::Vector3f(0,0,0));
     virtual ~OpenGL_Object();
@@ -24,6 +26,7 @@ namespace opengl {
     virtual void set_id( std::string id );
     virtual void set_visible( bool visible );
     virtual void set_color( Eigen::Vector3f color );
+    virtual void set_color( Eigen::Vector4f color );
     virtual void setHighlighted(bool); 
     virtual void set_transparency( double transparency );
     virtual void set_transform( KDL::Frame transform );

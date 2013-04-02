@@ -1,12 +1,16 @@
 #include "opengl/opengl_object_torus.h"
 
 using namespace std;
+using namespace KDL;
 using namespace Eigen;
 using namespace opengl;
 
 OpenGL_Object_Torus::
-OpenGL_Object_Torus( double majorRadius,
-                      double minorRadius ) : OpenGL_Object(),
+OpenGL_Object_Torus( string id,
+                      const Frame& transform,
+                      const Frame& offset,
+                      double majorRadius,
+                      double minorRadius ) : OpenGL_Object( id, transform, offset ),
                                               _major_radius( majorRadius ),
                                               _minor_radius( minorRadius ),
                                               _quadric( NULL ),
@@ -16,7 +20,14 @@ OpenGL_Object_Torus( double majorRadius,
 
 OpenGL_Object_Torus::
 ~OpenGL_Object_Torus() {
-
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  if( _quadric != NULL ){
+    delete _quadric;
+    _quadric = NULL;
+  }
 }
 
 OpenGL_Object_Torus::

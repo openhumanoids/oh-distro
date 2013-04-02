@@ -34,10 +34,6 @@ namespace collision {
     virtual void set_transform( const KDL::Frame& transform );
  
     std::string chull_obj_filename( void )const; 
-    virtual Eigen::Vector3f position( void )const;
-    virtual Eigen::Vector4f orientation( void )const;
-    virtual std::vector< btCollisionObject* > bt_collision_objects( void );    
-    virtual std::vector< const btCollisionObject* > bt_collision_objects( void )const;
 
   protected:
     bool _load_chull_obj( void );

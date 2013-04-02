@@ -13,7 +13,9 @@ using namespace opengl;
  */
 OpenGL_Object_Box::
 OpenGL_Object_Box( string id,
-                    Vector3f dimensions ) : OpenGL_Object( id ),
+                    const Frame& transform,
+                    const Frame& offset,
+                    Vector3f dimensions ) : OpenGL_Object( id, transform, offset ),
                                           _dimensions( dimensions ),
                                           _dl( 0 ){
 
@@ -25,7 +27,10 @@ OpenGL_Object_Box( string id,
  */
 OpenGL_Object_Box::
 ~OpenGL_Object_Box() {
-
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
 }
 
 /**
@@ -78,6 +83,31 @@ set( Frame transform,
       Vector3f dimensions ){
   _transform = transform;
   _dimensions = dimensions;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
+void
+OpenGL_Object_Box::
+set_color( Vector3f color ){
+  _color = color;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
+void
+OpenGL_Object_Box::
+set_color( Vector4f color ){
+  _color(0) = color(0);
+  _color(1) = color(1);
+  _color(2) = color(2);
+  _transparency = color(3);
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;

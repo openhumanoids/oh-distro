@@ -14,7 +14,8 @@ Collision_Object( string id,
                   bool active,
                   const Frame& offset ) : _id( id ), 
                                           _active(active),
-                                          _offset( offset ){
+                                          _offset( offset ),
+                                          _bt_collision_objects(){
 
 }
 
@@ -25,7 +26,8 @@ Collision_Object( string id,
 Collision_Object::
 Collision_Object( const Collision_Object& other ) : _id( other._id ),
                                                     _active( other._active ),
-                                                    _offset( other._offset ){
+                                                    _offset( other._offset ),
+                                                    _bt_collision_objects( other._bt_collision_objects ){
 
 }
 
@@ -36,13 +38,6 @@ Collision_Object( const Collision_Object& other ) : _id( other._id ),
 Collision_Object::
 ~Collision_Object(){
 
-}
-
-
-/**set position using pure virtual set_transform method*/
-void Collision_Object::set_position(const Vector3f position)
-{
-  set_transform(position, orientation());
 }
 
 void Collision_Object::set_active( bool active )
@@ -84,34 +79,25 @@ id( void )const{
   return _id;
 }
 
-Frame
-Collision_Object::
-offset( void )const{
-  return _offset;
-}
-
 /**
  * bt_collision_objects
  * returns a std::vector of btCollisionObject pointers
- 
-vector< btCollisionObject* >
+ */ 
+vector< btCollisionObject* >&
 Collision_Object::
 bt_collision_objects( void ){
-  vector< btCollisionObject* > bt_collision_objects;
-  return bt_collision_objects;
+  return _bt_collision_objects;
 }
-*/
+
 /**
  * bt_collision_object
  * returns a std::vectorm of const btCollisionObject pointers
- 
-vector< const btCollisionObject* >
+ */ 
+const vector< btCollisionObject* >&
 Collision_Object::
 bt_collision_objects( void )const{
-  vector< const btCollisionObject* > bt_collision_objects;
-  return bt_collision_objects;
+  return _bt_collision_objects;
 }
-*/
 
 /**
  * operator<<
@@ -122,20 +108,19 @@ namespace collision {
   operator<<( ostream& out,
               const Collision_Object& other ){
     out << "id:{" << other.id().c_str() << "} ";
-    vector< const btCollisionObject* > bt_collision_objects = other.bt_collision_objects();
-    out << "bt_collision_objects[" << bt_collision_objects.size() << "]:{";
-    for( unsigned int i = 0; i < bt_collision_objects.size(); i++ ){
-      if( bt_collision_objects[ i ] != NULL ){
+    out << "bt_collision_objects[" << other.bt_collision_objects().size() << "]:{";
+    for( unsigned int i = 0; i < other.bt_collision_objects().size(); i++ ){
+      if( other.bt_collision_objects()[ i ] != NULL ){
 
-        if( bt_collision_objects[ i ]->getBroadphaseHandle() != NULL ){
-          out << bt_collision_objects[ i ]->getBroadphaseHandle()->getUid();
+        if( other.bt_collision_objects()[ i ]->getBroadphaseHandle() != NULL ){
+          out << other.bt_collision_objects()[ i ]->getBroadphaseHandle()->getUid();
         } else {
           out << "N/A";
         }
 
-        btTransform bt_transform = bt_collision_objects[ i ]->getWorldTransform();
+        btTransform bt_transform = other.bt_collision_objects()[ i ]->getWorldTransform();
         out << ":{pos:(" << bt_transform.getOrigin().x() << "," << bt_transform.getOrigin().y() << "," << bt_transform.getOrigin().z() << "),(" << bt_transform.getRotation().getX() << "," << bt_transform.getRotation().getY() << "," << bt_transform.getRotation().getZ() << "," << bt_transform.getRotation().getW() << ")}";
-        if( i != ( bt_collision_objects.size() - 1 ) ){
+        if( i != ( other.bt_collision_objects().size() - 1 ) ){
           out << ",";
         }
 

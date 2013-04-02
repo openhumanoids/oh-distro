@@ -11,7 +11,9 @@ using namespace opengl;
  */
 OpenGL_Object_Sphere::
 OpenGL_Object_Sphere( string id,
-                      double radius ) : OpenGL_Object( id ),
+                      const Frame& transform,
+                      const Frame& offset,
+                      double radius ) : OpenGL_Object( id, transform, offset ),
                                         _radius( radius ),
                                         _quadric( NULL ),
                                         _dl( 0 ){
@@ -24,6 +26,10 @@ OpenGL_Object_Sphere( string id,
  */
 OpenGL_Object_Sphere::
 ~OpenGL_Object_Sphere() {
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
   if( _quadric == NULL ){
     gluDeleteQuadric(_quadric);
   }
@@ -81,6 +87,31 @@ set( Frame transform,
       double radius ){
   _transform = transform;
   _radius = radius;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
+void
+OpenGL_Object_Sphere::
+set_color( Vector3f color ){
+  _color = color;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
+void
+OpenGL_Object_Sphere::
+set_color( Vector4f color ){
+  _color(0) = color(0);
+  _color(1) = color(1);
+  _color(2) = color(2);
+  _transparency = color(3);
   if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
     glDeleteLists( _dl, 0 );
     _dl = 0;
