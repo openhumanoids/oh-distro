@@ -1,0 +1,28 @@
+package drc;
+
+// Base Goal Message with timeout
+
+struct walking_goal_t
+{
+	int64_t utime;
+	string robot_name;
+
+	// The goal position, as the center between the two feet
+	position_3d_t goal_pos;
+
+	int32_t max_num_steps;
+	int32_t min_num_steps;
+
+    // Max time to spend walking (in ns)
+	int64_t timeout;
+
+	// Default time per step (in ns)
+	int64_t time_per_step;
+
+	// whether to fix the yaw of each step (to force sidestepping, for example)
+	boolean yaw_fixed;
+
+	// whether this is a new goal message which should force the planner to start over
+	boolean is_new_goal;
+}
+
