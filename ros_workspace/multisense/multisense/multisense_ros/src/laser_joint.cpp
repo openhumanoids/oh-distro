@@ -15,6 +15,11 @@ namespace multisense_ros
     js_msg_.effort.push_back(0.0);
 
     // Default LCM message:
+    msg_simple_out_.name = "hokuyo_joint";
+    msg_simple_out_.position=0.0;
+    msg_simple_out_.velocity=0.0;
+    msg_simple_out_.effort  =0.0;
+    
     msg_out_.robot_name = "robot_name_holder"; // dont know if i can fill this
     msg_out_.origin_position.translation.x = 0;
     msg_out_.origin_position.translation.y = 0;
@@ -49,21 +54,7 @@ namespace multisense_ros
     msg_out_.joint_cov.push_back( j_cov );
 
     // dummy ground contact states
-    msg_out_.contacts.num_contacts =8;
-    msg_out_.contacts.id.push_back("LFootToeIn");
-    msg_out_.contacts.id.push_back("LFootToeOut");
-    msg_out_.contacts.id.push_back("LFootHeelIn");
-    msg_out_.contacts.id.push_back("LFootHeelOut");
-    msg_out_.contacts.id.push_back("RFootToeIn");
-    msg_out_.contacts.id.push_back("RFootToeOut");
-    msg_out_.contacts.id.push_back("RFootHeelIn");
-    msg_out_.contacts.id.push_back("RFootHeelOut");
-    for (int i=0; i< msg_out_.contacts.num_contacts; i++){
-      msg_out_.contacts.inContact.push_back(0);
-      drc::vector_3d_t f_zero;
-      f_zero.x = 0;f_zero.y = 0;f_zero.z = 0;
-      msg_out_.contacts.contactForce.push_back(f_zero);
-    }
+    msg_out_.contacts.num_contacts =0;
 
     if(!lcm_publish_.good()){
       std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -138,8 +129,7 @@ namespace multisense_ros
     //printf("Angles: %f  %f --> %f\n", angle_start, angle_end, angle_diff);
     //printf("Time: %f  %f --> %f\n", start_relative_time.toSec(), end_relative_time.toSec(), (end_relative_time-start_relative_time).toSec());
 
-
-
+    //////////////////////////////////////////////////////////////////////
     // publish joint state for beginning of scan
     js_msg_.header.frame_id = "";
     js_msg_.header.stamp = start_absolute_time;
@@ -148,12 +138,18 @@ namespace multisense_ros
     js_pub_.publish(js_msg_);
 
     // LCM:
+    msg_simple_out_.utime = (int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
+    msg_simple_out_.position= angle_start;
+    msg_simple_out_.velocity= velocity;
+    lcm_publish_.publish("MULTISENSE_JOINT", &msg_simple_out_);
+
     msg_out_.utime = (int64_t) start_absolute_time.toNSec()/1000; // from nsec to usec
     msg_out_.joint_position[0]= angle_start;
     msg_out_.joint_velocity[0]= velocity;
     lcm_publish_.publish("TRUE_ROBOT_STATE", &msg_out_);
 
-    // publish joint state for end of scan
+    //////////////////////////////////////////////////////////////////////
+    /// publish joint state for end of scan
     js_msg_.header.frame_id = "";
     ros::Time end_absolute_time = start_absolute_time + (end_relative_time - start_relative_time);
     js_msg_.header.stamp = end_absolute_time;
@@ -162,6 +158,11 @@ namespace multisense_ros
     js_pub_.publish(js_msg_);
 
     // LCM:
+    msg_simple_out_.utime = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
+    msg_simple_out_.position= angle_end;
+    msg_simple_out_.velocity= velocity;
+    lcm_publish_.publish("MULTISENSE_JOINT", &msg_simple_out_);
+
     msg_out_.utime = (int64_t) end_absolute_time.toNSec()/1000; // from nsec to usec
     msg_out_.joint_position[0]= angle_end;
     msg_out_.joint_velocity[0]= velocity;

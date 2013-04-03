@@ -204,7 +204,7 @@ void Camera::processCamData(const boost::shared_ptr<const CamDataMessage>& msg)
 void Camera::processDepthImage(const boost::shared_ptr<const CamDataMessage>& msg)
 {
   ros::Time cam_time = convertTime(msg->timeStamp.getCurrentTime());
-  //std::cout << msg->width << " " << msg->height << " " << isize << "\n";
+  //std::cout << msg->width << " " << msg->height << " " << isize << " processDepth\n";
   
   bool send_letterboxed =false;
   if (send_letterboxed){ 
@@ -324,6 +324,7 @@ void Camera::processCamImageData(const boost::shared_ptr<const CamImageDataMessa
 void Camera::processImages(const boost::shared_ptr<const CamImageDataMessage>& msg)
 {
   ros::Time cam_time = convertTime(msg->timeStamp.getCurrentTime());
+  std::cout << "processImages\n";
 
 if (1==0){  
   // LCM: (assumes mono)

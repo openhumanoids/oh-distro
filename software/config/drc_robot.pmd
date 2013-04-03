@@ -117,7 +117,7 @@ group "2.gazebo" {
         host = "paladin-02";
     }
     cmd "vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.la unch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
         host = "paladin-02";
     }
 }

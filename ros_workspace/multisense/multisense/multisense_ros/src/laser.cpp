@@ -105,7 +105,7 @@ namespace multisense_ros
     //msg_out_.intensities=NULL;
     msg_out_.rad0 = -HOKUYO_SCAN_ANGLE_RADIANS / 2.0;
     msg_out_.radstep = HOKUYO_SCAN_ANGLE_RADIANS / (msg->points - 1);
-    lcm_publish_.publish("ROTATING_SCAN", &msg_out_);
+    lcm_publish_.publish("SCAN", &msg_out_);
     /////////////////////////////////////////////////////////////
 
     laser_msg_.header.frame_id = frame_id_;
