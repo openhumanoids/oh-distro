@@ -22,7 +22,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       defaults = struct('step_time', 1.3,... % s
-        'max_step_length', .60,... % m
+        'max_step_length', .50,... % m
         'max_step_rot', pi/4,... % rad
         'min_foot_proximity', 0.15,... % m
         'r_foot_name', 'r_foot',...
