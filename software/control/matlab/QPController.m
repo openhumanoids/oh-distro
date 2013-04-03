@@ -1,4 +1,5 @@
 classdef QPController < MIMODrakeSystem
+
   % implementation assumes 3D atlas model
   methods
   function obj = QPController(r,zmpdata,options)
@@ -299,7 +300,7 @@ classdef QPController < MIMODrakeSystem
 
       % linear friction constraints
       % TEMP: hard code mu
-      mu = 0.7*ones(nc,1);
+      mu = 0.8*ones(nc,1);
       for i=1:nc
         Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
         bin_{i} = 0;

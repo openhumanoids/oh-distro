@@ -1,5 +1,4 @@
 function runWalkingPlanner(lcm_plan, goal_x, goal_y, goal_yaw)
-
 if nargin < 4; goal_yaw = 0.0; end
 if nargin < 3; goal_y = 0.0; end
 if nargin < 2; goal_x = 2.0; end
@@ -11,6 +10,8 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
+
+
 
 while true 
 
@@ -51,7 +52,7 @@ while true
     end
   end
 
-  [xtraj, qtraj, htraj, supptraj, comtraj,rfoottraj,lfoottraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
+  [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
   disp('Publishing robot plan...');
@@ -106,9 +107,7 @@ while true
 
   if execute
     walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot, ...
-      'qtraj',qtraj,'supptraj',supptraj,'comtraj',comtraj,'rfoottraj',rfoottraj, ...
-      'lfoottraj',lfoottraj));
+    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
   end
 end
 

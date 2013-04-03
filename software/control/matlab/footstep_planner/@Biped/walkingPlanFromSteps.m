@@ -1,5 +1,4 @@
-function [xtraj, qtraj, htraj, supptraj, comtraj, rfoottraj,lfoottraj, V, ts] = walkingPlanFromSteps(biped, x0, qstar, X)
-
+function [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(biped, x0, qstar, X)
 Xpos = [X.pos];
 Xright = Xpos(:, [X.is_right_foot] == 1);
 Xleft = Xpos(:, [X.is_right_foot] == 0);
@@ -50,10 +49,7 @@ htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    % DEFAULT
-    %q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
-    % EXPERIMENTAL: this is faster, but you need scott's dev branch
-    q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+    q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
   else
     q = q0;
   end
@@ -65,6 +61,3 @@ qtraj = PPTrajectory(spline(ts,q));
 htraj = PPTrajectory(spline(ts,htraj));
 xtraj = zeros(getNumStates(biped),length(ts));
 xtraj(1:getNumDOF(biped),:) = q;
-
-rfoottraj = foottraj.right.orig;
-lfoottraj = foottraj.left.orig;

@@ -1,4 +1,5 @@
 classdef WalkingPlanPublisher
+
 	properties
 		lc;
 		channel;
@@ -52,27 +53,6 @@ classdef WalkingPlanPublisher
       msg.supptraj = fread(fid,inf,'*uint8');
       fclose(fid);
       msg.n_supptraj_bytes = length(msg.supptraj); 
-
-      comtraj = data.comtraj;
-      save('tmp_r.mat','comtraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.comtraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_comtraj_bytes = length(msg.comtraj); 
-
-      rfoottraj = data.rfoottraj;
-      save('tmp_r.mat','rfoottraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.rfoottraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
-
-      lfoottraj = data.lfoottraj;
-      save('tmp_r.mat','lfoottraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.lfoottraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_lfoottraj_bytes = length(msg.lfoottraj); 
 
       obj.lc.publish(obj.channel, msg);
 		end
