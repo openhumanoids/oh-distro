@@ -16,8 +16,10 @@
 #include <multisense_ros/JointDiagnostics.h>
 
 
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcm/lcm-cpp.hpp>
+#include <lcmtypes/multisense.hpp>
+// This should be removed:
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 namespace multisense_ros
 {
@@ -57,6 +59,7 @@ private:
   // LCM stuff:
   lcm::LCM lcm_publish_ ;
   drc::robot_state_t msg_out_;
+  multisense::joint_t msg_simple_out_;
 
 }; // class
 
