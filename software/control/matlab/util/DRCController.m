@@ -7,6 +7,8 @@ classdef DRCController
   properties (SetAccess=protected,GetAccess=protected)
     controller; % drake system
 
+    v=[]; % optional visualizer for debugging
+    
     controller_data; % optional shared data handle reference
     
     controller_input_frames; % lcm frames w/coders for controller inputs
@@ -30,7 +32,7 @@ classdef DRCController
   end
 
   methods
-    function obj = DRCController(name,sys)
+    function obj = DRCController(name,sys,v)
       typecheck(name,'char');
       if ~(isa(sys,'DrakeSystem') || isa(sys,'SimulinkModel'))
         error('DRCController::Argument sys should be a DrakeSystem or SimulinkModel');
@@ -38,6 +40,10 @@ classdef DRCController
     
       obj.name = name;
       obj.controller = sys;
+      
+      if nargin>2
+        obj.v = v;
+      end
       
       if typecheck(sys.getInputFrame,'MultiCoordinateFrame')
         obj.controller_input_frames = sys.getInputFrame.frame;
@@ -133,6 +139,7 @@ classdef DRCController
       input_frame_time = -1*ones(obj.n_input_frames,1);
       
       t_offset = -1;
+      disp_counter = 0;
       while (1)
         % check termination conditions and break if any are true        
         [transition,data] = checkLCMTransitions(obj);
@@ -157,6 +164,13 @@ classdef DRCController
             %%% TEMP HACK FOR QUAL 1 %%%
             x(3) = x(3)-1.0;
             %%% TEMP HACK FOR QUAL 1 %%%
+            
+            % debug
+            if ~isempty(obj.v) && disp_counter==0 && strcmp('AtlasState',fr.name)
+              obj.v.draw(t,x);
+            end
+            disp_counter = mod(disp_counter+1,50);
+            
             input_frame_data{i} = x;
             input_frame_time(i) = t;
           end

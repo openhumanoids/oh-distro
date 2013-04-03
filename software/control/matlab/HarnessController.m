@@ -32,7 +32,8 @@ classdef HarnessController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
 
-      obj = setTimedTransition(obj,10,'standing',true); % set the controller timeout to 10s simtime
+      % controller timeout must match the harness time set in VRCPlugin.cpp
+      obj = setTimedTransition(obj,5,'standing',true); 
     end
     
     function obj = initialize(obj,msg_data)
