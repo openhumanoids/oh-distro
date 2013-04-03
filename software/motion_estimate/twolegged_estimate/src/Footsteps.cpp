@@ -7,6 +7,10 @@ Footsteps::Footsteps() {
 	std::cout << "New Footsteps object created" << std::endl;
 }
 
+void Footsteps::newFootstep(footstep newstep) {
+	footstep_hist.push_back(newstep);
+	active_step = newstep;
+}
 
 void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot) 
 {
@@ -50,5 +54,4 @@ int Footsteps::lastFoot() {
 
 void Footsteps::reset() {
 	footstep_hist.clear();
-	
 }

@@ -75,7 +75,7 @@ class TwoLegOdometry {
 		int secondary_foot();
 		int primary_foot();
 		
-		bool DetectFootTransistion(long utime, float leftz, float rightz);
+		footstep DetectFootTransistion(long utime, float leftz, float rightz);
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
 		Eigen::Isometry3d getSecondaryInLocal();
@@ -83,6 +83,7 @@ class TwoLegOdometry {
 		Eigen::Isometry3d getPelvisFromStep();
 		
 		void setPelvisPosition(Eigen::Isometry3d transform);
+		void ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis);
 };
 
 

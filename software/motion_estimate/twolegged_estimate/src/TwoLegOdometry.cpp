@@ -17,9 +17,9 @@ TwoLegOdometry::TwoLegOdometry()
 	// This is just here initially for initial testing and setup of the code structure
 	// TODO
 	// Assuming the robot is standing still.
-	Eigen::Isometry3d first;
-	footsteps.addFootstep(first,LEFTFOOT);
-	standing_foot = LEFTFOOT;
+	//Eigen::Isometry3d first;
+	footsteps.reset();
+	standing_foot = -1;
 	
 	foottransitionintermediateflag = true;
 	
@@ -132,13 +132,15 @@ int TwoLegOdometry::primary_foot() {
 	return standing_foot;
 }
 
-bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz) {
+footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz) {
 	
 	deltautime =  utime - lcmutime;
 	lcmutime = utime;
 	leftforces.z = leftz;
 	rightforces.z = rightz;
 	
+	footstep newstep;
+	newstep.foot = -1;
 	
 	if (getSecondaryFootZforce() - SCHMIDT_LEVEL*expectedweight > getPrimaryFootZforce()) {
 	  transition_timespan += deltautime;
@@ -159,14 +161,22 @@ bool TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz
 #ifdef VERBOSE_DEBUG
 		std::cout << "Adding footstep with values: " << temp.translation().transpose() << std::endl;
 #endif
-		footsteps.addFootstep(temp,secondary_foot());
-	  setStandingFoot(secondary_foot());
+		
+		// This is to be depreciated
+		//footsteps.addFootstep(temp,secondary_foot());
+	  //setStandingFoot(secondary_foot());
+	  //new modular function call
+	  
+	  newstep.foot = secondary_foot();
+	  newstep.footprintlocation = getSecondaryInLocal();
+	  standing_foot = newstep.foot;
+	  footsteps.newFootstep(newstep);
 	  
 	  foottransitionintermediateflag = false;
-	  return true;
+	  //return newstep;
 	}
 	
-	return false;
+	return newstep;
 }
 
 float TwoLegOdometry::getPrimaryFootZforce() {
@@ -322,7 +332,13 @@ void TwoLegOdometry::ResetInitialConditions() {
 	zero << 0.,0.,0.;
 	
 	local_to_pelvis.translation() = zero;
-	
 	footsteps.reset();
+}
+
+void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis) {
+	
+	ResetInitialConditions();
+	footsteps.addFootstep(leftfrompelvis,LEFTFOOT);
+	standing_foot = LEFTFOOT;
 }
 

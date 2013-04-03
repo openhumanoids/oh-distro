@@ -36,7 +36,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	    std::cerr << "ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
 	    return;
 	  }
-	  std::cout << "Before\n";
+	  
 	  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
 
 	
@@ -48,6 +48,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	poseplotcounter = 0;
 	collectionindex = 101;
 	_obj = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
+	
+	firstpass = true;
 	
 	return;
 }
@@ -131,15 +133,48 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	//pass left and right leg forces and torques to TwoLegOdometry
 	// TODO temporary testing interface
 	
+	
 
-	getTransforms(msg);
+	Eigen::Isometry3d left;
+	Eigen::Isometry3d right;
+	
+	getTransforms(msg,left,right);
 
+	// TODo - ensure the ordering is correct here
+	_leg_odo->setLegTransforms(left, right);
+	
+	if (firstpass)
+	{
+		firstpass = false;
+		_leg_odo->ResetWithLeftFootStates(left);
+		
+		
+		
+	}
+	
+	_leg_odo->setLegTransforms(left, right);
+	
 	Eigen::Isometry3d currentPelvis;
 	currentPelvis = _leg_odo->getPelvisFromStep();
+	footstep returnfootstep;
 	
-	//_leg_odo->setPelvisPosition(currentPelvis);
+	returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 	
-	_leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+	
+#ifdef DISPLAY_FOOTSTEP_POSES
+	// here comes the drawing of poses
+	//LinkCollection link(2, std::string("Links"));
+	_obj->add(100, isam::Pose3d(-_leg_odo->getSecondaryInLocal().translation().x(),-_leg_odo->getSecondaryInLocal().translation().y(),-_leg_odo->getSecondaryInLocal().translation().z(),0,0,0));
+	
+	// TODO - This is highly inefficient, inside the #define for now
+	Viewer viewer(lcm_viewer);
+	if (returnfootstep.foot != -1 || firstpass)
+	{
+		_obj->add(collectionindex, isam::Pose3d(-_leg_odo->getPrimaryInLocal().translation().x(),-_leg_odo->getPrimaryInLocal().translation().y(),-_leg_odo->getPrimaryInLocal().translation().z(),0,0,0));	
+		collectionindex = collectionindex + 1;
+	}
+	viewer.sendCollection(*_obj, true);
+#endif
 
 	/*
 	if (_leg_odo->primary_foot() == LEFTFOOT)
@@ -160,21 +195,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	//std::cout << std::endl;
 	
 	
-	// here comes the drawing of poses
 	
-	//LinkCollection link(2, std::string("Links"));
-	poseplotcounter++;
-	//std::cout << poseplotcounter << std::endl;
-	_obj->add(100, isam::Pose3d(currentPelvis.translation().x(),-currentPelvis.translation().y(),-currentPelvis.translation().z(),0,0,0));
-	
-	// TODO - This is highly inefficient
-	Viewer viewer(lcm_viewer);
-	if ((poseplotcounter)%1000 == 0)
-	{
-		poseplotcounter = 0;
-		_obj->add(collectionindex++, isam::Pose3d(currentPelvis.translation().x(),-currentPelvis.translation().y(),-currentPelvis.translation().z(),0,0,0));
-	}
-	viewer.sendCollection(*_obj, true);
 
         
         bot_core::pose_t pose;
@@ -190,7 +211,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 }
 
-void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
+void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {
   bool kinematics_status;
   bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
   
@@ -249,9 +270,6 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
         std::cout<< "fk position does not exist" <<std::endl;
   	  }
     
-	  Eigen::Isometry3d left;
-	  Eigen::Isometry3d right;
-	  
 	  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
 	  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
@@ -262,7 +280,5 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg) {
 	  left.rotate(leftq);
 	  right.rotate(rightq);
 	  
-	  // TODo - ensure the ordering is correct here
-	  _leg_odo->setLegTransforms(right, left);
 }
 

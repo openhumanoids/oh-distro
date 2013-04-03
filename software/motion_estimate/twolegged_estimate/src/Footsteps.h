@@ -21,7 +21,7 @@ class Footsteps {
 	public:
 		Footsteps();
 		void addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot);
-		
+		void newFootstep(footstep newstep);
 		
 		int getLastStepState(state const &RelativeFrameLocation);
 	

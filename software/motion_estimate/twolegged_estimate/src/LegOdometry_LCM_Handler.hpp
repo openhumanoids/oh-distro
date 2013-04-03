@@ -46,6 +46,9 @@
 
 //#include "urdf/model.h"
 
+#define DISPLAY_FOOTSTEP_POSES
+
+
 class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
@@ -68,6 +71,7 @@ private:
 	bool stillbusy;
 	int poseplotcounter;
 	int collectionindex;
+	bool firstpass;
 	
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
@@ -76,7 +80,7 @@ private:
 	//void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
 	void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);	
 	
-	void getTransforms(const drc::robot_state_t * msg);
+	void getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right);
 	void setupSolver();
 	
 	//void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
