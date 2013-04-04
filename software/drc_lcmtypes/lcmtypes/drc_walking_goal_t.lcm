@@ -22,6 +22,9 @@ struct walking_goal_t
 	// whether to fix the yaw of each step (to force sidestepping, for example)
 	boolean yaw_fixed;
 
+	// whether to allow optimization of the foostep plan
+	boolean allow_optimization;
+
 	// whether this is a new goal message which should force the planner to start over
 	boolean is_new_goal;
 }
