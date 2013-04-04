@@ -1,6 +1,6 @@
 function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, options, heightfun)
 
-  max_diag_dist = sqrt(biped.max_step_width^2 + biped.forward_step^2);
+  max_diag_dist = sqrt(biped.max_step_width^2 + biped.max_forward_step^2);
 
 % if options.max_num_steps - (length(X)-2) >= 1
 %   if X(end-1).is_right_foot
