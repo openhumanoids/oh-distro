@@ -36,16 +36,7 @@ void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot)
 }
 
 Eigen::Isometry3d Footsteps::getLastStep() {
-	//if (active_step.foot==LEFTFOOT)
-	  //std::cout << " left  ";
-	//else
-	  //std::cout << " right ";
-	
 	return active_step.footprintlocation;
-		
-	// TODO - decide on a final rotational representation and convert this part of the code to use drc types
-	
-	//return trans;
 }
 
 int Footsteps::lastFoot() {

@@ -26,6 +26,7 @@ class TwoLegOdometry {
 		long lcmutime;
 		long deltautime;
 		long transition_timespan;
+		int stepcount;
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
@@ -48,14 +49,14 @@ class TwoLegOdometry {
 		// Used internally to change the active foot for motion estimation
 		void setStandingFoot(int foot);
 		
-		void FootTransitionLogic();
 		
 		float getPrimaryFootZforce();
 		float getSecondaryFootZforce();
 		void ResetInitialConditions();
 		
-		Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
+		
+		Eigen::Isometry3d AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id);
 	public:
 		Eigen::Isometry3d pelvis_to_left;
 	    Eigen::Isometry3d left_to_pelvis;
@@ -75,6 +76,7 @@ class TwoLegOdometry {
 		int secondary_foot();
 		int primary_foot();
 		
+		bool FootLogic(long utime, float leftz, float rightz);
 		footstep DetectFootTransistion(long utime, float leftz, float rightz);
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
@@ -82,8 +84,17 @@ class TwoLegOdometry {
 		Eigen::Isometry3d getPrimaryInLocal();
 		Eigen::Isometry3d getPelvisFromStep();
 		
+		Eigen::Isometry3d getLeftInLocal();
+		Eigen::Isometry3d getRightInLocal();
+				
+		
 		void setPelvisPosition(Eigen::Isometry3d transform);
 		void ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis);
+		
+		int getStepCount();
+		int getActiveFoot();
+		
+		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 };
 
 

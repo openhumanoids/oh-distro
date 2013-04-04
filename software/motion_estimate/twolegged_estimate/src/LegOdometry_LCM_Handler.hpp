@@ -85,6 +85,15 @@ private:
 	
 	//void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
 
+#ifdef DISPLAY_FOOTSTEP_POSES
+	Viewer* _viewer;
+	
+	void addIsometryPose(int objnumber, const Eigen::Isometry3d &target);
+	void addFootstepPose_draw();
+	void drawLeftFootPose();
+	void drawRightFootPose();
+	void drawSumPose();
+#endif
 	
 public:
 	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_);
@@ -94,6 +103,7 @@ public:
 	
 	// Run the estimator, assuming the LCM connections have been set up correctly
 	void run(bool testingmode);
+	
 	
 };
 

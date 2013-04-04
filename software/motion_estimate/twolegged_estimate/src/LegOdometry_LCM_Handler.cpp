@@ -51,6 +51,10 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	
 	firstpass = true;
 	
+#ifdef DISPLAY_FOOTSTEP_POSES
+	_viewer = new Viewer(lcm_viewer);
+#endif
+	
 	return;
 }
 
@@ -59,6 +63,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	//delete model_;
 	delete _leg_odo;
 	delete _obj;
+	delete _viewer;
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
 	
@@ -124,6 +129,8 @@ void LegOdometry_Handler::run(bool testingmode) {
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
 												const  drc::robot_state_t* msg) {
+
+	bool legchangeflag;
 	
 	/*
 	std::cout << msg->utime << ", ";
@@ -140,40 +147,34 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	getTransforms(msg,left,right);
 
-	// TODo - ensure the ordering is correct here
-	_leg_odo->setLegTransforms(left, right);
 	
 	if (firstpass)
 	{
 		firstpass = false;
 		_leg_odo->ResetWithLeftFootStates(left);
-		
-		
-		
+		std::cout << "Footsteps initialized with the first step\n";
 	}
-	
 	_leg_odo->setLegTransforms(left, right);
 	
-	Eigen::Isometry3d currentPelvis;
-	currentPelvis = _leg_odo->getPelvisFromStep();
-	footstep returnfootstep;
 	
-	returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+	
+	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 	
 	
 #ifdef DISPLAY_FOOTSTEP_POSES
 	// here comes the drawing of poses
-	//LinkCollection link(2, std::string("Links"));
-	_obj->add(100, isam::Pose3d(-_leg_odo->getSecondaryInLocal().translation().x(),-_leg_odo->getSecondaryInLocal().translation().y(),-_leg_odo->getSecondaryInLocal().translation().z(),0,0,0));
 	
-	// TODO - This is highly inefficient, inside the #define for now
-	Viewer viewer(lcm_viewer);
-	if (returnfootstep.foot != -1 || firstpass)
-	{
-		_obj->add(collectionindex, isam::Pose3d(-_leg_odo->getPrimaryInLocal().translation().x(),-_leg_odo->getPrimaryInLocal().translation().y(),-_leg_odo->getPrimaryInLocal().translation().z(),0,0,0));	
-		collectionindex = collectionindex + 1;
-	}
-	viewer.sendCollection(*_obj, true);
+	//drawLeftFootPose();
+	//drawRightFootPose();
+	drawSumPose();
+		
+	
+	if (legchangeflag)
+		;
+	
+	
+	_viewer->sendCollection(*_obj, true);
 #endif
 
 	/*
@@ -193,10 +194,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	//std::cout << "Secondary is at: " << _leg_odo->getSecondaryInLocal().translation().transpose() << std::endl;
 	//std::cout << std::endl;
-	
-	
-	
-
+		Eigen::Isometry3d currentPelvis;
+		currentPelvis = _leg_odo->getPelvisFromStep();
         
         bot_core::pose_t pose;
         pose.pos[0] =currentPelvis.translation().x();
@@ -207,8 +206,52 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         pose.orientation[2] =0.;
         pose.orientation[3] =0.;
         lcm_->publish("POSE_KIN",&pose);
+        
 
 	
+}
+
+void LegOdometry_Handler::drawLeftFootPose() {
+	//LinkCollection link(2, std::string("Links"));
+	
+	//addIsometryPose(_leg_odo->getLeftInLocal());
+	
+	//addIsometryPose(98, _leg_odo->left_to_pelvis);
+	addIsometryPose(97, _leg_odo->left_to_pelvis);
+	addIsometryPose(98, _leg_odo->left_to_pelvis);
+			
+}
+
+void LegOdometry_Handler::drawRightFootPose() {
+	//LinkCollection link(2, std::string("Links"));
+	
+	//addIsometryPose(_leg_odo->getLeftInLocal());
+	
+	
+	addIsometryPose(99,_leg_odo->right_to_pelvis);
+	addIsometryPose(100,_leg_odo->right_to_pelvis);
+			
+	
+	//std::cout << "adding right foot pose" << std::endl;
+}
+
+void LegOdometry_Handler::drawSumPose() {
+	//addIsometryPose(95,_leg_odo->add(_leg_odo->left_to_pelvis,_leg_odo->pelvis_to_right));
+	//addIsometryPose(96,_leg_odo->add(_leg_odo->left_to_pelvis,_leg_odo->pelvis_to_right));
+	
+	addIsometryPose(93,_leg_odo->getSecondaryInLocal());
+	addIsometryPose(94,_leg_odo->getSecondaryInLocal());
+}
+
+void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d &target) {
+	// TODO - why are negatives required here
+	_obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),0,0,0));
+}
+
+void LegOdometry_Handler::addFootstepPose_draw() {
+	std::cout << "Drawing pose for foot: " << (_leg_odo->getActiveFoot() == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl; 
+	_obj->add(collectionindex, isam::Pose3d(_leg_odo->getPrimaryInLocal().translation().x(),_leg_odo->getPrimaryInLocal().translation().y(),_leg_odo->getPrimaryInLocal().translation().z(),0,0,0));	
+	collectionindex = collectionindex + 1;
 }
 
 void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::Isometry3d &left, Eigen::Isometry3d &right) {

@@ -37,6 +37,8 @@ TwoLegOdometry::TwoLegOdometry()
 	lcmutime = 0;
 	deltautime = 0;
 	transition_timespan = 0;
+	
+	stepcount = 0;
 }
 
 void TwoLegOdometry::parseRobotInput() {
@@ -92,22 +94,7 @@ void TwoLegOdometry::CalculateBodyStates(/*data*/) {
 	return;
 }
 
-void TwoLegOdometry::FootTransitionLogic() {
-	/*
-	if (DetemineIfFootTransistionRequired())
-	{
-#ifdef EARLY_DEV_COUTS
-		cout << "Next footstep has been made, transitioning footsteps." << endl;
-#endif
-		
-		// calculate new footstate relative to current best estimate of the robot states
-		// This is now going to become the primary foot
-		footsteps.addFootstep(getSecondaryFootState(),secondary_foot());
-		setStandingFoot(secondary_foot());
-		
-	}
-	*/
-}
+
 
 // now this seems excessive and should maybe be a more general transform update thing used for legs and head and pelvis
 state TwoLegOdometry::getSecondaryFootState() {
@@ -166,17 +153,33 @@ footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float ri
 		//footsteps.addFootstep(temp,secondary_foot());
 	  //setStandingFoot(secondary_foot());
 	  //new modular function call
-	  
-	  newstep.foot = secondary_foot();
-	  newstep.footprintlocation = getSecondaryInLocal();
-	  standing_foot = newstep.foot;
-	  footsteps.newFootstep(newstep);
-	  
+
 	  foottransitionintermediateflag = false;
+
+	  std::cout << "NEW STEP ON " << ((secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT") << " stepcount: " << stepcount << " at x= " << getSecondaryInLocal().translation().x() << std::endl;
+
+	  stepcount++;
+	  newstep.foot = secondary_foot();
+	  //newstep.footprintlocation = getSecondaryInLocal();
+	  newstep.footprintlocation = AccumulateFootPosition(getPrimaryInLocal(), primary_foot());
+	  
 	  //return newstep;
 	}
 	
 	return newstep;
+}
+
+bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
+  footstep newstep;
+  newstep = DetectFootTransistion(utime, leftz, rightz);
+	
+  if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
+	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
+	  standing_foot = newstep.foot;
+	  footsteps.newFootstep(newstep);
+	  return true;
+  }
+  return false;
 }
 
 float TwoLegOdometry::getPrimaryFootZforce() {
@@ -227,7 +230,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";
 		}
 		//returnval = add(footsteps.getLastStep(),left_to_pelvis);
-		returnval = add(footsteps.getLastStep(),pelvis_to_left);
+		returnval = add(footsteps.getLastStep(),left_to_pelvis);
 				
 		//std::cout << " left  ";
 		//return addTransforms(footsteps.getLastStep(), left_to_pelvis);
@@ -239,7 +242,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";	
 		}
 		//returnval = add(footsteps.getLastStep(),right_to_pelvis);
-		returnval = add(footsteps.getLastStep(),pelvis_to_right);
+		returnval = add(footsteps.getLastStep(),right_to_pelvis);
 		//std::cout << " right ";
 		//return addTransforms(footsteps.getLastStep(), right_to_pelvis);
 	}
@@ -248,12 +251,34 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	return returnval;
 }
 
+Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id) {
+	Eigen::Isometry3d returnval;
+	returnval.translation() << -99999999999., -99999999999.,-99999999999.;
+	
+	switch (foot_id) {
+	case LEFTFOOT:
+		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
+		break;
+	case RIGHTFOOT:
+		std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
+		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
+		break;
+	default:
+		std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::AccumulateFootPosition()" << std::endl;
+		break;
+	}
+	
+	return returnval;
+}
+
 Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	
 	//std::cout << "pelvis to left: " << (pelvis_to_left*local_to_pelvis).translation().transpose() << std::endl;
-	
+	std::cout << (secondary_foot()==LEFTFOOT ? "LEFT" : "RIGHT") << " is secondary_foot()" << std::endl;
 	Eigen::Isometry3d returnval;
-	returnval.translation() << -99999999999., -99999999999.,-99999999999.;
+	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
+	
+	/*
 	
 	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): local_to_pelvis: " << local_to_pelvis.translation().transpose() << std::endl;
 	
@@ -262,6 +287,7 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 		returnval = add(add(getPrimaryInLocal(),left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
+		std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
 		returnval = add(add(getPrimaryInLocal(),right_to_pelvis),pelvis_to_left);
 		break;
 	default:
@@ -269,13 +295,22 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 		break;
 	}
 	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): " << returnval.translation().transpose() << std::endl;
-	
+	*/
 	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPrimaryInLocal() {
 	return footsteps.getLastStep();
 	
+}
+
+Eigen::Isometry3d TwoLegOdometry::getLeftInLocal() {
+	return add(getPelvisFromStep(), pelvis_to_left);
+}
+
+
+Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
+	return add(getPelvisFromStep(), pelvis_to_right);
 }
 
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
@@ -331,6 +366,8 @@ void TwoLegOdometry::ResetInitialConditions() {
 	Eigen::Vector3d zero;
 	zero << 0.,0.,0.;
 	
+	stepcount = 0;
+	
 	local_to_pelvis.translation() = zero;
 	footsteps.reset();
 }
@@ -338,7 +375,15 @@ void TwoLegOdometry::ResetInitialConditions() {
 void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis) {
 	
 	ResetInitialConditions();
-	footsteps.addFootstep(leftfrompelvis,LEFTFOOT);
-	standing_foot = LEFTFOOT;
+	footsteps.addFootstep(pelvis_to_left,LEFTFOOT);
+	standing_foot = LEFTFOOT; // Not sure that double states should be used, this needs to change TODO
+}
+
+int TwoLegOdometry::getStepCount() {
+	return stepcount;
+}
+
+int TwoLegOdometry::getActiveFoot() {
+	return standing_foot;
 }
 
