@@ -31,7 +31,7 @@ classdef FootstepPlanner < DRCPlanner
         if changelist.goal || isempty(X_old)
           optimizer_halt = false;
           disp('got goal info')
-          for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal'}
+          for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
             options.(x{1}) = data.goal.(x{1});
           end
           options.timeout = options.timeout / 1000000;
