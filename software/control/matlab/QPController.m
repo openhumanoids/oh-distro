@@ -96,7 +96,7 @@ classdef QPController < MIMODrakeSystem
 %       obj.solver_options.presolve = 0;
 
       if obj.solver_options.method == 2
-        obj.solver_options.bariterlimit = 18; % iteration limit
+        obj.solver_options.bariterlimit = 25; % iteration limit
         obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
         obj.solver_options.barconvtol = 1e-4;
       end
@@ -155,7 +155,7 @@ classdef QPController < MIMODrakeSystem
     dJ = sparse(dJ(1:2,:)); % only need COM x-y
     Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
 
-    active_supports = find(supports~=0);
+    active_supports = find(supports~=0)
     if (isempty(active_supports))
       warning('QPController::No supporting bodies...');
     end
@@ -207,6 +207,7 @@ classdef QPController < MIMODrakeSystem
       for i=1:length(active_contacts);
         active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
+      active_idx
       Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
       Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
       Jpdot = matGradMult(Jpdot_,qd);
@@ -267,7 +268,7 @@ classdef QPController < MIMODrakeSystem
     Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
     Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
     Ieps = zeros(nc*dim,nparams); 
-    Ieps(:,nq_con+nu_con+nc+nc*dim+(1:nc*dim)) = eye(nc*dim);
+    Ieps(:,nq_con+nu_con+nc+nc*nd+(1:nc*dim)) = eye(nc*dim);
     
     
     %----------------------------------------------------------------------
