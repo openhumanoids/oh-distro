@@ -116,15 +116,15 @@ void AffordanceState::fromMsg(const drc::affordance_t *msg)
 void AffordanceState::setFrame(const KDL::Frame &frame)
 {
   //---set xyz roll pitch yaw from the frame
-  _params[X_NAME] = frame.p[0];
-  _params[Y_NAME] = frame.p[1];
-  _params[Z_NAME] = frame.p[2];
+  _origin_xyz[0] = frame.p[0];
+  _origin_xyz[1] = frame.p[1];
+  _origin_xyz[2] = frame.p[2];
   
   double roll,pitch,yaw;
   frame.M.GetRPY(roll,pitch,yaw);
-  _params[ROLL_NAME] 	= roll;
-  _params[PITCH_NAME] = pitch;
-  _params[YAW_NAME] 	= yaw;
+  _origin_rpy[0] = roll;
+  _origin_rpy[1] = pitch;
+  _origin_rpy[2] = yaw;
 }
 
 void AffordanceState::setColor(const Eigen::Vector3f &color)
@@ -235,6 +235,9 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
   _map_id 	= msg->map_id;
   _uid 	= msg->uid;
 
+  memcpy(_origin_xyz, msg->origin_xyz, 3*sizeof(double));
+  memcpy(_origin_rpy, msg->origin_rpy, 3*sizeof(double));
+
   memcpy(_bounding_pos, msg->bounding_pos, 3*sizeof(float));
   memcpy(_bounding_rpy, msg->bounding_rpy, 3*sizeof(float));
   memcpy(_bounding_lwh, msg->bounding_lwh, 3*sizeof(float));
@@ -276,6 +279,9 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	msg->map_id		= _map_id;
 	msg->uid 	= _uid;
 	msg->otdf_type		= _otdf_type;
+
+	memcpy(msg->origin_xyz, _origin_xyz, 3*sizeof(double));
+	memcpy(msg->origin_rpy, _origin_rpy, 3*sizeof(double));
 
 	memcpy(msg->bounding_pos, _bounding_pos, 3*sizeof(float));
 	memcpy(msg->bounding_rpy, _bounding_rpy, 3*sizeof(float));
@@ -321,21 +327,14 @@ void AffordanceState::toURDF(string &urdf_xml_string) const
 /**@return x,y,z or throws an exception if any of those are not present*/
 Vector3f AffordanceState::getXYZ() const
 {
-	//defensive checks
-	assertContainsKey(_params, X_NAME);
-	assertContainsKey(_params, Y_NAME);
-	assertContainsKey(_params, Z_NAME);
-
-	//using find method b/c operator[] isn't a const method
-	return Vector3f(_params.find(X_NAME)->second,
-					_params.find(Y_NAME)->second,
-					_params.find(Z_NAME)->second);
+        return Vector3f(_origin_xyz[0],_origin_xyz[1],_origin_xyz[2]);
 }
 
 
 /**@return true if we have roll/pitch/yaw parameters.  false otherwise*/
 bool AffordanceState::hasRPY() const
 {
+        return true;
 	return (_params.find(ROLL_NAME) != _params.end() &&
 			_params.find(PITCH_NAME) != _params.end() &&
 			_params.find(YAW_NAME) != _params.end());
@@ -370,12 +369,7 @@ bool AffordanceState::hasHeight() const
 /**@return roll,pitch,yaw or 0,0,0 none of those are not present*/
 Vector3f AffordanceState::getRPY() const
 {
-  //using find method b/c operator[] isn't a const method
-  return hasRPY()
-    ? Vector3f(_params.find(ROLL_NAME)->second,
-	       _params.find(PITCH_NAME)->second,
-	       _params.find(YAW_NAME)->second)
-    : Vector3f(0,0,0);
+  return Vector3f(_origin_rpy[0],_origin_rpy[1],_origin_rpy[2]);
 }
 
 

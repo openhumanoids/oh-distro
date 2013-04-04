@@ -52,6 +52,9 @@ namespace affordance
     boost::unordered_map<std::string, double> _params, //geometrical properties
                                              _states;
 
+    double _origin_xyz[3];
+    double _origin_rpy[3];
+
     float _bounding_pos[3];
     float _bounding_rpy[3];
     float _bounding_lwh[3];
