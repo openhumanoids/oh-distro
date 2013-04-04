@@ -133,15 +133,10 @@ public class RobotStateCoder implements drake.util.LCMCoder
         q[3] = msg.origin_position.rotation.z;
 
         q = quatnormalize(q);
-       /* double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
+        double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
             q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
             2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);*/
-            
-        double[] rpy = threeaxisrot(2*(q[2]*q[3] + q[0]*q[1]), 
-            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
-            2*(- q[1]*q[3] + q[0]*q[2]), 2.*(q[1]*q[2] + q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);            
+            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
 
         j = m_floating_joint_map.get("base_roll");
         if (j!=null) {
