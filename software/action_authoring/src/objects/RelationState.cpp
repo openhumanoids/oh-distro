@@ -12,8 +12,9 @@ bm_type RelationState::makeRNameMap()
     m.insert(bm_type::value_type("UNDEFINED", UNDEFINED));
     m.insert(bm_type::value_type("GRASP", GRASP));
     m.insert(bm_type::value_type("FORCE_CLOSURE", FORCE_CLOSURE));
-    m.insert(bm_type::value_type("OFFSET", OFFSET));
     m.insert(bm_type::value_type("POINT_CONTACT", POINT_CONTACT));
+    m.insert(bm_type::value_type("OFFSET", OFFSET));
+    m.insert(bm_type::value_type("NOT_IN_CONTACT", NOT_IN_CONTACT));
     return m;
 }
 

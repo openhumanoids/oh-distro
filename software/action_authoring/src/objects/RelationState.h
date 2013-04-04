@@ -28,6 +28,7 @@ public:
         FORCE_CLOSURE = 2,
         POINT_CONTACT = 3,
         OFFSET = 4,
+        NOT_IN_CONTACT = 5,
         RELATION_TYPE_LENGTH
     } RelationType;
 

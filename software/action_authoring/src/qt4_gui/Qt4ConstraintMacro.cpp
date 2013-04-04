@@ -3,6 +3,7 @@
 #include <sstream>
 
 using namespace action_authoring;
+using namespace std;
 
 Qt4ConstraintMacro::
 Qt4ConstraintMacro(ConstraintMacroPtr constraint, int constraintIndex) :
@@ -166,7 +167,7 @@ updateStateFromElements()
 
     _constraint->setTimeLowerBound(_gui_time_lower_bound->value());
     _constraint->setTimeUpperBound(_gui_time_upper_bound->value());
-
+    
     if (_gui_constraintType->currentIndex() != (int)(_constraint->getAtomicConstraint()->getRelationState()->getRelationType()) &&
         _gui_constraintType->currentIndex() >= 0 && _gui_constraintType->currentIndex() < RelationState::RELATION_TYPE_LENGTH)
     {
@@ -181,10 +182,14 @@ updateStateFromElements()
         {
             _constraint->getAtomicConstraint()->setRelationState((PointContactRelationPtr)new PointContactRelation());
         }
-        else 
+        else if (rType == RelationState::NOT_IN_CONTACT)
         {
-            _constraint->getAtomicConstraint()->setRelationState((RelationStatePtr)new RelationState(RelationState::UNDEFINED));
+          _constraint->getAtomicConstraint()->setRelationState((RelationStatePtr)new RelationState(RelationState::NOT_IN_CONTACT));
         }
+        else
+          {
+            _constraint->getAtomicConstraint()->setRelationState((RelationStatePtr)new RelationState(RelationState::UNDEFINED));
+          }
         std::cout << "set new pointer" << std::endl;
     }
 

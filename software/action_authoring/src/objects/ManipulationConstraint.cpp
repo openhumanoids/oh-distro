@@ -4,6 +4,7 @@
 using namespace action_authoring;
 using namespace affordance;
 using namespace boost;
+using namespace std;
 
 ManipulationConstraint::
 ManipulationConstraint(GlobalUID affordanceUID,
@@ -65,7 +66,20 @@ drc::contact_goal_t ManipulationConstraint::toLCM()
 	msg.object_1_contact_grp = getManipulator()->getContactGroupName();
   
     //TODO remove hardcodes here!
-    msg.contact_type = msg.ON_GROUND_PLANE;
+    switch(_relationState->getRelationType())
+      {
+      case RelationState::POINT_CONTACT:
+        msg.contact_type = drc::contact_goal_t::ON_GROUND_PLANE;
+        break;
+      case RelationState::NOT_IN_CONTACT:
+        msg.contact_type = drc::contact_goal_t::NOT_IN_CONTACT;
+        break;
+      default:
+        cout << "\n\n\n relation state = " << _relationState->getRelationType() << endl;
+        throw std::runtime_error("ManipulationConstraint: unhandled relation type for to lcm");
+      }
+    
+    
     msg.lower_bound_completion_time = _timeLowerBound;
     msg.upper_bound_completion_time = _timeUpperBound;
   
