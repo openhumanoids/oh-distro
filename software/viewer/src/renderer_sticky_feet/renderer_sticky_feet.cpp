@@ -159,10 +159,13 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     pos[0] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0]; 
     pos[1] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1]; 
     pos[2] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2]+0.0;  
-    std::stringstream oss;
-    oss << i;
-    glColor4f(0,0,0,1);
-    bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
+
+    if (i > 1) { // don't label the two steps where the robot's feet already are
+      std::stringstream oss;
+      oss << i - 1; // first footstep is number 1
+      glColor4f(0,0,0,1);
+      bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
+    }
     
     draw_state(viewer,super,i);
   }
