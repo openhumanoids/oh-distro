@@ -14,13 +14,13 @@ classdef BezierTraj
 			initial_angle = start_pos(6);
 			R = [cos(initial_angle), -sin(initial_angle); ...
 			  sin(initial_angle), cos(initial_angle)];
-      p2 = p1 + R * [1; 0];
+      p2 = p1 + R * [.5; 0];
       
       
 			final_angle = goal_pos(6);
       R = [cos(final_angle), -sin(final_angle); ...
 			  sin(final_angle), cos(final_angle)];
-      p3 = p4 - R * [1; 0];
+      p3 = p4 - R * [.5; 0];
       obj.sp = spmak([0 0 0 0 1 1 1 1], [p1 p2 p3 p4]);
       obj.df = fndir(obj.sp, eye(2));
 		end

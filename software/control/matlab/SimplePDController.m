@@ -41,7 +41,7 @@ classdef SimplePDController < DrakeSystem
         sizecheck(options.Kd,[obj.nq obj.nq]);
         obj.Kd = options.Kd;
       else
-        obj.Kd = 20.0*eye(obj.nq);
+        obj.Kd = 19.0*eye(obj.nq);
         obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
       end        
         
@@ -53,7 +53,7 @@ classdef SimplePDController < DrakeSystem
         obj.dt = 0.005;
       end
         
-      obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
+%       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
     end
    
   	function y=output(obj,t,~,x)

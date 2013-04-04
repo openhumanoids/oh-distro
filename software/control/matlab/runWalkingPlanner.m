@@ -103,6 +103,8 @@ while true
       waiting = false;
       execute = false;
     end
+    plan_pub.publish(ts,xtraj);
+    pause(0.5);
   end
 
   if execute
