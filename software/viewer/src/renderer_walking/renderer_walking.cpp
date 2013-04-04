@@ -32,7 +32,8 @@
 
 #define RENDERER_NAME "Walking"
 #define PARAM_GOAL_SEND "Walking Goal"
-#define PARAM_FIX_YAW "Fix footstep yaw"
+#define PARAM_FIX_YAW "Constrain footstep yaw"
+#define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
 #define PARAM_MAX_NUM_STEPS "Number of steps "
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
 #define PARAM_REINITIALIZE "[R]einit"
@@ -151,6 +152,7 @@ typedef struct _RendererWalking {
 
   bool has_walking_msg;
   bool fix_step_yaw;
+  bool allow_optimization;
   drc_walking_goal_t last_walking_msg;
   
   int dragging;
@@ -352,6 +354,8 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       msg.goal_pos.rotation.y = quat_out[2];
       msg.goal_pos.rotation.z = quat_out[3];
       msg.is_new_goal = true;
+      msg.allow_optimization = self->allow_optimization;
+      msg.yaw_fixed = self->fix_step_yaw;
       self->has_walking_msg = true;
       self->last_walking_msg = msg;
       fprintf(stderr, "Sending WALKING_GOAL\n");
@@ -544,12 +548,18 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->fix_step_yaw = bot_gtk_param_widget_get_bool(self->pw, PARAM_FIX_YAW);
   }
 
+  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
+    msg_changed = true;
+    self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
+  }
+
   if (msg_changed) {
     if (self->has_walking_msg) {
       self->last_walking_msg.utime = self->robot_utime; //bot_timestamp_now();
       self->last_walking_msg.max_num_steps = self->max_num_steps;
       self->last_walking_msg.is_new_goal = false;
       self->last_walking_msg.yaw_fixed = self->fix_step_yaw;
+      self->last_walking_msg.allow_optimization = self->allow_optimization;
       fprintf(stderr, "Sending WALKING_GOAL\n");
       drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
       bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
@@ -630,6 +640,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   self->has_walking_msg = false;
   self->fix_step_yaw = false;
+  self->allow_optimization = false;
   
   self->perceptionData = new PerceptionData();
   self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
@@ -642,6 +653,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FIX_YAW, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FIX_YAW, self->fix_step_yaw);
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
