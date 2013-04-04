@@ -27,5 +27,8 @@ struct walking_goal_t
 
 	// whether this is a new goal message which should force the planner to start over
 	boolean is_new_goal;
+
+	// true if the right foot leads, false if left foot leads
+	boolean right_foot_lead;
 }
 
