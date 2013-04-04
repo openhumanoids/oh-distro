@@ -8,5 +8,5 @@ frequency  = 0;
 value = ['Message here ' num2str(i) ' ' num2str(mod(i,5)) ...
   ' ' num2str(mod(i,3))];
 send_status(system, importance,frequency, value);
-pause(0.25)
+pause(0.01)
 end

@@ -30,14 +30,24 @@ classdef DRCStateMachine
       data = [];
       while 1
         ctrl = getfield(obj.controllers,obj.active_controller);
-        disp(['Initializing controller: ' ctrl.name '.']);
+        msg = ['Initializing controller: ' ctrl.name];
+        send_status(3, 0, 0, msg );
+        disp(msg);
+        
         ctrl = ctrl.initialize(data);
-        disp(['Running controller: ' ctrl.name '.']);
+        
+        msg = ['Running controller: ' ctrl.name];
+        send_status(3, 0, 0, msg );
+        disp(msg);
         transition_data = ctrl.run();
         
         fn = fieldnames(transition_data);
         transition_to = fn{1}; % arbitrarily take the first one if multiple transitions occured simultaneously
-        disp(['Transitioning from ' ctrl.name ' to ' transition_to '.']);
+        
+        msg = ['Transitioning from ' ctrl.name ' to ' transition_to];
+        send_status(3, 0, 0, msg );
+        disp(msg);
+        
         obj = setActiveController(obj,transition_to);
         data = getfield(transition_data,obj.active_controller);
       end

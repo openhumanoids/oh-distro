@@ -155,7 +155,7 @@ classdef QPController < MIMODrakeSystem
     dJ = sparse(dJ(1:2,:)); % only need COM x-y
     Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
 
-    active_supports = find(supports~=0)
+    active_supports = find(supports~=0);
     if (isempty(active_supports))
       warning('QPController::No supporting bodies...');
     end
@@ -163,14 +163,14 @@ classdef QPController < MIMODrakeSystem
    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = abs(phi)<0.005;
+    active_contacts = abs(phi)<0.008;
     nc = sum(active_contacts);
 
     if nc==0
       % ignore supporting body spec, use any body in contact
       [~,Jp,dJp] = contactPositions(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = abs(phi)<0.01;
+      active_contacts = abs(phi)<0.008;
       nc = sum(active_contacts);
       partial_contacts = [];
       partial_idx = [];
@@ -192,13 +192,13 @@ classdef QPController < MIMODrakeSystem
       % phase passes before the swing foot comes in  contact with the
       % ground. 
       partial_contacts = find(partial_contacts & active_contacts); 
-      active_contacts = find(active_contacts);
 
       partial_idx = zeros(dim*length(partial_contacts),1);
       for i=1:length(partial_contacts);
         partial_idx((i-1)*dim+1:i*dim) = (partial_contacts(i)-1)*dim + (1:dim)';
       end
     end
+    active_contacts = find(active_contacts);
     
     if nc > 0
       Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
@@ -207,7 +207,7 @@ classdef QPController < MIMODrakeSystem
       for i=1:length(active_contacts);
         active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
-      active_idx
+      %active_idx
       Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
       Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
       Jpdot = matGradMult(Jpdot_,qd);
