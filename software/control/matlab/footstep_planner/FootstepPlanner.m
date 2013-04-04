@@ -2,8 +2,6 @@ classdef FootstepPlanner < DRCPlanner
   properties
     biped
     monitors
-    walking_goal_coder
-    % plan_publisher
   end
   
   methods
@@ -29,6 +27,15 @@ classdef FootstepPlanner < DRCPlanner
       last_publish_time = now();
       optimizer_halt = false;
       while 1
+        if changelist.goal || isempty(X_old)
+          optimizer_halt = false;
+          disp('got goal info')
+          for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal'}
+            options.(x{1}) = data.goal.(x{1});
+          end
+          options.timeout = options.timeout / 1000000;
+          isnew = true;
+        end
         [data, changed, changelist] = obj.updateData(data);
         if (changelist.goal && data.goal.is_new_goal) || isempty(X_old)
           optimizer_halt = false;
@@ -44,18 +51,9 @@ classdef FootstepPlanner < DRCPlanner
           goal_pos(3) = 0;
           %%% end hack 
 
-          [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos);
+          [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, options);
         end
         changelist
-        if changelist.goal || isempty(X_old)
-          optimizer_halt = false;
-          disp('got goal info')
-          for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal'}
-            options.(x{1}) = data.goal.(x{1});
-          end
-          options.timeout = options.timeout / 1000000;
-          isnew = true;
-        end
         if changelist.plan_reject 
           optimizer_halt = true;
           disp('rejected')
