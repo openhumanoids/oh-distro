@@ -26,7 +26,7 @@ classdef BezierTraj
 		end
 
 		function Xi = eval(obj, li)
-      d = ppval(df, li);
+      d = ppval(obj.df, li);
       Xi = [fnval(obj.sp, li); zeros(3, length(li)); atan2(d(2, :), d(1, :))];
 		end
 	end

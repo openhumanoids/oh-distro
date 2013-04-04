@@ -1,10 +1,5 @@
 function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 
-  if options.yaw_fixed 
-    traj = turnGoTraj([x0, poses]);
-  else
-    traj = BezierTraj([x0, poses]);
-  end
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
@@ -17,6 +12,13 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', 1);
   X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', 0);
 
+  p0 = mean([X(1).pos, X(2).pos], 2);
+  if options.yaw_fixed 
+    traj = turnGoTraj([p0, poses]);
+  else
+    traj = BezierTraj([p0, poses]);
+  end
+
   lambda = 0;
   while (1)
     lambda_n = 1;
@@ -26,19 +28,21 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
         x(6) = x0(6);
       end
       pos_n = biped.stepCenter2FootCenter(x, ~X(end).is_right_foot);
-      if biped.checkStepFeasibility(X(end), pos_n, X(end).is_right_foot)
+      c = biped.checkStepFeasibility(X(end).pos, pos_n, X(end).is_right_foot);
+      if all(c <= 0)
         break
       else
         lambda_n = lambda + (lambda_n - lambda) * .9;
       end
     end
+    lambda = lambda_n
     X(end+1) = struct('pos', pos_n, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', ~X(end).is_right_foot);
     if X(end).is_right_foot
       goal = foot_goals.right;
     else
       goal = foot_goals.left;
     end
-    if all(X(end).pos - goal < 0.05) or length(X) >= options.max_num_steps - 1
+    if all(X(end).pos - goal < 0.05) || length(X) >= options.max_num_steps - 1
       break
     end
   end
