@@ -15,6 +15,9 @@ struct affordance_t
   const int16_t NEW=0, UPDATE=1, DELETE=2; //interruption for reset or halting
   
   // geometrical properties, 
+  double origin_xyz[3];
+  double origin_rpy[3];
+
   int32_t nparams;
   double params[nparams];
   string param_names[nparams];
