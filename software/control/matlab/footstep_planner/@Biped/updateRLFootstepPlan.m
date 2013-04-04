@@ -1,7 +1,6 @@
 function [X, exitflag] = updateRLFootstepPlan(biped, X, foot_goals, options, heightfun)
 
-  max_step_width = 0.35;
-  max_diag_dist = sqrt(max_step_width^2 + biped.max_step_length^2);
+  max_diag_dist = sqrt(biped.max_step_width^2 + biped.forward_step^2);
 
 % if options.max_num_steps - (length(X)-2) >= 1
 %   if X(end-1).is_right_foot
@@ -80,7 +79,7 @@ Xpos([1,2,6], :) = reshape(x_flat, 3, []);
 Xposc = num2cell(Xpos, 1);
 [X.pos] = Xposc{:};
 
-if (exitflag == -2 && options.max_num_steps > length(X)) || options.min_num_steps > length(X) - 2
+if (exitflag == -2 && options.max_num_steps > length(X) - 2) || options.min_num_steps > length(X) - 2
   % Xpos
   c = biped.checkStepFeasibility(Xpos(:, 1:end-1), Xpos(:, 2:end), [X(1:end-1).is_right_foot]);
   c = reshape(c, 3, length(X)-1);

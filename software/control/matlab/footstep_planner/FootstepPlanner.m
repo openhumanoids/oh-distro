@@ -37,7 +37,7 @@ classdef FootstepPlanner < DRCPlanner
           options.timeout = options.timeout / 1000000;
           isnew = true;
         end
-        if (changelist.goal && data.goal.is_new_goal) || isempty(X_old)
+        if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
           disp('got new goal');
           goal_pos = [data.goal.goal_pos.translation.x;
                       data.goal.goal_pos.translation.y;
@@ -73,7 +73,12 @@ classdef FootstepPlanner < DRCPlanner
 
         if ~optimizer_halt && data.goal.allow_optimization
           [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
+        else
+          for j = 1:size(X, 2)
+            X(j).pos(3) = heightfun(X(j).pos(1:2));
+          end
         end
+
         if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
           modified = false;
         else

@@ -1,13 +1,15 @@
 classdef Biped < TimeSteppingRigidBodyManipulator
   properties
     step_time
-    max_step_length
+    max_forward_step
+    max_backward_step
+    max_step_width
+    min_step_width
+    nom_step_width
     max_step_rot
-    min_foot_proximity
     foot_contact_offsets
     r_foot_name
     l_foot_name
-    step_width
     lc
   end
   
@@ -22,11 +24,13 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       defaults = struct('step_time', 1.3,... % s
-        'max_step_length', .50,... % m
+        'max_forward_step', 0.40,... %m
+        'max_backward_step', 0.20,...%m
+        'max_step_width', 0.35,...%m
+        'min_step_width', 0.15,...%m
+        'nom_step_width', 0.18,...%m (nominal step width)
         'max_step_rot', pi/4,... % rad
-        'min_foot_proximity', 0.15,... % m
         'r_foot_name', 'r_foot',...
-        'step_width', 0.22,...
         'l_foot_name', 'l_foot');
       fields = fieldnames(defaults);
       for i = 1:length(fields)
@@ -83,9 +87,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
     function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot)
       if is_right_foot
-        offs = [0; -obj.step_width/2; 0];
+        offs = [0; -obj.nom_step_width/2; 0];
       else
-        offs = [0; obj.step_width/2; 0];
+        offs = [0; obj.nom_step_width/2; 0];
       end
       for j = 1:length(Xc(1,:))
         M = makehgtform('xrotate', Xc(4, j), 'yrotate', Xc(5, j), 'zrotate', Xc(6, j));
@@ -96,9 +100,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
     function Xc = footCenter2StepCenter(obj, Xo, is_right_foot)
       if is_right_foot
-        offs = [0; -obj.step_width/2; 0];
+        offs = [0; -obj.nom_step_width/2; 0];
       else
-        offs = [0; obj.step_width/2; 0];
+        offs = [0; obj.nom_step_width/2; 0];
       end
       for j = 1:length(Xo(1,:))
         M = makehgtform('xrotate', Xo(4, j), 'yrotate', Xo(5, j), 'zrotate', Xo(6, j));

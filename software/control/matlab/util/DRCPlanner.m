@@ -61,14 +61,14 @@ classdef DRCPlanner < handle
         changelist = setfield(changelist,obj.name{i},false);
         % if (obj.updatable(i) && getLastTimestamp(obj.monitors{i})>=data.utime)
         % if obj.updatable(i)
-        if obj.updatable(i) && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i))
+        if obj.updatable(i) && (getLastTimestamp(obj.monitors{i}) >= obj.last_msg_utimes(i))
         % if (obj.updatable(i) ...
         %     && (getLastTimestamp(obj.monitors{i}) > obj.last_msg_utimes(i) ...
         %         || obj.always_process(i)))
           % data.utime = max(data.utime,getLastTimestamp(obj.monitors{i}));
           obj.last_msg_utimes(i) = getLastTimestamp(obj.monitors{i});
           % d = getNextMessage(obj.monitors{i}, 0);
-          d = getMessage(obj.monitors{i});
+          d = getNextMessage(obj.monitors{i}, 0);
           % if obj.always_process(i)
           %   d = getNextMessage(obj.monitors{i}, 1);
           % else

@@ -18,6 +18,9 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   else
     traj = BezierTraj([p0, poses]);
   end
+  t = linspace(0, 1);
+  xy = traj.eval(t);
+  plot_lcm_points([xy(1,:)', xy(2,:)', ones(length(t), 1)], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
 
   lambda = 0;
   while (1)
@@ -42,7 +45,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
     else
       goal = foot_goals.left;
     end
-    if all(X(end).pos - goal < 0.05) || length(X) >= options.max_num_steps - 1
+    if all(abs(X(end).pos - goal) < 0.05) || length(X) - 2 >= options.max_num_steps - 1
       break
     end
   end
