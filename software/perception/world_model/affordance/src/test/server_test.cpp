@@ -29,6 +29,8 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		cout << "\n\n===" << j << endl;
 		cout << wrapper << endl;
 		boost::this_thread::sleep(sleepTime); //======sleep
+        j++;
+
 
 		//draw
 		vector<AffConstPtr> affordances;
@@ -40,7 +42,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		}
 
 		//======add something to the server
-		if (j++ == 1 || j == 10)
+		if (j == 1 || j == 10)
 		{
 		  AffordanceState s;
 		  s._map_id 	 = 7;
@@ -48,7 +50,14 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
 		  s._params[AffordanceState::RADIUS_NAME] = (j == 10 ? 9999 : 1.41);
           s._params[AffordanceState::LENGTH_NAME] = 9;
           s.setType(AffordanceState::CYLINDER);
-          wrapper.addNewlyFittedAffordance(s);
+          
+          if (j == 1)
+            wrapper.addNewlyFittedAffordance(s);
+          else
+            {
+              s._uid = 1; //expect to get set to 1
+              wrapper.updateTrackedAffordance(s);
+            }
 		}
 
 		if (j == 15 || j == 20)
@@ -66,7 +75,7 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
           else
             {
               //need the actual uid now
-              s._uid = 1; //this will be the uid that it gets set to by affordance store.  
+              s._uid = 2; //this will be the uid that it gets set to by affordance store.  
               wrapper.deleteAffordance(s);
             }
 		}

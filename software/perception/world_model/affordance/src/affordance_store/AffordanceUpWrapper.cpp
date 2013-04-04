@@ -51,12 +51,14 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 {
 	_accessMutex.lock(); //=========lock
 
-	drc::affordance_t msg;
-	aff.toMsg(&msg);
-    msg.aff_store_control = drc::affordance_t::NEW;
+	drc::affordance_plus_t msgPlus;
+	aff.toMsg(&msgPlus.aff);
 
-	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msg);
+    msgPlus.aff.aff_store_control = drc::affordance_t::NEW;
+    msgPlus.npoints = 0;
+    msgPlus.ntriangles = 0;
 
+	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msgPlus);
 	_accessMutex.unlock(); //========unlock
 }
 
@@ -66,11 +68,14 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
   {
     _accessMutex.lock(); //=========lock
 
-	drc::affordance_t msg;
-	aff.toMsg(&msg);
-    msg.aff_store_control = drc::affordance_t::DELETE;
+	drc::affordance_plus_t msgPlus;
+	aff.toMsg(&msgPlus.aff);
+    msgPlus.aff.aff_store_control = drc::affordance_t::DELETE;
 
-	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msg);
+    msgPlus.npoints = 0;
+    msgPlus.ntriangles = 0;
+
+	_lcm->publish(AffordanceServer::AFFORDANCE_FIT_CHANNEL, &msgPlus);
 	_accessMutex.unlock(); //========unlock
   }
 

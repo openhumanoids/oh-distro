@@ -14,21 +14,28 @@
 #include <boost/unordered_map.hpp>
 #include <boost/thread.hpp>
 
-#include "affordance/AffordanceState.h"
+#include "affordance/AffordancePlusState.h"
 
 namespace affordance
 {
 
 //maps from : affordance.objectId --> that affordance
-typedef boost::shared_ptr<boost::unordered_map<int32_t, AffPtr> > AffIdMap;
+typedef boost::shared_ptr<boost::unordered_map<int32_t, AffPlusPtr> > AffIdMap;
 
 class AffordanceServer {
 
 	//----fields
 public:
 	/**Do not publish to this channel.  This channel is reserved for this server
-	 * to periodically publish the server state.*/
+	 * to periodically publish the server state in a light format: 
+     affordance_collection_t.*/
 	const static std::string AFF_SERVER_CHANNEL;
+
+	/**Do not publish to this channel.  This channel is reserved for this server
+	 * to periodically publish the entire server state as 
+     affordance_plus_collection_t.*/
+	const static std::string AFF_PLUS_SERVER_CHANNEL;
+
 
 	/**Channel for affordance updates from tracking
 	   an affordance_t message received on this channel will be added to the server and
@@ -41,6 +48,15 @@ public:
 	 */
 	const static std::string AFFORDANCE_FIT_CHANNEL;
 
+    /**if a message is received on this channel, will completely 
+       overwrite the state of the affordance server*/
+	const static std::string AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL;
+
+    /**if a message is received on this channel, will completely 
+     overwrite the state of the affordance server*/
+	const static std::string AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL;
+
+
 private:
 	/**shared lcm object */
 	boost::shared_ptr<lcm::LCM> _lcm;
@@ -51,8 +67,13 @@ private:
 	/**uid that will be assigned to the next object added*/
 	uint _nextObjectUID;
 
-	/**periodic publishing thread*/
-	boost::thread _pubThread;
+	/**periodic publishing thread of affordance collection*/
+	boost::thread _pubLightThread;
+
+	/**periodic publishing thread of all plus objects*/
+	boost::thread _pubPlusThread;
+
+    /**period publishing thread of affordance_plus_collection*/
 
 	/**mutex for _mapIdToAffIdMaps*/
 	boost::mutex _serverMutex;
@@ -64,14 +85,19 @@ public:
 
 	//---------message handling
 private:
-	void handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-				      const drc::affordance_t *affordance);
-	void handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-				      const drc::affordance_t *affordance);
+	void handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, 
+                                  const std::string& channel,
+                                  const drc::affordance_t *affordance);
+	void handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, 
+                                const std::string& channel,
+                                const drc::affordance_plus_t *affordance_plus);
 
-	void handle(const drc::affordance_t *aff);
+    void nukeAndOverwrite(const lcm::ReceiveBuffer* rbuf, 
+                                const std::string& channel,
+                                const drc::affordance_plus_collection_t *affordance_plus);
 
-	void runPeriodicPublish(void);
+	void runPeriodicLightPublish(void);
+	void runPeriodicPlusPublish(void);
 };
 
 } //namespace affordance
