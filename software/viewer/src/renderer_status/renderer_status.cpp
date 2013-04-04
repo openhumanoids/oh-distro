@@ -26,15 +26,22 @@
 
 using namespace std;
 #define RENDERER_NAME "System_Status"
-const char* PARAM_STATUS_0 = "Messages";
-const char* PARAM_STATUS_1 = "Mo. Est.";
+const char* PARAM_STATUS_0 = "Network";
+const char* PARAM_STATUS_1 = "Motion Estimation";
 const char* PARAM_STATUS_2 = "Tracking";
+const char* PARAM_STATUS_3 = "Planning & Control";
+const char* PARAM_STATUS_4 = "Grasping";
+#define NUMBER_OF_SYSTEMS 5
+#define MAXIMUM_N_OF_LINES 80
+
 const char* PARAM_IMPORTANT = "Important";
 const char* PARAM_MODE = "Mode";
 
 const bool PARAM_STATUS_0_DEFAULT = false;
 const bool PARAM_STATUS_1_DEFAULT = false;
 const bool PARAM_STATUS_2_DEFAULT = false;
+const bool PARAM_STATUS_3_DEFAULT = false;
+const bool PARAM_STATUS_4_DEFAULT = false;
 const bool PARAM_IMPORTANT_DEFAULT = false;
 
 #define ERR(fmt, ...) do { \
@@ -64,7 +71,7 @@ typedef struct
     
     // used for multidimensional lists:
     vector<string> msgchannels;
-    bool param_status[3];
+    bool param_status[NUMBER_OF_SYSTEMS];
     bool param_important;
     int visability;
     
@@ -85,15 +92,22 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
 {
     RendererSystemStatus *self = (RendererSystemStatus*) user;
     
-    self->sys_deque->push_back(drc_system_status_t_copy(msg));
-    if( self->sys_deque->size() > 200){
+    drc_system_status_t* recd = drc_system_status_t_copy(msg);
+    // NB: overwrite the incoming timestamp as that might have come from a simulated clock
+    recd->utime = bot_timestamp_now();
+    
+    self->sys_deque->push_back(recd);
+    if( self->sys_deque->size() > MAXIMUM_N_OF_LINES){
       self->sys_deque->pop_front();
     }
 
+    // If we dont know which system this belongs to, remove it
     int w = (int) msg->system;
-    self->deques[ w ]->push_back( drc_system_status_t_copy(msg) );
-    if( self->deques[ w ]->size() > 200){
-      self->deques[ w ]->pop_front();
+    if (w < NUMBER_OF_SYSTEMS+2){
+      self->deques[ w ]->push_back( recd );
+      if( self->deques[ w ]->size() > MAXIMUM_N_OF_LINES){
+        self->deques[ w ]->pop_front();
+      }
     }
 
     /*stringstream ss;
@@ -170,10 +184,12 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     void *font = GLUT_BITMAP_9_BY_15;
     int line_height = 14;
 
-    float colors[3][3] = {
+    float colors[5][3] = {
         { 1.0, 0.0, 0.0 }, // red
         { 0.7, 0.7, 0.0 }, // yellow
         { 0.0, 1.0, 0.5 }, // green
+        { 0.0, 0.7, 0.7 }, // ??
+        { 0.0, 0.0, 1.0 }, // blue
     };
     //{ 0.6, 0.6, 0.6 }, // gray        
 
@@ -224,7 +240,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glutBitmapString(font, (unsigned char*) line6);
     
     // scrolling text://////////////////////////////
-    double x_pos =140;
+    double x_pos =180;
     double y_pos;
     y = line_height;
     char scroll_line[100];
@@ -234,7 +250,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       W_to_show=1;
     }
     int N_active_params=0;
-    for (int j=0; j < 3 ; j++){
+    for (int j=0; j < NUMBER_OF_SYSTEMS ; j++){
       if (self->param_status[j]){
         //printf ("%d is active\n",j);
         N_active_params++;
@@ -242,7 +258,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       }
     }
     
-    int max_msgs_onscreen =80;
+    int max_bottom_strip = 15;
     if (1==1){
     
       if (N_active_params==1){ // if only one class wants to be shown:
@@ -262,7 +278,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          colors4[1] =colors[W_to_show][1];
          colors4[2] =colors[W_to_show][2];
          colors4[3] =1;
-         if (i>10){
+         if (i < (self->sys_deque->size() - max_bottom_strip) ){
 	      if (self->visability==MODE_FULL){
 		colors4[3] = 1;
 	      }else if (self->visability==MODE_NONE){
@@ -283,14 +299,12 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          glRasterPos2f(x_pos, gl_height -y_pos  );
          glutBitmapString(font, (unsigned char*) scroll_line);    
          msgs_onscreen++;
-         if (msgs_onscreen > max_msgs_onscreen) {
+         if (msgs_onscreen > MAXIMUM_N_OF_LINES) {
 	   break;
          }
        }
      }else if((N_active_params > 1)&&(self->param_important)){
-       //          printf ("show multiple widgets\n");
-       //   printf("refresh\n");
-       //glColor3fv(colors[1]);
+       //printf("important\n");
        int msgs_onscreen = 0;
        for (int i=self->sys_deque->size()-1 ;i>=0;i--){
          if (y_pos > (gl_height)){ // stop of we have covered the screen:
@@ -302,33 +316,33 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          int age_of_msg =(int) (bot_timestamp_now() - this_utime)/1000000;
          int W_to_show_comb = (int) self->sys_deque->at(i)->system;
          //cout << "i  should choose colour" << W_to_show_comb << endl; 
-         if (self->param_status[W_to_show_comb]){
-           y_pos = line_height*((float)msgs_onscreen +1);
-           float colors4[4] = {0};
-           colors4[0] =colors[W_to_show_comb][0];
-           colors4[1] =colors[W_to_show_comb][1];
-           colors4[2] =colors[W_to_show_comb][2];
-           colors4[3] =1;
-           if (i>10){
-	      if (self->visability==MODE_FULL){
-		colors4[3] = 1;
-	      }else if (self->visability==MODE_NONE){
-		colors4[3] = 0;
-	      }else{
-		colors4[3] = 0.4;
-	      }
-           }
-           sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
-           // use this for debugging:
-           //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
-           //      glColor3fv(colors[1]);
-           glColor4fv(colors4);
-           glRasterPos2f(x_pos, gl_height -y_pos  );
-           glutBitmapString(font, (unsigned char*) scroll_line);    
-           msgs_onscreen++;
-           if (msgs_onscreen > max_msgs_onscreen) {
-	     break;
-           }
+           if (self->param_status[W_to_show_comb]){
+             y_pos = line_height*((float)msgs_onscreen +1);
+             float colors4[4] = {0};
+             colors4[0] =colors[W_to_show_comb][0];
+             colors4[1] =colors[W_to_show_comb][1];
+             colors4[2] =colors[W_to_show_comb][2];
+             colors4[3] =1;
+             if (i <  (self->sys_deque->size() - max_bottom_strip) ){
+               if (self->visability==MODE_FULL){
+                 colors4[3] = 1;
+               }else if (self->visability==MODE_NONE){
+                 colors4[3] = 0;
+               }else{
+                 colors4[3] = 0.4;
+               }
+             }
+             sprintf(scroll_line, "%5.d %s",age_of_msg,temp.c_str());
+             // use this for debugging:
+             //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
+             //      glColor3fv(colors[1]);
+             glColor4fv(colors4);
+             glRasterPos2f(x_pos,  gl_height -y_pos   );
+             glutBitmapString(font, (unsigned char*) scroll_line);    
+             msgs_onscreen++;
+             if (msgs_onscreen > MAXIMUM_N_OF_LINES) {
+              break;
+             }
          }
        }
      }else if (N_active_params > 1){ // if only two classes want to be shown:
@@ -345,7 +359,6 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          long long this_utime= self->sys_deque->at(i)->utime;
          int age_of_msg =(int) (bot_timestamp_now() - this_utime)/1000000;
          int W_to_show_comb = (int) self->sys_deque->at(i)->system;
-         istringstream ( temp.substr(0,1) ) >> W_to_show_comb;
          //cout << "i  should choose colour" << W_to_show_comb << endl; 
          if (self->param_status[W_to_show_comb]){
            y_pos = line_height*((float)msgs_onscreen +1);
@@ -354,7 +367,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
            colors4[1] =colors[W_to_show_comb][1];
            colors4[2] =colors[W_to_show_comb][2];
            colors4[3] =1;
-           if (i>10){
+           if (i < (self->sys_deque->size() - max_bottom_strip) ){
 	      if (self->visability==MODE_FULL){
 		colors4[3] = 1;
 	      }else if (self->visability==MODE_NONE){
@@ -373,7 +386,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
            glRasterPos2f(x_pos, gl_height -y_pos  );
            glutBitmapString(font, (unsigned char*) scroll_line);    
            msgs_onscreen++;
-           if (msgs_onscreen > max_msgs_onscreen) {
+           if (msgs_onscreen > MAXIMUM_N_OF_LINES) {
 	     break;
            }
          }
@@ -397,6 +410,8 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_status[0] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_0);
   self->param_status[1] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_1);
   self->param_status[2] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_2);
+  self->param_status[3] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_3);
+  self->param_status[4] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_4);
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);
   bot_viewer_request_redraw (self->viewer);
@@ -432,7 +447,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
 
     self->sys_deque = new deque<drc_system_status_t *> ();
 //    deque<drc_system_status_t *> * adeque; = new deque<drc_system_status_t *> ();
-    for (int i=0;i<3;i++){
+    for (int i=0;i< NUMBER_OF_SYSTEMS;i++){
       self->deques.push_back( new deque<drc_system_status_t *> () );
     }
     
@@ -456,6 +471,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->param_status[0] = PARAM_STATUS_0_DEFAULT;    
     self->param_status[1] = PARAM_STATUS_1_DEFAULT;    
     self->param_status[2] = PARAM_STATUS_2_DEFAULT;    
+    self->param_status[3] = PARAM_STATUS_3_DEFAULT;    
+    self->param_status[4] = PARAM_STATUS_4_DEFAULT;    
     self->param_important = PARAM_IMPORTANT_DEFAULT;
     
   if (viewer) {
@@ -478,6 +495,10 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_STATUS_1, PARAM_STATUS_1_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_STATUS_2, PARAM_STATUS_2_DEFAULT, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_STATUS_3, PARAM_STATUS_3_DEFAULT, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_STATUS_4, PARAM_STATUS_4_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_IMPORTANT, PARAM_IMPORTANT_DEFAULT, NULL);
 
