@@ -15,5 +15,9 @@ struct bandwidth_stats_t
     // this is just queued - not transmitted or additional transport overhead
     int32_t queued_msgs [num_channels];
     int32_t queued_bytes [num_channels];
+
+    // actual cumulative bytes (without UDP or IPv4 overhead) transmitted or received per LCM channel
+    int32_t sent_bytes [num_channels];
+    int32_t received_bytes [num_channels];
 }
 
