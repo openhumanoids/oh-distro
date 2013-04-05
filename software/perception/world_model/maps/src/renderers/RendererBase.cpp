@@ -160,11 +160,6 @@ struct RendererBase::InternalHelper {
     free(mBotRenderer.name);
   }
 
-  static Gtk::Main* getGtkMain() {
-    static Gtk::Main theMain(0,NULL);
-    return &theMain;
-  }
-
   static void destroy(BotRenderer* iRenderer) {
     RendererBase* renderer = reinterpret_cast<RendererBase*>(iRenderer->user);
     delete renderer;
@@ -284,7 +279,7 @@ RendererBase(const std::string& iName,
 
   // other initializations
   drc::Clock::instance()->setLcm(mHelper->mLcm);
-  mHelper->getGtkMain();
+  Gtk::Main::init_gtkmm_internals();
   
   // assign event handlers
   memset(&mHelper->mBotEventHandler, 0, sizeof(BotEventHandler));

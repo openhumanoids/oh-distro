@@ -11,7 +11,7 @@ add_library(renderer_data_control SHARED
 set_target_properties(renderer_data_control PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(renderer_data_control
-  lcmtypes_drc_lcmtypes bot2-vis gtkmm-2.4)
+  drc-utils lcmtypes_drc_lcmtypes bot2-vis gtkmm-2.4)
 
 pods_install_headers(DataControlRenderer.hpp
   DESTINATION renderer_data_control)
@@ -20,7 +20,7 @@ pods_install_libraries(renderer_data_control)
   
 pods_install_pkg_config_file(renderer_data_control
     LIBS -lrenderer_data_control
-    REQUIRES lcmtypes_drc_lcmtypes bot2-vis
+    REQUIRES lcmtypes_drc_lcmtypes bot2-vis drc-utils
     VERSION 0.0.1)
 
 #####################################################################
