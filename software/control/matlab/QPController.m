@@ -163,14 +163,25 @@ classdef QPController < MIMODrakeSystem
    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = abs(phi)<0.01;
+    active_contacts = abs(phi)<0.005;
+    %%%%% TMP HACK %%%%%
+    %%%%% TMP HACK %%%%%
+    if any(active_contacts(1:4))
+      active_contacts(1:4) = 1;
+    end
+    if length(phi)>4 && any(active_contacts(5:8))
+      active_contacts(5:8) = 1;
+    end
+    %%%%% TMP HACK %%%%%
+    %%%%% TMP HACK %%%%%
+    
     nc = sum(active_contacts);
 
     if nc==0
       % ignore supporting body spec, use any body in contact
       [~,Jp,dJp] = contactPositions(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = abs(phi)<0.01;
+      active_contacts = abs(phi)<0.005;
       nc = sum(active_contacts);
       partial_contacts = [];
       partial_idx = [];
