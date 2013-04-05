@@ -67,6 +67,7 @@ private:
 	
 	// Drawing stuff
 	ObjectCollection* _obj;
+	LinkCollection* _link;
 	
 	bool stillbusy;
 	int poseplotcounter;

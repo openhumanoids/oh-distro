@@ -207,48 +207,25 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 
 }
 
-Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
-	Eigen::Isometry3d returnval;
-	
-	//Eigen::Isometry3d testcase;
-	//Eigen::Isometry3d testcase2;
-	//Eigen::Isometry3d addresult;
-			
-	//testcase.translation() << 10,10,10;
-	//testcase2.translation() << 1,1,1;
+Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
+	//std::cout << "Taking primary as: " << (footsteps.lastFoot()==LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
+	if (footsteps.lastFoot() == LEFTFOOT)
+		return right_to_pelvis;
+	if (footsteps.lastFoot() == RIGHTFOOT)
+		return left_to_pelvis;
+	return Eigen::Isometry3d();
+}
 
-	
-	//std::cout << "TwoLegOdometry::getPelvisFromStep(): Last step=" << footsteps.getLastStep().translation().transpose() << std::endl;
-	//std::cout << "Test case: " << testcase.translation().transpose() << std::endl;
-	
-	//addresult = add(testcase,testcase2);
-	//std::cout << "Add case: " << addresult.translation().transpose() << std::endl;
-	
-	if (primary_foot() == LEFTFOOT)
-	{
-		if (footsteps.lastFoot() != LEFTFOOT) {
-		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";
-		}
-		//returnval = add(footsteps.getLastStep(),left_to_pelvis);
-		returnval = add(footsteps.getLastStep(),left_to_pelvis);
-				
-		//std::cout << " left  ";
-		//return addTransforms(footsteps.getLastStep(), left_to_pelvis);
-		
-	}
-	else
-	{
-		if (footsteps.lastFoot() != RIGHTFOOT) {
-		  cout << "LEFT RIGHT ACTIVE FOOT SEQUENCING IS INCONSISTENT TwoLegOdometry::getPelvisFromStep()\n";	
-		}
-		//returnval = add(footsteps.getLastStep(),right_to_pelvis);
-		returnval = add(footsteps.getLastStep(),right_to_pelvis);
-		//std::cout << " right ";
-		//return addTransforms(footsteps.getLastStep(), right_to_pelvis);
-	}
-	
-	//std::cout << "returnval: " << returnval.translation().transpose() << std::endl;
-	return returnval;
+Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
+	if (footsteps.lastFoot() == LEFTFOOT)
+		return left_to_pelvis;
+	if (footsteps.lastFoot() == RIGHTFOOT)
+		return right_to_pelvis;
+	return Eigen::Isometry3d();
+}
+
+Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
+	return add(footsteps.getLastStep(),getPrimaryFootToPelvis());
 }
 
 Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id) {
@@ -260,7 +237,7 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 		returnval = add(add(from,left_to_pelvis),pelvis_to_right);
 		break;
 	case RIGHTFOOT:
-		std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
+		//std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
 		returnval = add(add(from,right_to_pelvis),pelvis_to_left);
 		break;
 	default:
@@ -274,7 +251,7 @@ Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d
 Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	
 	//std::cout << "pelvis to left: " << (pelvis_to_left*local_to_pelvis).translation().transpose() << std::endl;
-	std::cout << (secondary_foot()==LEFTFOOT ? "LEFT" : "RIGHT") << " is secondary_foot()" << std::endl;
+	//std::cout << (secondary_foot()==LEFTFOOT ? "LEFT" : "RIGHT") << " is secondary_foot()" << std::endl;
 	Eigen::Isometry3d returnval;
 	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
 	

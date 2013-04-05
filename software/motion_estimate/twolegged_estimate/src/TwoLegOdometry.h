@@ -86,7 +86,8 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d getLeftInLocal();
 		Eigen::Isometry3d getRightInLocal();
-				
+		Eigen::Isometry3d getSecondaryFootToPelvis();
+		Eigen::Isometry3d getPrimaryFootToPelvis();
 		
 		void setPelvisPosition(Eigen::Isometry3d transform);
 		void ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis);

@@ -48,11 +48,13 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	poseplotcounter = 0;
 	collectionindex = 101;
 	_obj = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
+	_link = new LinkCollection(2, std::string("Links"));
 	
 	firstpass = true;
 	
 #ifdef DISPLAY_FOOTSTEP_POSES
 	_viewer = new Viewer(lcm_viewer);
+	
 #endif
 	
 	return;
@@ -64,6 +66,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	delete _leg_odo;
 	delete _obj;
 	delete _viewer;
+	delete _link;
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
 	
@@ -167,12 +170,17 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	//drawLeftFootPose();
 	//drawRightFootPose();
-	drawSumPose();
+	//drawSumPose();
+	addIsometryPose(78, _leg_odo->getPelvisFromStep());
+	addIsometryPose(79, _leg_odo->getPelvisFromStep());
 		
 	
 	if (legchangeflag)
-		;
-	
+	{
+		std::cout << "LEGCHANGE\n";
+		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
+		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
+	}
 	
 	_viewer->sendCollection(*_obj, true);
 #endif
@@ -199,8 +207,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         
         bot_core::pose_t pose;
         pose.pos[0] =currentPelvis.translation().x();
-        pose.pos[1] =-currentPelvis.translation().y();
-        pose.pos[2] =-currentPelvis.translation().z();
+        pose.pos[1] =currentPelvis.translation().y();
+        pose.pos[2] =currentPelvis.translation().z();
         pose.orientation[0] =1.;
         pose.orientation[1] =0.;
         pose.orientation[2] =0.;
@@ -219,6 +227,9 @@ void LegOdometry_Handler::drawLeftFootPose() {
 	//addIsometryPose(98, _leg_odo->left_to_pelvis);
 	addIsometryPose(97, _leg_odo->left_to_pelvis);
 	addIsometryPose(98, _leg_odo->left_to_pelvis);
+	
+	addIsometryPose(87, _leg_odo->pelvis_to_left);
+	addIsometryPose(88, _leg_odo->pelvis_to_left);
 			
 }
 
@@ -230,7 +241,8 @@ void LegOdometry_Handler::drawRightFootPose() {
 	
 	addIsometryPose(99,_leg_odo->right_to_pelvis);
 	addIsometryPose(100,_leg_odo->right_to_pelvis);
-			
+	addIsometryPose(89,_leg_odo->pelvis_to_right);
+	addIsometryPose(90,_leg_odo->pelvis_to_right);
 	
 	//std::cout << "adding right foot pose" << std::endl;
 }
