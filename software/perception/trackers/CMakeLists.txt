@@ -18,6 +18,9 @@ add_subdirectory(src/histogram-tracker)
 add_subdirectory(src/object-tracker)
 
 add_subdirectory(src/vehicle-tracker)
+add_subdirectory(src/feature-tracker)
+
 add_subdirectory(src/tools)
 
 #pods_install_python_script(drc-send-tracker-command scripts/drc-send-tracker-command.py)
+
