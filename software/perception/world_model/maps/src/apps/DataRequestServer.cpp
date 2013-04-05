@@ -131,8 +131,8 @@ struct Worker {
     Eigen::Affine3f calib = Eigen::Affine3f::Identity();
     calib(0,0) = msg.width/(msg.clip_planes[0][3] + msg.clip_planes[1][3]);
     calib(1,1) = msg.height/(msg.clip_planes[2][3] + msg.clip_planes[3][3]);
-    calib(0,3) = msg.width/2;
-    calib(1,3) = msg.height/2;
+    calib(0,3) = msg.clip_planes[0][3]*calib(0,0);
+    calib(1,3) = msg.clip_planes[2][3]*calib(1,1);
     Eigen::Projective3f projector = calib*pose.inverse();
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
@@ -156,8 +156,8 @@ struct Worker {
     Eigen::Affine3f calib = Eigen::Affine3f::Identity();
     calib(0,0) = msg.width/(msg.clip_planes[0][3] + msg.clip_planes[1][3]);
     calib(1,1) = msg.height/(msg.clip_planes[2][3] + msg.clip_planes[3][3]);
-    calib(0,3) = msg.width/2;
-    calib(1,3) = msg.height/2;
+    calib(0,3) = msg.clip_planes[0][3]*calib(0,0);
+    calib(1,3) = msg.clip_planes[2][3]*calib(1,1);
     Eigen::Projective3f projector = calib*pose.inverse();
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
