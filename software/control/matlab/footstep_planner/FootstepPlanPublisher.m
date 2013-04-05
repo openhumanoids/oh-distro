@@ -55,14 +55,9 @@ classdef FootstepPlanPublisher
 			msg.fixed_pitch = X.pos_fixed(5);
 			msg.fixed_yaw = X.pos_fixed(6);
 			msg.is_right_foot = X.is_right_foot;
-		end
+    end
 
-		function qout = quatnormalize(q)
-			norm = sqrt(q(1)^2 + q(2)^2 + q(3)^2 + q(4)^2);
-			qout = q ./ (norm .* ones(size(q)));
-		end
-
-		function msg = encodeFootstepPlan(X, t, isnew)
+    function msg = encodeFootstepPlan(X, t, isnew)
 			if nargin < 3
 				isnew = true;
 			end

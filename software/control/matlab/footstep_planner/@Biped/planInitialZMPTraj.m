@@ -55,7 +55,7 @@ while 1
   end
   
   step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(1:6, istep.(m_foot)), step_locations.(m_foot)(1:6, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
-  step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.05, 0, 0, 0];
+  step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.05, 0.005, 0, 0];
   
   % Shift the ZMP by 2cm closer to the center of the feet
   foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
