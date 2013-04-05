@@ -147,9 +147,14 @@ classdef DRCController
         end
 
         input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
+        checked_frames = {};
+        chk_counter = 1;
         % for each input subframe, get next message
         for i=1:obj.n_input_frames
           fr = obj.controller_input_frames{i};
+          if any(strcmp(fr.name,checked_frames))
+            continue;
+          end
           [x,tsim] = getNextMessage(fr,100);
           if (~isempty(x))
             if (t_offset == -1)
@@ -171,8 +176,18 @@ classdef DRCController
             end
             disp_counter = mod(disp_counter+1,50);
             
+            checked_frames{chk_counter}=fr.name;
+            chk_counter = chk_counter+1;
+
             input_frame_data{i} = x;
             input_frame_time(i) = t;
+            % copy data to other subframes
+            for j=1:obj.n_input_frames
+              if strcmp(obj.controller_input_frames{j}.name,fr.name)
+                input_frame_data{j} = x;
+                input_frame_time(j) = t;
+              end
+            end
           end
         end
      
