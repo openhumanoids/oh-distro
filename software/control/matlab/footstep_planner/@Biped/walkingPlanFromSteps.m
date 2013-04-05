@@ -7,7 +7,7 @@ nq = getNumDOF(biped);
 q0 = x0(1:nq);
 kinsol = doKinematics(biped,q0);
 
-[zmptraj,foottraj, supptraj] = planInitialZMPTraj(biped, q0, Xright, Xleft);
+[zmptraj,foottraj, supptraj] = planInitialZMPTraj(biped, q0, X);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
