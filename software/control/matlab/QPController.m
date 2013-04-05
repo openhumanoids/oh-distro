@@ -163,7 +163,7 @@ classdef QPController < MIMODrakeSystem
    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = abs(phi)<0.005;
+    active_contacts = abs(phi)<0.004;
     %%%%% TMP HACK %%%%%
     %%%%% TMP HACK %%%%%
     if any(active_contacts(1:4))
