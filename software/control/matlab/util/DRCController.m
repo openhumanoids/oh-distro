@@ -136,7 +136,6 @@ classdef DRCController
       % time in the case of a timed transition)
 
       input_frame_data = cell(obj.n_input_frames,1);
-      input_frame_time = -1*ones(obj.n_input_frames,1);
       
       t_offset = -1;
       disp_counter = 0;
@@ -147,6 +146,7 @@ classdef DRCController
           break;
         end
 
+        input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
         % for each input subframe, get next message
         for i=1:obj.n_input_frames
           fr = obj.controller_input_frames{i};
@@ -194,7 +194,7 @@ classdef DRCController
           break;
         end
         
-        if all(input_frame_time >=0)
+        if any(input_frame_time >=0) % could also do 'all' here
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
           obj.controller_output_frame.publish(t,u,defaultChannel(obj.controller_output_frame));
         end
