@@ -37,7 +37,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
       end
       pos_n = biped.stepCenter2FootCenter(x, ~X(end).is_right_foot);
       c = biped.checkStepFeasibility(X(end).pos, pos_n, X(end).is_right_foot);
-      if all(c <= 0)
+      if all(c <= 0) || (lambda_n < 1e-3)
         break
       else
         lambda_n = lambda + (lambda_n - lambda) * .9;
