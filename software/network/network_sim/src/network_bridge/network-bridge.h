@@ -23,7 +23,7 @@ void robot2base(KMCLApp& app);
 // Structure of which channels to resent and when
 struct Resend{
   Resend(std::string channel, double max_freq, bool robot2base, int64_t last_utime):
-    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime), queued_msgs(0), queued_bytes(0) {}
+    channel(channel), max_freq(max_freq), robot2base(robot2base), last_utime(last_utime), queued_msgs(0), queued_bytes(0), sent_bytes(0), received_bytes(0) {}
   std::string channel; // .. LCM channel
   double max_freq; // max freq of transmission
   int64_t last_utime; // last utime of transmission
@@ -31,6 +31,10 @@ struct Resend{
   
   int queued_msgs; // number of queued messaged
   int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission ... used to determine outgoing bandwidth [added by mfallon Feb 2013]
+
+    int sent_bytes; // sum of the total number of bytes of this message type transmitted. Does *not* include overhead of UDP or IPv4, so it should be an accurate count of the bytes counted by DARPA
+    int received_bytes; // sum of the total number of bytes of this message type received. Does *not* include overhead of UDP or IPv4. If packets are dropped, this may be less than the total sent.
+    
 };
 
 
@@ -90,7 +94,10 @@ class KMCLApp{
     
     const std::vector<Resend>& resendlist() 
     { return resendlist_; }
-    
+
+    std::vector<Resend>* mutable_resendlist() 
+    { return &resendlist_; }
+
     std::string print_resend_list();
     void send_resend_list();
     

@@ -6,6 +6,7 @@
 #include <boost/circular_buffer.hpp>
 
 #include "goby/common/logger.h"
+#include "goby/common/time.h"
 #include "goby/acomms/modemdriver/udp_driver.h"
 #include "goby/acomms/connect.h"
 #include "goby/acomms/bind.h"
@@ -47,6 +48,21 @@ struct MessageQueue
     bool on_demand;
 };
 
+
+struct DataUsage
+{
+    DataUsage() : queued_msgs(0),
+                  queued_bytes(0),
+                  sent_bytes(0),
+                  received_bytes(0) 
+        { }
+        
+    int queued_msgs; // number of queued messaged
+    int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission
+
+    int sent_bytes; // sum of the total number of bytes of this message type transmitted. Does *not* include overhead of UDP or IPv4, so it should be an accurate count of the bytes counted by DARPA
+    int received_bytes; // sum of the total number of bytes of this message type received. Does *not* include overhead of UDP or IPv4. If packets are dropped, this may be less than the total sent.
+};
 
 
 std::string DebugStringNoData(const drc::ShaperPacket& a)
@@ -90,6 +106,8 @@ namespace drc
 }
 
 
+
+
 class DRCShaper
 {
 public:
@@ -128,6 +146,7 @@ private:
         }
     void try_decode( std::map<int, drc::ShaperPacket>& received_frags);
 
+    void post_bw_stats();
 
     friend void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
 private:
@@ -145,6 +164,9 @@ private:
 
     // maps channel number to channel name
     boost::bimap<std::string, int> channel_id_;
+
+    // maps channel number to data usage
+    std::map<int, DataUsage> data_usage_;
 
     int last_send_type_;
 
@@ -348,12 +370,16 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
 
 void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data)
-{  
+{
+    
     // Determine if the message should be dropped or sent (and then send)
     bool unused;
     bool on_demand = false;
     if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused, rbuf->data_size, &on_demand))
     {
+        data_usage_[channel_id_.left.at(channel)].queued_msgs++;
+        data_usage_[channel_id_.left.at(channel)].queued_bytes += rbuf->data_size;
+        
         std::vector<char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
         
         std::map<std::string, MessageQueue>::iterator q_it = queues_.find(channel);
@@ -418,6 +444,8 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     glog.is(VERBOSE) && glog << group("tx") << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
     glog.is(VERBOSE) && glog << group("tx") << "Data size: " << send_queue_.top().data().size() << std::endl;
     glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << msg->frame(0).size() << std::endl;
+
+    data_usage_[send_queue_.top().channel()].sent_bytes += msg->frame(0).size();
     
     send_queue_.pop();
 
@@ -508,8 +536,11 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
 {    
     drc::ShaperPacket packet;
+
     packet.ParseFromString(msg.frame(0));
 
+    data_usage_[packet.channel()].received_bytes += msg.frame(0).size();
+    
     glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
 
@@ -594,6 +625,40 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     }    
 }
 
+void DRCShaper::post_bw_stats()
+{
+    uint64_t now = goby::common::goby_time<uint64_t>();
+    double elapsed_time = (now - app_.bw_init_utime)/1.0e6 ;
+    double bw_window = 1.0; // bw window in seconds
+    if ( elapsed_time  > bw_window  ){
+        drc::bandwidth_stats_t stats;
+        stats.utime = now;
+        stats.previous_utime = app_.bw_init_utime;
+        stats.bytes_from_robot = 0;
+        stats.bytes_to_robot = 0;
+        stats.num_channels = data_usage_.size();
+
+        for (std::map<int, DataUsage>::const_iterator it = data_usage_.begin(),
+                 end = data_usage_.end(); it != end; ++it)
+        {
+            stats.channels.push_back(channel_id_.right.at(it->first));
+            stats.queued_msgs.push_back(it->second.queued_msgs);
+            stats.queued_bytes.push_back(it->second.queued_bytes);
+            stats.sent_bytes.push_back(it->second.sent_bytes);
+            stats.received_bytes.push_back(it->second.received_bytes);
+            
+            stats.bytes_to_robot += (node_ == BASE ? it->second.sent_bytes : it->second.received_bytes);
+            stats.bytes_from_robot += (node_ == BASE ? it->second.received_bytes : it->second.sent_bytes);
+        }
+        
+        
+        lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
+        app_.bw_init_utime = stats.utime;
+    }
+}
+
+
+
 void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& message)
 {
     fragments_[message.fragment()] = message;
@@ -645,6 +710,7 @@ void DRCShaper::run()
             // no messages
             udp_driver_->do_work(); 
             mac_.do_work();
+            post_bw_stats();
         } else if(FD_ISSET(lcm_fd, &fds)) {
             // LCM has events ready to be processed.
             lcm_handle(lcm_->getUnderlyingLCM());
