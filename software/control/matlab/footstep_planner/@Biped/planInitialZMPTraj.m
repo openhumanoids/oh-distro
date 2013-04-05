@@ -69,7 +69,7 @@ while 1
   s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
   stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...
              repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
-  plot_lcm_points((stepzmp + repmat([0;0;1], 1, length(stepzmp(1,:))))', zeros(size(stepzmp')), istep.right + istep.left, 'ZMP location', 1, true);
+  % plot_lcm_points((stepzmp + repmat([0;0;1], 1, length(stepzmp(1,:))))', zeros(size(stepzmp')), istep.right + istep.left, 'ZMP location', 1, true);
     
   istep.(m_foot) = istep.(m_foot) + 1;
   
@@ -90,6 +90,7 @@ while 1
   end
 end
 
+plot_lcm_points([zmp; ones(1, length(zmp(1,:)))]', zeros(length(zmp(1,:)), 3), 25, 'ZMP Location', 1, true);
 
 % add a segment at the end to recover
 ts = [ts, ts(end)+1];
