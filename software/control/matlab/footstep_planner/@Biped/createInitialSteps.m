@@ -50,7 +50,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
     else
       goal = foot_goals.left;
     end
-    if (all(abs(X(end).pos - goal) < 0.05) || length(X) - 2 >= options.max_num_steps - 1) && (length(X) - 2 >= options.min_num_steps)
+    if (all(abs(X(end).pos - goal) < 0.05) || length(X) - 2 >= options.max_num_steps - 1) && (length(X) - 2 >= options.min_num_steps - 1)
       break
     end
   end
