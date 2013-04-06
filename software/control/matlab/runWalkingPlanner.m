@@ -32,14 +32,14 @@ while true
     footsteps = planFootsteps(r, x0, navgoal, struct('plotting', true, 'interactive', false));
   else
     footstep_plan_listener = FootstepPlanListener('COMMITTED_FOOTSTEP_PLAN');
-    disp('Listening for footstep plans...');
+    msg ='Walking Planner: Listening for plans'; disp(msg); send_status(3,0,0,msg);
     waiting = true;
     foottraj = [];
 
     while waiting
       footsteps = footstep_plan_listener.getNextMessage(0);
       if (~isempty(footsteps))
-        disp('footstep plan received.');
+        msg ='Walking Planner: plan received'; disp(msg); send_status(3,0,0,msg);
         waiting = false;
       end
       [x,~] = getNextMessage(state_frame,10);
@@ -55,7 +55,7 @@ while true
   [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
-  disp('Publishing robot plan...');
+  msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
   %%%% TMP HACK FOR QUAL 1 %%%%%
   xtraj(3,:) = xtraj(3,:)+ 1;
   %%%% TMP HACK FOR QUAL 1 %%%%%
@@ -84,7 +84,7 @@ while true
 %   fnplt(htraj);
 %   
   
-  disp('Waiting for robot plan confirmation...');
+  msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
   plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
   reject_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
   waiting = true;
@@ -93,7 +93,7 @@ while true
     rplan = plan_listener.getNextMessage(100);
     if (~isempty(rplan))
       % for now don't do anything with it, just use it as a flag
-      disp('Plan confirmed. Executing...');
+      msg ='Walking Planner: Confirmed. Executing...'; disp(msg); send_status(3,0,0,msg);
       waiting = false;
     end
     rplan = reject_listener.getNextMessage(100);

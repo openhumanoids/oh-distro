@@ -30,7 +30,7 @@ classdef FootstepPlanner < DRCPlanner
         [data, changed, changelist] = obj.updateData(data);
         if changelist.goal || isempty(X_old)
           optimizer_halt = false;
-          disp('got goal info')
+          msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
           for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
             options.(x{1}) = data.goal.(x{1});
           end
@@ -38,7 +38,7 @@ classdef FootstepPlanner < DRCPlanner
           isnew = true;
         end
         if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
-          disp('got new goal');
+          msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);
           goal_pos = [data.goal.goal_pos.translation.x;
                       data.goal.goal_pos.translation.y;
                       data.goal.goal_pos.translation.z];
@@ -54,11 +54,11 @@ classdef FootstepPlanner < DRCPlanner
         end
         if changelist.plan_reject 
           optimizer_halt = true;
-          disp('rejected')
+          msg ='Footstep Planner: Rejected'; disp(msg); send_status(3,0,0,msg);
           break;
         end
         if changelist.plan_commit
-          disp('committed')
+          msg ='Footstep Planner: Committed'; disp(msg); send_status(3,0,0,msg);
           optimizer_halt = true;
         end
         if changelist.plan_con
