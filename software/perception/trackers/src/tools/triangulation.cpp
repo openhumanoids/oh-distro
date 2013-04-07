@@ -13,6 +13,7 @@
 #include "pcl/PolygonMesh.h"
 #include <pcl/common/transforms.h>
 
+#include <pcl/filters/voxel_grid.h>
 
 using namespace pcl;
 using namespace pcl::io;
@@ -28,11 +29,25 @@ main (int argc, char** argv)
   
   
   // Load input file into a PointCloud<T> with an appropriate type
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
   sensor_msgs::PointCloud2 cloud_blob;
   pcl::io::loadPCDFile (filename, cloud_blob);
-  pcl::fromROSMsg (cloud_blob, *cloud);
+  pcl::fromROSMsg (cloud_blob, *cloud_in);
   //* the data should be available in cloud
+  
+  
+  
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  if (1==0){
+    cloud = cloud_in;
+  }else{
+    pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter_;
+    voxel_grid_filter_.setLeafSize (0.0075, 0.0075, 0.0075);
+    voxel_grid_filter_.setInputCloud (cloud_in);
+    voxel_grid_filter_.filter (*cloud);  
+  }
+  
+  
 
   // Normal estimation*
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
@@ -70,14 +85,25 @@ main (int argc, char** argv)
     gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
     gp3.setNormalConsistency(false);
   }else{
+    /*
     // Set the maximum distance between connected points (maximum edge length)
     gp3.setSearchRadius (0.055);
     // Set typical values for the parameters
-    gp3.setMu (2.5);
     gp3.setMaximumNearestNeighbors (100);
+    gp3.setMu (2.5);
     gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
     gp3.setMinimumAngle(M_PI/18); // 10 degrees
     gp3.setMaximumAngle(3*M_PI/3); // 120 degrees
+    gp3.setNormalConsistency(false); */    
+    
+    // Set the maximum distance between connected points (maximum edge length)
+    gp3.setSearchRadius (0.055);
+    // Set typical values for the parameters
+    gp3.setMaximumNearestNeighbors (100); // higher seems to make smaller triangles
+    gp3.setMu (2.5);
+    gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
+    gp3.setMinimumAngle(M_PI/18); // 10 degrees
+    gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
     gp3.setNormalConsistency(false);
   }    
     

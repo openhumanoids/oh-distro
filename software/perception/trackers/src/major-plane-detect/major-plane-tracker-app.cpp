@@ -37,7 +37,7 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     std::string lidar_channel_;
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
-    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     void trackerCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::tracker_command_t* msg);
     
     BotParam* botparam_;
@@ -78,7 +78,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int tr
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
   lcm_->subscribe( lidar_channel_ ,&Pass::lidarHandler,this);
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);  
   
   // Vis Config:
@@ -194,21 +194,33 @@ Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vecto
 }
 
 
-void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::affordance_collection_t* msg){
+void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   if (!tracker_initiated_){
     // If we haven't told tracker what do to, then ignore affordances
     return; 
   }
 
+  
+  std::vector<int> uids;
+  for (size_t i=0; i<msg->affs_plus.size(); i++){
+    uids.push_back( msg->affs_plus[i].aff.uid );
+  }
+  int aff_iter = std::distance( uids.begin(), std::find( uids.begin(), uids.end(), plane_affordance_id_ ) );
+  if (aff_iter == msg->affs_plus.size()){
+     cout << "Error: Plane Affordance UID " <<  plane_affordance_id_ << " could not be found\n";
+     return;
+  }  
+  
+  
   // bootstrap tracker with required affordances:
   if  ( !got_initial_affordance_ ) {
     cout << "got affs\n";
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs[plane_affordance_id_].param_names, msg->affs[plane_affordance_id_].params  );
+    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[aff_iter].aff.param_names, msg->affs_plus[aff_iter].aff.params );
+    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[aff_iter].aff.param_names, msg->affs_plus[aff_iter].aff.params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
     
-    last_tracked_aff_msg_ = msg->affs[plane_affordance_id_];
+    last_tracked_aff_msg_ = msg->affs_plus[aff_iter].aff;
     
     cout << "about to start tracking plane: " << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
     pcl::ModelCoefficients::Ptr new_p_coeffs(new pcl::ModelCoefficients ());

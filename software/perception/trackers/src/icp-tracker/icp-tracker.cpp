@@ -56,6 +56,7 @@ void ICPTracker::doICPTracker(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_c
   new_pose_=  previous_pose * tf_previous_to_new.cast<double>() ;
 
   if(verbose_lcm_>=1){
+    pc_vis_->pose_to_lcm_from_list(771000, null_poseT_);
     pc_vis_->ptcld_to_lcm_from_list(771004, *previous_cloud, null_poseT_.utime, null_poseT_.utime); // Previous cloud now aligned with curren scene
     Isometry3dTime new_poseT = Isometry3dTime(0, new_pose_); 
     pc_vis_->pose_to_lcm_from_list(771010, new_poseT);
@@ -73,6 +74,7 @@ void ICPTracker::removePoseOffset(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previo
         previous_pose.translation(), pose_quat); // !! modifies lidar_cloud
 
   if(verbose_lcm_ >= 1){
+    pc_vis_->pose_to_lcm_from_list(771000, null_poseT_);
     pc_vis_->ptcld_to_lcm_from_list(771002, *previous_cloud, null_poseT_.utime, null_poseT_.utime);
     pc_vis_->ptcld_to_lcm_from_list(771003, *new_cloud, null_poseT_.utime, null_poseT_.utime);
   }
@@ -165,5 +167,6 @@ void ICPTracker::drawBoundingBox(Eigen::Isometry3f pose){
   pcl::transformPointCloud (*bb_pts, *bb_pts,
         pose.translation(), quat); // !! modifies lidar_cloud
 
+  pc_vis_->pose_to_lcm_from_list(771000, null_poseT_);
   pc_vis_->ptcld_to_lcm_from_list(771005, *bb_pts, null_poseT_.utime, null_poseT_.utime);
 }

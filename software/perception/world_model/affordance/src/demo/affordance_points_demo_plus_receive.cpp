@@ -16,6 +16,7 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <affordance/AffordanceUtils.hpp>
 
+using namespace Eigen;
 using namespace pcl;
 using namespace pcl::io;
 
@@ -49,7 +50,15 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     int cfg_root = aff_id*10;
 
     drc::affordance_plus_t a = msg->affs_plus[aff_id];
-    Eigen::Isometry3d pose = affutils.getPose( a.aff.param_names, a.aff.params );
+    
+    Matrix3d m;
+    m = AngleAxisd ( a.aff.origin_rpy[2], Vector3d::UnitZ ())
+                  * AngleAxisd( a.aff.origin_rpy[1], Vector3d::UnitY ())
+                  * AngleAxisd( a.aff.origin_rpy[0], Vector3d::UnitX ());  
+    Eigen::Isometry3d pose =  Eigen::Isometry3d::Identity();
+    pose *= m;  
+    pose.translation()  << a.aff.origin_xyz[0] , a.aff.origin_xyz[1], a.aff.origin_xyz[2];
+    //Eigen::Isometry3d pose = affutils.getPose( a.aff.param_names, a.aff.params );
     // obj: id name type reset
     // pts: id name type reset objcoll usergb rgb
     
@@ -68,7 +77,7 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
         pc_vis_->mesh_to_lcm(pconfig, mesh, 0, 0);  
       }
       
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_cloud = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_cloud = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, a.aff.bounding_lwh);
       ptcld_cfg pconfig = ptcld_cfg(cfg_root+3,    string( "Affordance Bounding Box " + std::to_string(i))     ,4,1, cfg_root,1, {0.2,0,0.2} );
       pc_vis_->ptcld_to_lcm(pconfig, *bb_cloud, 0, 0);  
     }

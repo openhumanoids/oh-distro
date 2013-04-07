@@ -244,7 +244,7 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     Isometry3dTime pT =  Isometry3dTime( 0, object_pose_);
     pc_vis_->pose_to_lcm_from_list(1010, pT);
     
-    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
+    object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, a.aff.bounding_lwh);
     pc_vis_->ptcld_to_lcm_from_list(1012, *object_bb_cloud_,pT.utime, pT.utime);  
     
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);

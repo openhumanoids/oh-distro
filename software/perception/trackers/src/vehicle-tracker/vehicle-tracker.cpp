@@ -24,6 +24,11 @@
 #include <pcl/filters/passthrough.h>
 
 
+#include <pcl/registration/icp.h>
+#include <pcl/features/normal_3d.h> //for computePointNormal
+
+
+
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <pointcloud_tools/pointcloud_vis.hpp>
 
@@ -49,7 +54,7 @@ struct Primitive
 class StatePub
 {
 public:
-  StatePub(boost::shared_ptr<lcm::LCM> &lcm_, string pcd_filename, string urdf_file, int pts_per_m_squared_);
+  StatePub(boost::shared_ptr<lcm::LCM> &lcm_, string pcd_filename, string filenameB_, int pts_per_m_squared_);
   ~StatePub() {}
   boost::shared_ptr<lcm::LCM> lcm_;
   
@@ -59,32 +64,34 @@ private:
       pointcloud_vis* pc_vis_;
 
   
-  bool readURDFString(std::string urdf_file, std::string &urdf_string);
+  bool readURDFString(std::string filenameB_, std::string &urdf_string);
   bool readModel(std::string model_filename, std::vector<Primitive> &primitives);
   void primitivesToMesh(std::vector<Primitive> &primitives);
-  bool readPCD();
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr readPCD(std::string filename);
   
   void transformMesh();
   void sendMesh();
   
-  void boxFilter();
+  void boxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+  void moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, Eigen::Isometry3d &transform);
+  
   
   void findPlanes (pcl::PointCloud<pcl::PointXYZRGB>::Ptr);
   
   void visualizePlanes(vector<BasicPlane> &plane_stack );
   
 
-  string pcd_filename_;
+  string filenameA_;
   
-  pcl::PointCloud<PointXYZRGB>::Ptr _cloud;    
+  pcl::PointCloud<PointXYZRGB>::Ptr cloudA_;    
   Isometry3dTime null_poseT_;  
   
   int pts_per_m_squared_;
   
 };
 
-StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string pcd_filename_, string urdf_file, int pts_per_m_squared_):
-    lcm_(lcm_), pcd_filename_(pcd_filename_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
+StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, string filenameB_, int pts_per_m_squared_):
+    lcm_(lcm_), filenameA_(filenameA_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
   prim_ = new rgbd_primitives();
   
   pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
@@ -102,16 +109,79 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string pcd_filename_,
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(349998,"Vehicle Tracker - Lidar Points"  ,1,1, 349995,1, colors_v ));
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Pose - Null",5,0) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud - Laser Map"     ,1,1, 1000,1, {0,0,1}));
-  
-      
-  std::vector<Primitive> primitives;
-  readModel( urdf_file, primitives );
-  primitivesToMesh( primitives );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Cloud Previous"     ,1,1, 1000,1, {0,0,1}));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1002,"Cloud New"     ,1,1, 1000,1, {1,0,0}));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1003,"Cloud Prev Aligned"     ,1,1, 1000,1, {0,1,0}));
+
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  _cloud = cloud_ptr ;  
-  readPCD();
+  cloudA_ = cloud_ptr ;  
+  
+  
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr previous_cloud = readPCD(filenameA_);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud = readPCD(filenameB_ );
+  
+  double scale = 0.0;
+  for (size_t i = 0; i < previous_cloud->points.size (); ++i){
+    pcl::PointXYZRGB pt = previous_cloud->points[i];
+    pt.x =pt.x+ scale * rand () / (RAND_MAX + 1.0f);
+    pt.y =pt.y+ scale * rand () / (RAND_MAX + 1.0f);
+    pt.z =pt.z+ scale * rand () / (RAND_MAX + 1.0f);
+    previous_cloud->points[i] = pt;
+  }  
+  
+  for (size_t i = 0; i < new_cloud->points.size (); ++i){
+    pcl::PointXYZRGB pt = new_cloud->points[i];
+    pt.x =pt.x+ scale * rand () / (RAND_MAX + 1.0f);
+    pt.y =pt.y+ scale * rand () / (RAND_MAX + 1.0f);
+    pt.z =pt.z+ scale * rand () / (RAND_MAX + 1.0f);
+    new_cloud->points[i] = pt;
+  }
+  
+  
+  Eigen::Isometry3d transform;
+  Eigen::Quaterniond quat = euler_to_quat( 0.1, 0,0 );             
+  transform.setIdentity();
+  transform.translation()  << 0.1, 0., 0.;
+  transform.rotate(quat);  
+  moveCloud(new_cloud, transform);
+  
+  
+  int64_t pose_id =0;
+  pc_vis_->pose_to_lcm_from_list(1000, null_poseT_);
+  pc_vis_->ptcld_to_lcm_from_list(1001, *previous_cloud, pose_id, pose_id);
+  pc_vis_->ptcld_to_lcm_from_list(1002, *new_cloud, pose_id, pose_id);
+  
+  pcl::io::savePCDFileASCII ("test_pcd.pcd", *new_cloud);
+  
+  
+  
+  IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
+  icp.setInputTarget( previous_cloud );
+  icp.setInputCloud( new_cloud );
+  //params
+  icp.setMaxCorrespondenceDistance(0.2);
+  icp.setMaximumIterations (200);
+
+  PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
+  icp.align(*downsampled_output);
+  
+  
+  // Apply inverted transform to transform original cloud onto the new pose:
+  Eigen::Matrix4f tf_previous_to_new;
+  tf_previous_to_new = icp.getFinalTransformation().inverse();
+  pcl::transformPointCloud(*previous_cloud, *previous_cloud, tf_previous_to_new);
+  
+  
+  pc_vis_->ptcld_to_lcm_from_list(1003, *previous_cloud, pose_id, pose_id);
+
+  exit(-1);
+      
+  std::vector<Primitive> primitives;
+  readModel( filenameB_, primitives );
+  primitivesToMesh( primitives );
+  findPlanes (cloudA_);
 
   transformMesh();
   sendMesh();
@@ -181,28 +251,32 @@ void StatePub::sendMesh(){
     }
   
   pc_vis_->ptcld_to_lcm_from_list(349997, *sampled_pts, pose_id , pose_id);  
-  pc_vis_->ptcld_to_lcm_from_list(349998, *_cloud, pose_id , pose_id);  
-
-  boxFilter();
-  cout << _cloud->points.size() << " cloud size\n";
-  findPlanes (_cloud);
 
 }
 
 
-void StatePub::boxFilter(){
+void StatePub::boxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
   pcl::PassThrough<pcl::PointXYZRGB> pass;
-  pass.setInputCloud (_cloud);
+  pass.setInputCloud (cloud);
   pass.setFilterFieldName ("x");
-  pass.setFilterLimits (-1.5, 1.5); //pass.setFilterLimitsNegative (true);
-  pass.filter (*_cloud);
+  pass.setFilterLimits (-1.6, 1.5); //pass.setFilterLimitsNegative (true);
+  pass.filter (*cloud);
 
-  pass.setInputCloud (_cloud);
+  pass.setInputCloud (cloud);
   pass.setFilterFieldName ("y");
   pass.setFilterLimits (-3.5, -1.5); //pass.setFilterLimitsNegative (true);
-  pass.filter (*_cloud);
+  pass.filter (*cloud);
+}
+
+void StatePub::moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, Eigen::Isometry3d & transform){
+
+    Eigen::Isometry3f local_to_lidar_i = transform.cast<float>().inverse();  
+    Eigen::Quaternionf quat_i  =  Eigen::Quaternionf ( local_to_lidar_i.rotation()  );
   
+    pcl::transformPointCloud (*cloud, *cloud,
+        local_to_lidar_i.translation(), quat_i); // !! modifies lidar_cloud
+
   
 }
 
@@ -322,12 +396,14 @@ bool StatePub::readModel(std::string model_filename, std::vector <Primitive> &pr
   return true;
 }
 
-bool StatePub::readPCD(){
-  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( pcd_filename_, *_cloud) == -1){ // load the file
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr StatePub::readPCD(std::string filename){
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( filename, *cloud) == -1){ // load the file
     PCL_ERROR ("Couldn't read file test_pcd.pcd \n");
-    return (false);
+    exit(-1);
   } 
-  return true;
+  return cloud;
 }
 
 

@@ -238,7 +238,7 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
   memcpy(_origin_xyz, msg->origin_xyz, 3*sizeof(double));
   memcpy(_origin_rpy, msg->origin_rpy, 3*sizeof(double));
 
-  memcpy(_bounding_pos, msg->bounding_pos, 3*sizeof(float));
+  memcpy(_bounding_xyz, msg->bounding_xyz, 3*sizeof(float));
   memcpy(_bounding_rpy, msg->bounding_rpy, 3*sizeof(float));
   memcpy(_bounding_lwh, msg->bounding_lwh, 3*sizeof(float));
 
@@ -283,7 +283,7 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	memcpy(msg->origin_xyz, _origin_xyz, 3*sizeof(double));
 	memcpy(msg->origin_rpy, _origin_rpy, 3*sizeof(double));
 
-	memcpy(msg->bounding_pos, _bounding_pos, 3*sizeof(float));
+	memcpy(msg->bounding_xyz, _bounding_xyz, 3*sizeof(float));
 	memcpy(msg->bounding_rpy, _bounding_rpy, 3*sizeof(float));
 	memcpy(msg->bounding_lwh, _bounding_lwh, 3*sizeof(float));
 

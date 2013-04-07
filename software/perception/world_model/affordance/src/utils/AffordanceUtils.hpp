@@ -33,7 +33,7 @@ class AffordanceUtils {
     void setXYZRPYFromIsometry3d(std::vector<std::string> &param_names, std::vector<double> &params, 
                    Eigen::Isometry3d pose);
     
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getBoundingBoxCloud(float bounding_pos[], float bounding_rpy[], float bounding_lwh[]);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getBoundingBoxCloud(float bounding_xyz[], float bounding_rpy[], float bounding_lwh[]);
 
     void printAffordance(std::vector<std::string> &param_names, std::vector<double> &params,
                          std::stringstream &ss){

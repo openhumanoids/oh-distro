@@ -230,7 +230,7 @@ void Pass::doDemo(){
   aff_plus_coll.naffs =aff_plus_coll.affs_plus.size();
   lcm_->publish("AFFORDANCE_PLUS_COLLECTION",&aff_plus_coll);
   
-  
+  /*
   drc::affordance_collection_t aff_coll;
   aff_coll.name  = "Map Name";
   aff_coll.utime = 0;
@@ -241,7 +241,7 @@ void Pass::doDemo(){
   aff_coll.affs.push_back( a2.aff);
   aff_coll.affs.push_back( a3.aff);
   aff_coll.naffs =aff_coll.affs.size();
-  lcm_->publish("AFFORDANCE_COLLECTION",&aff_coll);  
+  lcm_->publish("AFFORDANCE_COLLECTION",&aff_coll);  */
   
 }
 

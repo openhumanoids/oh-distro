@@ -34,7 +34,7 @@ class Pass{
     void doDemo();
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    drc::affordance_plus_t getAffordancePlus(std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
@@ -154,7 +154,7 @@ bool getCloudAsLists(std::string filename,
 }
     
     
-drc::affordance_plus_t Pass::getAffordancePlus(std::vector<double> &xyzrpy, int uid){ 
+drc::affordance_plus_t Pass::getAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
   drc::affordance_plus_t p;
   
   drc::affordance_t a;
@@ -164,32 +164,23 @@ drc::affordance_plus_t Pass::getAffordancePlus(std::vector<double> &xyzrpy, int 
   a.otdf_type ="mesh";
   a.aff_store_control = drc::affordance_t::NEW;
 
-  a.param_names.push_back("x");
-  a.params.push_back(xyzrpy[0]);
-  a.param_names.push_back("y");
-  a.params.push_back(xyzrpy[1]);
-  a.param_names.push_back("z");
-  a.params.push_back(xyzrpy[2]);
-
-  a.param_names.push_back("roll");
-  a.params.push_back( xyzrpy[3]);
-  a.param_names.push_back("pitch");
-  a.params.push_back( xyzrpy[4]);
-  a.param_names.push_back("yaw");
-  a.params.push_back( xyzrpy[5] );
-
 /*  a.param_names.push_back("radius");
   a.params.push_back(0.020000);
   a.param_names.push_back("length");
   a.params.push_back(0.13); */
   a.param_names.push_back("mass");
   a.params.push_back(1.0); // unknown
+  a.param_names.push_back("filename");
+  a.params.push_back( -1 ); //add string here
+  
   a.nparams =a.params.size();
   a.nstates =0;
 
-  a.bounding_pos[0]=xyzrpy[0]; a.bounding_pos[1]=xyzrpy[1]; a.bounding_pos[2]=xyzrpy[2]; 
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
   a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
-  a.bounding_lwh[0]=0.36;       a.bounding_lwh[1]=0.33;      a.bounding_lwh[2]=0.3; 
   //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
   // a.bounding_lwh = { 0.3, 0.36, 0.4};
   
@@ -198,36 +189,67 @@ drc::affordance_plus_t Pass::getAffordancePlus(std::vector<double> &xyzrpy, int 
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
   
-  char* pHome;
-  pHome = getenv ("HOME");  
-  string home = string(pHome);
-  cout << home << "\n";
+
   
-  if (uid==0){
-    getMeshAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply"), points, triangles);
-  }else if(uid==1){
-    getCloudAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd"), points, triangles );
-  }else if(uid==2){
-    getCloudAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd"), points, triangles );
-  }else{
-    getMeshAsLists( string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply"), points, triangles);
-  }    
+  int length = filename.length() ;
+  std::string extension = filename.substr (length-3,3);
+  cout << extension<<" q\n";
+  
+  if (extension=="ply"){
+    getMeshAsLists(filename , points, triangles);
+  }else if(extension=="pcd"){
+    getCloudAsLists(filename , points, triangles);
+  }
+    
   p.points =points;
-  p.npoints=points.size();
+  p.npoints=points.size(); 
   p.triangles = triangles;
   p.ntriangles =p.triangles.size();
   
   return p;
 }
 
-void Pass::doDemo(){
-  std::vector<double> xyzrpy = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
-  
-  int which = 3; //0 1 2 3 
-  drc::affordance_plus_t a0 = getAffordancePlus(xyzrpy, which);
 
-  a0.aff.uid =10;
+
+
+void Pass::doDemo(){
+  char* pHome;
+  pHome = getenv("HOME");  
+  string home = string(pHome);
+  cout << home << "\n";  
+  
+  
+  int uid = 10;
+  std::vector<double> xyzrpy = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
+  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
+  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
+  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
+  string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply");
+  drc::affordance_plus_t a0 = getAffordancePlus(filename, xyzrpy, uid);
+  a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
   lcm_->publish("AFFORDANCE_FIT",&a0);
+
+
+  uid = 11;
+  xyzrpy = {-2.85 , -2.55 , 0.64 , 0. , 0 , M_PI};
+  filename = string(home+ "/drc/software/models/mit_gazebo_models/vehicle_otdf/meshes/vehicle.pcd");
+  drc::affordance_plus_t a1 = getAffordancePlus(filename, xyzrpy, uid);
+  a1.aff.bounding_lwh[0]=2.8;       a1.aff.bounding_lwh[1]=1.6;      a1.aff.bounding_lwh[2]=1.7; 
+  a1.aff.otdf_type = "car";
+  lcm_->publish("AFFORDANCE_FIT",&a1);
+  
+  
+
+/*  
+  drc::affordance_plus_collection_t aplus_coll;
+  aplus_coll.affs_plus.push_back( a0 );
+  aplus_coll.affs_plus.push_back( a1 );
+  aplus_coll.naffs = aplus_coll.affs_plus.size();
+  while(1==1){
+    lcm_->publish("AFFORDANCE_PLUS_COLLECTION",&aplus_coll);
+    sleep(1);
+  }
+*/  
 }
 
 int main( int argc, char** argv ){

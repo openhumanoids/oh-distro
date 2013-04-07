@@ -153,7 +153,7 @@ void AffordanceUtils::setXYZRPYFromIsometry3d(std::vector<std::string> &param_na
 
 
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getBoundingBoxCloud(float bounding_pos[], float bounding_rpy[], float bounding_lwh[]){
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getBoundingBoxCloud(float bounding_xyz[], float bounding_rpy[], float bounding_lwh[]){
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8;

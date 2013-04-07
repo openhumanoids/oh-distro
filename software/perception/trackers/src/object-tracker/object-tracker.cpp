@@ -161,18 +161,18 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   mask_channel_="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel_ ,&Pass::maskHandler,this);
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordancePlusHandler,this); 
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this); 
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);   
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"[ICPApp] Pose - Null",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"[ICPApp] New Sweep"     ,1,1, 1000,1, {0,0,1}));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Tracker | Pose - Null",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1001,"Tracker | New Sweep"     ,1,1, 1000,1, {0,0,1}));
   
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"[ICPApp] Updated Pose",5,1) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1021,"[ICPApp] Aff Cloud [at Updated]"     ,1,1, 1020,1, {0,0.6,0}));
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"Tracker | Updated Pose",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1021,"Tracker | Aff Cloud [at Updated]"     ,1,1, 1020,1, {0,0.6,0}));
   
   
   
@@ -358,10 +358,14 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
     // true if we got a new sweep, make a box 5x5x5m centered around the robot's head
     // Update: this is where plane tracking used to take place:
     if (major_plane_->getSweep(head_to_local_.cast<float>().translation() ,  Eigen::Vector3f( 2., 2., 2.)) ){ 
+      // was:
       //plane_pose_set_ = major_plane_->trackPlane(plane_pose_, msg->utime);  
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud = major_plane_->getSweepCloudWithoutPlane(0.03,
-          plane_coeffs_);      
-
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud;
+      if (use_plane_tracker_){
+        new_cloud = major_plane_->getSweepCloudWithoutPlane(0.03,plane_coeffs_);      
+      }else{
+        new_cloud = major_plane_->getSweepCloud();
+      }
       /*
       cout << "Got a new sweep with "<< new_cloud->points.size() <<" points\n";
       Isometry3dTime null_poseT = Isometry3dTime(update_time, Eigen::Isometry3d::Identity() );
@@ -475,13 +479,23 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     // If we haven't told tracker what do to, then ignore affordances
     return; 
   }  
+  int64_t aff_utime =0 ;//TODO: replace this with a proper timestamp coming from the store
+
+  std::vector<int> uids;
+  for (size_t i=0; i<msg->affs_plus.size(); i++){
+    uids.push_back( msg->affs_plus[i].aff.uid );
+  }
+  int aff_iter = std::distance( uids.begin(), std::find( uids.begin(), uids.end(), affordance_id_ ) );
+  if (aff_iter == msg->affs_plus.size()){
+     cout << "Error: Affordance UID " <<  affordance_id_ << " could not be found\n";
+     return;
+  }
+  //std::cout << "The element contining the aff is " << aff_iter << '\n';  
   
-  int64_t aff_utime =0 ;// replace this with a proper timestamp coming from the store
-  
-  // Bootstrap the filter off the user-provided pose:
+  // Bootstrap the filter off the user-provided pose, then ignore:
   if  ( !got_initial_affordance_ ) {
-    cout << "got initial affordance position\n";
-    drc::affordance_plus_t a = msg->affs_plus[affordance_id_];
+    cout << "got initial position for Affordance "<< affordance_id_ <<"\n";
+    drc::affordance_plus_t a = msg->affs_plus[aff_iter];
     object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
@@ -490,12 +504,12 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     // TODO: convert a mesh affordance to a point cloud if required
     object_cloud_ = affutils.getCloudFromAffordance(a.points);
     // cache the message and repeatedly update the position:
-    last_affordance_msg_ = msg->affs_plus[affordance_id_].aff;
+    last_affordance_msg_ = msg->affs_plus[aff_iter].aff;
 
     if( verbose_>=1 ){
       Isometry3dTime object_poseT = Isometry3dTime ( aff_utime, object_pose_ );
       pc_vis_->pose_to_lcm_from_list(affordance_vis_, object_poseT);
-      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_pos, a.aff.bounding_rpy, a.aff.bounding_lwh);
+      object_bb_cloud_ = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, a.aff.bounding_lwh);
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
     }
@@ -504,9 +518,17 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
 
   // Update the tracked plane:
   if (use_plane_tracker_){
+    
+    int plane_aff_iter = std::distance( uids.begin(), std::find( uids.begin(), uids.end(), plane_affordance_id_ ) );
+    if (plane_aff_iter == msg->affs_plus.size()){
+        cout << "Error: Plane Affordance UID " <<  plane_affordance_id_ << " could not be found - disabling plane tracking\n";
+        use_plane_tracker_=false;
+        return;
+    }
+    
     //cout << "got updated plane position\n";
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[plane_affordance_id_].aff.param_names, msg->affs_plus[plane_affordance_id_].aff.params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[plane_affordance_id_].aff.param_names, msg->affs_plus[plane_affordance_id_].aff.params  );
+    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[plane_aff_iter].aff.param_names, msg->affs_plus[plane_aff_iter].aff.params );
+    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[plane_aff_iter].aff.param_names, msg->affs_plus[plane_aff_iter].aff.params  );
     major_plane_->setPlane(p_coeffs, p_centroid);    
     // TODO: this should be determined initally and retained:
     plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};
@@ -555,8 +577,8 @@ void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use
     // obj: id name type reset
     // pts: id name type reset objcoll usergb rgb  
     pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_, ss2.str() ,5,1) );
-    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+1,"[ICPApp] Aff Cloud [at Prev]"     ,1,1, affordance_vis_,1, {1,0,0}));
-    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+2,"[ICPApp] Bounding Box [Prev]"     ,4,1, affordance_vis_,1, {1,0,0}));
+    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+1,"Tracker | Aff Cloud [at Prev]"     ,1,1, affordance_vis_,1, {1,0,0}));
+    pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(affordance_vis_+2,"Tracker | Bounding Box [Prev]"     ,4,1, affordance_vis_,1, {1,0,0}));
     stringstream ss;
     ss << "Tracker | Particles of Aff " << affordance_id_;
     pc_vis_->obj_cfg_list.push_back( obj_cfg(affordance_vis_+3  , ss.str() ,5,1) );

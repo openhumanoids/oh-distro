@@ -59,14 +59,14 @@ void AffordancePlusState::initHelper(const drc::affordance_plus_t *msg)
   
   aff = AffPtr(new AffordanceState(&msg->aff));
   for(int i = 0; i < msg->npoints; i++)
-    points.push_back(Vector3f(points[i][0], 
-                              points[i][1],
-                              points[i][2]));
+    points.push_back(Vector3f(msg->points[i][0], 
+                              msg->points[i][1],
+                              msg->points[i][2]));
 
   for(int i = 0; i < msg->ntriangles; i++)
-    triangles.push_back(Vector3i(triangles[i][0], 
-                                 triangles[i][1],
-                                 triangles[i][2]));
+    triangles.push_back(Vector3i(msg->triangles[i][0], 
+                                 msg->triangles[i][1],
+                                 msg->triangles[i][2]));
 }
 
 AffordancePlusState::~AffordancePlusState()

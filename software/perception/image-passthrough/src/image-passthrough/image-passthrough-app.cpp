@@ -95,7 +95,7 @@ class Pass{
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
-    void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg);
+    void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     bool urdf_parsed_;
     bool urdf_subscription_on_;
     lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
@@ -130,7 +130,7 @@ class Pass{
     bool use_convex_hulls_;
     
     AffordanceUtils affutils;
-    bool affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
+    bool affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
 };
 
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
@@ -140,7 +140,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string
 
   // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
-  lcm_->subscribe("AFFORDANCE_COLLECTION",&Pass::affordanceHandler,this);  
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
   lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
   urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
@@ -225,30 +225,30 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 
 
 
-bool Pass::affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
+bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
     std::map<string,double> am;
-    for (size_t j=0; j< aff.nparams; j++){
-      am[ aff.param_names[j] ] = aff.params[j];
+    for (size_t j=0; j< affplus.aff.nparams; j++){
+      am[ affplus.aff.param_names[j] ] = affplus.aff.params[j];
     }
 
-    Eigen::Isometry3d transform = affutils.getPose(aff.param_names, aff.params);
+    Eigen::Isometry3d transform = affutils.getPose(affplus.aff.param_names, affplus.aff.params);
     
-    if (aff.otdf_type == "box"){
+    string otdf_type = affplus.aff.otdf_type;
+    
+    if (otdf_type == "box"){
       cout  << aff_uid << " is a box\n";
       mesh_out = prim_->getCubeWithTransform(transform,am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second);
-    }else if(aff.otdf_type == "cylinder"){
+    }else if(otdf_type == "cylinder"){
       cout  << aff_uid << " is a cylinder\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
-    }else if(aff.otdf_type == "steering_cyl"){
+    }else if(otdf_type == "steering_cyl"){
       cout  << aff_uid << " is a steering_cyl\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
-    }else if(aff.otdf_type == "mesh"){
-      cout << "mesh not supported now as we need to use affordance_plus_t to provide it\n";
-      //cout  << aff_uid << " is a mesh ["<< aff.points.size() << " and " << aff.triangles.size() << "]\n";
-      //mesh_out = affutils.getMeshFromAffordance(aff.points, aff.triangles,transform);
-      
+    }else if(otdf_type == "mesh"){
+      cout  << aff_uid << " is a mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
     }else{
-      cout  << aff_uid << " is a not recognised ["<< aff.otdf_type <<"] not supported yet\n";
+      cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";
     }
     
     // demo of bounding boxes: (using radius as x and y dimensions
@@ -271,7 +271,7 @@ bool Pass::affordanceInterpret(drc::affordance_t aff, int aff_uid, pcl::PolygonM
 
 // Receive affordances and creates a combined mesh in world frame
 // TODO: properly parse the affordances
-void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_collection_t* msg){
+void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   
   if (msg->naffs ==0){
     cout << "got "<< msg->naffs <<" affs [won't add anything]\n"; 
@@ -282,10 +282,9 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   
   pcl::PolygonMesh::Ptr combined_aff_mesh_temp(new pcl::PolygonMesh());
   combined_aff_mesh_ = combined_aff_mesh_temp;
-  for (size_t i=0; i < msg->affs.size(); i++){
-    affordance_t aff = msg->affs[i];
+  for (size_t i=0; i < msg->affs_plus.size(); i++){
     pcl::PolygonMesh::Ptr new_aff_mesh(new pcl::PolygonMesh());
-    affordanceInterpret(aff, i, new_aff_mesh );
+    affordancePlusInterpret(msg->affs_plus[i], msg->affs_plus[i].aff.uid, new_aff_mesh );
     simexample->mergePolygonMesh(combined_aff_mesh_, new_aff_mesh); 
   }
   aff_mesh_filled_=true;

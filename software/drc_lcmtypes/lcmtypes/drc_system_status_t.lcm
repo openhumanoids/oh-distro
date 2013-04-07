@@ -20,7 +20,7 @@ struct system_status_t
 // 5=somewhat important but very frequent
     
   // enum for system
-  const int8_t MESSAGING= 0; // info about message passing at the right frequencies
+  const int8_t MESSAGING= 0; // info about message passing and networking
   const int8_t MOTION_ESTIMATION= 1;
   const int8_t TRACKING= 2;
   const int8_t CONTROL= 3;
