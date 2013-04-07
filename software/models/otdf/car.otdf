@@ -496,18 +496,19 @@
     </geometry>
   </visual>
 </link>
-<joint name='gas_joint' type='fixed'>
+<!--<joint name='gas_joint' type='fixed'>-->
+<!--  <origin rpy="0 -1.0 0" xyz="0.53 0.14 0.56" />-->
+<!--  <parent link="chassis" type="link" />-->
+<!--  <child link="gas_pedal" type="link" />-->
+<!--  <axis xyz="1.000000 0.000000 -1.000000" />-->
+<!--</joint>-->
+<joint name='gas_joint' type='prismatic'>
   <origin rpy="0 -1.0 0" xyz="0.53 0.14 0.56" />
   <parent link="chassis" type="link" />
   <child link="gas_pedal" type="link" />
   <axis xyz="1.000000 0.000000 -1.000000" />
+  <limit effort="1" lower="0" upper="0.08" velocity="1"/> 
 </joint>
-<!--<joint name='gas_joint' type='prismatic'>-->
-  <!--<origin rpy="0 -1.0 0" xyz="0.53 0.14 0.56" />-->
-  <!--<parent link="chassis" type="link" />-->
-  <!--<child link="gas_pedal" type="link" />-->
-  <!--<axis xyz="1.000000 0.000000 -1.000000" />-->
-<!--</joint>-->
 <link name='brake_pedal'>
   <inertial>
     <mass value="0.1" />
@@ -525,18 +526,19 @@
     </geometry>
   </visual>
 </link>
-<joint name='brake_joint' type='fixed'>
+<!--<joint name='brake_joint' type='fixed'>-->
+<!--  <origin rpy="0 -1.0 0" xyz="0.54 0.27 0.58" />-->
+<!--  <parent link="chassis" type="link" />-->
+<!--  <child link="brake_pedal" type="link" />-->
+<!--  <axis xyz="1.000000 0.000000 -0.600000" />-->
+<!--</joint>-->
+<joint name='brake_joint' type='prismatic'>
   <origin rpy="0 -1.0 0" xyz="0.54 0.27 0.58" />
   <parent link="chassis" type="link" />
   <child link="brake_pedal" type="link" />
   <axis xyz="1.000000 0.000000 -0.600000" />
+  <limit effort="1" lower="0" upper="0.08" velocity="1"/>   
 </joint>
-<!--<joint name='brake_joint' type='prismatic'>-->
-  <!--<origin rpy="0 -1.0 0" xyz="0.54 0.27 0.58" />-->
-  <!--<parent link="chassis" type="link" />-->
-  <!--<child link="brake_pedal" type="link" />-->
-  <!--<axis xyz="1.000000 0.000000 -0.600000" />-->
-<!--</joint>-->
 <link name='hand_brake'>
   <inertial>
     <mass value="1.0" />
