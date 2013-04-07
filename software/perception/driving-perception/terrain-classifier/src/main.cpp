@@ -295,6 +295,7 @@ void detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     project_to_ground(self, utime, img, mask, self->lcmgl_basic);
     }*/
   
+  //the dilation is need for the contour to work - otherwise it will pick only a part of the road sometimes 
   cv::Mat1b mask_dil;
   dilate_mask(mask, mask_dil);
   cv::Mat filled_contour;
@@ -302,6 +303,11 @@ void detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   if(!filled_contour.empty()){
     cv::imshow("Contour Fill", filled_contour.clone());
     cv::Mat1b mask_filled = (filled_contour > 0);
+
+    cv::Mat contours;
+    cv::Canny(mask_filled, contours,10,350);
+    cv::imshow("Canny Edges", contours.clone());
+
     project_to_ground(self, utime, img, mask_filled, self->lcmgl);
   }  
   else{
