@@ -36,8 +36,8 @@ k = convhull(gc(1:2,1:4)');
 lfootcen0 = [mean(gc(1:2,k(1:end-1)),2);0];
 k = convhull(gc(1:2,5:8)');
 rfootcen0 = [mean(gc(1:2,4+k(1:end-1)),2);0];
-roffset = rfootcen0 - rfoot0(1:3) + [0;0.02;0];
-loffset = lfootcen0 - lfoot0(1:3) + [0;-0.02;0];
+roffset = rfootcen0 - rfoot0(1:3) + [0;0;0];
+loffset = lfootcen0 - lfoot0(1:3) + [0;0;0];
 
 function pos = rfootCenter(rfootpos)
   % orientation of foot is always zero in this demo

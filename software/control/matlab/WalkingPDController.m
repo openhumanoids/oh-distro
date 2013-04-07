@@ -35,8 +35,10 @@ classdef WalkingPDController < DrakeSystem
         sizecheck(options.Kp,[obj.nq obj.nq]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = 150.0*eye(obj.nq);
-        obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
+        obj.Kp = 185.0*eye(obj.nq);
+        %obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
+        %obj.Kp(19:20,19:20) = 75*eye(2); % make left/right ankle joints softer
+        %obj.Kp(31:32,31:32) = 75*eye(2);
       end        
         
       if isfield(options,'Kd')
@@ -44,8 +46,10 @@ classdef WalkingPDController < DrakeSystem
         sizecheck(options.Kd,[obj.nq obj.nq]);
         obj.Kd = options.Kd;
       else
-        obj.Kd = 20.0*eye(obj.nq);
-        obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+        obj.Kd = 19.0*eye(obj.nq);
+        %obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+        %obj.Kd(19:20,19:20) = 10*eye(2); % make left/right ankle joints softer
+        %obj.Kd(31:32,31:32) = 10*eye(2);
       end        
         
       if isfield(options,'dt')
@@ -55,7 +59,16 @@ classdef WalkingPDController < DrakeSystem
       else
         obj.dt = 0.005;
       end
-        
+      
+      if isfield(options,'q_nom')
+        typecheck(options.q_nom,'double');
+        sizecheck(options.q_nom,[obj.nq 1]);
+        q_nom = options.q_nom;
+      else
+        d = load('data/atlas_fp.mat');
+        q_nom = d.xstar(1:obj.nq);
+      end
+      
       % setup IK parameters
       cost = Point(r.getStateFrame,1);
       cost.base_x = 0;
@@ -65,12 +78,12 @@ classdef WalkingPDController < DrakeSystem
       cost.base_pitch = 1000;
       cost.base_yaw = 0;
       cost.back_mby = 100;
-      cost.back_ubx = 300;
+      cost.back_ubx = 100;
+
       cost = double(cost);
       obj.ikoptions = struct();
       obj.ikoptions.Q = diag(cost(1:obj.nq));
-      d = load('data/atlas_fp.mat');
-      obj.ikoptions.q_nom = d.xstar(1:obj.nq);
+      obj.ikoptions.q_nom = q_nom;
 
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
@@ -92,6 +105,10 @@ classdef WalkingPDController < DrakeSystem
         obj.lfoot_body,[0;0;0],cdata.lfoottraj.eval(t),obj.ikoptions);
 
       err_q = q_des - q;
+      nrmerr = norm(err_q,1);
+      if nrmerr > 2
+        err_q = err_q * (2/nrmerr);
+      end
       y = obj.Kp*err_q - obj.Kd*qd;
     end
   end

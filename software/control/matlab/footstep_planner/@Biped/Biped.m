@@ -28,7 +28,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'max_backward_step', 0.20,...%m
         'max_step_width', 0.35,...%m
         'min_step_width', 0.2,...%m
-        'nom_step_width', 0.24,...%m (nominal step width)
+        'nom_step_width', 0.26,...%m (nominal step width)
         'max_step_rot', pi/4,... % rad
         'r_foot_name', 'r_foot',...
         'l_foot_name', 'l_foot');

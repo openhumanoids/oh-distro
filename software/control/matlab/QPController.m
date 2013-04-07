@@ -258,8 +258,13 @@ classdef QPController < MIMODrakeSystem
       hddot = 0;
     else
       S = zmpd.S.eval(t);
-      h = zmpd.h.eval(t); 
-      hddot = zmpd.hddot.eval(t);
+      if typecheck(zmpd.h,'double')
+        h = zmpd.h; 
+        hddot = 0;
+      else
+        h = zmpd.h.eval(t); 
+        hddot = zmpd.hddot.eval(t);
+      end
     end
     G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
     xlimp = [xcom(1:2); J*qd]; % state of LIP model
@@ -297,7 +302,7 @@ classdef QPController < MIMODrakeSystem
     % Set up problem constraints ------------------------------------------
 
     lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 1e4*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 900*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
 
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);

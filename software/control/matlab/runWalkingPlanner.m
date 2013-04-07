@@ -11,8 +11,6 @@ options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
 
-
-
 while true 
 
   d = load('data/atlas_fp.mat');
@@ -51,8 +49,7 @@ while true
       end
     end
   end
-
-  [xtraj, qtraj, htraj, supptraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
+  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
   msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
@@ -83,7 +80,14 @@ while true
 %   subplot(3,1,3); hold on;
 %   fnplt(htraj);
 %   
-  
+
+  tt = 0:0.1:ts(end);
+  compoints = ones(3,length(tt));
+  for i=1:length(tt)
+    compoints(1:2,i) = comtraj.eval(tt(i));
+  end
+  plot_lcm_points(compoints,[zeros(1,length(tt)); ones(1,length(tt)); zeros(1,length(tt))],6666,'COM location',1,true);
+
   msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
   plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
   reject_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
@@ -102,14 +106,17 @@ while true
       disp('Plan rejected.');
       waiting = false;
       execute = false;
+    else 
+      plan_pub.publish(ts,xtraj);
+      pause(0.5);
     end
-    plan_pub.publish(ts,xtraj);
-    pause(0.5);
   end
 
   if execute
     walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
-    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj',hddot,'qtraj',qtraj,'supptraj',supptraj));
+    walking_pub.publish(0,struct('Straj',V.S,'htraj',htraj,'hddtraj', ...
+      hddot,'supptraj',supptraj,'comtraj',comtraj,...
+      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj));
   end
 end
 

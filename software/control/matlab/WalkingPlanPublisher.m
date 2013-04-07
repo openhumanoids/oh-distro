@@ -16,7 +16,7 @@ classdef WalkingPlanPublisher
       
  			msg.robot_name = 'atlas';
       msg.utime = utime;
-      % assume: data = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'Straj',Straj);
+      % assume: data is a struct with fields: htraj, hddtraj, Straj, supptraj, comtraj, lfoottraj, rfoottraj
 
       % do we have to save to file to convert to byte stream?
       htraj = data.htraj;
@@ -40,13 +40,6 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_Straj_bytes = length(msg.Straj); 
 
-      qtraj = data.qtraj;
-      save('tmp_r.mat','qtraj');
-      fid = fopen('tmp_r.mat','r');
-      msg.qtraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_qtraj_bytes = length(msg.qtraj); 
-
       supptraj = data.supptraj;
       save('tmp_r.mat','supptraj');
       fid = fopen('tmp_r.mat','r');
@@ -54,6 +47,27 @@ classdef WalkingPlanPublisher
       fclose(fid);
       msg.n_supptraj_bytes = length(msg.supptraj); 
 
+      comtraj = data.comtraj;
+      save('tmp_r.mat','comtraj');
+      fid = fopen('tmp_r.mat','r');
+      msg.comtraj = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_comtraj_bytes = length(msg.comtraj); 
+
+      lfoottraj = data.lfoottraj;
+      save('tmp_r.mat','lfoottraj');
+      fid = fopen('tmp_r.mat','r');
+      msg.lfoottraj = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_lfoottraj_bytes = length(msg.lfoottraj); 
+      
+      rfoottraj = data.rfoottraj;
+      save('tmp_r.mat','rfoottraj');
+      fid = fopen('tmp_r.mat','r');
+      msg.rfoottraj = fread(fid,inf,'*uint8');
+      fclose(fid);
+      msg.n_rfoottraj_bytes = length(msg.rfoottraj); 
+      
       obj.lc.publish(obj.channel, msg);
 		end
 
