@@ -60,6 +60,7 @@ public:
   GMainLoop *mainloop;
   BotFrames *frames; 
   BotParam *param;
+  bot_lcmgl_t * lcmgl_basic;
   bot_lcmgl_t * lcmgl;
   BotCamTrans *camtrans;
   char * coord_frame;
@@ -83,7 +84,7 @@ public:
   int64_t img_utime;
 };
 
-void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask);
+void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl);
 
 // Adapted from cv_line_template::convex_hull
 void templateConvexHull(const std::vector<cv::linemod::Template>& templates,
@@ -158,7 +159,7 @@ void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour){
   cv::Mat1b mask_new = mask.clone();
   cv::findContours(mask_new, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
   
-  fprintf(stderr, "No of countours : %d\n", contours.size());
+  //fprintf(stderr, "No of countours : %d\n", contours.size());
 
   vector<cv::Point> approx;
 
@@ -179,31 +180,40 @@ void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour){
   }  
   //this doesn't seem to work 
   bool tr = true;
+  const cv::Scalar color(255,255,255);
   //fprintf(stderr, "Largest Contour Size : %d\n",(int) max_size);
   if(largest_countour_id >=0){
-    vector<cv::Point> c_countour = contours[largest_countour_id];
+    vector<cv::Point> c_contour = contours[largest_countour_id];
 
     std::vector<cv::Point> hull;
-    cv::convexHull(c_countour, hull);
-    for(int j=0; j < c_countour.size(); j++){
-      mask_count.at<uint8_t>(c_countour[j].y, c_countour[j].x) = mask.at<uint8_t>(c_countour[j].y, c_countour[j].x);
+    cv::convexHull(c_contour, hull);
+    
+    for(int j=1; j < c_contour.size(); j++){
+      cv::line(mask_count, c_contour[j-1], c_contour[j], color,  2);
     }
+    /*for(int j=0; j < c_contour.size(); j++){
+      //one way is to directly set the value - but then you need to find the index x + y * rows
+      //mask_count.data[]
+      mask_count.at<uint8_t>(c_contour[j].y, c_contour[j].x) = mask.at<uint8_t>(c_contour[j].y, c_contour[j].x);
+      }*/
     /*for(int j=0; j < hull.size(); j++){
       mask_count.at<bool>(hull[j].y, hull[j].x) = mask.at<bool>(hull[j].y, hull[j].x);
       }*/
 
-    //Ideally we should use the propoer convex hull stuff - but the convex hull seems to be missing things 
+    //Ideally we should use the propoer convex hull stuff - but its messing up because of the 
+    //car's rollbar 
+    
     cv::Mat hull_contour = cv::Mat::zeros(size, CV_8U);
     const int hull_count = (int)hull.size();
     const cv::Point* hull_pts = &hull[0];//&hull[0];
     cv::fillPoly(hull_contour, &hull_pts, &hull_count, 1, cv::Scalar(255));
-    
+
     cv::imshow("Hull Mask", hull_contour);
 
 
     filled_contour = cv::Mat::zeros(size, CV_8U);
-    const int filled_count = (int)c_countour.size();
-    const cv::Point* filled_pts = &c_countour[0];//&hull[0];
+    const int filled_count = (int)c_contour.size();
+    const cv::Point* filled_pts = &c_contour[0];//&hull[0];
     cv::fillPoly(filled_contour, &filled_pts, &filled_count, 1, cv::Scalar(255));
     
     cv::imshow("Contour Mask", mask_count);
@@ -240,16 +250,50 @@ void detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   cv::Mat val = channels[1];
   cv::Mat sat = channels[2];
 
-  cv::Mat h_display = hue.clone();
-  cv::imshow("HUE", h_display);
+  //cv::Mat h_display = hue.clone();
 
-  cv::Mat v_display = val.clone();
-  cv::imshow("VAL", v_display);
+  //this is how you draw a line - do it on the cloned cv::Mat
+  /*cv::Point start(0,0);
+  cv::Point end(20,20);
+  const cv::Scalar color(0,0,255);
+  cv::line(h_display, start, end, color, 3);*/
+  //cv::imshow("HUE", h_display);
 
-  cv::Mat s_display = sat.clone();
-  cv::imshow("SAT", s_display);
+  //cv::Mat v_display = val.clone();
+  //cv::imshow("VAL", v_display);
 
-  cv::Mat1b mask = (val <= 255 * 0.05 & sat > 255* 0.1 & sat < 255 * 0.4);// & sa > 0.1 & val < 0.4);  
+  //cv::Mat s_display = sat.clone();
+  //cv::imshow("SAT", s_display);
+
+  //build a filled contour - and skip those for the road mask 
+  
+  //0,129 - 0,372 - 127-543 - 228, 543
+  std::vector<cv::Point> vehicle_mask_points;
+  vehicle_mask_points.push_back(cv::Point(0, 124));
+  vehicle_mask_points.push_back(cv::Point(0, 372));
+  vehicle_mask_points.push_back(cv::Point(127, 543));
+  vehicle_mask_points.push_back(cv::Point(228, 543));
+
+  cv::Size size(img.cols, img.rows);
+  cv::Mat vehicle_mask = cv::Mat::zeros(size, CV_8U);
+  const int vm_count = (int)vehicle_mask_points.size();
+  const cv::Point* vm_pts = &vehicle_mask_points[0];//&hull[0];
+  cv::fillPoly(vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
+  cv::imshow("Vehicle Mask", vehicle_mask);
+  
+
+  cv::Mat1b mask = (vehicle_mask == 0 & val <= 255 * 0.05 & sat > 255* 0.1 & sat < 255 * 0.4);// & sa > 0.1 & val < 0.4);  
+  cv::Mat filled_contour_basic;
+  find_contours(mask, filled_contour_basic);
+
+  /*if(!filled_contour_basic.empty()){
+    cv::Mat1b mask_filled = (filled_contour_basic > 0);
+    project_to_ground(self, utime, img, mask_filled, self->lcmgl_basic);
+  }  
+  else{
+    //this mask works 
+    project_to_ground(self, utime, img, mask, self->lcmgl_basic);
+    }*/
   
   cv::Mat1b mask_dil;
   dilate_mask(mask, mask_dil);
@@ -258,15 +302,15 @@ void detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   if(!filled_contour.empty()){
     cv::imshow("Contour Fill", filled_contour.clone());
     cv::Mat1b mask_filled = (filled_contour > 0);
-    project_to_ground(self, utime, img, mask_filled);
+    project_to_ground(self, utime, img, mask_filled, self->lcmgl);
   }  
   else{
     //this mask works 
-    project_to_ground(self, utime, img, mask);
+    project_to_ground(self, utime, img, mask, self->lcmgl);
   }
 
   cv::Mat1b sm_display = mask.clone();
-  cv::imshow("Road Mask", sm_display);
+  cv::imshow("Basic Road Detection", sm_display);
   
   //remove the visible car parts from the mask
   
@@ -415,17 +459,17 @@ void project_to_ground(Terrain *self, const bot_core_image_t *img){//int utime){
   
 }
 
-void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask){//int utime){
+void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl){//int utime){
   //we just need a new car frame - defined - with which the head is always tracked to 
   BotTrans cam_to_local;
   bot_frames_get_trans_with_utime(self->frames, self->coord_frame, bot_frames_get_root_name(self->frames),
 				  utime, &cam_to_local);
 
-  bot_lcmgl_point_size(self->lcmgl, 3);
-  bot_lcmgl_begin(self->lcmgl, GL_POINTS);
+  bot_lcmgl_point_size(lcmgl, 3);
+  bot_lcmgl_begin(lcmgl, GL_POINTS);
 
   // project image onto the ground plane
-  for (int i = 0; i < self->img_nvertices; i++) {
+  for (int i = 0; i < self->img_nvertices; i+=8) {
     ImageVertex *v = &self->vertices[i];
 
     bool road = mask.at<bool>(v->ty, v->tx);
@@ -464,11 +508,11 @@ void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& ma
     }
 
     
-    bot_lcmgl_color3f(self->lcmgl, r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(self->lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
+    bot_lcmgl_color3f(lcmgl, r/255.0, g/255.0, b/255.0);
+    bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
   }
-  bot_lcmgl_end(self->lcmgl);
-  bot_lcmgl_switch_buffer(self->lcmgl);
+  bot_lcmgl_end(lcmgl);
+  bot_lcmgl_switch_buffer(lcmgl);
   //done projecting 
   //lets draw some stuff 
   
@@ -498,6 +542,7 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
     }
   }
   decode_image(msg, state->img);    
+
   //this should get the mask and also find the largest road segment 
   detect_road(state, msg->utime, state->img, state->hsv_img);    
   
@@ -506,7 +551,7 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
 
   state->img_utime = msg->utime; 
   cv::Mat display = state->img.clone();
-  //g_mutex_unlock(self->mutex);
+  
   cv::imshow("Camera", display);
   return;
 }
@@ -735,6 +780,7 @@ int main(int argc, char **argv)
   opt.add(state->options.vDEBUG, "d", "debug","Debug mode");
   opt.parse();
 
+  state->lcmgl_basic = bot_lcmgl_init(state->lcm, "Terrain-detection-Basic");
   state->lcmgl = bot_lcmgl_init(state->lcm, "Terrain-detection");
 
   /*const char *optstring = "vhcfsdb";
@@ -777,10 +823,29 @@ int main(int argc, char **argv)
 
   bot_core_image_t_subscribe(state->lcm, state->options.vCHANNEL.c_str(), on_image, state);
 
+  //cvNamedWindow( "Draw Maks");
   // Main lcm handle
   while(1) { 
     unsigned char c = cv::waitKey(1) & 0xff;
     lcm_handle(state->lcm);
+
+    /*if(state->last_image){
+      int64_t stime = bot_timestamp_now();
+      CvMat cvImg = opencv_utils::get_opencv_header_for_bot_core_image_t(state->last_image);
+  
+      static IplImage tmpHeader;
+      IplImage * currentFrame;
+      CvMat *frame = &cvImg;
+      currentFrame = cvGetImage(frame,&tmpHeader);
+
+      cvShowImage( "Draw Mask",  currentFrame);
+      }*/
+    /*if(!state->img.empty()){
+      //vector
+      fprintf(stderr, "Writing Image\n");
+      imwrite("camera_image.jpg", state->img);
+     }*/
+
     if (c == 'q') {
       break;  
     } else if ( c == 'c' ) {      
