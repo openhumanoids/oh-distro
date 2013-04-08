@@ -8,6 +8,7 @@ pods_use_pkg_config_packages(drc-viewer
         renderer_walking
         multisense-renderer
         octomap-renderer
+	occ-map-renderers
         renderer_maps
         lcmtypes_drc_lcmtypes
         renderer_robot_state
