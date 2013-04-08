@@ -40,6 +40,7 @@ cost.base_z = 0;
 cost.base_roll = 1000;
 cost.base_pitch = 1000;
 cost.base_yaw = 0;
+cost.back_lbz = 10;
 cost.back_mby = 100;
 cost.back_ubx = 100;
 cost = double(cost);

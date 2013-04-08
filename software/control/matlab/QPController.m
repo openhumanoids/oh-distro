@@ -141,7 +141,7 @@ classdef QPController < MIMODrakeSystem
  
     q = x(1:nq); 
     qd = x(nq+(1:nq));
-    kinsol = doKinematics(r,q,true);
+    kinsol = doKinematics(r,q,false,true,qd);
     
     [H,C,B] = manipulatorDynamics(r,q,qd);
     
@@ -155,21 +155,21 @@ classdef QPController < MIMODrakeSystem
       B_free = B(obj.free_dof,obj.free_inputs);
     end
     
-    [xcom,J,dJ] = getCOM(r,kinsol);
+    [xcom,J] = getCOM(r,kinsol);
     J = J(1:2,:); % only need COM x-y
-    dJ = sparse(dJ(1:2,:)); % only need COM x-y
-    Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
+    Jdot = forwardJacDot(r,kinsol,0);
+    Jdot = Jdot(1:2,:);
 
-    % debug
-    histlen = 20;
-    if obj.comidx==-1
-      obj.comhist = repmat(xcom(1:2),1,histlen);
-      obj.comidx = 2;
-    else
-      obj.comhist(:,obj.comidx) = xcom(1:2);
-      obj.comidx = mod(obj.comidx+1,histlen)+1; 
-    end
-    plot_lcm_points([obj.comhist' ones(histlen,1)],[ones(histlen,1), zeros(histlen,1), zeros(histlen,1)],345345,'COM Location',1,true);
+%     % debug
+%     histlen = 20;
+%     if obj.comidx==-1
+%       obj.comhist = repmat(xcom(1:2),1,histlen);
+%       obj.comidx = 2;
+%     else
+%       obj.comhist(:,obj.comidx) = xcom(1:2);
+%       obj.comidx = mod(obj.comidx+1,histlen)+1; 
+%     end
+%     plot_lcm_points([obj.comhist' ones(histlen,1)],[ones(histlen,1), zeros(histlen,1), zeros(histlen,1)],345345,'COM Location',1,true);
 
     
     active_supports = find(supports~=0);
@@ -195,7 +195,7 @@ classdef QPController < MIMODrakeSystem
 
     if nc==0
       % ignore supporting body spec, use any body in contact
-      [~,Jp,dJp] = contactPositions(r,kinsol);
+      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
       active_contacts = abs(phi)<0.005;
 
@@ -213,7 +213,7 @@ classdef QPController < MIMODrakeSystem
       partial_idx = [];
     else
       % get support contact J, dJ for no-slip constraint
-      [~,Jp,dJp] = contactPositions(r,kinsol,active_supports);
+      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
       partial_contacts = [];
       for i=active_supports'
         nC = size(getBodyContacts(r,i),2);
@@ -248,10 +248,8 @@ classdef QPController < MIMODrakeSystem
       end
       %active_idx
       Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
-      Jpdot_ = reshape(dJp(active_idx,:),nc*dim*nq,nq);
-      Jpdot = matGradMult(Jpdot_,qd);
-      Jpdot = Jpdot(:,obj.con_dof);
-
+      Jpdot = Jpdot(active_idx,obj.con_dof);
+      
       % D_ is the parameterization of the polyhedral approximation of the 
       %    friction cone, in joint coordinates (figure 1 from Stewart96)
       %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
@@ -319,7 +317,7 @@ classdef QPController < MIMODrakeSystem
     % Set up problem constraints ------------------------------------------
 
     lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 900*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 800*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
 
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);
@@ -345,7 +343,7 @@ classdef QPController < MIMODrakeSystem
 
       % linear friction constraints
       % TEMP: hard code mu
-      mu = 0.8*ones(nc,1);
+      mu = 0.45*ones(nc,1);
       for i=1:nc
         Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
         bin_{i} = 0;

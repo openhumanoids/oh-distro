@@ -138,7 +138,7 @@ classdef DRCController
       input_frame_data = cell(obj.n_input_frames,1);
       
       t_offset = -1;
-      disp_counter = 0;
+%       disp_counter = 0;
       while (1)
         % check termination conditions and break if any are true        
         [transition,data] = checkLCMTransitions(obj);
@@ -148,7 +148,7 @@ classdef DRCController
 
         input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
         checked_frames = {};
-        chk_counter = 1;
+%         chk_counter = 1;
         % for each input subframe, get next message
         for i=1:obj.n_input_frames
           fr = obj.controller_input_frames{i};
@@ -170,14 +170,14 @@ classdef DRCController
             x(3) = x(3)-1.0;
             %%% TEMP HACK FOR QUAL 1 %%%
             
-            % debug
-            if ~isempty(obj.v) && disp_counter==0 && strcmp('AtlasState',fr.name)
-              obj.v.draw(t,x);
-            end
-            disp_counter = mod(disp_counter+1,50);
-            
-            checked_frames{chk_counter}=fr.name;
-            chk_counter = chk_counter+1;
+%             % debug
+%             if ~isempty(obj.v) && disp_counter==0 && strcmp('AtlasState',fr.name)
+%               obj.v.draw(t,x);
+%             end
+%             disp_counter = mod(disp_counter+1,50);
+%             
+%             checked_frames{chk_counter}=fr.name;
+%             chk_counter = chk_counter+1;
 
             input_frame_data{i} = x;
             input_frame_time(i) = t;
@@ -203,6 +203,8 @@ classdef DRCController
             else
               input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
             end
+          else
+            disp('skipping input.');
           end
           data = setfield(data,obj.timed_transition,input_data);
           break;
