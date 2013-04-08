@@ -74,7 +74,7 @@ while true
   for i=1:length(tt)
     compoints(1:2,i) = comtraj.eval(tt(i));
   end
-  plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'COM location',1,true);
+  plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
   
 
   msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);

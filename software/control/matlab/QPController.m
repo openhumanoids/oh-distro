@@ -102,6 +102,11 @@ classdef QPController < MIMODrakeSystem
       end
 
     end    
+    
+    % debug
+    obj.comhist = [];
+    obj.comidx = -1;
+
   end
     
   function y=mimoOutput(obj,t,~,varargin)
@@ -155,6 +160,18 @@ classdef QPController < MIMODrakeSystem
     dJ = sparse(dJ(1:2,:)); % only need COM x-y
     Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
 
+    % debug
+    histlen = 20;
+    if obj.comidx==-1
+      obj.comhist = repmat(xcom(1:2),1,histlen);
+      obj.comidx = 2;
+    else
+      obj.comhist(:,obj.comidx) = xcom(1:2);
+      obj.comidx = mod(obj.comidx+1,histlen)+1; 
+    end
+    plot_lcm_points([obj.comhist' ones(histlen,1)],[ones(histlen,1), zeros(histlen,1), zeros(histlen,1)],345345,'COM Location',1,true);
+
+    
     active_supports = find(supports~=0);
     if (isempty(active_supports))
       warning('QPController::No supporting bodies...');
@@ -436,5 +453,7 @@ classdef QPController < MIMODrakeSystem
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
+    comhist;
+    comidx;
   end
 end

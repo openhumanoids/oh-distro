@@ -35,7 +35,7 @@ classdef WalkingPDController < DrakeSystem
         sizecheck(options.Kp,[obj.nq obj.nq]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = 185.0*eye(obj.nq);
+        obj.Kp = 190.0*eye(obj.nq);
         %obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
         %obj.Kp(19:20,19:20) = 75*eye(2); % make left/right ankle joints softer
         %obj.Kp(31:32,31:32) = 75*eye(2);
