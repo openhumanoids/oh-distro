@@ -36,8 +36,8 @@ k = convhull(gc(1:2,1:4)');
 lfootcen0 = [mean(gc(1:2,k(1:end-1)),2);0];
 k = convhull(gc(1:2,5:8)');
 rfootcen0 = [mean(gc(1:2,4+k(1:end-1)),2);0];
-roffset = rfootcen0 - rfoot0(1:3) + [0;0;0];
-loffset = lfootcen0 - lfoot0(1:3) + [0;0;0];
+roffset = rfootcen0 - rfoot0(1:3) + [0;0.01;0];
+loffset = lfootcen0 - lfoot0(1:3) + [0;0.01;0];
 
 function pos = rfootCenter(rfootpos)
   % orientation of foot is always zero in this demo
@@ -79,13 +79,13 @@ for istep=1:num_steps
   tstep = ts(end)+[.1,.5,.925,.975,1]*step_time;
   if (bRightStep)
     rf(1,:) = rf(1,:)+[0,step_length(istep)/2,step_length(istep),step_length(istep)];
-    rf(3,:) = rf(3,:)+[0,.05,0.005,0];
+    rf(3,:) = rf(3,:)+[0,.045,0.005,0];
     stepzmp = [repmat(lfootCenter(lf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
     rfootsupport = [rfootsupport 0 0 0.5 1 1]; 
     lfootsupport = [lfootsupport 1 1 1 1 1]; 
   else
     lf(1,:) = lf(1,:)+[0,step_length(istep)/2,step_length(istep),step_length(istep)];
-    lf(3,:) = lf(3,:)+[0,.05,0.005,0];
+    lf(3,:) = lf(3,:)+[0,.045,0.005,0];
     stepzmp = [repmat(rfootCenter(rf(:,1)),1,3),feetCenter(rf(:,end),lf(:,end))];
     rfootsupport = [rfootsupport 1 1 1 1 1]; 
     lfootsupport = [lfootsupport 0 0 0.5 1 1]; 

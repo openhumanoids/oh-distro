@@ -55,7 +55,7 @@ zmpdata = SharedDataHandle(struct('S',V.S,'h',com(3),'hddot',0, ...
 
 % instantiate QP controller
 options.exclude_torso = false;
-options.slack_limit = 30.0;
+options.slack_limit = 10.0;
 options.w = 1.0;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
@@ -100,7 +100,7 @@ subplot(2,1,2);
 plot(ts,com(2,:),'r');
 
 err
-if err > 10
+if err > num_steps*0.5
   error('drakeWalking unit test failed: error is too large');
 end
 

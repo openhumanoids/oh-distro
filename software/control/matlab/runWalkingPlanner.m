@@ -69,24 +69,13 @@ while true
 
   hddot = fnder(htraj,2);
 
-%   figure(2); 
-%   clf; 
-%   subplot(3,1,1); hold on;
-%   fnplt(zmptraj(1));
-%   fnplt(comtraj(1));
-%   subplot(3,1,2); hold on;
-%   fnplt(zmptraj(2));
-%   fnplt(comtraj(2));
-%   subplot(3,1,3); hold on;
-%   fnplt(htraj);
-%   
-
-  tt = 0:0.1:ts(end);
+  tt = 0:0.02:ts(end);
   compoints = ones(3,length(tt));
   for i=1:length(tt)
     compoints(1:2,i) = comtraj.eval(tt(i));
   end
-  plot_lcm_points(compoints,[zeros(1,length(tt)); ones(1,length(tt)); zeros(1,length(tt))],6666,'COM location',1,true);
+  plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'COM location',1,true);
+  
 
   msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
   plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');

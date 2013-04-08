@@ -155,7 +155,7 @@ classdef QPController < MIMODrakeSystem
     dJ = sparse(dJ(1:2,:)); % only need COM x-y
     Jdot = matGradMult(reshape(dJ,2*nq,nq),qd);
 
-    active_supports = find(supports~=0)
+    active_supports = find(supports~=0);
     if (isempty(active_supports))
       warning('QPController::No supporting bodies...');
     end
@@ -219,7 +219,7 @@ classdef QPController < MIMODrakeSystem
       end
     end
     
-    active_contacts = find(active_contacts)
+    active_contacts = find(active_contacts);
     
     
     if nc > 0
@@ -410,6 +410,8 @@ classdef QPController < MIMODrakeSystem
     else
       y = alpha(nq+(1:nu));
     end
+    
+%     max(Iz*alpha)
 %     toc
    
   end

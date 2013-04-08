@@ -49,7 +49,7 @@ while 1
   step.right.orig = repmat(footpos.right.orig(:,end), 1, 5);
   
 %   tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
-  tstep = ts(end) + [.1, .5, .925, .975, 1] * step_time;
+  tstep = ts(end) + [.1, .5, .9, .975, 1] * step_time;
   if bRightStep
     m_foot = 'right'; % moving (swing) foot
     s_foot = 'left'; % stance foot
@@ -88,8 +88,7 @@ while 1
     break
   end
 end
-
-plot_lcm_points([zmp; ones(1, length(zmp(1,:)))]', zeros(length(zmp(1,:)), 3), 25, 'ZMP Location', 1, true);
+%plot_lcm_points([zmp; ones(1, length(zmp(1,:)))]', zeros(length(zmp(1,:)), 3), 25, 'ZMP Location', 1, true);
 
 % add a segment at the end to recover
 ts = [ts, ts(end)+1.5];
@@ -114,11 +113,11 @@ supporttraj(strcmp(biped.r_foot_name,biped.getLinkNames),:) = footsupport.right;
 supporttraj(strcmp(biped.l_foot_name,biped.getLinkNames),:) = footsupport.left;
 supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(biped));
 
-tt = 0:0.1:ts(end);
+tt = 0:0.02:ts(end);
 zmppoints = ones(3,length(tt));
-for i=1:length(ts)
+for i=1:length(tt)
   zmppoints(1:2,i) = zmptraj.eval(tt(i));
 end
-plot_lcm_points(zmppoints,zeros(3,length(tt)),9999,'ZMP location',1,true);
+plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',1,true);
 
 end

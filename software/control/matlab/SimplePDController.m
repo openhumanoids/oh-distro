@@ -32,7 +32,7 @@ classdef SimplePDController < DrakeSystem
         sizecheck(options.Kp,[obj.nq obj.nq]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = 200.0*eye(obj.nq);
+        obj.Kp = 180.0*eye(obj.nq);
         obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
       end        
         

@@ -16,6 +16,15 @@ limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
 comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 
+% figure(2); 
+% clf; 
+% subplot(2,1,1); hold on;
+% fnplt(zmptraj(1));
+% fnplt(comtraj(1));
+% subplot(2,1,2); hold on;
+% fnplt(zmptraj(2));
+% fnplt(comtraj(2));
+
 if 1
   [~,V] = ZMPtracker(limp,zmptraj);
 end
