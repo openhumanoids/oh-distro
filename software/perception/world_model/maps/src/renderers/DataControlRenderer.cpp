@@ -43,51 +43,11 @@ protected:
     TimeKeeper() : mLastUpdateTime(-1), mLabel(NULL) {}
   };
 
-  struct LastUpdateChecker {
-    DataControlRenderer* mRenderer;
-    std::thread mThread;
-    bool mIsRunning;
-
-    LastUpdateChecker(DataControlRenderer* iRenderer) : mRenderer(iRenderer) {
-      mThread = std::thread(std::ref(*this));
-    }
-
-    ~LastUpdateChecker() {
-      mIsRunning = false;
-      mThread.join();
-    }
-
-    void operator()() {
-      mIsRunning = true;
-      while (mIsRunning) {
-        int64_t currentTime = drc::Clock::instance()->getCurrentWallTime();
-        std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
-        {
-          std::lock_guard<std::mutex> lock(mRenderer->mTimeKeepersMutex);
-          for (iter = mRenderer->mTimeKeepers.begin();
-               iter != mRenderer->mTimeKeepers.end(); ++iter) {
-            int64_t lastUpdateTime = iter->second.mLastUpdateTime;
-            if (lastUpdateTime < 0) continue;
-            int dtSec = (currentTime - lastUpdateTime)/1000000;
-            if (dtSec > 0) {
-              std::string text = static_cast<std::ostringstream*>
-                (&(std::ostringstream() << dtSec) )->str();
-              text = "(" + text + "s)";
-              iter->second.mLabel->set_text(text);
-            }
-          }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      }
-    }
-  };
-
 protected:
   Gtk::VBox* mRequestControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
 
-  std::shared_ptr<LastUpdateChecker> mUpdateChecker;
   std::unordered_map<std::string, ChannelType> mChannels;
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
   std::mutex mTimeKeepersMutex;
@@ -107,13 +67,32 @@ public:
     // create and show ui widgets
     setupWidgets();
 
-    // create update timers
-    mUpdateChecker.reset(new LastUpdateChecker(this));
+    // create update timer
+    Glib::signal_timeout().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::checkTimers), 500);
   }
 
   ~DataControlRenderer() {
-    mUpdateChecker->mIsRunning = false;
-    mUpdateChecker.reset();
+  }
+
+  bool checkTimers() {
+    int64_t currentTime = drc::Clock::instance()->getCurrentWallTime();
+    std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
+    {
+      std::lock_guard<std::mutex> lock(mTimeKeepersMutex);
+      for (iter = mTimeKeepers.begin(); iter != mTimeKeepers.end(); ++iter) {
+	int64_t lastUpdateTime = iter->second.mLastUpdateTime;
+	if (lastUpdateTime < 0) continue;
+	int dtSec = (currentTime - lastUpdateTime)/1000000;
+	if (dtSec > 0) {
+	  std::string text = static_cast<std::ostringstream*>
+	    (&(std::ostringstream() << dtSec) )->str();
+	  text = "(" + text + "s)";
+	  iter->second.mLabel->set_text(text);
+	}
+      }
+    }
+    return true;
   }
 
   void onMessage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
