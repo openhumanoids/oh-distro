@@ -34,8 +34,8 @@ struct RoadDetectorOptions {
 
 typedef struct _ImageVertex ImageVertex;
 struct _ImageVertex {
-  float tx;
-  float ty;
+  int tx;
+  int ty;
   float vx;
   float vy;
   float vz;
@@ -97,7 +97,7 @@ void dilate_mask(cv::Mat1b& mask, cv::Mat1b& mask_new){
   }
 }
 
-void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&largest_contour){
+int find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&largest_contour){
 
   cv::Size size(mask.cols, mask.rows);
   vector<vector<cv::Point> > contours;
@@ -105,13 +105,7 @@ void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&l
   // find contours and store them all as a list
   cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
   
-  //fprintf(stderr, "No of countours : %d\n", contours.size());
-
-  vector<cv::Point> approx;
-
-  cv::Mat1b mask_count = cv::Mat1b::zeros(mask.rows, mask.cols);
-
-  // test each contour
+  //find largest contour
   int largest_countour_id = -1;
   int max_size = 0;
 
@@ -123,58 +117,45 @@ void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&l
     }
   }  
 
-  bool tr = true;
   const cv::Scalar color(255,255,255);
-  //fprintf(stderr, "Largest Contour Size : %d\n",(int) max_size);
+  
   if(largest_countour_id >=0){
     largest_contour = contours[largest_countour_id];
 
-    //we should use this?? 
+    //we are not using convex hull anymore - it messes up when the road is turining
+    if(1){
+      cv::Mat1b mask_count = cv::Mat1b::zeros(mask.rows, mask.cols);
+      std::vector<cv::Point> hull;
+      cv::convexHull(largest_contour, hull);
+      
+      /*for(int j=1; j < largest_contour.size(); j++){
+	cv::line(mask_count, largest_contour[j-1], largest_contour[j], color,  2);
+	}*/
+      for(int j=1; j < largest_contour.size(); j++){
+	cv::circle(mask_count, largest_contour[j],3, color,  2);
+      }
+        
+      cv::imshow("Contour Points", mask_count);
 
-    std::vector<cv::Point> hull;
-    cv::convexHull(largest_contour, hull);
-    
-    for(int j=1; j < largest_contour.size(); j++){
-      cv::line(mask_count, largest_contour[j-1], largest_contour[j], color,  2);
+      /*cv::Mat hull_contour = cv::Mat::zeros(size, CV_8U);
+      const int hull_count = (int)hull.size();
+      const cv::Point* hull_pts = &hull[0];//&hull[0];
+      cv::fillPoly(hull_contour, &hull_pts, &hull_count, 1, cv::Scalar(255));
+      
+      cv::imshow("Hull Mask", hull_contour);*/
     }
-    /*for(int j=0; j < c_contour.size(); j++){
-    //one way is to directly set the value - but then you need to find the index x + y * rows
-    //mask_count.data[]
-    mask_count.at<uint8_t>(c_contour[j].y, c_contour[j].x) = mask.at<uint8_t>(c_contour[j].y, c_contour[j].x);
-    }*/
-    /*for(int j=0; j < hull.size(); j++){
-      mask_count.at<bool>(hull[j].y, hull[j].x) = mask.at<bool>(hull[j].y, hull[j].x);
-      }*/
-
-    //Ideally we should use the propoer convex hull stuff - but its messing up because of the 
-    //car's rollbar 
-    
-    cv::Mat hull_contour = cv::Mat::zeros(size, CV_8U);
-    const int hull_count = (int)hull.size();
-    const cv::Point* hull_pts = &hull[0];//&hull[0];
-    cv::fillPoly(hull_contour, &hull_pts, &hull_count, 1, cv::Scalar(255));
-
-    cv::imshow("Hull Mask", hull_contour);
-
 
     filled_contour = cv::Mat::zeros(size, CV_8U);
     const int filled_count = (int)largest_contour.size();
     const cv::Point* filled_pts = &largest_contour[0];//&hull[0];
     cv::fillPoly(filled_contour, &filled_pts, &filled_count, 1, cv::Scalar(255));
     
-    cv::imshow("Contour Mask", mask_count);
-    //cv::imshow("Contour Fill", filled_contour.clone());
+    return 0;
   }
   else{
     fprintf(stderr, "Error - No contour found\n");
-  }
-  //cv::Mat1b sm_display = mask_new.clone();
-  
-  /*vector<cv::Point> c_countour = contours[i];
-    fprintf(stderr, "No of points in contour : %d\n", contours[i].size());
-    for(int j=0; j < c_countour.size(); j++){
-    fprintf(stderr, "\t (%d,%d)\n", c_countour[j].x, c_countour[j].y);
-    }*/
+    return -1;
+  }  
 }
 
 // Broken - use distanceTransform instead
@@ -305,13 +286,18 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   //get the contour points and the contour 
   cv::Mat filled_contour;
   vector<cv::Point> largest_contour;
-  find_contours(mask_dil, filled_contour, largest_contour);
+  int status = find_contours(mask_dil, filled_contour, largest_contour);
+
+  if(status <0){
+    fprintf(stderr, "Error : Failed to find large contour\n");
+    return -3;
+  }
 
   if(!filled_contour.empty()){
     cv::imshow("Contour Fill", filled_contour.clone());
     cv::Mat1b mask_filled = (filled_contour > 0);
 
-    cv::Mat contours;
+    /*cv::Mat contours;
     cv::Canny(mask_filled, contours,10,350);
     
     //we can use the canny edges to get the distance from edges ?? - to build up the cost map 
@@ -342,7 +328,7 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     cv::Mat planes[] = {dist8u1, dist8u2, dist8u2};
     merge(planes, 3, dist8u);
     
-    cv::imshow("Distance Transform", dist8u);
+    cv::imshow("Distance Transform", dist8u);*/
         
     PixelMap<float>* contour_map;
     create_contour_pixelmap(self, utime, mask_filled, contour_map, largest_contour, self->lcmgl);
@@ -409,8 +395,9 @@ void setup_projection(Terrain *self, int width, int height){//cv::Mat road){
 
   int xstep = 1;//4;
   int ystep = 1;//2;
-  int ncols = width / xstep + 1;
-  int nrows = height / ystep + 1;
+  int ncols = width;//width / xstep + 1;
+  int nrows = height;//height / ystep + 1;
+  
   self->img_nvertices = ncols * nrows;
   int img_data_size = self->img_nvertices * sizeof(ImageVertex);
   self->vertices = (ImageVertex*) malloc(img_data_size);
@@ -472,6 +459,598 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
 
   //fprintf(stderr, "Done with Pixel Map - No of Cells : %d\n", distance_map->num_cells);
   //We need a transform from the Cam to center of Vehicle - which is where we are trying to drive from 
+  
+  BotTrans corner_to_head;
+  
+  double rpy[3] = {0};
+  corner_to_head.trans_vec[0] = 0;
+  corner_to_head.trans_vec[1] = -10;
+  corner_to_head.trans_vec[2] = 0;
+
+  bot_roll_pitch_yaw_to_quat(rpy, corner_to_head.rot_quat);
+
+  double min_xy[2] = {10000, 10000};
+  double max_xy[2] = {-10000, -10000};
+  
+  BotTrans corner_to_local;
+  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
+
+  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
+  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
+
+  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
+  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
+  
+  corner_to_head.trans_vec[0] = 25;
+  corner_to_head.trans_vec[1] = -10;
+  
+  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
+
+  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
+  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
+
+  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
+  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
+
+  corner_to_head.trans_vec[0] = 25;
+  corner_to_head.trans_vec[1] = 10;
+  
+  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
+
+  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
+  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
+
+  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
+  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
+
+  corner_to_head.trans_vec[0] = 0;
+  corner_to_head.trans_vec[1] = 10;
+  
+  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
+
+  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
+  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
+
+  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
+  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
+
+  if(lcmgl){
+    bot_lcmgl_point_size(lcmgl, 5);
+    bot_lcmgl_begin(lcmgl, GL_POINTS);
+  }
+
+  double resolution = 0.1;
+  
+  distance_map = new PixelMap<float>(min_xy, max_xy, resolution, false);//xy0, xy1, 0.5, false);
+  distance_map->data = new float[distance_map->num_cells];
+  memset(distance_map->data, 0, sizeof(float) * distance_map->num_cells);
+
+
+  fprintf(stderr, "Image size : %d, %d\n", distance_map->dimensions[0], distance_map->dimensions[1]);
+
+  cv::Mat1b projected_map = cv::Mat1b::zeros(distance_map->dimensions[1], distance_map->dimensions[0]);
+  cv::Mat1b filled_map = cv::Mat1b::zeros(distance_map->dimensions[1], distance_map->dimensions[0]);
+  
+  BotTrans local_to_cam = cam_to_local;
+  bot_trans_invert(&local_to_cam);
+  
+  BotTrans point_to_local;
+  point_to_local.trans_vec[2] = 0;
+  bot_roll_pitch_yaw_to_quat(rpy, point_to_local.rot_quat);
+  
+  BotTrans point_to_cam; 
+  int skip = 1;
+  // project image onto the ground plane
+  int map_count = 0;
+
+  int last_valid_ind = 0;
+
+  vector<cv::Point> transformed_contour_points;
+  cv::Mat1b mask_count = cv::Mat1b::zeros(mask.rows, mask.cols);
+  const cv::Scalar color_1(255,255,255);
+
+  fprintf(stderr, "No of columns : %d\n", mask.cols);
+
+  if(1){
+    for(size_t i=0; i < contour.size(); i++){
+      cv::Point pt = contour[i];
+
+      int ind = pt.x + pt.y * mask.cols;
+      
+      cv::circle(mask_count, pt ,3, color_1,  2);
+
+      ImageVertex *v = &self->vertices[ind];
+
+      //fprintf(stderr, "X,Y Img : %d, %d -> Vertex : %d, %d - Delta x : %d\n", pt.x, pt.y, v->tx, v->ty, (pt.x - v->tx));
+
+      point3d_t pixel_rays_local;
+      pixel_rays_local.x = v->vx;
+      pixel_rays_local.y = v->vy;
+      pixel_rays_local.z = v->vz;
+
+      point2d_t ground_projections_local;
+
+      double v_cam[3] = { v->vx, v->vy, v->vz };
+
+      uint8_t r = 0.0;
+      uint8_t g = 1.0;
+      uint8_t b = 0.0;
+
+      bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
+    
+      //check where it hits the ground plane
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
+					     &ground_projections_local)) {
+	continue;
+      }
+
+      double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
+							    POINT2D(cam_to_local.trans_vec));
+
+      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+	continue;
+      }
+
+      point_to_local.trans_vec[0] = self->ground_projections_local[i].x;
+      point_to_local.trans_vec[1] = self->ground_projections_local[i].y;
+    
+      bot_trans_apply_trans_to(&local_to_cam, &point_to_local, &point_to_cam);
+
+      double xy[2] = {ground_projections_local.x, ground_projections_local.y};
+    
+      int ixy[2];
+
+      if(distance_map->isInMap(xy)){
+	distance_map->worldToTable(xy, ixy);
+	transformed_contour_points.push_back(cv::Point(ixy[0], ixy[1]));
+    
+	if(lcmgl){
+	  bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
+	  bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
+	}
+      }
+    }
+    cv::imshow("Contour Points Final", mask_count);
+
+    const int filled_count = (int)transformed_contour_points.size();
+    const cv::Point* filled_pts = &transformed_contour_points[0];//&hull[0];
+    cv::fillPoly(filled_map, &filled_pts, &filled_count, 1, cv::Scalar(255));
+    
+    imshow("Filled Transformed Contour", filled_map);
+  }
+
+  //fprintf(stderr, "No of Contour Points : %d\n", contour.size());
+
+  /*for(size_t i=1; i < contour.size(); i++){
+    cv::Point pt0 = contour[i-1];
+    cv::Point pt1 = contour[i];
+
+    int ind1 = pt0.x + pt0.y * mask.cols;
+    int ind2 = pt1.x + pt1.y * mask.cols;
+
+    ImageVertex *v1 = &self->vertices[ind1];
+    ImageVertex *v2 = &self->vertices[ind2];
+
+    point3d_t pixel_rays_local;
+    pixel_rays_local.x = v1->vx;
+    pixel_rays_local.y = v1->vy;
+    pixel_rays_local.z = v1->vz;
+
+    point2d_t ground_projections_local;
+
+    double v_cam[3] = { v1->vx, v1->vy, v1->vz };
+    //project these points - and draw a line between them 
+
+    uint8_t r = 0.0;
+    uint8_t g = 1.0;
+    uint8_t b = 0.0;
+
+    bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
+    
+    //check where it hits the ground plane
+    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
+					   &ground_projections_local)) {
+      continue;
+    }
+
+    double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
+							  POINT2D(cam_to_local.trans_vec));
+
+    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+      continue;
+    }
+
+    //now check the current one 
+    point3d_t pixel_rays_local2;
+    pixel_rays_local2.x = v2->vx;
+    pixel_rays_local2.y = v2->vy;
+    pixel_rays_local2.z = v2->vz;
+
+    point2d_t ground_projections_local2;
+
+    double v_cam2[3] = { v2->vx, v2->vy, v2->vz };
+    //project these points - and draw a line between them 
+
+    bot_trans_rotate_vec(&cam_to_local, v_cam2, point3d_as_array(&pixel_rays_local2));
+    
+    //check where it hits the ground plane
+    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local2, 0,
+					   &ground_projections_local2)) {
+      //current ind messed up - then move to next
+      i++;
+      continue;
+    }
+
+    dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local2,
+						   POINT2D(cam_to_local.trans_vec));
+
+    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+      i++;
+      continue;
+    }
+
+    point_to_local.trans_vec[0] = ground_projections_local.x;
+    point_to_local.trans_vec[1] = ground_projections_local.y;
+    
+    double xy_1[2] = {ground_projections_local.x, ground_projections_local.y};
+    double xy_2[2] = {ground_projections_local2.x, ground_projections_local2.y};
+    
+    float clamp[2] = {0,1};
+    int ixy_1[2];
+    int ixy_2[2];
+    if(distance_map->isInMap(xy_1) && distance_map->isInMap(xy_2)){
+      //get indices and draw lines in the opencv image 
+
+      distance_map->worldToTable(xy_1, ixy_1);
+      distance_map->worldToTable(xy_2, ixy_2);
+
+      cv::line(projected_map, cv::Point(ixy_1[0], ixy_1[1]), cv::Point(ixy_2[0], ixy_2[1]), color,  2);
+
+
+      map_count++;
+    }
+    
+    if(lcmgl){
+      bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
+      bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
+    }
+  }    
+  */
+  //we should fill the polygon and then invert it??
+  //const int filled_count = (int)largest_contour.size();
+  //const cv::Point* filled_pts = &largest_contour[0];//&hull[0];
+  //cv::fillPoly(filled_contour, &filled_pts, &filled_count, 1, cv::Scalar(255));
+
+
+
+  
+  //we should do this - but to the projected 
+  cv::Mat1b road_outline = (mask >0);//cv::Mat1b::zeros(mask.rows, mask.cols);
+  const cv::Scalar color(255,255,255);  
+  for(int j=1; j < contour.size(); j++){
+    cv::line(road_outline, contour[j-1], contour[j], color,  2);
+  }
+
+  for(int i= 0; i < road_outline.cols; i++){
+    for(int j= road_outline.rows - 20; j < road_outline.rows; j++){
+      road_outline.at<uint8_t>(j,i) = 1;
+    }
+  }
+  
+  //give up the bottom set of pixels - because we see the car sometimes 
+  
+  cv::Size size(mask.cols, mask.rows);
+  cv::Mat dist_color = cv::Mat::zeros(size, CV_8U);
+
+  cv::Mat dist;
+  distanceTransform(road_outline, dist, CV_DIST_L2, CV_DIST_MASK_5); //CV_DIST_MASK_PRECISE);
+  
+  uint8_t max = 0;
+  for(int i=0; i < dist.cols; i++){
+    for(int j=0; j < dist.rows; j++){
+      uint8_t d = 254* fmin(1, 100/dist.at<float>(j,i));
+      dist_color.at<uint8_t>(j,i) = d;//uint8_t(1);            
+      if(d > max)
+	max = d;
+    }
+  }
+
+  //we would need to local minimum 
+  
+  fprintf(stderr, "Max : %d\n", max);
+
+  
+  
+  cv::imshow("Road Distance Transform", dist_color);
+  //apply the distance transform here
+
+  cv::imshow("Road Outline", road_outline);
+
+  if(0){
+    for(size_t i=1; i < contour.size(); i++){
+      cv::Point pt0 = contour[i-1];
+      cv::Point pt1 = contour[i];
+
+      int ind1 = pt0.x + pt0.y * mask.cols;
+      int ind2 = pt1.x + pt1.y * mask.cols;
+
+      ImageVertex *v1 = &self->vertices[ind1];
+      ImageVertex *v2 = &self->vertices[ind2];
+
+      point3d_t pixel_rays_local;
+      pixel_rays_local.x = v1->vx;
+      pixel_rays_local.y = v1->vy;
+      pixel_rays_local.z = v1->vz;
+
+      point2d_t ground_projections_local;
+
+      double v_cam[3] = { v1->vx, v1->vy, v1->vz };
+      //project these points - and draw a line between them 
+
+      uint8_t r = 0.0;
+      uint8_t g = 1.0;
+      uint8_t b = 0.0;
+
+      bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
+    
+      //check where it hits the ground plane
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
+					     &ground_projections_local)) {
+	continue;
+      }
+
+      double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
+							    POINT2D(cam_to_local.trans_vec));
+
+      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+	continue;
+      }
+
+      //now check the current one 
+      point3d_t pixel_rays_local2;
+      pixel_rays_local2.x = v2->vx;
+      pixel_rays_local2.y = v2->vy;
+      pixel_rays_local2.z = v2->vz;
+
+      point2d_t ground_projections_local2;
+
+      double v_cam2[3] = { v2->vx, v2->vy, v2->vz };
+      //project these points - and draw a line between them 
+
+      bot_trans_rotate_vec(&cam_to_local, v_cam2, point3d_as_array(&pixel_rays_local2));
+    
+      //check where it hits the ground plane
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local2, 0,
+					     &ground_projections_local2)) {
+	//current ind messed up - then move to next
+	i++;
+	continue;
+      }
+
+      dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local2,
+						     POINT2D(cam_to_local.trans_vec));
+
+      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+	i++;
+	continue;
+      }
+
+      point_to_local.trans_vec[0] = ground_projections_local.x;
+      point_to_local.trans_vec[1] = ground_projections_local.y;
+    
+      double xy_1[2] = {ground_projections_local.x, ground_projections_local.y};
+      double xy_2[2] = {ground_projections_local2.x, ground_projections_local2.y};
+    
+      float clamp[2] = {0,1};
+
+      /*if(distance_map->isInMap(xy_2)){// && distance_map->isInMap(xy_2)){
+	distance_map->writeValue(xy_2, 1.0);
+	//distance_map->rayTrace(xy_1, xy_2, 1,1, clamp);
+	map_count++;
+	}*/
+    
+      if(lcmgl){
+	bot_lcmgl_color3f(lcmgl, 0.0, 1.0, 0);
+	bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
+      }
+    }    
+  }
+
+  if(0){
+    int back_ind = 0;
+    
+    
+    for(size_t i=1; i < contour.size(); i++){
+      cv::Point pt0 = contour[back_ind];
+      cv::Point pt1 = contour[i];
+
+      int ind1 = pt0.x + pt0.y * mask.cols;
+      int ind2 = pt1.x + pt1.y * mask.cols;
+
+      ImageVertex *v1 = &self->vertices[ind1];
+      ImageVertex *v2 = &self->vertices[ind2];
+
+      point3d_t pixel_rays_local;
+      pixel_rays_local.x = v1->vx;
+      pixel_rays_local.y = v1->vy;
+      pixel_rays_local.z = v1->vz;
+
+      point2d_t ground_projections_local;
+
+      double v_cam[3] = { v1->vx, v1->vy, v1->vz };
+      //project these points - and draw a line between them 
+
+      uint8_t r = 0.0;
+      uint8_t g = 1.0;
+      uint8_t b = 0.0;
+
+      bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
+    
+      //check where it hits the ground plane
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
+					     &ground_projections_local)) {
+	//if back ind messed up we should move forward 
+	back_ind+=1;
+	i++;
+	continue;
+      }
+
+      double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
+							    POINT2D(cam_to_local.trans_vec));
+
+      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+	back_ind+=1;
+	i++;
+	continue;
+      }
+
+      //now check the current one 
+      point3d_t pixel_rays_local2;
+      pixel_rays_local2.x = v2->vx;
+      pixel_rays_local2.y = v2->vy;
+      pixel_rays_local2.z = v2->vz;
+
+      point2d_t ground_projections_local2;
+
+      double v_cam2[3] = { v2->vx, v2->vy, v2->vz };
+      //project these points - and draw a line between them 
+
+      bot_trans_rotate_vec(&cam_to_local, v_cam2, point3d_as_array(&pixel_rays_local2));
+    
+      //check where it hits the ground plane
+      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local2, 0,
+					     &ground_projections_local2)) {
+	//current ind messed up - then move to next
+	i++;
+	continue;
+      }
+
+      dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local2,
+						     POINT2D(cam_to_local.trans_vec));
+
+      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+	i++;
+	continue;
+      }
+
+      back_ind = i;
+
+      point_to_local.trans_vec[0] = ground_projections_local.x;
+      point_to_local.trans_vec[1] = ground_projections_local.y;
+    
+      double xy_1[2] = {ground_projections_local.x, ground_projections_local.y};
+      double xy_2[2] = {ground_projections_local2.x, ground_projections_local2.y};
+    
+      float clamp[2] = {0,1};
+
+      if(distance_map->isInMap(xy_1) && distance_map->isInMap(xy_2)){
+	distance_map->writeValue(xy_2, 1.0);
+	//distance_map->rayTrace(xy_1, xy_2, 1,1, clamp);
+	map_count++;
+      }
+    
+      /*if(lcmgl){
+	bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
+	bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
+	}*/
+      //self->ground_projections_local[i].x, self->ground_projections_local[i].y
+      /*if(i %8==0){
+	if(lcmgl){
+	bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
+	bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
+	}
+	}*/
+
+    }
+  }
+
+  for (int i = 0; i < self->img_nvertices; i+=skip) {
+    ImageVertex *v = &self->vertices[i];
+
+    bool road = mask.at<uint8_t>(v->ty, v->tx);
+    
+    if(!road)
+      continue;
+    //get the ray in local frame 
+    self->pixel_rays_local[i].x = v->vx;
+    self->pixel_rays_local[i].y = v->vy;
+    self->pixel_rays_local[i].z = v->vz;
+    double v_cam[3] = { v->vx, v->vy, v->vz };
+
+    uint8_t r = 0.0;
+    uint8_t g = 1.0;
+    uint8_t b = 0.0;
+
+    bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&self->pixel_rays_local[i]));
+    
+    //check where it hits the ground plane
+    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &self->pixel_rays_local[i], 0,
+					   &self->ground_projections_local[i])) {
+      self->ground_projections_local[i].x = NAN;
+      self->ground_projections_local[i].y = NAN;
+      continue;
+    }
+
+    double dist_sq = geom_point_point_distance_squared_2d(&self->ground_projections_local[i],
+							  POINT2D(cam_to_local.trans_vec));
+    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
+      self->ground_projections_local[i].x = NAN;
+      self->ground_projections_local[i].y = NAN;
+      continue;
+    }
+
+
+    point_to_local.trans_vec[0] = self->ground_projections_local[i].x;
+    point_to_local.trans_vec[1] = self->ground_projections_local[i].y;
+    
+    bot_trans_apply_trans_to(&local_to_cam, &point_to_local, &point_to_cam);
+    
+    //fprintf(stderr, "Dist : %f, %f - %f\n", point_to_cam.trans_vec[0], point_to_cam.trans_vec[1], hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1]));
+    
+    double dist_rat = fmin(1,dist.at<float>(v->ty, v->tx)/50);//
+    //double dist_rat = fmin(1,hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1])/ 5.0);
+    float *color = bot_color_util_jet(dist_rat);
+    
+    double xy_c[2] = {self->ground_projections_local[i].x, self->ground_projections_local[i].y};
+    if(distance_map->isInMap(xy_c)){
+      distance_map->writeValue(xy_c, dist_rat);
+      //fprintf(stderr, "Value at %f,%f ",xy_c[0], xy_c[1]);
+      //fprintf(stderr, ":  %f\n", distance_map->readValue(xy_c));//dist_rat);
+      map_count++;
+    }
+    //self->ground_projections_local[i].x, self->ground_projections_local[i].y
+    if(0 && i %8==0){
+      if(lcmgl){
+	bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
+	bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
+      }
+    }
+  }
+
+  const occ_map_pixel_map_t *map_msg = distance_map->get_pixel_map_t(utime);
+  occ_map_pixel_map_t_publish(self->lcm, "PIXEL_MAP", map_msg);    
+
+  fprintf(stderr, "Map Count : %d\n", map_count);
+  if(lcmgl){
+    bot_lcmgl_end(lcmgl);
+    bot_lcmgl_switch_buffer(lcmgl);
+  }  
+}
+
+void create_contour_pixelmap_old(Terrain *self, int64_t utime, cv::Mat& mask, PixelMap<float>* distance_map, vector<cv::Point>contour, bot_lcmgl_t *lcmgl){
+  //this should all be done in a body relative frame - which will break the rendering of the occ map - but what the hell :D
+  BotTrans head_to_local;
+  
+  bot_frames_get_trans_with_utime(self->frames, "head", bot_frames_get_root_name(self->frames),
+				  utime, &head_to_local);
+  
+  BotTrans cam_to_local;
+  
+  bot_frames_get_trans_with_utime(self->frames, self->coord_frame, bot_frames_get_root_name(self->frames),
+				  utime, &cam_to_local);
+  
+  //fprintf(stderr, "Done with Pixel Map - No of Cells : %d\n", distance_map->num_cells);
+  //We need a transform from the Cam to center of Vehicle - which is where we are trying to drive from 
   if(lcmgl){
     bot_lcmgl_point_size(lcmgl, 10);
     bot_lcmgl_begin(lcmgl, GL_POINTS);
@@ -498,12 +1077,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
   max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
   max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
   
-  /*if(lcmgl){
-    bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-    }*/
-  //double xy0[2] = {corner_to_local.trans_vec[0], corner_to_local.trans_vec[1]};
-
   corner_to_head.trans_vec[0] = 25;
   corner_to_head.trans_vec[1] = -10;
   
@@ -515,11 +1088,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
   max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
   max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
 
-  /*if(lcmgl){
-    bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-    }*/
-
   corner_to_head.trans_vec[0] = 25;
   corner_to_head.trans_vec[1] = 10;
   
@@ -530,11 +1098,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
 
   max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
   max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  /*if(lcmgl){
-    bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-    }*/
 
   corner_to_head.trans_vec[0] = 0;
   corner_to_head.trans_vec[1] = 10;
@@ -547,25 +1110,12 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
   max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
   max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
 
-  /*if(lcmgl){
-    bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-    }*/
-
   if(lcmgl){
     bot_lcmgl_end(lcmgl);
     bot_lcmgl_point_size(lcmgl, 3);
     bot_lcmgl_begin(lcmgl, GL_POINTS);
-  }
+  }  
   
-
-  //double xy1[2] = {corner_to_local.trans_vec[0], corner_to_local.trans_vec[1]};
-  
-  /*fprintf(stderr, "Min {%.3f, %.3f} - Max {%.3f, %.3f}\n", 
-    min_xy[0], min_xy[1], max_xy[0], max_xy[1]);
-  */
-
-  //fprintf(stderr, "Creating Pixel Map\n");
   distance_map = new PixelMap<float>(min_xy, max_xy, 0.5, false);//xy0, xy1, 0.5, false);
   distance_map->data = new float[distance_map->num_cells];
   memset(distance_map->data, 0, sizeof(float) * distance_map->num_cells);
@@ -584,7 +1134,7 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
   int map_count = 0;
   
   //we should do this - but to the projected 
-  cv::Mat1b road_outline = (mask >0);//cv::Mat1b::zeros(mask.rows, mask.cols);
+  cv::Mat1b road_outline = (mask >0);
   const cv::Scalar color(255,255,255);  
   for(int j=1; j < contour.size(); j++){
     cv::line(road_outline, contour[j-1], contour[j], color,  2);
@@ -596,13 +1146,12 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
     }
   }
   
-  //give up the bottom set of pixels - because we see the car sometimes 
-  
   cv::Size size(mask.cols, mask.rows);
   cv::Mat dist_color = cv::Mat::zeros(size, CV_8U);
 
   cv::Mat dist;
-  distanceTransform(road_outline, dist, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+  //precise is a lot more expensive - try not to use 
+  distanceTransform(road_outline, dist, CV_DIST_L2, CV_DIST_MASK_5); //CV_DIST_MASK_PRECISE);
   
   uint8_t max = 0;
   for(int i=0; i < dist.cols; i++){
@@ -613,13 +1162,8 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
 	max = d;
     }
   }
-
-  //we would need to local minimum 
-  
   fprintf(stderr, "Max : %d\n", max);
 
-  
-  
   cv::imshow("Road Distance Transform", dist_color);
   //apply the distance transform here
 
