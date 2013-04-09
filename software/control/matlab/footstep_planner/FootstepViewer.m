@@ -27,7 +27,9 @@ classdef FootstepViewer
       % goal_msg = nav_goal_coder.encode([1;1;0;0;0;0]);
       % obj.lc.publish('NAV_GOAL_TIMED', goal_msg);
 
-      % r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
+      % r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+      % r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      % r = compile(r);      
       % d = load('../data/atlas_fp.mat');
       % xstar = d.xstar;
       % r = r.setInitialState(xstar);

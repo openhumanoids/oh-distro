@@ -1,9 +1,11 @@
 function testContactOffset()
 
 	options.floating = true;
-	r = Atlas('../../../../models/mit_gazebo_models/mit_robot_drake/model_foot_contact.urdf', options);
+  r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
+  r = removeCollisionGroupsExcept(r,{'heel','toe'});
+  r = compile(r);
 
-	for i = 1:10
+  for i = 1:10
 		for grp = {'heel', 'toe', 'center'}
 			g = grp{1};
 			for is_right_foot = [0, 1]

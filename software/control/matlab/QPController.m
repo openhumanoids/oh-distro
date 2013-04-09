@@ -38,13 +38,12 @@ classdef QPController < MIMODrakeSystem
       obj.slack_limit = options.slack_limit;
     end
     
-    obj.nu = getNumInputs(r);
-    obj.nq = getNumDOF(r);
+    nu = getNumInputs(r);
     if (~isfield(options,'R'))
-      obj.R = 1e-6*eye(obj.nu);
+      obj.R = 1e-6*eye(nu);
     else
       typecheck(options.R,'double');
-      sizecheck(options.R,[obj.nu,obj.nu]);
+      sizecheck(options.R,[nu,nu]);
       obj.R = options.R;
     end
     
@@ -81,30 +80,24 @@ classdef QPController < MIMODrakeSystem
     
   function y=mimoOutput(obj,t,~,varargin)
     tic;
+
     q_ddot_des = varargin{1};
     x = varargin{2};
-    
+    r = obj.robot;
     zmpd = getData(obj.zmpdata);
 
+    % use support trajectory
     if zmpd.ti_flag
-      supports = zmpd.supptraj;
+      active_supports = find(zmpd.supptraj);
     else
-      supports = zmpd.supptraj.eval(t);
+      active_supports = find(zmpd.supptraj.eval(t));
     end
-    
-    r = obj.robot;
-
-    %----------------------------------------------------------------------
-    % Set up problem dimensions -------------------------------------------
     
     nd = 4; % for friction cone approx, hard coded for now
     dim = 3; % 3D
-    nu = obj.nu;
-    nq = obj.nq;
+    nu = getNumInputs(r);
+    nq = getNumDOF(r);
     
-    %----------------------------------------------------------------------
-    % Compute kinematic and dynamic quantities ----------------------------
- 
     q = x(1:nq); 
     qd = x(nq+(1:nq));
     kinsol = doKinematics(r,q,false,true,qd);
@@ -116,14 +109,11 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-    active_supports = find(supports~=0);
-%     if (isempty(active_supports))
-%       warning('QPController::No supporting bodies...');
-%     end
-   
+    contact_threshold = 0.005; % m
+           
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = abs(phi)<0.005;
+    active_contacts = abs(phi)<contact_threshold;
 
     %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
     if any(active_contacts(1:4))
@@ -140,7 +130,7 @@ classdef QPController < MIMODrakeSystem
       % ignore supporting body spec, use any body in contact
       [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = abs(phi)<0.005;
+      active_contacts = abs(phi)<contact_threshold;
 
       %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
       if any(active_contacts(1:4))
@@ -279,7 +269,6 @@ classdef QPController < MIMODrakeSystem
     % quadratic slack var cost 
     Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
 
-    
     %----------------------------------------------------------------------
     % Solve QP ------------------------------------------------------------
         
@@ -328,8 +317,8 @@ classdef QPController < MIMODrakeSystem
     zmpdata;
     w = 1.0; % objective function weight
     slack_limit = 1.0; % maximum absolute magnitude of acceleration slack variable values
-    nq;
-    nu;
+    rfoot_idx;
+    lfoot_idx;
     R; % quadratic input cost matrix
     % LIP stuff
     A = [zeros(2),eye(2); zeros(2,4)]; % state transfer matrix
@@ -338,7 +327,5 @@ classdef QPController < MIMODrakeSystem
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
-    rfoot_idx;
-    lfoot_idx;
   end
 end
