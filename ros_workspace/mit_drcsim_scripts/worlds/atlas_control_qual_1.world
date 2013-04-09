@@ -7,8 +7,8 @@
       <ode>
         <solver>
           <type>quick</type>
-          <dt>0.00033</dt>
-          <iters>250</iters>
+          <dt>0.001</dt>
+          <iters>500</iters>
           <sor>1.2</sor>
         </solver>
         <constraints>
@@ -212,16 +212,19 @@
     <include>
       <uri>model://mit_robot_nohands</uri>
       <!-- stepping stones -->
-<!--      <pose>16.8 8.25 2.0 0 0 0</pose>-->
+<!--      <pose>16.8 8.0 1.93 0 0 0</pose>-->
       <!-- starting gate --> 
       <pose>0 0 1.93 0 0 0</pose> 
+      <!-- corridor -->
+<!--      <pose>10 0 1.93 0 0 1.57</pose>-->-->
+
     </include>
 
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
          <model_name>atlas</model_name>
-         <pin_link>utorso</pin_link>
+         <pin_link>pelvis</pin_link>
       </atlas>
       <drc_vehicle>
         <model_name>golf_cart</model_name>
