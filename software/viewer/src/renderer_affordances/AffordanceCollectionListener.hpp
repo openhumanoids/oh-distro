@@ -43,16 +43,22 @@ namespace renderer_affordances
   private:
    //-------------message callbacks
     
-   void handleAffordancePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf,
+   void handleAffordanceCollectionMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
-			      const drc::affordance_plus_collection_t* msg);
-   void handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-			    const  drc::affordance_plus_t* msg);    
+			      const drc::affordance_collection_t* msg);
+   void handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+			    const  drc::affordance_t* msg);    
+			    
+    void handleAffordancePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf,
+                                          const std::string& chan, 
+                                          const drc::affordance_plus_collection_t* msg);
+    void handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+                                 const  drc::affordance_plus_t* msg);    
 			    
 	//-------------utils   
 	//std::string get_filename(int32_t otdf_id); 
-	void add_new_otdf_object_instance (std::string &filename, const drc::affordance_plus_t &aff);
-	void update_object_instance (const drc::affordance_plus_t &aff);
+	void add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff);
+	void update_object_instance (const drc::affordance_t &aff);
 
 }; //class AffordanceCollectionListener
 

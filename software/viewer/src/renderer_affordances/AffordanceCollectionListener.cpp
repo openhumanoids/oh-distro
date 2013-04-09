@@ -32,6 +32,8 @@ namespace renderer_affordances
       }
 
 
+    _lcm->subscribe("AFFORDANCE_COLLECTION", &AffordanceCollectionListener::handleAffordanceCollectionMsg, this); 
+    _lcm->subscribe("AFFORDANCE", &AffordanceCollectionListener::handleAffordanceMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS_COLLECTION", &AffordanceCollectionListener::handleAffordancePlusCollectionMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS", &AffordanceCollectionListener::handleAffordancePlusMsg, this); 
 
@@ -47,9 +49,9 @@ namespace renderer_affordances
 
 // checks to see the affordances are in the parent renderer object list. If it is pre-existing 
 // it is updated and if its new a new instance is created.
-void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf,
+void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::affordance_plus_collection_t* msg)						 
+						 const drc::affordance_collection_t* msg)						 
   {
   
 
@@ -57,9 +59,8 @@ void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::
     //cout << "Ok!: " << oss.str() << endl;
     for (size_t i=0; i< (size_t)msg->naffs; i++)
     {
-      const drc::affordance_plus_t& aff_plus = msg->affs_plus[i];
-      const drc::affordance_t     & aff      = aff_plus.aff;
-
+      const drc::affordance_t aff = msg->affs[i];
+      
       std::stringstream oss;
       oss << aff.otdf_type << "_"<< aff.uid; 
         
@@ -69,44 +70,87 @@ void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
           //cout <<"updated_otdf_object_instance: "<< aff.otdf_type <<  " " <<  aff.uid << endl;
-          update_object_instance(aff_plus);
+          update_object_instance(aff);
        }      
        else {
           // add new otdf instance
           std::string filename = aff.otdf_type;//get_filename(aff.otdf_id);
           cout <<"add new otdf instance: "<< aff.otdf_type << "_"<< aff.uid << ", of template :" << filename << endl;
           //std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
-          add_new_otdf_object_instance(filename, aff_plus);
+          add_new_otdf_object_instance(filename, aff);
        }
     }
 
   } // end handleMessage
 
+  void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf,
+                                                                   const string& chan, 
+                                                                   const drc::affordance_plus_collection_t* msg)						 
+  {
+    for (size_t i=0; i< (size_t)msg->naffs; i++) {
+      const drc::affordance_plus_t& aff = msg->affs_plus[i];
+      handleAffordancePlusMsg(rbuf, chan, &aff);
+    }
+  }
+
    // =======================================================================  
    
-  void AffordanceCollectionListener::handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
-					       const  drc::affordance_plus_t* aff_plus) 
+  void AffordanceCollectionListener::handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
+					       const  drc::affordance_t* msg) 
   {
-       const drc::affordance_t* aff = &aff_plus->aff;
-       cout << "Received affordance: " << aff->otdf_type << " with uid: " << aff->uid << endl;
+       cout << "Received affordance: " << msg->otdf_type << " with uid: " << msg->uid << endl;
        std::stringstream oss;
-       oss << aff->otdf_type << "_"<< aff->uid; 
+       oss << msg->otdf_type << "_"<< msg->uid; 
     
        typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
        object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
          cout <<"update_otdf_object_instance" << endl;
-         update_object_instance((*aff_plus));
+         update_object_instance((*msg));
        }      
        else{
           // add new otdf instance
           cout <<"add new otdf instance" << endl;
-          std::string filename = aff->otdf_type;//get_filename(aff->otdf_id);
-          add_new_otdf_object_instance(filename, (*aff_plus));
+          std::string filename = msg->otdf_type;//get_filename(msg->otdf_id);
+          add_new_otdf_object_instance(filename, (*msg));
        }
        
   } 
+
+  void AffordanceCollectionListener::handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
+                                                             const  drc::affordance_plus_t* msg)
+  {
+    // handle affordance
+    handleAffordanceMsg(rbuf,channel,&msg->aff);
+    
+    // handle plus features
+    std::stringstream oss;
+    oss << msg->aff.otdf_type << "_"<< msg->aff.uid;
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
+    if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
+
+      std::vector<boost::shared_ptr<otdf::Link> > links;
+      it->second._otdf_instance->getLinks(links);
+      for(int i=0; i<links.size(); i++){
+        if(links[i]->visual && links[i]->visual->geometry){
+          cout << links[i]->visual->geometry->type << endl;
+          boost::shared_ptr<otdf::DynamicMesh> dmesh = 
+            dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
+          
+          if(dmesh){
+            dmesh->points = msg->points;
+            dmesh->triangles = msg->triangles;
+          }
+        }
+      }
+      
+    } else{
+      cout << "*** ERROR handleAffordancePlusMsg: shouldn't get here\n";
+    }
+
+  }
 
  // =======================================================================  
  //  Utils
@@ -119,15 +163,15 @@ void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::
           
   //NOTE: Have to manually list all the otdf templates, not ideal. 
   //Much better if otdf_id is a string instead of a enumerated type.
-  if(otdf_id==drc::affordance_plus_t::CYLINDER){
+  if(otdf_id==drc::affordance_t::CYLINDER){
    // check if cylinder exists in _parent_affordance_renderer->otdf_filenames
    filename = "cylinder";
   }
-  else if(otdf_id==drc::affordance_plus_t::LEVER)
+  else if(otdf_id==drc::affordance_t::LEVER)
   {
    filename = "lever";
   }
-  else if(otdf_id==drc::affordance_plus_t::SPHERE)
+  else if(otdf_id==drc::affordance_t::SPHERE)
   {
     filename = "sphere";  
   }
@@ -135,10 +179,9 @@ void AffordanceCollectionListener::handleAffordancePlusCollectionMsg(const lcm::
   return filename;
  }*/
  // =======================================================================
-void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &filename, const drc::affordance_plus_t &aff_plus)
+void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &filename, const drc::affordance_t &aff)
 {
-  const drc::affordance_t &aff = aff_plus.aff;
-
+ 
   std::string xml_string;
   if(!otdf::get_xml_string_from_file(filename, xml_string)){
     return; // file extraction failed
@@ -176,20 +219,6 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
   instance_struc._gl_object->set_state(instance_struc._otdf_instance);
 
-  std::vector<boost::shared_ptr<otdf::Link> > links;
-  instance_struc._otdf_instance->getLinks(links);
-  for(int i=0; i<links.size(); i++){
-    if(links[i]->visual && links[i]->visual->geometry){
-      cout << links[i]->visual->geometry->type << endl;
-      boost::shared_ptr<otdf::DynamicMesh> dmesh = 
-        dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
-      
-      if(dmesh){
-        dmesh->points = aff_plus.points;
-        dmesh->triangles = aff_plus.triangles;
-      }
-    }
-  }
   //boost::shared_ptr<const otdf::BaseEntity> base = instance_struc._otdf_instance->getRoot();
   //boost::shared_ptr<otdf::Link> link = dynamic_pointer_cast<otdf::Link>(instance_struc._otdf_instance->getRoot());
 
@@ -206,10 +235,8 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
 
 
 // =======================================================================  
-void AffordanceCollectionListener::update_object_instance (const drc::affordance_plus_t &aff_plus)
+void AffordanceCollectionListener::update_object_instance (const drc::affordance_t &aff)
 {
-
-  const drc::affordance_t &aff = aff_plus.aff;
 
   std::stringstream oss;
   oss << aff.otdf_type << "_"<< aff.uid; 
