@@ -7,4 +7,4 @@ status.frequency  = 0;
 status.value =value;
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('SYSTEM_STATUS', status);
-pause(0.25)
+%pause(0.25)

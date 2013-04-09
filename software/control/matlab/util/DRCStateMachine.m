@@ -28,19 +28,23 @@ classdef DRCStateMachine
     
     function run(obj)
       data = [];
+      transition_tic = tic;
       while 1
         ctrl = getfield(obj.controllers,obj.active_controller);
         msg = ['Initializing controller: ' ctrl.name];
         send_status(3, 0, 0, msg );
         disp(msg);
         
+        init_tic = tic;
         ctrl = ctrl.initialize(data);
+        disp([ctrl.name ' initialize time: ' num2str(toc(init_tic))]);
         
         msg = ['Running controller: ' ctrl.name];
         send_status(3, 0, 0, msg );
         disp(msg);
+        disp(['Transition time: ' num2str(toc(transition_tic))]);
         transition_data = ctrl.run();
-        
+        transition_tic = tic;
         fn = fieldnames(transition_data);
         transition_to = fn{1}; % arbitrarily take the first one if multiple transitions occured simultaneously
         

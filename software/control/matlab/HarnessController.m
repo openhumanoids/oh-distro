@@ -8,7 +8,7 @@ classdef HarnessController < DRCController
     function obj = HarnessController(name,r)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[],'supptraj',[],'ti_flag',true));
+      ctrl_data = SharedDataHandle(struct('qtraj',[],'ti_flag',true));
       
       % instantiate QP controller
       options = struct();
@@ -37,40 +37,15 @@ classdef HarnessController < DRCController
     end
     
     function obj = initialize(obj,msg_data)
-
       r = obj.robot;
       nq = getNumDOF(r);
       
       % use saved nominal pose --- could make this more general
       d = load('data/atlas_fp.mat');
       xstar = d.xstar;
-    
-      jn = getJointNames(r);
-      xstar(cellfun(@isempty,strfind(jn(2:end),'arm')) & ...
-            cellfun(@isempty,strfind(jn(2:end),'neck'))  & ...
-            cellfun(@isempty,strfind(jn(2:end),'leg'))  & ...
-            cellfun(@isempty,strfind(jn(2:end),'mhx'))) = 0.0; 
       
       q0 = xstar(1:nq);
-      kinsol = doKinematics(r,q0);
-      com = getCOM(r,kinsol);
-
-      % build TI-ZMP controller ... kinda silly to do this for the harness
-      foot_pos = contactPositions(r,q0); 
-      ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-      comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
-      limp = LinearInvertedPendulum(com(3));
-      options.Qy = diag([0 0 0 0 1 1]);
-      [~,V] = tilqr(limp,Point(limp.getStateFrame,[comgoal(1:2);0;0]), ...
-                    Point(limp.getInputFrame),zeros(4),zeros(2),options);
-
-      foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
-
-      obj.controller_data.setField('S',V.S);
-      obj.controller_data.setField('h',com(3));
-      obj.controller_data.setField('hddot',0);
       obj.controller_data.setField('qtraj',q0);
-      obj.controller_data.setField('supptraj',foot_support);
   
     end
   end  

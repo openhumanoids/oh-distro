@@ -79,7 +79,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    tic;
+%     tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -302,7 +302,7 @@ classdef QPController < MIMODrakeSystem
     end
 
 %     max(Iz*alpha)
-    toc
+%     toc
    
   end
   end
