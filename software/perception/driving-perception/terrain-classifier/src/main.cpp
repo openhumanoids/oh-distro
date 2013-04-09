@@ -103,14 +103,13 @@ void find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&l
   vector<vector<cv::Point> > contours;
 
   // find contours and store them all as a list
-  cv::Mat1b mask_new = mask.clone();
-  cv::findContours(mask_new, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
   
   //fprintf(stderr, "No of countours : %d\n", contours.size());
 
   vector<cv::Point> approx;
 
-  cv::Mat1b mask_count = cv::Mat1b::zeros(mask_new.rows, mask_new.cols);
+  cv::Mat1b mask_count = cv::Mat1b::zeros(mask.rows, mask.cols);
 
   // test each contour
   int largest_countour_id = -1;
@@ -284,7 +283,7 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   cv::Mat val = channels[1];
   cv::Mat sat = channels[2];
 
-  if(state->options.vDEBUG){
+  if(self->options.vDEBUG){
     //display the HSV results 
     cv::Mat h_display = hue.clone();
     cv::imshow("HUE", h_display);
