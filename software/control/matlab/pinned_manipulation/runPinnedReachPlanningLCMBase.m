@@ -73,9 +73,8 @@ while(1)
   rep = getNextMessage(r_ee.frame,1); 
   if (~isempty(rep))
     disp('Right hand goal received.');
-    p=rep(2:4);   q=rep(5:8);
-    norm(q)
-    rpy = quat2rpy(q);
+    p=rep(2:4);   rpy=rep(5:7);
+%    q=rep(5:8);rpy = quat2rpy(q);
     r_ee_goal=[p(:);rpy(:)];
     r_goal_received = true;
   end
@@ -83,11 +82,8 @@ while(1)
   lep = getNextMessage(l_ee.frame,1);
   if (~isempty(lep))
     disp('Left hand goal received.');
-    p=lep(2:4);   q=lep(5:8);
-%   [ya,pit,ro]=quat2angle(q','ZYX');[ro,pit,ya]*(180/pi)
-%   rpy=[ro,pit,ya];
-    norm(q)
-    rpy = quat2rpy(q);
+    p=lep(2:4);   rpy=lep(5:7);
+    %    q=lep(5:8);rpy = quat2rpy(q);
     l_ee_goal=[p(:);rpy(:)];
     l_goal_received = true;
   end
