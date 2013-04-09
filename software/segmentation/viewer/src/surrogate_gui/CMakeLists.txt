@@ -44,6 +44,7 @@ pods_use_pkg_config_packages(surrogate
     bot2-param-client
     lcmtypes_drc_lcmtypes
     maps
+    pointcloud_filters pointcloud_vis pointcloud_math
     ${REQUIRED_DRC_PACKAGES})
 
 pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h LinearAlgebra.h 
@@ -71,6 +72,7 @@ pods_use_pkg_config_packages(surrogate_viewer
     bot2-param-client
     lcm
     surrogate
-    renderer_affordances)
+    renderer_affordances
+    pointcloud_vis pointcloud_math)
 
 pods_install_executables(surrogate_viewer)

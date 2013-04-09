@@ -28,6 +28,10 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/surface/mls.h>
+
+#include <pointcloud_tools/filter_planes.hpp>
 
 #include <bot_core/rotations.h>
 
@@ -47,7 +51,7 @@ namespace surrogate_gui
     Matrix3d mat2(mat);
     for(int j=0;j<3;j++){
       for(int i=0;i<3;i++){
-  mat2(j,i) = mat[j*3+i];
+        mat2(j,i) = mat[j*3+i];
       }
     }
     return mat2.cast<float>();
@@ -95,6 +99,33 @@ namespace surrogate_gui
       points[i] -= xyz;
       points[i] = rot*points[i];
     }
+  }
+
+  PointCloud<PointXYZRGB>::Ptr extractAndSmooth(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, 
+                                                boost::shared_ptr<set<int> >  subcloudIndices)
+  {
+    PointCloud<PointXYZRGB>::Ptr subcloud;
+    if(subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
+    else subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+
+    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
+    // Output has the PointNormal type in order to store the normals calculated by MLS
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr mls_points(new pcl::PointCloud<pcl::PointXYZRGB>);
+    
+    // Init object (second point type is for the normals, even if unused)
+    pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::PointXYZRGB> mls;
+    
+    mls.setComputeNormals (true);
+    
+    // Set parameters
+    mls.setInputCloud (subcloud);
+    mls.setPolynomialFit (true);
+    mls.setSearchMethod (tree);
+    mls.setSearchRadius (0.03);
+    
+    // Reconstruct
+    mls.process (*mls_points);
+    return mls_points;
   }
                
   
@@ -366,8 +397,7 @@ namespace surrogate_gui
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 
-    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
-
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
 
     pcl::PCDWriter writer;
 
@@ -498,7 +528,7 @@ namespace surrogate_gui
     cout << "\n in fit sphere.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 
-    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
 
     //debugging
     Eigen::Vector4f centroid4f;
@@ -562,7 +592,7 @@ namespace surrogate_gui
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
                 
-    PointCloud<PointXYZRGB>::Ptr subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
 
     SampleConsensusModelCircle3D<PointXYZRGB>::Ptr model (new SampleConsensusModelCircle3D<PointXYZRGB> (subcloud));
                 
@@ -620,14 +650,28 @@ namespace surrogate_gui
                                            vector<Vector3f> & convexHull,
                                            vector< vector<float> > &inliers,
                                            vector<double> & inliers_distances)
+
   {
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
 
-    // if no points selected, use all, otherwise use selected points
-    PointCloud<PointXYZRGB>::Ptr subcloud;
-    if(subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
-    else subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
+
+    /*
+    // 2. Extract the major planes and send them to lcm:
+    int plane_fitter_id_ =1;
+    int64_t current_utime = 0;
+    FilterPlanes filtp;
+    filtp.setInputCloud(subcloud);
+    filtp.setPoseIDs(plane_fitter_id_,current_utime);
+    //filtp.setLCM(lcm_->getUnderlyingLCM());
+    filtp.setDistanceThreshold(0.02); // simulated lidar
+    filtp.setStopProportion(0.050);  //was 0.1
+    filtp.setStopCloudSize(200);
+    vector<BasicPlane> plane_stack; 
+    filtp.filterPlanes(plane_stack);
+    std::cout << "[PLANE] number of planes extracted: " << plane_stack.size() << "\n";
+    */
 
     //debugging
     //Eigen::Vector4f centroid4f;
@@ -637,7 +681,7 @@ namespace surrogate_gui
     //cout << "\n subcloud centroid = " << centroid << endl;
     //end debugging
 
-                PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
+    PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
 
     //---normals
     pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
