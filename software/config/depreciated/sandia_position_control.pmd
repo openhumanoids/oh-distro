@@ -1,0 +1,77 @@
+group "core" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_hands/floatingbase_urdfs/sandia_hands_floating.urdf";
+        host = "localhost";
+    }
+    cmd "estpub" {
+        exec = "est_robot_state_publisher_no_sensing";
+        host = "localhost";
+    }
+    cmd "r2l" {
+        exec = "rosrun translators ros2lcm -m hands";
+        host = "localhost";
+    }
+    cmd "l2r" {
+        exec = "rosrun translators lcm2ros";
+        host = "localhost";
+    }
+    cmd "affserver" {
+        exec = "affordance_server";
+        host = "localhost";
+    }
+    cmd "oracle2collection" {
+        exec = "drc-oracle2collection";
+        host = "localhost";
+    }    
+    cmd "pserver" {
+        exec = "bot-param-server drc_robot.cfg";
+        host = "localhost";
+    }
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "localhost";
+    }
+
+
+}
+
+group "drake" {
+    cmd "StickyHandsServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
+       host = "localhost";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "localhost";
+    }
+}
+
+group "gazebo" {
+    cmd "gfe" {
+        exec = "roslaunch mit_drcsim_scripts floating_sandia_hands.launch";
+        host = "localhost";
+    }
+}
+
+group "Misc" {
+
+    cmd "spy" {
+        exec = "bot-spy";
+        host = "localhost";
+    }
+    cmd "test_bot_pose_publisher" {
+        exec = "test_bot_pose_publisher";
+        host = "localhost";
+    }
+}
+
+script "startup simulation" {
+    start group "core";
+    start group "drake";
+    wait ms 1000;
+    start group "gazebo";
+}
