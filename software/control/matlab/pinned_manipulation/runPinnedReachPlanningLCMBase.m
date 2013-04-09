@@ -1,5 +1,4 @@
 function runPinnedReachPlanningLCMBase
-
 %NOTEST
 %mode = 1; % 0 = robot, 1 = base
 %if mode ==1
@@ -12,7 +11,6 @@ function runPinnedReachPlanningLCMBase
 options.floating = true;
 options.dt = 0.001;
 r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
-
 % NOTE: JointCommandCoder does not work with model_minimal_contact_with_hands.urdf
 %r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_with_hands.urdf',options);
 
@@ -35,17 +33,19 @@ r_ee.frame.subscribe('RIGHT_PALM_GOAL');
 l_ee = EndEffector(r,'atlas','left_palm',[0;0;0],'LEFT_PALM_GOAL');
 l_ee.frame.subscribe('LEFT_PALM_GOAL');
 
-% TEMP: for now listen for an ee_goal_t message over the EE_PLAN_START
-% channel to commence planning
-% ee_start_frame = LCMCoordinateFrameWCoder('ee_plan_start',7,'x',JLCMCoder(EndEffectorGoalCoder('atlas','ee_plan_start')));
-% ee_start_frame.subscribe('EE_PLAN_START');
 
+manip_planner = ManipulationPlanner(r);
+constraint_listener = TrajOptConstraintListener('MANIP_PLAN_CONSTRAINT');
+r_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
+l_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
-committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
-rejected_plan_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
+% committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
+% rejected_plan_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
+committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
+rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
 
 x0 = getInitialState(r); 
 q0 = x0(1:getNumDOF(r));
@@ -55,28 +55,15 @@ kinsol = doKinematics(r,q0);
 % l_hand_body = findLink(r,'left_palm');
 r_hand_body = findLink(r,'r_hand');
 l_hand_body = findLink(r,'l_hand');
-rep_goal = [1;forwardKin(r,kinsol,r_hand_body,[0;0;0],true)];
-lep_goal = [1;forwardKin(r,kinsol,l_hand_body,[0;0;0],true)];
-
-% Goals are presented in palm frame, must be transformed to hand frame 
-% for reach control.
-% Using notation similar to KDL.
-T_hand_palm_l.xyz = [0 0.1 0];
-T_hand_palm_l.M = angle2dcm(1.57079,-0,1.57079, 'ZYX');
-T_hand_palm_r.xyz = [0 -0.1 0];
-T_hand_palm_r.M = angle2dcm(-1.57079,-0,-1.57079, 'ZYX');
-
-% the inverse transformation that we are interested in.
-T_palm_hand_l.xyz = -T_hand_palm_l.xyz;
-T_palm_hand_l.M = inv(T_hand_palm_l.M);
-T_palm_hand_r.xyz = -T_hand_palm_r.xyz;
-T_palm_hand_r.M = inv(T_hand_palm_r.M);
-
-
+r_ee_goal = forwardKin(r,kinsol,r_hand_body,[0;0;0],1);
+l_ee_goal = forwardKin(r,kinsol,l_hand_body,[0;0;0],1);
+r_ee_constraint = [];
+l_ee_constraint = [];
 % logic variables
 r_goal_received = false; % set when r ee goal is received. Cleared if plan is committed or terminated
 l_goal_received = false; % set when l ee goal is received
-candidate_plan_published = false;
+l_constraint_received = false;
+r_constraint_received = false;
 
 % get initial state and end effector goals
 disp('Listening for goals...');
@@ -86,14 +73,22 @@ while(1)
   rep = getNextMessage(r_ee.frame,1); 
   if (~isempty(rep))
     disp('Right hand goal received.');
-    rep_goal = rep;
+    p=rep(2:4);   q=rep(5:8);
+    norm(q)
+    rpy = quat2rpy(q);
+    r_ee_goal=[p(:);rpy(:)];
     r_goal_received = true;
   end
   
   lep = getNextMessage(l_ee.frame,1);
   if (~isempty(lep))
     disp('Left hand goal received.');
-    lep_goal = lep;
+    p=lep(2:4);   q=lep(5:8);
+%   [ya,pit,ro]=quat2angle(q','ZYX');[ro,pit,ya]*(180/pi)
+%   rpy=[ro,pit,ya];
+    norm(q)
+    rpy = quat2rpy(q);
+    l_ee_goal=[p(:);rpy(:)];
     l_goal_received = true;
   end
   x = getNextMessage(state_frame,1000);
@@ -103,20 +98,69 @@ while(1)
     % the start of the plan might cause an impulse from gravity sag
     x0 = x;
   end
+  
+  x= constraint_listener.getNextMessage(1); % not a frame
+  if(~isempty(x))
+     num_links = length(x.time);
+     if((num_links==1)&&(strcmp(x.name,'left_palm')))
+       disp('received keyframe constraint for left hand'); 
+       l_constraint_received = true;
+       l_ee_constraint = x;
+     elseif((num_links==1)&&(strcmp(x.name,'right_palm')))
+       disp('received keyframe constraint for right hand');
+       r_constraint_received = true;
+       r_ee_constraint = x;
+     else
+      disp('Manip planner currently expects one constraint at a time') ; 
+     end     
+     
+    if(r_constraint_received && l_constraint_received)
+       disp('adjusting candidate robot plan given left and right end effector keyframe constraints.');
+       manip_planner.adjustAndPublishManipulationPlan(x0,r_ee_constraint,l_ee_constraint); 
+    elseif (r_constraint_received)
+       disp('adjusting candidate robot plan given right end effector keyframe constraint.');
+       manip_planner.adjustAndPublishManipulationPlan(x0,r_ee_constraint,[]);
+    elseif (l_constraint_received)
+       disp('adjusting candidate robot plan given left end effector keyframe constraint..');
+       manip_planner.adjustAndPublishManipulationPlan(x0,[],l_ee_constraint);
+    end    
+     
+  end
+  
+  
+  l_ee_traj= l_ee_motion_command_listener.getNextMessage(1);
+  if(~isempty(l_ee_traj))
+      disp('Left hand traj goal received.');
+      p = l_ee_traj(end).desired_pose(1:3);% for now just take the end state
+      q = l_ee_traj(end).desired_pose(4:7);q=q/norm(q);
+      lep = [p(:);q(:)];
+      rpy = quat2rpy(q);
+      l_ee_goal=[p(:);rpy(:)];
+      l_goal_received = true;
+  end
+  
+  r_ee_traj= r_ee_motion_command_listener.getNextMessage(1);
+  if(~isempty(r_ee_traj))
+      disp('Right hand traj goal received.');
+      p = r_ee_traj(end).desired_pose(1:3);% for now just take the end state
+      q = r_ee_traj(end).desired_pose(4:7);q=q/norm(q);
+      rep = [p(:);q(:)];
+      rpy = quat2rpy(q);
+      r_ee_goal=[p(:);rpy(:)];
+      r_goal_received = true;
+  end
+  
 
   if((~isempty(rep))|| (~isempty(lep)))
     if(r_goal_received && l_goal_received)
        disp('Publishing candidate robot plan for left and right end effectors.');
-       generateAndPublishManipulationPlan(r,plan_pub,x0,rep_goal,lep_goal); % publish bihanded plan
-       candidate_plan_published = true;
-    elseif (r_goal_received &&(candidate_plan_published==false))
-     disp('Publishing candidate robot plan for right end effector.');
-       generateAndPublishManipulationPlan(r,plan_pub,x0,rep_goal,[]);
-       candidate_plan_published = true;
-    elseif (l_goal_received &&(candidate_plan_published==false))
+       manip_planner.generateAndPublishManipulationPlan(x0,r_ee_goal,l_ee_goal); 
+    elseif (r_goal_received)
+       disp('Publishing candidate robot plan for right end effector.');
+       manip_planner.generateAndPublishManipulationPlan(x0,r_ee_goal,[]);
+    elseif (l_goal_received)
        disp('Publishing candidate robot plan for left end effector.');
-       generateAndPublishManipulationPlan(r,plan_pub,x0,[],lep_goal);
-       candidate_plan_published = true; 
+       manip_planner.generateAndPublishManipulationPlan(x0,[],l_ee_goal);
     end
   end
 
@@ -127,21 +171,19 @@ while(1)
     disp('candidate manipulation plan was committed');
        l_goal_received = false;
        r_goal_received = false;
-       candidate_plan_published = false;        
+       l_constraint_received = false;
+       r_constraint_received = false;
   end
   
   p = rejected_plan_listener.getNextMessage(1);
   if (~isempty(p))
     disp('candidate manipulation plan was rejected');
     l_goal_received = false;
-     r_goal_received = false;
-     candidate_plan_published = false;        
+    r_goal_received = false;
+    l_constraint_received = false;
+    r_constraint_received = false;
   end
 
-%   start_plan = getNextMessage(ee_start_frame,1);
-%   if (~isempty(start_plan))
-%     waiting = false;
-%   end
 end
 
 

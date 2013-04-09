@@ -14,7 +14,7 @@ r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_conta
 
 % create robot plan listener
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-plan_listener = RobotPlanListener('atlas', joint_names, true, 'COMMITTED_ROBOT_PLAN');
+plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
 
 % atlas state subscriber
 state_frame = r.getStateFrame();
@@ -24,10 +24,10 @@ disp('Listening for plans...');
 waiting = true;
 %xtraj = [];
 while waiting
-  xtraj = plan_listener.getNextMessage(1);
+  [xtraj,ts] = plan_listener.getNextMessage(10);
   if (~isempty(xtraj))
     disp('Plan received.');
-    executeReachPlan(r,state_frame,xtraj);
+    executeReachPlan(r,state_frame,xtraj,ts);
   end
 end
 
