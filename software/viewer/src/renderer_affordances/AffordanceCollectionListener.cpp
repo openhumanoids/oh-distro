@@ -146,7 +146,8 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   if (!instance_struc._otdf_instance){
     std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
   }
-  //instance_struc._otdf_instance->name_ = aff.name;
+  
+//instance_struc._otdf_instance->name_ = aff.name;
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)
    {   
@@ -157,7 +158,7 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   //TODO: set All JointStates too.
   
   // create a KDL tree parser from OTDF instance, without having to convert to urdf.
-  // otdf can contain some elements that are not part of urdf. e.g. TORUS  
+  // otdf can contain some elements that are not part of urdf. e.g. TORUS, DYNAMIC_MESH (They are handled as special cases)  
   std::string _urdf_xml_string = otdf::convertObjectInstanceToCompliantURDFstring(instance_struc._otdf_instance);
   
   /*std::map<std::string, int >::iterator it;
@@ -171,6 +172,28 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
   instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
   instance_struc._gl_object->set_state(instance_struc._otdf_instance);
+
+  std::vector<boost::shared_ptr<otdf::Link> > links;
+  instance_struc._otdf_instance->getLinks(links);
+  for(int i=0; i<links.size(); i++){
+    if(links[i]->visual && links[i]->visual->geometry){
+      cout << links[i]->visual->geometry->type << endl;
+      boost::shared_ptr<otdf::DynamicMesh> dmesh = 
+        dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
+      
+      if(dmesh){
+        //TODO: add back
+        /*
+        dmesh->points = aff.points;
+        dmesh->triangles = aff.triangles;
+        */
+      }
+    }
+  }
+  //boost::shared_ptr<const otdf::BaseEntity> base = instance_struc._otdf_instance->getRoot();
+  //boost::shared_ptr<otdf::Link> link = dynamic_pointer_cast<otdf::Link>(instance_struc._otdf_instance->getRoot());
+
+  //->visual->geometry;
 
 
   //_parent_affordance_renderer->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));

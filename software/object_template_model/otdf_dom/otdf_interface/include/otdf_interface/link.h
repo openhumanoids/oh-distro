@@ -108,7 +108,7 @@ namespace otdf{
 class Geometry
 {
 public:
-  enum {SPHERE, BOX, CYLINDER, MESH, TORUS} type;
+  enum {SPHERE, BOX, CYLINDER, MESH, TORUS, DYNAMIC_MESH} type;
 
   virtual void initXml(TiXmlElement *, ParamTable_t &symbol_table) = 0;
   virtual void update(){}
@@ -219,6 +219,27 @@ public:
   };
   void initXml(TiXmlElement *, ParamTable_t &symbol_table);
   bool fileExists(std::string filename);
+};
+
+class DynamicMesh : public Geometry
+{
+public:
+  DynamicMesh() { this->clear(); };
+  //std::string filename;
+  std::vector<std::vector<float> > points;
+  std::vector<std::vector<int> > triangles;
+
+  void clear()
+  {
+    //filename.clear();
+    points.clear();
+    triangles.clear();
+  };
+  void update()
+  {
+  };
+  void initXml(TiXmlElement *, ParamTable_t &symbol_table);
+  //bool fileExists(std::string filename);
 };
 
 class Torus : public Geometry

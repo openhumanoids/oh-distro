@@ -70,6 +70,8 @@ boost::shared_ptr<Geometry> parseGeometry(TiXmlElement *g, ParamTable_t &symbol_
     geom.reset(new Mesh);
   else if (type_name == "torus")
     geom.reset(new Torus);
+  else if (type_name == "dynamic_mesh")
+    geom.reset(new DynamicMesh);
   else
   {
     //ROS_ERROR("Unknown geometry type '%s'", type_name.c_str());
@@ -377,6 +379,34 @@ void Mesh::initXml(TiXmlElement *c, ParamTable_t &symbol_table)
   {
     //("Mesh scale was not specified, default to (1,1,1)");
   }
+}
+
+
+void DynamicMesh::initXml(TiXmlElement *c, ParamTable_t &symbol_table)
+{
+  this->clear();
+
+  this->type = DYNAMIC_MESH;
+
+  std::cout << "DynamicMesh::initXml\n";
+  /*if (!c->Attribute("filename")) {
+    throw ParseError("Mesh must contain a filename attribute");
+    }*/
+  /*
+  std::vector<std::pair<std::string,double> > variableList;
+  size_t size = symbol_table.get_variable_list(variableList);
+  points.resize(size/3);
+  for(int i=0;i<points.size();i++){
+    Vector3 v;
+    v.x = variableList[i*3+0].second;
+    v.y = variableList[i*3+1].second;
+    v.z = variableList[i*3+2].second;
+    points[i] = v;
+    }*/
+  
+
+  //filename = c->Attribute("filename");
+
 }
 
 

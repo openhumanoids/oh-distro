@@ -16,7 +16,7 @@ gfe
 perception
 action_authoring
 viewer
-#segmentation
+segmentation
 
 control
 

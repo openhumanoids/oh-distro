@@ -19,6 +19,7 @@
 using namespace std;
 using namespace pcl;
 using namespace boost;
+using namespace Eigen;
 
 namespace surrogate_gui
 {
@@ -938,14 +939,14 @@ namespace surrogate_gui
 	void UIProcessing::handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp)
 	{
 	  //todo: map_utime, map_id, object_id
-	  drc::affordance_t affordanceMsg;
+	  drc::affordance_plus_t affordanceMsg;
 	  	  
-	  affordanceMsg.map_id = 0; 	  
-	  affordanceMsg.otdf_type = "cylinder";
+	  affordanceMsg.aff.map_id = 0; 	  
+	  affordanceMsg.aff.otdf_type = "cylinder";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
+	  affordanceMsg.aff.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
 	  std::vector<double> inliers_distances;
           std::vector< vector<float> > inliers;
@@ -959,40 +960,46 @@ namespace surrogate_gui
                                         inliers,
 					inliers_distances);
 	
-	  affordanceMsg.params.push_back(x);
-	  affordanceMsg.param_names.push_back("x");
+	  affordanceMsg.aff.params.push_back(x);
+	  affordanceMsg.aff.param_names.push_back("x");
 	  
-	  affordanceMsg.params.push_back(y);
-	  affordanceMsg.param_names.push_back("y");
+	  affordanceMsg.aff.params.push_back(y);
+	  affordanceMsg.aff.param_names.push_back("y");
 
-	  affordanceMsg.params.push_back(z);
-	  affordanceMsg.param_names.push_back("z");
+	  affordanceMsg.aff.params.push_back(z);
+	  affordanceMsg.aff.param_names.push_back("z");
 
-	  affordanceMsg.params.push_back(roll);
-	  affordanceMsg.param_names.push_back("roll");
+	  affordanceMsg.aff.params.push_back(roll);
+	  affordanceMsg.aff.param_names.push_back("roll");
 
-	  affordanceMsg.params.push_back(pitch);
-	  affordanceMsg.param_names.push_back("pitch");
+	  affordanceMsg.aff.params.push_back(pitch);
+	  affordanceMsg.aff.param_names.push_back("pitch");
 
-	  affordanceMsg.params.push_back(yaw);
-	  affordanceMsg.param_names.push_back("yaw");
+	  affordanceMsg.aff.params.push_back(yaw);
+	  affordanceMsg.aff.param_names.push_back("yaw");
 
-	  affordanceMsg.params.push_back(radius);
-	  affordanceMsg.param_names.push_back("radius");
+	  affordanceMsg.aff.params.push_back(radius);
+	  affordanceMsg.aff.param_names.push_back("radius");
 
-	  affordanceMsg.params.push_back(length);
-	  affordanceMsg.param_names.push_back("length");
+	  affordanceMsg.aff.params.push_back(length);
+	  affordanceMsg.aff.param_names.push_back("length");
 
           // set bounding
-          affordanceMsg.bounding_pos[0] = x;
-          affordanceMsg.bounding_pos[1] = y;
-          affordanceMsg.bounding_pos[2] = z;
-          affordanceMsg.bounding_rpy[0] = roll;
-          affordanceMsg.bounding_rpy[1] = pitch;
-          affordanceMsg.bounding_rpy[2] = yaw;
-          affordanceMsg.bounding_lwh[0] = radius*2;
-          affordanceMsg.bounding_lwh[1] = radius*2;
-          affordanceMsg.bounding_lwh[2] = length;
+          affordanceMsg.aff.origin_xyz[0] = x;
+          affordanceMsg.aff.origin_xyz[1] = y;
+          affordanceMsg.aff.origin_xyz[2] = z;
+          affordanceMsg.aff.origin_rpy[0] = roll;
+          affordanceMsg.aff.origin_rpy[1] = pitch;
+          affordanceMsg.aff.origin_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_xyz[0] = x;
+          affordanceMsg.aff.bounding_xyz[1] = y;
+          affordanceMsg.aff.bounding_xyz[2] = z;
+          affordanceMsg.aff.bounding_rpy[0] = roll;
+          affordanceMsg.aff.bounding_rpy[1] = pitch;
+          affordanceMsg.aff.bounding_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_lwh[0] = radius*2;
+          affordanceMsg.aff.bounding_lwh[1] = radius*2;
+          affordanceMsg.aff.bounding_lwh[2] = length;
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
@@ -1001,13 +1008,13 @@ namespace surrogate_gui
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
-	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
-	       << affordanceMsg.param_names.size() << endl;
+	  cout << "states.size() = " << affordanceMsg.aff.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.aff.param_names.size() << endl;
 
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
-	  affordanceMsg.nstates = 0;
-          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
+	  affordanceMsg.aff.nstates = 0;
+          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
@@ -1019,14 +1026,14 @@ namespace surrogate_gui
 	void UIProcessing::handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp)
 	{
 	  //todo: map_utime, map_id, object_id
-	  drc::affordance_t affordanceMsg;
+	  drc::affordance_plus_t affordanceMsg;
 	  
-	  affordanceMsg.map_id = 0; 	  
-	  affordanceMsg.otdf_type = "sphere";
+	  affordanceMsg.aff.map_id = 0; 	  
+	  affordanceMsg.aff.otdf_type = "sphere";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.nparams = 4; //8; //xyz,radius
+	  affordanceMsg.aff.nparams = 4; //8; //xyz,radius
 	  double x,y,z,radius;
           std::vector< vector<float> > inliers;
 	  PointIndices::Ptr sphereIndices 
@@ -1036,28 +1043,34 @@ namespace surrogate_gui
                                       radius,
                                       inliers);
 	      
-	  affordanceMsg.params.push_back(x);
-	  affordanceMsg.param_names.push_back("x");
+	  affordanceMsg.aff.params.push_back(x);
+	  affordanceMsg.aff.param_names.push_back("x");
 	  
-	  affordanceMsg.params.push_back(y);
-	  affordanceMsg.param_names.push_back("y");
+	  affordanceMsg.aff.params.push_back(y);
+	  affordanceMsg.aff.param_names.push_back("y");
 
-	  affordanceMsg.params.push_back(z);
-	  affordanceMsg.param_names.push_back("z");
+	  affordanceMsg.aff.params.push_back(z);
+	  affordanceMsg.aff.param_names.push_back("z");
 
-	  affordanceMsg.params.push_back(radius);
-	  affordanceMsg.param_names.push_back("radius");
+	  affordanceMsg.aff.params.push_back(radius);
+	  affordanceMsg.aff.param_names.push_back("radius");
 
           // set bounding
-          affordanceMsg.bounding_pos[0] = x;
-          affordanceMsg.bounding_pos[1] = y;
-          affordanceMsg.bounding_pos[2] = z;
-          affordanceMsg.bounding_rpy[0] = 0;
-          affordanceMsg.bounding_rpy[1] = 0;
-          affordanceMsg.bounding_rpy[2] = 0;
-          affordanceMsg.bounding_lwh[0] = radius*2;
-          affordanceMsg.bounding_lwh[1] = radius*2;
-          affordanceMsg.bounding_lwh[2] = radius*2;
+          affordanceMsg.aff.origin_xyz[0] = x;
+          affordanceMsg.aff.origin_xyz[1] = y;
+          affordanceMsg.aff.origin_xyz[2] = z;
+          affordanceMsg.aff.origin_rpy[0] = 0;
+          affordanceMsg.aff.origin_rpy[1] = 0;
+          affordanceMsg.aff.origin_rpy[2] = 0;
+          affordanceMsg.aff.bounding_xyz[0] = x;
+          affordanceMsg.aff.bounding_xyz[1] = y;
+          affordanceMsg.aff.bounding_xyz[2] = z;
+          affordanceMsg.aff.bounding_rpy[0] = 0;
+          affordanceMsg.aff.bounding_rpy[1] = 0;
+          affordanceMsg.aff.bounding_rpy[2] = 0;
+          affordanceMsg.aff.bounding_lwh[0] = radius*2;
+          affordanceMsg.aff.bounding_lwh[1] = radius*2;
+          affordanceMsg.aff.bounding_lwh[2] = radius*2;
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
@@ -1065,13 +1078,13 @@ namespace surrogate_gui
           affordanceMsg.ntriangles = 0;
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
-	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
-	       << affordanceMsg.param_names.size() << endl;
+	  cout << "states.size() = " << affordanceMsg.aff.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.aff.param_names.size() << endl;
 
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
-	  affordanceMsg.nstates = 0;
-          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
+	  affordanceMsg.aff.nstates = 0;
+          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
@@ -1083,14 +1096,14 @@ namespace surrogate_gui
 	void UIProcessing::handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp)
 	{
 	  //todo: map_utime, map_id, object_id
-	  drc::affordance_t affordanceMsg;
+	  drc::affordance_plus_t affordanceMsg;
 	  	  
-	  affordanceMsg.map_id = 0; 	  
-	  affordanceMsg.otdf_type = "cylinder";
+	  affordanceMsg.aff.map_id = 0; 	  
+	  affordanceMsg.aff.otdf_type = "cylinder";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.nparams = 8; //8; //xyz,rpy,radius,length
+	  affordanceMsg.aff.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
           std::vector< vector<float> > inliers;
 	  std::vector<double> inliers_distances; 
@@ -1105,40 +1118,46 @@ namespace surrogate_gui
 
 		length = 0.01; // a 3d circle is a cylinder with 1 cm length
 	      
-	  affordanceMsg.params.push_back(x);
-	  affordanceMsg.param_names.push_back("x");
+	  affordanceMsg.aff.params.push_back(x);
+	  affordanceMsg.aff.param_names.push_back("x");
 	  
-	  affordanceMsg.params.push_back(y);
-	  affordanceMsg.param_names.push_back("y");
+	  affordanceMsg.aff.params.push_back(y);
+	  affordanceMsg.aff.param_names.push_back("y");
 
-	  affordanceMsg.params.push_back(z);
-	  affordanceMsg.param_names.push_back("z");
+	  affordanceMsg.aff.params.push_back(z);
+	  affordanceMsg.aff.param_names.push_back("z");
 
-	  affordanceMsg.params.push_back(roll);
-	  affordanceMsg.param_names.push_back("roll");
+	  affordanceMsg.aff.params.push_back(roll);
+	  affordanceMsg.aff.param_names.push_back("roll");
 
-	  affordanceMsg.params.push_back(pitch);
-	  affordanceMsg.param_names.push_back("pitch");
+	  affordanceMsg.aff.params.push_back(pitch);
+	  affordanceMsg.aff.param_names.push_back("pitch");
 
-	  affordanceMsg.params.push_back(yaw);
-	  affordanceMsg.param_names.push_back("yaw");
+	  affordanceMsg.aff.params.push_back(yaw);
+	  affordanceMsg.aff.param_names.push_back("yaw");
 
-	  affordanceMsg.params.push_back(radius);
-	  affordanceMsg.param_names.push_back("radius");
+	  affordanceMsg.aff.params.push_back(radius);
+	  affordanceMsg.aff.param_names.push_back("radius");
 
-	  affordanceMsg.params.push_back(length);
-	  affordanceMsg.param_names.push_back("length");
+	  affordanceMsg.aff.params.push_back(length);
+	  affordanceMsg.aff.param_names.push_back("length");
 
           // set bounding
-          affordanceMsg.bounding_pos[0] = x;
-          affordanceMsg.bounding_pos[1] = y;
-          affordanceMsg.bounding_pos[2] = z;
-          affordanceMsg.bounding_rpy[0] = roll;
-          affordanceMsg.bounding_rpy[1] = pitch;
-          affordanceMsg.bounding_rpy[2] = yaw;
-          affordanceMsg.bounding_lwh[0] = radius*2;
-          affordanceMsg.bounding_lwh[1] = radius*2;
-          affordanceMsg.bounding_lwh[2] = 0;
+          affordanceMsg.aff.origin_xyz[0] = x;
+          affordanceMsg.aff.origin_xyz[1] = y;
+          affordanceMsg.aff.origin_xyz[2] = z;
+          affordanceMsg.aff.origin_rpy[0] = roll;
+          affordanceMsg.aff.origin_rpy[1] = pitch;
+          affordanceMsg.aff.origin_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_xyz[0] = x;
+          affordanceMsg.aff.bounding_xyz[1] = y;
+          affordanceMsg.aff.bounding_xyz[2] = z;
+          affordanceMsg.aff.bounding_rpy[0] = roll;
+          affordanceMsg.aff.bounding_rpy[1] = pitch;
+          affordanceMsg.aff.bounding_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_lwh[0] = radius*2;
+          affordanceMsg.aff.bounding_lwh[1] = radius*2;
+          affordanceMsg.aff.bounding_lwh[2] = 0;
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
@@ -1146,13 +1165,13 @@ namespace surrogate_gui
           affordanceMsg.ntriangles = 0;
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
-	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
-	       << affordanceMsg.param_names.size() << endl;
+	  cout << "states.size() = " << affordanceMsg.aff.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.aff.param_names.size() << endl;
 
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
-	  affordanceMsg.nstates = 0;
-          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
+	  affordanceMsg.aff.nstates = 0;
+          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
@@ -1164,10 +1183,10 @@ namespace surrogate_gui
 	void UIProcessing::handleAffordancePubButtonPlane(const Segmentation::FittingParams& fp)
 	{
 	  //todo: map_utime, map_id, object_id
-	  drc::affordance_t affordanceMsg;
+	  drc::affordance_plus_t affordanceMsg;
 	  	  
-	  affordanceMsg.map_id = 0; 	  
-	  affordanceMsg.otdf_type = "box";
+	  affordanceMsg.aff.map_id = 0; 	  
+	  affordanceMsg.aff.otdf_type = "dynamic_mesh";
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
@@ -1184,61 +1203,89 @@ namespace surrogate_gui
                                      inliers,
                                      inliers_distances);
 
-	  affordanceMsg.params.push_back(x);
-	  affordanceMsg.param_names.push_back("x");
+	  affordanceMsg.aff.params.push_back(x);
+	  affordanceMsg.aff.param_names.push_back("x");
 	  
-	  affordanceMsg.params.push_back(y);
-	  affordanceMsg.param_names.push_back("y");
+	  affordanceMsg.aff.params.push_back(y);
+	  affordanceMsg.aff.param_names.push_back("y");
 
-	  affordanceMsg.params.push_back(z);
-	  affordanceMsg.param_names.push_back("z");
+	  affordanceMsg.aff.params.push_back(z);
+	  affordanceMsg.aff.param_names.push_back("z");
 
-	  affordanceMsg.params.push_back(roll);
-	  affordanceMsg.param_names.push_back("roll");
+	  affordanceMsg.aff.params.push_back(roll);
+	  affordanceMsg.aff.param_names.push_back("roll");
 
-	  affordanceMsg.params.push_back(pitch);
-	  affordanceMsg.param_names.push_back("pitch");
+	  affordanceMsg.aff.params.push_back(pitch);
+	  affordanceMsg.aff.param_names.push_back("pitch");
 
-	  affordanceMsg.params.push_back(yaw);
-	  affordanceMsg.param_names.push_back("yaw");
+	  affordanceMsg.aff.params.push_back(yaw);
+	  affordanceMsg.aff.param_names.push_back("yaw");
 
-	  affordanceMsg.params.push_back(width);
-	  affordanceMsg.param_names.push_back("lX"); 
+	  /*
+            affordanceMsg.aff.params.push_back(width);
+            affordanceMsg.aff.param_names.push_back("lX"); 
 
-	  affordanceMsg.params.push_back(length);
-	  affordanceMsg.param_names.push_back("lY");
+            affordanceMsg.aff.params.push_back(length);
+            affordanceMsg.aff.param_names.push_back("lY");
 
-	  affordanceMsg.params.push_back(0.01);
-	  affordanceMsg.param_names.push_back("lZ");
+            affordanceMsg.aff.params.push_back(0.01);
+            affordanceMsg.aff.param_names.push_back("lZ");
+          */
 
-	  affordanceMsg.nparams = affordanceMsg.params.size();
+ 
+	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
+
+          int nPoints = 4;
+          vector<Vector3f> points(nPoints);
+          points[0] = Vector3f(-width/2, -length/2, 0);
+          points[1] = Vector3f(-width/2,  length/2, 0);
+          points[2] = Vector3f( width/2,  length/2, 0);
+          points[3] = Vector3f( width/2, -length/2, 0);
+
+          // add points to message
+          affordanceMsg.npoints = nPoints;
+          affordanceMsg.points.resize(nPoints);
+          for(int i=0; i<nPoints; i++){
+            affordanceMsg.points[i].resize(3);
+            for(int j=0; j<3; j++) affordanceMsg.points[i][j] = points[i][j];
+          }
+          
+          // add triangles ot message
+          affordanceMsg.ntriangles = nPoints-2;
+          affordanceMsg.triangles.resize(affordanceMsg.ntriangles);
+          for(int i=0; i<affordanceMsg.ntriangles; i++){
+            Vector3i triangle(0,i+1,i+2);
+            affordanceMsg.triangles[i].resize(3);
+            for(int j=0;j<3;j++) affordanceMsg.triangles[i][j] = triangle[j];
+          }
 
           // set bounding
-          affordanceMsg.bounding_pos[0] = x;
-          affordanceMsg.bounding_pos[1] = y;
-          affordanceMsg.bounding_pos[2] = z;
-          affordanceMsg.bounding_rpy[0] = roll;
-          affordanceMsg.bounding_rpy[1] = pitch;
-          affordanceMsg.bounding_rpy[2] = yaw;
-          affordanceMsg.bounding_lwh[0] = width;
-          affordanceMsg.bounding_lwh[1] = length;
-          affordanceMsg.bounding_lwh[2] = 0;
-
-          //inliers
-          affordanceMsg.npoints = inliers.size();
-          affordanceMsg.points = inliers;
-          affordanceMsg.ntriangles = 0;
+          affordanceMsg.aff.origin_xyz[0] = x;
+          affordanceMsg.aff.origin_xyz[1] = y;
+          affordanceMsg.aff.origin_xyz[2] = z;
+          affordanceMsg.aff.origin_rpy[0] = roll;
+          affordanceMsg.aff.origin_rpy[1] = pitch;
+          affordanceMsg.aff.origin_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_xyz[0] = x;
+          affordanceMsg.aff.bounding_xyz[1] = y;
+          affordanceMsg.aff.bounding_xyz[2] = z;
+          affordanceMsg.aff.bounding_rpy[0] = roll;
+          affordanceMsg.aff.bounding_rpy[1] = pitch;
+          affordanceMsg.aff.bounding_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_lwh[0] = width;
+          affordanceMsg.aff.bounding_lwh[1] = length;
+          affordanceMsg.aff.bounding_lwh[2] = 0;
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
 
-	  cout << "states.size() = " << affordanceMsg.states.size() <<  " | state_names.size() = "
-	       << affordanceMsg.param_names.size() << endl;
+	  cout << "states.size() = " << affordanceMsg.aff.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.aff.param_names.size() << endl;
 
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
-	  affordanceMsg.nstates = 0;
-          affordanceMsg.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
+	  affordanceMsg.aff.nstates = 0;
+          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
 	  cout << "\n about to publish" << endl;
 	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);

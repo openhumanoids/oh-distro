@@ -1516,6 +1516,19 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
 
    // }// end if (found1!=std::string::npos)
   }
+  else if  (type == otdf::Geometry::DYNAMIC_MESH)
+  {
+    boost::shared_ptr<otdf::DynamicMesh> dm(boost::shared_dynamic_cast<otdf::DynamicMesh>(link));
+    glPushMatrix();
+    glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+    glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+    for(int i=0; i<dm->triangles.size(); i++){
+      glBegin(GL_POLYGON);
+      for(int j=0; j<3; j++) glVertex3fv(dm->points[dm->triangles[i][j]].data());
+      glEnd();
+    }
+    glPopMatrix();
+  }
   else if  (type == otdf::Geometry::TORUS)
   {
     boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
