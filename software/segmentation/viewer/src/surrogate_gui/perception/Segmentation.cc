@@ -641,23 +641,16 @@ namespace surrogate_gui
   //==============plane
   /**fits a plane to subcloudIndices in cloud.  currently, we assume
      the plane is oriented on the z axis*/
-  PointIndices::Ptr Segmentation::fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-                                           boost::shared_ptr<set<int> >  subcloudIndices,
-                                           const FittingParams& fp,
-                                           double &x, double &y, double &z,
-                                           double &roll, double &pitch, double &yaw, 
-                                           double &width, double& length,
-                                           vector<Vector3f> & convexHull,
-                                           vector< vector<float> > &inliers,
-                                           vector<double> & inliers_distances)
-
-  {
+  void Segmentation::fitPlanes(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                               boost::shared_ptr<set<int> >  subcloudIndices,
+                               const FittingParams& fp,
+                               vector<Plane>& planeList)
+  { 
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
-
+    
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
-
-    /*
+    
     // 2. Extract the major planes and send them to lcm:
     int plane_fitter_id_ =1;
     int64_t current_utime = 0;
@@ -666,103 +659,43 @@ namespace surrogate_gui
     filtp.setPoseIDs(plane_fitter_id_,current_utime);
     //filtp.setLCM(lcm_->getUnderlyingLCM());
     filtp.setDistanceThreshold(0.02); // simulated lidar
-    filtp.setStopProportion(0.050);  //was 0.1
-    filtp.setStopCloudSize(200);
+    filtp.setStopProportion(0.020);  //was 0.1
+    filtp.setStopCloudSize(50);
     vector<BasicPlane> plane_stack; 
     filtp.filterPlanes(plane_stack);
     std::cout << "[PLANE] number of planes extracted: " << plane_stack.size() << "\n";
-    */
-
-    //debugging
-    //Eigen::Vector4f centroid4f;
-    //compute3DCentroid(*subcloud, centroid4f);
-    //PointXYZ centroid(centroid4f[0], centroid4f[1], centroid4f[2]);
     
-    //cout << "\n subcloud centroid = " << centroid << endl;
-    //end debugging
+    planeList.resize(plane_stack.size());
+    for(int pi=0;pi<plane_stack.size();pi++){
+      
+      BasicPlane& bp = plane_stack[pi];  // input
+      Plane& p = planeList[pi];          // output
+      
+      cout << "Plane: ";
+      for(int i=0; i<bp.coeffs.values.size(); i++){  
+        cout<<bp.coeffs.values[i]<<", ";
+      }
+      cout<<endl;
+      // TODO can coeff be empty?
+      
+      // calculate normal 
+      // plane: ax+by+cz+d=0
+      float a = bp.coeffs.values[0];
+      float b = bp.coeffs.values[1];
+      float c = bp.coeffs.values[2];
+      float d = bp.coeffs.values[3];
+      Vector3f normal(a,b,c);
+      normal.normalize();
+      
+      cout << "Convex hull has: " << bp.cloud.points.size () << " data points." << std::endl;
+      p.convexHull.resize(bp.cloud.points.size());
+      for(int i=0; i<p.convexHull.size(); i++){
+        p.convexHull[i][0] = bp.cloud.points[i].x;
+        p.convexHull[i][1] = bp.cloud.points[i].y;
+        p.convexHull[i][2] = bp.cloud.points[i].z;
+      }
 
-    PointIndices::Ptr subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(subcloudIndices); //PclSurrogateUtils::copyIndices(subcloudIndices);
-
-    //---normals
-    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB> ());
-    NormalEstimation<PointXYZRGB, pcl::Normal> ne;
-    ne.setSearchMethod (tree);
-    ne.setInputCloud (subcloud);
-    ne.setKSearch (50);
-    PointCloud<pcl::Normal>::Ptr subcloud_normals (new PointCloud<pcl::Normal>);
-    ne.compute (*subcloud_normals);
-
-    //create the segmentation object
-    SACSegmentationFromNormals<PointXYZRGB, pcl::Normal> seg;
-                seg.setOptimizeCoefficients(true);
-                seg.setModelType(pcl::SACMODEL_NORMAL_PLANE); 
-                seg.setNormalDistanceWeight (0.1);
-    seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setMaxIterations (1000);
-    seg.setDistanceThreshold (fp.distanceThreshold);
-
-    //set input
-    seg.setInputCloud(subcloud);
-    seg.setInputNormals(subcloud_normals);
-
-    // convert FittingParams YPR to XYZ vector
-    Matrix3f Rx,Ry,Rz;
-    Rx << 1,0,0, 0,cos(fp.roll),-sin(fp.roll), 0,sin(fp.roll),cos(fp.roll);
-    Ry << cos(fp.pitch),0,sin(fp.pitch), 0,1,0, -sin(fp.pitch),0,cos(fp.pitch);
-    Rz << cos(fp.yaw),-sin(fp.yaw),0, sin(fp.yaw),cos(fp.yaw),0, 0,0,1;
-    Vector3f seedDirection = Rz*Ry*Rx*Vector3f(0,0,1);
-
-    //segment
-    ModelCoefficients::Ptr coefficients(new ModelCoefficients);
-    PointIndices::Ptr planeIndices (new PointIndices);
-                seg.setAxis(seedDirection); 
-                seg.setEpsAngle(fp.maxAngle); // seg faults if too small
-    seg.segment(*planeIndices, *coefficients);
-
-    cout << "Plane: ";
-    for(int i=0;i<coefficients->values.size();i++){
-      cout<<coefficients->values[i]<<", ";
-    }
-    cout<<endl;
-    // TODO can coeff be empty?
-
-    // calculate normal 
-    // plane: ax+by+cz+d=0
-    float a = coefficients->values[0];
-    float b = coefficients->values[1];
-    float c = coefficients->values[2];
-    float d = coefficients->values[3];
-    Vector3f normal(a,b,c);
-    normal.normalize();
-
-    /////////////////////////
-    // compute convex hull
-
-    // Project the model inliers 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::ProjectInliers<pcl::PointXYZRGB> proj;
-    proj.setModelType (pcl::SACMODEL_PLANE);
-    proj.setInputCloud (subcloud);
-    proj.setIndices(planeIndices);
-    proj.setModelCoefficients (coefficients);
-    proj.filter (*cloud_projected);
-
-    // Create a Convex Hull representation of the projected inliers
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::ConvexHull<pcl::PointXYZRGB> chull;
-    chull.setInputCloud (cloud_projected);
-    chull.reconstruct (*cloud_hull);
-    cout << "Convex hull has: " << cloud_hull->points.size () << " data points." << std::endl;
-    convexHull.resize(cloud_hull->points.size());
-    for(int i=0; i<convexHull.size(); i++){
-      convexHull[i][0] = cloud_hull->points[i].x;
-      convexHull[i][1] = cloud_hull->points[i].y;
-      convexHull[i][2] = cloud_hull->points[i].z;
-    }
-
-    //writer.write ("table_objects.pcd", *subcloud, false);
-
-    cout << "\n segmentation coefficients:\n" << *coefficients << endl;
+    cout << "\n segmentation coefficients:\n" << bp.coeffs << endl;
                 
     // iterate through possible rotations around normal to find best fit
     Vector3f center,ypr;
@@ -772,7 +705,7 @@ namespace surrogate_gui
 
     // first pass: 10 degree increments
     for(float theta=-180;theta<180;theta+=10){
-      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
                                    theta*M_PI/180.0f, center,ypr);
       float area = lengthWidth[0]*lengthWidth[1];
       if(area<minArea){
@@ -783,7 +716,7 @@ namespace surrogate_gui
 
     // second pass: 1 degree increments
     for(float theta=bestTheta-10;theta<bestTheta+10;theta+=1){
-      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
                                    theta*M_PI/180.0f, center,ypr);
       float area = lengthWidth[0]*lengthWidth[1];
       if(area<minArea){
@@ -794,7 +727,7 @@ namespace surrogate_gui
 
     // third pass: 0.1 degree increments
     for(float theta=bestTheta-1;theta<bestTheta+1;theta+=0.1){
-      lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
                                    theta*M_PI/180.0f, center,ypr);
       float area = lengthWidth[0]*lengthWidth[1];
       if(area<minArea){
@@ -803,24 +736,23 @@ namespace surrogate_gui
       }
     }
 
-    lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
+    lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
                                  bestTheta*M_PI/180.0f, center,ypr);
     
     // copy to output
-    x = center.x();
-    y = center.y();
-    z = center.z();
-    yaw = ypr[0];
-    pitch = ypr[1];
-    roll = ypr[2];
-    length = lengthWidth[0];
-    width = lengthWidth[1];
+    p.xyz = center;
+    p.ypr = ypr;
+    p.length = lengthWidth[0];
+    p.width = lengthWidth[1];
 
     // remove xyzypr from inliers and copy to output
-    remove_xyzypr(subcloud, planeIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
-    remove_xyzypr(convexHull, Vector3f(x,y,z), Vector3f(yaw,pitch,roll));
+    remove_xyzypr(p.convexHull, p.xyz, p.ypr);
+
+    //TODO
+    // compute inlier
+    // compute inlier distances (or remove from struct)
     
-    cout << "xyz_rpy_w_l:" << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
+    cout << "xyz_rpy_w_l:" << p.xyz << " " << p.ypr << p.width << " " << p.length << endl;
     
     // residuals 
     /* TODO
@@ -847,8 +779,8 @@ namespace surrogate_gui
                          - return vector of planes
                          - add number of instances to gui
                 */
-
-    return planeIndices;
+    }
+    //return planeIndices;
   }
 
 
@@ -899,7 +831,7 @@ namespace surrogate_gui
 /* calculates bounding box, center, and orientation of plane given theta
  * Rotates points to XY plane finds bounds and center, rotates center back to original rotation frame
  */
-Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, PointIndices::Ptr planeIndices, 
+Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>& subcloud,  
                                       float plane[4],Vector3f normal,float theta,
                                       Vector3f& center, Vector3f& ypr){
   
@@ -918,11 +850,11 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>::Ptr subcloud, Poi
   float zh;
   
   // compute length line
-  for(int i=0; i<planeIndices->indices.size();i++){ // for each inlier
+  for(int i=0; i<subcloud.size(); i++){ // for each inlier
     
     // extract point and project to plane
-    int index = planeIndices->indices[i];
-    PointXYZRGB& pt = subcloud->at(index);
+    int index = i;
+    PointXYZRGB& pt = subcloud.at(index);
     Vector3f p(pt.x,pt.y,pt.z);
     
     // rotate to horizontal plane

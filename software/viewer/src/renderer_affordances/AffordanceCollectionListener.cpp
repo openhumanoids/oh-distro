@@ -100,7 +100,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
   void AffordanceCollectionListener::handleAffordanceMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
 					       const  drc::affordance_t* msg) 
   {
-       cout << "Received affordance: " << msg->otdf_type << " with uid: " << msg->uid << endl;
+    //cout << "Received affordance: " << msg->otdf_type << " with uid: " << msg->uid << endl;
        std::stringstream oss;
        oss << msg->otdf_type << "_"<< msg->uid; 
     
@@ -108,7 +108,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
        object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
        if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
           //exists so update
-         cout <<"update_otdf_object_instance" << endl;
+         //cout <<"update_otdf_object_instance" << endl;
          update_object_instance((*msg));
        }      
        else{
@@ -141,7 +141,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       it->second._otdf_instance->getLinks(links);
       for(int i=0; i<links.size(); i++){
         if(links[i]->visual && links[i]->visual->geometry){
-          cout << links[i]->visual->geometry->type << endl;
+          //cout << links[i]->visual->geometry->type << endl;
           boost::shared_ptr<otdf::DynamicMesh> dmesh = 
             dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
           

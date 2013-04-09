@@ -41,6 +41,14 @@ namespace surrogate_gui
 			  FittingParams():yaw(0),pitch(0),roll(0),maxAngle(6.28),minRadius(0.01),maxRadius(0.30),distanceThreshold(0.09){}
 			};
 
+                        struct Plane {
+                          Eigen::Vector3f xyz, ypr;
+                          float width, length;
+                          std::vector<Eigen::Vector3f> convexHull;
+                          std::vector<std::vector<float> >inliers;
+                          std::vector<float> inlier_distances;
+                        };
+
 			static pcl::PointIndices::Ptr fitCylinder(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 								  boost::shared_ptr<std::set<int> > subcloudIndices,
 									const FittingParams& fp,
@@ -67,16 +75,10 @@ namespace surrogate_gui
                                                                   std::vector< std::vector<float> > &inliers,
                                                                   std::vector<double> & inliers_distances);
 
-			static pcl::PointIndices::Ptr fitPlane(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
-                                                               boost::shared_ptr<std::set<int> > subcloudIndices,
-                                                               const FittingParams& fp,
-                                                               double &x, double &y, double &z,
-                                                               double &roll, double &pitch, double &yaw, 
-                                                               double &width,
-                                                               double &height,
-                                                               std::vector<Eigen::Vector3f> &convexHull,
-                                                               std::vector< std::vector<float> > &inliers,
-                                                               std::vector<double> &inliers_distances);
+			static void fitPlanes(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                              boost::shared_ptr<std::set<int> > subcloudIndices,
+                                              const FittingParams& fp, 
+                                              std::vector<Plane>& planeList);
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
@@ -85,11 +87,10 @@ namespace surrogate_gui
 			static double getPlaneFitStatistics(pcl::ModelCoefficients::Ptr planeCoeffs,
 											    const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 											    pcl::PointIndices::Ptr planeIndices);
-
-			static Eigen::Vector2f getLengthWidth(pcl::PointCloud<pcl::PointXYZRGB>::Ptr subcloud, 
-																						pcl::PointIndices::Ptr planeIndices, 
-																						float plane[4],Eigen::Vector3f normal, float theta,
-																						Eigen::Vector3f& center, Eigen::Vector3f& ypr);
+                        
+			static Eigen::Vector2f getLengthWidth(pcl::PointCloud<pcl::PointXYZRGB>& subcloud, 
+                                                              float plane[4],Eigen::Vector3f normal, float theta,
+                                                              Eigen::Vector3f& center, Eigen::Vector3f& ypr);
 
 	}; //class Segmentation
 
