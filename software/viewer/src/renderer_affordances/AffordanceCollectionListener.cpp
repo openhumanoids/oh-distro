@@ -87,6 +87,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
                                                                    const string& chan, 
                                                                    const drc::affordance_plus_collection_t* msg)						 
   {
+    // call handleAffordancePlusMsg for each affordance in collection
     for (size_t i=0; i< (size_t)msg->naffs; i++) {
       const drc::affordance_plus_t& aff = msg->affs_plus[i];
       handleAffordancePlusMsg(rbuf, chan, &aff);
@@ -127,7 +128,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     //////////////////////////
     // handle plus features
 
-    // retrieve otdf object associates with current message
+    // retrieve otdf object associated with current message
     std::stringstream oss;
     oss << msg->aff.otdf_type << "_"<< msg->aff.uid;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
