@@ -65,7 +65,7 @@ while 1
   foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
   step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
   zmp_shift = [(step_center(1:2) - foot_center(1:2)); 0];
-  zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0; % shift ZMP toward instep 
+  zmp_shift = zmp_shift ./ sqrt(sum(zmp_shift.^2)) * 0.01; % shift ZMP toward instep 
   s_foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
   stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...
              repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
