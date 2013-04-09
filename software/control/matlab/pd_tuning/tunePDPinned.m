@@ -3,8 +3,8 @@ function tunePDPinned(dofnum,amplitude,tstep,T)
 
 options.floating = false;
 options.dt = 0.001;
-r = Atlas('../urdf/atlas_minimal_contact.urdf',options);
-
+%r = Atlas('../urdf/atlas_minimal_contact.urdf',options);
+r = Atlas('../../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf',options);
 % set initial state to fixed point
 load('../data/atlas_pinned_config.mat');
 
