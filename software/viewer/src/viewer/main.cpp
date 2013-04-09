@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
-  occ_map_pixel_map_add_renderer_to_viewer(viewer, 0, "TERRAIN_COST", "PixelMap");
+  occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "PIXEL_MAP", "PixelMap");
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
