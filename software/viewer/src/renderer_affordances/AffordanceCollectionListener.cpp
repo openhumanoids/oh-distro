@@ -34,6 +34,7 @@ namespace renderer_affordances
 
     _lcm->subscribe("AFFORDANCE_COLLECTION", &AffordanceCollectionListener::handleAffordanceCollectionMsg, this); 
     _lcm->subscribe("AFFORDANCE", &AffordanceCollectionListener::handleAffordanceMsg, this); 
+    _lcm->subscribe("AFFORDANCE_TRACK_ORACLE", &AffordanceCollectionListener::handleAffordanceMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS_COLLECTION", &AffordanceCollectionListener::handleAffordancePlusCollectionMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS", &AffordanceCollectionListener::handleAffordancePlusMsg, this); 
 
