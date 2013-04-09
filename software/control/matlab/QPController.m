@@ -223,7 +223,7 @@ classdef QPController < MIMODrakeSystem
     if nc>0
       Aeq_{1} = H*Iqdd - B*Iu - Jz'*Iz - Dbar*Ibeta;
     else
-      Aeq_{1} = H*Iqdd - B_con*Iu;
+      Aeq_{1} = H*Iqdd - B*Iu;
     end
     beq_{1} = -C;
     
