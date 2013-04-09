@@ -126,27 +126,19 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
         // convert quaternion to euler
         // note: drake uses XYZ convention
-        double[] q = new double[4];
-        q[0] = msg.origin_position.rotation.w;
-        q[1] = msg.origin_position.rotation.x;
-        q[2] = msg.origin_position.rotation.y;
-        q[3] = msg.origin_position.rotation.z;
+        double w = msg.origin_position.rotation.w;
+        double x = msg.origin_position.rotation.x;
+        double y = msg.origin_position.rotation.y;
+        double z = msg.origin_position.rotation.z;
 
-        q = quatnormalize(q);
-       /* double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
-            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
-            2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);*/
-            
-        double[] rpy = threeaxisrot(2*(q[2]*q[3] + q[0]*q[1]), 
-            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
-            2*(- q[1]*q[3] + q[0]*q[2]), 2.*(q[1]*q[2] + q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);            
+				double roll = Math.atan2(2*(w*x + y*z), w*w + z*z -(x*x +y*y));
+				double pitch = Math.asin(2*(w*y - z*x)); 
+				double yaw = Math.atan2(2*(w*z + x*y), w*w + x*x-(y*y+z*z));
 
         j = m_floating_joint_map.get("base_roll");
         if (j!=null) {
           index = j.intValue();
-          fdata.val[index] = rpy[0];
+          fdata.val[index] = roll;
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.x;
@@ -155,7 +147,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
         j = m_floating_joint_map.get("base_pitch");
         if (j!=null) {
           index = j.intValue();
-          fdata.val[index] = rpy[1];
+          fdata.val[index] = pitch;
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.y;
@@ -164,7 +156,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
         j = m_floating_joint_map.get("base_yaw");
         if (j!=null) {
           index = j.intValue();
-          fdata.val[index] = rpy[2];
+          fdata.val[index] = yaw;
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
           fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.z;
@@ -226,31 +218,21 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
         // covert rpy to quaternion 
         // note: drake uses XYZ convention
-        /*    double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-    double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);*/
-     double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);   
-    double x = Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)-Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2)-Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
+        double[] q = new double[4];
+        q[0] = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+        q[1] = Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+        q[2] = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
+        q[3] = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
 
-        msg.origin_position.rotation.x = (float) x;
-        msg.origin_position.rotation.y = (float) y;
-        msg.origin_position.rotation.z = (float) z;
-        msg.origin_position.rotation.w = (float) w;
+				q = quatnormalize(q);
+
+        msg.origin_position.rotation.w = (float) q[0];
+        msg.origin_position.rotation.x = (float) q[1];
+        msg.origin_position.rotation.y = (float) q[2];
+        msg.origin_position.rotation.z = (float) q[3];
       }
       
       return msg;
-    }
-    
-    private double[] threeaxisrot(double r11, double r12, double r21, double r31, double r32) { 
-      // find angles for rotations about X, Y, and Z axes
-      double[] r = new double[3];
-      r[0] = Math.atan2(r11, r12);
-      r[1] = Math.asin(r21);
-      r[2] = Math.atan2(r31, r32);
-      return r;
     }
     
     private double[] quatnormalize(double[] q) {

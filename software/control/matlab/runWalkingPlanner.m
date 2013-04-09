@@ -80,8 +80,8 @@ while true
   
 
   msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
-  plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
-  reject_listener = RobotPlanListener('atlas',joint_names,true,'REJECTED_ROBOT_PLAN');
+  plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
+  reject_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true);
   waiting = true;
   execute = true;
   while waiting

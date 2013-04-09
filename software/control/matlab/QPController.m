@@ -294,17 +294,12 @@ classdef QPController < MIMODrakeSystem
     
     y = alpha(nq+(1:nu));
     
-    
-    xycom = xcom(1:2);
-    h = xcom(3);
-    g = 9.81;
-    xcomdd = Jdot * qd + J * alpha(1:nq);
-    Czmp = eye(2);
-    Dzmp = -h/g*eye(2);
-    zmppos = Czmp * xycom + Dzmp * xcomdd;
-    
-    % Set zmp z-pos to 1m for DRC Quals 1
-    plot_lcm_points([zmppos', 1], [1, 0, 0], 60, 'Current ZMP', 1, true);
+    if obj.debug
+      xcomdd = Jdot * qd + J * alpha(1:nq);
+      zmppos = xcom(1:2) + G * xcomdd;
+      % Set zmp z-pos to 1m for DRC Quals 1
+      plot_lcm_points([zmppos', 1], [1, 0, 0], 60, 'Current ZMP', 1, true);
+    end
 
 %     max(Iz*alpha)
     toc
@@ -327,5 +322,6 @@ classdef QPController < MIMODrakeSystem
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
+    debug = false;
   end
 end
