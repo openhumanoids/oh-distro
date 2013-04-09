@@ -65,6 +65,20 @@ _unique_name(unique_name)
 }
 
 
+InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
+  bool enable_selection, string unique_name):
+  GlKinematicBody(urdf_xml_string), 
+  link_selection_enabled(enable_selection) ,
+  _unique_name(unique_name)
+{  
+
+  _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+  init_vars();
+  init_urdf_collision_objects();
+}
+
+
+
 // constructor for plain urdf
 InteractableGlKinematicBody::InteractableGlKinematicBody(string urdf_xml_string,
   shared_ptr<Collision_Detector> col_detector,
@@ -627,10 +641,11 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
   Eigen::Vector3f whole_body_span_dims,offset;
   GlKinematicBody::get_whole_body_span_dims(whole_body_span_dims,offset); //bounding box for entire body  
 
-  float dim[3] = {0.5*whole_body_span_dims[0]-offset[0], 0.5*whole_body_span_dims[1]-offset[1], 0.5*whole_body_span_dims[2]-offset[2]};
+  //float dim[3] = {0.5*whole_body_span_dims[0]-offset[0], 0.5*whole_body_span_dims[1]-offset[1], 0.5*whole_body_span_dims[2]-offset[2]};
+  float dim[3] = {0.5*whole_body_span_dims[0], 0.5*whole_body_span_dims[1], 0.5*whole_body_span_dims[2]};
   float maxspan= max(whole_body_span_dims[2],max(whole_body_span_dims[0],whole_body_span_dims[1]));
   float markersize;
-  //cout << "maxspan: " << maxspan << endl;
+
   if(maxspan<0.5)
      markersize = 0.09;
   else
@@ -640,8 +655,7 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
    float rot_marker_outer_radius = rot_marker_inner_radius+0.8*markersize;
    float torus_radius = 0.5*(rot_marker_inner_radius+rot_marker_outer_radius);
    float torus_tube_radius = 0.5*(rot_marker_outer_radius-rot_marker_inner_radius);
-   
-  
+
   Eigen::Vector3f box_dims;
   box_dims<<  markersize,markersize,markersize;
 

@@ -65,6 +65,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
   InteractableGlKinematicBody(std::string urdf_xml_string,
                               boost::shared_ptr<collision::Collision_Detector> col_detector, 
                               bool enable_selection, std::string unique_name);
+  InteractableGlKinematicBody(std::string urdf_xml_string,
+                              bool enable_selection, std::string unique_name);                            
   InteractableGlKinematicBody (boost::shared_ptr<otdf::ModelInterface> otdf_instance,
                               boost::shared_ptr<collision::Collision_Detector> col_detector,
                               bool enable_selection, std::string unique_name);
@@ -215,6 +217,8 @@ class InteractableGlKinematicBody: public GlKinematicBody
 //        _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
     }
    };
+   
+   // TODO: SEGFAULTS If set_bodypose_adjustment_type is called before set state , why?
    void set_bodypose_adjustment_type(int type){
     bodypose_adjustment_type= (_bodyadjust_type)type;
     _collision_detector_floatingbase_markers->clear_collision_objects(); // reset markers
