@@ -26,6 +26,8 @@
 #include <pcl/common/impl/centroid.hpp> //for computing centroid
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/surface/convex_hull.h>
 
 #include <bot_core/rotations.h>
 
@@ -81,6 +83,17 @@ namespace surrogate_gui
       points[i][0] = pt[0];
       points[i][1] = pt[1];
       points[i][2] = pt[2];
+    }
+  }
+               
+  void remove_xyzypr(vector<Vector3f>& points, Vector3f xyz, Vector3f ypr)
+  {
+    //point cloud indices
+    // remove objects xyzypr from each inlier point and add to affordanceMsg
+    Matrix3f rot = ypr2rot(ypr).inverse(); 
+    for(int i=0;i<points.size();i++){
+      points[i] -= xyz;
+      points[i] = rot*points[i];
     }
   }
                
@@ -604,8 +617,9 @@ namespace surrogate_gui
                                            double &x, double &y, double &z,
                                            double &roll, double &pitch, double &yaw, 
                                            double &width, double& length,
-                                           std::vector< std::vector<float> > &inliers,
-                                           std::vector<double> & inliers_distances)
+                                           vector<Vector3f> & convexHull,
+                                           vector< vector<float> > &inliers,
+                                           vector<double> & inliers_distances)
   {
     cout << "\n in fit plane.  num indices = " << subcloudIndices->size() << endl;
     cout << "\n cloud size = " << cloud->points.size() << endl;
@@ -677,6 +691,31 @@ namespace surrogate_gui
     Vector3f normal(a,b,c);
     normal.normalize();
 
+    /////////////////////////
+    // compute convex hull
+
+    // Project the model inliers 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::ProjectInliers<pcl::PointXYZRGB> proj;
+    proj.setModelType (pcl::SACMODEL_PLANE);
+    proj.setInputCloud (subcloud);
+    proj.setIndices(planeIndices);
+    proj.setModelCoefficients (coefficients);
+    proj.filter (*cloud_projected);
+
+    // Create a Convex Hull representation of the projected inliers
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::ConvexHull<pcl::PointXYZRGB> chull;
+    chull.setInputCloud (cloud_projected);
+    chull.reconstruct (*cloud_hull);
+    cout << "Convex hull has: " << cloud_hull->points.size () << " data points." << std::endl;
+    convexHull.resize(cloud_hull->points.size());
+    for(int i=0; i<convexHull.size(); i++){
+      convexHull[i][0] = cloud_hull->points[i].x;
+      convexHull[i][1] = cloud_hull->points[i].y;
+      convexHull[i][2] = cloud_hull->points[i].z;
+    }
+
     //writer.write ("table_objects.pcd", *subcloud, false);
 
     cout << "\n segmentation coefficients:\n" << *coefficients << endl;
@@ -723,7 +762,6 @@ namespace surrogate_gui
     lengthWidth = getLengthWidth(subcloud, planeIndices, coefficients->values.data(), normal, 
                                  bestTheta*M_PI/180.0f, center,ypr);
     
-    
     // copy to output
     x = center.x();
     y = center.y();
@@ -736,11 +774,9 @@ namespace surrogate_gui
 
     // remove xyzypr from inliers and copy to output
     remove_xyzypr(subcloud, planeIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
+    remove_xyzypr(convexHull, Vector3f(x,y,z), Vector3f(yaw,pitch,roll));
     
     cout << "xyz_rpy_w_l:" << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << width << " " << length << endl;
-    
-    
-    
     
     // residuals 
     /* TODO

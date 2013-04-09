@@ -1191,8 +1191,9 @@ namespace surrogate_gui
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  double x,y,z,roll,pitch=0,yaw=0,width=0.5,length=0.5;
-          std::vector< vector<float> > inliers;
-	  std::vector<double> inliers_distances; 
+          vector< vector<float> > inliers;
+	  vector<double> inliers_distances; 
+          vector<Vector3f> convex_hull;
 	  PointIndices::Ptr planeIndices 
 	    = Segmentation::fitPlane(_surrogate_renderer._display_info.cloud,
                                      currObj->indices, fp,
@@ -1200,6 +1201,7 @@ namespace surrogate_gui
                                      roll,pitch,yaw,
                                      width,
                                      length, 
+                                     convex_hull,
                                      inliers,
                                      inliers_distances);
 
@@ -1235,12 +1237,17 @@ namespace surrogate_gui
  
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
+          /*
           int nPoints = 4;
           vector<Vector3f> points(nPoints);
           points[0] = Vector3f(-width/2, -length/2, 0);
           points[1] = Vector3f(-width/2,  length/2, 0);
           points[2] = Vector3f( width/2,  length/2, 0);
           points[3] = Vector3f( width/2, -length/2, 0);
+          */
+          
+          int nPoints = convex_hull.size();
+          vector<Vector3f>& points = convex_hull;
 
           // add points to message
           affordanceMsg.npoints = nPoints;
