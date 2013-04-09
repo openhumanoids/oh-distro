@@ -176,6 +176,11 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
     gtk_widget_destroy(self->dblclk_popup);
   }
   
+  if((self->second_stage_popup)){   
+    fprintf(stderr, "second_stage_popup is Open. Closing \n");
+    gtk_widget_destroy(self->second_stage_popup);
+  }
+  
   if(self->selection_enabled==0){
     return -1.0;
   }

@@ -75,7 +75,6 @@ namespace renderer_affordances
        return;
     }    
    
-    KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();  // take into account the world location of the graspgeometry later as the object may move.
     _object_name = msg->object_name;
     _geometry_name = msg->geometry_name;
     _grasp_type = msg->grasp_type;
@@ -96,6 +95,9 @@ namespace renderer_affordances
     T_graspgeometry_rhand.p[2] = msg->r_hand_pose.translation.z;
     T_graspgeometry_rhand.M = KDL::Rotation::Quaternion( msg->r_hand_pose.rotation.x, msg->r_hand_pose.rotation.y, msg->r_hand_pose.rotation.z, msg->r_hand_pose.rotation.w );
     
+    
+    
+    KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();  // take into account the world location of the graspgeometry later as the object may move.    
     T_world_lhand = T_world_graspgeometry*T_graspgeometry_lhand;
     T_world_rhand = T_world_graspgeometry*T_graspgeometry_rhand;
     
@@ -194,6 +196,14 @@ namespace renderer_affordances
         sticky_hand_struc._gl_hand->set_state(T_world_hand, posture_msg);
         sticky_hand_struc.hand_type = _grasp_type;
         sticky_hand_struc.T_geometry_hand = T_world_hand;
+
+        /*double ro,pi,ya;  
+        T_world_hand.M.GetRPY(ro,pi,ya);
+        cout <<"adding sticky hand \n T_geometry_hand : "<< endl;
+        cout <<"roll "<<ro*(180/M_PI) << endl;
+        cout <<"pitch "<<pi*(180/M_PI) << endl;
+        cout <<"yaw "<<ya*(180/M_PI) << endl;*/
+
         sticky_hand_struc.joint_name = posture_msg.joint_name;
         sticky_hand_struc.joint_position = posture_msg.joint_position;
         _parent_renderer->sticky_hands.insert(make_pair(unique_hand_name, sticky_hand_struc));

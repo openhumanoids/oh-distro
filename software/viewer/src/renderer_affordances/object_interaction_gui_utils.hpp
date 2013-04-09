@@ -43,7 +43,7 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     it->second._gl_object->set_future_state_changing(false);
-    
+    self->second_stage_popup  = NULL;
   //   TODO: Send publish desired affordance state command msg    
   
   }
@@ -202,7 +202,7 @@ namespace renderer_affordances_gui_utils
     g_signal_connect(G_OBJECT(pw), "destroy",
       G_CALLBACK(on_adjust_dofs_popup_close2), self); 
 
-
+    self->second_stage_popup  = window;
     vbox = gtk_vbox_new (FALSE, 3);
     gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
@@ -507,34 +507,78 @@ namespace renderer_affordances_gui_utils
     
 // Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
    KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;  // this is actually in a base frame that is not l_hand/r_hand.
-//    KDL::Frame T_hand_palm = KDL::Frame::Identity();
+//    KDL::Frame T_base_palm = KDL::Frame::Identity();
 //    // this was there in urdf to make sure fingers are pointing in z axis.
-//    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
-//    KDL::Frame  T_geometry_palm = T_geometry_hand*T_hand_palm.Inverse()
+//    T_base_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
+//    KDL::Frame  T_geometry_palm = T_geometry_base*T_base_palm.Inverse()
 
     KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
     if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
       cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-
-//    double ro,pi,ya;  
-//   KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
-//   T_hand_palm.M.GetRPY(ro,pi,ya);
-//    cout <<"pitch"<<pi*(180/M_PI) << endl;
-    
+      
     T_world_ee = T_world_geometry*T_geometry_palm;
-          
-   if(pregrasp_flag){
-    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset; this should be T_palm_base
-    KDL::Frame T_hand_offset = KDL::Frame::Identity();
-    T_hand_offset.p[0] += 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
-    // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
-    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
+
+    /*double ro,pi,ya;  
+    T_world_geometry.M.GetRPY(ro,pi,ya);
+    cout <<"T_world_geometry : "<< endl;
+    cout <<"roll "<<ro*(180/M_PI) << endl;
+    cout <<"pitch "<<pi*(180/M_PI) << endl;
+    cout <<"yaw "<<ya*(180/M_PI) << endl;
+    cout << endl;
+   
+    T_geometry_hand.M.GetRPY(ro,pi,ya);
+    cout <<"T_geometry_stickyhandbaseframe : "<< endl;
+    cout <<"roll "<<ro*(180/M_PI) << endl;
+    cout <<"pitch "<<pi*(180/M_PI) << endl;
+    cout <<"yaw "<<ya*(180/M_PI) << endl;
+    cout << endl;
     
-    // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-    T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
-    //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+    T_geometry_palm.M.GetRPY(ro,pi,ya);
+    cout <<"T_geometry_palm : "<< endl;
+    cout <<"roll "<<ro*(180/M_PI) << endl;
+    cout <<"pitch "<<pi*(180/M_PI) << endl;
+    cout <<"yaw "<<ya*(180/M_PI) << endl;
+    cout << endl;
+
+    cout <<"T_world_palm : "<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+    T_world_ee.M.GetRPY(ro,pi,ya);
+    cout <<"roll "<<ro*(180/M_PI) << endl;
+    cout <<"pitch "<<pi*(180/M_PI) << endl;
+    cout <<"yaw "<<ya*(180/M_PI) << endl;
+    cout << endl;
+    
+    double x1,y1,z1,w1;
+    T_world_ee.M.GetQuaternion(x1,y1,z1,w1);    
+    cout << "T_world_palm q:" << x1 << " " << y1 <<" " << z1 << " " << w1 << endl;
+    */
+             
+   if(pregrasp_flag)
+   {
+
+
+    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base
+
+//    KDL::Frame T_hand_offset = KDL::Frame::Identity();
+//    T_hand_offset.p[0] = 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
+//   // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
+//    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
+ 
+    KDL::Vector handframe_offset;
+    handframe_offset[0]=0.1;handframe_offset[1]=0;handframe_offset[2]=0;
+    KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+    KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+    T_world_ee.p += worldframe_offset;
+
    }  
-          
+     
+    /* cout <<"T_world_palm "<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
+    T_world_ee.M.GetRPY(ro,pi,ya);
+    cout <<"roll "<<ro*(180/M_PI) << endl;
+    cout <<"pitch "<<pi*(180/M_PI) << endl;
+    cout <<"yaw "<<ya*(180/M_PI) << endl;
+    cout << endl;         
+    */
+    
     //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 
     // desired ee position wrt to robot body.
@@ -565,13 +609,13 @@ namespace renderer_affordances_gui_utils
     goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
     goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
     for(int i = 0; i < goalmsg.num_chain_joints; i++){
-    if(!pregrasp_flag){
-      goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
-    }
-    else{
-      goalmsg.joint_posture_bias[i]=0;//sticky_hand_struc.joint_position[i];
-    }
-    goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
+      if(!pregrasp_flag){
+        goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
+      }
+      else{
+        goalmsg.joint_posture_bias[i]=0;//sticky_hand_struc.joint_position[i];
+      }
+      goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
     }
 
     // Publish the message
@@ -788,14 +832,13 @@ namespace renderer_affordances_gui_utils
       int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT){
-          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);
-          
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
+          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);          
+         // publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
          }
         else if(grasp_type== msg.SANDIA_RIGHT){
           publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
           //DEBUG ONLY. TODO: REMOVE LATER
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
+         // publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
         }
         
       }// REMOVE LATER

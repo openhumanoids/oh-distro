@@ -230,6 +230,7 @@ typedef struct _RendererAffordances {
   std::string* robot_name_ptr;
   
   GtkWidget *dblclk_popup;
+  GtkWidget *second_stage_popup;
 }RendererAffordances;
 
 
