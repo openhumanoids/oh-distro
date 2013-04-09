@@ -38,34 +38,6 @@ classdef QPController < MIMODrakeSystem
       obj.slack_limit = options.slack_limit;
     end
     
-    if (isfield(options,'exclude_torso'))
-      typecheck(options.exclude_torso,'logical');
-    else
-      options.exclude_torso = false;
-    end
-   
-    if options.exclude_torso
-      % free_dof we perform unconstrained minimization to compute 
-      % accelerations and solve for inputs (then threshold).
-      % these should be the joints for which the columns of the contact
-      % jacobian are zero. The remaining dofs are indexed in cnstr_dof.
-      % NOTE: this is highly atlas specific right now
-      jn = getJointNames(r);
-      torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
-                ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
-                ~cellfun(@isempty,strfind(jn(2:end),'back'));
-      B = getB(r);
-      obj.free_dof = find(torso);
-      obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
-      obj.free_inputs = find(B'*torso);
-      obj.con_inputs = find(B'*torso==0);
-    else
-      obj.free_dof = [];
-      obj.con_dof = (1:getNumDOF(r))';
-      obj.free_inputs = [];
-      obj.con_inputs = (1:getNumInputs(r))';
-    end
-
     obj.nu = getNumInputs(r);
     obj.nq = getNumDOF(r);
     if (~isfield(options,'R'))
@@ -102,8 +74,8 @@ classdef QPController < MIMODrakeSystem
       end
     end  
     
-%     obj.rfoot_idx = find(strcmp('r_foot',getLinkNames(r)));
-%     obj.lfoot_idx = find(strcmp('l_foot',getLinkNames(r)));
+    obj.rfoot_idx = find(strcmp('r_foot',getLinkNames(r)));
+    obj.lfoot_idx = find(strcmp('l_foot',getLinkNames(r)));
     
   end
     
@@ -129,10 +101,6 @@ classdef QPController < MIMODrakeSystem
     dim = 3; % 3D
     nu = obj.nu;
     nq = obj.nq;
-    nq_free = length(obj.free_dof); 
-    nq_con = length(obj.con_dof); 
-    nu_con = length(obj.con_inputs);     
-
     
     %----------------------------------------------------------------------
     % Compute kinematic and dynamic quantities ----------------------------
@@ -142,16 +110,6 @@ classdef QPController < MIMODrakeSystem
     kinsol = doKinematics(r,q,false,true,qd);
     
     [H,C,B] = manipulatorDynamics(r,q,qd);
-    
-    H_con = H(obj.con_dof,:); 
-    C_con = C(obj.con_dof);
-    B_con = B(obj.con_dof,obj.con_inputs);
-    
-    if nq_free > 0
-      H_free = H(obj.free_dof,:); 
-      C_free = C(obj.free_dof);
-      B_free = B(obj.free_dof,obj.free_inputs);
-    end
     
     [xcom,J] = getCOM(r,kinsol);
     J = J(1:2,:); % only need COM x-y
@@ -202,25 +160,26 @@ classdef QPController < MIMODrakeSystem
     active_contacts = find(active_contacts);
     
     if nc > 0
-      Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
+      Jz = Jz(active_contacts,:); % only care about active contacts
 
       active_idx = zeros(dim*length(active_contacts),1);
       for i=1:length(active_contacts);
         active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
-      %active_idx
-      Jp = Jp(active_idx,obj.con_dof); % only care about active contacts and constrained dofs
-      Jpdot = Jpdot(active_idx,obj.con_dof);
+      Jp = Jp(active_idx,:); 
+      Jpdot = Jpdot(active_idx,:);
       
       % D_ is the parameterization of the polyhedral approximation of the 
       %    friction cone, in joint coordinates (figure 1 from Stewart96)
       %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
       % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for 
       % the kth contact point
+      %
+      % OPT---this isn't necessary
       D = cell(1,nc);
       for k=1:nc
         for i=1:nd
-          D{k}(:,i) = D_{i}(active_contacts(k),obj.con_dof)'; 
+          D{k}(:,i) = D_{i}(active_contacts(k),:)'; 
         end
       end
       Dbar = [D{:}];
@@ -246,40 +205,24 @@ classdef QPController < MIMODrakeSystem
     G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
     xlimp = [xcom(1:2); J*qd]; % state of LIP model
 
-    
-    %----------------------------------------------------------------------
-    % Free DOF cost function ----------------------------------------------
-
-    if nq_free > 0
-      % approximate quadratic cost for free dofs with the appropriate matrix block
-      Hqp_free = J(:,obj.free_dof)'*G'*obj.Qy*G*J(:,obj.free_dof) + obj.w*eye(nq_free);
-      fqp_free = xlimp'*obj.F'*obj.Qy*G*J(:,obj.free_dof) + ...
-                qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*G'*obj.Qy*G*J(:,obj.free_dof) + ...
-                xlimp'*S*obj.E*J(:,obj.free_dof) - obj.w*q_ddot_des(obj.free_dof)';
-
-      % solve for qdd_free unconstrained
-      qdd_free = -inv(Hqp_free)*fqp_free';
-    end
-        
-    
     %----------------------------------------------------------------------
     % Build handy index matrices ------------------------------------------
     
     nf = nc+nc*nd; % number of contact force variables
-    nparams = nq_con+nu_con+nf+nc*dim;
-    Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
-    Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
-    Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
-    Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
+    nparams = nq+nu+nf+nc*dim;
+    Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
+    Iu = zeros(nu,nparams); Iu(:,nq+(1:nu)) = eye(nu);
+    Iz = zeros(nc,nparams); Iz(:,nq+nu+(1:nc)) = eye(nc);
+    Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq+nu+nc+(1:nc*nd)) = eye(nc*nd);
     Ieps = zeros(nc*dim,nparams); 
-    Ieps(:,nq_con+nu_con+nc+nc*nd+(1:nc*dim)) = eye(nc*dim);
+    Ieps(:,nq+nu+nc+nc*nd+(1:nc*dim)) = eye(nc*dim);
     
     
     %----------------------------------------------------------------------
     % Set up problem constraints ------------------------------------------
 
-    lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 800*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+    lb = [-1e3*ones(1,nq) r.umin' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
+    ub = [ 1e3*ones(1,nq) r.umax' 800*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
 
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);
@@ -288,20 +231,16 @@ classdef QPController < MIMODrakeSystem
 
     % constrained dynamics
     if nc>0
-      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu - Jz'*Iz - Dbar*Ibeta;
+      Aeq_{1} = H*Iqdd - B*Iu - Jz'*Iz - Dbar*Ibeta;
     else
-      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu;
+      Aeq_{1} = H*Iqdd - B_con*Iu;
     end
-    if nq_free > 0
-      beq_{1} = -C_con - H_con(:,obj.free_dof)*qdd_free;
-    else
-      beq_{1} = -C_con;
-    end
+    beq_{1} = -C;
     
     if nc > 0
       % relative acceleration constraint
       Aeq_{2} = Jp*Iqdd + Ieps;
-      beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
+      beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
 
       % linear friction constraints
       % TEMP: hard code mu
@@ -326,20 +265,21 @@ classdef QPController < MIMODrakeSystem
     %
     %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
-    Hqp = Iqdd'*J(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
+    Hqp = Iqdd'*J'*G'*obj.Qy*G*J*Iqdd;
     Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
     
-    fqp = xlimp'*obj.F'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
-    fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
-    fqp = fqp + xlimp'*S*obj.E*J(:,obj.con_dof)*Iqdd;
-    fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
+    fqp = xlimp'*obj.F'*obj.Qy*G*J*Iqdd;
+    fqp = fqp + qd'*Jdot'*G'*obj.Qy*G*J*Iqdd;
+    fqp = fqp + xlimp'*S*obj.E*J*Iqdd;
+    fqp = fqp - obj.w*q_ddot_des'*Iqdd;
 
     % quadratic input cost
-    Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
+    Hqp(nq+(1:nu),nq+(1:nu)) = obj.R;
  
     % quadratic slack var cost 
     Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
 
+    
     %----------------------------------------------------------------------
     % Solve QP ------------------------------------------------------------
         
@@ -363,23 +303,7 @@ classdef QPController < MIMODrakeSystem
 %       dvals = result.pi;
     end
     
-    %----------------------------------------------------------------------
-    % Solve for free inputs -----------------------------------------------
-    if nq_free > 0
-      qdd = zeros(nq,1);
-      qdd(obj.free_dof) = qdd_free;
-      qdd(obj.con_dof) = alpha(1:nq_con);
-
-      u_free = B_free\(H_free*qdd + C_free);
-      u = zeros(nu,1);
-      u(obj.free_inputs) = u_free;
-      u(obj.con_inputs) = alpha(nq_con+(1:nu_con));
-
-      % saturate inputs
-      y = max(r.umin,min(r.umax,u));
-    else
-      y = alpha(nq+(1:nu));
-    end
+    y = alpha(nq+(1:nu));
     
 %     max(Iz*alpha)
     toc
@@ -388,17 +312,13 @@ classdef QPController < MIMODrakeSystem
   end
 
   properties
-    robot % to be controlled
-    zmpdata
+    robot; % to be controlled
+    zmpdata;
     w = 1.0; % objective function weight
     slack_limit = 1.0; % maximum absolute magnitude of acceleration slack variable values
-    free_dof % dof for which we perform unconstrained minimization (i.e., dofs not in the kinematic chain to contact points)
-    con_dof 
-    free_inputs
-    con_inputs
-    nq
-    nu
-    R  % quadratic input cost matrix
+    nq;
+    nu;
+    R; % quadratic input cost matrix
     % LIP stuff
     A = [zeros(2),eye(2); zeros(2,4)]; % state transfer matrix
     E = [zeros(2); eye(2)]; % input transfer matrix
@@ -406,5 +326,7 @@ classdef QPController < MIMODrakeSystem
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
+    rfoot_idx;
+    lfoot_idx;
   end
 end
