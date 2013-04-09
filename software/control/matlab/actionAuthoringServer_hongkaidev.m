@@ -238,6 +238,22 @@ while (1)
                   [q_zmp_plan; qdot_zmp_plan], ...
                   constraints_satisfied);
       end
+      if(action_options.IK)
+        % publish robot state message
+	ik_time_in_key_samples = (ik_time==action_sequence.key_time_samples);
+	if(any(ik_time_in_key_samples)
+		q_ik = q_key_time_samples(:,ik_time_in_key_samples);
+	else
+		ikargs = action_sequence.getIKArguments(ik_time);
+		[q_ik,info] = inverseKin(r,q,ikargs{:},options);
+	end
+        x = [q_ik;0*q_ik];
+        v.draw(0,x);
+        constraints_satisfied = ones(max(1,msg.num_contact_goals),1);
+        publish(robot_state_coder,0,x, ...
+          'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE', ...
+          constraints_satisfied);
+      end
       
     catch ex
       warning(ex.identifier, ...
@@ -246,15 +262,6 @@ while (1)
       q=q_bk;
       continue;
     end
-      if(action_options.IK)
-        % publish robot state message
-        x = [q_key_time_samples(:,end);0*q_key_time_samples(:,end)];
-        v.draw(0,x);
-        constraints_satisfied = ones(max(1,msg.num_contact_goals),1);
-        publish(robot_state_coder,0,x, ...
-          'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE', ...
-          constraints_satisfied);
-      end
   end
 end
 
