@@ -79,7 +79,7 @@ classdef QPController < MIMODrakeSystem
     if obj.solver==1 % use cplex
       obj.solver_options = cplexoptimset('cplex');
       obj.solver_options.diagnostics = 'on';
-      obj.solver_options.maxtime = 0.001;
+      obj.solver_options.maxtime = 0.01;
       % QP method: 
       %   0 	Automatic (default)
       %   1 	Primal Simplex
@@ -96,21 +96,19 @@ classdef QPController < MIMODrakeSystem
 %       obj.solver_options.presolve = 0;
 
       if obj.solver_options.method == 2
-        obj.solver_options.bariterlimit = 25; % iteration limit
+        obj.solver_options.bariterlimit = 20; % iteration limit
         obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
         obj.solver_options.barconvtol = 1e-4;
       end
-
-    end    
+    end  
     
-    % debug
-    obj.comhist = [];
-    obj.comidx = -1;
-
+%     obj.rfoot_idx = find(strcmp('r_foot',getLinkNames(r)));
+%     obj.lfoot_idx = find(strcmp('l_foot',getLinkNames(r)));
+    
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-%     tic;
+    tic;
     q_ddot_des = varargin{1};
     x = varargin{2};
     
@@ -159,24 +157,11 @@ classdef QPController < MIMODrakeSystem
     J = J(1:2,:); % only need COM x-y
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
-
-%     % debug
-%     histlen = 20;
-%     if obj.comidx==-1
-%       obj.comhist = repmat(xcom(1:2),1,histlen);
-%       obj.comidx = 2;
-%     else
-%       obj.comhist(:,obj.comidx) = xcom(1:2);
-%       obj.comidx = mod(obj.comidx+1,histlen)+1; 
-%     end
-%     plot_lcm_points([obj.comhist' ones(histlen,1)],[ones(histlen,1), zeros(histlen,1), zeros(histlen,1)],345345,'COM Location',1,true);
-
     
     active_supports = find(supports~=0);
-    if (isempty(active_supports))
-      warning('QPController::No supporting bodies...');
-    end
-    partial_supports = find(supports>0 & supports<1);
+%     if (isempty(active_supports))
+%       warning('QPController::No supporting bodies...');
+%     end
    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
@@ -209,35 +194,12 @@ classdef QPController < MIMODrakeSystem
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
       nc = sum(active_contacts);
-      partial_contacts = [];
-      partial_idx = [];
     else
       % get support contact J, dJ for no-slip constraint
       [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-      partial_contacts = [];
-      for i=active_supports'
-        nC = size(getBodyContacts(r,i),2);
-        if any(partial_supports==i)
-          partial_contacts = [partial_contacts; ones(nC,1)];
-        else
-          partial_contacts = [partial_contacts; zeros(nC,1)];
-        end
-      end
-      
-      % get subset of active_contacts that are partial supports
-      % NOTE: currently this is always an empty set because the partial contact
-      % phase passes before the swing foot comes in  contact with the
-      % ground. 
-      partial_contacts = find(partial_contacts & active_contacts); 
-
-      partial_idx = zeros(dim*length(partial_contacts),1);
-      for i=1:length(partial_contacts);
-        partial_idx((i-1)*dim+1:i*dim) = (partial_contacts(i)-1)*dim + (1:dim)';
-      end
     end
     
     active_contacts = find(active_contacts);
-    
     
     if nc > 0
       Jz = Jz(active_contacts,obj.con_dof); % only care about active contacts and constrained dofs
@@ -364,24 +326,17 @@ classdef QPController < MIMODrakeSystem
     %
     %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
-    Hqp = repmat(eye(nparams),2,1)'*vertcat(Iqdd'*J(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, obj.w*Iqdd'*Iqdd);
+    Hqp = Iqdd'*J(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
+    Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
     
-    fqp = horzcat(xlimp'*obj.F'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, ...
-          qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd, ...
-          xlimp'*S*obj.E*J(:,obj.con_dof)*Iqdd, ...
-          -obj.w*q_ddot_des(obj.con_dof)'*Iqdd)*repmat(eye(nparams),4,1);
+    fqp = xlimp'*obj.F'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
+    fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*G'*obj.Qy*G*J(:,obj.con_dof)*Iqdd;
+    fqp = fqp + xlimp'*S*obj.E*J(:,obj.con_dof)*Iqdd;
+    fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
 
     % quadratic input cost
     Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
-
-    % add cost term for transitional contacts
-    qz = zeros(nc,1);
-    qz(partial_contacts) = 1e-6*ones(length(partial_contacts),1);
-    qbeta = zeros(nc*nd,1);
-    qbeta(partial_idx) = 1e-6*ones(length(partial_idx),1);
-    Hqp(nq_con+nu_con+(1:nc),nq_con+nu_con+(1:nc)) = diag(qz);
-    Hqp(nq_con+nu_con+nc+(1:nc*nd),nq_con+nu_con+nc+(1:nc*nd)) = diag(qbeta);
-    
+ 
     % quadratic slack var cost 
     Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
 
@@ -427,7 +382,7 @@ classdef QPController < MIMODrakeSystem
     end
     
 %     max(Iz*alpha)
-%     toc
+    toc
    
   end
   end
@@ -451,7 +406,5 @@ classdef QPController < MIMODrakeSystem
     Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
-    comhist;
-    comidx;
   end
 end
