@@ -25,5 +25,3 @@ for i=1:height
 %    img = [img; row_array'];
 end
 imshow(img);
-%hsv = rgb2hsv(f);
-% imshow(hsv);
