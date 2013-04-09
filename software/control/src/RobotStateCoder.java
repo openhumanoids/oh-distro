@@ -133,10 +133,15 @@ public class RobotStateCoder implements drake.util.LCMCoder
         q[3] = msg.origin_position.rotation.z;
 
         q = quatnormalize(q);
-        double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
+       /* double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
             q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
             2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);
+            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);*/
+            
+        double[] rpy = threeaxisrot(2*(q[2]*q[3] + q[0]*q[1]), 
+            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
+            2*(- q[1]*q[3] + q[0]*q[2]), 2.*(q[1]*q[2] + q[0]*q[3]),
+            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);            
 
         j = m_floating_joint_map.get("base_roll");
         if (j!=null) {
@@ -221,10 +226,14 @@ public class RobotStateCoder implements drake.util.LCMCoder
 
         // covert rpy to quaternion 
         // note: drake uses XYZ convention
-        double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-        double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-        double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-        double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
+        /*    double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+    double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
+    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
+    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);*/
+     double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);   
+    double x = Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)-Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
+    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
+    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2)-Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
 
         msg.origin_position.rotation.x = (float) x;
         msg.origin_position.rotation.y = (float) y;
