@@ -1188,6 +1188,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
 
     if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
     {
@@ -1214,6 +1215,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
     
     if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
         (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
     {
@@ -1229,6 +1231,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
     }
     
     if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+        (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||    
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
     {        
       glPushMatrix();
