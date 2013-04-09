@@ -22,6 +22,10 @@
 #define MAX_GROUND_PROJECTION_DISTANCE 30//120
 #define MAX_GROUND_PROJECTION_DISTANCE_SQ (MAX_GROUND_PROJECTION_DISTANCE*MAX_GROUND_PROJECTION_DISTANCE)
 
+#define OFFSET_LARGE 5
+#define OFFSET_SMALL 3
+#define COSTMAP_RESOLUTION 0.1
+
 using namespace std;
 using namespace occ_map;
 
@@ -55,8 +59,6 @@ public:
 
   int img_nvertices;
   ImageVertex *vertices;
-  int *vert_indices;
-  int n_vert_indices;
   point3d_t *pixel_rays_local;
   point2d_t *ground_projections_local;
 
@@ -76,20 +78,20 @@ public:
   int64_t img_utime;
 };
 
-void create_pixelmap(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, PixelMap<float>* distance_map, bot_lcmgl_t *lcmgl=NULL);
+//void create_pixelmap(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, PixelMap<float>* distance_map, bot_lcmgl_t *lcmgl=NULL);
 
-void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelMap<float>* distance_map, vector<cv::Point>contour, bot_lcmgl_t *lcmgl = NULL);
+void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, vector<cv::Point>contour, bot_lcmgl_t *lcmgl = NULL);
 
-void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl);
+//void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl);
 
-void dilate_mask(cv::Mat1b& mask, cv::Mat1b& mask_new){
+void dilate_mask(cv::Mat1b& mask, cv::Mat1b& mask_new, int offset=OFFSET_LARGE){
 
   //cvFindContours
   //offset 3 is good to remove just basic noise 
   
   //OFFSET 5 is good to remove the centerline 
-  const int OFFSET = 5;
-  cv::dilate(mask, mask_new, cv::Mat(), cv::Point(-1,-1), OFFSET);
+  //const int OFFSET = 5;
+  cv::dilate(mask, mask_new, cv::Mat(), cv::Point(-1,-1), offset);
 
   if(0){
     cv::Mat1b sm_display = mask_new.clone();
@@ -123,7 +125,7 @@ int find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&la
     largest_contour = contours[largest_countour_id];
 
     //we are not using convex hull anymore - it messes up when the road is turining
-    if(1){
+    if(0){
       cv::Mat1b mask_count = cv::Mat1b::zeros(mask.rows, mask.cols);
       std::vector<cv::Point> hull;
       cv::convexHull(largest_contour, hull);
@@ -138,11 +140,11 @@ int find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&la
       cv::imshow("Contour Points", mask_count);
 
       /*cv::Mat hull_contour = cv::Mat::zeros(size, CV_8U);
-      const int hull_count = (int)hull.size();
-      const cv::Point* hull_pts = &hull[0];//&hull[0];
-      cv::fillPoly(hull_contour, &hull_pts, &hull_count, 1, cv::Scalar(255));
+	const int hull_count = (int)hull.size();
+	const cv::Point* hull_pts = &hull[0];//&hull[0];
+	cv::fillPoly(hull_contour, &hull_pts, &hull_count, 1, cv::Scalar(255));
       
-      cv::imshow("Hull Mask", hull_contour);*/
+	cv::imshow("Hull Mask", hull_contour);*/
     }
 
     filled_contour = cv::Mat::zeros(size, CV_8U);
@@ -157,78 +159,6 @@ int find_contours(cv::Mat1b& mask, cv::Mat& filled_contour, vector<cv::Point>&la
     return -1;
   }  
 }
-
-// Broken - use distanceTransform instead
-void get_distance_mask(cv::Mat& edges, cv::Mat& mask){
-  //0's anywhere the mask had 1 - which is where we need to fill 
-  cv::Size size(mask.cols, mask.rows);
-  cv::Mat dist_from_edge = cv::Mat::zeros(size, CV_32FC3);
-
-  cv::Mat1b mask_count = (mask==0);//cv::Mat1b::zeros(mask.rows, mask.cols);
-  vector<cv::Point> edge_points;
-  //lets get the points for which edges are 1
-  for(int i=0; i < edges.cols; i++){
-    for(int j=0; j < edges.rows; j++){
-      if(edges.at<uint8_t>(i,j)>0){
-	edge_points.push_back(cv::Point(i,j));
-	//edge point
-      }
-    }
-  }
-
-  //do we just go from the points - vs distance 
-  for(size_t k=0; k< edge_points.size(); k++){
-    for(uint8_t i=0; i< 20; i++){
-      for(uint8_t j=0; j< 20; j++){
-	cv::Point pt = edge_points[k];
-	//try all 4 points 
-	int dx = pt.x + i;
-	int dy = pt.y + j;
-	if(dx < mask.cols && dy < mask.rows){
-	  //check if filled 
-	  if(mask_count.at<uint8_t>(dx,dy)==0){
-	    //put the value
-	    dist_from_edge.at<float>(dx,dy) = hypot(dx,dy);
-	    mask_count.at<uint8_t>(dx,dy) = (uint8_t) 1;
-	  }
-	}
-	dx = pt.x + i;
-	dy = pt.y - j;
-	if(dx < mask.cols && dy >=0){
-	  //check if filled 
-	  if(mask_count.at<uint8_t>(dx,dy)==0){
-	    //put the value
-	    dist_from_edge.at<float>(dx,dy) = hypot(dx,dy);
-	    mask_count.at<uint8_t>(dx,dy) = (uint8_t) 1;
-	  }
-	}
-	dx = pt.x - i;
-	dy = pt.y + j;
-	if(dx >=0 && dy < mask.rows){
-	  //check if filled 
-	  if(mask_count.at<uint8_t>(dx,dy)==0){
-	    //put the value
-	    dist_from_edge.at<float>(dx,dy) = hypot(dx,dy);
-	    mask_count.at<uint8_t>(dx,dy) = (uint8_t) 1;
-	  }
-	}
-	dx = pt.x - i;
-	dy = pt.y - j;
-	if(dx >=0 && dy >=0){
-	  //check if filled 
-	  if(mask_count.at<uint8_t>(dx,dy)==0){
-	    //put the value
-	    dist_from_edge.at<float>(dx,dy) = hypot(dx,dy);
-	    mask_count.at<uint8_t>(dx,dy) = (uint8_t) 1;
-	  }
-	}
-      }
-    }
-  }
-
-  cv::imshow("Distance Fill", dist_from_edge.clone());
-}
-
 
 //Routine that does the road detection//
 //(1) convert the image to HSV space
@@ -281,7 +211,7 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
 
   //the dilation is need for the contour to work - otherwise it will pick only a part of the road sometimes 
   cv::Mat1b mask_dil;
-  dilate_mask(mask, mask_dil);
+  dilate_mask(mask, mask_dil, OFFSET_LARGE);
 
   //get the contour points and the contour 
   cv::Mat filled_contour;
@@ -294,65 +224,27 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   }
 
   if(!filled_contour.empty()){
+    //we can prob not do this also 
     cv::imshow("Contour Fill", filled_contour.clone());
-    cv::Mat1b mask_filled = (filled_contour > 0);
+    cv::Mat1b mask_filled = (filled_contour > 0);            
+    
+    //the road outine in the image space is projected to ground plane and then used to calculate 
+    //a distance map - from road edges - and published for use by the controller 
 
-    /*cv::Mat contours;
-    cv::Canny(mask_filled, contours,10,350);
-    
-    //we can use the canny edges to get the distance from edges ?? - to build up the cost map 
-    cv::imshow("Canny Edges", contours.clone());
-
-    //get_distance_mask(contours, mask_filled);
-    //figure this out 
-    //we should use this if we can - but projected on to the ground plane 
-    //also in the groud plane - we should prob draw lines between points 
-
-    cv::Mat dist;
-    distanceTransform(mask_filled, dist, CV_DIST_L2, CV_DIST_MASK_PRECISE);//CV_DIST_MASK_5);
-    
-    dist *= 5000;
-    pow(dist, 0.5, dist);
-    
-    cv::Mat dist32s, dist8u, dist8u1, dist8u2;
-    
-    dist.convertTo(dist32s, CV_32S, 1, 0.5);
-    dist32s &= cv::Scalar::all(255);
-    
-    dist32s.convertTo(dist8u1, CV_8U, 1, 0);
-    dist32s *= -1;
-    
-    dist32s += cv::Scalar::all(255);
-    dist32s.convertTo(dist8u2, CV_8U);
-    
-    cv::Mat planes[] = {dist8u1, dist8u2, dist8u2};
-    merge(planes, 3, dist8u);
-    
-    cv::imshow("Distance Transform", dist8u);*/
-        
-    PixelMap<float>* contour_map;
-    create_contour_pixelmap(self, utime, mask_filled, contour_map, largest_contour, self->lcmgl);
-
-    //project_to_ground(
-    /*PixelMap<float>* distance_map;
-      create_pixelmap(self, utime, img, mask_filled, distance_map, self->lcmgl);*/
-    //
-    //occ_map_pixel_map_t_publish(self->lcm, "TERRAIN_COST", map_msg);    
-    //delete distance_map;
+    create_contour_pixelmap(self, utime, mask_filled, largest_contour, self->lcmgl);
+    //delete contour_map->data;
+    //contour_map->data = NULL;
+    //delete contour_map;
   }  
   else{
     //this mask works 
-    project_to_ground(self, utime, img, mask, self->lcmgl);
+    fprintf(stderr, "Error - Did not find largest contour - this should not have reached - should exit early");
+    //project_to_ground(self, utime, img, mask, self->lcmgl);
   }
 
   cv::Mat1b sm_display = mask.clone();
   cv::imshow("Basic Road Detection", sm_display);
   
-  //remove the visible car parts from the mask
-  
-
-  //cv::Mat thresh; 
-
   return 0;
 }
 
@@ -388,22 +280,22 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
   return;
 }
 
+//set up the rays from the camera (applying corrections etc)
 void setup_projection(Terrain *self, int width, int height){//cv::Mat road){
   BotTrans cam_to_body;
   bot_frames_get_trans(self->frames, self->coord_frame, "body", //bot_frames_get_root_name(self->frames),
 		       &cam_to_body);
 
-  int xstep = 1;//4;
-  int ystep = 1;//2;
-  int ncols = width;//width / xstep + 1;
-  int nrows = height;//height / ystep + 1;
+  int xstep = 1;
+  int ystep = 1;
+  int ncols = width;
+  int nrows = height;
   
   self->img_nvertices = ncols * nrows;
   int img_data_size = self->img_nvertices * sizeof(ImageVertex);
   self->vertices = (ImageVertex*) malloc(img_data_size);
-  self->n_vert_indices = (ncols - 1) * (nrows - 1) * 4;
-  //cr->n_vert_indices = cr->width / xstep * cr->height / ystep * 4;
-  self->vert_indices = (int*) malloc(self->n_vert_indices * sizeof(int));
+  //self->n_vert_indices = (ncols - 1) * (nrows - 1) * 4;
+  //self->vert_indices = (int*) malloc(self->n_vert_indices * sizeof(int));
   int vi_count = 0;
   
   // allocate workspace for projecting the image onto the ground plane
@@ -430,23 +322,13 @@ void setup_projection(Terrain *self, int width, int height){//cv::Mat road){
       v->vz = ray_cam[2];
 
       v++;
-
-      if (row < nrows - 1 && col < ncols - 1) {
-	self->vert_indices[vi_count + 0] = row * ncols + col;
-	self->vert_indices[vi_count + 1] = row * ncols + col + 1;
-	self->vert_indices[vi_count + 2] = (row + 1) * ncols + col + 1;
-	self->vert_indices[vi_count + 3] = (row + 1) * ncols + col;
-	
-	vi_count += 4;
-      }
     }
   }
 }
 
-void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelMap<float>* distance_map, vector<cv::Point>contour, bot_lcmgl_t *lcmgl){
-
-  //this should all be done in a body relative frame - which will break the rendering of the occ map - but what the hell :D
-  
+//project the imagespace road contours on to the ground plane - and then do a distance transform - which is sent off to the controller
+void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, vector<cv::Point>contour, bot_lcmgl_t *lcmgl){
+    
   BotTrans head_to_local;
 
   bot_frames_get_trans_with_utime(self->frames, "head", bot_frames_get_root_name(self->frames),
@@ -519,14 +401,11 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
     bot_lcmgl_begin(lcmgl, GL_POINTS);
   }
 
-  double resolution = 0.1;
+  double resolution = COSTMAP_RESOLUTION;
   
-  distance_map = new PixelMap<float>(min_xy, max_xy, resolution, false);
+  PixelMap<float>* distance_map = new PixelMap<float>(min_xy, max_xy, resolution, false, false);
   distance_map->data = new float[distance_map->num_cells];
   memset(distance_map->data, 0, sizeof(float) * distance_map->num_cells);
-
-
-  fprintf(stderr, "Image size : %d, %d\n", distance_map->dimensions[0], distance_map->dimensions[1]);
 
   cv::Mat1b projected_map = cv::Mat1b::zeros(distance_map->dimensions[1], distance_map->dimensions[0]);
   cv::Mat1b filled_map = cv::Mat1b::zeros(distance_map->dimensions[1], distance_map->dimensions[0]);
@@ -617,14 +496,14 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
 
   //we should do this - but to the projected 
   /*cv::Mat1b road_outline = (mask >0);//cv::Mat1b::zeros(mask.rows, mask.cols);
-  const cv::Scalar color(255,255,255);  
-  for(int j=1; j < contour.size(); j++){
+    const cv::Scalar color(255,255,255);  
+    for(int j=1; j < contour.size(); j++){
     cv::line(road_outline, contour[j-1], contour[j], color,  2);
-  }
+    }
 
-  for(int i= 0; i < road_outline.cols; i++){
+    for(int i= 0; i < road_outline.cols; i++){
     for(int j= road_outline.rows - 20; j < road_outline.rows; j++){
-      road_outline.at<uint8_t>(j,i) = 1;
+    road_outline.at<uint8_t>(j,i) = 1;
     }
     }*/
   
@@ -635,16 +514,22 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
 
   cv::Mat dist;
   distanceTransform(road_outline, dist, CV_DIST_L2, CV_DIST_MASK_5); //CV_DIST_MASK_PRECISE);
+
+  dist *= resolution;
   
-  uint8_t max = 0;
-  for(int i=0; i < dist.cols; i++){
-    for(int j=0; j < dist.rows; j++){
-      uint8_t d = 254* fmin(10, dist.at<float>(j,i))/10.0;
-      dist_color.at<uint8_t>(j,i) = d;//uint8_t(1);            
-      if(d > max)
-	max = d;
+  if(0){
+    uint8_t max = 0;
+    for(int i=0; i < dist.cols; i++){
+      for(int j=0; j < dist.rows; j++){
+	uint8_t d = 254* fmin(7, dist.at<float>(j,i))/7.0;
+	dist_color.at<uint8_t>(j,i) = d;
+	if(d > max)
+	  max = d;
+      }
     }
+    cv::imshow("Road Distance Transform", dist_color);
   }
+    
 
   for(int i=0; i < dist.cols; i++){
     for(int j=0; j < dist.rows; j++){
@@ -654,702 +539,17 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, PixelM
     }
   }
 
-  //we would need to local minimum   
-  fprintf(stderr, "Max : %d\n", max);
-
-  cv::imshow("Road Distance Transform", dist_color);
-
-  //we can prob copy stuff over (properly normalized)
-  
-
   const occ_map_pixel_map_t *map_msg = distance_map->get_pixel_map_t(utime);
-  occ_map_pixel_map_t_publish(self->lcm, "TERRAIN_DIST_MAP", map_msg);    
+  occ_map_pixel_map_t_publish(self->lcm, "TERRAIN_DIST_MAP", map_msg);   
 
-  fprintf(stderr, "Map Count : %d\n", map_count);
+  delete distance_map->data;
+  distance_map->data = NULL;
+  delete distance_map;
+
   if(lcmgl){
     bot_lcmgl_end(lcmgl);
     bot_lcmgl_switch_buffer(lcmgl);
   }  
-}
-
-void create_contour_pixelmap_old(Terrain *self, int64_t utime, cv::Mat& mask, PixelMap<float>* distance_map, vector<cv::Point>contour, bot_lcmgl_t *lcmgl){
-  //this should all be done in a body relative frame - which will break the rendering of the occ map - but what the hell :D
-  BotTrans head_to_local;
-  
-  bot_frames_get_trans_with_utime(self->frames, "head", bot_frames_get_root_name(self->frames),
-				  utime, &head_to_local);
-  
-  BotTrans cam_to_local;
-  
-  bot_frames_get_trans_with_utime(self->frames, self->coord_frame, bot_frames_get_root_name(self->frames),
-				  utime, &cam_to_local);
-  
-  //fprintf(stderr, "Done with Pixel Map - No of Cells : %d\n", distance_map->num_cells);
-  //We need a transform from the Cam to center of Vehicle - which is where we are trying to drive from 
-  if(lcmgl){
-    bot_lcmgl_point_size(lcmgl, 10);
-    bot_lcmgl_begin(lcmgl, GL_POINTS);
-  }
-
-  BotTrans corner_to_head;
-  
-  double rpy[3] = {0};
-  corner_to_head.trans_vec[0] = 0;
-  corner_to_head.trans_vec[1] = -10;
-  corner_to_head.trans_vec[2] = 0;
-
-  bot_roll_pitch_yaw_to_quat(rpy, corner_to_head.rot_quat);
-
-  double min_xy[2] = {10000, 10000};
-  double max_xy[2] = {-10000, -10000};
-  
-  BotTrans corner_to_local;
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-  
-  corner_to_head.trans_vec[0] = 25;
-  corner_to_head.trans_vec[1] = -10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  corner_to_head.trans_vec[0] = 25;
-  corner_to_head.trans_vec[1] = 10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  corner_to_head.trans_vec[0] = 0;
-  corner_to_head.trans_vec[1] = 10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  if(lcmgl){
-    bot_lcmgl_end(lcmgl);
-    bot_lcmgl_point_size(lcmgl, 3);
-    bot_lcmgl_begin(lcmgl, GL_POINTS);
-  }  
-  
-  distance_map = new PixelMap<float>(min_xy, max_xy, 0.5, false);//xy0, xy1, 0.5, false);
-  distance_map->data = new float[distance_map->num_cells];
-  memset(distance_map->data, 0, sizeof(float) * distance_map->num_cells);
-  
-
-  BotTrans local_to_cam = cam_to_local;
-  bot_trans_invert(&local_to_cam);
-  
-  BotTrans point_to_local;
-  point_to_local.trans_vec[2] = 0;
-  bot_roll_pitch_yaw_to_quat(rpy, point_to_local.rot_quat);
-  
-  BotTrans point_to_cam; 
-  int skip = 1;
-  // project image onto the ground plane
-  int map_count = 0;
-  
-  //we should do this - but to the projected 
-  cv::Mat1b road_outline = (mask >0);
-  const cv::Scalar color(255,255,255);  
-  for(int j=1; j < contour.size(); j++){
-    cv::line(road_outline, contour[j-1], contour[j], color,  2);
-  }
-
-  for(int i= 0; i < road_outline.cols; i++){
-    for(int j= road_outline.rows - 20; j < road_outline.rows; j++){
-      road_outline.at<uint8_t>(j,i) = 1;
-    }
-  }
-  
-  cv::Size size(mask.cols, mask.rows);
-  cv::Mat dist_color = cv::Mat::zeros(size, CV_8U);
-
-  cv::Mat dist;
-  //precise is a lot more expensive - try not to use 
-  distanceTransform(road_outline, dist, CV_DIST_L2, CV_DIST_MASK_5); //CV_DIST_MASK_PRECISE);
-  
-  uint8_t max = 0;
-  for(int i=0; i < dist.cols; i++){
-    for(int j=0; j < dist.rows; j++){
-      uint8_t d = 254* fmin(1, 100/dist.at<float>(j,i));
-      dist_color.at<uint8_t>(j,i) = d;//uint8_t(1);            
-      if(d > max)
-	max = d;
-    }
-  }
-  fprintf(stderr, "Max : %d\n", max);
-
-  cv::imshow("Road Distance Transform", dist_color);
-  //apply the distance transform here
-
-  cv::imshow("Road Outline", road_outline);
-
-  if(0){
-    for(size_t i=1; i < contour.size(); i++){
-      cv::Point pt0 = contour[i-1];
-      cv::Point pt1 = contour[i];
-
-      int ind1 = pt0.x + pt0.y * mask.cols;
-      int ind2 = pt1.x + pt1.y * mask.cols;
-
-      ImageVertex *v1 = &self->vertices[ind1];
-      ImageVertex *v2 = &self->vertices[ind2];
-
-      point3d_t pixel_rays_local;
-      pixel_rays_local.x = v1->vx;
-      pixel_rays_local.y = v1->vy;
-      pixel_rays_local.z = v1->vz;
-
-      point2d_t ground_projections_local;
-
-      double v_cam[3] = { v1->vx, v1->vy, v1->vz };
-      //project these points - and draw a line between them 
-
-      uint8_t r = 0.0;
-      uint8_t g = 1.0;
-      uint8_t b = 0.0;
-
-      bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
-    
-      //check where it hits the ground plane
-      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
-					     &ground_projections_local)) {
-	continue;
-      }
-
-      double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
-							    POINT2D(cam_to_local.trans_vec));
-
-      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-	continue;
-      }
-
-      //now check the current one 
-      point3d_t pixel_rays_local2;
-      pixel_rays_local2.x = v2->vx;
-      pixel_rays_local2.y = v2->vy;
-      pixel_rays_local2.z = v2->vz;
-
-      point2d_t ground_projections_local2;
-
-      double v_cam2[3] = { v2->vx, v2->vy, v2->vz };
-      //project these points - and draw a line between them 
-
-      bot_trans_rotate_vec(&cam_to_local, v_cam2, point3d_as_array(&pixel_rays_local2));
-    
-      //check where it hits the ground plane
-      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local2, 0,
-					     &ground_projections_local2)) {
-	//current ind messed up - then move to next
-	i++;
-	continue;
-      }
-
-      dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local2,
-						     POINT2D(cam_to_local.trans_vec));
-
-      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-	i++;
-	continue;
-      }
-
-      point_to_local.trans_vec[0] = ground_projections_local.x;
-      point_to_local.trans_vec[1] = ground_projections_local.y;
-    
-      double xy_1[2] = {ground_projections_local.x, ground_projections_local.y};
-      double xy_2[2] = {ground_projections_local2.x, ground_projections_local2.y};
-    
-      float clamp[2] = {0,1};
-
-      if(distance_map->isInMap(xy_2)){// && distance_map->isInMap(xy_2)){
-	distance_map->writeValue(xy_2, 1.0);
-	//distance_map->rayTrace(xy_1, xy_2, 1,1, clamp);
-	map_count++;
-      }
-    
-      if(lcmgl){
-	bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
-	bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
-      }
-    }    
-  }
-
-  if(0){
-    int back_ind = 0;
-    
-    
-    for(size_t i=1; i < contour.size(); i++){
-      cv::Point pt0 = contour[back_ind];
-      cv::Point pt1 = contour[i];
-
-      int ind1 = pt0.x + pt0.y * mask.cols;
-      int ind2 = pt1.x + pt1.y * mask.cols;
-
-      ImageVertex *v1 = &self->vertices[ind1];
-      ImageVertex *v2 = &self->vertices[ind2];
-
-      point3d_t pixel_rays_local;
-      pixel_rays_local.x = v1->vx;
-      pixel_rays_local.y = v1->vy;
-      pixel_rays_local.z = v1->vz;
-
-      point2d_t ground_projections_local;
-
-      double v_cam[3] = { v1->vx, v1->vy, v1->vz };
-      //project these points - and draw a line between them 
-
-      uint8_t r = 0.0;
-      uint8_t g = 1.0;
-      uint8_t b = 0.0;
-
-      bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&pixel_rays_local));
-    
-      //check where it hits the ground plane
-      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local, 0,
-					     &ground_projections_local)) {
-	//if back ind messed up we should move forward 
-	back_ind+=1;
-	i++;
-	continue;
-      }
-
-      double dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local,
-							    POINT2D(cam_to_local.trans_vec));
-
-      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-	back_ind+=1;
-	i++;
-	continue;
-      }
-
-      //now check the current one 
-      point3d_t pixel_rays_local2;
-      pixel_rays_local2.x = v2->vx;
-      pixel_rays_local2.y = v2->vy;
-      pixel_rays_local2.z = v2->vz;
-
-      point2d_t ground_projections_local2;
-
-      double v_cam2[3] = { v2->vx, v2->vy, v2->vz };
-      //project these points - and draw a line between them 
-
-      bot_trans_rotate_vec(&cam_to_local, v_cam2, point3d_as_array(&pixel_rays_local2));
-    
-      //check where it hits the ground plane
-      if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &pixel_rays_local2, 0,
-					     &ground_projections_local2)) {
-	//current ind messed up - then move to next
-	i++;
-	continue;
-      }
-
-      dist_sq = geom_point_point_distance_squared_2d(&ground_projections_local2,
-						     POINT2D(cam_to_local.trans_vec));
-
-      if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-	i++;
-	continue;
-      }
-
-      back_ind = i;
-
-      point_to_local.trans_vec[0] = ground_projections_local.x;
-      point_to_local.trans_vec[1] = ground_projections_local.y;
-    
-      double xy_1[2] = {ground_projections_local.x, ground_projections_local.y};
-      double xy_2[2] = {ground_projections_local2.x, ground_projections_local2.y};
-    
-      float clamp[2] = {0,1};
-
-      if(distance_map->isInMap(xy_1) && distance_map->isInMap(xy_2)){
-	distance_map->writeValue(xy_2, 1.0);
-	//distance_map->rayTrace(xy_1, xy_2, 1,1, clamp);
-	map_count++;
-      }
-    
-      /*if(lcmgl){
-	bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
-	bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
-	}*/
-      //self->ground_projections_local[i].x, self->ground_projections_local[i].y
-      /*if(i %8==0){
-	if(lcmgl){
-	bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
-	bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
-	}
-	}*/
-
-    }
-  }
-
-  for (int i = 0; i < self->img_nvertices; i+=skip) {
-    ImageVertex *v = &self->vertices[i];
-
-    bool road = mask.at<uint8_t>(v->ty, v->tx);
-    
-    if(!road)
-      continue;
-    //get the ray in local frame 
-    self->pixel_rays_local[i].x = v->vx;
-    self->pixel_rays_local[i].y = v->vy;
-    self->pixel_rays_local[i].z = v->vz;
-    double v_cam[3] = { v->vx, v->vy, v->vz };
-
-    uint8_t r = 0.0;
-    uint8_t g = 1.0;
-    uint8_t b = 0.0;
-
-    bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&self->pixel_rays_local[i]));
-    
-    //check where it hits the ground plane
-    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &self->pixel_rays_local[i], 0,
-					   &self->ground_projections_local[i])) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-      continue;
-    }
-
-    double dist_sq = geom_point_point_distance_squared_2d(&self->ground_projections_local[i],
-							  POINT2D(cam_to_local.trans_vec));
-    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-      continue;
-    }
-
-
-    point_to_local.trans_vec[0] = self->ground_projections_local[i].x;
-    point_to_local.trans_vec[1] = self->ground_projections_local[i].y;
-    
-    bot_trans_apply_trans_to(&local_to_cam, &point_to_local, &point_to_cam);
-    
-    //fprintf(stderr, "Dist : %f, %f - %f\n", point_to_cam.trans_vec[0], point_to_cam.trans_vec[1], hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1]));
-    
-    double dist_rat = fmin(1,dist.at<float>(v->ty, v->tx)/50);//
-    //double dist_rat = fmin(1,hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1])/ 5.0);
-    float *color = bot_color_util_jet(dist_rat);
-    
-    double xy_c[2] = {self->ground_projections_local[i].x, self->ground_projections_local[i].y};
-    if(distance_map->isInMap(xy_c)){
-      distance_map->writeValue(xy_c, dist_rat);
-      //fprintf(stderr, "Value at %f,%f ",xy_c[0], xy_c[1]);
-      //fprintf(stderr, ":  %f\n", distance_map->readValue(xy_c));//dist_rat);
-      map_count++;
-    }
-    //self->ground_projections_local[i].x, self->ground_projections_local[i].y
-    /*if(i %8==0){
-      if(lcmgl){
-	bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
-	bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
-      }
-      }*/
-  }
-
-  const occ_map_pixel_map_t *map_msg = distance_map->get_pixel_map_t(utime);
-  occ_map_pixel_map_t_publish(self->lcm, "PIXEL_MAP", map_msg);    
-
-  fprintf(stderr, "Map Count : %d\n", map_count);
-  if(lcmgl){
-    bot_lcmgl_end(lcmgl);
-    bot_lcmgl_switch_buffer(lcmgl);
-  }  
-}
-
-void create_pixelmap(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, PixelMap<float>* distance_map, bot_lcmgl_t *lcmgl){
-
-  //this should all be done in a body relative frame - which will break the rendering of the occ map - but what the hell :D
-  
-  BotTrans head_to_local;
-
-  bot_frames_get_trans_with_utime(self->frames, "head", bot_frames_get_root_name(self->frames),
-				  utime, &head_to_local);
-  
-  BotTrans cam_to_local;
-
-  bot_frames_get_trans_with_utime(self->frames, self->coord_frame, bot_frames_get_root_name(self->frames),
-				  utime, &cam_to_local);
-
-  //fprintf(stderr, "Done with Pixel Map - No of Cells : %d\n", distance_map->num_cells);
-  //We need a transform from the Cam to center of Vehicle - which is where we are trying to drive from 
-  if(lcmgl){
-    bot_lcmgl_point_size(lcmgl, 10);
-    bot_lcmgl_begin(lcmgl, GL_POINTS);
-  }
-
-  BotTrans corner_to_head;
-  
-  double rpy[3] = {0};
-  corner_to_head.trans_vec[0] = 0;
-  corner_to_head.trans_vec[1] = -10;
-  corner_to_head.trans_vec[2] = 0;
-
-  bot_roll_pitch_yaw_to_quat(rpy, corner_to_head.rot_quat);
-
-  double min_xy[2] = {10000, 10000};
-  double max_xy[2] = {-10000, -10000};
-  
-  BotTrans corner_to_local;
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-  
-  bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-  bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-
-  //double xy0[2] = {corner_to_local.trans_vec[0], corner_to_local.trans_vec[1]};
-
-  corner_to_head.trans_vec[0] = 25;
-  corner_to_head.trans_vec[1] = -10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-  bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-
-  corner_to_head.trans_vec[0] = 25;
-  corner_to_head.trans_vec[1] = 10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-  bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-
-  corner_to_head.trans_vec[0] = 0;
-  corner_to_head.trans_vec[1] = 10;
-  
-  bot_trans_apply_trans_to(&head_to_local, &corner_to_head, &corner_to_local);
-
-  min_xy[0] = fmin(corner_to_local.trans_vec[0], min_xy[0]);
-  min_xy[1] = fmin(corner_to_local.trans_vec[1], min_xy[1]);
-
-  max_xy[0] = fmax(corner_to_local.trans_vec[0], max_xy[0]);
-  max_xy[1] = fmax(corner_to_local.trans_vec[1], max_xy[1]);
-
-  bot_lcmgl_color3f(lcmgl, 1, 0, 0);//r/255.0, g/255.0, b/255.0);
-  bot_lcmgl_vertex3f(lcmgl, corner_to_local.trans_vec[0], corner_to_local.trans_vec[1], 0);
-
-  if(lcmgl){
-    bot_lcmgl_end(lcmgl);
-    bot_lcmgl_point_size(lcmgl, 3);
-    bot_lcmgl_begin(lcmgl, GL_POINTS);
-  }
-  
-
-  //double xy1[2] = {corner_to_local.trans_vec[0], corner_to_local.trans_vec[1]};
-  
-  /*fprintf(stderr, "Min {%.3f, %.3f} - Max {%.3f, %.3f}\n", 
-    min_xy[0], min_xy[1], max_xy[0], max_xy[1]);
-  */
-
-  //fprintf(stderr, "Creating Pixel Map\n");
-  distance_map = new PixelMap<float>(min_xy, max_xy, 0.5, false);//xy0, xy1, 0.5, false);
-  distance_map->data = new float[distance_map->num_cells];
-  memset(distance_map->data, 0, sizeof(float) * distance_map->num_cells);
-  
-
-  BotTrans local_to_cam = cam_to_local;
-  bot_trans_invert(&local_to_cam);
-  
-  BotTrans point_to_local;
-  point_to_local.trans_vec[2] = 0;
-  bot_roll_pitch_yaw_to_quat(rpy, point_to_local.rot_quat);
-  
-  BotTrans point_to_cam; 
-  int skip = 1;
-  // project image onto the ground plane
-  int map_count = 0;
-
-  for (int i = 0; i < self->img_nvertices; i+=skip) {
-    ImageVertex *v = &self->vertices[i];
-
-    bool road = mask.at<uint8_t>(v->ty, v->tx);
-    
-    if(!road)
-      continue;
-    //get the ray in local frame 
-    self->pixel_rays_local[i].x = v->vx;
-    self->pixel_rays_local[i].y = v->vy;
-    self->pixel_rays_local[i].z = v->vz;
-    double v_cam[3] = { v->vx, v->vy, v->vz };
-
-    uint8_t r = 0.0;
-    uint8_t g = 1.0;
-    uint8_t b = 0.0;
-
-    bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&self->pixel_rays_local[i]));
-    
-    //check where it hits the ground plane
-    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &self->pixel_rays_local[i], 0,
-					   &self->ground_projections_local[i])) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-      continue;
-    }
-
-    double dist_sq = geom_point_point_distance_squared_2d(&self->ground_projections_local[i],
-							  POINT2D(cam_to_local.trans_vec));
-    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-      continue;
-    }
-
-
-    point_to_local.trans_vec[0] = self->ground_projections_local[i].x;
-    point_to_local.trans_vec[1] = self->ground_projections_local[i].y;
-    
-    bot_trans_apply_trans_to(&local_to_cam, &point_to_local, &point_to_cam);
-    
-    //fprintf(stderr, "Dist : %f, %f - %f\n", point_to_cam.trans_vec[0], point_to_cam.trans_vec[1], hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1]));
-    
-    double dist_rat = fmin(1,hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1])/ 5.0);
-    float *color = bot_color_util_jet(dist_rat);
-    
-    double xy_c[2] = {self->ground_projections_local[i].x, self->ground_projections_local[i].y};
-    if(distance_map->isInMap(xy_c)){
-      distance_map->writeValue(xy_c, dist_rat);
-      //fprintf(stderr, "Value at %f,%f ",xy_c[0], xy_c[1]);
-      //fprintf(stderr, ":  %f\n", distance_map->readValue(xy_c));//dist_rat);
-      map_count++;
-    }
-    //self->ground_projections_local[i].x, self->ground_projections_local[i].y
-    if(i %8==0){
-      if(lcmgl){
-	bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
-	bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
-      }
-    }
-  }
-
-  const occ_map_pixel_map_t *map_msg = distance_map->get_pixel_map_t(utime);
-  occ_map_pixel_map_t_publish(self->lcm, "PIXEL_MAP", map_msg);    
-
-  fprintf(stderr, "Map Count : %d\n", map_count);
-  if(lcmgl){
-    bot_lcmgl_end(lcmgl);
-    bot_lcmgl_switch_buffer(lcmgl);
-  }  
-}
-
-void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl){
-  //we just need a new car frame - defined - with which the head is always tracked to 
-  BotTrans cam_to_local;
-  bot_frames_get_trans_with_utime(self->frames, self->coord_frame, bot_frames_get_root_name(self->frames),
-				  utime, &cam_to_local);
-
-  //We need a transform from the Cam to center of Vehicle - which is where we are trying to drive from 
-
-  bot_lcmgl_point_size(lcmgl, 3);
-  bot_lcmgl_begin(lcmgl, GL_POINTS);
-
-  BotTrans local_to_cam = cam_to_local;
-  bot_trans_invert(&local_to_cam);
-  
-  BotTrans point_to_local;
-  point_to_local.trans_vec[2] = 0;
-  double rpy[3] = {0};
-  bot_roll_pitch_yaw_to_quat(rpy, point_to_local.rot_quat);
-  
-  BotTrans point_to_cam; 
-  
-
-  // project image onto the ground plane
-  for (int i = 0; i < self->img_nvertices; i+=8) {
-    ImageVertex *v = &self->vertices[i];
-
-    bool road = mask.at<bool>(v->ty, v->tx);
-    if(!road)
-      continue;
-    //get the ray in local frame 
-    self->pixel_rays_local[i].x = v->vx;
-    self->pixel_rays_local[i].y = v->vy;
-    self->pixel_rays_local[i].z = v->vz;
-    double v_cam[3] = { v->vx, v->vy, v->vz };
-
-    
-    /*int index = v->tx + v->ty* (img->width);
-      uint8_t r = img->data[3 *index];
-      uint8_t g = img->data[3 *index+1];
-      uint8_t b = img->data[3 *index+2];*/
-    uint8_t r = 0.0;
-    uint8_t g = 1.0;
-    uint8_t b = 0.0;
-
-    bot_trans_rotate_vec(&cam_to_local, v_cam, point3d_as_array(&self->pixel_rays_local[i]));
-    
-    //check where it hits the ground plane
-    if (0 != geom_ray_z_plane_intersect_3d(POINT3D(cam_to_local.trans_vec), &self->pixel_rays_local[i], 0,
-					   &self->ground_projections_local[i])) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-      continue;
-    }
-
-    double dist_sq = geom_point_point_distance_squared_2d(&self->ground_projections_local[i],
-							  POINT2D(cam_to_local.trans_vec));
-    if (dist_sq > MAX_GROUND_PROJECTION_DISTANCE_SQ) {
-      self->ground_projections_local[i].x = NAN;
-      self->ground_projections_local[i].y = NAN;
-    }
-
-
-    point_to_local.trans_vec[0] = self->ground_projections_local[i].x;
-    point_to_local.trans_vec[1] = self->ground_projections_local[i].y;
-    
-    bot_trans_apply_trans_to(&local_to_cam, &point_to_local, &point_to_cam);
-    
-    //fprintf(stderr, "Dist : %f, %f - %f\n", point_to_cam.trans_vec[0], point_to_cam.trans_vec[1], hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1]));
-    
-    double dist_rat = fmin(1,hypot(point_to_cam.trans_vec[0], point_to_cam.trans_vec[1])/ 5.0);
-    float *color = bot_color_util_jet(dist_rat);
-
-    //self->ground_projections_local[i].x, self->ground_projections_local[i].y
-    
-
-    bot_lcmgl_color3f(lcmgl, color[0], color[1], color[2]);//r/255.0, g/255.0, b/255.0);
-    bot_lcmgl_vertex3f(lcmgl, self->ground_projections_local[i].x, self->ground_projections_local[i].y, 0);
-  }
-  bot_lcmgl_end(lcmgl);
-  bot_lcmgl_switch_buffer(lcmgl);
-  //done projecting 
-  //lets draw some stuff 
-  
 }
 
 void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_image_t * msg, void * user) {  
@@ -1366,13 +566,13 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
     setup_projection(state, msg->width, msg->height);
 
     //setup the vehicle mask 
-     cv::Size size(msg->width, msg->height);
-     state->vehicle_mask = cv::Mat::zeros(size, CV_8U);
-     const int vm_count = (int)state->vehicle_mask_points.size();
-     const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
-     cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
-     if(state->options.vDEBUG)
-       cv::imshow("Vehicle Mask", state->vehicle_mask);
+    cv::Size size(msg->width, msg->height);
+    state->vehicle_mask = cv::Mat::zeros(size, CV_8U);
+    const int vm_count = (int)state->vehicle_mask_points.size();
+    const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
+    cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
+    if(state->options.vDEBUG)
+      cv::imshow("Vehicle Mask", state->vehicle_mask);
   }  
 
   if (state->img.empty() || state->img.rows != msg->height || state->img.cols != msg->width) { 
