@@ -102,6 +102,8 @@ for f = {'right', 'left'}
 
 end
 
+biped.plot_step_clearance_lcm(foottraj, istep.left + istep.right)
+
 % create ZMP trajectory
 p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));
 zmp = [zmp,p(1:2)];
