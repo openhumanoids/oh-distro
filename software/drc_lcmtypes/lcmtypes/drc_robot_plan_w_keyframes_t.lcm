@@ -1,0 +1,16 @@
+package drc;
+
+struct robot_plan_w_keyframes_t
+{
+    int64_t utime;
+    string robot_name;    
+    int32_t num_keyframes;
+    int32_t num_states;
+    boolean is_keyframe[num_states];
+    robot_state_t plan[num_states]; //each individual state is also timed.
+    int32_t num_bytes;
+   	byte matlab_data[num_bytes];
+}
+
+
+
