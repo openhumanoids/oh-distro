@@ -664,6 +664,7 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
    
   if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
   {
@@ -678,6 +679,7 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
   
   }
   if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
   {    
     shared_ptr<Collision_Object> base_z_object_ptr(new Collision_Object_Box("markers::base_z", box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -699,6 +701,7 @@ void InteractableGlKinematicBody::init_floatingbase_marker_collision_objects()
 
   if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
   {
@@ -734,6 +737,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
       
   if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+    (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
   {      
@@ -747,6 +751,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     downcasted_object2->set_transform(p,q0);
   }  
   if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
+     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
   {     
     shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
@@ -774,6 +779,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   
   if ((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D)||
+      (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_HALF_D)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
   {          

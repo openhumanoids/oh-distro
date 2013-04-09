@@ -42,7 +42,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
   public:  
    enum _bodyadjust_type
    {
-     THREE_D=0, TWO_D, THREE_D_TRANS, THREE_D_ROT, TWO_D_TRANS, TWO_D_ROT
+     THREE_D=0, TWO_D, TWO_HALF_D,THREE_D_TRANS, THREE_D_ROT, TWO_D_TRANS, TWO_D_ROT
    } bodypose_adjustment_type; 
      
   private:  
