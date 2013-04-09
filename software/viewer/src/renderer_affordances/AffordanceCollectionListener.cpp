@@ -121,16 +121,20 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
   void AffordanceCollectionListener::handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
                                                              const  drc::affordance_plus_t* msg)
   {
-    // handle affordance
+    // handle affordance_t within affordance_plus_t message
     handleAffordanceMsg(rbuf,channel,&msg->aff);
-    
+
+    //////////////////////////
     // handle plus features
+
+    // retrieve otdf object associates with current message
     std::stringstream oss;
     oss << msg->aff.otdf_type << "_"<< msg->aff.uid;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
     if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
 
+      // find links of type DynamicMesh and copy points and triangles into it.
       std::vector<boost::shared_ptr<otdf::Link> > links;
       it->second._otdf_instance->getLinks(links);
       for(int i=0; i<links.size(); i++){
@@ -147,6 +151,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       }
       
     } else{
+      // object should always exist, so we should never get here
       cout << "*** ERROR handleAffordancePlusMsg: shouldn't get here\n";
     }
 
