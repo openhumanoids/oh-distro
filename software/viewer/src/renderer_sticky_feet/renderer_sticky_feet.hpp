@@ -310,6 +310,10 @@ namespace renderer_sticky_feet{
         double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
         T_world_object.p[1] = dy;
       }
+      else if((*self->marker_selection)=="markers::base_z"){
+        double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+        T_world_object.p[2] = dz;
+      }
       else if((*self->marker_selection)=="markers::base_yaw"){
         currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object.p[1],self->prev_ray_hit_drag[0]-T_world_object.p[0]);
         angleTo = atan2(self->ray_hit_drag[1]-T_world_object.p[1],self->ray_hit_drag[0]-T_world_object.p[0]);
