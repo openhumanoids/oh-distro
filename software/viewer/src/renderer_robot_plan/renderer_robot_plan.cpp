@@ -57,11 +57,12 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float alpha = 0.4;
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
  
-  if((self->use_colormap)&&(self->displayed_plan_index==-1)) {
+  if((self->use_colormap)&&(self->displayed_plan_index==-1)&&(!self->robotPlanListener->_is_manip_plan)) {
   // Each model Jet: blue to red
   float j = (float)i/ (self->robotPlanListener->_gl_robot_list.size() -1);
   jet_rgb(j,c);
   }
+  
   glColor4f(c[0],c[1],c[2], alpha);
   
   
@@ -70,6 +71,42 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   //if((*self->selection)!=" ")
   self->robotPlanListener->_gl_robot_list[i]->highlight_link((*self->selection));
   self->robotPlanListener->_gl_robot_list[i]->draw_body (c,alpha);  
+}
+
+
+static void 
+draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
+
+  float c_blue[3] = {0.3,0.3,0.6}; // light blue
+  float alpha = 0.7;
+  RendererRobotPlan *self = (RendererRobotPlan*) super->user;
+  float c[3];
+  if((self->use_colormap)) {
+    // Each model Jet: blue to red
+    float j = (float)i/ (self->robotPlanListener->_gl_robot_keyframe_list.size() -1);
+    jet_rgb(j,c);
+  }
+  else{
+   c[0] = c_blue[0];c[1] = c_blue[1];c[2] = c_blue[2];
+  }
+  glColor4f(c[0],c[1],c[2], alpha);
+  
+  //self->robotPlanListener->_gl_robot_keyframe_list[i]->enable_link_selection(self->selection_enabled);
+  
+	std::string selected_keyframe_name = " ";
+	//if(self->selected_keyframe_index!=-1)
+	if((*self->selection)  != " ")
+	 selected_keyframe_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
+  self->robotPlanListener->_gl_robot_keyframe_list[i]->highlight_body(selected_keyframe_name);
+  self->robotPlanListener->_gl_robot_keyframe_list[i]->draw_body(c,alpha);  
+  
+     
+ if ((self->robotPlanListener->is_in_motion(i))&&(self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())) 
+ {
+  self->robotPlanListener->_gl_left_hand->draw_body(c_blue,alpha);
+  self->robotPlanListener->_gl_right_hand->draw_body(c_blue,alpha);
+ } 
+  
 }
 
 static void 
@@ -104,20 +141,25 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   int plan_size =   self->robotPlanListener->_gl_robot_list.size();
   if (plan_size ==0) // nothing to renderer
     return;
-  
-  //glColor3f(c[0],c[1],c[2]);
+    
+    
+   // ALways show keyframes
+  if((self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
+  {
+    for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size(); i++) 
+    { 
+        draw_keyframe(viewer,super,i);
+    }
+  }      
   
   double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
   
   if (plan_part==1){
-    //printf("Show it all\n");
     for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
     { 
-     //cout << "i:"<<i<< endl;
       draw_state(viewer,super,i);
     }
-    self->displayed_plan_index = -1;
-    
+    self->displayed_plan_index = -1;    
   }else{
     uint w_plan = (uint) round(plan_part* (plan_size -1));
     //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
@@ -126,25 +168,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     draw_state(viewer,super,w_plan);
   }
 
+
+
+  
  if((self->plan_execution_dock==NULL))
       spawn_plan_execution_dock(self);
-//  else if((self->plan_execution_dock!=NULL))
-//  {
-//      // move dock to account for viewer movement
-//      gint root_x, root_y;
-//      gtk_window_get_position (GTK_WINDOW(self->viewer->window), &root_x, &root_y);
-//      gint width, height;
-//      gtk_window_get_size(GTK_WINDOW(self->viewer->window),&width,&height);
-//      
-//      
-//       gint pos_x, pos_y;
-//      pos_x=root_x+0.5*width;    pos_y=root_y+0.75*height;
-//      
-//     gint current_pos_x, current_pos_y;
-//     if((fabs(current_pos_x-pos_x)+fabs(current_pos_y-pos_y))>1)
-//          gtk_window_move(GTK_WINDOW(self->plan_execution_dock),pos_x,pos_y);
-//     
-//  }  
 
 }
 
@@ -224,47 +252,23 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
  
   self->ray_start = from;
   self->ray_end = to;
+  self->ray_hit_t = t;
+  self->ray_hit_drag = to;
+  self->ray_hit = to; 
+  
+  //
 
   Eigen::Vector3f hit_pt;
   collision::Collision_Object * intersected_object = NULL;
   double shortest_distance = -1;
   self->selected_plan_index= 0;
-
-  /*if(self->displayed_plan_index==-1)
-  {
-    for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-    { 
-     // if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
-     // {
-      // self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
-       self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-     // }
-      
-      if( intersected_object != NULL ){
-        Eigen::Vector3f diff = (from-hit_pt);
-        double distance = diff.norm();
-        if(shortest_distance>0) {
-          if (distance < shortest_distance)
-            shortest_distance = distance;
-            self->selected_plan_index=i;
-        }
-        else {
-          shortest_distance = distance;
-          self->selected_plan_index=i;
-         }
-        intersected_object = NULL; 
-      }
-      
-    }//end for  
+  
+  
+  if(self->robotPlanListener->_is_manip_plan)  {
+    shortest_distance = get_shortest_distance_between_keyframes_and_markers(self,from,to);
   }
-  else {*/
- if((self->displayed_plan_index!=-1)&&(self->robotPlanListener->_gl_robot_list.size()>0)) {
-    self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-    if( intersected_object != NULL ){
-        Eigen::Vector3f diff = (from-hit_pt);
-        shortest_distance = diff.norm();
-        self->selected_plan_index=self->displayed_plan_index;
-   }
+  else   {
+    shortest_distance = get_shortest_distance_from_a_plan_frame(self,from,to);
   }
 
   //std::cout  << "RobotStateRenderer distance " << -1.0 << std::endl;
@@ -282,19 +286,68 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
  // fprintf(stderr, "RobotPlanRenderer Ehandler Activated\n");
   self->clicked = 1;
   //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
-
   collision::Collision_Object * intersected_object = NULL;
-  //self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->num_collisions();
-  self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
-  if( intersected_object != NULL ){
-      std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
-      std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
-      (*self->selection)  = std::string(intersected_object->id().c_str());
-      self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
+   if((self->robotPlanListener->_is_manip_plan)&&(self->selected_keyframe_index!=-1)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
+   {
+   // cout << "keyframe: " << self->selected_keyframe_index << " " << self->robotPlanListener->_gl_robot_keyframe_list.size()<< endl;
+    self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object ); //sometimes this is segfaulting intermitenly
+    if( intersected_object != NULL ){
+        std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
+        std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
+        (*self->selection)  = std::string(intersected_object->id().c_str());
+        
+	      std::string body_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
+        self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->highlight_body(body_name);
+        //self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->highlight_link((*self->selection));
+     }
+
+   }
+   else{
+  
+    //self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->num_collisions();
+    self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
+    if( intersected_object != NULL ){
+        std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
+        std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
+        (*self->selection)  = std::string(intersected_object->id().c_str());
+        self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
+     }
    }
 
-  bot_viewer_request_redraw(self->viewer);
+  if((self->robotPlanListener->_is_manip_plan)&&(((*self->selection)  != " ") || ((*self->marker_selection)  != " "))&&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
+  {
+    cout << "DblClk: " << (*self->selection) << endl;
+    if((*self->marker_selection)  == " ")// dbl clk on keyframe then toogle
+    { 
+      bool toggle=true;
+      if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
+         toggle = !self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled();
+      }
+      self->robotPlanListener->set_in_motion_hands_state(self->selected_keyframe_index);
+      self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(toggle); 
+      self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(toggle);
+    } 
 
+        // On double click create/toggle  local copies of right and left sticky hand duplicates and spawn them with markers
+   return 1;// consumed if pop up comes up.    
+  }
+  else if(((*self->marker_selection)  != " "))
+  {
+    self->dragging = 1;
+    
+    KDL::Frame T_world_hand;
+    if(self->is_left_in_motion) {
+      T_world_hand = self->robotPlanListener->_gl_left_hand->_T_world_body; 
+    }
+    else {
+      T_world_hand = self->robotPlanListener->_gl_right_hand->_T_world_body; 
+    }
+    self->marker_offset_on_press << self->ray_hit[0]-T_world_hand.p[0],self->ray_hit[1]-T_world_hand.p[1],self->ray_hit[2]-T_world_hand.p[2]; 
+    std::cout << "RendererRobotPlan: Event is consumed" <<  std::endl;
+    return 1;// consumed
+  }
+
+  bot_viewer_request_redraw(self->viewer);
   return 0;
 }
 
@@ -309,12 +362,37 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     //fprintf(stderr, "Ehandler Not active\n");
     return 0;
   }
+  if (self->dragging) {
+    self->dragging = 0;
+    string channel = "MANIP_PLAN_CONSTRAINT";
+    publish_traj_opt_constraint(self,channel,self->selected_keyframe_index);
+  }
   if (ehandler->picking==1)
     ehandler->picking=0; //release picking(IMPORTANT)
   bot_viewer_request_redraw(self->viewer);
   return 0;
 }
 
+
+static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const double ray_start[3], const double ray_dir[3],   const GdkEventMotion *event)
+{
+  RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
+  
+  if((!self->dragging)||(ehandler->picking==0)){
+    return 0;
+  }
+  
+  if((*self->marker_selection)  != " "){
+    double t = self->ray_hit_t;
+    self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+    adjust_keyframe_on_marker_motion(self);
+    // cout << (*self->marker_selection) << ": mouse drag\n";
+  }
+  bot_viewer_request_redraw(self->viewer);
+  return 1;
+}
+
+// ------------------------END Event Handling-------------------------------------------
 
 static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel, 
                                const drc_utime_t *msg, void *user){
@@ -417,7 +495,10 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
   	self->use_colormap = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
     self->clicked = 0;	
+    self->dragging = 0;    
   	self->selection = new std::string(" ");
+    self->marker_selection = new std::string(" ");  	
+    self->is_left_in_motion =  true;
     self->visualize_bbox = false;
     
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
@@ -439,7 +520,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     ehandler->hover_query = NULL;
     ehandler->mouse_press = mouse_press;
     ehandler->mouse_release = mouse_release;
-    ehandler->mouse_motion = NULL;
+    ehandler->mouse_motion = mouse_motion;
     ehandler->user = self;
 
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);

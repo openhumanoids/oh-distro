@@ -9,6 +9,12 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     self->robotPlanListener->_gl_robot_list.clear();
+    if(self->robotPlanListener->_is_manip_plan){
+     self->robotPlanListener->_gl_robot_keyframe_list.clear();
+     self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(false); 
+     self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(false);
+     self->robotPlanListener->_is_manip_plan = false;
+    }
     gtk_widget_destroy(self->plan_execution_dock);
     self->plan_execution_dock= NULL;
     cout <<"Robot plan terminated" << endl;
