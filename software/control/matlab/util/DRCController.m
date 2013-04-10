@@ -113,7 +113,7 @@ classdef DRCController
       transition=false;
       
       for i=1:length(obj.transition_monitors)
-        d = obj.transition_monitors{i}.getNextMessage(10);
+        d = obj.transition_monitors{i}.getNextMessage(1);
         if ~isempty(d)
           if isempty(obj.transition_coders{i})
             data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors(i).newInstance(d)));
@@ -141,11 +141,15 @@ classdef DRCController
       
       t_offset = -1;
 %       disp_counter = 0;
+      lcm_check_tic = tic;
       while (1)
-        % check termination conditions and break if any are true        
-        [transition,data] = checkLCMTransitions(obj);
-        if transition 
-          break;
+        if (toc(lcm_check_tic) > 0.2) % check periodically
+          % check termination conditions and break if any are true        
+          [transition,data] = checkLCMTransitions(obj);
+          lcm_check_tic = tic;
+          if transition 
+            break;
+          end
         end
 
         input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
@@ -157,7 +161,7 @@ classdef DRCController
           if any(strcmp(fr.name,checked_frames))
             continue;
           end
-          [x,tsim] = getNextMessage(fr,100);
+          [x,tsim] = getNextMessage(fr,1);
           if (~isempty(x))
             if (t_offset == -1)
               if obj.absolute_time

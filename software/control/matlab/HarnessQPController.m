@@ -65,7 +65,6 @@ classdef HarnessQPController < MIMODrakeSystem
     
     q = x(1:nq); 
     qd = x(nq+(1:nq));
-    kinsol = doKinematics(r,q,true);
     
     [H,C,B] = manipulatorDynamics(r,q,qd);
     
@@ -76,7 +75,6 @@ classdef HarnessQPController < MIMODrakeSystem
     lb = [-1e3*ones(nq,1); r.umin]; 
     ub = [ 1e3*ones(nq,1); r.umax];
 
-    % constrained dynamics
     Aeq = H*Iqdd - B*Iu; 
     beq = -C;
 
