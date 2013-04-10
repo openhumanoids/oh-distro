@@ -100,6 +100,10 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/atlas_control_qual_1.world";
         host = "paladin-02";
     }
+    cmd "qual_walking_slow_unpaused" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/atlas_control_qual_1.world gzname:=run_gazebo_unpaused";
+        host = "paladin-02";
+    }
     cmd "qual_climbing" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
         host = "paladin-02";
@@ -152,15 +156,15 @@ group "3.perception"{
 group "4.drake_robot" {
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
-        host = "localhost";
+        host = "paladin-02";
     }
     cmd "ZMPWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
-        host = "localhost";
+        host = "paladin-02";
     }
     cmd "StateMachine" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
-        host = "localhost";
+        host = "paladin-02";
     }
 }
 
@@ -295,11 +299,23 @@ group "robot.dev_tools" {
     }
 }
 
-script "startup simulation" {
-    start group "core";
-    start group "drake";
-    wait ms 1000;
-    start group "gazebo";
-    wait ms 5000;
-    start group "sensing";
+group "utils.system-test" {
+    cmd "systemwide-test" {
+        exec = "drc-systemwide-tests";
+        host = "paladin-02";
+    }
+}
+
+
+script "systemtest" {
+    start cmd "systemwide-test";
+    wait ms 100;
+    start group "0.dev_deputies";
+    wait ms 100;
+    start group "1.a.core";
+    wait ms 100;
+    start group "1.b.sensing";
+    start group "4.drake_robot";
+    wait ms 10000;
+    start cmd "qual_walking_slow_unpaused";
 }
