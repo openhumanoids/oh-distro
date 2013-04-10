@@ -81,7 +81,7 @@ group "2.gazebo" {
         host = "paladin-02";
     }
     cmd "qual_manipulation" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "paladin-02";
     }
     cmd "qual_climbing" {
