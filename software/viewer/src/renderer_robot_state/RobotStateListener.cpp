@@ -67,13 +67,15 @@ namespace renderer_robot_state
     }
     
     // Render at 100Hz of Sim Time. Too much rendering will make the viewer less reponsive.
-    //cout << msg->utime-_last_state_msg_timestamp << endl;
-    if(msg->utime-_last_state_msg_timestamp>10000)  // timestamps are in usec
+    //cout << msg->utime - _last_state_msg_timestamp << endl;
+    if(msg->utime-_last_state_msg_timestamp >= 10000)  // timestamps are in usec
     {
+    //cout << msg->utime - _last_state_msg_timestamp << endl;
     _gl_robot->set_state(*msg);
     bot_viewer_request_redraw(_viewer);
+     _last_state_msg_timestamp = msg->utime;
     }
-    _last_state_msg_timestamp = msg->utime;
+   
 
     //int64_t toc = bot_timestamp_now();
     //cout << bot_timestamp_useconds(toc-tic) << endl;
