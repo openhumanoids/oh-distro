@@ -214,7 +214,7 @@
       <!-- stepping stones -->
 <!--      <pose>16.8 8.0 1.93 0 0 0</pose>-->
       <!-- starting gate --> 
-      <pose>0 0 1.93 0 0 0</pose> 
+-     <pose>0 0 1.93 0 0 0</pose> 
       <!-- corridor -->
 <!--      <pose>10 0 1.93 0 0 1.57</pose>-->-->
 
