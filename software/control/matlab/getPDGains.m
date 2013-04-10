@@ -79,6 +79,112 @@ elseif strcmpi(mode,'pinned')
   Kd.back_mby = 300.0; %
   Kd.back_ubx = 250.0; %
   
+elseif strcmpi(mode,'pinned2')
+    
+  Kp.l_arm_usy = 400.0; 
+  Kp.l_arm_shx = 2000.0; 
+  Kp.l_arm_ely = 200.0; 
+  Kp.l_arm_elx = 400.0; 
+  Kp.l_arm_uwy = 15.0; 
+  Kp.l_arm_mwx = 300.0; 
+  Kp.l_leg_uhz = 100.0; 
+  Kp.l_leg_mhx = 250.0; 
+  Kp.l_leg_lhy = 500.0; 
+  Kp.l_leg_kny = 120.0; 
+  Kp.l_leg_uay = 15.0;
+  Kp.l_leg_lax = 15.0;
+  Kp.neck_ay = 100.0; 
+  Kp.back_lbz = 5000.0;  
+  Kp.back_mby = 3000.0; 
+  Kp.back_ubx = 6000.0; 
+
+  Kd.l_arm_usy = 70.0; 
+  Kd.l_arm_shx = 70.0; 
+  Kd.l_arm_ely = 5.0; 
+  Kd.l_arm_elx = 15.0; 
+  Kd.l_arm_uwy = 6.0; 
+  Kd.l_arm_mwx = 15.0; 
+  Kd.l_leg_uhz = 30.0; 
+  Kd.l_leg_mhx = 50.0; 
+  Kd.l_leg_lhy = 25.0; 
+  Kd.l_leg_kny = 5; 
+  Kd.l_leg_uay = 2;
+  Kd.l_leg_lax = 2;
+  Kd.neck_ay = 5.0; 
+  Kd.back_lbz = 45.0; 
+  Kd.back_mby = 45.0; 
+  Kd.back_ubx = 45.0;   
+    
+elseif strcmpi(mode,'pinned-cecilia');
+
+  Kp.l_arm_usy = 2000.0; 
+  Kp.l_arm_shx = 800.0; 
+  Kp.l_arm_ely = 200.0; 
+  Kp.l_arm_elx = 200.0; 
+  Kp.l_arm_uwy = 50.0; 
+  Kp.l_arm_mwx = 200.0; 
+  Kp.l_leg_uhz = 5.0; 
+  Kp.l_leg_mhx = 100.0; 
+  Kp.l_leg_lhy = 2000.0; 
+  Kp.l_leg_kny = 1000.0; 
+  Kp.l_leg_uay = 900.0;
+  Kp.l_leg_lax = 300.0;
+  Kp.neck_ay = 20.0; 
+  Kp.back_lbz = 20.0;  
+  Kp.back_mby = 4000.0; 
+  Kp.back_ubx = 2000.0; 
+
+  Kd.l_arm_usy = 180.0; 
+  Kd.l_arm_shx = 100.0; 
+  Kd.l_arm_ely = 4.0; 
+  Kd.l_arm_elx = 25.0; 
+  Kd.l_arm_uwy = 8.0; 
+  Kd.l_arm_mwx = 22.0; 
+  Kd.l_leg_uhz = 0.01; 
+  Kd.l_leg_mhx = 1.0; 
+  Kd.l_leg_lhy = 10.0; 
+  Kd.l_leg_kny = 10.0; 
+  Kd.l_leg_uay = 8.0;
+  Kd.l_leg_lax = 2.0;
+  Kd.neck_ay = 1.0; 
+  Kd.back_lbz = 0.1; 
+  Kd.back_mby = 2.0; 
+  Kd.back_ubx = 1.0;    
+
+%   Kp.l_arm_usy = 100.0;  
+%   Kp.l_arm_shx = 100.0;  
+%   Kp.l_arm_ely = 100.0;   
+%   Kp.l_arm_elx = 100.0;   
+%   Kp.l_arm_uwy = 100.0;  
+%   Kp.l_arm_mwx = 100.0; 
+%   Kp.l_leg_uhz = 100.0;  
+%   Kp.l_leg_mhx = 100.0;  
+%   Kp.l_leg_lhy = 100.0;   
+%   Kp.l_leg_kny = 100.0;  
+%   Kp.l_leg_uay = 100.0;  
+%   Kp.l_leg_lax = 100.0;  
+%   Kp.neck_ay = 100.0; 
+%   Kp.back_lbz = 100.0;  
+%   Kp.back_mby = 100.0;  
+%   Kp.back_ubx = 100.0;  
+% 
+%   Kd.l_arm_usy = 10.0; 
+%   Kd.l_arm_shx = 10.0; 
+%   Kd.l_arm_ely = 10.0;  
+%   Kd.l_arm_elx = 10.0; 
+%   Kd.l_arm_uwy = 10.0; 
+%   Kd.l_arm_mwx = 10.0; 
+%   Kd.l_leg_uhz = 10.0; 
+%   Kd.l_leg_mhx = 10.0;  
+%   Kd.l_leg_lhy = 10.0;  
+%   Kd.l_leg_kny = 10.0; 
+%   Kd.l_leg_uay = 10.0; 
+%   Kd.l_leg_lax = 10.0; 
+%   Kd.neck_ay = 10.0; 
+%   Kd.back_lbz = 10.0; 
+%   Kd.back_mby = 10.0;  
+%   Kd.back_ubx = 10.0; 
+  
 elseif strcmpi(mode,'stance_leg')
   Kp.l_arm_usy = 625.0; %%%%%
   Kp.l_arm_shx = 3000.0; %%%%%

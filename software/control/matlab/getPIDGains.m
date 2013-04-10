@@ -132,6 +132,23 @@ elseif strcmpi(mode,'pinned')
   Kd.back_lbz = 45.0; 
   Kd.back_mby = 45.0; 
   Kd.back_ubx = 45.0; 
+  
+  Ki.l_arm_usy = 0.1; 
+  Ki.l_arm_shx = 0.1; 
+  Ki.l_arm_ely = 0.1; 
+  Ki.l_arm_elx = 0.2; 
+  Ki.l_arm_uwy = 0.2; 
+  Ki.l_arm_mwx = 0.1; 
+  Ki.l_leg_uhz = 0.1; 
+  Ki.l_leg_mhx = 0.1; 
+  Ki.l_leg_lhy = 0.1; 
+  Ki.l_leg_kny = 0.1; 
+  Ki.l_leg_uay = 0.1;
+  Ki.l_leg_lax = 0.1;
+  Ki.neck_ay = 0.1;
+  Ki.back_lbz = 0.0;  
+  Ki.back_mby = 0.0; 
+  Ki.back_ubx = 0.0; 
 
 elseif strcmpi(mode,'pinnedtuned');
 
@@ -148,9 +165,9 @@ elseif strcmpi(mode,'pinnedtuned');
   Kp.l_leg_uay = 900.0;
   Kp.l_leg_lax = 300.0;
   Kp.neck_ay = 20.0; 
-  Kp.back_lbz = 800.0;  
+  Kp.back_lbz = 5000.0;  
   Kp.back_mby = 3000.0; 
-  Kp.back_ubx = 5000.0; 
+  Kp.back_ubx = 6000.0; 
 
   Kd.l_arm_usy = 180.0; 
   Kd.l_arm_shx = 90.0; 
@@ -165,9 +182,12 @@ elseif strcmpi(mode,'pinnedtuned');
   Kd.l_leg_uay = 8.0;
   Kd.l_leg_lax = 2.0;
   Kd.neck_ay = 1.0; 
-  Kd.back_lbz = 100.0; 
-  Kd.back_mby = 400.0; 
-  Kd.back_ubx = 250.0; 
+%   Kd.back_lbz = 100.0; 
+%   Kd.back_mby = 400.0; 
+%   Kd.back_ubx = 250.0; 
+  Kd.back_lbz = 45.0; 
+  Kd.back_mby = 45.0; 
+  Kd.back_ubx = 45.0;   
   
   Ki.l_arm_usy = 0.1; 
   Ki.l_arm_shx = 0.1; 
@@ -182,9 +202,12 @@ elseif strcmpi(mode,'pinnedtuned');
   Ki.l_leg_uay = 0.1;
   Ki.l_leg_lax = 0.1;
   Ki.neck_ay = 0.1; 
-  Ki.back_lbz = 0.01;  
-  Ki.back_mby = 10.0; 
-  Ki.back_ubx = 0.01; 
+%   Ki.back_lbz = 0.01;  
+%   Ki.back_mby = 10.0; 
+%   Ki.back_ubx = 0.01; 
+  Ki.back_lbz = 0.0;  
+  Ki.back_mby = 0.0; 
+  Ki.back_ubx = 0.0; 
  
 elseif strcmpi(mode,'stance_leg')
   Kp.l_arm_usy = 625.0; %%%%%

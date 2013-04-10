@@ -7,7 +7,7 @@ classdef PinnedAtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       input_names = r.getInputFrame().coordinates;
       input_names = regexprep(input_names,'_motor',''); % remove motor suffix     
       
-      [Kp,Kd,Ki] = getPIDGains(r,'pinnedtuned');
+      [Kp,Kd,Ki] = getPIDGains(r,'pinned2');
 %       [Kp,Kd] = getPDGains(r,'gazebo');
       
       coder = JointCommandCoderWIntegralGains('atlas',input_names,diag(Kp),diag(Kd),diag(Ki));
