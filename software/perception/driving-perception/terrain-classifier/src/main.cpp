@@ -207,7 +207,19 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   }
 
   //we might need another filtering part for the yellow road lines
-  cv::Mat1b mask = (self->vehicle_mask == 0 & val <= 255 * 0.05 & sat > 255* 0.1 & sat < 255 * 0.4);
+  cv::Mat1b mask = (self->vehicle_mask == 0 
+		    & ((val <= 255 * 0.05 & sat > 255* 0.1 & sat < 255 * 0.4)) 
+		    //(hue  35 & hue < 50))
+		    );
+
+  //this is a simple hsv filter to detect road paint - sometimes gets the top of the traffic cone - but i dont think its a problem 
+  /*cv::Mat1b road_lines = (self->vehicle_mask == 0 
+			  & (hue <30 & hue > 15));
+  */
+			  // & val > 80); // & sat > 225 & val < 180 & val > 130));
+			  //& (hue > 35 & hue < 50  & val > 200)
+			    
+  //cv::imshow("Road Paint", road_lines);
 
   //the dilation is need for the contour to work - otherwise it will pick only a part of the road sometimes 
   cv::Mat1b mask_dil;
@@ -222,6 +234,43 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     fprintf(stderr, "Error : Failed to find large contour\n");
     return -3;
   }
+
+  //detect obstacles 
+  cv::Mat1b mask_dil_small;
+  dilate_mask(mask, mask_dil_small, 2);
+
+  cv::Mat road_paint = (mask_dil_small == 0 & filled_contour >0 & (hue <30 & hue > 15));
+  
+  //do another diff - between things that are not road in the small dil but are in the small dil but also not road paint
+  //cv::Mat obstacles = (mask_dil_small == 0 & filled_contour >0 & road_paint ==0);
+
+  cv::imshow("Road Paint " , road_paint);
+  //cv::imshow("Obstacles " , obstacles);
+
+  /*for(int i= mask.cols/2.0; i< mask.cols; i++){
+    for(int j= (mask.rows / 2.0); j < mask.rows; j++){
+      if(diff.at<uint8_t>(j,i) >0)
+	fprintf(stderr, "HUE : %d Sat : %d Val : %d\n", hue.at<uint8_t>(j,i),
+		sat.at<uint8_t>(j,i), 
+		val.at<uint8_t>(j,i));
+    }
+    }*/
+    
+
+  /*cv::Mat1b mask_dil_large;
+  dilate_mask(mask, mask_dil_large, 15);
+  
+  cv::imshow("Small Dil", mask_dil_small);
+  
+  cv::Mat filled_contour_large;
+  vector<cv::Point> largest_contour_l;
+  int status1 = find_contours(mask_dil_large, filled_contour_large, largest_contour_l);
+
+  cv::imshow("Large Dil Contour", filled_contour_large);
+
+  cv::Mat obstacles = (filled_contour_large > 0 & mask_dil_small ==0);
+  cv::imshow("Obstacles" , obstacles);
+  */
 
   if(!filled_contour.empty()){
     //we can prob not do this also 
@@ -530,7 +579,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, vector
     cv::imshow("Road Distance Transform", dist_color);
   }
     
-
   for(int i=0; i < dist.cols; i++){
     for(int j=0; j < dist.rows; j++){
       float d = dist.at<float>(j,i);
