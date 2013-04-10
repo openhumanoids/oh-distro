@@ -72,36 +72,16 @@ group "1.b.sensing" {
 }
 
 group "2.gazebo" {
-    cmd "mit_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
-        host = "paladin-02";
-    }
-    cmd "mit_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
-        host = "paladin-02";
-    }
-    cmd "mit_walking_bdi" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
-        host = "paladin-02";
-    }
-    cmd "mit_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
-        host = "paladin-02";
-    }
-    cmd "qual_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_2.world";
-        host = "paladin-02";
-    }
-    cmd "qual_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_1.world";
-        host = "paladin-02";
-    }
     cmd "qual_walking_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/atlas_control_qual_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "paladin-02";
     }
     cmd "qual_walking_slow_unpaused" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/atlas_control_qual_1.world gzname:=run_gazebo_unpaused";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world gzname:=run_gazebo_unpaused";
+        host = "paladin-02";
+    }
+    cmd "qual_manipulation" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "paladin-02";
     }
     cmd "qual_climbing" {
