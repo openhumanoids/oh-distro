@@ -1,0 +1,14 @@
+package drc;
+
+struct controller_status_t
+{
+  int64_t utime;
+
+  int8_t state;
+
+  const int8_t UNKNOWN      = 0;
+  const int8_t STANDING     = 1;
+  const int8_t WALKING      = 2;
+  const int8_t HARNESSED    = 3;
+}
+

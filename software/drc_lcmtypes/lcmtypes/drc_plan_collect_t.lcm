@@ -1,6 +1,5 @@
 package drc;
 
-// status of the robot system
 struct plan_collect_t
 {
   int64_t utime;
