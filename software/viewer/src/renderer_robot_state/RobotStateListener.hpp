@@ -48,7 +48,7 @@ namespace renderer_robot_state
     
   public:  
     bool _urdf_subscription_on;
-
+    int64_t _last_state_msg_timestamp; 
    
     //----------------constructor/destructor
   public:

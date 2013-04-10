@@ -18,6 +18,7 @@ namespace renderer_robot_state
     _lcm(lcm),
     _viewer(viewer)
   {
+   _last_state_msg_timestamp = 0;
    _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     if(!lcm->good())
@@ -64,9 +65,15 @@ namespace renderer_robot_state
       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
       _urdf_subscription_on =  false; 	
     }
-
+    
+    // Render at 100Hz of Sim Time. Too much rendering will make the viewer less reponsive.
+    //cout << msg->utime-_last_state_msg_timestamp << endl;
+    if(msg->utime-_last_state_msg_timestamp>10000)  // timestamps are in usec
+    {
     _gl_robot->set_state(*msg);
     bot_viewer_request_redraw(_viewer);
+    }
+    _last_state_msg_timestamp = msg->utime;
 
     //int64_t toc = bot_timestamp_now();
     //cout << bot_timestamp_useconds(toc-tic) << endl;
