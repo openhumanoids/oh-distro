@@ -18,6 +18,7 @@ classdef DRCController
     transition_coders; % lcm coders for transition events
     transition_monitors; % message monitors for transition events
     transition_targets; % list of names of controllers to transition to
+    transition_channels; 
     
     constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     t_final = inf; % controller time limit
@@ -102,6 +103,7 @@ classdef DRCController
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe(channel,mon);
       
+      obj.transition_channels{n} = channel;
       obj.transition_monitors{n} = mon;
       obj.transition_targets{n} = transition_to_controller;
     end
@@ -114,9 +116,9 @@ classdef DRCController
         d = obj.transition_monitors{i}.getNextMessage(10);
         if ~isempty(d)
           if isempty(obj.transition_coders{i})
-            data = setfield(data,obj.transition_targets{i},obj.constructors(i).newInstance(d));
+            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors(i).newInstance(d)));
           else
-            data = setfield(data,obj.transition_targets{i},obj.coders{i}.decode(d));
+            data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.coders{i}.decode(d)));
           end
           transition = true;
         end
@@ -195,7 +197,7 @@ classdef DRCController
         if any(tt >= obj.t_final)
           % on timeout events, we pass back the latest input data
           input_data = struct();
-          if ~strcmp(obj.name,'harnessed') % TMP HACK
+          if ~strcmp(obj.name,'harnessed') % TMP HACK, to be replaced when precompute matlab instance is implemented
             if obj.n_input_frames > 1
               for i=1:obj.n_input_frames
                 input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});

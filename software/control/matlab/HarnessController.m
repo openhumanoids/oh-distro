@@ -5,7 +5,7 @@ classdef HarnessController < DRCController
   end  
     
   methods
-    function obj = HarnessController(name,r)
+    function obj = HarnessController(name,r,timeout)
       typecheck(r,'Atlas');
 
       ctrl_data = SharedDataHandle(struct('qtraj',[],'ti_flag',true));
@@ -16,8 +16,8 @@ classdef HarnessController < DRCController
       qp = HarnessQPController(r,options);
 
       % cascade PD controller 
-      options.Kp=diag([zeros(6,1);100*ones(getNumDOF(r)-6,1)]);
-      options.Kd=0.2*options.Kp;
+      options.Kp=diag(500*ones(getNumDOF(r),1));
+      options.Kd=0.1*options.Kp;
       pd = SimplePDController(r,ctrl_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -32,20 +32,35 @@ classdef HarnessController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
 
-      % controller timeout must match the harness time set in VRCPlugin.cpp
-      obj = setTimedTransition(obj,5,'standing',true); 
+      if nargin < 3
+        % controller timeout must match the harness time set in VRCPlugin.cpp
+        obj = setTimedTransition(obj,5,'standing',true);
+      else
+        obj = setTimedTransition(obj,timeout,'standing',true);
+      end
+      
+      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name);
+
     end
     
     function obj = initialize(obj,msg_data)
-      r = obj.robot;
-      nq = getNumDOF(r);
       
-      % use saved nominal pose --- could make this more general
-      d = load('data/atlas_fp.mat');
-      xstar = d.xstar;
+      if isfield(msg_data,'COMMITTED_ROBOT_PLAN')
+        % pinned reaching plan
+        msg = getfield(msg_data,'COMMITTED_ROBOT_PLAN');
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true);        
+        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+
+        obj.controller_data.setField('ti_flag',false);
+        obj = setDuration(obj,inf,false); % set the controller timeout
+      else
+        % use saved nominal pose
+        d = load('data/atlas_fp.mat');
+        qtraj = d.xstar(1:getNumDOF(obj.robot));
+        obj.controller_data.setField('ti_flag',true);
+      end
       
-      q0 = xstar(1:nq);
-      obj.controller_data.setField('qtraj',q0);
+      obj.controller_data.setField('qtraj',qtraj);
   
     end
   end  
