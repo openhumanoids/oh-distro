@@ -43,11 +43,11 @@ classdef HarnessController < DRCController
 
     end
     
-    function obj = initialize(obj,msg_data)
+    function obj = initialize(obj,data)
       
-      if isfield(msg_data,'COMMITTED_ROBOT_PLAN')
+      if isfield(data,'COMMITTED_ROBOT_PLAN')
         % pinned reaching plan
-        msg = getfield(msg_data,'COMMITTED_ROBOT_PLAN');
+        msg = getfield(data,'COMMITTED_ROBOT_PLAN');
         [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true);        
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 

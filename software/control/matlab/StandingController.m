@@ -18,8 +18,6 @@ classdef StandingController < DRCController
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-%       Kp=diag([0;0;200;200;200;0;200*ones(getNumDOF(r)-6,1)]);
-%       Kd=0.1*Kp;
       pd = SimplePDController(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -66,17 +64,14 @@ classdef StandingController < DRCController
       
     end
     
-    function obj = initialize(obj,msg_data)
+    function obj = initialize(obj,data)
 
       % for now, use saved nominal pose, just update floating base
       % take in new nominal pose and compute standing controller
-      if isfield(msg_data,'AtlasState')
+      if isfield(data,'AtlasState')
         r = obj.robot;
 
-        %d = load('data/atlas_fp.mat');
-        %x0 = d.xstar;
-        %x0([1;2;6]) = msg_data.AtlasState([1;2;6]);
-        x0 = msg_data.AtlasState;
+        x0 = data.AtlasState;
         q0 = x0(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
         com = getCOM(r,kinsol);

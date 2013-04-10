@@ -30,8 +30,9 @@ classdef WalkingController < DRCController
       
    end
     
-    function obj = initialize(obj,msg_data)
+    function obj = initialize(obj,data)
             
+      msg_data = getfield(data,'COMMITTED_WALKING_PLAN');
       % do we have to save to file to convert a byte stream to a
       % matlab binary?
       fid = fopen('tmp_w.mat','w');

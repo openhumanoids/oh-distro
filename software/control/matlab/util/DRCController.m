@@ -27,9 +27,9 @@ classdef DRCController
   end
 
   methods (Abstract)
-    initialize(obj,msg_data) % controllers need to implement this
-    %  in the event of a lcm transition, msg_data contains the decoded lcm 
-    %  message data.
+    initialize(obj,data) % controllers need to implement this
+    %  in the event of a lcm transition, data contains a struct that maps channel names to the 
+    %  decoded lcm message data. for timed transitions, it maps input frame names to the latest data
   end
 
   methods
