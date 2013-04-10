@@ -78,11 +78,7 @@ public:
   int64_t img_utime;
 };
 
-//void create_pixelmap(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, PixelMap<float>* distance_map, bot_lcmgl_t *lcmgl=NULL);
-
 void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, const vector< vector<cv::Point> > & obstacles, vector<cv::Point>contour, bot_lcmgl_t *lcmgl = NULL);
-
-//void project_to_ground(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat1b& mask, bot_lcmgl_t *lcmgl);
 
 void dilate_mask(cv::Mat1b& mask, cv::Mat1b& mask_new, int offset=OFFSET_LARGE){
 
@@ -161,14 +157,17 @@ int find_contours(cv::Mat1b& _mask, cv::Mat1b& filled_contour, vector<cv::Point>
   }  
 }
 
-void find_all_contours(cv::Mat1b& mask, vector<vector<cv::Point> >& contours){
+//for this get all the contour points - otherwise it will miss some obstacles
+void find_all_contours(cv::Mat1b& _mask, vector<vector<cv::Point> >& contours){
+  cv::Mat1b mask = _mask.clone();
   // find contours and store them all as a list
-  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 }
 
-void find_all_contours(cv::Mat& mask, vector<vector<cv::Point> >& contours){
+void find_all_contours(cv::Mat& _mask, vector<vector<cv::Point> >& contours){
+  cv::Mat1b mask = _mask.clone();
   // find contours and store them all as a list
-  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 }
 
 //Routine that does the road detection//
@@ -255,14 +254,12 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   cv::Mat1b road_paint_dil;
   dilate_mask(road_paint, road_paint_dil, 2);
 
-
+  cv::imshow("Road Paint (Small Dilation)" , road_paint_dil);
   //maybe dilate the road paint a bit 
 
   cv::Mat1b road_and_paint = (mask_dil_small | road_paint_dil);
-  cv::Mat1b not_road_and_paint = (mask_dil_small == 0 & road_paint_dil == 0);
   
   cv::imshow("Road with Paint", road_and_paint);
-  cv::imshow("Not Road with Paint", not_road_and_paint);
 
   //get the contour points and the contour 
   cv::Mat1b filled_contour;
@@ -271,69 +268,25 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   status = find_contours(road_and_paint_c, filled_contour, largest_contour);
 
   //contour blurs the obstacles (sometimes) - depends on the position
-  //we will have to add them seperately 
-  //cv::Mat1b obstacles = (not_road_and_paint >0);// & filled_contour == 255);
+  //we will have to add the ones we missed - due to the contour 
   cv::Size size(mask.cols, mask.rows);
-  /*cv::Mat obstacles = cv::Mat::zeros(size, CV_8U);
-  for(int i=0; i < not_road_and_paint.cols; i++){
-    for(int j=0; j < not_road_and_paint.rows; j++){
-      if(not_road_and_paint.at<uint8_t>(j,i) >0 && filled_contour.at<uint8_t>(j,i) >0){
-	obstacles.at<uint8_t>(j,i) = 255;
-      }
-    }
-    }*/
-  
-  cv::Mat1b obs = (not_road_and_paint >0 & filled_contour == 255);
 
+  cv::Mat1b obstacles = (road_and_paint == 0 & filled_contour == 255);
 
-  cv::Mat1b obstacles = obs.clone();
   //get the contours for the obstacles - we will just pass that in to the function
   vector< vector<cv::Point> > obs_contours;
   //find contours seems to mess with the data in obstacles 
   find_all_contours(obstacles, obs_contours);
+
   cv::imshow("Obstacles", obstacles);
-  cv::imshow("Obstacles Original", obs);
   
-  
-  //do another diff - between things that are not road in the small dil but are in the small dil but also not road paint
-  //cv::Mat obstacles = (mask_dil_small == 0 & filled_contour >0 & road_paint ==0);
-
-  cv::imshow("Road Paint " , road_paint);
-  //cv::imshow("Obstacles " , obstacles);
-
-  /*for(int i= mask.cols/2.0; i< mask.cols; i++){
-    for(int j= (mask.rows / 2.0); j < mask.rows; j++){
-      if(diff.at<uint8_t>(j,i) >0)
-	fprintf(stderr, "HUE : %d Sat : %d Val : %d\n", hue.at<uint8_t>(j,i),
-		sat.at<uint8_t>(j,i), 
-		val.at<uint8_t>(j,i));
-    }
-    }*/
-    
-
-  /*cv::Mat1b mask_dil_large;
-  dilate_mask(mask, mask_dil_large, 15);
-  
-  cv::imshow("Small Dil", mask_dil_small);
-  
-  cv::Mat filled_contour_large;
-  vector<cv::Point> largest_contour_l;
-  int status1 = find_contours(mask_dil_large, filled_contour_large, largest_contour_l);
-
-  cv::imshow("Large Dil Contour", filled_contour_large);
-
-  cv::Mat obstacles = (filled_contour_large > 0 & mask_dil_small ==0);
-  cv::imshow("Obstacles" , obstacles);
-  */
-
   if(!filled_contour.empty()){
     //we can prob not do this also 
     cv::imshow("Contour Fill", filled_contour.clone());
     cv::Mat1b mask_filled = (filled_contour > 0);            
     
     //the road outine in the image space is projected to ground plane and then used to calculate 
-    //a distance map - from road edges - and published for use by the controller 
-
+    //a distance map - from road edges - and published for use by the controller
     create_contour_pixelmap(self, utime, mask_filled, obs_contours, largest_contour, self->lcmgl);
     //delete contour_map->data;
     //contour_map->data = NULL;
@@ -591,11 +544,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, const 
   for(size_t i=0; i < obstacles.size(); i++){
     vector<cv::Point> obs = obstacles[i];
     
-    /*if(obs.size() < 10){
-      fprintf(stderr, "Small Obstacle - skipping - check if this is what we should do\n");
-      continue;
-      }*/
-
     vector<cv::Point> tf_obs_points; 
     for(size_t j=0; j < obs.size(); j++){
       
@@ -644,6 +592,11 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, const 
       if(distance_map->isInMap(xy)){
 	distance_map->worldToTable(xy, ixy);
 	tf_obs_points.push_back(cv::Point(ixy[0], ixy[1]));
+
+	if(lcmgl){
+	  bot_lcmgl_color3f(lcmgl, 1.0, 0, 0);
+	  bot_lcmgl_vertex3f(lcmgl, ground_projections_local.x, ground_projections_local.y, 0);
+	}
       }
     }
     if(tf_obs_points.size() > 0){
