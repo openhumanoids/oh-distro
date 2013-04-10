@@ -2,6 +2,7 @@ classdef FootstepPlanner < DRCPlanner
   properties
     biped
     monitors
+    hmap_ptr
   end
   
   methods
@@ -18,6 +19,8 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
+      % obj.hmap_ptr = mapAPIwrapper();
+      % mapAPIwrapper(obj.hmap_ptr);
     end
     
     function X = plan(obj,data)
@@ -75,7 +78,8 @@ classdef FootstepPlanner < DRCPlanner
           [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
         else
           for j = 1:size(X, 2)
-            X(j).pos(3) = heightfun(X(j).pos(1:2));
+            X(j).pos = heightfun(X(j).pos);
+            % X(j).pos(3) = heightfun(X(j).pos(1:2));
           end
         end
 
@@ -92,19 +96,22 @@ classdef FootstepPlanner < DRCPlanner
           for j = 1:length(X)
             Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
           end
-          publish(Xout, @heightfun);
+          publish(Xout);
           last_publish_time = now();
         end
       end
 
 
-      function publish(X, htfun)
-        obj.biped.publish_footstep_plan(X, htfun, data.utime, isnew);
+      function publish(X)
+        obj.biped.publish_footstep_plan(X, data.utime, isnew);
         isnew = false;
       end
 
-      function h = heightfun(xy)
-        h = zeros(1, length(xy(1,:)));
+      function ground_pos = heightfun(pos)
+        % [closest_terrain_pos, normal] = mapAPIwrapper(obj.hmap_ptr, X
+        h = zeros(1, length(pos(1,:)));
+        ground_pos = pos;
+        ground_pos(3,:) = h;
       end
     end
   end

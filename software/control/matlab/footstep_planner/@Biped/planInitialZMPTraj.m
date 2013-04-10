@@ -99,10 +99,9 @@ for f = {'right', 'left'}
   footpos.(foot).orig = [footpos.(foot).orig footpos.(foot).orig(:,end)];
   foottraj.(foot).orig = PPTrajectory(foh(ts, footpos.(foot).orig));
   footsupport.(foot) = [footsupport.(foot) 1];
-
 end
 
-biped.plot_step_clearance_lcm(foottraj, istep.left + istep.right)
+biped.plot_step_clearance_lcm(footpos);
 
 % create ZMP trajectory
 p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));
@@ -123,3 +122,5 @@ end
 plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',1,true);
 
 end
+
+

@@ -148,23 +148,13 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       id = counter;
     end
 
-    function publish_footstep_plan(obj, X, htfun, t, isnew)
+    function publish_footstep_plan(obj, X, t, isnew)
       if nargin < 4
         isnew = true;
       end
       if nargin < 3
         t = now() * 24 * 60 * 60;
       end
-      % ndx = obj.getStepNdx(length(X(1,:)));
-      % [Xright, Xleft] = obj.stepGoals(X, ndx.right, ndx.left);
-      % Xright = obj.stepCenter2FootCenter(X(:, ndx.right), 1);
-      % Xleft = obj.stepCenter2FootCenter(X(:, ndx.left), 0);
-      % Xright(end+1, :) = 1;
-      % Xleft(end+1, :) = 0;
-
-      % Xright(3,:) = htfun(Xright(1:2,:));
-      % Xleft(3,:) = htfun(Xleft(1:2,:));
-
 
       msg = FootstepPlanPublisher.encodeFootstepPlan(X, t, isnew);
       obj.lc.publish('CANDIDATE_FOOTSTEP_PLAN', msg);
