@@ -68,6 +68,7 @@
     <!-- A ground plane -->
     <include>
       <uri>model://table</uri>
+      <static>true</static>
       <pose>-0.05 0 0 0 0 0</pose>
     </include>
 
