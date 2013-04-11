@@ -70,7 +70,7 @@ disp('Listening for goals...');
 
 waiting = true;
 while(1)
-  rep = getNextMessage(r_ee.frame,1); 
+  rep = getNextMessage(r_ee.frame,0); 
   if (~isempty(rep))
     disp('Right hand goal received.');
     p=rep(2:4);   rpy=rep(5:7);
@@ -79,7 +79,7 @@ while(1)
     r_goal_received = true;
   end
   
-  lep = getNextMessage(l_ee.frame,1);
+  lep = getNextMessage(l_ee.frame,0);
   if (~isempty(lep))
     disp('Left hand goal received.');
     p=lep(2:4);   rpy=lep(5:7);
@@ -87,15 +87,17 @@ while(1)
     l_ee_goal=[p(:);rpy(:)];
     l_goal_received = true;
   end
-  x = getNextMessage(state_frame,1000);
+  
+  [x,ts] = getNextMessage(state_frame,0);
   if (~isempty(x))
+    %  fprintf('received state at time %f\n',ts);
     % disp('Robot state received.');
     % note: setting the desired to actual at 
     % the start of the plan might cause an impulse from gravity sag
     x0 = x;
   end
   
-  x= constraint_listener.getNextMessage(1); % not a frame
+  x= constraint_listener.getNextMessage(0); % not a frame
   if(~isempty(x))
      num_links = length(x.time);
      if((num_links==1)&&(strcmp(x.name,'left_palm')))
@@ -124,7 +126,7 @@ while(1)
   end
   
   
-  l_ee_traj= l_ee_motion_command_listener.getNextMessage(1);
+  l_ee_traj= l_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(l_ee_traj))
       disp('Left hand traj goal received.');
       p = l_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -135,7 +137,7 @@ while(1)
       l_goal_received = true;
   end
   
-  r_ee_traj= r_ee_motion_command_listener.getNextMessage(1);
+  r_ee_traj= r_ee_motion_command_listener.getNextMessage(0);
   if(~isempty(r_ee_traj))
       disp('Right hand traj goal received.');
       p = r_ee_traj(end).desired_pose(1:3);% for now just take the end state
@@ -162,7 +164,7 @@ while(1)
 
 %listen to  committed robot plan or rejected robot plan
 % channels and clear flags on plan termination.    
-  p = committed_plan_listener.getNextMessage(1);
+  p = committed_plan_listener.getNextMessage(0);
   if (~isempty(p))
     disp('candidate manipulation plan was committed');
        l_goal_received = false;
@@ -171,7 +173,7 @@ while(1)
        r_constraint_received = false;
   end
   
-  p = rejected_plan_listener.getNextMessage(1);
+  p = rejected_plan_listener.getNextMessage(0);
   if (~isempty(p))
     disp('candidate manipulation plan was rejected');
     l_goal_received = false;

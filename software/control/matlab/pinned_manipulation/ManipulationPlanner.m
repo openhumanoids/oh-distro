@@ -164,31 +164,38 @@ classdef ManipulationPlanner < handle
  
        
       ind = getActuatedJoints(obj.r);
-      cost = getCostVector(obj);
+      cost = getCostVector2(obj);
       
       ikoptions = struct();
       ikoptions.Q = diag(cost(1:getNumDOF(obj.r)));
       ikoptions.q_nom = q0;
       if(is_keyframe_constraint)
-         ikoptions.MajorIterationsLimit = 10; 
+         ikoptions.MajorIterationsLimit = 100; 
       else
-         ikoptions.MajorIterationsLimit = 50;
+         ikoptions.MajorIterationsLimit = 100;
       end
-      dofnum =  find(ismember(obj.r.getStateFrame.coordinates,'l_arm_elx')==1);
-      ikoptions.q_nom(dofnum) = 30*(pi/180);
-      dofnum =  find(ismember(obj.r.getStateFrame.coordinates,'r_arm_elx')==1);
-      ikoptions.q_nom(dofnum) = 30*(pi/180);
+%       dofnum =  find(ismember(obj.r.getStateFrame.coordinates,'l_arm_elx')==1);
+%       ikoptions.q_nom(dofnum) = 30*(pi/180);
+%       dofnum =  find(ismember(obj.r.getStateFrame.coordinates,'r_arm_elx')==1);
+%       ikoptions.q_nom(dofnum) = 30*(pi/180);
+%       
+      
       comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
       comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
       pelvis_body = findLink(obj.r,'pelvis'); % dont move pelvis
       pelvis_pose0 = forwardKin(obj.r,kinsol,pelvis_body,[0;0;0],2);
        
-      
+      utorso_body = findLink(obj.r,'utorso'); % dont move pelvis
+      utorso_pose0 = forwardKin(obj.r,kinsol,utorso_body,[0;0;0],2);
+      utorso_pose0_relaxed = utorso_pose0;
+%       utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-1*ones(4,1)];
+%       utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-1*ones(4,1)];
+%       utorso_pose0 = utorso_pose0(1:3);
       
       s = [0 1]; % normalized arc length index 
       ks = ActionSequence();
-      kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
-      ks = ks.addKinematicConstraint(kc_com);
+%       kc_com = ActionKinematicConstraint(obj.r,0,[0;0;0],comgoal,[s(1),s(end)],'com');
+%       ks = ks.addKinematicConstraint(kc_com);
       kc_rfoot = ActionKinematicConstraint(obj.r,rfoot_body,mean(rfoot_body.getContactPoints('heel'),2),r_foot_pose0,[s(1),s(end)],'rfoot_heel');
       ks = ks.addKinematicConstraint(kc_rfoot);
       kc_lfoot = ActionKinematicConstraint(obj.r,lfoot_body,mean(lfoot_body.getContactPoints('heel'),2),l_foot_pose0,[s(1),s(end)],'lfoot_heel');
@@ -210,6 +217,8 @@ classdef ManipulationPlanner < handle
       ks = ks.addKinematicConstraint(kc_lhandT);
       kc_pelvis = ActionKinematicConstraint(obj.r,pelvis_body,[0;0;0],pelvis_pose0,[s(1),s(end)],'pelvis');
       ks = ks.addKinematicConstraint(kc_pelvis);  
+      kc_torso = ActionKinematicConstraint(obj.r,utorso_body,[0;0;0],utorso_pose0_relaxed,[s(1),s(end)],'utorso');
+      ks = ks.addKinematicConstraint(kc_torso);  
       
 if(is_keyframe_constraint)
       % If break point is adjusted via gui.  
@@ -243,10 +252,10 @@ end
        lhand_const.min = l_hand_poseT-1e-3;
        lhand_const.max = l_hand_poseT+1e-3;
 
-       
+       %               0,comgoal,...
         [q_final_guess,snopt_info] = inverseKin(obj.r,q0,...
-              0,comgoal,...
               pelvis_body,[0;0;0],pelvis_pose0,...
+              utorso_body,[0;0;0],utorso_pose0_relaxed,...
               rfoot_body,'heel',r_foot_pose0, ...
               lfoot_body,'heel',l_foot_pose0, ...
               r_hand_body,[0;0;0],rhand_const, ...
@@ -265,13 +274,15 @@ end
  end
  
  % PERFORM IKSEQUENCE OPT
- 
+      ikseq_options.Q = diag(cost(1:getNumDOF(obj.r))); 
+      ikseq_options.Qa = eye(getNumDOF(obj.r)); 
+      ikseq_options.Qv = eye(getNumDOF(obj.r)); 
       ikseq_options.nSample = obj.num_breaks-1;
       ikseq_options.qdotf.lb = zeros(obj.r.getNumDOF(),1);
       ikseq_options.qdotf.ub = zeros(obj.r.getNumDOF(),1);
-      
+      ikseq_options.quasiStaticFlag=false;
       if(is_keyframe_constraint)
-         ikseq_options.MajorIterationsLimit = 10; 
+         ikseq_options.MajorIterationsLimit = 100; 
          ikseq_options.qtraj0 = obj.qtraj_guess_fine; % use previous optimization output as seed
       else
          ikseq_options.MajorIterationsLimit = 100; 
@@ -320,6 +331,7 @@ end
       for i=2:length(s)
           si = s(i);
           tic;
+          ikoptions.Q = 0*diag(cost(1:getNumDOF(obj.r))); 
           ikoptions.q_nom = q(:,i-1);
           r_hand_pose_at_t=pose_spline(s_breaks,rhand_breaks,si);  %#ok<*PROP> % evaluate in quaternions
           l_hand_pose_at_t=pose_spline(s_breaks,lhand_breaks,si); % evaluate in quaternions
@@ -343,10 +355,10 @@ end
           %l_pose_constraint=[lhandT(1);lhandT(2);lhandT(3);lhandT(4);lhandT(5);lhandT(6)];
 
           q_guess =qtraj_guess.eval(si);
-
+%           0,comgoal,...
          [q(:,i),snopt_info] = inverseKin(obj.r,q_guess,...
-          0,comgoal,...
           pelvis_body,[0;0;0],pelvis_pose0,...
+          utorso_body,[0;0;0],utorso_pose0_relaxed,...
           rfoot_body,'heel',r_foot_pose0, ...
           lfoot_body,'heel',l_foot_pose0, ...
           r_hand_body,[0;0;0],rhand_const, ...
@@ -384,7 +396,46 @@ end
       obj.time_2_index_scale = (v_desired/s_total);
       obj.plan_pub.publish(ts,xtraj);
     end
-    
+    function cost = getCostVector2(obj)
+      cost = Point(obj.r.getStateFrame,1);       
+      cost.base_x = 1;
+      cost.base_y = 1;
+      cost.base_z = 1;
+      cost.base_roll = 1;
+      cost.base_pitch = 1;
+      cost.base_yaw = 1; 
+      cost.back_lbz = 1; 
+      cost.back_mby = 1;
+      cost.back_ubx = 1;
+      cost.neck_ay =  1; 
+      cost.l_arm_usy = 1;
+      cost.l_arm_shx = 1; 
+      cost.l_arm_ely = 1; 
+      cost.l_arm_elx = 1; 
+      cost.l_arm_uwy = 1; 
+      cost.l_arm_mwx = 1; 
+      cost.l_leg_uhz = 1; 
+      cost.l_leg_mhx = 1; 
+      cost.l_leg_lhy = 1; 
+      cost.l_leg_kny = 1;
+      cost.l_leg_uay = 1;
+      cost.l_leg_lax = 1;
+      cost.r_arm_usy = cost.l_arm_usy; 
+      cost.r_arm_shx = cost.l_arm_shx;
+      cost.r_arm_ely = cost.l_arm_ely; 
+      cost.r_arm_elx = cost.l_arm_elx; 
+      cost.r_arm_uwy = cost.l_arm_uwy; 
+      cost.r_arm_mwx = cost.l_arm_mwx;
+      cost.r_leg_uhz = cost.l_leg_uhz;
+      cost.r_leg_mhx = cost.l_leg_mhx;
+      cost.r_leg_lhy = cost.l_leg_lhy;
+      cost.r_leg_kny = cost.l_leg_kny;
+      cost.r_leg_uay = cost.l_leg_uay;
+      cost.r_leg_lax = cost.l_leg_lax;
+      cost = double(cost);  
+        
+    end
+     
     
     function cost = getCostVector(obj)
       cost = Point(obj.r.getStateFrame,1);       
