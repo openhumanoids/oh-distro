@@ -82,6 +82,7 @@ protected:
   Gtk::VBox* mViewListBox;
   typedef std::unordered_map<int64_t,ViewMetaData::Ptr > DataMap;
   DataMap mViewData;
+  Glib::Dispatcher mViewDataDispatcher;
 
   // request parameters
   int mInputMode;
@@ -239,6 +240,10 @@ public:
     }
 
     notebook->show_all();
+
+    // handler for updating ui widgets when views are added
+    mViewDataDispatcher.connect
+      (sigc::mem_fun(*this, &MapsRenderer::addViewWidgets));
   }
 
   ~MapsRenderer() {
@@ -675,35 +680,45 @@ public:
     }
 
     // create widget and add to list
-    data->mBox.reset(new Gtk::HBox());
-    data->mToggleButton =
-      Gtk::manage(new Gtk::ToggleButton("                    "));
-    Gdk::Color color;
-    color.set_rgb_p(data->mColor[0], data->mColor[1], data->mColor[2]);
-    data->mToggleButton->modify_bg(Gtk::STATE_ACTIVE, color);
-    color.set_rgb_p((data->mColor[0]+1)/2, (data->mColor[1]+1)/2,
-                    (data->mColor[2]+1)/2);
-    data->mToggleButton->modify_bg(Gtk::STATE_PRELIGHT, color); 
-    color.set_rgb_p(0.8, 0.8, 0.8);
-    data->mToggleButton->modify_bg(Gtk::STATE_NORMAL, color);
-    data->mToggleButton->signal_toggled().connect
-      (sigc::mem_fun(*data, &ViewMetaData::onToggleButton));
-    data->mToggleButton->set_active(true);
-    data->mBox->pack_start(*(data->mToggleButton), false, false);
-    Gtk::Label* label = Gtk::manage(new Gtk::Label(data->mLabel));
-    data->mBox->pack_start(*label, false, false);
-    if (iId != 1) {
-      Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
-      data->mBox->pack_start(*cancelButton, false, false);
-      cancelButton->signal_clicked().connect
-        (sigc::mem_fun(*data, &ViewMetaData::onCancelButton));
-    }
-    mViewListBox->pack_start(*(data->mBox), false, false);
-    data->mBox->show_all();
+    mViewDataDispatcher();
 
+    // add to data list
     mViewData[iId] = data;
   }
 
+  void addViewWidgets() {
+    DataMap::const_iterator iter;
+    for (iter = mViewData.begin(); iter != mViewData.end(); ++iter) {
+      ViewMetaData::Ptr data = iter->second;
+      if (data->mBox != NULL) continue;
+
+      data->mBox.reset(new Gtk::HBox());
+      data->mToggleButton =
+        Gtk::manage(new Gtk::ToggleButton("                    "));
+      Gdk::Color color;
+      color.set_rgb_p(data->mColor[0], data->mColor[1], data->mColor[2]);
+      data->mToggleButton->modify_bg(Gtk::STATE_ACTIVE, color);
+      color.set_rgb_p((data->mColor[0]+1)/2, (data->mColor[1]+1)/2,
+                      (data->mColor[2]+1)/2);
+      data->mToggleButton->modify_bg(Gtk::STATE_PRELIGHT, color); 
+      color.set_rgb_p(0.8, 0.8, 0.8);
+      data->mToggleButton->modify_bg(Gtk::STATE_NORMAL, color);
+      data->mToggleButton->signal_toggled().connect
+        (sigc::mem_fun(*data, &ViewMetaData::onToggleButton));
+      data->mToggleButton->set_active(true);
+      data->mBox->pack_start(*(data->mToggleButton), false, false);
+      Gtk::Label* label = Gtk::manage(new Gtk::Label(data->mLabel));
+      data->mBox->pack_start(*label, false, false);
+      if (iter->first != 1) {
+        Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
+        data->mBox->pack_start(*cancelButton, false, false);
+        cancelButton->signal_clicked().connect
+          (sigc::mem_fun(*data, &ViewMetaData::onCancelButton));
+      }
+      mViewListBox->pack_start(*(data->mBox), false, false);
+      data->mBox->show_all();
+    }
+  }
 };
 
 }
