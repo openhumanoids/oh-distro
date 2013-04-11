@@ -13,7 +13,7 @@ classdef StandingController < DRCController
       
       % instantiate QP controller
       options.slack_limit = 30.0;
-      options.w = 0.5;
+      options.w = 1.0;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
 

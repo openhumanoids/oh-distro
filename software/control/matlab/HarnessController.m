@@ -16,7 +16,7 @@ classdef HarnessController < DRCController
       qp = HarnessQPController(r,options);
 
       % cascade PD controller 
-      options.Kp=diag([zeros(6,1);500*ones(getNumDOF(r)-6,1)]);
+      options.Kp=diag([zeros(6,1);100*ones(getNumDOF(r)-6,1)]);
       options.Kd=0.1*options.Kp;
       pd = SimplePDController(r,ctrl_data,options);
       ins(1).system = 1;
