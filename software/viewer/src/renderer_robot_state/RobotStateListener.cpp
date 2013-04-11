@@ -56,26 +56,27 @@ namespace renderer_robot_state
     //int64_t tic = bot_timestamp_now();
     if (!_urdf_parsed)
     {
+     //cout << msg->utime << endl;
       //cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
       return;
     }
     if(_urdf_subscription_on)
-    {
+    {			
       cout << "\n handleRobotStateMsg: unsubscribing from _urdf_subscription" << endl;
       _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
       _urdf_subscription_on =  false; 	
     }
     
-    // Render at 100Hz of Sim Time. Too much rendering will make the viewer less reponsive.
+    // Render at 100Hz of Real Time. Too much rendering will make the viewer less reponsive.
     //cout << msg->utime - _last_state_msg_timestamp << endl;
-    if(msg->utime-_last_state_msg_timestamp >= 10000)  // timestamps are in usec
+		int64_t now = bot_timestamp_now();//msg->utime
+    if(now-_last_state_msg_timestamp >= 10000)  // timestamps are in usec
     {
-    //cout << msg->utime - _last_state_msg_timestamp << endl;
+    // cout << now - _last_state_msg_timestamp << endl;
     _gl_robot->set_state(*msg);
     bot_viewer_request_redraw(_viewer);
-     _last_state_msg_timestamp = msg->utime;
+     _last_state_msg_timestamp = now;//msg->utime;
     }
-   
 
     //int64_t toc = bot_timestamp_now();
     //cout << bot_timestamp_useconds(toc-tic) << endl;
