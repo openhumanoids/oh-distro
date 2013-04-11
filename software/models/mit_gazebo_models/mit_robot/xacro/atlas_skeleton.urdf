@@ -51,9 +51,9 @@
     </link>
     <link name="l_foot">
         <inertial>
-            <mass value="0.817" />
+            <mass value="0.867" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
+            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -141,9 +141,9 @@
     </link>
     <link name="l_lglut">
         <inertial>
-            <mass value="0.69" />
+            <mass value="0.803" />
             <origin xyz="0.0133341 0.0170484 -0.0312052" rpy="0 -0 0" />
-            <inertia ixx="0.000691326" ixy="-2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="0.000137862" izz="0.00106487" />
+            <inertia ixx="0.0453457" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.0174182" iyz="-0.000137862" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -222,9 +222,9 @@
     </link>
     <link name="l_talus">
         <inertial>
-            <mass value="0.817" />
-            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
+            <mass value="0.867" />
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -272,9 +272,9 @@
     </link>
     <link name="l_uglut">
         <inertial>
-            <mass value="0.5166" />
+            <mass value="1.51622" />
             <origin xyz="0.00529262 -0.00344732 0.00313046" rpy="0 -0 0" />
-            <inertia ixx="0.00074276" ixy="-3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="-3.2735e-08" izz="0.00041242" />
+            <inertia ixx="0.0327037" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.0174182" iyz="3.2735e-08" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -297,9 +297,9 @@
     </link>
     <link name="l_uleg">
         <inertial>
-            <mass value="7.34" />
+            <mass value="7.227" />
             <origin xyz="0 0 -0.21" rpy="0 -0 0" />
-            <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02" />
+            <inertia ixx="0.0453457" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -334,9 +334,9 @@
     </link>
     <link name="ltorso">
         <inertial>
-            <mass value="1.92" />
+            <mass value="1.62729" />
             <origin xyz="-0.0112984 -3.15366e-06 0.0746835" rpy="0 -0 0" />
-            <inertia ixx="0.0039092" ixy="-5.04491e-08" ixz="-0.000342157" iyy="0.00341694" iyz="4.87119e-07" izz="0.00174492" />
+            <inertia ixx="0.0646646" ixy="-5.04491e-08" ixz="-0.000342157" iyy="0.050298" iyz="4.87119e-07" izz="0.10973" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -367,9 +367,9 @@
     </link>
     <link name="mtorso">
         <inertial>
-            <mass value="0.55" />
+            <mass value="3.8068" />
             <origin xyz="-0.00816266 -0.0131245 0.0305974" rpy="0 -0 0" />
-            <inertia ixx="0.000454181" ixy="-6.10764e-05" ixz="3.94009e-05" iyy="0.000483282" iyz="5.27463e-05" izz="0.000444215" />
+            <inertia ixx="0.1975" ixy="-6.10764e-05" ixz="3.94009e-05" iyy="0.544742" iyz="5.27463e-05" izz="0.10973" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -398,9 +398,9 @@
     </link>
     <link name="pelvis">
         <inertial>
-            <mass value="14.2529" />
+            <mass value="12.54638" />
             <origin xyz="0.0111 0 0.0271" rpy="0 -0 0" />
-            <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167" />
+            <inertia ixx="0.0327037" ixy="0.0008" ixz="-0.0007" iyy="0.0174182" iyz="-0.0005" izz="0.118059" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -485,9 +485,9 @@
     </link>
     <link name="r_foot">
         <inertial>
-            <mass value="0.817" />
+            <mass value="0.867" />
             <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
+            <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -575,9 +575,9 @@
     </link>
     <link name="r_lglut">
         <inertial>
-            <mass value="0.69" />
+            <mass value="0.803" />
             <origin xyz="0.0133341 -0.0170484 -0.0312052" rpy="0 -0 0" />
-            <inertia ixx="0.000691326" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="-0.000137862" izz="0.00106487" />
+            <inertia ixx="0.0453457" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.0174182" iyz="-0.000137862" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -656,9 +656,9 @@
     </link>
     <link name="r_talus">
         <inertial>
-            <mass value="0.817" />
-            <origin xyz="0.027 0 -0.067" rpy="0 -0 0" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.0035" iyz="0" izz="0.004" />
+            <mass value="0.867" />
+            <origin xyz="0 0 0" rpy="0 -0 0" />
+            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.00350421" iyz="0" izz="0.00400651" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -706,9 +706,9 @@
     </link>
     <link name="r_uglut">
         <inertial>
-            <mass value="0.5166" />
+            <mass value="1.51622" />
             <origin xyz="0.00529262 0.00344732 0.00313046" rpy="0 -0 0" />
-            <inertia ixx="0.00074276" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="3.2735e-08" izz="0.00041242" />
+            <inertia ixx="0.0327037" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.0174182" iyz="3.2735e-08" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -731,9 +731,9 @@
     </link>
     <link name="r_uleg">
         <inertial>
-            <mass value="7.34" />
+            <mass value="7.227" />
             <origin xyz="0 0 -0.21" rpy="0 -0 0" />
-            <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02" />
+            <inertia ixx="0.0453457" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.0071591" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -768,9 +768,9 @@
     </link>
     <link name="utorso">
         <inertial>
-            <mass value="18.484" />
+            <mass value="15.2272" />
             <origin xyz="0.02 -0.001 0.211" rpy="0 -0 0" />
-            <inertia ixx="0.395" ixy="0" ixz="0.083" iyy="1.089" iyz="-0.003" izz="0.327" />
+            <inertia ixx="0.395" ixy="0" ixz="0.083" iyy="0.544742" iyz="-0.003" izz="0.10973" />
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
@@ -802,7 +802,7 @@
         <axis xyz="0 0 1" />
         <parent link="pelvis" />
         <child link="ltorso" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="124.016" velocity="12" lower="-0.610865" upper="0.610865" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6109" soft_upper_limit="10.6109" />
     </joint>
@@ -811,7 +811,7 @@
         <axis xyz="0 1 0" />
         <parent link="ltorso" />
         <child link="mtorso" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="206.843" velocity="12" lower="-1.2" upper="1.28" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2" soft_upper_limit="11.28" />
     </joint>
@@ -820,7 +820,7 @@
         <axis xyz="1 0 0" />
         <parent link="mtorso" />
         <child link="utorso" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="94.91" velocity="12" lower="-0.790809" upper="0.790809" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.7908" soft_upper_limit="10.7908" />
     </joint>
@@ -901,7 +901,7 @@
         <axis xyz="0 1 0" />
         <parent link="l_lglut" />
         <child link="l_uleg" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="260" velocity="12" lower="-1.75" upper="0.524" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.75" soft_upper_limit="10.524" />
     </joint>
@@ -910,7 +910,7 @@
         <axis xyz="1 0 0" />
         <parent link="l_uglut" />
         <child link="l_lglut" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="180" velocity="12" lower="-0.47" upper="0.495" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.47" soft_upper_limit="10.495" />
     </joint>
@@ -928,7 +928,7 @@
         <axis xyz="0 0 1" />
         <parent link="pelvis" />
         <child link="l_uglut" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="110" velocity="12" lower="-0.32" upper="1.14" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.32" soft_upper_limit="11.14" />
     </joint>
@@ -1020,7 +1020,7 @@
         <axis xyz="0 1 0" />
         <parent link="r_lglut" />
         <child link="r_uleg" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="260" velocity="12" lower="-1.745" upper="0.524" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.745" soft_upper_limit="10.524" />
     </joint>
@@ -1029,7 +1029,7 @@
         <axis xyz="1 0 0" />
         <parent link="r_uglut" />
         <child link="r_lglut" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="180" velocity="12" lower="-0.495" upper="0.47" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.495" soft_upper_limit="10.47" />
     </joint>
@@ -1047,7 +1047,7 @@
         <axis xyz="0 0 1" />
         <parent link="pelvis" />
         <child link="r_uglut" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="10" friction="0" />
         <limit effort="260" velocity="12" lower="-1.14" upper="0.32" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32" />
     </joint>

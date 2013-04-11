@@ -56,6 +56,40 @@
     <sensor name="imu_sensor" type="imu">
       <always_on>1</always_on>
       <update_rate>1000.0</update_rate>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters from Boston Dynamics
+               (http://gazebosim.org/wiki/Sensor_noise):
+                 rates (rad/s): mean=0, stddev=2e-4
+                 accels (m/s/s): mean=0, stddev=1.7e-2
+                 rate bias (rad/s): 5e-6 - 1e-5
+                 accel bias (m/s/s): 1e-1
+               Experimentally, simulation provide rates with noise of
+               about 1e-3 rad/s and accels with noise of about 1e-1 m/s/s.
+               So we don't expect to see the noise unless number of inner iterations
+               are increased.
+
+               We will add bias.  In this model, bias is sampled once for rates
+               and once for accels at startup; the sign (negative or positive)
+               of each bias is then switched with equal probability.  Thereafter,
+               the biases are fixed additive offsets.  We choose
+               bias means and stddevs to produce biases close to the provided
+               data. -->
+          <rate>
+            <mean>0.0</mean>
+            <stddev>2e-4</stddev>
+            <bias_mean>0.0000075</bias_mean>
+            <bias_stddev>0.0000008</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0.0</mean>
+            <stddev>1.7e-2</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
     </sensor>
   </gazebo>
   <gazebo reference="l_arm_mwx">
@@ -118,6 +152,13 @@
       </contact>
     </sensor>
   </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_force.so" name="gazebo_ros_force">
+      <bodyName>pelvis</bodyName>
+      <topicName>/atlas/apply_pelvis_force</topicName>
+    </plugin>
+  </gazebo>
+
 
   <gazebo reference="back_lbz">
     <cfmDamping>1</cfmDamping>
