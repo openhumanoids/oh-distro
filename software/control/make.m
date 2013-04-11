@@ -40,6 +40,7 @@ fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','util'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','frames'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','footstep_planner'));
+fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'matlab','pinned_manipulation/spherical_interp'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(pwd,'collections_utils'));
 fprintf(fptr,'addpath(''%s'');\n',fullfile(BUILD_PREFIX,'matlab'));
 
