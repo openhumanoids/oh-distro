@@ -57,9 +57,8 @@ function q_out = online_planning(r,l_hand_des,r_hand_des,q_curr,q_des,l_hand,r_h
     J_curr = [J_l_hand;J_r_hand];
     J_curr = J_curr(:,7:end);
     
-    lambda = 1e-1;
+    lambda = 1e-2;
     q_error = lambda*pinv(J_curr)*ee_error;
-    disp(max(q_error))
     %J_curr\ee_error;
     % gives   Warning: Rank deficient, rank = 12, tol =  1.166121e-15. 
 
