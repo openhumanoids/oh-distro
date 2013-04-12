@@ -10,8 +10,8 @@ nq = r.getNumDOF();
 q_breaks = xtraj(1:nq,:);
 n_breaks = size(q_breaks,2);
 
-l_hand = findLinkInd('l_hand');
-r_hand = findLinkInd('r_hand');
+l_hand = r.findLinkInd('l_hand');
+r_hand = r.findLinkInd('r_hand');
 l_hand_pt = [0;0;0];
 r_hand_pt = [0;0;0];
 l_hand_pos = zeros(7,n_breaks); % use quaternions
@@ -56,7 +56,13 @@ function q_out = online_planning(r,l_hand_des,r_hand_des,q_curr,q_des,l_hand,r_h
     ee_error = [l_hand_pos;r_hand_pos]-[l_hand_des;r_hand_des];
     J_curr = [J_l_hand;J_r_hand];
     J_curr = J_curr(:,7:end);
-    q_error = J_curr\ee_error;
+    
+    lambda = 1e-1;
+    q_error = lambda*pinv(J_curr)*ee_error;
+    disp(max(q_error))
+    %J_curr\ee_error;
+    % gives   Warning: Rank deficient, rank = 12, tol =  1.166121e-15. 
+
     q_out = q_des(7:end)+q_error;
 end
 % [N,X]=hist(diff(texec),20);plot(X,N,'b.-')
