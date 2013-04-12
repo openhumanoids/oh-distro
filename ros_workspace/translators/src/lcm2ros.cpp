@@ -130,7 +130,7 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     joint_cmd_pub_.publish(joint_command_msg);
   } 
   
-  ros::spinOnce();
+//  ros::spinOnce();
 }  
 
 void LCM2ROS::rot_scan_rate_cmd_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_timed_t* msg){
