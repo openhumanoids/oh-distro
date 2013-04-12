@@ -150,8 +150,12 @@ group "4.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
         host = "paladin-02";
     }
-    cmd "StateMachine" {
+    cmd "Qual1StateMachine" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
+        host = "paladin-02";
+    }
+    cmd "Qual2StateMachine" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "paladin-02";
     }
 }
