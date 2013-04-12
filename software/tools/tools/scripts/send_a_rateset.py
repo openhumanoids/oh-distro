@@ -19,6 +19,10 @@ else:
 if (times > 1.0):
   print "ignoring fraction quicker than 1 - can't do miracles"
   times=1.0
+elif (times <= 0):
+  print "don't be an idiot"
+  times=1.0
+
 val = (1/ float(times) )-1
 
 msg = pose_t()
