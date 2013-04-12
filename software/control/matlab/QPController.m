@@ -87,7 +87,7 @@ classdef QPController < MIMODrakeSystem
     zmpd = getData(obj.zmpdata);
 
     % use support trajectory
-    if zmpd.ti_flag
+    if typecheck(zmpd.supptraj,'double') %zmpd.ti_flag
       active_supports = find(zmpd.supptraj);
     else
       active_supports = find(zmpd.supptraj.eval(t));
@@ -178,19 +178,17 @@ classdef QPController < MIMODrakeSystem
     %----------------------------------------------------------------------
     % Linear inverted pendulum stuff --------------------------------------
         
-    if zmpd.ti_flag
-      S = zmpd.S;
+    if typecheck(zmpd.h,'double')
       h = zmpd.h; 
       hddot = 0;
     else
+      h = zmpd.h.eval(t); 
+      hddot = zmpd.hddot.eval(t);
+    end
+    if typecheck(zmpd.S,'double')
+      S = zmpd.S;
+    else
       S = zmpd.S.eval(t);
-      if typecheck(zmpd.h,'double')
-        h = zmpd.h; 
-        hddot = 0;
-      else
-        h = zmpd.h.eval(t); 
-        hddot = zmpd.hddot.eval(t);
-      end
     end
     G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
     xlimp = [xcom(1:2); J*qd]; % state of LIP model

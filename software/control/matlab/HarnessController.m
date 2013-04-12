@@ -16,7 +16,7 @@ classdef HarnessController < DRCController
       qp = HarnessQPController(r,options);
 
       % cascade PD controller 
-      options.Kp=diag([zeros(6,1);100*ones(getNumDOF(r)-6,1)]);
+      options.Kp=diag([zeros(6,1);200*ones(getNumDOF(r)-6,1)]);
       options.Kd=0.1*options.Kp;
       pd = SimplePDController(r,ctrl_data,options);
       ins(1).system = 1;
@@ -34,7 +34,7 @@ classdef HarnessController < DRCController
 
       if nargin < 3
         % controller timeout must match the harness time set in VRCPlugin.cpp
-        obj = setTimedTransition(obj,5,'standing',true);
+        obj = setTimedTransition(obj,10,'standing',true);
       else
         obj = setTimedTransition(obj,timeout,'standing',true);
       end

@@ -12,7 +12,7 @@ classdef StandingController < DRCController
       ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[],'supptraj',[],'ti_flag',true));
       
       % instantiate QP controller
-      options.slack_limit = 30.0;
+      options.slack_limit = 40.0;
       options.w = 1.0;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
@@ -33,42 +33,17 @@ classdef StandingController < DRCController
       obj.controller_data = ctrl_data;
       
       obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
+      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
 
-      % use saved nominal pose 
-      d = load('data/atlas_fp.mat');
-      xstar = d.xstar;
-      nq = getNumDOF(r);
-      
-      q0 = xstar(1:nq);
-      kinsol = doKinematics(r,q0);
-      com = getCOM(r,kinsol);
-
-      % build TI-ZMP controller 
-      foot_pos = contactPositions(r,q0); 
-      ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-      comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
-      limp = LinearInvertedPendulum(com(3));
-      options.Qy = diag([0 0 0 0 1 1]);
-      [~,V] = tilqr(limp,Point(limp.getStateFrame,[comgoal(1:2);0;0]), ...
-                    Point(limp.getInputFrame),zeros(4),zeros(2),options);
-
-      foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
-
-      obj.controller_data.setField('S',V.S);
-      obj.controller_data.setField('h',com(3));
-      obj.controller_data.setField('hddot',0);
-      obj.controller_data.setField('qtraj',q0);
-      obj.controller_data.setField('supptraj',foot_support);
+      obj = initialize(obj,struct());
   
-      obj = setDuration(obj,inf,false); % set the controller timeout
-      
     end
     
     function obj = initialize(obj,data)
 
-      % for now, use saved nominal pose, just update floating base
-      % take in new nominal pose and compute standing controller
       if isfield(data,'AtlasState')
+        % transition from walking:
+        % take in new nominal pose and compute standing controller
         r = obj.robot;
 
         x0 = data.AtlasState;
@@ -87,13 +62,53 @@ classdef StandingController < DRCController
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
+        obj.controller_data.setField('S',PPTrV.S);
+        obj.controller_data.setField('h',com(3));
+        obj.controller_data.setField('hddot',0);
+        obj.controller_data.setField('qtraj',q0);
+        obj.controller_data.setField('supptraj',foot_support);
+        obj.controller_data.setField('ti_flag',true);
+
+      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
+        % standing and reaching plan
+        msg = data.COMMITTED_ROBOT_PLAN;
+        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
+        ts
+        %%% TMP HACK %%%
+        xtraj(3,:) = xtraj(3,:) - 1; 
+        %%% TMP HACK %%%
+        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
+
+        obj.controller_data.setField('qtraj',qtraj);
+        obj.controller_data.setField('ti_flag',false);
+        obj = setDuration(obj,inf,false); % set the controller timeout
+
+      else
+        % use saved nominal pose 
+        d = load('data/atlas_fp.mat');
+        q0 = d.xstar(1:getNumDOF(obj.robot));
+        kinsol = doKinematics(obj.robot,q0);
+        com = getCOM(obj.robot,kinsol);
+
+        % build TI-ZMP controller 
+        foot_pos = contactPositions(obj.robot,q0); 
+        ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
+        comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
+        limp = LinearInvertedPendulum(com(3));
+        options.Qy = diag([0 0 0 0 1 1]);
+        [~,V] = tilqr(limp,Point(limp.getStateFrame,[comgoal(1:2);0;0]), ...
+                      Point(limp.getInputFrame),zeros(4),zeros(2),options);
+
+        foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
+
         obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('h',com(3));
         obj.controller_data.setField('hddot',0);
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('supptraj',foot_support);
+        obj.controller_data.setField('ti_flag',true);
       end
-      
+     
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
   end  

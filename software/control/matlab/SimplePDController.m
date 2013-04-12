@@ -32,8 +32,8 @@ classdef SimplePDController < DrakeSystem
         sizecheck(options.Kp,[obj.nq obj.nq]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = 180.0*eye(obj.nq);
-        obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
+        obj.Kp = 170.0*eye(obj.nq);
+%         obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
       end        
         
       if isfield(options,'Kd')
@@ -42,7 +42,7 @@ classdef SimplePDController < DrakeSystem
         obj.Kd = options.Kd;
       else
         obj.Kd = 19.0*eye(obj.nq);
-        obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+%         obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
       end        
         
       if isfield(options,'dt')

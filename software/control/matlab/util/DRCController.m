@@ -173,7 +173,7 @@ classdef DRCController
             t=tsim-t_offset;
 
             %%% TEMP HACK FOR QUAL 1 %%%
-            x(3) = x(3)-1.0;
+%             x(3) = x(3)-1.0;
             %%% TEMP HACK FOR QUAL 1 %%%
             
 %             % debug
