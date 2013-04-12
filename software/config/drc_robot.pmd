@@ -134,22 +134,6 @@ group "3.perception"{
 }
 
 group "4.drake_robot" {
-    cmd "ReachPlanFollower_PD" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runReachPlanFollowerLCMRobot;\"";
-       host = "paladin-02";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
-       host = "paladin-02";
-    } 
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
-        host = "paladin-02";
-    }
-    cmd "ZMPWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
-        host = "paladin-02";
-    }
     cmd "Qual1StateMachine" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
         host = "paladin-02";
@@ -158,6 +142,14 @@ group "4.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "paladin-02";
     }
+    cmd "ReachPlanFollower_PD" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runReachPlanFollowerLCMRobot;\"";
+       host = "paladin-02";
+    }
+    cmd "GraspController" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
+       host = "paladin-02";
+    } 
 }
 
 group "5.base" {
@@ -201,17 +193,16 @@ group "6.drake_base" {
        host = "paladin-01";
     }
     cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "paladin-01";
     }    
-
-    cmd "footstep_planner" {
+    cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
-       host = "paladin-01";
+        host = "paladin-01";
     }
-    cmd "base_planner" {
-       exec = "matlab -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0')\" ";
-       host = "paladin-01";
+    cmd "ZMPWalkingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+        host = "paladin-01";
     }
 }
 
