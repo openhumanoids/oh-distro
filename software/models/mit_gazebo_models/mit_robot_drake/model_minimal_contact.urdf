@@ -694,7 +694,6 @@
     <limit effort="260" lower="-1.14" upper="0.32" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.14" soft_upper_limit="10.32"/>
   </joint>
-  <!--  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/point_mass_hands.urdf" />-->
   <transmission name="back_lbz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_lbz"/>
     <actuator name="back_lbz_motor"/>

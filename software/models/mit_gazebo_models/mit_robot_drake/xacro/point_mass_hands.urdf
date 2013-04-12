@@ -2,7 +2,7 @@
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="2.9"/>
+      <mass value="3.1690"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -17,7 +17,7 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="2.9"/>
+      <mass value="3.1690"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -33,14 +33,14 @@
    <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.0 0.15 0.0"/>
+    <origin rpy="0 0 0" xyz="0.004 0.1601 -0.0078"/>
   </joint>
 
 <!-- COM numbers are made up for now -->
   <joint name="r_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="r_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.0 -0.15 0.0"/>
+    <origin rpy="0 0 0" xyz="0.004 -0.1601 -0.0078"/>
   </joint>
 
 </robot>
