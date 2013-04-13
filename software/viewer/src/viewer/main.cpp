@@ -28,6 +28,9 @@
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_status.hpp>
 
+// new grid renderer:
+#include <renderer_drc/renderer_drcgrid.h>
+
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
@@ -224,7 +227,8 @@ int main(int argc, char *argv[])
   bot_viewer_add_event_handler(viewer, ehandler, 0);
 
   // core renderers
-  bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
+  drcgrid_add_renderer_to_viewer(viewer, 1, lcm);
+//  bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
