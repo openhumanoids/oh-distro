@@ -34,7 +34,7 @@ private:
   void outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
         KDL::Frame  T_body_head  );
   void outputSensing(const drc::robot_state_t * TRUE_state_msg,
-        KDL::Frame  T_head_body  );
+        KDL::Frame  T_body_head  );
   
   void sendPose(KDL::Frame pose, int64_t utime, std::string channel);
   void sendPose(drc::position_3d_t &origin, int64_t utime, std::string channel);
@@ -114,6 +114,7 @@ void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
                                                 msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
   T_world_head = T_world_body * T_body_head; 
   sendPose(T_world_head, msgout.utime, "POSE_HEAD");   
+  sendPose(T_world_head, msgout.utime, "POSE_HEAD_TRUE"); // courtesy publish
   
   // Keep this for the trigger:
   _last_est_state = msgout;  
@@ -121,7 +122,19 @@ void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
 
 
 void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
-  KDL::Frame  T_head_body){
+  KDL::Frame  T_body_head){
+  
+  // Infer the Robot's head position from the ground truth root world pose
+  KDL::Frame T_world_body_GT, T_world_head_GT;
+  T_world_body_GT.p[0]= TRUE_state_msg->origin_position.translation.x;
+  T_world_body_GT.p[1]= TRUE_state_msg->origin_position.translation.y;
+  T_world_body_GT.p[2]= TRUE_state_msg->origin_position.translation.z;
+  T_world_body_GT.M =  KDL::Rotation::Quaternion(TRUE_state_msg->origin_position.rotation.x, TRUE_state_msg->origin_position.rotation.y, 
+                                                TRUE_state_msg->origin_position.rotation.z, TRUE_state_msg->origin_position.rotation.w);
+  T_world_head_GT = T_world_body_GT * T_body_head; 
+  sendPose(T_world_head_GT, TRUE_state_msg->utime, "POSE_HEAD_TRUE");  
+  
+  
   if (!_initPoseHead){
     std::cout <<"Haven't received the first POSE_HEAD yet.\nRefusing to output EST_ROBOT_STATE ["<< TRUE_state_msg->utime <<"]\n";
     return; 
@@ -129,7 +142,7 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
   
   // Determine world position of root link using head position and relative transform
   KDL::Frame  T_world_body;
-  T_world_body  = _T_world_head*T_head_body;
+  T_world_body  = _T_world_head*T_body_head.Inverse();
   drc::position_3d_t body_origin;
   body_origin.translation.x = T_world_body.p[0];
   body_origin.translation.y = T_world_body.p[1];
@@ -144,6 +157,8 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
 
   // Publish robot's root link position as a curtesy - prob no necessary:
   sendPose(body_origin, msgout.utime, "POSE_BODY");   
+  
+  
   
   // Keep this for the trigger:
   _last_est_state = msgout;
@@ -209,7 +224,7 @@ void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   if(_ground_truth_mode  ){ // formerly est_robot_state_no_sensing
     outputNoSensing(TRUE_state_msg, T_body_head);
   }else{
-    outputSensing(TRUE_state_msg, T_head_body);
+    outputSensing(TRUE_state_msg, T_body_head);
   }
 }
 

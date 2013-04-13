@@ -50,7 +50,6 @@ static inline int64_t _timestamp_now()
 
 
 void ModelClient::doModelClient(){
-  
   drc_robot_urdf_t_subscription_t * sub = drc_robot_urdf_t_subscribe(lcm_, model_channel_.c_str(), drc_robot_urdf_handler_aux, this);
   
   //TODO: is there a way to be sure nothing else is subscribed???
@@ -96,6 +95,11 @@ void ModelClient::doModelClient(){
 }
 
 
+// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
+// Any subscriptions/construction with Model Client must
+// be before typical user subscriptions - if the same LCM object
+// is used. Otherwise it won't be received before handling them
+// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
 ModelClient::ModelClient(lcm_t* lcm_, int keep_updated_):
     urdf_parsed_(false),lcm_(lcm_), keep_updated_(keep_updated_){
   model_channel_ = "ROBOT_MODEL";
