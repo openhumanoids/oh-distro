@@ -15,10 +15,10 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
 
-struct AffordancePlus
+struct AffordancePlusMeta
 {
   Eigen::Isometry3d offset; // offset between the ros pose and the affordance collection pose
-  drc::affordance_t aff;
+  drc::affordance_plus_t affplus;
 };
 
 
@@ -67,7 +67,7 @@ class OraclePlugin: public ModelPlugin{
     std::string world_to_robot_link_;
     std::string robot_name_;
     
-    std::map< std::string, AffordancePlus > aff_map_;    
+    std::map< std::string, AffordancePlusMeta > aff_map_;    
 };
 
 // Register this plugin with the simulator
@@ -116,9 +116,7 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["duff_beer"]=70012;
   model_map_["steering_assembly"]=70013;    
   model_map_["mit_standpipe"]=70014;    
-  model_map_["mit_valve"]=70015;  
-  model_map_["drill"]=70016;  
-  model_map_["table"]=70017;  
+  model_map_["mit_valve"]=70015;    
   //model_map_["mit_drc_robot"]=7012; //dont send this
     gzerr << "model_map_ " << model_map_.size()<<"\n";
   storeAffordances();
@@ -143,21 +141,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="steering_cyl";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.220000);
@@ -165,17 +148,19 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["drc_vehicle_polaris_ranger_ev::steering_wheel"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["drc_vehicle_polaris_ranger_ev::steering_wheel"]=affmeta;
   }
   
+  
   { 
     drc::affordance_t a;
     a.utime =0;
@@ -183,21 +168,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.020000);
@@ -205,6 +175,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.13);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -215,10 +186,10 @@ void OraclePlugin::storeAffordances()
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["drill_link"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_cordless_drill_link"]=affmeta;
   }    
   
 
@@ -229,21 +200,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.030000);
@@ -251,6 +207,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.11);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -261,102 +218,10 @@ void OraclePlugin::storeAffordances()
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["drill_link_handle"]=affp;
-  }    
-    
-  
-  { 
-    drc::affordance_t a;
-    a.utime =0;
-    a.map_id =0;
-    a.uid =counter++;
-    a.otdf_type ="cylinder";
-    a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
-
-    a.param_names.push_back("radius");
-    a.params.push_back(0.020000);
-    a.param_names.push_back("length");
-    a.params.push_back(0.13);
-    a.param_names.push_back("mass");
-    a.params.push_back(1.0); // unknown
-    a.nstates =0;
-
-    
-    Eigen::Isometry3d offset;
-    offset.setIdentity();
-    offset.translation()  << -0.085, 0.03, 0.20;
-    double ypr[3]={0, 1.571,0};
-    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
-    offset.rotate(quat);
-
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_cordless_drill_link"]=affp;
-  }    
-  
-
-  { 
-    drc::affordance_t a;
-    a.utime =0;
-    a.map_id =0;
-    a.uid =counter++;
-    a.otdf_type ="cylinder";
-    a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
-
-    a.param_names.push_back("radius");
-    a.params.push_back(0.030000);
-    a.param_names.push_back("length");
-    a.params.push_back(0.11);
-    a.param_names.push_back("mass");
-    a.params.push_back(1.0); // unknown
-    a.nstates =0;
-
-    
-    Eigen::Isometry3d offset;
-    offset.setIdentity();
-    offset.translation()  << 0, -0.025, 0.15;
-    double ypr[3]={1.571, 0,0};
-    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
-    offset.rotate(quat);
-
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_cordless_drill_link_handle"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_cordless_drill_link_handle"]=affmeta;
   }    
     
   
@@ -368,37 +233,24 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
 
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
     a.param_names.push_back("radius");
     a.params.push_back(0.10000); // 
     a.param_names.push_back("length");
     a.params.push_back(0.35000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
-    
     Eigen::Isometry3d offset;
     offset.setIdentity();
     offset.translation()  << 0.0,0,0.14;
     
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_coke_can_link"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_coke_can_link"]=affmeta;
   }        
   
   
@@ -410,26 +262,14 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
 
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
     a.param_names.push_back("radius");
     a.params.push_back(0.05500); // 
     a.param_names.push_back("length");
     a.params.push_back(0.23000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(0.39); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -437,10 +277,10 @@ void OraclePlugin::storeAffordances()
     offset.setIdentity();
     offset.translation()  << 0.0,0,0.0;
     
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["duff_beer_link"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["duff_beer_link"]=affmeta;
   }        
     
     
@@ -451,26 +291,14 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
 
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
     a.param_names.push_back("radius");
     a.params.push_back(0.02500); // 
     a.param_names.push_back("length");
     a.params.push_back(0.23000); //.32
     a.param_names.push_back("mass");
     a.params.push_back(0.39); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -478,10 +306,10 @@ void OraclePlugin::storeAffordances()
     offset.setIdentity();
     offset.translation()  << 0.0,0,0.15;
     
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["standpipe_standpipe"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["standpipe_standpipe"]=affmeta;
   }     
 
 
@@ -492,21 +320,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="steering_cyl";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.220000);
@@ -514,6 +327,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -524,10 +338,10 @@ void OraclePlugin::storeAffordances()
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["steering_assembly_steering_wheel"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["steering_assembly_steering_wheel"]=affmeta;
   }   
         
 
@@ -538,21 +352,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.1000);
@@ -560,6 +359,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.38000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -570,10 +370,10 @@ void OraclePlugin::storeAffordances()
     //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     //offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_standpipe_link"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_standpipe_link"]=affmeta;
   }   
   
 
@@ -584,21 +384,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="cylinder";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =9;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("radius");
     a.params.push_back(0.150000);
@@ -606,6 +391,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.020000);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -616,10 +402,10 @@ void OraclePlugin::storeAffordances()
     //Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     //offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_valve_wheel"]=affp;
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_valve_wheel"]=affmeta;
   }     
   
   
@@ -630,21 +416,6 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="box";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =10;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
 
     a.param_names.push_back("lX");
     a.params.push_back(3.00000);
@@ -654,6 +425,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01000); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -664,10 +436,10 @@ void OraclePlugin::storeAffordances()
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["sbox4_chassis"]=affp; 
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["sbox4_chassis"]=affmeta; 
   }     
     
   
@@ -678,23 +450,8 @@ void OraclePlugin::storeAffordances()
     a.uid =counter++;
     a.otdf_type ="box";
     a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =10;
 
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
     a.param_names.push_back("lX");
-
     a.params.push_back(0.8000);
     a.param_names.push_back("lY");
     a.params.push_back(1.5000);
@@ -702,6 +459,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
+    a.nparams = a.params.size();
     a.nstates =0;
 
     
@@ -712,58 +470,11 @@ void OraclePlugin::storeAffordances()
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
 
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["mit_table_link"]=affp; 
-  } 
-  
-  { 
-    drc::affordance_t a;
-    a.utime =0;
-    a.map_id =0;
-    a.uid =counter++;
-    a.otdf_type ="box";
-    a.aff_store_control = drc::affordance_t::NEW;
-    a.nparams =10;
-
-    a.param_names.push_back("x");
-    a.params.push_back(0);
-    a.param_names.push_back("y");
-    a.params.push_back(0);
-    a.param_names.push_back("z");
-    a.params.push_back(0);
-
-    a.param_names.push_back("roll");
-    a.params.push_back( 0 );
-    a.param_names.push_back("pitch");
-    a.params.push_back( 0);
-    a.param_names.push_back("yaw");
-    a.params.push_back( 0 );
-    a.param_names.push_back("lX");
-
-    a.params.push_back(0.8000);
-    a.param_names.push_back("lY");
-    a.params.push_back(1.5000);
-    a.param_names.push_back("lZ");
-    a.params.push_back(0.01); 
-    a.param_names.push_back("mass");
-    a.params.push_back(1.0);  // unknown
-    a.nstates =0;
-
-    
-    Eigen::Isometry3d offset;
-    offset.setIdentity();
-    offset.translation()  <<0,0, 1.0;
-    double ypr[3]={1.571,0,0};
-    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
-    offset.rotate(quat);
-
-    AffordancePlus affp;
-    affp.aff =a;
-    affp.offset = offset;
-    aff_map_["table_link"]=affp; 
-  }        
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["mit_table_link"]=affmeta; 
+  }       
   
 }
 
@@ -774,41 +485,49 @@ bool OraclePlugin::sendAffordance(
         Eigen::Isometry3d pose){
 
     // Find the affordance:
-    AffordancePlus affp = aff_map_.find( name)->second;
+    AffordancePlusMeta affmeta = aff_map_.find( name)->second;
 
     /*
     cout << aff_map_.find( name)->second.aff.otdf_type << " is the type\n";
     cout << (int) aff_map_.find( name)->second.aff.aff_store_control << " is the control\n";
     cout <<  name << " is combined link\n";
     */
-    aff_map_.find( name)->second.aff.aff_store_control = drc::affordance_t::UPDATE;
+    aff_map_.find( name)->second.affplus.aff.aff_store_control = drc::affordance_t::UPDATE;
 
-    drc::affordance_t aff= affp.aff;
+    drc::affordance_plus_t affplus= affmeta.affplus;
     // Update the xyzrpr:
-    int ix = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "x"   ) );
-    int iy = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "y"   ) );
-    int iz = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "z"   ) );
-    int iroll = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "roll"   ) );
-    int ipitch = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "pitch"   ) );
-    int iyaw = std::distance( aff.param_names.begin(), std::find( aff.param_names.begin(), aff.param_names.end(), "yaw"   ) );
-
-    pose= pose*affp.offset;
+    /*
+    int ix = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "x"   ) );
+    int iy = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "y"   ) );
+    int iz = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "z"   ) );
+    int iroll = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "roll"   ) );
+    int ipitch = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "pitch"   ) );
+    int iyaw = std::distance( affplus.aff.param_names.begin(), std::find( affplus.aff.param_names.begin(), affplus.aff.param_names.end(), "yaw"   ) );
+    */
+    pose= pose*affmeta.offset;
     
     Eigen::Quaterniond r(pose.rotation());
     double yaw, pitch, roll;
-    quat_to_euler(r, yaw, pitch, roll);    
-    aff.params[ix] = pose.translation().x() ;
-    aff.params[iy] = pose.translation().y() ;
-    aff.params[iz] = pose.translation().z() ;
-    aff.params[iroll] = roll ;
-    aff.params[ipitch] = pitch ;
-    aff.params[iyaw] = yaw ;
-    
-
-    if (aff.aff_store_control==0){
-      lcm_publish_.publish( ("AFFORDANCE_FIT_ORACLE") , &aff);        
+    quat_to_euler(r, yaw, pitch, roll);   
+    affplus.aff.origin_xyz[0] =pose.translation().x() ; 
+    affplus.aff.origin_xyz[1] =pose.translation().y() ; 
+    affplus.aff.origin_xyz[2] =pose.translation().z() ; 
+    affplus.aff.origin_rpy[0] =roll; 
+    affplus.aff.origin_rpy[1] =pitch ; 
+    affplus.aff.origin_rpy[2] =yaw ; 
+ 
+    /*
+    affplus.aff.params[ix] = pose.translation().x() ;
+    affplus.aff.params[iy] = pose.translation().y() ;
+    affplus.aff.params[iz] = pose.translation().z() ;
+    affplus.aff.params[iroll] = roll ;
+    affplus.aff.params[ipitch] = pitch ;
+    affplus.aff.params[iyaw] = yaw ;
+    */
+    if (affplus.aff.aff_store_control==0){
+      lcm_publish_.publish( ("AFFORDANCE_FIT_ORACLE") , &affplus);        
     }else{
-      lcm_publish_.publish( ("AFFORDANCE_TRACK_ORACLE") , &aff);        
+      lcm_publish_.publish( ("AFFORDANCE_TRACK_ORACLE") , &affplus);        
     }
     return true;
 }  
@@ -824,7 +543,6 @@ void OraclePlugin::OnUpdate(){
     
     BOOST_FOREACH( physics::ModelPtr model, all_models ){
       if (model){
-       // gzerr << model->GetName() <<"\n";
         if ( model->GetName().compare( this->robot_name_ ) == 0){
           //gzerr << "which link: "<< model->GetName() <<"\n";
           //physics::Link_V all_links = model->GetAllLinks(); // depricated in 1.4.0
@@ -964,17 +682,6 @@ void OraclePlugin::OnUpdate(){
               if ( model->GetName().compare( "mit_table" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
                   sendAffordance(affname,  world_to_link);
-                }
-              }
-              if ( model->GetName().compare( "table" ) == 0){
-                if ( link->GetName().compare( "link" ) == 0){
-                  sendAffordance(affname,  world_to_link);
-                }
-              }              
-              if ( model->GetName().compare( "drill" ) == 0){
-                if ( link->GetName().compare( "link" ) == 0){
-                  sendAffordance(affname,  world_to_link);
-                  sendAffordance(   "drill_link_handle"   ,  world_to_link);
                 }
               }
               
