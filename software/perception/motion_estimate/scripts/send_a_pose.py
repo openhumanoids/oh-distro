@@ -11,8 +11,8 @@ from bot_core.pose_t import pose_t
 
 msg = pose_t()
 msg.utime = 0
-msg.pos = (0, 0, 0)
+msg.pos = (0, 0, 1.1)
 msg.orientation = (1, 0, 0, 0)
 
 lc = lcm.LCM()
-lc.publish("POSE_HEAD", msg.encode())
+lc.publish("GROUND_HEIGHT", msg.encode())

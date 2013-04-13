@@ -219,7 +219,7 @@ void Pass::doDemo(){
   cout << home << "\n";  
   
   
-  int uid = 10;
+  int uid = 12;
   std::vector<double> xyzrpy = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
   //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
   //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
@@ -230,7 +230,7 @@ void Pass::doDemo(){
   lcm_->publish("AFFORDANCE_FIT",&a0);
 
 
-  uid = 11;
+  uid = 13;
   xyzrpy = {-2.85 , -2.55 , 0.64 , 0. , 0 , M_PI};
   filename = string(home+ "/drc/software/models/mit_gazebo_models/vehicle_otdf/meshes/vehicle.pcd");
   drc::affordance_plus_t a1 = getAffordancePlus(filename, xyzrpy, uid);

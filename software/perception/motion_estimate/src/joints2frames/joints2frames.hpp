@@ -15,6 +15,7 @@
 #include "kdl/tree.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
+#include <model-client/model-client.hpp>
 
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include <pointcloud_tools/pointcloud_lcm.hpp>
@@ -28,36 +29,28 @@
 ///////////////////////////////////////////////////////////////
 class joints2frames{
   public:
-    joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, 
-                  bool show_triads_, bool _standalone_head);
+    joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, 
+                  bool show_triads_, bool standalone_head_, bool show_ground_image_);
     
     ~joints2frames(){
     }
+    void Identity();
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;
+    boost::shared_ptr<ModelClient> model_;
+    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 
-    Isometry3dTime world_to_bodyT_;
-    Isometry3dTime body_to_headT_;
+    pointcloud_vis* pc_vis_;
 
     void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
-    bool show_labels_, show_triads_;
+    bool show_labels_, show_triads_, ground_height_;
 
-    // Solver: [from sisir]
-    std::string _robot_name;
-    std::string _urdf_xml_string;
-    std::string _head_link_name;
-    std::vector<std::string> _joint_names_;    
-    std::map<std::string, boost::shared_ptr<urdf::Link> > _links_map;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> _fksolver;
+    bool standalone_head_;
     
-    lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
-    bool _urdf_parsed;    
-    std::vector<drc::link_transform_t> _link_tfs;
-    
-    bool _standalone_head;
+    void PublishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime);
+    double last_ground_height_;
     
     Eigen::Quaterniond  euler_to_quat(double yaw, double pitch, double roll);
 };    

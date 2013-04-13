@@ -46,10 +46,10 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
                              const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   cout << "got "<< msg->affs_plus.size() <<" affs\n";
   for (size_t i=0; i < msg->affs_plus.size() ; i++){
-    int aff_id =i;
-    int cfg_root = aff_id*10;
 
-    drc::affordance_plus_t a = msg->affs_plus[aff_id];
+    drc::affordance_plus_t a = msg->affs_plus[i];
+    int aff_id =a.aff.uid;
+    int cfg_root = aff_id*10;
     
     Matrix3d m;
     m = AngleAxisd ( a.aff.origin_rpy[2], Vector3d::UnitZ ())
@@ -62,23 +62,23 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     // obj: id name type reset
     // pts: id name type reset objcoll usergb rgb
     
-    if (a.points.size() !=0 ){
-      obj_cfg oconfig = obj_cfg(cfg_root,   string( "Affordance Pose " + std::to_string(i))   ,5,1);
+    if (1==1){//(a.points.size() !=0 ){
+      obj_cfg oconfig = obj_cfg(cfg_root,   string( "Affordance Pose " + std::to_string(aff_id))   ,5,1);
       Isometry3dTime poseT = Isometry3dTime ( 0, pose  );
       pc_vis_->pose_to_lcm(oconfig,poseT);
 
       if (a.triangles.size() ==0){
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = affutils.getCloudFromAffordance(a.points);
-        ptcld_cfg pconfig = ptcld_cfg(cfg_root+1,  string( "Affordance Cloud " + std::to_string(i))     ,1,1, cfg_root,1, {0.2,0,0.2} );
+        ptcld_cfg pconfig = ptcld_cfg(cfg_root+1,  string( "Affordance Cloud " + std::to_string(aff_id))     ,1,1, cfg_root,1, {0.2,0,0.2} );
         pc_vis_->ptcld_to_lcm(pconfig, *cloud, 0, 0);  
       }else{
         pcl::PolygonMesh::Ptr mesh = affutils.getMeshFromAffordance(a.points, a.triangles);
-        ptcld_cfg pconfig = ptcld_cfg(cfg_root+2,    string( "Affordance Mesh " + std::to_string(i))     ,7,1, cfg_root,1, {0.2,0,0.2} );
+        ptcld_cfg pconfig = ptcld_cfg(cfg_root+2,    string( "Affordance Mesh " + std::to_string(aff_id))     ,7,1, cfg_root,1, {0.2,0,0.2} );
         pc_vis_->mesh_to_lcm(pconfig, mesh, 0, 0);  
       }
       
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_cloud = affutils.getBoundingBoxCloud(a.aff.bounding_xyz, a.aff.bounding_rpy, a.aff.bounding_lwh);
-      ptcld_cfg pconfig = ptcld_cfg(cfg_root+3,    string( "Affordance Bounding Box " + std::to_string(i))     ,4,1, cfg_root,1, {0.2,0,0.2} );
+      ptcld_cfg pconfig = ptcld_cfg(cfg_root+3,    string( "Affordance Bounding Box " + std::to_string(aff_id))     ,4,1, cfg_root,1, {0.2,0,0.2} );
       pc_vis_->ptcld_to_lcm(pconfig, *bb_cloud, 0, 0);  
     }
   }

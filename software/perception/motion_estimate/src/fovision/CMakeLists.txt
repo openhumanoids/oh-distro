@@ -19,23 +19,21 @@ pods_install_pkg_config_file(fovision
     REQUIRES 
     VERSION 0.0.1)
 
+    
+# Required for FK only:
+set(FK_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics model-client)
 
+    
 
 ##############################################
 add_executable (drc-fovision-odometry fovision_odometry.cpp)
 pods_use_pkg_config_packages(drc-fovision-odometry eigen3 
-  lcm bot2-core
-  bot2-frames
-  bot2-frames_cpp
-  lcmtypes_bot2-core   
-  lcmtypes_fovis-bot2
-  lcmtypes_microstrain_comm
-  voconfig
-  vofeatures
-  voestimator
-  fovision
-  pointcloud_vis
-  opencv)
+  lcm bot2-core bot2-frames   bot2-frames_cpp
+  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm
+  voconfig   vofeatures   voestimator   fovision
+  pointcloud_vis  
+  opencv
+  ${FK_PACKAGES})
 pods_install_executables(drc-fovision-odometry)
 
 

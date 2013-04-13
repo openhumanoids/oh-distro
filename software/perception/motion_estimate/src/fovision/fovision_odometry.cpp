@@ -1,4 +1,5 @@
-// Demonstrations application for fovis wrapper library - fovision
+// Main VO module
+
 #include <zlib.h>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_param/param_client.h>
@@ -17,6 +18,14 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
+/// For Forward Kinematics from body to head:
+#include "urdf/model.h"
+#include "kdl/tree.hpp"
+#include "kdl_parser/kdl_parser.hpp"
+#include "forward_kinematics/treefksolverposfull_recursive.hpp"
+#include <model-client/model-client.hpp>
+///
+
 #include <opencv/cv.h> // for disparity 
 
 using namespace std;
@@ -25,7 +34,7 @@ using namespace cv; // for disparity ops
 
 class StereoOdom{
   public:
-    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, string camera_config_);//lcm_t* publish_lcm);
+    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_);
     
     ~StereoOdom(){
       free (left_buf_);
@@ -68,23 +77,34 @@ class StereoOdom{
     void multisenseLRHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     void multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     
+    void trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    boost::shared_ptr<ModelClient> model_;
+    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+
     
-    int imu_fusion_mode_;
-    bool imu_initialized_;
+    int fusion_mode_;
+    bool pose_initialized_;
     int imu_counter_;
     void microstrainHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  microstrain::ins_t* msg);
     void gazeboHeadIMUHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);
-    void fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency);
+    void fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency, int64_t utime);
 };    
 
-StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, string camera_config_) : 
+StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_) : 
        lcm_(lcm_), utime_cur_(0), utime_prev_(0), 
        ref_utime_(0), changed_ref_frames_(false), 
-       imu_fusion_mode_( imu_fusion_mode_ ), camera_config_(camera_config_)
+       fusion_mode_( fusion_mode_ ), camera_config_(camera_config_)
 {
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
-
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  KDL::Tree tree;
+  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
+    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
+    exit(-1);
+  }
+  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+  
   // Read config from file:
   config = new voconfig::KmclConfiguration(botparam_, camera_config_);
 
@@ -99,19 +119,22 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int imu_fusion_mode_, 
   vo_ = new FoVision(lcm_ , stereo_calibration_);
 
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
-  estimator_ = new VoEstimator(lcm_ , botframes_);
+  estimator_ = new VoEstimator(lcm_ , botframes_,"POSE_HEAD");
 
-  // DEPRECATED - assumes CAMERA is image_t type:
+  // Assumes CAMERA is image_t type:
   lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
-  //lcm_->subscribe("CAMERA",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LR",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("MULTISENSE_LD",&StereoOdom::multisenseLDHandler,this);
+
+  // For dev of integration:
+  lcm_->subscribe("TRUE_ROBOT_STATE",&StereoOdom::trueRobotStateHandler,this);
   
   // IMU:
-  imu_initialized_=false;
+  pose_initialized_=false;
   imu_counter_=0;
   lcm_->subscribe("MICROSTRAIN_INS",&StereoOdom::microstrainHandler,this);
   lcm_->subscribe("HEAD_IMU",&StereoOdom::gazeboHeadIMUHandler,this);
+
   
   cout <<"StereoOdom Constructed\n";
 }
@@ -163,6 +186,7 @@ void StereoOdom::updateMotion(){
   vo_->fovis_stats();
   estimator_->voUpdate(utime_cur_, delta_camera);
   
+  /*
   stringstream ss;
   ss << "Number of Visual Odometry inliers: " << vo_->getNumInliers();
   drc::system_status_t status_msg;
@@ -172,7 +196,7 @@ void StereoOdom::updateMotion(){
   status_msg.frequency = 1;// use enums!!
   status_msg.value = ss.str();
   lcm_->publish("SYSTEM_STATUS", &status_msg);
-  
+  */
 }
 
 /// Added for RGB-to-Gray:
@@ -271,6 +295,73 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
+void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
+                                       const std::string& channel, const  drc::robot_state_t* msg){
+  if (fusion_mode_!=3){
+    return; 
+  }
+  if (pose_initialized_){
+    return;
+  }
+  
+  // 1. Take the simulator-created robot root position in world frame:
+  cout << "got true RS\n";  
+  Eigen::Isometry3d world_to_body;
+  world_to_body.setIdentity();
+  world_to_body.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y,
+                                 msg->origin_position.translation.z;
+  world_to_body.rotate(  Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
+                                            msg->origin_position.rotation.y, msg->origin_position.rotation.z) );
+  
+  map<string, double> jointpos_in;
+  map<string, drc::transform_t > cartpos_out;
+  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
+    jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+
+  // Calculate forward position kinematics
+  bool kinematics_status;
+  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
+  if(kinematics_status>=0){
+    // cout << "Success!" <<endl;
+  }else{
+    cerr << "Error: could not calculate forward kinematics!" <<endl;
+    return;
+  }
+  
+  // 2. Determine the head position:
+  Eigen::Isometry3d body_to_head;
+  bool body_to_head_found =false;
+  for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
+    std::string joint = (*ii).first;
+    if (   (*ii).first.compare( "head" ) == 0 ){
+      body_to_head.setIdentity();
+      body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
+      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
+      body_to_head.rotate(quat);    
+      body_to_head_found=true;
+    }
+  }    
+  
+  // 3. If successful, set the robot's head position and start state estimation:
+  if (body_to_head_found){
+    Eigen::Isometry3d world_to_head = world_to_body * body_to_head; 
+    std::stringstream ss2;
+    print_Isometry3d(world_to_head, ss2);
+    double ypr[3];
+    quat_to_euler(  Eigen::Quaterniond(world_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+    
+    if (1==1){//verbose
+      std::cout << "gt world_to_head: " << ss2.str() << " | "<< 
+        ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+    }
+  
+  estimator_->setHeadPose(world_to_head);
+  pose_initialized_ = true;
+  cout << "got first GT Pose Head measurement from true\n";      
+  
+  }
+}
 
 
 // Transform the Gazebo head IMU orientation into the head frame:
@@ -320,73 +411,78 @@ Eigen::Quaterniond microstrainIMUToRobotOrientation(const microstrain::ins_t *ms
   return r_x;
 }
 
-void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency){
-  if (imu_fusion_mode_ >0 ){
-    if (!imu_initialized_){
+void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
+                              int correction_frequency, int64_t utime){
+  if (fusion_mode_==0){
+    //    cout << "got IMU measurement - not incorporating them\n";
+    return;
+  }
+  
+  if (!pose_initialized_){
+    if((fusion_mode_ ==1) ||(fusion_mode_ ==2) ){
       Eigen::Isometry3d init_pose;
       init_pose.setIdentity();
       init_pose.translation() << 0,0,0;
       init_pose.rotate( imu_robotorientation );
       estimator_->setHeadPose(init_pose);
-      imu_initialized_ = true;
+      pose_initialized_ = true;
       cout << "got first IMU measurement\n";
-    }else if(imu_fusion_mode_ ==2){
-      if (imu_counter_== correction_frequency){
-        // Every X frames: replace the pitch and roll with that from the IMU
-        // convert the camera pose to body frame
-        // extract xyz and yaw from body frame
-        // extract pitch and roll from imu (in body frame)
-        // combine, convert to camera frame... set as pose
-        bool verbose = false;
-        
-        Eigen::Isometry3d local_to_head = estimator_->getHeadPose();// _local_to_camera *cam2head;
-        std::stringstream ss2;
-        print_Isometry3d(local_to_head, ss2);
-        double ypr[3];
-        quat_to_euler(  Eigen::Quaterniond(local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
-        
-        if (verbose){
-          std::cout << "_local_to_head: " << ss2.str() << " | "<< 
-            ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
-
-          double xyz[3];
-          xyz[0] = local_to_head.translation().x();
-          xyz[1] = local_to_head.translation().y();
-          xyz[2] = local_to_head.translation().z();
-          std::cout << xyz[0] << " " << xyz[1] << " " << xyz[2] << " pose xyz\n";
-        }
-          
-        double ypr_imu[3];
-        quat_to_euler( imu_robotorientation , 
-                        ypr_imu[0], ypr_imu[1], ypr_imu[2]);
-        if (verbose){
-          std::cout <<  ypr_imu[0]*180/M_PI << " " << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << " imuypr\n";        
-        }
-        cout << "IMU correction | pitch roll | was: "
-             << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << " | now: "
-             << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << "\n";
-        
-        Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr[0], ypr_imu[1], ypr_imu[2]);             
-        Eigen::Isometry3d revised_local_to_head;
-        revised_local_to_head.setIdentity();
-        revised_local_to_head.translation() = local_to_head.translation();
-        revised_local_to_head.rotate(revised_local_to_head_quat);
-        
-        if (verbose){
-          std::stringstream ss4;
-          print_Isometry3d(revised_local_to_head, ss4);
-          quat_to_euler(  Eigen::Quaterniond(revised_local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
-          std::cout << "_local_revhead: " << ss4.str() << " | "<< 
-            ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
-        }
-        estimator_->setHeadPose(revised_local_to_head);
-      }
-      if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
-      imu_counter_++;
+      return;
     }
-  }else{
-//    cout << "got IMU measurement - not incorporating them\n";
-  }  
+  }
+  
+  if((fusion_mode_ ==2) ||(fusion_mode_ ==3) ){
+    if (imu_counter_== correction_frequency){
+      // Every X frames: replace the pitch and roll with that from the IMU
+      // convert the camera pose to body frame
+      // extract xyz and yaw from body frame
+      // extract pitch and roll from imu (in body frame)
+      // combine, convert to camera frame... set as pose
+      bool verbose = false;
+      
+      Eigen::Isometry3d local_to_head = estimator_->getHeadPose();// _local_to_camera *cam2head;
+      std::stringstream ss2;
+      print_Isometry3d(local_to_head, ss2);
+      double ypr[3];
+      quat_to_euler(  Eigen::Quaterniond(local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+      
+      if (verbose){
+        std::cout << "local_to_head: " << ss2.str() << " | "<< 
+          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+      }
+        
+      double ypr_imu[3];
+      quat_to_euler( imu_robotorientation , 
+                      ypr_imu[0], ypr_imu[1], ypr_imu[2]);
+      if (verbose){
+        std::cout <<  ypr_imu[0]*180/M_PI << " " << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << " imuypr\n";        
+        cout << "IMU correction | pitch roll | was: "
+            << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << " | now: "
+            << ypr_imu[1]*180/M_PI << " " << ypr_imu[2]*180/M_PI << "\n";
+      }
+      
+      // pitch and roll only:
+      Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr[0], ypr_imu[1], ypr_imu[2]);             
+      // ypr:
+      //Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr_imu[0], ypr_imu[1], ypr_imu[2]);             
+      Eigen::Isometry3d revised_local_to_head;
+      revised_local_to_head.setIdentity();
+      revised_local_to_head.translation() = local_to_head.translation();
+      revised_local_to_head.rotate(revised_local_to_head_quat);
+      
+      if (verbose){
+        std::stringstream ss4;
+        print_Isometry3d(revised_local_to_head, ss4);
+        quat_to_euler(  Eigen::Quaterniond(revised_local_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+        std::cout << "local_revhead: " << ss4.str() << " | "<< 
+          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
+      }
+      estimator_->setHeadPose(revised_local_to_head);
+      estimator_->publishUpdate(utime);
+    }
+    if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
+    imu_counter_++;
+  }
 }
 
 void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -394,26 +490,27 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   Eigen::Quaterniond imu_robotorientation;
   imu_robotorientation =microstrainIMUToRobotOrientation(msg);
   int correction_frequency=100;
-  fuseInterial(imu_robotorientation, correction_frequency);
+  fuseInterial(imu_robotorientation, correction_frequency, msg->utime);
 }
 
 void StereoOdom::gazeboHeadIMUHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  drc::imu_t* msg){
   Eigen::Quaterniond imu_robotorientation;
   imu_robotorientation =gazeboHeadIMUToRobotOrientation(msg);
-  int correction_frequency=1000;
-  fuseInterial(imu_robotorientation, correction_frequency);  
+  //int correction_frequency=1000;
+  int correction_frequency=10; // once every 1/100 of second
+  fuseInterial(imu_robotorientation, correction_frequency, msg->utime);  
 }
 
 
 int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "fovision-odometry");
-  int imu_fusion_mode=0;
+  int fusion_mode=0;
   string camera_config = "CAMERA";
-  parser.add(imu_fusion_mode, "i", "imu_fusion_mode", "0 none, 1 at init, 2 every second");
+  parser.add(fusion_mode, "i", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
   parser.add(camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
   parser.parse();
-  cout << imu_fusion_mode << " is imu_fusion_mode\n"; 
+  cout << fusion_mode << " is fusion_mode\n"; 
   cout << camera_config << " is camera_config\n"; 
   
   
@@ -421,6 +518,6 @@ int main(int argc, char **argv){
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-  StereoOdom fo= StereoOdom(lcm, imu_fusion_mode,camera_config);    
+  StereoOdom fo= StereoOdom(lcm, fusion_mode,camera_config);    
   while(0 == lcm->handle());
 }

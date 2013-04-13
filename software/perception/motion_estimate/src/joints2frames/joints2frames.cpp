@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <lcm/lcm.h>
 #include <iostream>
+#include <limits>       // std::numeric_limits
 
 #include "joints2frames.hpp"
 #include <ConciseArgs>
@@ -20,20 +21,25 @@ using namespace boost::assign;
 
 /////////////////////////////////////
 
-joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &publish_lcm, bool show_labels_, bool show_triads_,
-  bool _standalone_head):
-          lcm_(publish_lcm), _urdf_parsed(false), show_labels_(show_labels_), show_triads_(show_triads_),
-          _standalone_head(_standalone_head),
-          world_to_bodyT_(0, Eigen::Isometry3d::Identity()),
-          body_to_headT_(0, Eigen::Isometry3d::Identity()) {
-
+joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, bool show_triads_,
+  bool standalone_head_, bool ground_height_):
+          lcm_(lcm_), show_labels_(show_labels_), show_triads_(show_triads_),
+          standalone_head_(standalone_head_), ground_height_(ground_height_){
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  KDL::Tree tree;
+  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
+    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
+    exit(-1);
+  }
+  fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+  
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
-
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
-  _urdf_subscription =   lcm_->subscribe("ROBOT_MODEL",&joints2frames::urdf_handler,this);  
+  
+  last_ground_height_=std::numeric_limits<double>::min();
 }
 
 // same as bot_timestamp_now():
@@ -43,21 +49,45 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  if (!_urdf_parsed){
-    cout << "\n handleRobotStateMsg: Waiting for urdf to be parsed" << endl;
-    return;
-  }
+Eigen::Isometry3d DRCTransformToEigen(drc::transform_t tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.translation.x, tf.translation.y, tf.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(tf.rotation.w, tf.rotation.x, 
+                                               tf.rotation.y, tf.rotation.z);
+  tf_out.rotate(quat);    
+  return tf_out;
+}
 
+void joints2frames::PublishGroundHeightPose(Eigen::Isometry3d pose, int64_t utime){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();  
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();  
+  pose_msg.orientation[1] =  r_x.x();  
+  pose_msg.orientation[2] =  r_x.y();  
+  pose_msg.orientation[3] =  r_x.z();  
+  lcm_->publish( "POSE_GROUND", &pose_msg);
+}
+
+void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
     tic_toc.push_back(_timestamp_now());
   #endif
-  
-  
+  // 0. Extract World Pose of body:
+  Eigen::Isometry3d world_to_body;
+  world_to_body.setIdentity();
+  world_to_body.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
+                                               msg->origin_position.rotation.y, msg->origin_position.rotation.z);
+  world_to_body.rotate(quat);    
+    
   // 1. Solve for Forward Kinematics:
-  _link_tfs.clear();
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
   map<string, drc::transform_t > cartpos_out;
@@ -68,11 +98,10 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     tic_toc.push_back(_timestamp_now());
   #endif
   
-  
   // Calculate forward position kinematics
   bool kinematics_status;
   bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-  kinematics_status = _fksolver->JntToCart(jointpos_in,cartpos_out,flatten_tree);
+  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
   if(kinematics_status>=0){
     // cout << "Success!" <<endl;
   }else{
@@ -91,16 +120,10 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string joint = (*ii).first;
     if (   (*ii).first.compare( "head" ) == 0 ){
-      body_to_head.setIdentity();
-      body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
-      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
-      body_to_head.rotate(quat);    
+      body_to_head = DRCTransformToEigen( (*ii).second );
       body_to_head_found=true;
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
-      body_to_hokuyo_link.setIdentity();
-      body_to_hokuyo_link.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
-      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
-      body_to_hokuyo_link.rotate(quat);    
+      body_to_hokuyo_link = DRCTransformToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
     }
   }  
@@ -141,7 +164,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }
   }
   
-  if (_standalone_head){
+  if (standalone_head_){
     // If publish from the head alone - then the head is the root linl:
       Eigen::Isometry3d head_to_hokuyo_link = body_to_hokuyo_link ;
       
@@ -163,20 +186,43 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     display_tic_toc(tic_toc,"createScene");  
   #endif
 
+  
+  if (ground_height_){ 
+    // Publish a pose at the lower of the feet - assumed to be on the ground
+    // TODO: This doesnt need to be published at 1000Hz
+    Eigen::Isometry3d body_to_l_foot = DRCTransformToEigen(cartpos_out.find("l_foot")->second);
+    Eigen::Isometry3d body_to_r_foot = DRCTransformToEigen(cartpos_out.find("r_foot")->second);
+
+    Eigen::Isometry3d foot_to_sole;
+    foot_to_sole.setIdentity();
+    foot_to_sole.translation()  << 0.0,0.,-0.08; //distance between foot link and sole of foot
     
-  if (!show_triads_){
-    return; 
+    Eigen::Isometry3d world_to_l_sole = world_to_body * body_to_l_foot * foot_to_sole;
+    Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
+    /*std::cout << world_to_l_sole.translation().x() << " " foot_to_sole
+              << world_to_l_sole.translation().y() << " " 
+              << world_to_l_sole.translation().z() << " L\n" ;
+    std::cout << world_to_r_sole.translation().x() << " " 
+              << world_to_r_sole.translation().y() << " " 
+              << world_to_r_sole.translation().z() << " R\n" ;
+              */
+    // Publish lower of the soles at the ground when it changes by 1cm
+    if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
+      if ( fabs( last_ground_height_ - world_to_l_sole.translation().z()) > 0.01 ){
+        last_ground_height_ = world_to_l_sole.translation().z();
+        PublishGroundHeightPose(world_to_l_sole, msg->utime);
+      }
+    }else{
+      if ( fabs( last_ground_height_ - world_to_r_sole.translation().z()) > 0.01 ){
+        last_ground_height_ = world_to_r_sole.translation().z();
+        PublishGroundHeightPose(world_to_r_sole, msg->utime);
+      }
+    }
   }
-  
-  // 3. Extract World Pose:
-  world_to_bodyT_.pose.setIdentity();
-  world_to_bodyT_.pose.translation()  << msg->origin_position.translation.x, msg->origin_position.translation.y, msg->origin_position.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
-                                               msg->origin_position.rotation.y, msg->origin_position.rotation.z);
-  world_to_bodyT_.pose.rotate(quat);    
-  world_to_bodyT_.utime = msg->utime;
-  
+    
+
   // 4. Loop through joints and extract world positions:
+  if (!show_triads_){     return;    }
   int counter =msg->utime;  
   std::vector<Isometry3dTime> body_to_jointTs, world_to_jointsT;
   std::vector< int64_t > body_to_joint_utimes;
@@ -195,7 +241,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     Isometry3dTime body_to_jointT(counter, body_to_joint);
     body_to_jointTs.push_back(body_to_jointT);
     // convert to world positions
-    Isometry3dTime world_to_jointT(counter, world_to_bodyT_.pose*body_to_joint);
+    Isometry3dTime world_to_jointT(counter, world_to_body*body_to_joint);
     world_to_jointsT.push_back(world_to_jointT);
     counter++;
   }
@@ -206,63 +252,18 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
 }
 
 
-void joints2frames::urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-    const  drc::robot_urdf_t* msg)
-{
-  // Received robot urdf string. Store it internally and get all available joints.
-  _robot_name      = msg->robot_name;
-  _urdf_xml_string = msg->urdf_xml_string;
-  cout<< "Received urdf_xml_string of robot [" 
-      << msg->robot_name << "], storing it internally as a param" << endl;
-
-  // Get a urdf Model from the xml string and get all the joint names.
-  urdf::Model robot_model; 
-  if (!robot_model.initString( msg->urdf_xml_string))
-  {
-    cerr << "ERROR: Could not generate robot model" << endl;
-  }
-
-  typedef map<string, shared_ptr<urdf::Joint> > joints_mapType;
-  for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
-  {
-    if(it->second->type!=6) // All joints that not of the type FIXED.
-      _joint_names_.push_back(it->first);
-  }
-
-  _links_map =  robot_model.links_;
-
-  //---------parse the tree and stop listening for urdf messages
-
-  // Parse KDL tree
-  KDL::Tree tree;
-  if (!kdl_parser::treeFromString(_urdf_xml_string,tree))
-  {
-    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
-    return;
-  }
-
-  //unsubscribe from urdf messages
-  lcm_->unsubscribe(_urdf_subscription); 
-
-  //
-  _fksolver = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
-  //remember that we've parsed the urdf already
-  _urdf_parsed = true;
-
-  cout<< "Number of Joints: " << _joint_names_.size() <<endl;
-};// end handleRobotUrdfMsg
-
-
 int
 main(int argc, char ** argv){
   string role = "robot";
   bool labels = false;
   bool triads = false;
   bool standalone_head = false;
+  bool ground_height = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(role, "r", "role","Role - robot or base");
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
+  opt.add(ground_height, "g", "ground", "Publish the grounded foot pose");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
   opt.parse();
   if (labels){ // require triads if labels is to be published
@@ -299,7 +300,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads, standalone_head);
+  joints2frames app(lcm,labels,triads, standalone_head, ground_height);
   while(0 == lcm->handle());
   return 0;
 }

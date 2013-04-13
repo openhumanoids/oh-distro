@@ -23,11 +23,13 @@
 class VoEstimator
 {
 public:
-  VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_);
+  VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_, 
+              std::string pose_head_channel_ = "POSE_HEAD");
   ~VoEstimator();
 
   void voUpdate(int64_t utime, Eigen::Isometry3d delta_camera);
-
+  void publishUpdate(int64_t utime);
+  
   Eigen::Isometry3d getCameraPose(){ return local_to_head_*head_to_camera_; }
   Eigen::Isometry3d getHeadPose(){ return local_to_head_; }
 
@@ -38,12 +40,12 @@ public:
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
   pointcloud_vis* pc_vis_;
-  int64_t utime_;
 
   BotFrames* botframes_;
   bot::frames* botframes_cpp_;
 
   Eigen::Isometry3d camera_to_head_, head_to_camera_, local_to_head_;
+  std::string pose_head_channel_;
 };
 
 #endif

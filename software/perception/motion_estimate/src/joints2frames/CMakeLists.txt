@@ -19,7 +19,8 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 add_executable(drc-joints2frames joints2frames.cpp  )
 pods_use_pkg_config_packages(drc-joints2frames
     path-util
-    bot2-param-client
+  model-client
+  bot2-param-client
         pointcloud_lcm        pointcloud_vis        pointcloud_math
 	lcmtypes_drc_lcmtypes  lcmtypes_visualization
        ${PCL_LIBRARIES} ${REQUIRED_PACKAGES})
