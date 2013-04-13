@@ -30,9 +30,9 @@ struct affordance_t
   // position can be the same as origin
   // If lwh are 0,0,0 - then none were given
   // lwh dimensions in bounding box frame i.e. forward/back, sideways, up/down
-  float bounding_xyz[3];
-  float bounding_rpy[3];
-  float bounding_lwh[3]; 
+  double bounding_xyz[3];
+  double bounding_rpy[3];
+  double bounding_lwh[3]; 
 
 
 }
