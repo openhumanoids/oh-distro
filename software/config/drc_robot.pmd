@@ -11,7 +11,7 @@ group "0.dev_deputies" {
 
 group "1.a.core" {
     cmd "pserver" {
-        exec = "bot-param-server drc_robot.cfg";
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
         host = "paladin-02";
     }
     cmd "roscore" {
@@ -46,7 +46,7 @@ group "1.a.core" {
 
 group "1.b.sensing" {
     cmd "j2f" {
-        exec = "drc-joints2frames";
+        exec = "drc-joints2frames -g";
         host = "paladin-02";
     }
     cmd "r2l_perception" {
@@ -157,7 +157,7 @@ group "5.base" {
         exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
         host = "paladin-01";
     }
-    cmd "viewer" {
+    cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "paladin-01";
     }
@@ -178,7 +178,7 @@ group "5.base" {
         host = "paladin-01";
     }
     cmd "param_server" {
-        exec = "bot-param-server drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
         host = "paladin-01";
     }
     cmd "mini2maxi" {
@@ -298,9 +298,9 @@ script "systemtest" {
     start cmd "systemwide-test";
     wait ms 100;
     start group "0.dev_deputies";
-    wait ms 100;
+    wait ms 200;
     start group "1.a.core";
-    wait ms 100;
+    wait ms 200;
     start group "1.b.sensing";
     start group "4.drake_robot";
     wait ms 10000;
