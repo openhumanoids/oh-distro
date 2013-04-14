@@ -52,7 +52,7 @@ class TwoLegOdometry {
 		
 		float getPrimaryFootZforce();
 		float getSecondaryFootZforce();
-		void ResetInitialConditions();
+		void ResetInitialConditions(const Eigen::Isometry3d &left_);
 		
 		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 		
@@ -90,7 +90,7 @@ class TwoLegOdometry {
 		Eigen::Isometry3d getPrimaryFootToPelvis();
 		
 		void setPelvisPosition(Eigen::Isometry3d transform);
-		void ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis);
+		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
 		
 		int getStepCount();
 		int getActiveFoot();

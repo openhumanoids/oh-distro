@@ -13,7 +13,7 @@
 //#include <inttypes.h>
 
 #include "LegOdometry_LCM_Handler.hpp"
-
+#include "QuaternionLib.h"
 
 
 using namespace TwoLegs;
@@ -149,26 +149,24 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Isometry3d right;
 	
 	getTransforms(msg,left,right);
+	InertialOdometry::QuaternionLib::printEulerAngles("after getTransforms()", left);
 
 	
 	if (firstpass)
 	{
 		firstpass = false;
-		_leg_odo->ResetWithLeftFootStates(left);
-		std::cout << "Footsteps initialized with the first step\n";
+		_leg_odo->ResetWithLeftFootStates(left,right);
+		//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
 	}
 	_leg_odo->setLegTransforms(left, right);
-	
-	
 	
 	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 	
-	
 #ifdef DISPLAY_FOOTSTEP_POSES
 	// here comes the drawing of poses
 	
-	//drawLeftFootPose();
+	drawLeftFootPose();
 	//drawRightFootPose();
 	//drawSumPose();
 	addIsometryPose(78, _leg_odo->getPelvisFromStep());
@@ -177,7 +175,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	if (legchangeflag)
 	{
-		std::cout << "LEGCHANGE\n";
+		//std::cout << "LEGCHANGE\n";
 		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
 		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
 	}
@@ -225,11 +223,16 @@ void LegOdometry_Handler::drawLeftFootPose() {
 	//addIsometryPose(_leg_odo->getLeftInLocal());
 	
 	//addIsometryPose(98, _leg_odo->left_to_pelvis);
+	
+	//TODO - male left_to_pelvis and other private members in TwoLegOdometry class with get functions of the same name, as is done with Eigen::Isometry3d .translation() and .rotation()
+	
 	addIsometryPose(97, _leg_odo->left_to_pelvis);
 	addIsometryPose(98, _leg_odo->left_to_pelvis);
 	
 	addIsometryPose(87, _leg_odo->pelvis_to_left);
 	addIsometryPose(88, _leg_odo->pelvis_to_left);
+	
+	//InertialOdometry::QuaternionLib::printEulerAngles("drawLeftFootPose()", _leg_odo->pelvis_to_left);
 			
 }
 
@@ -256,8 +259,12 @@ void LegOdometry_Handler::drawSumPose() {
 }
 
 void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d &target) {
-	// TODO - why are negatives required here
-	_obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),0,0,0));
+  // TODO - why are negatives required here
+  
+  //InertialOdometry::QuaternionLib::printEulerAngles("AddIsometryPose()", target);
+  
+  _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),0,0,0));
+	
 }
 
 void LegOdometry_Handler::addFootstepPose_draw() {
@@ -322,17 +329,43 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 #endif
   	    transform_it_rf->second.rotation;
 	  }else{
-        std::cout<< "fk position does not exist" <<std::endl;
+        std::cout<< "fk position does not exist" << std::endl;
   	  }
     
 	  left.translation() << transform_it_lf->second.translation.x, transform_it_lf->second.translation.y, transform_it_lf->second.translation.z;
 	  right.translation() << transform_it_rf->second.translation.x, transform_it_rf->second.translation.y, transform_it_rf->second.translation.z;
 
+	  Eigen::Vector3d E_;
+	  
 	  // TODO - Confirm the quaternion scale and vector ordering is correct and the ->second pointer is the correct use
 	  Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
 	  Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
-	  	  
-	  left.rotate(leftq);
+	  
+	  //std::cout << "leftq Quaternion values are: " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() << std::endl;
+	  
+	  Eigen::Quaterniond tempq;
+	  Eigen::Matrix<double,3,3> leftC;
+	  tempq.setIdentity();
+	  
+	  //std::cout << ".rotation() is: " << left.rotation() << std::endl;
+	  
+	  E_ << 0.,0.,0.;
+	  InertialOdometry::QuaternionLib::q2e(leftq, E_);
+	  //std::cout << "LegOdometry_Handler::getTransforms() leftq 2 E: " << E_.transpose() << std::endl;
+	  
+	  leftC = InertialOdometry::QuaternionLib::q2C(leftq);
+	  
+	  //left.rotate(leftq); // with quaternion
+	  //left.rotate(leftC); // with rotation matrix
+	  left.linear() = leftC; // trying to do this directly
+	  
+	  E_<< 0.,0.,0.;
+	  tempq = Eigen::Quaterniond(left.rotation());
+	  //std::cout << "left.rotation() Quaternion values are: " << tempq.w() << ", " << tempq.x() << ", " << tempq.y() << ", " << tempq.z() << std::endl;
+	  std::cout << "LegOdometry_Handler::getTransforms() subtracted vals: " << leftq.w() - tempq.w() << ", " << leftq.x() - tempq.x() << ", " << leftq.y() - tempq.y() << ", " << leftq.z() - tempq.z() << std::endl;
+	  InertialOdometry::QuaternionLib::q2e(tempq, E_);
+	  //std::cout << "LegOdometry_Handler::getTransforms() tempq 2 E: " << E_.transpose() << std::endl << std::endl;
+	  
 	  right.rotate(rightq);
 	  
 }

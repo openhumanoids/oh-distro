@@ -78,6 +78,16 @@ namespace InertialOdometry
     //std::cout << " QuaternionLib::VectorRotation happened." << std::endl;
     
   }
+  
+  void QuaternionLib::q2e(const Eigen::Quaterniond &q_, Eigen::Vector3d &E) {
+	  
+	  Eigen::Vector4d var;
+	  var << q_.w(), q_.x(), q_.y(), q_.z();
+	  
+	  //std::cout << "q2e(Eigen::Q, Eigen::V3) convention not confirmed "<< var.transpose() << "\n";
+	  
+	  q2e(var, E);
+  }
 
   //This function is specific to NED and forward right down coordinate frames
   void QuaternionLib::q2e(Eigen::Vector4d q_, Eigen::Vector3d &E)
@@ -87,7 +97,7 @@ namespace InertialOdometry
 
   	double a,b,c,d;
 
-  	a = q_(0);
+  	a = q_(0); // 90% sure this is the scalar component for computations below -- confirm this with more testing
   	b = q_(1);
   	c = q_(2);
   	d = q_(3);
@@ -118,6 +128,17 @@ namespace InertialOdometry
 
   	return;
   }
+  
+  // This one comes from Maurice for DRC, but they seem the same. This one follows the non-Homogeneous form
+  void QuaternionLib::quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
+    const double q0 = q.w();
+    const double q1 = q.x();
+    const double q2 = q.y();
+    const double q3 = q.z();
+    roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2));
+    pitch = asin(2*(q0*q2-q3*q1));
+    yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+  }
 
   void QuaternionLib::skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew)
   {
@@ -127,6 +148,17 @@ namespace InertialOdometry
 	  		  -v_(1), v_(0), 0.;
 	  
 	  return;
+  }
+  
+  Eigen::Matrix<double,3,3> QuaternionLib::q2C(Eigen::Quaterniond const &q_) {
+	  Eigen::Matrix<double,3,3> mat;
+	  Eigen::Vector4d q_pass;
+	  
+	  q_pass << q_.w(), q_.x(), q_.y(), q_.z();
+	  
+	  q2C(q_pass, mat);
+	  
+	  return mat;
   }
   
   void QuaternionLib::q2C(Eigen::Vector4d const &q_, Eigen::Matrix<double,3,3> &C)
@@ -178,5 +210,47 @@ namespace InertialOdometry
 	  C(1,2) = -cps*sp + sp * st * cp;
 	  C(2,2) = ct * cp;
   }
+  
+
+  void QuaternionLib::printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom) {
+    Eigen::Quaterniond r(isom.rotation());
+    double ypr[3];
+    quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
+    std::cout << prefix << " Euler Angles: " << ypr[0] << ", " << ypr[1] << ", " << ypr[2] << std::endl;
+  }
+  
+  /* Not ready to be used yet, as the Eigen::Quaternion has this as a constructor -- but left here for when i need it later
+  Eigen::Quaterniond QuaternionLib::affine2q(const Eigen::Matrix<3,3,double> &mat) const {
+	Eigen::Quaterniond& q;
+	
+    float trace = a[0][0] + a[1][1] + a[2][2]; // I removed + 1.0f; see discussion with Ethan
+    if( trace > 0 ) {// I changed M_EPSILON to 0
+      float s = 0.5f / sqrtf(trace+ 1.0f);
+      q.w() = 0.25f / s;
+      q.x() = ( a[2][1] - a[1][2] ) * s;
+      q.y() = ( a[0][2] - a[2][0] ) * s;
+      q.z() = ( a[1][0] - a[0][1] ) * s;
+    } else {
+      if ( a[0][0] > a[1][1] && a[0][0] > a[2][2] ) {
+        float s = 2.0f * sqrtf( 1.0f + a[0][0] - a[1][1] - a[2][2]);
+        q.w() = (a[2][1] - a[1][2] ) / s;
+        q.x() = 0.25f * s;
+        q.y() = (a[0][1] + a[1][0] ) / s;
+        q.z() = (a[0][2] + a[2][0] ) / s;
+      } else if (a[1][1] > a[2][2]) {
+        float s = 2.0f * sqrtf( 1.0f + a[1][1] - a[0][0] - a[2][2]);
+        q.w() = (a[0][2] - a[2][0] ) / s;
+        q.x() = (a[0][1] + a[1][0] ) / s;
+        q.y() = 0.25f * s;
+        q.z() = (a[1][2] + a[2][1] ) / s;
+      } else {
+        float s = 2.0f * sqrtf( 1.0f + a[2][2] - a[0][0] - a[1][1] );
+        q.w() = (a[1][0] - a[0][1] ) / s;
+        q.x() = (a[0][2] + a[2][0] ) / s;
+        q.y() = (a[1][2] + a[2][1] ) / s;
+        q.z() = 0.25f * s;
+      }
+    }
+  }*/
 }
 

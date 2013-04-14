@@ -225,6 +225,9 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
+	//std::cout << "Last step: " << footsteps.getLastStep().translation().transpose() << "\n";
+	//std::cout << "Primary to Pelvis: " << getPrimaryFootToPelvis().translation().transpose() << "\n";
+	//std::cout << "Add: " << add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation().transpose() << "\n";
 	return add(footsteps.getLastStep(),getPrimaryFootToPelvis());
 }
 
@@ -255,24 +258,6 @@ Eigen::Isometry3d TwoLegOdometry::getSecondaryInLocal() {
 	Eigen::Isometry3d returnval;
 	returnval = AccumulateFootPosition(getPrimaryInLocal(),primary_foot());
 	
-	/*
-	
-	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): local_to_pelvis: " << local_to_pelvis.translation().transpose() << std::endl;
-	
-	switch (secondary_foot()) {
-	case LEFTFOOT:
-		returnval = add(add(getPrimaryInLocal(),left_to_pelvis),pelvis_to_right);
-		break;
-	case RIGHTFOOT:
-		std::cout << "Going right: " << getPrimaryInLocal().translation().x() << ", " << right_to_pelvis.translation().x() << ", " << pelvis_to_left.translation().x() << std::endl;
-		returnval = add(add(getPrimaryInLocal(),right_to_pelvis),pelvis_to_left);
-		break;
-	default:
-		std::cout << "THIS SHOULD NEVER HAPPEN - TwoLegOdometry::getSecondaryFootTransform()" << std::endl;
-		break;
-	}
-	//std::cout << "TwoLegOdometry::getSecondaryInLocal(): " << returnval.translation().transpose() << std::endl;
-	*/
 	return returnval;
 }
 
@@ -336,23 +321,30 @@ Eigen::Quaterniond TwoLegOdometry::mult(Eigen::Quaterniond lhs, Eigen::Quaternio
 	return result;
 }
 
-void TwoLegOdometry::ResetInitialConditions() {
-	// this function assumes the pelvis is at the 0 position.
-	// The left foot is used as the initial condition for the system.
+void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_) {
+	// The left foot is used to initialise height of the pelvis.
 	
 	Eigen::Vector3d zero;
-	zero << 0.,0.,0.;
+	zero << 0.,0.,-left_.translation().z();
 	
 	stepcount = 0;
 	
 	local_to_pelvis.translation() = zero;
+	
 	footsteps.reset();
 }
 
-void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &leftfrompelvis) {
+void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_) {
 	
-	ResetInitialConditions();
-	footsteps.addFootstep(pelvis_to_left,LEFTFOOT);
+	ResetInitialConditions(left_);
+	
+	//std::cout << "Pelvis was set to: " << local_to_pelvis.translation().transpose() << std::endl;
+	//std::cout << "Last step location before add: " << footsteps.getLastStep().translation().transpose() << std::endl;
+	//std::cout << "PrimaryFoot to Pelvis: " << getPrimaryFootToPelvis().translation().transpose() << std::endl;
+	
+	footsteps.addFootstep(add(local_to_pelvis,left_),LEFTFOOT);
+	//std::cout << "Last step location after add: " << footsteps.getLastStep().translation().transpose() << std::endl;
+	//footsteps.addFootstep(pelvis_to_left,LEFTFOOT);
 	standing_foot = LEFTFOOT; // Not sure that double states should be used, this needs to change TODO
 }
 
