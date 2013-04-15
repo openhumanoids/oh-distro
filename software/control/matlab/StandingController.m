@@ -33,7 +33,7 @@ classdef StandingController < DRCController
       obj.controller_data = ctrl_data;
       
       obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
-      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+      %obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
 
       obj = initialize(obj,struct());
   
