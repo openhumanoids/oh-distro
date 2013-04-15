@@ -85,23 +85,23 @@ group "2.gazebo" {
         host = "paladin-02";
     }
     cmd "qual_climbing" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_3.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/qual_task_3.world";
         host = "paladin-02";
     }
     cmd "qual_ladder" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/qual_task_4.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/qual_task_4.world";
         host = "paladin-02";
     }
     cmd "vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_1.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_1.world";
         host = "paladin-02";
     }
     cmd "vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_2.world";
         host = "paladin-02";
     }
     cmd "vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.2/worlds/vrc_task_3.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_3.world";
         host = "paladin-02";
     }
 }
