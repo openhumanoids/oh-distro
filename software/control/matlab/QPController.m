@@ -113,7 +113,7 @@ classdef QPController < MIMODrakeSystem
            
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = abs(phi)<contact_threshold;
+    active_contacts = phi<contact_threshold;
 
     %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
     if any(active_contacts(1:4))
@@ -130,7 +130,7 @@ classdef QPController < MIMODrakeSystem
       % ignore supporting body spec, use any body in contact
       [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = abs(phi)<contact_threshold;
+      active_contacts = phi<contact_threshold;
 
       %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
       if any(active_contacts(1:4))
@@ -210,7 +210,7 @@ classdef QPController < MIMODrakeSystem
     % Set up problem constraints ------------------------------------------
 
     lb = [-1e3*ones(1,nq) r.umin' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq) r.umax' 800*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+    ub = [ 1e3*ones(1,nq) r.umax' 500*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
 
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);
