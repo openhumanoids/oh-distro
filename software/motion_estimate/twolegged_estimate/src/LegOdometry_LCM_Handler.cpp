@@ -214,10 +214,11 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         pose.pos[0] =currentPelvis.translation().x();
         pose.pos[1] =currentPelvis.translation().y();
         pose.pos[2] =currentPelvis.translation().z();
-        pose.orientation[0] =1.;
-        pose.orientation[1] =0.;
-        pose.orientation[2] =0.;
-        pose.orientation[3] =0.;
+        Eigen::Quaterniond bodykin_q(currentPelvis.linear());
+        pose.orientation[0] =bodykin_q.w();
+        pose.orientation[1] =bodykin_q.x();
+        pose.orientation[2] =bodykin_q.y();
+        pose.orientation[3] =bodykin_q.z();
         lcm_->publish("POSE_KIN",&pose);
         
 
