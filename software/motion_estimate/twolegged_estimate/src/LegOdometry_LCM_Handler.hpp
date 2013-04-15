@@ -97,6 +97,8 @@ private:
 #endif
 	
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	
 	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_);
 	~LegOdometry_Handler();
 	

@@ -11,6 +11,7 @@ namespace InertialOdometry
 {
   class QuaternionLib {
   public:
+	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // The result is pushed back into a2 (overwrites what was in there)
     static void QuaternionProduct(double *a1, double *a2);
 
@@ -36,6 +37,9 @@ namespace InertialOdometry
     static void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew);
     
     static void e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C);
+    
+    //Rotate a 3 vector around only te yaw axis
+    static Eigen::Vector3d Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v);
     
     static void printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom);
   };

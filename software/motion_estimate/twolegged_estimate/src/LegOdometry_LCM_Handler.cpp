@@ -149,7 +149,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Isometry3d right;
 	
 	getTransforms(msg,left,right);
-	InertialOdometry::QuaternionLib::printEulerAngles("after getTransforms()", left);
+	//InertialOdometry::QuaternionLib::printEulerAngles("after getTransforms()", left);
 
 	
 	if (firstpass)
@@ -166,18 +166,25 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 #ifdef DISPLAY_FOOTSTEP_POSES
 	// here comes the drawing of poses
 	
-	drawLeftFootPose();
+	//drawLeftFootPose();
 	//drawRightFootPose();
 	//drawSumPose();
+	/*
+	std::cout << msg->utime << " ";
 	addIsometryPose(78, _leg_odo->getPelvisFromStep());
+	std::cout << msg->utime << " ";
 	addIsometryPose(79, _leg_odo->getPelvisFromStep());
-		
+	*/
+	//std::cout << "Pelvis from step\n" << _leg_odo->getPelvisFromStep().linear() << std::endl;
+	
 	
 	if (legchangeflag)
 	{
 		//std::cout << "LEGCHANGE\n";
-		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
-		addIsometryPose(collectionindex++,_leg_odo->getPrimaryInLocal());
+		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+		collectionindex++;
+		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+		collectionindex++;
 	}
 	
 	_viewer->sendCollection(*_obj, true);
@@ -226,6 +233,8 @@ void LegOdometry_Handler::drawLeftFootPose() {
 	
 	//TODO - male left_to_pelvis and other private members in TwoLegOdometry class with get functions of the same name, as is done with Eigen::Isometry3d .translation() and .rotation()
 	
+	std::cout << "left to pelvis: ";
+	
 	addIsometryPose(97, _leg_odo->left_to_pelvis);
 	addIsometryPose(98, _leg_odo->left_to_pelvis);
 	
@@ -263,10 +272,16 @@ void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d
   
   //InertialOdometry::QuaternionLib::printEulerAngles("AddIsometryPose()", target);
   
-  _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),0,0,0));
+  Eigen::Vector3d E;
+  
+  InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(target.linear()),E);
+  std::cout << "Going to draw: " << E.transpose() << "\n";
+	
+  _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),E(2),0,0));
 	
 }
 
+// this function may be depreciated soon
 void LegOdometry_Handler::addFootstepPose_draw() {
 	std::cout << "Drawing pose for foot: " << (_leg_odo->getActiveFoot() == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl; 
 	_obj->add(collectionindex, isam::Pose3d(_leg_odo->getPrimaryInLocal().translation().x(),_leg_odo->getPrimaryInLocal().translation().y(),_leg_odo->getPrimaryInLocal().translation().z(),0,0,0));	
@@ -283,8 +298,6 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     // call a routine that calculates the transforms the joint_state_t* msg.
     map<string, double> jointpos_in;
     map<string, drc::transform_t > cartpos_out;
-    
-        
     
     for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
       jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
@@ -337,14 +350,14 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 
 	  Eigen::Vector3d E_;
 	  
-	  // TODO - Confirm the quaternion scale and vector ordering is correct and the ->second pointer is the correct use
+	  // quaternion scale and vector ordering seems to be correct
 	  Eigen::Quaterniond  leftq(transform_it_lf->second.rotation.w, transform_it_lf->second.rotation.x,transform_it_lf->second.rotation.y,transform_it_lf->second.rotation.z);
 	  Eigen::Quaterniond rightq(transform_it_rf->second.rotation.w, transform_it_rf->second.rotation.x,transform_it_rf->second.rotation.y,transform_it_rf->second.rotation.z);
 	  
 	  //std::cout << "leftq Quaternion values are: " << leftq.w() << ", " << leftq.x() << ", " << leftq.y() << ", " << leftq.z() << std::endl;
 	  
 	  Eigen::Quaterniond tempq;
-	  Eigen::Matrix<double,3,3> leftC;
+	  Eigen::Matrix<double,3,3> leftC, rightC;
 	  tempq.setIdentity();
 	  
 	  //std::cout << ".rotation() is: " << left.rotation() << std::endl;
@@ -353,20 +366,24 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  InertialOdometry::QuaternionLib::q2e(leftq, E_);
 	  //std::cout << "LegOdometry_Handler::getTransforms() leftq 2 E: " << E_.transpose() << std::endl;
 	  
-	  leftC = InertialOdometry::QuaternionLib::q2C(leftq);
+	  //leftC = InertialOdometry::QuaternionLib::q2C(leftq);
 	  
 	  //left.rotate(leftq); // with quaternion
 	  //left.rotate(leftC); // with rotation matrix
-	  left.linear() = leftC; // trying to do this directly
+	  // TODO -- confirm the use of transpose() convert the rotation matrix into the correct frae, as this may be in the q2C function..
+	  left.linear() = InertialOdometry::QuaternionLib::q2C(leftq).transpose(); // note Isometry3d.rotation() is still marked as "experimental"
+	  //right.rotate(rightq);
+	  right.linear() = InertialOdometry::QuaternionLib::q2C(rightq).transpose();
 	  
-	  E_<< 0.,0.,0.;
-	  tempq = Eigen::Quaterniond(left.rotation());
+	  
+	  //E_<< 0.,0.,0.;
+	  //tempq = Eigen::Quaterniond(left.linear().transpose());
 	  //std::cout << "left.rotation() Quaternion values are: " << tempq.w() << ", " << tempq.x() << ", " << tempq.y() << ", " << tempq.z() << std::endl;
-	  std::cout << "LegOdometry_Handler::getTransforms() subtracted vals: " << leftq.w() - tempq.w() << ", " << leftq.x() - tempq.x() << ", " << leftq.y() - tempq.y() << ", " << leftq.z() - tempq.z() << std::endl;
-	  InertialOdometry::QuaternionLib::q2e(tempq, E_);
+	  //std::cout << "LegOdometry_Handler::getTransforms() subtracted vals: " << leftq.w() - tempq.w() << ", " << leftq.x() - tempq.x() << ", " << leftq.y() - tempq.y() << ", " << leftq.z() - tempq.z() << std::endl;
+	  //InertialOdometry::QuaternionLib::q2e(tempq, E_);
 	  //std::cout << "LegOdometry_Handler::getTransforms() tempq 2 E: " << E_.transpose() << std::endl << std::endl;
 	  
-	  right.rotate(rightq);
+	  
 	  
 }
 

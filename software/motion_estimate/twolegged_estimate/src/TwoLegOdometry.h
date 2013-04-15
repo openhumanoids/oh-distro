@@ -58,6 +58,8 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id);
 	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+		
 		Eigen::Isometry3d pelvis_to_left;
 	    Eigen::Isometry3d left_to_pelvis;
 	    Eigen::Isometry3d pelvis_to_right;

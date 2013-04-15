@@ -161,6 +161,7 @@ namespace InertialOdometry
 	  return mat;
   }
   
+  // Calculate the left hand rotation matrix
   void QuaternionLib::q2C(Eigen::Vector4d const &q_, Eigen::Matrix<double,3,3> &C)
   {
 	  // scalar vector format
@@ -180,7 +181,10 @@ namespace InertialOdometry
 	  C(2,2) = w*w - x*x - y*y + z*z;
 	  C(0,2) = 2.*(x*z - w*y);
 	  C(1,2) = 2.*(w*x + y*z);
-	  std::cout << "TODO: QuaternionLib::q2C(..) is UNTESTED" << std::endl;
+	  // confirm that this function generates a to b or b to a rotation, this function may need a transpose to generate the correct matrix
+	  //std::cout << "TODO: QuaternionLib::q2C(..) is UNTESTED" << std::endl;
+	  
+	  // TODO -- confirm that the rows and columns of the rotation matrix that is computed by this function maintains the DCM unity constraints
 	  
 	  return;
   }
@@ -211,6 +215,25 @@ namespace InertialOdometry
 	  C(2,2) = ct * cp;
   }
   
+  Eigen::Vector3d QuaternionLib::Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v) {
+	  // This is a fairly inefficient implementation, but done like this to save time. This can be improved to be a direct conversion from C to E to C_yaw, rather than go through the quaternion conversion
+	  
+	  Eigen::Vector3d v_rot;
+	  Eigen::Matrix<double, 3, 3> C_yaw;
+	  Eigen::Vector3d E;
+	  Eigen::Quaterniond q(C);
+	  
+	  q2e(q,E);
+	  
+	  E(0) = 0.;
+	  E(1) = 0.;
+	  
+	  e2C(E,C_yaw); // TODO -- Check if we need to do a transpose here
+	  
+	  v_rot = C_yaw * v;
+	  
+	  return v_rot;
+  }
 
   void QuaternionLib::printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom) {
     Eigen::Quaterniond r(isom.rotation());

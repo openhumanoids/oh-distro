@@ -19,6 +19,8 @@ class Footsteps {
 		int thisisatestvariable;
 		
 	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+		
 		Footsteps();
 		void addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot);
 		void newFootstep(footstep newstep);

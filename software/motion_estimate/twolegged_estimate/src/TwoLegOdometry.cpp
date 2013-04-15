@@ -6,6 +6,8 @@
 
 #include "TwoLegsEstimate_types.h"
 
+#include "QuaternionLib.h"
+
 
 using namespace TwoLegs;
 using namespace std;
@@ -109,6 +111,7 @@ void TwoLegOdometry::setStandingFoot(int foot) {
 	standing_foot = foot;
 }
 
+// TODO - unused function, to be depreciated
 void TwoLegOdometry::updateInternalStates(/*data*/) {
 	cout << "void TwoLegOdometry::updateInternalStates(); nothing updated - NOT implemented" << endl;
 	
@@ -198,13 +201,13 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	pelvis_to_left = left;
 	pelvis_to_right = right;
 	
+	//std::cout << "Setting leg transforms\n";
 	
-	// TODO - do the rotation assignments for for the inverse directions
+	// TODO - do the rotation assignments have not been tested yet
 	left_to_pelvis.translation() = -left.translation();
-	//left_to_pelvis.rotation() = left.inverse().rotation();
+	left_to_pelvis.linear() = left.linear().transpose();
 	right_to_pelvis.translation() = -right.translation();
-	//right_to_pelvis.rotation() = right.rotation();
-
+	right_to_pelvis.linear() = right.linear().transpose();
 }
 
 Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
@@ -228,6 +231,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	//std::cout << "Last step: " << footsteps.getLastStep().translation().transpose() << "\n";
 	//std::cout << "Primary to Pelvis: " << getPrimaryFootToPelvis().translation().transpose() << "\n";
 	//std::cout << "Add: " << add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation().transpose() << "\n";
+	
 	return add(footsteps.getLastStep(),getPrimaryFootToPelvis());
 }
 
@@ -283,11 +287,17 @@ void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
 	Eigen::Isometry3d add;
 	
-	add.translation() = lhs.translation() + rhs.translation();
+	add.translation() = lhs.translation() + InertialOdometry::QuaternionLib::Cyaw_rotate(lhs.linear() ,InertialOdometry::QuaternionLib::Cyaw_rotate(rhs.linear(),rhs.translation()));
 	
 	//TODO - Test and confirm the correct rotation sequence has been followed here
-	add.rotate(lhs.rotation());
-	add.rotate(rhs.rotation());
+	//add.rotate(lhs.rotation());
+	//add.rotate(rhs.rotation());
+	
+	//std::cout << "Going to rotation matrices for adding operation:\n" << lhs.linear() << std::endl << rhs.linear() << std::endl;
+	
+	add.linear() = lhs.linear() * rhs.linear();
+	
+	//std::cout << "Product:\n" << add.linear() << std::endl;
 	
 	return add;
 }
@@ -330,6 +340,7 @@ void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_) {
 	stepcount = 0;
 	
 	local_to_pelvis.translation() = zero;
+	local_to_pelvis.linear().setIdentity();
 	
 	footsteps.reset();
 }
