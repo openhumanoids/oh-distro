@@ -9,7 +9,7 @@ classdef AtlasState < LCMCoordinateFrameWCoder & Singleton
       
       obj = obj@LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(coder));
       obj.setCoordinateNames(r.getStateFrame.coordinates);
-      obj.setDefaultChannel('TRUE_ROBOT_STATE');
+      obj.setDefaultChannel('EST_ROBOT_STATE');
     end
   end
 end
