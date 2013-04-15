@@ -41,6 +41,7 @@ classdef DRCStateMachine
         
         msg = ['Running controller: ' ctrl.name];
         send_status(3, 0, 0, msg );
+        send_controller_status(ctrl.name);
         disp(msg);
         disp(['Transition time: ' num2str(toc(transition_tic))]);
         transition_data = ctrl.run();
