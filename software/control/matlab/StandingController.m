@@ -62,7 +62,7 @@ classdef StandingController < DRCController
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
-        obj.controller_data.setField('S',PPTrV.S);
+        obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('h',com(3));
         obj.controller_data.setField('hddot',0);
         obj.controller_data.setField('qtraj',q0);
