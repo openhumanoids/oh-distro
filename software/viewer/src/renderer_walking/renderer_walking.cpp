@@ -22,9 +22,10 @@
 #include <bot_core/bot_core.h>
 
 //#include <visualization/renderer_localize.h>
+#include <vector>
 
 #include <lcmtypes/drc_lcmtypes.h>
-#include <lcmtypes/drc_lcmtypes.hpp>
+//#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 
 #include <maps/ViewClient.hpp>
@@ -260,7 +261,7 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   point2d_t click_pt_local;
   float zMean = 0;
   
-  int iViewId = drc::data_request_t::HEIGHT_MAP_SCENE;
+  int iViewId = DRC_DATA_REQUEST_T_HEIGHT_MAP_SCENE;
   maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
   if (view != NULL) {
     maps::PointCloud::Ptr cloud = view->getAsPointCloud();
