@@ -278,10 +278,13 @@ HistogramTracker::update(cv::Mat& img, float scale, std::vector< Eigen::Vector3d
         int u = floor( ((pt1[0] * fx_)/pt1[2]) + cx_);
         int v = floor( ((pt1[1] * fy_)/pt1[2]) + cy_);
         int dist = sqrt( pow( u - u_estimated ,2) + pow( v - v_estimated ,2) );
-        // Crude Binary Likelihood:
-        if (dist < 13){
-            loglikelihoods[i] =1; //was 1
-        }
+        float dx = pow(u-u_estimated,2)/(2*est_win.size.width*est_win.size.width);
+        float dy = pow(v-v_estimated,2)/(2*est_win.size.height*est_win.size.height);
+        loglikelihoods[i] = -(dx + dy);
+        // // Crude Binary Likelihood:
+        // if (dist < 13){
+        //     loglikelihoods[i] =1; //was 1
+        // }
     }        
 
 
