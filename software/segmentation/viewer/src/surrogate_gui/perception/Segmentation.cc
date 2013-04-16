@@ -30,6 +30,7 @@
 #include <pcl/surface/convex_hull.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
+#include <pcl/registration/icp.h>
 
 #include <pointcloud_tools/filter_planes.hpp>
 
@@ -102,10 +103,11 @@ namespace surrogate_gui
   }
 
   PointCloud<PointXYZRGB>::Ptr extractAndSmooth(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, 
-                                                boost::shared_ptr<set<int> >  subcloudIndices)
+                                                boost::shared_ptr<set<int> >  subcloudIndices 
+                                                   = boost::shared_ptr<set<int> >())
   {
     PointCloud<PointXYZRGB>::Ptr subcloud;
-    if(subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
+    if(!subcloudIndices || subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
     else subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
     pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
@@ -784,50 +786,44 @@ namespace surrogate_gui
   }
 
 
+  void Segmentation::fitPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                   boost::shared_ptr<set<int> >  subcloudIndices,
+                                   const FittingParams& fp,
+                                   Vector3f& xyz, Vector3f& ypr)
+  {
+    /* TODO 
+       - support multiple files
+       - only read in file once
+    */
 
+    // read in pcd
+    PointCloud<PointXYZRGB>::Ptr modelcloud(new PointCloud<PointXYZRGB>());
+    pcl::PCDReader reader;
+    string file = getenv("HOME") + string("/drc/software/models/otdf/car.pcd");
+    reader.read(file.c_str(), *modelcloud);
+    modelcloud = extractAndSmooth(modelcloud);
+    
+    // icp
+    PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
+    pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
+    icp.setInputCloud(modelcloud);
+    icp.setInputTarget(subcloud);
+    pcl::PointCloud<pcl::PointXYZRGB> Final;
+    icp.align(Final);
+    std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+      icp.getFitnessScore() << std::endl;
+    Matrix4f transformation = icp.getFinalTransformation();
+    std::cout << transformation << std::endl;
 
+    // extract xyzrpy
+    Matrix3f rot = transformation.block<3,3>(0,0);
+    xyz = transformation.block<3,1>(0,3);
+    ypr = rot2ypr(rot);
 
+    cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
 
-#if 0
-    uint min_plane_size = (int) (0.2 * subcloud->points.size());
-    if (min_plane_size > 500 || min_plane_size < 300)
-      min_plane_size = 500;
-
-    int maxNumSegments = 10; 
-
-    for (uint i = 0; i < maxNumSegments && subcloud->points.size() > min_plane_size; i++){
-
-      seg.setInputCloud(subcloud);
-      seg.setIndices(subcloudIndicesCopy);
-
-      ModelCoefficients::Ptr coefficients(new ModelCoefficients);
-      PointIndices::Ptr nextSegmentIndices (new PointIndices);
-      seg.segment(*nextSegmentIndices, *coefficients);
-
-      /*if (nextSegmentIndices->indices.size() > min_plane_size)
-        segmentsFound.push_back(nextSegmentIndices); 
-      else
-        break;
-      */
-
-      boost::shared_ptr<set<int> > remainingIndices (new set<int>(subcloudIndicesCopy->indices.begin(), subcloudIndicesCopy->indices.end()));
-
-      for(uint i = 0; i < nextSegmentIndices->indices.size(); i++)
-        remainingIndices->erase(nextSegmentIndices->indices[i]);
-
-      subcloudIndicesCopy = PclSurrogateUtils::toPclIndices(remainingIndices);
-    }
-
-
-    ///////////////////// FIXME //////////////////////////////////// 
-    PointIndices::Ptr planeIndices (new PointIndices);
-    return planeIndices;
-
-}
-
-
-#endif  
-
+  }
+ 
 /* calculates bounding box, center, and orientation of plane given theta
  * Rotates points to XY plane finds bounds and center, rotates center back to original rotation frame
  */
@@ -883,6 +879,8 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>& subcloud,
   return lengthWidth;     
   
 }
+
+
 
 
   //==================

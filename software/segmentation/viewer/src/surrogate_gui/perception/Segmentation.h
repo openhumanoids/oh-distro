@@ -80,6 +80,11 @@ namespace surrogate_gui
                                               const FittingParams& fp, 
                                               std::vector<Plane>& planeList);
 
+                        static void fitPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                                  boost::shared_ptr<std::set<int> >  subcloudIndices,
+                                                  const FittingParams& fp, 
+                                                  Eigen::Vector3f& xyz, Eigen::Vector3f& ypr);
+
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
 

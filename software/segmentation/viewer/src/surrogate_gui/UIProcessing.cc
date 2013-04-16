@@ -13,6 +13,9 @@
 #include <iostream>
 
 #include <pcl/common/distances.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/transforms.h>
+
 #include <maps/BotWrapper.hpp>
 
 
@@ -53,11 +56,12 @@ namespace surrogate_gui
 		//self->mouse_mode = CAMERA_MOVE;
 
 		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, BOT_GTK_PARAM_WIDGET_MENU,
-					      0, // initial value
+					      CAR, // initial value
 					      "Cylinder", CYLINDER,
 					      "Sphere", SPHERE,
-								"3D Circle", CIRCLE_3D,
+                                              "3D Circle", CIRCLE_3D,
 					      "Plane", PLANE,
+					      "Car", CAR,
 					      "Line", LINE,
 					      "Torus", TORUS,
 					      "Cube", CUBE,
@@ -898,6 +902,17 @@ namespace surrogate_gui
     if(currObj->indices->size()==0) subcloud = cloud;  // if nothing selected, output everything
     else subcloud = PclSurrogateUtils::extractIndexedPoints(currObj->indices, cloud);
 
+    // subtract off centroid x,y
+    /*Vector4f centroid;
+    compute3DCentroid(*subcloud, centroid);
+    Matrix4f transformation = Matrix4f::Identity();
+    transformation(0,3)=-centroid[0];
+    transformation(1,3)=-centroid[1];
+    //transformation(2,3)=-centroid[2];
+    PointCloud<PointXYZRGB>::Ptr subcloud2(new PointCloud<PointXYZRGB>());
+    transformPointCloud(*subcloud, *subcloud2, transformation);
+    subcloud = subcloud2;*/
+
     // write subcloud
     cout << "Write cloud: " << filename << endl;
     pcl::PCDWriter writer;
@@ -923,6 +938,7 @@ namespace surrogate_gui
 	  case SPHERE:   handleAffordancePubButtonSphere(fp); break;
 	  case CIRCLE_3D:handleAffordancePubButtonCircle3d(fp); break;
 	  case PLANE:    handleAffordancePubButtonPlane(fp); break;
+	  case CAR:      handleAffordancePubButtonPointCloud(fp); break;
 	  case LINE:     handleAffordancePubButtonLine(fp); break;
 	  case TORUS:    handleAffordancePubButtonTorus(fp); break;
 	  case CUBE:     handleAffordancePubButtonCube(fp); break;
@@ -1316,7 +1332,91 @@ namespace surrogate_gui
 	  handleAffordancePubButtonCylinder(fp); //placeholder TODO
 	}
 
-  
+  	void UIProcessing::handleAffordancePubButtonPointCloud(const Segmentation::FittingParams& fp)
+	{
+	  //todo: map_utime, map_id, object_id
+	  drc::affordance_plus_t affordanceMsg;
+	  	  
+	  affordanceMsg.aff.map_id = 0; 	  
+	  affordanceMsg.aff.otdf_type = "car";
+
+          //geometrical properties
+	  ObjectPointsPtr currObj = getCurrentObjectSelected();
+          Vector3f xyz(0,0,0),ypr(0,0,0);
+	  //std::vector<double> inliers_distances; TODO
+          //std::vector< vector<float> > inliers; TODO
+	  // PointIndices::Ptr inlierIndices = TODO
+          Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
+                                      currObj->indices, fp, xyz, ypr);
+          
+          float x = xyz[0]; 
+          float y = xyz[1];
+          float z = xyz[2]; 
+          float yaw   = ypr[0]+M_PI;
+          if(yaw>180) yaw-=2*M_PI;
+          float pitch = ypr[1];
+          float roll  = ypr[2];
+	
+	  affordanceMsg.aff.params.push_back(x);
+	  affordanceMsg.aff.param_names.push_back("x");
+	  
+	  affordanceMsg.aff.params.push_back(y);
+	  affordanceMsg.aff.param_names.push_back("y");
+
+	  affordanceMsg.aff.params.push_back(z);
+	  affordanceMsg.aff.param_names.push_back("z");
+
+	  affordanceMsg.aff.params.push_back(roll);
+	  affordanceMsg.aff.param_names.push_back("roll");
+
+	  affordanceMsg.aff.params.push_back(pitch);
+	  affordanceMsg.aff.param_names.push_back("pitch");
+
+	  affordanceMsg.aff.params.push_back(yaw);
+	  affordanceMsg.aff.param_names.push_back("yaw");
+
+	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
+
+          // set bounding
+          affordanceMsg.aff.origin_xyz[0] = x;
+          affordanceMsg.aff.origin_xyz[1] = y;
+          affordanceMsg.aff.origin_xyz[2] = z;
+          affordanceMsg.aff.origin_rpy[0] = roll;
+          affordanceMsg.aff.origin_rpy[1] = pitch;
+          affordanceMsg.aff.origin_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_xyz[0] = x;
+          affordanceMsg.aff.bounding_xyz[1] = y;
+          affordanceMsg.aff.bounding_xyz[2] = z;
+          affordanceMsg.aff.bounding_rpy[0] = roll;
+          affordanceMsg.aff.bounding_rpy[1] = pitch;
+          affordanceMsg.aff.bounding_rpy[2] = yaw;
+          affordanceMsg.aff.bounding_lwh[0] = 1; //TODO
+          affordanceMsg.aff.bounding_lwh[1] = 1; //TODO
+          affordanceMsg.aff.bounding_lwh[2] = 1; //TODO
+
+	  //inliers
+          //affordanceMsg.npoints = inliers.size();
+          //affordanceMsg.points = inliers;
+          affordanceMsg.npoints = 0; //todo
+          affordanceMsg.ntriangles = 0;
+
+	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
+
+	  cout << "states.size() = " << affordanceMsg.aff.states.size() <<  " | state_names.size() = "
+	       << affordanceMsg.aff.param_names.size() << endl;
+
+	  //todo : Set these
+	  //states: todo? is this used? states/state_names
+	  affordanceMsg.aff.nstates = 0;
+          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
+	  
+	  cout << "\n about to publish" << endl;
+	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+	  cout << "\n ***published \n" << endl;
+	  
+	  return;
+	}
+
 	void UIProcessing::handleFullResetButton(BotGtkParamWidget *pw)
 	{
 		_gui_state = SEGMENTING;
@@ -1450,6 +1550,12 @@ namespace surrogate_gui
 				{
 					if(views[v]->getId() == 1) continue; // get rid of low rez map
 					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
+                                        /*
+                                          Matrix4f transformation = Matrix4f::Identity();
+                                          transformation(0,3)=3;
+                                          transformation(1,3)=-1;
+                                          transformPointCloud(*cloud, *cloud, transformation);
+                                        */
 					(*cloudFull) += *cloud;
 				}
 				getDisplayInfo()->cloud = cloudFull;
