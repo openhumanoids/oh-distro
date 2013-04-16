@@ -698,54 +698,15 @@ namespace surrogate_gui
       }
 
     cout << "\n segmentation coefficients:\n" << bp.coeffs << endl;
-                
-    // iterate through possible rotations around normal to find best fit
-    Vector3f center,ypr;
-    Vector2f lengthWidth;
-    float minArea=numeric_limits<float>::max();
-    float bestTheta;
 
-    // first pass: 10 degree increments
-    for(float theta=-180;theta<180;theta+=10){
-      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
-                                   theta*M_PI/180.0f, center,ypr);
-      float area = lengthWidth[0]*lengthWidth[1];
-      if(area<minArea){
-        minArea = area;
-        bestTheta=theta;
-      }
-    }
-
-    // second pass: 1 degree increments
-    for(float theta=bestTheta-10;theta<bestTheta+10;theta+=1){
-      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
-                                   theta*M_PI/180.0f, center,ypr);
-      float area = lengthWidth[0]*lengthWidth[1];
-      if(area<minArea){
-        minArea = area;
-        bestTheta=theta;
-      }
-    }
-
-    // third pass: 0.1 degree increments
-    for(float theta=bestTheta-1;theta<bestTheta+1;theta+=0.1){
-      lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
-                                   theta*M_PI/180.0f, center,ypr);
-      float area = lengthWidth[0]*lengthWidth[1];
-      if(area<minArea){
-        minArea = area;
-        bestTheta=theta;
-      }
-    }
-
-    lengthWidth = getLengthWidth(bp.cloud, bp.coeffs.values.data(), normal, 
-                                 bestTheta*M_PI/180.0f, center,ypr);
-    
     // copy to output
+    Vector4f centroid;
+    compute3DCentroid(bp.cloud, centroid);
+    Vector3f center(centroid[0],centroid[1],centroid[2]);
     p.xyz = center;
-    p.ypr = ypr;
-    p.length = lengthWidth[0];
-    p.width = lengthWidth[1];
+    p.ypr = Vector3f( atan2(normal[1],normal[0]), acos(normal[2]/normal.norm()), 0 );
+    p.length = 0;//lengthWidth[0];
+    p.width = 0;//lengthWidth[1];
 
     // remove xyzypr from inliers and copy to output
     remove_xyzypr(p.convexHull, p.xyz, p.ypr);
@@ -990,7 +951,55 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>& subcloud,
   
 }
 
+  Vector2f Segmentation::findOptimalRectangle(PointCloud<PointXYZRGB>& cloud,  
+                                          float plane[4], Vector3f& center, Vector3f& ypr){
+    
+    
+    // iterate through possible rotations around normal to find best fit
+    //Vector3f center,ypr;
+    Vector2f lengthWidth;
+    float minArea=numeric_limits<float>::max();
+    float bestTheta;
+    Vector3f normal(plane);
 
+    // first pass: 10 degree increments
+    for(float theta=-180;theta<180;theta+=10){
+      lengthWidth = getLengthWidth(cloud, plane, normal, 
+                                   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+        minArea = area;
+        bestTheta=theta;
+      }
+    }
+
+    // second pass: 1 degree increments
+    for(float theta=bestTheta-10;theta<bestTheta+10;theta+=1){
+      lengthWidth = getLengthWidth(cloud, plane, normal, 
+                                   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+        minArea = area;
+        bestTheta=theta;
+      }
+    }
+
+    // third pass: 0.1 degree increments
+    for(float theta=bestTheta-1;theta<bestTheta+1;theta+=0.1){
+      lengthWidth = getLengthWidth(cloud, plane, normal, 
+                                   theta*M_PI/180.0f, center,ypr);
+      float area = lengthWidth[0]*lengthWidth[1];
+      if(area<minArea){
+        minArea = area;
+        bestTheta=theta;
+      }
+    }
+
+    lengthWidth = getLengthWidth(cloud, plane, normal, 
+                                 bestTheta*M_PI/180.0f, center,ypr);
+    
+    return lengthWidth;
+  }
 
 
   //==================

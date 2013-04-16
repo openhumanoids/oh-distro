@@ -72,6 +72,8 @@ boost::shared_ptr<Geometry> parseGeometry(TiXmlElement *g, ParamTable_t &symbol_
     geom.reset(new Torus);
   else if (type_name == "dynamic_mesh")
     geom.reset(new DynamicMesh);
+  else if (type_name == "plane") // plane is rendered as dynamic_mesh
+    geom.reset(new DynamicMesh);
   else
   {
     //ROS_ERROR("Unknown geometry type '%s'", type_name.c_str());

@@ -97,6 +97,10 @@ namespace surrogate_gui
 			static Eigen::Vector2f getLengthWidth(pcl::PointCloud<pcl::PointXYZRGB>& subcloud, 
                                                               float plane[4],Eigen::Vector3f normal, float theta,
                                                               Eigen::Vector3f& center, Eigen::Vector3f& ypr);
+                        
+			static Eigen::Vector2f findOptimalRectangle(pcl::PointCloud<pcl::PointXYZRGB>& subcloud, 
+                                                                    float plane[4], Eigen::Vector3f& center, 
+                                                                    Eigen::Vector3f& ypr);
 
 	}; //class Segmentation
 

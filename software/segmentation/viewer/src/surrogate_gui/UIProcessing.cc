@@ -55,7 +55,8 @@ namespace surrogate_gui
 		//self->mouse_mode = CAMERA_MOVE;
 
 		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, BOT_GTK_PARAM_WIDGET_MENU,
-					      CAR, // initial value
+					      //CAR, // initial value
+					      0, // initial value
 					      "Cylinder", CYLINDER,
 					      "Sphere", SPHERE,
                                               "3D Circle", CIRCLE_3D,
@@ -1184,7 +1185,8 @@ namespace surrogate_gui
             drc::affordance_plus_t affordanceMsg;
             
             affordanceMsg.aff.map_id = 0; 	  
-            affordanceMsg.aff.otdf_type = "dynamic_mesh";
+            affordanceMsg.aff.otdf_type = "plane";
+            //affordanceMsg.aff.otdf_type = "dynamic_mesh";
             
             affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
             
