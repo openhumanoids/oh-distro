@@ -10,7 +10,6 @@ namespace opencv_utils {
 
 
 OpenCVImageViewer::OpenCVImageViewer() { 
-    cv::namedWindow("OpenCV Viewer", CV_GUI_EXPANDED);
     // setMouseCallback("OpenCV Viewer", on_mouse, &mouse);
     // setWindowProperty("OpenCV Viewer", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
     frame = cv::Mat3b(HEIGHT, WIDTH);

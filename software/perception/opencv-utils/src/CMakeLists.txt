@@ -6,6 +6,7 @@ set(cpp_files
   imgproc_utils.cpp
   plot_utils.cpp
   calib_utils.cpp
+  print_utils.cpp
 )
 
 
@@ -17,6 +18,7 @@ set(hpp_files
   imgproc_utils.hpp
   plot_utils.hpp
   calib_utils.hpp
+  print_utils.hpp
 )  
 
 # Create a shared library libhello.so with a single source file
