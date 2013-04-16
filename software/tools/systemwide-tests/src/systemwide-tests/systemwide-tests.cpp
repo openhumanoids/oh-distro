@@ -17,7 +17,7 @@ using namespace std;
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_);
     
     ~Pass(){
     }    
@@ -32,9 +32,9 @@ class Pass{
     int stage_;
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): 
-    lcm_(lcm_){
-  stage_=3;
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int stage_): 
+    lcm_(lcm_), stage_(stage_){
+  
 
   lcm_->subscribe( "EST_ROBOT_STATE" ,&Pass::robotStateHandler,this);
   lcm_->subscribe("CANDIDATE_FOOTSTEP_PLAN",&Pass::candidateFootstepPlanHandler,this);   
@@ -85,9 +85,11 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     goal.right_foot_lead = true;
     lcm_->publish("WALKING_GOAL", &goal);
    
+    sleep(5); // added to make sure that the footstep plane is new before accepting it, could be smaller?
     stage_=1;
     std::cout << "Stage 0: DX: " << dx << " DY " << dy << " DYAW: " << 180*dyaw/M_PI <<"\n";
     std::cout << "Stage 0: got EST_ROBOT_STATE, publishing WALKING_GOAL. Moving to Stage 1\n";
+    
   }
 }
 
@@ -126,17 +128,20 @@ void Pass::controllerStatusHandler(const lcm::ReceiveBuffer* rbuf,
 
 int main(int argc, char ** argv) {
   int verbose = 0;
+  int stage = 3;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(verbose, "v", "verbosity","0 none, 1 little, 2 debug");
+  opt.add(stage, "s", "stage","Starting Stage");
   opt.parse();
   std::cout << "verbose: " << verbose << "\n";    
+  std::cout << "stage: " << stage << "\n";    
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm);
+  Pass app(lcm, stage);
   cout << "System Test Ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
