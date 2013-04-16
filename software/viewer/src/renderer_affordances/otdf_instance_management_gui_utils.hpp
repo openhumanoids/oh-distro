@@ -92,7 +92,8 @@ namespace renderer_affordances_gui_utils
     self->gl_temp_object->set_state(self->otdf_instance_hold);
     self->selection_hold_on=false;
    
-    publish_otdf_instance_to_affstore("AFFORDANCE_FIT",(*self->instance_hold_otdf_type_ptr),self->instance_hold_uid,self->otdf_instance_hold,self); 
+    //was AFFORDANCE_FIT
+    publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(*self->instance_hold_otdf_type_ptr),self->instance_hold_uid,self->otdf_instance_hold,self); 
     bot_viewer_request_redraw(self->viewer);
   }  
   //------------------
