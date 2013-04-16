@@ -9,7 +9,9 @@ AffordanceUtils::AffordanceUtils() {
   
 }
 
-Eigen::Isometry3d AffordanceUtils::getPose(std::vector<std::string> param_names, std::vector<double> params ){
+Eigen::Isometry3d AffordanceUtils::getPose(double xyz[], double rpy[]){
+//  std::vector<std::string> param_names, std::vector<double> params ){
+  /*
   std::map<std::string,double> am;
   for (size_t j=0; j< param_names.size(); j++){
     am[ param_names[j] ] = params[j];
@@ -23,6 +25,15 @@ Eigen::Isometry3d AffordanceUtils::getPose(std::vector<std::string> param_names,
   Eigen::Isometry3d pose =  Eigen::Isometry3d::Identity();
   pose *= m;  
   pose.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
+  */
+  Matrix3d m;
+  m = AngleAxisd ( rpy[2], Vector3d::UnitZ ())
+                  * AngleAxisd (rpy[1] , Vector3d::UnitY ())
+                  * AngleAxisd ( rpy[0] , Vector3d::UnitX ());  
+  Eigen::Isometry3d pose =  Eigen::Isometry3d::Identity();
+  pose *= m;  
+  pose.translation()  << xyz[0], xyz[1], xyz[2];  
+  
   return pose;
 }
 
@@ -97,6 +108,8 @@ void AffordanceUtils::setXYZRPYFromPlane(std::vector<std::string> &param_names, 
   double pitch = acos( plane_coeffs[2]/ run);
   double roll =0; // not constrained - properly set to zero
 
+  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: setXYZRPYFromPlane\n";
+  
   for (size_t j=0; j< param_names.size(); j++){
     if (param_names[j] == "x"){
       params[j] = plane_centroid(0);
@@ -128,27 +141,19 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
 }
 
 
-void AffordanceUtils::setXYZRPYFromIsometry3d(std::vector<std::string> &param_names, std::vector<double> &params, 
+void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[], double rpy[], 
                    Eigen::Isometry3d pose){
   Eigen::Quaterniond r(pose.rotation());
   double yaw, pitch, roll;
   quat_to_euler(r, yaw, pitch, roll);  
 
-  for (size_t j=0; j< param_names.size(); j++){
-    if (param_names[j] == "x"){
-      params[j] = pose.translation().x();
-    }else if(param_names[j] == "y"){
-      params[j] = pose.translation().y();
-    }else if(param_names[j] == "z"){
-      params[j] = pose.translation().z();
-    }else if(param_names[j] == "yaw"){
-      params[j] = yaw;
-    }else if(param_names[j] == "pitch"){
-      params[j] = pitch;
-    }else if(param_names[j] == "roll"){
-      params[j] = roll;
-    }
-  }
+  xyz[0] = pose.translation().x();
+  xyz[1] = pose.translation().y();
+  xyz[2] = pose.translation().z();
+  
+  rpy[0] = roll;
+  rpy[1] = pitch;
+  rpy[2] = yaw;
 }  
 
 

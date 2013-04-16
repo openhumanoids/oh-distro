@@ -55,9 +55,9 @@ namespace affordance
     double _origin_xyz[3];
     double _origin_rpy[3];
 
-    float _bounding_xyz[3];
-    float _bounding_rpy[3];
-    float _bounding_lwh[3];
+    double _bounding_xyz[3];
+    double _bounding_rpy[3];
+    double _bounding_lwh[3];
     //std::vector< std::vector <float> > _points;
     //std::vector< std::vector <int> > _triangles;    
     

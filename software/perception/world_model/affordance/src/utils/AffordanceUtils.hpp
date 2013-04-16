@@ -17,7 +17,8 @@ class AffordanceUtils {
   public:
     AffordanceUtils ();
 
-    Eigen::Isometry3d getPose(std::vector<std::string> param_names, std::vector<double> params );
+    Eigen::Isometry3d getPose(double xyz[], double rpy[]);
+    //std::vector<std::string> param_names, std::vector<double> params );
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudFromAffordance(std::vector< std::vector< float > > &points);
     
@@ -30,7 +31,7 @@ class AffordanceUtils {
     void setXYZRPYFromPlane(std::vector<std::string> &param_names, std::vector<double> &params, 
                    std::vector<float> plane_coeffs, Eigen::Vector3d plane_centroid);
     
-    void setXYZRPYFromIsometry3d(std::vector<std::string> &param_names, std::vector<double> &params, 
+    void setXYZRPYFromIsometry3d(double xyz[], double rpy[], 
                    Eigen::Isometry3d pose);
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getBoundingBoxCloud(double bounding_xyz[], double bounding_rpy[], double bounding_lwh[]);
