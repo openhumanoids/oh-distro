@@ -116,9 +116,11 @@ void OraclePlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   model_map_["duff_beer"]=70012;
   model_map_["steering_assembly"]=70013;    
   model_map_["mit_standpipe"]=70014;    
-  model_map_["mit_valve"]=70015;    
+  model_map_["mit_valve"]=70015;
+  model_map_["drill"]=70016;  
+  model_map_["table"]=70017;  
   //model_map_["mit_drc_robot"]=7012; //dont send this
-    gzerr << "model_map_ " << model_map_.size()<<"\n";
+  gzerr << "model_map_ " << model_map_.size()<<"\n";
   storeAffordances();
     
   // obj_cfg: id name type reset
@@ -474,8 +476,105 @@ void OraclePlugin::storeAffordances()
     drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
     affmeta.offset = offset;
     aff_map_["mit_table_link"]=affmeta; 
-  }       
+  } 
+
   
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="box";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("lX");
+    a.params.push_back(0.8000);
+    a.param_names.push_back("lY");
+    a.params.push_back(1.5000);
+    a.param_names.push_back("lZ");
+    a.params.push_back(0.01); 
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0);  // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  <<0,0, 1.0;
+    double ypr[3]={1.571,0,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["table_link"]=affmeta; 
+  }
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+    a.nparams =9;
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.020000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.13);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << -0.085, 0.03, 0.20;
+    double ypr[3]={0, 1.571,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["drill_link"]=affmeta;
+  }      
+
+  { 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =counter++;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.030000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.11);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+
+    
+    Eigen::Isometry3d offset;
+    offset.setIdentity();
+    offset.translation()  << 0, -0.025, 0.15;
+    double ypr[3]={1.571, 0,0};
+    Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
+    offset.rotate(quat);
+
+    AffordancePlusMeta affmeta;
+    drc::affordance_plus_t aplus; aplus.aff = a; aplus.ntriangles=0; aplus.npoints=0; affmeta.affplus = aplus;
+    affmeta.offset = offset;
+    aff_map_["drill_link_handle"]=affmeta;
+  }
+    
+
 }
 
 
@@ -682,6 +781,17 @@ void OraclePlugin::OnUpdate(){
               if ( model->GetName().compare( "mit_table" ) == 0){
                 if ( link->GetName().compare( "link" ) == 0){
                   sendAffordance(affname,  world_to_link);
+                }
+              }
+              if ( model->GetName().compare( "table" ) == 0){
+                if ( link->GetName().compare( "link" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                }
+              }              
+              if ( model->GetName().compare( "drill" ) == 0){
+                if ( link->GetName().compare( "link" ) == 0){
+                  sendAffordance(affname,  world_to_link);
+                  sendAffordance(   "drill_link_handle"   ,  world_to_link);
                 }
               }
               
