@@ -60,6 +60,8 @@ make;
 
 cd(p);
 
+mex src/lcmTest.cpp -llcm
+
 %% build drc drake mexfiles
 
 [~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
