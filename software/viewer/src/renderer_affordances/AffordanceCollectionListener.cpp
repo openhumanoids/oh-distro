@@ -202,6 +202,13 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   
 //instance_struc._otdf_instance->name_ = aff.name;
    //set All Params
+  instance_struc._otdf_instance->setParam("x",aff.origin_xyz[0]);
+  instance_struc._otdf_instance->setParam("y",aff.origin_xyz[1]);
+  instance_struc._otdf_instance->setParam("z",aff.origin_xyz[2]);
+  instance_struc._otdf_instance->setParam("roll", aff.origin_rpy[0]);
+  instance_struc._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
+  instance_struc._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
+
    for (size_t i=0; i < (size_t)aff.nparams; i++)
    {   
        instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
@@ -250,7 +257,13 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
 
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
   object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
-       
+
+  it->second._otdf_instance->setParam("x",aff.origin_xyz[0]);
+  it->second._otdf_instance->setParam("y",aff.origin_xyz[1]);
+  it->second._otdf_instance->setParam("z",aff.origin_xyz[2]);
+  it->second._otdf_instance->setParam("roll", aff.origin_rpy[0]);
+  it->second._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
+  it->second._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
        
    //set All Params
    for (size_t i=0; i < (size_t)aff.nparams; i++)

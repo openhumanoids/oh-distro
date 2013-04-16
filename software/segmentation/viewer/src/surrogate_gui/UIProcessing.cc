@@ -962,7 +962,6 @@ namespace surrogate_gui
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.aff.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
 	  std::vector<double> inliers_distances;
           std::vector< vector<float> > inliers;
@@ -975,7 +974,8 @@ namespace surrogate_gui
 					length, 
                                         inliers,
 					inliers_distances);
-	
+
+          /*
 	  affordanceMsg.aff.params.push_back(x);
 	  affordanceMsg.aff.param_names.push_back("x");
 	  
@@ -993,12 +993,15 @@ namespace surrogate_gui
 
 	  affordanceMsg.aff.params.push_back(yaw);
 	  affordanceMsg.aff.param_names.push_back("yaw");
+          */
 
 	  affordanceMsg.aff.params.push_back(radius);
 	  affordanceMsg.aff.param_names.push_back("radius");
 
 	  affordanceMsg.aff.params.push_back(length);
 	  affordanceMsg.aff.param_names.push_back("length");
+
+	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
           // set bounding
           affordanceMsg.aff.origin_xyz[0] = x;
