@@ -869,7 +869,8 @@ namespace surrogate_gui
   void Segmentation::fitPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
                                    boost::shared_ptr<set<int> >  subcloudIndices,
                                    const FittingParams& fp,
-                                   Vector3f& xyz, Vector3f& ypr)
+                                   Vector3f& xyz, Vector3f& ypr,
+                                   vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
   {
     /* TODO 
        - support multiple files
@@ -884,27 +885,26 @@ namespace surrogate_gui
     modelcloud = extractAndSmooth(modelcloud);
     
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
-
-    // subtract centroid
     Vector4f centroid;
-    compute3DCentroid(*subcloud, centroid);
-    for(int i=0;i<subcloud->size();i++){
-      subcloud->at(i).x -= centroid[0];
-      subcloud->at(i).y -= centroid[1];
-      //subcloud->at(i).z -= centroid[2];
-    }   
-    
+    compute3DCentroid(*cloud, centroid);
+
     // icp
 #if 1
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
+    icp.setMaxCorrespondenceDistance(1);
+    //icp.setTransformationEpsilon(
     icp.setInputCloud(modelcloud);
     icp.setInputTarget(subcloud);
     pcl::PointCloud<pcl::PointXYZRGB> Final;
-    icp.align(Final);
+    Matrix4f guess = Matrix4f::Identity();
+    guess(0,3) = centroid[0];
+    guess(1,3) = centroid[1];
+    //guess(2,3) = centroid[2];
+    icp.align(Final, guess);
     std::cout << "has converged:" << icp.hasConverged() << " score: " <<
       icp.getFitnessScore() << std::endl;
     Matrix4f transformation = icp.getFinalTransformation();
-    std::cout << transformation << std::endl;
+    //std::cout << transformation << std::endl;
     
 #else
 
@@ -914,15 +914,21 @@ namespace surrogate_gui
     pairAlign(modelcloud, subcloud, output, transformation, 10, 2, true);
 
 #endif
+    cout << "Max corrs: " << icp.getMaxCorrespondenceDistance () << endl;
+    cout << "Max iter: " << icp.getMaximumIterations () << endl;
+    cout << "Max trans eps: " << icp.getTransformationEpsilon () << endl;
+    cout << "Max euclid eps: " << icp.getEuclideanFitnessEpsilon () << endl;
+
+    clouds.push_back(*modelcloud);
+    clouds.push_back(*subcloud);
+    clouds.push_back(Final);
 
     // extract xyzrpy
     Matrix3f rot = transformation.block<3,3>(0,0);
     xyz = transformation.block<3,1>(0,3);
-    xyz[0]+=centroid[0];
-    xyz[1]+=centroid[1];
-    //xyz[2]+=centroid[2];
     ypr = rot2ypr(rot);
     
+    cout << "Guess:\n" << guess << endl;
     cout << "Matrix:\n" << transformation << endl;
     cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
 

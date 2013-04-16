@@ -42,6 +42,7 @@ pods_use_pkg_config_packages(surrogate
     bot2-vis
     bot2-frames
     bot2-param-client
+    bot2-lcmgl-client
     lcmtypes_drc_lcmtypes
     maps
     pointcloud_filters pointcloud_vis pointcloud_math
@@ -70,6 +71,8 @@ pods_use_pkg_config_packages(surrogate_viewer
     bot2-vis
     bot2-frames
     bot2-param-client
+    bot2-lcmgl-client
+    bot2-lcmgl-renderer
     lcm
     surrogate
     renderer_affordances

@@ -40,6 +40,7 @@
 #include <maps/ViewClient.hpp>
 #include <boost/thread.hpp>
 
+#include <bot_lcmgl_client/lcmgl.h>
 
 namespace surrogate_gui
 {
@@ -74,6 +75,8 @@ namespace surrogate_gui
 			boost::shared_ptr<ObjectTracker> _objTracker;
 			
 			boost::shared_ptr<maps::ViewClient> _mViewClient; //map pulling
+
+                        bot_lcmgl_t* _lcmgl;
 
 		//=====constructor/destructor
 		public:

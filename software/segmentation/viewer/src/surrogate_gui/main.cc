@@ -4,6 +4,7 @@
 #include <bot_vis/bot_vis.h>
 #include <gtk/gtk.h>
 #include <lcm/lcm.h>
+#include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 
 /*#include <bot_vis/viewer.h>
 #include <bot_vis/bot_vis.h>
@@ -120,6 +121,9 @@ int main(int argc, char *argv[])
     // setup renderers
     bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
     //KinectRendererXYZRGB *krxyzrgb = kinect_add_renderer_xyzrgb_to_viewer(viewer, 0,NULL,NULL);
+
+    // lcmgl
+    bot_lcmgl_add_renderer_to_viewer(viewer, lcmCpp->getUnderlyingLCM(), 1);
 
 	// create segmentation handler
     std::string channel_name = "LOCAL_MAP_POINTS";

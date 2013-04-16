@@ -18,7 +18,6 @@
 
 #include <maps/BotWrapper.hpp>
 
-
 using namespace std;
 using namespace pcl;
 using namespace boost;
@@ -136,6 +135,8 @@ namespace surrogate_gui
 		//other fields
 		_lcmCpp = lcm;
 
+                _lcmgl = bot_lcmgl_init(_lcmCpp->getUnderlyingLCM(), "fit point cloud");
+
 		_button_states.shift_L_is_down = false;
 		_button_states.shift_R_is_down = false;
 		_button_states.ctrl_L_is_down = false;
@@ -180,6 +181,7 @@ namespace surrogate_gui
 
 	UIProcessing::~UIProcessing()
 	{
+          bot_lcmgl_destroy(_lcmgl);
 		free(_ehandler);
 		free(_mode_handler);
 	}
@@ -1280,9 +1282,29 @@ namespace surrogate_gui
 	  //std::vector<double> inliers_distances; TODO
           //std::vector< vector<float> > inliers; TODO
 	  // PointIndices::Ptr inlierIndices = TODO
+          vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
           Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
-                                      currObj->indices, fp, xyz, ypr);
+                                      currObj->indices, fp, xyz, ypr, clouds);
+          float colors[][3] = {
+            {1,0,0},
+            {0,1,0},
+            {0,0,1},
+            {0,1,1},
+            {1,0,1},
+            {1,1,0},
+            {1,1,1}
+          };
           
+          for(int j=0; j<clouds.size();j++){
+            bot_lcmgl_color3f(_lcmgl, colors[j][0],colors[j][1],colors[j][2]);
+            bot_lcmgl_begin(_lcmgl, LCMGL_POINTS);
+            for(int i=0;i<clouds[j].size();i++){
+              bot_lcmgl_vertex3f(_lcmgl, clouds[j][i].x, clouds[j][i].y, clouds[j][i].z);
+            }
+            bot_lcmgl_end(_lcmgl);
+          }
+          bot_lcmgl_switch_buffer(_lcmgl);
+
           float x = xyz[0]; 
           float y = xyz[1];
           float z = xyz[2]; 
