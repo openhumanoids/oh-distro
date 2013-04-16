@@ -785,6 +785,86 @@ namespace surrogate_gui
     //return planeIndices;
   }
 
+  //convenient typedefs
+  typedef pcl::PointXYZRGB MyPointT;
+  typedef pcl::PointCloud<MyPointT> MyPointCloud;
+  typedef pcl::PointNormal MyPointNormalT;
+  typedef pcl::PointCloud<MyPointNormalT> MyPointCloudWithNormals;
+  
+  void pairAlign (const MyPointCloud::Ptr cloud_src, const MyPointCloud::Ptr cloud_tgt, MyPointCloud::Ptr output, Eigen::Matrix4f &final_transform, int nbIteration, int ICPIter, bool downsample = false)
+{
+    MyPointCloud::Ptr src (new MyPointCloud);
+    MyPointCloud::Ptr tgt (new MyPointCloud);
+    pcl::VoxelGrid<MyPointT> grid;
+    if (downsample)
+    {
+        grid.setLeafSize (0.05, 0.05, 0.05);
+        grid.setInputCloud (cloud_src);
+        grid.filter (*src);
+ 
+        grid.setInputCloud (cloud_tgt);
+        grid.filter (*tgt);
+    }
+    else
+    {
+        src = cloud_src;
+        tgt = cloud_tgt;
+    }
+ 
+    MyPointCloudWithNormals::Ptr points_with_normals_src (new MyPointCloudWithNormals);
+    MyPointCloudWithNormals::Ptr points_with_normals_tgt (new MyPointCloudWithNormals);
+ 
+    pcl::NormalEstimation<MyPointT, MyPointNormalT> norm_est;
+    pcl::search::KdTree<MyPointT>::Ptr tree (new pcl::search::KdTree<MyPointT> ());
+    norm_est.setSearchMethod (tree);
+    norm_est.setKSearch (30);
+ 
+    norm_est.setInputCloud (src);
+    norm_est.compute (*points_with_normals_src);
+    pcl::copyPointCloud (*src, *points_with_normals_src);
+ 
+    norm_est.setInputCloud (tgt);
+    norm_est.compute (*points_with_normals_tgt);
+    pcl::copyPointCloud (*tgt, *points_with_normals_tgt);
+ 
+    // Run the same optimization in a loop and visualize the results
+    Eigen::Matrix4f Ti = Eigen::Matrix4f::Identity (), prev, targetToSource;
+    MyPointCloudWithNormals::Ptr reg_result = points_with_normals_src;
+ 
+    pcl::IterativeClosestPoint<MyPointNormalT, MyPointNormalT> reg;
+    reg.setMaximumIterations (ICPIter);
+    reg.setInputTarget (points_with_normals_tgt);
+ 
+    for (int i = 0; i < nbIteration; ++i)
+    {
+        PCL_INFO ("Iteration Nr. %d.\n", i);
+ 
+        // save cloud for visualization purpose
+        points_with_normals_src = reg_result;
+ 
+        // Estimate
+        reg.setInputCloud (points_with_normals_src);
+        reg.align (*reg_result);
+        //accumulate transformation between each Iteration
+        Ti = reg.getFinalTransformation () * Ti;
+        //check if threshold is reach, if so decrease the threshold
+        if (fabs ((reg.getLastIncrementalTransformation () - prev).sum ()) < reg.getTransformationEpsilon ()) 
+           reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 0.001);
+ 
+        prev = reg.getLastIncrementalTransformation ();
+    }
+ 
+    // Get the transformation from target to source
+    targetToSource = Ti;
+ 
+    // Transform target back in source frame
+    pcl::transformPointCloud (*cloud_tgt, *output, targetToSource);
+    //add the source to the transformed target
+    *output += *cloud_src;
+ 
+    final_transform = targetToSource;
+}
+
 
   void Segmentation::fitPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
                                    boost::shared_ptr<set<int> >  subcloudIndices,
@@ -803,8 +883,19 @@ namespace surrogate_gui
     reader.read(file.c_str(), *modelcloud);
     modelcloud = extractAndSmooth(modelcloud);
     
-    // icp
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
+
+    // subtract centroid
+    Vector4f centroid;
+    compute3DCentroid(*subcloud, centroid);
+    for(int i=0;i<subcloud->size();i++){
+      subcloud->at(i).x -= centroid[0];
+      subcloud->at(i).y -= centroid[1];
+      //subcloud->at(i).z -= centroid[2];
+    }   
+    
+    // icp
+#if 1
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
     icp.setInputCloud(modelcloud);
     icp.setInputTarget(subcloud);
@@ -814,12 +905,25 @@ namespace surrogate_gui
       icp.getFitnessScore() << std::endl;
     Matrix4f transformation = icp.getFinalTransformation();
     std::cout << transformation << std::endl;
+    
+#else
+
+    // pair align
+    PointCloud<PointXYZRGB>::Ptr output(new PointCloud<PointXYZRGB>);
+    Matrix4f transformation = Matrix4f::Identity();
+    pairAlign(modelcloud, subcloud, output, transformation, 10, 2, true);
+
+#endif
 
     // extract xyzrpy
     Matrix3f rot = transformation.block<3,3>(0,0);
     xyz = transformation.block<3,1>(0,3);
+    xyz[0]+=centroid[0];
+    xyz[1]+=centroid[1];
+    //xyz[2]+=centroid[2];
     ypr = rot2ypr(rot);
-
+    
+    cout << "Matrix:\n" << transformation << endl;
     cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
 
   }

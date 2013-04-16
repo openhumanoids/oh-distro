@@ -913,6 +913,13 @@ namespace surrogate_gui
     transformPointCloud(*subcloud, *subcloud2, transformation);
     subcloud = subcloud2;*/
 
+    /*PointCloud<PointXYZRGB>::Ptr subcloud2(new PointCloud<PointXYZRGB>(*subcloud));
+    for(int i=0;i<subcloud->size();i++){
+      subcloud2->at(i).x += 0.8;
+      subcloud2->at(i).y += 2.57;
+    }
+    subcloud = subcloud2;*/
+
     // write subcloud
     cout << "Write cloud: " << filename << endl;
     pcl::PCDWriter writer;
@@ -1280,7 +1287,7 @@ namespace surrogate_gui
           float y = xyz[1];
           float z = xyz[2]; 
           float yaw   = ypr[0]+M_PI;
-          if(yaw>180) yaw-=2*M_PI;
+          if(yaw>M_PI) yaw-=2*M_PI;
           float pitch = ypr[1];
           float roll  = ypr[2];
 	
