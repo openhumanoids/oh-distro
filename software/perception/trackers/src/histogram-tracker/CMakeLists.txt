@@ -21,7 +21,6 @@ add_executable(drc-histogram-tracker
   histogram-tracker.cpp)
 pods_use_pkg_config_packages(drc-histogram-tracker lcm 
   bot2-param-client bot2-lcmgl-client
-  lcmtypes_tld-tracker
   bot2-frames  bot2-frames_cpp
   opencv  image_io_utils histogram-tracker
   pointcloud_filters  pointcloud_vis pointcloud_lcm)
