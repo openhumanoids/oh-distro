@@ -23,7 +23,7 @@ group "1.a.core" {
         host = "paladin-02";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
         host = "paladin-02";
     }
     cmd "estpub" {
@@ -357,12 +357,26 @@ script "systemtest-core" {
     start cmd "qual_walking_slow_unpaused";
     wait ms 5000;
     start cmd "set-sim-rate";
+}
 
+script "systemtest-core-stop" {
+    stop cmd "lcm-logger-no-vis";
+    stop cmd "systemwide-test";
+    stop group "0.dev_deputies";
+    stop group "1.a.core";
+    stop group "1.b.sensing";
+    stop cmd "Qual1StateMachine";
+    stop cmd "FootstepPlanner";
+    stop cmd "ZMPWalkingPlanner";
+    stop cmd "qual_walking_slow_unpaused";
+    stop cmd "set-sim-rate";
 }
 
 script "systemtest" {
     run_script "systemtest-core";
-    wait ms 600000;
+    wait ms 1200000;
+    run_script "systemtest-core-stop";
+    wait ms 10000;
 }
 
 script "systemtest-vo" {
