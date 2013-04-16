@@ -44,6 +44,9 @@ const bool PARAM_STATUS_3_DEFAULT = false;
 const bool PARAM_STATUS_4_DEFAULT = false;
 const bool PARAM_IMPORTANT_DEFAULT = false;
 
+const char* PARAM_SHADING = "Shading";
+const bool PARAM_SHADING_DEFAULT = true;
+
 #define ERR(fmt, ...) do { \
     fprintf(stderr, "["__FILE__":%d Error: ", __LINE__); \
     fprintf(stderr, fmt, ##__VA_ARGS__); \
@@ -73,6 +76,7 @@ typedef struct
     vector<string> msgchannels;
     bool param_status[NUMBER_OF_SYSTEMS];
     bool param_important;
+    bool shading;
     int visability;
     
     // for custom checkboxes
@@ -204,16 +208,30 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 
     //double x = hind * 110 + 120;
     double x = 0 ;// hind * 150 + 120;
-    double y = gl_height - 5 * line_height - 1;
+    double y = gl_height - 8 * line_height;
 
-    glColor4f(0, 0, 0, 0.7);
-    glBegin(GL_QUADS);
-    glVertex2f(x, y - line_height);
-    glVertex2f(x + 21*9, y - line_height); // 21 is the number of chars in the box
+    int x_pos = 189; // text lines x_position
+    if (self->shading){
+      glColor4f(0, 0, 0, 0.7);
+      glBegin(GL_QUADS);
+      glVertex2f(x, y - line_height);
+      glVertex2f(x + 21*9, y - line_height); // 21 is the number of chars in the box
 
-    glVertex2f(x + 21*9, y + 5 * line_height); // 21 is the number of chars in the box
-    glVertex2f(x, y + 6 * line_height);
-    glEnd();
+      glVertex2f(x + 21*9, y + 8 * line_height); // 21 is the number of chars in the box
+      glVertex2f(x       , y + 8 * line_height);
+      glEnd();
+
+      // scrolling text background://////////////////////////////
+      
+      glColor4f(0, 0, 0, 0.7);
+      glBegin(GL_QUADS);
+      glVertex2f(x_pos, y - line_height);
+      glVertex2f(gl_width, y - line_height); // 21 is the number of chars in the box
+
+      glVertex2f(gl_width, y + 8 * line_height); // 21 is the number of chars in the box
+      glVertex2f(x_pos, y + 8 * line_height);
+      glEnd();    
+    }
 
     glColor3fv(colors[0]);
     glRasterPos2f(x, y);
@@ -239,10 +257,10 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
     
+
+    
     // scrolling text://////////////////////////////
-    double x_pos =180;
-    double y_pos;
-    y = line_height;
+    int y_pos=0;
     char scroll_line[100];
     
     int W_to_show=0;
@@ -258,7 +276,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       }
     }
     
-    int max_bottom_strip = 15;
+    int max_bottom_strip = 8;//15;
     if (1==1){
     
       if (N_active_params==1){ // if only one class wants to be shown:
@@ -268,24 +286,24 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
         int msgs_onscreen = 0;
 	// go through the circular list
         for (int i=self->deques[W_to_show]->size()-1 ;i>=0;i--){
-         y_pos = line_height*((float)i +1);
          // stop of we have covered the screen:
          if (y_pos > (gl_height)){
 	   break;
          }
+         y_pos = (int) line_height*msgs_onscreen;
          float colors4[4] = {0};
          colors4[0] =colors[W_to_show][0];
          colors4[1] =colors[W_to_show][1];
          colors4[2] =colors[W_to_show][2];
          colors4[3] =1;
-         if (i < (self->sys_deque->size() - max_bottom_strip) ){
-	      if (self->visability==MODE_FULL){
-		colors4[3] = 1;
-	      }else if (self->visability==MODE_NONE){
-		colors4[3] = 0;
-	      }else{
-		colors4[3] = 0.4;
-	      }
+         if (msgs_onscreen >  (max_bottom_strip) ){
+            if (self->visability==MODE_FULL){
+              colors4[3] = 1;
+            }else if (self->visability==MODE_NONE){
+              colors4[3] = 0;
+            }else{
+              colors4[3] = 0.4;
+            }
          }
          string temp;
          temp= self->deques[W_to_show]->at(i)->value;
@@ -296,7 +314,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
          //      glColor3fv(colors[1]);
          glColor4fv(colors4);
-         glRasterPos2f(x_pos, gl_height -y_pos  );
+         glRasterPos2f(x_pos,  (int)gl_height -y_pos  );
          glutBitmapString(font, (unsigned char*) scroll_line);    
          msgs_onscreen++;
          if (msgs_onscreen > MAXIMUM_N_OF_LINES) {
@@ -304,7 +322,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          }
        }
      }else if((N_active_params > 1)&&(self->param_important)){
-       //printf("important\n");
+       printf("important\n");
        int msgs_onscreen = 0;
        for (int i=self->sys_deque->size()-1 ;i>=0;i--){
          if (y_pos > (gl_height)){ // stop of we have covered the screen:
@@ -317,17 +335,17 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          int W_to_show_comb = (int) self->sys_deque->at(i)->system;
          //cout << "i  should choose colour" << W_to_show_comb << endl; 
            if (self->param_status[W_to_show_comb]){
-             y_pos = line_height*((float)msgs_onscreen +1);
+             y_pos = line_height*msgs_onscreen;
              float colors4[4] = {0};
              colors4[0] =colors[W_to_show_comb][0];
              colors4[1] =colors[W_to_show_comb][1];
              colors4[2] =colors[W_to_show_comb][2];
-             colors4[3] =1;
-             if (i <  (self->sys_deque->size() - max_bottom_strip) ){
+             colors4[3] =1.0;
+             if (msgs_onscreen >  (max_bottom_strip) ){
                if (self->visability==MODE_FULL){
-                 colors4[3] = 1;
+                 colors4[3] = 1.0;
                }else if (self->visability==MODE_NONE){
-                 colors4[3] = 0;
+                 colors4[3] = 0.0;
                }else{
                  colors4[3] = 0.4;
                }
@@ -337,7 +355,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
              //sprintf(scroll_line, "%5.d %s line number %d - ctr: %d",age_of_msg,temp.c_str(),i,ctr);
              //      glColor3fv(colors[1]);
              glColor4fv(colors4);
-             glRasterPos2f(x_pos,  gl_height -y_pos   );
+             glRasterPos2f(x_pos, (int) gl_height -y_pos   );
              glutBitmapString(font, (unsigned char*) scroll_line);    
              msgs_onscreen++;
              if (msgs_onscreen > MAXIMUM_N_OF_LINES) {
@@ -361,17 +379,17 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          int W_to_show_comb = (int) self->sys_deque->at(i)->system;
          //cout << "i  should choose colour" << W_to_show_comb << endl; 
          if (self->param_status[W_to_show_comb]){
-           y_pos = line_height*((float)msgs_onscreen +1);
-           float colors4[4] = {0};
+           y_pos = line_height*((float)msgs_onscreen );
+           float colors4[4] = {0.0};
            colors4[0] =colors[W_to_show_comb][0];
            colors4[1] =colors[W_to_show_comb][1];
            colors4[2] =colors[W_to_show_comb][2];
            colors4[3] =1;
-           if (i < (self->sys_deque->size() - max_bottom_strip) ){
+           if (msgs_onscreen >  (max_bottom_strip) ){
 	      if (self->visability==MODE_FULL){
-		colors4[3] = 1;
+		colors4[3] = 1.0;
 	      }else if (self->visability==MODE_NONE){
-		colors4[3] = 0;
+		colors4[3] = 0.0;
 	      }else{
 		colors4[3] = 0.4;
 	      }
@@ -413,6 +431,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_status[3] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_3);
   self->param_status[4] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_4);
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
+  self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);
   bot_viewer_request_redraw (self->viewer);
 }
@@ -499,12 +518,14 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_STATUS_3, PARAM_STATUS_3_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_STATUS_4, PARAM_STATUS_4_DEFAULT, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
-                                      PARAM_IMPORTANT, PARAM_IMPORTANT_DEFAULT, NULL);
 
     bot_gtk_param_widget_add_enum (self->pw, PARAM_MODE, (BotGtkParamWidgetUIHint)0, MODE_FADE, 
 	      "Full", MODE_FULL, "Fade", MODE_FADE, 
 	      "None", MODE_NONE, NULL);    
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_IMPORTANT, PARAM_IMPORTANT_DEFAULT, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+                                      PARAM_SHADING, PARAM_SHADING_DEFAULT, NULL);
     
     
     gtk_widget_show (GTK_WIDGET (self->pw));

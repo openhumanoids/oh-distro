@@ -279,14 +279,14 @@ static BotRenderer *renderer_drcgrid_new (BotViewer *viewer, lcm_t *lcm)
     bot_gtk_param_widget_add_double (self->pw, PARAM_AZIMUTH,
             BOT_GTK_PARAM_WIDGET_SLIDER,
             0, 90, 0.1, 0);
-	bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
+    bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
             PARAM_BGLIGHT, 1, 
             PARAM_RENDER_GROUND, 0, 
             NULL);
 
-        bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
+    bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
             PARAM_DRAW_GRID, 1, NULL);
-	bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
+    bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_DEFAULTS, 
             PARAM_GRID_SPACING_AUTOMATIC, 1, NULL);
         
     bot_gtk_param_widget_add_double(self->pw, 
