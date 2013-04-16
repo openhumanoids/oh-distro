@@ -17,7 +17,7 @@ pods_install_headers(renderer_driving.hpp DESTINATION renderer_drc)
   
 pods_install_pkg_config_file(renderer_driving
     LIBS -lrenderer_driving
-    REQUIRES bot2-core bot2-vis bot2-frames bot2-frames_cpp lcmtypes_tld-tracker
+    REQUIRES bot2-core bot2-vis bot2-frames bot2-frames_cpp lcmtypes_trackers
     VERSION 0.0.1)
 
 pods_use_pkg_config_packages(renderer_driving
