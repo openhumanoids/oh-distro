@@ -80,6 +80,10 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world gzname:=run_gazebo_unpaused";
         host = "paladin-02";
     }
+    cmd "qual_walking_slow_steps" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
+        host = "paladin-02";
+    }
     cmd "qual_manipulation" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
         host = "paladin-02";
@@ -129,6 +133,17 @@ group "3.perception"{
     }
     cmd "maskunzip" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED";
+        host = "paladin-02";
+    }
+}
+
+group "3a.motion_vo"{
+    cmd "motion_vo_testing" {
+        exec = "drc-fovision-odometry -i 3";
+        host = "paladin-02";
+    }
+    cmd "estpub_sensing" {
+        exec = "est_robot_state_publisher";
         host = "paladin-02";
     }
 }
@@ -291,6 +306,10 @@ group "utils.system-test" {
         exec = "drc-systemwide-tests";
         host = "paladin-02";
     }
+    cmd "set-sim-rate" {
+        exec = "drc-set-sim-rate 0.1";
+        host = "paladin-02";
+    }
 }
 
 
@@ -302,7 +321,18 @@ script "systemtest" {
     start group "1.a.core";
     wait ms 200;
     start group "1.b.sensing";
-    start group "4.drake_robot";
+    start cmd "Qual1StateMachine";
+    start cmd "FootstepPlanner";
+    start cmd "ZMPWalkingPlanner";
     wait ms 10000;
     start cmd "qual_walking_slow_unpaused";
+    wait ms 5000;
+    start cmd "set-sim-rate";
+}
+
+script "systemtest-vo" {
+    run_script "systemtest";
+    stop cmd "estpub";
+    start cmd "motion_vo_testing";
+    start cmd "estpub_sensing";
 }
