@@ -310,10 +310,23 @@ group "utils.system-test" {
         exec = "drc-set-sim-rate 0.1";
         host = "paladin-02";
     }
+    cmd "lcm-logger-no-vis" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v";
+        host = "paladin-02";
+    }
+}
+
+script "quicktest" {
+    start cmd "lcm-logger-no-vis";
+    start cmd "systemwide-test";
+    start group "0.dev_deputies";
+    start group "1.a.core";
+    wait ms 500;
 }
 
 
-script "systemtest" {
+script "systemtest-core" {
+    start cmd "lcm-logger-no-vis";
     start cmd "systemwide-test";
     wait ms 100;
     start group "0.dev_deputies";
@@ -328,11 +341,18 @@ script "systemtest" {
     start cmd "qual_walking_slow_unpaused";
     wait ms 5000;
     start cmd "set-sim-rate";
+
+}
+
+script "systemtest" {
+    run_script "systemtest-core";
+    wait ms 600000;
 }
 
 script "systemtest-vo" {
-    run_script "systemtest";
+    run_script "systemtest-core";
     stop cmd "estpub";
     start cmd "motion_vo_testing";
     start cmd "estpub_sensing";
+    wait ms 600000;
 }
