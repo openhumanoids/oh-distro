@@ -72,6 +72,22 @@ group "1.b.sensing" {
 }
 
 group "2.gazebo" {
+    cmd "mit_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
+        host = "paladin-02";
+    }
+    cmd "mit_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        host = "paladin-02";
+    }
+    cmd "mit_walking_bdi" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
+        host = "paladin-02";
+    }
+    cmd "mit_driving" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
+        host = "paladin-02";
+    }
     cmd "qual_walking_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "paladin-02";
@@ -132,7 +148,7 @@ group "3.perception"{
         host = "paladin-02";
     }
     cmd "maskunzip" {
-        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED";
+        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "paladin-02";
     }
 }
