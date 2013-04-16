@@ -405,29 +405,18 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
 void Pass::publishUpdatedAffordance(){
   last_affordance_msg_.aff_store_control =  drc::affordance_t::UPDATE;
-  affutils.setXYZRPYFromIsometry3d(last_affordance_msg_.param_names, last_affordance_msg_.params,  object_pose_ );
+  affutils.setXYZRPYFromIsometry3d(last_affordance_msg_.origin_xyz, last_affordance_msg_.origin_xyz,  object_pose_ );
   lcm_->publish("AFFORDANCE_TRACK", &last_affordance_msg_);
 }
 
 
 
-Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::vector<double> params ){
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-  Eigen::Isometry3d transform;
-  transform.setIdentity();
-  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-  transform.rotate(quat);  
-  return transform;
-}
-
-
 std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vector<double> params ){
   // Ridiculously hacky way of converting from plane affordance to plane coeffs.
   // the x-direction of the plane pose is along the axis - hence this
+  
+  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: affordanceToPlane\n";
+  
   
   std::map<string,double> am;
   for (size_t j=0; j< param_names.size(); j++){
@@ -462,6 +451,10 @@ std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vecto
 }
 
 Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vector<double> params ){
+  
+  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: affordanceToCentroid\n";
+  
+  
   std::map<string,double> am;
   for (size_t j=0; j< param_names.size(); j++){
     am[ param_names[j] ] = params[j];
@@ -496,7 +489,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
   if  ( !got_initial_affordance_ ) {
     cout << "got initial position for Affordance "<< affordance_id_ <<"\n";
     drc::affordance_plus_t a = msg->affs_plus[aff_iter];
-    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
+//    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
+    object_pose_ = affutils.getPose( a.aff.origin_xyz, a.aff.origin_rpy );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);

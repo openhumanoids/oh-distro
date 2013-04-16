@@ -28,8 +28,11 @@ public:
     
     
     ~FoVision();
+    
     void doOdometry(uint8_t *left_buf,uint8_t *right_buf);
     void doOdometry(uint8_t *left_buf,float *disparity_buf);
+
+    void send_status_msg(std::string text);
     void fovis_stats();
     
     Eigen::Isometry3d getMotionEstimate(){ 

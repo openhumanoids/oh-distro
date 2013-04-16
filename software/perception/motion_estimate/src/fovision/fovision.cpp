@@ -1,4 +1,5 @@
 #include "fovision.hpp"
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 FoVision::FoVision(boost::shared_ptr<lcm::LCM> &lcm_,
   boost::shared_ptr<fovis::StereoCalibration> kcal):
@@ -54,11 +55,18 @@ void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf){
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
 }
 
-void FoVision::fovis_stats(){
-  
+void FoVision::send_status_msg(std::string text){
+  drc::system_status_t status_msg;
+  status_msg.utime =  current_timestamp_;
+  status_msg.system = drc::system_status_t::MOTION_ESTIMATION;// use enums!!
+  status_msg.importance = drc::system_status_t::VERY_IMPORTANT;// use enums!!
+  status_msg.frequency = drc::system_status_t::MEDIUM_FREQUENCY;// use enums!!
+  status_msg.value = text;
+  lcm_->publish("SYSTEM_STATUS", &status_msg);
+}
 
-  
-  
+
+void FoVision::fovis_stats(){
   
   Eigen::Isometry3d cam_to_local = odom_.getPose();
   
@@ -106,29 +114,36 @@ void FoVision::fovis_stats(){
     case fovis::SUCCESS:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_VALID;
       if (verbose){
+        /*
 	printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
           me->getNumInliers(),
           me->getNumReprojectionFailures(),
           me->getNumMatches(),
           (int) odom_.getTargetFrame()->getNumKeypoints(),
           me->getMeanInlierReprojectionError());
+        */
       }
       break;
     case fovis::INSUFFICIENT_INLIERS:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_INSUFFICIENT_FEATURES;
       if (verbose){
+        send_status_msg("Insufficient inliers");
 	printf("Insufficient inliers\n");
       }
       break;
     case fovis::OPTIMIZATION_FAILURE:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_DEGENERATE;
       if (verbose){
+        send_status_msg("Unable to solve for rigid body transform");
 	printf("Unable to solve for rigid body transform\n");
       }
       break;
     case fovis::REPROJECTION_ERROR:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_REPROJECTION_ERROR;
       if (verbose){
+        std::stringstream ss;
+        ss << "Excessive reprojection error: " << me->getMeanInlierReprojectionError();
+        send_status_msg(ss.str());
 	printf("Excessive reprojection error (%f).\n", me->getMeanInlierReprojectionError());
       }
       break;

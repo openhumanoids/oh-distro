@@ -37,6 +37,11 @@ public:
   void setHeadPose(Eigen::Isometry3d local_to_head_in){
     local_to_head_ = local_to_head_in;
   }
+  
+  // Clamp the Z-height to this value (which comes from gazebo - as a dev cheat)
+  void setHeadPoseZ(double clamp_z_value){
+    local_to_head_.translation().z() = clamp_z_value;
+  }  
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
   pointcloud_vis* pc_vis_;
@@ -46,6 +51,11 @@ private:
 
   Eigen::Isometry3d camera_to_head_, head_to_camera_, local_to_head_;
   std::string pose_head_channel_;
+  
+  int64_t prev_utime_;
+  
+  void convertDeltaToVelocity(Eigen::Isometry3d delta_head,
+                      int64_t utime, int64_t prev_utime);
 };
 
 #endif

@@ -231,8 +231,10 @@ bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       am[ affplus.aff.param_names[j] ] = affplus.aff.params[j];
     }
 
-    Eigen::Isometry3d transform = affutils.getPose(affplus.aff.param_names, affplus.aff.params);
+    //Eigen::Isometry3d transform = affutils.getPose(affplus.aff.param_names, affplus.aff.params);
+    Eigen::Isometry3d transform = affutils.getPose(affplus.aff.origin_xyz, affplus.aff.origin_rpy );
     
+
     string otdf_type = affplus.aff.otdf_type;
     
     if (otdf_type == "box"){

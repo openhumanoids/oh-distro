@@ -34,7 +34,8 @@ using namespace cv; // for disparity ops
 
 class StereoOdom{
   public:
-    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_);
+    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
+      string output_channel_);
     
     ~StereoOdom(){
       free (left_buf_);
@@ -68,6 +69,7 @@ class StereoOdom{
     bool changed_ref_frames_;
 
     VoEstimator* estimator_;
+    string output_channel_;
 
     void featureAnalysis();
     void updateMotion();
@@ -80,6 +82,7 @@ class StereoOdom{
     void trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+    bool getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d &local_to_head);
 
     
     int fusion_mode_;
@@ -90,10 +93,12 @@ class StereoOdom{
     void fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency, int64_t utime);
 };    
 
-StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_) : 
+StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
+       string output_channel_) : 
        lcm_(lcm_), utime_cur_(0), utime_prev_(0), 
        ref_utime_(0), changed_ref_frames_(false), 
-       fusion_mode_( fusion_mode_ ), camera_config_(camera_config_)
+       fusion_mode_( fusion_mode_ ), camera_config_(camera_config_),
+       output_channel_(output_channel_)
 {
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
@@ -119,7 +124,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
   vo_ = new FoVision(lcm_ , stereo_calibration_);
 
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
-  estimator_ = new VoEstimator(lcm_ , botframes_,"POSE_HEAD");
+  estimator_ = new VoEstimator(lcm_ , botframes_, output_channel_ );
 
   // Assumes CAMERA is image_t type:
   lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
@@ -185,6 +190,7 @@ void StereoOdom::updateMotion(){
   vo_->getMotion(delta_camera, delta_cov, delta_status );
   vo_->fovis_stats();
   estimator_->voUpdate(utime_cur_, delta_camera);
+  
   
   /*
   stringstream ss;
@@ -295,22 +301,16 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
-void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
-                                       const std::string& channel, const  drc::robot_state_t* msg){
-  if (fusion_mode_!=3){
-    return; 
-  }
-  if (pose_initialized_){
-    return;
-  }
-  
+// Given the incoming message, determing the world-to-head frame
+bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d &local_to_head){
+  bool head_found =false;
+
   // 1. Take the simulator-created robot root position in world frame:
-  cout << "got true RS\n";  
-  Eigen::Isometry3d world_to_body;
-  world_to_body.setIdentity();
-  world_to_body.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y,
+  Eigen::Isometry3d local_to_body;
+  local_to_body.setIdentity();
+  local_to_body.translation() << msg->origin_position.translation.x, msg->origin_position.translation.y,
                                  msg->origin_position.translation.z;
-  world_to_body.rotate(  Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
+  local_to_body.rotate(  Eigen::Quaterniond(msg->origin_position.rotation.w, msg->origin_position.rotation.x, 
                                             msg->origin_position.rotation.y, msg->origin_position.rotation.z) );
   
   map<string, double> jointpos_in;
@@ -326,39 +326,58 @@ void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
     // cout << "Success!" <<endl;
   }else{
     cerr << "Error: could not calculate forward kinematics!" <<endl;
-    return;
+    return false;
   }
   
   // 2. Determine the head position:
-  Eigen::Isometry3d body_to_head;
-  bool body_to_head_found =false;
   for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string joint = (*ii).first;
     if (   (*ii).first.compare( "head" ) == 0 ){
+      Eigen::Isometry3d body_to_head;
       body_to_head.setIdentity();
       body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
       Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
       body_to_head.rotate(quat);    
-      body_to_head_found=true;
+      head_found =true;
+      // Determine the head position in world frame:
+      local_to_head = local_to_body * body_to_head; 
+      break;
     }
-  }    
-  
-  // 3. If successful, set the robot's head position and start state estimation:
-  if (body_to_head_found){
-    Eigen::Isometry3d world_to_head = world_to_body * body_to_head; 
-    std::stringstream ss2;
-    print_Isometry3d(world_to_head, ss2);
-    double ypr[3];
-    quat_to_euler(  Eigen::Quaterniond(world_to_head.rotation()) , ypr[0], ypr[1], ypr[2]);
+  }     
+  return head_found ;
+}
+
+
+void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
+                                       const std::string& channel, const  drc::robot_state_t* msg){
+  if (fusion_mode_!=3){
+    return; 
+  }
+ 
+  // If successful, set the robot's head position and start state estimation:
+  Eigen::Isometry3d local_to_head_true;
+  if ( getWorldToHead(msg, local_to_head_true)   ){
+    if (!pose_initialized_){
+      std::stringstream ss2;
+      print_Isometry3d(local_to_head_true, ss2);
+      double ypr[3];
+      quat_to_euler(  Eigen::Quaterniond(local_to_head_true.rotation()) , ypr[0], ypr[1], ypr[2]);
+      
+      if (1==1){//verbose
+        std::cout << "gt local_to_head_true: " << ss2.str() << " | "<< 
+          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+      }
     
-    if (1==1){//verbose
-      std::cout << "gt world_to_head: " << ss2.str() << " | "<< 
-        ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+      estimator_->setHeadPose(local_to_head_true);
+      pose_initialized_ = true;
+      cout << "got first GT Pose Head measurement from true\n";      
     }
-  
-  estimator_->setHeadPose(world_to_head);
-  pose_initialized_ = true;
-  cout << "got first GT Pose Head measurement from true\n";      
+    
+    bool clamp_z =true;// clamp the estimated
+    if (clamp_z){
+      estimator_->setHeadPoseZ( local_to_head_true.translation().z() );
+      
+    }
   
   }
 }
@@ -507,8 +526,10 @@ int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "fovision-odometry");
   int fusion_mode=0;
   string camera_config = "CAMERA";
+  string output_channel = "POSE_HEAD";
   parser.add(fusion_mode, "i", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
   parser.add(camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
+  parser.add(output_channel, "o", "output_channel", "Published head pose to this channel");
   parser.parse();
   cout << fusion_mode << " is fusion_mode\n"; 
   cout << camera_config << " is camera_config\n"; 
@@ -518,6 +539,6 @@ int main(int argc, char **argv){
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-  StereoOdom fo= StereoOdom(lcm, fusion_mode,camera_config);    
+  StereoOdom fo= StereoOdom(lcm, fusion_mode,camera_config, output_channel);    
   while(0 == lcm->handle());
 }

@@ -3,7 +3,8 @@
 
 VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_,
   std::string pose_head_channel_):
-  lcm_(lcm_), botframes_(botframes_), pose_head_channel_(pose_head_channel_)  {
+  lcm_(lcm_), botframes_(botframes_), pose_head_channel_(pose_head_channel_),
+  prev_utime_(0){
   local_to_head_.setIdentity();
 
   // Assume head to camera is rigid:
@@ -13,12 +14,39 @@ VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes
   if(!lcm_->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose Head",5,1) );
 }
+
+
+void VoEstimator::convertDeltaToVelocity(Eigen::Isometry3d delta_head,
+                      int64_t utime, int64_t prev_utime){
+  double elapsed_time =  ( (double) utime - prev_utime)/1E6;
+  
+  double xyz_vel[3];
+  xyz_vel[0] = delta_head.translation().x()/elapsed_time;
+  xyz_vel[1] = delta_head.translation().y()/elapsed_time;
+  xyz_vel[2] = delta_head.translation().z()/elapsed_time;
+  
+  double d_ypr[3], ypr_vel[3];
+  quat_to_euler(  Eigen::Quaterniond(delta_head.rotation()) , d_ypr[0], d_ypr[1], d_ypr[2]);
+  ypr_vel[0] = d_ypr[0]/elapsed_time;
+  ypr_vel[1] = d_ypr[1]/elapsed_time;
+  ypr_vel[2] = d_ypr[2]/elapsed_time;  // ypr_vel are now the angular rates in camera frame
+  
+  cout << "\nElapsed Time: " << elapsed_time << "\n";
+  std::stringstream ss;
+  ss << "DeltaH: ";     print_Isometry3d(delta_head,ss); 
+  std::cout << ss.str() << "\n";
+  std::cout << "YPR: " << d_ypr[0] << ", "<<d_ypr[1] << ", "<<d_ypr[2] <<" rads [delta]\n";
+  std::cout << "YPR: " << ypr_vel[0] << ", "<<ypr_vel[1] << ", "<<ypr_vel[2] <<" rad/s | ang velocity\n";
+  std::cout << "YPR: " << ypr_vel[0]*180/M_PI << ", "<<ypr_vel[1]*180/M_PI << ", "<<ypr_vel[2]*180/M_PI <<" deg/s | ang velocity\n";
+  std::cout << "XYZ: " << xyz_vel[0] << ", "<<xyz_vel[1] << ", "<<xyz_vel[2] <<" m/s | lin velocity\n";
+  
+}
+  
 
 // TODO: remove fovis dependency entirely:
 void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
@@ -26,6 +54,12 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   Eigen::Isometry3d delta_head = head_to_camera_*delta_camera*camera_to_head_;
   local_to_head_ = local_to_head_*delta_head;
 
+  if(prev_utime_!=0){
+    convertDeltaToVelocity(delta_head, utime, prev_utime_);
+  }else{
+    std::cout << "prev_utime_ is zero [at init]\n"; 
+  }
+  
   /*
   std::stringstream ss;
   ss << "VO: ";     print_Isometry3d(delta_camera,ss); 
@@ -35,6 +69,7 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   std::cout << ss.str() << "\n";
   */
   publishUpdate(utime);
+  prev_utime_ = utime;
 }
   
 void VoEstimator::publishUpdate(int64_t utime){

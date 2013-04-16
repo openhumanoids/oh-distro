@@ -35,7 +35,7 @@ using namespace boost;
 
 double yaw=0;
 double x=0;
-double y=5;
+double y=0;
 double z=0;
 
 struct Primitive
@@ -135,9 +135,11 @@ void StatePub::boxFilter(){
 
 void StatePub::moveCloud(){
     Eigen::Isometry3f local_to_lidar;
-    Eigen::Quaternionf quat = Eigen::Quaternionf(1,0,0,0);
+    Eigen::Quaternionf quat = euler_to_quat_f( yaw*M_PI/180.0 ,0,0);
+    //Eigen::Quaternionf quat = Eigen::Quaternionf(1,0,0,0);
     local_to_lidar.setIdentity();
-    local_to_lidar.translation()  << 1.2575, 1.3, 1.16;
+//    local_to_lidar.translation()  << 1.2575, 1.3, 1.16;
+    local_to_lidar.translation()  << x,y,z;//0,0,-0.63;
     local_to_lidar.rotate(quat);
 
     

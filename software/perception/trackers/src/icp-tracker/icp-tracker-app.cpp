@@ -239,7 +239,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
   if  ( !got_affs_ ) {
     cout << "got affs\n";
     drc::affordance_plus_t a = msg->affs_plus[affordance_id_];
-    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
+//    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
+    object_pose_ = affutils.getPose( a.aff.origin_xyz, a.aff.origin_rpy );
 
     Isometry3dTime pT =  Isometry3dTime( 0, object_pose_);
     pc_vis_->pose_to_lcm_from_list(1010, pT);
