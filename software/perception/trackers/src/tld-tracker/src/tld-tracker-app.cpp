@@ -49,26 +49,6 @@ struct TLDTrackerOptions {
 };
 TLDTrackerOptions options;
 
-
-struct CameraParams { 
-    int width, height;
-    float fx, fy, cx, cy, k1, k2, k3, p1, p2;
-    CameraParams () {}
-    CameraParams (BotParam* param, const std::string key_prefix_str) { 
-        width = bot_param_get_int_or_fail(param, (key_prefix_str+".width").c_str());
-        height = bot_param_get_int_or_fail(param,(key_prefix_str+".height").c_str());
-        fx = bot_param_get_double_or_fail(param, (key_prefix_str+".fx").c_str());
-        fy = bot_param_get_double_or_fail(param, (key_prefix_str+".fy").c_str());
-        cx = bot_param_get_double_or_fail(param, (key_prefix_str+".cx").c_str());
-        cy = bot_param_get_double_or_fail(param, (key_prefix_str+".cy").c_str());
-        k1 = bot_param_get_double_or_fail(param, (key_prefix_str+".k1").c_str());
-        k2 = bot_param_get_double_or_fail(param, (key_prefix_str+".k2").c_str());
-        k3 = bot_param_get_double_or_fail(param, (key_prefix_str+".k3").c_str());
-        p1 = bot_param_get_double_or_fail(param, (key_prefix_str+".p1").c_str());
-        p2 = bot_param_get_double_or_fail(param, (key_prefix_str+".p2").c_str());
-    }
-};
-
 struct state_t { 
     lcm_t* lcm;
 

@@ -13,6 +13,7 @@ add_subdirectory(src/major-plane-detect)
 add_subdirectory(src/color-tracker)
 add_subdirectory(src/icp-tracker)
 add_subdirectory(src/histogram-tracker)
+add_subdirectory(src/tld-tracker)
 
 # particle filter based:
 add_subdirectory(src/object-tracker)
