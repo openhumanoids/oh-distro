@@ -975,26 +975,6 @@ namespace surrogate_gui
                                         inliers,
 					inliers_distances);
 
-          /*
-	  affordanceMsg.aff.params.push_back(x);
-	  affordanceMsg.aff.param_names.push_back("x");
-	  
-	  affordanceMsg.aff.params.push_back(y);
-	  affordanceMsg.aff.param_names.push_back("y");
-
-	  affordanceMsg.aff.params.push_back(z);
-	  affordanceMsg.aff.param_names.push_back("z");
-
-	  affordanceMsg.aff.params.push_back(roll);
-	  affordanceMsg.aff.param_names.push_back("roll");
-
-	  affordanceMsg.aff.params.push_back(pitch);
-	  affordanceMsg.aff.param_names.push_back("pitch");
-
-	  affordanceMsg.aff.params.push_back(yaw);
-	  affordanceMsg.aff.param_names.push_back("yaw");
-          */
-
 	  affordanceMsg.aff.params.push_back(radius);
 	  affordanceMsg.aff.param_names.push_back("radius");
 
@@ -1052,7 +1032,6 @@ namespace surrogate_gui
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.aff.nparams = 4; //8; //xyz,radius
 	  double x,y,z,radius;
           std::vector< vector<float> > inliers;
 	  PointIndices::Ptr sphereIndices 
@@ -1062,17 +1041,9 @@ namespace surrogate_gui
                                       radius,
                                       inliers);
 	      
-	  affordanceMsg.aff.params.push_back(x);
-	  affordanceMsg.aff.param_names.push_back("x");
-	  
-	  affordanceMsg.aff.params.push_back(y);
-	  affordanceMsg.aff.param_names.push_back("y");
-
-	  affordanceMsg.aff.params.push_back(z);
-	  affordanceMsg.aff.param_names.push_back("z");
-
 	  affordanceMsg.aff.params.push_back(radius);
 	  affordanceMsg.aff.param_names.push_back("radius");
+	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
           // set bounding
           affordanceMsg.aff.origin_xyz[0] = x;
@@ -1122,7 +1093,6 @@ namespace surrogate_gui
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-	  affordanceMsg.aff.nparams = 8; //8; //xyz,rpy,radius,length
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
           std::vector< vector<float> > inliers;
 	  std::vector<double> inliers_distances; 
@@ -1137,29 +1107,13 @@ namespace surrogate_gui
 
 		length = 0.01; // a 3d circle is a cylinder with 1 cm length
 	      
-	  affordanceMsg.aff.params.push_back(x);
-	  affordanceMsg.aff.param_names.push_back("x");
-	  
-	  affordanceMsg.aff.params.push_back(y);
-	  affordanceMsg.aff.param_names.push_back("y");
-
-	  affordanceMsg.aff.params.push_back(z);
-	  affordanceMsg.aff.param_names.push_back("z");
-
-	  affordanceMsg.aff.params.push_back(roll);
-	  affordanceMsg.aff.param_names.push_back("roll");
-
-	  affordanceMsg.aff.params.push_back(pitch);
-	  affordanceMsg.aff.param_names.push_back("pitch");
-
-	  affordanceMsg.aff.params.push_back(yaw);
-	  affordanceMsg.aff.param_names.push_back("yaw");
-
 	  affordanceMsg.aff.params.push_back(radius);
 	  affordanceMsg.aff.param_names.push_back("radius");
 
 	  affordanceMsg.aff.params.push_back(length);
 	  affordanceMsg.aff.param_names.push_back("length");
+
+	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
           // set bounding
           affordanceMsg.aff.origin_xyz[0] = x;
@@ -1222,36 +1176,6 @@ namespace surrogate_gui
             
             affordanceMsg.aff.map_id = 0; 	  
             affordanceMsg.aff.otdf_type = "dynamic_mesh";
-            
-            affordanceMsg.aff.params.push_back(p.xyz[0]);
-            affordanceMsg.aff.param_names.push_back("x");
-	  
-            affordanceMsg.aff.params.push_back(p.xyz[1]);
-            affordanceMsg.aff.param_names.push_back("y");
-            
-            affordanceMsg.aff.params.push_back(p.xyz[2]);
-            affordanceMsg.aff.param_names.push_back("z");
-            
-            affordanceMsg.aff.params.push_back(p.ypr[2]);
-            affordanceMsg.aff.param_names.push_back("roll");
-            
-            affordanceMsg.aff.params.push_back(p.ypr[1]);
-            affordanceMsg.aff.param_names.push_back("pitch");
-            
-            affordanceMsg.aff.params.push_back(p.ypr[0]);
-            affordanceMsg.aff.param_names.push_back("yaw");
-            
-            /*
-              affordanceMsg.aff.params.push_back(width);
-              affordanceMsg.aff.param_names.push_back("lX"); 
-              
-              affordanceMsg.aff.params.push_back(length);
-              affordanceMsg.aff.param_names.push_back("lY");
-              
-              affordanceMsg.aff.params.push_back(0.01);
-              affordanceMsg.aff.param_names.push_back("lZ");
-            */
-            
             
             affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
             
@@ -1360,24 +1284,6 @@ namespace surrogate_gui
           float pitch = ypr[1];
           float roll  = ypr[2];
 	
-	  affordanceMsg.aff.params.push_back(x);
-	  affordanceMsg.aff.param_names.push_back("x");
-	  
-	  affordanceMsg.aff.params.push_back(y);
-	  affordanceMsg.aff.param_names.push_back("y");
-
-	  affordanceMsg.aff.params.push_back(z);
-	  affordanceMsg.aff.param_names.push_back("z");
-
-	  affordanceMsg.aff.params.push_back(roll);
-	  affordanceMsg.aff.param_names.push_back("roll");
-
-	  affordanceMsg.aff.params.push_back(pitch);
-	  affordanceMsg.aff.param_names.push_back("pitch");
-
-	  affordanceMsg.aff.params.push_back(yaw);
-	  affordanceMsg.aff.param_names.push_back("yaw");
-
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
           // set bounding
