@@ -1,0 +1,28 @@
+package drc;
+
+struct driving_control_cmd_t
+{
+  int64_t utime;
+
+  int8_t type;
+
+  double steering_angle; //assumed to be absolute steering angle 
+  double throttle_value; 
+  double brake_value;
+
+  const int8_t TYPE_START_CAR    = 0;
+  const int8_t TYPE_GEAR_FORWARD = 1;
+  const int8_t TYPE_GEAR_NEUTRAL = 2;
+  const int8_t TYPE_GEAR_REVERSE = 3;
+  const int8_t TYPE_DRIVE        = 4;
+  const int8_t TYPE_BRAKE        = 5;
+  const int8_t TYPE_E_STOP       = 6;
+  const int8_t TYPE_SWITCH_OFF_ENGINE = 7;
+  const int8_t TYPE_DRIVE_DELTA_STEERING = 8;
+  const int8_t TYPE_DRIVE_DELTA_THROTTLE = 9;	
+  const int8_t TYPE_HANDBRAKE_ON       = 10;
+  const int8_t TYPE_HANDBRAKE_OFF       = 11;	
+  const int8_t TYPE_START_SEQUENCE  = 12;			
+}
+
+
