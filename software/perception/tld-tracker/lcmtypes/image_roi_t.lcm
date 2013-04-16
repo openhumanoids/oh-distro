@@ -1,9 +1,0 @@
-package perception; 
-
-struct image_roi_t 
-{
-    int64_t utime; 
-    int32_t object_id; 
-    int32_t feature_id;
-    perception.rect_t roi;
-}

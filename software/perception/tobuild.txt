@@ -21,7 +21,6 @@ image-passthrough
 
 # sudeep:
 opencv-utils
-tld-tracker
 stereo-bm
 
 # particle-filter based tracking
