@@ -23,7 +23,7 @@ group "1.a.core" {
         host = "paladin-02";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
         host = "paladin-02";
     }
     cmd "estpub" {
