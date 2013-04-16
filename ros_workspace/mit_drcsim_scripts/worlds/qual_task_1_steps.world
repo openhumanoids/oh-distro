@@ -212,6 +212,90 @@
 
 
 
+    <model name="box_obstacle_1">
+      <static>true</static>
+      <pose>1.0 0 1.1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/drc_qual.material</uri>
+              <name>DRCQual/MetalPlate</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_2">
+      <static>true</static>
+      <pose>1.6 0 1.3 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/drc_qual.material</uri>
+              <name>DRCQual/MetalPlate</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_3">
+      <static>true</static>
+      <pose>2.2 0 1.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.0 3.0 0.2</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/drc_qual.material</uri>
+              <name>DRCQual/MetalPlate</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
 
     <include>
       <uri>model://mit_robot_nohands</uri>
