@@ -265,32 +265,44 @@ on_controller_timer (gpointer data)
         double steering_input = self->kp_steer * heading_error;
         
         //if (self->verbose)
-        fprintf (stdout, "Steering control: Error = %.2f deg, steering_input = %.2f (deg)\n",
+        fprintf (stdout, "Steering control: Error = %.2f deg, steering_input = %.2f (deg)",
                  bot_to_degrees(heading_error), bot_to_degrees(steering_input));
 
 	double steering_angle_delta = steering_input;// 
+
 	
 	int accelerate = 0;
-	if(self->stop_utime >= self->accelerator_utime){
-	  //last command was a stop 
+	
+	if(self->stop_utime > 0 && self->stop_utime >= self->accelerator_utime){
+	    //last command was a stop 
 	  if((self->utime - self->stop_utime)/1.0e6 > STOP_TIME_GAP_SEC){
 	    //we should accelerate
 	    self->accelerator_utime = self->utime;
 	    accelerate = 1;
+	    fprintf(stdout, "= Acceleration Started\n");
 	  }
 	  else{
 	    accelerate = 0;
+	    fprintf(stdout, ".........\n");
 	  }
 	}
+	
 	else{
 	  //we have been accelerating - should check if we should stop
-	  if((self->utime - self->accelerator_utime)/1.0e6 > ACCELERATOR_TIME_GAP_SEC){
+	  if(self->accelerator_utime < 0){
+	    self->accelerator_utime = self->utime;
+	    accelerate = 1;
+	    fprintf(stdout, "= Startup Acceleration Started\n");	    
+	  }
+	  else if((self->utime - self->accelerator_utime)/1.0e6 > ACCELERATOR_TIME_GAP_SEC){
 	    //we should stop accelerating
 	    self->stop_utime = self->utime;
 	    accelerate = 0;
+	    fprintf(stdout, "= Acceleration stopped\n");
 	  }
 	  else{
 	    accelerate = 1;
+	    fprintf(stdout, "+++++++++\n");
 	  }	  
 	}
 
@@ -373,7 +385,8 @@ int main (int argc, char **argv) {
     }
 
     self->verbose = 1;
-    self->accelerator_utime = 0;
+    self->accelerator_utime = -1;
+    self->stop_utime = -1;
 
     self->lcm = bot_lcm_get_global (NULL);
     if (!self->lcm) {
