@@ -206,7 +206,7 @@ void OraclePlugin::storeAffordances()
     a.param_names.push_back("radius");
     a.params.push_back(0.030000);
     a.param_names.push_back("length");
-    a.params.push_back(0.11);
+    a.params.push_back(0.09);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     a.nparams = a.params.size();
@@ -215,7 +215,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    offset.translation()  << 0, -0.025, 0.15;
+    offset.translation()  << 0, -0.025, 0.1;
     double ypr[3]={1.571, 0,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
@@ -554,7 +554,7 @@ void OraclePlugin::storeAffordances()
     a.param_names.push_back("radius");
     a.params.push_back(0.030000);
     a.param_names.push_back("length");
-    a.params.push_back(0.11);
+    a.params.push_back(0.09);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     a.nparams = a.params.size();
@@ -563,7 +563,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    offset.translation()  << 0, -0.025, 0.15;
+    offset.translation()  << 0, -0.025, 0.1;
     double ypr[3]={1.571, 0,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
