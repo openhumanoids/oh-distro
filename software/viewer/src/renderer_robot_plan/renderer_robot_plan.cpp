@@ -89,6 +89,10 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
   else{
    c[0] = c_blue[0];c[1] = c_blue[1];c[2] = c_blue[2];
   }
+  
+  if(self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
+    alpha = 0.2;
+  
   glColor4f(c[0],c[1],c[2], alpha);
   
   //self->robotPlanListener->_gl_robot_keyframe_list[i]->enable_link_selection(self->selection_enabled);
@@ -103,6 +107,7 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
      
  if ((self->robotPlanListener->is_in_motion(i))&&(self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())) 
  {
+  alpha = 0.9;
   self->robotPlanListener->_gl_left_hand->draw_body(c_blue,alpha);
   self->robotPlanListener->_gl_right_hand->draw_body(c_blue,alpha);
  } 
@@ -290,7 +295,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
    if((self->robotPlanListener->_is_manip_plan)&&(self->selected_keyframe_index!=-1)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
    {
    // cout << "keyframe: " << self->selected_keyframe_index << " " << self->robotPlanListener->_gl_robot_keyframe_list.size()<< endl;
-    self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object ); //sometimes this is segfaulting intermitenly
+    self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object ); 
     if( intersected_object != NULL ){
         std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
         std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
@@ -303,8 +308,6 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
    }
    else{
-  
-    //self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->num_collisions();
     self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
     if( intersected_object != NULL ){
         std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
@@ -316,9 +319,13 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
 
   if((self->robotPlanListener->_is_manip_plan)&&(((*self->selection)  != " ") || ((*self->marker_selection)  != " "))&&(event->button==1) &&(event->type==GDK_2BUTTON_PRESS))
   {
+
+   if((*self->marker_selection)  == " ")
     cout << "DblClk: " << (*self->selection) << endl;
-    if((*self->marker_selection)  == " ")// dbl clk on keyframe then toogle
-    { 
+   else
+    cout << "DblClk on Marker: " << (*self->marker_selection) << endl;
+   /* if((*self->marker_selection)  == " ")// dbl clk on keyframe then toogle
+    { */
       bool toggle=true;
       if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
          toggle = !self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled();
@@ -326,8 +333,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       self->robotPlanListener->set_in_motion_hands_state(self->selected_keyframe_index);
       self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(toggle); 
       self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(toggle);
-    } 
-
+      if(!toggle){
+        (*self->marker_selection)  = " ";
+      }
+   //}
         // On double click create/toggle  local copies of right and left sticky hand duplicates and spawn them with markers
    return 1;// consumed if pop up comes up.    
   }
@@ -365,7 +374,13 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
   if (self->dragging) {
     self->dragging = 0;
     string channel = "MANIP_PLAN_CONSTRAINT";
+    
+    Eigen::Vector3f diff=self->ray_hit_drag-self->ray_hit;
+    double movement = diff.norm();
+    if(((*self->marker_selection)  != " ")&&(movement>=1e-3)){
+    //cout << "publishing manip_plan_constraint \n";
     publish_traj_opt_constraint(self,channel,self->selected_keyframe_index);
+    }
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //release picking(IMPORTANT)

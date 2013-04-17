@@ -267,7 +267,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm)
       
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->alpha = 1.0;
-  	self->selection_enabled = 1;
+  	self->selection_enabled = 0;
 	  bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->clicked = 0;	
   	self->selection = new std::string(" ");

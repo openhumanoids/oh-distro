@@ -79,13 +79,65 @@ namespace renderer_robot_plan
 
       T_world_base_l = T_world_palm_l*(T_base_palm.Inverse());
       T_world_base_r = T_world_palm_r*(T_base_palm.Inverse());
+      
 
+      
+      // Flip marker direction to always point away from the body center.
+
+      double normal, flipped;
+      Eigen::Vector3f u_x(1,0,0);
+      Eigen::Vector3f u_y(0,1,0);
+      Eigen::Vector3f u_hand_to_body;
+      u_hand_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_palm_l.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_palm_l.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_palm_l.p[2]; 
+      u_hand_to_body.normalize();
+      
+      normal = acos(u_hand_to_body.dot(u_x));
+      flipped = acos(u_hand_to_body.dot(-u_x));
+      if(flipped>normal+1e-1) {
+        _gl_left_hand->flip_trans_marker_xdir(true);
+        }
+      else{
+       _gl_left_hand->flip_trans_marker_xdir(false);
+       }
+       
+      normal = acos(u_hand_to_body.dot(u_y));
+      flipped = acos(u_hand_to_body.dot(-u_y));
+      if(flipped>normal+1e-1){
+        _gl_left_hand->flip_trans_marker_ydir(true);
+        }
+      else{
+       _gl_left_hand->flip_trans_marker_ydir(false); 
+       }
+      u_hand_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_palm_r.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_palm_r.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_palm_r.p[2]; 
+      u_hand_to_body.normalize();
+      
+      normal = acos(u_hand_to_body.dot(u_x));
+      flipped = acos(u_hand_to_body.dot(-u_x));
+      if(flipped>normal+1e-1){
+        _gl_right_hand->flip_trans_marker_xdir(true);
+        }
+      else{
+       _gl_right_hand->flip_trans_marker_xdir(false);
+       }
+      normal = acos(u_hand_to_body.dot(u_y));
+      flipped = acos(u_hand_to_body.dot(-u_y));
+      if(flipped>normal+1e-1){
+        _gl_right_hand->flip_trans_marker_ydir(true);
+        }
+      else{
+       _gl_right_hand->flip_trans_marker_ydir(false);  
+       }
+       
       std::map<std::string, double> jointpos_l;
       jointpos_l=_gl_left_hand->_current_jointpos;
       _gl_left_hand->set_state(T_world_base_l,jointpos_l);
       _gl_left_hand->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
-
-      std::map<std::string, double> jointpos_r;
+      
+       std::map<std::string, double> jointpos_r;
       jointpos_r = _gl_right_hand->_current_jointpos;
       _gl_right_hand->set_state(T_world_base_r,jointpos_r);    
       _gl_right_hand->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);

@@ -170,7 +170,9 @@ namespace renderer_robot_plan
         
       } //end ((self->robotPlanListener->_gl_left_hand)&&(self->robotPlanListener->_gl_right_hand))
 
-     if((self->robotPlanListener->_gl_robot_keyframe_list.size()>2)&&(shortest_distance == -1)) // knot points other than end points exist
+     if((self->robotPlanListener->_gl_robot_keyframe_list.size()>2)
+      &&(!self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled())
+      &&(!self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled())) // knot points other than end points exist
      {
 
         for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size()-1; i++) // ignore current state and end state, only intermediate stuff
@@ -216,34 +218,6 @@ namespace renderer_robot_plan
     Eigen::Vector3f hit_pt;
     double shortest_distance = -1;
     
-  /*if(self->displayed_plan_index==-1)
-    {
-      for(uint i = 0; i < self->robotPlanListener->_gl_robot_list.size(); i++) 
-      { 
-       // if(self->robotPlanListener->_gl_robot_list[i]) // to make sure that _gl_robot is initialized 
-       // {
-        // self->robotPlanListener->_gl_robot_list[i]->_collision_detector->num_collisions();
-         self->robotPlanListener->_gl_robot_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-       // }
-        
-        if( intersected_object != NULL ){
-          Eigen::Vector3f diff = (from-hit_pt);
-          double distance = diff.norm();
-          if(shortest_distance>0) {
-            if (distance < shortest_distance)
-              shortest_distance = distance;
-              self->selected_plan_index=i;
-          }
-          else {
-            shortest_distance = distance;
-            self->selected_plan_index=i;
-           }
-          intersected_object = NULL; 
-        }
-        
-      }//end for  
-    }
-    else {*/
      if((self->displayed_plan_index!=-1)&&(self->robotPlanListener->_gl_robot_list.size()>0)) {
         self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
         if( intersected_object != NULL ){
