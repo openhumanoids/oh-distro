@@ -1,0 +1,7 @@
+package drc;
+
+struct driving_cmd_t
+{
+  int64_t utime;  
+  double drive_duration; 
+}
