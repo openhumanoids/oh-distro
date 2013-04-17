@@ -39,7 +39,8 @@ com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
 [c,V] = ZMPtracker(limp,zmptraj);
-comtraj = ZMPplannerFromTracker(limp,com(1:2),zeros(2,1),c,zmptraj.tspan);
+%comtraj = ZMPplannerFromTracker(limp,com(1:2),zeros(2,1),c,zmptraj.tspan);
+comtraj = ZMPplanner(limp,com(1:2),zeros(2,1),zmptraj);
 
 % time spacing of samples for IK
 ts = 0:0.1:zmptraj.tspan(end);
