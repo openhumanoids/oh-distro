@@ -12,7 +12,7 @@ using namespace visualization_utils;
 //}
 
 //constructor
-GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false)
+GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -66,7 +66,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   { 
     if(it->second->visual) // atleast one default visual tag exists
     {
-      cout << it->first << endl;
+      //cout << it->first << endl;
       
       typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
       visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
@@ -150,7 +150,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
 }
 
-GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false)
+GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -379,9 +379,19 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
 void GlKinematicBody::set_state(const drc::robot_state_t &msg)
 {
 
-  std::map<std::string, double> jointpos_in;
+  /*std::map<std::string, double> jointpos_in;
   for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
+  _current_jointpos.clear();
+  _current_jointpos = jointpos_in;  */
+  
+  // dont clear old just update
+   map<string, double>::iterator joint_it;
+    for (uint i=0; i< (uint) msg.num_joints; i++){
+       joint_it = _current_jointpos.find(msg.joint_name[i]);
+       if(joint_it!=_current_jointpos.end())
+          joint_it->second = msg.joint_position[i];
+    }
     
   //TODO: STORE previous jointpos_in and T_world_body as private members?
   //InteractableGLKinematicBody will provide an method for interactive adjustment.  
@@ -393,8 +403,11 @@ void GlKinematicBody::set_state(const drc::robot_state_t &msg)
   T_world_body.M =  KDL::Rotation::Quaternion(msg.origin_position.rotation.x, msg.origin_position.rotation.y, msg.origin_position.rotation.z, msg.origin_position.rotation.w);
   _T_world_body  = T_world_body;  
 
-  _current_jointpos.clear();
-  _current_jointpos = jointpos_in;
+
+  
+
+  
+  
   run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
   if(future_display_active)
     run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);

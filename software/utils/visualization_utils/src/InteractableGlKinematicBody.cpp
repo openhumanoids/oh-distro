@@ -15,6 +15,7 @@ void InteractableGlKinematicBody::init_vars(){
   selected_link = " ";
   _floatingbase_markers_boxsize = 0;
   bodypose_adjustment_type = InteractableGlKinematicBody::THREE_D;
+  _marker_dir_flip << 1,1,1;
 
 }
 
@@ -743,11 +744,13 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   {      
 
     shared_ptr<Collision_Object_Box> downcasted_object1(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
-    p=p0; p[0]+=trans_marker_length;
+    p=p0; p[0]+=_marker_dir_flip[0]*trans_marker_length;
     downcasted_object1->set_transform(p,q0);
     
     shared_ptr<Collision_Object_Box> downcasted_object2(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
-    p=p0; p[1]+=trans_marker_length;
+    p=p0; p[1]+=_marker_dir_flip[1]*trans_marker_length;
+
+
     downcasted_object2->set_transform(p,q0);
   }  
   if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
@@ -755,7 +758,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
   {     
     shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
-    p=p0; p[2]+=trans_marker_length;
+    p=p0;p[2]+=_marker_dir_flip[2]*trans_marker_length;
     downcasted_object3->set_transform(p,q0);
   }
     
@@ -1161,9 +1164,9 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
      
    
     float ORG[3] = {0.0, 0.0, 0.0};
-    float XP[3] = {trans_marker_length, 0.0, 0.0};
-    float YP[3] = {0.0, trans_marker_length, 0.0};
-    float ZP[3] = {0.0, 0.0, trans_marker_length};
+    float XP[3] = {_marker_dir_flip[0]*trans_marker_length, 0.0, 0.0};
+    float YP[3] = {0.0, _marker_dir_flip[1]*trans_marker_length, 0.0};
+    float ZP[3] = {0.0, 0.0, _marker_dir_flip[2]*trans_marker_length};
 
 
     glPushMatrix();
@@ -1194,7 +1197,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
     {
     
       glPushMatrix();
-      glTranslatef(pos[0]+trans_marker_length,pos[1],pos[2]);
+      glTranslatef(pos[0]+_marker_dir_flip[0]*trans_marker_length,pos[1],pos[2]);
       glScalef(trans_marker_boxsize,trans_marker_boxsize,trans_marker_boxsize);
       glColor4f(1.0, 0.0, 0.0,alpha);
       if(selected_marker=="markers::base_x")
@@ -1203,7 +1206,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
       glPopMatrix();
       
       glPushMatrix();
-      glTranslatef(pos[0],pos[1]+trans_marker_length,pos[2]);
+      glTranslatef(pos[0],pos[1]+_marker_dir_flip[1]*trans_marker_length,pos[2]);
       glColor4f(0.0, 1.0, 0.0,alpha);
       if(selected_marker=="markers::base_y")
         glColor4f(0.7,0.1,0.1,1.0);
@@ -1235,7 +1238,7 @@ void InteractableGlKinematicBody::draw_markers(float (&pos)[3], float trans_mark
         (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
     {        
       glPushMatrix();
-      glTranslatef(pos[0],pos[1],pos[2]+trans_marker_length);
+      glTranslatef(pos[0],pos[1],pos[2]+_marker_dir_flip[2]*trans_marker_length);
       glColor4f(0.0, 0.0, 1.0,alpha);
       if(selected_marker=="markers::base_z")
         glColor4f(0.7,0.1,0.1,1.0);

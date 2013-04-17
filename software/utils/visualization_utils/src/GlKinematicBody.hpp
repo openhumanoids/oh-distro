@@ -93,12 +93,14 @@ class GlKinematicBody
     std::map<std::string, MeshStruct > _mesh_model_map; // associates file name with meshstruct
     
  
-    bool visualize_bbox; 
+    bool visualize_bbox;
+    bool enable_blinking; 
     bool initialized;
     bool is_otdf_instance;
     bool accumulate_motion_trail;
     bool future_state_changing;
     bool future_display_active;  // set when set_future_state is called. Cleared when _T_world_body == _T_world_body_desired;
+   
    public:
     // Constructors and destructor
     //GlKinematicBody( const GlKinematicBody& other );// copy constructor
@@ -167,6 +169,15 @@ class GlKinematicBody
     {
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
+      double t;
+      if(enable_blinking){
+        int64_t now=bot_timestamp_now();
+        t=bot_timestamp_useconds(now)*1e-6;//in sec
+        alpha=std::min(fabs(sin(M_PI*t)),1.0);
+        glColor4f(c[0],c[1],c[2],alpha);
+      }
+      
+      
       for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
         LinkFrameStruct nextTf = _link_geometry_tfs[i];   
@@ -316,6 +327,9 @@ class GlKinematicBody
     void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
     
     void draw_whole_body_bbox(); 
+    void blink(bool value){
+      enable_blinking=value;
+    }
     // Was protected: (mfallon changed this:
     std::string evalMeshFilePath(std::string file_path_expression, bool return_convex_hull_path =false);
   protected:    

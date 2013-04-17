@@ -49,6 +49,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
    Eigen::Vector3f _floatingbase_offset; // visual offset of the root link, if any 
    float _floatingbase_markers_boxsize;
    Eigen::Vector2f _floatingbase_markers_torusdims;
+   Eigen::Vector3i _marker_dir_flip;
    
   public:
   //copy Constructors
@@ -87,8 +88,18 @@ class InteractableGlKinematicBody: public GlKinematicBody
    // double alpha = self->alpha;
    void draw_body (float (&c)[3], float alpha)
    {
-     
       glColor4f(c[0],c[1],c[2],alpha);
+      double t;
+      if(enable_blinking){
+        int64_t now=bot_timestamp_now();
+        t=bot_timestamp_useconds(now)*1e-6;//in sec
+        alpha=std::min(fabs(sin(M_PI*t)),1.0);
+        c[0]=0.7;
+        c[1]=0.1;
+        c[2]=0.1;
+      }
+     
+      
       for(uint i = 0; i < _link_geometry_tfs.size(); i++)
       {
         LinkFrameStruct nextTf=_link_geometry_tfs[i];
@@ -236,8 +247,26 @@ class InteractableGlKinematicBody: public GlKinematicBody
    void enable_whole_body_selection(bool value)   { 
     whole_body_selection_enabled = value;
    };
+   
+   void flip_trans_marker_xdir(bool value)   { 
 
-
+     if(value)
+      _marker_dir_flip[0] = -1;
+    else
+     _marker_dir_flip[0] = 1;
+   };
+   void flip_trans_marker_ydir(bool value)   { 
+     if(value)
+      _marker_dir_flip[1] = -1;
+    else
+     _marker_dir_flip[1] = 1;
+   };
+   void flip_trans_marker_zdir(bool value)   { 
+     if(value)
+      _marker_dir_flip[2] = -1;
+    else
+     _marker_dir_flip[2] = 1;
+   };
 };
 
 } // end namespace 
