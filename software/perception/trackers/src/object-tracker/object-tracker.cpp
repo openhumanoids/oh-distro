@@ -323,7 +323,6 @@ void Pass::updatePF(){
   
   // Update the pose and publish the updated affordance:
   object_pose_ = pf_->IntegratePose();
-  
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);
   double ESS = pf_->ConsiderResample();
   if(verbose_ >= 1){
@@ -405,64 +404,8 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
 void Pass::publishUpdatedAffordance(){
   last_affordance_msg_.aff_store_control =  drc::affordance_t::UPDATE;
-  affutils.setXYZRPYFromIsometry3d(last_affordance_msg_.origin_xyz, last_affordance_msg_.origin_xyz,  object_pose_ );
+  affutils.setXYZRPYFromIsometry3d( (last_affordance_msg_.origin_xyz), (last_affordance_msg_.origin_rpy),  object_pose_ );
   lcm_->publish("AFFORDANCE_TRACK", &last_affordance_msg_);
-}
-
-
-
-std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vector<double> params ){
-  // Ridiculously hacky way of converting from plane affordance to plane coeffs.
-  // the x-direction of the plane pose is along the axis - hence this
-  
-  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: affordanceToPlane\n";
-  
-  
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-  Eigen::Isometry3d transform;
-  transform.setIdentity();
-  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-  transform.rotate(quat);  
-
-  Eigen::Isometry3d ztransform;
-  ztransform.setIdentity();
-  ztransform.translation()  << 0 ,0, 1; // determine a point 1m in the z direction... use this as the normal
-  ztransform = transform*ztransform;
-  float a =(float) ztransform.translation().x() -  transform.translation().x();
-  float b =(float) ztransform.translation().y() -  transform.translation().y();
-  float c =(float) ztransform.translation().z() -  transform.translation().z();
-  float d = - (a*am.find("x")->second + b*am.find("y")->second + c*am.find("z")->second);
-  
-  /*
-  cout << "pitch : " << 180.*am.find("pitch")->second/M_PI << "\n";
-  cout << "yaw   : " << 180.*am.find("yaw")->second/M_PI << "\n";
-  cout << "roll   : " << 180.*am.find("roll")->second/M_PI << "\n";   
-  obj_cfg oconfig = obj_cfg(1251000,"Tracker | Affordance Pose Z",5,1);
-  Isometry3dTime reinit_poseT = Isometry3dTime ( 0, ztransform );
-  pc_vis_->pose_to_lcm(oconfig,reinit_poseT);
-  */
-
-  std::vector<float> plane = { a,b,c,d};
-  return plane;
-}
-
-Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vector<double> params ){
-  
-  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: affordanceToCentroid\n";
-  
-  
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-
-  Eigen::Vector4f plane_centroid( am.find("x")->second, am.find("y")->second , 
-        am.find("z")->second, 0); // last element held at zero
-  return plane_centroid;
 }
 
 
@@ -521,18 +464,21 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     }
     
     //cout << "got updated plane position\n";
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[plane_aff_iter].aff.param_names, msg->affs_plus[plane_aff_iter].aff.params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[plane_aff_iter].aff.param_names, msg->affs_plus[plane_aff_iter].aff.params  );
-    major_plane_->setPlane(p_coeffs, p_centroid);    
+    drc::affordance_plus_t a_plane = msg->affs_plus[plane_aff_iter];
+    std::vector<float> p_coeffs;
+    Eigen::Vector3d p_centroid_3d;
+    affutils.setPlaneFromXYZYPR(a_plane.aff.origin_xyz, a_plane.aff.origin_rpy, p_coeffs, p_centroid_3d );
+    Eigen::Vector4f p_centroid = Eigen::Vector4f( p_centroid_3d(0), p_centroid_3d(1), p_centroid_3d(2), 0);
+    major_plane_->setPlane(p_coeffs, p_centroid);       
     // TODO: this should be determined initally and retained:
     plane_relative_xyzypr_  = { 0, 0, 0.12, 0., 0., 0.};
     plane_relative_xyzypr_set_  = { 0, 0, 1, 0, 1, 1};
-    plane_pose_set_=true;
     plane_coeffs_->values = p_coeffs;
-    plane_pose_ = major_plane_->determinePlanePose(plane_coeffs_, p_centroid);
-    
+    plane_pose_ = major_plane_->determinePlanePose(plane_coeffs_, p_centroid);   
+    plane_pose_set_=true;
     if( verbose_>=1 ){
-      //cout << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
+      //cout << "tracking relative to plane: " << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
+
       obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance Plane",5,1);
       Isometry3dTime pT = Isometry3dTime ( aff_utime, plane_pose_ );
       pc_vis_->pose_to_lcm(oconfig2,pT);
@@ -563,6 +509,7 @@ void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use
   plane_affordance_id_ = plane_affordance_id;
   tracker_initiated_ = true;
   got_initial_affordance_ = false;
+  plane_pose_set_ = false;
   
   if( verbose_ >=1 ){
     stringstream ss2;

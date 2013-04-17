@@ -66,7 +66,7 @@ class Pass{
     // Plane Tracking Variables:
     Eigen::Isometry3d plane_pose_ ;
     bool plane_pose_set_;
-    drc::affordance_t last_tracked_aff_msg_;
+    drc::affordance_plus_t last_tracked_affp_msg_;
     
     AffordanceUtils affutils;
 };
@@ -96,17 +96,30 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int tr
 }
 
 void Pass::publishUpdatedAffordance(){
-  last_tracked_aff_msg_.aff_store_control =  drc::affordance_t::UPDATE;
-  affutils.setXYZRPYFromPlane(last_tracked_aff_msg_.param_names, last_tracked_aff_msg_.params, major_plane_->getPlaneCoeffs(), plane_pose_.translation() );
+  last_tracked_affp_msg_.aff.aff_store_control =  drc::affordance_t::UPDATE;
+  //affutils.setXYZRPYFromPlane(last_tracked_affp_msg_.aff.param_names, last_tracked_affp_msg_.aff.params, major_plane_->getPlaneCoeffs(), plane_pose_.translation() );
+  affutils.setXYZRPYFromPlane(last_tracked_affp_msg_.aff.origin_xyz, last_tracked_affp_msg_.aff.origin_rpy, 
+                              major_plane_->getPlaneCoeffs(), plane_pose_.translation() );
+  
   // Update the affordance hull:
-  std::cout << "publishUpdatedAffordance AFFORDANCE update: points\n";
-  //std::vector< std::vector<float> > points = major_plane_->getPlaneHull();
-  //last_tracked_aff_msg_.points = points;
-  //last_tracked_aff_msg_.npoints = points.size();
-  lcm_->publish("AFFORDANCE_TRACK", &last_tracked_aff_msg_);
+  //std::cout << "publishUpdatedAffordance AFFORDANCE update: points\n";
+  
+  std::vector< std::vector<float> > points = major_plane_->getPlaneHull();
+  last_tracked_affp_msg_.points = points;
+  last_tracked_affp_msg_.npoints = points.size();
+  // add triangles to message (duplicates what Paul has in segmentation gui:
+  last_tracked_affp_msg_.ntriangles = points.size()-2;
+  last_tracked_affp_msg_.triangles.resize(last_tracked_affp_msg_.ntriangles);
+  for(int i=0; i<last_tracked_affp_msg_.ntriangles; i++){
+    Eigen::Vector3i triangle(0,i+1,i+2);
+    last_tracked_affp_msg_.triangles[i].resize(3);
+    for(int j=0;j<3;j++) last_tracked_affp_msg_.triangles[i][j] = triangle[j];
+  }
+  // Not supported yet:
+  //lcm_->publish("AFFORDANCE_PLUS_TRACK", &last_tracked_affp_msg_);
+  
+  lcm_->publish("AFFORDANCE_TRACK", &last_tracked_affp_msg_.aff);
 }
-
-
 
 void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::planar_lidar_t* msg){
@@ -132,68 +145,6 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
-Eigen::Isometry3d affordanceToIsometry3d(std::vector<string> param_names, std::vector<double> params ){
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-  Eigen::Isometry3d transform;
-  transform.setIdentity();
-  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-  transform.rotate(quat);  
-  return transform;
-}
-
-
-std::vector<float> affordanceToPlane(std::vector<string> param_names, std::vector<double> params ){
-  // Ridiculously hacky way of converting from plane affordance to plane coeffs.
-  // the x-direction of the plane pose is along the axis - hence this
-  
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-  Eigen::Quaterniond quat = euler_to_quat( am.find("yaw")->second , am.find("pitch")->second , am.find("roll")->second );             
-  Eigen::Isometry3d transform;
-  transform.setIdentity();
-  transform.translation()  << am.find("x")->second , am.find("y")->second, am.find("z")->second;
-  transform.rotate(quat);  
-
-  Eigen::Isometry3d ztransform;
-  ztransform.setIdentity();
-  ztransform.translation()  << 0 ,0, 1; // determine a point 1m in the z direction... use this as the normal
-  ztransform = transform*ztransform;
-  float a =(float) ztransform.translation().x() -  transform.translation().x();
-  float b =(float) ztransform.translation().y() -  transform.translation().y();
-  float c =(float) ztransform.translation().z() -  transform.translation().z();
-  float d = - (a*am.find("x")->second + b*am.find("y")->second + c*am.find("z")->second);
-  
-  /*
-  cout << "pitch : " << 180.*am.find("pitch")->second/M_PI << "\n";
-  cout << "yaw   : " << 180.*am.find("yaw")->second/M_PI << "\n";
-  cout << "roll   : " << 180.*am.find("roll")->second/M_PI << "\n";   
-  obj_cfg oconfig = obj_cfg(1251000,"Tracker | Affordance Pose Z",5,1);
-  Isometry3dTime reinit_poseT = Isometry3dTime ( 0, ztransform );
-  pc_vis_->pose_to_lcm(oconfig,reinit_poseT);
-  */
-
-  std::vector<float> plane = { a,b,c,d};
-  return plane;
-}
-
-Eigen::Vector4f affordanceToCentroid(std::vector<string> param_names, std::vector<double> params ){
-  std::map<string,double> am;
-  for (size_t j=0; j< param_names.size(); j++){
-    am[ param_names[j] ] = params[j];
-  }
-
-  Eigen::Vector4f plane_centroid( am.find("x")->second, am.find("y")->second , 
-        am.find("z")->second, 0); // last element held at zero
-  return plane_centroid;
-}
-
-
 void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   if (!tracker_initiated_){
@@ -212,21 +163,23 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
      return;
   }  
   
-  
   // bootstrap tracker with required affordances:
+  // Theres alot of grandfathered stuff here...
   if  ( !got_initial_affordance_ ) {
     cout << "got affs\n";
-    std::vector<float> p_coeffs = affordanceToPlane(msg->affs_plus[aff_iter].aff.param_names, msg->affs_plus[aff_iter].aff.params );
-    Eigen::Vector4f p_centroid = affordanceToCentroid(msg->affs_plus[aff_iter].aff.param_names, msg->affs_plus[aff_iter].aff.params  );
+    drc::affordance_plus_t a = msg->affs_plus[aff_iter];
+    std::vector<float> p_coeffs;
+    Eigen::Vector3d p_centroid_3d;
+    affutils.setPlaneFromXYZYPR(a.aff.origin_xyz, a.aff.origin_rpy, p_coeffs, p_centroid_3d );
+    Eigen::Vector4f p_centroid = Eigen::Vector4f( p_centroid_3d(0), p_centroid_3d(1), p_centroid_3d(2), 0);
     major_plane_->setPlane(p_coeffs, p_centroid);    
-    
-    last_tracked_aff_msg_ = msg->affs_plus[aff_iter].aff;
+    last_tracked_affp_msg_ = a;
     
     cout << "about to start tracking plane: " << p_coeffs[0] << " " << p_coeffs[1] << " " << p_coeffs[2] << " " << p_coeffs[3] << "\n";
-    pcl::ModelCoefficients::Ptr new_p_coeffs(new pcl::ModelCoefficients ());
-    new_p_coeffs->values = p_coeffs;
-    Eigen::Isometry3d p = major_plane_->determinePlanePose(new_p_coeffs, p_centroid);
     if (verbose_ >=1){
+      pcl::ModelCoefficients::Ptr new_p_coeffs(new pcl::ModelCoefficients ());
+      new_p_coeffs->values = p_coeffs;
+      Eigen::Isometry3d p = major_plane_->determinePlanePose(new_p_coeffs, p_centroid);
       obj_cfg oconfig2 = obj_cfg(1351000,"Tracker | Affordance plane",5,1);
       Isometry3dTime pt = Isometry3dTime( 0, p );
       pc_vis_->pose_to_lcm(oconfig2,pt);

@@ -62,7 +62,7 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
     // obj: id name type reset
     // pts: id name type reset objcoll usergb rgb
     
-    if (1==1){//(a.points.size() !=0 ){
+    if (a.points.size() !=0 ){
       obj_cfg oconfig = obj_cfg(cfg_root,   string( "Affordance Pose " + std::to_string(aff_id))   ,5,1);
       Isometry3dTime poseT = Isometry3dTime ( 0, pose  );
       pc_vis_->pose_to_lcm(oconfig,poseT);

@@ -17,7 +17,7 @@ class AffordanceUtils {
   public:
     AffordanceUtils ();
 
-    Eigen::Isometry3d getPose(double xyz[], double rpy[]);
+    Eigen::Isometry3d getPose(double xyz[3], double rpy[3]);
     //std::vector<std::string> param_names, std::vector<double> params );
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudFromAffordance(std::vector< std::vector< float > > &points);
@@ -28,11 +28,16 @@ class AffordanceUtils {
     pcl::PolygonMesh::Ptr getMeshFromAffordance(std::vector< std::vector< float > > &points, 
                   std::vector< std::vector< int > > &triangles);
     
-    void setXYZRPYFromPlane(std::vector<std::string> &param_names, std::vector<double> &params, 
+    
+    ////// Conversion from/to Plane from XYZYPR affordance params
+    void setPlaneFromXYZYPR(double xyz[3], double rpy[3], 
+                   std::vector<float> &plane_coeffs, Eigen::Vector3d &plane_centroid);
+    
+    void setXYZRPYFromPlane(double xyz[3], double rpy[3], 
                    std::vector<float> plane_coeffs, Eigen::Vector3d plane_centroid);
     
-    void setXYZRPYFromIsometry3d(double xyz[], double rpy[], 
-                   Eigen::Isometry3d pose);
+    void setXYZRPYFromIsometry3d(double xyz[3], double rpy[3], 
+                   Eigen::Isometry3d &pose);
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getBoundingBoxCloud(double bounding_xyz[], double bounding_rpy[], double bounding_lwh[]);
 

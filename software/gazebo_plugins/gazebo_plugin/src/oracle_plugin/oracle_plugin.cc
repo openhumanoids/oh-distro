@@ -416,9 +416,10 @@ void OraclePlugin::storeAffordances()
     a.utime =0;
     a.map_id =0;
     a.uid =counter++;
-    a.otdf_type ="box";
+    a.otdf_type ="plane"; // was a box
     a.aff_store_control = drc::affordance_t::NEW;
 
+    /*
     a.param_names.push_back("lX");
     a.params.push_back(3.00000);
     a.param_names.push_back("lY");
@@ -427,6 +428,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01000); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
+    */
     a.nparams = a.params.size();
     a.nstates =0;
 
@@ -450,9 +452,10 @@ void OraclePlugin::storeAffordances()
     a.utime =0;
     a.map_id =0;
     a.uid =counter++;
-    a.otdf_type ="box";
+    a.otdf_type ="plane"; // was a box
     a.aff_store_control = drc::affordance_t::NEW;
 
+    /*
     a.param_names.push_back("lX");
     a.params.push_back(0.8000);
     a.param_names.push_back("lY");
@@ -461,6 +464,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(0.01); 
     a.param_names.push_back("mass");
     a.params.push_back(1.0);  // unknown
+    */
     a.nparams = a.params.size();
     a.nstates =0;
 
@@ -484,9 +488,10 @@ void OraclePlugin::storeAffordances()
     a.utime =0;
     a.map_id =0;
     a.uid =counter++;
-    a.otdf_type ="box";
+    a.otdf_type ="plane";// was a box
     a.aff_store_control = drc::affordance_t::NEW;
 
+    /*
     a.param_names.push_back("lX");
     a.params.push_back(0.8000);
     a.param_names.push_back("lY");
@@ -497,7 +502,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(1.0);  // unknown
     a.nparams = a.params.size();
     a.nstates =0;
-
+    */
     
     Eigen::Isometry3d offset;
     offset.setIdentity();

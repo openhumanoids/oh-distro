@@ -1,15 +1,18 @@
 #include <map>
+#include <boost/assign/std/vector.hpp>
+
 #include "AffordanceUtils.hpp"
 
 using namespace Eigen;
 using namespace std;
+using namespace boost::assign; // bring 'operator+()' into scope
 
 
 AffordanceUtils::AffordanceUtils() {
   
 }
 
-Eigen::Isometry3d AffordanceUtils::getPose(double xyz[], double rpy[]){
+Eigen::Isometry3d AffordanceUtils::getPose(double xyz[3], double rpy[3]){
 //  std::vector<std::string> param_names, std::vector<double> params ){
   /*
   std::map<std::string,double> am;
@@ -99,18 +102,60 @@ pcl::PolygonMesh::Ptr AffordanceUtils::getMeshFromAffordance(std::vector< std::v
   return mesh_ptr;
 }
 
-void AffordanceUtils::setXYZRPYFromPlane(std::vector<std::string> &param_names, std::vector<double> &params, 
+void AffordanceUtils::setPlaneFromXYZYPR(double xyz[3], double rpy[3], 
+                std::vector<float> &plane_coeffs, Eigen::Vector3d &plane_centroid){
+  // Ridiculously hacky way of converting from plane affordance to plane coeffs.
+  // the x-direction of the plane pose is along the axis - hence this
+  Matrix3d m;
+  m = AngleAxisd ( rpy[2], Vector3d::UnitZ ())
+                  * AngleAxisd (rpy[1] , Vector3d::UnitY ())
+                  * AngleAxisd ( rpy[0] , Vector3d::UnitX ());  
+  Eigen::Isometry3d transform =  Eigen::Isometry3d::Identity();
+  transform *= m;  
+  transform.translation()  << xyz[0], xyz[1], xyz[2];    
+  
+
+  Eigen::Isometry3d ztransform;
+  ztransform.setIdentity();
+  ztransform.translation()  << 0 ,0, 1; // determine a point 1m in the z direction... use this as the normal
+  ztransform = transform*ztransform;
+  float a =(float) ztransform.translation().x() -  transform.translation().x();
+  float b =(float) ztransform.translation().y() -  transform.translation().y();
+  float c =(float) ztransform.translation().z() -  transform.translation().z();
+  float d = - (a*xyz[0] + b*xyz[1] + c*xyz[2]);
+  plane_coeffs.clear();
+  plane_coeffs += a, b, c, d;
+  /*
+  cout << "pitch : " << 180.*am.find("pitch")->second/M_PI << "\n";
+  cout << "yaw   : " << 180.*am.find("yaw")->second/M_PI << "\n";
+  cout << "roll   : " << 180.*am.find("roll")->second/M_PI << "\n";   
+  obj_cfg oconfig = obj_cfg(1251000,"Tracker | Affordance Pose Z",5,1);
+  Isometry3dTime reinit_poseT = Isometry3dTime ( 0, ztransform );
+  pc_vis_->pose_to_lcm(oconfig,reinit_poseT);
+  */
+
+  plane_centroid=  Eigen::Vector3d( xyz[0], xyz[1], xyz[2]); // last element held at zero
+}
+
+void AffordanceUtils::setXYZRPYFromPlane(double xyz[3], double rpy[3], 
                 std::vector<float> plane_coeffs, Eigen::Vector3d plane_centroid){
   
   double run = sqrt(plane_coeffs[0]*plane_coeffs[0] + plane_coeffs[1]*plane_coeffs[1] 
                         +  plane_coeffs[2]*plane_coeffs[2]);
   double yaw = atan2 ( plane_coeffs[1] , plane_coeffs[0]);
   double pitch = acos( plane_coeffs[2]/ run);
-  double roll =0; // not constrained - properly set to zero
+  // Conversion from Centroid+Plane to XYZRPY is not constrained
+  // - properly set to zero
+  double roll =0; 
 
-  std::cout << "OLD PARAMS AFFORDANCE FUNCTION: setXYZRPYFromPlane\n";
+  xyz[0] = plane_centroid(0);
+  xyz[1] = plane_centroid(1);
+  xyz[2] = plane_centroid(2);
+  rpy[0] = roll;
+  rpy[1] = pitch;
+  rpy[2] = yaw;
   
-  for (size_t j=0; j< param_names.size(); j++){
+/*  for (size_t j=0; j< param_names.size(); j++){
     if (param_names[j] == "x"){
       params[j] = plane_centroid(0);
     }else if(param_names[j] == "y"){
@@ -125,9 +170,8 @@ void AffordanceUtils::setXYZRPYFromPlane(std::vector<std::string> &param_names, 
       params[j] = roll;
     }
   }
-  
+*/  
 }
-
 
 /// This function replicates one in pointcloud_math. But does a function exist in Eigen?
 void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
@@ -141,8 +185,8 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
 }
 
 
-void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[], double rpy[], 
-                   Eigen::Isometry3d pose){
+void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[3], double rpy[3], 
+                   Eigen::Isometry3d &pose){
   Eigen::Quaterniond r(pose.rotation());
   double yaw, pitch, roll;
   quat_to_euler(r, yaw, pitch, roll);  
@@ -150,6 +194,7 @@ void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[], double rpy[],
   xyz[0] = pose.translation().x();
   xyz[1] = pose.translation().y();
   xyz[2] = pose.translation().z();
+  
   
   rpy[0] = roll;
   rpy[1] = pitch;

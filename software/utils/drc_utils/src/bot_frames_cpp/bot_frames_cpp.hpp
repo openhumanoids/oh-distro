@@ -14,21 +14,14 @@ namespace bot {
 class frames {
 public:
   frames();
-  //static frames* instance();
-
   int get_trans_with_utime(BotFrames *bot_frames,
         const char *from_frame, const char *to_frame, int64_t utime,
         Eigen::Isometry3d&mat);
 
-/*  virtual void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
-
-  virtual void setChannel(const std::string& iChannelName);
-  std::string getChannel() const;
-
-  void setTimeoutInterval(const int iMilliseconds);
-
-  virtual int64_t getCurrentTime() const = 0;
-*/
+  // Varient of above directly returnig the frame
+  Eigen::Isometry3d get_trans_with_utime(BotFrames *bot_frames,
+        const char *from_frame, const char *to_frame, int64_t utime);
+  
 
 protected:
 };

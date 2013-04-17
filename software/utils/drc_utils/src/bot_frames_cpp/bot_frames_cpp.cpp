@@ -3,6 +3,11 @@
 #include <iostream>
 
 namespace bot {
+  
+frames::frames(){
+
+};
+
 int frames::get_trans_with_utime(BotFrames *bot_frames,
         const char *from_frame, const char *to_frame, int64_t utime,
         Eigen::Isometry3d & mat){
@@ -18,9 +23,14 @@ int frames::get_trans_with_utime(BotFrames *bot_frames,
   return status;
 }
 
+Eigen::Isometry3d frames::get_trans_with_utime(BotFrames *bot_frames,
+        const char *from_frame, const char *to_frame, int64_t utime){
+  Eigen::Isometry3d mat;
+  get_trans_with_utime(bot_frames, from_frame, to_frame, utime, mat);
+  return mat;
+}
 
-frames::frames(){
 
-};
+
 
 }
