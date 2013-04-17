@@ -61,6 +61,8 @@ ros::Publisher key_pub;
 ros::Publisher exit_pub;
 ros::Publisher enter_pub;
 
+//http://gazebosim.org/wiki/Tutorials/drcsim/2.2/VRC_Plugin_DRC_Vehicle
+
 typedef struct  {
   WINDOW *w;
   int width, height;
@@ -119,6 +121,9 @@ static int publish_hand_wheel(void *user_data){
   hand_wheel_pub.publish(msg);
   return 0; 
 }
+
+
+
 static int publish_brake_pedal(void *user_data){
   state_t* s = static_cast<state_t*>(user_data);
 
@@ -131,6 +136,11 @@ static int publish_brake_pedal(void *user_data){
   return 0; 
 }
 
+/*
+  The direction state and key state topics send an Int8 value. The direction state reports "1" for Forward, "0" for Neutral, and "-1" for Reverse. The key state reports "1" for On, "0" for Off, and "-1" for an error caused by turning the key to On when the direction switch is not in Neutral. Putting the direction switch back to neutral will restore the key state to "1". The key switch defaults to "On" and the direction to "Forward", but this may not be the case in future versions of the software or in the competition.
+
+ */
+
 static int publish_key(void *user_data){
   state_t* s = static_cast<state_t*>(user_data);
   std_msgs::Int8 msg;
@@ -139,6 +149,7 @@ static int publish_key(void *user_data){
   return 0; 
 }
 
+//this is incremental - it needs to be added to the state 
 static int publish_direction(void *user_data){
   state_t* s = static_cast<state_t*>(user_data);
   std_msgs::Int8 msg;
@@ -163,11 +174,81 @@ static int update_and_publish_hand_brake(double new_val, state_t *s){
   //return 0;
 }
 
-static int update_and_publish_hand_wheel(double new_val, state_t *s){
-  if(new_val != s->hand_wheel){
-    s->hand_wheel = new_val;
-    return publish_hand_wheel(s);
+/*
+  static int update_to_and_publish_hand_wheel(double new_val, state_t *s){
+  double delta = new_val - s->hand_wheel;
+  
+  if(delta >0){
+    std_msgs::Float64 msg;
+
+    msg.data = delta;
+    hand_wheel_pub.publish(msg);
+
+    //how long ?? 
+    sleep(1);
+    msg.data = 0;
+    hand_wheel_pub.publish(msg);
+    
+    s->hand_wheel += delta;
+
+    fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);    
+
+    if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
+    if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
   }
+
+  return 0;
+}
+
+static int update_and_publish_hand_wheel(double delta, state_t *s){
+  if(delta >0){
+    std_msgs::Float64 msg;
+    msg.data = delta;
+    hand_wheel_pub.publish(msg);
+
+    //how long ?? 
+    sleep(1);
+    msg.data = 0;
+    hand_wheel_pub.publish(msg);
+
+    s->hand_wheel += delta;
+
+    fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
+
+    if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
+    if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
+  }
+
+  return 0;
+}
+ */
+
+static int update_and_publish_hand_wheel_delta(double delta, state_t *s){
+  s->hand_wheel += delta;
+  if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
+  if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
+
+  std_msgs::Float64 msg;
+  
+  msg.data = s->hand_wheel;
+  hand_wheel_pub.publish(msg);
+  
+  fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);    
+
+  return 0;
+}
+
+static int update_and_publish_hand_wheel(double new_val, state_t *s){
+  double delta = new_val - s->hand_wheel;
+  s->hand_wheel = new_val;
+  if (s->hand_wheel >=7.0) {    s->hand_wheel = 7.0; }
+  if (s->hand_wheel <=-7.0) {    s->hand_wheel = -7.0; }
+  std_msgs::Float64 msg;
+  msg.data = s->hand_wheel;
+  hand_wheel_pub.publish(msg);
+
+  fprintf(stderr, "Delta : %f (deg)  Steering Angle : %f (deg) - %f (rad) \n", bot_to_degrees(delta), bot_to_degrees(s->hand_wheel), s->hand_wheel);
+
   return 0;
 }
 
@@ -262,99 +343,6 @@ repaint (state_t * s)
   return 0;
 }
 
-
-static gboolean
-on_input (GIOChannel * source, GIOCondition cond, gpointer data)
-{
-  state_t* s = static_cast<state_t*>(data);
-  WINDOW * w = s->w;
-  int c = getch();
-    
-  double d_hand_wheel =0.3;
-  double d_hand_brake =0.05;
-  double d_gas_pedal =0.001;
-  double d_brake_pedal =0.05;
-  switch (c)
-  {
-    case 65: // up arrow: +gas
-      s->gas_pedal += d_gas_pedal ;
-      publish_gas_pedal(s);
-      break;
-    case 66: // down arrow: -gas
-      s->gas_pedal -= d_gas_pedal ;
-      publish_gas_pedal(s);
-      break;
-    case 68: // left arrow: steer left
-      s->hand_wheel += d_hand_wheel ;
-      publish_hand_wheel(s);
-      break;
-    case 67: // right arrow: steer right
-      s->hand_wheel -= d_hand_wheel ;
-      publish_hand_wheel(s);
-      break;
-    case 'q':
-      s->hand_brake -= d_hand_brake ;
-      publish_hand_brake(s);
-      break;
-    case 'a':
-      s->hand_brake += d_hand_brake ;
-      publish_hand_brake(s);
-      break;
-    case 'w':
-      s->brake_pedal -= d_brake_pedal ;
-      publish_brake_pedal(s);
-      break;
-    case 's':
-      s->brake_pedal += d_brake_pedal ;
-      publish_brake_pedal(s);
-      break;
-    case 'e':
-      s->hand_brake= 0.0 ;
-      publish_hand_brake(s);
-      s->brake_pedal= 0.0 ;
-      publish_brake_pedal(s);
-      break;
-    case '1':
-      s->direction = -1 ;
-      publish_direction(s);
-      break;
-    case '2':
-      s->direction = 0 ;
-      publish_direction(s);
-      break;
-    case '3':
-      s->direction = 1 ;
-      publish_direction(s);
-      break;
-    case 'i':
-      s->key = 1 ;
-      publish_key(s);
-      break;
-    case 'o':
-      s->key = 0;
-      publish_key(s);
-      break;
-    case 'k':
-      publish_exit(s);
-      break;
-    case 'l':
-      publish_enter(s);
-      break;
-    case ' ':
-      s->hand_brake = 1.0 ;
-      publish_hand_brake(s);
-      s->brake_pedal = 1.0 ;
-      publish_brake_pedal(s);
-      s->hand_wheel = 0.0 ;
-      publish_hand_wheel(s);
-      s->gas_pedal = 0.0 ;
-      publish_gas_pedal(s);
-  }
-    
-  repaint (s);	
-  return TRUE;
-}
-
 void init_state(state_t *s){
   s->hand_wheel = 0;
   s->gas_pedal = 0;
@@ -366,7 +354,7 @@ void init_state(state_t *s){
   //publish these values 
   publish_hand_brake(s);
   publish_gas_pedal(s);
-  publish_hand_wheel(s);
+  update_and_publish_hand_wheel(0, s);
   publish_brake_pedal(s);
   publish_key(s);
   publish_direction(s);
@@ -387,7 +375,11 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
     fprintf(stderr, "Starting vehicle - this should be ignored - vehicle always on\n");
     //self->key = 1;
     //publish_key(user);
+    self->direction = 0;
+    publish_direction(self);
     update_and_publish_key(1, self);
+    self->direction = 1;
+    publish_direction(self);
   }
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_SWITCH_OFF_ENGINE){
     fprintf(stderr, "Switching off engine - this should be ignored - vehicle always on\n");
@@ -413,10 +405,10 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
     update_and_publish_gas_pedal(msg->throttle_value, self);
   } 
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING){
-    fprintf(stderr, "Driving - turning wheel heading (deg): %f Throttle : %f\n", bot_to_degrees(msg->steering_angle + self->hand_wheel), msg->throttle_value);
+    fprintf(stderr, "Driving - turning wheel delta heading (deg): %f Throttle : %f\n", bot_to_degrees(msg->steering_angle + self->hand_wheel), msg->throttle_value);
     update_and_publish_hand_brake(0.0, self);
     update_and_publish_brake_pedal(0.0, self);
-    update_and_publish_hand_wheel(msg->steering_angle + self->hand_wheel, self);
+    update_and_publish_hand_wheel_delta(msg->steering_angle, self);
     update_and_publish_gas_pedal(msg->throttle_value, self);
   } 
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE){
@@ -430,7 +422,8 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
   }
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_HANDBRAKE_ON){
     fprintf(stderr, "Applying Handbrake \n");
-    update_and_publish_hand_brake(0.05, self);
+    //update_and_publish_hand_brake(0.05, self);
+    update_and_publish_hand_brake(.3, self);
     //update_and_publish_hand_brake(1.0, self);
     //update_and_publish_hand_brake(1.0, self);
   }
@@ -438,6 +431,7 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
     fprintf(stderr, "Removing Handbrake\n");
     update_and_publish_hand_brake(0.00, self);
   }
+
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_START_SEQUENCE){
     fprintf(stderr, "Initializing start sequence\n");
     self->hand_brake = 0.05;
