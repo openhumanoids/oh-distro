@@ -25,6 +25,14 @@ TLD's work well w/ features (keypts) low-level features
 #include <ConciseArgs>
 
 #include "tld-tracker.hpp"
+
+#include <GL/gl.h>
+
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+
+#include <bot_lcmgl_client/lcmgl.h>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
 // #include <pthread.h>
 
 // #define SHOW_ALL_RECTS_BY_ONE 0
@@ -39,15 +47,17 @@ struct DrivingTrackerOptions {
     std::string vCHANNEL;
 
     DrivingTrackerOptions () : 
-        vCHANNEL(std::string("CAMERALEFT")), vSCALE(1.f), vDEBUG(false) {}
+        vCHANNEL(std::string("CAMERALEFT")), vSCALE(0.5f), vDEBUG(false) {}
 };
 DrivingTrackerOptions options;
 
 struct state_t { 
     lcm_t* lcm;
+    bot_lcmgl_t* lcmgl;
 
     BotParam* param;
     BotFrames* frames;
+    bot::frames frames_cpp;
 
     // Img
     cv::Mat img;
@@ -63,9 +73,13 @@ struct state_t {
     
     int counter;
 
+    std::vector<cv::Scalar> id_colors; 
+
     state_t (const DrivingTrackerOptions& _options) {
         // LCM, BotFrames, BotParam inits
         lcm =  bot_lcm_get_global(NULL);
+        lcmgl = NULL;
+
         param = bot_param_new_from_server(lcm, 1);
         frames = bot_frames_get_global (lcm, param);
 
@@ -74,6 +88,10 @@ struct state_t {
 
         // Initialize TLD tracker
         // tracker = new TLDTracker(camera_params.width, camera_params.height, _options.vSCALE);
+        for (int j=0; j<4; j++) { 
+            cv::RNG rng(id_colors.size());
+            id_colors.push_back(cv::Scalar(rng.uniform(0,255), rng.uniform(0,255), rng.uniform(0,255)));
+        }
 
         // Counter for debug prints
         counter = 0; 
@@ -180,6 +198,27 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     decode_image(msg, state->img);    
     state->img_utime = msg->utime; 
 
+    // Bot trans for rigid-body transform from head to local frame
+    std::vector< Eigen::Vector3d > pts;
+    Eigen::Isometry3d cam_to_frame;
+    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "local", msg->utime, cam_to_frame); 
+
+    // LCM gl draw bearing vector
+    if (!state->lcmgl)
+        state->lcmgl = bot_lcmgl_init(state->lcm,"object-bearing-vector");
+
+    if(state->lcmgl){
+        // bot_lcmgl_point_size(state->lcmgl, 4);
+        bot_lcmgl_line_width(state->lcmgl, 2);
+        bot_lcmgl_begin(state->lcmgl, GL_LINES);
+    }
+
+    
+    // Main debug overlay
+    cv::Mat display = state->img.clone();
+
+    // For each object detected
+    int idx = 0;
     for (std::map<int64_t, TLDTracker*>::iterator it = state->tracker_map.begin(); 
          it != state->tracker_map.end(); it++) { 
         TLDTracker* tr = it->second;
@@ -187,12 +226,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         double tic = bot_timestamp_now(); 
         if (!tr) return;
 
-        // Update step
-        std::vector< Eigen::Vector3d > pts;
-        Eigen::Isometry3d local_to_camera;
-
         if (tr->initialized) 
-            tr->update(state->img, pts, local_to_camera);
+            tr->update(state->img, pts, cam_to_frame);
 
         if (++state->counter == 10) { 
             printf("===> TLD TRACKER: %4.2f ms\n", (bot_timestamp_now() - tic) * 1.f * 1e-3); 
@@ -220,8 +255,32 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
             bearing_vec.vec[0] = a, 
                 bearing_vec.vec[1] = b, 
                 bearing_vec.vec[2] = 1;
+
+            Eigen::Vector4d p0 = cam_to_frame * Eigen::Vector4d(0, 0, 0, 1);
+            Eigen::Vector4d p1 = cam_to_frame * Eigen::Vector4d(a, b, 1, 1);
+
+            if(state->lcmgl){
+                float b = state->id_colors[idx][0] * 1.f / 255.f;
+                float g = state->id_colors[idx][1] * 1.f / 255.f;
+                float r = state->id_colors[idx][2] * 1.f / 255.f;
+
+                bot_lcmgl_color3f(state->lcmgl, r, g, b);
+                bot_lcmgl_vertex3f(state->lcmgl, p0[0], p0[1], p0[2]);
+                bot_lcmgl_vertex3f(state->lcmgl, p1[0], p1[1], p1[2]);
+            }
+
             perception_pointing_vector_t_publish(state->lcm, "OBJECT_BEARING", &bearing_vec);
         }
+
+        // Display overlay
+        tr->addOverlay(display, idx, state->id_colors[idx]); idx++;
+    }
+    cv::imshow("Driving Tracker", display);
+
+    // Finish up drawing
+    if(state->lcmgl){
+        bot_lcmgl_end(state->lcmgl);
+        bot_lcmgl_switch_buffer(state->lcmgl);
     }
 
     return;
@@ -237,7 +296,8 @@ void  INThandler(int sig) {
 int main(int argc, char** argv)
 {
     cout << "============= QUICK MODES ===================\n";
-    cout << "drc-driving-tracker -s 0.25 -c CAMERALEFT\n";
+    cout << "drc-driving-tracker -s 0.5 -c CAMERALEFT\n";
+    cout << "Note: Make sure drc-tld-segmenter is providing ROI segmentation\n";
     cout << "=============================================\n";
 
     ConciseArgs opt(argc, (char**)argv);

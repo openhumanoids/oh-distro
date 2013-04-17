@@ -51,7 +51,6 @@ TLDTracker::internal_init() {
     dc->nnClassifier->thetaTP = 0.65;
     dc->nnClassifier->thetaFP = 0.5;
 
-
     currBB = cv::Rect(0,0,0,0); 
     predBB = cv::Rect(0,0,0,0);
 
@@ -188,7 +187,7 @@ TLDTracker::update(cv::Mat& img, std::vector< Eigen::Vector3d > & pts,
     }
 
     // show TLD info
-    showTLDInfo(img);
+    // showTLDInfo(img);
 
     return loglikelihoods;
 }
@@ -201,7 +200,7 @@ TLDTracker::showTLDInfo(cv::Mat& img) {
     int w = display.cols, h = display.rows;
     int sw = scale * w, sh = scale * h; 
     
-    int off = 5;
+    int off = 2;
     float ow = object_roi.cols, oh = object_roi.rows;
     cv::Mat obj_roi = cv::Mat(display, cv::Rect(w-ow,off,ow,oh));
 
@@ -215,4 +214,35 @@ TLDTracker::showTLDInfo(cv::Mat& img) {
     }
     cv::imshow("TLD", display);
     return;
+}
+
+void TLDTracker::addOverlay(cv::Mat& img, int idx, cv::Scalar color) { 
+
+    const int thumb_size = 100, thumb_off = 2; 
+    const int thumb_pad = thumb_size + thumb_off;
+
+    cv::Mat thumb; 
+    float ow = object_roi.cols, oh = object_roi.rows;
+    cv::Size sz;
+    if (ow >= oh) 
+        sz = cv::Size(thumb_size, thumb_size * oh / ow);
+    else 
+        sz = cv::Size(thumb_size * ow / oh, thumb_size);
+    cv::resize(object_roi, thumb, sz, cv::INTER_LINEAR); 
+
+    int w = img.cols, h = img.rows;
+    cv::Mat obj_roi = cv::Mat(img, cv::Rect(w-(idx+1)*thumb_pad, h-thumb_pad, sz.width, sz.height));
+
+    if (!object_roi.empty()) { 
+        cv::rectangle(thumb, cv::Point(0,0), cv::Point(thumb.cols-1, thumb.rows-1), color, 2, 8);
+        thumb.copyTo(obj_roi);
+        // addWeighted(obj_roi, 1.0, thumb, 0.0, 0, obj_roi);
+    }
+
+    if (detection_valid) { 
+        cv::rectangle(img, currBB.tl(), currBB.br(), color, 2, 8);
+        // cv::rectangle(img, predBB.tl(), predBB.br(), cv::Scalar(255,255,0), 1, 8);
+    }
+
+
 }

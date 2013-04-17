@@ -170,15 +170,6 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     decode_image(msg, state->img);    
     state->img_utime = msg->utime; 
 
-    if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
-        cv::Mat roi(state->img, state->selection);
-        rectangle(state->img, state->selection, cv::Scalar(0,255,255), 2);
-        bitwise_not(roi, roi);
-    }
-    // Show OBJECT_ID, FEATURE_ID
-    cv::putText(state->img, cv::format("OBJ: %ld, FEAT: %ld", OBJECT_ID, FEATURE_ID),
-            Point(10,10), 0, .35, cv::Scalar(200,200,0), 1);
-    imshow(WINDOW_NAME, state->img);    
     return;
 }
 
@@ -235,6 +226,20 @@ int main(int argc, char** argv)
             OBJECT_ID++;
         } else if (c == 's') { 
             OBJECT_ID--;
+        }
+
+        // UI handling 
+        if (!state->img.empty()) { 
+            cv::Mat display = state->img.clone();
+            if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
+                cv::Mat roi(display, state->selection);
+                rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
+                bitwise_not(roi, roi);
+            }
+            // Show OBJECT_ID, FEATURE_ID
+            cv::putText(display, cv::format("OBJ: %ld", OBJECT_ID),
+                        Point(20,20), 0, .5, cv::Scalar(0,200,0), 2);
+            imshow(WINDOW_NAME, display);
         }
     }
 

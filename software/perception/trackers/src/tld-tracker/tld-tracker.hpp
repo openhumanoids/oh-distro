@@ -39,6 +39,8 @@ struct CameraParams {
     }
 };
 
+
+
 class TLDTracker { 
  public: 
     cv::Mat object_roi;
@@ -90,6 +92,7 @@ private:
         Eigen::Isometry3d local_to_camera); 
     bool computeMaskROI(const cv::Mat& img, const cv::Mat& mask, cv::Rect& roi);
     void showTLDInfo(cv::Mat& img);
+    void addOverlay(cv::Mat& img, int idx, cv::Scalar color);
 };
 
 #endif /* TLDTracker_H_ */
