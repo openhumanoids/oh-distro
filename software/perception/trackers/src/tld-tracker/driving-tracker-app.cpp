@@ -273,7 +273,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         }
 
         // Display overlay
-        tr->addOverlay(display, idx, state->id_colors[idx]); idx++;
+        if (tr->initialized)
+            tr->addOverlay(display, idx, state->id_colors[idx]); idx++;
     }
     cv::imshow("Driving Tracker", display);
 

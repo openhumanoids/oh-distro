@@ -123,6 +123,12 @@ bool
 TLDTracker::initialize(cv::Mat& img, cv::Rect selection) {
  
     internal_init();
+    
+    if (selection.width < 5 || selection.height < 5) { 
+        std::cerr << "Insufficient Region of Interest" << std::endl; 
+        return false ; 
+    }
+
 
     cv::Mat roi_im = cv::Mat(img, selection);
     roi_im.copyTo(object_roi);
