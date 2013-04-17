@@ -24,10 +24,15 @@
 
 #include <lcmtypes/occ_map_pixel_map_t.h>
 #include <lcmtypes/drc_driving_control_params_t.h>
+#include <lcmtypes/drc_driving_control_cmd_t.h>
+#include <lcmtypes/drc_utime_t.h>
 
 #define DEFAULT_GOAL_DISTANCE 10.0
 
 #define TIMER_PERIOD_MSEC 50
+
+#define STOP_TIME_GAP_SEC 50.0
+#define ACCELERATOR_TIME_GAP_SEC 5.0
 
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
@@ -42,10 +47,13 @@ typedef struct _state_t {
     occ_map_pixel_map_t *cost_map_last;
     
     bot_lcmgl_t *lcmgl_goal; 
+  int64_t utime;
 
     int have_valid_goal;
     double cur_goal[3];
-
+  
+  int accelerator_utime; 
+  int stop_utime;
     // Control parameters
     double goal_distance;
     double kp_steer;
@@ -91,6 +99,15 @@ void draw_goal_range (state_t *self)
         lcmglCircle (xyz_car_local, self->goal_distance);
         bot_lcmgl_switch_buffer (self->lcmgl_goal);
     }
+}
+
+static void
+on_utime (const lcm_recv_buf_t *rbuf, const char *channel,
+	  const drc_utime_t *msg, void *user)
+{
+  state_t *self = (state_t *) user;
+  self->utime = msg->utime;
+  
 }
 
 static void
@@ -192,6 +209,7 @@ on_controller_timer (gpointer data)
         return TRUE;
     }
 
+    //we should check if the map is stale - because of some issue with the controller    
     
     occ_map::FloatPixelMap *fmap = new occ_map::FloatPixelMap (self->cost_map_last);
 
@@ -215,13 +233,80 @@ on_controller_timer (gpointer data)
 
         // Compute the steering command
         double xyz_goal_car[3];
-        bot_frames_transform_vec (self->frames, "local", CAR_FRAME, self->cur_goal, xyz_goal_car);
-        double heading_error = bot_fasttrig_atan2 (xyz_goal_car[1], xyz_goal_car[0]);
+	bot_frames_transform_vec (self->frames, "local", "body", self->cur_goal, xyz_goal_car);
+
+	BotTrans goal_to_body;
+	goal_to_body.trans_vec[0] = xyz_goal_car[0];
+	goal_to_body.trans_vec[1] = xyz_goal_car[1];
+	goal_to_body.trans_vec[2] = 0;
+
+	double rpy[3] = {0};
+	bot_roll_pitch_yaw_to_quat(rpy, goal_to_body.rot_quat);
+	
+	BotTrans body_to_car; 
+	body_to_car.trans_vec[0] = 0;
+	body_to_car.trans_vec[1] = 0.3;
+	body_to_car.trans_vec[2] = 0;
+
+	bot_roll_pitch_yaw_to_quat(rpy, body_to_car.rot_quat);
+	
+	BotTrans goal_to_car; 
+	bot_trans_apply_trans_to(&body_to_car, &goal_to_body, &goal_to_car);
+
+	//car frame values are wrong
+
+        //bot_frames_transform_vec (self->frames, "local", CAR_FRAME, self->cur_goal, xyz_goal_car);
+	fprintf(stderr, "Body frame : %f,%f => Car frame : %f,%f\n", 
+		xyz_goal_car[0], xyz_goal_car[1], 
+		goal_to_car.trans_vec[0], goal_to_car.trans_vec[1]);
+
+
+        double heading_error = bot_fasttrig_atan2 (goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);  // xyz_goal_car[1], xyz_goal_car[0]);
         double steering_input = self->kp_steer * heading_error;
         
         //if (self->verbose)
-        //fprintf (stdout, "Steering control: Error = %.2f deg, steering_input = %.2f\n",
-        //         heading_error, steering_input);
+        fprintf (stdout, "Steering control: Error = %.2f deg, steering_input = %.2f (deg)\n",
+                 bot_to_degrees(heading_error), bot_to_degrees(steering_input));
+
+	double steering_angle_delta = steering_input;// 
+	
+	int accelerate = 0;
+	if(self->stop_utime >= self->accelerator_utime){
+	  //last command was a stop 
+	  if((self->utime - self->stop_utime)/1.0e6 > STOP_TIME_GAP_SEC){
+	    //we should accelerate
+	    self->accelerator_utime = self->utime;
+	    accelerate = 1;
+	  }
+	  else{
+	    accelerate = 0;
+	  }
+	}
+	else{
+	  //we have been accelerating - should check if we should stop
+	  if((self->utime - self->accelerator_utime)/1.0e6 > ACCELERATOR_TIME_GAP_SEC){
+	    //we should stop accelerating
+	    self->stop_utime = self->utime;
+	    accelerate = 0;
+	  }
+	  else{
+	    accelerate = 1;
+	  }	  
+	}
+
+	drc_driving_control_cmd_t msg;
+	msg.utime = bot_timestamp_now();
+	msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
+	msg.steering_angle =  steering_angle_delta;
+	if(accelerate)
+	  msg.throttle_value = 0.03; //the controller caps this off at 0.09 anyway - need to figure out a mapping 
+	else
+	  msg.throttle_value = 0.0;
+	//from the steering input to throttle and steering angle 
+	//also the steering angle is a delta here - ??
+	
+	msg.brake_value = 0; //not sure if we are going to use this value
+	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);	
     }
     else
         perform_emergency_stop (self);
@@ -288,6 +373,7 @@ int main (int argc, char **argv) {
     }
 
     self->verbose = 1;
+    self->accelerator_utime = 0;
 
     self->lcm = bot_lcm_get_global (NULL);
     if (!self->lcm) {
@@ -315,11 +401,13 @@ int main (int argc, char **argv) {
 
     self->lcmgl_goal = bot_lcmgl_init (self->lcm, "DRIVING_GOAL");
 
+    drc_utime_t_subscribe(self->lcm, "ROBOT_UTIME", on_utime, self);
+
     occ_map_pixel_map_t_subscribe (self->lcm, "TERRAIN_DIST_MAP", on_terrain_dist_map, self);
     drc_driving_control_params_t_subscribe (self->lcm, "DRIVING_CONTROL_PARAMS_DESIRED", on_driving_control_params, self);
     
     self->mainloop = g_main_loop_new (NULL, TRUE);
-
+    
     // Control timer
     self->controller_timer_id = g_timeout_add (TIMER_PERIOD_MSEC, on_controller_timer, self);
     
