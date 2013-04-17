@@ -148,7 +148,7 @@ classdef QPController < MIMODrakeSystem
     end
     
     active_contacts = find(active_contacts);
-    
+        
     if nc > 0
       Jz = Jz(active_contacts,:); % only care about active contacts
 
@@ -177,22 +177,26 @@ classdef QPController < MIMODrakeSystem
     
     %----------------------------------------------------------------------
     % Linear inverted pendulum stuff --------------------------------------
-        
-    if typecheck(zmpd.h,'double')
-      h = zmpd.h; 
-      hddot = 0;
-    else
-      h = zmpd.h.eval(t); 
-      hddot = zmpd.hddot.eval(t);
+    if nc > 0    
+      if typecheck(zmpd.h,'double')
+        h = zmpd.h; 
+        hddot = 0;
+      else
+        h = zmpd.h.eval(t); 
+        hddot = zmpd.hddot.eval(t);
+      end
+      if typecheck(zmpd.S,'double')
+        S = zmpd.S;
+        com_des = zmpd.comtraj;
+      else
+        S = zmpd.S.eval(t);
+        com_des = zmpd.comtraj.eval(t);
+      end
+      G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
+      xlimp = [xcom(1:2); J*qd]; % state of LIP model
+      x_bar = xlimp - [com_des;0;0];
     end
-    if typecheck(zmpd.S,'double')
-      S = zmpd.S;
-    else
-      S = zmpd.S.eval(t);
-    end
-    G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
-    xlimp = [xcom(1:2); J*qd]; % state of LIP model
-
+    
     %----------------------------------------------------------------------
     % Build handy index matrices ------------------------------------------
     
@@ -218,7 +222,7 @@ classdef QPController < MIMODrakeSystem
     bin_ = cell(1,nc);
 
     % constrained dynamics
-    if nc>0
+    if nc > 0
       Aeq_{1} = H*Iqdd - B*Iu - Jz'*Iz - Dbar*Ibeta;
     else
       Aeq_{1} = H*Iqdd - B*Iu;
@@ -253,19 +257,25 @@ classdef QPController < MIMODrakeSystem
     %
     %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
-    Hqp = Iqdd'*J'*G'*obj.Qy*G*J*Iqdd;
-    Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
-    
-    fqp = xlimp'*obj.F'*obj.Qy*G*J*Iqdd;
-    fqp = fqp + qd'*Jdot'*G'*obj.Qy*G*J*Iqdd;
-    fqp = fqp + xlimp'*S*obj.E*J*Iqdd;
-    fqp = fqp - obj.w*q_ddot_des'*Iqdd;
+    if nc > 0
+      Hqp = Iqdd'*J'*G'*obj.Qy*G*J*Iqdd;
+      Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
+      fqp = x_bar'*obj.F'*obj.Qy*G*J*Iqdd;
+      fqp = fqp + qd'*Jdot'*G'*obj.Qy*G*J*Iqdd;
+      fqp = fqp + x_bar'*S*obj.E*J*Iqdd;
+      fqp = fqp - obj.w*q_ddot_des'*Iqdd;
+
+      % quadratic slack var cost 
+      Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
+    else
+      Hqp = Iqdd'*Iqdd;
+      fqp = -q_ddot_des'*Iqdd;
+    end
+    
     % quadratic input cost
     Hqp(nq+(1:nu),nq+(1:nu)) = obj.R;
  
-    % quadratic slack var cost 
-    Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
 
     %----------------------------------------------------------------------
     % Solve QP ------------------------------------------------------------
@@ -287,12 +297,11 @@ classdef QPController < MIMODrakeSystem
       result = gurobi(model,obj.solver_options);
 %       toc
       alpha = result.x;
-%       dvals = result.pi;
     end
     
     y = alpha(nq+(1:nu));
     
-    if obj.debug
+    if obj.debug && nc > 0
       xcomdd = Jdot * qd + J * alpha(1:nq);
       zmppos = xcom(1:2) + G * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1

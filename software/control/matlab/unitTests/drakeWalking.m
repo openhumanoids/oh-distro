@@ -1,6 +1,6 @@
 function drakeWalking
 
-addpath('..');
+addpath(fullfile(pwd,'..'));
 addpath(fullfile(pwd,'../frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -19,6 +19,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load('../data/atlas_fp.mat');
+xstar(1) = 1000*randn();
+xstar(2) = 1000*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -36,8 +38,8 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
-comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
-[~,V] = ZMPtracker(limp,zmptraj);
+[c,V] = ZMPtracker(limp,zmptraj);
+comtraj = ZMPplannerFromTracker(limp,com(1:2),zeros(2,1),c,zmptraj.tspan);
 
 % time spacing of samples for IK
 ts = 0:0.1:zmptraj.tspan(end);
@@ -45,12 +47,15 @@ T = ts(end);
 
 figure(2); 
 clf; 
-subplot(2,1,1); hold on;
+subplot(3,1,1); hold on;
 fnplt(zmptraj(1));
 fnplt(comtraj(1));
-subplot(2,1,2); hold on;
+subplot(3,1,2); hold on;
 fnplt(zmptraj(2));
 fnplt(comtraj(2));
+subplot(3,1,3); hold on;
+fnplt(zmptraj);
+fnplt(comtraj);
 
 zmpdata = SharedDataHandle(struct('S',V.S,'h',com(3),'hddot',0, ...
                     'lfoottraj',lfoottraj,'rfoottraj',rfoottraj, ...
@@ -96,10 +101,12 @@ for i=1:length(ts)
 end
 
 figure(2);
-subplot(2,1,1);
+subplot(3,1,1);
 plot(ts,com(1,:),'r');
-subplot(2,1,2);
+subplot(3,1,2);
 plot(ts,com(2,:),'r');
+subplot(3,1,3); hold on;
+plot(com(1,:),com(2,:),'r');
 
 err
 if err > num_steps*0.5
