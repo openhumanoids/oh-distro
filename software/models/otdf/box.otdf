@@ -49,9 +49,9 @@
 <link name="box">
 <inertial>
    <mass value="${mass}" />
-   <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"
-            iyy="${(mass/12)*(3*(radius^2)+(length^2))}" iyz="0.0"
-            izz="${(mass/2)*(radius^2)}" />
+   <inertia ixx="${(mass/12)*(lY^2+lZ^2)}"  ixy="0.0" ixz="0.0"
+            iyy="${(mass/12)*(lX^2+lZ^2)}" iyz="0.0"
+            izz="${(mass/2)*(lY^2+lX^2)}" />
 </inertial>
 	<visual>
 		<origin rpy="0 0 0" xyz="0 0 0"/>
