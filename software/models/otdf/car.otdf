@@ -153,6 +153,7 @@
   <origin rpy="0 0 0" xyz="0 0 0"/>
   <!--<axis xyz="0 0 1"/>-->
 </joint>
+
 <link name='steering_wheel'>
   <inertial>
     <mass value="1.0" />
@@ -276,14 +277,32 @@
     <geometry><cylinder length="0.105065778087" radius="0.01" /></geometry>
   </collision>
 </link>
+
+
+<!--<link name='steering_wheel'>-->
+<!--  <inertial>-->
+<!--    <mass value="1.0" />-->
+<!--    <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--    <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="1.0" />-->
+<!--  </inertial>-->
+<!--  <visual name="visual00">-->
+<!--    <origin rpy=" 0 0 0" xyz="0 0.000000 0"/>-->
+<!--    <geometry><cylinder length="0.05" radius="0.22" /></geometry>-->
+<!--  </visual>-->
+<!--</link>-->
+
 <joint name="steering_joint" type="continuous">
   <origin rpy=" 0 -0.8 0" xyz="0.37 0.30 1.2"/> 
   <!--<origin xyz="1 1 1" rpy="1.570796 -0.8 0.0"/> -->
   <parent link="chassis" type="link"/>
   <child link="steering_wheel" type="link"/>
-  <axis xyz="-1 0 1.023"/>
+<!--  <axis xyz="-1 0 1.023"/>-->
+  <axis xyz="0 0 1"/>
   <!--<limit lower="-7.853000" upper="7.853000"/>-->
 </joint>
+
+
+
 <link name="rear_right_wheel">
   <inertial>
     <mass value="12" /><!-- estimated from http://www.rzrforums.net/wheels-tires/1729-tire-wheel-weights-most-sizes.html -->
@@ -506,8 +525,9 @@
   <origin rpy="0 -1.0 0" xyz="0.53 0.14 0.56" />
   <parent link="chassis" type="link" />
   <child link="gas_pedal" type="link" />
-  <axis xyz="1.000000 0.000000 -1.000000" />
-  <limit effort="1" lower="0" upper="0.08" velocity="1"/> 
+<!-- <axis xyz="1.000000 0.000000 -1.000000" />-->
+  <axis xyz="0.5403  0 -0.8415" />
+  <limit effort="1" lower="0" upper="0.05" velocity="1"/> 
 </joint>
 <link name='brake_pedal'>
   <inertial>
@@ -536,8 +556,9 @@
   <origin rpy="0 -1.0 0" xyz="0.54 0.27 0.58" />
   <parent link="chassis" type="link" />
   <child link="brake_pedal" type="link" />
-  <axis xyz="1.000000 0.000000 -0.600000" />
-  <limit effort="1" lower="0" upper="0.08" velocity="1"/>   
+<!--  <axis xyz="1.000000 0.000000 -0.600000" />-->
+  <axis xyz="0.5403  0 -0.8415" />
+  <limit effort="1" lower="0" upper="0.05" velocity="1"/>   
 </joint>
 <link name='hand_brake'>
   <inertial>
