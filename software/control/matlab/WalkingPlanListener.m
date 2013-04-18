@@ -39,10 +39,16 @@ classdef WalkingPlanListener
         hddtraj=matdata.hddtraj;
 
         fid = fopen('tmp_w.mat','w');
-        fwrite(fid,typecast(msg.Straj,'uint8'),'uint8');
+        fwrite(fid,typecast(msg.S,'uint8'),'uint8');
         fclose(fid);
         matdata = load('tmp_w.mat');
-        Straj=matdata.Straj;
+        S=matdata.S;
+ 
+        fid = fopen('tmp_w.mat','w');
+        fwrite(fid,typecast(msg.s1,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load('tmp_w.mat');
+        s1=matdata.s1;
  
         fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.supptraj,'uint8'),'uint8');
@@ -68,7 +74,7 @@ classdef WalkingPlanListener
         matdata = load('tmp_w.mat');
         rfoottraj=matdata.rfoottraj;
         
-        x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'Straj',Straj,'supptraj',supptraj);
+        x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'S',S,'s1',s1,'supptraj',supptraj);
 			end
     end
 	end

@@ -4,7 +4,7 @@ addpath(fullfile(pwd,'..'));
 addpath(fullfile(pwd,'../frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 10;
+num_steps = 20;
 step_length = 0.5;
 step_time = 1.0;
 
@@ -19,8 +19,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load('../data/atlas_fp.mat');
-xstar(1) = 1000*randn();
-xstar(2) = 1000*randn();
+xstar(1) = 0*randn();
+xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -58,13 +58,13 @@ subplot(3,1,3); hold on;
 fnplt(zmptraj);
 fnplt(comtraj);
 
-zmpdata = SharedDataHandle(struct('S',V.S,'h',com(3),'hddot',0, ...
+zmpdata = SharedDataHandle(struct('S',V.S,'s1',V.s1,'h',com(3),'hddot',0, ...
                     'lfoottraj',lfoottraj,'rfoottraj',rfoottraj, ...
                     'comtraj',comtraj,'supptraj',supptraj,'ti_flag',false));
 
 % instantiate QP controller
 options.slack_limit = 20.0;
-options.w = 1.0;
+options.w = 0.1;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);
 clear options;
@@ -93,7 +93,7 @@ warning(S);
 traj = simulate(sys,[0 T],x0);
 playback(v,traj,struct('slider',true));
 
-err = 0; % x-y error
+err = 0; % x,y error
 for i=1:length(ts)
   x=traj.eval(ts(i));
   q=x(1:getNumDOF(r)); 

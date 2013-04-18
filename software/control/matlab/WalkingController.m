@@ -4,12 +4,12 @@ classdef WalkingController < DRCController
     function obj = WalkingController(name,r)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[], ...
+      ctrl_data = SharedDataHandle(struct('S',[],'s1',[],'h',[],'hddot',[], ...
         'supptraj',[],'comtraj',[],'lfoottraj',[],'rfoottraj',[],'ti_flag',false));
       
       % instantiate QP controller
-      options.slack_limit = 30.0;
-      options.w = 1.0;
+      options.slack_limit = 20.0;
+      options.w = 0.2;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
 
@@ -48,11 +48,17 @@ classdef WalkingController < DRCController
       obj.controller_data.setField('hddot',matdata.hddtraj);
 
       fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.Straj,'uint8'),'uint8');
+      fwrite(fid,typecast(msg_data.S,'uint8'),'uint8');
       fclose(fid);
       matdata = load('tmp_w.mat');
-      obj.controller_data.setField('S',matdata.Straj);
-     
+      obj.controller_data.setField('S',matdata.S);
+
+      fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.s1,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('s1',matdata.s1);
+
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.supptraj,'uint8'),'uint8');
       fclose(fid);

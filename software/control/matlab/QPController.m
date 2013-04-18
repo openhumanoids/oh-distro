@@ -187,17 +187,16 @@ classdef QPController < MIMODrakeSystem
       end
       if typecheck(zmpd.S,'double')
         S = zmpd.S;
+        s1= zeros(4,1); % zmpd.s1; 
         xlimp0 = zmpd.xlimp0;
       else
         S = zmpd.S.eval(t);
+        s1 = zmpd.s1.eval(t);
+        xlimp0 = zeros(4,1);
       end
       G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
       xlimp = [xcom(1:2); J*qd]; % state of LIP model
-      if zmpd.ti_flag
-        x_bar = xlimp - xlimp0;
-      else
-        x_bar = xlimp;
-      end
+      x_bar = xlimp - xlimp0;
     end
     
     %----------------------------------------------------------------------
@@ -239,7 +238,7 @@ classdef QPController < MIMODrakeSystem
 
       % linear friction constraints
       % TEMP: hard code mu
-      mu = 0.45*ones(nc,1);
+      mu = 0.5*ones(nc,1);
       for i=1:nc
         Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
         bin_{i} = 0;
@@ -258,7 +257,7 @@ classdef QPController < MIMODrakeSystem
     %----------------------------------------------------------------------
     % QP cost function ----------------------------------------------------
     %
-    %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + 2*x'*S*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
+    %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + (2*x'*S + s1')*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
     if nc > 0
       Hqp = Iqdd'*J'*G'*obj.Qy*G*J*Iqdd;
@@ -267,6 +266,7 @@ classdef QPController < MIMODrakeSystem
       fqp = x_bar'*obj.F'*obj.Qy*G*J*Iqdd;
       fqp = fqp + qd'*Jdot'*G'*obj.Qy*G*J*Iqdd;
       fqp = fqp + x_bar'*S*obj.E*J*Iqdd;
+      fqp = fqp + 0.5*s1'*obj.E*J*Iqdd;
       fqp = fqp - obj.w*q_ddot_des'*Iqdd;
 
       % quadratic slack var cost 

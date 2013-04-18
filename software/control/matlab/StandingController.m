@@ -12,8 +12,8 @@ classdef StandingController < DRCController
       ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[],'supptraj',[],'ti_flag',true));
       
       % instantiate QP controller
-      options.slack_limit = 40.0;
-      options.w = 1.0;
+      options.slack_limit = 20.0;
+      options.w = 0.2;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
 
