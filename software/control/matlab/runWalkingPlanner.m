@@ -46,6 +46,9 @@ while true
       if (~isempty(x))
         %%% TEMP HACK FOR QUAL 1 %%%
         x(3) = x(3)-1.0;
+        for j = 1:length(footsteps)
+          footsteps(j).pos(3) = footsteps(j).pos(3) - 1;
+        end
         %%% TEMP HACK FOR QUAL 1 %%%
         x0=x;
       end

@@ -58,9 +58,13 @@ while 1
     s_foot = 'right';
   end
   
-  step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(1:6, istep.(m_foot)), step_locations.(m_foot)(1:6, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
-  step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.04, 0.005, 0, 0];
-  
+  step.(m_foot).orig = [step_locations.(m_foot)(1:6, istep.(m_foot)),...
+                        step_locations.(m_foot)(1:6, istep.(m_foot)+1),...
+                 repmat(step_locations.(m_foot)(1:6, istep.(m_foot)+2), 1, 3)];
+  step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0, 0.005, 0, 0];
+  % step.(m_foot).orig = interp1([0; 1], [step_locations.(m_foot)(1:6, istep.(m_foot)), step_locations.(m_foot)(1:6, istep.(m_foot)+1)]', [0, .5, 1, 1, 1]')';
+  % step.(m_foot).orig(3,:) = step.(m_foot).orig(3,:) + [0, 0.04, 0.005, 0, 0];
+
   % Shift the ZMP by 2cm closer to the center of the feet
   foot_center = biped.footOrig2Contact(step.(s_foot).orig(:,1), 'center', strcmp(s_foot, 'right'));
   step_center = biped.footCenter2StepCenter(foot_center, strcmp(s_foot, 'right'));
@@ -70,7 +74,8 @@ while 1
   stepzmp = [repmat(s_foot_center(1:3)+zmp_shift,1,3)...
              repmat(feetCenter(step.(m_foot).orig(:,end), step.(s_foot).orig(:,end)), 1, 2)];
     
-  istep.(m_foot) = istep.(m_foot) + 1;
+  % istep.(m_foot) = istep.(m_foot) + 1;
+  istep.(m_foot) = istep.(m_foot) + 2;
   
 %   footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1];
   footsupport.(m_foot) = [footsupport.(m_foot) 0 0 1 1 1]; 
@@ -101,7 +106,7 @@ for f = {'right', 'left'}
   footsupport.(foot) = [footsupport.(foot) 1];
 end
 
-biped.plot_step_clearance_lcm(footpos);
+% biped.plot_step_clearance_lcm(footpos);
 
 % create ZMP trajectory
 p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));

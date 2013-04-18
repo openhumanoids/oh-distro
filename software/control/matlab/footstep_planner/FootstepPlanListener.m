@@ -58,8 +58,9 @@ classdef FootstepPlanListener
 					           goal_msg.fixed_pitch;
 					           goal_msg.fixed_yaw];
 		  X.is_right_foot = goal_msg.is_right_foot;
+		  X.is_in_contact = goal_msg.is_in_contact;
 		  %%%% HACK for DRC Qual 1 %%%%%
-		  X.pos(3) = X.pos(3) - 1;
+		  % X.pos(3) = X.pos(3) - 1;
 		  %%%% end
 		end
 	end

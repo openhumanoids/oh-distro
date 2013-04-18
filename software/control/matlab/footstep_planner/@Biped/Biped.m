@@ -6,6 +6,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     max_step_width
     min_step_width
     nom_step_width
+    nom_step_clearance
     max_step_rot
     foot_contact_offsets
     r_foot_name
@@ -29,6 +30,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'max_step_width', 0.35,...%m
         'min_step_width', 0.2,...%m
         'nom_step_width', 0.26,...%m (nominal step width)
+        'nom_step_clearance', 0.05,...%m
         'max_step_rot', pi/4,... % rad
         'r_foot_name', 'r_foot',...
         'l_foot_name', 'l_foot');
@@ -136,7 +138,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));
       t = zeros(1, nsteps);
-      t(3:end) = (1:nsteps-2) * obj.step_time;
+      t(3:end) = (1:nsteps-2) * (obj.step_time/2);
     end
 
     function id = getNextStepID(obj)

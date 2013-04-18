@@ -10,8 +10,6 @@ id = 70;
         pos = biped.footOrig2Contact(footpos.(foot).orig(:,j), grp, strcmp(foot, 'right'));
         pts(:, j) = pos(1:3);
       end
-      % HACK for Quals 1
-      pts(3, :) = pts(3, :) + 1;
       plot_lcm_points(pts', repmat([1;0;1], 1, length(pts(1,:)))', id, ['Step Clearance: ', foot, ' ', grp], 2, true);
       id = id + 1;
     end

@@ -9,18 +9,20 @@ classdef BezierTraj
       sizecheck(poses, [6,2]);
       start_pos = poses(:,1);
       goal_pos = poses(:,2);
+
+      control_dist = min(1, sqrt(sum((start_pos(1:2) - goal_pos(1:2)).^2))/2)
 			p1 = start_pos(1:2);
 			p4 = goal_pos(1:2);
 			initial_angle = start_pos(6);
 			R = [cos(initial_angle), -sin(initial_angle); ...
 			  sin(initial_angle), cos(initial_angle)];
-      p2 = p1 + R * [1; 0];
+      p2 = p1 + R * [control_dist; 0];
       
       
 			final_angle = goal_pos(6);
       R = [cos(final_angle), -sin(final_angle); ...
 			  sin(final_angle), cos(final_angle)];
-      p3 = p4 - R * [1; 0];
+      p3 = p4 - R * [control_dist; 0];
       obj.sp = spmak([0 0 0 0 1 1 1 1], [p1 p2 p3 p4]);
       obj.df = fndir(obj.sp, eye(2));
 		end

@@ -19,7 +19,7 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
       obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true);
-      % obj.hmap_ptr = mapAPIwrapper();
+      obj.hmap_ptr = mapAPIwrapper();
       % mapAPIwrapper(obj.hmap_ptr);
     end
     
@@ -50,10 +50,10 @@ classdef FootstepPlanner < DRCPlanner
                                             data.goal.goal_pos.rotation.y,...
                                             data.goal.goal_pos.rotation.z], 'XYZ');
           %%% HACK for DRC Qual 1 
-          goal_pos(3) = 0;
+          % goal_pos(3) = 0;
           %%% end hack 
 
-          [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, options);
+          [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, options, @heightfun);
         end
         if changelist.plan_reject 
           optimizer_halt = true;
@@ -74,14 +74,18 @@ classdef FootstepPlanner < DRCPlanner
           [X.time] = t{:};
         end
 
-        if ~optimizer_halt && data.goal.allow_optimization
-          [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
-        else
+        % if ~optimizer_halt && data.goal.allow_optimization
+        %   [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
+        % else
           for j = 1:size(X, 2)
-            X(j).pos = heightfun(X(j).pos);
+            if X(j).is_in_contact
+              X(j).pos = heightfun(X(j).pos);
+            % elseif ~X(j).is_in_contact && ~X(j).pos_fixed(3)
+            %   X(j).pos = heightfun(X(j).pos) + [0;0;obj.biped.nom_step_clearance;0;0;0];
+            end
             % X(j).pos(3) = heightfun(X(j).pos(1:2));
           end
-        end
+        % end
 
         if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
           modified = false;
@@ -107,11 +111,17 @@ classdef FootstepPlanner < DRCPlanner
         isnew = false;
       end
 
-      function ground_pos = heightfun(pos)
-        % [closest_terrain_pos, normal] = mapAPIwrapper(obj.hmap_ptr, X
-        h = zeros(1, length(pos(1,:)));
+      function [ground_pos, got_data] = heightfun(pos)
+        [closest_terrain_pos, normal] = mapAPIwrapper(obj.hmap_ptr, pos(1:3,:));
+
+        % h = zeros(1, length(pos(1,:)));
         ground_pos = pos;
-        ground_pos(3,:) = h;
+        got_data = false;
+        if ~isnan(closest_terrain_pos)
+          got_data = true;
+          ground_pos(1:3) = closest_terrain_pos;
+        end
+        % ground_pos(3,:) = h;
       end
     end
   end

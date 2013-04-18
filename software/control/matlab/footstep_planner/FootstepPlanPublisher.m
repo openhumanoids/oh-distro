@@ -26,7 +26,7 @@ classdef FootstepPlanPublisher
 			end
 
 			%%%% HACK for DRC Qual 1 %%%%%
-			X.pos(3) = X.pos(3) + 1;
+			% X.pos(3) = X.pos(3) + 1;
 			%%%% end
 			msg = drc.footstep_goal_t();
 			msg.utime = t * 1000000;
@@ -55,6 +55,7 @@ classdef FootstepPlanPublisher
 			msg.fixed_pitch = X.pos_fixed(5);
 			msg.fixed_yaw = X.pos_fixed(6);
 			msg.is_right_foot = X.is_right_foot;
+			msg.is_in_contact = X.is_in_contact;
     end
 
     function msg = encodeFootstepPlan(X, t, isnew)
