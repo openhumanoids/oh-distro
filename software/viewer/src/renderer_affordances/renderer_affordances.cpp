@@ -75,7 +75,12 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
   typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
   for(object_instance_map_type_::const_iterator it = self->instantiated_objects.begin(); it!=self->instantiated_objects.end(); it++)
   {
-    
+    // if Show Mesh checked and object has mesh, set drawMesh to true
+    const vector<Eigen::Vector3i>& tri = it->second.triangles;
+    const vector<Eigen::Vector3f>& pts = it->second.points;
+    bool drawMesh = self->showMesh && (pts.size()>0);
+
+    // draw object   
     double pos[3];
     pos[0] = it->second._gl_object->_T_world_body.p[0]; 
     pos[1] = it->second._gl_object->_T_world_body.p[1]; 
@@ -85,7 +90,9 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     glColor4f(0,0,0,1);
     bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
     it->second._gl_object->enable_link_selection(self->selection_enabled);
-    it->second._gl_object->draw_body(c,self->alpha); // no using sliders
+    if(!drawMesh){ // draw object if not drawing mesh
+      it->second._gl_object->draw_body(c,self->alpha); // no using sliders
+    }
 
     // get object transformation from KDF::Frame
     KDL::Frame& nextTfframe = it->second._gl_object->_T_world_body;
@@ -95,28 +102,21 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     nextTfframe.M.GetQuaternion(x,y,z,w);
     double quat[4] = {w,x,y,z};
     bot_quat_to_angle_axis(quat, &theta, axis);
-    const vector<Eigen::Vector3i>& tri = it->second.triangles;
-    const vector<Eigen::Vector3f>& pts = it->second.points;
-
-    // if Show Mesh checked, set drawMesh to true
-    bool drawMesh = self->showMesh;
 
     // if dynamic mesh, force drawMesh to true
     std::vector<boost::shared_ptr<otdf::Link> > links;
     it->second._otdf_instance->getLinks(links);
     for(int i=0; i<links.size(); i++){
-      if(links[i]->visual && links[i]->visual->geometry){
-        cout << links[i]->visual->geometry->type << endl;
-        boost::shared_ptr<otdf::DynamicMesh> dmesh = 
-          dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
-        
-        if(dmesh) drawMesh = true;
+      if(links[i]->visual && links[i]->visual->geometry
+          && links[i]->visual->geometry->type==otdf::Geometry::DYNAMIC_MESH){
+        drawMesh = true;
       }
     }
 
     // draw triangles if available
     if(tri.size()>0 && drawMesh){
       glPushMatrix();
+      glColor4f(c[0],c[1],c[2],self->alpha);
       glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
       glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
       for(int i=0; i<tri.size(); i++){
@@ -130,8 +130,12 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     // draw points if available and no triangles
     if(pts.size()>0 && tri.size()==0 && drawMesh){
       glPushMatrix();
+      glColor4f(c[0],c[1],c[2],self->alpha);
       glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
       glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+      glEnable(GL_BLEND); //for dimming contrast
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glPointSize(2.0);
       glBegin(GL_POINTS);
       for(int i=0; i<pts.size(); i++) glVertex3fv(pts[i].data());
       glEnd();
