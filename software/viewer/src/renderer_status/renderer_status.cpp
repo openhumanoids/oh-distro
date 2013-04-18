@@ -43,7 +43,7 @@ const bool PARAM_STATUS_1_DEFAULT = false;
 const bool PARAM_STATUS_2_DEFAULT = false;
 const bool PARAM_STATUS_3_DEFAULT = false;
 const bool PARAM_STATUS_4_DEFAULT = false;
-const bool PARAM_STATUS_5_DEFAULT = false;
+const bool PARAM_STATUS_5_DEFAULT = true;
 const bool PARAM_IMPORTANT_DEFAULT = false;
 
 const char* PARAM_SHADING = "Shading";
@@ -210,7 +210,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     };
     //{ 0.6, 0.6, 0.6 }, // gray        
 
-    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[80], line8[80];
+    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90];
 
     sprintf(line1, "n affs %d",self->naffs);
     sprintf(line2, " pitch %5.1f hd %5.1f",self->pitch,self->head_pitch);
@@ -218,10 +218,11 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
-
-    if(self->driving_status){
-        sprintf(line7, "veh k[%d] dir[%d] hb[%.2f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
-        sprintf(line8, " hw[%.1f] bp[%.2f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
+    
+    bool draw_driving = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
+    if(self->driving_status && draw_driving){
+        sprintf(line7, "veh k[%d] dir[%d] hb[%.1f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
+        sprintf(line8, "hw[%.0f] bp[%.1f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
     }
 
     //double x = hind * 110 + 120;
@@ -275,15 +276,15 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
 
-    glColor3fv(colors[2]);
-    glRasterPos2f(x, y + 6 * line_height);
-    glutBitmapString(font, (unsigned char*) line7);
-    
-    glColor3fv(colors[2]);
-    glRasterPos2f(x, y + 7 * line_height);
-    glutBitmapString(font, (unsigned char*) line8);
-    
-
+    if(self->driving_status && draw_driving){
+        glColor3fv(colors[2]);
+        glRasterPos2f(x, y + 6 * line_height);
+        glutBitmapString(font, (unsigned char*) line7);
+        
+        glColor3fv(colors[2]);
+        glRasterPos2f(x, y + 7 * line_height);
+        glutBitmapString(font, (unsigned char*) line8);
+    }
     
     // scrolling text://////////////////////////////
     int y_pos=0;
