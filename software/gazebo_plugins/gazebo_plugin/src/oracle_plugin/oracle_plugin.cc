@@ -206,7 +206,7 @@ void OraclePlugin::storeAffordances()
     a.param_names.push_back("radius");
     a.params.push_back(0.030000);
     a.param_names.push_back("length");
-    a.params.push_back(0.09);
+    a.params.push_back(0.1);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     a.nparams = a.params.size();
@@ -215,7 +215,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    offset.translation()  << 0, -0.025, 0.1;
+    offset.translation()  << 0, -0.025, 0.125;
     double ypr[3]={1.571, 0,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
@@ -488,10 +488,10 @@ void OraclePlugin::storeAffordances()
     a.utime =0;
     a.map_id =0;
     a.uid =counter++;
-    a.otdf_type ="plane";// was a box
+    a.otdf_type ="box";// was a box
     a.aff_store_control = drc::affordance_t::NEW;
 
-    /*
+
     a.param_names.push_back("lX");
     a.params.push_back(0.8000);
     a.param_names.push_back("lY");
@@ -502,7 +502,7 @@ void OraclePlugin::storeAffordances()
     a.params.push_back(1.0);  // unknown
     a.nparams = a.params.size();
     a.nstates =0;
-    */
+
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
@@ -559,7 +559,7 @@ void OraclePlugin::storeAffordances()
     a.param_names.push_back("radius");
     a.params.push_back(0.030000);
     a.param_names.push_back("length");
-    a.params.push_back(0.09);
+    a.params.push_back(0.1);
     a.param_names.push_back("mass");
     a.params.push_back(1.0); // unknown
     a.nparams = a.params.size();
@@ -568,7 +568,7 @@ void OraclePlugin::storeAffordances()
     
     Eigen::Isometry3d offset;
     offset.setIdentity();
-    offset.translation()  << 0, -0.025, 0.1;
+    offset.translation()  << 0, -0.025, 0.125;
     double ypr[3]={1.571, 0,0};
     Eigen::Quaterniond quat = euler_to_quat( ypr[0], ypr[1], ypr[2]);             
     offset.rotate(quat);
