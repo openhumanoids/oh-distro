@@ -38,6 +38,12 @@ rosbuild_add_boost_directories()
 rosbuild_add_executable(driving_interface src/driving_interface/main.cpp)
 target_link_libraries(driving_interface curses boost_thread)
 
+rosbuild_add_executable(groundtruth_receiver src/groundtruth_receiver/main.cpp)
+target_link_libraries(groundtruth_receiver curses boost_thread)
+
+pods_use_pkg_config_packages(groundtruth_receiver
+  bot2-core drc-lcmtypes
+  )
 
 #add_executable (drc-keyboard-driving keyboard_driving.cpp)
 #target_link_libraries (drc-keyboard-driving curses    )
