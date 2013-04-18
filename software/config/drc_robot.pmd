@@ -386,3 +386,19 @@ script "systemtest-vo" {
     start cmd "estpub_sensing";
     wait ms 600000;
 }
+
+
+
+script "run_QUAL_1" {
+    start group "0.dev_deputies";
+    start group "1.a.core";
+    wait ms 100;
+    start group "1.b.sensing";
+    start cmd "Qual1StateMachine"; 
+    start cmd "FootstepPlanner"; 
+    start cmd "ZMPWalkingPlanner";
+    wait ms 10000;
+    start cmd "qual_walking_slow"; 
+    wait ms 4000;
+    start cmd "set-sim-rate"; 
+}
