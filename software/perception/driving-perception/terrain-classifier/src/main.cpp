@@ -328,8 +328,6 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
                                       largest_contour, 
                                       obs_contours);
 
-    fprintf(stderr, "Largest Contour Size : %d\n", largest_contour.size());
-
     cv::Size size(road_and_paint.cols, road_and_paint.rows);
     
     if(largest_contour.size() >0){
@@ -1093,7 +1091,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
     if(transformed_obstacles.size() > 0){
         for(int i=0; i< transformed_obstacles.size(); i++){
             vector<cv::Point> obs = transformed_obstacles[i];
-            fprintf(stderr, "Adding Points : %d\n", (int)obs.size()); 
             const int filled_count = (int)obs.size();
             const cv::Point* filled_pts = &obs[0];
             cv::fillPoly(filled_obs_map, &filled_pts, &filled_count, 1, cv::Scalar(255));
@@ -1213,8 +1210,10 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
     if(status <0){
         fprintf(stderr, "Error Detecting road\n");
     }
+    
 
-    fprintf(stderr, "Time to process : %f\n",   (e_utime - s_utime)/1.0e6);
+    if(!state->options.vSILENT)
+        fprintf(stderr, "Time to process : %f\n",   (e_utime - s_utime)/1.0e6);
 
     state->img_utime = msg->utime; 
     cv::Mat display = state->img.clone();  
