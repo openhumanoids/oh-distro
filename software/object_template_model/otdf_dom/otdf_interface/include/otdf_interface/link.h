@@ -226,14 +226,15 @@ class DynamicMesh : public Geometry
 public:
   DynamicMesh() { this->clear(); };
   //std::string filename;
-  std::vector<std::vector<float> > points;
-  std::vector<std::vector<int> > triangles;
+  // NOTE: points and triangles now handled by renderer_affordances.h/cpp
+  //std::vector<std::vector<float> > points;
+  //std::vector<std::vector<int> > triangles;
 
   void clear()
   {
     //filename.clear();
-    points.clear();
-    triangles.clear();
+    //points.clear();
+    //triangles.clear();
   };
   void update()
   {

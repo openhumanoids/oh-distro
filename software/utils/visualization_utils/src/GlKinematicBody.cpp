@@ -1531,6 +1531,9 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
   }
   else if  (type == otdf::Geometry::DYNAMIC_MESH)
   {
+    //NOTE: this is now drawn by renderer_affordances.cpp
+    
+    /*
     boost::shared_ptr<otdf::DynamicMesh> dm(boost::shared_dynamic_cast<otdf::DynamicMesh>(link));
     glPushMatrix();
     glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
@@ -1541,6 +1544,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
       glEnd();
     }
     glPopMatrix();
+    */
   }
   else if  (type == otdf::Geometry::TORUS)
   {

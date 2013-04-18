@@ -135,7 +135,23 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
     if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
 
+      // copy triangles
+      it->second.triangles.resize(msg->triangles.size());
+      for(int i=0;i<msg->triangles.size();i++){
+        it->second.triangles[i][0] = msg->triangles[i][0];
+        it->second.triangles[i][1] = msg->triangles[i][1];
+        it->second.triangles[i][2] = msg->triangles[i][2];
+      }
+      // copy points
+      it->second.points.resize(msg->points.size());
+      for(int i=0;i<msg->points.size();i++){
+        it->second.points[i][0] = msg->points[i][0];
+        it->second.points[i][1] = msg->points[i][1];
+        it->second.points[i][2] = msg->points[i][2];
+      }
+
       // find links of type DynamicMesh and copy points and triangles into it.
+      /*
       std::vector<boost::shared_ptr<otdf::Link> > links;
       it->second._otdf_instance->getLinks(links);
       for(int i=0; i<links.size(); i++){
@@ -150,6 +166,7 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
           }
         }
       }
+      */
       
     } else{
       // object should always exist, so we should never get here

@@ -87,7 +87,40 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     it->second._gl_object->enable_link_selection(self->selection_enabled);
     it->second._gl_object->draw_body(c,self->alpha); // no using sliders
 
+    // get object transformation from KDF::Frame
+    KDL::Frame& nextTfframe = it->second._gl_object->_T_world_body;
+    double theta;
+    double axis[3];
+    double x,y,z,w;
+    nextTfframe.M.GetQuaternion(x,y,z,w);
+    double quat[4] = {w,x,y,z};
+    bot_quat_to_angle_axis(quat, &theta, axis);
+    const vector<Eigen::Vector3i>& tri = it->second.triangles;
+    const vector<Eigen::Vector3f>& pts = it->second.points;
 
+    // draw triangles if available
+    if(tri.size()>0){
+      glPushMatrix();
+      glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+      glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+      for(int i=0; i<tri.size(); i++){
+        glBegin(GL_POLYGON);
+        for(int j=0; j<3; j++) glVertex3fv(pts[tri[i][j]].data());
+        glEnd();
+      }
+      glPopMatrix();
+    }
+
+    // draw points if available and no triangles
+    if(pts.size()>0 && tri.size()==0){
+      glPushMatrix();
+      glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+      glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+      glBegin(GL_POINTS);
+      for(int i=0; i<pts.size(); i++) glVertex3fv(pts[i].data());
+      glEnd();
+      glPopMatrix();
+    }
 
   }
   

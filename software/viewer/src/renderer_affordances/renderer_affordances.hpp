@@ -129,6 +129,10 @@ typedef struct _OtdfInstanceStruc {
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;  
     // Each object has its own collision detector for now. 
     // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.   
+
+    std::vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3i> triangles;
+
 }OtdfInstanceStruc;   
 
 typedef struct _StickyHandStruc {
