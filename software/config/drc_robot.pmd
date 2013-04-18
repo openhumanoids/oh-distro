@@ -228,7 +228,7 @@ group "6.drake_base" {
        host = "paladin-01";
     }    
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
         host = "paladin-01";
     }
     cmd "ZMPWalkingPlanner" {
