@@ -28,7 +28,8 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float c_grey[3] = {0.3,0.3,0.3}; // grey
   float c_green[3] = {0.3,0.5,0.3};  // green for right sticky feet
   float c_yellow[3] = {0.5,0.5,0.3}; //yellow for left sticky feet
-  float alpha = 0.4;
+  float alpha_contact = 0.4;
+  float alpha_apex = 0.15;
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
  
  
@@ -108,16 +109,22 @@ string no_selection =  " ";
    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->highlight_marker(no_selection);
  }
  
- if(!self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_fixed){
- if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type == FootStepPlanListener::RIGHT)
-    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
- else
-    self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
- }
- else {
+  float alpha;
+  if (self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_in_contact) {
+    alpha = alpha_contact;
+  } else {
+    alpha = alpha_apex;
+  }
+  if(!self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_fixed){
+    if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type == FootStepPlanListener::RIGHT)
+      self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_green,alpha); 
+    else
+      self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_yellow,alpha);  
+  }
+  else {
     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->draw_body (c_grey,alpha); 
- }   
-    
+  }   
+  
     
 
  if(self->footStepPlanListener->is_motion_copy(i))
@@ -162,7 +169,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
     if (i > 1) { // don't label the two steps where the robot's feet already are
       std::stringstream oss;
-      oss << i - 1; // first footstep is number 1
+      float label_num = (i - 1.0) / 2.0;
+      oss << label_num; 
       glColor4f(0,0,0,1);
       bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
     }

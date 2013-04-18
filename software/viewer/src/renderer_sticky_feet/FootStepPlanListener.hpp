@@ -27,6 +27,7 @@ namespace renderer_sticky_feet
   {
     int foot_type; // left or right
     bool is_fixed;
+    bool is_in_contact;
   } StickyFeetInfoStruct;
   
   class FootStepPlanListener

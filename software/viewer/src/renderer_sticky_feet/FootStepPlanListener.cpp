@@ -168,54 +168,30 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       // KDL::Frame T_worldframe_meshframe;
       KDL::Frame T_worldframe_footframe;
       transformLCMToKDL(goal_msg.pos, T_worldframe_footframe);
+      bool is_constrained = ((goal_msg.fixed_x)||(goal_msg.fixed_y)||(goal_msg.fixed_z)||(goal_msg.fixed_roll)||(goal_msg.fixed_pitch)||(goal_msg.fixed_yaw));
       
       StickyFeetInfoStruct info;
-       bool is_constrained = ((goal_msg.fixed_x)||(goal_msg.fixed_y)||(goal_msg.fixed_z)||(goal_msg.fixed_roll)||(goal_msg.fixed_pitch)||(goal_msg.fixed_yaw));
+      info.is_fixed=is_constrained;
+      info.is_in_contact=goal_msg.is_in_contact;
       if(!goal_msg.is_right_foot)
       {
-
-        // KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_left.Inverse();
-        // KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_left;
-      
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::LEFT;
-         info.is_fixed=is_constrained;
-        _planned_stickyfeet_info_list.push_back(info);
-        _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true);
-         std::map<std::string, double> jointpos_in; 
-         jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
-
-        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);       
-        _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_HALF_D);
       }
       else
       {
-      
-
-        // KDL::Frame T_worldframe_bodyframe =  T_worldframe_meshframe*_T_bodyframe_meshframe_right.Inverse();
-        // KDL::Frame T_worldframe_groundframe = T_worldframe_bodyframe*_T_bodyframe_groundframe_right;
-
         shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::RIGHT;
-         info.is_fixed=is_constrained;
-        _planned_stickyfeet_info_list.push_back(info);
-        _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
-         std::map<std::string, double> jointpos_in; 
-         jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
-        
-        _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);
-        _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_HALF_D);
-      }  
+       }
+      _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
+       std::map<std::string, double> jointpos_in; 
+       jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
       
-      
-//      if((old_in_motion_footstep_id!=-1)&&(old_in_motion_footstep_id == goal_msg.id))
-//      {      
-//        _gl_planned_stickyfeet_list[i]->enable_bodypose_adjustment(true); // make the current in_motion_footstep persistent across candidate plan publishes
-//      }
-      
-     
+      _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);
+      _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_HALF_D);
+      _planned_stickyfeet_info_list.push_back(info);
 
     }//end for num of goals;
 
