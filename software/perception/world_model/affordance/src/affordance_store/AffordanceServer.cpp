@@ -21,6 +21,7 @@ namespace affordance
 const string AffordanceServer::AFF_SERVER_CHANNEL("AFFORDANCE_COLLECTION");
 const string AffordanceServer::AFF_PLUS_SERVER_CHANNEL("AFFORDANCE_PLUS_COLLECTION");
 const string AffordanceServer::AFFORDANCE_TRACK_CHANNEL("AFFORDANCE_TRACK");
+const string AffordanceServer::AFFORDANCE_PLUS_TRACK_CHANNEL("AFFORDANCE_PLUS_TRACK");
 const string AffordanceServer::AFFORDANCE_FIT_CHANNEL("AFFORDANCE_FIT");
 const string AffordanceServer::AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL("AFFORDANCE_PLUS_BOT_OVERWRITE");
 const string AffordanceServer::AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL("AFFORDANCE_PLUS_BASE_OVERWRITE");
@@ -31,16 +32,28 @@ const string AffordanceServer::AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL("AFFORDANC
 AffordanceServer::AffordanceServer(shared_ptr<lcm::LCM> lcm)
   : _lcm(lcm), _mapIdToAffIdMaps(),
     _nextObjectUID(1), //make the min id 1 
-    _serverMutex() 
+    _serverMutex(),
+    _latest_utime(-1)
+    
 {
 	//subscribe
-	lcm->subscribe(AFFORDANCE_TRACK_CHANNEL, &AffordanceServer::handleAffordanceTrackMsg, this);
-	lcm->subscribe(AFFORDANCE_FIT_CHANNEL, &AffordanceServer::handleAffordanceFitMsg, this);
+	lcm->subscribe(AFFORDANCE_TRACK_CHANNEL, 
+                   &AffordanceServer::handleAffordanceTrackMsg, this);
+
+    lcm->subscribe(AFFORDANCE_PLUS_TRACK_CHANNEL, 
+                   &AffordanceServer::handleAffordancePlusTrackMsg, this);
+
+	lcm->subscribe(AFFORDANCE_FIT_CHANNEL, 
+                   &AffordanceServer::handleAffordanceFitMsg, this);
+
 	lcm->subscribe(AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, 
                    &AffordanceServer::nukeAndOverwrite, this);
+
 	lcm->subscribe(AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL, 
                    &AffordanceServer::nukeAndOverwrite, this);
 
+    lcm->subscribe("ROBOT_UTIME", 
+                   &AffordanceServer::handleTimeUpdate, this);
 
 	//start publishing threads
 	_pubLightThread = boost::thread(&AffordanceServer::runPeriodicLightPublish, this);
@@ -53,13 +66,51 @@ AffordanceServer::~AffordanceServer()
 }
 
 //-------methods
-void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
-						const drc::affordance_t *affordance)
+void AffordanceServer::handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rbuf, 
+                                                    const std::string& channel,
+                                                    const drc::affordance_plus_t *affordance_plus)
+{
+  if (affordance_plus->aff.aff_store_control != drc::affordance_t::UPDATE)
+    {
+      sendErrorMsg("expected track messages to be UPDATE");
+      return; 
+    }
+
+	//copy the data into an AffordanceState
+	AffPlusPtr aptr(new AffordancePlusState(affordance_plus));
+
+	_serverMutex.lock(); //=======lock
+
+	if (_mapIdToAffIdMaps.find(aptr->aff->_map_id) == _mapIdToAffIdMaps.end())
+      {
+        sendErrorMsg("how are we tracking an object we don't have a map for");
+        return; 
+      }
+
+	//get the relevant map
+	AffIdMap scene(_mapIdToAffIdMaps[aptr->aff->_map_id]);
+
+	if (scene->find(aptr->aff->_uid) == scene->end())
+      {
+        sendErrorMsg("how are we tracking an object that's not in the corresponding map");
+        return; 
+      }
+
+    (*scene)[aptr->aff->_uid] = aptr; //actually update
+
+	_serverMutex.unlock(); //========unlock
+}
+
+
+
+void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, 
+                                                const std::string& channel,
+                                                const drc::affordance_t *affordance)
 {
   if (affordance->aff_store_control != drc::affordance_t::UPDATE)
     {
-      cout << "\n expected track messages to be UPDATE's" << endl;
-      return; //todo : display system error
+      sendErrorMsg("expected track messages to be UPDATE");
+      return; 
     }
 
 	//copy the data into an AffordanceState
@@ -69,8 +120,8 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, 
 
 	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end())
       {
-        cout << "\n how are we tracking an object we don't have a map for" << endl;
-        return; //todo: display system error
+        sendErrorMsg("how are we tracking an object we don't have a map for");
+        return; 
       }
 
 	//get the relevant map
@@ -78,8 +129,8 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, 
 
 	if (scene->find(aptr->_uid) == scene->end())
       {
-        cout << "\n how are we tracking an object that's not in the corresponding map" << endl;
-        return; //todo: display system error
+        sendErrorMsg("how are we tracking an object that's not in the corresponding map");
+        return; 
       }
 
     (*scene)[aptr->_uid]->aff = aptr; //actually update
@@ -141,7 +192,7 @@ void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf,
       {
         if (affordance_plus->aff.aff_store_control != drc::affordance_t::NEW) //not new ?
           {
-            cout << "\naffServer: non-NEW msg : no such map" << endl; //todo: system error
+            sendErrorMsg("affServer: non-NEW msg : no such map");
             return;
           }
         _mapIdToAffIdMaps[aptr->_map_id] = AffIdMap(new unordered_map<int32_t,AffPlusPtr>()); //add map
@@ -154,7 +205,7 @@ void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf,
       {
         if (affordance_plus->aff.aff_store_control != drc::affordance_t::NEW) //new object?
           {
-            cout << "\naffServer: non-NEW msg : no such object" << endl;
+            sendErrorMsg("affServer: non-NEW msg : no such object");
             return;
           }
         aptr->_uid = _nextObjectUID++; //set object id
@@ -169,6 +220,30 @@ void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf,
 
 	_serverMutex.unlock(); //========unlock
 }
+
+  void AffordanceServer::handleTimeUpdate(const lcm::ReceiveBuffer*rbuf,
+                                          const std::string &channel,
+                                          const drc::utime_t *new_time)
+  {
+    _latest_utime = new_time->utime;
+  }
+
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //=======================================
+  //======================publishing
 
 void AffordanceServer::runPeriodicLightPublish()
 {
@@ -189,6 +264,7 @@ void AffordanceServer::runPeriodicLightPublish()
 			{
 				shared_ptr<drc::affordance_t> a(new drc::affordance_t());
 				mIt->second->aff->toMsg(a.get());
+                a->utime = _latest_utime;
 				msg.affs.push_back(*a);
 			}
 		}
@@ -224,6 +300,7 @@ void AffordanceServer::runPeriodicPlusPublish()
 			{
               shared_ptr<drc::affordance_plus_t> a(new drc::affordance_plus_t());
               mIt->second->toMsg(a.get());
+              a->aff.utime = _latest_utime;
               msg.affs_plus.push_back(*a);
 			}
 		}
@@ -237,6 +314,12 @@ void AffordanceServer::runPeriodicPlusPublish()
 
 		_serverMutex.unlock(); //=====unlock
 	}
+}
+
+void AffordanceServer::sendErrorMsg(const string &s) const
+{
+  //todo 
+  cout << "\n\n===ERROR:\n" << s << "\n========\n\n" << endl;
 }
 
 } //namespace affordance

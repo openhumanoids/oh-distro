@@ -13,6 +13,11 @@ using namespace Eigen;
 using namespace boost;
 using namespace std;
 
+/**construct empty affordance plus state*/
+AffordancePlusState::AffordancePlusState()
+{
+}
+
 /**Constructs an AffordancePlusState from an lcm message.*/
 AffordancePlusState::AffordancePlusState(const drc::affordance_plus_t *msg) 
 {

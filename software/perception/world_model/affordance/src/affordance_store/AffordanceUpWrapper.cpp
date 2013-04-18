@@ -91,8 +91,26 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
     msg.aff_store_control = drc::affordance_t::UPDATE;
 
 	_lcm->publish(AffordanceServer::AFFORDANCE_TRACK_CHANNEL, &msg);
+
 	_accessMutex.unlock(); //========unlock
   }
+
+
+  /***/
+  void AffordanceUpWrapper::updateTrackedAffordancePlus(const AffordancePlusState &affp)
+  {
+    _accessMutex.lock(); //=========lock
+
+	drc::affordance_plus_t msg;
+	affp.toMsg(&msg);
+    msg.aff.aff_store_control = drc::affordance_t::UPDATE;
+
+	_lcm->publish(AffordanceServer::AFFORDANCE_PLUS_TRACK_CHANNEL, &msg);
+
+	_accessMutex.unlock(); //========unlock
+  }
+
+
 
 
 /**receives affordance collection message from server -- which represents

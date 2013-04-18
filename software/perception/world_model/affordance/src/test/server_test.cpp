@@ -60,23 +60,32 @@ void runTest(const shared_ptr<lcm::LCM> lcm)
             }
 		}
 
-		if (j == 15 || j == 20)
+		if (j == 15 || j == 20 || j == 25)
 		{
-		  AffordanceState s;
-		  s._map_id 	 = 7;
-		  s._uid = 21; //should get set to 1 by the server		  
-		  s._params[AffordanceState::LENGTH_NAME] = .11111;
-		  s._params[AffordanceState::WIDTH_NAME] = 0;
-		  s._params[AffordanceState::HEIGHT_NAME] = 0;
-          s.setType(AffordanceState::BOX);
+		  AffPtr s(new AffordanceState());
+		  s->_map_id 	 = 7;
+		  s->_uid = 21; //should get set to 1 by the server		  
+		  s->_params[AffordanceState::LENGTH_NAME] = .11111;
+		  s->_params[AffordanceState::WIDTH_NAME] = 0;
+		  s->_params[AffordanceState::HEIGHT_NAME] = 0;
+          s->setType(AffordanceState::BOX);
 
           if (j == 15)
-            wrapper.addNewlyFittedAffordance(s);
-          else
+            wrapper.addNewlyFittedAffordance(*s);
+          else if (j == 20)
             {
               //need the actual uid now
-              s._uid = 2; //this will be the uid that it gets set to by affordance store.  
-              wrapper.deleteAffordance(s);
+              s->_uid = 2; //this will be the uid that it gets set to by affordance store.  
+              AffordancePlusState plus;
+              plus.aff = s;
+              plus.points.push_back(Eigen::Vector3f(1.1,2.2,3.3));
+              plus.triangles.push_back(Eigen::Vector3i(4,5,6));
+              wrapper.updateTrackedAffordancePlus(plus);
+            }
+          else
+            {
+              s->_uid = 2; 
+              wrapper.deleteAffordance(*s);
             }
 		}
 	}

@@ -434,6 +434,7 @@ namespace affordance
   ostream& operator<<(ostream& out, const AffordanceState& other )
   {
     out << "=====Affordance " << other.getType() << "========" << endl;
+    out << "time = " << other._utime << endl;
     out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
         << other._uid << ", " << other.getType() << ")\n";
     out << "------params: \n" << AffordanceState::toStrFromMap(other._params) << endl;;

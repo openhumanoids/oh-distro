@@ -41,6 +41,7 @@ public:
 	void addNewlyFittedAffordance(const AffordanceState &aff);
 	void deleteAffordance(const AffordanceState &aff);
 	void updateTrackedAffordance(const AffordanceState &aff);
+	void updateTrackedAffordancePlus(const AffordancePlusState &aff);
 
 private:
 	void handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,

@@ -29,6 +29,7 @@ namespace affordance
     
     //-----------constructor/destructor
   public:
+    AffordancePlusState(void);
     AffordancePlusState(const drc::affordance_plus_t *affordancePlusMsg);
     AffordancePlusState& operator=(const AffordancePlusState& rhs);
     virtual ~AffordancePlusState();    

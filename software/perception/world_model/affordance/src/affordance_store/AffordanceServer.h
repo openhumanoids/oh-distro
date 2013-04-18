@@ -38,9 +38,14 @@ public:
 
 
 	/**Channel for affordance updates from tracking
-	   an affordance_t message received on this channel will be added to the server and
-	 * will replace any existing affordance with the same map/objectId.*/
+	   an affordance_t message received on this channel will be added to the server 
+       and  will replace any existing affordance with the same map/objectId.*/
 	const static std::string AFFORDANCE_TRACK_CHANNEL;
+
+	/**Channel for affordance updates from tracking
+	   an affordance_t message received on this channel will be added to the server 
+       and  will replace any existing affordance with the same map/objectId.*/
+	const static std::string AFFORDANCE_PLUS_TRACK_CHANNEL;
 
 	/**Channel for new affordances from fitting
 	   an affordance_t message received on this channel will be added to the
@@ -78,6 +83,9 @@ private:
 	/**mutex for _mapIdToAffIdMaps*/
 	boost::mutex _serverMutex;
 
+    /**most recently received utime on ROBOT_UTIME channel*/
+    int64_t _latest_utime;
+
 	//--------constructor/destructor
 public:
 	AffordanceServer(const boost::shared_ptr<lcm::LCM> lcm);
@@ -88,16 +96,28 @@ private:
 	void handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf, 
                                   const std::string& channel,
                                   const drc::affordance_t *affordance);
+
+
+	void handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rbuf, 
+                                      const std::string& channel,
+                                      const drc::affordance_plus_t *affordance_plus);
+
 	void handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, 
                                 const std::string& channel,
                                 const drc::affordance_plus_t *affordance_plus);
 
     void nukeAndOverwrite(const lcm::ReceiveBuffer* rbuf, 
-                                const std::string& channel,
-                                const drc::affordance_plus_collection_t *affordance_plus);
+                          const std::string& channel,
+                          const drc::affordance_plus_collection_t *affordance_plus);
+
+    void handleTimeUpdate(const lcm::ReceiveBuffer* rbuf, 
+                         const std::string& channel,
+                         const drc::utime_t *time);
 
 	void runPeriodicLightPublish(void);
 	void runPeriodicPlusPublish(void);
+
+    void sendErrorMsg(const std::string &) const;
 };
 
 } //namespace affordance
