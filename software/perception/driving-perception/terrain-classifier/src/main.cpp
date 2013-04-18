@@ -34,7 +34,7 @@ struct RoadDetectorOptions {
     std::string vCHANNEL;
     bool vSILENT;
     RoadDetectorOptions () : 
-        vCHANNEL(std::string("CAMERALEFT")), vDEBUG(false), vSILENT(true){}
+        vCHANNEL(std::string("CAMERALEFT")), vDEBUG(false), vSILENT(false){}
 };
 
 typedef struct _ImageVertex ImageVertex;
@@ -312,12 +312,14 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     cv::Mat1b road_paint_dil;
     dilate_mask(road_paint, road_paint_dil, 2);
 
-    cv::imshow("Road Paint (Small Dilation)" , road_paint_dil);
+    if(!self->options.vSILENT)
+        cv::imshow("Road Paint (Small Dilation)" , road_paint_dil);
     //maybe dilate the road paint a bit 
 
     cv::Mat1b road_and_paint = (mask_dil_small | road_paint_dil);
-  
-    cv::imshow("Road with Paint", road_and_paint);
+      
+    if(!self->options.vSILENT)
+        cv::imshow("Road with Paint", road_and_paint);
 
     vector<cv::Point> largest_contour;
     vector< vector<cv::Point> > obs_contours;
@@ -347,7 +349,8 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     }
 
     cv::Mat1b sm_display = mask.clone();
-    cv::imshow("Basic Road Detection", sm_display);
+    if(!self->options.vSILENT)
+        cv::imshow("Basic Road Detection", sm_display);
   
     return 0;
 }
@@ -959,7 +962,9 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
     int last_valid_ind = 0;
 
     vector<cv::Point> transformed_contour_points;
-    cv::Mat1b mask_count = cv::Mat1b::zeros(img_size);
+    //cv::Mat1b mask_count = cv::Mat1b::zeros(img_size);
+    
+    cv::Mat mask_count = cv::Mat3b::zeros(img_size);//, CV_8U);
     const cv::Scalar color_1(255,255,255);
     const cv::Scalar color_obs(0,0,255);
 
@@ -1021,7 +1026,8 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
   
     for(size_t i=0; i < obstacles.size(); i++){
         vector<cv::Point> obs = obstacles[i];
-    
+        //fprintf(stderr, "Size of obs : %d\n", obs.size());
+        //we might want to skip these objects - if they are small??
         vector<cv::Point> tf_obs_points; 
         for(size_t j=0; j < obs.size(); j++){
       
@@ -1029,7 +1035,7 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
     
             int ind = pt.x + pt.y * img_size.width;
     
-            cv::circle(mask_count, pt ,3, color_1,  2);
+            cv::circle(mask_count, pt ,3, color_obs,  2);
     
             ImageVertex *v = &self->vertices[ind];
     
@@ -1094,8 +1100,6 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
         }
     }
 
-    //cv::Mat1b obs_free_map = (!filled_obs_map);
-
     cv::imshow("Contour Points (Img Space)", mask_count);
   
     const int filled_count = (int)transformed_contour_points.size();
@@ -1104,8 +1108,9 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
   
     cv::Mat1b road_map = (filled_obs_map==0 & filled_map);
 
-    imshow("Filled Transformed Contour", filled_map);
-
+    if(!self->options.vSILENT)
+        imshow("Filled Transformed Contour", filled_map);
+    
     imshow("Transformed Road Map", road_map);
 
     cv::Mat1b road_outline = (road_map >0);//(filled_map >0);
