@@ -95,15 +95,69 @@ void dilate_mask(cv::Mat1b& mask, cv::Mat1b& mask_new, int offset=OFFSET_LARGE){
   }
 }
 
+static bool contour_size_compare(const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) { 
+    return lhs.second < rhs.second;
+}
+
+#if 0
+void find_contours(cv::Mat1b& _mask, 
+                   std::vector<cv::Point>& largest_contour, 
+                   std::vector<std::vector<cv::Point> >& inner_contours) { 
+
+  // find hierarchical contours
+  cv::findContours(mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE); 
+  filled_contour = cv::Mat::zeros(size, CV_8U);
+
+  std::vector<std::pair<int, int> > contour_sizes; 
+  for (int idx=0; idx>=0; idx = hierarchy[idx][0]) { 
+      cv::Mat zmat = filled_contour.clone();
+      drawContours(zmat, contours, idx, cv::Scalar(255), CV_FILLED, 8, hierarchy); 
+      contour_sizes.push_back(std::make_pair(idx, cv::countNonZero(zmat)));
+  }
+
+  std::vector<std::pair<int, int> >::iterator it = 
+      std::max_element(contour_sizes.begin(), contour_sizes.end(), contour_size_compare);
+  int largest_contour_id = it->first;
+  // std::cerr << "MAX ID : " << largest_contour_id << std::endl;
+
+  // cv::Mat zmat = filled_contour.clone();
+  // drawContours(zmat, contours, largest_contour_id, cv::Scalar(255), CV_FILLED, 8, hierarchy); 
+  // cv::Mat3b zmat2 = cv::Mat3b::zeros(zmat.size());
+  // for (int idx=largest_contour_id; idx<largest_contour_id+1; idx++) { 
+  //     std::vector<cv::Point>& contourj = contours[idx]; 
+  //     for (int j=0; j<contourj.size(); j++)
+  //         cv::circle(zmat2, contourj[j], 1, cv::Scalar(0,255,0)); 
+  // }
+
+  // Find all contours with the largest component as their parent
+  std::vector<int> contour_children; 
+  for (int idx=0; idx<contours.size(); idx++) { 
+      if (hierarchy[idx][3] == largest_contour_id)
+          contour_children.push_back(idx);
+  }
+
+  std::vector<std::vector<cv::Point> > inner_contours; 
+  for (int j=0; j<contour_children.size(); j++) { 
+      int idx = contour_children[j];
+      inner_contours.push_back(contours[idx]);
+  }
+
+  // cv::imshow("zmat", zmat);
+  // cv::imshow("zmat2", zmat2);
+  return;
+}
+#endif
+
 int find_contours(cv::Mat1b& _mask, cv::Mat1b& filled_contour, vector<cv::Point>&largest_contour){
 
   cv::Mat1b mask = _mask.clone();
   cv::Size size(mask.cols, mask.rows);
   vector<vector<cv::Point> > contours;
+  vector<cv::Vec4i> hierarchy;
 
   // find contours and store them all as a list
-  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-  
+  cv::findContours(mask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE); 
+
   //find largest contour
   int largest_countour_id = -1;
   int max_size = 0;
@@ -249,8 +303,8 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
   cv::Mat1b mask_dil_small;
   dilate_mask(mask, mask_dil_small, 2);
 
-  cv::Mat1b road_paint = (mask_dil_small == 0 & filled_contour_l >0 & (hue <30 & hue > 15));
-
+  cv::Mat1b road_paint = (mask_dil_small == 0 & filled_contour_l >0 & (hue <30 & hue > 15))
+;
   cv::Mat1b road_paint_dil;
   dilate_mask(road_paint, road_paint_dil, 2);
 
