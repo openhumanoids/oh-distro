@@ -221,7 +221,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 
     if(self->driving_status){
         sprintf(line7, "veh k[%d] dir[%d] hb[%.2f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
-        sprintf(line8, " hw[%.1f] bp[%.2f] gp[%.2f]", bot_to_degrees(self->driving_status->direction), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
+        sprintf(line8, " hw[%.1f] bp[%.2f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
     }
 
     //double x = hind * 110 + 120;
