@@ -48,7 +48,7 @@ classdef HarnessController < DRCController
       end
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name);
-      obj = addPrecomputeResponseHandler(obj,'STANDING_PREC_RESPONSE','standing');
+%       obj = addPrecomputeResponseHandler(obj,'STANDING_PREC_RESPONSE','standing');
     end
     
     function obj = initialize(obj,data)

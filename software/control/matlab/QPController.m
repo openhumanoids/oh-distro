@@ -187,14 +187,17 @@ classdef QPController < MIMODrakeSystem
       end
       if typecheck(zmpd.S,'double')
         S = zmpd.S;
-        com_des = zmpd.comtraj;
+        xlimp0 = zmpd.xlimp0;
       else
         S = zmpd.S.eval(t);
-        com_des = zmpd.comtraj.eval(t);
       end
       G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
       xlimp = [xcom(1:2); J*qd]; % state of LIP model
-      x_bar = xlimp - [com_des;0;0];
+      if zmpd.ti_flag
+        x_bar = xlimp - xlimp0;
+      else
+        x_bar = xlimp;
+      end
     end
     
     %----------------------------------------------------------------------

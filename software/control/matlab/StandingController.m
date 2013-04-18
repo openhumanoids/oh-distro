@@ -54,11 +54,9 @@ classdef StandingController < DRCController
         % build TI-ZMP controller 
         foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-        comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
+        comgoal = mean(foot_pos(1:2,ch),2);
         limp = LinearInvertedPendulum(com(3));
-        options.Qy = diag([0 0 0 0 1 1]);
-        [~,V] = tilqr(limp,Point(limp.getStateFrame,[comgoal(1:2);0;0]), ...
-                      Point(limp.getInputFrame),zeros(4),zeros(2),options);
+        [~,V] = lqr(limp,comgoal);
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
@@ -66,6 +64,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('h',com(3));
         obj.controller_data.setField('hddot',0);
         obj.controller_data.setField('qtraj',q0);
+        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
         obj.controller_data.setField('ti_flag',true);
 
@@ -93,11 +92,9 @@ classdef StandingController < DRCController
         % build TI-ZMP controller 
         foot_pos = contactPositions(obj.robot,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-        comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
+        comgoal = mean(foot_pos(1:2,ch),2);
         limp = LinearInvertedPendulum(com(3));
-        options.Qy = diag([0 0 0 0 1 1]);
-        [~,V] = tilqr(limp,Point(limp.getStateFrame,[comgoal(1:2);0;0]), ...
-                      Point(limp.getInputFrame),zeros(4),zeros(2),options);
+        [~,V] = lqr(limp,comgoal);
 
         foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
 
@@ -105,6 +102,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('h',com(3));
         obj.controller_data.setField('hddot',0);
         obj.controller_data.setField('qtraj',q0);
+        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
         obj.controller_data.setField('ti_flag',true);
       end

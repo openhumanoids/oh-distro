@@ -35,14 +35,14 @@ com = getCOM(r,kinsol);
 % build TI-ZMP controller 
 foot_pos = contactPositions(r,q0); 
 ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-comgoal = [mean(foot_pos(1:2,ch),2);com(3)];
+comgoal = mean(foot_pos(1:2,ch),2);
 limp = LinearInvertedPendulum(com(3));
-[~,V] = lqr(limp,comgoal(1:2));
+[~,V] = lqr(limp,comgoal);
 
 foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
 zmpdata = SharedDataHandle(struct('S',V.S,'h',com(3),'hddot',0,'qtraj',q0,...
-             'comtraj',comgoal(1:2),'supptraj',foot_support,'ti_flag',true));
+             'xlimp0',[comgoal;0;0],'supptraj',foot_support,'ti_flag',true));
 
 % instantiate QP controller
 options.slack_limit = 20.0;
