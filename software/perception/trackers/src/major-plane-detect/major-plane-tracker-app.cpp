@@ -115,10 +115,8 @@ void Pass::publishUpdatedAffordance(){
     last_tracked_affp_msg_.triangles[i].resize(3);
     for(int j=0;j<3;j++) last_tracked_affp_msg_.triangles[i][j] = triangle[j];
   }
-  // Not supported yet:
-  //lcm_->publish("AFFORDANCE_PLUS_TRACK", &last_tracked_affp_msg_);
-  
-  lcm_->publish("AFFORDANCE_TRACK", &last_tracked_affp_msg_.aff);
+  lcm_->publish("AFFORDANCE_PLUS_TRACK", &last_tracked_affp_msg_);
+  //lcm_->publish("AFFORDANCE_TRACK", &last_tracked_affp_msg_.aff);
 }
 
 void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, 
