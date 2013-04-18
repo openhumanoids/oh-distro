@@ -52,6 +52,7 @@ typedef struct  {
     double hand_brake;
     double gas_pedal;
     double brake_pedal;
+    int verbose;
     
     int direction;
     int key;    
@@ -121,13 +122,14 @@ static void *track_work_thread(void *user)
 
     while(1){
         pthread_mutex_lock(&state->mutex);
-
-        fprintf(stderr, "Hand Brake : %f\n", state->hand_brake);
-        fprintf(stderr, "Hand Wheel : %f\n", state->hand_wheel);
-        fprintf(stderr, "Brake Pedal : %f\n", state->brake_pedal);
-        fprintf(stderr, "Gas Pedal : %f\n", state->gas_pedal);
-        fprintf(stderr, "Direction : %d\n", state->direction);
-        fprintf(stderr, "Key : %d\n\n", state->key);
+        if(state->verbose){
+            fprintf(stderr, "Hand Brake : %f\n", state->hand_brake);
+            fprintf(stderr, "Hand Wheel : %f\n", state->hand_wheel);
+            fprintf(stderr, "Brake Pedal : %f\n", state->brake_pedal);
+            fprintf(stderr, "Gas Pedal : %f\n", state->gas_pedal);
+            fprintf(stderr, "Direction : %d\n", state->direction);
+            fprintf(stderr, "Key : %d\n\n", state->key);
+        }
 
         drc_driving_status_t msg;
         msg.utime = bot_timestamp_now();
@@ -141,7 +143,7 @@ static void *track_work_thread(void *user)
         drc_driving_status_t_publish(state->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", &msg);
         
         pthread_mutex_unlock(&state->mutex);
-        usleep(5000);
+        usleep(50000);
     }
 }
 
@@ -159,7 +161,7 @@ int main(int argc, char **argv)
    */
     state = new state_t();
     state->lcm= lcm_create(NULL);
-    
+    state->verbose = 0;
     state->robot_name = "drc_vehicle";
     ros::init(argc, argv, "listener");
     
