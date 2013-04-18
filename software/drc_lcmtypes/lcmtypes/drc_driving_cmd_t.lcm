@@ -2,6 +2,18 @@ package drc;
 
 struct driving_cmd_t
 {
-  int64_t utime;  
-  double drive_duration; 
+        int64_t utime;  
+        double drive_duration; 
+        double throttle_ratio;
+        double throttle_duration;
+
+        double kp_steer;
+        double lookahead_dist;
+        
+        int8_t type;    
+        const int8_t TYPE_USE_ROAD_LOOKAHEAD = 0;  //use the road detection to pick the lookahead (at the set lookahead distance
+        const int8_t TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD = 1;  //use the TLD tracker heading with road to pick local direction
+        const int8_t TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD = 2;  //use just the TLD tracker heading    
+        
+        const int8_t TYPE_USE_USER_HEADING = 3;  //use the user's published heading 
 }
