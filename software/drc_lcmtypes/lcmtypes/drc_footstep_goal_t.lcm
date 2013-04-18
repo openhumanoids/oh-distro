@@ -8,6 +8,7 @@ struct footstep_goal_t
 	int64_t step_time;
 	int32_t id;
 	boolean is_right_foot;
+	boolean is_in_contact;
 	boolean fixed_x;
 	boolean fixed_y;
 	boolean fixed_z;
