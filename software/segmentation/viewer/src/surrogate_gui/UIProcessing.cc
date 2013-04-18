@@ -26,6 +26,16 @@ using namespace Eigen;
 namespace surrogate_gui
 {
 
+  int start_spy_counter=0;
+  static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
+  {
+    BotViewer *self = (BotViewer*) user_data;
+    if (start_spy_counter >0){ // is there a better way than this counter?
+      int i = system ("bot-spy &> /dev/null &");
+    }
+    start_spy_counter++;
+  }
+
 	//======================================
 	//======================================
 	//======================================
@@ -128,6 +138,15 @@ namespace surrogate_gui
 		//Clear Warning Messages
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_WARNING_MSGS, NULL);
 
+  // add custom TOP VIEW button
+  GtkWidget *start_spy_button;
+  start_spy_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_FIND);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(start_spy_button), "Bot Spy");
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(start_spy_button), viewer->tips, "Launch Bot Spy", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_spy_button), 4);
+  gtk_widget_show(start_spy_button);
+  g_signal_connect(G_OBJECT(start_spy_button), "clicked", G_CALLBACK(on_start_spy_clicked), viewer);
+  on_start_spy_clicked(NULL, (void *) viewer);  
 
 		//===========================================
 		//===========================================
