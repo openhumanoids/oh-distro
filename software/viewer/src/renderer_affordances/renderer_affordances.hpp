@@ -56,6 +56,7 @@
 
 #define RENDERER_NAME "Objects & StickyHands"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
+#define PARAM_SHOW_MESH "Show mesh"
 //#define PARAM_ADJUST_PARAM "Adjust Params"
 #define PARAM_OTDF_SELECT "Template"
 #define PARAM_OTDF_INSTANCE_SELECT "Instance"
@@ -235,6 +236,8 @@ typedef struct _RendererAffordances {
   
   GtkWidget *dblclk_popup;
   GtkWidget *second_stage_popup;
+
+  bool showMesh;  // if false, draws otdf, if true, draws mesh instead
 }RendererAffordances;
 
 

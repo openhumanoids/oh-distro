@@ -98,8 +98,24 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     const vector<Eigen::Vector3i>& tri = it->second.triangles;
     const vector<Eigen::Vector3f>& pts = it->second.points;
 
+    // if Show Mesh checked, set drawMesh to true
+    bool drawMesh = self->showMesh;
+
+    // if dynamic mesh, force drawMesh to true
+    std::vector<boost::shared_ptr<otdf::Link> > links;
+    it->second._otdf_instance->getLinks(links);
+    for(int i=0; i<links.size(); i++){
+      if(links[i]->visual && links[i]->visual->geometry){
+        cout << links[i]->visual->geometry->type << endl;
+        boost::shared_ptr<otdf::DynamicMesh> dmesh = 
+          dynamic_pointer_cast<otdf::DynamicMesh>(links[i]->visual->geometry);
+        
+        if(dmesh) drawMesh = true;
+      }
+    }
+
     // draw triangles if available
-    if(tri.size()>0){
+    if(tri.size()>0 && drawMesh){
       glPushMatrix();
       glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
       glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
@@ -112,7 +128,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     }
 
     // draw points if available and no triangles
-    if(pts.size()>0 && tri.size()==0){
+    if(pts.size()>0 && tri.size()==0 && drawMesh){
       glPushMatrix();
       glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
       glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
@@ -433,7 +449,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
     self->alpha = (float) bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
     bot_viewer_request_redraw(self->viewer);
+  }else if(!strcmp(name, PARAM_SHOW_MESH)) {
+    self->showMesh = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_MESH);
+    bot_viewer_request_redraw(self->viewer);  
   }
+
 
 
 }
@@ -531,6 +551,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   self->lhand_urdf_id= 0; // default file
   self->rhand_urdf_id= 1; // default file
   self->alpha = 1.0; // default opacity is full on
+  self->showMesh = false;
   bot_gtk_param_widget_add_separator (self->pw,"Objects");
   bot_gtk_param_widget_add_enumv (self->pw, PARAM_OTDF_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                          self->otdf_id,
@@ -543,6 +564,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   bot_gtk_param_widget_add_buttons(self->pw,PARAM_CLEAR, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_MESH, 0, NULL);
   
   bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA,
                                   BOT_GTK_PARAM_WIDGET_SLIDER,
@@ -559,7 +581,6 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 				                          self->num_urdfs,
 			                            (const char **)  self->urdf_names,
 			                            self->urdf_nums); 
-  
   
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   self->renderer.widget = GTK_WIDGET(self->pw);
