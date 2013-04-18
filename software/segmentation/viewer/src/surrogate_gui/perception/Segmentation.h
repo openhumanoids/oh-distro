@@ -14,6 +14,7 @@
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/model_types.h>
+#include <pcl/PolygonMesh.h>
 
 namespace surrogate_gui
 {
@@ -56,7 +57,8 @@ namespace surrogate_gui
 								  double &roll, double &pitch, double &yaw, 
 								  double &radius,
 								  double &height,
-                                                                  std::vector< std::vector<float> > &inliers,
+                  std::vector<Eigen::Vector3f>& points,
+                  std::vector<Eigen::Vector3i>& triangles,
 								  std::vector<double> &inliers_distances);
 			
 			static pcl::PointIndices::Ptr fitSphere(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
@@ -101,6 +103,12 @@ namespace surrogate_gui
 			static Eigen::Vector2f findOptimalRectangle(pcl::PointCloud<pcl::PointXYZRGB>& subcloud, 
                                                                     float plane[4], Eigen::Vector3f& center, 
                                                                     Eigen::Vector3f& ypr);
+
+    static void cloudToTriangles(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                                      pcl::PointIndices::Ptr indices,
+                                      std::vector<Eigen::Vector3f>& points,
+                                      std::vector<Eigen::Vector3i>& triangles);
+
 
 	}; //class Segmentation
 

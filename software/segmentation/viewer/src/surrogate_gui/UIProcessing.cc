@@ -993,7 +993,8 @@ namespace surrogate_gui
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
 	  double x,y,z,roll,pitch=0,yaw=0,radius,length=0.5;
 	  std::vector<double> inliers_distances;
-          std::vector< vector<float> > inliers;
+    std::vector< Vector3f > points;
+    std::vector< Vector3i > triangles;
 	  PointIndices::Ptr cylinderIndices 
 	    = Segmentation::fitCylinder(_surrogate_renderer._display_info.cloud,
                                         currObj->indices, fp,
@@ -1001,7 +1002,7 @@ namespace surrogate_gui
 					roll,pitch,yaw,
 					radius,
 					length, 
-                                        inliers,
+          points, triangles, 
 					inliers_distances);
 
 	  affordanceMsg.aff.params.push_back(radius);
@@ -1029,10 +1030,25 @@ namespace surrogate_gui
           affordanceMsg.aff.bounding_lwh[1] = radius*2;
           affordanceMsg.aff.bounding_lwh[2] = length;
 
-	  //inliers
-          affordanceMsg.npoints = inliers.size();
-          affordanceMsg.points = inliers;
-          affordanceMsg.ntriangles = 0;
+          // populate points
+          affordanceMsg.npoints = points.size();
+          affordanceMsg.points.resize(points.size());
+          for(int i=0;i<points.size();i++){
+            affordanceMsg.points[i].resize(3);
+            affordanceMsg.points[i][0] = points[i][0];
+            affordanceMsg.points[i][1] = points[i][1];
+            affordanceMsg.points[i][2] = points[i][2];
+          }
+
+          // populate triangles
+          affordanceMsg.ntriangles = triangles.size();
+          affordanceMsg.triangles.resize(triangles.size());
+          for(int i=0;i<triangles.size();i++){
+            affordanceMsg.triangles[i].resize(3);
+            affordanceMsg.triangles[i][0] = triangles[i][0];
+            affordanceMsg.triangles[i][1] = triangles[i][1];
+            affordanceMsg.triangles[i][2] = triangles[i][2];
+          }
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 

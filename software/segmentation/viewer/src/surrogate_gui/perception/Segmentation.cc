@@ -31,6 +31,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/registration/icp.h>
+#include <pcl/surface/gp3.h>
 
 #include <pointcloud_tools/filter_planes.hpp>
 
@@ -393,7 +394,8 @@ namespace surrogate_gui
                 double &roll, double &pitch, double &yaw, 
                 double &radius,
                 double &length,  
-                std::vector< vector<float> > &inliers,
+                std::vector<Eigen::Vector3f>& points,
+                std::vector<Eigen::Vector3i>& triangles,
                 std::vector<double> & inliers_distances)
   {
     cout << "\n in fit cylinder.  num indices = " << subcloudIndices->size() << endl;
@@ -501,7 +503,21 @@ namespace surrogate_gui
     length = (pMax-pMin).norm();
 
     // remove xyzypr from inliers and copy to output
-    remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), Vector3f(yaw,pitch,roll), inliers);
+    if(true){
+      vector<vector<float> > pointsV;
+      remove_xyzypr(subcloud, cylinderIndices, Vector3f(x,y,z), 
+                                         Vector3f(yaw,pitch,roll), pointsV);
+      points.resize(pointsV.size());
+      for(int i=0;i<pointsV.size();i++){
+        points[i][0] = pointsV[i][0];
+        points[i][1] = pointsV[i][1];
+        points[i][2] = pointsV[i][2];
+      }
+    } else {
+      // compute triangles
+      cloudToTriangles(subcloud, cylinderIndices, points, triangles);
+      remove_xyzypr(points, Vector3f(x,y,z), Vector3f(yaw,pitch,roll));
+    }
 
     // residuals 
     inliers_distances.clear ();
@@ -1001,6 +1017,78 @@ Vector2f Segmentation::getLengthWidth(PointCloud<PointXYZRGB>& subcloud,
     return lengthWidth;
   }
 
+
+  void Segmentation::cloudToTriangles(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                                      PointIndices::Ptr indices,
+                                      std::vector<Eigen::Vector3f>& points,
+                                      std::vector<Eigen::Vector3i>& triangles){
+
+    // apply grid filter
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::VoxelGrid<pcl::PointXYZRGB> voxel_grid_filter_;
+    voxel_grid_filter_.setLeafSize (0.0075, 0.0075, 0.0075);
+    voxel_grid_filter_.setInputCloud (cloud_in);
+    if(indices && indices->indices.size()!=0) voxel_grid_filter_.setIndices(indices);
+    voxel_grid_filter_.filter (*cloud);  
+
+    // Normal estimation*
+    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> n;
+    pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
+    tree->setInputCloud (cloud);
+    n.setInputCloud (cloud);
+    n.setSearchMethod (tree);
+    n.setKSearch (20);
+    n.compute (*normals);
+    //* normals should not contain the point normals + surface curvatures
+
+    // Concatenate the XYZ and normal fields*
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+    pcl::concatenateFields (*cloud, *normals, *cloud_with_normals);
+    //* cloud_with_normals = cloud + normals
+
+    // Create search tree*
+    pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
+    tree2->setInputCloud (cloud_with_normals);
+
+    // Initialize objects
+    pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+    pcl::PolygonMesh polymesh;
+
+    
+    // Set the maximum distance between connected points (maximum edge length)
+    gp3.setSearchRadius (0.055);
+    // Set typical values for the parameters
+    gp3.setMaximumNearestNeighbors (100); // higher seems to make smaller triangles
+    gp3.setMu (2.5);
+    gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
+    gp3.setMinimumAngle(M_PI/18); // 10 degrees
+    gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
+    gp3.setNormalConsistency(false);
+
+    // Get result
+    gp3.setInputCloud (cloud_with_normals);
+    gp3.setSearchMethod (tree2);
+    gp3.reconstruct (polymesh);
+
+    // get points
+    points.resize(cloud->size());
+    for(int i=0;i<cloud->size();i++){
+      points[i][0] = cloud->at(i).x;
+      points[i][1] = cloud->at(i).y;
+      points[i][2] = cloud->at(i).z;
+    }
+
+    // get triangles
+    triangles.clear();
+    for(int i=0;i<polymesh.polygons.size();i++){
+      Vertices& v = polymesh.polygons[i];
+      for(int j=0;j<v.vertices.size()-2;j++){
+        Vector3i triangle(v.vertices[0],v.vertices[j+1],v.vertices[j+2]);
+        triangles.push_back(triangle);
+      }
+    }
+  }
 
   //==================
   //---------non-instantiable
