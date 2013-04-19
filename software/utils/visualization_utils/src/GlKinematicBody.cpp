@@ -536,6 +536,7 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
           x= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.x;
           y= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.y;
           z= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.z; 
+          w= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.w; 
           T_parentlink_jointorigin.M = KDL::Rotation::Quaternion(x,y,z,w);
 
           if(transform_it!=cartpos_out.end())// fk cart pos exists
@@ -798,7 +799,8 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
           double x,y,z,w;       
           x= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.x;
           y= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.y;
-          z= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.z; 
+          z= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.z;
+          w= it->second->child_joints[i]->parent_to_joint_origin_transform.rotation.w;  
           T_parentlink_jointorigin.M = KDL::Rotation::Quaternion(x,y,z,w);
 
           if(transform_it!=cartpos_out.end())// fk cart pos exists
@@ -813,8 +815,13 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
               jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
               jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
-              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              
+              // axis is specified in joint frame 
+             jointInfo.axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.axis;
+              //or is axis specified in parent link frame
+              // jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;   
               jointInfo.axis.Normalize();
+              
               jointInfo.type=it->second->child_joints[i]->type;
               
               //store
@@ -830,8 +837,13 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
                     jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
                     jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
                     jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
-                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
-                    _joint_tfs[index].future_axis.Normalize();
+                   
+                   // axis is specified in parent link frame of the joint
+                  _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.future_axis;
+                   //or is axis specified in body frame
+                   // _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                   _joint_tfs[index].future_axis.Normalize();
+                    
                 }
               } // end if  (!update_future_frame)        
             
@@ -848,7 +860,10 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
               jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
               jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
-              jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis;
+              // axis is specified in parent link frame of the joint
+              jointInfo.axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.axis;
+              //or is axis specified in body frame
+              //jointInfo.axis= T_world_body.M*T_body_parentlink.M*jointInfo.axis; 
               jointInfo.axis.Normalize();
               jointInfo.type=it->second->child_joints[i]->type;
               
@@ -865,8 +880,11 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
                     jointInfo.future_axis[0]=it->second->child_joints[i]->axis.x;
                     jointInfo.future_axis[1]=it->second->child_joints[i]->axis.y;
                     jointInfo.future_axis[2]=it->second->child_joints[i]->axis.z;
-                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
-                    _joint_tfs[index].future_axis.Normalize();
+                    _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.future_axis;
+                    
+                   //or is axis specified in body frame
+                  // _joint_tfs[index].future_axis= T_world_body.M*T_body_parentlink.M*jointInfo.future_axis;
+                   _joint_tfs[index].future_axis.Normalize();
                 }
               } // end if  (!update_future_frame)     
           }
