@@ -99,6 +99,8 @@ void AffordanceServer::handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rb
     (*scene)[aptr->aff->_uid] = aptr; //actually update
 
 	_serverMutex.unlock(); //========unlock
+
+    publishPlusOneTime(); //publish this update
 }
 
 
@@ -271,7 +273,7 @@ void AffordanceServer::runPeriodicLightPublish()
 
 		msg.naffs 		= msg.affs.size();
 		msg.map_id 		= -1;
-		msg.utime 	= -1;
+		msg.utime 	    = _latest_utime;
 		msg.name 		= "affordanceServerPeriodicLightPublish";
 
 		_lcm->publish(AFF_SERVER_CHANNEL, &msg); //====publish
@@ -287,33 +289,39 @@ void AffordanceServer::runPeriodicPlusPublish()
 	while(true)
 	{
 		boost::this_thread::sleep(sleepTime); //======sleep
-
-		_serverMutex.lock(); //======lock
-
-		drc::affordance_plus_collection_t msg;
-		for(unordered_map<int32_t, AffIdMap>::const_iterator iter = _mapIdToAffIdMaps.begin();
-			iter != _mapIdToAffIdMaps.end(); ++iter)
-		{
-			AffIdMap nextMap = iter->second;
-			for(unordered_map<int32_t, AffPlusPtr>::const_iterator mIt = nextMap->begin();
-				mIt != nextMap->end(); ++mIt)
-			{
-              shared_ptr<drc::affordance_plus_t> a(new drc::affordance_plus_t());
-              mIt->second->toMsg(a.get());
-              a->aff.utime = _latest_utime;
-              msg.affs_plus.push_back(*a);
-			}
-		}
-
-		msg.naffs 		= msg.affs_plus.size();
-		msg.map_id 		= -1;
-		msg.utime 	    = -1;
-		msg.name 		= "affordanceServerPeriodicPlusPublish";
-
-		_lcm->publish(AFF_PLUS_SERVER_CHANNEL, &msg); //====publish
-
-		_serverMutex.unlock(); //=====unlock
+        publishPlusOneTime();
 	}
+}
+
+
+void AffordanceServer::publishPlusOneTime()
+{
+
+  _serverMutex.lock(); //======lock
+  
+  drc::affordance_plus_collection_t msg;
+  for(unordered_map<int32_t, AffIdMap>::const_iterator iter = _mapIdToAffIdMaps.begin();
+      iter != _mapIdToAffIdMaps.end(); ++iter)
+    {
+      AffIdMap nextMap = iter->second;
+      for(unordered_map<int32_t, AffPlusPtr>::const_iterator mIt = nextMap->begin();
+          mIt != nextMap->end(); ++mIt)
+        {
+          shared_ptr<drc::affordance_plus_t> a(new drc::affordance_plus_t());
+          mIt->second->toMsg(a.get());
+          a->aff.utime = _latest_utime;
+          msg.affs_plus.push_back(*a);
+        }
+    }
+  
+  msg.naffs 		= msg.affs_plus.size();
+  msg.map_id 		= -1;
+  msg.utime 	    = _latest_utime;
+  msg.name 		= "affordanceServerPeriodicPlusPublish";
+  
+  _lcm->publish(AFF_PLUS_SERVER_CHANNEL, &msg); //====publish
+  
+  _serverMutex.unlock(); //=====unlock
 }
 
 void AffordanceServer::sendErrorMsg(const string &s) const

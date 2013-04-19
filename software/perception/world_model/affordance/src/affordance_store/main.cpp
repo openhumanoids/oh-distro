@@ -20,10 +20,10 @@ int main(int argc, char ** argv)
 
   string lcm_url="";
   std::string role_upper;
-  for(short i = 0; i < role.size(); ++i)
+  for(ushort i = 0; i < role.size(); ++i)
      role_upper+= (std::toupper(role[i]));
   if((role.compare("robot") == 0) || (role.compare("base") == 0) ){
-    for(short i = 0; i < role_upper.size(); ++i)
+    for(ushort i = 0; i < role_upper.size(); ++i)
        role_upper[i] = (std::toupper(role_upper[i]));
     string env_variable_name = string("LCM_URL_DRC_" + role_upper); 
     char* env_variable;

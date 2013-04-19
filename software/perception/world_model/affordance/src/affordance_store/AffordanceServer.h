@@ -117,6 +117,8 @@ private:
 	void runPeriodicLightPublish(void);
 	void runPeriodicPlusPublish(void);
 
+    void publishPlusOneTime(void);
+
     void sendErrorMsg(const std::string &) const;
 };
 
