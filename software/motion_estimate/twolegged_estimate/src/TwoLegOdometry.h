@@ -10,8 +10,9 @@
 #include "TwoLegsEstimate_types.h"
 #include "lcmtypes/drc_lcmtypes.hpp"
 
-#define SCHMIDT_LEVEL	      0.7f
-#define TRANSITION_TIMEOUT    3000
+#define SCHMITT_LEVEL	               0.65f
+#define TRANSITION_TIMEOUT            4000
+#define STANDING_TRANSITION_TIMEOUT   50000
 
 namespace TwoLegs {
 
@@ -19,13 +20,17 @@ class TwoLegOdometry {
 	private:
 		Footsteps footsteps;
 		int standing_foot;
+		bool both_feet_in_contact;
 		bool foottransitionintermediateflag;
+		bool standingintermediate;
 		float expectedweight;
 		footforces leftforces;
 		footforces rightforces;
-		long lcmutime;
-		long deltautime;
-		long transition_timespan;
+		int64_t lcmutime;
+		int64_t deltautime;
+		int64_t transition_timespan;
+		int64_t standing_timer;
+		int64_t standing_delay;
 		int stepcount;
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
@@ -79,7 +84,7 @@ class TwoLegOdometry {
 		int primary_foot();
 		
 		bool FootLogic(long utime, float leftz, float rightz);
-		footstep DetectFootTransistion(long utime, float leftz, float rightz);
+		footstep DetectFootTransistion(int64_t utime, float leftz, float rightz);
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
 		Eigen::Isometry3d getSecondaryInLocal();
@@ -96,6 +101,8 @@ class TwoLegOdometry {
 		
 		int getStepCount();
 		int getActiveFoot();
+		float leftContactStatus();
+		float rightContactStatus();
 		
 		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 };

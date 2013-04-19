@@ -1,6 +1,7 @@
 
 
 #include <iostream>
+#include <cmath>
 
 #include "TwoLegOdometry.h"
 
@@ -24,6 +25,7 @@ TwoLegOdometry::TwoLegOdometry()
 	standing_foot = -1;
 	
 	foottransitionintermediateflag = true;
+	standingintermediate = true;
 	
 	// TODO - expected weight must be updated from live vehicle data and not be hard coded like this
 	expectedweight = 900.f;
@@ -39,8 +41,12 @@ TwoLegOdometry::TwoLegOdometry()
 	lcmutime = 0;
 	deltautime = 0;
 	transition_timespan = 0;
+	standing_timer = 0;
+	standing_delay = 0;
 	
 	stepcount = 0;
+	
+	both_feet_in_contact = true;
 }
 
 void TwoLegOdometry::parseRobotInput() {
@@ -122,7 +128,7 @@ int TwoLegOdometry::primary_foot() {
 	return standing_foot;
 }
 
-footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float rightz) {
+footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float rightz) {
 	
 	deltautime =  utime - lcmutime;
 	lcmutime = utime;
@@ -132,20 +138,23 @@ footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float ri
 	footstep newstep;
 	newstep.foot = -1;
 	
-	if (getSecondaryFootZforce() - SCHMIDT_LEVEL*expectedweight > getPrimaryFootZforce()) {
+	if (getSecondaryFootZforce() - SCHMITT_LEVEL*expectedweight > getPrimaryFootZforce()) {
 	  transition_timespan += deltautime;
 	}
 	else
 	{
 	  transition_timespan = 0.;
 	  foottransitionintermediateflag = true;
+	  
+	  // in the intermediate zone
+	  // potentially standing
 	}
 	  
 	if (transition_timespan > TRANSITION_TIMEOUT && foottransitionintermediateflag) 
 	{
 		Eigen::Isometry3d transform;
 		
-
+		
 		Eigen::Isometry3d temp;
 		temp = getSecondaryInLocal();
 #ifdef VERBOSE_DEBUG
@@ -158,6 +167,7 @@ footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float ri
 	  //new modular function call
 
 	  foottransitionintermediateflag = false;
+	  
 
 	  std::cout << "NEW STEP ON " << ((secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT") << " stepcount: " << stepcount << " at x= " << getSecondaryInLocal().translation().x() << std::endl;
 
@@ -166,7 +176,51 @@ footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float ri
 	  //newstep.footprintlocation = getSecondaryInLocal();
 	  newstep.footprintlocation = AccumulateFootPosition(getPrimaryInLocal(), primary_foot());
 	  
-	  //return newstep;
+	  //standing must be removed in time from a foot transition event
+  	  
+  	  standing_delay = 5*STANDING_TRANSITION_TIMEOUT;
+	  
+	} else {
+
+		
+			// What does this space mean
+			if (fabs(leftz*leftz - rightz*rightz) < (SCHMITT_LEVEL*expectedweight*SCHMITT_LEVEL*expectedweight)) {
+				
+				if (standing_delay > 0) {
+					standing_delay -= deltautime;
+					std::cout << "reducing standing delay to: " << standing_delay << std::endl;
+				} else {
+					standing_delay = 0;
+				}
+				
+				//25346000 - 25153000 = 193000
+				//25346000 - 25158000 = 188000
+				//25345000 - 25153000 = 192000
+				standing_timer += deltautime;
+			}
+			else
+			{
+				if (standing_timer>STANDING_TRANSITION_TIMEOUT)
+				{
+					standing_timer = STANDING_TRANSITION_TIMEOUT;
+					standingintermediate = true;
+				}
+				standing_timer -= deltautime;
+				if (standing_timer<0) {
+					standingintermediate = false;
+					standing_timer = 0;
+				}
+				else
+				{
+					std::cout << "Standing timer reduced to : " << standing_timer << "\n";
+				}
+			}
+			
+			if ((standing_timer > STANDING_TRANSITION_TIMEOUT && standing_delay<=0) || standingintermediate) {
+				std::cout << standing_timer << " standing with delay time: " << standing_delay << "\n";
+				
+			}
+		
 	}
 	
 	return newstep;
@@ -175,7 +229,7 @@ footstep TwoLegOdometry::DetectFootTransistion(long utime, float leftz, float ri
 bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   footstep newstep;
   newstep = DetectFootTransistion(utime, leftz, rightz);
-	
+  
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
@@ -367,3 +421,16 @@ int TwoLegOdometry::getActiveFoot() {
 	return standing_foot;
 }
 
+float TwoLegOdometry::leftContactStatus() {
+	if (getActiveFoot() == LEFTFOOT) {
+		return 1.0f;
+	}
+	return 0.0f;
+}
+
+float TwoLegOdometry::rightContactStatus() {
+	if (getActiveFoot() == RIGHTFOOT) {
+		return 1.0f;
+	}
+	return 0.0f;
+}

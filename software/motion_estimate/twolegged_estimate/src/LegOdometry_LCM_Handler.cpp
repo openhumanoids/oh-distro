@@ -16,6 +16,7 @@
 #include "QuaternionLib.h"
 
 
+
 using namespace TwoLegs;
 using namespace std;
 
@@ -52,9 +53,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	
 	firstpass = true;
 	
-#ifdef DISPLAY_FOOTSTEP_POSES
+#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
 	_viewer = new Viewer(lcm_viewer);
-	
 #endif
 	
 	return;
@@ -160,14 +160,15 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 	_leg_odo->setLegTransforms(left, right);
 	
-	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+	// TODO -- Check Changed the ordering on 18 April 2013 from (msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z)
+	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[0].z , msg->contacts.contact_force[1].z);
 	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 	
-#ifdef DISPLAY_FOOTSTEP_POSES
+#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
 	// here comes the drawing of poses
 	
-	//drawLeftFootPose();
-	//drawRightFootPose();
+	drawLeftFootPose();
+	drawRightFootPose();
 	//drawSumPose();
 	/*
 	std::cout << msg->utime << " ";
@@ -176,8 +177,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	addIsometryPose(79, _leg_odo->getPelvisFromStep());
 	*/
 	//std::cout << "Pelvis from step\n" << _leg_odo->getPelvisFromStep().linear() << std::endl;
+	_viewer->sendCollection(*_obj, true);
+#endif
 	
-	
+#ifdef DISPLAY_FOOTSTEP_POSES
 	if (legchangeflag)
 	{
 		//std::cout << "LEGCHANGE\n";
@@ -223,6 +226,19 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         
 
 	
+        PublishFootContactEst(msg->utime);
+}
+
+void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
+	drc::foot_contact_estimate_t msg_contact_est;
+	
+	msg_contact_est.utime = utime;
+	msg_contact_est.detection_method = DIFF_SCHMITT_WITH_DELAY;
+	
+	msg_contact_est.left_contact = _leg_odo->leftContactStatus();
+	msg_contact_est.right_contact = _leg_odo->rightContactStatus();
+	
+	lcm_->publish("FOOT_CONTACT_ESTIMATE",&msg_contact_est);
 }
 
 void LegOdometry_Handler::drawLeftFootPose() {
@@ -233,8 +249,6 @@ void LegOdometry_Handler::drawLeftFootPose() {
 	//addIsometryPose(98, _leg_odo->left_to_pelvis);
 	
 	//TODO - male left_to_pelvis and other private members in TwoLegOdometry class with get functions of the same name, as is done with Eigen::Isometry3d .translation() and .rotation()
-	
-	std::cout << "left to pelvis: ";
 	
 	addIsometryPose(97, _leg_odo->left_to_pelvis);
 	addIsometryPose(98, _leg_odo->left_to_pelvis);
@@ -268,6 +282,7 @@ void LegOdometry_Handler::drawSumPose() {
 	addIsometryPose(94,_leg_odo->getSecondaryInLocal());
 }
 
+
 void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d &target) {
   // TODO - why are negatives required here
   
@@ -276,7 +291,7 @@ void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d
   Eigen::Vector3d E;
   
   InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(target.linear()),E);
-  std::cout << "Going to draw: " << E.transpose() << "\n";
+  //std::cout << "Going to draw: " << E.transpose() << " @ " << target.translation().transpose() << "\n";
 	
   _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),E(2),0,0));
 	

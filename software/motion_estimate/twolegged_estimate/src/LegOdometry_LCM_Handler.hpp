@@ -47,6 +47,7 @@
 //#include "urdf/model.h"
 
 #define DISPLAY_FOOTSTEP_POSES
+#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
 
 class LegOdometry_Handler {
@@ -73,6 +74,7 @@ private:
 	int poseplotcounter;
 	int collectionindex;
 	bool firstpass;
+	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
 	
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
@@ -86,16 +88,18 @@ private:
 	
 	//void drc_transform_inverse(const drc::transform_t &in, drc::transform_t &out);
 
-#ifdef DISPLAY_FOOTSTEP_POSES
 	Viewer* _viewer;
 	
 	void addIsometryPose(int objnumber, const Eigen::Isometry3d &target);
+
 	void addFootstepPose_draw();
-	void drawLeftFootPose();
-	void drawRightFootPose();
-	void drawSumPose();
-#endif
 	
+	void drawSumPose();
+
+	void drawLeftFootPose();
+	void drawRightFootPose();	
+
+	void PublishFootContactEst(int64_t utime);
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
