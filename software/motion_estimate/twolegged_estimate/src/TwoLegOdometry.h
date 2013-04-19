@@ -11,8 +11,11 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 
 #define SCHMITT_LEVEL	               0.65f
-#define TRANSITION_TIMEOUT            4000
-#define STANDING_TRANSITION_TIMEOUT   50000
+#define TRANSITION_TIMEOUT             4000
+#define STANDING_TRANSITION_TIMEOUT   10000
+
+#define MIN_STANDING_FORCE			     50
+#define MIN_STANDING_FEET_X_SEP			0.1
 
 namespace TwoLegs {
 

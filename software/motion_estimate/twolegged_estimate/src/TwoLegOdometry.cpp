@@ -183,12 +183,17 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	} else {
 
 		
-			// What does this space mean
-			if (fabs(leftz*leftz - rightz*rightz) < (SCHMITT_LEVEL*expectedweight*SCHMITT_LEVEL*expectedweight)) {
+			double separation, loadsplit;
+			
+			loadsplit = abs(leftz*leftz - rightz*rightz) < (SCHMITT_LEVEL*expectedweight*SCHMITT_LEVEL*expectedweight);
+			separation = abs(pelvis_to_left.translation().x()) + abs(pelvis_to_right.translation().x());
+			
+			// Second layer of logic testing to isolate the robot standing condition
+			if (loadsplit && separation < MIN_STANDING_FEET_X_SEP && leftz > MIN_STANDING_FORCE && rightz > MIN_STANDING_FORCE) {
 				
 				if (standing_delay > 0) {
 					standing_delay -= deltautime;
-					std::cout << "reducing standing delay to: " << standing_delay << std::endl;
+					//std::cout << "reducing standing delay to: " << standing_delay << std::endl;
 				} else {
 					standing_delay = 0;
 				}
@@ -209,18 +214,29 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 				if (standing_timer<0) {
 					standingintermediate = false;
 					standing_timer = 0;
+					
+					both_feet_in_contact = false;
 				}
 				else
 				{
-					std::cout << "Standing timer reduced to : " << standing_timer << "\n";
+					//std::cout << "Standing timer reduced to : " << standing_timer << "\n";
 				}
 			}
 			
 			if ((standing_timer > STANDING_TRANSITION_TIMEOUT && standing_delay<=0) || standingintermediate) {
-				std::cout << standing_timer << " standing with delay time: " << standing_delay << "\n";
+				//std::cout << "Standing for: " << standing_timer <<  "\n";
+				both_feet_in_contact = true;
+			}
+			else
+			{
 				
 			}
-		
+			
+			if (both_feet_in_contact)
+			{
+				std::cout << "Standing for: " << standing_timer <<  "\n";
+			}
+				
 	}
 	
 	return newstep;
@@ -422,14 +438,14 @@ int TwoLegOdometry::getActiveFoot() {
 }
 
 float TwoLegOdometry::leftContactStatus() {
-	if (getActiveFoot() == LEFTFOOT) {
+	if (getActiveFoot() == LEFTFOOT || both_feet_in_contact) {
 		return 1.0f;
 	}
 	return 0.0f;
 }
 
 float TwoLegOdometry::rightContactStatus() {
-	if (getActiveFoot() == RIGHTFOOT) {
+	if (getActiveFoot() == RIGHTFOOT || both_feet_in_contact) {
 		return 1.0f;
 	}
 	return 0.0f;
