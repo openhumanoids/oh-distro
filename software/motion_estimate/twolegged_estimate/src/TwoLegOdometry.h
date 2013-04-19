@@ -10,6 +10,8 @@
 #include "TwoLegsEstimate_types.h"
 #include "lcmtypes/drc_lcmtypes.hpp"
 
+#include "SignalTap.hpp"
+
 #define SCHMITT_LEVEL	               0.65f
 #define TRANSITION_TIMEOUT             4000
 #define STANDING_TRANSITION_TIMEOUT   10000

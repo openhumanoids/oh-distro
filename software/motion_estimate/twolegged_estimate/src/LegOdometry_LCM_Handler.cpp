@@ -225,7 +225,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         lcm_->publish("POSE_KIN",&pose);
         
 
-	
+        // Publish the foot contact state estimates to LCM
         PublishFootContactEst(msg->utime);
 }
 
