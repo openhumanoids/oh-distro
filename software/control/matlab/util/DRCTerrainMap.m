@@ -11,7 +11,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
     end
     
     function [z,normal] = getHeight(obj,xy)
-      [p,normal] = mapAPIwrapper(obj.map_ptr.getData(),[xy;0*xy(1,:)])
+      [p,normal] = mapAPIwrapper(obj.map_ptr.getData(),[xy;0*xy(1,:)]);
       z=p(3,:);
       if 0 %any(z==nan)  % temporary hack because the robot is initialized without knowing the ground under it's feet
         p(:,z==nan) = repmat([0;0;1],1,sum(z==nan));
