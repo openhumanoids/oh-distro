@@ -8,13 +8,18 @@ map = DRCTerrainMap;
 map_mon = drake.util.MessageMonitor(drc.map_image_t,'utime');
 lc.subscribe('MAP_DEPTH',map_mon);
 
+fprintf('waiting for a robot state message...');
+d=[];
+while(isempty(d))
+  d = getNextMessage(robot_state_mon,100);
+  drawnow;
+end
+x0 = robot_state_coder.decode(d).val;
+fprintf(1,'received!\n');
+
 while (1) 
   d = getNextMessage(map_mon,100);  % wait for gui request to start
   if isempty(d), drawnow; continue; end
-  
-  % first wait for at least one state message
-  d = getMessage(robot_state_mon);
-  x0 = robot_state_coder.decode(d).val;
   
   [X,Y] = meshgrid(x0(1)+[-10:.2:10],x0(2)+[-10:.2:10]);
   [z,n] = getHeight(map,[X(:),Y(:)]');
