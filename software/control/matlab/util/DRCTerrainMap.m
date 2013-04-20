@@ -10,22 +10,25 @@ classdef DRCTerrainMap < RigidBodyTerrain
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe('MAP_DEPTH',map_mon);
       
-      fprintf(1,'waiting for a terrain map message...');
-      d=[];
-      while isempty(d)
-        d = getNextMessage(map_mon,100);  
-        if ~isempty(d)
-          msg = drc.map_image_t(d);
-          if (msg.view_id ~= 6), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
+      fprintf(1,'waiting for a non-empty terrain map message...');
+      obj.minval=[];
+      while isempty(obj.minval)
+        d=[];
+        while isempty(d)
+          d = getNextMessage(map_mon,100);  
+          if ~isempty(d)
+            msg = drc.map_image_t(d);
+            if (msg.view_id ~= 6), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
+          end
+          drawnow;  % allow matlab gui interaction
         end
-        drawnow;  % allow matlab gui interaction
+
+        % temporary hack because the robot is initialized without knowing the ground under it's feet
+        ptcloud = mapAPIwrapper(obj.map_ptr.getData(),[]);
+        obj.minval = min(ptcloud(3,:));
+        % end hack
       end
       fprintf(1,'received!\n');
-
-      % temporary hack because the robot is initialized without knowing the ground under it's feet
-      ptcloud = mapAPIwrapper(obj.map_ptr.getData(),[]);
-      obj.minval = min(ptcloud(3,:));
-      % end hack
     end
     
     function [z,normal] = getHeight(obj,xy)
