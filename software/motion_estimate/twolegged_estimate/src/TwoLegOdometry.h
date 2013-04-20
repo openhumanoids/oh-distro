@@ -12,12 +12,15 @@
 
 #include "SignalTap.hpp"
 
-#define SCHMITT_LEVEL	               0.65f
+#define LOG_DATA_FILES
+
+#define SCHMITT_LEVEL	               0.65
 #define TRANSITION_TIMEOUT             4000
 #define STANDING_TRANSITION_TIMEOUT   10000
 
 #define MIN_STANDING_FORCE			     50
 #define MIN_STANDING_FEET_X_SEP			0.1
+#define LOADSPLIT_LEVEL				    0.75
 
 namespace TwoLegs {
 
@@ -37,6 +40,10 @@ class TwoLegOdometry {
 		int64_t standing_timer;
 		int64_t standing_delay;
 		int stepcount;
+		
+		//LowPassFilter lowpass;
+		DataFileLogger datafile;
+		DataFileLogger footcontactfile;
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
@@ -108,6 +115,8 @@ class TwoLegOdometry {
 		int getActiveFoot();
 		float leftContactStatus();
 		float rightContactStatus();
+		
+		void terminate();
 		
 		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
 };

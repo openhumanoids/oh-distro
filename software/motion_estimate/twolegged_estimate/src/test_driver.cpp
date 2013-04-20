@@ -4,13 +4,37 @@
 
 #include "TwoLegOdometry.h"
 #include "LegOdometry_LCM_Handler.hpp"
+#include <csignal>
+#include <exception>
 
 using namespace std;
 
 //TwoLegs::TwoLegOdometry* _leg_odo; // excessive, as this gets tested in _legs_motion_estimate
 LegOdometry_Handler* _legs_motion_estimate;
 
+void signalHandler( int signum )
+{
+    cout << "Interrupt signal (" << signum << ") received.\n";
+
+    // cleanup and close up stuff here  
+    try
+    {
+    	_legs_motion_estimate->terminate();
+    }
+    catch (std::exception &e)
+    {
+    	std::cout << "Exception occured during close out\n";
+    }
+    // terminate program  
+
+   exit(signum);  
+
+}
+
 int main() {
+	// register signal SIGINT and signal handler  
+	signal(SIGINT, signalHandler);  
+	
 	cout << "Test driver main function for the twoleg motion estimate pod" << endl;
 
 	boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);

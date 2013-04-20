@@ -403,3 +403,9 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  
 }
 
+void LegOdometry_Handler::terminate() {
+	std::cout << "Closing and cleaning out LegOdometry_Handler object\n";
+	
+	_leg_odo->terminate();
+}
+

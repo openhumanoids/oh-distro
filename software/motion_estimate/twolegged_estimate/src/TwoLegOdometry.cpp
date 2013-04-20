@@ -8,6 +8,7 @@
 #include "TwoLegsEstimate_types.h"
 
 #include "QuaternionLib.h"
+#include <sstream>
 
 
 using namespace TwoLegs;
@@ -47,6 +48,10 @@ TwoLegOdometry::TwoLegOdometry()
 	stepcount = 0;
 	
 	both_feet_in_contact = true;
+	
+	datafile.Open("datalog.csv");
+	footcontactfile.Open("footcontactlog.csv");
+	
 }
 
 void TwoLegOdometry::parseRobotInput() {
@@ -138,6 +143,10 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	footstep newstep;
 	newstep.foot = -1;
 	
+	stringstream ss (stringstream::in | stringstream::out);
+	stringstream cnct_est (stringstream::in | stringstream::out);
+
+	
 	if (getSecondaryFootZforce() - SCHMITT_LEVEL*expectedweight > getPrimaryFootZforce()) {
 	  transition_timespan += deltautime;
 	}
@@ -160,15 +169,9 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 #ifdef VERBOSE_DEBUG
 		std::cout << "Adding footstep with values: " << temp.translation().transpose() << std::endl;
 #endif
-		
-		// This is to be depreciated
-		//footsteps.addFootstep(temp,secondary_foot());
-	  //setStandingFoot(secondary_foot());
-	  //new modular function call
 
 	  foottransitionintermediateflag = false;
 	  
-
 	  std::cout << "NEW STEP ON " << ((secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT") << " stepcount: " << stepcount << " at x= " << getSecondaryInLocal().translation().x() << std::endl;
 
 	  stepcount++;
@@ -176,20 +179,23 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	  //newstep.footprintlocation = getSecondaryInLocal();
 	  newstep.footprintlocation = AccumulateFootPosition(getPrimaryInLocal(), primary_foot());
 	  
-	  //standing must be removed in time from a foot transition event
-  	  
+	  
+	  // TODO - investigate this large delay requirement and tie it to a proper requirements, rather than a fudge factor
   	  standing_delay = 5*STANDING_TRANSITION_TIMEOUT;
 	  
 	} else {
 
 		
-			double separation, loadsplit;
+			double loadsplit;
 			
-			loadsplit = abs(leftz*leftz - rightz*rightz) < (SCHMITT_LEVEL*expectedweight*SCHMITT_LEVEL*expectedweight);
-			separation = abs(pelvis_to_left.translation().x()) + abs(pelvis_to_right.translation().x());
+			loadsplit = abs(leftz*leftz - rightz*rightz) < (LOADSPLIT_LEVEL*expectedweight*LOADSPLIT_LEVEL*expectedweight);
+			
+			// separation requirement no longer needed, kept for future reference
+			//separation = abs(pelvis_to_left.translation().x()) + abs(pelvis_to_right.translation().x());
+			//&& separation < MIN_STANDING_FEET_X_SEP
 			
 			// Second layer of logic testing to isolate the robot standing condition
-			if (loadsplit && separation < MIN_STANDING_FEET_X_SEP && leftz > MIN_STANDING_FORCE && rightz > MIN_STANDING_FORCE) {
+			if (loadsplit && leftz > MIN_STANDING_FORCE && rightz > MIN_STANDING_FORCE) {
 				
 				if (standing_delay > 0) {
 					standing_delay -= deltautime;
@@ -198,9 +204,6 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 					standing_delay = 0;
 				}
 				
-				//25346000 - 25153000 = 193000
-				//25346000 - 25158000 = 188000
-				//25345000 - 25153000 = 192000
 				standing_timer += deltautime;
 			}
 			else
@@ -219,7 +222,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 				}
 				else
 				{
-					//std::cout << "Standing timer reduced to : " << standing_timer << "\n";
+					;
 				}
 			}
 			
@@ -229,15 +232,34 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 			}
 			else
 			{
-				
+				;
 			}
 			
-			if (both_feet_in_contact)
-			{
-				std::cout << "Standing for: " << standing_timer <<  "\n";
-			}
-				
 	}
+	
+#if defined( LOG_DATA_FILES )
+	ss << leftforces.z << ", " << rightforces.z << ", ";
+	
+	ss << standing_timer << ", " << standing_delay << ", ";
+	ss << ((standingintermediate) ? "1" : "0") << ", ";
+	ss << ((both_feet_in_contact) ? "1" : "0");
+	
+	ss << std::endl;
+	string datastr = ss.str();
+	datafile.log(datastr);
+	
+	cnct_est << leftforces.z << ", " << rightforces.z << ", ";
+	
+	cnct_est << ( leftContactStatus() > 0.5 ? "1" : "0") << ", ";
+	cnct_est << (rightContactStatus() > 0.5 ? "1" : "0");
+	cnct_est << "\n";
+	
+	datastr = "";
+	datastr = cnct_est.str();
+	
+	footcontactfile.log(datastr);
+#endif
+	
 	
 	return newstep;
 }
@@ -449,4 +471,11 @@ float TwoLegOdometry::rightContactStatus() {
 		return 1.0f;
 	}
 	return 0.0f;
+}
+
+void TwoLegOdometry::terminate() {
+	std::cout << "Terminating and cleaning out TwoLegOdometry object\n";
+	
+	datafile.Close();
+	footcontactfile.Close();
 }

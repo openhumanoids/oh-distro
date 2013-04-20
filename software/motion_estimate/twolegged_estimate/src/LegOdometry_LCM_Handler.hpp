@@ -111,7 +111,7 @@ public:
 	// Run the estimator, assuming the LCM connections have been set up correctly
 	void run(bool testingmode);
 	
-	
+	void terminate();
 };
 
 
