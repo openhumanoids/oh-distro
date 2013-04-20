@@ -30,7 +30,12 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _f
 	
 	model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
 	
-	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this); 
+#ifdef VERBOSE_DEGUG
+	std::cout << "LegOdoemtry_handler is now subscribing to LCM messages: " << "TRUE_ROBOT_STATE, " << "TORSO_IMU" << std::endl; 
+#endif
+	
+	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this);
+	lcm_->subscribe("TORSO_IMU",&LegOdometry_Handler::torso_imu_handler,this);
 	
 	// Parse KDL tree
 	  if (!kdl_parser::treeFromString(  model_->getURDFString() ,tree)){
@@ -222,11 +227,21 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
         pose.orientation[1] =bodykin_q.x();
         pose.orientation[2] =bodykin_q.y();
         pose.orientation[3] =bodykin_q.z();
-        lcm_->publish("POSE_KIN",&pose);
-        
+        //lcm_->publish("POSE_KIN",&pose);
+        lcm_->publish("POSE_BODY_VO",&pose);
+                
 
         // Publish the foot contact state estimates to LCM
         PublishFootContactEst(msg->utime);
+}
+
+void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 
+												const std::string& channel, 
+												const  drc::imu_t* msg) {
+	
+	std::cout << msg->utime << " A new IMU handler call has been made\n";
+	
+	return;
 }
 
 void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
