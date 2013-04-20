@@ -44,7 +44,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //     - pos is a 3xn matrix
   //     - closest_terrain_pos is a 3xn matrix of the closest points on the terrain
   //     - normal is a 3xn matrix of the surface normals of the terrain at closest_terrain_pos
-
+  // pts = mapAPIwrapper(ptr,[]);
+  //     - returns all of the points as a point cloud
+  
   struct ViewWrapperData* pdata = NULL;
 
   if (nrhs<1) { // then it's ptr = mapAPIWrapper()
@@ -113,34 +115,46 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   int N = mxGetN(prhs[1]);
-  if (mxGetM(prhs[1])!=3) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:BadInputs","pos must be 3xn\n"); 
-
-  plhs[0] = mxCreateDoubleMatrix(3,N,mxREAL);
-  mxArray* pmxNormal = mxCreateDoubleMatrix(3,N,mxREAL);
-
-  Vector3f pos, closest_terrain_pos, normal;
-  double *ppos = mxGetPr(prhs[1]), *pclosest_terrain_pos = mxGetPr(plhs[0]), *pnormal = mxGetPr(pmxNormal);
- 
-  int j;
-  for (int i=0; i<N; i++) {
-    pos << (float) ppos[3*i], (float) ppos[3*i+1], (float) ppos[3*i+2];
-    if (vptr->getClosest(pos,closest_terrain_pos,normal)) {
-	for (j=0; j<3; j++) {
-	  pclosest_terrain_pos[3*i+j] = (double) closest_terrain_pos(j);
-	  pnormal[3*i+j] = (double) normal(j);
-	}
-    } else { // returns false if off the grid		   
-	for (j=0; j<3; j++) {
-	  pclosest_terrain_pos[3*i+j] = NAN;
-	  pnormal[3*i+j] = NAN;
-	}
+  if (N<1) {  // then it's mapAPIwrapper(ptr,[]); return the point cloud
+    maps::PointCloud::Ptr cloud = vptr->getAsPointCloud();
+    plhs[0] = mxCreateDoubleMatrix(3,cloud->size(),mxREAL);
+    double* ptr = mxGetPr(plhs[0]);
+    for (int i = 0; i < cloud->size(); ++i) {
+      maps::PointCloud::PointType pt = cloud->points[i];
+      ptr[i*3+0] = pt.x;
+      ptr[i*3+1] = pt.y;
+      ptr[i*3+2] = pt.z;
     }
-  }
-
-  if (nlhs>1) {
-    plhs[1] = pmxNormal;
   } else {
-    mxDestroyArray(pmxNormal);
+    if (mxGetM(prhs[1])!=3) mexErrMsgIdAndTxt("DRC:mapAPIwrapper:BadInputs","pos must be 3xn\n");
+    
+    plhs[0] = mxCreateDoubleMatrix(3,N,mxREAL);
+    mxArray* pmxNormal = mxCreateDoubleMatrix(3,N,mxREAL);
+    
+    Vector3f pos, closest_terrain_pos, normal;
+    double *ppos = mxGetPr(prhs[1]), *pclosest_terrain_pos = mxGetPr(plhs[0]), *pnormal = mxGetPr(pmxNormal);
+    
+    int j;
+    for (int i=0; i<N; i++) {
+      pos << (float) ppos[3*i], (float) ppos[3*i+1], (float) ppos[3*i+2];
+      if (vptr->getClosest(pos,closest_terrain_pos,normal)) {
+        for (j=0; j<3; j++) {
+          pclosest_terrain_pos[3*i+j] = (double) closest_terrain_pos(j);
+          pnormal[3*i+j] = (double) normal(j);
+        }
+      } else { // returns false if off the grid
+        for (j=0; j<3; j++) {
+          pclosest_terrain_pos[3*i+j] = NAN;
+          pnormal[3*i+j] = NAN;
+        }
+      }
+    }
+    
+    if (nlhs>1) {
+      plhs[1] = pmxNormal;
+    } else {
+      mxDestroyArray(pmxNormal);
+    }
   }
 }
 
