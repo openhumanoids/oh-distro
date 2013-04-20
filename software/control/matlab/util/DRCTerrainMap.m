@@ -14,6 +14,10 @@ classdef DRCTerrainMap < RigidBodyTerrain
       d=[];
       while isempty(d)
         d = getNextMessage(map_mon,100);  
+        if ~isempty(d)
+          msg = drc.map_image_t(d);
+          if (msg.view_id ~= 6), d=[]; end  % check specifically for HEIGHT_MAP_SCENE
+        end
         drawnow;  % allow matlab gui interaction
       end
       fprintf(1,'received!\n');
