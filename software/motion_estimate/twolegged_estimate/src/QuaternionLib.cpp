@@ -89,6 +89,14 @@ namespace InertialOdometry
 	  q2e(var, E);
   }
 
+  Eigen::Vector3d QuaternionLib::q2e(const Eigen::Quaterniond &q_) {
+	  Eigen::Vector3d E;
+	  
+	  q2e(q_,E);
+	  
+	  return E;
+  }
+  
   //This function is specific to NED and forward right down coordinate frames
   void QuaternionLib::q2e(Eigen::Vector4d q_, Eigen::Vector3d &E)
   {
@@ -128,6 +136,7 @@ namespace InertialOdometry
 
   	return;
   }
+  
   
   // This one comes from Maurice for DRC, but they seem the same. This one follows the non-Homogeneous form
   void QuaternionLib::quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
@@ -188,6 +197,34 @@ namespace InertialOdometry
 	  
 	  return;
   }
+  Eigen::Quaterniond QuaternionLib::C2q(const Eigen::Matrix<double, 3, 3> &C) {
+	  
+	  Eigen::Quaterniond returnval;
+	  double scalar;
+	  
+	  // before the conversion for column major related ot Eigen Matrix
+	  //w = 0.5*sqrt(1 + C(1,1) + C(2,2) + C(3,3));
+	  //x = 1/(4*w)*(C(3,2)-C(2,3));
+	  //y = 1/(4*w)*(C(1,3)-C(3,1));
+	  //z = 1/(4*w)*(C(2,1)-C(1,2));
+	  
+	  scalar = 0.5*sqrt(1 + C(1,1) + C(2,2) + C(3,3));
+	  	  
+	  returnval.w() = scalar;
+	  returnval.x() = 1/(4*scalar)*(C(2,3)-C(3,2));
+	  returnval.y() = 1/(4*scalar)*(C(3,1)-C(1,3));
+	  returnval.z() = 1/(4*scalar)*(C(1,2)-C(2,1));
+	  
+	  return returnval;
+  }
+  
+  Eigen::Matrix<double, 3, 3> QuaternionLib::e2C(const Eigen::Vector3d &E) {
+	  Eigen::Matrix<double, 3, 3> returnval;
+	  
+	  
+	  
+	  return returnval;
+  }
   
   void QuaternionLib::e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C)
   {
@@ -213,6 +250,15 @@ namespace InertialOdometry
 	  C(0,2) = sps * sp + cps * st * cp;
 	  C(1,2) = -cps*sp + sp * st * cp;
 	  C(2,2) = ct * cp;
+  }
+  
+  Eigen::Quaterniond QuaternionLib::e2q(const Eigen::Vector3d &E) {
+	  //Eigen::Quaterniond q;
+	  
+	  //std::cout << "e2q -- E = " << E.transpose() << std::endl;
+	  
+	  return C2q(e2C(E));
+	  
   }
   
   Eigen::Vector3d QuaternionLib::Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v) {

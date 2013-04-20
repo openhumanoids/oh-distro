@@ -27,16 +27,21 @@ namespace InertialOdometry
     //This function is specific to NED and forward right down coordinate frames
     static void q2e(Eigen::Vector4d q_, Eigen::Vector3d &E);
     static void q2e(const Eigen::Quaterniond &q_, Eigen::Vector3d &E);
+    static Eigen::Vector3d q2e(const Eigen::Quaterniond &q_);
     static void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
     
     //get the direction cosine matrix equivalent to quaternion (scalar, vector)
     static void q2C(Eigen::Vector4d const &q_, Eigen::Matrix<double,3,3> &C);
     static Eigen::Matrix<double,3,3> q2C(Eigen::Quaterniond const &q_);
+    static Eigen::Quaterniond C2q(const Eigen::Matrix<double, 3, 3> &C);
+    
     
     // Places the 3x3 skew symmetric matrix of 3x1 vector v in skew
     static void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew);
     
     static void e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C);
+    static Eigen::Matrix<double, 3, 3> e2C(const Eigen::Vector3d &E);
+    static Eigen::Quaterniond e2q(const Eigen::Vector3d &E);
     
     //Rotate a 3 vector around only te yaw axis
     static Eigen::Vector3d Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v);

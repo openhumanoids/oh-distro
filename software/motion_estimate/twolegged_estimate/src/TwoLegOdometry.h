@@ -41,6 +41,8 @@ class TwoLegOdometry {
 		int64_t standing_delay;
 		int stepcount;
 		
+		Eigen::Quaterniond imu_orientation_estimate;
+		
 		//LowPassFilter lowpass;
 		DataFileLogger datafile;
 		DataFileLogger footcontactfile;
@@ -74,6 +76,8 @@ class TwoLegOdometry {
 		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 		
 		Eigen::Isometry3d AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id);
+		
+		Eigen::Quaterniond MergePitchRollYaw(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs);
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
@@ -99,6 +103,8 @@ class TwoLegOdometry {
 		footstep DetectFootTransistion(int64_t utime, float leftz, float rightz);
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
+		void setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation);
+		
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
 		Eigen::Isometry3d getPelvisFromStep();
@@ -111,6 +117,7 @@ class TwoLegOdometry {
 		void setPelvisPosition(Eigen::Isometry3d transform);
 		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
 		
+		Eigen::Isometry3d getPelvisState();
 		int getStepCount();
 		int getActiveFoot();
 		float leftContactStatus();

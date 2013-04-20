@@ -24,6 +24,8 @@ TwoLegOdometry::TwoLegOdometry()
 	//Eigen::Isometry3d first;
 	footsteps.reset();
 	standing_foot = -1;
+
+	imu_orientation_estimate.setIdentity();
 	
 	foottransitionintermediateflag = true;
 	standingintermediate = true;
@@ -302,6 +304,11 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	right_to_pelvis.linear() = right.linear().transpose();
 }
 
+void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation) {
+	
+	imu_orientation_estimate = ahrs_orientation;
+}
+
 Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
 	//std::cout << "Taking primary as: " << (footsteps.lastFoot()==LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	if (footsteps.lastFoot() == LEFTFOOT)
@@ -317,6 +324,56 @@ Eigen::Isometry3d TwoLegOdometry::getPrimaryFootToPelvis() {
 	if (footsteps.lastFoot() == RIGHTFOOT)
 		return right_to_pelvis;
 	return Eigen::Isometry3d();
+}
+
+Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q_RollPitch, const Eigen::Quaterniond &q_Yaw) {
+	Eigen::Vector3d E_rp;
+	Eigen::Vector3d E_y;
+		
+	// TODO -- Remove the dependence on gimbal lock, by not using the Euler angle representation when merging the attitude angle estimates from the different computations
+	
+	E_rp = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
+	E_y  = InertialOdometry::QuaternionLib::q2e(q_Yaw);
+	Eigen::Quaterniond return_q;
+	
+	// Only use the yaw angle from the leg kinematics
+	E_y(0) = 0.;
+	E_y(1) = 0.;
+	
+	//use pitch and roll form the IMU states which are read directly from the LCM TORSO_IMU message -- This is assumed to be a Kalman Filter based AHRS value
+	E_rp(2) = 0.;
+	
+	//std::cout << "Merge: " << (E_lk + E_imu).transpose() << std::endl;
+	
+	//Eigen::Vector3d output_E;
+//	output_E = (E_rp + E_y);
+	
+	Eigen::Vector3d output_E( 0.,0.,0.);
+	
+	//std::cout << "Set E to: " << output_E << std::endl;
+	//std::cout << output_E(2) << std::endl;
+	
+	return_q = InertialOdometry::QuaternionLib::e2q(output_E);
+	
+	return return_q;
+}
+
+
+// The intended user member call to get the pelvis state. The orientation is a mix of the leg kinematics yaw and the torso IMU AHRS pitch and roll angles
+// Translation is from the accumulated leg kinematics
+Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
+	Eigen::Quaterniond roll_pitch_q;
+	
+	roll_pitch_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear());
+	
+	//Eigen::Isometry3d output_state(roll_pitch_q);
+	Eigen::Isometry3d output_state;
+	output_state = MergePitchRollYaw(roll_pitch_q,imu_orientation_estimate);
+	//output_state.linear().setIdentity();
+	
+	output_state.translation() = getPelvisFromStep().translation();
+	
+	return output_state;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
