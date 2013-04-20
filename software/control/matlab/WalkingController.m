@@ -9,7 +9,7 @@ classdef WalkingController < DRCController
       
       % instantiate QP controller
       options.slack_limit = 20.0;
-      options.w = 0.2;
+      options.w = 0.5;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
 

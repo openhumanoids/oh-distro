@@ -76,6 +76,10 @@ classdef QPController < MIMODrakeSystem
     obj.rfoot_idx = find(strcmp('r_foot',getLinkNames(r)));
     obj.lfoot_idx = find(strcmp('l_foot',getLinkNames(r)));
     
+    obj.lc = lcm.lcm.LCM.getSingleton();
+    obj.contact_est = drc.foot_contact_estimate_t();
+    obj.contact_est.detection_method = 0;
+    
   end
     
   function y=mimoOutput(obj,t,~,varargin)
@@ -88,10 +92,11 @@ classdef QPController < MIMODrakeSystem
 
     % use support trajectory
     if typecheck(zmpd.supptraj,'double') %zmpd.ti_flag
-      active_supports = find(zmpd.supptraj);
+      supp = zmpd.supptraj;
     else
-      active_supports = find(zmpd.supptraj.eval(t));
+      supp = zmpd.supptraj.eval(t);
     end
+    active_supports = find(supp);
     
     nd = 4; % for friction cone approx, hard coded for now
     dim = 3; % 3D
@@ -115,15 +120,40 @@ classdef QPController < MIMODrakeSystem
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
     active_contacts = phi<contact_threshold;
 
+    % hack to overload support trajectory to allow specification of ground
+    % height for that foot step. e.g., supp(idx) = 1 means z=0, supp(idx) =
+    % 1.2 means z=1.2
+%     if any(phi(1:4)<(supp(active_supports(1))-1+contact_threshold))
+%       active_contacts(1:4) = 1;
+%     end
+%     if length(phi)>4 && any(phi(5:8)<(supp(active_supports(2))-1+contact_threshold))
+%       active_contacts(5:8) = 1;
+%     end
+    
+    obj.contact_est.utime = t*1000000;
+    
     %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
+    obj.contact_est.right_contact = 0;
+    obj.contact_est.left_contact = 0;
     if any(active_contacts(1:4))
+      if active_supports(1)==obj.rfoot_idx
+        obj.contact_est.right_contact = 1;
+      elseif active_supports(1)==obj.lfoot_idx
+        obj.contact_est.left_contact = 1;
+      end
       active_contacts(1:4) = 1;
     end
     if length(phi)>4 && any(active_contacts(5:8))
+      if active_supports(2)==obj.rfoot_idx
+        obj.contact_est.right_contact = 1;
+      elseif active_supports(2)==obj.lfoot_idx
+        obj.contact_est.left_contact = 1;
+      end
       active_contacts(5:8) = 1;
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    obj.lc.publish('KINEMATIC_FOOT_CONTACT_EST', obj.contact_est);
+    
     nc = sum(active_contacts);
 
     if nc==0
@@ -134,9 +164,19 @@ classdef QPController < MIMODrakeSystem
 
       %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
       if any(active_contacts(1:4))
+        if active_supports(1)==obj.rfoot_idx
+          obj.contact_est.right_contact = 1;
+        elseif active_supports(1)==obj.lfoot_idx
+          obj.contact_est.left_contact = 1;
+        end
         active_contacts(1:4) = 1;
       end
       if length(phi)>4 && any(active_contacts(5:8))
+        if active_supports(2)==obj.rfoot_idx
+          obj.contact_est.right_contact = 1;
+        elseif active_supports(2)==obj.lfoot_idx
+          obj.contact_est.left_contact = 1;
+        end
         active_contacts(5:8) = 1;
       end
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -333,5 +373,7 @@ classdef QPController < MIMODrakeSystem
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug = false;
+    lc;
+    contact_est;
   end
 end
