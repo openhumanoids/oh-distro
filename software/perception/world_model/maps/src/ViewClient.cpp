@@ -89,8 +89,8 @@ struct ViewClient::Worker {
       return false;
     }
     mState = StateRunning;
-    mCondition.notify_one();
     lock.unlock();
+    mCondition.notify_one();
     mOctreeSubscription = mBotWrapper->getLcm()->
       subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
     mCloudSubscription = mBotWrapper->getLcm()->
