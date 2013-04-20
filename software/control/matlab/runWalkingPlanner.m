@@ -45,10 +45,10 @@ while true
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
         %%% TEMP HACK FOR QUAL 1 %%%
-        x(3) = x(3)-1.0;
-        for j = 1:length(footsteps)
-          footsteps(j).pos(3) = footsteps(j).pos(3) - 1;
-        end
+%         x(3) = x(3)-1.0;
+%         for j = 1:length(footsteps)
+%           footsteps(j).pos(3) = footsteps(j).pos(3) - 1;
+%         end
         %%% TEMP HACK FOR QUAL 1 %%%
         x0=x;
       end
@@ -59,7 +59,7 @@ while true
   % publish robot plan
   msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
   %%%% TMP HACK FOR QUAL 1 %%%%%
-  xtraj(3,:) = xtraj(3,:)+ 1;
+%   xtraj(3,:) = xtraj(3,:)+ 1;
   %%%% TMP HACK FOR QUAL 1 %%%%%
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'

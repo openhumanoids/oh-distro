@@ -137,6 +137,7 @@ classdef DRCController
       % name of the controller to take over to lcm message data (or halting
       % time in the case of a timed transition)
 
+      data = struct();
       input_frame_data = cell(obj.n_input_frames,1);
       
       t_offset = -1;
@@ -173,7 +174,7 @@ classdef DRCController
             t=tsim-t_offset;
 
             %%% TEMP HACK FOR QUAL 1 %%%
-            x(3) = x(3)-1.0;
+%             x(3) = x(3)-1.0;
             %%% TEMP HACK FOR QUAL 1 %%%
             
 %             % debug

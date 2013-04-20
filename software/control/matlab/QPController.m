@@ -114,10 +114,11 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-    contact_threshold = 0.005; % m
+    contact_threshold = 0.0075; % m
            
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+    phi
     active_contacts = phi<contact_threshold;
 
     % hack to overload support trajectory to allow specification of ground

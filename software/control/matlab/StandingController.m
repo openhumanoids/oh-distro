@@ -74,7 +74,7 @@ classdef StandingController < DRCController
         [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
         ts
         %%% TMP HACK %%%
-        xtraj(3,:) = xtraj(3,:) - 1; 
+%         xtraj(3,:) = xtraj(3,:) - 1; 
         %%% TMP HACK %%%
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
