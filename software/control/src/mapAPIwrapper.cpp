@@ -127,12 +127,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   } 
 
   ViewClient::ViewPtr vptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
-  if (!vptr) { // check if null
-    mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","Have not received height map via LCM yet.  Perhaps you still need to request it in the viewer?\n");
-  }
+  // NOTE: tries to handle this more gracefully below now
+  //  if (!vptr) { // check if null
+  //    mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","Have not received height map via LCM yet.  Perhaps you still need to request it in the viewer?\n");
+  //  }
 
   int N = mxGetN(prhs[1]);
   if (N<1) {  // then it's mapAPIwrapper(ptr,[]); return the point cloud
+    if (!vptr) {
+      plhs[0] = mxCreateDoubleMatrix(3,0,mxREAL);
+      return;
+    }
     maps::PointCloud::Ptr cloud = vptr->getAsPointCloud();
     plhs[0] = mxCreateDoubleMatrix(3,cloud->size(),mxREAL);
     double* ptr = mxGetPr(plhs[0]);
@@ -154,7 +159,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int j;
     for (int i=0; i<N; i++) {
       pos << (float) ppos[3*i], (float) ppos[3*i+1], (float) ppos[3*i+2];
-      if (vptr->getClosest(pos,closest_terrain_pos,normal)) {
+      if (vptr && vptr->getClosest(pos,closest_terrain_pos,normal)) {
         for (j=0; j<3; j++) {
           pclosest_terrain_pos[3*i+j] = (double) closest_terrain_pos(j);
           pnormal[3*i+j] = (double) normal(j);

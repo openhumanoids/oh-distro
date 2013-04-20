@@ -31,7 +31,7 @@ while (1)
   
   figure(1); clf; hold on;
   mesh(X,Y,Z);
-  quiver3(X,Y,Z,U,V,W);
+%  quiver3(X,Y,Z,U,V,W);
 end
 
 end
