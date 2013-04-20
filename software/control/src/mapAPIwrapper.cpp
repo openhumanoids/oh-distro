@@ -27,10 +27,25 @@ struct ViewWrapperData {
 
 void lcmThreadMain(struct ViewWrapperData* pdata) {
   //  while(0 == pdata->lcm->handle()) {
-  while (0 == lcm_handle(pdata->lcm)) {
-    if (pdata->b_interrupt_lcm) {
-      mexPrintf("interruption requested\n"); mexEvalString("drawnow");
+  while(!pdata->b_interrupt_lcm) {
+    int fn = lcm_get_fileno(pdata->lcm);
+    fd_set input_set;
+    FD_ZERO(&input_set);
+    FD_SET(fn, &input_set);
+    struct timeval timeout = { 0, 200*1000 };
+    int status = select(fn+1, &input_set, NULL, NULL, &timeout);
+    if (status == 0) {
+      //
+    }
+    else if (status < 0) {
+      mexPrintf("error in lcm pipe"); mexEvalString("drawnow");
       break;
+    }
+    else if (FD_ISSET(fn, &input_set)) {
+      if (0 != lcm_handle(pdata->lcm)) {
+        mexPrintf("error in lcm handle\n"); mexEvalString("drawnow");
+        break;
+      }
     }
   }
 }
@@ -68,13 +83,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mexPrintf("setting botwrapper in view client\n"); mexEvalString("drawnow");
     pdata->view_client->setBotWrapper(botWrapper);
 
-    mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
-    pdata->b_interrupt_lcm = false;
-    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
-
     // start listening for view data
     mexPrintf("starting view client\n"); mexEvalString("drawnow");
     pdata->view_client->start();
+
+    mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
+    pdata->b_interrupt_lcm = false;
+    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
 
     // return a pointer to the model
     mxClassID cid;
