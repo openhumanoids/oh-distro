@@ -61,14 +61,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     //    pdata->lcm.reset(new lcm::LCM());  //lcm_create(NULL); 
     //    if (!pdata->lcm->good()) 
       mexErrMsgIdAndTxt("DRC:mapAPIwrapper:LCMFailed","Failed to create LCM instance");
-    mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
-    pdata->b_interrupt_lcm = false;
-    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
 
     mexPrintf("creating botwrapper\n"); mexEvalString("drawnow");
     BotWrapper::Ptr botWrapper(new BotWrapper(pdata->lcm, NULL, NULL));
+
     mexPrintf("setting botwrapper in view client\n"); mexEvalString("drawnow");
     pdata->view_client->setBotWrapper(botWrapper);
+
+    mexPrintf("spawning LCM thread\n"); mexEvalString("drawnow");
+    pdata->b_interrupt_lcm = false;
+    pdata->lcm_thread = new boost::thread(lcmThreadMain,pdata);
 
     // start listening for view data
     mexPrintf("starting view client\n"); mexEvalString("drawnow");
