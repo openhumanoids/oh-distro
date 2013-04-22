@@ -1,11 +1,11 @@
 #ifndef FUSIONSTABLOOP_HPP_
 #define FUSIONSTABLOOP_HPP_
 
-#include <vector>
+#include <Eigen/Dense>
 
 class FusionStabLoop {
 private:
-	std::vector<double> channels;
+	Eigen::VectorXd channels;
 
 public:
 	FusionStabLoop(int num_channels);

@@ -15,7 +15,7 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 # build two LCM test programs
-add_executable(CollierTools_unit_test src/FusionStabLoop.cpp src/Filter.cpp src/unit_test.cpp)
+add_executable(CollierTools_unit_test src/common_signal_objects.cpp src/FusionStabLoop.cpp src/Filter.cpp src/unit_test.cpp)
 pods_use_pkg_config_packages(CollierTools_unit_test lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 
 # make exeutables public
