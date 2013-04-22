@@ -63,7 +63,7 @@ zmpdata = SharedDataHandle(struct('S',V.S,'s1',V.s1,'h',com(3),'hddot',0, ...
                     'comtraj',comtraj,'supptraj',supptraj,'ti_flag',false));
 
 % instantiate QP controller
-options.slack_limit = 20.0;
+options.slack_limit = 30.0;
 options.w = 0.1;
 options.R = 1e-12*eye(nu);
 qp = QPController(r,zmpdata,options);

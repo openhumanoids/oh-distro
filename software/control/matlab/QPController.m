@@ -115,7 +115,7 @@ classdef QPController < MIMODrakeSystem
     Jdot = Jdot(1:2,:);
     
     contact_threshold = 0.0001; % m
-           
+    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
     phi
@@ -158,7 +158,9 @@ classdef QPController < MIMODrakeSystem
     nc = sum(active_contacts);
 
     if nc==0
-      % ignore supporting body spec, use any body in contact
+      % ignore supporting body spec, use any foot in contact
+      active_supports = [obj.rfoot_idx, obj.lfoot_idx];
+
       [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
       [phi,Jz,D_] = contactConstraints(r,kinsol);
       active_contacts = phi<contact_threshold;
