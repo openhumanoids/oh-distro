@@ -13,7 +13,6 @@ classdef SimplePDController < DrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
       
-      
       input_frame = r.getStateFrame;
       coords = AtlasCoordinates(r);
       obj = obj@DrakeSystem(0,0,input_frame.dim,coords.dim,true,true);
@@ -33,7 +32,7 @@ classdef SimplePDController < DrakeSystem
         obj.Kp = options.Kp;
       else
         obj.Kp = 170.0*eye(obj.nq);
-%         obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
+        obj.Kp([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
       end        
         
       if isfield(options,'Kd')
@@ -42,7 +41,7 @@ classdef SimplePDController < DrakeSystem
         obj.Kd = options.Kd;
       else
         obj.Kd = 19.0*eye(obj.nq);
-%         obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
+        obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
       end        
         
       if isfield(options,'dt')
@@ -62,7 +61,7 @@ classdef SimplePDController < DrakeSystem
 
       cdata = obj.controller_data.getData();
 
-      if cdata.ti_flag
+      if typecheck(cdata.qtraj,'double')
         q_des = cdata.qtraj;
       else
         q_des = cdata.qtraj.eval(t);
