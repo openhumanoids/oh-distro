@@ -3,11 +3,8 @@
 #include <stdlib.h>
 #include "Filter.hpp"
 #include "FusionStabLoop.hpp"
-#include "common_signal_objects.hpp"
 
 using namespace std;
-
-
 
 int main() {
   cout << "Test driver for Filter objects.\n";

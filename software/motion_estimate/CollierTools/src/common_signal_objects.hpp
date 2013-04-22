@@ -1,7 +1,7 @@
 #ifndef COMMON_SIGNAL_OBJECTS_HPP_
 #define COMMON_HPP_
 
-#include <vector>
+
 #include <Eigen/Dense>
 
 
