@@ -9,29 +9,6 @@
 
 // objects and functions for generic operations on data
 
-class Filter {
-private:
-
-	Eigen::VectorXd samples;
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-	Filter();
-	
-};
-
-class LowPassFilter : Filter { 
-private:
-	
-	
-	
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-	LowPassFilter();
-	
-};
-
 class DataFileLogger {
 private:
 	std::ofstream fs;

@@ -30,7 +30,7 @@
 
 //#include <lcmtypes/bot_core.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <boost/shared_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
 #include <model-client/model-client.hpp>
 #include <lcmtypes/bot_core.hpp>
 
