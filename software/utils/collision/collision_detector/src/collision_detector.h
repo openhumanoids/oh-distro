@@ -56,6 +56,8 @@ namespace collision {
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject );
     void ray_test( KDL::Vector from, KDL::Vector to, Collision_Object*& collisionObject );
     void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject, Eigen::Vector3f &hit_pt);
+    void ray_test( Eigen::Vector3f from, Eigen::Vector3f to, Collision_Object*& collisionObject, Eigen::Vector3f &hit_pt, Eigen::Vector3f &hit_normal);
+    
     Collision_Object* find_collision_object_by_uid( int uid );
 
     std::vector< Collision_Object* > collision_objects( void )const;
