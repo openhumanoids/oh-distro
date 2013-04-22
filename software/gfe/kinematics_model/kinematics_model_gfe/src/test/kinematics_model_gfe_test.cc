@@ -20,12 +20,12 @@ main( int argc,
   cout << "kinematics_model_gfe: " << kinematics_model_gfe << endl;
 
   State_GFE robot_state;
-  Frame utorso_to_hand_pose = Frame::Identity();
-  utorso_to_hand_pose.p[2] = 0.3;
-  State_GFE_Arm left_arm_state;
+  Frame pelvis_to_hand_pose = Frame::Identity();
+  pelvis_to_hand_pose.p[2] = 0.3;
+  State_GFE solution;
   
-  if( kinematics_model_gfe.inverse_kinematics_left_arm( robot_state, utorso_to_hand_pose, left_arm_state ) ){
-    cout << "found inverse kinematics: " << left_arm_state << endl;
+  if( kinematics_model_gfe.inverse_kinematics_left_arm( robot_state, pelvis_to_hand_pose, solution ) ){
+    cout << "found inverse kinematics: " << solution << endl;
   } else {
     cout << "could not solve inverse kinematics" << endl;
   }

@@ -15,20 +15,20 @@
 namespace kinematics {
   class Kinematics_Model_GFE {
   public:
-    Kinematics_Model_GFE();
-    Kinematics_Model_GFE( std::string xmlString );
+    Kinematics_Model_GFE( double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( std::string xmlString, double eps = 0.001, unsigned int maxIterations = 500 );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
     
-    bool inverse_kinematics_left_arm( const state::State_GFE& robotState, const KDL::Frame& utorsoToHandPose, state::State_GFE_Arm& leftArmState ); 
-    bool inverse_kinematics_right_arm( const state::State_GFE& robotState, const KDL::Frame& utorsoToHandPose, state::State_GFE_Arm& rightArmState );
-    bool inverse_kinematics_left_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE_Leg& leftLegState ); 
-    bool inverse_kinematics_right_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE_Leg& rightLegState );
+    bool inverse_kinematics_left_arm( const state::State_GFE& robotState, const KDL::Frame& pelvisToHandPose, state::State_GFE& solution ); 
+    bool inverse_kinematics_right_arm( const state::State_GFE& robotState, const KDL::Frame& pelvisToHandPose, state::State_GFE& solution );
+    bool inverse_kinematics_left_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE& solution ); 
+    bool inverse_kinematics_right_leg( const state::State_GFE& robotState, const KDL::Frame& pelvisToFootPose, state::State_GFE& solution );
 
     static std::string urdf_filename_to_xml_string( std::string urdfFilename );
 
-    bool load_xml_string( std::string xmlString ); 
-    bool load_urdf( std::string urdf );
+    bool load_xml_string( std::string xmlString, double eps, unsigned int maxIterations ); 
+    bool load_urdf( std::string urdf, double eps, unsigned int maxIterations );
     void set( const drc::robot_state_t& robotState );  
     void set( state::State_GFE& stateGFE );
 
