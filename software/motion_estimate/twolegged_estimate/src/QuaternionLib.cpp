@@ -163,6 +163,9 @@ namespace InertialOdometry
 	  Eigen::Matrix<double,3,3> mat;
 	  Eigen::Vector4d q_pass;
 	  
+	  mat.setZero();
+	  q_pass.setZero();
+	  
 	  q_pass << q_.w(), q_.x(), q_.y(), q_.z();
 	  
 	  q2C(q_pass, mat);
@@ -202,18 +205,21 @@ namespace InertialOdometry
 	  Eigen::Quaterniond returnval;
 	  double scalar;
 	  
+	  returnval.setIdentity();
+	  scalar = 0.;
+	  
 	  // before the conversion for column major related ot Eigen Matrix
 	  //w = 0.5*sqrt(1 + C(1,1) + C(2,2) + C(3,3));
 	  //x = 1/(4*w)*(C(3,2)-C(2,3));
 	  //y = 1/(4*w)*(C(1,3)-C(3,1));
 	  //z = 1/(4*w)*(C(2,1)-C(1,2));
-	  
-	  scalar = 0.5*sqrt(1 + C(1,1) + C(2,2) + C(3,3));
+	  //std::cout << "Converting:\n" << C << std::endl;
+	  scalar = 0.5*sqrt(1 + C(0,0) + C(1,1) + C(2,2));
 	  	  
 	  returnval.w() = scalar;
-	  returnval.x() = 1/(4*scalar)*(C(2,3)-C(3,2));
-	  returnval.y() = 1/(4*scalar)*(C(3,1)-C(1,3));
-	  returnval.z() = 1/(4*scalar)*(C(1,2)-C(2,1));
+	  returnval.x() = 1/(4*scalar)*(C(1,2)-C(2,1));
+	  returnval.y() = 1/(4*scalar)*(C(2,0)-C(0,2));
+	  returnval.z() = 1/(4*scalar)*(C(0,1)-C(1,0));
 	  
 	  return returnval;
   }
@@ -221,7 +227,11 @@ namespace InertialOdometry
   Eigen::Matrix<double, 3, 3> QuaternionLib::e2C(const Eigen::Vector3d &E) {
 	  Eigen::Matrix<double, 3, 3> returnval;
 	  
+	  returnval.setZero();
 	  
+	  e2C(E,returnval);
+	  
+	  //std::cout << "QuaternionLib::e2C(const Eigen::Vector3d &E) -- SHOULD NOT BE USED YET" << std::endl;
 	  
 	  return returnval;
   }
@@ -269,6 +279,8 @@ namespace InertialOdometry
 	  Eigen::Vector3d E;
 	  Eigen::Quaterniond q(C);
 	  
+	  E.setZero();
+	  
 	  q2e(q,E);
 	  
 	  E(0) = 0.;
@@ -282,7 +294,7 @@ namespace InertialOdometry
   }
 
   void QuaternionLib::printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom) {
-    Eigen::Quaterniond r(isom.rotation());
+    Eigen::Quaterniond r(isom.linear());
     double ypr[3];
     quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
     std::cout << prefix << " Euler Angles: " << ypr[0] << ", " << ypr[1] << ", " << ypr[2] << std::endl;

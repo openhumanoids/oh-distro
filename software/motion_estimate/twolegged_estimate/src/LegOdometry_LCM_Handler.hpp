@@ -49,6 +49,8 @@
 #define DISPLAY_FOOTSTEP_POSES
 #define DRAW_DEBUG_LEGTRANSFORM_POSES
 
+// TODO -- remove after testing
+//#define PUBLISH_AT_TRUE_POSITION
 
 class LegOdometry_Handler {
 private:
@@ -101,6 +103,8 @@ private:
 	void drawRightFootPose();	
 
 	void PublishFootContactEst(int64_t utime);
+	void PublishEstimatedStates(int64_t time);
+	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	

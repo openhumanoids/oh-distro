@@ -42,6 +42,10 @@ class TwoLegOdometry {
 		int stepcount;
 		
 		Eigen::Quaterniond imu_orientation_estimate;
+		Eigen::Quaterniond local_frame_orientation;
+		Eigen::Vector3d local_frame_rates;
+		Eigen::Vector3d local_velocities;
+		
 		
 		//LowPassFilter lowpass;
 		DataFileLogger datafile;
@@ -103,7 +107,7 @@ class TwoLegOdometry {
 		footstep DetectFootTransistion(int64_t utime, float leftz, float rightz);
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
-		void setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation);
+		void setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates);
 		
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
@@ -118,6 +122,7 @@ class TwoLegOdometry {
 		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
 		
 		Eigen::Isometry3d getPelvisState();
+		Eigen::Isometry3d getPelvisVelocityStates();
 		int getStepCount();
 		int getActiveFoot();
 		float leftContactStatus();

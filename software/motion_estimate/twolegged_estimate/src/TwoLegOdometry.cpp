@@ -33,6 +33,8 @@ TwoLegOdometry::TwoLegOdometry()
 	// TODO - expected weight must be updated from live vehicle data and not be hard coded like this
 	expectedweight = 900.f;
 	
+	local_velocities.setZero();
+	
 	leftforces.x = 0.f;
 	leftforces.y = 0.f;
 	leftforces.z = 0.f;
@@ -89,22 +91,12 @@ int TwoLegOdometry::secondary_foot() {
 }
 
 void TwoLegOdometry::CalculateBodyStates(/*data*/) {
+	
 	cout << "TwoLegOdometry::CalculateBodyStates() NOT IMPLEMENTED YET" << endl << endl;
 	
-	// Here we use the active footstep 
-	// and add the transform to compute the pelvis postion from the active foot
-	// from the pelvis calculate the other foot state
-	// from the pelvis compute the head state
-	
-	// all states of the robot should now be updated in the local object states
 	
 	
-	// calculate the new pelvis and head states
-	// create some data and pass it to this function
-	updateInternalStates(/*data*/); // some data must be passed to this function
 	
-	// Determine whether to transition feet
-	//FootTransitionLogic(); - depreciated
 	
 	return;
 }
@@ -127,6 +119,8 @@ void TwoLegOdometry::setStandingFoot(int foot) {
 // TODO - unused function, to be depreciated
 void TwoLegOdometry::updateInternalStates(/*data*/) {
 	cout << "void TwoLegOdometry::updateInternalStates(); nothing updated - NOT implemented" << endl;
+	
+	
 	
 	return;
 }
@@ -302,11 +296,29 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	left_to_pelvis.linear() = left.linear().transpose();
 	right_to_pelvis.translation() = -right.translation();
 	right_to_pelvis.linear() = right.linear().transpose();
+	
+	// Think we should add the velocity estimation process here
+	
 }
 
-void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation) {
+void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates) {
 	
-	imu_orientation_estimate = ahrs_orientation;
+	Eigen::Matrix3d C;
+	
+	C = InertialOdometry::QuaternionLib::q2C(ahrs_orientation);
+	
+	imu_orientation_estimate = InertialOdometry::QuaternionLib::C2q(C.transpose());
+	
+	//ComputeLocalOrientation();
+	
+	//Eigen::Vector3d local_rpy_rate = local_to_body_.linear() * ( temp_body_rpy_rate );
+	
+	Eigen::Quaterniond yaw_q;
+	yaw_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear());
+	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
+	
+	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
+	
 }
 
 Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
@@ -332,9 +344,16 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 		
 	// TODO -- Remove the dependence on gimbal lock, by not using the Euler angle representation when merging the attitude angle estimates from the different computations
 	
+	
 	E_rp = InertialOdometry::QuaternionLib::q2e(q_RollPitch);
 	E_y  = InertialOdometry::QuaternionLib::q2e(q_Yaw);
+	
+	
 	Eigen::Quaterniond return_q;
+	
+	//E_rp(1) = 1.;//its drawing what i expect, but requires a transpose on the .linear() from Eigen::Isometry3d testing higher up..
+	
+	std::cout << "Roll and Pitch and yaw from ahrs: " << E_rp.transpose() << std::endl;
 	
 	// Only use the yaw angle from the leg kinematics
 	E_y(0) = 0.;
@@ -345,12 +364,12 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 	
 	//std::cout << "Merge: " << (E_lk + E_imu).transpose() << std::endl;
 	
-	//Eigen::Vector3d output_E;
-//	output_E = (E_rp + E_y);
+	Eigen::Vector3d output_E;
+	output_E = (E_rp + E_y);
 	
-	Eigen::Vector3d output_E( 0.,0.,0.);
+	//Eigen::Vector3d output_E( 0.,0.,0.);
 	
-	//std::cout << "Set E to: " << output_E << std::endl;
+	//std::cout << "Set E to: " << output_E.transpose() << std::endl;
 	//std::cout << output_E(2) << std::endl;
 	
 	return_q = InertialOdometry::QuaternionLib::e2q(output_E);
@@ -362,18 +381,20 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 // The intended user member call to get the pelvis state. The orientation is a mix of the leg kinematics yaw and the torso IMU AHRS pitch and roll angles
 // Translation is from the accumulated leg kinematics
 Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
-	Eigen::Quaterniond roll_pitch_q;
 	
-	roll_pitch_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear());
-	
-	//Eigen::Isometry3d output_state(roll_pitch_q);
-	Eigen::Isometry3d output_state;
-	output_state = MergePitchRollYaw(roll_pitch_q,imu_orientation_estimate);
-	//output_state.linear().setIdentity();
-	
+	Eigen::Isometry3d output_state(local_frame_orientation);
 	output_state.translation() = getPelvisFromStep().translation();
 	
 	return output_state;
+}
+
+Eigen::Isometry3d TwoLegOdometry::getPelvisVelocityStates() {
+	
+	std::cout << "TwoLegOdometry::getPelvisVelocityStates() IS NOT READY TO BE USED\n";
+	
+	
+	
+	return Eigen::Isometry3d();
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {

@@ -153,6 +153,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Isometry3d left;
 	Eigen::Isometry3d right;
 	
+	
 	getTransforms(msg,left,right);
 	//InertialOdometry::QuaternionLib::printEulerAngles("after getTransforms()", left);
 
@@ -215,31 +216,53 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	//std::cout << "Secondary is at: " << _leg_odo->getSecondaryInLocal().translation().transpose() << std::endl;
 	//std::cout << std::endl;
-		Eigen::Isometry3d currentPelvis;
-
-		currentPelvis = _leg_odo->getPelvisState();
-		//currentPelvis = _leg_odo->getPelvisFromStep();
 		
-        bot_core::pose_t pose;
-        pose.pos[0] =currentPelvis.translation().x();
-        pose.pos[1] =currentPelvis.translation().y();
-        pose.pos[2] =currentPelvis.translation().z();
-        
-        Eigen::Quaterniond output_q(currentPelvis.linear());
-        
-        //std::cout << "Output E angles: " << InertialOdometry::QuaternionLib::q2e(output_q).transpose() << std::endl;
-        //Eigen::Quaterniond output_q;
-        
-        pose.orientation[0] =output_q.w();
-        pose.orientation[1] =output_q.x();
-        pose.orientation[2] =output_q.y();
-        pose.orientation[3] =output_q.z();
-        //lcm_->publish("POSE_KIN",&pose);
-        lcm_->publish("POSE_BODY_VO",&pose);
                 
 
         // Publish the foot contact state estimates to LCM
         PublishFootContactEst(msg->utime);
+        
+        PublishEstimatedStates(msg->utime);
+}
+
+void LegOdometry_Handler::PublishEstimatedStates(int64_t time) {
+	
+	Eigen::Isometry3d currentPelvis;
+
+	currentPelvis = _leg_odo->getPelvisState();
+	//currentPelvis = _leg_odo->getPelvisFromStep();
+	
+    bot_core::pose_t pose;
+    pose.pos[0] =currentPelvis.translation().x();
+    pose.pos[1] =currentPelvis.translation().y();
+    // TODO -- Confirm the proper use of the z() translation offset. as this +1meter is done just for visualization
+    pose.pos[2] =currentPelvis.translation().z()+1.;
+    
+    Eigen::Quaterniond output_q(currentPelvis.linear());
+    
+#ifdef PUBLISH_AT_TRUE_POSITION
+    pose.pos[0] = msg->origin_position.translation.x;
+    pose.pos[1] = msg->origin_position.translation.y;
+    pose.pos[2] = msg->origin_position.translation.z;
+#endif
+    
+    //std::cout << "Output E angles: " << InertialOdometry::QuaternionLib::q2e(output_q).transpose() << std::endl;
+    //Eigen::Quaterniond output_q;
+    
+    pose.orientation[0] =output_q.w();
+    pose.orientation[1] =output_q.x();
+    pose.orientation[2] =output_q.y();
+    pose.orientation[3] =output_q.z();
+    
+    // Need to add the rotation rate states..
+    
+    
+    
+    //lcm_->publish("POSE_KIN",&pose);
+    lcm_->publish("POSE_BODY_VO",&pose);
+        
+        
+	
 }
 
 void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 
@@ -248,6 +271,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
+	Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
 
 	/*
 	std::cout << "AHRS - q: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl
@@ -255,7 +279,7 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 			  << std::endl;
 	*/
 	
-	_leg_odo->setOrientationTransform(q);
+	_leg_odo->setOrientationTransform(q, rates_b);
 	
 	return;
 }
