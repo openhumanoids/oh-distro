@@ -30,7 +30,7 @@ if 1
 end
 
 % time spacing of samples for IK
-ts = 0:0.1:zmptraj.tspan(end);
+ts = 0:0.08:zmptraj.tspan(end);
 
 % create desired joint trajectory
 cost = Point(biped.getStateFrame,1);
@@ -59,10 +59,11 @@ htraj = [];
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    % default:
-    %q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
-    % beta:
-    q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+    try
+      q(:,i) = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+    catch err
+      q(:,i) = inverseKin(biped,q(:,i-1),0,[comtraj.eval(t);nan],rfoot_body,[0;0;0],foottraj.right.orig.eval(t),lfoot_body,[0;0;0],foottraj.left.orig.eval(t),options);
+    end
   else
     q = q0;
   end
