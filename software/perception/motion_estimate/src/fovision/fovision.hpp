@@ -29,8 +29,8 @@ public:
     
     ~FoVision();
     
-    void doOdometry(uint8_t *left_buf,uint8_t *right_buf);
-    void doOdometry(uint8_t *left_buf,float *disparity_buf);
+    void doOdometry(uint8_t *left_buf,uint8_t *right_buf, int64_t utime);
+    void doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime);
 
     void send_status_msg(std::string text);
     void fovis_stats();
@@ -68,10 +68,6 @@ public:
       return estim_status;
     }
     
-    void setCurrentTimestamp(int64_t current_timestamp_in){
-      current_timestamp_ = current_timestamp_in;
-    }
-
     const fovis::FeatureMatch* getMatches(){ return odom_.getMotionEstimator()->getMatches(); }
     int getNumMatches(){ return odom_.getMotionEstimator()->getNumMatches(); }
     int getNumInliers(){ return odom_.getMotionEstimator()->getNumInliers(); }

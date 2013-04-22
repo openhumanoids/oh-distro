@@ -1,6 +1,8 @@
 #include "fovision.hpp"
 #include <lcmtypes/drc_lcmtypes.hpp>
 
+using namespace std;
+
 FoVision::FoVision(boost::shared_ptr<lcm::LCM> &lcm_,
   boost::shared_ptr<fovis::StereoCalibration> kcal):
   lcm_(lcm_), kcal_(kcal), odom_(kcal_->getLeftRectification(),  
@@ -42,14 +44,18 @@ FoVision::~FoVision()
 
 
 // Typical Stereo:
-void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf){
+void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf, int64_t utime){
+  prev_timestamp_ = current_timestamp_;
+  current_timestamp_ = utime;
   stereo_depth_->setRightImage(right_buf);
   odom_.processFrame(left_buf, stereo_depth_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
 }
 
 // Left and Disparity:
-void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf){
+void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime){
+  prev_timestamp_ = current_timestamp_;
+  current_timestamp_ = utime;
   stereo_disparity_->setDisparityData(disparity_buf);
   odom_.processFrame(left_buf, stereo_disparity_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
@@ -156,7 +162,7 @@ void FoVision::fovis_stats(){
   
   if (estim_status !=  fovis::NO_DATA) {
     fovis_update_t_publish(lcm_->getUnderlyingLCM(), 
-                "KINECT_REL_ODOMETRY_FOVISION", &update_msg);
+                "FOVIS_REL_ODOMETRY", &update_msg);
   }
 
   bool publish_fovis_stats=1;

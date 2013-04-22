@@ -113,6 +113,31 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     tic_toc.push_back(_timestamp_now());
   #endif
   
+    
+  // 1b. Publihs Head to Body - which needs to be intverted
+    /*
+  map<string, drc::transform_t>::const_iterator transform_it;
+  drc::transform_t  T_body_head;
+  transform_it=cartpos_out.find("head");
+  if(transform_it!=cartpos_out.end()){// fk cart pos exists
+    T_body_head= transform_it->second;
+  }else{
+    std::cout<< "fk position does not exist" <<std::endl;
+  }
+  Eigen::Isometry3d T_head_body = Eigen::Isometry3d( DRCTransformToEigen( T_body_head ) ).inverse();
+  bot_core::rigid_transform_t tf;
+  tf.utime = msg->utime;
+  tf.trans[0] = T_head_body.translation().x();
+  tf.trans[1] = T_head_body.translation().y();
+  tf.trans[2] = T_head_body.translation().z();
+  Eigen::Quaterniond quat2 = Eigen::Quaterniond(T_head_body.rotation());
+  tf.quat[0] = quat2.w();
+  tf.quat[1] = quat2.x();
+  tf.quat[2] = quat2.y();
+  tf.quat[3] = quat2.z();
+  lcm_->publish("HEAD_TO_BODY", &tf);    
+  */  
+    
   // 2a. Determine the required BOT_FRAMES transforms:
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
   bool body_to_head_found =false;
@@ -135,6 +160,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   
   // 2b. Republish the required BOT_FRAMES transforms:
   if (body_to_head_found){
+    /*
+     * DONT PUBLISH THIS - the TF is the opposite direction
     bot_core::rigid_transform_t tf;
     tf.utime = msg->utime;
     tf.trans[0] = body_to_head.translation().x();
@@ -145,7 +172,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     tf.quat[1] = quat.x();
     tf.quat[2] = quat.y();
     tf.quat[3] = quat.z();
-    lcm_->publish("BODY_TO_HEAD", &tf);     
+    lcm_->publish("BODY_TO_HEAD", &tf);
+    */
     
     if (body_to_hokuyo_link_found){
       Eigen::Isometry3d head_to_hokuyo_link = body_to_head.inverse() * body_to_hokuyo_link ;
