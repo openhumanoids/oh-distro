@@ -83,11 +83,22 @@ class SimExample
     void write_score_image(const float* score_buffer,std::string fname, int64_t utime);
     void write_depth_image_uint(const float* depth_buffer,std::string fname, int64_t utime);
 
-    // Get the GL depth buffer, invert it, color mask it. always 3 colors
-    uint8_t* getDepthBuffer();
-    // Get the GL color buffer, invert it and output either gray (red channel) or rgb
+    ///////////// Processed //////////////////////
+    // Get the GL depth buffer, flip up/down it, color mask it. always 3 colors
+    uint8_t* getDepthBufferAsColor();
+    // Get the GL color buffer, flip up/down and output either gray (red channel) or rgb
     uint8_t* getColorBuffer(int n_colors_);
-
+    
+    //////////// Raw //////////////////////////////
+    // Get the raw GL depth buffer.  Direct pointer to GL buffer:
+    const float* getDepthBuffer(){
+      return  rl_->getDepthBuffer ();
+    }
+    // Get the raw GL color buffer. Direct pointer to GL buffer:
+    const uint8_t* getColorBuffer(){
+      return  rl_->getColorBuffer ();
+    }    
+    
     void setCameraIntrinsicsParameters (int camera_width_in,
                                       int camera_height_in,
                                       float camera_fx_in,

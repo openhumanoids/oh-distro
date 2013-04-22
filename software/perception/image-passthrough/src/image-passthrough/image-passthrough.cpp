@@ -448,7 +448,7 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
 
 //////////////////////////// I-O ///////////////////////////////////////
 uint8_t* 
-SimExample::getDepthBuffer()
+SimExample::getDepthBufferAsColor()
 {
   const float* depth_buffer =  rl_->getDepthBuffer ();
   int npixels = rl_->getWidth() * rl_->getHeight();

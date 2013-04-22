@@ -43,7 +43,7 @@
 //   component solve fk, createScene, render, sendOutput
 //   fraction: 0, 0.0146542, 0.459086, 0.384564, 0.141696, 
 //   time sec: 0, 0.000375, 0.011748, 0.009841, 0.003626, ... creating Scene is much quicker AND transmission as zip images is quick
-
+/*
 #include <iostream>
 #include <Eigen/Dense>
 
@@ -65,12 +65,13 @@
 
 
 
-#include <ConciseArgs>
 
 #define DO_TIMING_PROFILE FALSE
 #define PCL_VERBOSITY_LEVEL L_ERROR
 // offset of affordance in mask labelling:
 #define AFFORDANCE_OFFSET 64
+*/
+#include "image-passthrough-app.hpp"
 
 using namespace std;
 using namespace drc;
@@ -79,69 +80,14 @@ using namespace boost;
 using namespace boost::assign; // bring 'operator+()' into scope
 
 
-
-
-class Pass{
-  public:
-    Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
-         std::string camera_channel_, int output_color_mode_, bool use_convex_hulls);
-    
-    ~Pass(){
-    }
-    
-  private:
-    // LCM:
-    boost::shared_ptr<lcm::LCM> lcm_;
-    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
-    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
-    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);  
-    void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
-    bool urdf_parsed_;
-    bool urdf_subscription_on_;
-    lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
-    
-    // External Objects:
-    BotParam* botparam_;
-    pointcloud_vis* pc_vis_;
-    boost::shared_ptr<visualization_utils::GlKinematicBody> gl_robot_;
-    image_io_utils*  imgutils_; 
-    SimExample::Ptr simexample;
-    boost::shared_ptr<rgbd_primitives>  prim_; // this should be moved into the library
-
-    void sendOutput(int64_t utime);
-
-    // Config:
-    int width_, height_;
-    std::string camera_channel_;
-    
-    // State:
-    pcl::PolygonMesh::Ptr combined_aff_mesh_ ;
-    bool aff_mesh_filled_;
-    drc::robot_state_t last_rstate_; // Last robot state: this is used to extract link positions:
-    bool init_rstate_;    
-    std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-    std::string robot_name_;
-    std::string urdf_xml_string_; 
-    
-    // Settings:
-    bool verbose_;
-    int output_color_mode_;
-    bool use_convex_hulls_;
-    
-    AffordanceUtils affutils;
-    bool affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
-};
-
 Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_channel_,
-    int output_color_mode_, bool use_convex_hulls_):          
+    int output_color_mode_, bool use_convex_hulls_, string camera_frame_):          
     lcm_(lcm_), output_color_mode_(output_color_mode_), use_convex_hulls_(use_convex_hulls_), 
-    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_) {
+    urdf_parsed_(false), init_rstate_(false), camera_channel_(camera_channel_), camera_frame_(camera_frame_){
 
   // LCM subscriptions:
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
-  lcm_->subscribe(camera_channel_,&Pass::imageHandler,this);  
   urdf_subscription_ = lcm_->subscribe("ROBOT_MODEL", &Pass::urdfHandler,this);    
   urdf_subscription_on_ = true;
   ////////////////////////////////////////////////////////
@@ -189,30 +135,6 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-// Output the simulated output to file/lcm:
-void Pass::sendOutput(int64_t utime){ 
-  bool do_timing=false;
-  std::vector<int64_t> tic_toc;
-  if (do_timing){
-    tic_toc.push_back(_timestamp_now());
-  }
-
-  //imgutils_->sendImage( simexample->getDepthBuffer(), utime, width_, height_, 3, string( camera_channel_ +  "_DEPTH") );
-  if (output_color_mode_==0){
-    // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
-    imgutils_->sendImage( simexample->getColorBuffer(3), utime, width_, height_, 3, string( camera_channel_ +  "_MASK") );
-  }else{
-    //imgutils_->sendImage( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASK")  );
-    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASKZIPPED")  );
-  }
-  
-  if (do_timing==1){
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"sendOutput");
-  }
-}
-
-
 pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   pcl::PolygonMesh mesh;
   pcl::io::loadPolygonFile(  filename    ,mesh);
@@ -221,9 +143,6 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   //state->model = mesh_ptr;  
   return mesh_ptr;
 }
-
-
-
 
 bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
     std::map<string,double> am;
@@ -238,16 +157,19 @@ bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     string otdf_type = affplus.aff.otdf_type;
     
     if (otdf_type == "box"){
-      cout  << aff_uid << " is a box\n";
+      //cout  << aff_uid << " is a box\n";
       mesh_out = prim_->getCubeWithTransform(transform,am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second);
     }else if(otdf_type == "cylinder"){
-      cout  << aff_uid << " is a cylinder\n";
+      //cout  << aff_uid << " is a cylinder\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
     }else if(otdf_type == "steering_cyl"){
-      cout  << aff_uid << " is a steering_cyl\n";
+      //cout  << aff_uid << " is a steering_cyl\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
     }else if(otdf_type == "dynamic_mesh"){
-      cout  << aff_uid << " is a dynamic_mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+      //cout  << aff_uid << " is a dynamic_mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    }else if(otdf_type == "plane"){
+      //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
     }else{
       cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";
@@ -280,7 +202,7 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
     aff_mesh_filled_=false;
     return;
   }
-  cout << "got "<< msg->naffs <<" affs\n"; 
+  cout << "got "<< msg->naffs <<" affs @ "<< msg->utime <<"\n"; 
   
   pcl::PolygonMesh::Ptr combined_aff_mesh_temp(new pcl::PolygonMesh());
   combined_aff_mesh_ = combined_aff_mesh_temp;
@@ -366,16 +288,15 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   init_rstate_=true; // both urdf parsed and robot state handled... ready to handle data
 }  
   
-
-void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
+bool Pass::createMask(int64_t msg_time){
   if (!urdf_parsed_){
     std::cout << "URDF not parsed, ignoring image\n";
-    return;
+    return false;
   }
   if (!init_rstate_){
     std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
-    return;
-  }
+    return false;
+  }  
   
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
@@ -405,13 +326,13 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     // cout << "Success!" <<endl;
   }else{
     cerr << "Error: could not calculate forward kinematics!" <<endl;
-    return;
+    return false;
   }    
   
   // 1b. Determine World to Camera Pose:
   Eigen::Isometry3d world_to_camera;
   map<string, drc::transform_t>::const_iterator transform_it;
-  transform_it=cartpos_out.find("left_camera_optical_frame");
+  transform_it=cartpos_out.find(camera_frame_);// usually "left_camera_optical_frame"
   if(transform_it!=cartpos_out.end()){// fk cart pos exists
     Eigen::Isometry3d body_to_camera;
     body_to_camera.setIdentity();
@@ -429,7 +350,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   // Loop through joints and extract world positions:
   std::vector<Eigen::Isometry3d> link_tfs_e;
-  int counter =msg->utime;  
+  int counter =msg_time;  
   std::vector<Isometry3dTime> world_to_jointTs;
   std::vector< int64_t > world_to_joint_utimes;
   std::vector< std::string > link_names;
@@ -473,7 +394,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   
   if (verbose_){
-    Isometry3dTime world_to_cameraTorig = Isometry3dTime( msg->utime, world_to_camera);
+    Isometry3dTime world_to_cameraTorig = Isometry3dTime( msg_time, world_to_camera);
     pc_vis_->pose_to_lcm_from_list(9995, world_to_cameraTorig);
   }
   
@@ -493,7 +414,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     print_Isometry3d(world_to_camera, ss);
     cout << ss.str() << " head_pose\n";
 
-    Isometry3dTime world_to_cameraT = Isometry3dTime( msg->utime, world_to_camera);
+    Isometry3dTime world_to_cameraT = Isometry3dTime(msg_time, world_to_camera);
     pc_vis_->pose_to_lcm_from_list(9999, world_to_cameraT);
   }
     
@@ -510,9 +431,9 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   if (verbose_){ // Visualize the entire world thats about to be renderered: NBNB THIS IS REALLY USEFUL FOR DEBUGGING
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
-    Isometry3dTime null_poseT = Isometry3dTime(msg->utime, null_pose);  
+    Isometry3dTime null_poseT = Isometry3dTime(msg_time, null_pose);  
     pc_vis_->pose_to_lcm_from_list(9994, null_poseT);
-    pc_vis_->mesh_to_lcm_from_list(9993, simexample->getCombinedMesh() , msg->utime , msg->utime);
+    pc_vis_->mesh_to_lcm_from_list(9993, simexample->getCombinedMesh() , msg_time , msg_time);
   }
   simexample->addScene();
   
@@ -524,37 +445,32 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
-  #endif
-  
-  sendOutput(msg->utime);
-  
-  #if DO_TIMING_PROFILE
-    tic_toc.push_back(_timestamp_now());
-    display_tic_toc(tic_toc,"imageHandler");
+    display_tic_toc(tic_toc,"createMask");
   #endif  
+    
+  return true;
 }
 
-int 
-main( int argc, char** argv ){
-  ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string camera_channel="CAMERALEFT";
-  int output_color_mode=1; // 0 =rgb, 1=grayscale mask, 2=binary black/white grayscale mask
-  bool use_convex_hulls=false;
-  parser.add(camera_channel, "c", "camera_channel", "Camera channel");
-  parser.add(output_color_mode, "o", "output_color_mode", "0rgb |1grayscale |2b/w");
-  parser.add(use_convex_hulls, "u", "use_convex_hulls", "Use convex hull models");
-  parser.parse();
-  cout << camera_channel << " is camera_channel\n"; 
-  cout << output_color_mode << " is output_color_mode\n"; 
-  cout << use_convex_hulls << " is use_convex_hulls\n"; 
-  
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
-  if(!lcm->good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+
+// Output the simulated output to file/lcm:
+void Pass::sendOutput(int64_t utime){ 
+  bool do_timing=false;
+  std::vector<int64_t> tic_toc;
+  if (do_timing){
+    tic_toc.push_back(_timestamp_now());
+  }
+
+  //imgutils_->sendImage( simexample->getDepthBufferAsColor(), utime, width_, height_, 3, string( camera_channel_ +  "_DEPTH") );
+  if (output_color_mode_==0){
+    // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
+    imgutils_->sendImage( simexample->getColorBuffer(3), utime, width_, height_, 3, string( camera_channel_ +  "_MASK") );
+  }else{
+    //imgutils_->sendImage( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASK")  );
+    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, width_, height_, 1, string( camera_channel_ +  "_MASKZIPPED")  );
   }
   
-  Pass app(argc,argv, lcm, camera_channel,output_color_mode, use_convex_hulls);
-  cout << "image-passthrough ready" << endl << endl;
-  while(0 == lcm->handle());
-  return 0;
+  if (do_timing==1){
+    tic_toc.push_back(_timestamp_now());
+    display_tic_toc(tic_toc,"sendOutput");
+  }
 }
