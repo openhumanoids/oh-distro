@@ -140,14 +140,13 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
 
     PointMatch match = matcher.refine(curPos, rightPyramid, refTransform,
                                       leftPyramid, mHelper->mPatchRadiusX,
-                                      mHelper->mPatchRadiusY);
-    std::cout << match.mRefPos.transpose() << " " << curPos.transpose() << " " << match.mCurPos.transpose() << " " << match.mScore << std::endl;
+                                      mHelper->mPatchRadiusY, xDir);
+
     // add to list if good match
     if (match.mScore >= mHelper->mMinMatchScore) {
       matches.push_back(match);
     }
   }
-  return true;
 
   // triangulate 3d points from 2d stereo pairs
   StereoCamera camera = mHelper->mCamera;
@@ -170,9 +169,9 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
     Eigen::Matrix<float,3,2> lhs;
     Eigen::Vector3f rhs = rightOrigin - leftOrigin;
     lhs.block<3,1>(0,0) = leftRay;
-    lhs.block<3,1>(0,0) = -rightRay;
+    lhs.block<3,1>(0,1) = -rightRay;
     Eigen::Vector2f sol =
-      lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(rhs);
+      lhs.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(rhs);
     landmarks[i].mPos3d = leftOrigin + leftRay*sol[0];
     // TODO landmarks[i].mPosCov = xxx;
   }
@@ -198,7 +197,7 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
   }
   std::vector<float> sortedSquaredDistances = squaredDistances;
   std::sort(sortedSquaredDistances.begin(), sortedSquaredDistances.end());
-  float distThresh = 3*1.5*sqrt(squaredDistances[n/2]);
+  float distThresh = 3*1.5*sqrt(sortedSquaredDistances[n/2]);
   distThresh *= distThresh;
 
   TrackedObject::Ptr object(new TrackedObject());

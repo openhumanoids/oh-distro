@@ -2,12 +2,15 @@
 #include <fstream>
 #include <chrono>
 
+#include <bot_param/param_client.h>
+#include <opencv2/opencv.hpp>
+
 #include "StereoCamera.hpp"
 #include "BotUtils.hpp"
 #include "FeatureBasedTracker.hpp"
-#include <bot_param/param_client.h>
-#include <opencv2/opencv.hpp>
 #include "KeyFrame.hpp"
+#include "PatchUtils.hpp"
+#include "PointMatcher.hpp"
 
 using namespace std;
 using namespace tracking;
@@ -107,13 +110,52 @@ int main(const int iArgc, const char** iArgv) {
     }
   }
 
+  //
+  // test patch tracking
+  //
+  cv::Mat rightImageFake;
+  cv::Mat_<float> warper(2,3);
+  warper(0,0) = 1; warper(0,1) = 0; warper(0,2) = 3;
+  warper(1,0) = 0; warper(1,1) = 1; warper(1,2) = 0;
+  cv::warpAffine(leftImage, rightImageFake, warper, leftImage.size());
+  KeyFrame::Ptr keyFrame1(new KeyFrame());
+  keyFrame1->setId(0);
+  keyFrame1->setNumPyramidLevels(4);
+  keyFrame1->setFastThreshold(5);
+  keyFrame1->setSmoothingSigma(0.5);
+  keyFrame1->setShouldExtractFeatures(true);
+  keyFrame1->setPose(sensorPose);
+  keyFrame1->setData(leftImage, leftImage, disparity);
+  std::vector<cv::Mat> leftPyramid(keyFrame1->getNumPyramidLevels());
+  std::vector<cv::Mat> rightPyramid(keyFrame1->getNumPyramidLevels());
+  for (int i = 0; i < keyFrame1->getNumPyramidLevels(); ++i) {
+    leftPyramid[i] = keyFrame1->getPyramidLevel(i)->mLeftImage;
+    rightPyramid[i] = keyFrame1->getPyramidLevel(i)->mRightImage;
+  }
+  KeyFrame::PyramidLevel::Ptr pyrLevel = keyFrame1->getPyramidLevel(0);
+  PointMatcher matcher;
+  Eigen::Affine2f refTransform = Eigen::Affine2f::Identity();
+  Eigen::Vector2f xDir = Eigen::Vector2f::UnitX();
+  Eigen::Vector2f curPos(408,376);
+  refTransform.translation() = curPos + Eigen::Vector2f(10,0);
+  PointMatch match = matcher.refine(curPos, rightPyramid, refTransform,
+                                    leftPyramid, 20,20, xDir);
+  std::cout << match.mRefPos.transpose() << " " <<
+    curPos.transpose() << " " << match.mCurPos.transpose() << " " <<
+    match.mScore << std::endl;
 
   //
   // test object initialization
   //
+  startTime = std::chrono::high_resolution_clock::now();
   FeatureBasedTracker tracker;
+  tracker.setCamera(camera);
   tracker.initialize(timestamp, id, mask, leftImage, rightImage, disparity,
                      objectPose, sensorPose);
+  endTime = std::chrono::high_resolution_clock::now();
+  timeDiff =
+    std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime);
+  std::cout << "Time for feature init " << timeDiff.count()/1e6 << std::endl;
 
   return 0;
 }

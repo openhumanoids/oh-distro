@@ -22,12 +22,6 @@ refine(const Eigen::Vector2f& iCurPos,
   match.mRefPos = iRefTransform.translation();
   match.mCurPos = iCurPos;
   bool shouldProject = iConstraintDir.norm() > 1e-4f;
-  std::cout << "CONSTRAINT " << iConstraintDir.transpose() << std::endl;
-  if (shouldProject) {
-    std::cout << "WHY" << std::endl;
-  } else {
-    std::cout << "NOT" << std::endl;
-  }
 
   // create patches
   cv::Mat refPatch(2*iPatchRadiusX+1, 2*iPatchRadiusY+1, CV_32FC1);
@@ -91,16 +85,13 @@ refine(const Eigen::Vector2f& iCurPos,
         float gyt = gy.dot(gt);
         delta = Eigen::Vector2f(hyy*gxt - hxy*gyt, -hxy*gxt + hxx*gyt)*detInv;
       }
-      std::cout << "DELTA " << delta.transpose() << std::endl;
 
       match.mCurPos += delta;
       if (delta.norm() < 0.01f) break;
     }
-    std::cout << "ITERS " << iter << std::endl;
 
     // transform current position back to base level coords
     match.mCurPos /= scaleFactor;
-    exit(-1);
   }
 
   // compute final score

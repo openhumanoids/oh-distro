@@ -57,8 +57,8 @@ interpolateImpl(const cv::Mat& iImage, const Eigen::Vector2f& iCenter,
   for (int outRow = 0, inRow = yInt-yRadius;
        outRow < oPatch.rows; ++outRow, ++inRow) {
     if ((inRow < 0) || (inRow >= iImage.rows-1)) continue;
-    const InType* inPtr0 = iImage.ptr<InType>(inRow);
-    const InType* inPtr1 = iImage.ptr<InType>(inRow+1);
+    const InType* inPtr0 = iImage.ptr<InType>(inRow) + xInt-xRadius;
+    const InType* inPtr1 = iImage.ptr<InType>(inRow+1) + xInt-xRadius;
     OutType* outPtr = oPatch.ptr<OutType>(outRow);
     for (int outCol = 0, inCol = xInt-xRadius; outCol < oPatch.cols;
          ++outCol, ++inCol, ++inPtr0, ++inPtr1, ++outPtr) {
@@ -206,7 +206,7 @@ save(const cv::Mat& iImage, const std::string& iFileName) {
   ofs << iImage.cols << " " << iImage.rows << std::endl;
   for (int i = 0; i < iImage.rows; ++i) {
     for (int j = 0; j < iImage.cols; ++j) {
-      ofs << iImage.at<float>(j,i) << " ";
+      ofs << iImage.at<float>(i,j) << " ";
     }
     ofs << std::endl;
   }
