@@ -3,7 +3,40 @@
 #include "ConstraintApp.h"
 #include <kdl/treefksolverpos_recursive.hpp>
 
-Affordance::Affordance(std::ofstream& log, const drc::affordance_t& msg) : m_log(log)
+Affordance::Affordance(const std::string& filename) : m_log(std::cout) 
+{
+  // load the OTDF file
+  std::string xml_string;
+  if ( !otdf::get_xml_string_from_file(filename, xml_string) ) {
+    m_log << "unable to get_xml_string_from_file " << filename << std::endl;
+    return;
+  }
+
+  //convert OTDF to URDF
+  boost::shared_ptr<otdf::ModelInterface> otdf_instance(otdf::parseOTDF(xml_string));
+  otdf_instance->update();
+
+  std::string urdf_xml_string(otdf::convertObjectInstanceToCompliantURDFstring(otdf_instance));
+
+  // Parse KDL tree
+  if ( !kdl_parser::treeFromString(urdf_xml_string, m_tree) ) {
+    m_log << "ERROR: Failed to extract kdl tree from " << filename 
+	  << " otdf object instance "<< std::endl; 
+    return;
+  }
+
+  UpdateJointNames();
+
+  //print some debug info on the new affordance
+  m_log << "Joint names and numbers: " << std::endl;
+  PrintJointNames();
+  
+  m_log << "created KDL object with " << m_tree.getNrOfJoints() << " joints and " 
+	<< m_tree.getNrOfSegments() << " segments" << std::endl;
+  PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0);
+}
+
+Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(log)
 {
   /*
   std::string urdf_xml_string;
@@ -209,15 +242,15 @@ bool Affordance::GetSegmentExpressedInWorld(const std::string& segmentName, cons
   KDL::Frame segment_expressedIn_root;
   KDL::TreeFkSolverPos_recursive fk(m_tree);
   int fkret = fk.JntToCart(joints, segment_expressedIn_root, segmentName);
-  if ( fkret < 0 ) {
+  //if ( fkret < 0 ) {
     m_log << "ERROR: Affordance::GetSegmentExpressedInWorld: fk returned " << fkret << std::endl
 	  << "   segmentName=" << segmentName << std::endl
 	  << "   joints=" << joints.data << std::endl;
     m_log << "   state=";
     for ( int i = 0; i < state.size(); i++ ) m_log << state[i] << ", ";
     m_log << std::endl;
-    return false;
-  }
+    //  return false;
+    //}
 
   segment_expressedIn_world = root_expressedIn_world * segment_expressedIn_root;
 

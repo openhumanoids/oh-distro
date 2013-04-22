@@ -35,7 +35,8 @@ class Affordance {
   typedef boost::shared_ptr<Affordance> Ptr;
   typedef std::vector<double> StateVector;
   
-  Affordance(std::ofstream& log, const drc::affordance_t& msg);  
+  Affordance(const std::string& filename);
+  Affordance(std::ostream& log, const drc::affordance_t& msg);  
   bool GetStateFromMsg(const drc::affordance_t& msg, StateVector& state);
   void PrintState(const StateVector& state);
   KDL::Tree& GetTree() { return m_tree; }
@@ -53,7 +54,7 @@ class Affordance {
   KDL::Frame GetFrameFromVector(const StateVector& state);
 
  private:
-  std::ofstream& m_log;
+  std::ostream& m_log;
   KDL::Tree m_tree;
 
   typedef boost::multi_index_container<
