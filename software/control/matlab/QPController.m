@@ -114,7 +114,7 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-    contact_threshold = 0.0075; % m
+    contact_threshold = 0.0001; % m
            
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
@@ -338,9 +338,13 @@ classdef QPController < MIMODrakeSystem
       model.ub = ub;
 
 %       tic;
+%     try
       result = gurobi(model,obj.solver_options);
-%       toc
       alpha = result.x;
+%     catch err
+%       stophere=1;
+%     end
+%       toc
     end
     
     y = alpha(nq+(1:nu));

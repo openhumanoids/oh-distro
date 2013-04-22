@@ -8,8 +8,8 @@ classdef WalkingController < DRCController
         'supptraj',[],'comtraj',[],'lfoottraj',[],'rfoottraj',[],'ti_flag',false));
       
       % instantiate QP controller
-      options.slack_limit = 20.0;
-      options.w = 0.5;
+      options.slack_limit = 30.0;
+      options.w = 0.1;
       options.R = 1e-12*eye(getNumInputs(r));
       qp = QPController(r,ctrl_data,options);
 
