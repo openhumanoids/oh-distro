@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <random>
 
 #include <bot_param/param_client.h>
 #include <opencv2/opencv.hpp>
@@ -11,6 +12,7 @@
 #include "KeyFrame.hpp"
 #include "PatchUtils.hpp"
 #include "PointMatcher.hpp"
+#include "PoseEstimator.hpp"
 
 using namespace std;
 using namespace tracking;
@@ -145,6 +147,44 @@ int main(const int iArgc, const char** iArgv) {
     match.mScore << std::endl;
 
   //
+  // test 3d pose estimation
+  //
+  std::vector<Eigen::Vector3f> ptsOrig(100);
+  std::default_random_engine gen;
+  std::uniform_real_distribution<float> dist(-10,10);
+  for (size_t i = 0; i < ptsOrig.size(); ++i) {
+    ptsOrig[i] = Eigen::Vector3f(dist(gen), dist(gen), dist(gen));
+  }
+  Eigen::Isometry3f xform = Eigen::Isometry3f::Identity();
+  xform.translation() = Eigen::Vector3f(1,2,3);
+  Eigen::Matrix3f rot;
+  rot = Eigen::AngleAxisf(0.1, Eigen::Vector3f(1,2,3).normalized());
+  xform.linear() = rot;
+  auto ptsNew = ptsOrig;
+  for (size_t i = 0; i < ptsNew.size(); ++i) {
+    ptsNew[i] = xform*ptsOrig[i];
+  }
+  PoseEstimator est;
+  Eigen::Isometry3f estPose;
+  if (est.leastSquares(ptsOrig, ptsNew, estPose)) {
+    std::cout << "est pose\n" << estPose.matrix() << std::endl;
+  } else {
+    std::cout << "POSE ESTIMATION FAILED" << std::endl;
+  }
+  std::vector<int> inliers;
+  for (int i = 0; i < 10; ++i) {
+    ptsOrig.push_back(Eigen::Vector3f(dist(gen), dist(gen), dist(gen)));
+    ptsNew.push_back(Eigen::Vector3f(dist(gen), dist(gen), dist(gen)));
+  }
+  est.setErrorThreshold(0.01);
+  if (est.ransac(ptsOrig, ptsNew, estPose, inliers)) {
+    std::cout << "ransac pose\n" << estPose.matrix() << std::endl;
+    std::cout << "inliers: " << inliers.size() << std::endl;
+  } else {
+    std::cout << "POSE RANSAC FAILED" << std::endl;
+  }
+
+  //
   // test object initialization
   //
   startTime = std::chrono::high_resolution_clock::now();
@@ -155,7 +195,17 @@ int main(const int iArgc, const char** iArgv) {
   endTime = std::chrono::high_resolution_clock::now();
   timeDiff =
     std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime);
-  std::cout << "Time for feature init " << timeDiff.count()/1e6 << std::endl;
+  std::cout << "Time for init " << timeDiff.count()/1e6 << std::endl;
+
+  //
+  // test object tracking
+  //
+  startTime = std::chrono::high_resolution_clock::now();
+  tracker.update(timestamp, leftImage, rightImage, disparity, sensorPose);
+  endTime = std::chrono::high_resolution_clock::now();
+  timeDiff =
+    std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime);
+  std::cout << "Time for update " << timeDiff.count()/1e6 << std::endl;
 
   return 0;
 }

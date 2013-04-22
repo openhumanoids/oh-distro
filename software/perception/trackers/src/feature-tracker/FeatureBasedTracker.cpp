@@ -43,8 +43,7 @@ struct FeatureBasedTracker::Helper {
       Eigen::Vector2f predRight =
         rightCamera.pointToPixel(iObject->mLandmarks[i].mPos3d).head<2>();
 
-      // predict patches
-      
+      // predict patches via current sensor pose      
       // TODO
 
       // relocalize predicted point in left image

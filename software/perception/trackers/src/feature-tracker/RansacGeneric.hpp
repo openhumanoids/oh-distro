@@ -61,7 +61,7 @@ public:
     // for random sample index generation
     std::vector<int> allIndices(n);
     std::random_device randomDevice;
-    std::mt19937 randomGenerator(randomDevice());
+    std::default_random_engine randomGenerator(randomDevice());
     std::uniform_int_distribution<> randomDist(0, n-1);
 
     // iterate until adaptive number of iterations are exceeded

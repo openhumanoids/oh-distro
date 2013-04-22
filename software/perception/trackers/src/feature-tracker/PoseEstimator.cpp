@@ -21,6 +21,9 @@ leastSquares(const std::vector<Eigen::Vector3f>& iRefPoints,
   const size_t n = iRefPoints.size();
   if ((n < 3) || (n != iCurPoints.size())) return false;
 
+  // initialize pose object
+  oPose = Eigen::Isometry3f::Identity();
+
   // compute center of mass of each point set
   Eigen::Vector3f meanRef(0,0,0), meanCur(0,0,0);
   for (size_t i = 0; i < n; ++i) {
@@ -39,7 +42,7 @@ leastSquares(const std::vector<Eigen::Vector3f>& iRefPoints,
   }
   Eigen::Matrix3f matx = refMatrix.transpose()*curMatrix;
   Eigen::JacobiSVD<Eigen::Matrix3f> svd;
-  svd.compute(matx, Eigen::ComputeFullV);
+  svd.compute(matx, Eigen::ComputeFullU | Eigen::ComputeFullV);
   oPose.linear() = svd.matrixU()*svd.matrixV().transpose();
 
   // translation vector
@@ -71,7 +74,13 @@ ransac(const std::vector<Eigen::Vector3f>& iRefPoints,
 
     Eigen::Isometry3f estimate(const std::vector<int> iIndices) const {
       Eigen::Isometry3f pose;
-      mEstimator->leastSquares(*mRefPoints, *mCurPoints, pose);
+      std::vector<Eigen::Vector3f> refPoints(iIndices.size());
+      std::vector<Eigen::Vector3f> curPoints(iIndices.size());      
+      for (size_t i = 0; i < iIndices.size(); ++i) {
+        refPoints[i] = (*mRefPoints)[iIndices[i]];
+        curPoints[i] = (*mCurPoints)[iIndices[i]];
+      }
+      mEstimator->leastSquares(refPoints, curPoints, pose);
       return pose;
     }
 
@@ -94,7 +103,11 @@ ransac(const std::vector<Eigen::Vector3f>& iRefPoints,
   problem.mCurPoints = const_cast<std::vector<Eigen::Vector3f>*>(&iCurPoints);
 
   RansacGeneric<Problem> ransacObj;
+  ransacObj.setMaximumError(mErrorThreshold);
+  ransacObj.setRefineUsingInliers(true);
   RansacGeneric<Problem>::Result result = ransacObj.solve(problem);
+  oPose = result.mSolution;
+  oInliers = result.mInliers;
 
   return result.mSuccess;
 }
