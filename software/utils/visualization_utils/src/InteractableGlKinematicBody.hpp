@@ -229,7 +229,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
     }
    };
    
-  
+  void set_bodypose_adjustment_type(int type){
     bodypose_adjustment_type= (_bodyadjust_type)type;
     if(_collision_detector_floatingbase_markers) //  without this it SEGFAULTS If set_bodypose_adjustment_type is called before set state
     _collision_detector_floatingbase_markers->clear_collision_objects(); // reset markers
