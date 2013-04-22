@@ -4,6 +4,8 @@
 #include <vector>
 #include <Eigen/Geometry>
 
+namespace tracking {
+
 class PoseEstimator {
 public:
   PoseEstimator();
@@ -22,5 +24,7 @@ public:
 protected:
   float mErrorThreshold;
 };
+
+}
 
 #endif

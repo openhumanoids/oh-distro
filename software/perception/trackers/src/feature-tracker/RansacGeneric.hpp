@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <random>
 
+namespace tracking {
+
 template<typename Problem>
 class RansacGeneric {
 public:
@@ -142,5 +144,7 @@ protected:
   double mGoodSolutionProbability;
   double mMaximumError;
 };
+
+}
 
 #endif

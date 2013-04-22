@@ -2,6 +2,8 @@
 
 #include "RansacGeneric.hpp"
 
+using namespace tracking;
+
 PoseEstimator::
 PoseEstimator() {
   setErrorThreshold(0.03);
