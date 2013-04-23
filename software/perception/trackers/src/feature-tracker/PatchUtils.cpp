@@ -1,5 +1,7 @@
 #include "PatchUtils.hpp"
 
+#include "CameraModel.hpp"
+
 // TODO: TEMP
 #include <fstream>
 
@@ -35,7 +37,8 @@ normalizedCrossCorrelation(const cv::Mat& iA, const cv::Mat& iB) {
   float numer = n*sumAB - sumA*sumB;
   float term1 = n*sumSqA - sumA*sumA;
   float term2 = n*sumSqB - sumB*sumB;
-  float denom = sqrt(term1*term2);
+  float denom = sqrt(fabs(term1*term2));
+  if (denom < 1e-6) denom = 1;
 
   return numer/denom;
 }
@@ -199,6 +202,30 @@ computeGradients(const cv::Mat& iImage, cv::Mat& oGx, cv::Mat& oGy) {
 
   return true;
 }
+
+Eigen::Affine2f PatchUtils::
+linearize(const Eigen::Vector2f& iPix, const CameraModel& iRefCamera,
+          const CameraModel& iCurCamera, const Eigen::Vector4f& iPlane) {
+  Eigen::Affine2f refToCur = Eigen::Affine2f::Identity();
+  Eigen::Vector2f pix[3] = {
+    iPix, iPix+Eigen::Vector2f::UnitX(), iPix+Eigen::Vector2f::UnitY()
+  };
+  Eigen::Vector2f proj[3];
+  Eigen::Vector3f origin = iRefCamera.getPose().translation();
+  Eigen::Vector3f normal = iPlane.head<3>();
+  for (int k = 0; k < 3; ++k) {
+    Eigen::Vector3f ray = iRefCamera.pixelToRay(pix[k]);
+    float t = -(normal.dot(origin) + iPlane[3]) / normal.dot(ray);
+    Eigen::Vector3f intersection = origin + t*ray;
+    proj[k] = iCurCamera.pointToPixel(intersection).head<2>();
+  }
+  refToCur.matrix().block<2,1>(0,0) = proj[1]-proj[0];
+  refToCur.matrix().block<2,1>(0,1) = proj[2]-proj[0];
+  Eigen::Affine2f curToRef = refToCur.inverse();
+  curToRef.matrix().block<2,1>(0,2) = iPix;
+  return curToRef;
+}
+
 
 bool PatchUtils::
 save(const cv::Mat& iImage, const std::string& iFileName) {

@@ -4,6 +4,8 @@
 #include "StereoCamera.hpp"
 #include "KeyFrame.hpp"
 #include "PointMatcher.hpp"
+#include "PatchUtils.hpp"
+#include "PoseEstimator.hpp"
 
 using namespace tracking;
 
@@ -29,34 +31,112 @@ struct FeatureBasedTracker::Helper {
      warp original patches to current viewpoint
      optimize sum of two error functions
      at each iteration, reproject 3d point and compute new errors
+
+     TODO: idea:
+     track entire object's dofs by minimizing all patch errors in both images
+     can also update structure by allowing some deformations
    */
 
   bool update(TrackedObject::Ptr& iObject, const KeyFrame::Ptr& iKeyFrame) {
+    // set up cameras for current frame
     StereoCamera camera = mCamera;
     camera.applyPose(iKeyFrame->getPose());
     const CameraModel& leftCamera = camera.getLeftCamera();
     const CameraModel& rightCamera = camera.getRightCamera();
+    const Eigen::Vector3f leftOrigin = leftCamera.getPose().translation();
+    const Eigen::Vector3f rightOrigin = rightCamera.getPose().translation();
+
+    PointMatcher matcher;
+
+    // set up image pyramids for current frame
+    std::vector<cv::Mat> leftPyramid(iKeyFrame->getNumPyramidLevels());
+    std::vector<cv::Mat> rightPyramid(iKeyFrame->getNumPyramidLevels());
+    for (int i = 0; i < iKeyFrame->getNumPyramidLevels(); ++i) {
+      leftPyramid[i] = iKeyFrame->getPyramidLevel(i)->mLeftImage;
+      rightPyramid[i] = iKeyFrame->getPyramidLevel(i)->mRightImage;
+    }
+
+    // try to find landmarks in current frame
+    std::vector<Eigen::Vector3f> pointsRef, pointsCur;
     for (size_t i = 0; i < iObject->mLandmarks.size(); ++i) {
+      Landmark& landmark = iObject->mLandmarks[i];
+
+      // adjust model point by delta in object pose
+      Eigen::Isometry3f origToCurrent =
+        iObject->mCurrentState.mPose.inverse()*iObject->mOriginalState.mPose;
+      Eigen::Vector3f pos3d = origToCurrent*landmark.mPos3d;
+      Eigen::Vector3f normal = origToCurrent.linear()*landmark.mNormal;
+
       // project model point into images
-      Eigen::Vector2f predLeft =
-        leftCamera.pointToPixel(iObject->mLandmarks[i].mPos3d).head<2>();
-      Eigen::Vector2f predRight =
-        rightCamera.pointToPixel(iObject->mLandmarks[i].mPos3d).head<2>();
+      Eigen::Vector2f predLeft, predRight;
+      predLeft = leftCamera.pointToPixel(pos3d).head<2>();
+      predRight = rightCamera.pointToPixel(pos3d).head<2>();
 
-      // predict patches via current sensor pose      
-      // TODO
+      KeyFrame::Ptr keyFrameOrig = mKeyFrames[landmark.mKeyFrameId];
 
-      // relocalize predicted point in left image
+      // set up pyramid from original frame
+      std::vector<cv::Mat> leftPyramidOrig(leftPyramid.size());
+      for (size_t k = 0; k < leftPyramidOrig.size(); ++k) {
+        leftPyramidOrig[k] = keyFrameOrig->getPyramidLevel(k)->mLeftImage;
+      }
+
+      // predict and locate patch in left image via current sensor pose
+      Eigen::Vector4f plane;
+      plane.head<3>() = normal;
+      plane[3] = -plane.head<3>().dot(pos3d);
+      StereoCamera cameraOrig = mCamera;
+      cameraOrig.applyPose(keyFrameOrig->getPose());
+      const CameraModel& leftCameraOrig = cameraOrig.getLeftCamera();
+      Eigen::Affine2f patchTransform =
+        PatchUtils::linearize(landmark.mPosLeft, leftCameraOrig,
+                              leftCamera, plane);
+      PointMatch match = matcher.refine
+        (predLeft, leftPyramid, patchTransform, leftPyramidOrig,
+         mPatchRadiusX, mPatchRadiusY);
+      if (match.mScore < mMinMatchScore) continue;
 
       // find corresponding point in right image
+      // TODO: replace epipolarLine with actual epipolar line
+      Eigen::Vector3f epipolarLine(0,1,-match.mCurPos[1]);
+      float t = -(epipolarLine[2] + epipolarLine.head<2>().dot(predRight));
+      predRight += epipolarLine.head<2>()*t;
+      Eigen::Vector2f epiDir(epipolarLine[2], -epipolarLine[1]);
+      patchTransform = Eigen::Affine2f::Identity();
+      patchTransform.translation() = match.mCurPos;
+      match = matcher.refine(predRight, rightPyramid, patchTransform,
+                             leftPyramid, mPatchRadiusX, mPatchRadiusY, epiDir);
+      if (match.mScore < mMinMatchScore) continue;
 
       // intersect rays
+      Eigen::Vector3f leftRay = leftCamera.pixelToRay(match.mRefPos);
+      Eigen::Vector3f rightRay = rightCamera.pixelToRay(match.mCurPos);
+      Eigen::Matrix<float,3,2> lhs;
+      Eigen::Vector3f rhs = rightOrigin - leftOrigin;
+      lhs.block<3,1>(0,0) = leftRay;
+      lhs.block<3,1>(0,1) = -rightRay;
+      Eigen::Vector2f sol =
+        lhs.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(rhs);
+      Eigen::Vector3f pos3dCur = leftOrigin + leftRay*sol[0];
+
+      pointsRef.push_back(pos3d);
+      pointsCur.push_back(pos3dCur);
     }
 
     // align subset of 3d points to original 3d points using ransac
+    PoseEstimator estimator;
+    estimator.setErrorThreshold(0.03);
+    Eigen::Isometry3f poseChange;
+    std::vector<int> inliers;
+    if (!estimator.ransac(pointsRef, pointsCur, poseChange, inliers)) {
+      return false;
+    }
+
+    std::cout << "Pose change\n" << poseChange.matrix() << std::endl;
+    std::cout << "Inliers " << inliers.size() << std::endl;
 
     // update current track state
-
+    iObject->mCurrentState.mTimestamp = iKeyFrame->getId();
+    iObject->mCurrentState.mPose = iObject->mCurrentState.mPose*poseChange;
 
     return true;
   }
@@ -116,15 +196,20 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
     rightPyramid[i] = keyFrame->getPyramidLevel(i)->mRightImage;
   }
 
-  // mask out features and find matches across stereo pair
-  // TODO: for now, just base pyramid level
+  // mask features and find matches across stereo pair
+  // TODO: for now, just base pyramid level; later use all
   KeyFrame::PyramidLevel::Ptr pyrLevel = keyFrame->getPyramidLevel(0);
   std::vector<cv::KeyPoint>& keyPoints = pyrLevel->mLeftKeyPoints;
   PointMatcher matcher;
   Eigen::Affine2f refTransform = Eigen::Affine2f::Identity();
-  Eigen::Vector2f xDir = Eigen::Vector2f::UnitX();
-  std::vector<PointMatch> matches;
-  matches.reserve(keyPoints.size());
+  Eigen::Vector2f epiDir = Eigen::Vector2f::UnitX();
+  StereoCamera camera = mHelper->mCamera;
+  camera.applyPose(iSensorPose);
+  const CameraModel& leftCam = camera.getLeftCamera();
+  const CameraModel& rightCam = camera.getRightCamera();
+  const Eigen::Vector3f leftOrigin = leftCam.getPose().translation();
+  const Eigen::Vector3f rightOrigin = rightCam.getPose().translation();
+  std::vector<Landmark> landmarks;
   for (size_t i = 0; i < keyPoints.size(); ++i) {
     // check whether point falls inside object mask in left image
     if (iMask.at<uint8_t>(keyPoints[i].pt) == 0) continue;
@@ -136,43 +221,34 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
     // try to find matching point to subpixel accuracy using klt track
     refTransform.translation() = Eigen::Vector2f(keyPoints[i].pt.x,
                                                  keyPoints[i].pt.y);
-
     PointMatch match = matcher.refine(curPos, rightPyramid, refTransform,
                                       leftPyramid, mHelper->mPatchRadiusX,
-                                      mHelper->mPatchRadiusY, xDir);
+                                      mHelper->mPatchRadiusY, epiDir);
+    if (match.mScore < mHelper->mMinMatchScore) continue;
 
-    // add to list if good match
-    if (match.mScore >= mHelper->mMinMatchScore) {
-      matches.push_back(match);
-    }
-  }
+    // create new landmark
+    Landmark landmark;
+    landmark.mId = i;
+    landmark.mPyramidLevel = 0;
+    landmark.mKeyFrameId = keyFrame->getId();
+    landmark.mPosLeft = match.mRefPos;
+    landmark.mPosRight = match.mCurPos;
+    landmark.mNormal = leftCam.getPose().matrix().block<3,1>(0,2);
 
-  // triangulate 3d points from 2d stereo pairs
-  StereoCamera camera = mHelper->mCamera;
-  camera.applyPose(iSensorPose);
-  const CameraModel& leftCam = mHelper->mCamera.getLeftCamera();
-  const CameraModel& rightCam = mHelper->mCamera.getRightCamera();
-  const Eigen::Vector3f leftOrigin = leftCam.getPose().translation();
-  const Eigen::Vector3f rightOrigin = rightCam.getPose().translation();
-  std::vector<Landmark> landmarks(matches.size());
-  for (size_t i = 0; i < matches.size(); ++i) {
-    landmarks[i].mId = i;
-    landmarks[i].mPyramidLevel = 0;
-    landmarks[i].mKeyFrameId = keyFrame->getId();
-    landmarks[i].mPosLeft = matches[i].mRefPos;
-    landmarks[i].mPosRight = matches[i].mCurPos;
-    landmarks[i].mNormal = -iSensorPose.matrix().block<3,1>(0,2);
-
-    Eigen::Vector3f leftRay = leftCam.pixelToRay(matches[i].mRefPos);
-    Eigen::Vector3f rightRay = rightCam.pixelToRay(matches[i].mCurPos);
+    // triangulate 3d landmark position
+    Eigen::Vector3f leftRay = leftCam.pixelToRay(match.mRefPos);
+    Eigen::Vector3f rightRay = rightCam.pixelToRay(match.mCurPos);
     Eigen::Matrix<float,3,2> lhs;
     Eigen::Vector3f rhs = rightOrigin - leftOrigin;
     lhs.block<3,1>(0,0) = leftRay;
     lhs.block<3,1>(0,1) = -rightRay;
     Eigen::Vector2f sol =
       lhs.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(rhs);
-    landmarks[i].mPos3d = leftOrigin + leftRay*sol[0];
-    // TODO landmarks[i].mPosCov = xxx;
+    landmark.mPos3d = leftOrigin + leftRay*sol[0];
+    // TODO landmark.mPosCov = xxx;
+
+    // add landmark to list
+    landmarks.push_back(landmark);
   }
 
   // find robust mean and stdev

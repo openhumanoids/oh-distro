@@ -41,6 +41,8 @@ public:
   void setPose(const Eigen::Isometry3f& iPose);
   Eigen::Isometry3f getPose() const;
 
+  // TODO: store camera(s)
+
 protected:
   cv::Mat convert(const cv::Mat& iImage) const;
 

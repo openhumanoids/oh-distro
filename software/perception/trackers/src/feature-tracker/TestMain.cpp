@@ -139,9 +139,10 @@ int main(const int iArgc, const char** iArgv) {
   Eigen::Affine2f refTransform = Eigen::Affine2f::Identity();
   Eigen::Vector2f xDir = Eigen::Vector2f::UnitX();
   Eigen::Vector2f curPos(408,376);
-  refTransform.translation() = curPos + Eigen::Vector2f(10,0);
+  //Eigen::Vector2f curPos(797,10);
+  refTransform.translation() = curPos + Eigen::Vector2f(10,5);
   PointMatch match = matcher.refine(curPos, rightPyramid, refTransform,
-                                    leftPyramid, 20,20, xDir);
+                                    leftPyramid, 20,20);
   std::cout << match.mRefPos.transpose() << " " <<
     curPos.transpose() << " " << match.mCurPos.transpose() << " " <<
     match.mScore << std::endl;
