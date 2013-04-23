@@ -31,7 +31,7 @@ group "1.a.core" {
         host = "paladin-02";
     }
     cmd "r2l_control" {
-        exec = "rosrun translators ros2lcm -c";
+        exec = "rosrun translators ros2lcm -c -g";
         host = "paladin-02";
     }
     cmd "l2r" {
@@ -76,12 +76,16 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "paladin-02";
     }
-    cmd "mit_walking" {
+    cmd "mit_manip_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world gzname:=run_gazebo_unpaused";
+        host = "paladin-02";
+    }
+    cmd "mit_walking_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "paladin-02";
     }
     cmd "mit_walking_bdi" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world gzname:=run_gazebo_unpaused";
         host = "paladin-02";
     }
     cmd "mit_driving" {
@@ -332,19 +336,8 @@ group "utils.system-test" {
     }
 }
 
-script "quicktest" {
-    start cmd "lcm-logger-no-vis";
-    start cmd "systemwide-test";
-    start group "0.dev_deputies";
-    start group "1.a.core";
-    wait ms 500;
-}
 
-
-script "systemtest-core" {
-    start cmd "lcm-logger-no-vis";
-    start cmd "systemwide-test";
-    wait ms 100;
+script "core-start" {
     start group "0.dev_deputies";
     wait ms 200;
     start group "1.a.core";
@@ -359,7 +352,38 @@ script "systemtest-core" {
     start cmd "set-sim-rate";
 }
 
-script "systemtest-core-stop" {
+script "core-start-mit-walking" {
+    start group "0.dev_deputies";
+    wait ms 200;
+    start group "1.a.core";
+    wait ms 200;
+    start group "1.b.sensing";
+    start cmd "Qual1StateMachine";
+    start cmd "FootstepPlanner";
+    start cmd "ZMPWalkingPlanner";
+    wait ms 10000;
+    start cmd "mit_walking_slow";
+    wait ms 5000;
+    start cmd "set-sim-rate";
+}
+
+
+script "core-start-mit-manip" {
+    start group "0.dev_deputies";
+    wait ms 200;
+    start group "1.a.core";
+    wait ms 200;
+    start group "1.b.sensing";
+    start cmd "Qual1StateMachine";
+    start cmd "FootstepPlanner";
+    start cmd "ZMPWalkingPlanner";
+    wait ms 10000;
+    start cmd "mit_manip_slow";
+    wait ms 5000;
+    start cmd "set-sim-rate";
+}
+
+script "core-stop" {
     stop cmd "lcm-logger-no-vis";
     stop cmd "systemwide-test";
     stop group "0.dev_deputies";
@@ -373,18 +397,20 @@ script "systemtest-core-stop" {
 }
 
 script "systemtest" {
-    run_script "systemtest-core";
+    start cmd "lcm-logger-no-vis";
+    start cmd "systemwide-test";
+    wait ms 100;
+    run_script "start-core";
     wait ms 1200000;
-    run_script "systemtest-core-stop";
+    run_script "core-stop";
     wait ms 10000;
 }
 
-script "systemtest-vo" {
-    run_script "systemtest-core";
+script "core-start-vo" {
+    run_script "core-start";
     stop cmd "estpub";
-    start cmd "motion_vo_testing";
     start cmd "estpub_sensing";
-    wait ms 600000;
+    start cmd "motion_vo_testing";
 }
 
 
