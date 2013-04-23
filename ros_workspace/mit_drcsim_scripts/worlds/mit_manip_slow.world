@@ -1,14 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.3">
   <world name="default">
-
-    <!-- place user camera -->
-<!--    <gui>
-      <camera name="user_camera">
-        <pose>-3 5 4 0.000000 0.000 1.0000</pose>
-      </camera>
-    </gui> -->
-
     <physics type="ode">
       <gravity>0 0 -9.81</gravity>
       <update_rate>1000</update_rate>
@@ -27,7 +19,6 @@
         </constraints>
       </ode>
     </physics>
-
     <!-- Basic environment -->
 
     <!-- Light Source -->
