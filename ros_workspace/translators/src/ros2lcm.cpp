@@ -56,13 +56,16 @@ uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale im
 
 class App{
 public:
-  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_, bool control_output_, bool perception_output_);
+  App(const std::string & stereo_in, const std::string & stereo_out, ros::NodeHandle node_, string mode_, 
+      bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_hand_cameras_);
   ~App();
 
 private:
   string mode_;
   bool control_output_; // publish control msgs to LCM
   bool perception_output_; // publish control msgs to LCM
+  bool send_ground_truth_; // listen for and publish ground truth inside TRUE_ROBOT_STATE 
+  bool send_hand_cameras_; // listen for and publish the hand cameras
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
@@ -116,27 +119,42 @@ private:
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
   
   // Combined Stereo Image:
-  void stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
-      const sensor_msgs::CameraInfoConstPtr& l_cam_info,
-      const sensor_msgs::ImageConstPtr& r_image,
-      const sensor_msgs::CameraInfoConstPtr& r_cam_info);
+  void stereo_cb(const sensor_msgs::ImageConstPtr& l_image, const sensor_msgs::CameraInfoConstPtr& l_cam_info,
+      const sensor_msgs::ImageConstPtr& r_image, const sensor_msgs::CameraInfoConstPtr& r_cam_info, std::string camera_out);
   image_transport::ImageTransport it_;
+  
+  void head_stereo_cb(const sensor_msgs::ImageConstPtr& l_image, const sensor_msgs::CameraInfoConstPtr& l_cam_info,
+      const sensor_msgs::ImageConstPtr& r_image, const sensor_msgs::CameraInfoConstPtr& r_cam_info);
   image_transport::SubscriberFilter l_image_sub_, r_image_sub_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> l_info_sub_, r_info_sub_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo,
   sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
+  
+  void l_hand__stereo_cb(const sensor_msgs::ImageConstPtr& l_image, const sensor_msgs::CameraInfoConstPtr& l_cam_info,
+      const sensor_msgs::ImageConstPtr& r_image, const sensor_msgs::CameraInfoConstPtr& r_cam_info);
+  image_transport::SubscriberFilter l_hand_l_image_sub_, l_hand_r_image_sub_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> l_hand_l_info_sub_, l_hand_r_info_sub_;
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo,
+  sensor_msgs::Image, sensor_msgs::CameraInfo> l_hand_sync_;
+  
+  void r_hand_stereo_cb(const sensor_msgs::ImageConstPtr& l_image, const sensor_msgs::CameraInfoConstPtr& l_cam_info,
+      const sensor_msgs::ImageConstPtr& r_image, const sensor_msgs::CameraInfoConstPtr& r_cam_info);
+  image_transport::SubscriberFilter r_hand_l_image_sub_, r_hand_r_image_sub_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> r_hand_l_info_sub_, r_hand_r_info_sub_;
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo,
+  sensor_msgs::Image, sensor_msgs::CameraInfo> r_hand_sync_;
+  
   const std::string stereo_in_,stereo_out_;
 };
 
 App::App(const std::string & stereo_in,
     const std::string & stereo_out,
-    ros::NodeHandle node_, string mode_, bool control_output_, bool perception_output_) :
-    stereo_in_(stereo_in),
-    stereo_out_(stereo_out),
-    node_(node_),
-    it_(node_),
-    sync_(10),
-    mode_(mode_), control_output_(control_output_), perception_output_(perception_output_){
+    ros::NodeHandle node_, string mode_, 
+    bool control_output_, bool perception_output_, bool send_ground_truth_, bool send_hand_cameras_) :
+    stereo_in_(stereo_in), stereo_out_(stereo_out),
+    node_(node_), it_(node_), sync_(10), l_hand_sync_(10), r_hand_sync_(10),
+    mode_(mode_), control_output_(control_output_), 
+    perception_output_(perception_output_), send_ground_truth_(send_ground_truth_), send_hand_cameras_(send_hand_cameras_){
   ROS_INFO("Initializing Translator");
 
   if(!lcm_publish_.good()){
@@ -158,20 +176,41 @@ App::App(const std::string & stereo_in,
     head_joint_states_sub_ = node_.subscribe(string("/multisense_sl/joint_states"), 1000, &App::head_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
     l_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/l_hand/joint_states"), 1000, &App::l_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
     r_hand_joint_states_sub_ = node_.subscribe(string("/sandia_hands/r_hand/joint_states"), 1000, &App::r_hand_joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
-
-    ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
     end_effector_sensors_sub_ = node_.subscribe(string("/atlas/force_torque_sensors"), 10, &App::end_effector_sensors_cb,this);
+
+    init_recd_[0]=false; // had ground_truth_odom been received?
+    init_recd_[1]=false; // have joint angles been received?
     
-    init_recd_[0]=false;
-    init_recd_[1]=false;
+    ///////////////////////////// Ground Truth Odom ///////////////////////////////////////
+    // initialize with known (but ridiculous) state - to expose any GT data feeding through
+    ground_truth_odom_.pose.pose.position.x =0.;
+    ground_truth_odom_.pose.pose.position.y =0.;
+    ground_truth_odom_.pose.pose.position.z =0.;
+    ground_truth_odom_.pose.pose.orientation.w =0.; // upside down (to make it obvious)
+    ground_truth_odom_.pose.pose.orientation.x =1.;
+    ground_truth_odom_.pose.pose.orientation.y =0.;
+    ground_truth_odom_.pose.pose.orientation.z =0.;
+    ground_truth_odom_.twist.twist.linear.x = std::numeric_limits<int>::min();
+    ground_truth_odom_.twist.twist.linear.y = std::numeric_limits<int>::min();
+    ground_truth_odom_.twist.twist.linear.z = std::numeric_limits<int>::min();
+    ground_truth_odom_.twist.twist.angular.x = std::numeric_limits<int>::min();
+    ground_truth_odom_.twist.twist.angular.y = std::numeric_limits<int>::min();
+    ground_truth_odom_.twist.twist.angular.z = std::numeric_limits<int>::min();
+    
+    if (send_ground_truth_){
+      ground_truth_odom_sub_ = node_.subscribe(string("/ground_truth_odom"), 1000, &App::ground_truth_odom_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
+    }else{
+      init_recd_[0]=true; // NB: needed to fool this program into believing it has got GTO when we aren't going to provide it
+    }
+    
   }
   
   if (perception_output_){
     // Laser:
     rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 10, &App::rotating_scan_cb,this);
     // Porterbot
-    scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
-    scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
+    //scan_left_sub_ = node_.subscribe(string("/scan_left"), 10, &App::scan_left_cb,this);
+    //scan_right_sub_ = node_.subscribe(string("/scan_right"), 10, &App::scan_right_cb,this);
   
     // Stereo Image:
     std::string lim_string ,lin_string,rim_string,rin_string;
@@ -191,7 +230,7 @@ App::App(const std::string & stereo_in,
       lin_string = stereo_in_ + "/left/camera_info";
       rim_string = stereo_in_ + "/right/image_raw";
       rin_string = stereo_in_ + "/right/camera_info";
-    }else if(which_image==4){ // Raw on GFE:
+    }else if(which_image==4){ // Raw on GFE: (is RGB)
       lim_string = stereo_in_ + "/left/image_raw";
       lin_string = stereo_in_ + "/left/camera_info";
       rim_string = stereo_in_ + "/right/image_raw";
@@ -206,7 +245,7 @@ App::App(const std::string & stereo_in,
     r_image_sub_.subscribe(it_, ros::names::resolve( rim_string ), 3);
     r_info_sub_.subscribe(node_, ros::names::resolve( rin_string ), 3);
     sync_.connectInput(l_image_sub_, l_info_sub_, r_image_sub_, r_info_sub_);
-    sync_.registerCallback( boost::bind(&App::stereo_cb, this, _1, _2, _3, _4) );
+    sync_.registerCallback( boost::bind(&App::head_stereo_cb, this, _1, _2, _3, _4) );
 
     // Mono-Cameras:
     left_image_sub_ = node_.subscribe( string(stereo_in_ + "/left/image_raw"), 10, &App::left_image_cb,this);
@@ -214,7 +253,23 @@ App::App(const std::string & stereo_in,
       left_image_sub_ = node_.subscribe( lim_string, 10, &App::left_image_cb,this);
       right_image_sub_ = node_.subscribe(rim_string, 10, &App::right_image_cb,this);
     }
-  
+
+    /////////////////////////////// Hand Cameras /////////////////////////////////////
+    if (send_hand_cameras_){
+      l_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/image_raw" ), 3);
+      l_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/left/camera_info" ), 3);
+      l_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/image_raw" ), 3);
+      l_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/l_hand/camera/right/camera_info"  ), 3);
+      l_hand_sync_.connectInput(l_hand_l_image_sub_, l_hand_l_info_sub_, l_hand_r_image_sub_, l_hand_r_info_sub_);
+      l_hand_sync_.registerCallback( boost::bind(&App::l_hand__stereo_cb, this, _1, _2, _3, _4) );        
+
+      r_hand_l_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/image_raw" ), 3);
+      r_hand_l_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/left/camera_info" ), 3);
+      r_hand_r_image_sub_.subscribe(it_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/image_raw" ), 3);
+      r_hand_r_info_sub_.subscribe(node_, ros::names::resolve( "/sandia_hands/r_hand/camera/right/camera_info"  ), 3);
+      r_hand_sync_.connectInput(r_hand_l_image_sub_, r_hand_l_info_sub_, r_hand_r_image_sub_, r_hand_r_info_sub_);
+      r_hand_sync_.registerCallback( boost::bind(&App::r_hand_stereo_cb, this, _1, _2, _3, _4) );   
+    }
   }
 };
 
@@ -257,13 +312,12 @@ void App::send_imu_as_pose(const sensor_msgs::ImuConstPtr& msg,string channel ){
 
 void App::torso_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"TORSO_IMU");
-  send_imu_as_pose(msg,"POSE_BODY_ORIENT");
+  send_imu_as_pose(msg,"POSE_BODY_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
 }
 
 void App::head_imu_cb(const sensor_msgs::ImuConstPtr& msg){
   send_imu(msg,"HEAD_IMU");
-  send_imu_as_pose(msg,"POSE_HEAD_ORIENT");
-//  send_imu_as_pose(msg,"POSE_HEAD");
+  send_imu_as_pose(msg,"POSE_HEAD_ORIENT"); // not necessary, just for easy rendering in bot_frames in viewer 
 }
 
 void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
@@ -272,11 +326,27 @@ void App::clock_cb(const rosgraph_msgs::ClockConstPtr& msg){
   lcm_publish_.publish("ROBOT_UTIME", &utime_msg);
 }
 
+
+void App::head_stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
+{
+  stereo_cb(l_image,l_cam_info,r_image,r_cam_info,"CAMERA");
+}
+
+void App::l_hand__stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
+{
+  stereo_cb(l_image,l_cam_info,r_image,r_cam_info,"CAMERA_LHAND");
+}
+
+void App::r_hand_stereo_cb(const sensor_msgs::ImageConstPtr& l_image,    const sensor_msgs::CameraInfoConstPtr& l_cam_info,    const sensor_msgs::ImageConstPtr& r_image,    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
+{
+  stereo_cb(l_image,l_cam_info,r_image,r_cam_info,"CAMERA_RHAND");
+}
+
 int stereo_counter=0;
 void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     const sensor_msgs::CameraInfoConstPtr& l_cam_info,
     const sensor_msgs::ImageConstPtr& r_image,
-    const sensor_msgs::CameraInfoConstPtr& r_cam_info)
+    const sensor_msgs::CameraInfoConstPtr& r_cam_info, std::string camera_out)
 {
   
   int64_t current_utime = (int64_t) floor(l_image->header.stamp.toNSec()/1000);
@@ -308,7 +378,7 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     cvtColor( left_ptr->image, l_img, CV_BGR2RGB);
     cv::Mat r_img;
     cvtColor( right_ptr->image, r_img, CV_BGR2RGB);
-
+    
     // Write to file:
     //cv::imwrite("left.png", left_ptr->image);
     //cv::imwrite("right.png", right_ptr->image);
@@ -326,6 +396,8 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     copy(l_image->data.begin(), l_image->data.end(), stereo_data);
     copy(r_image->data.begin(), r_image->data.end(), stereo_data + (l_image->width*l_image->height));
     stereo.data.assign(stereo_data, stereo_data + ( 2*isize));
+    
+    //camera_out = "LHAND_CAMERA";
   }else if (l_image->encoding.compare("bayer_bggr8") == 0){
     stereo.row_stride=l_image->width;
     stereo.pixelformat =bot_core::image_t::PIXEL_FORMAT_BAYER_BGGR;
@@ -348,7 +420,8 @@ void App::stereo_cb(const sensor_msgs::ImageConstPtr& l_image,
     cout << stereo_out_ << "\n";
     return;
   }
-  lcm_publish_.publish(stereo_out_.c_str(), &stereo);
+  lcm_publish_.publish(camera_out, &stereo);
+//  lcm_publish_.publish(stereo_out_.c_str(), &stereo);
   
   // As a convenience also publish the left image:
   //send_image(l_image, "CAMERALEFT" );
@@ -368,6 +441,9 @@ void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
 }
 int r_counter =0;
 void App::right_image_cb(const sensor_msgs::ImageConstPtr& msg){
+  std::cout << "got r image\n";
+  std::cout << msg->encoding << " is r encdoing\n";
+  
   r_counter++;
   if (r_counter%30 ==0){
     std::cout << r_counter << " right image\n";
@@ -583,7 +659,7 @@ void App::appendLimbSensor(drc::robot_state_t& msg_out , atlas_msgs::ForceTorque
 }
 
 void App::publishRobotState(int64_t utime_in){
-
+ // If haven't got a ground_truth_odom_, exit:
  if(mode_.compare("hands") != 0){
   if(!init_recd_[0])
     return;
@@ -600,10 +676,10 @@ void App::publishRobotState(int64_t utime_in){
   robot_state_msg.origin_position.translation.x = ground_truth_odom_.pose.pose.position.x;
   robot_state_msg.origin_position.translation.y = ground_truth_odom_.pose.pose.position.y;
   robot_state_msg.origin_position.translation.z = ground_truth_odom_.pose.pose.position.z;
+  robot_state_msg.origin_position.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
   robot_state_msg.origin_position.rotation.x = ground_truth_odom_.pose.pose.orientation.x;
   robot_state_msg.origin_position.rotation.y = ground_truth_odom_.pose.pose.orientation.y;
   robot_state_msg.origin_position.rotation.z = ground_truth_odom_.pose.pose.orientation.z;
-  robot_state_msg.origin_position.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
 
   robot_state_msg.origin_twist.linear_velocity.x =ground_truth_odom_.twist.twist.linear.x;
   robot_state_msg.origin_twist.linear_velocity.y =ground_truth_odom_.twist.twist.linear.y;
@@ -731,13 +807,19 @@ int main(int argc, char **argv){
   string mode = "robot";
   bool control_output = false;
   bool perception_output = false;  
+  bool send_ground_truth = false;  
+  bool send_hand_cameras = false;
   parser.add(mode, "m", "mode", "Mode: robot, hands");
   parser.add(control_output, "c", "control_output", "Publish control message");
   parser.add(perception_output, "p", "perception_output", "Publish perception messages");
+  parser.add(send_ground_truth, "g", "send_ground_truth", "Listen for and include GT odom");
+  parser.add(send_hand_cameras, "l", "send_hand_cameras", "Send cameras in hand/limbs");
   parser.parse();
   cout << "Publish Mode: " << mode << "\n";   
   cout << "Publish Control Messages: " << control_output << "\n";   
   cout << "Publish Perception Messages: " << perception_output << "\n";   
+  cout << "Listen for and publish ground_truth_odom: " << send_ground_truth << " [control mode only]\n";   
+  cout << "Publish Hand Camera Messages: " << send_hand_cameras << "\n";   
   
   if (control_output && perception_output){
     cout << "must run to translators\ncontrol_output and perception_output cannot both be true\n";
@@ -755,7 +837,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode, control_output, perception_output);
+  App *app = new App( "multisense_sl/camera", "CAMERA", nh, mode, control_output, perception_output, send_ground_truth, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));
