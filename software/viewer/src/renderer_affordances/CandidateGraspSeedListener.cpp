@@ -13,9 +13,7 @@ namespace renderer_affordances
 {
   //==================constructor / destructor
 
-//   CandidateGraspSeedListener::CandidateGraspSeedListener(boost::shared_ptr<lcm::LCM> &lcm, RendererAffordances* affordance_renderer):
-//     _lcm(lcm),
-//     _parent_renderer(affordance_renderer)
+
   CandidateGraspSeedListener::CandidateGraspSeedListener(RendererAffordances* affordance_renderer):
     _parent_renderer(affordance_renderer)
   {
@@ -26,7 +24,7 @@ namespace renderer_affordances
     //lcm ok?
     if(!_lcm->good())
     {
-      cerr << "\nLCM Not Good: Robot State Handler" << endl;
+      cerr << "\nLCM Not Good: Candidate Grasp Seed Listener" << endl;
       return;
     }
     
@@ -174,8 +172,8 @@ namespace renderer_affordances
       {
        
         StickyHandStruc sticky_hand_struc;
-        sticky_hand_struc.object_name = _object_name ;
-        sticky_hand_struc.geometry_name = _geometry_name;
+        sticky_hand_struc.object_name = _object_name;//.c_str();
+        sticky_hand_struc.geometry_name = _geometry_name;//.c_str();
         sticky_hand_struc.uid = uid; 
         sticky_hand_struc.opt_status = _optimization_status;
         sticky_hand_struc._collision_detector.reset();
@@ -239,7 +237,7 @@ namespace renderer_affordances
       cout << "--------------------------------------------------------------------" << endl;
       unsigned int index = found - _parent_renderer->urdf_filenames.begin();
       std::string filename=_parent_renderer->urdf_filenames[index];  
-      oss << (*_parent_renderer->urdf_dir_name_ptr)  << filename << ext;
+      oss << _parent_renderer->urdf_dir_name << filename << ext;
       std::string xml_string;
       get_xmlstring_from_file(oss.str(),xml_string);
       _urdf_xml_string = xml_string;

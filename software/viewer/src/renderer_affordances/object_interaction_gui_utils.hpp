@@ -20,11 +20,16 @@
 #define PARAM_RESEED "Re-seed"
 #define PARAM_HALT_OPT "Halt Opt"
 #define PARAM_DELETE "Delete"
-#define PARAM_ENABLE_BODYPOSE_ADJUSTMENT "Adjust BodyPose"
-#define PARAM_ENABLE_JOINTDOF_ADJUSTMENT "Adjust JointDofs"
+#define PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT "Adjust Cur BodyPose"
+#define PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT "Adjust Cur JointDofs"
+#define PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT "Set Des BodyPose"
+#define PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT "Set Des JointDofs"
 #define PARAM_ADJUST_DOFS_VIA_SLIDERS "Adjust (via Sliders)"
 #define PARAM_RESET_DESIRED_STATE "Reset"
 #define PARAM_CONTACT_MASK_SELECT "Mask"
+
+#include "renderer_affordances.hpp"
+#include "otdf_instance_management_gui_utils.hpp"
 
 using namespace renderer_affordances;
 
@@ -39,7 +44,7 @@ namespace renderer_affordances_gui_utils
   static void on_adjust_dofs_popup_close2 (BotGtkParamWidget *pw, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    std::string instance_name=  (*self->object_selection);
+    std::string instance_name=  self->object_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     it->second._gl_object->set_future_state_changing(false);
@@ -51,7 +56,7 @@ namespace renderer_affordances_gui_utils
   static void on_otdf_adjust_dofs_widget_changed2(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    std::string instance_name=  (*self->object_selection);
+    std::string instance_name=  self->object_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
@@ -132,7 +137,7 @@ namespace renderer_affordances_gui_utils
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
-    std::string instance_name=  (*self->object_selection);
+    std::string instance_name=  self->object_selection;
 
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
@@ -221,19 +226,19 @@ namespace renderer_affordances_gui_utils
   {
     RendererAffordances *self = (RendererAffordances*) user;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator it= self->instantiated_objects.find((*self->object_selection));
-    
+    object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
+
   
-    if (! strcmp(name, PARAM_ENABLE_BODYPOSE_ADJUSTMENT)) {
-      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_BODYPOSE_ADJUSTMENT);
+    if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
+      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT);
       if(val){
-        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_JOINTDOF_ADJUSTMENT,false); 
-        std::cout << "enabling bodypose adjustment for object " <<(*self->object_selection) << std::endl;
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT,false); 
+        std::cout << "enabling bodypose adjustment for object " <<self->object_selection << std::endl;
       }
      else{
-         std::cout << "disabling bodypose adjustment for object " <<(*self->object_selection) << std::endl;
-         bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_JOINTDOF_ADJUSTMENT);
-         if(((*self->marker_selection)  != " ")&&(!val)) {
+         std::cout << "disabling bodypose adjustment for object " <<self->object_selection << std::endl;
+         bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT);
+         if((self->marker_selection  != " ")&&(!val)) {
           if(it->second._gl_object->is_future_state_changing())
             it->second._gl_object->set_future_state_changing(false);   // when both jointdof and bodypose are disabled.
          }
@@ -244,19 +249,17 @@ namespace renderer_affordances_gui_utils
         it->second._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
         it->second._gl_object->enable_jointdof_adjustment(false);    
       }
-    
-
     }
-    else if (! strcmp(name, PARAM_ENABLE_JOINTDOF_ADJUSTMENT)) {
-      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_JOINTDOF_ADJUSTMENT);
+    else if (! strcmp(name, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT)) {
+      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT);
       if(val){
-        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_BODYPOSE_ADJUSTMENT,false);
-        std::cout << "enabling jointdof adjustment for object " <<(*self->object_selection) << " to "<< val << std::endl;
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT,false);
+        std::cout << "enabling jointdof adjustment for object " <<self->object_selection << " to "<< val << std::endl;
       }
       else{
-          std::cout << "disabling jointdof adjustment for object " <<(*self->object_selection) << std::endl;
-         bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_BODYPOSE_ADJUSTMENT);
-         if(((*self->marker_selection)  != " ")&&(!val)) {
+          std::cout << "disabling jointdof adjustment for object " <<self->object_selection << std::endl;
+         bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT);
+         if((self->marker_selection  != " ")&&(!val)) {
           if(it->second._gl_object->is_future_state_changing())
             it->second._gl_object->set_future_state_changing(false);   // clear future state when both jointdof and bodypose are disabled.
          }
@@ -266,6 +269,72 @@ namespace renderer_affordances_gui_utils
           it->second._gl_object->enable_jointdof_adjustment(val);  
        }      
     }
+    else if (! strcmp(name, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT)) {
+      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT);
+      if(val){
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT,false); 
+        std::cout << "enabling bodypose adjustment for object " <<self->object_selection << std::endl;
+        
+        if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
+          self->otdf_instance_hold.uid=it->second.uid;
+          cout << "ok" << endl;
+          self->otdf_instance_hold.otdf_type = it->second.otdf_type;
+          //self->otdf_instance_hold.otdf_type = new string((*it->second.otdf_type));    // SEGFAULTS With Strings  .copy((char *)it->second.otdf_type.c_str(),it->second.otdf_type.length())
+          cout << "ok" << endl;
+          self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+          self->otdf_instance_hold._gl_object.reset();
+          self->otdf_instance_hold._collision_detector.reset();
+          self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
+          self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+          self->otdf_instance_hold._otdf_instance->update();
+          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+          self->selection_hold_on=true;
+        }
+        
+      }
+     else{
+        std::cout << "disabling bodypose adjustment for object " <<self->object_selection << std::endl;
+        self->selection_hold_on=false;
+      }  
+      if(it!=self->instantiated_objects.end()){
+        self->otdf_instance_hold._gl_object->enable_bodypose_adjustment(val);
+        self->otdf_instance_hold._gl_object->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
+        self->otdf_instance_hold._gl_object->enable_jointdof_adjustment(false);    
+      }
+
+    }
+    else if (! strcmp(name, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT)) {
+      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT);
+      if(val){
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT,false);
+        std::cout << "enabling jointdof adjustment for object " <<self->object_selection << " to "<< val << std::endl;
+        
+        if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
+          self->otdf_instance_hold.uid=it->second.uid;
+          self->otdf_instance_hold.otdf_type = it->second.otdf_type;  
+          //self->otdf_instance_hold.otdf_type = new string((*it->second.otdf_type));    // SEGFAULTS With Strings
+          self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+          self->otdf_instance_hold._gl_object.reset();
+          self->otdf_instance_hold._collision_detector.reset();
+          self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
+          self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+          self->otdf_instance_hold._otdf_instance->update();
+          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+          self->selection_hold_on=true;
+        }
+        
+      }
+      else{
+          std::cout << "disabling jointdof adjustment for object " <<self->object_selection << std::endl;
+          self->selection_hold_on=false;
+      }
+      
+      if(it!=self->instantiated_objects.end()){
+         self->otdf_instance_hold._gl_object->enable_bodypose_adjustment(false); 
+         self->otdf_instance_hold._gl_object->enable_jointdof_adjustment(val);  
+       } 
+
+    } 
     else if(! strcmp(name, PARAM_RESET_DESIRED_STATE)) {
        it->second._gl_object->set_future_state(it->second._gl_object->_T_world_body,it->second._gl_object->_current_jointpos);    
        bot_viewer_request_redraw(self->viewer);
@@ -330,22 +399,144 @@ namespace renderer_affordances_gui_utils
            }             
        }
     }
+    else if (! strcmp(name, PARAM_SEED_LF)) {
+      self->free_running_sticky_foot_cnt++;
+      int uid = self->free_running_sticky_foot_cnt;
+      int foot_type = 0;
+      std::string object_name =self->object_selection;
+      
+      std::string object_geometry_name = self->link_selection;
+      std::string object_name_token  = object_name + "_";
+      size_t found = object_geometry_name.find(object_name_token);  
+      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size()); 
     
+      Eigen::Vector3f eVx,eVy,eVz,diff;
+      diff=self->ray_hit_drag-self->ray_hit;
+      cout << diff.norm() << endl;
+      if(diff.norm()< 0.001){
+        diff << 0,0,1;
+       } 
+      diff.normalize();
+      eVz = self->ray_hit_normal; eVz.normalize();
+      eVy = eVz.cross(diff);  eVy.normalize();
+      eVx = eVy.cross(eVz); eVx.normalize();
+
+      KDL::Vector Vx,Vy,Vz;
+      Vx[0]= eVx[0];Vx[1]= eVx[1];Vx[2]= eVx[2];
+      Vy[0]= eVy[0];Vy[1]= eVy[1];Vy[2]= eVy[2];
+      Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
+
+      KDL::Frame T_world_footcontact= KDL::Frame::Identity();
+      T_world_footcontact.p[0] = self->ray_hit[0];
+      T_world_footcontact.p[1] = self->ray_hit[1];
+      T_world_footcontact.p[2] = self->ray_hit[2];
+      KDL::Rotation tempM(Vx,Vy,Vz);
+      T_world_footcontact.M = tempM;
+
+      KDL::Frame T_world_objectgeometry = KDL::Frame::Identity(); 
+      if(! it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry))
+      {
+       cerr << " ERROR: failed to retrieve " << geometry_name<<" in object " << object_name <<endl;
+      }
+      KDL::Frame  T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
+      KDL::Frame T_objectgeometry_foot,T_contactframe_footframe;
+      T_contactframe_footframe=self->candidateFootStepSeedManager->_T_groundframe_bodyframe_left;
+      T_objectgeometry_foot=T_objectgeometry_footcontact*(T_contactframe_footframe);
+    
+      std::vector<std::string> joint_names;
+      std::vector<double> joint_positions;
+      joint_names.push_back("l_leg_uay");
+      joint_names.push_back("l_leg_lax");
+      joint_positions.push_back(0);
+      joint_positions.push_back(0);      
+      self->candidateFootStepSeedManager->add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name, T_objectgeometry_foot,joint_names,joint_positions);	
+
+    }
+    else if (! strcmp(name, PARAM_SEED_RF)) {
+      self->free_running_sticky_foot_cnt++;
+      int uid = self->free_running_sticky_foot_cnt;
+      int foot_type = 1;
+      std::string object_name =self->object_selection;
+      std::string object_geometry_name = self->link_selection;
+      std::string object_name_token  = object_name + "_";
+      size_t found = object_geometry_name.find(object_name_token);  
+      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+      
+           Eigen::Vector3f eVx,eVy,eVz,diff;
+      diff=self->ray_hit_drag-self->ray_hit;
+      cout << diff.norm() << endl;
+      if(diff.norm()< 0.001){
+        diff << 0,0,1;
+       } 
+      diff.normalize();
+      eVz = self->ray_hit_normal; eVz.normalize();
+      eVy = eVz.cross(diff);  eVy.normalize();
+      eVx = eVy.cross(eVz); eVx.normalize();
+
+      KDL::Vector Vx,Vy,Vz;
+      Vx[0]= eVx[0];Vx[1]= eVx[1];Vx[2]= eVx[2];
+      Vy[0]= eVy[0];Vy[1]= eVy[1];Vy[2]= eVy[2];
+      Vz[0]= eVz[0];Vz[1]= eVz[1];Vz[2]= eVz[2];
+
+      KDL::Frame T_world_footcontact= KDL::Frame::Identity();
+      T_world_footcontact.p[0] = self->ray_hit[0];
+      T_world_footcontact.p[1] = self->ray_hit[1];
+      T_world_footcontact.p[2] = self->ray_hit[2];
+      KDL::Rotation tempM(Vx,Vy,Vz);
+      T_world_footcontact.M = tempM;
+
+      KDL::Frame T_world_objectgeometry = KDL::Frame::Identity(); 
+      if(! it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry))
+      {
+       cerr << " ERROR: failed to retrieve " << geometry_name<<" in object " << object_name <<endl;
+      }
+      KDL::Frame  T_objectgeometry_footcontact = (T_world_objectgeometry.Inverse())*T_world_footcontact;
+      KDL::Frame T_objectgeometry_foot,T_contactframe_footframe;
+      T_contactframe_footframe=self->candidateFootStepSeedManager->_T_groundframe_bodyframe_right;
+      T_objectgeometry_foot=T_objectgeometry_footcontact*(T_contactframe_footframe);
+      
+      std::vector<std::string> joint_names;
+      std::vector<double> joint_positions;
+      joint_names.push_back("r_leg_uay");
+      joint_names.push_back("r_leg_lax");
+      joint_positions.push_back(0);
+      joint_positions.push_back(0); 
+      // Query Normal at point of dbl click. Drag direction gives foot direction.
+      // Foot frame Z direction should point towards normal.     
+      self->candidateFootStepSeedManager->add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name, T_objectgeometry_foot,joint_names,joint_positions);	
+
+    }
     else if (! strcmp(name, PARAM_CLEAR_SEEDS)) {
     
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
       while (hand_it!=self->sticky_hands.end()) 
       {
-         if (hand_it->second.object_name == (*self->object_selection))
+         if (hand_it->second.object_name == self->object_selection)
          {
-            if((*self->stickyhand_selection)==hand_it->first)
-               (*self->stickyhand_selection) = " ";
+            if(self->stickyhand_selection==hand_it->first)
+               self->stickyhand_selection = " ";
             self->sticky_hands.erase(hand_it++);
          }
          else
             hand_it++;
       } 
+      
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
+      while (foot_it!=self->sticky_feet.end()) 
+      {
+         if (foot_it->second.object_name == self->object_selection)
+         {
+            if(self->stickyfoot_selection==foot_it->first)
+               self->stickyfoot_selection = " ";
+            self->sticky_feet.erase(foot_it++);
+         }
+         else
+            foot_it++;
+      } 
+      
+      self->selection_hold_on = false;
     
     }
     else if (! strcmp(name, PARAM_ADJUST_DOFS_VIA_SLIDERS)) {
@@ -381,11 +572,21 @@ namespace renderer_affordances_gui_utils
       }
 
     }
+    else if(!strcmp(name,PARAM_OTDF_ADJUST_PARAM)) {
+      self->instance_selection  = std::string(self->object_selection);
+      spawn_adjust_params_popup(self);
+    }
+    else if(!strcmp(name,PARAM_OTDF_ADJUST_DOF)) {
+      self->instance_selection  = std::string(self->object_selection);  
+      spawn_adjust_dofs_popup(self);
+    }
         
     bot_viewer_request_redraw(self->viewer);
     if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DOFS_VIA_SLIDERS))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
+  
+  
   
   static void on_dblclk_popup_close (BotGtkParamWidget *pw, void *user)
   {
@@ -398,7 +599,9 @@ namespace renderer_affordances_gui_utils
 
   static void spawn_object_geometry_dblclk_popup (RendererAffordances *self)
   {
-    if(((*self->marker_selection)  == " "))
+
+    bool has_seeds = otdf_instance_has_seeds(self,self->object_selection);
+    if((self->marker_selection  == " "))
        set_hand_init_position(self); 
        
     GtkWidget *window, *close_button, *vbox;
@@ -430,45 +633,73 @@ namespace renderer_affordances_gui_utils
     contact_nums[0]=msg.ALL; contact_nums[1]=msg.FINGERS_ONLY;
     
     
-    if(((*self->marker_selection)  == " ")) 
+    if((!has_seeds)&&((self->marker_selection  == " ")
+      ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
+      ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) 
     {
+      bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
+      bot_gtk_param_widget_add_separator (pw,"of params/curr state");
+      bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
+
+      bool val=false;
+      bool val2=false;
+      if(self->selection_hold_on){
+       val =  self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled();
+       val2 = self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled();
+      }
+      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
+      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT, val2, NULL);
+    }
+    
+    if((self->marker_selection  == " ")) 
+    {
+    
       
-      bot_gtk_param_widget_add_separator (pw,"Contact Filter");
+      
+      bot_gtk_param_widget_add_separator (pw,"Contact filter");
       bot_gtk_param_widget_add_enumv (pw, PARAM_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                            msg.ALL,
 				                            num_masks,
 			                              (const char **)  contact_masks,
 			                              contact_nums);
 		
-			                              
-      bot_gtk_param_widget_add_separator (pw,"Opt Control");
+      bot_gtk_param_widget_add_separator (pw,"Seed-opt control");
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
-  //    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
-  //    bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
-    }
-    
 
-     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-     object_instance_map_type_::iterator it= self->instantiated_objects.find((*self->object_selection));
-     bool val,val2;
-     val = false;
-     val2 = false;
-     if(it!=self->instantiated_objects.end()){
+    
+    }
+
+
+   has_seeds = true;// turn on everything for now: just for testing. TODO: Remove later  
+   if((has_seeds)&&(!self->selection_hold_on))  
+   {
+      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it= self->instantiated_objects.find(self->object_selection);
+      bool val,val2;
+      val = false;
+      val2 = false;
+      if(it!=self->instantiated_objects.end()){
       val = it->second._gl_object->is_bodypose_adjustment_enabled();
       if(!val)
        val2 = it->second._gl_object->is_jointdof_adjustment_enabled();
-      }
-    bot_gtk_param_widget_add_separator (pw,"Set Desired State");
-    bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
-    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_BODYPOSE_ADJUSTMENT, val, NULL);
-    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_JOINTDOF_ADJUSTMENT, val2, NULL);
-    bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DOFS_VIA_SLIDERS,NULL);
-    bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
+      }   
+      
+      bot_gtk_param_widget_add_separator (pw,"Set desired state");
+      bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
+      bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
+      bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DOFS_VIA_SLIDERS,NULL);
+      bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
+   }
     
-    //cout <<*self->selection << endl; // otdf_type::geom_name
+    //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
 
     self->dblclk_popup  = window;
@@ -517,52 +748,10 @@ namespace renderer_affordances_gui_utils
       cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
       
     T_world_ee = T_world_geometry*T_geometry_palm;
-
-    /*double ro,pi,ya;  
-    T_world_geometry.M.GetRPY(ro,pi,ya);
-    cout <<"T_world_geometry : "<< endl;
-    cout <<"roll "<<ro*(180/M_PI) << endl;
-    cout <<"pitch "<<pi*(180/M_PI) << endl;
-    cout <<"yaw "<<ya*(180/M_PI) << endl;
-    cout << endl;
-   
-    T_geometry_hand.M.GetRPY(ro,pi,ya);
-    cout <<"T_geometry_stickyhandbaseframe : "<< endl;
-    cout <<"roll "<<ro*(180/M_PI) << endl;
-    cout <<"pitch "<<pi*(180/M_PI) << endl;
-    cout <<"yaw "<<ya*(180/M_PI) << endl;
-    cout << endl;
-    
-    T_geometry_palm.M.GetRPY(ro,pi,ya);
-    cout <<"T_geometry_palm : "<< endl;
-    cout <<"roll "<<ro*(180/M_PI) << endl;
-    cout <<"pitch "<<pi*(180/M_PI) << endl;
-    cout <<"yaw "<<ya*(180/M_PI) << endl;
-    cout << endl;
-
-    cout <<"T_world_palm : "<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-    T_world_ee.M.GetRPY(ro,pi,ya);
-    cout <<"roll "<<ro*(180/M_PI) << endl;
-    cout <<"pitch "<<pi*(180/M_PI) << endl;
-    cout <<"yaw "<<ya*(180/M_PI) << endl;
-    cout << endl;
-    
-    double x1,y1,z1,w1;
-    T_world_ee.M.GetQuaternion(x1,y1,z1,w1);    
-    cout << "T_world_palm q:" << x1 << " " << y1 <<" " << z1 << " " << w1 << endl;
-    */
              
    if(pregrasp_flag)
    {
-
-
-    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base
-
-//    KDL::Frame T_hand_offset = KDL::Frame::Identity();
-//    T_hand_offset.p[0] = 0.1; // 10cm  move away from which ever direction the palm is facing by 10 cm 
-//   // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
-//    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
- 
+    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
     KDL::Vector handframe_offset;
     handframe_offset[0]=0.1;handframe_offset[1]=0;handframe_offset[2]=0;
     KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
@@ -570,15 +759,7 @@ namespace renderer_affordances_gui_utils
     T_world_ee.p += worldframe_offset;
 
    }  
-     
-    /* cout <<"T_world_palm "<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-    T_world_ee.M.GetRPY(ro,pi,ya);
-    cout <<"roll "<<ro*(180/M_PI) << endl;
-    cout <<"pitch "<<pi*(180/M_PI) << endl;
-    cout <<"yaw "<<ya*(180/M_PI) << endl;
-    cout << endl;         
-    */
-    
+
     //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
 
     // desired ee position wrt to robot body.
@@ -640,7 +821,7 @@ namespace renderer_affordances_gui_utils
 
 
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(sticky_hand_struc.object_name);
+    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(sticky_hand_struc.object_name));
     KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
     
       trajmsg.num_links =  sticky_hand_struc._gl_hand->_desired_body_motion_history.size();
@@ -677,8 +858,8 @@ namespace renderer_affordances_gui_utils
     msg.utime = self->last_state_msg_timestamp;
     msg.robot_name = "atlas";
     
-    msg.object_name = sticky_hand_struc.object_name;
-    msg.geometry_name = sticky_hand_struc.geometry_name;
+    msg.object_name = string(sticky_hand_struc.object_name);
+    msg.geometry_name = string(sticky_hand_struc.geometry_name);
     msg.unique_id = sticky_hand_struc.uid;
     msg.grasp_type = sticky_hand_struc.hand_type;
 
@@ -794,7 +975,7 @@ namespace renderer_affordances_gui_utils
   {
     RendererAffordances *self = (RendererAffordances*) user;
     
-    if((*self->stickyhand_selection)==" "){
+    if(self->stickyhand_selection==" "){
       gtk_widget_destroy(self->dblclk_popup);
       return;
     }
@@ -803,10 +984,10 @@ namespace renderer_affordances_gui_utils
       fprintf(stderr,"\n Clearing selected sticky hand\n");
       
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
       if(hand_it!=self->sticky_hands.end())
         self->sticky_hands.erase(hand_it);
-      (*self->stickyhand_selection) = " ";
+      self->stickyhand_selection = " ";
       bot_viewer_request_redraw(self->viewer);
     }
     else if (! strcmp(name, PARAM_RESEED)) {
@@ -815,15 +996,15 @@ namespace renderer_affordances_gui_utils
     else if(! strcmp(name, PARAM_EE_MOTION)) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
       
       //===================================// TODO: //DEBUG ONLY.REMOVE BLOCK LATER
      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
 
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry_future = KDL::Frame::Identity(); // the object might have moved.
 
-      if(!obj_it->second._gl_object->get_link_geometry_future_frame(hand_it->second.geometry_name,T_world_graspgeometry_future))
+      if(!obj_it->second._gl_object->get_link_geometry_future_frame(string(hand_it->second.geometry_name),T_world_graspgeometry_future))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
       //===================================// TODO: //DEBUG ONLY.REMOVE BLOCK LATER
@@ -846,13 +1027,13 @@ namespace renderer_affordances_gui_utils
     }
     else if (!strcmp(name, PARAM_COMMIT)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
-      if(!obj_it->second._gl_object->get_link_geometry_frame(hand_it->second.geometry_name,T_world_graspgeometry))
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
         drc::desired_grasp_state_t msg; // just to access types
@@ -870,13 +1051,13 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_EXECUTE))||(!strcmp(name, PARAM_PALM_TOUCH))||(!strcmp(name, PARAM_PREGRASP))||(!strcmp(name, PARAM_GET_CLOSE))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find((*self->stickyhand_selection));
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(hand_it->second.object_name);
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
       KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
 
-      if(!obj_it->second._gl_object->get_link_geometry_frame(hand_it->second.geometry_name,T_world_graspgeometry))
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
       cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
         drc::grasp_opt_control_t msg; // just to access types
@@ -945,7 +1126,7 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
 
     
-    //cout <<*self->selection << endl; // otdf_type::geom_name
+    //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);
 
     self->dblclk_popup  = window;

@@ -137,14 +137,14 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 
       // copy triangles
       it->second.triangles.resize(msg->triangles.size());
-      for(int i=0;i<msg->triangles.size();i++){
+      for(size_t i=0;i<msg->triangles.size();i++){
         it->second.triangles[i][0] = msg->triangles[i][0];
         it->second.triangles[i][1] = msg->triangles[i][1];
         it->second.triangles[i][2] = msg->triangles[i][2];
       }
       // copy points
       it->second.points.resize(msg->points.size());
-      for(int i=0;i<msg->points.size();i++){
+      for(size_t i=0;i<msg->points.size();i++){
         it->second.points[i][0] = msg->points[i][0];
         it->second.points[i][1] = msg->points[i][1];
         it->second.points[i][2] = msg->points[i][2];
@@ -245,7 +245,7 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   std::stringstream oss;
   oss << aff.otdf_type << "_"<< aff.uid;
   instance_struc.uid = aff.uid;
-  instance_struc.otdf_type = aff.otdf_type;
+  instance_struc.otdf_type = aff.otdf_type;//new string(aff.otdf_type);
   instance_struc._collision_detector.reset();
   instance_struc._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
   instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));

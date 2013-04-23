@@ -45,10 +45,10 @@ namespace renderer_affordances
     
     drc::grasp_opt_control_t msg;
     msg.utime = _parent_renderer->last_state_msg_timestamp; // best estimate of latest sim time
-    msg.robot_name = (*_parent_renderer->robot_name_ptr);
-    msg.object_name = (*_parent_renderer->object_selection);
+    msg.robot_name = _parent_renderer->robot_name;
+    msg.object_name = _parent_renderer->object_selection;
     
-    string object_geometry_name = (*_parent_renderer->link_selection);
+    string object_geometry_name = _parent_renderer->link_selection;
     string object_name_token  =msg.object_name + "_";
     size_t found = object_geometry_name.find(object_name_token);  
     string geometry_name =object_geometry_name.substr(found+object_name_token.size());

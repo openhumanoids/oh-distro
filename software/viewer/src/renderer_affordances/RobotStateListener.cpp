@@ -17,8 +17,9 @@ namespace renderer_affordances
     _lcm(lcm),
     _viewer(viewer)*/
   RobotStateListener::RobotStateListener(RendererAffordances* parent_renderer):
-   _parent_renderer(parent_renderer)
+   _parent_renderer(parent_renderer),_robot_state_received(false)
   {
+
     _lcm = _parent_renderer->lcm; 
     //lcm ok?
     if(!_lcm->good())
@@ -29,7 +30,8 @@ namespace renderer_affordances
     T_body_world = KDL::Frame::Identity();
 
     _parent_renderer->last_state_msg_timestamp = 0;
-    (*_parent_renderer->robot_name_ptr) = "atlas"; //default
+     _parent_renderer->robot_name = "atlas";//default
+   //(*_parent_renderer->robot_name_ptr) = "atlas"; 
 
     // Subscribe to Robot_state. 
     _lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
@@ -44,6 +46,9 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_state_t* msg)						 
   { 
+      if(!_robot_state_received)
+      _robot_state_received = true;
+  
   	  KDL::Frame  T_world_body;
   	    
       T_world_body.p[0]= msg->origin_position.translation.x;
@@ -53,8 +58,13 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 
       T_body_world=T_world_body.Inverse();   
       
+   
+      last_robotstate_msg = (*msg);
       _parent_renderer->last_state_msg_timestamp = msg->utime;
-      (*_parent_renderer->robot_name_ptr)  = msg->robot_name;
+       _parent_renderer->robot_name = msg->robot_name;
+      //(*_parent_renderer->robot_name_ptr)  = msg->robot_name;
+      
+       
     
   } // end handleMessage
 

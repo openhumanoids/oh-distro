@@ -54,9 +54,10 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/file_access_utils.hpp>
 
-#define RENDERER_NAME "Objects & StickyHands"
+#define RENDERER_NAME "Affordances & StickyHands/Feet"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
 #define PARAM_SHOW_MESH "Show mesh"
+#define PARAM_REACHABILITY_FILTER "Enable Reachability Filter"
 //#define PARAM_ADJUST_PARAM "Adjust Params"
 #define PARAM_OTDF_SELECT "Template"
 #define PARAM_OTDF_INSTANCE_SELECT "Instance"
@@ -64,8 +65,6 @@
 #define PARAM_OTDF_ADJUST_DOF "Adjust DoFs"
 #define PARAM_OTDF_INSTANCE_CLEAR "Clear Instance"
 #define PARAM_OTDF_INSTANCE_CLEAR_ALL "Clear All"
-#define PARAM_OTDF_REACH_OBJECT_L "Reach Object w Left Arm"
-#define PARAM_OTDF_REACH_OBJECT_R "Reach Object w Right Arm"
 #define PARAM_INSTANTIATE "Instantiate/Fit"
 #define PARAM_CLEAR "Clear All Instances"
 #define PARAM_SELECTION "Enable Selection"
@@ -88,7 +87,7 @@ using namespace boost;
 using namespace visualization_utils;
 using namespace collision;
 
-namespace renderer_affordances{
+namespace renderer_affordances {
 
 // ===== 2 dimensional structure =====
 #ifndef _point2d_t_h
@@ -122,129 +121,309 @@ typedef point3d_t vec3d_t;
 #define POINT3D(p) (&(((union _point3d_any_t *)(p))->point))
 
 
-typedef struct _OtdfInstanceStruc {
+struct OtdfInstanceStruc {
+    //std::string* otdf_type;
     std::string otdf_type;
+    //const char* otdf_type;
     int uid;
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;  
     // Each object has its own collision detector for now. 
-    // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.   
-
+    // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3i> triangles;
+};   
 
-}OtdfInstanceStruc;   
-
-typedef struct _StickyHandStruc {
+struct StickyHandStruc {
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_hand;
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;
-    std::string object_name;
-    std::string geometry_name; 
+    string object_name;
+    string geometry_name; 
     int hand_type; //SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
     KDL::Frame T_geometry_hand; // this is stored in obj frame
     std::vector<std::string> joint_name;
     std::vector<double> joint_position;
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
-}StickyHandStruc;   
+};   
+
+
+struct StickyFootStruc {
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_foot;
+    boost::shared_ptr<collision::Collision_Detector> _collision_detector;
+    string object_name;
+    string geometry_name; 
+    int foot_type; //LEFT=0, RIGHT=1;
+    KDL::Frame T_geometry_foot; // this is stored in obj frame
+    std::vector<std::string> joint_name;
+    std::vector<double> joint_position;
+    int uid;
+   // int opt_status;
+}; 
 
 class AffordanceCollectionListener;
 class RobotStateListener;
 class InitGraspOptPublisher;
 class CandidateGraspSeedListener;
 class GraspOptStatusListener;
+class CandidateFootStepSeedManager;
+class ReachabilityVerifier;
  
-typedef struct _RendererAffordances {
+struct RendererAffordances {
+  RendererAffordances()
+  {
+  // initializing variables to prevent memory issues due to uninitialized vars.
+    viewer = NULL;
+    pw = NULL;
+    otdf_names = NULL;
+    otdf_nums = NULL;
+    dblclk_popup= NULL;
+    second_stage_popup= NULL;
+    
+    
+    showMesh = false;
+    enableReachabilityFilter=false;
+    debugMode=false;
+    selection_hold_on = false;
+    selection_enabled=false;
+    clicked=false;
+    dragging=false;
+    show_popup_onrelease=false;
+    visualize_bbox=false;
+
+    
+    ray_hit_t = 0;
+    otdf_id = 0;
+    num_otdfs = 0;
+    alpha = 1.0;
+    last_state_msg_timestamp = 0;
+    lhand_urdf_id=0;
+    rhand_urdf_id=0;
+    
+    free_running_sticky_hand_cnt = 0;
+    free_running_sticky_foot_cnt = 0;
+  }
+  
+  ~RendererAffordances(){   
+    
+  } 
+
+  // core members
   BotRenderer renderer;
   BotEventHandler ehandler;
+  
+  // core member pointers
   BotViewer *viewer;
+  BotGtkParamWidget *pw;
+  GtkWidget *dblclk_popup;
+  GtkWidget *second_stage_popup;
   boost::shared_ptr<lcm::LCM> lcm;
 
-  BotGtkParamWidget *pw;
-
-  bool selection_enabled;
-  bool clicked;
-  bool dragging;
-  bool show_popup_onrelease;
-  bool visualize_bbox;
-  Eigen::Vector3f ray_start;
-  Eigen::Vector3f ray_end;
-  Eigen::Vector3f ray_hit;
-  Eigen::Vector3f ray_hit_drag;
-  Eigen::Vector3f prev_ray_hit_drag;
-
-  Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
-  double ray_hit_t;
-  std::string* link_selection;
-  std::string* object_selection;
-  std::string* stickyhand_selection;
-  std::string* marker_selection;
-  int otdf_id;
-
-  int num_otdfs;
-  char ** otdf_names;
-  int * otdf_nums;
-  
-  std::string* otdf_dir_name_ptr;
-  std::vector<std::string> otdf_filenames; // otdf_template_names
-  std::map<std::string, int > instance_cnt; // templateName, value.
-  
-   int lhand_urdf_id;
-   int rhand_urdf_id;
-  // hand models
-  int num_urdfs;
-  char ** urdf_names;
-  int * urdf_nums;
-  
-  std::string* urdf_dir_name_ptr;
-  std::vector<std::string> urdf_filenames; // otdf_template_names
-
-  // transparency of the object:
-  float alpha;  
-  
-  std::string* instance_selection_ptr; 
-  bool selection_hold_on;
-  
-  
-  // TODO: make the following OtdfInstanceStruc
-  boost::shared_ptr<otdf::ModelInterface> otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
-  boost::shared_ptr<visualization_utils::GlKinematicBody> gl_temp_object;
-  std::string*  instance_hold_otdf_type_ptr; // std::stromg segfaults , hence using a pointer
-  int instance_hold_uid;
-    
-  //otdf::ModelInterface otdf_instance_hold; // keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance type.
-  std::map<std::string, OtdfInstanceStruc > instantiated_objects; // otdftemplatename+ object_uid
-  
-  std::map<std::string, StickyHandStruc> sticky_hands; // otdftemplatename + object_uid + geometryname + "_grasp_" + hand_uid;
-  // NOTE: an otdf instance can have multiple sticky_hands associated with it.
-  // this variable should ideally be in the affordance store process.
-  int free_running_sticky_hand_cnt; // never decremented, used to set uid of sticky hands which is unique in global map scope 
-  
-  KDL::Frame T_graspgeometry_lhandinitpos;
-  KDL::Frame T_graspgeometry_rhandinitpos;
+ 
+  // Member Classes
+  // -----------------
   // LCM msg handlers and publishers
   boost::shared_ptr<AffordanceCollectionListener> affordanceMsgHandler;
   boost::shared_ptr<RobotStateListener> robotStateListener;
   boost::shared_ptr<CandidateGraspSeedListener> candidateGraspSeedListener;
   boost::shared_ptr<InitGraspOptPublisher> initGraspOptPublisher;
   boost::shared_ptr<GraspOptStatusListener> graspOptStatusListener;
-
- 
-  long last_state_msg_timestamp;
-  std::string* robot_name_ptr;
+  boost::shared_ptr<CandidateFootStepSeedManager> candidateFootStepSeedManager;
+  boost::shared_ptr<ReachabilityVerifier> reachabilityVerifier;
   
-  GtkWidget *dblclk_popup;
-  GtkWidget *second_stage_popup;
+  //Member Variables 
+  // -----------------
 
+  std::map<std::string, OtdfInstanceStruc > instantiated_objects; // otdftemplatename+ object_uid
+  std::map<std::string, StickyHandStruc> sticky_hands; // otdftemplatename + object_uid + geometryname + "_grasp_" + hand_uid;  
+  std::map<std::string, StickyFootStruc> sticky_feet; // otdftemplatename + object_uid + geometryname + "_footstep_" + foot_uid;
+  // NOTE: an otdf instance can have multiple sticky_hands/feet associated with it.
+  
+  OtdfInstanceStruc otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance.
+  
+  int free_running_sticky_hand_cnt; // never decremented, used to set uid of sticky hands which is unique in global map scope 
+  int free_running_sticky_foot_cnt;
+  KDL::Frame T_graspgeometry_lhandinitpos;
+  KDL::Frame T_graspgeometry_rhandinitpos;
+
+  int otdf_id;
+  // otdf models
+  int num_otdfs;
+  char ** otdf_names;
+  int * otdf_nums;
+  
+  int lhand_urdf_id;
+  int rhand_urdf_id;
+  
+  // hand models
+  int num_urdfs;
+  char ** urdf_names;
+  int * urdf_nums;
+  
+ // strings  
+ std::string robot_name;
+ std::string instance_selection; 
+ std::string link_selection;
+ std::string object_selection;
+ std::string stickyhand_selection;
+ std::string stickyfoot_selection;
+ std::string marker_selection;
+ std::string urdf_dir_name;
+ std::vector<std::string> urdf_filenames;
+ std::string otdf_dir_name;
+ std::vector<std::string> otdf_filenames;
+
+  
+  std::map<std::string, int > instance_cnt; // templateName, value. keeps track of how many times each template is instantiated. (only used for creating a local aff store)
+  
+  long last_state_msg_timestamp;
+  float alpha;    // transparency of the object:
+  
+  Eigen::Vector3f ray_start;
+  Eigen::Vector3f ray_end;
+  Eigen::Vector3f ray_hit;
+  Eigen::Vector3f ray_hit_drag;
+  Eigen::Vector3f prev_ray_hit_drag;
+  Eigen::Vector3f ray_hit_normal;
+  Eigen::Vector3f marker_offset_on_press;// maintains this offset while dragging
+  double ray_hit_t;
+  
+  
+  // boolean flags
   bool showMesh;  // if false, draws otdf, if true, draws mesh instead
-}RendererAffordances;
+  bool enableReachabilityFilter;
+  bool debugMode;
+  bool selection_hold_on;
+  bool selection_enabled;
+  bool clicked;
+  bool dragging;
+  bool show_popup_onrelease;
+  bool visualize_bbox;
+};
 
 
 // =================================================================================
 // maintaining  OtdfInstanceStruc
+  
+  inline static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
+  {
+   RendererAffordances *self = (RendererAffordances*) user;
+   drc::affordance_t msg;
 
-  inline static void create_otdf_object_instance (RendererAffordances *self)
+   msg.utime = 0;
+   msg.map_id = 0;
+   
+   
+   msg.otdf_type = otdf_type;
+   msg.aff_store_control = msg.UPDATE;//msg.NEW
+   msg.uid = uid; 
+   
+    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
+   msg.origin_xyz[0] =instance_in->params_map_.find("x")->second;
+   msg.origin_xyz[0] =instance_in->params_map_.find("y")->second;
+   msg.origin_xyz[0] =instance_in->params_map_.find("z")->second;
+   msg.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
+   msg.origin_rpy[0] =instance_in->params_map_.find("pitch")->second;
+   msg.origin_rpy[0] =instance_in->params_map_.find("yaw")->second;
+   
+   double bounding_xyz[]={0,0,0};
+   double bounding_rpy[]={0,0,0};
+   double bounding_lwh[]={0,0,0};
+  
+   msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
+   msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
+   msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
+    
+   msg.nparams =  instance_in->params_map_.size();
+   typedef std::map<std::string, double > params_mapType;
+   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
+   { 
+      msg.param_names.push_back(it->first);
+      msg.params.push_back(it->second);
+   }
+
+  int cnt=0;
+   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
+    {     
+      if(it->second->type!=(int) otdf::Joint::FIXED) {
+
+          double pos, vel;
+          instance_in->getJointState(it->first,pos,vel);
+          cnt++;
+          msg.state_names.push_back(it->first);
+          msg.states.push_back(pos);
+      }
+     }
+   msg.nstates =  cnt;
+   cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
+   
+   self->lcm->publish(channel, &msg);
+
+  } 
+  
+  
+  inline static void publish_new_otdf_instance_to_affstore( string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
+  {
+   RendererAffordances *self = (RendererAffordances*) user;
+   drc::affordance_plus_t msg;
+
+   msg.aff.utime = 0;
+   msg.aff.map_id = 0;
+   msg.aff.uid =0; // aff store should assign this
+   
+      
+   msg.aff.otdf_type = otdf_type;
+   msg.aff.aff_store_control = msg.aff.NEW;
+   
+   //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
+   msg.aff.origin_xyz[0] =instance_in->params_map_.find("x")->second;
+   msg.aff.origin_xyz[0] =instance_in->params_map_.find("y")->second;
+   msg.aff.origin_xyz[0] =instance_in->params_map_.find("z")->second;
+   msg.aff.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
+   msg.aff.origin_rpy[0] =instance_in->params_map_.find("pitch")->second;
+   msg.aff.origin_rpy[0] =instance_in->params_map_.find("yaw")->second;
+   
+   double bounding_xyz[]={0,0,0};
+   double bounding_rpy[]={0,0,0};
+   double bounding_lwh[]={0,0,0};
+  
+   msg.aff.bounding_xyz[0] = bounding_xyz[0]; msg.aff.bounding_xyz[1] = bounding_xyz[1];msg.aff.bounding_xyz[2] = bounding_xyz[2];
+   msg.aff.bounding_rpy[0] = bounding_rpy[0]; msg.aff.bounding_rpy[1] = bounding_rpy[1];msg.aff.bounding_rpy[2] = bounding_rpy[2];
+   msg.aff.bounding_lwh[0] = bounding_lwh[0]; msg.aff.bounding_lwh[1] = bounding_lwh[1];msg.aff.bounding_lwh[2] = bounding_lwh[2];
+
+  
+   msg.aff.nparams =  instance_in->params_map_.size();
+   typedef std::map<std::string, double > params_mapType;
+   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
+   { 
+      msg.aff.param_names.push_back(it->first);
+      msg.aff.params.push_back(it->second);
+   }
+
+  int cnt=0;
+   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
+    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
+    {   
+      if(it->second->type!=(int) otdf::Joint::FIXED) {
+
+          double pos, vel;
+          instance_in->getJointState(it->first,pos,vel);
+          cnt++;
+          msg.aff.state_names.push_back(it->first);
+          msg.aff.states.push_back(pos);
+      }
+     }
+   msg.aff.nstates =  cnt;
+   msg.npoints = 0;
+   msg.ntriangles = 0;
+   cout <<"publish_otdf_instance_to_affstore: creating a new instance of template :" << msg.aff.otdf_type << endl;
+    
+   self->lcm->publish(channel, &msg);
+  } 
+  
+  inline static void create_otdf_object_instance (RendererAffordances *self, bool local_testing)
   {
     std::string filename = self->otdf_filenames[self->otdf_id];
     std::string xml_string;
@@ -267,7 +446,7 @@ typedef struct _RendererAffordances {
     std::stringstream oss;
     oss << self-> otdf_filenames[self->otdf_id] << "_"<< it->second-1;  // unique name, cnt starts from zero
     
-    instance_struc.otdf_type=filename;
+    instance_struc.otdf_type=filename;//new string(filename);
     instance_struc.uid=it->second-1; // starts from zero
     //instance_struc._otdf_instance->name_ = oss.str();
     
@@ -277,7 +456,12 @@ typedef struct _RendererAffordances {
     instance_struc._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(instance_struc._otdf_instance,instance_struc._collision_detector,true,oss.str()));
     instance_struc._gl_object->set_state(instance_struc._otdf_instance);
 
-    self->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
+    if(local_testing)
+      self->instantiated_objects.insert(std::make_pair(oss.str(), instance_struc));
+    else
+    {
+      publish_new_otdf_instance_to_affstore("AFFORDANCE_FIT",(instance_struc.otdf_type),0,instance_struc._otdf_instance,self); 
+    }
     bot_viewer_request_redraw(self->viewer);
   } 
 
@@ -287,90 +471,38 @@ typedef struct _RendererAffordances {
     instance_struc._gl_object->set_state(instance_struc._otdf_instance);
   }
   
-//===============================================================================
-// FILE ACCESS
-  
- /* inline static bool get_xmlstring_from_file(const std::string& filename, std::string &xml_string)
-  {
-    // get the entire file
-    std::fstream xml_file(filename.c_str(), std::fstream::in);
-    if (xml_file.is_open())
+    
+ inline static bool otdf_instance_has_seeds(void* user, string &object_name)
+ { 
+    RendererAffordances *self = (RendererAffordances*) user;
+    typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+    sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+    while (hand_it!=self->sticky_hands.end()) 
     {
-      while ( xml_file.good() )
-      {
-        std::string line;
-        std::getline( xml_file, line);
-        xml_string += (line + "\n");
-      }
-      xml_file.close();
-      return true;
-    }
-    else
+       if (hand_it->second.object_name == (object_name))
+       {
+         return true;
+       }
+       
+       hand_it++;
+    } 
+
+    typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+    sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
+    while (foot_it!=self->sticky_feet.end()) 
     {
-     // ROS_ERROR("Could not open file [%s] for parsing.",filename.c_str());
-     std::cerr << "Could not open file ["<<filename.c_str()<<"] for parsing."<< std::endl;
-      return false;
-    }
-  }
-
-      
-  // this function should go into otdf_utils library
-  inline static int get_OTDF_filenames_from_dir (std::string dir, std::vector<std::string> &files)
-  {
-      DIR *dp;
-      struct dirent *dirp;
-      if((dp  = opendir(dir.c_str())) == NULL) {
-          cout << "Error(" << errno << ") opening " << dir << endl;
-          return errno;
-      }
-
-      while ((dirp = readdir(dp)) != NULL) {
-        std::string fn =string(dirp->d_name);
-        if(fn.substr(fn.find_last_of(".") + 1) == "otdf") 
-          files.push_back(fn.substr(0,fn.find_last_of(".")));
-      }
-      closedir(dp);
-      return 0;
-  }
-   //-------------------------------------------------------------------------------
-  // this function should go into otdf_utils library
-  inline static int get_URDF_or_SDF_filenames_from_dir (std::string dir, std::vector<std::string> &files)
-  {
-      DIR *dp;
-      struct dirent *dirp;
-      if((dp  = opendir(dir.c_str())) == NULL) {
-          cout << "Error(" << errno << ") opening " << dir << endl;
-          return errno;
-      }
-
-      while ((dirp = readdir(dp)) != NULL) {
-        std::string fn =string(dirp->d_name);
-        if((fn.substr(fn.find_last_of(".") + 1) == "urdf")||(fn.substr(fn.find_last_of(".") + 1) == "sdf")) 
-          files.push_back(fn.substr(0,fn.find_last_of(".")));
-      }
-      closedir(dp);
-      return 0;
+       if (foot_it->second.object_name == (object_name))
+       {
+         return true;
+       }
+       
+       foot_it++;
+    } 
+    return false;
+    
   }
   
-    inline static int get_URDF_filenames_from_dir (std::string dir, std::vector<std::string> &files)
-  {
-      DIR *dp;
-      struct dirent *dirp;
-      if((dp  = opendir(dir.c_str())) == NULL) {
-          cout << "Error(" << errno << ") opening " << dir << endl;
-          return errno;
-      }
 
-      while ((dirp = readdir(dp)) != NULL) {
-        std::string fn =string(dirp->d_name);
-        if(fn.substr(fn.find_last_of(".") + 1) == "urdf") 
-          files.push_back(fn.substr(0,fn.find_last_of(".")));
-      }
-      closedir(dp);
-      return 0;
-  } 
-  
-    */
 //===============================================================================
 // MISC. UTILS
 
@@ -638,8 +770,8 @@ typedef struct _RendererAffordances {
   {
     RendererAffordances *self = (RendererAffordances*) user;
 
-    string object_geometry_name = (*self->link_selection); 
-    string object_name_token  = (*self->object_selection) + "_";
+    string object_geometry_name = self->link_selection; 
+    string object_name_token  = self->object_selection + "_";
     size_t found = object_geometry_name.find(object_name_token);  
     string geometry_name =object_geometry_name.substr(found+object_name_token.size());
   
@@ -649,9 +781,9 @@ typedef struct _RendererAffordances {
     self->T_graspgeometry_rhandinitpos = KDL::Frame::Identity();
     //Get initial position of hand relative to object geometry.
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find((*self->object_selection));
+    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(self->object_selection);
     if(!obj_it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_graspgeometry))
-        cerr << " failed to retrieve " << geometry_name<<" in object " << (*self->object_selection) <<endl;
+        cerr << " failed to retrieve " << geometry_name<<" in object " << self->object_selection <<endl;
     else {
         
         KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
@@ -680,14 +812,14 @@ typedef struct _RendererAffordances {
         else{
          get_hand_approach(from_geomframe,hit_pt_geomframe,link_geom,self->T_graspgeometry_lhandinitpos,self->T_graspgeometry_rhandinitpos);
 
-        }
+        }//end else
          
         /*std::cout << "T_objectgeometry_hand.p: " << self->T_graspgeometry_lhandinitpos.p[0] 
                                           << " " << self->T_graspgeometry_lhandinitpos.p[1] 
                                           << " " << self->T_graspgeometry_lhandinitpos.p[2] << " " << std::endl;*/
         
-    }
-  }
+    }//end else
+  }// end void set_hand_init_position(void *user)
   //------------------------------------------------------------------------------- 
   
   inline static void set_object_desired_state_on_marker_motion(void *user)
@@ -695,7 +827,7 @@ typedef struct _RendererAffordances {
       RendererAffordances *self = (RendererAffordances*) user;
       double gain = 1;
 
-      std::string instance_name=  (*self->object_selection);
+      std::string instance_name=  self->object_selection;
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
@@ -722,19 +854,19 @@ typedef struct _RendererAffordances {
       if(it->second._gl_object->is_bodypose_adjustment_enabled())
       {
       
-        if((*self->marker_selection)=="markers::base_x"){
+        if(self->marker_selection=="markers::base_x"){
           double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
           T_world_object_future.p[0] = dx;
         }
-        else if((*self->marker_selection)=="markers::base_y"){
+        else if(self->marker_selection=="markers::base_y"){
           double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
           T_world_object_future.p[1] = dy;
         }      
-        else if((*self->marker_selection)=="markers::base_z"){
+        else if(self->marker_selection=="markers::base_z"){
           double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
           T_world_object_future.p[2] = dz;
         }    
-        else if((*self->marker_selection)=="markers::base_roll"){
+        else if(self->marker_selection=="markers::base_roll"){
           currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object_future.p[2],self->prev_ray_hit_drag[1]-T_world_object_future.p[1]);
           angleTo = atan2(self->ray_hit_drag[2]-T_world_object_future.p[2],self->ray_hit_drag[1]-T_world_object_future.p[1]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
@@ -743,7 +875,7 @@ typedef struct _RendererAffordances {
           axis[0] = 1; axis[1] = 0; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }
-        else if((*self->marker_selection)=="markers::base_pitch"){ 
+        else if(self->marker_selection=="markers::base_pitch"){ 
           currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object_future.p[0],self->prev_ray_hit_drag[2]-T_world_object_future.p[2]);
           angleTo = atan2(self->ray_hit_drag[0]-T_world_object_future.p[0],self->ray_hit_drag[2]-T_world_object_future.p[2]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
@@ -752,7 +884,7 @@ typedef struct _RendererAffordances {
           axis[0] = 0; axis[1] = 1; axis[2]=0;
           DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
         }    
-        else if((*self->marker_selection)=="markers::base_yaw"){
+        else if(self->marker_selection=="markers::base_yaw"){
           currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object_future.p[1],self->prev_ray_hit_drag[0]-T_world_object_future.p[0]);
           angleTo = atan2(self->ray_hit_drag[1]-T_world_object_future.p[1],self->ray_hit_drag[0]-T_world_object_future.p[0]);
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
@@ -773,8 +905,8 @@ typedef struct _RendererAffordances {
         //===========================================================================
         // set joint dof
 
-        string object_name = (*self->object_selection); 
-        string marker_name = (*self->marker_selection); 
+        string object_name = self->object_selection; 
+        string marker_name = self->marker_selection; 
         string token  = "markers::";
         size_t found = marker_name.find(token);  
         if (found==std::string::npos)
@@ -848,19 +980,217 @@ typedef struct _RendererAffordances {
           
   }   // end set_object_desired_state_on_marker_motion()
   
-//------------------------------------------------------------------------------- 
 
-  inline static double get_shortest_distance_between_objects_markers_stickyhands (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
+  //------------------------------------------------------------------------------- 
+  
+  inline static void set_object_current_state_on_marker_motion(void *user)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+      double gain = 1;
+
+      std::string instance_name=  self->object_selection;
+
+      // set current state
+      KDL::Frame T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+      
+      double currentAngle, angleTo,dtheta;       
+      KDL::Frame DragRotation=KDL::Frame::Identity();       
+      if(self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())
+      {
+      
+        if(self->marker_selection=="markers::base_x"){
+          double dx =  self->ray_hit_drag[0]-self->marker_offset_on_press[0];
+          T_world_object.p[0] = dx;
+        }
+        else if(self->marker_selection=="markers::base_y"){
+          double dy =  self->ray_hit_drag[1]-self->marker_offset_on_press[1];
+          T_world_object.p[1] = dy;
+        }      
+        else if(self->marker_selection=="markers::base_z"){
+          double dz =  self->ray_hit_drag[2]-self->marker_offset_on_press[2];
+          T_world_object.p[2] = dz;
+        }    
+        else if(self->marker_selection=="markers::base_roll"){
+          currentAngle = atan2(self->prev_ray_hit_drag[2]-T_world_object.p[2],self->prev_ray_hit_drag[1]-T_world_object.p[1]);
+          angleTo = atan2(self->ray_hit_drag[2]-T_world_object.p[2],self->ray_hit_drag[1]-T_world_object.p[1]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
+          KDL::Vector axis;
+          axis[0] = 1; axis[1] = 0; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        else if(self->marker_selection=="markers::base_pitch"){ 
+          currentAngle = atan2(self->prev_ray_hit_drag[0]-T_world_object.p[0],self->prev_ray_hit_drag[2]-T_world_object.p[2]);
+          angleTo = atan2(self->ray_hit_drag[0]-T_world_object.p[0],self->ray_hit_drag[2]-T_world_object.p[2]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          //dtheta =  atan2(sin(angleTo - currentAngle), cos(angleTo - currentAngle));
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 1; axis[2]=0;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }    
+        else if(self->marker_selection=="markers::base_yaw"){
+          currentAngle = atan2(self->prev_ray_hit_drag[1]-T_world_object.p[1],self->prev_ray_hit_drag[0]-T_world_object.p[0]);
+          angleTo = atan2(self->ray_hit_drag[1]-T_world_object.p[1],self->ray_hit_drag[0]-T_world_object.p[0]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          KDL::Vector axis;
+          axis[0] = 0; axis[1] = 0; axis[2]=1;
+          DragRotation.M = KDL::Rotation::Rot(axis,dtheta);
+        }
+        
+        T_world_object.M  = DragRotation.M*T_world_object.M; 
+        
+        double roll,pitch,yaw;
+        T_world_object.M.GetRPY(roll,pitch,yaw);
+        self->otdf_instance_hold._otdf_instance->setParam("x",T_world_object.p[0]);
+        self->otdf_instance_hold._otdf_instance->setParam("y",T_world_object.p[1]);
+        self->otdf_instance_hold._otdf_instance->setParam("z",T_world_object.p[2]);
+        self->otdf_instance_hold._otdf_instance->setParam("roll",roll);
+        self->otdf_instance_hold._otdf_instance->setParam("pitch",pitch);
+        self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw);
+        self->otdf_instance_hold._otdf_instance->update(); 
+        self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+
+      }
+     else if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
+      {
+        //===========================================================================
+        // set joint dof
+        string object_name = self->object_selection; 
+        string marker_name = self->marker_selection; 
+        string token  = "markers::";
+        size_t found = marker_name.find(token);  
+        if (found==std::string::npos)
+            return;
+        string joint_name =marker_name.substr(found+token.size());
+        
+        //std::cout <<"markername: "<< marker_name<< " mouse on joint marker: " << joint_name << std::endl;
+
+      // Get joint marker draw frame
+        visualization_utils::JointFrameStruct jointInfo;
+        self->otdf_instance_hold._gl_object->get_joint_info(joint_name,jointInfo);
+        
+        KDL::Frame T_world_object = self->otdf_instance_hold._gl_object->_T_world_body;
+        
+        Eigen::Vector3f joint_axis;
+        joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
+
+        Eigen::Vector3f u_body_to_joint;
+        u_body_to_joint[0] = T_world_object.p[0]-jointInfo.frame.p[0];
+        u_body_to_joint[1] = T_world_object.p[1]-jointInfo.frame.p[1];
+        u_body_to_joint[2] = T_world_object.p[2]-jointInfo.frame.p[2];
+        u_body_to_joint.normalize();
+        double normal = acos(u_body_to_joint.dot(joint_axis));
+        double flipped = acos(u_body_to_joint.dot(-joint_axis));
+        
+        double theta;
+        Eigen::Vector3f axis;      
+        Eigen::Vector3f uz; 
+        uz << 0 , 0 , 1; 
+        axis = uz.cross(joint_axis);
+        theta = acos(uz.dot(joint_axis));
+ 
+        KDL::Frame JointAxisFrame;
+        JointAxisFrame.p = jointInfo.frame.p;//?
+        KDL::Vector axis_temp;
+        axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
+        JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);
+        KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+        
+        double arrow_length =0.2;
+        if(flipped>normal+1e-1) {
+          JointAxisOffset.p[2] =-2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+         }
+        else{
+          JointAxisOffset.p[2] = 2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+        }
+     
+        Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
+        //convert to joint dof marker frame .
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,JointAxisFrame.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,JointAxisFrame.Inverse(),hitdrag_markerframe); 
+     
+        double currentAngle, angleTo, dtheta;         
+        currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
+        angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
+        dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+  
+        double current_pos, velocity;
+        self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
+        self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos+dtheta,velocity); 
+        self->otdf_instance_hold._otdf_instance->update(); 
+        self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+   
+      }
+          
+      self->prev_ray_hit_drag = self->ray_hit_drag; 
+          
+  }   // end set_object_current_state_on_marker_motion()
+  
+
+//-------------------------------------------------------------------------------
+  inline static double get_shortest_distance_between_objects_markers_sticky_hands_and_feet(void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
   {
     RendererAffordances *self = (RendererAffordances*) user;
     collision::Collision_Object * intersected_object = NULL;
     Eigen::Vector3f hit_pt;
+    Eigen::Vector3f hit_normal;
     double shortest_distance = -1;
-    (*self->object_selection)  = " ";
-    (*self->link_selection)  = " ";
-    (*self->stickyhand_selection)  = " ";
-    (*self->marker_selection) = " ";
+    self->object_selection  = " ";
+    self->link_selection  = " ";
+    self->stickyhand_selection  = " ";
+    self->stickyfoot_selection  = " ";
+    self->marker_selection = " ";
     
+
+
+    if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on)) // to make sure that _gl_object is initialized 
+    {
+     //if marker based adjustment is enabled
+     if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
+     {
+
+       if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
+          self->otdf_instance_hold._gl_object->_collision_detector_jointdof_markers->ray_test( from, to, intersected_object,hit_pt);
+       else
+          self->otdf_instance_hold._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
+        
+        if(intersected_object != NULL ){
+            self->ray_hit = hit_pt;
+            self->ray_hit_t = (hit_pt - self->ray_start).norm();
+            Eigen::Vector3f diff = (from-hit_pt);
+            double distance = diff.norm();
+            if(shortest_distance>0) {
+              if (distance < shortest_distance)
+              {
+                shortest_distance = distance;
+                self->ray_hit = hit_pt;
+                self->ray_hit_drag = hit_pt;
+                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
+                self->marker_selection  = string(intersected_object->id().c_str());
+              }
+            }
+            else {
+              shortest_distance = distance;
+              self->ray_hit = hit_pt;
+              self->ray_hit_drag = hit_pt;
+              self->ray_hit_t = (hit_pt - self->ray_start).norm();
+              self->object_selection  =  self->otdf_instance_hold._gl_object->_unique_name;
+              self->marker_selection  = string(intersected_object->id().c_str());
+             }
+        }
+        else {
+        // clear previous selections
+         string no_selection = " ";
+         self->otdf_instance_hold._gl_object->highlight_link(no_selection); 
+        }  
+                     
+      }// end if(...is_bodypose_adjustment_enabled)||...->is_jointdof_adjustment_enabled))
+
+    }// end if((self->otdf_instance_hold._gl_object)&&(self->selection_hold_on))
+
 
     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
     // loop through object list and check if ray intersect any of them.
@@ -891,8 +1221,8 @@ typedef struct _RendererAffordances {
                   self->ray_hit = hit_pt;
                   self->ray_hit_drag = hit_pt;
                   self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  (*self->object_selection)  =  it->first;
-                  (*self->marker_selection)  = string(intersected_object->id().c_str());
+                  self->object_selection  =  it->first;
+                  self->marker_selection  = string(intersected_object->id().c_str());
                 }
               }
               else {
@@ -900,8 +1230,8 @@ typedef struct _RendererAffordances {
                 self->ray_hit = hit_pt;
                 self->ray_hit_drag = hit_pt;
                 self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                (*self->object_selection)  =  it->first;
-                (*self->marker_selection)  = string(intersected_object->id().c_str());
+                self->object_selection  =  it->first;
+                self->marker_selection  = string(intersected_object->id().c_str());
                }
           }
           else {
@@ -916,7 +1246,7 @@ typedef struct _RendererAffordances {
   /*if(!(it->second._gl_object->is_jointdof_adjustment_enabled()))
   {*/
        //it->second._gl_object->_collision_detector->num_collisions();
-        it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
+        it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
    
         
         // Highlight all objects that intersect with ray
@@ -930,22 +1260,24 @@ typedef struct _RendererAffordances {
                 {
                   shortest_distance = distance;
                   self->ray_hit = hit_pt;
+                  self->ray_hit_normal = hit_normal;  
                   self->ray_hit_drag = hit_pt;
                   self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                  (*self->object_selection)  =  it->first;
-                  (*self->marker_selection)  = " ";
-                  (*self->link_selection)  = string(intersected_object->id().c_str());   
+                  self->object_selection  =  it->first;
+                  self->marker_selection  = " ";
+                  self->link_selection  = string(intersected_object->id().c_str());   
           
                 }
               }
               else {
                 shortest_distance = distance;
                 self->ray_hit = hit_pt;
+                self->ray_hit_normal = hit_normal;  
                 self->ray_hit_drag = hit_pt;
                 self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                (*self->object_selection)  =  it->first;
-                (*self->marker_selection)  = " ";
-                (*self->link_selection)  = string(intersected_object->id().c_str());   
+                self->object_selection  =  it->first;
+                self->marker_selection  = " ";
+                self->link_selection = string(intersected_object->id().c_str());   
      
                }          
 
@@ -961,6 +1293,66 @@ typedef struct _RendererAffordances {
     }// end for
 
   //}
+  
+   //loop through stick-feet list and check if ray intersect any of them.
+    typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+    for(sticky_feet_map_type_::iterator it = self->sticky_feet.begin(); it!=self->sticky_feet.end(); it++)
+    {
+    
+          KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(it->second.object_name);
+          if(!obj_it->second._gl_object->get_link_geometry_frame(it->second.geometry_name,T_world_graspgeometry))
+              cerr << " failed to retrieve " << it->second.geometry_name<<" in object " << it->second.object_name <<endl;
+          else {
+              KDL::Frame T_graspgeometry_world = T_world_graspgeometry.Inverse();
+              Eigen::Vector3f from_geomframe,to_geomframe;
+              //convert to geometry frame.
+              rotate_eigen_vector_given_kdl_frame(from,T_graspgeometry_world,from_geomframe); 
+              rotate_eigen_vector_given_kdl_frame(to,T_graspgeometry_world,to_geomframe); 
+              Eigen::Vector3f hit_pt;
+              //it->second._gl_foot->_collision_detector->num_collisions();
+              it->second._gl_foot->_collision_detector->ray_test( from_geomframe, to_geomframe, intersected_object,hit_pt);
+
+              if(intersected_object != NULL ){   
+                Eigen::Vector3f diff = (from_geomframe-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                  {
+                    shortest_distance = distance;
+                    it->second._gl_foot->enable_whole_body_selection(true);
+                    self->object_selection  =  " ";
+                    self->link_selection  =  " ";
+                    self->marker_selection  =  " ";
+                    self->stickyhand_selection  = " ";
+                    self->stickyfoot_selection  = it->first;  //intersected_object->id().c_str() includes link name 
+                  }
+                }
+                else{
+                  shortest_distance = distance;
+                  it->second._gl_foot->enable_whole_body_selection(true);
+                  self->object_selection  =  " ";
+                  self->link_selection  =  " ";
+                  self->marker_selection  =  " ";
+                  self->stickyhand_selection  = " ";
+                  self->stickyfoot_selection  = it->first;  //intersected_object->id().c_str() includes link name                  
+                }
+   
+                intersected_object = NULL;
+              }
+              else {
+                // clear previous selections
+                string no_selection = " ";
+                it->second._gl_foot->highlight_link(no_selection); 
+                it->second._gl_foot->highlight_marker(no_selection);
+              }
+        
+         }// end if
+    
+    }// end for   
+    
+  
 
     //loop through stick-hands list and check if ray intersect any of them.
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
@@ -990,19 +1382,19 @@ typedef struct _RendererAffordances {
                   {
                     shortest_distance = distance;
                     it->second._gl_hand->enable_whole_body_selection(true);
-                    (*self->object_selection)  =  " ";
-                    (*self->link_selection)  =  " ";
-                    (*self->marker_selection)  =  " ";
-                    (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name 
+                    self->object_selection  =  " ";
+                    self->link_selection  =  " ";
+                    self->marker_selection  =  " ";
+                    self->stickyhand_selection  = it->first;  //intersected_object->id().c_str() includes link name 
                   }
                 }
                 else{
                   shortest_distance = distance;
                   it->second._gl_hand->enable_whole_body_selection(true);
-                  (*self->object_selection)  =  " ";
-                  (*self->link_selection)  =  " ";
-                  (*self->marker_selection)  =  " ";
-                  (*self->stickyhand_selection)  = it->first;  //intersected_object->id().c_str() includes link name                  
+                  self->object_selection  =  " ";
+                  self->link_selection  =  " ";
+                  self->marker_selection =  " ";
+                  self->stickyhand_selection  = it->first;  //intersected_object->id().c_str() includes link name                  
                 }
    
                 intersected_object = NULL;
@@ -1017,6 +1409,9 @@ typedef struct _RendererAffordances {
          }// end if
     
     }// end for
+    
+
+    
     self->prev_ray_hit_drag = self->ray_hit_drag;
     return shortest_distance;
   }

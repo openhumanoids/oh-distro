@@ -35,19 +35,7 @@ namespace renderer_affordances
 			      const std::string& chan, 
 			      const drc::grasp_opt_status_t* msg);
 			      
-	public:
-	  int getNextAvailableOptChannelId(void);
-	  void getAllReservedOptChannelIdsandHandUids(std::vector<int> &OptChannelList, std::vector<int> &ChannelHandUidList);
-	  int getReservedOptChannelIdforHandUid(int hand_uid); // used to reseed a hand_uid.
-	  bool reserveOptChannel(int OptChannel, int hand_uid);
-	  bool unreserveOptChannel(int OptChannel);
-	  bool isOptPoolReady(void){
-	   return _worker_pool_ready;
-	  };
-
-	  
   private: 
- 	   
  	   //Reservation Process:
  	   //User reserves the next available channel reservation an publishes a msg to initialize opt.
  	   //When opt starts, a status msg is received which clears reservation.
@@ -56,6 +44,16 @@ namespace renderer_affordances
  	   std::vector<int>  _worker_associated_handuid; // Associated hand_uid on reserved channel.
  	   int _num_workers;
  	   bool _worker_pool_ready;
+ 	   
+ 	public:
+	  int getNextAvailableOptChannelId(void);
+	  void getAllReservedOptChannelIdsandHandUids(std::vector<int> &OptChannelList, std::vector<int> &ChannelHandUidList);
+	  int getReservedOptChannelIdforHandUid(int hand_uid); // used to reseed a hand_uid.
+	  bool reserveOptChannel(int OptChannel, int hand_uid);
+	  bool unreserveOptChannel(int OptChannel);
+	  bool isOptPoolReady(void){
+	   return _worker_pool_ready;
+	  };
  	
  	public:     		      
 		 int64_t  _last_statusmsg_stamp;	      

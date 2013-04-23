@@ -80,13 +80,14 @@ int GraspOptStatusListener::getNextAvailableOptChannelId()
 
 bool GraspOptStatusListener::reserveOptChannel(int OptChannel, int uid)
 {
+
     if(OptChannel<=_num_workers) {
      _worker_reservation[OptChannel-1] = true; // now its reserved    
      _worker_associated_handuid[OptChannel-1]= uid;
      return true;
      }
-    else
-     return false;
+
+   return false;
 }
 
 bool GraspOptStatusListener::unreserveOptChannel(int OptChannel)
@@ -95,7 +96,7 @@ bool GraspOptStatusListener::unreserveOptChannel(int OptChannel)
      _worker_reservation[OptChannel-1] = false; // now its unreserved
      return true;
      }
-    else
+
      return false;
 }
 
@@ -103,7 +104,7 @@ void GraspOptStatusListener::getAllReservedOptChannelIdsandHandUids(std::vector<
 { 
   OptChannelIdList.clear();
   ChannelHandUidList.clear();
-  for (int i=0;i<_worker_availability.size();i++)
+  for (size_t i=0;i<_worker_availability.size();i++)
   {
    if(_worker_availability[i]){ // get the next available channel that has not been reserved.
        OptChannelIdList.push_back(i+1); 
@@ -114,12 +115,13 @@ void GraspOptStatusListener::getAllReservedOptChannelIdsandHandUids(std::vector<
 
 int GraspOptStatusListener::getReservedOptChannelIdforHandUid(int hand_uid)
 {
-  for (int i=0;i<_worker_associated_handuid.size();i++)
+  for (size_t i=0;i<_worker_associated_handuid.size();i++)
   {
     if(_worker_associated_handuid[i]==hand_uid)  {
       return i+1;
     }
   }
+  return -1; // no opt channel reserved 
 }
 
 } //end namespace

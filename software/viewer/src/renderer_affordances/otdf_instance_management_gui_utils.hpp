@@ -25,75 +25,35 @@ namespace renderer_affordances_gui_utils
   //------------------------------------------------------------------
   // PARAM adjust popup management
 
-  
-  static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
-  {
-   RendererAffordances *self = (RendererAffordances*) user;
-   drc::affordance_t msg;
 
-   msg.utime = 0;
-   msg.map_id = 0;
-
-   msg.uid = uid; 
-   msg.otdf_type = otdf_type; 
-   
-   msg.aff_store_control = msg.UPDATE;
-
-   msg.nparams =  instance_in->params_map_.size();
-   typedef std::map<std::string, double > params_mapType;
-   for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   { 
-      msg.param_names.push_back(it->first);
-      msg.params.push_back(it->second);
-   }
-
-  int cnt=0;
-   typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
-    for (joints_mapType::iterator it = instance_in->joints_.begin();it != instance_in->joints_.end(); it++)
-    {     
-      double dof_pos = 0;
-      if(it->second->type!=(int) otdf::Joint::FIXED) {
-
-          double pos, vel;
-          instance_in->getJointState(it->first,pos,vel);
-          cnt++;
-          msg.state_names.push_back(it->first);
-          msg.states.push_back(pos);
-      }
-     }
-   msg.nstates =  cnt;
-   //msg.nptinds = 0;
-   cout <<"publish_otdf_instance_to_affstore: "<< msg.otdf_type << "_"<< msg.uid << ", of template :" << msg.otdf_type << endl;
-   self->lcm->publish(channel, &msg);
-
-  } 
   //------------------
   static void on_adjust_params_popup_close (BotGtkParamWidget *pw, void *user)
   {
 
     RendererAffordances *self = (RendererAffordances*) user;
-//    std::string instance_name=  (*self->instance_selection_ptr);
+//    std::string instance_name=  (self->instance_selection_ptr);
 //    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
 //    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     
     typedef std::map<std::string, double > params_mapType;
     //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
-    for( params_mapType::const_iterator it2 = self->otdf_instance_hold->params_map_.begin(); it2!=self->otdf_instance_hold->params_map_.end(); it2++) 
+    for( params_mapType::const_iterator it2 = self->otdf_instance_hold._otdf_instance->params_map_.begin(); it2!=self->otdf_instance_hold._otdf_instance->params_map_.end(); it2++) 
     { 
       double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
       //std::cout << it->first << ": " << t << std::endl;
       //it->second._otdf_instance->setParam(it2->first, t);
-      self->otdf_instance_hold->setParam(it2->first, t);
+      self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
     }
     // regen kdl::tree and reset fksolver
     // regen link tfs and shapes for display
     //update_OtdfInstanceStruc(it->second);
-    self->otdf_instance_hold->update();
-    self->gl_temp_object->set_state(self->otdf_instance_hold);
+    self->otdf_instance_hold._otdf_instance->update();
+    self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
     self->selection_hold_on=false;
    
     //was AFFORDANCE_FIT
-    publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(*self->instance_hold_otdf_type_ptr),self->instance_hold_uid,self->otdf_instance_hold,self); 
+    //std::string otdf_type = string(self->otdf_instance_hold.otdf_type);
+    publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
     bot_viewer_request_redraw(self->viewer);
   }  
   //------------------
@@ -101,25 +61,24 @@ namespace renderer_affordances_gui_utils
   {
 
     RendererAffordances *self = (RendererAffordances*) user;
-//    std::string instance_name=  (*self->instance_selection_ptr);
+//    std::string instance_name=  (self->instance_selection_ptr);
 //    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
 //    object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     
     typedef std::map<std::string, double > params_mapType;
     //for( params_mapType::const_iterator it2 = it->second._otdf_instance->params_map_.begin(); it2!=it->second._otdf_instance->params_map_.end(); it2++)
-    for( params_mapType::const_iterator it2 = self->otdf_instance_hold->params_map_.begin(); it2!=self->otdf_instance_hold->params_map_.end(); it2++)
+    for( params_mapType::const_iterator it2 = self->otdf_instance_hold._otdf_instance->params_map_.begin(); it2!=self->otdf_instance_hold._otdf_instance->params_map_.end(); it2++)
     { 
       if(!strcmp(name, it2->first.c_str())) {
           double t = bot_gtk_param_widget_get_double (pw,it2->first.c_str());
       //std::cout << it->first << ": " << t << std::endl;
       //it->second._otdf_instance->setParam(it2->first, t);
-      self->otdf_instance_hold->setParam(it2->first, t);
+      self->otdf_instance_hold._otdf_instance->setParam(it2->first, t);
       }
     }
     
-     self->otdf_instance_hold->update(); //update_OtdfInstanceStruc(it->second);
-     self->gl_temp_object->set_state(self->otdf_instance_hold);
-   //publish_otdf_instance_to_affstore("AFFORDANCE_FIT",self->otdf_instance_hold,self); 
+    self->otdf_instance_hold._otdf_instance->update(); //update_OtdfInstanceStruc(it->second);
+    self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
     bot_viewer_request_redraw(self->viewer);// gives realtime feedback of the geometry changing.
   }
   
@@ -131,7 +90,7 @@ namespace renderer_affordances_gui_utils
   static void on_adjust_dofs_popup_close (BotGtkParamWidget *pw, void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    std::string instance_name=  (*self->instance_selection_ptr);
+    std::string instance_name=  self->instance_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     it->second._gl_object->set_future_state_changing(false);
@@ -143,7 +102,7 @@ namespace renderer_affordances_gui_utils
   static void on_otdf_adjust_dofs_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
-    std::string instance_name=  (*self->instance_selection_ptr);
+    std::string instance_name=  self->instance_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
     
@@ -156,7 +115,8 @@ namespace renderer_affordances_gui_utils
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
       while (hand_it!=self->sticky_hands.end()) 
       {
-         if (hand_it->second.object_name == (instance_name))
+         std::string hand_name = std::string(hand_it->second.object_name);
+         if (hand_name == (instance_name))
          {
             hand_it->second._gl_hand->clear_desired_body_motion_history();
          }
@@ -197,13 +157,17 @@ namespace renderer_affordances_gui_utils
     gtk_window_stick(GTK_WINDOW(window));
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
     gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
     //gtk_widget_set_size_request (window, 300, 250);
     //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_title(GTK_WINDOW(window), "Adjust Params");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
-    std::string instance_name=  (*self->instance_selection_ptr);
+    std::string instance_name=  self->instance_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
 
@@ -217,14 +181,20 @@ namespace renderer_affordances_gui_utils
        min, max, inc, value); 
     }
     
+
     // create a temp copy of the selected otdf instance to make modifications to.    
     if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
-      self->otdf_instance_hold = otdf::duplicateOTDFInstance(it->second._otdf_instance);
-      self->gl_temp_object.reset();
-      self->gl_temp_object = shared_ptr<GlKinematicBody>(new GlKinematicBody(self->otdf_instance_hold));
-      (*self->instance_hold_otdf_type_ptr)=it->second.otdf_type;
-      self->instance_hold_uid=it->second.uid;
-      
+      self->otdf_instance_hold.uid=it->second.uid;
+     
+      self->otdf_instance_hold.otdf_type = it->second.otdf_type;
+      //self->otdf_instance_hold.otdf_type = new string((*it->second.otdf_type));    // SEGFAULTS With Strings
+      self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
+      self->otdf_instance_hold._gl_object.reset();
+      self->otdf_instance_hold._collision_detector.reset();
+      self->otdf_instance_hold._collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());     
+      self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
+      self->otdf_instance_hold._otdf_instance->update();
+      self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
       self->selection_hold_on=true;
     }
 
@@ -261,13 +231,17 @@ namespace renderer_affordances_gui_utils
     gtk_window_stick(GTK_WINDOW(window));
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
     gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
     //gtk_widget_set_size_request (window, 300, 250);
     //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_title(GTK_WINDOW(window), "Adjust Dofs");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
-    std::string instance_name=  (*self->instance_selection_ptr);
+    std::string instance_name=  self->instance_selection;
 
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
@@ -329,61 +303,6 @@ namespace renderer_affordances_gui_utils
   }
 
 
-
-  static void publish_eegoal_to_object_center(boost::shared_ptr<lcm::LCM> &_lcm, OtdfInstanceStruc &instance_struc, std::string channel, KDL::Frame &T_body_world)
-  {
-    drc::ee_goal_t goalmsg;
-
-    double x,y,z,w;
-
-    // desired ee position in world frame
-    KDL::Frame T_world_ee,T_body_ee;
-    T_world_ee.p[0]= instance_struc._otdf_instance->getParam("x");
-    T_world_ee.p[1]= instance_struc._otdf_instance->getParam("y");
-    T_world_ee.p[2]= instance_struc._otdf_instance->getParam("z");
-    T_world_ee.M =  KDL::Rotation::RPY(instance_struc._otdf_instance->getParam("roll"),
-                                       instance_struc._otdf_instance->getParam("pitch"),
-                                       instance_struc._otdf_instance->getParam("yaw"));
-          
-    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
-
-    // desired ee position wrt to robot body.
-    T_body_ee = T_body_world*T_world_ee;
-
-    T_body_ee.M.GetQuaternion(x,y,z,w);
-
-    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
-
-    goalmsg.ee_goal_pos.rotation.x = x;
-    goalmsg.ee_goal_pos.rotation.y = y;
-    goalmsg.ee_goal_pos.rotation.z = z;
-    goalmsg.ee_goal_pos.rotation.w = w;
-
-    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
-
-    goalmsg.num_chain_joints  = 6;
-    // No specified posture bias
-    goalmsg.use_posture_bias  = false;
-    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
-    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
-    for(int i = 0; i < goalmsg.num_chain_joints; i++){
-    goalmsg.joint_posture_bias[i]=0;
-    goalmsg.chain_joint_names[i]= "dummy_joint_names";
-    }
-
-    // Publish the message
-    goalmsg.halt_ee_controller = false;
-
-    _lcm->publish(channel, &goalmsg);
-  }
-  
   // ================================================================================
   // First Stage Popup of OTDF instance management
 
@@ -394,7 +313,7 @@ namespace renderer_affordances_gui_utils
     // int selection = bot_gtk_param_widget_get_enum (pw, PARAM_OTDF_INSTANCE_SELECT);
     const char *instance_name;
     instance_name = bot_gtk_param_widget_get_enum_str( pw, PARAM_OTDF_INSTANCE_SELECT );
-    (*self->instance_selection_ptr)  = std::string(instance_name);
+    self->instance_selection  = std::string(instance_name);
 
     if(!strcmp(name,PARAM_OTDF_ADJUST_PARAM)) {
       spawn_adjust_params_popup(self);
@@ -411,20 +330,21 @@ namespace renderer_affordances_gui_utils
      if(it!=self->instantiated_objects.end())
      {
         self->instantiated_objects.erase(it);
-        if((*self->object_selection)==std::string(instance_name))
+        if(self->object_selection==std::string(instance_name))
         {
-          (*self->link_selection) = " ";
-          (*self->object_selection) = " ";
+          self->link_selection = " ";
+          self->object_selection = " ";
         }  
 
         typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
        
         sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
         while (hand_it!=self->sticky_hands.end()) {
-           if (hand_it->second.object_name == std::string(instance_name))
+            std::string hand_name = std::string(hand_it->second.object_name);
+           if (hand_name == std::string(instance_name))
            {
-              if((*self->stickyhand_selection)==hand_it->first)
-                 (*self->stickyhand_selection) = " ";
+              if(self->stickyhand_selection==hand_it->first)
+                 self->stickyhand_selection = " ";
               self->sticky_hands.erase(hand_it++);
            }
            else
@@ -443,24 +363,10 @@ namespace renderer_affordances_gui_utils
       { 
        it->second = 0;
       }
-     (*self->link_selection) = " ";
-     (*self->object_selection) = " ";
-     (*self->stickyhand_selection) = " ";
+     self->link_selection = " ";
+     self->object_selection = " ";
+     self->stickyhand_selection = " ";
       bot_viewer_request_redraw(self->viewer);
-    }
-    else if(!strcmp(name,PARAM_OTDF_REACH_OBJECT_L)) {
-      fprintf(stderr,"\nReaching centroid of selected Object\n");
-      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
-      KDL::Frame T_body_world = self->robotStateListener->T_body_world;
-      publish_eegoal_to_object_center( self->lcm, it->second, "LWRISTROLL_LINK_GOAL",T_body_world);
-    }
-    else if(!strcmp(name,PARAM_OTDF_REACH_OBJECT_R)) {
-      fprintf(stderr,"\nReaching centroid of selected Object\n");
-      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
-      object_instance_map_type_::iterator it = self->instantiated_objects.find(std::string(instance_name));
-      KDL::Frame T_body_world = self->robotStateListener->T_body_world;
-      publish_eegoal_to_object_center( self->lcm, it->second, "RWRISTROLL_LINK_GOAL",T_body_world);    
     }
   }
 
@@ -476,6 +382,10 @@ namespace renderer_affordances_gui_utils
     gtk_window_stick(GTK_WINDOW(window));
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
     gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
     gtk_window_set_title(GTK_WINDOW(window), "Instance Management");
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
@@ -525,8 +435,6 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_INSTANCE_CLEAR_ALL, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_REACH_OBJECT_L, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_REACH_OBJECT_R, NULL);
     }
 
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_instance_management_widget_changed), self);

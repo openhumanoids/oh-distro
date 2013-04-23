@@ -40,12 +40,9 @@ namespace renderer_affordances
     boost::shared_ptr<lcm::LCM> _lcm; 
     RendererAffordances* _parent_renderer; // maintains the list of objects.  
 
-    //get rid of this
-   // BotViewer *_viewer;
    
     //----------------constructor/destructor
   public:
-    //CandidateGraspSeedListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
     CandidateGraspSeedListener(RendererAffordances* affordance_renderer);
     ~CandidateGraspSeedListener();
 
