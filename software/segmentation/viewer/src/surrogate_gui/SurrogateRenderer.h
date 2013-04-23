@@ -48,6 +48,7 @@ namespace surrogate_gui
 			static void cb_destruct(BotRenderer *renderer);
 			void destruct(BotRenderer *renderer);
 			void initVals();
+      BotViewer* getViewer() { return _viewer; }
 
 		//-----------observers
 		std::set<int> mouseRectTo3D(double x1, double x2, double y1, double y2); //can't declare constant b/c temporarily does some glrotate stuff

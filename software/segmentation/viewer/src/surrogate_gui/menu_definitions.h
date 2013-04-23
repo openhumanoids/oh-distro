@@ -26,6 +26,8 @@ namespace surrogate_gui
 	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "Geometric Primitive"
 	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE, CIRCLE_3D, CAR};
 
+  #define PARAM_NAME_AFFORDANCE_SELECT "Select Affordance"
+
 	//======DOF Controls
 	#define PARAM_NAME_YAW "Yaw"
 	#define PARAM_NAME_PITCH "Pitch"

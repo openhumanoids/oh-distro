@@ -36,6 +36,8 @@
 #include "ObjectTracker.h"
 #include "Segmentation.h"
 
+#include <lcmtypes/drc_lcmtypes.hpp>
+
 //-------pulling maps
 #include <maps/ViewClient.hpp>
 #include <boost/thread.hpp>
@@ -76,7 +78,19 @@ namespace surrogate_gui
 			
 			boost::shared_ptr<maps::ViewClient> _mViewClient; //map pulling
 
-                        bot_lcmgl_t* _lcmgl;
+      bot_lcmgl_t* _lcmgl;
+
+      // affordance listener and selector
+      std::vector<drc::affordance_plus_t> _currentAffordances;
+      boost::shared_ptr<drc::affordance_plus_t> _selectedAffordance;
+      //std::vector<std::string> _currentAffordanceNames;
+      boost::mutex _currentAffordancesMutex;
+      void affordanceMsgHandler(const lcm::ReceiveBuffer* iBuf,
+                const std::string& iChannel, 
+                const drc::affordance_plus_collection_t* collection);
+      void handleAffordanceSelectButton();
+      static void handleAffordanceSelection(BotGtkParamWidget *pw, 
+                                                  const char *name,void *user);
 
 		//=====constructor/destructor
 		public:
@@ -135,7 +149,7 @@ namespace surrogate_gui
 
 			void on_kinect_frame (const lcm_recv_buf_t *rbuf, const char *channel,
 					      const ptools_pointcloud2_t *msg, void *user_data);
-
+            
 
 		//-----static helpers
 		private:

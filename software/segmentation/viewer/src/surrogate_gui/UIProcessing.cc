@@ -26,6 +26,13 @@ using namespace Eigen;
 namespace surrogate_gui
 {
 
+  // closes popup window
+  static gboolean on_popup_close (GtkButton* button, GtkWidget* pWindow)
+  {
+    gtk_widget_destroy (pWindow);
+    return TRUE;
+  }
+
   int start_spy_counter=0;
   static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
   {
@@ -76,6 +83,8 @@ namespace surrogate_gui
 					      "Torus", TORUS,
 					      "Cube", CUBE,
 					      NULL);
+
+    bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_SELECT, NULL);
 
 		// DOF Controls
 		Segmentation::FittingParams defaultFp; //default fitting params
@@ -197,6 +206,10 @@ namespace surrogate_gui
 					       cb_on_kinect_frame, this);
 
 		on_param_widget_changed_xyzrgb(pw, PARAM_NAME_NEW_OBJECT, NULL); // create new object by default
+
+    // subscribe to affordance plus collection to allow object updating
+    lcm->subscribe("AFFORDANCE_PLUS_COLLECTION", &UIProcessing::affordanceMsgHandler, this);
+
 	}
 
 	UIProcessing::~UIProcessing()
@@ -961,7 +974,16 @@ namespace surrogate_gui
 		fp.roll = bot_gtk_param_widget_get_double(pw, PARAM_NAME_ROLL);
 		fp.maxAngle = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_ANGLE);
 
-	  // Handle selected geometric primitive TODO
+    // TODO: support selected afforance for other objects
+    if(_selectedAffordance){
+      if(getGeometricPrimitive()!=CAR){
+        cout << "************ Only car affordance currently handled with selected affordances\n";
+      }
+      if(_selectedAffordance->aff.otdf_type != "car"){
+        cout << "************ Only car affordance currently handled with selected affordances\n";
+      }
+    }
+
 	  switch(getGeometricPrimitive()){
 	  case CYLINDER: handleAffordancePubButtonCylinder(fp); break;
 	  case SPHERE:   handleAffordancePubButtonSphere(fp); break;
@@ -976,8 +998,6 @@ namespace surrogate_gui
 	    break;
 	  };
 	  	  
-    
-
   }
   
 
@@ -1304,76 +1324,98 @@ namespace surrogate_gui
 	{
 	  handleAffordancePubButtonCylinder(fp); //placeholder TODO
 	}
-
-  	void UIProcessing::handleAffordancePubButtonPointCloud(const Segmentation::FittingParams& fp)
+    
+ 	void UIProcessing::handleAffordancePubButtonPointCloud(const Segmentation::FittingParams& fp)
 	{
+
+    // retrieve initial pos from selected object if available
+    Vector3f initialXYZ, initialYPR;
+    bool isInitialSet = false;
+    if(_selectedAffordance){
+      isInitialSet = true;
+      drc::affordance_t& aff = _selectedAffordance->aff;
+      initialXYZ[0] = aff.origin_xyz[0];
+      initialXYZ[1] = aff.origin_xyz[1];
+      initialXYZ[2] = aff.origin_xyz[2];
+      initialYPR[0] = aff.origin_rpy[2];
+      initialYPR[1] = aff.origin_rpy[1];
+      initialYPR[2] = aff.origin_rpy[0];
+
+      // old style params
+      for(int i=0;i<aff.params.size();i++){
+        if(aff.param_names[i] == "x") initialXYZ[0] = aff.params[i];
+        if(aff.param_names[i] == "y") initialXYZ[1] = aff.params[i];
+        if(aff.param_names[i] == "z") initialXYZ[2] = aff.params[i];
+        if(aff.param_names[i] == "roll")  initialYPR[2] = aff.params[i];
+        if(aff.param_names[i] == "pitch") initialYPR[1] = aff.params[i];
+        if(aff.param_names[i] == "yaw")   initialYPR[0] = aff.params[i];
+      }
+    }
+
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  	  
 	  affordanceMsg.aff.map_id = 0; 	  
 	  affordanceMsg.aff.otdf_type = "car";
 
-          //geometrical properties
-	  ObjectPointsPtr currObj = getCurrentObjectSelected();
-          Vector3f xyz(0,0,0),ypr(0,0,0);
-	  //std::vector<double> inliers_distances; TODO
-          //std::vector< vector<float> > inliers; TODO
-	  // PointIndices::Ptr inlierIndices = TODO
-          vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
-          Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
-                                      currObj->indices, fp, xyz, ypr, clouds);
-          float colors[][3] = {
-            {1,0,0},
-            {0,1,0},
-            {0,0,1},
-            {0,1,1},
-            {1,0,1},
-            {1,1,0},
-            {1,1,1}
-          };
-          
-          for(int j=0; j<clouds.size();j++){
-            bot_lcmgl_color3f(_lcmgl, colors[j][0],colors[j][1],colors[j][2]);
-            bot_lcmgl_begin(_lcmgl, LCMGL_POINTS);
-            for(int i=0;i<clouds[j].size();i++){
-              bot_lcmgl_vertex3f(_lcmgl, clouds[j][i].x, clouds[j][i].y, clouds[j][i].z);
-            }
-            bot_lcmgl_end(_lcmgl);
-          }
-          bot_lcmgl_switch_buffer(_lcmgl);
+    //geometrical properties
+    ObjectPointsPtr currObj = getCurrentObjectSelected();
+    Vector3f xyz(0,0,0),ypr(0,0,0);
+    //std::vector<double> inliers_distances; TODO
+    //std::vector< vector<float> > inliers; TODO
+    // PointIndices::Ptr inlierIndices = TODO
+    vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
+    Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
+                                currObj->indices, fp, 
+                                isInitialSet, initialXYZ, initialYPR, 
+                                xyz, ypr, clouds);
 
-          float x = xyz[0]; 
-          float y = xyz[1];
-          float z = xyz[2]; 
-          float yaw   = ypr[0]+M_PI;
-          if(yaw>M_PI) yaw-=2*M_PI;
-          float pitch = ypr[1];
-          float roll  = ypr[2];
+
+    // lcmgl display for debugging
+    float colors[][3] = {{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0},{1,1,1}};
+    for(int j=0; j<clouds.size();j++){
+      bot_lcmgl_color3f(_lcmgl, colors[j][0],colors[j][1],colors[j][2]);
+      bot_lcmgl_begin(_lcmgl, LCMGL_POINTS);
+      for(int i=0;i<clouds[j].size();i++){
+        bot_lcmgl_vertex3f(_lcmgl, clouds[j][i].x, clouds[j][i].y, clouds[j][i].z);
+      }
+      bot_lcmgl_end(_lcmgl);
+    }
+    bot_lcmgl_switch_buffer(_lcmgl);
+
+    // copy results accounting for difference between model and pointcloud
+    float x = xyz[0]; 
+    float y = xyz[1];
+    float z = xyz[2]; 
+    float yaw   = ypr[0]+M_PI;
+    if(yaw>M_PI) yaw-=2*M_PI;
+    float pitch = ypr[1];
+    float roll  = ypr[2];
 	
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
-          // set bounding
-          affordanceMsg.aff.origin_xyz[0] = x;
-          affordanceMsg.aff.origin_xyz[1] = y;
-          affordanceMsg.aff.origin_xyz[2] = z;
-          affordanceMsg.aff.origin_rpy[0] = roll;
-          affordanceMsg.aff.origin_rpy[1] = pitch;
-          affordanceMsg.aff.origin_rpy[2] = yaw;
-          affordanceMsg.aff.bounding_xyz[0] = x;
-          affordanceMsg.aff.bounding_xyz[1] = y;
-          affordanceMsg.aff.bounding_xyz[2] = z;
-          affordanceMsg.aff.bounding_rpy[0] = roll;
-          affordanceMsg.aff.bounding_rpy[1] = pitch;
-          affordanceMsg.aff.bounding_rpy[2] = yaw;
-          affordanceMsg.aff.bounding_lwh[0] = 1; //TODO
-          affordanceMsg.aff.bounding_lwh[1] = 1; //TODO
-          affordanceMsg.aff.bounding_lwh[2] = 1; //TODO
+    // set bounding
+    affordanceMsg.aff.origin_xyz[0] = x;
+    affordanceMsg.aff.origin_xyz[1] = y;
+    affordanceMsg.aff.origin_xyz[2] = z;
+    affordanceMsg.aff.origin_rpy[0] = roll;
+    affordanceMsg.aff.origin_rpy[1] = pitch;
+    affordanceMsg.aff.origin_rpy[2] = yaw;
+    affordanceMsg.aff.bounding_xyz[0] = x;
+    affordanceMsg.aff.bounding_xyz[1] = y;
+    affordanceMsg.aff.bounding_xyz[2] = z;
+    affordanceMsg.aff.bounding_rpy[0] = roll;
+    affordanceMsg.aff.bounding_rpy[1] = pitch;
+    affordanceMsg.aff.bounding_rpy[2] = yaw;
+    affordanceMsg.aff.bounding_lwh[0] = 1; //TODO
+    affordanceMsg.aff.bounding_lwh[1] = 1; //TODO
+    affordanceMsg.aff.bounding_lwh[2] = 1; //TODO
 
 	  //inliers
-          //affordanceMsg.npoints = inliers.size();
-          //affordanceMsg.points = inliers;
-          affordanceMsg.npoints = 0; //todo
-          affordanceMsg.ntriangles = 0;
+    //affordanceMsg.npoints = inliers.size();
+    //affordanceMsg.points = inliers;
+    affordanceMsg.npoints = 0; //todo
+    affordanceMsg.ntriangles = 0;
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
@@ -1383,11 +1425,16 @@ namespace surrogate_gui
 	  //todo : Set these
 	  //states: todo? is this used? states/state_names
 	  affordanceMsg.aff.nstates = 0;
-          affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
-	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
-	  cout << "\n ***published \n" << endl;
+    cout << "\n about to publish" << endl;
+    if(_selectedAffordance){
+      affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
+      _lcmCpp->publish("AFFORDANCE_TRACK", &affordanceMsg);
+    }else{
+      affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
+	    _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+    }
+    cout << "\n ***published \n" << endl;
 	  
 	  return;
 	}
@@ -1405,6 +1452,91 @@ namespace surrogate_gui
 		bot_gtk_param_widget_clear_enum(pw, PARAM_NAME_CURR_OBJECT);
 		_surrogate_renderer.setCamera(CAMERA_FRONT);
 	}
+
+  void UIProcessing::handleAffordanceSelectButton()
+  {
+    // unselect affordance if any selected
+    _selectedAffordance.reset(); 
+    
+    // create new window
+    GtkWidget *window, *close_button, *vbox;
+    BotGtkParamWidget *pw; 
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_surrogate_renderer.getViewer()->window));
+    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+    gtk_window_set_title(GTK_WINDOW(window), "Instance Management");
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+    // list for names and values
+    vector<string> namesCpp;
+    vector<const char*> names;
+    vector<int> numbers;
+
+    // add "New" to list
+    namesCpp.push_back("New");
+    names.push_back(namesCpp.back().c_str());
+    numbers.push_back(-1);
+
+    // add each affordance name to list
+    _currentAffordancesMutex.lock();
+    for(int i=0;i<_currentAffordances.size();i++){
+      drc::affordance_t& aff = _currentAffordances[i].aff;
+      stringstream ss;
+      ss << aff.otdf_type << "_" << aff.uid;
+      string name = ss.str();
+      namesCpp.push_back(name);
+      names.push_back(namesCpp.back().c_str());
+      numbers.push_back(i);
+    }
+    _currentAffordancesMutex.unlock();
+
+    // create pulldown from list
+    bot_gtk_param_widget_add_enumv (pw, PARAM_NAME_AFFORDANCE_SELECT, 
+                                    BOT_GTK_PARAM_WIDGET_MENU, 
+                                  -1,  //New is default
+                                  names.size(),
+                                  names.data(),
+                                  numbers.data());
+
+    // callback for selection
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(handleAffordanceSelection), this);
+
+    // close button
+    close_button = gtk_button_new_with_label ("Close");
+    g_signal_connect (G_OBJECT (close_button),
+                  "clicked",
+                  G_CALLBACK (on_popup_close),
+                  (gpointer) window);
+    vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+
+    // finish creation and show new window
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show_all(window);     
+  }
+
+  void UIProcessing::handleAffordanceSelection(BotGtkParamWidget *pw, 
+                                               const char *name,void *user){
+    UIProcessing* self = (UIProcessing*)user;
+    int index = bot_gtk_param_widget_get_enum(pw, PARAM_NAME_AFFORDANCE_SELECT);
+    if(index<0) { // "New" selected, so clear selection
+      self->_selectedAffordance.reset();
+      cout << "Affordance selection reset\n";
+    }else{   // object selected, so make copy of affordance
+      self->_currentAffordancesMutex.lock();
+      self->_selectedAffordance.reset(
+              new drc::affordance_plus_t(self->_currentAffordances[index]));
+      self->_currentAffordancesMutex.unlock();
+      cout << self->_selectedAffordance->aff.otdf_type << "_"
+           << self->_selectedAffordance->aff.uid << " selected" << endl;
+    }
+  }
 
 	//=========main handler for menu changes, button clicks, etc
 	void UIProcessing::on_param_widget_changed_xyzrgb (BotGtkParamWidget *pw, const char *name, void *user)
@@ -1523,15 +1655,18 @@ namespace surrogate_gui
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
-					if(views[v]->getId() == 1) continue; // get rid of low rez map
-					maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
-                                        /*
-                                          Matrix4f transformation = Matrix4f::Identity();
-                                          transformation(0,3)=3;
-                                          transformation(1,3)=-1;
-                                          transformPointCloud(*cloud, *cloud, transformation);
-                                        */
-					(*cloudFull) += *cloud;
+					if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_SCENE 
+             || views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE
+             || views[v]->getId() == drc::data_request_t::HEIGHT_MAP_SCENE) {
+					  maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
+                                          /*
+                                            Matrix4f transformation = Matrix4f::Identity();
+                                            transformation(0,3)=3;
+                                            transformation(1,3)=-1;
+                                            transformPointCloud(*cloud, *cloud, transformation);
+                                          */
+					  (*cloudFull) += *cloud;
+          }
 				}
 				getDisplayInfo()->cloud = cloudFull;
 				getDisplayInfo()->lcmCloudFrameId = "header_not_set";//msg->header.frame_id;
@@ -1575,6 +1710,10 @@ namespace surrogate_gui
 			handleSaveCloudButton(pw);
 			//return;
 		}
+
+    if (stringsEqual(name, PARAM_NAME_AFFORDANCE_SELECT)){
+      handleAffordanceSelectButton();
+    }
 
 		bot_viewer_request_redraw(_surrogate_renderer._viewer);
 	}
@@ -1683,5 +1822,34 @@ namespace surrogate_gui
 	{
 		return ((UIProcessing*) user_data)->on_kinect_frame(rbuf, channel, msg, user_data);
 	}
+
+  void UIProcessing::affordanceMsgHandler(const lcm::ReceiveBuffer* iBuf,
+                const std::string& iChannel, 
+                const drc::affordance_plus_collection_t* collection)
+  {
+    // make copy of latest affordance collection
+    _currentAffordancesMutex.lock();
+    _currentAffordances = collection->affs_plus;
+    _currentAffordancesMutex.unlock();
+    
+/*
+    bool changed = false;
+    if(_currentAffordances.size()!=_currentAffordanceNames){
+      changed = true;
+      _currentAffordanceNames.resize(_currentAffordances.size());
+    }
+
+    for(int i=0;i<_currentAffordances.size();i++) {
+      drc::affordance_t& aff = _currentAffordances[i].aff;
+      stringstream ss;
+      ss << aff.otdf_type << "_" << aff.uid;
+      string name = ss.str();
+      if(name != _currentAffordanceNames[i]){
+        changed = true;
+        _currentAffordanceNames[i] = name;
+      }
+    }
+*/
+  }
 
 } //namespace surrogate_gui

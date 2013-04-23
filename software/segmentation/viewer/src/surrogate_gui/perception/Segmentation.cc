@@ -124,10 +124,11 @@ namespace surrogate_gui
     mls.setInputCloud (subcloud);
     mls.setPolynomialFit (true);
     mls.setSearchMethod (tree);
-    mls.setSearchRadius (0.03);
+    mls.setSearchRadius (0.15);
     
     // Reconstruct
     mls.process (*mls_points);
+
     return mls_points;
   }
                
@@ -846,6 +847,8 @@ namespace surrogate_gui
   void Segmentation::fitPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
                                    boost::shared_ptr<set<int> >  subcloudIndices,
                                    const FittingParams& fp,
+                                   bool isInitialSet, Vector3f initialXYZ, 
+                                   Vector3f initialYPR,
                                    Vector3f& xyz, Vector3f& ypr,
                                    vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
   {
@@ -874,9 +877,15 @@ namespace surrogate_gui
     icp.setInputTarget(subcloud);
     pcl::PointCloud<pcl::PointXYZRGB> Final;
     Matrix4f guess = Matrix4f::Identity();
-    guess(0,3) = centroid[0];
-    guess(1,3) = centroid[1];
-    //guess(2,3) = centroid[2];
+    cout << "Initial guess XYZYPR: " << initialXYZ.transpose() << " " 
+         << initialYPR.transpose() << endl;
+    if(isInitialSet){
+      Matrix3f rot = ypr2rot(initialYPR);
+      guess.block<3,3>(0,0) = rot;
+      guess(0,3) = initialXYZ[0];
+      guess(1,3) = initialXYZ[1];
+      guess(2,3) = initialXYZ[2];
+    }
     icp.align(Final, guess);
     std::cout << "has converged:" << icp.hasConverged() << " score: " <<
       icp.getFitnessScore() << std::endl;
