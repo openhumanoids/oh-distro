@@ -76,15 +76,15 @@ MouseEvent mouse;
 static void onMouse(int event, int x, int y, int flags, void* userdata) {
     MouseEvent* data = (MouseEvent*)userdata;
 
-    float sx = 1.f / MAX_IMAGE_WIDTH; 
-    float sy = 1.f / MAX_IMAGE_HEIGHT;
+    float sx = 1.f / WINDOW_WIDTH ; 
+    float sy = 1.f / WINDOW_HEIGHT;
 
     if (state->selectObject) {
         state->selection.x = MIN(x, state->origin.x);
         state->selection.y = MIN(y, state->origin.y);
         state->selection.width = std::abs(x - state->origin.x);
         state->selection.height = std::abs(y - state->origin.y);
-        state->selection &= Rect(0, 0, MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT);
+        state->selection &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
     switch (event) {
@@ -262,17 +262,8 @@ int main(int argc, char** argv)
             cv::resize(state->img.clone(), display, cv::Size(WINDOW_WIDTH,WINDOW_HEIGHT)); 
             if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
                 
-                float sx = 1.f * WINDOW_WIDTH / MAX_IMAGE_WIDTH; 
-                float sy = 1.f * WINDOW_HEIGHT / MAX_IMAGE_HEIGHT;
-
-                cv::Rect up_selection = state->selection; 
-                up_selection.x *= sx; 
-                up_selection.y *= sy; 
-                up_selection.width *= sx;
-                up_selection.height *= sy; 
-
-                cv::Mat roi(display, up_selection);
-                rectangle(display, up_selection, cv::Scalar(0,255,255), 2);
+                cv::Mat roi(display, state->selection);
+                rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
                 bitwise_not(roi, roi);
             }
             // Show OBJECT_ID, FEATURE_ID
