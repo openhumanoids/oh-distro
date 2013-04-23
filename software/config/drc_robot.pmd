@@ -428,3 +428,20 @@ script "run_QUAL_1" {
     wait ms 4000;
     start cmd "set-sim-rate"; 
 }
+
+
+script "run_QUAL_2" {
+    start group "0.dev_deputies";
+    start group "1.a.core";
+    wait ms 100;
+    start group "1.b.sensing";
+    start cmd "aff_server"; 
+    start cmd "GraspController";
+    start cmd "Qual2StateMachine";
+    start cmd "ReachingPlanner";
+    start cmd "sticky_hands";
+    wait ms 10000;
+    start cmd "qual_manipulation";    
+    wait ms 500;  
+    start cmd "oracle2coll"; 
+}
