@@ -19,6 +19,9 @@ TLD's work well w/ features (keypts) low-level features
 #include <lcmtypes/perception_image_roi_t.h>
 #include <ConciseArgs>
 
+const int WINDOW_WIDTH = 1024; 
+const int WINDOW_HEIGHT = 544; 
+
 int MAX_IMAGE_WIDTH = 0;
 int MAX_IMAGE_HEIGHT = 0;
 
@@ -255,11 +258,21 @@ int main(int argc, char** argv)
 
         // UI handling 
         if (!state->img.empty()) { 
-            cv::Mat display = state->img.clone();
+            cv::Mat display;
+            cv::resize(state->img.clone(), display, cv::Size(WINDOW_WIDTH,WINDOW_HEIGHT)); 
             if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
                 
-                cv::Mat roi(display, state->selection);
-                rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
+                float sx = 1.f * WINDOW_WIDTH / MAX_IMAGE_WIDTH; 
+                float sy = 1.f * WINDOW_HEIGHT / MAX_IMAGE_HEIGHT;
+
+                cv::Rect up_selection = state->selection; 
+                up_selection.x *= sx; 
+                up_selection.y *= sy; 
+                up_selection.width *= sx;
+                up_selection.height *= sy; 
+
+                cv::Mat roi(display, up_selection);
+                rectangle(display, up_selection, cv::Scalar(0,255,255), 2);
                 bitwise_not(roi, roi);
             }
             // Show OBJECT_ID, FEATURE_ID
