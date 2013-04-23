@@ -29,6 +29,10 @@ classdef FootstepPlanner < DRCPlanner
       options = struct();
       last_publish_time = now();
       optimizer_halt = false;
+
+      foot_body = struct('right', findLink(obj.biped, obj.biped.r_foot_name),...
+                            'left', findLink(obj.biped, obj.biped.l_foot_name));
+
       while 1
         [data, changed, changelist] = obj.updateData(data);
         if changelist.goal || isempty(X_old)
@@ -111,16 +115,42 @@ classdef FootstepPlanner < DRCPlanner
         isnew = false;
       end
 
-      function [ground_pos, got_data] = heightfun(pos)
+      function [ground_pos, got_data, terrain_ok] = heightfun(pos, is_right_foot)
+        if nargin < 2
+          is_right_foot = -1;
+        end
+        orig = obj.biped.footContact2Orig(pos, 'center', is_right_foot);
+
+        if is_right_foot ~= -1
+          sizecheck(pos, [6, 1]);
+          if is_right_foot
+            gc = foot_body.right.contact_pts;
+          else
+            gc = foot_body.left.contact_pts;
+          end
+          for j = 1:length(gc(1,:))
+            M = makehgtform('xrotate', orig(4), 'yrotate', orig(5), 'zrotate', orig(6));
+            offs = gc(:,j) * 1.1;
+            d = M * [offs; 1];
+            gc(:,j) = orig(1:3) + d(1:3);
+          end
+          [ground_pts, normals] = mapAPIwrapper(obj.hmap_ptr, gc);
+          plot_lcm_points(ground_pts', zeros(length(gc(1,:)),3), 100, 'contact pts', 1, 1);
+          max_z_dist = max(ground_pts(3,:)) - min(ground_pts(3,:));
+          terrain_ok =  max_z_dist <= obj.biped.terrain_step_threshold;
+        else
+          max_z_dist = 0;
+          terrain_ok = 0;
+        end
+
         [closest_terrain_pos, normal] = mapAPIwrapper(obj.hmap_ptr, pos(1:3,:));
 
         % h = zeros(1, length(pos(1,:)));
         ground_pos = pos;
-        got_data = false;
-        if ~isnan(closest_terrain_pos)
-          got_data = true;
+        if ~any(isnan(closest_terrain_pos))
           ground_pos(1:3) = closest_terrain_pos;
         end
+        got_data = ~any(isnan(closest_terrain_pos)) && ~isnan(max_z_dist);
         % ground_pos(3,:) = h;
       end
     end

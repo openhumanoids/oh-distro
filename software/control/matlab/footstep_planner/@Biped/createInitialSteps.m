@@ -19,6 +19,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   end
   
   last_good_z = X(1).pos(3);
+  using_heightmap = false;
 
   p0 = mean([X(1).pos, X(2).pos], 2);
   if options.yaw_fixed 
@@ -39,28 +40,42 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
       if options.yaw_fixed
         x(6) = x0(6);
       end
-      [pos_n, got_data] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot));
+      [pos_n, got_data, terrain_ok] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
       c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot);
-      if all(c <= 0) || (lambda_n < 1e-3)
+      if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) || (lambda_n - lambda < 1e-3)
         break
       else
         lambda_n = lambda + (lambda_n - lambda) * .9;
       end
     end
-    lambda = lambda_n;
-    if ~got_data
-      pos_n(3) = last_good_z;
-    else
-      last_good_z = pos_n(3);
+    if got_data
+      using_heightmap = true;
     end
+    if ~using_heightmap
+      pos_n(3) = last_good_z;
+    end
+    lambda = lambda_n;
     if length(X) == 2
       last_pos = X(end-1).pos;
     else
       last_pos = X(end-2).pos;
     end
+    got_data
+    pos_n
     apex_pos = get_apex_pos(last_pos, pos_n);
+    apex_pos
     X(end+1) = struct('pos', apex_pos, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
     X(end+1) = struct('pos', pos_n, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
+
+    %%%%
+    Xout = X;
+    % Convert from foot center to foot origin
+    for j = 1:length(X)
+      Xout(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
+    end
+    biped.publish_footstep_plan(Xout);
+    %%%%%
+
     if X(end).is_right_foot
       goal = foot_goals.right;
     else
@@ -88,6 +103,11 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   
   function apex_pos = get_apex_pos(last_pos, next_pos)
     apex_pos = mean([last_pos, next_pos], 2);
+    if last_pos(3) - next_pos(3) > (0.8 * biped.nom_step_clearance)
+      apex_pos(1:2) = next_pos(1:2);
+    elseif next_pos(3) - last_pos(3) > (0.8 * biped.nom_step_clearance)
+      apex_pos(1:2) = last_pos(1:2);
+    end
     apex_pos(3) = max([last_pos(3), next_pos(3)]) + biped.nom_step_clearance;
   end
 end

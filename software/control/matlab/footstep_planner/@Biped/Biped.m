@@ -9,6 +9,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     nom_step_clearance
     max_step_rot
     foot_contact_offsets
+    terrain_step_threshold
     r_foot_name
     l_foot_name
     lc
@@ -25,7 +26,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       defaults = struct('step_time', 2.0,... % s
-        'max_forward_step', 0.3,... %m
+        'max_forward_step', 0.35,... %m
         'max_backward_step', 0.20,...%m
         'max_step_width', 0.35,...%m
         'min_step_width', 0.2,...%m
@@ -33,6 +34,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'nom_step_clearance', 0.05,...%m
         'max_step_rot', pi/4,... % rad
         'r_foot_name', 'r_foot',...
+        'terrain_step_threshold', 0.03,...%m
         'l_foot_name', 'l_foot');
       fields = fieldnames(defaults);
       for i = 1:length(fields)
