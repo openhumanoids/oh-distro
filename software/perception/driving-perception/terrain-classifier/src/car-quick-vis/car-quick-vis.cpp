@@ -1,3 +1,8 @@
+// Publish a car affordance mesage relative to the robot's pelvis
+//
+// 
+
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
