@@ -66,7 +66,6 @@ typedef struct _state_t {
     drc_driving_cmd_t *last_driving_cmd; 
 
     bot_lcmgl_t *lcmgl_goal; 
-    bot_lcmgl_t *lcmgl_arc; 
     bot_lcmgl_t *lcmgl_rays; 
     int64_t utime;
 
@@ -515,10 +514,6 @@ on_controller_timer (gpointer data)
         double xyz_goal_car[3];
 	bot_frames_transform_vec (self->frames, "local", "body", self->cur_goal, xyz_goal_car);
 
-        BotTrans body_to_local; 
-        bot_frames_get_trans(self->frames, "body", "local", 
-                             &body_to_local);
-
 	BotTrans goal_to_body;
 	goal_to_body.trans_vec[0] = xyz_goal_car[0];
 	goal_to_body.trans_vec[1] = xyz_goal_car[1];
@@ -537,109 +532,10 @@ on_controller_timer (gpointer data)
 	BotTrans goal_to_car; 
 	bot_trans_apply_trans_to(&body_to_car, &goal_to_body, &goal_to_car);
 
-        BotTrans car_to_body = body_to_car; 
-        bot_trans_invert(&car_to_body);
-        
-        BotTrans car_to_local;
-        bot_trans_apply_trans_to(&body_to_local, &car_to_body, &car_to_local);
-
-        double steering_angle = 0;
-
-        if(goal_to_car.trans_vec[1] != 0){
-            double R = (pow(goal_to_car.trans_vec[0],2) + pow(goal_to_car.trans_vec[1],2))/ (2 * goal_to_car.trans_vec[1]);
-
-            //lets draw lcmgl stuff??  - a circle
-            if(R < 50){
-                BotTrans center_to_car;
-                center_to_car.trans_vec[0] = 0;
-                center_to_car.trans_vec[1] = R;
-                center_to_car.trans_vec[3] = 0;
-
-                double rpy_zero[3] = {0};
-                bot_roll_pitch_yaw_to_quat(rpy_zero, center_to_car.rot_quat);
-                
-                BotTrans center_to_local; 
-                bot_trans_apply_trans_to(&car_to_local, &center_to_car, &center_to_local);
-                
-                double xyz_center[3] = {center_to_local.trans_vec[0], center_to_local.trans_vec[1], 0};
-                
-                bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-                lcmglColor3f (1.0, 0.0, 0.0);
-                bot_lcmgl_line_width(lcmgl, 5);
-                lcmglCircle (xyz_center, R);
-                bot_lcmgl_switch_buffer (self->lcmgl_arc);
-            }
-            else{
-                bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-                bot_lcmgl_line_width(lcmgl, 10);
-                lcmglColor3f (1.0, 0.0, 0.0);
-                bot_lcmgl_begin(lcmgl, GL_LINES);
-                bot_lcmgl_vertex3f(lcmgl, car_to_local.trans_vec[0], car_to_local.trans_vec[1], 0);
-                BotTrans infront_to_car;
-                infront_to_car.trans_vec[0] = 20.0;
-                infront_to_car.trans_vec[1] = 0.0;
-                infront_to_car.trans_vec[2] = 0.0;
-                double rpy_zero[3] = {0};
-                bot_roll_pitch_yaw_to_quat(rpy_zero, infront_to_car.rot_quat);
-
-                BotTrans infront_to_local; 
-                bot_trans_apply_trans_to(&car_to_local, &infront_to_car, &infront_to_local);
-        
-                bot_lcmgl_vertex3f(lcmgl, infront_to_local.trans_vec[0], infront_to_local.trans_vec[1], 0);
-                bot_lcmgl_end(lcmgl);
-                bot_lcmgl_switch_buffer (self->lcmgl_arc);
-            }
-
-
-            fprintf(stderr, "Turning Radius : %f\n", R);
-
-            double l = 1.88;
-            double w = 1.2; 
-        
-            double turn_theta = fabs(atan(pow( pow(l,2) / (pow(R,2) - pow(l,2)), 0.5)));
-        
-            fprintf(stderr, "Dx : %f Dy : %f\n", goal_to_car.trans_vec[0], goal_to_car.trans_vec[1]);
-
-            if(goal_to_car.trans_vec[1] >=0){
-                fprintf(stderr, "Left turn : %f\n", bot_to_degrees(turn_theta));
-            }
-            else{
-                fprintf(stderr, "Right turn : %f\n", bot_to_degrees(turn_theta));
-                turn_theta = -turn_theta;
-            }        
-
-            double steering_ratio = 0.063670;
-
-            steering_angle = turn_theta / steering_ratio;
-
-            fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_angle));
-        }
-        else{
-            fprintf(stderr, "Waypoint is straight ahead - driving straight\n");
-            bot_lcmgl_t *lcmgl = self->lcmgl_arc;
-            bot_lcmgl_line_width(lcmgl, 10);
-            lcmglColor3f (1.0, 0.0, 0.0);
-            bot_lcmgl_begin(lcmgl, GL_LINES);
-            bot_lcmgl_vertex3f(lcmgl, car_to_local.trans_vec[0], car_to_local.trans_vec[1], 0);
-            BotTrans infront_to_car;
-            infront_to_car.trans_vec[0] = 20.0;
-            infront_to_car.trans_vec[1] = 0.0;
-            infront_to_car.trans_vec[2] = 0.0;
-            double rpy_zero[3] = {0};
-            bot_roll_pitch_yaw_to_quat(rpy_zero, infront_to_car.rot_quat);
-
-            BotTrans infront_to_local; 
-            bot_trans_apply_trans_to(&car_to_local, &infront_to_car, &infront_to_local);
-        
-            bot_lcmgl_vertex3f(lcmgl, infront_to_local.trans_vec[0], infront_to_local.trans_vec[1], 0);
-            bot_lcmgl_end(lcmgl);
-            bot_lcmgl_switch_buffer (self->lcmgl_arc);
-        }
-
         double heading_error = bot_fasttrig_atan2 (goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);  // xyz_goal_car[1], xyz_goal_car[0]);
         double steering_input = self->kp_steer * heading_error;
 
-	double steering_angle_delta = steering_angle;//steering_input;
+	double steering_angle_delta = steering_input;
 	
 	//angle at which accceleration should be down - this might be tough when actually controlling the car 
 	//using the robot 
@@ -672,7 +568,7 @@ on_controller_timer (gpointer data)
         if(last_utime > 0)
         self->time_applied_to_brake += (self->utime - last_utime);
         }*/
-        double max_angle = 180;
+        double max_angle = 90;
         steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), steering_angle_delta));
 
 	fprintf (stdout, "Steering control: Error = %.2f deg, Signal = %.2f (deg) Throttle : %f Brake: %f\n",
@@ -789,7 +685,6 @@ int main (int argc, char **argv) {
 
 
     self->lcmgl_goal = bot_lcmgl_init (self->lcm, "DRIVING_GOAL");
-    self->lcmgl_arc = bot_lcmgl_init (self->lcm, "DRIVING_ARC");
 
     self->lcmgl_rays = bot_lcmgl_init (self->lcm, "DRIVING_RAYS");
 
