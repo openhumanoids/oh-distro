@@ -2,7 +2,7 @@ package perception;
 
 struct rect_t 
 {
-    int32_t x, y;
-    int32_t width; 
-    int32_t height;
+    float x, y;
+    float width; 
+    float height;
 }

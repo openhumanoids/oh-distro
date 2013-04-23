@@ -72,6 +72,10 @@ MouseEvent mouse;
 
 static void onMouse(int event, int x, int y, int flags, void* userdata) {
     MouseEvent* data = (MouseEvent*)userdata;
+
+    float sx = 1.f / MAX_IMAGE_WIDTH; 
+    float sy = 1.f / MAX_IMAGE_HEIGHT;
+
     if (state->selectObject) {
         state->selection.x = MIN(x, state->origin.x);
         state->selection.y = MIN(y, state->origin.y);
@@ -96,11 +100,13 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         img_selection.utime = state->img_utime;
         img_selection.object_id = OBJECT_ID; 
         img_selection.feature_id = FEATURE_ID; 
-        img_selection.roi.x = state->selection.x;
-        img_selection.roi.y = state->selection.y;
-        img_selection.roi.width = state->selection.width;
-        img_selection.roi.height = state->selection.height;
+        img_selection.roi.x = state->selection.x * sx;
+        img_selection.roi.y = state->selection.y * sy;
+        img_selection.roi.width = state->selection.width * sx;
+        img_selection.roi.height = state->selection.height * sy;
         perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_selection);
+        destroyWindow(WINDOW_NAME);
+        state->img = cv::Mat();
 
         break;
     }
@@ -118,9 +124,14 @@ void  INThandler(int sig)
 void
 decode_image(const bot_core_image_t * msg, cv::Mat& img)
 {
+    int ch = msg->row_stride / (msg->width); 
     if (img.empty() || img.rows != msg->height || img.cols != msg->width)
-        img.create(msg->height, msg->width, CV_8UC3);
-
+        if (ch == 3) 
+            img.create(msg->height, msg->width, CV_8UC3);
+        else 
+            img.create(msg->height, msg->width, CV_8UC1);
+    std::cerr << "msg: " << ch << " " << msg->row_stride << " " << msg->width << "x" << msg->height << std::endl;
+        
   // extract image data
   switch (msg->pixelformat) {
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
@@ -129,12 +140,22 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
       break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
       // for some reason msg->row_stride is 0, so we use msg->width instead.
-      jpeg_decompress_8u_gray(msg->data,
-                              msg->size,
-                              img.data,
-                              msg->width,
-                              msg->height,
-                              msg->width);
+        if (ch == 3) { 
+            jpeg_decompress_8u_rgb(msg->data,
+                                    msg->size,
+                                    img.data,
+                                    msg->width,
+                                    msg->height,
+                                    msg->width * ch);
+        cv::cvtColor(img, img, CV_RGB2BGR);
+        } else {  
+            jpeg_decompress_8u_gray(msg->data,
+                                    msg->size,
+                                    img.data,
+                                    msg->width,
+                                    msg->height,
+                                    msg->width);
+        }
       break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
       memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
@@ -170,6 +191,10 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     decode_image(msg, state->img);    
     state->img_utime = msg->utime; 
 
+
+    cv::namedWindow( WINDOW_NAME );
+    cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
+
     return;
 }
 
@@ -204,8 +229,8 @@ int main(int argc, char** argv)
     // Param server, botframes
     state = new state_t();
 
-    cv::namedWindow( WINDOW_NAME );
-    cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
+    // cv::namedWindow( WINDOW_NAME );
+    // cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
 
     // Subscriptions
     bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
@@ -232,6 +257,7 @@ int main(int argc, char** argv)
         if (!state->img.empty()) { 
             cv::Mat display = state->img.clone();
             if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
+                
                 cv::Mat roi(display, state->selection);
                 rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
                 bitwise_not(roi, roi);
@@ -239,6 +265,7 @@ int main(int argc, char** argv)
             // Show OBJECT_ID, FEATURE_ID
             cv::putText(display, cv::format("OBJ: %ld", OBJECT_ID),
                         Point(20,20), 0, .5, cv::Scalar(0,200,0), 2);
+
             imshow(WINDOW_NAME, display);
         }
     }

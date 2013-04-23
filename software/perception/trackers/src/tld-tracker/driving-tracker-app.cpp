@@ -150,8 +150,9 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
               << " SEGMENTATION msg: " << msg->utime << " " << msg->roi.x << " " << msg->roi.y 
 	      << " " << msg->roi.width << " " << msg->roi.height << std::endl;
 
-    state_t* state = (state_t*) user_data; 
-    Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
+    state_t* state = (state_t*) user_data;
+    float sw = state->camera_params.width, sh = state->camera_params.height;
+    Rect selection(msg->roi.x * sw, msg->roi.y * sh, msg->roi.width * sw, msg->roi.height * sh);
 
     // Initialize tracker for object_id
     TLDTracker* tr = new TLDTracker(state->camera_params.width, state->camera_params.height, options.vSCALE);
@@ -200,8 +201,11 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
 
     // Bot trans for rigid-body transform from head to local frame
     std::vector< Eigen::Vector3d > pts;
-    Eigen::Isometry3d cam_to_frame;
-    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "local", msg->utime, cam_to_frame); 
+    Eigen::Isometry3d cam_to_local;
+    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "local", msg->utime, cam_to_local); 
+
+    Eigen::Isometry3d cam_to_body;
+    state->frames_cpp.get_trans_with_utime(state->frames, "CAMERA", "body", msg->utime, cam_to_body); 
 
     // LCM gl draw bearing vector
     if (!state->lcmgl)
@@ -227,7 +231,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         if (!tr) return;
 
         if (tr->initialized) 
-            tr->update(state->img, pts, cam_to_frame);
+            tr->update(state->img, pts, cam_to_local);
 
         if (++state->counter == 10) { 
             printf("===> TLD TRACKER: %4.2f ms\n", (bot_timestamp_now() - tic) * 1.f * 1e-3); 
@@ -246,18 +250,20 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                 a = b = 0;
             else 
                 a = u*1.f/state->camera_params.fx, b = v*1.f/state->camera_params.fy;
+
+            Eigen::Vector4d p0l = cam_to_local * Eigen::Vector4d(0, 0, 0, 1);
+            Eigen::Vector4d p1l = cam_to_local * Eigen::Vector4d(a, b, 1, 1);
+            Eigen::Vector4d p1b = cam_to_body * Eigen::Vector4d(a, b, 1, 1);
+
             perception_pointing_vector_t bearing_vec;
             bearing_vec.utime = state->img_utime;
             bearing_vec.pos[0] = 0, 
                 bearing_vec.pos[1] = 0, 
                 bearing_vec.pos[2] = 0;
 
-            bearing_vec.vec[0] = a, 
-                bearing_vec.vec[1] = b, 
-                bearing_vec.vec[2] = 1;
-
-            Eigen::Vector4d p0 = cam_to_frame * Eigen::Vector4d(0, 0, 0, 1);
-            Eigen::Vector4d p1 = cam_to_frame * Eigen::Vector4d(a, b, 1, 1);
+            bearing_vec.vec[0] = p1b[0], 
+                bearing_vec.vec[1] = p1b[1], 
+                bearing_vec.vec[2] = p1b[2];
 
             if(state->lcmgl){
                 float b = state->id_colors[idx][0] * 1.f / 255.f;
@@ -265,8 +271,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                 float r = state->id_colors[idx][2] * 1.f / 255.f;
 
                 bot_lcmgl_color3f(state->lcmgl, r, g, b);
-                bot_lcmgl_vertex3f(state->lcmgl, p0[0], p0[1], p0[2]);
-                bot_lcmgl_vertex3f(state->lcmgl, p1[0], p1[1], p1[2]);
+                bot_lcmgl_vertex3f(state->lcmgl, p0l[0], p0l[1], p0l[2]);
+                bot_lcmgl_vertex3f(state->lcmgl, p1l[0], p1l[1], p1l[2]);
             }
 
             perception_pointing_vector_t_publish(state->lcm, "OBJECT_BEARING", &bearing_vec);
