@@ -111,7 +111,9 @@ namespace surrogate_gui
     if(!subcloudIndices || subcloudIndices->size()==0) subcloud.reset(new PointCloud<PointXYZRGB>(*cloud));  
     else subcloud = PclSurrogateUtils::extractIndexedPoints(subcloudIndices, cloud);
 
-    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
+    return subcloud;
+
+    /*pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
     // Output has the PointNormal type in order to store the normals calculated by MLS
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr mls_points(new pcl::PointCloud<pcl::PointXYZRGB>);
     
@@ -129,7 +131,7 @@ namespace surrogate_gui
     // Reconstruct
     mls.process (*mls_points);
 
-    return mls_points;
+    return mls_points;*/
   }
                
   
@@ -862,6 +864,10 @@ namespace surrogate_gui
     pcl::PCDReader reader;
     string file = getenv("HOME") + string("/drc/software/models/otdf/car.pcd");
     reader.read(file.c_str(), *modelcloud);
+    Affine3f transformModel = Affine3f::Identity();
+    transformModel.translation() = Vector3f(0.72,0,0); // correct model
+    transformModel.linear() = ypr2rot(Vector3f(M_PI,0,0));
+    transformPointCloud(*modelcloud, *modelcloud, transformModel);
     modelcloud = extractAndSmooth(modelcloud);
     
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);

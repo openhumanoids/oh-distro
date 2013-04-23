@@ -1354,7 +1354,6 @@ namespace surrogate_gui
 
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
-	  	  
 	  affordanceMsg.aff.map_id = 0; 	  
 	  affordanceMsg.aff.otdf_type = "car";
 
@@ -1387,8 +1386,7 @@ namespace surrogate_gui
     float x = xyz[0]; 
     float y = xyz[1];
     float z = xyz[2]; 
-    float yaw   = ypr[0]+M_PI;
-    if(yaw>M_PI) yaw-=2*M_PI;
+    float yaw   = ypr[0];
     float pitch = ypr[1];
     float roll  = ypr[2];
 	
@@ -1429,7 +1427,8 @@ namespace surrogate_gui
     cout << "\n about to publish" << endl;
     if(_selectedAffordance){
       affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
-      _lcmCpp->publish("AFFORDANCE_TRACK", &affordanceMsg);
+      affordanceMsg.aff.uid = _selectedAffordance->aff.uid;
+      _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
     }else{
       affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
 	    _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
