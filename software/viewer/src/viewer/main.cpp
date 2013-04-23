@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
   setup_renderer_robot_plan(viewer, 0, lcm);
   setup_renderer_affordances(viewer, 0, lcm);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames);
-  setup_renderer_end_effector_goal(viewer, 0, lcm);
+  //setup_renderer_end_effector_goal(viewer, 0, lcm); // this is not needed any more
 
   // Individual Renderers:
   add_octomap_renderer_to_viewer(viewer, 1, lcm);
