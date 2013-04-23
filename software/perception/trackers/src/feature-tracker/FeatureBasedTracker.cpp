@@ -260,6 +260,10 @@ initialize(const int iId, const cv::Mat& iMask,
     landmarks.push_back(landmark);
   }
 
+  if (landmarks.size() < 5) {  // TODO: make this a parameter
+    return false;
+  }
+
   // find robust mean and stdev
   int n = landmarks.size();
   std::vector<float> xVals(n);

@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <list>
+#include <unordered_map>
 #include <limits>
 
 #include <opencv2/opencv.hpp>
@@ -63,6 +64,9 @@ struct State {
   UpdateData mUpdateData;
   InitializeData mInitData;
 
+  typedef std::unordered_map<int,drc::affordance_t> AffordanceMap;
+  AffordanceMap mLatestAffordances;
+
   State() {
     // lcm and subscriptions
     mLcm.reset(new lcm::LCM());
@@ -122,6 +126,7 @@ struct State {
 
   void onMultisense(const lcm::ReceiveBuffer* iBuf, const std::string& iChan,
                     const multisense::images_t* iMessage) {
+    //std::cout << "received multisense " << iMessage->utime << std::endl;
     std::lock_guard<std::mutex> lock(mBufferMutex);
     for (int i = 0; i < iMessage->n_images; ++i) {
       if (iMessage->image_types[i] != multisense::images_t::DISPARITY) {
@@ -138,6 +143,7 @@ struct State {
 
   void onStereo(const lcm::ReceiveBuffer* iBuf, const std::string& iChan,
                 const bot_core::image_t* iMessage) {
+    //std::cout << "received stereo " << iMessage->utime << std::endl;
     std::lock_guard<std::mutex> lock(mBufferMutex);
     mStereoBuffer.push_back(*iMessage);
     if (mStereoBuffer.size() > mMaxBufferSize) mStereoBuffer.pop_front();
@@ -148,13 +154,22 @@ struct State {
                  const drc::affordance_plus_collection_t* iMessage) {
     if (mInitData.mObjectId < 0) return;
     for (size_t i = 0; i < iMessage->affs_plus.size(); ++i) {
-      if (iMessage->affs_plus[i].aff.uid == mInitData.mObjectId) {
-        mAffordanceBuffer.push_back(iMessage->affs_plus[i].aff);
+      const drc::affordance_t& aff = iMessage->affs_plus[i].aff;
+
+      // create new if this is an init
+      if (aff.uid == mInitData.mObjectId) {
+        mAffordanceBuffer.push_back(aff);
+        mLatestAffordances[aff.uid] = aff;
         if (mAffordanceBuffer.size() > mMaxBufferSize) {
           mAffordanceBuffer.pop_front();
         }
-        break;
+        continue;
       }
+
+      // add to latest affordances if this is an update
+      AffordanceMap::const_iterator item = mLatestAffordances.find(aff.uid);
+      if (item == mLatestAffordances.end()) continue;
+      mLatestAffordances[item->first] = aff;
     }
   }
 
@@ -230,6 +245,7 @@ struct TrackerWrapper {
     uncompress(bytes.data(), &numBytes, maskRaw->data.data(), maskRaw->size);
     cv::Mat temp(maskRaw->width, maskRaw->height, CV_8UC1, bytes.data());
     cv::Mat1b mask = (temp == (64 + initData.mObjectId));
+    initData.mMask = mask;
 
     // find closest affordance in time
     std::list<drc::affordance_t>::iterator iter;
@@ -261,7 +277,10 @@ struct TrackerWrapper {
   }
 
   void publishAffordance(const int iId, const TrackedObject::State& iState) {
-    drc::affordance_t msg; // TODO = xxx;
+    State::AffordanceMap::const_iterator item =
+      mState->mLatestAffordances.find(iId);
+    if (item == mState->mLatestAffordances.end()) return;
+    drc::affordance_t msg = item->second;
     msg.aff_store_control = drc::affordance_t::UPDATE;
     Eigen::Vector3d rpy =
       iState.mPose.linear().cast<double>().eulerAngles(0,1,2);
@@ -280,27 +299,43 @@ struct TrackerWrapper {
 
       // if there is new unprocessed image data
       if (mState->mUpdateData.mReady) {
+        auto startTime = std::chrono::high_resolution_clock::now();
         decodeUpdateData();
         mTracker.setData(mState->mUpdateData.mStereoRaw.utime,
                          mState->mUpdateData.mLeftImage,
                          mState->mUpdateData.mRightImage,
                          mState->mUpdateData.mDisparity,
                          mState->mUpdateData.mHeadPose);
-        mTracker.update();
-        std::vector<int> ids = mTracker.getAllTrackIds();
-        for (size_t k = 0; k < ids.size(); ++k) {
-          TrackedObject::State state = mTracker.getCurrentState(ids[k]);
-          publishAffordance(ids[k], state);
-          // TODO: debug info
+        if (!mTracker.update()) {
+          std::cout << "Error: could not update this frame" << std::endl;
+        }
+        else {
+          auto endTime = std::chrono::high_resolution_clock::now();
+          auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>
+            (endTime - startTime);
+          std::cout << "Updated in " << timeDiff.count()/1e3 <<
+            "s" << std::endl;
+          std::vector<int> ids = mTracker.getAllTrackIds();
+          for (size_t k = 0; k < ids.size(); ++k) {
+            TrackedObject::State state = mTracker.getCurrentState(ids[k]);
+            publishAffordance(ids[k], state);
+            // TODO: debug info
+          }
         }
 
         if (mState->mInitData.mObjectId >= 0) {
 
           // try to find mask
+          std::cout << "TRYING TO INITIALIZE" << std::endl;
           if (decodeInitData()) {
-            mTracker.initialize(mState->mInitData.mObjectId,
-                                mState->mInitData.mMask,
-                                mState->mInitData.mObjectPose);
+            if (mTracker.initialize(mState->mInitData.mObjectId,
+                                    mState->mInitData.mMask,
+                                    mState->mInitData.mObjectPose)) {
+              std::cout << "INITIALIZED!" << std::endl;
+            }
+            else {
+              std::cout << "Error: Failed to initialize track" << std::endl;
+            }
             mState->mInitData.mObjectId = -1;
           }
         }
