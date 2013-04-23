@@ -716,6 +716,8 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.throttle_ratio = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_RATIO);
         msg.throttle_duration = fmin(bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE_DURATION), msg.drive_duration);
         msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
+        msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
+        msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
         msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
         
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
