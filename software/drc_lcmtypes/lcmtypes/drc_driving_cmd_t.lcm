@@ -8,6 +8,8 @@ struct driving_cmd_t
         double throttle_duration;
 
         double kp_steer;
+        double kd_steer;
+        double ki_steer;
         double lookahead_dist;
         
         int8_t type;    
