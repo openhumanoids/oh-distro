@@ -34,6 +34,8 @@
 
 #define TIMER_PERIOD_MSEC 50
 
+#define TIMER_PERIOD_MSEC_LONG 700
+
 #define STOP_TIME_GAP_SEC 50.0
 #define ACCELERATOR_TIME_GAP_SEC 2.5
 #define TIMEOUT_THRESHOLD 1.0
@@ -58,7 +60,7 @@ typedef struct _state_t {
     BotFrames * frames;
     GMainLoop *mainloop; 
     guint controller_timer_id;
-
+    int64_t last_controller_utime;
     controller_state_t *curr_state;
   
     occ_map_pixel_map_t *cost_map_last;
@@ -69,6 +71,9 @@ typedef struct _state_t {
     bot_lcmgl_t *lcmgl_arc; 
     bot_lcmgl_t *lcmgl_rays; 
     int64_t utime;
+
+    int use_differential_angle; 
+    double timer_period; 
 
     int64_t time_applied_to_brake;
     
@@ -166,9 +171,7 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
     self->throttle_duration = msg->throttle_duration;
     self->goal_distance = msg->lookahead_dist;
     self->drive_start_time = self->utime;
-    self->time_applied_to_accelerate  = 0;
-    
-    
+    self->time_applied_to_accelerate  = 0;    
 }
 
 static void
@@ -416,8 +419,8 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
 
     if (found_goal) {
         /*self->cur_goal[0] = xy_goal[0];
-        self->cur_goal[1] = xy_goal[1];
-        self->cur_goal[2] = 0;*/
+          self->cur_goal[1] = xy_goal[1];
+          self->cur_goal[2] = 0;*/
         self->cur_goal[0] = it->second.xy[0];
         self->cur_goal[1] = it->second.xy[1];
         self->cur_goal[2] = 0;
@@ -439,7 +442,6 @@ perform_emergency_stop (state_t *self)
     msg.brake_value = 1.0;
     drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
 }
-
 
 static gboolean
 on_controller_timer (gpointer data)
@@ -474,6 +476,13 @@ on_controller_timer (gpointer data)
         return TRUE;
     }
 
+    if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
+        fprintf(stderr, "Timer gap : %f (ms)\n", (self->utime - self->last_controller_utime) / 1.0e3);
+        return TRUE;
+    }
+
+    
+
     if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
@@ -483,6 +492,186 @@ on_controller_timer (gpointer data)
         self->drive_duration = -1;
         return TRUE;
     }
+
+    self->last_controller_utime = self->utime;
+
+    static int64_t last_utime = 0;
+    
+    fprintf(stderr, "Drive start time : %f\n", (self->utime - self->drive_start_time)/1.0e6);
+
+    occ_map::FloatPixelMap *fmap = new occ_map::FloatPixelMap (self->cost_map_last);
+
+    //draw_goal_range (self);    
+    double xyz_goal[3];
+    if (find_goal_enhanced (fmap, self)) {
+        draw_goal (self);
+        self->have_valid_goal = 1;
+    }
+    else {
+        if (self->verbose)
+            fprintf (stdout, "Unable to find goal in PixMap - Stopping\n");
+        
+        perform_emergency_stop(self);
+        self->drive_duration = -1;
+        return TRUE;
+    }
+    
+    // We should verify that current goal is valid
+    if (self->have_valid_goal) {
+        // This is where we check
+    }
+
+    if (self->have_valid_goal) {
+        // Compute the steering command
+        double xyz_goal_car[3];
+	bot_frames_transform_vec (self->frames, "local", "body", self->cur_goal, xyz_goal_car);
+
+	BotTrans goal_to_body;
+	goal_to_body.trans_vec[0] = xyz_goal_car[0];
+	goal_to_body.trans_vec[1] = xyz_goal_car[1];
+	goal_to_body.trans_vec[2] = 0;
+
+	double rpy[3] = {0};
+	bot_roll_pitch_yaw_to_quat(rpy, goal_to_body.rot_quat);
+	
+	BotTrans body_to_car; 
+	body_to_car.trans_vec[0] = 0;
+	body_to_car.trans_vec[1] = 0.3;
+	body_to_car.trans_vec[2] = 0;
+
+	bot_roll_pitch_yaw_to_quat(rpy, body_to_car.rot_quat);
+	
+	BotTrans goal_to_car; 
+	bot_trans_apply_trans_to(&body_to_car, &goal_to_body, &goal_to_car);
+
+        double heading_error = bot_fasttrig_atan2 (goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);  // xyz_goal_car[1], xyz_goal_car[0]);
+        double steering_input = self->kp_steer * heading_error;
+
+	double steering_angle_delta = steering_input;
+	
+	//angle at which accceleration should be down - this might be tough when actually controlling the car 
+	//using the robot 
+	double steering_no_angle;
+	if(steering_angle_delta >= 0){
+            steering_no_angle = bot_to_radians(4);
+	}
+	else{
+            steering_no_angle = bot_to_radians(-4);
+	}
+
+	//lets assume a driving for a given time model 
+	
+	double throttle_ratio = (steering_no_angle - steering_angle_delta) / steering_no_angle;
+	throttle_ratio = fmin(1.0, fmax(throttle_ratio, -2.0));
+	double throttle_val = 0;
+	double brake_val = 0;
+	
+	if((self->utime - self->drive_start_time)/1.0e6 < self->throttle_duration){
+            throttle_val = self->throttle_ratio;//MAX_THROTTLE;
+	}
+
+	/*if(throttle_ratio >=0){
+        //throttle_val = 0.04 + MAX_THROTTLE * throttle_ratio;
+        if(throttle_ratio >0 && last_utime > 0)
+        self->time_applied_to_accelerate += (self->utime - last_utime);
+	}
+	else{
+        brake_val = 0; //MAX_BRAKE * fabs(throttle_ratio);
+        if(last_utime > 0)
+        self->time_applied_to_brake += (self->utime - last_utime);
+        }*/
+        double max_angle = 90;
+        steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), steering_angle_delta));
+
+	fprintf (stdout, "Steering control: Error = %.2f deg, Signal = %.2f (deg) Throttle : %f Brake: %f\n",
+		 bot_to_degrees(heading_error), bot_to_degrees(steering_input), 
+		 throttle_val, brake_val);
+
+	if(self->time_applied_to_brake > 0 && self->time_applied_to_accelerate)
+            fprintf(stderr, "Time accelerating : %f, Time braking : %f\n", self->time_applied_to_accelerate / 1.0e6, 
+                    self->time_applied_to_brake / 1.0e6);
+
+	drc_driving_control_cmd_t msg;
+	msg.utime = bot_timestamp_now();
+        if(self->use_differential_angle){
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
+            //if(fabs(steering_input) > bot_to_radians(5)){
+            msg.steering_angle =  steering_input;
+            /*}
+            else{
+                msg.steering_angle =  0;
+            }
+
+            fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
+        }
+        else{
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
+            msg.steering_angle =  steering_input;
+        }
+
+	msg.throttle_value = throttle_val;
+	msg.brake_value = brake_val;
+	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);	
+    }
+    else
+        perform_emergency_stop (self);
+
+    last_utime = self->utime;
+
+    delete fmap;
+
+    return TRUE;
+}
+
+
+static gboolean
+on_controller_timer_arc (gpointer data)
+{
+
+    state_t *self = (state_t *) data;
+
+    if (!self->cost_map_last) {
+        if (self->verbose)
+            //fprintf (stdout, "No valid terrain classification map\n");
+        
+            return TRUE;
+    }
+
+    //we should check if the map is stale - because of some issue with the controller   
+
+    if((self->utime - self->cost_map_last->utime)/1.0e6 > TIMEOUT_THRESHOLD){
+        fprintf(stderr, "Error - Costmap too old - asking for EStop\n");
+      
+        drc_driving_control_cmd_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
+        msg.brake_value = 1.0;
+        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
+
+        return TRUE;
+    }
+
+    if(self->drive_duration < 0){
+        //we are not required to drive - return TRUE
+      
+        return TRUE;
+    }
+
+    if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
+        return TRUE;
+    }
+
+    if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
+        drc_driving_control_cmd_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
+        msg.brake_value = 1.0;
+        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
+        self->drive_duration = -1;
+        return TRUE;
+    }
+
+    self->last_controller_utime = self->utime;
 
     static int64_t last_utime = 0;
     
@@ -685,7 +874,11 @@ on_controller_timer (gpointer data)
 
 	drc_driving_control_cmd_t msg;
 	msg.utime = bot_timestamp_now();
-	msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
+        if(self->use_differential_angle)
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
+        else
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE;
+
 	msg.steering_angle =  steering_input;
 	msg.throttle_value = throttle_val;
 	msg.brake_value = brake_val;
@@ -737,19 +930,28 @@ int main (int argc, char **argv) {
     state_t *self = (state_t *) calloc (1, sizeof (state_t));
     self->goal_distance = DEFAULT_GOAL_DISTANCE;
 
-    char *optstring = "vd:";
+    char *optstring = "vda";
     char c;
     struct option long_opts[] = {
         { "verbose", no_argument, 0, 'v'},
-        { "distance", required_argument, 0, 'd'},
+        { "differential_cmd", no_argument, 0, 'd'},
+	{ "arc", no_argument, 0, 'a'},
         { 0, 0, 0, 0 }
     };
+
+    int arc = 0;
 
     while ((c = getopt_long (argc, argv, optstring, long_opts, 0)) >= 0)
         {
             switch (c) {
             case 'd':
-                self->goal_distance = strtod (optarg, NULL);
+                fprintf(stderr, "Using differential commands\n");
+                self->use_differential_angle = 1;//goal_distance = strtod (optarg, NULL);
+		break;
+	    case 'a':
+	        fprintf(stderr, "Setting arc based controller - calculating the exact steering angle needed to drive\n");
+	        arc = 1;
+		break;
             case 'v':
                 self->verbose = 1;
                 break;
@@ -766,19 +968,22 @@ int main (int argc, char **argv) {
     self->lcm = bot_lcm_get_global (NULL);
     if (!self->lcm) {
         fprintf (stderr, "Error getting LCM\n");
-        goto fail;
+        //goto fail;
+        return -1;
     }
 
     self->param = bot_param_new_from_server (self->lcm, 0);
     if (!self->param) {
         fprintf (stderr, "Error getting BotParam\n");
-        goto fail;
+        //goto fail;
+        return -1;
     }
 
     self->frames = bot_frames_new (self->lcm, self->param);
     if (!self->frames) {
         fprintf (stderr, "Error getting BotFrames\n");
-        goto fail;
+        //goto fail;
+        return -1;
     }
 
     self->last_driving_cmd = NULL;
@@ -802,17 +1007,23 @@ int main (int argc, char **argv) {
 
     self->mainloop = g_main_loop_new (NULL, TRUE);
     
-    // Control timer
-    self->controller_timer_id = g_timeout_add (TIMER_PERIOD_MSEC, on_controller_timer, self);
+    self->timer_period = TIMER_PERIOD_MSEC;
     
+    if(self->use_differential_angle == 1){
+        self->timer_period = TIMER_PERIOD_MSEC_LONG;
+    }
+
+    // Control timer
+    if(arc==0){        
+        self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer, self);
+    }
+    else{
+        self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer_arc, self);
+    }
     // Connect LCM to the mainloop
     bot_glib_mainloop_attach_lcm (self->lcm);
 
     g_main_loop_run (self->mainloop);
 
     return 1;
-
- fail:
-    driving_control_destroy (self);
-    return 0;
 }
