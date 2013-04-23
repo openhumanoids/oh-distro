@@ -122,9 +122,7 @@ typedef point3d_t vec3d_t;
 
 
 struct OtdfInstanceStruc {
-    //std::string* otdf_type;
     std::string otdf_type;
-    //const char* otdf_type;
     int uid;
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_object;
