@@ -5,6 +5,10 @@
 #include "lcmtypes/bot_core.hpp"
 #include <boost/shared_ptr.hpp>
 
+#include <bot_frames/bot_frames.h>
+#include <bot_param/param_client.h>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
+
 #include <model-client/model-client.hpp>
 
 #include "kdl/tree.hpp"
@@ -47,11 +51,18 @@ private:
   /// used for Trigger based message demand:
   drc::robot_state_t _last_est_state;    
   void sendTriggerOutput();
+  
+  BotParam* botparam_;
+  BotFrames* botframes_;
+  bot::frames* botframes_cpp_;
+  
 };
 
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
     _lcm(_lcm),_initPoseHead(false), _ground_truth_mode(_ground_truth_mode){
-  
+  botparam_ = bot_param_new_from_server(_lcm->getUnderlyingLCM(), 0);
+  botframes_= bot_frames_get_global(_lcm->getUnderlyingLCM(), botparam_);
+      
   _T_world_head = KDL::Frame::Identity();  
   // Get URDF string - this is instead of doing a URDF handler
   // These seems to need to be before the other subscribers otherwise
@@ -219,13 +230,21 @@ void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   tf.trans[1] = T_head_body.p[1];
   tf.trans[2] = T_head_body.p[2];
   T_head_body.M.GetQuaternion(tf.quat[1], tf.quat[2], tf.quat[3], tf.quat[0]);
-  _lcm->publish("HEAD_TO_BODY", &tf);        
-    
-  if(_ground_truth_mode  ){ // formerly est_robot_state_no_sensing
-    outputNoSensing(TRUE_state_msg, T_body_head);
-  }else{
-    outputSensing(TRUE_state_msg, T_body_head);
+  _lcm->publish("HEAD_TO_BODY", &tf);   
+  
+  // If not outputing the EST_ROBOT_STATE from here, 
+  // Sensing mode is now provided by Motion Estimation Modules Directly
+  if(!_ground_truth_mode  ){ // formerly the sensing mode
+    return;
   }
+  
+  
+    
+  //if(_ground_truth_mode  ){ // formerly est_robot_state_no_sensing
+  outputNoSensing(TRUE_state_msg, T_body_head);
+  //}else{
+  //  outputSensing(TRUE_state_msg, T_body_head);
+  //}
 }
 
 void StatePub::handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg)  {
