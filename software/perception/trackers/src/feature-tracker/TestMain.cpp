@@ -148,6 +148,22 @@ int main(const int iArgc, const char** iArgv) {
     match.mScore << std::endl;
 
   //
+  // test rpy
+  //
+  Eigen::Vector3d rpy(0.1, 0.2, 0.3);
+  Eigen::Matrix3d rotation;
+  rotation = Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY()) *
+    Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX());
+  Eigen::Vector3d rpy2 = rotation.eulerAngles(2,1,0);
+  std::swap(rpy2[0], rpy2[2]);
+  Eigen::Matrix3d rotation2;
+  rotation2 = Eigen::AngleAxisd(rpy2[2], Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(rpy2[1], Eigen::Vector3d::UnitY()) *
+    Eigen::AngleAxisd(rpy2[0], Eigen::Vector3d::UnitX());
+  std::cout << "rotation diff\n" << (rotation-rotation2) << std::endl;
+
+  //
   // test 3d pose estimation
   //
   std::vector<Eigen::Vector3f> ptsOrig(100);
@@ -191,8 +207,8 @@ int main(const int iArgc, const char** iArgv) {
   startTime = std::chrono::high_resolution_clock::now();
   FeatureBasedTracker tracker;
   tracker.setCamera(camera);
-  tracker.initialize(timestamp, id, mask, leftImage, rightImage, disparity,
-                     objectPose, sensorPose);
+  tracker.setData(timestamp, leftImage, rightImage, disparity, sensorPose);
+  tracker.initialize(id, mask, objectPose);
   endTime = std::chrono::high_resolution_clock::now();
   timeDiff =
     std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime);
@@ -202,7 +218,7 @@ int main(const int iArgc, const char** iArgv) {
   // test object tracking
   //
   startTime = std::chrono::high_resolution_clock::now();
-  tracker.update(timestamp, leftImage, rightImage, disparity, sensorPose);
+  tracker.update();
   endTime = std::chrono::high_resolution_clock::now();
   timeDiff =
     std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime);

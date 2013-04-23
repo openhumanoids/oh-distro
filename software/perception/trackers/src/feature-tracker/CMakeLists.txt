@@ -45,8 +45,15 @@ pods_install_pkg_config_file(${PACKAGE_NAME}
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)
 
-
+# unit tests
 set(EXE_NAME feature-tracking-test)
 add_executable(${EXE_NAME} TestMain.cpp)
 pods_use_pkg_config_packages(${EXE_NAME} feature-tracking)
+pods_install_executables(${EXE_NAME})
+
+# standalone tracker (to be integrated with object-tracker infrastructure)
+set(EXE_NAME feature-tracker)
+add_executable(${EXE_NAME} TrackerMain.cpp)
+pods_use_pkg_config_packages(${EXE_NAME} feature-tracking zlib bot2-frames
+  bot2-param-client)
 pods_install_executables(${EXE_NAME})

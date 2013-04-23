@@ -26,16 +26,17 @@ public:
   void setPatchRadius(const int iRadiusX, const int iRadiusY);
   void setMinMatchScore(const float iScore);
 
-  bool initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
-                  const cv::Mat& iLeftImage, const cv::Mat& iRightImage,
-                  const cv::Mat& iDisparity,
-                  const Eigen::Isometry3f& iObjectPose,
-                  const Eigen::Isometry3f& iSensorPose);
+  // must be called before initialize() or update() on respective frame
+  void setData(const int64_t iTime, const cv::Mat& iLeftImage,
+               const cv::Mat& iRightImage, const cv::Mat& iDisparity,
+               const Eigen::Isometry3f& iSensorPose);
 
-  bool update(const int64_t iTime,
-              const cv::Mat& iLeftImage, const cv::Mat& iRightImage,
-              const cv::Mat& iDisparity, const Eigen::Isometry3f& iSensorPose);
+  bool initialize(const int iId, const cv::Mat& iMask,
+                  const Eigen::Isometry3f& iObjectPose);
 
+  bool update();
+
+  std::vector<int> getAllTrackIds() const;
   TrackedObject::State getCurrentState(const int iId) const;
 
 protected:

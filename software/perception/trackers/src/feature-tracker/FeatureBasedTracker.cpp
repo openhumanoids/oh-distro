@@ -15,6 +15,7 @@ struct FeatureBasedTracker::Helper {
   float mMinMatchScore;
 
   StereoCamera mCamera;
+  KeyFrame::Ptr mCurrentKeyFrame;
 
   typedef std::unordered_map<int,TrackedObject::Ptr> ObjectMap;
   ObjectMap mTrackedObjects;
@@ -37,10 +38,11 @@ struct FeatureBasedTracker::Helper {
      can also update structure by allowing some deformations
    */
 
-  bool update(TrackedObject::Ptr& iObject, const KeyFrame::Ptr& iKeyFrame) {
+  bool update(TrackedObject::Ptr& iObject) {
     // set up cameras for current frame
+    KeyFrame::Ptr keyFrame = mCurrentKeyFrame;
     StereoCamera camera = mCamera;
-    camera.applyPose(iKeyFrame->getPose());
+    camera.applyPose(keyFrame->getPose());
     const CameraModel& leftCamera = camera.getLeftCamera();
     const CameraModel& rightCamera = camera.getRightCamera();
     const Eigen::Vector3f leftOrigin = leftCamera.getPose().translation();
@@ -49,11 +51,11 @@ struct FeatureBasedTracker::Helper {
     PointMatcher matcher;
 
     // set up image pyramids for current frame
-    std::vector<cv::Mat> leftPyramid(iKeyFrame->getNumPyramidLevels());
-    std::vector<cv::Mat> rightPyramid(iKeyFrame->getNumPyramidLevels());
-    for (int i = 0; i < iKeyFrame->getNumPyramidLevels(); ++i) {
-      leftPyramid[i] = iKeyFrame->getPyramidLevel(i)->mLeftImage;
-      rightPyramid[i] = iKeyFrame->getPyramidLevel(i)->mRightImage;
+    std::vector<cv::Mat> leftPyramid(keyFrame->getNumPyramidLevels());
+    std::vector<cv::Mat> rightPyramid(keyFrame->getNumPyramidLevels());
+    for (int i = 0; i < keyFrame->getNumPyramidLevels(); ++i) {
+      leftPyramid[i] = keyFrame->getPyramidLevel(i)->mLeftImage;
+      rightPyramid[i] = keyFrame->getPyramidLevel(i)->mRightImage;
     }
 
     // try to find landmarks in current frame
@@ -135,7 +137,7 @@ struct FeatureBasedTracker::Helper {
     std::cout << "Inliers " << inliers.size() << std::endl;
 
     // update current track state
-    iObject->mCurrentState.mTimestamp = iKeyFrame->getId();
+    iObject->mCurrentState.mTimestamp = keyFrame->getId();
     iObject->mCurrentState.mPose = iObject->mCurrentState.mPose*poseChange;
 
     return true;
@@ -172,12 +174,10 @@ setMinMatchScore(const float iScore) {
   mHelper->mMinMatchScore = iScore;
 }
 
-bool FeatureBasedTracker::
-initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
-           const cv::Mat& iLeftImage, const cv::Mat& iRightImage,
-           const cv::Mat& iDisparity, const Eigen::Isometry3f& iObjectPose,
-           const Eigen::Isometry3f& iSensorPose) {
-
+void FeatureBasedTracker::
+setData(const int64_t iTime, const cv::Mat& iLeftImage,
+        const cv::Mat& iRightImage, const cv::Mat& iDisparity,
+        const Eigen::Isometry3f& iSensorPose) {
   // set up frame info
   KeyFrame::Ptr keyFrame(new KeyFrame());
   keyFrame->setId(iTime);
@@ -187,6 +187,15 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
   keyFrame->setShouldExtractFeatures(true);
   keyFrame->setPose(iSensorPose);
   keyFrame->setData(iLeftImage, iRightImage, iDisparity);
+  mHelper->mCurrentKeyFrame = keyFrame;
+}
+
+
+
+bool FeatureBasedTracker::
+initialize(const int iId, const cv::Mat& iMask,
+           const Eigen::Isometry3f& iObjectPose) {
+  KeyFrame::Ptr keyFrame = mHelper->mCurrentKeyFrame;
 
   // set up temporary pyramids
   std::vector<cv::Mat> leftPyramid(keyFrame->getNumPyramidLevels());
@@ -204,7 +213,7 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
   Eigen::Affine2f refTransform = Eigen::Affine2f::Identity();
   Eigen::Vector2f epiDir = Eigen::Vector2f::UnitX();
   StereoCamera camera = mHelper->mCamera;
-  camera.applyPose(iSensorPose);
+  camera.applyPose(keyFrame->getPose());
   const CameraModel& leftCam = camera.getLeftCamera();
   const CameraModel& rightCam = camera.getRightCamera();
   const Eigen::Vector3f leftOrigin = leftCam.getPose().translation();
@@ -278,7 +287,7 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
   TrackedObject::Ptr object(new TrackedObject());
   object->mId = iId;
   TrackedObject::State state;
-  state.mTimestamp = iTime;
+  state.mTimestamp = keyFrame->getId();
   state.mPose = iObjectPose;
   object->mOriginalState = state;
   object->mCurrentState = state;
@@ -291,36 +300,34 @@ initialize(const int64_t iTime, const int iId, const cv::Mat& iMask,
     }
   }
 
+  // add keyframe to map
+  mHelper->mKeyFrames[keyFrame->getId()] = keyFrame;
+
   // add this object to map
   mHelper->mTrackedObjects[object->mId] = object;
-
-  // add this keyframe to map
-  mHelper->mKeyFrames[iTime] = keyFrame;
 
   return false;
 }
 
 bool FeatureBasedTracker::
-update(const int64_t iTime,
-       const cv::Mat& iLeftImage, const cv::Mat& iRightImage,
-       const cv::Mat& iDisparity, const Eigen::Isometry3f& iSensorPose) {
-
-  // set up frame info
-  KeyFrame::Ptr keyFrame(new KeyFrame());
-  keyFrame->setId(iTime);
-  keyFrame->setNumPyramidLevels(4);  // TODO: make this a param
-  keyFrame->setSmoothingSigma(0.5);  // TODO: make this a param
-  keyFrame->setShouldExtractFeatures(true);
-  keyFrame->setPose(iSensorPose);
-  keyFrame->setData(iLeftImage, iRightImage, iDisparity);
-
+update() {
   Helper::ObjectMap::const_iterator iter = mHelper->mTrackedObjects.begin();
   for (; iter != mHelper->mTrackedObjects.end(); ++iter) {
     TrackedObject::Ptr obj = iter->second;
-    mHelper->update(obj, keyFrame);
+    mHelper->update(obj);
   }
-
   return true;
+}
+
+std::vector<int> FeatureBasedTracker::
+getAllTrackIds() const {
+  std::vector<int> ids;
+  ids.reserve(mHelper->mTrackedObjects.size());
+  Helper::ObjectMap::const_iterator iter = mHelper->mTrackedObjects.begin();
+  for (; iter != mHelper->mTrackedObjects.end(); ++iter) {
+    ids.push_back(iter->second->mId);
+  }
+  return ids;
 }
 
 TrackedObject::State FeatureBasedTracker::
