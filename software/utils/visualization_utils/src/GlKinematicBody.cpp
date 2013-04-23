@@ -664,10 +664,14 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
               shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
               //---store
               if (!update_future_frame){
-                _link_names.push_back(it->first);
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_link_names.begin(), _link_names.end(), it->first);
+                if (found == _link_names.end()) { // if doesnt exist then add
+                  _link_names.push_back(it->first);  
+                  _link_tfs.push_back(link_state);;
+                }
                 _link_geometry_names.push_back(unique_geometry_name);
                 _link_shapes.push_back(geom);
-                _link_tfs.push_back(link_state);
                 _link_geometry_tfs.push_back(geometry_state);
               }
               else{ // update future frame
@@ -719,10 +723,14 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
 
                 //---store
                  if (!update_future_frame){
-                  _link_names.push_back(it->first);
+                  std::vector<std::string>::const_iterator found;
+                  found = std::find (_link_names.begin(), _link_names.end(), it->first);
+                  if (found == _link_names.end()) { // if doesnt exist then add
+                    _link_names.push_back(it->first);  
+                    _link_tfs.push_back(link_state);;
+                  }
                   _link_geometry_names.push_back(unique_geometry_name);  
                   _link_shapes.push_back(geom);
-                  _link_tfs.push_back(link_state);
                   _link_geometry_tfs.push_back(geometry_state);
                 }
                 else{// update future frame
@@ -942,10 +950,14 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
             shared_ptr<otdf::Geometry> geom =  visuals[iv]->geometry;
             //---store
              if (!update_future_frame){
-              _link_names.push_back(it->first); 
+               std::vector<std::string>::const_iterator found;
+                found = std::find (_link_names.begin(), _link_names.end(), it->first);
+                if (found == _link_names.end()) { // if doesnt exist then add
+                _link_names.push_back(it->first);  
+                _link_tfs.push_back(link_state);
+                }
               _link_geometry_names.push_back(unique_geometry_name);   
               _otdf_link_shapes.push_back(geom);
-              _link_tfs.push_back(link_state);
               _link_geometry_tfs.push_back(geometry_state);
             }
             else{
@@ -986,10 +998,16 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
 
               //---store
                if (!update_future_frame){
+               
+                std::vector<std::string>::const_iterator found;
+                found = std::find (_link_names.begin(), _link_names.end(), it->first);
+                if (found == _link_names.end()) { // if doesnt exist then add
                 _link_names.push_back(it->first);  
+                _link_tfs.push_back(link_state);
+                }
                 _link_geometry_names.push_back(unique_geometry_name);
                 _otdf_link_shapes.push_back(geom);
-                _link_tfs.push_back(link_state);
+               
                 _link_geometry_tfs.push_back(geometry_state);
               }
               else{
@@ -1073,7 +1091,7 @@ bool GlKinematicBody::get_link_frame(const std::string &link_name, KDL::Frame &T
       if (found != _link_names.end()) {
         unsigned int index = found - _link_names.begin();
         state = _link_tfs[index];  
-        T_world_link= state.frame;       
+        T_world_link= state.frame; 
         return true;
       } 
       else 
