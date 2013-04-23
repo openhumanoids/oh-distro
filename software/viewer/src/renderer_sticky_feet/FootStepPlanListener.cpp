@@ -61,12 +61,12 @@ namespace renderer_sticky_feet
       
       val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
       _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-      _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);    
+      _T_bodyframe_groundframe_left.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));    
       
       _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
       val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct); 
      _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-     _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
+     _T_bodyframe_groundframe_right.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));
      
 //     Eigen::Vector3f whole_body_span;
 //     Eigen::Vector3f offset;

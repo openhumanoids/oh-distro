@@ -73,9 +73,9 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
     {
      double offset = 0;
      if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
-       offset = self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
+       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
      else
-       offset = self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
+       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
       KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
       //std::cout <<  "motion copy height: " << i <<" "<<T_worldframe_footframe.p[2] <<" "<<  z_surface << " " << offset<< std::endl;
 
