@@ -4,12 +4,19 @@ function actionAuthoringServer(IK)
 if(nargin<1)
     action_options.IK = true;
     action_options.ZMP = false;
+    action_options.QS = false;
 elseif(IK == 1)
     action_options.IK = true;
     action_options.ZMP = false;
+    action_options.QS = false;
 elseif(IK == 2)
     action_options.IK = false;
     action_options.ZMP = true;
+    action_options.QS = false;
+elseif(IK == 3)
+    action_options.IK = false;
+    action_options.ZMP = false;
+    action_options.QS = true;
 end
 % listens for drc_action_sequence_t messages and, upon receipt, computes the
 % IK and publishes the robot_state_t
@@ -22,6 +29,8 @@ if (IK==1)
   lc.subscribe('REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE',monitor);
 elseif (IK==2)
   lc.subscribe('REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE',monitor);
+elseif (IK==3)
+  lc.subscribe('REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE',monitor);
 end
 
 % construct lcm state publisher
@@ -29,7 +38,10 @@ end
 
 s=warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating','true'));
+%r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating',true));
+r = RigidBodyManipulator('');
+r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
+r = r.addRobotFromURDF('../../models/mit_gazebo_objects/polaris_ranger_ev/model-1_3.urdf');
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
@@ -62,6 +74,7 @@ v = r.constructVisualizer();
 
 timeout=10;
 display('Listening ...');
+warning on
 while (1)
   data = getNextMessage(monitor,timeout);
   if ~isempty(data)
@@ -81,18 +94,19 @@ while (1)
       end
 
       % Above ground constraints
-      tspan = action_sequence.tspan;
-      for body_ind = 1:length(r.body)
-        body_contact_pts = r.body(body_ind).getContactPoints();
-        if(~isempty(body_contact_pts))
-          above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
-          action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
-        end 
-      end
+      %tspan = action_sequence.tspan;
+      %for body_ind = 1:length(r.body)
+        %body_contact_pts = r.body(body_ind).getContactPoints();
+        %if(~isempty(body_contact_pts))
+          %above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_ind,body_contact_pts,tspan,[r.body(body_ind).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
+          %action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
+        %end 
+      %end
       
       % Solve the IK sequentially in time for each key time, add the
       % additional static contact constraint if necessary
       num_key_time_samples = length(action_sequence.key_time_samples);
+      com_key_time_samples = zeros(3,num_key_time_samples);
       q_key_time_samples = zeros(nq,num_key_time_samples);
       for i = 1:num_key_time_samples
           ikargs = action_sequence.getIKArguments(action_sequence.key_time_samples(i));
@@ -102,11 +116,53 @@ while (1)
               [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
               if(info>10)
                 warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+              else
+                fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
               end
               if(i<num_key_time_samples)
                 action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
               end
           end
+          kinsol = doKinematics(r,q_key_time_samples(:,i));
+          com_key_time_samples(:,i) = getCOM(r,kinsol);
+      end
+
+      if(action_options.QS)
+        dt = 0.5;
+        stillGoing = true;
+        q_qs_plan = q_key_time_samples;
+        t_qs_breaks = action_sequence.key_time_samples;
+        while stillGoing
+          %q0 = q;
+          q0 = q_qs_plan(:,1);
+          qdot0 = zeros(size(q));
+          options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
+          options.quasiStaticFlag = true;
+          window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
+          t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+          t_qs_breaks(end) = action_sequence.tspan(end);
+          options.nSample = length(t_qs_breaks)-1;
+          [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
+
+          % Drake gui playback
+          xtraj = PPTrajectory(pchipDeriv(t_qs_breaks,[q_qs_plan;qdot_qs_plan],[qdot_qs_plan;0*qdot_qs_plan]));
+          xtraj = xtraj.setOutputFrame(r.getStateFrame());
+          v.playback(xtraj,struct('slider',true));
+
+          % Refine?
+          dt = input(sprintf('Planning finished with dt = %4.2f.\n New dt:',dt));
+          if(isempty(dt))
+            stillGoing = false;
+          end
+
+          % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
+          constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
+            size(q_qs_plan,2));
+
+          publish(robot_plan_publisher, t_qs_breaks, ...
+            [q_qs_plan; qdot_qs_plan], ...
+            constraints_satisfied);
+        end
       end
 
       % If the action sequence is specified, we need to solve the ZMP
@@ -189,7 +245,8 @@ while (1)
                   if(ikargs{j} == 0)
                     j = j+2;
                   else
-                      contact_pos_ind = (ikargs{j+2}.max(3,:)<contact_tol)&(all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
+                      %contact_pos_ind = (ikargs{j+2}.max(3,:)<contact_tol)&(all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
+                      contact_pos_ind = (all(ikargs{j+2}.max(1:2,:)==ikargs{j+2}.min(1:2,:),1));
                       contact_pos{i} = [contact_pos{i} ikargs{j+2}.max(1:2,contact_pos_ind)];
                       j = j+3;
                   end
@@ -232,43 +289,43 @@ while (1)
 
           % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
           constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
-                                       size(q_zmp_plan,2));
+            size(q_zmp_plan,2));
 
           publish(robot_plan_publisher, t_zmp_breaks, ...
-                  [q_zmp_plan; qdot_zmp_plan], ...
-                  constraints_satisfied);
+            [q_zmp_plan; qdot_zmp_plan], ...
+            constraints_satisfied);
+        end
+        if(action_options.IK)
+          % publish robot state message
+          ik_time_in_key_samples = (ik_time==action_sequence.key_time_samples);
+          if(any(ik_time_in_key_samples))
+            q_ik = q_key_time_samples(:,ik_time_in_key_samples);
+          else
+            ikargs = action_sequence.getIKArguments(ik_time);
+            [q_ik,info] = inverseKin(r,q,ikargs{:},options);
+          end
+          x = [q_ik;0*q_ik];
+          v.draw(0,x);
+          constraints_satisfied = ones(max(1,msg.num_contact_goals),1);
+          publish(robot_state_coder,0,x, ...
+            'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE', ...
+            constraints_satisfied);
+        end
+
+      catch ex
+        warning( ...
+          [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
+          regexprep(ex.getReport,'\n','\n\t'));
+        q=q_bk;
+        continue;
       end
-      if(action_options.IK)
-        % publish robot state message
-	ik_time_in_key_samples = (ik_time==action_sequence.key_time_samples);
-	if(any(ik_time_in_key_samples)
-		q_ik = q_key_time_samples(:,ik_time_in_key_samples);
-	else
-		ikargs = action_sequence.getIKArguments(ik_time);
-		[q_ik,info] = inverseKin(r,q,ikargs{:},options);
-	end
-        x = [q_ik;0*q_ik];
-        v.draw(0,x);
-        constraints_satisfied = ones(max(1,msg.num_contact_goals),1);
-        publish(robot_state_coder,0,x, ...
-          'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE', ...
-          constraints_satisfied);
-      end
-      
-    catch ex
-      warning(ex.identifier, ...
-              [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
-              regexprep(ex.getReport,'\n','\n\t'));
-      q=q_bk;
-      continue;
     end
-  end
 end
 
 end 
 
 function kc = getConstraintFromGoal(r,goal)
-if(goal.contact_type ~= goal.ON_GROUND_PLANE)
+if(goal.contact_type ~= goal.ON_GROUND_PLANE) && (goal.contact_type ~= goal.NOT_IN_CONTACT)
     error('The contact type is not supported yet');
 end
     body_ind=findLink(r,char(goal.object_1_name));
@@ -336,13 +393,15 @@ end
               pos.min(4:6,2:end) = -inf(3,num_pts);
           end
       end
-      if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.TOUCH||goal.contact_type == goal.FORCE_CLOSURE)
-          contact_state0 = ones(size(collision_group_pts,2),1);
-          contact_statef = ones(size(collision_group_pts,2),1);
-      else
-          contact_state0 = -ones(size(collision_group_pts,2),1);
-          contact_statef = -ones(size(collision_group_pts,2),1);
+      if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
+          contact_state0 = ones(1,size(collision_group_pts,2));
+          contact_statei = 3*ones(1,size(collision_group_pts,2));
+          contact_statef = 2*ones(1,size(collision_group_pts,2));
+      elseif(goal.contact_type == goal.NOT_IN_CONTACT)
+          contact_state0 = zeros(1,size(collision_group_pts,2));
+          contact_statei = zeros(1,size(collision_group_pts,2));
+          contact_statef = zeros(1,size(collision_group_pts,2));
       end
       kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
-      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statef);
+      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef);
 end
