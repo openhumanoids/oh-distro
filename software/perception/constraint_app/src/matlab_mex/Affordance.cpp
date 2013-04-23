@@ -242,15 +242,15 @@ bool Affordance::GetSegmentExpressedInWorld(const std::string& segmentName, cons
   KDL::Frame segment_expressedIn_root;
   KDL::TreeFkSolverPos_recursive fk(m_tree);
   int fkret = fk.JntToCart(joints, segment_expressedIn_root, segmentName);
-  //if ( fkret < 0 ) {
+  if ( fkret < 0 ) {
     m_log << "ERROR: Affordance::GetSegmentExpressedInWorld: fk returned " << fkret << std::endl
 	  << "   segmentName=" << segmentName << std::endl
 	  << "   joints=" << joints.data << std::endl;
     m_log << "   state=";
     for ( int i = 0; i < state.size(); i++ ) m_log << state[i] << ", ";
     m_log << std::endl;
-    //  return false;
-    //}
+    return false;
+  }
 
   segment_expressedIn_world = root_expressedIn_world * segment_expressedIn_root;
 
