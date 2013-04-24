@@ -55,8 +55,9 @@ TODO: make openni into a pod within the repo
 
 1b Goby - Toby Schneider's networking library
 sudo add-apt-repository ppa:goby-dev/ppa
+sudo add-apt-repository ppa:tes/goby-daily
 sudo apt-get update
-sudo apt-get install libgoby2-dev
+sudo apt-get install libgoby2-dev drc-tc
 
 2. INSTALL pods tool from sourceforge (optional)
 ===================
