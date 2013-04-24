@@ -23,7 +23,7 @@ group "1.a.core" {
         host = "paladin-02";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
+        exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
         host = "paladin-02";
     }
     cmd "estpub" {
@@ -185,6 +185,14 @@ group "4.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "paladin-02";
     } 
+    cmd "FootContactEstimator" {
+       exec = "drc-legged-odometry";
+        host = "paladin-02";
+    }
+    cmd "KinematicFootContactEstimator" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runKinematicFootContactEstimator;\"";
+        host = "paladin-02";
+    }
 }
 
 group "5.base" {
