@@ -156,7 +156,7 @@ publish_opencv_image_multisense(lcm_t* lcm, const char* str, cv::Mat& _disp, con
   // MAGIC scaling parameter to match default stereo_match parameters 
   // to Carnegie Robotic's 1/16th disparity values
   // TODO: find the proper scaling function between SBM and CRL's data
-  _disp = 4* _disp;
+  
   
   //////// RIGHT IMAGE /////////////////////////////////////////////  
   int n_bytes=4; // 4 bytes per value
@@ -372,6 +372,7 @@ void on_image_frame(const lcm_recv_buf_t *rbuf, const char *channel,
   if( vSCALE != 1.f ) {
       int method =vSCALE < 1 ? cv::INTER_AREA : cv::INTER_CUBIC;
       cv::resize(disp, disp, cv::Size(), 1.f/vSCALE, 1.f/vSCALE, method);
+      disp =  disp/vSCALE ;
   }
 
   //disp = dispp.colRange(numberOfDisparities, img1p.cols);
