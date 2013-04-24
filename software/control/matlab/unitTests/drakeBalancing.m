@@ -1,5 +1,7 @@
 function drakeBalancing
 
+error('Knowingly broken temporarily until foot contacts are implemented here');
+
 % put robot in a random x,y,yaw position and balance for 5 seconds
 
 addpath(fullfile(pwd,'..'));
@@ -14,17 +16,16 @@ r = compile(r);
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
+nq = getNumDOF(r);
+nu = getNumInputs(r);
 
 % set initial state to fixed point
 load('../data/atlas_fp.mat');
-xstar(1) = 10*randn();
-xstar(2) = 10*randn();
+xstar(1) = 5*randn();
+xstar(2) = 5*randn();
 xstar(6) = pi*randn();
-
+xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
-
-nq = getNumDOF(r);
-nu = getNumInputs(r);
 
 x0 = xstar;
 q0 = x0(1:nq);
