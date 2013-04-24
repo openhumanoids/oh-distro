@@ -1531,11 +1531,24 @@ namespace surrogate_gui
     }else{   // object selected, so make copy of affordance
       stringstream ss;
       self->_currentAffordancesMutex.lock();
-      ss << self->_currentAffordances[index].aff.otdf_type << "_" 
-         << self->_currentAffordances[index].aff.uid;
+      string otdf_type = self->_currentAffordances[index].aff.otdf_type;
+      ss << otdf_type << "_" << self->_currentAffordances[index].aff.uid;
       self->_currentAffordancesMutex.unlock();
       self->_selectedAffordanceName = ss.str();
       cout << ss.str() << " selected" << endl;
+
+      // change geometric_primitive to match selection
+      int prim = -1;
+      if     (otdf_type == "cylinder") prim = CYLINDER;
+      else if(otdf_type == "sphere")   prim = SPHERE;
+      else if(otdf_type == "plane")    prim = PLANE;
+      else if(otdf_type == "TODO")     prim = LINE;      // TODO
+      else if(otdf_type == "TODO")     prim = TORUS;     // TODO
+      else if(otdf_type == "TODO")     prim = CUBE;      // TODO
+      else if(otdf_type == "TODO")     prim = CIRCLE_3D; // TODO
+      else if(otdf_type == "car")      prim = CAR;
+      if(prim>0) bot_gtk_param_widget_set_enum(self->_surrogate_renderer._pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, prim);
+
     }
   }
 
@@ -1834,6 +1847,7 @@ namespace surrogate_gui
     _currentAffordancesMutex.unlock();
   }
 
+  // returns copy of affordance matching _selectedAffordanceName
   UIProcessing::AffPlusPtr UIProcessing::getSelectedAffordance(){
     AffPlusPtr selectedAff;
     _currentAffordancesMutex.lock();
