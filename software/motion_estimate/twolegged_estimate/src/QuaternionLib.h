@@ -25,8 +25,12 @@ namespace InertialOdometry
     static void VectorRotation(Eigen::Vector4d q, Eigen::Vector3d &v);
 
     //This function is specific to NED and forward right down coordinate frames
-    static void q2e(Eigen::Vector4d q_, Eigen::Vector3d &E);
+    static Eigen::Quaterniond e2q(const Eigen::Vector3d &E);
+    static void q2e(const Eigen::Vector4d &q_, Eigen::Vector3d &E);
     static void q2e(const Eigen::Quaterniond &q_, Eigen::Vector3d &E);
+    static void q2e_(const Eigen::Vector4d &q_, Eigen::Vector3d &E);
+    
+    
     static Eigen::Vector3d q2e(const Eigen::Quaterniond &q_);
     static void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll);
     
@@ -41,12 +45,13 @@ namespace InertialOdometry
     
     static void e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C);
     static Eigen::Matrix<double, 3, 3> e2C(const Eigen::Vector3d &E);
-    static Eigen::Quaterniond e2q(const Eigen::Vector3d &E);
+    
     
     //Rotate a 3 vector around only te yaw axis
     static Eigen::Vector3d Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v);
     
     static void printEulerAngles(std::string prefix, const Eigen::Isometry3d &isom);
+    static void printQuaternion(std::string preamble, const Eigen::Quaterniond &q);
   };
 
 }

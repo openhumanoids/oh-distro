@@ -11,6 +11,7 @@
 #include <exception>
 //#include <stdio.h>
 //#include <inttypes.h>
+#include <time.h>
 
 #include "LegOdometry_LCM_Handler.hpp"
 #include "QuaternionLib.h"
@@ -70,11 +71,11 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	//delete model_;
 	delete _leg_odo;
 	delete _obj;
-	delete _viewer;
 	delete _link;
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
-	
+	delete _viewer;
+		
 	
 	cout << "Everything Destroyed in LegOdometry_Handler::~LegOdometry_Handler()" << endl;
 	return;
@@ -138,18 +139,14 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 												const std::string& channel, 
 												const  drc::robot_state_t* msg) {
 
+	timespec before, quater,mid, threequat, after;
+	clock_gettime(CLOCK_REALTIME, &before);
+	
+	
 	bool legchangeflag;
-	
-	/*
-	std::cout << msg->utime << ", ";
-	std::cout << msg->contacts.contact_force[0].z << ", ";
-	std::cout << msg->contacts.contact_force[1].z << ", ";*/
-	
-	//pass left and right leg forces and torques to TwoLegOdometry
+
 	// TODO temporary testing interface
 	
-	
-
 	Eigen::Isometry3d left;
 	Eigen::Isometry3d right;
 	
@@ -169,6 +166,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	// TODO -- Check Changed the ordering on 18 April 2013 from (msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z)
 	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[0].z , msg->contacts.contact_force[1].z);
 	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
+
+	// Timing profile. This is the midway point
+	clock_gettime(CLOCK_REALTIME, &mid);
 	
 #ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
 	// here comes the drawing of poses
@@ -176,13 +176,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	drawLeftFootPose();
 	drawRightFootPose();
 	//drawSumPose();
-	/*
-	std::cout << msg->utime << " ";
-	addIsometryPose(78, _leg_odo->getPelvisFromStep());
-	std::cout << msg->utime << " ";
-	addIsometryPose(79, _leg_odo->getPelvisFromStep());
-	*/
-	//std::cout << "Pelvis from step\n" << _leg_odo->getPelvisFromStep().linear() << std::endl;
+
 	_viewer->sendCollection(*_obj, true);
 #endif
 	
@@ -199,38 +193,40 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	_viewer->sendCollection(*_obj, true);
 #endif
 
-	/*
-	if (_leg_odo->primary_foot() == LEFTFOOT)
-		 std::cout << "LEFT  ";// << std:: endl;
-	else
-		std::cout << "RIGHT ";
-	//std::cout << std::endl;
+	clock_gettime(CLOCK_REALTIME, &threequat);
+	
+    // Publish the foot contact state estimates to LCM
+    PublishFootContactEst(msg->utime);
+    PublishEstimatedStates(msg);
+    
+	clock_gettime(CLOCK_REALTIME, &after);
+/*
+	long elapsed;
+	elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
+	double elapsed_us = elapsed/1000.;
+	std::cout << "0.50, " << elapsed_us << ", ";// << std::endl;
+	
+	elapsed = static_cast<long>(threequat.tv_nsec) - static_cast<long>(before.tv_nsec);
+	elapsed_us = elapsed/1000.;
+	std::cout << "0.75, " << elapsed_us << ", ";// << std::endl;
+	
+	elapsed = static_cast<long>(after.tv_nsec) - static_cast<long>(before.tv_nsec);
+	elapsed_us = elapsed/1000.;
+	std::cout << "1.00, " << elapsed_us << std::endl;
 	*/
-	//std::cout << _leg_odo->primary_foot() << ", ";
-	//std::cout << _leg_odo->getPrimaryInLocal().translation().transpose() << ", ";
-	//std::cout << "Pelvis is at   : ";
-	//std::cout << currentPelvis.translation().transpose() << ", ";
-	
-	//std::cout << _leg_odo->pelvis_to_left.translation().transpose() << ", ";
-	//std::cout << _leg_odo->left_to_pelvis.translation().transpose() << ", ";
-	
-	//std::cout << "Secondary is at: " << _leg_odo->getSecondaryInLocal().translation().transpose() << std::endl;
-	//std::cout << std::endl;
-		
-                
-
-        // Publish the foot contact state estimates to LCM
-        PublishFootContactEst(msg->utime);
-        
-        PublishEstimatedStates(msg->utime);
 }
 
-void LegOdometry_Handler::PublishEstimatedStates(int64_t time) {
+void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg) {
+	
+	/*
+		if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
+	    std::cout << "pose or vo or zheight not initialized, refusing to publish EST_ROBOT_STATE\n";
+	    return;
+	  }
+	  */
 	
 	Eigen::Isometry3d currentPelvis;
-
 	currentPelvis = _leg_odo->getPelvisState();
-	//currentPelvis = _leg_odo->getPelvisFromStep();
 	
     bot_core::pose_t pose;
     pose.pos[0] =currentPelvis.translation().x();
@@ -249,20 +245,92 @@ void LegOdometry_Handler::PublishEstimatedStates(int64_t time) {
     //std::cout << "Output E angles: " << InertialOdometry::QuaternionLib::q2e(output_q).transpose() << std::endl;
     //Eigen::Quaterniond output_q;
     
+    
+    
+    // forcing yaw angle for testing of the pitch and roll angle values which is to be published as the estimated state of the robot
+      Eigen::Quaterniond dummy_var;
+      dummy_var.w() = msg->origin_position.rotation.w;
+      dummy_var.x() = msg->origin_position.rotation.x;
+      dummy_var.y() = msg->origin_position.rotation.y;
+      dummy_var.z() = msg->origin_position.rotation.z;
+      
+      Eigen::Vector3d E_true_y = InertialOdometry::QuaternionLib::q2e(dummy_var);
+      //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
+      Eigen::Vector3d E_est_rp = InertialOdometry::QuaternionLib::q2e(output_q);
+      
+      E_true_y(0) = 0.;
+      E_true_y(1) = 0.;
+      E_est_rp(2) = 0.;
+      
+      //std::cout << "Cummulative angles are: " << (E_true_y + E_est_rp).transpose() << std::endl;
+      
+      output_q = InertialOdometry::QuaternionLib::e2q(E_true_y + E_est_rp);
+    
+      
+      
     pose.orientation[0] =output_q.w();
     pose.orientation[1] =output_q.x();
     pose.orientation[2] =output_q.y();
     pose.orientation[3] =output_q.z();
     
-    // Need to add the rotation rate states..
-    
-    
-    
     //lcm_->publish("POSE_KIN",&pose);
+#ifndef DONT_PUBLISH_LCM_EST
     lcm_->publish("POSE_BODY_VO",&pose);
+#endif
         
-        
-	
+    //Below is copied from Maurice's VO -- publishing of true and estimated robot states
+  
+  // Infer the Robot's head position from the ground truth root world pose
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = msg->utime;
+  pose_msg.pos[0] = msg->origin_position.translation.x;
+  pose_msg.pos[1] = msg->origin_position.translation.y;
+  pose_msg.pos[2] = msg->origin_position.translation.z;
+  pose_msg.orientation[0] = msg->origin_position.rotation.w;
+  pose_msg.orientation[1] = msg->origin_position.rotation.x;
+  pose_msg.orientation[2] = msg->origin_position.rotation.y;
+  pose_msg.orientation[3] = msg->origin_position.rotation.z;
+#ifndef DONT_PUBLISH_LCM_EST
+  lcm_->publish("POSE_BODY_TRUE", &pose_msg);
+#endif
+  
+  drc::position_3d_t origin;
+  origin.translation.x = currentPelvis.translation().x();
+  origin.translation.y = currentPelvis.translation().y();
+  origin.translation.z = currentPelvis.translation().z();
+  
+  origin.rotation.w = output_q.w();
+  origin.rotation.x = output_q.x();
+  origin.rotation.y = output_q.y();
+  origin.rotation.z = output_q.z();  
+  
+  drc::twist_t twist;
+  twist.linear_velocity.x = 0.;
+  twist.linear_velocity.y = 0.;
+  twist.linear_velocity.z = 0.;
+//  twist.linear_velocity.x = TRUE_state_msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
+//  twist.linear_velocity.y = TRUE_state_msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
+//  twist.linear_velocity.z = TRUE_state_msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
+
+  Eigen::Vector3d local_rates;
+  local_rates = _leg_odo->getLocalFrameRates();
+  
+  twist.angular_velocity.x = local_rates(0);
+  twist.angular_velocity.y = local_rates(1);
+  twist.angular_velocity.z = local_rates(2);
+//  twist.angular_velocity.x = TRUE_state_msg->origin_twist.angular_velocity.x;
+//  twist.angular_velocity.y = TRUE_state_msg->origin_twist.angular_velocity.y;
+//  twist.angular_velocity.z = TRUE_state_msg->origin_twist.angular_velocity.z;
+  
+  
+  // EST is TRUE with sensor estimated position
+  drc::robot_state_t msgout;
+  msgout = *msg;
+  msgout.origin_position = origin;
+  msgout.origin_twist = twist;
+#ifndef DONT_PUBLISH_LCM_EST
+  lcm_->publish("EST_ROBOT_STATE_VO", &msgout);
+#endif
 }
 
 void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 
@@ -456,8 +524,11 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
 	  //InertialOdometry::QuaternionLib::q2e(tempq, E_);
 	  //std::cout << "LegOdometry_Handler::getTransforms() tempq 2 E: " << E_.transpose() << std::endl << std::endl;
 	  
-	  
-	  
+	  // Matt Antoine says 
+	  // myMap.clear();
+	  // try sysprof (apt-get install sysprof) system profiler
+	  // valgrind (memory leaks, memory bounds checking)
+	  //   valgrind --leak-check=full --track-origin=yes --output-fil=path_to_output.txt
 }
 
 void LegOdometry_Handler::terminate() {

@@ -47,10 +47,12 @@
 //#include "urdf/model.h"
 
 #define DISPLAY_FOOTSTEP_POSES
-#define DRAW_DEBUG_LEGTRANSFORM_POSES
+#define DONT_PUBLISH_LCM_EST
 
-// TODO -- remove after testing
-//#define PUBLISH_AT_TRUE_POSITION
+// At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
+//#define DRAW_DEBUG_LEGTRANSFORM_POSES
+
+#define PUBLISH_AT_TRUE_POSITION
 
 class LegOdometry_Handler {
 private:
@@ -103,7 +105,7 @@ private:
 	void drawRightFootPose();	
 
 	void PublishFootContactEst(int64_t utime);
-	void PublishEstimatedStates(int64_t time);
+	void PublishEstimatedStates(const drc::robot_state_t * msg);
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW

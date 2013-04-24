@@ -85,6 +85,8 @@ class TwoLegOdometry {
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
+		
+		// TODO -- Move this to private members, with pointer return member functions()
 		Eigen::Isometry3d pelvis_to_left;
 	    Eigen::Isometry3d left_to_pelvis;
 	    Eigen::Isometry3d pelvis_to_right;
@@ -108,6 +110,9 @@ class TwoLegOdometry {
 		
 		void setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right);
 		void setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates);
+
+		void setPelvisPosition(Eigen::Isometry3d transform);
+		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
 		
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
@@ -118,8 +123,7 @@ class TwoLegOdometry {
 		Eigen::Isometry3d getSecondaryFootToPelvis();
 		Eigen::Isometry3d getPrimaryFootToPelvis();
 		
-		void setPelvisPosition(Eigen::Isometry3d transform);
-		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
+		Eigen::Vector3d const getLocalFrameRates();
 		
 		Eigen::Isometry3d getPelvisState();
 		Eigen::Isometry3d getPelvisVelocityStates();

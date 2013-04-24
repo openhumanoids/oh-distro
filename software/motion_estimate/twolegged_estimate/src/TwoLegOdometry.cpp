@@ -321,6 +321,10 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	
 }
 
+Eigen::Vector3d const TwoLegOdometry::getLocalFrameRates() {
+	return local_frame_rates;
+}
+
 Eigen::Isometry3d TwoLegOdometry::getSecondaryFootToPelvis() {
 	//std::cout << "Taking primary as: " << (footsteps.lastFoot()==LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	if (footsteps.lastFoot() == LEFTFOOT)
@@ -353,7 +357,7 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 	
 	//E_rp(1) = 1.;//its drawing what i expect, but requires a transpose on the .linear() from Eigen::Isometry3d testing higher up..
 	
-	std::cout << "Roll and Pitch and yaw from ahrs: " << E_rp.transpose() << std::endl;
+	//std::cout << "Roll and Pitch and yaw from ahrs: " << E_rp.transpose() << std::endl;
 	
 	// Only use the yaw angle from the leg kinematics
 	E_y(0) = 0.;

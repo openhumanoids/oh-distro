@@ -82,30 +82,51 @@ namespace InertialOdometry
   void QuaternionLib::q2e(const Eigen::Quaterniond &q_, Eigen::Vector3d &E) {
 	  
 	  Eigen::Vector4d var;
-	  var << q_.w(), q_.x(), q_.y(), q_.z();
+	  //var << q_.w(), q_.x(), q_.y(), q_.z();
+	  
+	  var(0) = q_.w();
+	  var(1) = q_.x();
+	  var(2) = q_.y();
+	  var(3) = q_.z();
+	  	  
 	  
 	  //std::cout << "q2e(Eigen::Q, Eigen::V3) convention not confirmed "<< var.transpose() << "\n";
 	  
 	  q2e(var, E);
   }
 
-  Eigen::Vector3d QuaternionLib::q2e(const Eigen::Quaterniond &q_) {
+  Eigen::Vector3d QuaternionLib::q2e(const Eigen::Quaterniond &q) {
 	  Eigen::Vector3d E;
 	  
-	  q2e(q_,E);
+	  q2e(q,E);
+	  /*
+	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
+  	  std::cout << "New q2e is running\n";
+        double roll_a = 2. * (q.w()*q.x() + q.y()*q.z());
+        double roll_b = 1. - 2. * (q.x()*q.x() + q.y()*q.y());
+        E(0) = atan2 (roll_a, roll_b);
+
+        double pitch_sin = 2. * (q.w()*q.y() - q.z()*q.x());
+        E(1) = asin (pitch_sin);
+
+        double yaw_a = 2. * (q.w()*q.z() + q.x()*q.y());
+        double yaw_b = 1. - 2. * (q.y()*q.y() + q.z()*q.z());
+        E(2) = atan2 (yaw_a, yaw_b);
+	  */
+	  //std::cout << "Returned Euler is: " << E.transpose() << std::endl;
 	  
 	  return E;
   }
   
   //This function is specific to NED and forward right down coordinate frames
-  void QuaternionLib::q2e(Eigen::Vector4d q_, Eigen::Vector3d &E)
+  void QuaternionLib::q2e(const Eigen::Vector4d &q_, Eigen::Vector3d &E)
   {
   	//Euler = [phi;theta;psi];
 
 
   	double a,b,c,d;
 
-  	a = q_(0); // 90% sure this is the scalar component for computations below -- confirm this with more testing
+  	a = q_(0); // scalar
   	b = q_(1);
   	c = q_(2);
   	d = q_(3);
@@ -135,6 +156,29 @@ namespace InertialOdometry
   	E(2) = atan2(2.0*(b*c + d*a),a*a+b*b-c*c-d*d);
 
   	return;
+  }
+  
+  
+  void QuaternionLib::q2e_(const Eigen::Vector4d &q, Eigen::Vector3d &E) 
+  {
+	  // Function comes from libbot for quaternion [scalar vector] to Euler [roll p y]
+	  std::cout << "q2e received q: " << q.transpose() << "\n";
+	  double roll_a = 2 * (q(0)*q(1) + q(2)*q(3));
+	  double roll_b = 1 - 2 * (q(1)*q(1) + q(2)*q(2));
+      E(0) = atan2 (roll_a, roll_b);
+
+      double pitch_sin = 2 * (q(0)*q(2) - q(3)*q(1));
+      E(1) = asin (pitch_sin);
+
+      double yaw_a = 2 * (q(0)*q(3) + q(1)*q(2));
+      double yaw_b = 1 - 2 * (q(2)*q(2) + q(3)*q(3));
+      E(2) = atan2 (yaw_a, yaw_b);
+      
+      std::cout << "Returning E angles: " << E.transpose() << std::endl;
+      
+      /*
+      
+      */
   }
   
   
@@ -267,8 +311,29 @@ namespace InertialOdometry
 	  
 	  //std::cout << "e2q -- E = " << E.transpose() << std::endl;
 	  
-	  return C2q(e2C(E));
+	  //return C2q(e2C(E));
 	  
+	  Eigen::Quaterniond q_return;
+	  double roll = E(0), pitch = E(1), yaw = E(2);
+
+     double halfroll = roll / 2.;
+     double halfpitch = pitch / 2.;
+     double halfyaw = yaw / 2.;
+
+     double sin_r2 = sin (halfroll);
+     double sin_p2 = sin (halfpitch);
+     double sin_y2 = sin (halfyaw);
+
+     double cos_r2 = cos (halfroll);
+     double cos_p2 = cos (halfpitch);
+     double cos_y2 = cos (halfyaw);
+
+     q_return.w() = cos_r2 * cos_p2 * cos_y2 + sin_r2 * sin_p2 * sin_y2;
+     q_return.x() = sin_r2 * cos_p2 * cos_y2 - cos_r2 * sin_p2 * sin_y2;
+     q_return.y() = cos_r2 * sin_p2 * cos_y2 + sin_r2 * cos_p2 * sin_y2;
+     q_return.z() = cos_r2 * cos_p2 * sin_y2 - sin_r2 * sin_p2 * cos_y2;
+	  
+     return q_return;
   }
   
   Eigen::Vector3d QuaternionLib::Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v) {
@@ -298,6 +363,11 @@ namespace InertialOdometry
     double ypr[3];
     quat_to_euler(r, ypr[0], ypr[1], ypr[2]);
     std::cout << prefix << " Euler Angles: " << ypr[0] << ", " << ypr[1] << ", " << ypr[2] << std::endl;
+  }
+  
+  void QuaternionLib::printQuaternion(std::string preamble, const Eigen::Quaterniond &q) {
+	  
+	  std:: cout << preamble << " " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
   }
   
   /* Not ready to be used yet, as the Eigen::Quaternion has this as a constructor -- but left here for when i need it later
