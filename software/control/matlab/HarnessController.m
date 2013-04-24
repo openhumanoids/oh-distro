@@ -6,7 +6,7 @@ classdef HarnessController < DRCController
   end  
     
   methods
-    function obj = HarnessController(name,r,timeout,floating)
+    function obj = HarnessController(name,r,timeout)
       typecheck(r,'Atlas');
 
       ctrl_data = SharedDataHandle(struct('qtraj',[],'ti_flag',true));
@@ -19,9 +19,12 @@ classdef HarnessController < DRCController
       % cascade PD controller 
       if getNumDOF(r)==34 % floating model
         options.Kp=diag([zeros(6,1); 200*ones(getNumDOF(r)-6,1)]);
+        float = true;
       else
         options.Kp=diag(200*ones(getNumDOF(r),1));
+        float = false;
       end
+      
       options.Kd=0.12*options.Kp;
       pd = SimplePDController(r,ctrl_data,options);
       ins(1).system = 1;
@@ -36,18 +39,13 @@ classdef HarnessController < DRCController
 
       obj.robot = r;
       obj.controller_data = ctrl_data;
-
+      obj.floating = float;
+      
       if nargin < 3
         % controller timeout must match the harness time set in VRCPlugin.cpp
         obj = setTimedTransition(obj,10,'standing',true);
       else
         obj = setTimedTransition(obj,timeout,'standing',true);
-      end
-      
-      if nargin < 4
-        obj.floating = true;
-      else
-        obj.floating = floating;
       end
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name);
