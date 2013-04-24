@@ -21,7 +21,8 @@
 using namespace TwoLegs;
 using namespace std;
 
-LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_) : _finish(false), lcm_(lcm_) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation):
+        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	_leg_odo = new TwoLegOdometry();
@@ -197,7 +198,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
     // Publish the foot contact state estimates to LCM
     PublishFootContactEst(msg->utime);
-    PublishEstimatedStates(msg);
+    if (_do_estimation){
+      PublishEstimatedStates(msg);
+    }
     
 	clock_gettime(CLOCK_REALTIME, &after);
 /*
@@ -274,9 +277,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     pose.orientation[3] =output_q.z();
     
     //lcm_->publish("POSE_KIN",&pose);
-#ifndef DONT_PUBLISH_LCM_EST
-    lcm_->publish("POSE_BODY_VO",&pose);
-#endif
+      lcm_->publish("POSE_BODY_VO",&pose);
         
     //Below is copied from Maurice's VO -- publishing of true and estimated robot states
   
@@ -290,9 +291,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   pose_msg.orientation[1] = msg->origin_position.rotation.x;
   pose_msg.orientation[2] = msg->origin_position.rotation.y;
   pose_msg.orientation[3] = msg->origin_position.rotation.z;
-#ifndef DONT_PUBLISH_LCM_EST
   lcm_->publish("POSE_BODY_TRUE", &pose_msg);
-#endif
   
   drc::position_3d_t origin;
   origin.translation.x = currentPelvis.translation().x();
@@ -328,9 +327,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   msgout = *msg;
   msgout.origin_position = origin;
   msgout.origin_twist = twist;
-#ifndef DONT_PUBLISH_LCM_EST
   lcm_->publish("EST_ROBOT_STATE_VO", &msgout);
-#endif
 }
 
 void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 

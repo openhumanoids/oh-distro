@@ -47,7 +47,6 @@
 //#include "urdf/model.h"
 
 #define DISPLAY_FOOTSTEP_POSES
-#define DONT_PUBLISH_LCM_EST
 
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
@@ -60,6 +59,7 @@ private:
 	boost::shared_ptr<lcm::LCM> lcm_;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
+	bool _do_estimation;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -110,7 +110,7 @@ private:
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_);
+	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation);
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }
