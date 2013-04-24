@@ -171,8 +171,13 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	// Timing profile. This is the midway point
 	clock_gettime(CLOCK_REALTIME, &mid);
 	
+	// Think we should add the velocity estimation process here
+	_leg_odo->calculateUpdateVelocityStates(msg->utime);
+	
+	
 #ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
 	// here comes the drawing of poses
+	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
 	
 	drawLeftFootPose();
 	drawRightFootPose();
@@ -304,9 +309,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   origin.rotation.z = output_q.z();  
   
   drc::twist_t twist;
-  twist.linear_velocity.x = 0.;
-  twist.linear_velocity.y = 0.;
-  twist.linear_velocity.z = 0.;
+  Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
+  twist.linear_velocity.x = velocity_states(0);
+  twist.linear_velocity.y = velocity_states(1);
+  twist.linear_velocity.z = velocity_states(2);
 //  twist.linear_velocity.x = TRUE_state_msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
 //  twist.linear_velocity.y = TRUE_state_msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
 //  twist.linear_velocity.z = TRUE_state_msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);

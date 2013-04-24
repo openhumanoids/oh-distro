@@ -297,7 +297,6 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	right_to_pelvis.translation() = -right.translation();
 	right_to_pelvis.linear() = right.linear().transpose();
 	
-	// Think we should add the velocity estimation process here
 	
 }
 
@@ -392,13 +391,11 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
 	return output_state;
 }
 
-Eigen::Isometry3d TwoLegOdometry::getPelvisVelocityStates() {
+Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
 	
-	std::cout << "TwoLegOdometry::getPelvisVelocityStates() IS NOT READY TO BE USED\n";
+	//std::cout << "TwoLegOdometry::getPelvisVelocityStates() IS NOT READY TO BE USED\n";
 	
-	
-	
-	return Eigen::Isometry3d();
+	return local_velocities;
 }
 
 Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
@@ -560,4 +557,19 @@ void TwoLegOdometry::terminate() {
 	
 	datafile.Close();
 	footcontactfile.Close();
+}
+
+void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
+	//std::cout << "Not implemented yet\n";
+	
+	Eigen::Vector3d current_position;
+	//Eigen::Vector3d velocity_estimate;
+	
+	current_position = getPelvisState().translation();
+	local_velocities = (1.e6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
+	
+	
+	
+	previous_isometry = getPelvisState();
+	previous_isometry_time = current_time;
 }

@@ -45,7 +45,8 @@ class TwoLegOdometry {
 		Eigen::Quaterniond local_frame_orientation;
 		Eigen::Vector3d local_frame_rates;
 		Eigen::Vector3d local_velocities;
-		
+		Eigen::Isometry3d previous_isometry;
+		int64_t previous_isometry_time;
 		
 		//LowPassFilter lowpass;
 		DataFileLogger datafile;
@@ -126,7 +127,7 @@ class TwoLegOdometry {
 		Eigen::Vector3d const getLocalFrameRates();
 		
 		Eigen::Isometry3d getPelvisState();
-		Eigen::Isometry3d getPelvisVelocityStates();
+		Eigen::Vector3d getPelvisVelocityStates();
 		int getStepCount();
 		int getActiveFoot();
 		float leftContactStatus();
@@ -135,6 +136,8 @@ class TwoLegOdometry {
 		void terminate();
 		
 		static Eigen::Isometry3d add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs);
+		
+		void calculateUpdateVelocityStates(int64_t current_time);
 };
 
 
