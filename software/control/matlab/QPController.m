@@ -73,12 +73,12 @@ classdef QPController < MIMODrakeSystem
       end
     end  
     
-    obj.rfoot_idx = find(strcmp('r_foot',getLinkNames(r)));
-    obj.lfoot_idx = find(strcmp('l_foot',getLinkNames(r)));
+    obj.rfoot_idx = findLinkInd(r,'r_foot');
+    obj.lfoot_idx = findLinkInd(r,'l_foot');
     
+    obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
     obj.lc = lcm.lcm.LCM.getSingleton();
-    obj.contact_est = drc.foot_contact_estimate_t();
-    obj.contact_est.detection_method = 0;
+    obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
     
   end
     
@@ -114,81 +114,52 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-    contact_threshold = 0.0001; % m
+%     contact_threshold = 0.001; % m
     
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    phi
-    active_contacts = phi<contact_threshold;
+    if obj.debug
+      phi
+%       x(1:6)
+    end
+    active_contacts = zeros(length(phi),1);% phi<contact_threshold;
 
-    % hack to overload support trajectory to allow specification of ground
-    % height for that foot step. e.g., supp(idx) = 1 means z=0, supp(idx) =
-    % 1.2 means z=1.2
-%     if any(phi(1:4)<(supp(active_supports(1))-1+contact_threshold))
-%       active_contacts(1:4) = 1;
-%     end
-%     if length(phi)>4 && any(phi(5:8)<(supp(active_supports(2))-1+contact_threshold))
-%       active_contacts(5:8) = 1;
-%     end
-    
-    obj.contact_est.utime = t*1000000;
-    
-    %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
-    obj.contact_est.right_contact = 0;
-    obj.contact_est.left_contact = 0;
-    if any(active_contacts(1:4))
-      if active_supports(1)==obj.rfoot_idx
-        obj.contact_est.right_contact = 1;
-      elseif active_supports(1)==obj.lfoot_idx
-        obj.contact_est.left_contact = 1;
-      end
-      active_contacts(1:4) = 1;
+    contact_data = obj.contact_est_monitor.getNextMessage(1);
+    if ~isempty(contact_data)
+      msg = drc.foot_contact_estimate_t(contact_data);
+      obj.lfoot_contact_state = msg.left_contact;
+      obj.rfoot_contact_state = msg.right_contact;
     end
-    if length(phi)>4 && any(active_contacts(5:8))
-      if active_supports(2)==obj.rfoot_idx
-        obj.contact_est.right_contact = 1;
-      elseif active_supports(2)==obj.lfoot_idx
-        obj.contact_est.left_contact = 1;
-      end
-      active_contacts(5:8) = 1;
+        
+    % if any foot point is in contact, all contact points are active
+    if any(active_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
+      active_contacts((find(active_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
     end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    obj.lc.publish('KINEMATIC_FOOT_CONTACT_EST', obj.contact_est);
+    if any(active_supports==obj.lfoot_idx) && obj.lfoot_contact_state > 0.5
+      active_contacts((find(active_supports==obj.lfoot_idx)-1)*4+(1:4)) = 1;
+    end
     
     nc = sum(active_contacts);
 
-    if nc==0
-      % ignore supporting body spec, use any foot in contact
-      active_supports = [obj.rfoot_idx, obj.lfoot_idx];
-
-      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
-      [phi,Jz,D_] = contactConstraints(r,kinsol);
-      active_contacts = phi<contact_threshold;
-
-      %%%%% Testing: if any foot point is in contact, all contact points are active %%%%%
-      if any(active_contacts(1:4))
-        if active_supports(1)==obj.rfoot_idx
-          obj.contact_est.right_contact = 1;
-        elseif active_supports(1)==obj.lfoot_idx
-          obj.contact_est.left_contact = 1;
-        end
-        active_contacts(1:4) = 1;
-      end
-      if length(phi)>4 && any(active_contacts(5:8))
-        if active_supports(2)==obj.rfoot_idx
-          obj.contact_est.right_contact = 1;
-        elseif active_supports(2)==obj.lfoot_idx
-          obj.contact_est.left_contact = 1;
-        end
-        active_contacts(5:8) = 1;
-      end
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      
-      nc = sum(active_contacts);
-    else
-      % get support contact J, dJ for no-slip constraint
-      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-    end
+%     if nc==0
+%       % ignore supporting body spec, use any foot in contact
+%       [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
+%       [phi,Jz,D_] = contactConstraints(r,kinsol);
+%       active_contacts = phi<contact_threshold;
+% 
+%       % if any foot point is in contact, all contact points are active
+%       if any(active_contacts(1:4))
+%         active_contacts(1:4) = 1;
+%       end
+%       if length(phi)>4 && any(active_contacts(5:8))
+%         active_contacts(5:8) = 1;
+%       end
+%       
+%       nc = sum(active_contacts);
+%     else
+%       % get support contact J, dJ for no-slip constraint
+      [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
+%     end
     
     active_contacts = find(active_contacts);
         
@@ -340,12 +311,8 @@ classdef QPController < MIMODrakeSystem
       model.ub = ub;
 
 %       tic;
-%     try
       result = gurobi(model,obj.solver_options);
       alpha = result.x;
-%     catch err
-%       stophere=1;
-%     end
 %       toc
     end
     
@@ -355,7 +322,72 @@ classdef QPController < MIMODrakeSystem
       xcomdd = Jdot * qd + J * alpha(1:nq);
       zmppos = xcom(1:2) + G * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
-      plot_lcm_points([zmppos', 1], [1, 0, 0], 60, 'Current ZMP', 1, true);
+      plot_lcm_points([zmppos', getTerrainHeight(r,zmppos)], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
+      
+      [~,normals] = getTerrainHeight(r,cpos);
+      d = RigidBodyManipulator.surfaceTangents(normals);
+
+      lambda = Iz*alpha;
+      beta_full = Ibeta*alpha;
+      for kk=1:8
+        if kk<=nc
+          plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.25*normals(:,kk)]', [0 0 1; 0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
+          beta = beta_full((kk-1)*nd+(1:nd),:);
+          fvec = lambda(kk)*normals(:,kk) + d{1}(:,kk)*beta(1) + d{2}(:,kk)*beta(2) - d{1}(:,kk)*beta(3) - d{2}(:,kk)*beta(4);
+          plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.005*fvec]', [1 0 0; 1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
+        else
+          plot_lcm_points(zeros(2,3), [0 0 1;0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
+          plot_lcm_points(zeros(2,3), [1 0 0;1 0 0], 6643+kk, sprintf('Foot Contact Force %d',kk), 2, true);
+        end
+      end
+      
+      % plot body coordinate frames
+      m=vs.obj_collection_t();
+      m.objs = javaArray('vs.obj_t', size(1, 1));
+      m.id=13300;
+      m.type=5; % rgb triad
+      m.name='Drake Body Coords';
+      m.reset=true;
+      m.nobjs=5; 
+      
+      pelvis = findLinkInd(r,'pelvis');
+      xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
+      msg=vs.obj_t();
+      msg.id=1;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+      m.objs(msg.id) = msg;
+
+      head = findLinkInd(r,'head');
+      xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
+      msg=vs.obj_t();
+      msg.id=2;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+      m.objs(msg.id) = msg;
+
+      xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
+      msg=vs.obj_t();
+      msg.id=3;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+      m.objs(msg.id) = msg;
+
+      xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
+      msg=vs.obj_t();
+      msg.id=4;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+      m.objs(msg.id) = msg;
+
+      xzyrpy = x(1:6); 
+      msg=vs.obj_t();
+      msg.id=5;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
+      m.objs(msg.id) = msg;
+      
+      obj.lc.publish('OBJ_COLLECTION', m);
     end
 
 %     max(Iz*alpha)
@@ -381,6 +413,8 @@ classdef QPController < MIMODrakeSystem
     solver_options = struct();
     debug = false;
     lc;
-    contact_est;
+    contact_est_monitor;
+    lfoot_contact_state = 0; 
+    rfoot_contact_state = 0; 
   end
 end
