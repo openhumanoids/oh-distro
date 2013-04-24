@@ -1,5 +1,7 @@
 function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X)
 
+debug = false;
+
 Xpos = [X.pos];
 Xright = Xpos(:, [X.is_right_foot] == 1);
 Xleft = Xpos(:, [X.is_right_foot] == 0);
@@ -77,7 +79,6 @@ while 1
   % istep.(m_foot) = istep.(m_foot) + 1;
   istep.(m_foot) = istep.(m_foot) + 2;
   
-%   footsupport.(m_foot) = [footsupport.(m_foot) 0 0 .5 1 1];
   footsupport.(m_foot) = [footsupport.(m_foot), [[0 0 1 1 1] + [0 0, step.(m_foot).orig(3, 3:5)]]] ; 
   footsupport.(s_foot) = [footsupport.(s_foot), [[1 1 1 1 1] + [step.(s_foot).orig(3,:)]]]; 
   
@@ -93,7 +94,6 @@ while 1
     break
   end
 end
-%plot_lcm_points([zmp; ones(1, length(zmp(1,:)))]', zeros(length(zmp(1,:)), 3), 25, 'ZMP Location', 1, true);
 
 % add a segment at the end to recover
 ts = [ts, ts(end)+1.5];
@@ -106,8 +106,6 @@ for f = {'right', 'left'}
   footsupport.(foot) = [footsupport.(foot) 1];
 end
 
-% biped.plot_step_clearance_lcm(footpos);
-
 % create ZMP trajectory
 p = feetCenter(footpos.right.orig(:,end),footpos.left.orig(:,end));
 zmp = [zmp,p(1:2)];
@@ -119,12 +117,16 @@ supporttraj(strcmp(biped.r_foot_name,biped.getLinkNames),:) = footsupport.right;
 supporttraj(strcmp(biped.l_foot_name,biped.getLinkNames),:) = footsupport.left;
 supporttraj = setOutputFrame(PPTrajectory(zoh(ts,supporttraj)),AtlasBody(biped));
 
-tt = 0:0.02:ts(end);
-zmppoints = ones(3,length(tt));
-for i=1:length(tt)
-  zmppoints(1:2,i) = zmptraj.eval(tt(i));
+if debug
+  tt = 0:0.02:ts(end);
+  zmppoints = ones(3,length(tt));
+  for i=1:length(tt)
+    zmppoints(1:2,i) = zmptraj.eval(tt(i));
+  end
+  zmppoints(3,:) = getTerrainHeight(biped,zmppoints(1:2,:));
+  plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',1,true);
+  % biped.plot_step_clearance_lcm(footpos);
 end
-plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',1,true);
 
 end
 
