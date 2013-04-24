@@ -6,9 +6,6 @@ classdef DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     controller; % drake system
-
-    v=[]; % optional visualizer for debugging
-    
     controller_data; % optional shared data handle reference
     
     controller_input_frames; % lcm frames w/coders for controller inputs
@@ -33,7 +30,7 @@ classdef DRCController
   end
 
   methods
-    function obj = DRCController(name,sys,v)
+    function obj = DRCController(name,sys)
       typecheck(name,'char');
       if ~(isa(sys,'DrakeSystem') || isa(sys,'SimulinkModel'))
         error('DRCController::Argument sys should be a DrakeSystem or SimulinkModel');
@@ -41,10 +38,6 @@ classdef DRCController
     
       obj.name = name;
       obj.controller = sys;
-      
-      if nargin>2
-        obj.v = v;
-      end
       
       if typecheck(sys.getInputFrame,'MultiCoordinateFrame')
         obj.controller_input_frames = sys.getInputFrame.frame;
@@ -141,7 +134,6 @@ classdef DRCController
       input_frame_data = cell(obj.n_input_frames,1);
       
       t_offset = -1;
-%       disp_counter = 0;
       lcm_check_tic = tic;
       while (1)
         if (toc(lcm_check_tic) > 0.2) % check periodically
@@ -155,7 +147,6 @@ classdef DRCController
 
         input_frame_time = -1*ones(obj.n_input_frames,1); % signify stale data with time -1
         checked_frames = {};
-%         chk_counter = 1;
         % for each input subframe, get next message
         for i=1:obj.n_input_frames
           fr = obj.controller_input_frames{i};
@@ -173,19 +164,6 @@ classdef DRCController
             end
             t=tsim-t_offset;
 
-            %%% TEMP HACK FOR QUAL 1 %%%
-%             x(3) = x(3)-1.0;
-            %%% TEMP HACK FOR QUAL 1 %%%
-            
-%             % debug
-%             if ~isempty(obj.v) && disp_counter==0 && strcmp('AtlasState',fr.name)
-%               obj.v.draw(t,x);
-%             end
-%             disp_counter = mod(disp_counter+1,50);
-%             
-%             checked_frames{chk_counter}=fr.name;
-%             chk_counter = chk_counter+1;
-
             input_frame_data{i} = x;
             input_frame_time(i) = t;
             % copy data to other subframes
@@ -202,16 +180,12 @@ classdef DRCController
         if any(tt >= obj.t_final)
           % on timeout events, we pass back the latest input data
           input_data = struct();
-          if true%~strcmp(obj.name,'harnessed') % TMP HACK, to be replaced when precompute matlab instance is implemented
-            if obj.n_input_frames > 1
-              for i=1:obj.n_input_frames
-                input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
-              end
-            else
-              input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
+          if obj.n_input_frames > 1
+            for i=1:obj.n_input_frames
+              input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
             end
           else
-            disp('skipping input.');
+            input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
           end
           data = setfield(data,obj.timed_transition,input_data);
           break;

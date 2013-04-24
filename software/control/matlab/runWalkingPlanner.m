@@ -4,6 +4,8 @@ if nargin < 3; goal_y = 0.0; end
 if nargin < 2; goal_x = 2.0; end
 if nargin < 1; lcm_plan = true; end
 
+debug = false;
+
 addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -11,6 +13,7 @@ options.floating = true;
 options.dt = 0.001;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
+r = setTerrain(r,DRCTerrainMap());
 r = compile(r);
 
 while true 
@@ -44,12 +47,6 @@ while true
       end
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
-        %%% TEMP HACK FOR QUAL 1 %%%
-%         x(3) = x(3)-1.0;
-%         for j = 1:length(footsteps)
-%           footsteps(j).pos(3) = footsteps(j).pos(3) - 1;
-%         end
-        %%% TEMP HACK FOR QUAL 1 %%%
         x0=x;
       end
     end
@@ -58,9 +55,6 @@ while true
   
   % publish robot plan
   msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
-  %%%% TMP HACK FOR QUAL 1 %%%%%
-%   xtraj(3,:) = xtraj(3,:)+ 1;
-  %%%% TMP HACK FOR QUAL 1 %%%%%
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
@@ -74,13 +68,15 @@ while true
 
   hddot = fnder(htraj,2);
 
-  tt = 0:0.02:ts(end);
-  compoints = ones(3,length(tt));
-  for i=1:length(tt)
-    compoints(1:2,i) = comtraj.eval(tt(i));
-  end
-  plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
-  
+  if debug
+    tt = 0:0.04:ts(end);
+    compoints = zeros(3,length(tt));
+    for i=1:length(tt)
+      compoints(1:2,i) = comtraj.eval(tt(i));
+    end
+    compoints(3,:) = getTerrainHeight(r,compoints(1:2,:));
+    plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
+  end  
 
   msg ='Walking Planner: Waiting for confirmation...'; disp(msg); send_status(3,0,0,msg);
   plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true);
