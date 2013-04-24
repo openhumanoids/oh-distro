@@ -975,11 +975,12 @@ namespace surrogate_gui
 		fp.maxAngle = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_ANGLE);
 
     // TODO: support selected afforance for other objects
-    if(_selectedAffordance){
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
       if(getGeometricPrimitive()!=CAR){
         cout << "************ Only car affordance currently handled with selected affordances\n";
       }
-      if(_selectedAffordance->aff.otdf_type != "car"){
+      if(selectedAff->aff.otdf_type != "car"){
         cout << "************ Only car affordance currently handled with selected affordances\n";
       }
     }
@@ -1331,24 +1332,24 @@ namespace surrogate_gui
     // retrieve initial pos from selected object if available
     Vector3f initialXYZ, initialYPR;
     bool isInitialSet = false;
-    if(_selectedAffordance){
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
       isInitialSet = true;
-      drc::affordance_t& aff = _selectedAffordance->aff;
-      initialXYZ[0] = aff.origin_xyz[0];
-      initialXYZ[1] = aff.origin_xyz[1];
-      initialXYZ[2] = aff.origin_xyz[2];
-      initialYPR[0] = aff.origin_rpy[2];
-      initialYPR[1] = aff.origin_rpy[1];
-      initialYPR[2] = aff.origin_rpy[0];
+      initialXYZ[0] = selectedAff->aff.origin_xyz[0];
+      initialXYZ[1] = selectedAff->aff.origin_xyz[1];
+      initialXYZ[2] = selectedAff->aff.origin_xyz[2];
+      initialYPR[0] = selectedAff->aff.origin_rpy[2];
+      initialYPR[1] = selectedAff->aff.origin_rpy[1];
+      initialYPR[2] = selectedAff->aff.origin_rpy[0];
 
       // old style params
-      for(int i=0;i<aff.params.size();i++){
-        if(aff.param_names[i] == "x") initialXYZ[0] = aff.params[i];
-        if(aff.param_names[i] == "y") initialXYZ[1] = aff.params[i];
-        if(aff.param_names[i] == "z") initialXYZ[2] = aff.params[i];
-        if(aff.param_names[i] == "roll")  initialYPR[2] = aff.params[i];
-        if(aff.param_names[i] == "pitch") initialYPR[1] = aff.params[i];
-        if(aff.param_names[i] == "yaw")   initialYPR[0] = aff.params[i];
+      for(int i=0;i<selectedAff->aff.params.size();i++){
+        if(selectedAff->aff.param_names[i] == "x") initialXYZ[0] = selectedAff->aff.params[i];
+        if(selectedAff->aff.param_names[i] == "y") initialXYZ[1] = selectedAff->aff.params[i];
+        if(selectedAff->aff.param_names[i] == "z") initialXYZ[2] = selectedAff->aff.params[i];
+        if(selectedAff->aff.param_names[i] == "roll")  initialYPR[2] = selectedAff->aff.params[i];
+        if(selectedAff->aff.param_names[i] == "pitch") initialYPR[1] = selectedAff->aff.params[i];
+        if(selectedAff->aff.param_names[i] == "yaw")   initialYPR[0] = selectedAff->aff.params[i];
       }
     }
 
@@ -1425,9 +1426,9 @@ namespace surrogate_gui
 	  affordanceMsg.aff.nstates = 0;
 	  
     cout << "\n about to publish" << endl;
-    if(_selectedAffordance){
+    if(selectedAff){
       affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
-      affordanceMsg.aff.uid = _selectedAffordance->aff.uid;
+      affordanceMsg.aff.uid = selectedAff->aff.uid;
       _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
     }else{
       affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
@@ -1455,7 +1456,7 @@ namespace surrogate_gui
   void UIProcessing::handleAffordanceSelectButton()
   {
     // unselect affordance if any selected
-    _selectedAffordance.reset(); 
+    _selectedAffordanceName.clear(); 
     
     // create new window
     GtkWidget *window, *close_button, *vbox;
@@ -1525,15 +1526,16 @@ namespace surrogate_gui
     UIProcessing* self = (UIProcessing*)user;
     int index = bot_gtk_param_widget_get_enum(pw, PARAM_NAME_AFFORDANCE_SELECT);
     if(index<0) { // "New" selected, so clear selection
-      self->_selectedAffordance.reset();
+      self->_selectedAffordanceName.clear();
       cout << "Affordance selection reset\n";
     }else{   // object selected, so make copy of affordance
+      stringstream ss;
       self->_currentAffordancesMutex.lock();
-      self->_selectedAffordance.reset(
-              new drc::affordance_plus_t(self->_currentAffordances[index]));
+      ss << self->_currentAffordances[index].aff.otdf_type << "_" 
+         << self->_currentAffordances[index].aff.uid;
       self->_currentAffordancesMutex.unlock();
-      cout << self->_selectedAffordance->aff.otdf_type << "_"
-           << self->_selectedAffordance->aff.uid << " selected" << endl;
+      self->_selectedAffordanceName = ss.str();
+      cout << ss.str() << " selected" << endl;
     }
   }
 
@@ -1830,25 +1832,22 @@ namespace surrogate_gui
     _currentAffordancesMutex.lock();
     _currentAffordances = collection->affs_plus;
     _currentAffordancesMutex.unlock();
-    
-/*
-    bool changed = false;
-    if(_currentAffordances.size()!=_currentAffordanceNames){
-      changed = true;
-      _currentAffordanceNames.resize(_currentAffordances.size());
-    }
+  }
 
+  UIProcessing::AffPlusPtr UIProcessing::getSelectedAffordance(){
+    AffPlusPtr selectedAff;
+    _currentAffordancesMutex.lock();
     for(int i=0;i<_currentAffordances.size();i++) {
       drc::affordance_t& aff = _currentAffordances[i].aff;
       stringstream ss;
       ss << aff.otdf_type << "_" << aff.uid;
       string name = ss.str();
-      if(name != _currentAffordanceNames[i]){
-        changed = true;
-        _currentAffordanceNames[i] = name;
+      if(name == _selectedAffordanceName){  // if name matches, make a copy
+        selectedAff.reset(new drc::affordance_plus_t(_currentAffordances[i]));
       }
     }
-*/
+    _currentAffordancesMutex.unlock();
+    return selectedAff;
   }
 
 } //namespace surrogate_gui

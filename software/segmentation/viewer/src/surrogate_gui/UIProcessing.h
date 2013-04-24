@@ -63,6 +63,9 @@ namespace surrogate_gui
 	/**Class for processing user input: keystrokes, menu selections, mouse button clicks*/
 	class UIProcessing
 	{
+
+    typedef boost::shared_ptr<drc::affordance_plus_t> AffPlusPtr;  
+
 		//======fields
 		private:
 			GuiState _gui_state; //segmenting or tracking
@@ -82,8 +85,7 @@ namespace surrogate_gui
 
       // affordance listener and selector
       std::vector<drc::affordance_plus_t> _currentAffordances;
-      boost::shared_ptr<drc::affordance_plus_t> _selectedAffordance;
-      //std::vector<std::string> _currentAffordanceNames;
+      std::string _selectedAffordanceName;
       boost::mutex _currentAffordancesMutex;
       void affordanceMsgHandler(const lcm::ReceiveBuffer* iBuf,
                 const std::string& iChannel, 
@@ -91,6 +93,7 @@ namespace surrogate_gui
       void handleAffordanceSelectButton();
       static void handleAffordanceSelection(BotGtkParamWidget *pw, 
                                                   const char *name,void *user);
+      AffPlusPtr getSelectedAffordance();
 
 		//=====constructor/destructor
 		public:
