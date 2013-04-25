@@ -9,7 +9,8 @@ classdef StandingController < DRCController
     function obj = StandingController(name,r)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[],'qtraj',[],'supptraj',[],'ti_flag',true));
+      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[], ...
+        'xlimp0',[],'qtraj',[],'supptraj',[],'ti_flag',true));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -43,7 +44,18 @@ classdef StandingController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'AtlasState')
+      if isfield(data,'precomp')
+        disp('standing controller: using precompute data');
+        cdata = data.precomp.resp_data;
+        obj.controller_data.setField('S',cdata.S);
+        obj.controller_data.setField('h',cdata.h);
+        obj.controller_data.setField('hddot',0);
+        obj.controller_data.setField('qtraj',cdata.q_nom);
+        obj.controller_data.setField('xlimp0',cdata.xlimp0);
+        obj.controller_data.setField('supptraj',cdata.support);
+        obj.controller_data.setField('ti_flag',true);        
+        
+      elseif isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
         r = obj.robot;

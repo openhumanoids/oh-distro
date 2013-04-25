@@ -17,6 +17,10 @@ classdef DRCController
     transition_targets; % list of names of controllers to transition to
     transition_channels; 
     
+    precompute_response_channels;
+    precompute_response_monitors;
+    precompute_response_targets; % struct that maps controller names to received messages
+    
     constructors=javaArray('java.lang.reflect.Constructor', 1);  % array of lcm type constructors
     t_final = inf; % controller time limit
     timed_transition; % name of the controller to transition to when t>=t_final
@@ -79,6 +83,10 @@ classdef DRCController
       obj.absolute_time = absolute_time;
     end
 
+    function tf = getDuration(obj)
+      tf = obj.t_final;
+    end
+    
     function obj = addLCMTransition(obj,channel,lcmtype_or_lcmcoder,transition_to_controller)
       typecheck(channel,'char');
       typecheck(transition_to_controller,'char');
@@ -100,6 +108,21 @@ classdef DRCController
       obj.transition_monitors{n} = mon;
       obj.transition_targets{n} = transition_to_controller;
     end
+
+    function obj = addPrecomputeResponseHandler(obj,response_channel,transition_to_controller)
+      typecheck(response_channel,'char');
+      typecheck(transition_to_controller,'char');
+
+      lcmtype = drc.precompute_request_t;
+      mon = drake.util.MessageMonitor(lcmtype,'utime');
+      lc = lcm.lcm.LCM.getSingleton();
+      lc.subscribe(response_channel,mon);
+      
+      n = length(obj.precompute_response_monitors)+1;
+      obj.precompute_response_channels{n} = response_channel;
+      obj.precompute_response_monitors{n} = mon;
+      obj.precompute_response_targets = setfield(obj.precompute_response_targets,transition_to_controller,[]);
+    end
     
     function [transition,data] = checkLCMTransitions(obj)
       data = struct();
@@ -118,6 +141,25 @@ classdef DRCController
       end
     end
     
+    function obj=checkPrecomputeResponses(obj)
+      if ~isempty(obj.precompute_response_monitors)
+        fn = fieldnames(obj.precompute_response_targets);
+        for i=1:length(obj.precompute_response_monitors)
+          d = obj.precompute_response_monitors{i}.getNextMessage(1);
+          if ~isempty(d)
+            disp(['received precompute response on ' obj.precompute_response_channels{i}]);
+            msg = drc.precompute_request_t(d);
+            fid = fopen('prec_w.mat','w');
+            fwrite(fid,typecast(msg.matdata,'uint8'),'uint8');
+            fclose(fid);
+            matdata = load('prec_w.mat');
+            obj.precompute_response_targets = setfield(obj.precompute_response_targets, ...
+               fn{i},matdata);
+          end
+        end
+      end
+    end
+     
     function obj=addSafetyTransition(obj,transition_to_controller)
       typecheck(transition_to_controller,'char');
 
@@ -137,10 +179,18 @@ classdef DRCController
       lcm_check_tic = tic;
       while (1)
         if (toc(lcm_check_tic) > 0.2) % check periodically
+          obj=checkPrecomputeResponses(obj);
           % check termination conditions and break if any are true        
           [transition,data] = checkLCMTransitions(obj);
           lcm_check_tic = tic;
           if transition 
+            fn = fieldnames(data);
+            if isfield(obj.precompute_response_targets,fn{1})
+              d = getfield(obj.precompute_response_targets,fn{1}); % take first transition if many
+              if ~isempty(d)
+                data = struct('precomp',d); % pass precomputation message to next controller
+              end
+            end
             break;
           end
         end
@@ -178,14 +228,24 @@ classdef DRCController
      
         tt = max(input_frame_time);
         if any(tt >= obj.t_final)
-          % on timeout events, we pass back the latest input data
-          input_data = struct();
-          if obj.n_input_frames > 1
-            for i=1:obj.n_input_frames
-              input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
-            end
+          % on timeout events, we pass back the latest input data unless
+          % there is precomputed stuff available
+          
+          d=[];
+          if isfield(obj.precompute_response_targets,obj.timed_transition)
+            d = getfield(obj.precompute_response_targets,obj.timed_transition); 
+          end
+          if ~isempty(d)
+            input_data = struct('precomp',d); % pass precomputation message to next controller
           else
-            input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
+            input_data = struct();
+            if obj.n_input_frames > 1
+              for i=1:obj.n_input_frames
+                input_data = setfield(input_data,obj.controller_input_frames{i}.name,input_frame_data{i});
+              end
+            else
+              input_data = setfield(input_data,obj.controller_input_frames.name,input_frame_data);
+            end
           end
           data = setfield(data,obj.timed_transition,input_data);
           break;
