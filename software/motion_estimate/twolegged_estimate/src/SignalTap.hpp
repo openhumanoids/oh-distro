@@ -12,15 +12,16 @@
 class DataFileLogger {
 private:
 	std::ofstream fs;
-	
+	bool suppress_logger;
 	
 public:
 	DataFileLogger();
 	
-	void Open(std::string filename);
+	void Open(bool not_suppress, std::string filename);
 	void Close();
 	
 	void log(std::string data);
+	void operator<<(std::string to_log);
 };
 
 class SchmittTrigger {

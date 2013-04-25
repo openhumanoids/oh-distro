@@ -14,7 +14,7 @@
 using namespace TwoLegs;
 using namespace std;
 
-TwoLegOdometry::TwoLegOdometry()
+TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 {
 	cout << "A new TwoLegOdometry object was created" << endl;
 	
@@ -56,8 +56,8 @@ TwoLegOdometry::TwoLegOdometry()
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
-	datafile.Open("datalog.csv");
-	footcontactfile.Open("footcontactlog.csv");
+	datafile.Open(_log_data_files,"datalog.csv");
+	footcontactfile.Open(_log_data_files,"footcontactlog.csv");
 	
 }
 
@@ -511,23 +511,25 @@ Eigen::Quaterniond TwoLegOdometry::mult(Eigen::Quaterniond lhs, Eigen::Quaternio
 	return result;
 }
 
-void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_) {
+void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &init_states) {
 	// The left foot is used to initialise height of the pelvis.
 	
+	/* This will probably be depreciated soon
 	Eigen::Vector3d zero;
 	zero << 0.,0.,-left_.translation().z();
-	
-	stepcount = 0;
-	
 	local_to_pelvis.translation() = zero;
 	local_to_pelvis.linear().setIdentity();
+	*/
+	
+	stepcount = 0;
+	local_to_pelvis = init_states;
 	
 	footsteps.reset();
 }
 
-void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_) {
+void TwoLegOdometry::ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_, const Eigen::Isometry3d &init_states) {
 	
-	ResetInitialConditions(left_);
+	ResetInitialConditions(left_, init_states);
 	
 	//std::cout << "Pelvis was set to: " << local_to_pelvis.translation().transpose() << std::endl;
 	//std::cout << "Last step location before add: " << footsteps.getLastStep().translation().transpose() << std::endl;

@@ -51,7 +51,7 @@
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
-#define PUBLISH_AT_TRUE_POSITION
+//#define PUBLISH_AT_TRUE_POSITION
 
 class LegOdometry_Handler {
 private:
@@ -61,6 +61,7 @@ private:
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
 	bool _do_estimation;
 	bool _draw_footsteps;
+	bool _log_data_files;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -79,6 +80,8 @@ private:
 	int poseplotcounter;
 	int collectionindex;
 	bool firstpass;
+	
+	DataFileLogger state_estimate_error_log;
 	
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
@@ -117,7 +120,7 @@ private:
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps);
+	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files);
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }

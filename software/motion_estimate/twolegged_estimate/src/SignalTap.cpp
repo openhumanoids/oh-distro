@@ -2,6 +2,7 @@
 
 #include "SignalTap.hpp"
 #include <iostream>
+#include <sstream>
 
 
 
@@ -11,20 +12,28 @@ DataFileLogger::DataFileLogger() {
 	
 }
 
-void DataFileLogger::Open(std::string filename) {
+void DataFileLogger::Open(bool not_suppress, std::string filename) {
+	suppress_logger = !not_suppress;
 	
-	fs.open(filename.c_str());
+	if (!suppress_logger)
+		fs.open(filename.c_str());
 	
 }
 
 void DataFileLogger::Close() {
-	fs.close();
+  if (!suppress_logger)
+    fs.close();
 	
 }
 
 void DataFileLogger::log(std::string data) {
-	//return std::ofstream();
-	fs << data;
+  if (!suppress_logger)
+    fs << data;
+}
+
+void DataFileLogger::operator<<(std::string to_log) {
+  if (!suppress_logger)
+    log(to_log);
 }
 
 
@@ -47,12 +56,12 @@ void SchmittTrigger::UpdateState(long present_time, double value) {
 		first_call = false;
 		previous_time = present_time;
 	}
-	std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
+	//std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
 	if (current_status)
 		{
 			if (value <= low_threshold)
 			{
-				std::cout << "below threshold\n";
+				//std::cout << "below threshold\n";
 				if (timer > time_delay) {
 					current_status = false;
 				} else {
@@ -64,7 +73,7 @@ void SchmittTrigger::UpdateState(long present_time, double value) {
 			
 		} else {
 			if (value >= high_threshold) {
-				std::cout << "above threshold\n";
+				//std::cout << "above threshold\n";
 				if (timer > time_delay) {
 					current_status = true;
 				} else {

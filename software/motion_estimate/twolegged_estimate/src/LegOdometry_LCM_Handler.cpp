@@ -21,11 +21,11 @@
 using namespace TwoLegs;
 using namespace std;
 
-LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps):
-        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files):
+        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps), _log_data_files(_log_data_files) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
-	_leg_odo = new TwoLegOdometry();
+	_leg_odo = new TwoLegOdometry(_log_data_files);
 	
 	if(!lcm_->good())
 	  return;
@@ -65,11 +65,15 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	_viewer = new Viewer(lcm_viewer);
   }
 	//#endif
+  
+    state_estimate_error_log.Open(_log_data_files,"estimated_state_errors.csv");
 	
 	return;
 }
 
 LegOdometry_Handler::~LegOdometry_Handler() {
+	
+	  state_estimate_error_log.Close();
 	
 	//delete model_;
 	delete _leg_odo;
@@ -180,8 +184,19 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		firstpass = false;
 		
 		// We need to reset the initial condition of the odometry estimate here..
-				
-		_leg_odo->ResetWithLeftFootStates(left,right);
+		// TODO -- can we access the true first state, or do we just follow this for initial testing. im sure we are going to have to remove this before the VRC
+		Eigen::Quaterniond dummy_var;
+        dummy_var.w() = msg->origin_position.rotation.w;
+        dummy_var.x() = msg->origin_position.rotation.x;
+        dummy_var.y() = msg->origin_position.rotation.y;
+        dummy_var.z() = msg->origin_position.rotation.z;
+        
+		Eigen::Isometry3d first_pose_init(dummy_var);
+		first_pose_init.translation().x() = msg->origin_position.translation.x;
+		first_pose_init.translation().y() = msg->origin_position.translation.y;
+		first_pose_init.translation().z() = msg->origin_position.translation.z;
+		
+		_leg_odo->ResetWithLeftFootStates(left,right,first_pose_init);
 		//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
 		
 		
@@ -265,12 +280,12 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     bot_core::pose_t pose;
     pose.pos[0] =currentPelvis.translation().x();
     pose.pos[1] =currentPelvis.translation().y();
-    // TODO -- Confirm the proper use of the z() translation offset. as this +1meter is done just for visualization
-    pose.pos[2] =currentPelvis.translation().z()+1.;
+    pose.pos[2] =currentPelvis.translation().z();
     
-    Eigen::Quaterniond output_q(currentPelvis.linear());
+    Eigen::Quaterniond output_q(currentPelvis.linear().transpose());
     
 #ifdef PUBLISH_AT_TRUE_POSITION
+    std::cout << "Using the true position for the estimated state\n";
     pose.pos[0] = msg->origin_position.translation.x;
     pose.pos[1] = msg->origin_position.translation.y;
     pose.pos[2] = msg->origin_position.translation.z;
@@ -288,17 +303,16 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
       dummy_var.y() = msg->origin_position.rotation.y;
       dummy_var.z() = msg->origin_position.rotation.z;
       
+      
+      // This is to use the true yaw angle
       Eigen::Vector3d E_true_y = InertialOdometry::QuaternionLib::q2e(dummy_var);
       //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
       Eigen::Vector3d E_est_rp = InertialOdometry::QuaternionLib::q2e(output_q);
-      
       E_true_y(0) = 0.;
       E_true_y(1) = 0.;
       E_est_rp(2) = 0.;
-      
-      //std::cout << "Cummulative angles are: " << (E_true_y + E_est_rp).transpose() << std::endl;
-      
-      output_q = InertialOdometry::QuaternionLib::e2q(E_true_y + E_est_rp);
+      // But we are not using the true yaw angle now..
+      //output_q = InertialOdometry::QuaternionLib::e2q(E_true_y + E_est_rp);
     
       
       
@@ -360,6 +374,23 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   msgout.origin_position = origin;
   msgout.origin_twist = twist;
   lcm_->publish("EST_ROBOT_STATE_VO", &msgout);
+  
+  // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
+  
+  if (_log_data_files) {
+    stringstream ss (stringstream::in | stringstream::out);
+	
+    ss << (msg->origin_position.translation.x - currentPelvis.translation().x()) << ", ";
+    ss << (msg->origin_position.translation.y - currentPelvis.translation().y()) << ", ";
+    ss << (msg->origin_position.translation.z - currentPelvis.translation().z()) << ", ";
+	
+    ss << (msg->origin_twist.linear_velocity.x - velocity_states(0)) << ", ";
+    ss << (msg->origin_twist.linear_velocity.y - velocity_states(1)) << ", ";
+    ss << (msg->origin_twist.linear_velocity.z - velocity_states(2)) << std::endl;
+    
+	state_estimate_error_log << ss.str();
+	  
+  }
 }
 
 void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf, 
@@ -389,10 +420,8 @@ void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
 	// TODO -- Convert this to use the enumerated types from inside the LCM message
 	msg_contact_est.detection_method = DIFF_SCHMITT_WITH_DELAY;
 	
-	std::cout << "Checking the feet\n";
 	msg_contact_est.left_contact = _leg_odo->leftContactStatus();
 	msg_contact_est.right_contact = _leg_odo->rightContactStatus();
-	std::cout << std::endl;
 	
 	lcm_->publish("FOOT_CONTACT_ESTIMATE",&msg_contact_est);
 }

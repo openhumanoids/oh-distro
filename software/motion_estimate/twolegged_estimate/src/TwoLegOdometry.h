@@ -52,7 +52,6 @@ class TwoLegOdometry {
 		Eigen::Isometry3d previous_isometry;
 		int64_t previous_isometry_time;
 		
-		//LowPassFilter lowpass;
 		DataFileLogger datafile;
 		DataFileLogger footcontactfile;
 		
@@ -83,7 +82,7 @@ class TwoLegOdometry {
 		
 		float getPrimaryFootZforce();
 		float getSecondaryFootZforce();
-		void ResetInitialConditions(const Eigen::Isometry3d &left_);
+		void ResetInitialConditions(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &init_states);
 		
 		Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 		
@@ -100,9 +99,8 @@ class TwoLegOdometry {
 	    Eigen::Isometry3d pelvis_to_right;
 	    Eigen::Isometry3d right_to_pelvis;
 	    Eigen::Isometry3d local_to_pelvis;
-				
 		
-		TwoLegOdometry();
+		TwoLegOdometry(bool _log_data_files);
 		~TwoLegOdometry();
 		
 		// Testing function not dependent on LCM messages
@@ -121,7 +119,7 @@ class TwoLegOdometry {
 		void setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates);
 
 		void setPelvisPosition(Eigen::Isometry3d transform);
-		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_);
+		void ResetWithLeftFootStates(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &right_, const Eigen::Isometry3d &init_states);
 		
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
