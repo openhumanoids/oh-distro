@@ -13,7 +13,7 @@ state_frame.subscribe('EST_ROBOT_STATE');
 contact_est = drc.foot_contact_estimate_t();
 contact_est.detection_method = 0;
 
-contact_threshold = 0.001; % m
+contact_threshold = 0.002; % m
 
 lfoot_idx = findLinkInd(r,'l_foot');
 rfoot_idx = findLinkInd(r,'r_foot');
@@ -21,7 +21,7 @@ rfoot_idx = findLinkInd(r,'r_foot');
 lc = lcm.lcm.LCM.getSingleton();
 
 x=[];
-while isempty(x)
+while isempty(x) % wait for initial state
   [x,t] = getNextMessage(state_frame,10);
 end
 

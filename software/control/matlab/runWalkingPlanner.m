@@ -47,6 +47,14 @@ while true
       end
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
+        % temp hack --- aim footsteps slightly below the ground. this will be removed
+        % when footstep planner does this explicitly. This helps force based classifier
+        % detect contact and is reasonable because the foot actually goes about 3mm below the
+        % ground in gazebo... 
+        for j = 1:length(footsteps)
+          footsteps(j).pos(3) = footsteps(j).pos(3) - 0.003;
+        end
+        % end hack %%%%%%%%%%%
         x0=x;
       end
     end
