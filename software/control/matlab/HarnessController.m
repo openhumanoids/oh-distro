@@ -43,7 +43,7 @@ classdef HarnessController < DRCController
       
       if nargin < 3
         % controller timeout must match the harness time set in VRCPlugin.cpp
-        obj = setTimedTransition(obj,10,'standing',true);
+        obj = setTimedTransition(obj,5,'standing',true);
       else
         obj = setTimedTransition(obj,timeout,'standing',true);
       end
