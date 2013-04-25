@@ -51,7 +51,8 @@ namespace surrogate_gui
 		_gui_state(SEGMENTING),
 		_surrogate_renderer(viewer, BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new())),
 		_objTracker(),
-		_mViewClient(new maps::ViewClient())
+		_mViewClient(new maps::ViewClient()),
+    _updatingAffordanceSelectionMenu(false)
 	{
 	       //--setup view client
 	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(lcm));
@@ -84,7 +85,8 @@ namespace surrogate_gui
 					      "Cube", CUBE,
 					      NULL);
 
-    bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_SELECT, NULL);
+    bot_gtk_param_widget_add_enum(pw, PARAM_NAME_AFFORDANCE_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+                0,"None",0,NULL);
 
 		// DOF Controls
 		Segmentation::FittingParams defaultFp; //default fitting params
@@ -1453,92 +1455,27 @@ namespace surrogate_gui
 		_surrogate_renderer.setCamera(CAMERA_FRONT);
 	}
 
-  void UIProcessing::handleAffordanceSelectButton()
+
+  void UIProcessing::handleAffordanceSelectChange(BotGtkParamWidget *pw)
   {
-    // unselect affordance if any selected
-    _selectedAffordanceName.clear(); 
-    
-    // create new window
-    GtkWidget *window, *close_button, *vbox;
-    BotGtkParamWidget *pw; 
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_surrogate_renderer.getViewer()->window));
-    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
-    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
-    gtk_window_stick(GTK_WINDOW(window));
-    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
-    gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
-    gtk_window_set_title(GTK_WINDOW(window), "Instance Management");
-    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+    // if selection menu is being update, don't do anything
+    if(_updatingAffordanceSelectionMenu) return;
 
-    // list for names and values
-    vector<string> namesCpp;
-    vector<const char*> names;
-    vector<int> numbers;
-
-    // add "New" to list
-    namesCpp.push_back("New");
-    names.push_back(namesCpp.back().c_str());
-    numbers.push_back(-1);
-
-    // add each affordance name to list
-    _currentAffordancesMutex.lock();
-    for(int i=0;i<_currentAffordances.size();i++){
-      drc::affordance_t& aff = _currentAffordances[i].aff;
-      stringstream ss;
-      ss << aff.otdf_type << "_" << aff.uid;
-      string name = ss.str();
-      namesCpp.push_back(name);
-      names.push_back(namesCpp.back().c_str());
-      numbers.push_back(i);
-    }
-    _currentAffordancesMutex.unlock();
-
-    // create pulldown from list
-    bot_gtk_param_widget_add_enumv (pw, PARAM_NAME_AFFORDANCE_SELECT, 
-                                    BOT_GTK_PARAM_WIDGET_MENU, 
-                                  -1,  //New is default
-                                  names.size(),
-                                  names.data(),
-                                  numbers.data());
-
-    // callback for selection
-    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(handleAffordanceSelection), this);
-
-    // close button
-    close_button = gtk_button_new_with_label ("Close");
-    g_signal_connect (G_OBJECT (close_button),
-                  "clicked",
-                  G_CALLBACK (on_popup_close),
-                  (gpointer) window);
-    vbox = gtk_vbox_new (FALSE, 3);
-    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-
-    // finish creation and show new window
-    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
-    gtk_container_add (GTK_CONTAINER (window), vbox);
-    gtk_widget_show_all(window);     
-  }
-
-  void UIProcessing::handleAffordanceSelection(BotGtkParamWidget *pw, 
-                                               const char *name,void *user){
-    UIProcessing* self = (UIProcessing*)user;
+    // update _selectedAffordanceName    
     int index = bot_gtk_param_widget_get_enum(pw, PARAM_NAME_AFFORDANCE_SELECT);
+    index = index-1; // 0==none, so subtract 1 for index
     if(index<0) { // "New" selected, so clear selection
-      self->_selectedAffordanceName.clear();
+      _selectedAffordanceName.clear();
       cout << "Affordance selection reset\n";
     }else{   // object selected, so make copy of affordance
-      stringstream ss;
-      self->_currentAffordancesMutex.lock();
-      string otdf_type = self->_currentAffordances[index].aff.otdf_type;
-      ss << otdf_type << "_" << self->_currentAffordances[index].aff.uid;
-      self->_currentAffordancesMutex.unlock();
-      self->_selectedAffordanceName = ss.str();
-      cout << ss.str() << " selected" << endl;
-
+      boost::lock_guard<boost::mutex> lock(_currentAffordancesMutex);
+      _selectedAffordanceName = _currentAffordanceNames[index];
+      string otdf_type = _currentAffordances[index].aff.otdf_type;
+      cout << _selectedAffordanceName << " selected" << endl;
+    
       // change geometric_primitive to match selection
       int prim = -1;
+      cout << otdf_type << endl;
       if     (otdf_type == "cylinder") prim = CYLINDER;
       else if(otdf_type == "sphere")   prim = SPHERE;
       else if(otdf_type == "plane")    prim = PLANE;
@@ -1547,9 +1484,10 @@ namespace surrogate_gui
       else if(otdf_type == "TODO")     prim = CUBE;      // TODO
       else if(otdf_type == "TODO")     prim = CIRCLE_3D; // TODO
       else if(otdf_type == "car")      prim = CAR;
-      if(prim>0) bot_gtk_param_widget_set_enum(self->_surrogate_renderer._pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, prim);
+      if(prim>=0) bot_gtk_param_widget_set_enum(_surrogate_renderer._pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, prim);
 
     }
+
   }
 
 	//=========main handler for menu changes, button clicks, etc
@@ -1726,7 +1664,7 @@ namespace surrogate_gui
 		}
 
     if (stringsEqual(name, PARAM_NAME_AFFORDANCE_SELECT)){
-      handleAffordanceSelectButton();
+      handleAffordanceSelectChange(pw);
     }
 
 		bot_viewer_request_redraw(_surrogate_renderer._viewer);
@@ -1841,16 +1779,55 @@ namespace surrogate_gui
                 const std::string& iChannel, 
                 const drc::affordance_plus_collection_t* collection)
   {
+    // lock cause updating _currentAffordances and _currentAffordanceNames
+    boost::unique_lock<boost::mutex> lock(_currentAffordancesMutex);
+
     // make copy of latest affordance collection
-    _currentAffordancesMutex.lock();
     _currentAffordances = collection->affs_plus;
-    _currentAffordancesMutex.unlock();
+
+    // see if size has changed
+    bool changed = false;
+    if(_currentAffordances.size()!=_currentAffordanceNames.size()){
+      changed = true;
+      _currentAffordanceNames.resize(_currentAffordances.size());
+    }
+
+    // see if names have changed
+    for(int i=0;i<_currentAffordances.size();i++) {
+      drc::affordance_t& aff = _currentAffordances[i].aff;
+      stringstream ss;
+      ss << aff.otdf_type << "_" << aff.uid;
+      string name = ss.str();
+      if(name != _currentAffordanceNames[i]){
+        changed = true;
+        _currentAffordanceNames[i] = name;
+      }
+    }
+    vector<string> affNames;
+    if(changed) affNames = _currentAffordanceNames;
+    lock.unlock();  // done with shared variable, so unlock
+    
+    // update menu
+    if(changed){
+      _updatingAffordanceSelectionMenu = true; // suppress menu callback while updating menu
+		  BotGtkParamWidget *pw = _surrogate_renderer._pw;
+      int selectedIndex = -1;
+      bot_gtk_param_widget_clear_enum(pw, PARAM_NAME_AFFORDANCE_SELECT);
+      for(int i=0; i<affNames.size(); i++){
+        bot_gtk_param_widget_modify_enum(pw, PARAM_NAME_AFFORDANCE_SELECT, affNames[i].c_str(), i+1); //+1 because 0 is None
+        if(_selectedAffordanceName == affNames[i]) selectedIndex = i;
+      }
+      bot_gtk_param_widget_set_enum(pw, PARAM_NAME_AFFORDANCE_SELECT, selectedIndex+1); //+1 because 0 is None
+      if(selectedIndex == -1) _selectedAffordanceName.clear(); // clear selected name if no longer exists
+      _updatingAffordanceSelectionMenu = false;
+    }
+
   }
 
   // returns copy of affordance matching _selectedAffordanceName
   UIProcessing::AffPlusPtr UIProcessing::getSelectedAffordance(){
+    boost::lock_guard<boost::mutex> lock(_currentAffordancesMutex);
     AffPlusPtr selectedAff;
-    _currentAffordancesMutex.lock();
     for(int i=0;i<_currentAffordances.size();i++) {
       drc::affordance_t& aff = _currentAffordances[i].aff;
       stringstream ss;
@@ -1860,7 +1837,6 @@ namespace surrogate_gui
         selectedAff.reset(new drc::affordance_plus_t(_currentAffordances[i]));
       }
     }
-    _currentAffordancesMutex.unlock();
     return selectedAff;
   }
 

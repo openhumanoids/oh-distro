@@ -85,15 +85,15 @@ namespace surrogate_gui
 
       // affordance listener and selector
       std::vector<drc::affordance_plus_t> _currentAffordances;
-      std::string _selectedAffordanceName;
+      std::vector<std::string> _currentAffordanceNames;
       boost::mutex _currentAffordancesMutex;
+      std::string _selectedAffordanceName;
       void affordanceMsgHandler(const lcm::ReceiveBuffer* iBuf,
                 const std::string& iChannel, 
                 const drc::affordance_plus_collection_t* collection);
-      void handleAffordanceSelectButton();
-      static void handleAffordanceSelection(BotGtkParamWidget *pw, 
-                                                  const char *name,void *user);
+      void handleAffordanceSelectChange(BotGtkParamWidget *pw);
       AffPlusPtr getSelectedAffordance();
+      volatile bool _updatingAffordanceSelectionMenu;
 
 		//=====constructor/destructor
 		public:
