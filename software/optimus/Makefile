@@ -1,3 +1,6 @@
+#GPU_CMD="vblank_mode=0 primusrun"
+GPU_CMD="optirun"
+
 DRC_ROOT=${HOME}/drc
 DRC_BIN=${DRC_ROOT}/software/build/bin
 ROS_BIN=/opt/ros/fuerte/bin
@@ -25,13 +28,13 @@ dir:
 ${DRC_BINS}:
 	@echo "Creating $@"
 	@echo "#!/bin/bash" > ${DEST_DIR}/$@
-	@echo "vblank_mode=0 primusrun ${DRC_BIN}/$@" ${ARGS_STR} >> ${DEST_DIR}/$@
+	@echo "${GPU_CMD} ${DRC_BIN}/$@" ${ARGS_STR} >> ${DEST_DIR}/$@
 	@chmod 755 ${DEST_DIR}/$@
 
 ${ROS_BINS}:
 	@echo "Creating $@"
 	@echo "#!/bin/bash" > ${DEST_DIR}/$@
-	@echo "vblank_mode=0 primusrun ${ROS_BIN}/$@" ${ARGS_STR} >> ${DEST_DIR}/$@
+	@echo "${GPU_CMD} ${ROS_BIN}/$@" ${ARGS_STR} >> ${DEST_DIR}/$@
 	@chmod 755 ${DEST_DIR}/$@
 
 clean:
