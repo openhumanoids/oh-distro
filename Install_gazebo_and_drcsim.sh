@@ -3,7 +3,6 @@ GAZEBO_REV=7503
 SIM_REV=2006
 MODELS_REV=212
 
-make clean -C ~/drc/software/externals/bullet
 
 cd ~/
 mkdir ~/gazebo_versions
@@ -12,6 +11,7 @@ mkdir ~/gazebo_versions/gazebo_$GAZEBO_REV
 read -p "gazebo, drcsim, models? (g/d/m) " RESP
 if [ "$RESP" = "g" ]; then
 
+  make clean -C ~/drc/software/externals/bullet
   echo "CHECKING OUT GAZEBO ====================================="
   hg clone https://bitbucket.org/osrf/gazebo ~/gazebo_versions/gazebo_$GAZEBO_REV/gazebo 
   cd ~/gazebo_versions/gazebo_$GAZEBO_REV/gazebo 
@@ -29,7 +29,8 @@ if [ "$RESP" = "g" ]; then
   pwd
   source /opt/ros/fuerte/setup.bash
   source /usr/local/share/gazebo-1.5/setup.sh 
-  cd ../../
+  cd ~/
+  make -C ~/drc/software/externals/bullet
   echo "Finished Installing Gazebo==================="
 
 elif [ "$RESP" = "d" ]; then
