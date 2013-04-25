@@ -1,6 +1,5 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
-
 #externals
 drc_lcmtypes
 models
@@ -8,34 +7,24 @@ robot_model
 object_template_model
 kinematics
 utils
-
-#hubo
 sensing
-
 gfe
 perception
+motion_estimate
 action_authoring
 viewer
 segmentation
-
 control
-
 network
-
-# requires drcsim/gazebo1.2 and ubuntu 12.04:
 gazebo_plugins
-
-# disabled for now:
-#teleop
 plan
-
-# porterbot stuff:
-porterbot
 
 # various scripts and tools e.g. BW plotting
 tools
 
-
-# depreciate early viewer
+# disabled for now:
+#teleop
+#porterbot
+#depreciated early viewer
 #interface
-
+#hubo
