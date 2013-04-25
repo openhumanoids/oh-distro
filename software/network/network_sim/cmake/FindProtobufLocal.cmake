@@ -91,7 +91,7 @@ function(PROTOBUF_GENERATE_CPP SRCS HDRS CPP_OUT_DIR)
       COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --cpp_out ${CPP_OUT_DIR} ${ABS_FIL} ${ALL_PROTOBUF_INCLUDE_DIRS} "-I${CMAKE_CURRENT_SOURCE_DIR}"
       DEPENDS ${ABS_FIL}
-      COMMENT "Running C++ protocol buffer compiler on ${FIL}"
+      COMMENT "Running C++ protocol buffer compiler on ${FIL} with --cpp_out ${CPP_OUT_DIR} ${ABS_FIL} ${ALL_PROTOBUF_INCLUDE_DIRS} -I${CMAKE_CURRENT_SOURCE_DIR}" 
       VERBATIM )
   endforeach()
 

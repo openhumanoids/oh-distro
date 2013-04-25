@@ -20,7 +20,6 @@ include_directories(${GOBY_INCLUDE_DIR})
 protobuf_include_dirs(${PROTOBUF_INCLUDE_DIR})
 protobuf_include_dirs(${GOBY_INCLUDE_DIR})
 
-
 # simple network simulator:
 add_subdirectory(src/network_bridge)
 

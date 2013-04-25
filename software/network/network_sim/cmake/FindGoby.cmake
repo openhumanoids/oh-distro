@@ -11,12 +11,14 @@ mark_as_advanced(GOBY_INCLUDE_DIR)
 file(READ "${GOBY_INCLUDE_DIR}/goby/version.h" GOBY_VERSION_HPP_CONTENTS)
   
 string(REGEX REPLACE ".*#define GOBY_VERSION_MAJOR ([0-9]+).*" "\\1" GOBY_VERSION_MAJOR "${GOBY_VERSION_HPP_CONTENTS}")
+string(REGEX REPLACE ".*#define GOBY_VERSION_MINOR ([0-9]+).*" "\\1" GOBY_VERSION_MINOR "${GOBY_VERSION_HPP_CONTENTS}")
+string(REGEX REPLACE ".*#define GOBY_VERSION_PATCH ([0-9~a-z]+).*" "\\1" GOBY_VERSION_PATCH "${GOBY_VERSION_HPP_CONTENTS}")
 
 
 get_filename_component(GOBY_DIR ${GOBY_INCLUDE_DIR}/../ ABSOLUTE)
 set(GOBY_LIBRARY_PATH "${GOBY_DIR}/lib")
 
-message("Using Goby in ${GOBY_DIR} (Major version ${GOBY_VERSION_MAJOR})")
+message("Using Goby in ${GOBY_DIR} (Version ${GOBY_VERSION_MAJOR}.${GOBY_VERSION_MINOR}.${GOBY_VERSION_PATCH})")
 #
 # Find libraries
 # 
