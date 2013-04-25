@@ -1,15 +1,26 @@
+import "goby/acomms/protobuf/dccl_option_extensions.proto";
+
 package drc;
+
+message ShaperHeader
+{
+  option (dccl.msg).max_bytes = 9;
+  option (dccl.msg).id = 124;
+  required int32 channel = 1 [(dccl.field).min = 0,
+                              (dccl.field).max = 1023];
+  required int32 priority = 2 [(dccl.field).min = 0,
+                               (dccl.field).max = 7];
+  required int32 message_number = 3 [(dccl.field).min = 0,
+                                     (dccl.field).max = 15];
+  required uint32 fragment = 4 [(dccl.field).min = 0,
+                                (dccl.field).max = 0xFFFFF]; // 1 Megabyte
+  required bool is_last_fragment = 5;
+  required uint32 message_size = 10 [(dccl.field).min = 0,
+                                     (dccl.field).max = 0xFFFFF]; // 1 Megabyte
+}
 
 message ShaperPacket
 {
-  required fixed32 channel = 1;
-  required fixed32 priority = 2;
-  required fixed32 message_number = 3;
-  required fixed32 fragment = 4;
-  required bool is_last_fragment = 5;
-  required fixed32 message_size = 10;
-  
-  required bytes data = 30;
+  required ShaperHeader header = 1; // DCCL encoded ShaperHeader
+  required bytes data = 2; // fragment of message
 }
-
-
