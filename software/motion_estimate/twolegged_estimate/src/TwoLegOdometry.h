@@ -52,6 +52,9 @@ class TwoLegOdometry {
 		DataFileLogger datafile;
 		DataFileLogger footcontactfile;
 		
+		SchmittTrigger* _left_contact_state;
+		SchmittTrigger* _right_contact_state;
+		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
 	    drc::transform_t pelvis_to_left;
@@ -96,6 +99,7 @@ class TwoLegOdometry {
 				
 		
 		TwoLegOdometry();
+		~TwoLegOdometry();
 		
 		// Testing function not dependent on LCM messages
 		void CalculateBodyStates_Testing(int counter);
@@ -132,6 +136,8 @@ class TwoLegOdometry {
 		int getActiveFoot();
 		float leftContactStatus();
 		float rightContactStatus();
+		
+		void updateSingleFootContactStates(long utime, const double left_force, const double right_force);
 		
 		void terminate();
 		

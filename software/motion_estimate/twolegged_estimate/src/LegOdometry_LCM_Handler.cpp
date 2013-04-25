@@ -133,8 +133,18 @@ void LegOdometry_Handler::run(bool testingmode) {
 	return;
 }
 
+// To be moved to a better abstraction location
+void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, float right_z) {
+	// The idea here is to determine the contact state of each foot independently
+	// to enable better initialization logic when the robot is stating up, or stading up after falling down
+	_leg_odo->updateSingleFootContactStates(utime, left_z, right_z);
+}
 
-//void LegOdometry_Handler::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg) {
+void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
+	left_force = msg->contacts.contact_force[0].z;
+	right_force = msg->contacts.contact_force[1].z;
+}
+
 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
@@ -151,21 +161,33 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	Eigen::Isometry3d left;
 	Eigen::Isometry3d right;
 	
-	
 	getTransforms(msg,left,right);
-	//InertialOdometry::QuaternionLib::printEulerAngles("after getTransforms()", left);
-
 	
+	// TODO -- get the name based left and right foot force data here
+	double left_force, right_force;
+	
+	ParseFootForces(msg, left_force, right_force);
+	left_force = msg->contacts.contact_force[0].z;
+	right_force = msg->contacts.contact_force[1].z;
+
+	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
+	
+	// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
 	if (firstpass)
 	{
 		firstpass = false;
+		
+		// We need to reset the initial condition of the odometry estimate here..
+				
 		_leg_odo->ResetWithLeftFootStates(left,right);
 		//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
+		
+		
 	}
 	_leg_odo->setLegTransforms(left, right);
 	
 	// TODO -- Check Changed the ordering on 18 April 2013 from (msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z)
-	legchangeflag = _leg_odo->FootLogic(msg->utime, msg->contacts.contact_force[0].z , msg->contacts.contact_force[1].z);
+	legchangeflag = _leg_odo->FootLogic(msg->utime, left_force, right_force);
 	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
 
 	// Timing profile. This is the midway point
@@ -363,8 +385,10 @@ void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
 	// TODO -- Convert this to use the enumerated types from inside the LCM message
 	msg_contact_est.detection_method = DIFF_SCHMITT_WITH_DELAY;
 	
+	std::cout << "Checking the feet\n";
 	msg_contact_est.left_contact = _leg_odo->leftContactStatus();
 	msg_contact_est.right_contact = _leg_odo->rightContactStatus();
+	std::cout << std::endl;
 	
 	lcm_->publish("FOOT_CONTACT_ESTIMATE",&msg_contact_est);
 }

@@ -78,8 +78,9 @@ private:
 	int poseplotcounter;
 	int collectionindex;
 	bool firstpass;
-	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
 	
+	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
+	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
 	
 	// Connect to the correct LCM messages and start to propagate that data into the odometry object for state estimation
 	void setupLCM();
@@ -106,6 +107,11 @@ private:
 
 	void PublishFootContactEst(int64_t utime);
 	void PublishEstimatedStates(const drc::robot_state_t * msg);
+	
+	void ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force);
+	// This function may move to a new class in the future. This is just the starting location for testing of the functionality
+	void DetermineLegContactStates(long utime, float left_z, float right_z);
+	
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW

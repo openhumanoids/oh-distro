@@ -23,5 +23,21 @@ public:
 	void log(std::string data);
 };
 
+class SchmittTrigger {
+private:
+	bool current_status;
+	long timer;
+	long time_delay;
+	long previous_time;
+	double low_threshold;
+	double high_threshold;
+	bool first_call;
+	
+public:
+	SchmittTrigger(double lt, double ht, long delay);
+	void UpdateState(long present_time, double value);
+	void Reset();
+	float getState();
+};
 
 #endif /*SIGNALTAP_HPP_*/

@@ -53,8 +53,17 @@ TwoLegOdometry::TwoLegOdometry()
 	
 	both_feet_in_contact = true;
 	
+	_left_contact_state = new SchmittTrigger(30, 200, 10000);
+	_right_contact_state = new SchmittTrigger(30, 200, 10000);
+	
 	datafile.Open("datalog.csv");
 	footcontactfile.Open("footcontactlog.csv");
+	
+}
+
+TwoLegOdometry::~TwoLegOdometry() {
+	delete _left_contact_state;
+	delete _right_contact_state;
 	
 }
 
@@ -538,18 +547,35 @@ int TwoLegOdometry::getActiveFoot() {
 	return standing_foot;
 }
 
+void TwoLegOdometry::updateSingleFootContactStates(long utime, const double left_force, const double right_force) {
+	_left_contact_state->UpdateState(utime, left_force);
+	_right_contact_state->UpdateState(utime, right_force);
+}
+
+
 float TwoLegOdometry::leftContactStatus() {
+	return _left_contact_state->getState();
+	
+	/*
+	 * This comes from when the contact state classification was done from the odometry classification
+	 * This has been changed since weight baring and contact states have developed to be a little different.
+	 * We therefore maintain two classifiers
+	 * 
 	if (getActiveFoot() == LEFTFOOT || both_feet_in_contact) {
 		return 1.0f;
 	}
-	return 0.0f;
+	return 0.0f;*/
 }
 
 float TwoLegOdometry::rightContactStatus() {
+	return _right_contact_state->getState();
+	
+	/*
 	if (getActiveFoot() == RIGHTFOOT || both_feet_in_contact) {
 		return 1.0f;
 	}
 	return 0.0f;
+	*/
 }
 
 void TwoLegOdometry::terminate() {
