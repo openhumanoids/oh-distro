@@ -76,6 +76,10 @@ group "2.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "paladin-02";
     }
+    cmd "mit_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
+        host = "paladin-02";
+    }
     cmd "mit_manip_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world gzname:=run_gazebo_unpaused";
         host = "paladin-02";
@@ -428,6 +432,7 @@ script "run_QUAL_1" {
     start group "1.a.core";
     wait ms 100;
     start group "1.b.sensing";
+    start cmd "KinematicFootContactEstimator"; 
     start cmd "Qual1StateMachine"; 
     start cmd "FootstepPlanner"; 
     start cmd "ZMPWalkingPlanner";
