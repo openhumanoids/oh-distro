@@ -27,6 +27,7 @@
 #include <renderer_drc/renderer_driving.hpp>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_status.hpp>
+#include <renderer_drc/renderer_score.hpp>
 
 // new grid renderer:
 #include <renderer_drc/renderer_drcgrid.h>
@@ -250,6 +251,7 @@ int main(int argc, char *argv[])
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
+  score_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
