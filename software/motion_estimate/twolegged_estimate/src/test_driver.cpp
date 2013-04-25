@@ -31,11 +31,13 @@ void signalHandler( int signum ){
 
 int main(int argc, char ** argv) {
   bool do_estimation = false;
+  bool plot_footsteps = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(do_estimation, "e", "do_estimation","Do motion estimation");
+  opt.add(plot_footsteps, "f", "plot_footsteps","Draw footstep poses in viewer");
   opt.parse();
-  std::cout << "Do motion estimation: " << do_estimation<< "\n";
-  
+  std::cout << "Do motion estimation: " << do_estimation<< std::endl;
+  std::cout << "Draw footsteps: " << plot_footsteps << std::endl;
 
 
   // register signal SIGINT and signal handler  
@@ -48,7 +50,7 @@ int main(int argc, char ** argv) {
     return 1;
 
   //_leg_odo = new TwoLegs::TwoLegOdometry(); // This is excessive, as the class is also invoked by LegOdometry_Handler() object.
-  _legs_motion_estimate = new LegOdometry_Handler(lcm, do_estimation);
+  _legs_motion_estimate = new LegOdometry_Handler(lcm, do_estimation, plot_footsteps);
 
 
   // Do some stuff with the objects to test them. Preferably here you must call the internal testing functions of the different objects created..

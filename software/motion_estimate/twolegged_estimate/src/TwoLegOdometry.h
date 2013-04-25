@@ -19,8 +19,12 @@
 #define STANDING_TRANSITION_TIMEOUT   10000
 
 #define MIN_STANDING_FORCE			     50
-#define MIN_STANDING_FEET_X_SEP			0.1
-#define LOADSPLIT_LEVEL				    0.75
+#define MIN_STANDING_FEET_X_SEP			  0.1
+#define LOADSPLIT_LEVEL				      0.75
+
+#define HIGH_FOOT_CONTACT_THRESH         10
+#define LOW_FOOT_CONTACT_THRESH           0
+#define FOOT_CONTACT_DELAY             1000
 
 namespace TwoLegs {
 

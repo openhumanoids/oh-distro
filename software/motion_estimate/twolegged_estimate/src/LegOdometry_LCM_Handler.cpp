@@ -21,8 +21,8 @@
 using namespace TwoLegs;
 using namespace std;
 
-LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation):
-        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps):
+        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	_leg_odo = new TwoLegOdometry();
@@ -60,9 +60,11 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	
 	firstpass = true;
 	
-#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
+//#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
+  if (_draw_footsteps) {
 	_viewer = new Viewer(lcm_viewer);
-#endif
+  }
+	//#endif
 	
 	return;
 }
@@ -208,7 +210,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	_viewer->sendCollection(*_obj, true);
 #endif
 	
-#ifdef DISPLAY_FOOTSTEP_POSES
+//#ifdef DISPLAY_FOOTSTEP_POSES
+  if (_draw_footsteps) {
 	if (legchangeflag)
 	{
 		//std::cout << "LEGCHANGE\n";
@@ -219,7 +222,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 	
 	_viewer->sendCollection(*_obj, true);
-#endif
+  }
+	//#endif
 
 	clock_gettime(CLOCK_REALTIME, &threequat);
 	

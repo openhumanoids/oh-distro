@@ -53,8 +53,8 @@ TwoLegOdometry::TwoLegOdometry()
 	
 	both_feet_in_contact = true;
 	
-	_left_contact_state = new SchmittTrigger(0, 15, 1000);
-	_right_contact_state = new SchmittTrigger(0, 15, 1000);
+	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
+	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
 	datafile.Open("datalog.csv");
 	footcontactfile.Open("footcontactlog.csv");

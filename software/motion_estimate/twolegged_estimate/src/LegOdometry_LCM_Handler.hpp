@@ -60,6 +60,7 @@ private:
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
 	bool _do_estimation;
+	bool _draw_footsteps;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -116,7 +117,7 @@ private:
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation);
+	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps);
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }
