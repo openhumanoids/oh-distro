@@ -348,53 +348,60 @@ group "utils.system-test" {
     }
 }
 
-
+######################################
+########### Walking ##################
 script "core-start" {
     start group "0.dev_deputies";
-    wait ms 200;
     start group "1.a.core";
-    wait ms 200;
+    wait ms 100;
     start group "1.b.sensing";
+    start cmd "FootContactEstimator"; 
     start cmd "Qual1StateMachine";
     start cmd "FootstepPlanner";
     start cmd "ZMPWalkingPlanner";
     wait ms 10000;
-    start cmd "qual_walking_slow_unpaused";
-    wait ms 5000;
-    start cmd "set-sim-rate";
 }
 
 script "core-start-mit-walking" {
-    start group "0.dev_deputies";
-    wait ms 200;
-    start group "1.a.core";
-    wait ms 200;
-    start group "1.b.sensing";
-    start cmd "Qual1StateMachine";
-    start cmd "FootstepPlanner";
-    start cmd "ZMPWalkingPlanner";
-    wait ms 10000;
+    run_script "core-start";
     start cmd "mit_walking_slow";
-    wait ms 5000;
+    wait ms 4000;
     start cmd "set-sim-rate";
 }
-
 
 script "core-start-mit-manip" {
-    start group "0.dev_deputies";
-    wait ms 200;
-    start group "1.a.core";
-    wait ms 200;
-    start group "1.b.sensing";
-    start cmd "Qual1StateMachine";
-    start cmd "FootstepPlanner";
-    start cmd "ZMPWalkingPlanner";
-    wait ms 10000;
+    run_script "core-start";
     start cmd "mit_manip_slow";
-    wait ms 5000;
+    wait ms 4000;
     start cmd "set-sim-rate";
 }
 
+script "run_QUAL_1" {
+    run_script "core-start";
+    start cmd "qual_walking_slow"; 
+    wait ms 4000;
+    start cmd "set-sim-rate";
+}
+
+########### Manip ##################
+script "run_QUAL_2" {
+    start group "0.dev_deputies";
+    start group "1.a.core";
+    wait ms 100;
+    start group "1.b.sensing";
+    start cmd "aff_server"; 
+    start cmd "GraspController";
+    start cmd "Qual2StateMachine";
+    start cmd "ReachingPlanner";
+    start cmd "sticky_hands";
+    wait ms 10000;
+    start cmd "qual_manipulation";    
+    wait ms 500;  
+    start cmd "oracle2coll"; 
+}
+
+
+############ System Test ############
 script "core-stop" {
     stop cmd "lcm-logger-no-vis";
     stop cmd "systemwide-test";
@@ -412,49 +419,15 @@ script "systemtest" {
     start cmd "lcm-logger-no-vis";
     start cmd "systemwide-test";
     wait ms 100;
-    run_script "start-core";
+    run_script "run_QUAL_1";
     wait ms 1200000;
     run_script "core-stop";
     wait ms 10000;
 }
 
 script "core-start-vo" {
-    run_script "core-start";
+    run_script "run_QUAL_1";
     stop cmd "estpub";
     start cmd "estpub_sensing";
     start cmd "motion_vo_testing";
-}
-
-
-
-script "run_QUAL_1" {
-    start group "0.dev_deputies";
-    start group "1.a.core";
-    wait ms 100;
-    start group "1.b.sensing";
-    start cmd "FootContactEstimator"; 
-    start cmd "Qual1StateMachine"; 
-    start cmd "FootstepPlanner"; 
-    start cmd "ZMPWalkingPlanner";
-    wait ms 10000;
-    start cmd "qual_walking_slow"; 
-    wait ms 4000;
-    start cmd "set-sim-rate"; 
-}
-
-
-script "run_QUAL_2" {
-    start group "0.dev_deputies";
-    start group "1.a.core";
-    wait ms 100;
-    start group "1.b.sensing";
-    start cmd "aff_server"; 
-    start cmd "GraspController";
-    start cmd "Qual2StateMachine";
-    start cmd "ReachingPlanner";
-    start cmd "sticky_hands";
-    wait ms 10000;
-    start cmd "qual_manipulation";    
-    wait ms 500;  
-    start cmd "oracle2coll"; 
 }
