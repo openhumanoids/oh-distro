@@ -132,7 +132,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
     Q_(1,3) = -272.0;//-right_.cy();
     Q_(2,3) = 606.0344848632812;//right_.fx();
     Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx;  
-  }else{ // simulated
+  }else if(1==0){ // simulated 1024x544
     Q_(0,0) = Q_(1,1) = 1.0;  
     //double Tx = baseline();
     Q_(3,2) = 14.2914745276283;//1.0 / Tx;
@@ -140,6 +140,14 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
     Q_(1,3) = -272.5;//-right_.cy();
     Q_(2,3) = 610.1778;//right_.fx();
     Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx;      
+  }else{ // simulated 800x800
+    Q_(0,0) = Q_(1,1) = 1.0;  
+    //double Tx = baseline();
+    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
+    Q_(0,3) = -400.5;//-right_.cx();
+    Q_(1,3) = -400.5;//-right_.cy();
+    Q_(2,3) = 476.7014;//right_.fx();
+    Q_(3,3) = 0;// (400.5 - 400.5)/0.07;//(right_.cx() - left_.cx()) / Tx;      
   }
   std::cout << Q_ << " is reprojectionMatrix\n";  
   

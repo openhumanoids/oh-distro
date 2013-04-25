@@ -245,12 +245,12 @@ fovis::StereoCalibration* FoVision::default_config(){
   fovis::StereoCalibrationParameters kparams;
 
   fovis::CameraIntrinsicsParameters lparams;
-  lparams.width = 1024;
-  lparams.height= 1088;
-  lparams.fx = 606.0344848632812;
-  lparams.fy = 606.0344848632812;
-  lparams.cx = 512.0; // should this have another 0.5?
-  lparams.cy = 544.0; // should this have another 0.5?
+  lparams.width = 800;
+  lparams.height= 800;
+  lparams.fx = 476.7014;
+  lparams.fy = 476.7014;
+  lparams.cx = 400.5; // should this have another 0.5?
+  lparams.cy = 400.5; // should this have another 0.5?
   lparams.k1 = 0.0;
   lparams.k2 = 0.0;
   lparams.k3 = 0.0;
@@ -258,12 +258,12 @@ fovis::StereoCalibration* FoVision::default_config(){
   lparams.p2 = 0.0;
 
   fovis::CameraIntrinsicsParameters rparams;
-  rparams.width = 1024;
-  rparams.height = 1088;
-  rparams.fx = 606.0344848632812;
-  rparams.fy = 606.0344848632812;
-  rparams.cx = 512.0; // should this have another 0.5?
-  rparams.cy = 544.0; // should this have another 0.5?
+  rparams.width = 800;
+  rparams.height = 800;
+  rparams.fx = 476.7014;
+  rparams.fy = 476.7014;
+  rparams.cx = 400.5; // should this have another 0.5?
+  rparams.cy = 400.5; // should this have another 0.5?
   rparams.k1 = 0.0;
   rparams.k2 = 0.0;
   rparams.k3 = 0.0;
