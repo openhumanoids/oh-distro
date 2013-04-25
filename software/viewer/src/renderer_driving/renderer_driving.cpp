@@ -651,7 +651,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     RendererDriving *self = (RendererDriving*) ehandler->user;
     self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
 
-    return 1;
+    return 0;
 }
 
 
