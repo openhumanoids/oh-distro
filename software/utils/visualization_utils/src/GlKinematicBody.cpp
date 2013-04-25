@@ -12,7 +12,7 @@ using namespace visualization_utils;
 //}
 
 //constructor
-GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false)
+GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),visualize_bbox(false),is_otdf_instance(false),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false), accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false)
 {  
   //cout << "GLKinematicBody Constructor" << endl;
 
@@ -150,7 +150,7 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
 
 }
 
-GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false)
+GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),visualize_bbox(false),is_otdf_instance(true),_T_world_body(KDL::Frame::Identity()),_T_world_body_future(KDL::Frame::Identity()), future_display_active(false),accumulate_motion_trail(false),enable_blinking(false),future_state_changing(false)
 {  
  //re_init(otdf_instance);
  set_state(otdf_instance); //calls re_init inside
@@ -464,12 +464,14 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::st
 // space and time visualization.
 void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {
+  cout << "1) GlKinematicBody set_future_state \n";
  if(!future_display_active){
    future_display_active = true;
   }
 //  std::map<std::string, double> jointpos_in;
 //  for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
 //    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
+ cout << "_future_jointpos.size() " <<_future_jointpos.size() <<" "<<jointpos_in.size() <<endl;         
     _future_jointpos.clear();
     _future_jointpos = jointpos_in;
     _T_world_body_future = T_world_body_future;
@@ -477,6 +479,8 @@ void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, st
         run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
     else
         run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
+        
+ cout << "2) GlKinematicBody set_future_state \n";
 
 }//end void GlKinematicBody::set_future_state
 
@@ -664,12 +668,12 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
               shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
               //---store
               if (!update_future_frame){
-                std::vector<std::string>::const_iterator found;
+                /*std::vector<std::string>::const_iterator found;
                 found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                if (found == _link_names.end()) { // if doesnt exist then add
+                if (found == _link_names.end()) { // if doesnt exist then add*/
                   _link_names.push_back(it->first);  
                   _link_tfs.push_back(link_state);;
-                }
+                //}
                 _link_geometry_names.push_back(unique_geometry_name);
                 _link_shapes.push_back(geom);
                 _link_geometry_tfs.push_back(geometry_state);
@@ -723,12 +727,12 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
 
                 //---store
                  if (!update_future_frame){
-                  std::vector<std::string>::const_iterator found;
+                 /* std::vector<std::string>::const_iterator found;
                   found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                  if (found == _link_names.end()) { // if doesnt exist then add
+                  if (found == _link_names.end()) { // if doesnt exist then add*/
                     _link_names.push_back(it->first);  
                     _link_tfs.push_back(link_state);;
-                  }
+                  //}
                   _link_geometry_names.push_back(unique_geometry_name);  
                   _link_shapes.push_back(geom);
                   _link_geometry_tfs.push_back(geometry_state);
@@ -787,7 +791,6 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
       return;
     }
 
-
     typedef map<string, shared_ptr<otdf::Link> > links_mapType;      
     for( links_mapType::const_iterator it =  _otdf_links_map.begin(); it!= _otdf_links_map.end(); it++)
     {  		
@@ -822,8 +825,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               jointInfo.frame=T_world_jointorigin;
               jointInfo.axis[0]=it->second->child_joints[i]->axis.x;
               jointInfo.axis[1]=it->second->child_joints[i]->axis.y;
-              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;
-              
+              jointInfo.axis[2]=it->second->child_joints[i]->axis.z;       
               // axis is specified in joint frame 
              jointInfo.axis= T_world_body.M*T_body_parentlink.M*T_parentlink_jointorigin.M*jointInfo.axis;
               //or is axis specified in parent link frame
@@ -854,7 +856,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
                     
                 }
               } // end if  (!update_future_frame)        
-            
+          
             
           }
           else if(it->first ==_root_name){
@@ -899,19 +901,18 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
            
         }// end if (it->second->child_joints[i]->type!=urdf::Joint::FIXED)
       }// end for all child joints
-    
 
       if(it->second->visual)
       {  
         typedef map<string, shared_ptr<vector<shared_ptr<otdf::Visual> > > >  visual_groups_mapType;
         visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
+
         for (size_t iv = 0;iv < v_grp_it->second->size();iv++)
         {
           vector<shared_ptr<otdf::Visual> > visuals = (*v_grp_it->second);
           
           otdf::Pose visual_origin = visuals[iv]->origin;
           KDL::Frame T_parentjoint_visual, T_body_parentjoint, T_body_visual, T_world_visual, T_world_parentjoint;
-
 
           //map<string, KDL::Frame>::const_iterator transform_it;
           //transform_it=cartpos_out.find(it->first);
@@ -950,12 +951,12 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
             shared_ptr<otdf::Geometry> geom =  visuals[iv]->geometry;
             //---store
              if (!update_future_frame){
-               std::vector<std::string>::const_iterator found;
+               /*std::vector<std::string>::const_iterator found;
                 found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                if (found == _link_names.end()) { // if doesnt exist then add
+                if (found == _link_names.end()) { // if doesnt exist then add*/
                 _link_names.push_back(it->first);  
                 _link_tfs.push_back(link_state);
-                }
+                //}
               _link_geometry_names.push_back(unique_geometry_name);   
               _otdf_link_shapes.push_back(geom);
               _link_geometry_tfs.push_back(geometry_state);
@@ -965,7 +966,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), unique_geometry_name);
               if (found != _link_geometry_names.end()) {
                   unsigned int index = found - _link_geometry_names.begin();
-                  _link_tfs[index].future_frame = T_world_parentjoint; 
+                  _link_tfs[index].future_frame = T_world_parentjoint;  
                   _link_geometry_tfs[index].future_frame = T_world_visual; 
               }
             }
@@ -999,12 +1000,12 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               //---store
                if (!update_future_frame){
                
-                std::vector<std::string>::const_iterator found;
+                /*std::vector<std::string>::const_iterator found;
                 found = std::find (_link_names.begin(), _link_names.end(), it->first);
-                if (found == _link_names.end()) { // if doesnt exist then add
+                if (found == _link_names.end()) { // if doesnt exist then add*/
                 _link_names.push_back(it->first);  
                 _link_tfs.push_back(link_state);
-                }
+                //}
                 _link_geometry_names.push_back(unique_geometry_name);
                 _otdf_link_shapes.push_back(geom);
                
@@ -1021,11 +1022,9 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               }
 
            } //end if(transform_it!=cartpos_out.end())
-                     
+             
         }// end for visual groups    
-
       }//if(it->second->visual)
-
     }//end for
 
 }// end run_fk_and_update_otdf_link_shapes_and_tfs

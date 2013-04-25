@@ -609,6 +609,7 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
 
 void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {
+
   GlKinematicBody::set_future_state(T_world_body_future,jointpos_in);
   
    if(_root_name!="world"){
@@ -616,11 +617,12 @@ void InteractableGlKinematicBody::set_future_state(const KDL::Frame &T_world_bod
         init_floatingbase_marker_collision_objects(); //  For the first time, create the marker collision objects.
       update_floatingbase_marker_collision_objects();  
    }
-   
+
     if(!jointdof_markers_initialized){
       init_jointdof_marker_collision_objects(); // For the first time, create the marker collision objects.
       jointdof_markers_initialized = true; 
     }
+
     update_jointdof_marker_collision_objects();
 
 }//end void GlKinematicBody::set_future_state
@@ -836,7 +838,7 @@ void InteractableGlKinematicBody::init_jointdof_marker_collision_objects()
 //----------------------------------------------------------------------------------------------------------------
 void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
 {
-
+ 
   Eigen::Vector3f p;
   Eigen::Vector4f q;
 
@@ -854,7 +856,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
       joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
     }
 
-  
+
     int type = jointInfo.type;
       
     if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
