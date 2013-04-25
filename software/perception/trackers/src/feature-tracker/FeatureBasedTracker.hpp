@@ -38,6 +38,7 @@ public:
 
   std::vector<int> getAllTrackIds() const;
   TrackedObject::State getCurrentState(const int iId) const;
+  TrackedObject::Ptr getTrackedObject(const int iId) const;
 
 protected:
   std::shared_ptr<Helper> mHelper;

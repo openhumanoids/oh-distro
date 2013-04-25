@@ -55,5 +55,5 @@ pods_install_executables(${EXE_NAME})
 set(EXE_NAME feature-tracker)
 add_executable(${EXE_NAME} TrackerMain.cpp)
 pods_use_pkg_config_packages(${EXE_NAME} feature-tracking zlib bot2-frames
-  bot2-param-client)
+  bot2-param-client bot2-lcmgl-client)
 pods_install_executables(${EXE_NAME})

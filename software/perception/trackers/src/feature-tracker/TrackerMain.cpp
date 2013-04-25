@@ -23,6 +23,9 @@
 #include "StereoCamera.hpp"
 #include "FeatureBasedTracker.hpp"
 
+// TODO: debugging
+#include <bot_lcmgl_client/lcmgl.h>
+
 using namespace tracking;
 
 // structure to hold one frame of data to update the tracker
@@ -47,6 +50,7 @@ struct InitializeData {
 // main structure
 struct State {
   std::shared_ptr<lcm::LCM> mLcm;
+  bot_lcmgl_t* mLcmGl;
 
   BotParam* mBotParam;
   BotFrames* mBotFrames;
@@ -75,6 +79,7 @@ struct State {
     mLcm->subscribe("CAMERA", &State::onStereo, this);
     mLcm->subscribe("AFFORDANCE_PLUS_COLLECTION", &State::onAffPlus, this);
     mLcm->subscribe("TRACKER_COMMAND", &State::onCommand, this);   
+    mLcmGl = bot_lcmgl_init(mLcm->getUnderlyingLCM(), "feature-tracker");
 
     // configure camera
     mBotParam = bot_param_new_from_server(mLcm->getUnderlyingLCM(), 0);
@@ -91,6 +96,7 @@ struct State {
   }
 
   ~State() {
+    bot_lcmgl_destroy(mLcmGl);
     bot_frames_destroy(mBotFrames);
     bot_param_destroy(mBotParam);
   }
@@ -239,7 +245,8 @@ struct TrackerWrapper {
     // find mask with matching timestamp
     const bot_core::image_t* maskRaw =
       mState->find(mState->mMaskBuffer, mState->mUpdateData.mStereoRaw.utime);
-    if (maskRaw == NULL) return false;
+    // TODO TEMP if (maskRaw == NULL) return false;
+    if (maskRaw == NULL) maskRaw = &mState->mMaskBuffer.back();
 
     // decode mask
     unsigned long numBytes = maskRaw->width*maskRaw->height;
@@ -324,7 +331,27 @@ struct TrackerWrapper {
           for (size_t k = 0; k < ids.size(); ++k) {
             TrackedObject::State state = mTracker.getCurrentState(ids[k]);
             publishAffordance(ids[k], state);
-            // TODO: debug info
+
+            // publish debug info
+            bot_lcmgl_t* lcmgl = mState->mLcmGl;
+            TrackedObject::Ptr obj = mTracker.getTrackedObject(ids[k]);
+            std::vector<Landmark>& landmarks = obj->mLandmarks;
+            bot_lcmgl_point_size(lcmgl, 5);
+            bot_lcmgl_color3f(lcmgl, 0.5, 0.0, 1.0);
+            bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+            for (size_t p = 0; p < landmarks.size(); ++p) {
+              Eigen::Vector3f pt = landmarks[p].mPos3d;
+              bot_lcmgl_vertex3f(lcmgl, pt[0], pt[1], pt[2]);
+            }
+            bot_lcmgl_end(lcmgl);
+            // bot_lcmgl_color3f(lcmgl, 0.5, 0.5, 1.0);
+            // bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+            // for (int p = 0; p < xxx; ++p) {
+            //   Eigen::Vector3d pt = xxx;
+            //   bot_lcmgl_vertex3d(lcmgl, pt[0], pt[1], pt[2]);
+            // }
+            // bot_lcmgl_end(lcmgl);
+            bot_lcmgl_switch_buffer(lcmgl);
           }
         }
 

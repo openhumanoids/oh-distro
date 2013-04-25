@@ -345,3 +345,12 @@ getCurrentState(const int iId) const {
   }
   return item->second->mCurrentState;
 }
+
+TrackedObject::Ptr FeatureBasedTracker::
+getTrackedObject(const int iId) const {
+  Helper::ObjectMap::const_iterator item = mHelper->mTrackedObjects.find(iId);
+  if (item == mHelper->mTrackedObjects.end()) {
+    return NULL;
+  }
+  return item->second;
+}
