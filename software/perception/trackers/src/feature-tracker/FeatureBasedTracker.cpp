@@ -126,7 +126,7 @@ struct FeatureBasedTracker::Helper {
 
     // align subset of 3d points to original 3d points using ransac
     PoseEstimator estimator;
-    estimator.setErrorThreshold(0.03);
+    estimator.setErrorThreshold(0.02);  // TODO: make this a parameter
     Eigen::Isometry3f poseChange;
     std::vector<int> inliers;
     if (!estimator.ransac(pointsRef, pointsCur, poseChange, inliers)) {
@@ -224,12 +224,12 @@ initialize(const int iId, const cv::Mat& iMask,
     if (iMask.at<uint8_t>(keyPoints[i].pt) == 0) continue;
 
     // move point into right image via disparity
-    Eigen::Vector2f curPos(keyPoints[i].pt.x, keyPoints[i].pt.y);
+    Eigen::Vector2f refPos(keyPoints[i].pt.x, keyPoints[i].pt.y);
+    Eigen::Vector2f curPos = refPos;
     curPos[0] -= pyrLevel->mDisparity.at<float>(keyPoints[i].pt);
 
-    // try to find matching point to subpixel accuracy using klt track
-    refTransform.translation() = Eigen::Vector2f(keyPoints[i].pt.x,
-                                                 keyPoints[i].pt.y);
+    // try to find matching point to subpixel accuracy
+    refTransform.translation() = refPos;
     PointMatch match = matcher.refine(curPos, rightPyramid, refTransform,
                                       leftPyramid, mHelper->mPatchRadiusX,
                                       mHelper->mPatchRadiusY, epiDir);
@@ -310,7 +310,7 @@ initialize(const int iId, const cv::Mat& iMask,
   // add this object to map
   mHelper->mTrackedObjects[object->mId] = object;
 
-  return false;
+  return true;
 }
 
 bool FeatureBasedTracker::

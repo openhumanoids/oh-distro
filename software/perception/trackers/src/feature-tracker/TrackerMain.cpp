@@ -209,7 +209,8 @@ struct TrackerWrapper {
     int w = upData.mDisparityRaw.width;
     int h = upData.mDisparityRaw.height;
     void* data = upData.mDisparityRaw.data.data();
-    upData.mDisparity = cv::Mat(w, h, CV_32FC1, data).clone();
+
+    cv::Mat(h, w, CV_16UC1, data).convertTo(upData.mDisparity, CV_32F, 1.0f/16);
 
     // get pose for stereo pair
     BotTrans trans;
@@ -224,17 +225,18 @@ struct TrackerWrapper {
                       trans.trans_vec[2]);
 
     // split left and right images
-    w = upData.mStereoRaw.width/2;
-    h = upData.mStereoRaw.height;
+    w = upData.mStereoRaw.width;
+    h = upData.mStereoRaw.height/2;
     data = upData.mStereoRaw.data.data();
-    cv::Mat img = cv::Mat(2*w, h, CV_8UC1, data);
-    upData.mLeftImage = img.colRange(0, w-1).clone();
-    upData.mRightImage = img.colRange(w, 2*w-1).clone();
+    cv::Mat img(2*h, w, CV_8UC1, data);
+    upData.mLeftImage = img.rowRange(0, h).clone();
+    upData.mRightImage = img.rowRange(h, 2*h).clone();
   }
 
   bool decodeInitData() {
     InitializeData& initData = mState->mInitData;
 
+    // find mask with matching timestamp
     const bot_core::image_t* maskRaw =
       mState->find(mState->mMaskBuffer, mState->mUpdateData.mStereoRaw.utime);
     if (maskRaw == NULL) return false;
@@ -243,9 +245,12 @@ struct TrackerWrapper {
     unsigned long numBytes = maskRaw->width*maskRaw->height;
     std::vector<uint8_t> bytes(numBytes);
     uncompress(bytes.data(), &numBytes, maskRaw->data.data(), maskRaw->size);
-    cv::Mat temp(maskRaw->width, maskRaw->height, CV_8UC1, bytes.data());
+    cv::Mat temp(maskRaw->height, maskRaw->width, CV_8UC1, bytes.data());
     cv::Mat1b mask = (temp == (64 + initData.mObjectId));
     initData.mMask = mask;
+    // TODO: how to quickly synchronize stereo pair, disparity, mask
+    // could generate mask rather than waiting for it
+    // could just grab latest mask
 
     // find closest affordance in time
     std::list<drc::affordance_t>::iterator iter;

@@ -45,7 +45,7 @@ cv::Mat KeyFrame::
 convert(const cv::Mat& iImage) const {
   cv::Mat grayImage, outImage;
   if (iImage.channels() > 1) cv::cvtColor(iImage, grayImage, CV_BGR2GRAY);
-  else grayImage = mOrigData.mLeftImage;
+  else grayImage = iImage;
   if (mSmoothingSigma > 0.01) {
     cv::GaussianBlur(grayImage, outImage, cv::Size(5,5),
                      mSmoothingSigma, 0, cv::BORDER_REFLECT);
@@ -100,7 +100,8 @@ setData(const cv::Mat& iLeft, const cv::Mat& iRight,
     cv::FastFeatureDetector detector(mFastThreshold);
     for (size_t i = 0; i < mPyramid.size(); ++i) {
       detector.detect(mPyramid[i]->mLeftImage, mPyramid[i]->mLeftKeyPoints);
-      detector.detect(mPyramid[i]->mRightImage, mPyramid[i]->mRightKeyPoints);
+      // TODO: for now, don't need features from right image
+      //detector.detect(mPyramid[i]->mRightImage, mPyramid[i]->mRightKeyPoints);
     }
   }
 }
