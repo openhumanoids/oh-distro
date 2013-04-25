@@ -69,10 +69,13 @@ classdef HarnessController < DRCController
         % use saved nominal pose
         d = load('data/atlas_fp.mat');
         if ~obj.floating
-          qtraj = d.xstar(6+(1:getNumDOF(obj.robot)));
+          qf = d.xstar(6+(1:getNumDOF(obj.robot)));
         else
-          qtraj = d.xstar(1:getNumDOF(obj.robot));
+          qf = d.xstar(1:getNumDOF(obj.robot));
         end
+        q0 = zeros(getNumDOF(obj.robot),1);
+        qtraj = PPTrajectory(spline([0 2],[q0 qf]));
+        
         obj.controller_data.setField('ti_flag',true);
       end
       
