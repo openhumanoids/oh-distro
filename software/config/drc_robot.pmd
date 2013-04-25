@@ -181,6 +181,10 @@ group "4.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "paladin-02";
     }
+    cmd "PrecomputationServer" {
+       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "paladin-02";
+    }
     cmd "ReachPlanFollower_PD" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runReachPlanFollowerLCMRobot;\"";
        host = "paladin-02";
@@ -339,7 +343,7 @@ group "utils.system-test" {
         host = "paladin-02";
     }
     cmd "set-sim-rate" {
-        exec = "drc-set-sim-rate 0.1";
+        exec = "drc-set-sim-rate 0.25";
         host = "paladin-02";
     }
     cmd "lcm-logger-no-vis" {
@@ -356,6 +360,7 @@ script "core-start" {
     wait ms 100;
     start group "1.b.sensing";
     start cmd "FootContactEstimator"; 
+    start cmd "PrecomputationServer"; 
     start cmd "Qual1StateMachine";
     start cmd "FootstepPlanner";
     start cmd "ZMPWalkingPlanner";
