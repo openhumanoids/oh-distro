@@ -63,7 +63,7 @@ struct state_t {
         frames = bot_frames_get_global (lcm, param);
 
         // Initialize image IO utils
-        imgutils_aff = new image_io_utils( lcm, 1024, 544);
+        imgutils_aff = new image_io_utils( lcm, 800, 800);
         tracker = new HistogramTracker();
         counter = 0; 
     }

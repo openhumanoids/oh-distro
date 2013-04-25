@@ -49,8 +49,8 @@
 using namespace std;
 
 
-int width =1024; // hardcoded
-int height =544; // hardcoded
+int width =800;//1024; // hardcoded
+int height =800;//544; // hardcoded
 uint8_t* stereo_data = new uint8_t [2*3* width*height]; // 2 color scale images stacked
 uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
 

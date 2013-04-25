@@ -1,13 +1,3 @@
-// 1024x544 from Gazebo
-// reduced by 4 to 256x136 - 5KB per image @ 50% quality 
-// (1024x544 per image @ 50% quality is 40KB for same image)
-//
-// Older Calculations:
-// 320x240 image:
-// 1.8MB per sec @ 8Hz uncompressed [230kB per image = 320w*240h*3stride]
-// 145KB per sec @ 8Hz 94% quality jpeg [18KB per image]
-// 50KB per sec @ 8Hz 50% quality jpeg [6.25KB per image]
-// 21kB per sec @ 8Hz 10% quality jpeg [1.6KB per image = about 13kbits]
 #include <iostream>
 #include <stdio.h>
 #include <signal.h>
@@ -62,8 +52,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
 
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
-  width_ = 1024;
-  height_ = 544;
+  width_ = 800;
+  height_ =800;
   counter_=0;
   last_img_.utime=0; // used to indicate no message recieved yet
 }
@@ -155,24 +145,6 @@ void Pass::sendOutput(){
   imgutils_->sendImage(imgMat.data, last_img_.utime, last_img_.width, 
                         last_img_.height, 3, string(image_channel_ + "_TRACKING")  );
   
-  
-/*
-  if (mode_==0){ // resize, jpeg and send 
-    /// factor of 4: 1024x544 --> 256x136  
-    // OPENCV HERE TO AVOID DEPENDENCY
-    Mat src= Mat::zeros( last_img_.height,last_img_.width  ,CV_8UC3);
-    src.data = last_img_.data.data();
-    int resize_height = last_img_.height/resize_;
-    int resize_width  = last_img_.width/resize_;
-    Mat img = Mat::zeros( resize_height , resize_width ,CV_8UC3);
-    cv::resize(src, img, img.size());  // Resize src to img size
-    imgutils_->jpegImageThenSend(img.data, last_img_.utime, 
-                resize_width, resize_height, jpeg_quality_, image_channel_);
-  }else if(mode_==1){ // unzip and send
-    uint8_t* buf = imgutils_->unzipImage( &(last_img_) );// , image_channel_);
-    imgutils_->sendImage(buf, last_img_.utime, last_img_.width, 
-                         last_img_.height, 1, string(image_channel_ + "_UNZIPPED")  );
-  } */
 }
 
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -192,10 +164,6 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 int main(int argc, char ** argv) {
-  cout << "============= QUICK MODES ===================\n";
-  cout << "drc-image-tool  -m 0 -c CAMERALEFT\n";
-  cout << "drc-image-tool  -m 1 -c CAMERALEFT_MASKZIPPED\n";
-  cout << "=============================================\n";
 
   int jpeg_quality = 50;
   string channel = "CAMERALEFT";
