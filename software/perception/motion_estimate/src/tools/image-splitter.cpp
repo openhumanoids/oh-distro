@@ -51,7 +51,7 @@ void image_splitter::image_handler(const bot_core_image_t *msg, const char* chan
   
   if (output_color_){ // output colour
     // this code also converts from BGR to RGB:
-    Mat mat_img_bgra = Mat::zeros(1536,1024,CV_8UC4); // h,w
+    Mat mat_img_bgra = Mat::zeros(1600,800,CV_8UC4); // h,w
     mat_img_bgra.data = msg->data;
 
     /*

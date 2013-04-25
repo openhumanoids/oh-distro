@@ -19,8 +19,8 @@ TLD's work well w/ features (keypts) low-level features
 #include <lcmtypes/perception_image_roi_t.h>
 #include <ConciseArgs>
 
-const int WINDOW_WIDTH = 1024; 
-const int WINDOW_HEIGHT = 544; 
+const int WINDOW_WIDTH = 800; 
+const int WINDOW_HEIGHT = 800; 
 
 int MAX_IMAGE_WIDTH = 0;
 int MAX_IMAGE_HEIGHT = 0;

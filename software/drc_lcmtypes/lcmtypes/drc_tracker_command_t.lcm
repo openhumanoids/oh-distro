@@ -21,5 +21,6 @@ struct tracker_command_t
   const int8_t COLOR     = 2;
   const int8_t HISTOGRAM = 3;  
   const int8_t FEATURE   = 4;  
-  const int8_t ICP   = 4;
+  const int8_t ICP       = 5;
+  const int8_t STEREOICP = 6;  
 }

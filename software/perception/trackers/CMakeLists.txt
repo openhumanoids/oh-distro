@@ -15,6 +15,10 @@ add_subdirectory(src/icp-tracker)
 add_subdirectory(src/histogram-tracker)
 add_subdirectory(src/tld-tracker)
 
+
+#add_subdirectory(src/dense-tracker)
+
+
 # particle filter based:
 add_subdirectory(src/object-tracker)
 

@@ -43,6 +43,10 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
+#include <pointcloud_tools/pointcloud_lcm.hpp> // create point clouds
+#include <stereo-bm/stereo-bm.hpp>
+
+
 #include <particle/particle_filter.hpp>
 #include <trackers/major-plane-detect.hpp>
 #include <trackers/color-tracker.hpp>
@@ -68,12 +72,13 @@ class Pass{
     }    
     
     void initiate_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, 
-                       bool use_icp_tracker, bool use_plane_tracker, int plane_affordance_id);
+                       bool use_icp_tracker, bool use_stereo_tracker, bool use_plane_tracker, int plane_affordance_id);
     
   private:
     int verbose_;
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    void imageStereoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     void trackerCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::tracker_command_t* msg);    
@@ -88,6 +93,7 @@ class Pass{
     BotFrames* botframes_;
     bot::frames* frames_cpp_;
     pointcloud_vis* pc_vis_;
+    pointcloud_lcm* pc_lcm_;      
     image_io_utils*  imgutils_;
 
     // unique id of this tracker instance. Plane=0, otherwise above that
@@ -118,6 +124,9 @@ class Pass{
     bool use_color_tracker_;
     bool use_histogram_tracker_;
     bool use_icp_tracker_;
+    bool use_stereo_icp_tracker_;
+    
+    StereoB*  stereob_;
     
     // Plane Tracking Variables:
     int plane_affordance_id_;
@@ -159,6 +168,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
+  lcm_->subscribe( "CAMERA" ,&Pass::imageStereoHandler,this);
+  
+  
   mask_channel_="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel_ ,&Pass::maskHandler,this);
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this); 
@@ -173,6 +185,10 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1020,"Tracker | Updated Pose",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1021,"Tracker | Aff Cloud [at Updated]"     ,1,1, 1020,1, {0,0.6,0}));
+  
+// Remove this into StereoB tracker:
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1100,"Pose - Stereo",5,1) );
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1101,"Cloud - Stereo"         ,1,1, 1100,0, {0.0, 0.0, 1.0} ));
   
   
   
@@ -212,6 +228,14 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   icp_tracker_ = new ICPTracker(lcm_, 0);
   pcl::ModelCoefficients::Ptr plane_coeffs_ptr_(new pcl::ModelCoefficients ());
   plane_coeffs_ = plane_coeffs_ptr_;
+  // Stereo ICP Tracking:
+  float bm_scale = 0.25f;
+  stereob_ = new StereoB(lcm_);
+  stereob_->setScale(bm_scale);
+  int decimate_ =4; // was 2
+  pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
+  pc_lcm_->set_decimate( decimate_ );  
+  
   
   // Plane Detection:
   major_plane_ = new MajorPlane( lcm_, 2);
@@ -330,6 +354,96 @@ void Pass::updatePF(){
   }
 }
 
+
+void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf, 
+                        const std::string& channel, const  bot_core::image_t* msg){
+  
+  if (!tracker_initiated_){
+    // haven't been initated, quit ...
+    return;
+  }  
+  if (!got_initial_affordance_){
+    return; 
+  }  
+  
+  if (!use_stereo_icp_tracker_){
+    return;
+  }
+  int64_t update_time = msg->utime;
+    
+    
+  cout << "got stereo\n";
+
+  cv::Mat left_img, right_img;
+  int w = msg->width;
+  int h = msg->height/2;
+  std::cout << "a1\n";
+
+  if (left_img.empty() || left_img.rows != h || left_img.cols != w)
+      left_img.create(h, w, CV_8UC1);
+  if (right_img.empty() || right_img.rows != h || right_img.cols != w)
+      right_img.create(h, w, CV_8UC1);
+
+  memcpy(left_img.data,  msg->data.data() , msg->size/2);
+  memcpy(right_img.data,  msg->data.data() + msg->size/2 , msg->size/2);
+  stereob_->doStereoB(left_img, right_img, update_time);
+  stereob_->sendRangeImage(update_time);
+
+  cv::Mat_<double> Q_ = cv::Mat_<double>(4,4,0.0);
+  Q_(0,0) = Q_(1,1) = 1.0;  
+  //double Tx = baseline();
+  Q_(3,2) = 14.2914745276283;//1.0 / Tx;
+  Q_(0,3) = -512.5;//-right_.cx();
+  Q_(1,3) = -272.5;//-right_.cy();
+  Q_(2,3) = 610.1778;//right_.fx();
+  Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx; 
+
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pc_lcm_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, new_cloud);
+  cout << "points: " << new_cloud->points.size() << "\n";
+
+  Eigen::Isometry3d camera_to_local;
+  frames_cpp_->get_trans_with_utime( botframes_ , "CAMERA","local", update_time, camera_to_local);
+
+  Isometry3dTime camera_to_localT = Isometry3dTime(update_time, camera_to_local);
+  pc_vis_->pose_to_lcm_from_list(1100, camera_to_localT);
+  pc_vis_->ptcld_to_lcm_from_list(1101, *new_cloud, update_time, update_time);  
+
+  Eigen::Quaternionf pose_quat( camera_to_local.cast<float>().rotation() );
+  pcl::transformPointCloud (*new_cloud, *new_cloud,
+    camera_to_local.cast<float>().translation(), pose_quat); // !! modifies cloud
+
+
+  cout << "Got a new sweep with "<< new_cloud->points.size() <<" points\n";
+  Isometry3dTime null_poseT = Isometry3dTime(update_time, Eigen::Isometry3d::Identity() );
+  pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
+  pc_vis_->ptcld_to_lcm_from_list(1001, *new_cloud, update_time, update_time);
+
+
+  Isometry3dTime previous_object_poseT = Isometry3dTime(update_time, object_pose_); 
+  pc_vis_->pose_to_lcm_from_list(affordance_vis_, previous_object_poseT);
+  pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
+  pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,previous_object_poseT.utime, previous_object_poseT.utime);  
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  object_cloud_copy = object_cloud_;
+  icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
+  object_pose_ = icp_tracker_->getUpdatedPose();
+  //std::cout << object_pose_.translation().transpose() << " new xyz\n";
+  //std::cout << object_pose_.rotation() << " new rot\n";
+  
+  Isometry3dTime   updated_object_pose_T =  Isometry3dTime( update_time, object_pose_);
+  pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
+  pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+  publishUpdatedAffordance(); // updated at sweep frequency  
+
+    
+  
+}
+
+
+
 void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::image_t* msg){
   counter_++;
@@ -343,6 +457,10 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
     // haven't been initated, quit ...
     return;
   }
+  if (!got_initial_affordance_){
+    return; 
+  }
+  
   img_= *msg;  
   int64_t update_time = msg->utime;
   
@@ -499,12 +617,13 @@ void Pass::maskHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 void Pass::initiate_tracking(int affordance_id, bool use_color_tracker, bool use_histogram_tracker, 
-                             bool use_icp_tracker,
+                             bool use_icp_tracker, bool use_stereo_icp_tracker,
                              bool use_plane_tracker, int plane_affordance_id){
   affordance_id_ = affordance_id;
   use_color_tracker_ = use_color_tracker;
   use_histogram_tracker_ = use_histogram_tracker;
   use_icp_tracker_ = use_icp_tracker;
+  use_stereo_icp_tracker_ = use_stereo_icp_tracker;
   use_plane_tracker_ = use_plane_tracker;
   plane_affordance_id_ = plane_affordance_id;
   tracker_initiated_ = true;
@@ -541,6 +660,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
   use_color_tracker_ = false;
   use_histogram_tracker_= false;
   use_icp_tracker_ = false;
+  use_stereo_icp_tracker_ = false;
   use_plane_tracker_= false;
   plane_affordance_id_ = -1;
   
@@ -557,6 +677,8 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
     use_histogram_tracker_= true;
   }else if(msg->tracker_type== drc::tracker_command_t::ICP){ 
     use_icp_tracker_= true;
+  }else if(msg->tracker_type== drc::tracker_command_t::STEREOICP){ 
+    use_stereo_icp_tracker_= true;
   }else{
     cout << "Tracker Type not understood ["<< ((int)msg->tracker_type)  <<"]\n";
   }
@@ -569,7 +691,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
   // Update tracker status:
   // Largely Superflous
   initiate_tracking(msg->uid, use_color_tracker_, use_histogram_tracker_, 
-                    use_icp_tracker_,
+                    use_icp_tracker_, use_stereo_icp_tracker_,
                     use_plane_tracker_, plane_affordance_id_);  
 }
 
@@ -581,6 +703,7 @@ int main(int argc, char ** argv) {
   bool use_color_tracker =false;
   bool use_histogram_tracker =false;
   bool use_plane_tracker =false;  
+  bool use_stereo_icp_tracker =false;
   bool use_icp_tracker =false;  
   int verbose = 0;
   int plane_affordance_id=-1;
@@ -592,6 +715,7 @@ int main(int argc, char ** argv) {
   opt.add(use_color_tracker, "c", "use_color_tracker","Use Color Tracker");
   opt.add(use_histogram_tracker, "g", "use_histogram_tracker","Use Histogram Tracker");
   opt.add(use_icp_tracker, "i", "use_icp_tracker","Use ICP Tracker");
+  opt.add(use_stereo_icp_tracker, "s", "use_stereo_tracker","Use Stereo ICP Tracker");
   opt.add(use_plane_tracker, "p", "use_plane_tracker","Use Plane Tracker");
   opt.add(plane_affordance_id, "l", "plane_affordance_id","Plane Affordance ID");
   opt.add(tracker_instance_id, "t", "tracker","Tracker ID");
@@ -602,6 +726,8 @@ int main(int argc, char ** argv) {
   std::cout << "affordance_id: " << affordance_id << "\n";    
   std::cout << "use_color_tracker: " << use_color_tracker << "\n";    
   std::cout << "use_histogram_tracker: " << use_histogram_tracker << "\n";    
+  std::cout << "use_icp_tracker: " << use_icp_tracker << "\n";    
+  std::cout << "use_stereo_icp_tracker: " << use_stereo_icp_tracker << "\n";    
   std::cout << "plane_affordance_id: " << plane_affordance_id << "\n";    
   std::cout << "tracker_instance_id: " << tracker_instance_id << " [id of this tracker process]\n";    
   std::cout << "verbose: " << verbose << "\n";    
@@ -616,7 +742,7 @@ int main(int argc, char ** argv) {
   if (affordance_id>=0){
     // if a valid id - initiate tracker on launch
     app.initiate_tracking(affordance_id, use_color_tracker, use_histogram_tracker,
-      use_icp_tracker, use_plane_tracker, plane_affordance_id);
+      use_icp_tracker, use_stereo_icp_tracker, use_plane_tracker, plane_affordance_id);
   }else{
     cout << "Starting Object Tracker Uninitiated\n";
   }  

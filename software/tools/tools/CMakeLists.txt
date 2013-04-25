@@ -15,7 +15,8 @@ lcmtypes_build()
 
 file(COPY scripts/drc-svn-stat.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-pods_install_python_script(drc-lcmscope scripts/python_lcmscope.py)
-pods_install_python_script(drc-bandwidth-scope scripts/bandwidth_scope.py)
+pods_install_python_script(drc-scope-motionest scripts/python_lcmscope.py)
+pods_install_python_script(drc-scope-bandwidth scripts/bandwidth_scope.py)
+pods_install_python_script(drc-scope-jointrate scripts/jointrate_scope.py)
 pods_install_python_script(drc-set-sim-rate scripts/send_a_rateset.py)
 

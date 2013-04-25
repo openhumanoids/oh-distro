@@ -10,6 +10,7 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 add_subdirectory(src/image-passthrough)
+add_subdirectory(src/dense-passthrough)
 add_subdirectory(src/mask-color)
 add_subdirectory(src/stream)
 

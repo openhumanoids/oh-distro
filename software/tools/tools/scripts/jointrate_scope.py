@@ -47,7 +47,7 @@ def plot_data():
   if ( len(controlrate.utimes) >1):
     plt.figure(1)
     ax1.cla()
-    ax1.plot( controlrate.utimes[2:], np.transpose(controlrate.v[2:,0]), 'r', linewidth=1,label="control rate [Hz]")
+    ax1.plot( controlrate.utimes[2:], np.transpose(controlrate.v[2:,0]), 'ro-', linewidth=1,label="control rate [Hz]")
     ax1.legend();   ax1.set_xlabel('Time - sec | ' + str(len(controlrate.utimes)));   ax1.set_ylabel('Control Rate [Hz]');   ax1.grid(True)
     ax1.legend(loc=2,prop={'size':10})
     #ax1.set_xlim( (s.last_utime - s.plot_window - s.first_utime)/1000000 , (s.last_utime + front_block - s.first_utime)/1000000 )

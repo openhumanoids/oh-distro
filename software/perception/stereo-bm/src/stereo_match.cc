@@ -153,11 +153,6 @@ publish_opencv_image_multisense(lcm_t* lcm, const char* str, cv::Mat& _disp, con
   int h = _disp.rows;
   int w = _disp.cols;
   
-  // MAGIC scaling parameter to match default stereo_match parameters 
-  // to Carnegie Robotic's 1/16th disparity values
-  // TODO: find the proper scaling function between SBM and CRL's data
-  
-  
   //////// RIGHT IMAGE /////////////////////////////////////////////  
   int n_bytes=4; // 4 bytes per value
   int isize = n_bytes*w*h;

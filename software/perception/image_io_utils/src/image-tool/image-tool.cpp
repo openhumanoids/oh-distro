@@ -64,9 +64,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   lcm_->subscribe("TRIGGER_CAMERA",&Pass::triggerHandler,this);
 
+  width_ = 800;
+  height_ = 800;
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_ );
-  width_ = 1024;
-  height_ = 544;
   counter_=0;
   last_img_.utime=0; // used to indicate no message recieved yet
 }

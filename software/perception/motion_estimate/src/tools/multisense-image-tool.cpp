@@ -143,7 +143,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
   }
   std::cout << Q_ << " is reprojectionMatrix\n";  
   
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 1024, 544);
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 800, 800);
   last_mask_.utime =0; // use this number to determine initial image
   counter_=0;
   

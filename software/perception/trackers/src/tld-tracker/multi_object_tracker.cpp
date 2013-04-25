@@ -885,7 +885,7 @@ int main(int argc, char** argv)
     // state->mainloop = g_main_loop_new( NULL, FALSE );  
     state->param = bot_param_new_from_server(state->lcm, 1);
     state->frames = bot_frames_get_global (state->lcm, state->param);
-    state->imgutils = new image_io_utils( state->lcm, 1024, 544);
+    state->imgutils = new image_io_utils( state->lcm, 800, 800);
 
     // Start LCM thread
     printf("Starting LCM thread\n");

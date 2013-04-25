@@ -10,10 +10,11 @@ pods_use_pkg_config_packages(object-tracker   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   bot2-param-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_math 
+  pointcloud_vis pointcloud_math pointcloud_lcm
   opencv image_io_utils
   major-plane-detect 
   color-tracker histogram-tracker icp-tracker
+  stereo-bm
   affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(object-tracker)

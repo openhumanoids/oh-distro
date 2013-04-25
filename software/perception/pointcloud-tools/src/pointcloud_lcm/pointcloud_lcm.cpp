@@ -297,77 +297,22 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 }
 
 
-// msg - raw input data
-// repro_matrix is reprojection matrix e.g. this was the loan unit in feb 2013:
-//   [1, 0, 0, -512.5;
-//    0, 1, 0, -272.5;
-//    0, 0, 0, 606.034;
-//    0, 0, 14.2914745276283, 0]
-// cloud - output pcl cloud
-void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
+
+
+
+
+
+void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
 
-  int h = msg->images[0].height;
-  int w = msg->images[0].width;
+  int h = height;//msg->images[0].height;
+  int w = width;//msg->images[0].width;
   
   // Convert Carnegie disparity format into floating point disparity. Store in local buffer
   Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
-  disparity_orig_temp.data = msg->images[1].data;  
-  
-  cv::Mat_<float> disparity_orig(h, w);
-  disparity_orig = disparity_orig_temp;
-  
-  //std::stringstream disparity_fname;
-  //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
-  //imwrite(disparity_fname.str(),disparity_orig_temp); 
-  
-  disparity_buf_.resize(h * w);
-  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
-  disparity = disparity_orig / 16.0;
-    
-  // Allocate buffer for reprojection output
-  points_buf_.resize(h * w);
-  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
-
-  // Do the reprojection in open space
-  static const bool handle_missing_values = true;
-  cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
-  
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  cloud->width    =(int) (w/ (double) decimate_) ;
-  cloud->height   =(int) (h/ (double) decimate_);
-  cloud->is_dense = true;
-  cloud->points.resize (cloud->width * cloud->height);  
-  int j2=0;
-  for(int v=0; v<h; v=v+ decimate_) { // t2b
-    for(int u=0; u<w; u=u+decimate_ ) {  //l2r
-        //cout <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
-        cloud->points[j2].x = points(v,u)[0];
-        cloud->points[j2].y = points(v,u)[1];
-        cloud->points[j2].z = points(v,u)[2];
-        
-        // TODO: add check for RGB - this assumed gray:
-        cloud->points[j2].r = msg->images[0].data[v*w + u];
-        cloud->points[j2].g = msg->images[0].data[v*w + u];// + 1];
-        cloud->points[j2].b = msg->images[0].data[v*w + u];// + 2];
-        j2++;
-    }
-  }
-}
-
-
-void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-  // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
-
-  int h = msg->images[0].height;
-  int w = msg->images[0].width;
-  
-  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
-  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
-  const uint8_t* raw_data = msg->images[1].data.data();
-  disparity_orig_temp.data = (uchar*) raw_data;   // ... is a simple assignment possible?
+//  const uint8_t* raw_data= stereob_->getDisparity();//= 3;//msg->images[1].data.data();
+  disparity_orig_temp.data = (uchar*) depth_data;   // ... is a simple assignment possible?
 
   //std::copy(msg->images[1].data.data()             , msg->images[1].data.data() + (msg->images[1].size) ,
   //          disparity_orig_temp.data);
@@ -416,10 +361,150 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
         cloud->points[j2].z = points(v,u)[2];
         
         // TODO: add check for RGB - this assumed gray:
+        cloud->points[j2].r =color_data[v*w + u];
+        cloud->points[j2].g =color_data[v*w + u];// + 1];
+        cloud->points[j2].b =color_data[v*w + u];// + 2];
+        j2++;
+    }
+  }
+//  cout << "points: " << cloud->points.size() << "\n";
+//  pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
+}
+
+
+// msg - raw input data
+// repro_matrix is reprojection matrix e.g. this was the loan unit in feb 2013:
+//   [1, 0, 0, -512.5;
+//    0, 1, 0, -272.5;
+//    0, 0, 0, 606.034;
+//    0, 0, 14.2914745276283, 0]
+// cloud - output pcl cloud
+void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
+
+  // This hasn't been tested:
+  unpack_multisense(msg->images[1].data, msg->images[0].data, msg->images[0].height, msg->images[0].width, repro_matrix, 
+                                       cloud);
+
+/*
+  int h = msg->images[0].height;
+  int w = msg->images[0].width;
+  
+  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
+  disparity_orig_temp.data = msg->images[1].data;  
+  
+  cv::Mat_<float> disparity_orig(h, w);
+  disparity_orig = disparity_orig_temp;
+  
+  //std::stringstream disparity_fname;
+  //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
+  //imwrite(disparity_fname.str(),disparity_orig_temp); 
+  
+  disparity_buf_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
+  disparity = disparity_orig / 16.0;
+    
+  // Allocate buffer for reprojection output
+  points_buf_.resize(h * w);
+  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
+
+  // Do the reprojection in open space
+  static const bool handle_missing_values = true;
+  cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
+  
+  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  cloud->width    =(int) (w/ (double) decimate_) ;
+  cloud->height   =(int) (h/ (double) decimate_);
+  cloud->is_dense = true;
+  cloud->points.resize (cloud->width * cloud->height);  
+  int j2=0;
+  for(int v=0; v<h; v=v+ decimate_) { // t2b
+    for(int u=0; u<w; u=u+decimate_ ) {  //l2r
+        //cout <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
+        cloud->points[j2].x = points(v,u)[0];
+        cloud->points[j2].y = points(v,u)[1];
+        cloud->points[j2].z = points(v,u)[2];
+        
+        // TODO: add check for RGB - this assumed gray:
         cloud->points[j2].r = msg->images[0].data[v*w + u];
         cloud->points[j2].g = msg->images[0].data[v*w + u];// + 1];
         cloud->points[j2].b = msg->images[0].data[v*w + u];// + 2];
         j2++;
     }
   }
+*/
+}
+
+
+void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
+
+  // this hasn't been tested:
+  unpack_multisense(msg->images[1].data.data(), msg->images[0].data.data(), msg->images[0].height, msg->images[0].width, repro_matrix, 
+                                       cloud);
+
+  /*
+  int h = msg->images[0].height;
+  int w = msg->images[0].width;
+  
+  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
+  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
+  const uint8_t* raw_data = msg->images[1].data.data();
+  disparity_orig_temp.data = (uchar*) raw_data;   // ... is a simple assignment possible?
+
+  //std::copy(msg->images[1].data.data()             , msg->images[1].data.data() + (msg->images[1].size) ,
+  //          disparity_orig_temp.data);
+  
+  // disparity_orig_temp.data = msg->images[1].data.data();   // ... is a simple assignment possible?
+  
+  cv::Mat_<float> disparity_orig(h, w);
+  disparity_orig = disparity_orig_temp;
+  
+  //std::stringstream disparity_fname;
+  //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
+  //imwrite(disparity_fname.str(),disparity_orig_temp); 
+  
+  disparity_buf_.resize(h * w);
+  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
+  disparity = disparity_orig / 16.0;
+    
+  // Allocate buffer for reprojection output
+  points_buf_.resize(h * w);
+  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
+
+  // Do the reprojection in open space
+  static const bool handle_missing_values = true;
+  cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
+  
+
+//  int vv =400; //l2r
+//  int uu =512; //t2b
+//  cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
+//              << " " << points(vv,uu)[1]              << " " << points(vv,uu)[2]              << "\n";
+
+  
+  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  cloud->width    =(int) (w/ (double) decimate_) ;
+  cloud->height   =(int) (h/ (double) decimate_);
+  cloud->is_dense = true;
+  cloud->points.resize (cloud->width * cloud->height);  
+  int j2=0;
+  for(int v=0; v<h; v=v+ decimate_) { // t2b
+    for(int u=0; u<w; u=u+decimate_ ) {  //l2r
+        //cout <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
+        cloud->points[j2].x = points(v,u)[0];
+        cloud->points[j2].y = points(v,u)[1];
+        cloud->points[j2].z = points(v,u)[2];
+        
+        // TODO: add check for RGB - this assumed gray:
+        cloud->points[j2].r = msg->images[0].data[v*w + u];
+        cloud->points[j2].g = msg->images[0].data[v*w + u];// + 1];
+        cloud->points[j2].b = msg->images[0].data[v*w + u];// + 2];
+        j2++;
+    }
+  }
+*/
 }

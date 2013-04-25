@@ -16,8 +16,8 @@ using namespace std;
 image_io_utils::image_io_utils (lcm_t* publish_lcm_, int width_, int height_):
         publish_lcm_(publish_lcm_), width_(width_), height_(height_){
 
-  img_buffer_size_ = 640 * 480 * sizeof(int16_t) * 4;
-  img_buffer_= new uint8_t[1024 * 544 * 4];  // x4 was used for zlib in kinect_lcm
+  img_buffer_size_ = 800 * 800 * sizeof(int16_t) * 4;
+  img_buffer_= new uint8_t[800 * 800 * 4];  // x4 was used for zlib in kinect_lcm
   // is x10 necessary for  jpeg? thats waht kinect_lcm assumed
 }
 
@@ -27,7 +27,7 @@ image_io_utils::image_io_utils (lcm_t* publish_lcm_, int width_, int height_):
 void image_io_utils::jpegImageThenSend(uint8_t* buffer, int64_t utime, int width, int height, int jpeg_quality, std::string channel){
 
   /*
-  /// factor of 4: 1024x544 --> 256x136
+  /// factor of 4: 800x800 --> 200x200
   Mat src= Mat::zeros( msg->height,msg->width  ,CV_8UC3);
   src.data = msg->data;
   int resize_height = msg->height/self->resize;

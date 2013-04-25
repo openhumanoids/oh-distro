@@ -17,18 +17,21 @@ include_directories(
 )
 
 # create an executable, and make it public
-add_executable(stereo-bm 
+add_executable(stereo-bm-orig 
   src/stereo_match.cc
 )
 
-pods_use_pkg_config_packages ( stereo-bm lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+pods_use_pkg_config_packages ( stereo-bm-orig lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
   bot2-frames jpeg-utils
   bot2-param-client opencv perception-opencv-utils lcmtypes_multisense lcmtypes_visualization )
 
-target_link_libraries(stereo-bm 
+target_link_libraries(stereo-bm-orig
   ${LCMTYPES_LIBS} 
   ${OPENGL_LIBRARIES}
   ${GLU_LIBRARIES}
   ${GLUT_LIBRARIES}
 )
-pods_install_executables(stereo-bm)
+pods_install_executables(stereo-bm-orig)
+
+
+add_subdirectory(src/stereo-bm)

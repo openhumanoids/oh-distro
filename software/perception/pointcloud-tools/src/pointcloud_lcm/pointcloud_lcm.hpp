@@ -67,6 +67,9 @@ class pointcloud_lcm {
     void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
+    void unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    
     void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
