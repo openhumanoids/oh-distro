@@ -1,0 +1,13 @@
+package drc;
+
+struct driving_controller_status_t
+{
+  int64_t utime;
+
+  int8_t status; 
+  
+  const int8_t CONTROLLER_IDLE = 0;
+  const int8_t CONTROLLER_DRIVING = 1;
+  const int8_t CONTROLLER_E_STOP = 2;
+  const int8_t CONTROLLER_ERROR = 3;
+}
