@@ -36,6 +36,11 @@
 
 #define TIMER_PERIOD_MSEC 50
 
+//#define TIME_TO_TURN_PER_RADIAN 1.0
+
+//this is a hack for now - adding a fixed time to turn 
+#define TIME_TO_TURN 2.0
+
 #define TIMER_PERIOD_MSEC_LONG 700
 
 #define STOP_TIME_GAP_SEC 50.0
@@ -54,7 +59,7 @@
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
 typedef enum {
-    IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, 
+    IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, DOING_INITIAL_TURN, 
     DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
 } controller_state_t;
 
@@ -158,6 +163,9 @@ void publish_status(state_t *self){
     case ERROR_NO_VALID_GOAL:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_VALID_GOAL;
         break;
+    case DOING_INITIAL_TURN:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_INITIAL_TURN;
+        break;
     }
     drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
 }
@@ -254,7 +262,7 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
 
     self->last_driving_cmd = drc_driving_cmd_t_copy(msg);
 
-    self->drive_duration = msg->drive_duration; 
+    self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
     self->kp_steer = msg->kp_steer;
     self->kd_steer = msg->kd_steer;
     self->throttle_ratio = msg->throttle_ratio;
@@ -928,6 +936,11 @@ on_controller_timer (gpointer data)
         return TRUE;
     }
 
+    int turn_only = 0;
+    if((self->utime - self->drive_start_time)/1.0e6 < TIME_TO_TURN){
+        turn_only = 1;
+    }
+
     int use_road = 1;
     int use_tld = 0;
     
@@ -1084,9 +1097,13 @@ on_controller_timer (gpointer data)
 	throttle_ratio = fmin(1.0, fmax(throttle_ratio, -2.0));
 	double throttle_val = 0;
 	double brake_val = 0;
-	
-	if((self->utime - self->drive_start_time)/1.0e6 < self->throttle_duration){
-            throttle_val = self->throttle_ratio;//MAX_THROTTLE;
+
+        if(turn_only){
+            throttle_val = 0;
+            self->curr_state = DOING_INITIAL_TURN;
+        }
+	else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
+            throttle_val = self->throttle_ratio;
 	}
 
 	/*if(throttle_ratio >=0){
