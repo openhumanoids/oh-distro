@@ -15,8 +15,7 @@ action_authoring
 viewer
 segmentation
 control
-# currently breaking the build: [26 april 2013]
-#network
+network
 gazebo_plugins
 plan
 
