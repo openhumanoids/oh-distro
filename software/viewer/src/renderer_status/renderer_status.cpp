@@ -126,7 +126,7 @@ on_drc_system_status(const lcm_recv_buf_t *rbuf,
         self->deques[ w ]->pop_front();
       }
     }
-
+    
     /*stringstream ss;
     ss << "Deque Sizes: ";
     for (int i=0;i<3;i++){
@@ -219,8 +219,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
     
-    bool draw_driving = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
-    if(self->driving_status && draw_driving){
+    //bool draw_driving = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
+    if(self->driving_status){// && draw_driving){
         sprintf(line7, "veh k[%d] dir[%d] hb[%.1f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
         sprintf(line8, "hw[%.0f] bp[%.1f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
     }
@@ -276,7 +276,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
 
-    if(self->driving_status && draw_driving){
+    if(self->driving_status){// && draw_driving){
         glColor3fv(colors[2]);
         glRasterPos2f(x, y + 6 * line_height);
         glutBitmapString(font, (unsigned char*) line7);
@@ -458,6 +458,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_status[3] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_3);
   self->param_status[4] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_4);
   self->param_status[5] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
+  //fprintf(stderr, "Param Status : %d\n", self->param_status[5]);
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
   self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);

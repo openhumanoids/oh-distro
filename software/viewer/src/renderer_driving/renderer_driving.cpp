@@ -32,6 +32,7 @@
 //#include <visualization/renderer_localize.h>
 
 #include <lcmtypes/drc_lcmtypes.h>
+#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
 #include <lcmtypes/drc_driving_cmd_t.h>
@@ -230,6 +231,9 @@ typedef struct _RendererDriving {
     double theta;
     double goal_std;
     double goal_timeout; // no. seconds before this goal expires
+
+    double last_tld_tracker_update; 
+    double last_road_detection_update;
 
     int64_t max_draw_utime;
     double circle_color[3];
@@ -625,6 +629,36 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,
     return 1;
 }
 
+gboolean heartbeat_cb (gpointer data)
+{
+    RendererDriving *self = (RendererDriving *) data;
+
+    if (!self) return false;
+    if (!self->last_tld_tracker_update) return false; 
+    drc_system_status_t status_msg;
+    if(self->last_tld_tracker_update) { 
+        bool good = bot_timestamp_now() - self->last_tld_tracker_update <= 2 * 1e6;
+        std::stringstream ss; ss << "DRIVING HEADING:" << ( good ? "GOOD" : "BAD");  
+        status_msg.importance = ( good ? DRC_SYSTEM_STATUS_T_VERY_IMPORTANT : DRC_SYSTEM_STATUS_T_VERY_IMPORTANT );// use enums!!
+        status_msg.utime =  self->last_tld_tracker_update;
+        status_msg.value = (char*)ss.str().c_str();
+    } 
+
+    if (self->last_road_detection_update) {
+        bool good = (bot_timestamp_now() - self->last_road_detection_update <= 2 * 1e6);
+        std::stringstream ss; ss << "ROAD DETECT:" << ( good ? "GOOD" : "BAD");  
+        status_msg.importance = ( good ? DRC_SYSTEM_STATUS_T_VERY_IMPORTANT : DRC_SYSTEM_STATUS_T_VERY_IMPORTANT );// use enums!!
+        status_msg.utime =  self->last_road_detection_update;
+        status_msg.value = (char*)ss.str().c_str();
+    }
+    status_msg.system = DRC_SYSTEM_STATUS_T_TRACKING;// use enums!!
+    status_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;// use enums!!
+    drc_system_status_t_publish(self->lc, "SYSTEM_STATUS", &status_msg);
+    // printf("Heartbeat tracker update %s\n", ss.str().c_str());
+    
+    return true;
+}
+
 void activate(RendererDriving *self, int type)
 {
     self->active = type;
@@ -864,8 +898,10 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
 static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel, 
                                const perception_pointing_vector_t *msg, void *user){
     RendererDriving *self = (RendererDriving*) user;
-    cout << "got pointing vector\n";
-  
+    // cout << "got pointing vector\n";
+
+    self->last_tld_tracker_update = bot_timestamp_now();
+    
     // Convert vector into point very far away
     double scale = 100.0;
     double goal_pos[]={scale*msg->vec[0], scale*msg->vec[1],scale* msg->vec[2]};
@@ -889,8 +925,7 @@ static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel,
     Eigen::Vector4d null_vec= Eigen::Vector4d(0,0,0, 1);
     self->body_pointpose_from=  cam_to_body*null_vec;
 
-    cout << "bottom\n";
-  
+    // cout << "bottom\n";
   
     /*
       self->robot_utime =msg->utime;
@@ -935,7 +970,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     self->renderer.name = RENDERER_NAME;
     self->renderer.user = self;
     self->renderer.enabled = 1;
-
+    
     BotEventHandler *ehandler = &self->ehandler;
     ehandler->name = (char*) RENDERER_NAME;
     ehandler->enabled = 1;
@@ -962,6 +997,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     self->max_velocity = 2.0; // m/s  - about 4.5MPH or 7.2km/hr
     self->center_arc_left.setIdentity();
     self->center_arc_right.setIdentity();
+    self->last_tld_tracker_update = 0; 
+    self->last_road_detection_update = 0; 
 
     double kp_default;
 
@@ -985,6 +1022,9 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   
     drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
     perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
+
+    // heartbeat for system status monitoring (every 1sec)
+    g_timeout_add (1000, heartbeat_cb, self);
   
     self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     bot_gtk_param_widget_add_booleans (self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE, 0, NULL);
