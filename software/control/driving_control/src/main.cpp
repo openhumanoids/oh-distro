@@ -131,7 +131,7 @@ void publish_status(state_t *self){
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
-        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN;
+        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
     }
     else{
         msg.time_to_drive = 0;
@@ -157,17 +157,17 @@ void publish_status(state_t *self){
         break;
     case DRIVING_ROAD_ONLY:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
-        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive);
+        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive/1.0e6);
         s_msg.value = status;
         break;
     case DRIVING_TLD_AND_ROAD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
-        sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive);
+        sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive/1.0e6);
         s_msg.value = status;
         break;
     case DRIVING_TLD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD;
-        sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive);
+        sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive/1.0e6);
         s_msg.value = status;
         break;
     case DRIVING_USER:
@@ -191,7 +191,7 @@ void publish_status(state_t *self){
         break;
     }
     drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
-    //drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
+    drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
 }
 
 void draw_goal(state_t *self){
