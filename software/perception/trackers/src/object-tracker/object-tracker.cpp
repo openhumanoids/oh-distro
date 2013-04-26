@@ -232,7 +232,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   float bm_scale = 0.25f;
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(bm_scale);
-  int decimate_ =4; // was 2
+  int decimate_ =4;
   pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
   pc_lcm_->set_decimate( decimate_ );  
   
@@ -386,7 +386,7 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
 
   memcpy(left_img.data,  msg->data.data() , msg->size/2);
   memcpy(right_img.data,  msg->data.data() + msg->size/2 , msg->size/2);
-  stereob_->doStereoB(left_img, right_img, update_time);
+  stereob_->doStereoB(left_img, right_img);
   stereob_->sendRangeImage(update_time);
 
   cv::Mat_<double> Q_ = cv::Mat_<double>(4,4,0.0);
