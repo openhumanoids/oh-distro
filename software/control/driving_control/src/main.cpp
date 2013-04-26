@@ -27,6 +27,7 @@
 #include <lcmtypes/drc_driving_control_cmd_t.h>
 #include <lcmtypes/drc_utime_t.h>
 #include <lcmtypes/drc_driving_cmd_t.h>
+#include <lcmtypes/drc_driving_controller_status_t.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
 #include <vector>
 #include <algorithm> 
@@ -53,7 +54,8 @@
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
 typedef enum {
-    IDLE, MAP_TIMEOUT, DRIVING
+    IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, 
+    DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
 } controller_state_t;
 
 typedef struct{
@@ -69,7 +71,7 @@ typedef struct _state_t {
     GMainLoop *mainloop; 
     guint controller_timer_id;
     int64_t last_controller_utime;
-    controller_state_t *curr_state;
+    controller_state_t curr_state;
   
     occ_map_pixel_map_t *cost_map_last;
     perception_pointing_vector_t *tld_bearing;
@@ -94,6 +96,8 @@ typedef struct _state_t {
     double drive_duration; 
     int64_t drive_start_time;
 
+    int64_t drive_time_to_go;
+
     double error_last; 
     
     double goal_distance;
@@ -110,6 +114,53 @@ typedef struct _state_t {
     int verbose;
 } state_t;
 
+void publish_status(state_t *self){
+    
+    drc_driving_controller_status_t msg;
+    msg.utime = self->utime;
+    if(self->drive_duration >=0){
+        msg.time_to_drive = self->drive_time_to_go;
+    }
+    else{
+        msg.time_to_drive = 0;
+    }
+    /*
+      IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY, 
+    DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
+     */
+
+    switch(self->curr_state){
+
+    case IDLE:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_IDLE;
+        break;
+    case ERROR_NO_MAP:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_MAP;
+        break;
+    case ERROR_MAP_TIMEOUT:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_MAP_TIMEOUT;
+        break;
+    case DRIVING_ROAD_ONLY:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
+        break;
+    case DRIVING_TLD_AND_ROAD:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
+        break;
+    case DRIVING_TLD:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD;
+        break;
+    case DRIVING_USER:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_USER;
+        break;
+    case ERROR_TLD_TIMEOUT:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_TLD_TIMEOUT;
+        break;
+    case ERROR_NO_VALID_GOAL:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_VALID_GOAL;
+        break;
+    }
+    drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
+}
 
 void draw_goal(state_t *self){
     if (self->lcmgl_goal) {
@@ -732,6 +783,81 @@ find_goal_enhanced_with_tld_heading (occ_map::FloatPixelMap *fmap, state_t *self
     return found_goal;
 }
 
+static int
+find_goal_with_only_tld_heading (state_t *self)
+{
+    if(self->tld_bearing == NULL){
+        fprintf(stderr, "No TLD bearing found\n");
+        return -1;
+    }
+    
+    //we assume that this is the same for the car frame - because this is in the body frame 
+    double long_goal_heading = atan2(self->tld_bearing->vec[1], self->tld_bearing->vec[0]);
+    
+    fprintf(stderr, "Longterm TLD heading : %f\n", bot_to_radians(long_goal_heading));
+
+    // Find the best goal
+    int found_goal = 1;
+    //double max_reward = 10000;
+
+    double min_cost = 10000;
+    double xy_goal[2] = {0, 0};
+    double xyz_car_car[] = {0, 0, 0};
+    double xyz_car_local[3];
+
+    BotTrans car_to_body; 
+    car_to_body.trans_vec[0] = 0;
+    car_to_body.trans_vec[1] = -0.3;
+    car_to_body.trans_vec[2] = 0;
+    
+    double rpy[3] = {0};
+    bot_roll_pitch_yaw_to_quat(rpy, car_to_body.rot_quat);
+
+    BotTrans body_to_local;
+
+    bot_frames_get_trans(self->frames, "body", "local", 
+			 &body_to_local);
+
+
+    BotTrans long_goal_to_car;
+    long_goal_to_car.trans_vec[0] = self->goal_distance * cos(long_goal_heading);
+    long_goal_to_car.trans_vec[1] = self->goal_distance * sin(long_goal_heading);
+    long_goal_to_car.trans_vec[2] = 0;
+    
+    bot_roll_pitch_yaw_to_quat(rpy, long_goal_to_car.rot_quat);
+    
+    BotTrans car_to_local; 
+    bot_trans_apply_trans_to(&body_to_local, &car_to_body, &car_to_local);
+    
+    xyz_car_local[0] = car_to_local.trans_vec[0];
+    xyz_car_local[1] = car_to_local.trans_vec[1];
+
+    double x_arc, y_arc;
+    double angle_deg;
+
+    double min_dist = fmin(6.0, self->goal_distance);
+    double max_dist = self->goal_distance;
+
+    //we should actually ckeck 
+    bot_lcmgl_t *lcmgl = self->lcmgl_rays; 
+    lcmglColor3f (1.0, 0.0, 0.0);
+    bot_lcmgl_line_width(lcmgl, 5);
+
+    BotTrans long_goal_to_local; 
+    bot_trans_apply_trans_to(&car_to_local, &long_goal_to_car, &long_goal_to_local);
+    
+    xy_goal[0] = long_goal_to_local.trans_vec[0], xy_goal[1] = long_goal_to_local.trans_vec[1];
+
+    fprintf(stderr, "Goal Position (local) : %f,%f\n", xy_goal[0], xy_goal[1]);
+        
+    if (found_goal) {
+        self->cur_goal[0] = xy_goal[0];
+        self->cur_goal[1] = xy_goal[1];
+        self->cur_goal[2] = 0;
+    }
+    return found_goal;
+}
+
 static void
 perform_emergency_stop (state_t *self)
 {
@@ -750,15 +876,22 @@ on_controller_timer (gpointer data)
 
     state_t *self = (state_t *) data;
 
+    if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
+        fprintf(stderr, "Timer gap : %f (ms)\n", (self->utime - self->last_controller_utime) / 1.0e3);
+        return TRUE;
+    }
+
+    self->last_controller_utime = self->utime;
+
     if (!self->cost_map_last) {
         if (self->verbose)
-            //fprintf (stdout, "No valid terrain classification map\n");
-        
-            return TRUE;
+            fprintf (stdout, "No valid terrain classification map\n");
+        self->curr_state = ERROR_NO_MAP;
+        publish_status(self);
+        return TRUE;
     }
 
     //we should check if the map is stale - because of some issue with the controller   
-
     if((self->utime - self->cost_map_last->utime)/1.0e6 > TIMEOUT_THRESHOLD){
         fprintf(stderr, "Error - Costmap too old - asking for EStop\n");
       
@@ -767,7 +900,9 @@ on_controller_timer (gpointer data)
         msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
         msg.brake_value = 1.0;
         drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
-        
+
+        self->curr_state = ERROR_MAP_TIMEOUT;
+        publish_status(self);
         return TRUE;
     }
 
@@ -775,16 +910,12 @@ on_controller_timer (gpointer data)
 
     if(self->drive_duration < 0){
         //we are not required to drive - return TRUE      
+        self->curr_state = IDLE;
+        publish_status(self);
         return TRUE;
     }
 
-    if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
-        fprintf(stderr, "Timer gap : %f (ms)\n", (self->utime - self->last_controller_utime) / 1.0e3);
-        return TRUE;
-    }
-
-    
-
+    //drive duration is over - we need to stop 
     if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
@@ -792,6 +923,8 @@ on_controller_timer (gpointer data)
         msg.brake_value = 1.0;
         drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
         self->drive_duration = -1;
+        self->curr_state = IDLE;
+        publish_status(self);
         return TRUE;
     }
 
@@ -813,16 +946,20 @@ on_controller_timer (gpointer data)
     
     if(use_tld && fabs(self->utime - self->tld_bearing->utime)/1.0e6 > TLD_TIMEOUT_SEC){
         fprintf(stderr, "Error : Asked to follow TLD - but no TLD heading\n");
+        self->curr_state = ERROR_TLD_TIMEOUT;
+        publish_status(self);
         return TRUE;        
     }
 
     //add code to handle the TLD heading if we have it 
 
-    self->last_controller_utime = self->utime;
+  
 
     static int64_t last_utime = 0;
     
     fprintf(stderr, "Drive start time : %f\n", (self->utime - self->drive_start_time)/1.0e6);
+
+    self->drive_time_to_go = self->drive_duration*1.0e6 - (self->utime - self->drive_start_time);
 
     occ_map::FloatPixelMap *fmap = new occ_map::FloatPixelMap (self->cost_map_last);
 
@@ -833,6 +970,7 @@ on_controller_timer (gpointer data)
         if (find_goal_enhanced (fmap, self)) {
             draw_goal (self);
             self->have_valid_goal = 1;
+            self->curr_state = DRIVING_ROAD_ONLY;
         }
         else {
             if (self->verbose)
@@ -840,6 +978,8 @@ on_controller_timer (gpointer data)
         
             perform_emergency_stop(self);
             self->drive_duration = -1;
+            self->curr_state = ERROR_NO_VALID_GOAL;
+            publish_status(self);
             return TRUE;
         }
     }
@@ -847,6 +987,7 @@ on_controller_timer (gpointer data)
         if (find_goal_enhanced_with_tld_heading (fmap, self)) {
             draw_goal (self);
             self->have_valid_goal = 1;
+            self->curr_state = DRIVING_TLD_AND_ROAD;
         }
         else {
             if (self->verbose)
@@ -854,28 +995,35 @@ on_controller_timer (gpointer data)
             
             perform_emergency_stop(self);
             self->drive_duration = -1;
+            self->curr_state = ERROR_NO_VALID_GOAL;
+            publish_status(self);
             return TRUE;
         }
     }
     else if(use_tld && !use_road){
-        fprintf(stderr, "Not handled right now - returning\n");
-        /*if (find_goal_with_only_tld_heading (self)) {
+        //fprintf(stderr, "Not handled right now - returning\n");
+        if (find_goal_with_only_tld_heading(self)){
             draw_goal (self);
             self->have_valid_goal = 1;
+            self->curr_state = DRIVING_TLD;
         }
-        else {
+        else{
             if (self->verbose)
-                fprintf (stdout, "Unable to find goal using TLD - Stopping\n");
-            
+                fprintf (stdout, "Unable to find goal in PixMap using TLD heading - Stopping\n");
+            self->curr_state = ERROR_NO_VALID_GOAL;
             perform_emergency_stop(self);
             self->drive_duration = -1;
+            publish_status(self);
             return TRUE;
-            }*/
+
+        }
     }
     else{
         fprintf(stderr, "Error: Unknown drive command type - skipping\n");
         perform_emergency_stop(self);
+        self->curr_state = ERROR_NO_VALID_GOAL;
         self->drive_duration = -1;
+        publish_status(self);
         return TRUE;
     }
    
@@ -982,15 +1130,18 @@ on_controller_timer (gpointer data)
 
 	msg.throttle_value = throttle_val;
 	msg.brake_value = brake_val;
-	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);	
+	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
+        
     }
-    else
+    else{
+        self->curr_state = ERROR_NO_VALID_GOAL;
         perform_emergency_stop (self);
+    }
 
     last_utime = self->utime;
 
     delete fmap;
-
+    publish_status(self);
     return TRUE;
 }
 
@@ -1300,7 +1451,7 @@ int main (int argc, char **argv) {
 
     state_t *self = (state_t *) calloc (1, sizeof (state_t));
     self->goal_distance = DEFAULT_GOAL_DISTANCE;
-
+    self->curr_state = IDLE;
     char *optstring = "vda";
     char c;
     struct option long_opts[] = {
@@ -1393,6 +1544,7 @@ int main (int argc, char **argv) {
     else{
         self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer_arc, self);
     }
+    
     // Connect LCM to the mainloop
     bot_glib_mainloop_attach_lcm (self->lcm);
 
