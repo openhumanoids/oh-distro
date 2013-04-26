@@ -1501,7 +1501,6 @@ int main (int argc, char **argv) {
             };
         }
 
-    self->verbose = 1;
     self->accelerator_utime = -1;
     self->stop_utime = -1;
 
