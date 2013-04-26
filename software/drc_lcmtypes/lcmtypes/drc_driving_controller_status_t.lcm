@@ -16,4 +16,5 @@ struct driving_controller_status_t
   const int8_t ERROR_MAP_TIMEOUT = 6;
   const int8_t ERROR_TLD_TIMEOUT = 7;
   const int8_t ERROR_NO_VALID_GOAL = 8;
+  const int8_t DRIVING_DOING_INITIAL_TURN = 9;
 }
