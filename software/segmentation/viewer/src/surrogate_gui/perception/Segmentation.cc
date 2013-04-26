@@ -851,6 +851,7 @@ namespace surrogate_gui
                                    const FittingParams& fp,
                                    bool isInitialSet, Vector3f initialXYZ, 
                                    Vector3f initialYPR,
+                                   pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
                                    Vector3f& xyz, Vector3f& ypr,
                                    vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
   {
@@ -860,7 +861,6 @@ namespace surrogate_gui
     */
 
     // read in pcd
-    PointCloud<PointXYZRGB>::Ptr modelcloud(new PointCloud<PointXYZRGB>());
     pcl::PCDReader reader;
     string file = getenv("HOME") + string("/drc/software/models/otdf/car.pcd");
     reader.read(file.c_str(), *modelcloud);

@@ -1366,10 +1366,12 @@ namespace surrogate_gui
     //std::vector<double> inliers_distances; TODO
     //std::vector< vector<float> > inliers; TODO
     // PointIndices::Ptr inlierIndices = TODO
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
     Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
                                 currObj->indices, fp, 
                                 isInitialSet, initialXYZ, initialYPR, 
+                                modelcloud,
                                 xyz, ypr, clouds);
 
 
@@ -1412,10 +1414,15 @@ namespace surrogate_gui
     affordanceMsg.aff.bounding_lwh[1] = 1; //TODO
     affordanceMsg.aff.bounding_lwh[2] = 1; //TODO
 
-	  //inliers
-    //affordanceMsg.npoints = inliers.size();
-    //affordanceMsg.points = inliers;
-    affordanceMsg.npoints = 0; //todo
+    // populate points
+    affordanceMsg.npoints = modelcloud->size();
+    affordanceMsg.points.resize(modelcloud->size());
+    for(int i=0;i<modelcloud->size();i++){
+      affordanceMsg.points[i].resize(3);
+      affordanceMsg.points[i][0] = modelcloud->at(i).x;
+      affordanceMsg.points[i][1] = modelcloud->at(i).y;
+      affordanceMsg.points[i][2] = modelcloud->at(i).z;
+    }
     affordanceMsg.ntriangles = 0;
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;

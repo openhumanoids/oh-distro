@@ -87,6 +87,7 @@ namespace surrogate_gui
                               const FittingParams& fp, 
                               bool isInitialSet, Eigen::Vector3f initialXYZ, 
                               Eigen::Vector3f initialYPR,
+                              pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
                               Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
                               std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
 
