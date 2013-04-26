@@ -1,10 +1,10 @@
 group "0.dev_deputies" {
     cmd "robot_deputy" {
-        exec = "bot-procman-deputy -n paladin-02";
+        exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
     cmd "base_deputy" {
-        exec = "bot-procman-deputy -n paladin-01";
+        exec = "bot-procman-deputy -n base";
         host = "localhost";
     }
 }
@@ -12,248 +12,248 @@ group "0.dev_deputies" {
 group "1.a.core" {
     cmd "pserver" {
         exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "roscore" {
         exec = "roscore";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "viewer" {
         exec = "drc-viewer";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "modelpub" {
         exec = "robot_model_publisher -u $HOME/drc/software/models/mit_gazebo_models/mit_robot_nohands/model.urdf";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "estpub" {
         exec = "est_robot_state_publisher -g";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "r2l_control" {
         exec = "rosrun translators ros2lcm -c -g";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "l2r" {
         exec = "rosrun translators lcm2ros -p";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "netshaper" {
         exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "1.b.sensing" {
     cmd "j2f" {
         exec = "drc-joints2frames -g";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "r2l_perception" {
         exec = "rosrun translators ros2lcm -p";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "maps-server" {
         exec = "maps-server";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "lidarfilt" {
         exec = "drc-lidar-passthrough";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "icompress" {
         exec = "drc-image-tool";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "2.gazebo" {
     cmd "mit_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "mit_manip_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world gzname:=run_gazebo_unpaused";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "mit_ingress_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress_slow.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "mit_walking_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "mit_walking_bdi" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world gzname:=run_gazebo_unpaused";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "mit_driving" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_walking_slow" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_walking_slow_unpaused" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world gzname:=run_gazebo_unpaused";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_walking_slow_steps" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_manipulation" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_climbing" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/qual_task_3.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "qual_ladder" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/qual_task_4.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "vrc_driving" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_1.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "vrc_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_2.world";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "vrc_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.3/worlds/vrc_task_3.world";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "3.perception"{
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "estpub_sensing" {
         exec = "est_robot_state_publisher";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "motion_vo" {
         exec = "drc-fovision-odometry -i 2";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "stereo-bm" {
         exec = "stereo-bm";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "imagemask" {
         exec = "drc-image-passthrough -o 1";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "maskunzip" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "3a.motion_vo"{
     cmd "motion_vo_testing" {
         exec = "drc-fovision-odometry -i 3";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "estpub_sensing" {
         exec = "est_robot_state_publisher";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "4.drake_robot" {
     cmd "Qual1StateMachine" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "Qual2StateMachine" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "PrecomputationServer" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "ReachPlanFollower_PD" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runReachPlanFollowerLCMRobot;\"";
-       host = "paladin-02";
+       host = "robot";
     }
     cmd "GraspController" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
-       host = "paladin-02";
+       host = "robot";
     } 
     cmd "FootContactEstimator" {
        exec = "drc-legged-odometry";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "KinematicFootContactEstimator" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runKinematicFootContactEstimator;\"";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "5.base" {
     cmd "netshaper" {
         exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
-        host = "paladin-01";
+        host = "base";
     }
     cmd "surrogate_viewer" {
         exec = "surrogate_viewer -r base";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "modelpub" {
         exec = "robot_model_publisher -r base -u $HOME/drc/software/models/mit_gazebo_models/mit_robot/model.urdf";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r base";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "j2f" {
         exec = "drc-joints2frames -r base";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "param_server" {
         exec = "bot-param-server $HOME/drc/software/config/drc_robot.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "mini2maxi" {
         exec = "minimal_to_est_robot_state  -r base";
-        host = "paladin-01";
+        host = "base";
     }
 }
 
 group "6.drake_base" {
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
-       host = "paladin-01";
+       host = "base";
     }
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
-       host = "paladin-01";
+       host = "base";
     }    
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "ZMPWalkingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
-        host = "paladin-01";
+        host = "base";
     }
 }
 
@@ -261,94 +261,94 @@ group "6.drake_base" {
 group "robot.simple_control" {
     cmd "head_0" {
         exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_flat_hands_down";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "head_45" {
         exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_part_down_hands_down";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "head_90" {
         exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  look_full_down_hands_down";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "hand_in_view" {
         exec = "rosrun tutorial_atlas_control traj_yaml.py $HOME/drc/ros_workspace/tutorial_atlas_control/scripts/Traj_data2.yaml  hand_in_view";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "individual_joints" {
         exec = "rosrun tutorial_atlas_control traj_gui.py";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "robot.misc" {
     cmd "robot_spy" {
         exec = "bot-spy";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "lcmscope" {
         exec = "drc-lcmscope";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "teleop" {
         exec = "rosrun keyboard_teleop keyboard_teleop";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "maskunzip" {
         exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "sheriff_obs" {
         exec = "bot-procman-sheriff -o";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "base.misc" {
     cmd "lcmscope" {
         exec = "drc-lcmscope";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "base_spy" {
         exec = "bot-spy -l 'udpm://239.255.76.68:7668?ttl=0'";
-        host = "paladin-01";
+        host = "base";
     }
     cmd "bandwidth-scope" {
         exec = "drc-bandwidth-scope";
-        host = "paladin-01";
+        host = "base";
     }
 }
 group "robot.dev_tools" {
     cmd "teleport_to_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "teleport_to_000" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[0.0, 0.0, 1.00]' '[0, 0, 0, 1]'";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "oracle2coll" {
         exec = "drc-oracle2collection";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
 group "utils.system-test" {
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "set-sim-rate" {
         exec = "drc-set-sim-rate 0.25";
-        host = "paladin-02";
+        host = "robot";
     }
     cmd "lcm-logger-no-vis" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v";
-        host = "paladin-02";
+        host = "robot";
     }
 }
 
