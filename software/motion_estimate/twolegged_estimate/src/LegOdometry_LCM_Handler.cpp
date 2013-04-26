@@ -302,17 +302,15 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
       dummy_var.x() = msg->origin_position.rotation.x;
       dummy_var.y() = msg->origin_position.rotation.y;
       dummy_var.z() = msg->origin_position.rotation.z;
-      
-      
       // This is to use the true yaw angle
-      Eigen::Vector3d E_true_y = InertialOdometry::QuaternionLib::q2e(dummy_var);
+      Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(dummy_var);
       //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
-      Eigen::Vector3d E_est_rp = InertialOdometry::QuaternionLib::q2e(output_q);
-      E_true_y(0) = 0.;
-      E_true_y(1) = 0.;
-      E_est_rp(2) = 0.;
-      // But we are not using the true yaw angle now..
-      //output_q = InertialOdometry::QuaternionLib::e2q(E_true_y + E_est_rp);
+      Eigen::Vector3d E_est = InertialOdometry::QuaternionLib::q2e(output_q);
+      //E_true(0) = 0.;
+      //E_true(1) = 0.;
+      //E_est(2) = 0.;
+      // But we are not using the true yaw angle now.. -- this was for testing of the roll and pitch angles, but the problem was found as the transpose of .linear() for Eigen::Isometry3d
+      //output_q = InertialOdometry::QuaternionLib::e2q(E_true + E_est);
     
       
       
@@ -373,7 +371,9 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   msgout = *msg;
   msgout.origin_position = origin;
   msgout.origin_twist = twist;
-  lcm_->publish("EST_ROBOT_STATE_VO", &msgout);
+  
+  //"EST_ROBOT_STATE_VO"
+  lcm_->publish("EST_ROBOT_STATE", &msgout);
   
   // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
   
@@ -386,7 +386,21 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	
     ss << (msg->origin_twist.linear_velocity.x - velocity_states(0)) << ", ";
     ss << (msg->origin_twist.linear_velocity.y - velocity_states(1)) << ", ";
-    ss << (msg->origin_twist.linear_velocity.z - velocity_states(2)) << std::endl;
+    ss << (msg->origin_twist.linear_velocity.z - velocity_states(2)) << ", ";
+    
+    ss << E_true(0) - E_est(0) << ", ";
+    ss << E_true(1) - E_est(1) << ", ";
+    ss << E_true(2) - E_est(2) << ", ";
+    
+    ss << msg->origin_twist.linear_velocity.x - local_rates(0) << ", ";
+    ss << msg->origin_twist.linear_velocity.y - local_rates(1) << ", ";
+    ss << msg->origin_twist.linear_velocity.z - local_rates(2) << ", ";
+    
+    ss << (msg->origin_twist.linear_velocity.x) << ", ";
+    ss << (msg->origin_twist.linear_velocity.y) << ", ";
+    ss << (msg->origin_twist.linear_velocity.z);
+    
+    ss <<std::endl;
     
 	state_estimate_error_log << ss.str();
 	  

@@ -41,4 +41,35 @@ public:
 	float getState();
 };
 
+class BipolarSchmittTrigger {
+private:
+	double prev_value;
+	SchmittTrigger* _trigger;
+	//SchmittTrigger* _lowside;
+public:
+	BipolarSchmittTrigger(double lt, double ht, long delay);
+	~BipolarSchmittTrigger();
+	void UpdateState(long present_time, double value);
+	void Reset();
+	float getState();
+	
+};
+
+
+// This class should be updated to support vectored signals, rather than the present single channel
+// Maybe the signals should be handled in a vector, as that will separate this module from the Eignen requirement
+class NumericalDiff {
+private:
+	Eigen::VectorXd prev_sample;
+	int size;
+	double prev_time;
+public:
+	NumericalDiff();
+	void setSize(int size);
+	
+	Eigen::VectorXd diff(double time, const Eigen::VectorXd &sample);
+	
+	
+};
+
 #endif /*SIGNALTAP_HPP_*/

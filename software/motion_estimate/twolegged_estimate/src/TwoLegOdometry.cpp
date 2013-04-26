@@ -34,6 +34,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	expectedweight = 900.f;
 	
 	local_velocities.setZero();
+	accel.setSize(3);
 	
 	leftforces.x = 0.f;
 	leftforces.y = 0.f;
@@ -56,23 +57,34 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
+	// the idea at this point is that if the accleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
+	_vel_spike_isolation[0] = new BipolarSchmittTrigger(0.5, 0.75, 3000); 
+	_vel_spike_isolation[1] = new BipolarSchmittTrigger(0.5, 0.75, 3000);
+	_vel_spike_isolation[2] = new BipolarSchmittTrigger(0.5, 0.75, 3000);
+	
 	datafile.Open(_log_data_files,"datalog.csv");
 	footcontactfile.Open(_log_data_files,"footcontactlog.csv");
 	
 }
 
 TwoLegOdometry::~TwoLegOdometry() {
+	std::cout << "Terminating a TwoLegOdometry object and its allocated memory\n";
+	
+	terminate();
+	
 	delete _left_contact_state;
 	delete _right_contact_state;
-	
+	delete _vel_spike_isolation[0];
+	delete _vel_spike_isolation[1];
+	delete _vel_spike_isolation[2];
+		
 }
 
 void TwoLegOdometry::parseRobotInput() {
 	
-	cout << "TwoLegOdometry::parseLCMInput() called, NOT implemented" << endl;
-
-		
-	return;
+  cout << "TwoLegOdometry::parseLCMInput() called, NOT implemented" << endl;
+  
+  return;
 }
 
 /*
@@ -129,7 +141,7 @@ void TwoLegOdometry::setStandingFoot(int foot) {
 void TwoLegOdometry::updateInternalStates(/*data*/) {
 	cout << "void TwoLegOdometry::updateInternalStates(); nothing updated - NOT implemented" << endl;
 	
-	
+	// This function is currently not used
 	
 	return;
 }
@@ -594,9 +606,30 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	//Eigen::Vector3d velocity_estimate;
 	
 	current_position = getPelvisState().translation();
+	
+	Eigen::Vector3d prev_velocities;
+	prev_velocities = local_velocities;
 	local_velocities = (1.e6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
 	
 	
+	// This is to ignore velocity spikes that occur on when the active foot state is transitioned from left to right
+	// This is probablydue to some uncompensated offset at the present time, but may be good enough for the present requirements
+	// if the velocity which is calculated here is high for a period, we need to consider that something has gone wrong.
+	// But there is a known issue with transitioins between feet, whic create a large velocity spike.
+	// Suggested cure is a delayed Schmitt trigger once more -- this is to pass or ignore spikes with a time delay.
+	local_accelerations = accel.diff((1.e-6)*current_time, local_velocities);
+	for (int i=0;i<3;i++) {
+		_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
+		
+		if (local_accelerations(i) < -1.0 || local_accelerations(i) > 1.0)
+		{
+			if (!_vel_spike_isolation[i]->getState()) {
+				// accel values have not remained high, and can therefore be ignored
+				local_velocities(i) = prev_velocities(i);
+			}
+			// else do noting and the current computed state will not be ignored
+		}
+	}
 	
 	previous_isometry = getPelvisState();
 	previous_isometry_time = current_time;

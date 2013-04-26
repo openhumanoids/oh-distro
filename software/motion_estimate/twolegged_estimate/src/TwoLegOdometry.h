@@ -49,6 +49,7 @@ class TwoLegOdometry {
 		Eigen::Quaterniond local_frame_orientation;
 		Eigen::Vector3d local_frame_rates;
 		Eigen::Vector3d local_velocities;
+		Eigen::Vector3d local_accelerations;
 		Eigen::Isometry3d previous_isometry;
 		int64_t previous_isometry_time;
 		
@@ -57,6 +58,10 @@ class TwoLegOdometry {
 		
 		SchmittTrigger* _left_contact_state;
 		SchmittTrigger* _right_contact_state;
+		
+		// isolate and ignore velocity estimate spikes
+		BipolarSchmittTrigger* _vel_spike_isolation[3];
+		NumericalDiff accel;
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
