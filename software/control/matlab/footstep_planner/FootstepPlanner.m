@@ -31,7 +31,6 @@ classdef FootstepPlanner < DRCPlanner
           obj.options.(x{1}) = data.goal.(x{1});
         end
         obj.options.timeout = obj.options.timeout / 1000000;
-        isnew = true;
       end
       if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
         msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);
@@ -48,6 +47,7 @@ classdef FootstepPlanner < DRCPlanner
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
+        new_X.pos(3) = new_X.pos(3) + 0.003; % add back the 3mm we subtracted before publishing
         X([X.id] == new_X.id) = new_X;
         t = num2cell(obj.biped.getStepTimes([X.pos]));
         [X.time] = t{:};
@@ -66,12 +66,14 @@ classdef FootstepPlanner < DRCPlanner
       goal_pos = [];
       obj.options = struct();
       last_publish_time = now();
+      isnew = true;
 
       foot_body = struct('right', findLink(obj.biped, obj.biped.r_foot_name),...
                             'left', findLink(obj.biped, obj.biped.l_foot_name));
 
       while 1
         [data, changed, changelist] = obj.updateData(data);
+        isnew = changelist.goal || isempty(X_old);
         if changelist.plan_reject 
           msg ='Footstep Planner: Rejected'; disp(msg); send_status(3,0,0,msg);
           break;
@@ -93,6 +95,8 @@ classdef FootstepPlanner < DRCPlanner
           % Convert from foot center to foot origin
           for j = 1:length(X)
             Xout(j).pos = obj.biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
+            % move the planned steps down by 3mm (helps with force classification and compensates for gazebo issues)
+            Xout(j).pos(3) = Xout(j).pos(3) - 0.003;
           end
           publish(Xout);
           last_publish_time = now();
@@ -104,7 +108,6 @@ classdef FootstepPlanner < DRCPlanner
 
       function publish(X)
         obj.biped.publish_footstep_plan(X, data.utime, isnew);
-        isnew = false;
       end
 
       function [ground_pos, got_data, terrain_ok] = heightfun(pos, is_right_foot)
