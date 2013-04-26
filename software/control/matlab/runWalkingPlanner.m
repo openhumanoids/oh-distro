@@ -48,10 +48,10 @@ while true
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
         % get pelvis height above height map and adjust footstep heights
-        dz = getTerrainHeight(r,x(1:2))-x(3);
-        x(3) = x(3) + dz;
+        zmap = getTerrainHeight(r,x(1:2));
+        x(3) = x(3) - zmap;
         for j = 1:length(footsteps)
-          footsteps(j).pos(3) = footsteps(j).pos(3) + dz;
+          footsteps(j).pos(3) = footsteps(j).pos(3) - zmap;
         end
                 
         % temp hack --- aim footsteps slightly below the ground. this will be removed
@@ -75,7 +75,7 @@ while true
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 
-  xtraj(3,:) = xtraj(3,:) - dz;
+  xtraj(3,:) = xtraj(3,:) + zmap;
   plan_pub.publish(ts,xtraj);
 
   % if 0 % do proper TV linear system approach

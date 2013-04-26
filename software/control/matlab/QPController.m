@@ -91,7 +91,7 @@ classdef QPController < MIMODrakeSystem
     zmpd = getData(obj.zmpdata);
 
     % get pelvis height above height map
-    x(3) = getTerrainHeight(r,x(1:2));
+    x(3) = x(3)-getTerrainHeight(r,x(1:2));
       
     % use support trajectory
     if typecheck(zmpd.supptraj,'double') %zmpd.ti_flag

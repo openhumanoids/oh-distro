@@ -61,7 +61,7 @@ classdef SimplePDController < DrakeSystem
   	function y=output(obj,t,~,x)
 
       % get pelvis height above height map
-      x(3) = getTerrainHeight(obj.robot,x(1:2));
+      x(3) = x(3)-getTerrainHeight(obj.robot,x(1:2));
       
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
