@@ -34,4 +34,4 @@ target_link_libraries(stereo-bm-orig
 pods_install_executables(stereo-bm-orig)
 
 
-add_subdirectory(src/stereo-bm)
+#add_subdirectory(src/stereo-bm)
