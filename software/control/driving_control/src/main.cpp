@@ -186,9 +186,12 @@ void publish_status(state_t *self){
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_INITIAL_TURN;
         s_msg.value = "DOING_INITIAL_TURN";
         break;
+    default:
+        s_msg.value = "ERROR - UNKNOWN STATUS";
+        break;
     }
     drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
-    drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
+    //drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
 }
 
 void draw_goal(state_t *self){
