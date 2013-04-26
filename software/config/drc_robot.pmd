@@ -308,6 +308,58 @@ group "robot.misc" {
     }
 }
 
+group "7.driving" {
+    cmd "exit_robot" {
+        exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
+    cmd "drc-lidar-classifier" {
+        exec = "drc-lidar-classifier";
+        host = "robot";
+    }
+    cmd "vehicle-groundtruth-state" {
+        exec = "rosrun driving_interface groundtruth_receiver";
+        host = "robot";
+    }
+    cmd "drc-car-quick-vis" {
+        exec = "drc-car-quick-vis";
+        host = "robot";
+    }
+    cmd "driving_interface" {
+        exec = "rosrun driving_interface driving_interface";
+        host = "robot";
+    }
+    cmd "send_affordance" {
+        exec = "affordance_points_drill_send";
+        host = "robot";
+    }
+    cmd "TLD-Tracker" {
+        exec = "drc-driving-tracker";
+        host = "robot";
+    }
+    cmd "TLD-Segmenter" {
+        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
+        host = "robot";
+    }
+    cmd "affordance_server -r robot" {
+        exec = "affordance_server -r robot";
+        host = "robot";
+    }
+    cmd "seat_robot" {
+        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
+    cmd "drc-driving-control" {
+        exec = "drc-driving-control";
+        host = "robot";
+    }
+    cmd "drc-terrain-classifier" {
+        exec = "drc-terrain-classifier -s";
+        host = "robot";
+    }
+}
+
+
 group "base.misc" {
     cmd "lcmscope" {
         exec = "drc-lcmscope";
