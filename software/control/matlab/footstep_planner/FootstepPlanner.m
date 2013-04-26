@@ -3,6 +3,7 @@ classdef FootstepPlanner < DRCPlanner
     biped
     monitors
     hmap_ptr
+    options
   end
   
   methods
@@ -22,74 +23,63 @@ classdef FootstepPlanner < DRCPlanner
       obj.hmap_ptr = mapAPIwrapper();
       % mapAPIwrapper(obj.hmap_ptr);
     end
+
+    function X = updatePlan(obj, X_old, data, changed, changelist, heightfun)
+      if changelist.goal || isempty(X_old)
+        msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
+          obj.options.(x{1}) = data.goal.(x{1});
+        end
+        obj.options.timeout = obj.options.timeout / 1000000;
+        isnew = true;
+      end
+      if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
+        msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);
+        goal_pos = [data.goal.goal_pos.translation.x;
+                    data.goal.goal_pos.translation.y;
+                    data.goal.goal_pos.translation.z];
+        [goal_pos(4), goal_pos(5), goal_pos(6)] = quat2angle([data.goal.goal_pos.rotation.w,...
+                                          data.goal.goal_pos.rotation.x,...
+                                          data.goal.goal_pos.rotation.y,...
+                                          data.goal.goal_pos.rotation.z], 'XYZ');
+        [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, obj.options, heightfun);
+      end
+      if changelist.plan_con
+        new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
+        new_X = new_X(1);
+        new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
+        X([X.id] == new_X.id) = new_X;
+        t = num2cell(obj.biped.getStepTimes([X.pos]));
+        [X.time] = t{:};
+      end
+
+      for j = 1:size(X, 2)
+        if X(j).is_in_contact
+          X(j).pos = heightfun(X(j).pos);
+        end
+      end
+    end
+
     
     function X = plan(obj,data)
       X_old = [];
       goal_pos = [];
-      options = struct();
+      obj.options = struct();
       last_publish_time = now();
-      optimizer_halt = false;
 
       foot_body = struct('right', findLink(obj.biped, obj.biped.r_foot_name),...
                             'left', findLink(obj.biped, obj.biped.l_foot_name));
 
       while 1
         [data, changed, changelist] = obj.updateData(data);
-        if changelist.goal || isempty(X_old)
-          optimizer_halt = false;
-          msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
-          for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
-            options.(x{1}) = data.goal.(x{1});
-          end
-          options.timeout = options.timeout / 1000000;
-          isnew = true;
-        end
-        if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
-          msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);
-          goal_pos = [data.goal.goal_pos.translation.x;
-                      data.goal.goal_pos.translation.y;
-                      data.goal.goal_pos.translation.z];
-          [goal_pos(4), goal_pos(5), goal_pos(6)] = quat2angle([data.goal.goal_pos.rotation.w,...
-                                            data.goal.goal_pos.rotation.x,...
-                                            data.goal.goal_pos.rotation.y,...
-                                            data.goal.goal_pos.rotation.z], 'XYZ');
-          %%% HACK for DRC Qual 1 
-          % goal_pos(3) = 0;
-          %%% end hack 
-
-          [X, foot_goals] = obj.biped.createInitialSteps(data.x0, goal_pos, options, @heightfun);
-        end
         if changelist.plan_reject 
-          optimizer_halt = true;
           msg ='Footstep Planner: Rejected'; disp(msg); send_status(3,0,0,msg);
           break;
         end
         if changelist.plan_commit
           msg ='Footstep Planner: Committed'; disp(msg); send_status(3,0,0,msg);
-          optimizer_halt = true;
         end
-        if changelist.plan_con
-          optimizer_halt = false;
-          new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
-          new_X = new_X(1);
-          new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
-          X([X.id] == new_X.id) = new_X;
-          t = num2cell(obj.biped.getStepTimes([X.pos]));
-          [X.time] = t{:};
-        end
-
-        % if ~optimizer_halt && data.goal.allow_optimization
-        %   [X, outputflag] = updateRLFootstepPlan(obj.biped, X, foot_goals, options, @heightfun);
-        % else
-          for j = 1:size(X, 2)
-            if X(j).is_in_contact
-              X(j).pos = heightfun(X(j).pos);
-            % elseif ~X(j).is_in_contact && ~X(j).pos_fixed(3)
-            %   X(j).pos = heightfun(X(j).pos) + [0;0;obj.biped.nom_step_clearance;0;0;0];
-            end
-            % X(j).pos(3) = heightfun(X(j).pos(1:2));
-          end
-        % end
+        X = obj.updatePlan(X_old, data, changed, changelist, @heightfun);
 
         if isequal(size(X_old), size(X)) && all(all(abs([X_old.pos] - [X.pos]) < 0.01))
           modified = false;
@@ -106,6 +96,8 @@ classdef FootstepPlanner < DRCPlanner
           end
           publish(Xout);
           last_publish_time = now();
+        else
+          pause(1)
         end
       end
 

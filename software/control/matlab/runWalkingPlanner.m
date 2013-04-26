@@ -68,11 +68,11 @@ while true
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
   plan_pub.publish(ts,xtraj);
 
-  if 0 % do proper TV linear system approach
-    disp('Computing ZMP controller...');
-    limp = LinearInvertedPendulum(htraj);
-    [~,V] = ZMPtracker(limp,zmptraj); 
-  end
+  % if 0 % do proper TV linear system approach
+  %   disp('Computing ZMP controller...');
+  %   limp = LinearInvertedPendulum(htraj);
+  %   [~,V] = ZMPtracker(limp,zmptraj); 
+  % end
 
   hddot = fnder(htraj,2);
 

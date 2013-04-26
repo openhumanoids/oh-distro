@@ -25,9 +25,7 @@ comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 % fnplt(zmptraj(2));
 % fnplt(comtraj(2));
 
-if 1
-  [~,V] = ZMPtracker(limp,zmptraj);
-end
+[~,V] = ZMPtracker(limp,zmptraj);
 
 % time spacing of samples for IK
 ts = 0:0.08:zmptraj.tspan(end);
