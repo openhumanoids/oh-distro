@@ -1,8 +1,8 @@
 #!/bin/bash
 GAZEBO_REV=7503
+GAZEBO_VERSION=1.7
 SIM_REV=2006
 MODELS_REV=212
-
 
 cd ~/
 mkdir ~/gazebo_versions
@@ -27,14 +27,14 @@ if [ "$RESP" = "g" ]; then
   make -j8
   sudo make install 
   pwd
-  source /opt/ros/fuerte/setup.bash
-  source /usr/local/share/gazebo-1.5/setup.sh 
   cd ~/
   make -C ~/drc/software/externals/bullet
   echo "Finished Installing Gazebo==================="
 
 elif [ "$RESP" = "d" ]; then
 
+  source /opt/ros/fuerte/setup.bash
+  source /usr/local/share/gazebo-$GAZEBO_VERSION/setup.sh 
   echo "CHECKING OUT DRCSIM ======================="
   sleep 2
   hg clone https://bitbucket.org/osrf/drcsim ~/gazebo_versions/gazebo_$GAZEBO_REV/drcsim 
