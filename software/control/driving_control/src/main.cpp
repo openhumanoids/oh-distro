@@ -37,6 +37,8 @@
 
 #define TIMER_PERIOD_MSEC 50
 
+#define STATUS_TIMER_PERIOD_MSEC 1000
+
 //#define TIME_TO_TURN_PER_RADIAN 1.0
 
 //this is a hack for now - adding a fixed time to turn 
@@ -56,6 +58,7 @@
 #define DIST_POW 2
 
 #define TLD_TIMEOUT_SEC 1.0
+
 
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
@@ -122,12 +125,12 @@ typedef struct _state_t {
 
 void publish_status(state_t *self){
     
-    drc_system_status_t s_msg;
+    /*drc_system_status_t s_msg;
     s_msg.utime = self->utime;
     s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
     s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
     s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
-    
+    */
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
@@ -145,52 +148,107 @@ void publish_status(state_t *self){
 
     case IDLE:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_IDLE;
-        s_msg.value = "IDLE";
+        //s_msg.value = "IDLE";
         break;
     case ERROR_NO_MAP:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_MAP;
-        s_msg.value = "NO_MAP";
+        //s_msg.value = "NO_MAP";
         break;
     case ERROR_MAP_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_MAP_TIMEOUT;
-        s_msg.value = "MAP_TIMEOUT";
+        //s_msg.value = "MAP_TIMEOUT";
         break;
     case DRIVING_ROAD_ONLY:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
-        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive/1.0e6);
-        s_msg.value = status;
+        //sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive/1.0e6);
+        //s_msg.value = status;
         break;
     case DRIVING_TLD_AND_ROAD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
-        sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive/1.0e6);
-        s_msg.value = status;
+        //sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive/1.0e6);
+        //s_msg.value = status;
         break;
     case DRIVING_TLD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD;
-        sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive/1.0e6);
-        s_msg.value = status;
+        //sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive/1.0e6);
+        //s_msg.value = status;
         break;
     case DRIVING_USER:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_USER;
-        s_msg.value = "DRIVING_USER";
+        //s_msg.value = "DRIVING_USER";
         break;
     case ERROR_TLD_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_TLD_TIMEOUT;
-        s_msg.value = "ERROR_TLD_HEADING_TIMEOUT";
+        //s_msg.value = "ERROR_TLD_HEADING_TIMEOUT";
         break;
     case ERROR_NO_VALID_GOAL:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_VALID_GOAL;
-        s_msg.value = "ERROR_NO_VALID_GOAL";
+        //s_msg.value = "ERROR_NO_VALID_GOAL";
         break;
     case DOING_INITIAL_TURN:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_INITIAL_TURN;
+        //s_msg.value = "DOING_INITIAL_TURN";
+        break;
+    default:
+        //s_msg.value = "ERROR - UNKNOWN STATUS";
+        break;
+    }
+    drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
+    //drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
+}
+
+void publish_system_status(state_t *self){
+    
+    drc_system_status_t s_msg;
+    s_msg.utime = self->utime;
+    s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
+    s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
+    s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
+    
+    double time_to_drive = 0;
+    if(self->drive_duration >=0){
+        time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+    }
+    char status[1024];
+    switch(self->curr_state){
+
+    case IDLE:
+        s_msg.value = "IDLE";
+        break;
+    case ERROR_NO_MAP:
+        s_msg.value = "NO_MAP";
+        break;
+    case ERROR_MAP_TIMEOUT:
+        s_msg.value = "MAP_TIMEOUT";
+        break;
+    case DRIVING_ROAD_ONLY:
+        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", time_to_drive/1.0e6);
+        s_msg.value = status;
+        break;
+    case DRIVING_TLD_AND_ROAD:
+        sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", time_to_drive/1.0e6);
+        s_msg.value = status;
+        break;
+    case DRIVING_TLD:
+        sprintf(status, "DRIVING_TLD : %.2f", time_to_drive/1.0e6);
+        s_msg.value = status;
+        break;
+    case DRIVING_USER:
+        s_msg.value = "DRIVING_USER";
+        break;
+    case ERROR_TLD_TIMEOUT:
+        s_msg.value = "ERROR_TLD_HEADING_TIMEOUT";
+        break;
+    case ERROR_NO_VALID_GOAL:
+        s_msg.value = "ERROR_NO_VALID_GOAL";
+        break;
+    case DOING_INITIAL_TURN:
         s_msg.value = "DOING_INITIAL_TURN";
         break;
     default:
         s_msg.value = "ERROR - UNKNOWN STATUS";
         break;
     }
-    drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
     drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
 }
 
@@ -903,6 +961,13 @@ perform_emergency_stop (state_t *self)
 }
 
 static gboolean
+status_timer (gpointer data)
+{
+    state_t *self = (state_t *) data;
+    publish_system_status(self);    
+}
+
+static gboolean
 on_controller_timer (gpointer data)
 {
 
@@ -1586,6 +1651,8 @@ int main (int argc, char **argv) {
     else{
         self->controller_timer_id = g_timeout_add (self->timer_period, on_controller_timer_arc, self);
     }
+
+    g_timeout_add (STATUS_TIMER_PERIOD_MSEC, status_timer, self);
     
     // Connect LCM to the mainloop
     bot_glib_mainloop_attach_lcm (self->lcm);
