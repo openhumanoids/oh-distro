@@ -64,14 +64,13 @@ namespace surrogate_gui
 		//=========menu setup
 		BotGtkParamWidget *pw = _surrogate_renderer._pw;
 
-		//selection mode
-		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_MOUSE_MODE, BOT_GTK_PARAM_WIDGET_MENU,
-									  0, //initial value
-									  "Camera Move", CAMERA_MOVE,
-									  "Rectangle Select", RECTANGLE_SELECT,
-									  NULL);
-		//self->mouse_mode = CAMERA_MOVE;
+		// 1. pull map
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_PULL_MAP, NULL);
 
+    // 2. Affordance selection
+    bot_gtk_param_widget_add_enum(pw, PARAM_NAME_AFFORDANCE_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
+                0,"None",0,NULL);
+    // 3. geometric primitive
 		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_GEOMETRIC_PRIMITIVE, BOT_GTK_PARAM_WIDGET_MENU,
 					      //CAR, // initial value
 					      0, // initial value
@@ -85,8 +84,18 @@ namespace surrogate_gui
 					      "Cube", CUBE,
 					      NULL);
 
-    bot_gtk_param_widget_add_enum(pw, PARAM_NAME_AFFORDANCE_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
-                0,"None",0,NULL);
+		// 4. selection mode
+		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_MOUSE_MODE, BOT_GTK_PARAM_WIDGET_MENU,
+									  0, //initial value
+									  "Camera Move", CAMERA_MOVE,
+									  "Rectangle Select", RECTANGLE_SELECT,
+									  NULL);
+		//self->mouse_mode = CAMERA_MOVE;
+
+		// 5. affordance publish button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUB, NULL);
+
+    bot_gtk_param_widget_add_separator (pw, "");
 
 		// DOF Controls
 		Segmentation::FittingParams defaultFp; //default fitting params
@@ -96,6 +105,9 @@ namespace surrogate_gui
 																		0.1, 10, 0.1, defaultFp.maxRadius);		
 		bot_gtk_param_widget_add_double(pw, PARAM_NAME_DISTANCE_THRESHOLD, BOT_GTK_PARAM_WIDGET_SPINBOX, 
 																		0.01, 1, 0.01, defaultFp.distanceThreshold);
+
+    // YPR settings
+    /*
 		bot_gtk_param_widget_add_double(pw, PARAM_NAME_YAW, BOT_GTK_PARAM_WIDGET_SPINBOX, 
 																		-3.14, +3.14, 0.05, defaultFp.yaw);
 		bot_gtk_param_widget_add_double(pw, PARAM_NAME_PITCH, BOT_GTK_PARAM_WIDGET_SPINBOX, 
@@ -104,50 +116,47 @@ namespace surrogate_gui
 																		-3.14, +3.14, 0.05, defaultFp.roll);
 		bot_gtk_param_widget_add_double(pw, PARAM_NAME_MAX_ANGLE, BOT_GTK_PARAM_WIDGET_SPINBOX, 
 																		0, 6.28, 0.05, defaultFp.maxAngle);
+    */
 
 		//pause
-		bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
+		//bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_NAME_CLOUD_PAUSE, 0, NULL);
 		//self->paused = 0;
 
 		// current object
-		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_CURR_OBJECT, BOT_GTK_PARAM_WIDGET_MENU,
+		/*bot_gtk_param_widget_add_enum(pw, PARAM_NAME_CURR_OBJECT, BOT_GTK_PARAM_WIDGET_MENU,
 									  0, //initial value
 									  "None", NO_OBJECT,
 									  NULL);
 		//self->curr_object = NO_OBJECT;
+    */
 
 		// New object button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_NEW_OBJECT, NULL);
+		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_NEW_OBJECT, NULL);
 
 		// Clear object button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_OBJECT, NULL);
-
-		//pull map
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_PULL_MAP, NULL);
+		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_OBJECT, NULL);
 
 		// Tracking mode
-		bot_gtk_param_widget_add_enum(pw, PARAM_NAME_TRACK_METHOD, BOT_GTK_PARAM_WIDGET_MENU,
+		/*bot_gtk_param_widget_add_enum(pw, PARAM_NAME_TRACK_METHOD, BOT_GTK_PARAM_WIDGET_MENU,
 									  0, //initial value
 									  "ICP", ICP,
 									  //"3D-only", TRACK_3D,
 									  //"2D and 3D", TRACK_2D,
 									  NULL);
 		//self->track_mode = TRACK_3D;
+    */
 
 		//===live tracking button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_TRACK_OBJECTS, NULL);
-
-		//affordance publish button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUB, NULL);
+		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_TRACK_OBJECTS, NULL);
 
 		//affordance save cloud button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_SAVE_CLOUD, NULL);
 
 		// master reset button
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
+		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_RESET, NULL);
 
 		//Clear Warning Messages
-		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_WARNING_MSGS, NULL);
+		//bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_CLEAR_WARNING_MSGS, NULL);
 
   // add custom TOP VIEW button
   GtkWidget *start_spy_button;
@@ -971,10 +980,12 @@ namespace surrogate_gui
 		fp.minRadius = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MIN_RADIUS);
 		fp.maxRadius = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_RADIUS);
 		fp.distanceThreshold = bot_gtk_param_widget_get_double(pw, PARAM_NAME_DISTANCE_THRESHOLD);
+    /* TODO: put back or remove altogether
 		fp.yaw = bot_gtk_param_widget_get_double(pw, PARAM_NAME_YAW);
 		fp.pitch = bot_gtk_param_widget_get_double(pw, PARAM_NAME_PITCH);
 		fp.roll = bot_gtk_param_widget_get_double(pw, PARAM_NAME_ROLL);
 		fp.maxAngle = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_ANGLE);
+    */
 
     // TODO: support selected afforance for other objects
     AffPlusPtr selectedAff = getSelectedAffordance();
@@ -1001,6 +1012,7 @@ namespace surrogate_gui
 	    break;
 	  };
 	  	  
+
   }
   
 
@@ -1373,7 +1385,6 @@ namespace surrogate_gui
                                 isInitialSet, initialXYZ, initialYPR, 
                                 modelcloud,
                                 xyz, ypr, clouds);
-
 
     // lcmgl display for debugging
     float colors[][3] = {{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0},{1,1,1}};

@@ -14,19 +14,19 @@ namespace surrogate_gui
 	#define PARAM_NAME_NEW_OBJECT "New Object"
 	#define PARAM_NAME_CLEAR_OBJECT "Clear ObjPts"
 	#define PARAM_NAME_CURR_OBJECT "Current Object"
-	#define PARAM_NAME_AFFORDANCE_PUB "Affordance Pub"
+	#define PARAM_NAME_AFFORDANCE_PUB "5. Affordance Pub"
 	#define PARAM_NAME_SAVE_CLOUD "Save Point Cloud"
 	#define NO_OBJECT 0
 
 	//======mouse mode
-	#define PARAM_NAME_MOUSE_MODE "Mouse Mode"
+	#define PARAM_NAME_MOUSE_MODE "4. Mouse Mode"
 	enum MouseMode{CAMERA_MOVE, RECTANGLE_SELECT};
 
 	//======geometric primitive
-	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "Geometric Primitive"
+	#define PARAM_NAME_GEOMETRIC_PRIMITIVE "3. Geometric Primitive"
 	enum GeometricPrimitive{CYLINDER, SPHERE, PLANE, LINE, TORUS, CUBE, CIRCLE_3D, CAR};
 
-  #define PARAM_NAME_AFFORDANCE_SELECT "Select Affordance"
+  #define PARAM_NAME_AFFORDANCE_SELECT "2. Select Affordance"
 
 	//======DOF Controls
 	#define PARAM_NAME_YAW "Yaw"
@@ -42,7 +42,7 @@ namespace surrogate_gui
 	//#define PARAM_NAME_SHOW_CLOUD "Show Cloud Updates"
 
 	//===========pull from map
-	#define PARAM_NAME_PULL_MAP "Get Map"
+	#define PARAM_NAME_PULL_MAP "1. Get Map"
 
 	//==========tracking
 	#define PARAM_NAME_TRACK_METHOD "Tracking Method"

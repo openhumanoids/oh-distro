@@ -910,7 +910,8 @@ namespace surrogate_gui
 
 	string SurrogateRenderer::getCurrentObjectSelectedName() const
 	{
-		return bot_gtk_param_widget_get_enum_str(_pw, PARAM_NAME_CURR_OBJECT);
+    return "Object 1"; //TODO fix or remove altogether
+		//return bot_gtk_param_widget_get_enum_str(_pw, PARAM_NAME_CURR_OBJECT);
 	}
 
 	/**@returns the object currently selected in the drop-down menu.  Or
