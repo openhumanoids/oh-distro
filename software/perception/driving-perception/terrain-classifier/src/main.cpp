@@ -1243,10 +1243,10 @@ static void *p_thread(void *user)
 }
 
 // apr 26: dashboard mask
-cv::Point mask_pts[] = {cv::Point(0,248), cv::Point(222,502), cv::Point(188,544), cv::Point(184,603), 
+cv::Point mask_pts[] = {cv::Point(0,280), cv::Point(212,512), cv::Point(188,544), cv::Point(184,603), 
                         cv::Point(170,622), cv::Point(218,785), cv::Point(213,799), cv::Point(799,799), 
                         cv::Point(799,423), cv::Point(738, 401), cv::Point(614,397), cv::Point(595,404), 
-                        cv::Point(344,394), cv::Point(250,463), cv::Point(0,85) };
+                        cv::Point(344,394), cv::Point(250,463), cv::Point(0,95) };
 
 int main(int argc, char **argv)
 {
