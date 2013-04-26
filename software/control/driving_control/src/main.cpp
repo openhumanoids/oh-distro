@@ -885,7 +885,8 @@ on_controller_timer (gpointer data)
     state_t *self = (state_t *) data;
 
     if((self->utime - self->last_controller_utime) / 1.0e3 < self->timer_period){
-        fprintf(stderr, "Timer gap : %f (ms)\n", (self->utime - self->last_controller_utime) / 1.0e3);
+        if(self->verbose)
+            fprintf(stderr, "Timer gap : %f (ms)\n", (self->utime - self->last_controller_utime) / 1.0e3);
         return TRUE;
     }
 
