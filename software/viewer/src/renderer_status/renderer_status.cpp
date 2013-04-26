@@ -32,7 +32,7 @@ const char* PARAM_STATUS_2 = "Tracking";
 const char* PARAM_STATUS_3 = "Planning & Control";
 const char* PARAM_STATUS_4 = "Grasping";
 const char* PARAM_STATUS_5 = "Driving";
-#define NUMBER_OF_SYSTEMS 5
+#define NUMBER_OF_SYSTEMS 6
 #define MAXIMUM_N_OF_LINES 80
 
 const char* PARAM_IMPORTANT = "Important";
@@ -457,6 +457,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->param_status[2] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_2);
   self->param_status[3] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_3);
   self->param_status[4] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_4);
+  self->param_status[5] = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
   self->param_important = bot_gtk_param_widget_get_bool(self->pw, PARAM_IMPORTANT);
   self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);
@@ -523,6 +524,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     self->param_status[2] = PARAM_STATUS_2_DEFAULT;    
     self->param_status[3] = PARAM_STATUS_3_DEFAULT;    
     self->param_status[4] = PARAM_STATUS_4_DEFAULT;    
+    self->param_status[5] = PARAM_STATUS_5_DEFAULT;    
     self->param_important = PARAM_IMPORTANT_DEFAULT;
     
   if (viewer) {
@@ -549,7 +551,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
                                       PARAM_STATUS_3, PARAM_STATUS_3_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_STATUS_4, PARAM_STATUS_4_DEFAULT, NULL);
-     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
+    bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_STATUS_5, PARAM_STATUS_5_DEFAULT, NULL);
     
 
