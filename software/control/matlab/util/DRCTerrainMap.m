@@ -25,7 +25,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
 
         % temporary hack because the robot is initialized without knowing the ground under it's feet
         ptcloud = mapAPIwrapper(obj.map_ptr.getData(),[]);
-        obj.minval = median(ptcloud(3,:));
+        obj.minval = min(ptcloud(3,:));
         % end hack
       end
       fprintf(1,'received!\n');
@@ -38,10 +38,6 @@ classdef DRCTerrainMap < RigidBodyTerrain
         normal(:,isnan(z)) = repmat([0;0;1],1,sum(isnan(z)));
         z(isnan(z))=obj.minval;
       end      
-%       % TMP HACK, having some issues with normals in walking controller
-%       normal(1:2,:) = 0;
-%       normal(3,:) = 1;
-%       % end hack
     end
     
     function writeWRL(obj,fptr)

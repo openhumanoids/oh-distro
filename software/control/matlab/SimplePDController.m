@@ -6,6 +6,7 @@ classdef SimplePDController < DrakeSystem
     Kd;
     dt;
     controller_data; % pointer to shared data handle containing qtraj, ti_flag
+    robot;
   end
   
   methods
@@ -51,11 +52,17 @@ classdef SimplePDController < DrakeSystem
       else
         obj.dt = 0.005;
       end
-        
+      
+      obj.robot = r;
+      
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
     end
    
   	function y=output(obj,t,~,x)
+
+      % get pelvis height above height map
+      x(3) = getTerrainHeight(obj.robot,x(1:2));
+      
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
 

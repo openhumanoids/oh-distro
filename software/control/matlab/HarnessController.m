@@ -51,7 +51,38 @@ classdef HarnessController < DRCController
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name);
       obj = addPrecomputeResponseHandler(obj,'STANDING_PREC_RESPONSE','standing');
       
+      % add precompute trigger
+      obj = addPrecomputeTrigger(obj,@obj.standingRequestTrigger);
+      
     end
+
+    function trigger_active = standingRequestTrigger(obj,input_data,times)
+      trigger_active = true;
+      t=max(times);
+      if ~isinf(getDuration(obj)) && t>3.0
+        x = input_data{1};
+        d = load('data/atlas_fp.mat');
+        q_nom = d.xstar(1:getNumDOF(obj.robot));
+        q_nom([1,2,6]) = x([1,2,6]); % copy over pelvix x,y,yaw
+        
+        disp('HarnessController:publishing standing precompute request.');
+        req_msg = drc.precompute_request_t();
+        req_msg.utime = 1000000*t;
+        req_msg.robot_name = 'atlas';
+        req_msg.response_channel = 'STANDING_PREC_RESPONSE';
+        req_msg.precompute_type = 0;
+        
+        save('prec_r.mat','q_nom');
+        fid = fopen('prec_r.mat','r');
+        req_msg.matdata = fread(fid,inf,'*uint8');
+        fclose(fid);
+        req_msg.n_bytes = length(req_msg.matdata);
+        lc = lcm.lcm.LCM.getSingleton();
+        lc.publish('STANDING_PREC_REQUEST', req_msg);
+        trigger_active = false; % run once
+      end        
+    end
+    
     
     function obj = initialize(obj,data)
 
@@ -75,26 +106,7 @@ classdef HarnessController < DRCController
           q_nom = d.xstar(1:getNumDOF(obj.robot));
         end
         q0 = zeros(getNumDOF(obj.robot),1);
-        qtraj = PPTrajectory(spline([0 2],[q0 q_nom]));
-        
-        if ~isinf(getDuration(obj))
-          q_nom = d.xstar(1:getNumDOF(obj.robot));
-          disp('publishing precompute request');
-          % send standing precomputation request
-          req_msg = drc.precompute_request_t();
-          req_msg.utime = 0;
-          req_msg.robot_name = 'atlas';
-          req_msg.response_channel = 'STANDING_PREC_RESPONSE';
-          req_msg.precompute_type = 0;
-
-          save('prec_r.mat','q_nom');
-          fid = fopen('prec_r.mat','r');
-          req_msg.matdata = fread(fid,inf,'*uint8');
-          fclose(fid);
-          req_msg.n_bytes = length(req_msg.matdata);
-          lc = lcm.lcm.LCM.getSingleton();
-          lc.publish('STANDING_PREC_REQUEST', req_msg);
-        end
+        qtraj = PPTrajectory(spline([0 2.5],[q0 q_nom]));
         
         obj.controller_data.setField('ti_flag',true);
       end
@@ -103,4 +115,5 @@ classdef HarnessController < DRCController
   
     end
   end  
+  
 end

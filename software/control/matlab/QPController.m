@@ -90,6 +90,9 @@ classdef QPController < MIMODrakeSystem
     r = obj.robot;
     zmpd = getData(obj.zmpdata);
 
+    % get pelvis height above height map
+    x(3) = getTerrainHeight(r,x(1:2));
+      
     % use support trajectory
     if typecheck(zmpd.supptraj,'double') %zmpd.ti_flag
       supp = zmpd.supptraj;
@@ -114,15 +117,13 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-%     contact_threshold = 0.001; % m
-    
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
     if obj.debug
       phi
 %       x(1:6)
     end
-    active_contacts = zeros(length(phi),1);% phi<contact_threshold;
+    active_contacts = zeros(length(phi),1);
 
     contact_data = obj.contact_est_monitor.getNextMessage(1);
     if ~isempty(contact_data)
@@ -140,26 +141,7 @@ classdef QPController < MIMODrakeSystem
     end
     
     nc = sum(active_contacts);
-
-%     if nc==0
-%       % ignore supporting body spec, use any foot in contact
-%       [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol);
-%       [phi,Jz,D_] = contactConstraints(r,kinsol);
-%       active_contacts = phi<contact_threshold;
-% 
-%       % if any foot point is in contact, all contact points are active
-%       if any(active_contacts(1:4))
-%         active_contacts(1:4) = 1;
-%       end
-%       if length(phi)>4 && any(active_contacts(5:8))
-%         active_contacts(5:8) = 1;
-%       end
-%       
-%       nc = sum(active_contacts);
-%     else
-%       % get support contact J, dJ for no-slip constraint
-      [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-%     end
+    [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
     
     active_contacts = find(active_contacts);
         

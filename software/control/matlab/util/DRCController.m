@@ -16,6 +16,9 @@ classdef DRCController
     transition_monitors; % message monitors for transition events
     transition_targets; % list of names of controllers to transition to
     transition_channels; 
+
+    precompute_triggers; % list of function handles, active=f(controller_input,t) 
+    precompute_active; % list of bools, whether trigger functions are currently active 
     
     precompute_response_channels;
     precompute_response_monitors;
@@ -124,6 +127,13 @@ classdef DRCController
       obj.precompute_response_targets = setfield(obj.precompute_response_targets,transition_to_controller,[]);
     end
     
+    function obj = addPrecomputeTrigger(obj,trigger_function_handle)
+      typecheck(trigger_function_handle,'function_handle');
+      n = length(obj.precompute_triggers)+1;
+      obj.precompute_triggers{n} = trigger_function_handle;
+      obj.precompute_active{n} = true;
+   end
+    
     function [transition,data] = checkLCMTransitions(obj)
       data = struct();
       transition=false;
@@ -159,7 +169,7 @@ classdef DRCController
         end
       end
     end
-     
+    
     function obj=addSafetyTransition(obj,transition_to_controller)
       typecheck(transition_to_controller,'char');
 
@@ -225,6 +235,14 @@ classdef DRCController
             end
           end
         end
+        
+        % do this every loop?
+        for i=1:length(obj.precompute_triggers)
+          if obj.precompute_active{i}
+            f=obj.precompute_triggers{i};
+            obj.precompute_active{i} = f(input_frame_data,input_frame_time);
+          end
+        end
      
         tt = max(input_frame_time);
         if any(tt >= obj.t_final)
@@ -253,7 +271,7 @@ classdef DRCController
         
         if any(input_frame_time >=0) % could also do 'all' here
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
-          obj.controller_output_frame.publish(t,u,defaultChannel(obj.controller_output_frame));
+          obj.controller_output_frame.publish(tt,u,defaultChannel(obj.controller_output_frame));
         end
       end
     end
