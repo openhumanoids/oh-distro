@@ -202,8 +202,8 @@ void publish_system_status(state_t *self){
     drc_system_status_t s_msg;
     s_msg.utime = self->utime;
     s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
-    s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
-    s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
+    s_msg.importance = DRC_SYSTEM_STATUS_T_VERY_IMPORTANT;
+    s_msg.frequency = DRC_SYSTEM_STATUS_T_LOW_FREQUENCY;
     
     double time_to_drive = 0;
     if(self->drive_duration >=0){
