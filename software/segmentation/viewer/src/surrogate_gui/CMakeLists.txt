@@ -65,8 +65,8 @@ pods_install_pkg_config_file(surrogate
 pods_install_libraries(surrogate)
 
 #=============#=============#=============#=============#=============#=============#=============
-add_executable(surrogate_viewer main.cc)
-pods_use_pkg_config_packages(surrogate_viewer
+add_executable(segmentation-viewer main.cc)
+pods_use_pkg_config_packages(segmentation-viewer
     glib-2.0
     bot2-vis
     bot2-frames
@@ -78,4 +78,4 @@ pods_use_pkg_config_packages(surrogate_viewer
     renderer_affordances
     pointcloud_vis pointcloud_math)
 
-pods_install_executables(surrogate_viewer)
+pods_install_executables(segmentation-viewer)

@@ -64,7 +64,18 @@ namespace surrogate_gui
     double* mat3 = mat2.data();
     double q[4];
     double rpy[3];
-    int rc=bot_matrix_to_quat(mat3,q);
+    bot_matrix_to_quat(mat3,q);
+
+    // in some cases, q is NaN.  Try to fix it. HACK //TODO do better fix
+    // ususally caused by numbers near 0 and 1
+    if(isnan(q[0])){
+      cout << "***** Warning quat is NaN, trying to fix.  Matrix:\n"<< mat << endl;
+      for(int i=0;i<9;i++) mat3[i] = round(mat3[i]);
+      bot_matrix_to_quat(mat3,q);
+      if(isnan(q[0])) cout << "Couldn't fix\n";
+      else            cout << "Fix seemed to work.\n";
+    }
+
     bot_quat_to_roll_pitch_yaw(q,rpy);
     return Vector3f(rpy[2],rpy[1],rpy[0]);
   }
@@ -865,7 +876,7 @@ namespace surrogate_gui
     string file = getenv("HOME") + string("/drc/software/models/otdf/car.pcd");
     reader.read(file.c_str(), *modelcloud);
     Affine3f transformModel = Affine3f::Identity();
-    transformModel.translation() = Vector3f(0.72,0,0); // correct model
+    transformModel.translation() = Vector3f(0.72,0,0); // correct model  TODO fix model and remove hard coding
     transformModel.linear() = ypr2rot(Vector3f(M_PI,0,0));
     transformPointCloud(*modelcloud, *modelcloud, transformModel);
     modelcloud = extractAndSmooth(modelcloud);
@@ -877,8 +888,13 @@ namespace surrogate_gui
     // icp
 #if 1
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
+
     icp.setMaxCorrespondenceDistance(1);
-    //icp.setTransformationEpsilon(
+
+    //icp.setRANSACOutlierRejectionThreshold (1);
+    //icp.setTransformationEpsilon (0.001);
+    //icp.setMaximumIterations (10);
+
     icp.setInputCloud(modelcloud);
     icp.setInputTarget(subcloud);
     pcl::PointCloud<pcl::PointXYZRGB> Final;

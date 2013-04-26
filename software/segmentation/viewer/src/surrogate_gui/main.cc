@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     state_t app;
     memset(&app, 0, sizeof(app));
 
-    BotViewer *viewer = bot_viewer_new("Viewer-Surrogate");
+    BotViewer *viewer = bot_viewer_new("Segmentation");
     app.viewer = viewer;
     app.lcm = lcm_create( lcm_url.c_str() );
     boost::shared_ptr<lcm::LCM> lcmCpp = boost::shared_ptr<lcm::LCM>(new lcm::LCM(app.lcm));

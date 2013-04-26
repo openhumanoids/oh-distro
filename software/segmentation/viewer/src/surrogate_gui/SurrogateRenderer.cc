@@ -49,7 +49,7 @@ namespace surrogate_gui
 		renderer->destroy 	= cb_destruct;
 
 
-		renderer->name 		= (char*)"Kinect_XYZRGB_Surrogate";
+		renderer->name 		= (char*)"Segmentation";
 		renderer->widget 	= GTK_WIDGET(pw);
 		renderer->enabled 	= 1;
 		renderer->user 		= this;

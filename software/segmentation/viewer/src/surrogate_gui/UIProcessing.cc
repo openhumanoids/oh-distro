@@ -54,6 +54,7 @@ namespace surrogate_gui
 		_mViewClient(new maps::ViewClient()),
     _updatingAffordanceSelectionMenu(false)
 	{
+
 	       //--setup view client
 	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(lcm));
 	       _mViewClient->setBotWrapper(wrapper);
@@ -1386,6 +1387,7 @@ namespace surrogate_gui
                                 modelcloud,
                                 xyz, ypr, clouds);
 
+    /*
     // lcmgl display for debugging
     float colors[][3] = {{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0},{1,1,1}};
     for(int j=0; j<clouds.size();j++){
@@ -1397,6 +1399,7 @@ namespace surrogate_gui
       bot_lcmgl_end(_lcmgl);
     }
     bot_lcmgl_switch_buffer(_lcmgl);
+    */
 
     // copy results accounting for difference between model and pointcloud
     float x = xyz[0]; 
@@ -1625,9 +1628,11 @@ namespace surrogate_gui
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
-					if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_SCENE 
-             || views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE
-             || views[v]->getId() == drc::data_request_t::HEIGHT_MAP_SCENE) {
+					//if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_SCENE 
+          //   || views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE
+          //   || views[v]->getId() == drc::data_request_t::HEIGHT_MAP_SCENE) {
+          if(views[v]->getId() != 1)
+          {
 					  maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
                                           /*
                                             Matrix4f transformation = Matrix4f::Identity();
