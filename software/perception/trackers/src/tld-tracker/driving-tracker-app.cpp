@@ -70,7 +70,10 @@ struct state_t {
 
     // Main Tracker
     std::map<int64_t, TLDTracker*> tracker_map;
-    
+    std::map<int64_t, cv::Rect> reference_object_map; 
+    std::map<int64_t, cv::Rect> virtual_object_map; 
+    std::map<int64_t, cv::Point2f> ref_to_virtual_map;
+
     int counter;
 
     std::vector<cv::Scalar> id_colors; 
@@ -135,6 +138,10 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
       fprintf(stderr, "Unrecognized image format\n");
       break;
   }
+
+  // save image
+  cv::imwrite("test.png", img); 
+
   return;
 }
 
@@ -153,6 +160,37 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
     state_t* state = (state_t*) user_data;
     float sw = state->camera_params.width, sh = state->camera_params.height;
     Rect selection(msg->roi.x * sw, msg->roi.y * sh, msg->roi.width * sw, msg->roi.height * sh);
+    
+    // If virtual object, store and output bearing accordingly
+    if (msg->feature_id < 0) { 
+        std::cerr << "Registered virtual object with object_id: " << msg->object_id << std::endl;
+        std::cerr << "Virtual object: " << selection.tl() << " " << selection.br() << std::endl;        
+        state->virtual_object_map[msg->object_id] = selection;
+    } else { 
+        // store reference object
+        state->reference_object_map[msg->object_id] = selection;
+        // reset virtual object whenever a new reference object is defined
+        if (state->virtual_object_map.find(msg->object_id) != state->virtual_object_map.end())
+            state->virtual_object_map.erase(msg->object_id); 
+    }
+
+    // If both reference and virtual object are found
+    if (state->reference_object_map.find(msg->object_id) != state->reference_object_map.end() &&
+        state->virtual_object_map.find(msg->object_id) != state->virtual_object_map.end()) { 
+        cv::Rect refrect = state->reference_object_map[msg->object_id];
+        cv::Rect virtrect = state->virtual_object_map[msg->object_id];
+        state->ref_to_virtual_map[msg->object_id] = 
+            cv::Point2f(refrect.tl().x + refrect.width/2,refrect.tl().y + refrect.height/2) - 
+            cv::Point2f(virtrect.tl().x + virtrect.width/2,virtrect.tl().y + virtrect.height/2);
+    } else { 
+        if (state->ref_to_virtual_map.find(msg->object_id) != state->ref_to_virtual_map.end())
+            state->ref_to_virtual_map.erase(msg->object_id); 
+    }
+
+    if (msg->feature_id < 0)
+        return;
+
+        
 
     // Initialize tracker for object_id
     TLDTracker* tr = new TLDTracker(state->camera_params.width, state->camera_params.height, options.vSCALE);
@@ -243,6 +281,15 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
             const cv::Rect& currBB = tr->currBB;
             std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
             float roix = currBB.x + currBB.width/2, roiy = currBB.y + currBB.height/2;
+
+            if (state->ref_to_virtual_map.find(it->first) != state->ref_to_virtual_map.end()) { 
+                cv::Point2f offpt = state->ref_to_virtual_map[it->first];
+                std::cerr << "Offsetting TLD track to virtual point" << cv::Point2f(roix, roiy) << "->" << offpt << std::endl;
+                roix -= offpt.x, roiy -= offpt.y;
+
+                cv::line(display, cv::Point2f(roix, roiy-10), cv::Point2f(roix, roiy+10), cv::Scalar(0,255,0), 2, CV_AA);
+                cv::line(display, cv::Point2f(roix-10, roiy), cv::Point2f(roix+10, roiy), cv::Scalar(0,255,0), 2, CV_AA);
+            }
             float a,b;
             float u = -(state->camera_params.cx - roix);
             float v = -(state->camera_params.cy - roiy);
@@ -281,6 +328,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         // Display overlay
         if (tr->initialized)
             tr->addOverlay(display, idx, state->id_colors[idx]); idx++;
+
     }
     cv::imshow("Driving Tracker", display);
 

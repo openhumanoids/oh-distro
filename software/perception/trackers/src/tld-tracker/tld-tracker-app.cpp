@@ -92,9 +92,9 @@ struct state_t {
     }
 
     ~state_t () { 
-        lcm_destroy(lcm);
         delete imgutils_aff;
-        delete tracker;
+        // delete tracker;
+        lcm_destroy(lcm);
     }
 };
 state_t* state = NULL; 
@@ -159,8 +159,15 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
 	      << " " << msg->roi.width << " " << msg->roi.height << std::endl;
 
     state_t* state = (state_t*) user_data; 
-    Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
+    float sw = state->camera_params.width, sh = state->camera_params.height;
+    Rect selection(msg->roi.x * sw, msg->roi.y * sh, msg->roi.width * sw, msg->roi.height * sh);
     state->aff_utime = msg->utime; 
+
+    if (msg->feature_id < 0) {
+        std::cerr << "INVALID feature_id" << std::endl;
+        return;
+    }
+        
 
     // Ensure tracker is initialized
     if (!state->tracker) { 

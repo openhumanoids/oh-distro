@@ -26,7 +26,7 @@ int MAX_IMAGE_WIDTH = 0;
 int MAX_IMAGE_HEIGHT = 0;
 
 int32_t OBJECT_ID = 1; 
-int32_t FEATURE_ID = 1; 
+int32_t FEATURE_ID = 1; // 1 for object (reference), -1 for virtual heading object
 using namespace cv;
 
 struct state_t {
@@ -43,9 +43,9 @@ struct state_t {
     int64_t  img_utime;
 
     // UI selection of desired object
-    Rect selection;
-    Point origin;
-    bool selectObject;
+    Rect selection, selection_virtual;
+    Point origin, origin_virtual;
+    bool selectObject, selectObject_virtual;
 
     state_t () {
         // LCM, BotFrames, BotParam inits
@@ -57,6 +57,7 @@ struct state_t {
         counter = 0; 
 
         selectObject = false;
+        selectObject_virtual = false;
     }
     ~state_t () { 
         lcm_destroy(lcm);
@@ -87,11 +88,48 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         state->selection &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
+    if (state->selectObject_virtual) {
+        state->selection_virtual.x = MIN(x, state->origin_virtual.x);
+        state->selection_virtual.y = MIN(y, state->origin_virtual.y);
+        state->selection_virtual.width = std::abs(x - state->origin_virtual.x);
+        state->selection_virtual.height = std::abs(y - state->origin_virtual.y);
+        state->selection &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    }
+
     switch (event) {
+    case CV_EVENT_RBUTTONDOWN:
+        state->origin_virtual = Point(x, y);
+        state->selection_virtual = Rect(x, y, 0, 0);
+        state->selectObject_virtual = true;
+        break;
+    case CV_EVENT_RBUTTONUP:
+        state->selectObject_virtual = false;
+        std::cerr << "SEND virtual selection: " << state->img_utime << " - " << 
+            state->selection_virtual.x << " " << state->selection_virtual.y << " " << 
+            state->selection_virtual.width << " " << state->selection_virtual.height << std::endl;
+
+        perception_image_roi_t img_vselection;
+        img_vselection.utime = state->img_utime;
+        img_vselection.object_id = OBJECT_ID; 
+        img_vselection.feature_id = -1; // FEATURE_ID; 
+        img_vselection.roi.x = state->selection_virtual.x * sx;
+        img_vselection.roi.y = state->selection_virtual.y * sy;
+        img_vselection.roi.width = state->selection_virtual.width * sx;
+        img_vselection.roi.height = state->selection_virtual.height * sy;
+        perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_vselection);
+
+        destroyWindow(WINDOW_NAME);
+        state->img = cv::Mat();
+
+        break;
     case CV_EVENT_LBUTTONDOWN:
         state->origin = Point(x, y);
         state->selection = Rect(x, y, 0, 0);
         state->selectObject = true;
+
+        // reset virtual feature
+        state->selection_virtual = Rect(0,0,0,0);
+
         break;
     case CV_EVENT_LBUTTONUP:
         state->selectObject = false;
@@ -102,14 +140,14 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         perception_image_roi_t img_selection;
         img_selection.utime = state->img_utime;
         img_selection.object_id = OBJECT_ID; 
-        img_selection.feature_id = FEATURE_ID; 
+        img_selection.feature_id = 1; // FEATURE_ID; 
         img_selection.roi.x = state->selection.x * sx;
         img_selection.roi.y = state->selection.y * sy;
         img_selection.roi.width = state->selection.width * sx;
         img_selection.roi.height = state->selection.height * sy;
         perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_selection);
-        destroyWindow(WINDOW_NAME);
-        state->img = cv::Mat();
+        // destroyWindow(WINDOW_NAME);
+        // state->img = cv::Mat();
 
         break;
     }
@@ -197,6 +235,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
 
     cv::namedWindow( WINDOW_NAME );
     cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
+    state->selectObject_virtual = false;
+    state->selectObject = false;
 
     return;
 }
@@ -246,10 +286,10 @@ int main(int argc, char** argv)
 	lcm_handle(state->lcm);
         if (c == 'q') { 
             break;
-        } else if (c == 'd') { 
-            FEATURE_ID++;
-        } else if (c == 'a') { 
-            FEATURE_ID--;
+        // } else if (c == 'd') { 
+        //     FEATURE_ID++;
+        // } else if (c == 'a') { 
+        //     FEATURE_ID--;
         } else if (c == 'w') { 
             OBJECT_ID++;
         } else if (c == 's') { 
@@ -260,12 +300,20 @@ int main(int argc, char** argv)
         if (!state->img.empty()) { 
             cv::Mat display;
             cv::resize(state->img.clone(), display, cv::Size(WINDOW_WIDTH,WINDOW_HEIGHT)); 
-            if (state->selectObject && state->selection.width > 0 && state->selection.height > 0) {
+            if (state->selection.width > 0 && state->selection.height > 0) {
                 
                 cv::Mat roi(display, state->selection);
                 rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
-                bitwise_not(roi, roi);
+                // bitwise_not(roi, roi);
             }
+            if (state->selection_virtual.width > 0 && state->selection_virtual.height > 0) {
+                
+                cv::Mat roi(display, state->selection_virtual);
+                rectangle(display, state->selection_virtual, cv::Scalar(0,255,0), 2);
+                // bitwise_not(roi, roi);
+            }
+
+
             // Show OBJECT_ID, FEATURE_ID
             cv::putText(display, cv::format("OBJ: %ld", OBJECT_ID),
                         Point(20,20), 0, .5, cv::Scalar(0,200,0), 2);
