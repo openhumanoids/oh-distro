@@ -5,9 +5,15 @@ struct driving_controller_status_t
   int64_t utime;
 
   int8_t status; 
+  int64_t time_to_drive; 
   
-  const int8_t CONTROLLER_IDLE = 0;
-  const int8_t CONTROLLER_DRIVING = 1;
-  const int8_t CONTROLLER_E_STOP = 2;
-  const int8_t CONTROLLER_ERROR = 3;
+  const int8_t IDLE = 0;
+  const int8_t DRIVING_ROAD_ONLY = 1;
+  const int8_t DRIVING_TLD_AND_ROAD = 2;
+  const int8_t DRIVING_TLD = 3;
+  const int8_t DRIVING_USER = 4;     
+  const int8_t ERROR_NO_MAP = 5;
+  const int8_t ERROR_MAP_TIMEOUT = 6;
+  const int8_t ERROR_TLD_TIMEOUT = 7;
+  const int8_t ERROR_NO_VALID_GOAL = 8;
 }
