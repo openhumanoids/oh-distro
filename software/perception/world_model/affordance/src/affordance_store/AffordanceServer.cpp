@@ -79,7 +79,7 @@ void AffordanceServer::handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rb
 	//copy the data into an AffordanceState
 	AffPlusPtr aptr(new AffordancePlusState(affordance_plus));
 
-	_serverMutex.lock(); //=======lock
+	boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
 
 	if (_mapIdToAffIdMaps.find(aptr->aff->_map_id) == _mapIdToAffIdMaps.end())
       {
@@ -98,9 +98,9 @@ void AffordanceServer::handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rb
 
     (*scene)[aptr->aff->_uid] = aptr; //actually update
 
-	_serverMutex.unlock(); //========unlock
+	lock.unlock(); //========unlock
 
-    publishPlusOneTime(); //publish this update
+  publishPlusOneTime(); //publish this update
 }
 
 
@@ -118,7 +118,7 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf,
 	//copy the data into an AffordanceState
 	AffPtr aptr(new AffordanceState(affordance));
 
-	_serverMutex.lock(); //=======lock
+	boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
 
 	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end())
       {
@@ -136,8 +136,6 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf,
       }
 
     (*scene)[aptr->_uid]->aff = aptr; //actually update
-
-	_serverMutex.unlock(); //========unlock
 }
 
 
@@ -145,7 +143,7 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf,
                                           const std::string& channel,
                                           const drc::affordance_plus_collection_t *affordance_plus_col)
   {
-    _serverMutex.lock(); //=====lock
+	  boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
 
     _mapIdToAffIdMaps.clear(); //nuke
 
@@ -174,7 +172,6 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf,
       }
 
     _nextObjectUID++; //make this 1 more than the largest uid seen
-    _serverMutex.unlock(); //===unlock
   }
 
 
@@ -187,7 +184,7 @@ void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf,
     AffPlusPtr aPlusPtr(new AffordancePlusState(affordance_plus));
 	AffPtr aptr = aPlusPtr->aff;
 
-	_serverMutex.lock(); //=======lock
+	boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
 
 	//do we have an entry for this map?
 	if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end()) //no map 
@@ -219,8 +216,6 @@ void AffordanceServer::handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf,
     //delete if that's what the update was
     if (affordance_plus->aff.aff_store_control == drc::affordance_t::DELETE)
         (*scene).erase(aptr->_uid);
-
-	_serverMutex.unlock(); //========unlock
 }
 
   void AffordanceServer::handleTimeUpdate(const lcm::ReceiveBuffer*rbuf,
@@ -254,7 +249,7 @@ void AffordanceServer::runPeriodicLightPublish()
 	{
 		boost::this_thread::sleep(sleepTime); //======sleep
 
-		_serverMutex.lock(); //======lock
+	  boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
 
 		drc::affordance_collection_t msg;
 		for(unordered_map<int32_t, AffIdMap>::const_iterator iter = _mapIdToAffIdMaps.begin();
@@ -277,9 +272,7 @@ void AffordanceServer::runPeriodicLightPublish()
 		msg.name 		= "affordanceServerPeriodicLightPublish";
 
 		_lcm->publish(AFF_SERVER_CHANNEL, &msg); //====publish
-
-		_serverMutex.unlock(); //=====unlock
-	}
+	} //lock goes out of scope
 }
 
 
@@ -297,7 +290,7 @@ void AffordanceServer::runPeriodicPlusPublish()
 void AffordanceServer::publishPlusOneTime()
 {
 
-  _serverMutex.lock(); //======lock
+	boost::unique_lock<boost::mutex> lock(_serverMutex); //=======lock, will auto unlock
   
   drc::affordance_plus_collection_t msg;
   for(unordered_map<int32_t, AffIdMap>::const_iterator iter = _mapIdToAffIdMaps.begin();
@@ -320,8 +313,6 @@ void AffordanceServer::publishPlusOneTime()
   msg.name 		= "affordanceServerPeriodicPlusPublish";
   
   _lcm->publish(AFF_PLUS_SERVER_CHANNEL, &msg); //====publish
-  
-  _serverMutex.unlock(); //=====unlock
 }
 
 void AffordanceServer::sendErrorMsg(const string &s) const
