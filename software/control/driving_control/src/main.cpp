@@ -29,6 +29,7 @@
 #include <lcmtypes/drc_driving_cmd_t.h>
 #include <lcmtypes/drc_driving_controller_status_t.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
+#include <lcmtypes/drc_system_status_t.h>
 #include <vector>
 #include <algorithm> 
 
@@ -121,10 +122,16 @@ typedef struct _state_t {
 
 void publish_status(state_t *self){
     
+    drc_system_status_t s_msg;
+    s_msg.utime = self->utime;
+    s_msg.system = DRC_SYSTEM_STATUS_T_DRIVING;
+    s_msg.importance = DRC_SYSTEM_STATUS_T_IMPORTANT;
+    s_msg.frequency = DRC_SYSTEM_STATUS_T_MEDIUM_FREQUENCY;
+    
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
-        msg.time_to_drive = self->drive_time_to_go;
+        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN;
     }
     else{
         msg.time_to_drive = 0;
@@ -133,41 +140,55 @@ void publish_status(state_t *self){
       IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY, 
     DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
      */
-
+    char status[1024];
     switch(self->curr_state){
 
     case IDLE:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_IDLE;
+        s_msg.value = "IDLE";
         break;
     case ERROR_NO_MAP:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_MAP;
+        s_msg.value = "NO_MAP";
         break;
     case ERROR_MAP_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_MAP_TIMEOUT;
+        s_msg.value = "MAP_TIMEOUT";
         break;
     case DRIVING_ROAD_ONLY:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
+        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive);
+        s_msg.value = status;
         break;
     case DRIVING_TLD_AND_ROAD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
+        sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive);
+        s_msg.value = status;
         break;
     case DRIVING_TLD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD;
+        sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive);
+        s_msg.value = status;
         break;
     case DRIVING_USER:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_USER;
+        s_msg.value = "DRIVING_USER";
         break;
     case ERROR_TLD_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_TLD_TIMEOUT;
+        s_msg.value = "ERROR_TLD_HEADING_TIMEOUT";
         break;
     case ERROR_NO_VALID_GOAL:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_VALID_GOAL;
+        s_msg.value = "ERROR_NO_VALID_GOAL";
         break;
     case DOING_INITIAL_TURN:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_INITIAL_TURN;
+        s_msg.value = "DOING_INITIAL_TURN";
         break;
     }
     drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
+    drc_system_status_t_publish(self->lcm, "SYSTEM_STATUS", &s_msg);
 }
 
 void draw_goal(state_t *self){
@@ -928,6 +949,7 @@ on_controller_timer (gpointer data)
     if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
+        //we should tell it to slow down gracefully??
         msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
         msg.brake_value = 1.0;
         drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
