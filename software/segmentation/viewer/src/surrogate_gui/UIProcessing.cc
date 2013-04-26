@@ -1406,13 +1406,13 @@ namespace surrogate_gui
     affordanceMsg.aff.origin_rpy[2] = yaw;
     affordanceMsg.aff.bounding_xyz[0] = x;
     affordanceMsg.aff.bounding_xyz[1] = y;
-    affordanceMsg.aff.bounding_xyz[2] = z;
+    affordanceMsg.aff.bounding_xyz[2] = z+0.75; // center of car above ground 
     affordanceMsg.aff.bounding_rpy[0] = roll;
     affordanceMsg.aff.bounding_rpy[1] = pitch;
     affordanceMsg.aff.bounding_rpy[2] = yaw;
-    affordanceMsg.aff.bounding_lwh[0] = 1; //TODO
-    affordanceMsg.aff.bounding_lwh[1] = 1; //TODO
-    affordanceMsg.aff.bounding_lwh[2] = 1; //TODO
+    affordanceMsg.aff.bounding_lwh[0] = 3.0;  // TODO make more general, not just car
+    affordanceMsg.aff.bounding_lwh[1] = 1.5;
+    affordanceMsg.aff.bounding_lwh[2] = 1.5;
 
     // populate points
     affordanceMsg.npoints = modelcloud->size();
