@@ -201,12 +201,13 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     void *font = GLUT_BITMAP_9_BY_15;
     int line_height = 14;
 
-    float colors[5][3] = {
+    float colors[6][3] = {
         { 1.0, 0.0, 0.0 }, // red
         { 0.7, 0.7, 0.0 }, // yellow
         { 0.0, 1.0, 0.5 }, // green
         { 0.0, 0.7, 0.7 }, // ??
         { 0.0, 0.0, 1.0 }, // blue
+        { 0.0, 0.4, 0.3 },
     };
     //{ 0.6, 0.6, 0.6 }, // gray        
 
