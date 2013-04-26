@@ -965,6 +965,7 @@ status_timer (gpointer data)
 {
     state_t *self = (state_t *) data;
     publish_system_status(self);    
+    return TRUE;
 }
 
 static gboolean
