@@ -24,15 +24,15 @@ classdef FootstepPlanner < DRCPlanner
       % mapAPIwrapper(obj.hmap_ptr);
     end
 
-    function X = updatePlan(obj, X_old, data, changed, changelist, heightfun)
-      if changelist.goal || isempty(X_old)
+    function X = updatePlan(obj, X, data, changed, changelist, heightfun)
+      if changelist.goal || isempty(X)
         msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
         for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
         obj.options.timeout = obj.options.timeout / 1000000;
       end
-      if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X_old)
+      if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X)
         msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);
         goal_pos = [data.goal.goal_pos.translation.x;
                     data.goal.goal_pos.translation.y;
