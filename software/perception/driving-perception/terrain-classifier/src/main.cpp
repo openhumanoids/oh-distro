@@ -1183,13 +1183,15 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
         setup_projection(state, msg->width, msg->height);
 
         //setup the vehicle mask 
-        cv::Size size(msg->width, msg->height);
-        state->vehicle_mask = cv::Mat::zeros(size, CV_8U);
-        const int vm_count = (int)state->vehicle_mask_points.size();
-        const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
-        cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
-        if(state->options.vDEBUG)
-            cv::imshow("Vehicle Mask", state->vehicle_mask);
+        if (state->vehicle_mask.empty()) { 
+            cv::Size size(msg->width, msg->height);
+            state->vehicle_mask = cv::Mat::zeros(size, CV_8U);
+            const int vm_count = (int)state->vehicle_mask_points.size();
+            const cv::Point* vm_pts = &state->vehicle_mask_points[0];//&hull[0];
+            cv::fillPoly(state->vehicle_mask, &vm_pts, &vm_count, 1, cv::Scalar(255));
+            if(state->options.vDEBUG)
+                cv::imshow("Vehicle Mask", state->vehicle_mask);
+        }
     }  
 
     if (state->img.empty() || state->img.rows != msg->height || state->img.cols != msg->width) { 
@@ -1240,6 +1242,12 @@ static void *p_thread(void *user)
     }
 }
 
+// apr 26: dashboard mask
+cv::Point mask_pts[] = {cv::Point(0,248), cv::Point(222,502), cv::Point(188,544), cv::Point(184,603), 
+                        cv::Point(170,622), cv::Point(218,785), cv::Point(213,799), cv::Point(799,799), 
+                        cv::Point(799,423), cv::Point(738, 401), cv::Point(614,397), cv::Point(595,404), 
+                        cv::Point(344,394), cv::Point(250,463), cv::Point(0,85) };
+
 int main(int argc, char **argv)
 {
     g_thread_init(NULL);
@@ -1268,10 +1276,11 @@ int main(int argc, char **argv)
     state->lcmgl = bot_lcmgl_init(state->lcm, "Terrain-detection");
 
     //setup the vehicle mask
-    state->vehicle_mask_points.push_back(cv::Point(0, 124));
-    state->vehicle_mask_points.push_back(cv::Point(0, 372));
-    state->vehicle_mask_points.push_back(cv::Point(127, 543));
-    state->vehicle_mask_points.push_back(cv::Point(228, 543));
+    state->vehicle_mask_points = std::vector<cv::Point>(mask_pts, mask_pts + sizeof(mask_pts) / sizeof(cv::Point));
+    // state->vehicle_mask_points.push_back(cv::Point(0, 124));
+    // state->vehicle_mask_points.push_back(cv::Point(0, 372));
+    // state->vehicle_mask_points.push_back(cv::Point(127, 543));
+    // state->vehicle_mask_points.push_back(cv::Point(228, 543));
 
     char * cam_name = bot_param_get_camera_name_from_lcm_channel(state->param,  state->options.vCHANNEL.c_str());
     if (cam_name != NULL) {
