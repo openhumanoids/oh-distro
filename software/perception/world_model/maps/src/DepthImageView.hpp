@@ -11,6 +11,12 @@ class DepthImageView : public ViewBase {
 public:
   typedef boost::shared_ptr<DepthImageView> Ptr;
 
+  enum NormalMethod {
+    NormalMethodLeastSquares,
+    NormalMethodRobustKernel,
+    NormalMethodSampleConsensus
+  };
+
 public:
   DepthImageView();
   ~DepthImageView();
@@ -18,6 +24,9 @@ public:
   void setSize(const int iWidth, const int iHeight);
   void set(const DepthImage& iImage);
   boost::shared_ptr<DepthImage> getDepthImage() const;
+
+  void setNormalRadius(const int iRadiusPixels);
+  void setNormalMethod(const NormalMethod iMethod);
 
   const Type getType() const;
   ViewBase::Ptr clone() const;
@@ -35,8 +44,25 @@ protected:
   bool unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
                  Eigen::Vector3f& oNormal) const;
 
+  static bool fitPlaneSac(const Eigen::MatrixX3f& iPoints,
+                          Eigen::Vector4f& oPlane);
+  static bool fitPlaneRobust(const Eigen::MatrixX3f& iPoints,
+                             Eigen::Vector4f& oPlane);
+  static bool fitPlaneRobust(const Eigen::MatrixX3f& iPoints,
+                             const Eigen::Vector3f& iPointOnPlane,
+                             Eigen::Vector4f& oPlane);
+  static bool fitPlane(const Eigen::MatrixX3f& iPoints,
+                       const Eigen::VectorXf& iWeights,
+                       Eigen::Vector4f& oPlane);
+  static bool fitPlane(const Eigen::MatrixX3f& iPoints,
+                       const Eigen::Vector3f& iPointOnPlane,
+                       const Eigen::VectorXf& iWeights,
+                       Eigen::Vector4f& oPlane);
+
 protected:
   boost::shared_ptr<DepthImage> mImage;
+  int mNormalRadius;
+  NormalMethod mNormalMethod;
 };
 
 }

@@ -8,6 +8,8 @@ using namespace maps;
 DepthImageView::
 DepthImageView() {
   mImage.reset(new DepthImage());
+  setNormalRadius(0);
+  setNormalMethod(NormalMethodLeastSquares);
 }
 
 DepthImageView::
@@ -28,6 +30,16 @@ set(const DepthImage& iImage) {
 boost::shared_ptr<DepthImage> DepthImageView::
 getDepthImage() const {
   return mImage;
+}
+
+void DepthImageView::
+setNormalRadius(const int iRadiusPixels) {
+  mNormalRadius = iRadiusPixels;
+}
+
+void DepthImageView::
+setNormalMethod(const NormalMethod iMethod) {
+  mNormalMethod = iMethod;
 }
 
 ViewBase::Ptr DepthImageView::
@@ -176,7 +188,64 @@ getClosest(const Eigen::Vector3f& iPoint,
   DepthImage::Type depthType = DepthImage::TypeDepth;
   Eigen::Vector3f proj = mImage->project(iPoint, depthType);
   if (!interpolate(proj[0], proj[1], proj[2])) return false;
-  return unproject(proj, oPoint, oNormal);
+
+  // do triangle-based interpolated point and normal
+  if (mNormalRadius == 0) {
+    return unproject(proj, oPoint, oNormal);
+  }
+
+  // do neighborhood plane fit to find normal
+  else {
+    oPoint = mImage->unproject(proj, depthType);
+
+    // gather points in neighborhood
+    const std::vector<float>& depths = mImage->getData(depthType);
+    const int width = mImage->getWidth();
+    const int height = mImage->getHeight();
+    const int xInt(proj[0]), yInt(proj[1]);
+    const int xMin = std::max(0, xInt-mNormalRadius);
+    const int xMax = std::min(width-1, xInt+mNormalRadius);
+    const int yMin = std::max(0, yInt-mNormalRadius);
+    const int yMax = std::min(height-1, yInt+mNormalRadius);
+    const float invalidValue = mImage->getInvalidValue(depthType);
+    std::vector<Eigen::Vector3f> points;
+    points.reserve((2*mNormalRadius+1)*(2*mNormalRadius+1));
+    for (int y = yMin; y <= yMax; ++y) {
+      for (int x = xMin; x <= xMax; ++x) {
+        int idx = y*width + x;
+        float z = depths[idx];
+        if (z == invalidValue) continue;
+        Eigen::Vector3f pt =
+          mImage->unproject(Eigen::Vector3f(x,y,z), depthType);
+        points.push_back(pt);
+      }
+    }
+
+    // form data matrix and solve
+    Eigen::MatrixX3f matx(points.size(), 3);
+    for (int i = 0; i < points.size(); ++i) {
+      matx.row(i) = points[i];
+    }
+    Eigen::Vector4f plane;
+    switch (mNormalMethod) {
+    case NormalMethodLeastSquares:
+      if (!fitPlane(matx, Eigen::VectorXf(), plane)) return false;
+      break;
+    case NormalMethodRobustKernel:
+      if (!fitPlaneRobust(matx, plane)) return false;
+      break;
+    case NormalMethodSampleConsensus:
+      if (!fitPlaneSac(matx, plane)) return false;
+      break;
+    default:
+      std::cout << "Invalid normal method specified!" << std::endl;
+      return false;
+    }
+    oNormal = plane.head<3>();
+    Eigen::Vector3f ray = mTransform.inverse().translation() - oPoint;
+    if (ray.dot(oNormal) < 0) oNormal = -oNormal;
+    return true;
+  }
 }
 
 bool DepthImageView::
@@ -184,7 +253,7 @@ unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
           Eigen::Vector3f& oNormal) const {
   typedef Eigen::Vector3f Vec3f;
   const DepthImage::Type depthType = DepthImage::TypeDepth;
-  Eigen::Vector3f outputPoint = mImage->unproject(iPoint, depthType);
+  oPoint = mImage->unproject(iPoint, depthType);
   int xInt(iPoint[0]), yInt(iPoint[1]);
   int width = mImage->getWidth();
   int idx = width*yInt + xInt;
@@ -209,8 +278,6 @@ unproject(const Eigen::Vector3f& iPoint, Eigen::Vector3f& oPoint,
     Vec3f d1(p00-p3), d2(p11-p3);
     oNormal = d2.cross(d1).normalized();
   }
-
-  oPoint = outputPoint;
 
   return true;
 }
@@ -284,4 +351,84 @@ intersectRay(const Eigen::Vector3f& iOrigin,
   return true;
   if (!interpolate(oPoint[0], oPoint[1], oPoint[2])) return false;
   return unproject(oPoint, oPoint, oNormal);
+}
+
+bool DepthImageView::
+fitPlaneSac(const Eigen::MatrixX3f& iPoints, Eigen::Vector4f& oPlane) {
+  // TODO: implement
+  return false;
+}
+
+bool DepthImageView::
+fitPlaneRobust(const Eigen::MatrixX3f& iPoints, Eigen::Vector4f& oPlane) {
+  const int n = iPoints.rows();
+  if (n < 3) return false;
+
+  Eigen::VectorXf weights = Eigen::VectorXf::Ones(n);
+  Eigen::VectorXf weightsPrev = Eigen::VectorXf::Zero(n);
+  const float weightThresh = (1e-3f * 1e-3f)*n;
+  const int maxIter = 10;
+  int iter;
+  for (iter = 0; iter < maxIter; ++iter) {
+    fitPlane(iPoints, weights, oPlane);
+
+    // compute robust sigma
+    Eigen::VectorXf dists2 = (iPoints*oPlane.head<3>()).array() + oPlane[3];
+    dists2.array() *= dists2.array();
+    std::sort(dists2.data(), dists2.data()+n);
+    float medVal = (n%2 != 0) ? dists2[n/2] : 0.5*(dists2[n/2-1] + dists2[n/2]);
+    float sigma2 = std::max(1.4826*sqrt(medVal)*4.7851, 1e-6);
+    sigma2 *= sigma2;
+
+    // check to see if weights are unchanged
+    Eigen::VectorXf weightDiff = weightsPrev-weights;
+    if (weightDiff.dot(weightDiff) < weightThresh) break;
+
+    // recompute weights
+    weightsPrev = weights;
+    weights = 1-dists2.array()/sigma2;
+    weights = (weights.array() < 0).select(0.0f, weights);
+  }
+  std::cout << "iters " << iter << std::endl;
+  return true;
+}
+
+bool DepthImageView::
+fitPlane(const Eigen::MatrixX3f& iPoints, const Eigen::VectorXf& iWeights,
+         Eigen::Vector4f& oPlane) {
+  if ((iWeights.size() != 0) && (iPoints.rows() != iWeights.size())) {
+    return false;
+  }
+  if (iPoints.rows() < 3) return false;
+
+  // compute mean
+  Eigen::Vector3f mean;
+  if (iWeights.size() > 0) {
+    mean = (iWeights.asDiagonal()*iPoints).colwise().sum() / iWeights.sum();
+  }
+  else {
+    mean = iPoints.colwise().sum() / iPoints.rows();
+  }
+
+  return fitPlane(iPoints, mean, iWeights, oPlane);
+}
+
+bool DepthImageView::
+fitPlane(const Eigen::MatrixX3f& iPoints, const Eigen::Vector3f& iPointOnPlane,
+         const Eigen::VectorXf& iWeights, Eigen::Vector4f& oPlane) {
+  Eigen::MatrixX3f data(iPoints.rows(),3);
+  for (int k = 0; k < 3; ++k) {
+    data.col(k).array() = iPoints.col(k).array() - iPointOnPlane[k];
+  }
+
+  // compute principal direction via svd
+  if (iWeights.size() > 0) {
+    data = iWeights.asDiagonal()*data;
+  }
+  oPlane.head<3>() = data.jacobiSvd(Eigen::ComputeFullV).matrixV().col(2);
+
+  // compute plane offset
+  oPlane[3] = -iPointOnPlane.dot(oPlane.head<3>());
+
+  return true;
 }
