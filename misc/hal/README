@@ -3,7 +3,9 @@
 this location should work but didn't:
 /home/drc/.local/share/applications/start_procman.desktop
 
-2. add to launcher tab:
 sudo cp start_procman.desktop /usr/share/applications/start_procman.desktop 
+
+2. add to launcher tab
+
 
 
