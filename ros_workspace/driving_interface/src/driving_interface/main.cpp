@@ -405,7 +405,7 @@ void on_driving_cmd(const lcm_recv_buf_t *rbuf, const char * channel, const drc_
     update_and_publish_gas_pedal(msg->throttle_value, self);
   } 
   else if(msg->type == DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING){
-    fprintf(stderr, "Driving - turning wheel delta heading (deg): %f Throttle : %f Brake : %f \n", bot_to_degrees(msg->steering_angle + self->hand_wheel), msg->throttle_value, msg->brake_value);
+      fprintf(stderr, "Driving - turning wheel delta heading (deg): %f Throttle : %f Brake : %f \n", bot_to_degrees(msg->steering_angle), msg->throttle_value, msg->brake_value);
     update_and_publish_hand_brake(0.0, self);
     //update_and_publish_brake_pedal(0.0, self);
     update_and_publish_hand_wheel_delta(msg->steering_angle, self);
