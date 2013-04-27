@@ -1,6 +1,6 @@
 <launch>
 
-<!-- what launch script to run: either "run_gazebo" or "run_gazebo_unpaused" -->
+<!-- what launch script to run: either "run_gazebo" or "run_gazebo_paused" -->
   <arg name="gzname" default="run_gazebo"/>
 
 <!-- Read world file -->
