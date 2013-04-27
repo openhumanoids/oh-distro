@@ -127,10 +127,6 @@ group "a.3.grasping" {
 }
 
 group "a.4.driving" {
-    cmd "exit_car" {
-        exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
-        host = "robot";
-    }
     cmd "vehicle-groundtruth-state" {
         exec = "rosrun driving_interface groundtruth_receiver";
         host = "robot";
@@ -390,6 +386,10 @@ group "m.3.dev_tools" {
         exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v";
         host = "robot";
     }
+    cmd "exit_car" {
+        exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
 }
 
 group "m.4.base" {
@@ -463,7 +463,7 @@ script "d.qual_2" {
 }
 script "d.vrc_driving" { 
     start group "0.development";
-    run_script "a.qual_2";
+    run_script "a.vrc_driving";
 }
 
 
