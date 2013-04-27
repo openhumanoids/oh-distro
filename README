@@ -1,6 +1,6 @@
 This is the code base for the DRC project. 
 
-0. Install LCM v0.9  
+0. Install LCM v0.9    
 ================
 25Oct2012: A system wide install of LCM is still required for DRAKE. You should install LCM system wide for now for this reason. 
 - Note that it is available to install at:
