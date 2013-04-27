@@ -25,7 +25,7 @@ def on_utime(channel, data):
   t = m.utime
   #print t
   if ( abs(t - 300000) < 5000): # after .3secs send a spin rate
-    print "spin for bloody laser already - %d" %(t)
+    print "spin the bloody laser already - %d" %(t)
     o = twist_timed_t()
     o.utime = t
     l = vector_3d_t()
