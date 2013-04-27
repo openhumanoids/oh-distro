@@ -61,6 +61,7 @@ typedef struct
     BotGtkParamWidget *pw;    
 
     lcm_t *lcm;
+    int64_t last_utime;
     
     drc_system_status_t_subscription_t *status_sub;
     
@@ -169,6 +170,13 @@ on_affordance_collection(const lcm_recv_buf_t * buf, const char *channel, const 
     self->naffs = msg->naffs;
 }
 
+static void
+on_robot_state(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_state_t *msg, void *user_data){
+    RendererSystemStatus *self = (RendererSystemStatus*) user_data;
+    self->last_utime = msg->utime;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // ------------------------------ Drawing Functions ------------------------- //
 ////////////////////////////////////////////////////////////////////////////////
@@ -219,12 +227,13 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     sprintf(line4, "height %5.1f hd %5.1f",self->height,self->head_height); 
     sprintf(line5, " speed %5.1f hd %5.1f",self->speed, self->head_speed );
     sprintf(line6, "spdcmd %5.1f",self->cmd_speed );
+    sprintf(line8, "%f", ((double)self->last_utime/1E6) );
     
-    //bool draw_driving = bot_gtk_param_widget_get_bool(self->pw, PARAM_STATUS_5);
-    if(self->driving_status){// && draw_driving){
-        sprintf(line7, "veh k[%d] dir[%d] hb[%.1f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
-        sprintf(line8, "hw[%.0f] bp[%.1f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
-    }
+    // @@@@@@@@@@@@@ sachi: PUT THIS IN THE DRIVING RENDERER ON THE TOP LEFT
+    //if(self->driving_status){
+        //sprintf(line7, "veh k[%d] dir[%d] hb[%.1f]",self->driving_status->key, self->driving_status->direction, self->driving_status->hand_brake);
+        //sprintf(line8, "hw[%.0f] bp[%.1f] gp[%.2f]", bot_to_degrees(self->driving_status->hand_wheel), self->driving_status->brake_pedal, self->driving_status->gas_pedal );
+    //}
 
     //double x = hind * 110 + 120;
     double x = 0 ;// hind * 150 + 120;
@@ -277,15 +286,13 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glRasterPos2f(x, y + 5 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
 
-    if(self->driving_status){// && draw_driving){
-        glColor3fv(colors[2]);
-        glRasterPos2f(x, y + 6 * line_height);
-        glutBitmapString(font, (unsigned char*) line7);
+    //glColor3fv(colors[2]);
+    //glRasterPos2f(x, y + 6 * line_height);
+    //glutBitmapString(font, (unsigned char*) line7);
         
-        glColor3fv(colors[2]);
-        glRasterPos2f(x, y + 7 * line_height);
-        glutBitmapString(font, (unsigned char*) line8);
-    }
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 7 * line_height);
+    glutBitmapString(font, (unsigned char*) line8);
     
     // scrolling text://////////////////////////////
     int y_pos=0;
@@ -350,7 +357,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
          }
        }
      }else if((N_active_params > 1)&&(self->param_important)){
-       printf("important\n");
+       //printf("important\n");
        int msgs_onscreen = 0;
        for (int i=self->sys_deque->size()-1 ;i>=0;i--){
          if (y_pos > (gl_height)){ // stop of we have covered the screen:
@@ -516,6 +523,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_core_pose_t_subscribe(self->lcm,"POSE_BODY",on_pose_body,self);
     bot_core_pose_t_subscribe(self->lcm,"POSE_HEAD",on_pose_head,self);
     drc_affordance_collection_t_subscribe(self->lcm,"AFFORDANCE_COLLECTION",on_affordance_collection,self);
+    drc_robot_state_t_subscribe(self->lcm,"EST_ROBOT_STATE",on_robot_state,self);
     
     drc_driving_status_t_subscribe(self->lcm, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_ground_driving_status, self);
 

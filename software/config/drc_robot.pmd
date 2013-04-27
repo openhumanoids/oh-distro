@@ -135,16 +135,12 @@ group "a.4.driving" {
         exec = "rosrun driving_interface groundtruth_receiver";
         host = "robot";
     }
-    cmd "drc-car-quick-vis" {
+    cmd "car-vis" {
         exec = "drc-car-quick-vis";
         host = "robot";
     }
     cmd "driving_interface" {
         exec = "rosrun driving_interface driving_interface";
-        host = "robot";
-    }
-    cmd "send_affordance" {
-        exec = "affordance_points_drill_send";
         host = "robot";
     }
     cmd "tld-tracker" {
@@ -227,7 +223,7 @@ group "b.1.core" {
     cmd "est_rsp_base" {
         exec = "est_robot_state_publisher -g";
         host = "base";
-    }    
+    }
 }
 
 group "b.2.walking" {
@@ -252,6 +248,12 @@ group "b.3.grasping" {
     }    
 }
 
+group "b.4.driving" {
+    cmd "car-vis-local" {
+       exec = "drc-car-quick-vis";
+       host = "base";
+    }
+}
 
 
 group "g.0.gazebo" {
@@ -442,10 +444,11 @@ script "a.qual_3" {
 script "a.vrc_driving" {
     start group "a.1.core";
     start group "b.1.core";
-    wait ms 100;
-    start cmd "gz_mit_driving";
-    wait ms 2000;
     start group "a.4.driving";
+    wait ms 500;
+    start cmd "gz_mit_driving";
+    wait ms 6000;
+    start group "b.4.driving";
 }
 
 ######################################
