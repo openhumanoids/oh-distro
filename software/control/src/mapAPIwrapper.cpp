@@ -126,7 +126,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     return;
   } 
 
-  ViewClient::ViewPtr vptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
+  ViewClient::ViewPtr temp_ptr = pdata->view_client->getView(drc::data_request_t::HEIGHT_MAP_SCENE);
+  DepthImageView::Ptr vptr = boost::dynamic_pointer_cast<DepthImageView>(temp_ptr);
+
+  // 0 defaults to old behavior;
+  // >0 sets radius (in pixels) for normal computation
+  vptr->setNormalRadius(0);
+
+  // options are LeastSquares, RobustKernel, and SampleConsensus
+  // this is ignored if radius==0
+  vptr->setNormalMethod(DepthImageView::NormalMethodLeastSquares);
+
   // NOTE: tries to handle this more gracefully below now
   //  if (!vptr) { // check if null
   //    mexErrMsgIdAndTxt("DRC:mapAPIwrapper:NullViewPtr","Have not received height map via LCM yet.  Perhaps you still need to request it in the viewer?\n");
