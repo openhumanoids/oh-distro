@@ -1,4 +1,4 @@
-group "0.dev_deputies" {
+group "0.development" {
     cmd "robot_deputy" {
         exec = "bot-procman-deputy -n robot";
         host = "localhost";
@@ -6,6 +6,26 @@ group "0.dev_deputies" {
     cmd "base_deputy" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
+    }
+}
+group "0.init_robot" {
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
+        host = "robot";
+    }
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
+        host = "localhost";
+    }
+}
+group "0.init_base" {
+    cmd "base_deputy" {
+        exec = "bot-procman-deputy -n base";
+        host = "localhost";
+    }
+    cmd "netshaper" {
+        exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
+        host = "base";
     }
 }
 
@@ -36,10 +56,6 @@ group "1.a.core" {
     }
     cmd "l2r" {
         exec = "rosrun translators lcm2ros -p";
-        host = "robot";
-    }
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r robot -c drc_robot.cfg";
         host = "robot";
     }
 }
@@ -77,7 +93,7 @@ group "2.gazebo" {
         host = "robot";
     }
     cmd "mit_manip_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world gzname:=run_gazebo_unpaused";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
         host = "robot";
     }
     cmd "mit_ingress_slow" {
@@ -89,7 +105,7 @@ group "2.gazebo" {
         host = "robot";
     }
     cmd "mit_walking_bdi" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world gzname:=run_gazebo_unpaused";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
         host = "robot";
     }
     cmd "mit_driving" {
@@ -101,7 +117,7 @@ group "2.gazebo" {
         host = "robot";
     }
     cmd "quals_1_unpaused" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world gzname:=run_gazebo_unpaused";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "robot";
     }
     cmd "quals_1_steps" {
@@ -200,10 +216,6 @@ group "4.drake_robot" {
 }
 
 group "5.base" {
-    cmd "netshaper" {
-        exec = "drc-network-shaper -t manipulation -r base -c drc_robot.cfg";
-        host = "base";
-    }
     cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
         host = "base";
