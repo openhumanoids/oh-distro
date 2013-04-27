@@ -21,11 +21,19 @@
 using namespace TwoLegs;
 using namespace std;
 
-LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files):
-        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps), _log_data_files(_log_data_files) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files, bool _lcm_add_ext):
+        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps), _log_data_files(_log_data_files), _lcm_add_ext(_lcm_add_ext) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	_leg_odo = new TwoLegOdometry(_log_data_files);
+	
+	ratecounter = 0;
+	
+	if (_lcm_add_ext) {
+	  _channel_extension = "_VO";
+	} else {
+		_channel_extension = "";
+	}
 	
 	if(!lcm_->good())
 	  return;
@@ -155,15 +163,17 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
 												const  drc::robot_state_t* msg) {
-
-	timespec before, quater,mid, threequat, after;
-	clock_gettime(CLOCK_REALTIME, &before);
+	ratecounter++;
+	if (ratecounter < 1)
+		return;
+	//std::cout << "Timestamp: " << msg->utime << std::endl;
+	ratecounter = 0;
 	
+	//timespec before, quater,mid, threequat, after;
+	//clock_gettime(CLOCK_REALTIME, &before);
 	
 	bool legchangeflag;
 
-	// TODO temporary testing interface
-	
 	Eigen::Isometry3d left;
 	Eigen::Isometry3d right;
 	
@@ -171,85 +181,68 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	// TODO -- get the name based left and right foot force data here
 	double left_force, right_force;
-	
 	ParseFootForces(msg, left_force, right_force);
 	left_force = msg->contacts.contact_force[0].z;
 	right_force = msg->contacts.contact_force[1].z;
 
 	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	
-	// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
-	if (firstpass)
-	{
-		firstpass = false;
+	if (_do_estimation){
+		// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
+		if (firstpass)
+		{
+			firstpass = false;
+			// We need to reset the initial condition of the odometry estimate here..
+			// TODO -- can we access the true first state, or do we just follow this for initial testing. im sure we are going to have to remove this before the VRC
+			Eigen::Quaterniond dummy_var;
+	        dummy_var.w() = msg->origin_position.rotation.w;
+	        dummy_var.x() = msg->origin_position.rotation.x;
+	        dummy_var.y() = msg->origin_position.rotation.y;
+	        dummy_var.z() = msg->origin_position.rotation.z;
+	        
+			Eigen::Isometry3d first_pose_init(dummy_var);
+			first_pose_init.translation().x() = msg->origin_position.translation.x;
+			first_pose_init.translation().y() = msg->origin_position.translation.y;
+			first_pose_init.translation().z() = msg->origin_position.translation.z;
+			
+			_leg_odo->ResetWithLeftFootStates(left,right,first_pose_init);
+			//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
+			
+		}
+		_leg_odo->setLegTransforms(left, right);
 		
-		// We need to reset the initial condition of the odometry estimate here..
-		// TODO -- can we access the true first state, or do we just follow this for initial testing. im sure we are going to have to remove this before the VRC
-		Eigen::Quaterniond dummy_var;
-        dummy_var.w() = msg->origin_position.rotation.w;
-        dummy_var.x() = msg->origin_position.rotation.x;
-        dummy_var.y() = msg->origin_position.rotation.y;
-        dummy_var.z() = msg->origin_position.rotation.z;
-        
-		Eigen::Isometry3d first_pose_init(dummy_var);
-		first_pose_init.translation().x() = msg->origin_position.translation.x;
-		first_pose_init.translation().y() = msg->origin_position.translation.y;
-		first_pose_init.translation().z() = msg->origin_position.translation.z;
+		legchangeflag = _leg_odo->FootLogic(msg->utime, left_force, right_force);
+	
+		// Timing profile. This is the midway point
+		//clock_gettime(CLOCK_REALTIME, &mid);
 		
-		_leg_odo->ResetWithLeftFootStates(left,right,first_pose_init);
-		//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
+		// Think we should add the velocity estimation process here
+		_leg_odo->calculateUpdateVelocityStates(msg->utime);
 		
+		if (_draw_footsteps) {
+			if (legchangeflag)
+			{
+				//std::cout << "LEGCHANGE\n";
+				addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+				collectionindex++;
+				addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
+				collectionindex++;
+			}
 		
-	}
-	_leg_odo->setLegTransforms(left, right);
-	
-	// TODO -- Check Changed the ordering on 18 April 2013 from (msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z)
-	legchangeflag = _leg_odo->FootLogic(msg->utime, left_force, right_force);
-	//returnfootstep = _leg_odo->DetectFootTransistion(msg->utime, msg->contacts.contact_force[1].z , msg->contacts.contact_force[0].z);
-
-	// Timing profile. This is the midway point
-	clock_gettime(CLOCK_REALTIME, &mid);
-	
-	// Think we should add the velocity estimation process here
-	_leg_odo->calculateUpdateVelocityStates(msg->utime);
-	
-	
-#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
-	// here comes the drawing of poses
-	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
-	
-	drawLeftFootPose();
-	drawRightFootPose();
-	//drawSumPose();
-
-	_viewer->sendCollection(*_obj, true);
-#endif
-	
-//#ifdef DISPLAY_FOOTSTEP_POSES
-  if (_draw_footsteps) {
-	if (legchangeflag)
-	{
-		//std::cout << "LEGCHANGE\n";
-		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
-		collectionindex++;
-		addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
-		collectionindex++;
-	}
-	
-	_viewer->sendCollection(*_obj, true);
-  }
-	//#endif
-
-	clock_gettime(CLOCK_REALTIME, &threequat);
-	
-    // Publish the foot contact state estimates to LCM
-    PublishFootContactEst(msg->utime);
-    if (_do_estimation){
-      PublishEstimatedStates(msg);
+			_viewer->sendCollection(*_obj, true);
+		}
+	  
+		//clock_gettime(CLOCK_REALTIME, &threequat);
+		
+		PublishEstimatedStates(msg);
     }
+	
+	// Always Publish the foot contact state estimates to LCM
+	PublishFootContactEst(msg->utime);
     
-	clock_gettime(CLOCK_REALTIME, &after);
+	
 /*
+   clock_gettime(CLOCK_REALTIME, &after);
 	long elapsed;
 	elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
 	double elapsed_us = elapsed/1000.;
@@ -263,6 +256,17 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	elapsed_us = elapsed/1000.;
 	std::cout << "1.00, " << elapsed_us << std::endl;
 	*/
+	
+#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
+	// here comes the drawing of poses
+	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
+	
+	drawLeftFootPose();
+	drawRightFootPose();
+	//drawSumPose();
+
+	_viewer->sendCollection(*_obj, true);
+#endif
 }
 
 void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg) {
@@ -312,15 +316,13 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
       // But we are not using the true yaw angle now.. -- this was for testing of the roll and pitch angles, but the problem was found as the transpose of .linear() for Eigen::Isometry3d
       //output_q = InertialOdometry::QuaternionLib::e2q(E_true + E_est);
     
-      
-      
     pose.orientation[0] =output_q.w();
     pose.orientation[1] =output_q.x();
     pose.orientation[2] =output_q.y();
     pose.orientation[3] =output_q.z();
     
     //lcm_->publish("POSE_KIN",&pose);
-      lcm_->publish("POSE_BODY_VO",&pose);
+      lcm_->publish("POSE_BODY" + _channel_extension,&pose);
         
     //Below is copied from Maurice's VO -- publishing of true and estimated robot states
   
@@ -373,7 +375,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   msgout.origin_twist = twist;
   
   //"EST_ROBOT_STATE_VO"
-  lcm_->publish("EST_ROBOT_STATE", &msgout);
+  lcm_->publish("EST_ROBOT_STATE" + _channel_extension, &msgout);
   
   // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
   

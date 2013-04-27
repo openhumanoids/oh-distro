@@ -33,14 +33,17 @@ int main(int argc, char ** argv) {
   bool do_estimation = false;
   bool plot_footsteps = false;
   bool log_data_files = false;
+  bool lcm_add_ext = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(do_estimation, "e", "do_estimation","Do motion estimation");
   opt.add(plot_footsteps, "f", "plot_footsteps","Draw footstep poses in viewer");
   opt.add(log_data_files, "l", "log_data_files","Logging some data to file");
+  opt.add(lcm_add_ext, "x", "lcm_add_ext", "Adding extension to the LCM messages");
   opt.parse();
   std::cout << "Do motion estimation: " << do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << plot_footsteps << std::endl;
   std::cout << "Logging of data to file: " << log_data_files << std::endl;
+  std::cout << "Adding extenstion to LCM messages: " << lcm_add_ext << std::endl;
 
 
   // register signal SIGINT and signal handler  
@@ -53,7 +56,7 @@ int main(int argc, char ** argv) {
     return 1;
 
   //_leg_odo = new TwoLegs::TwoLegOdometry(); // This is excessive, as the class is also invoked by LegOdometry_Handler() object.
-  _legs_motion_estimate = new LegOdometry_Handler(lcm, do_estimation, plot_footsteps, log_data_files);
+  _legs_motion_estimate = new LegOdometry_Handler(lcm, do_estimation, plot_footsteps, log_data_files, lcm_add_ext);
 
 
   // Do some stuff with the objects to test them. Preferably here you must call the internal testing functions of the different objects created..

@@ -57,11 +57,13 @@ class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
 	boost::shared_ptr<lcm::LCM> lcm_;
+	int ratecounter;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
 	bool _do_estimation;
 	bool _draw_footsteps;
 	bool _log_data_files;
+	bool _lcm_add_ext;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -80,6 +82,7 @@ private:
 	int poseplotcounter;
 	int collectionindex;
 	bool firstpass;
+	std::string _channel_extension;
 	
 	DataFileLogger state_estimate_error_log;
 	
@@ -120,7 +123,7 @@ private:
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files);
+	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files, bool _add_lcm_ext);
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }
