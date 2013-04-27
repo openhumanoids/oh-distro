@@ -264,7 +264,7 @@ public:
                    const drc::map_params_t* iMessage) {
     LocalMap::Spec spec;
     LcmTranslator::fromLcm(*iMessage, spec);
-    int id = mCollector->getMapManager()->createMap(spec);
+    mCollector->getMapManager()->createMap(spec);
   }
 
   void onMapMacro(const lcm::ReceiveBuffer* iBuf,
@@ -362,7 +362,6 @@ public:
       worker->mCollector = mCollector;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
-      double mat[16];
       mBotWrapper->getTransform("head", "local", worker->mInitialPose,
                                 worker->mRequest.utime);
       mViewWorkers[iRequest.view_id] = worker;
@@ -457,7 +456,7 @@ int main(const int iArgc, const char** iArgv) {
   mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*1e10;
   mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*1e10;
   mapSpec.mResolution = defaultResolution;
-  int id = state.mCollector->getMapManager()->createMap(mapSpec);
+  state.mCollector->getMapManager()->createMap(mapSpec);
   state.mRequestSubscription =
     lcm->subscribe("MAP_REQUEST", &State::onRequest, &state);
   state.mMapCommandSubscription =
