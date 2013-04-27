@@ -90,78 +90,30 @@ group "a.1.core" {
         exec = "affordance_server  -r robot";
         host = "robot";
     }
-}
-
-group "a.2.gazebo" {
-    cmd "mit_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
-        host = "robot";
-    }
-    cmd "mit_manip_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
-        host = "robot";
-    }
-    cmd "mit_ingress_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress_slow.world";
-        host = "robot";
-    }
-    cmd "mit_walking_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
-        host = "robot";
-    }
-    cmd "mit_walking_bdi" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
-        host = "robot";
-    }
-    cmd "mit_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
-        host = "robot";
-    }
-    cmd "quals_1" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "robot";
-    }
-    cmd "quals_1_unpaused" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "robot";
-    }
-    cmd "quals_1_steps" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
-        host = "robot";
-    }
-    cmd "quals_2" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
-        host = "robot";
-    }
-    cmd "quals_3" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
-        host = "robot";
-    }
-    cmd "vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_1.world";
-        host = "robot";
-    }
-    cmd "vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_2.world";
-        host = "robot";
-    }
-    cmd "vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_3.world";
+    cmd "init-laser" {
+        exec = "drc-init-laser";
         host = "robot";
     }
 }
 
-group "a.3.drake_robot" {
+group "a.2.walking" {
     cmd "Qual1StateMachine" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
-        host = "robot";
-    }
-    cmd "Qual2StateMachine" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual1StateMachine;\"";
         host = "robot";
     }
     cmd "PrecomputationServer" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "robot";
+    }
+    cmd "KinematicFootContactEstimator" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runKinematicFootContactEstimator;\"";
+        host = "robot";
+    }
+}
+
+group "a.3.grasping" {
+    cmd "Qual2StateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "robot";
     }
     cmd "ReachPlanFollower_PD" {
@@ -172,36 +124,9 @@ group "a.3.drake_robot" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "robot";
     } 
-    cmd "KinematicFootContactEstimator" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runKinematicFootContactEstimator;\"";
-        host = "robot";
-    }
 }
 
-group "a.4.perception"{
-    cmd "stereo-bm" {
-        exec = "stereo-bm";
-        host = "robot";
-    }
-    cmd "imagemask" {
-        exec = "drc-image-passthrough -o 1";
-        host = "robot";
-    }
-}
-
-group "a.4.a.motion_vo"{
-    cmd "motion_vo_testing" {
-        exec = "drc-fovision-odometry -i 3";
-        host = "robot";
-    }
-    cmd "estpub_sensing" {
-        exec = "est_robot_state_publisher";
-        host = "robot";
-    }
-}
-
-
-group "a.5.driving" {
+group "a.4.driving" {
     cmd "exit_car" {
         exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
         host = "robot";
@@ -248,6 +173,28 @@ group "a.5.driving" {
     }
 }
 
+group "a.5.perception"{
+    cmd "stereo-bm" {
+        exec = "stereo-bm";
+        host = "robot";
+    }
+    cmd "imagemask" {
+        exec = "drc-image-passthrough -o 1";
+        host = "robot";
+    }
+}
+
+group "a.5.a.motion_vo"{
+    cmd "motion_vo_testing" {
+        exec = "drc-fovision-odometry -i 3";
+        host = "robot";
+    }
+    cmd "estpub_sensing" {
+        exec = "est_robot_state_publisher";
+        host = "robot";
+    }
+}
+
 group "b.1.core" {
     cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
@@ -284,14 +231,6 @@ group "b.1.core" {
 }
 
 group "b.2.walking" {
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/sticky_hands']); runGraspSynthesisPoolServer (4);\"";
-       host = "base";
-    }
-    cmd "ReachingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
-       host = "base";
-    }    
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
         host = "base";
@@ -311,13 +250,66 @@ group "b.3.grasping" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "base";
     }    
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/footstep_planner']); runFootstepPlanner;\"";
-        host = "base";
+}
+
+
+
+group "g.0.gazebo" {
+    cmd "gz_mit_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
+        host = "robot";
     }
-    cmd "ZMPWalkingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
-        host = "base";
+    cmd "gz_mit_manip_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
+        host = "robot";
+    }
+    cmd "gz_mit_ingress_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress_slow.world";
+        host = "robot";
+    }
+    cmd "gz_mit_walking_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        host = "robot";
+    }
+    cmd "gz_mit_walking_bdi" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_bdi.world";
+        host = "robot";
+    }
+    cmd "gz_mit_driving" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_driving.world";
+        host = "robot";
+    }
+    cmd "gz_quals_1" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
+        host = "robot";
+    }
+    cmd "gz_quals_1_unpaused" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
+        host = "robot";
+    }
+    cmd "gz_quals_1_steps" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
+        host = "robot";
+    }
+    cmd "gz_quals_2" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        host = "robot";
+    }
+    cmd "gz_quals_3" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_driving" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_1.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_walking" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_2.world";
+        host = "robot";
+    }
+    cmd "gz_vrc_manip" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_3.world";
+        host = "robot";
     }
 }
 
@@ -411,51 +403,18 @@ group "m.4.base" {
 
 
 ######################################
-########### Walking ##################
-script "core-start" {
-    start group "0.dev_deputies";
+script "a.qual_1" {
     start group "a.1.core";
-    wait ms 100;
-    start cmd "foot-contact"; 
-    start cmd "PrecomputationServer"; 
-    start cmd "Qual1StateMachine";
-    start cmd "FootstepPlanner";
-    start cmd "ZMPWalkingPlanner";
+    start group "b.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
     wait ms 10000;
-}
-
-script "core-start-mit-walking" {
-    run_script "core-start";
-    start cmd "mit_walking_slow";
-    wait ms 4000;
+    start cmd "gz_quals_1"; 
+    wait ms 3000;
     start cmd "set-sim-rate";
 }
 
-script "core-start-mit-manip" {
-    run_script "core-start";
-    start cmd "mit_manip_slow";
-    wait ms 4000;
-    start cmd "set-sim-rate";
-}
-
-script "run_qual_1" {
-    run_script "core-start";
-    start cmd "quals_1"; 
-    wait ms 4000;
-    start cmd "set-sim-rate";
-}
-
-
-script "run_qual_3" {
-    run_script "core-start";
-    start cmd "quals_3"; 
-    wait ms 4000;
-    start cmd "set-sim-rate";
-}
-
-########### Manip ##################
-script "run_qual_2" {
-    start group "0.dev_deputies";
+script "a.qual_2" {
     start group "a.1.core";
     wait ms 100;
     start cmd "aff_server"; 
@@ -464,46 +423,87 @@ script "run_qual_2" {
     start cmd "ReachingPlanner";
     start cmd "sticky_hands";
     wait ms 10000;
-    start cmd "quals_2";    
+    start cmd "gz_quals_2";    
     wait ms 500;  
     start cmd "oracle2coll"; 
 }
 
-########### Driving ##################
-script "run_ros_driving" {
+script "a.qual_3" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 10000;
+    start cmd "gz_quals_3"; 
+    wait ms 3000;
+    start cmd "set-sim-rate";
+}
+
+script "a.vrc_driving" {
     start group "a.1.core";
     start group "b.1.core";
     wait ms 100;
-    start cmd "mit_driving";
+    start cmd "gz_mit_driving";
     wait ms 2000;
-    start group "a.5.driving";
+    start group "a.4.driving";
 }
 
-############ System Test ############
-script "core-stop" {
+######################################
+# deputies:
+script "d.qual_1" { 
+    start group "0.development";
+    run_script "a.qual_1";
+}
+script "d.qual_2" { 
+    start group "0.development";
+    run_script "a.qual_2";
+}
+script "d.vrc_driving" { 
+    start group "0.development";
+    run_script "a.qual_2";
+}
+
+
+############ Misc incl System Tests ############
+script "systest-start-mit-walking" {
+    run_script "core-start";
+    start cmd "gz_mit_walking_slow";
+    wait ms 4000;
+    start cmd "set-sim-rate";
+}
+
+script "systest-start-mit-manip" {
+    run_script "core-start";
+    start cmd "gz_mit_manip_slow";
+    wait ms 4000;
+    start cmd "set-sim-rate";
+}
+
+
+script "systest-core-stop" {
     stop cmd "lcm-logger-no-vis";
     stop cmd "systemwide-test";
-    stop group "0.dev_deputies";
+    stop group "0.development";
     stop group "a.1.core";
     stop cmd "Qual1StateMachine";
     stop cmd "FootstepPlanner";
     stop cmd "ZMPWalkingPlanner";
-    stop cmd "quals_1_unpaused";
+    stop cmd "gz_quals_1_unpaused";
     stop cmd "set-sim-rate";
 }
 
-script "systemtest" {
+script "systest-main" {
     start cmd "lcm-logger-no-vis";
     start cmd "systemwide-test";
     wait ms 100;
-    run_script "run_qual_1";
+    run_script "qual_1";
     wait ms 1200000;
     run_script "core-stop";
     wait ms 10000;
 }
 
-script "core-start-vo" {
-    run_script "run_qual_1";
+script "systest-start-vo" {
+    run_script "qual_1";
     stop cmd "estpub";
     start cmd "estpub_sensing";
     start cmd "motion_vo_testing";
