@@ -103,6 +103,7 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   }
 
   osrf_msgs::JointCommands joint_command_msg;
+  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   
   joint_command_msg.ki_position.resize(msg->num_joints);
   joint_command_msg.kp_velocity.resize(msg->num_joints);
@@ -128,6 +129,7 @@ void LCM2ROS::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   }
   if(ros::ok()) {
     joint_cmd_pub_.publish(joint_command_msg);
+    
   } 
   
 //  ros::spinOnce();
@@ -152,6 +154,7 @@ void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
   }
 
   osrf_msgs::JointCommands joint_command_msg;
+  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
 
   for (int i=0; i<msg->num_joints; i++) {
     joint_command_msg.name.push_back("sandia_hands::l_hand::" + msg->name[i]); // must use scoped name
@@ -180,6 +183,7 @@ void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
   }
 
   osrf_msgs::JointCommands joint_command_msg;
+  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
 
   for (int i=0; i<msg->num_joints; i++) {
     joint_command_msg.name.push_back("sandia_hands::r_hand::" + msg->name[i]); // must use scoped name
@@ -213,6 +217,7 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
 
   // set robot pose    
   geometry_msgs::Pose pose_msg;
+//  pose_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   pose_msg.position = geometry_msgs::Point();
   pose_msg.position.x = msg->origin_position.translation.x;
   pose_msg.position.y = msg->origin_position.translation.y;
@@ -226,6 +231,7 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
   
   // set robot joint config
   sensor_msgs::JointState joint_msg;
+  joint_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   for (int i=0; i<msg->num_joints; i++) {
     joint_msg.name.push_back(msg->joint_name[i]);
     joint_msg.position.push_back(msg->joint_position[i]);
@@ -237,6 +243,7 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
   
   // send zero joint command
   osrf_msgs::JointCommands joint_command_msg;
+  joint_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   joint_command_msg.name.resize(msg->num_joints);
   joint_command_msg.position.resize(msg->num_joints);
   joint_command_msg.velocity.resize(msg->num_joints);
@@ -316,6 +323,7 @@ void LCM2ROS::reconfigCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::strin
 
 void LCM2ROS::bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg){
   geometry_msgs::Twist body_twist_cmd_msg;
+  //body_twist_cmd_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   body_twist_cmd_msg.linear.x =  msg->linear_velocity.x;
   body_twist_cmd_msg.linear.y =  msg->linear_velocity.y;
   body_twist_cmd_msg.linear.z =  msg->linear_velocity.z;
