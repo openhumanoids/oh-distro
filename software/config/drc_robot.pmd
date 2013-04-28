@@ -105,10 +105,6 @@ group "a.2.walking" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
         host = "robot";
     }
-    cmd "KinematicFootContactEstimator" {
-        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runKinematicFootContactEstimator;\"";
-        host = "robot";
-    }
 }
 
 group "a.3.grasping" {
