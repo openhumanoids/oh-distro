@@ -44,6 +44,10 @@
 #include <isam/isam.h>
 //#include "bot-core.h"
 
+
+#include <bot_param/param_client.h>
+#include <bot_frames/bot_frames.h>
+
 //#include "urdf/model.h"
 
 #define DISPLAY_FOOTSTEP_POSES
@@ -57,6 +61,10 @@ class LegOdometry_Handler {
 private:
 	TwoLegs::TwoLegOdometry *_leg_odo;
 	boost::shared_ptr<lcm::LCM> lcm_;
+    BotParam* _botparam;
+    BotFrames* _botframes;
+	
+	
 	int ratecounter;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
@@ -83,6 +91,10 @@ private:
 	int collectionindex;
 	bool firstpass;
 	std::string _channel_extension;
+	
+	NumericalDiff local_to_head_vel_diff;
+	NumericalDiff local_to_head_acc_diff;
+	NumericalDiff local_to_head_rate_diff;
 	
 	DataFileLogger state_estimate_error_log;
 	

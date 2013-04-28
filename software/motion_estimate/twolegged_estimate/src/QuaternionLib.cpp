@@ -306,6 +306,13 @@ namespace InertialOdometry
 	  C(2,2) = ct * cp;
   }
   
+  Eigen::Vector3d QuaternionLib::C2e(const Eigen::Matrix<double, 3, 3> &C) {
+	  Eigen::Quaterniond q(C);
+	  
+	  return q2e(q);
+  }
+      
+  
   Eigen::Quaterniond QuaternionLib::e2q(const Eigen::Vector3d &E) {
 	  //Eigen::Quaterniond q;
 	  

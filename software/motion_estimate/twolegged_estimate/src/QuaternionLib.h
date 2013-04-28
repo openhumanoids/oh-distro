@@ -46,6 +46,7 @@ namespace InertialOdometry
     static void e2C(Eigen::Vector3d const &E, Eigen::Matrix<double, 3, 3> &C);
     static Eigen::Matrix<double, 3, 3> e2C(const Eigen::Vector3d &E);
     
+    static Eigen::Vector3d C2e(const Eigen::Matrix<double, 3, 3> &C);
     
     //Rotate a 3 vector around only te yaw axis
     static Eigen::Vector3d Cyaw_rotate(const Eigen::Matrix<double, 3, 3> &C, const Eigen::Vector3d &v);

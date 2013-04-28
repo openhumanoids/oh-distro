@@ -18,6 +18,7 @@
 
 
 
+
 using namespace TwoLegs;
 using namespace std;
 
@@ -27,7 +28,14 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
 	_leg_odo = new TwoLegOdometry(_log_data_files);
 	
+	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
+	
+	
 	ratecounter = 0;
+	local_to_head_vel_diff.setSize(3);
+	local_to_head_acc_diff.setSize(3);
+	local_to_head_rate_diff.setSize(3);
 	
 	if (_lcm_add_ext) {
 	  _channel_extension = "_VO";
@@ -90,7 +98,10 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
 	delete _viewer;
-		
+	
+	// Not sure if the pointers must be deleted here, this may try and delete a pointer to a static memory location -- therefore commented
+	//delete _botframes;
+	//delete _botparam;
 	
 	cout << "Everything Destroyed in LegOdometry_Handler::~LegOdometry_Handler()" << endl;
 	return;
@@ -374,11 +385,57 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   msgout.origin_position = origin;
   msgout.origin_twist = twist;
   
-  //"EST_ROBOT_STATE_VO"
   lcm_->publish("EST_ROBOT_STATE" + _channel_extension, &msgout);
   
-  // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
+  // publish local to head pose
   
+  // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
+  // new
+  int status;
+  double matx[16];
+  Eigen::Isometry3d body_to_head;
+  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes,  "body", "head",  msg->utime, matx);
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      body_to_head(i,j) = matx[i*4+j];
+    }
+  }  
+  
+  // Where is the head at
+  Eigen::Isometry3d local_to_head;
+  local_to_head = currentPelvis*body_to_head; // TODO -- not sure if this is corect, must test to confirm
+  
+  // now we need the linear and rotational velocity states -- velocity and acclerations are computed wiht the first order differential
+  Eigen::Vector3d local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());
+  Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff((double)msg->utime*(1E-6), local_to_head_vel);
+  Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff((double)msg->utime*(1E-6), InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
+  
+  // estimate the rotational velocity of the head
+    Eigen::Quaterniond l2head_rot(local_to_head.linear());
+    bot_core::pose_t l2head_msg;
+    l2head_msg.utime = msg->utime;
+    
+    l2head_msg.pos[0] = local_to_head.translation().x();
+    l2head_msg.pos[1] = local_to_head.translation().y();
+    l2head_msg.pos[2] = local_to_head.translation().z();
+    
+    l2head_msg.orientation[0] = l2head_rot.w();
+    l2head_msg.orientation[1] = l2head_rot.x();
+    l2head_msg.orientation[2] = l2head_rot.y();
+    l2head_msg.orientation[3] = l2head_rot.z();
+    l2head_msg.vel[0]=local_to_head_vel(0);
+    l2head_msg.vel[1]=local_to_head_vel(1);
+    l2head_msg.vel[2]=local_to_head_vel(2);
+    l2head_msg.rotation_rate[0]=local_to_head_rate(2);//is this the correct ordering of the roll pitch yaw
+    l2head_msg.rotation_rate[1]=local_to_head_rate(1);
+    l2head_msg.rotation_rate[2]=local_to_head_rate(0);
+    l2head_msg.accel[0]=local_to_head_acc(0);
+    l2head_msg.accel[1]=local_to_head_acc(1);
+    l2head_msg.accel[2]=local_to_head_acc(2);
+    lcm_->publish("POSE_HEAD" + _channel_extension, &l2head_msg);  
+  
+  
+  // Logging some some data for analysis in MATLAB
   if (_log_data_files) {
     stringstream ss (stringstream::in | stringstream::out);
 	
