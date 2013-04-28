@@ -271,7 +271,7 @@ classdef DRCController
         
         if any(input_frame_time >=0) % could also do 'all' here
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
-          obj.controller_output_frame.publish(tt,u,defaultChannel(obj.controller_output_frame));
+          obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
         end
       end
     end
