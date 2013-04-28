@@ -32,9 +32,9 @@ using namespace occ_map;
 struct RoadDetectorOptions { 
     bool vDEBUG;
     std::string vCHANNEL;
-    bool vSILENT;
+    bool vVERBOSE;
     RoadDetectorOptions () : 
-        vCHANNEL(std::string("CAMERALEFT")), vDEBUG(false), vSILENT(false){}
+        vCHANNEL(std::string("CAMERALEFT")), vDEBUG(false), vVERBOSE(false){}
 };
 
 typedef struct _ImageVertex ImageVertex;
@@ -312,13 +312,13 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     cv::Mat1b road_paint_dil;
     dilate_mask(road_paint, road_paint_dil, 2);
 
-    if(!self->options.vSILENT)
+    if(self->options.vVERBOSE)
         cv::imshow("Road Paint (Small Dilation)" , road_paint_dil);
     //maybe dilate the road paint a bit 
 
     cv::Mat1b road_and_paint = (mask_dil_small | road_paint_dil);
       
-    if(!self->options.vSILENT)
+    if(self->options.vVERBOSE)
         cv::imshow("Road with Paint", road_and_paint);
 
     vector<cv::Point> largest_contour;
@@ -347,7 +347,7 @@ int detect_road(Terrain *self, int64_t utime, cv::Mat& img, cv::Mat &hsv_img)
     }
 
     cv::Mat1b sm_display = mask.clone();
-    if(!self->options.vSILENT)
+    if(self->options.vVERBOSE)
         cv::imshow("Basic Road Detection", sm_display);
   
     return 0;
@@ -1105,7 +1105,7 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
   
     cv::Mat1b road_map = (filled_obs_map==0 & filled_map);
 
-    if(!self->options.vSILENT)
+    if(self->options.vVERBOSE)
         imshow("Filled Transformed Contour", filled_map);
     
     imshow("Transformed Road Map", road_map);
@@ -1214,7 +1214,7 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
     }
     
 
-    if(!state->options.vSILENT)
+    if(state->options.vVERBOSE)
         fprintf(stderr, "Time to process : %f\n",   (e_utime - s_utime)/1.0e6);
 
     state->img_utime = msg->utime; 
@@ -1269,7 +1269,7 @@ int main(int argc, char **argv)
     ConciseArgs opt(argc, (char**)argv);
     opt.add(state->options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
     opt.add(state->options.vDEBUG, "d", "debug","Debug mode");
-    opt.add(state->options.vSILENT, "s", "silent","Silent mode");
+    opt.add(state->options.vVERBOSE, "v", "verbose","Verbose");
     opt.parse();
 
     state->lcmgl_basic = bot_lcmgl_init(state->lcm, "Terrain-detection-Basic");
