@@ -43,6 +43,9 @@
 
 //this is a hack for now - adding a fixed time to turn 
 #define TIME_TO_TURN 2.0
+#define TIME_TO_BRAKE 2.0
+
+#define MAX_BRAKE 0.5
 
 #define TIMER_PERIOD_MSEC_LONG 700
 
@@ -50,7 +53,6 @@
 #define ACCELERATOR_TIME_GAP_SEC 2.5
 #define TIMEOUT_THRESHOLD 1.0
 #define MAX_THROTTLE 0.03
-#define MAX_BRAKE    0.02
 #define ALPHA .2
 #define VEHICLE_THRESHOLD 1/1.5
 #define SAFE_DISTANCE 3.0
@@ -59,12 +61,11 @@
 
 #define TLD_TIMEOUT_SEC 1.0
 
-
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
 typedef enum {
     IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, DOING_INITIAL_TURN, 
-    DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
+    DOING_BRAKING, DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
 } controller_state_t;
 
 typedef struct{
@@ -134,7 +135,7 @@ void publish_status(state_t *self){
     drc_driving_controller_status_t msg;
     msg.utime = self->utime;
     if(self->drive_duration >=0){
-        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6;
+        msg.time_to_drive = self->drive_time_to_go - TIME_TO_TURN * 1e6 - TIME_TO_BRAKE * 1e6;
     }
     else{
         msg.time_to_drive = 0;
@@ -344,7 +345,7 @@ on_driving_command (const lcm_recv_buf_t *rbuf, const char *channel,
 
     self->last_driving_cmd = drc_driving_cmd_t_copy(msg);
 
-    self->drive_duration = msg->drive_duration + TIME_TO_TURN; 
+    self->drive_duration = msg->drive_duration + TIME_TO_TURN + TIME_TO_BRAKE; 
     self->kp_steer = msg->kp_steer;
     self->kd_steer = msg->kd_steer;
     self->throttle_ratio = msg->throttle_ratio;
@@ -1196,7 +1197,19 @@ on_controller_timer (gpointer data)
         }
 	else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
             throttle_val = self->throttle_ratio;
-	}
+	}        
+
+        if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+            double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
+            throttle_val = 0;
+            
+            if(TIME_TO_BRAKE > 0)
+                brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
+            else
+                brake_val = MAX_BRAKE;
+
+            //time to brake - gracefully
+        }
 
 	/*if(throttle_ratio >=0){
         //throttle_val = 0.04 + MAX_THROTTLE * throttle_ratio;
