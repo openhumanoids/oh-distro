@@ -118,8 +118,8 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         img_vselection.roi.height = state->selection_virtual.height * sy;
         perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_vselection);
 
-        destroyWindow(WINDOW_NAME);
-        state->img = cv::Mat();
+        // destroyWindow(WINDOW_NAME);
+        // state->img = cv::Mat();
 
         break;
     case CV_EVENT_LBUTTONDOWN:
@@ -219,6 +219,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         MAX_IMAGE_HEIGHT = msg->height;
     }
 
+
     state_t* state = (state_t*) user_data; 
     if (state->img.empty() || state->img.rows != msg->height || state->img.cols != msg->width) { 
         if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY) { 
@@ -231,13 +232,6 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     }
     decode_image(msg, state->img);    
     state->img_utime = msg->utime; 
-
-
-    cv::namedWindow( WINDOW_NAME );
-    cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
-    state->selectObject_virtual = false;
-    state->selectObject = false;
-
     return;
 }
 
@@ -272,8 +266,8 @@ int main(int argc, char** argv)
     // Param server, botframes
     state = new state_t();
 
-    // cv::namedWindow( WINDOW_NAME );
-    // cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
+    cv::namedWindow( WINDOW_NAME );
+    cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
 
     // Subscriptions
     bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
