@@ -31,6 +31,9 @@ using namespace cv;
 
 struct state_t {
     lcm_t *lcm;
+    pthread_t lcm_thread;
+    pthread_mutex_t img_mutex;
+
     GMainLoop *mainloop;
     BotParam *param;
     BotFrames *frames;
@@ -53,6 +56,7 @@ struct state_t {
         param = bot_param_new_from_server(lcm, 1);
         frames = bot_frames_get_global (lcm, param);
 
+        img_mutex = PTHREAD_MUTEX_INITIALIZER;
         // Counter for debug prints
         counter = 0; 
 
@@ -60,12 +64,17 @@ struct state_t {
         selectObject_virtual = false;
     }
     ~state_t () { 
-        lcm_destroy(lcm);
     }
 
 };
 state_t * state = NULL;
 
+void* lcm_thread_handler(void *l) {
+    state_t* state = (state_t*)l;
+    while(1)
+        lcm_handle(state->lcm);
+
+}
 struct MouseEvent {
     MouseEvent() { event = -1; buttonState = 0; }
     Point pt;
@@ -219,7 +228,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         MAX_IMAGE_HEIGHT = msg->height;
     }
 
-
+    pthread_mutex_lock(&state->img_mutex);
     state_t* state = (state_t*) user_data; 
     if (state->img.empty() || state->img.rows != msg->height || state->img.cols != msg->width) { 
         if (msg->pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY) { 
@@ -232,6 +241,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     }
     decode_image(msg, state->img);    
     state->img_utime = msg->utime; 
+    pthread_mutex_unlock(&state->img_mutex);
     return;
 }
 
@@ -266,6 +276,9 @@ int main(int argc, char** argv)
     // Param server, botframes
     state = new state_t();
 
+    printf("starting lcm thread\n");
+    pthread_create(&(state->lcm_thread), NULL, lcm_thread_handler, state);
+
     cv::namedWindow( WINDOW_NAME );
     cv::setMouseCallback( WINDOW_NAME, onMouse, &mouse);
 
@@ -277,7 +290,7 @@ int main(int argc, char** argv)
 
     while(1) { 
         unsigned char c = cv::waitKey(1) & 0xff;
-	lcm_handle(state->lcm);
+	// lcm_handle(state->lcm);
         if (c == 'q') { 
             break;
         // } else if (c == 'd') { 
@@ -290,6 +303,7 @@ int main(int argc, char** argv)
             OBJECT_ID--;
         }
 
+        pthread_mutex_lock(&state->img_mutex);
         // UI handling 
         if (!state->img.empty()) { 
             cv::Mat display;
@@ -314,8 +328,9 @@ int main(int argc, char** argv)
 
             imshow(WINDOW_NAME, display);
         }
+        pthread_mutex_unlock(&state->img_mutex);
     }
 
-    if (state) delete state; 
+    // if (state) delete state; 
     return 0;
 }
