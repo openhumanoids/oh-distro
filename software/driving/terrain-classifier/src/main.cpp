@@ -788,8 +788,8 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Mat& mask, const 
     }
 
     //cv::Mat1b obs_free_map = (!filled_obs_map);
-
-    cv::imshow("Contour Points Projected", mask_count);
+    if(self->options.vVERBOSE)
+        cv::imshow("Contour Points Projected", mask_count);
   
     const int filled_count = (int)transformed_contour_points.size();
     const cv::Point* filled_pts = &transformed_contour_points[0];
@@ -1096,8 +1096,9 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
             cv::fillPoly(filled_obs_map, &filled_pts, &filled_count, 1, cv::Scalar(255));
         }
     }
-
-    cv::imshow("Contour Points (Img Space)", mask_count);
+    
+    if(self->options.vVERBOSE)
+        cv::imshow("Contour Points (Img Space)", mask_count);
   
     const int filled_count = (int)transformed_contour_points.size();
     const cv::Point* filled_pts = &transformed_contour_points[0];
@@ -1108,7 +1109,8 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
     if(self->options.vVERBOSE)
         imshow("Filled Transformed Contour", filled_map);
     
-    imshow("Transformed Road Map", road_map);
+    if(self->options.vVERBOSE)
+        imshow("Transformed Road Map", road_map);
 
     cv::Mat1b road_outline = (road_map >0);//(filled_map >0);
 
@@ -1219,7 +1221,8 @@ void on_image(const lcm_recv_buf_t *rbuf, const char * channel, const bot_core_i
 
     state->img_utime = msg->utime; 
     cv::Mat display = state->img.clone();  
-    cv::imshow("Camera", display);
+    if(state->options.vVERBOSE)
+        cv::imshow("Camera", display);
 
     return;
 }
