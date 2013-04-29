@@ -35,7 +35,7 @@
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
-#include <lcmtypes/drc_driving_cmd_t.h>
+//#include <lcmtypes/drc_driving_cmd_t.h>
 
 
 #define RENDERER_NAME "Driving"
@@ -63,6 +63,8 @@
 #define PARAM_P_GAIN "P Gain"
 #define PARAM_D_GAIN "D Gain"
 #define PARAM_I_GAIN "I Gain"
+
+#define STEERING_RATIO 0.063670;
 
 #define PARAM_UPDATE "Update Params"
 
@@ -250,7 +252,7 @@ typedef struct _RendererDriving {
     double max_velocity;
   
     //
-
+    drc_driving_controller_values_t *controller_values;
   
   
     visual_goal_type_t visual_goal_type;
@@ -267,6 +269,155 @@ static void
 _draw (BotViewer *viewer, BotRenderer *renderer)
 {
     RendererDriving *self = (RendererDriving*) renderer;
+
+    if(self->controller_values){
+        BotTrans car_to_local;
+        
+        bot_frames_get_trans(self->bot_frames, "car", "local", 
+                             &car_to_local);
+    
+        //this part could be done upon msg also 
+        //get the wheel arcs from the steering angle
+        double wheel_angle = (self->controller_values->hand_steer) * STEERING_RATIO ;
+                
+        BotTrans pt_to_car;
+        double rpy[3];
+        bot_roll_pitch_yaw_to_quat(rpy, pt_to_car.rot_quat);
+
+        double rpy_car[3];
+        
+        bot_quat_to_roll_pitch_yaw(car_to_local.rot_quat, rpy_car);
+
+        double l = 1.88;
+        double w = 1.2; 
+        int draw_line  = 0;
+
+        double R = 100;
+        
+        //if(wheel_angle < 0.01){
+            //draw a staright line
+        //   pt_to_car.trans_vec[0] = 25;
+        //  pt_to_car.trans_vec[1] = 0;
+        //  pt_to_car.trans_vec[2] = 0;
+        //  draw_line = 1;
+        //}
+        //else{
+        R = pow( pow(l/ tan(wheel_angle),2) + pow(l,2), 0.5);
+        
+        //fprintf(stderr, "R : %f\n", R);
+        //if(R > 50){
+        //draw line
+        //pt_to_car.trans_vec[0] = 25;
+        //pt_to_car.trans_vec[1] = 0;
+        //pt_to_car.trans_vec[2] = 0;
+        //draw_line = 1;
+        //}
+        //else{
+        /*if(wheel_angle >=0){
+            //the center of the circle is on the left
+            pt_to_car.trans_vec[0] = R;
+            pt_to_car.trans_vec[1] = R;
+            pt_to_car.trans_vec[2] = 0;
+        }
+        else{
+                    //the center of the circle is on the right 
+                    pt_to_car.trans_vec[0] = R;
+                    pt_to_car.trans_vec[1] = -R;
+                    pt_to_car.trans_vec[2] = 0;
+                }                
+            }
+        }
+                
+        BotTrans pt_to_local;
+        bot_trans_apply_trans_to(&car_to_local, &pt_to_car, &pt_to_local);*/
+        //could draw everything in car frame also 
+        //glPushMatrix();
+        //glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
+        //glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
+        
+        glPushMatrix();
+        glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0);
+        glRotatef(rpy_car[2]*180/M_PI , 0, 0, 1.0);
+        glColor3f(0,1,1);
+        glLineWidth(5.0);
+        /*if(draw_line){
+            glBegin(GL_LINES);
+            glVertex3f(0,0,0);
+            glVertex3f( pt_to_car.trans_vec[0],  pt_to_car.trans_vec[1],  pt_to_car.trans_vec[2]);
+            glEnd();
+        }
+        else{*/
+            //draw an arc 
+        glBegin(GL_LINE_STRIP);
+            
+        double x = 0;
+        double y = 0;
+            
+        //draw arc for given angle
+        double swept_angle = 20 / R;
+        
+        int no_segments = 20;;
+        double angle_d = swept_angle/ no_segments;
+        for(int i=0; i < no_segments; i++){
+            double theta = angle_d * i;
+            double s, c;
+            bot_fasttrig_sincos(theta, &s, &c);
+            x = R * s;
+
+            y = R*(1-c);
+            if(wheel_angle <0){
+                y = -y;
+            }
+            glVertex3f(x,y,0);
+        }
+        glEnd();
+            //}
+        glPopMatrix();
+        
+
+        /*
+          //for an arc
+          for (int i=-1; i<=1 ; i=i+2){
+          glBegin(GL_LINE_STRIP);
+          glVertex2f(max_permissable_travel_distance, 0);
+          for (double count = 0.001; count < 1 ; count =count+0.01){
+          double r = 1/count;
+          double circ = 2*M_PI*r;  
+          double fraction =  max_permissable_travel_distance/circ;
+          double boundary_x = r*sin( fraction *2*M_PI);
+          double boundary_y = r*cos( fraction *2*M_PI);
+
+          if (sqrt(boundary_x*boundary_x +  (boundary_y)*(boundary_y))  <  self->min_turn_radius ){
+          // cout << r << " \n";
+          break; 
+          }
+      
+          if (i > 0){
+          glVertex2f(boundary_x, boundary_y - r);
+          }else{
+          glVertex2f(boundary_x, r -boundary_y );
+          }
+          }
+  
+          double r = self->min_turn_radius;
+          double circ = 2*M_PI*r;  
+          double fraction =  max_permissable_travel_distance/circ;
+          double boundary_x = r*sin( fraction *2*M_PI);
+          double boundary_y = r*cos( fraction *2*M_PI);
+
+          if (i > 0){
+          glVertex2f(boundary_x, boundary_y - r);
+          }else{
+          glVertex2f(boundary_x, r -boundary_y );
+          }
+  
+          glEnd();
+          }
+          
+         */
+        //glPopMatrix();
+        
+    }
   
     // Alternatively this could be controlled using the input dropdown..
     if (!bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE)) {
@@ -290,6 +441,8 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     glPopMatrix();
   
   
+    
+
   
   
     // select xy (theta) point
@@ -894,6 +1047,17 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
     bot_viewer_request_redraw(self->viewer);
 }
 
+static void on_controller_values(const lcm_recv_buf_t * buf, const char *channel, 
+                                 const drc_driving_controller_values_t *msg, void *user){
+    RendererDriving *self = (RendererDriving*) user;
+
+    if(self->controller_values)
+        drc_driving_controller_values_t_destroy(self->controller_values);
+    self->controller_values = drc_driving_controller_values_t_copy(msg);
+
+
+    bot_viewer_request_redraw(self->viewer);
+}
 
 static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel, 
                                const perception_pointing_vector_t *msg, void *user){
@@ -999,7 +1163,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     self->center_arc_right.setIdentity();
     self->last_tld_tracker_update = 0; 
     self->last_road_detection_update = 0; 
-
+    self->controller_values = NULL;
     double kp_default;
 
     int status = bot_param_get_double (param, "driving.control.kp_steer_default", &kp_default);
@@ -1022,6 +1186,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
   
     drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
     perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
+
+    drc_driving_controller_values_t_subscribe(self->lc, "DRIVING_CONTROLLER_COMMAND_VALUES", on_controller_values, self);
 
     // heartbeat for system status monitoring (every 1sec)
     g_timeout_add (1000, heartbeat_cb, self);
