@@ -767,7 +767,16 @@
     <include>
 	    <uri>model://mit_robot_nohands</uri>
 <!--      <uri>model://atlas_sandia_hands</uri>-->
-      <pose>-0.5 0 0.93 0 0 0</pose>
+			<!-- starting gate -->
+<!--      <pose>-0.5 0 0.93 0 0 0</pose>-->
+			<!-- first step --> 
+      <pose>3.5 0 0.93 0 0 0</pose> 
+			<!-- multi steps --> 
+<!--      <pose>11.25 0 0.93 0 0 0</pose> -->
+			<!-- ramp top --> 
+<!--      <pose>15.75 -10.75 2.25 0 0 3.14</pose> -->
+			<!-- ramp bottom --> 
+<!--      <pose>10 -10.75 0.93 0 0 0</pose> -->
     </include>
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
