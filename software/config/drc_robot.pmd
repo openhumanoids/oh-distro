@@ -380,7 +380,7 @@ group "b.2.walking" {
         host = "base";
     }
     cmd "ZMPWalkingPlanner" {
-        exec = "matlab -nosplash -nodesktop -r \"setenv('LCM_DEFAULT_URL','udpm://239.255.76.68:7668?ttl=0'); cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingPlanner;\"";
         host = "base";
     }
 }
