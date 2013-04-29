@@ -54,7 +54,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
 	
 #ifdef VERBOSE_DEGUG
-	std::cout << "LegOdoemtry_handler is now subscribing to LCM messages: " << "TRUE_ROBOT_STATE, " << "TORSO_IMU" << std::endl; 
+	std::cout << "LegOdometry_handler is now subscribing to LCM messages: " << "TRUE_ROBOT_STATE, " << "TORSO_IMU" << std::endl; 
 #endif
 	
 	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this);
@@ -208,7 +208,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	left_force = msg->contacts.contact_force[0].z;
 	right_force = msg->contacts.contact_force[1].z;
 
-	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
+	if (_switches->publish_footcontact_states) {
+	  DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process	
+	  PublishFootContactEst(msg->utime);
+	}
 	
 	if (_switches->do_estimation){
 		// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
@@ -271,10 +274,6 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		
 		PublishEstimatedStates(msg);
     }
-	
-	// Always Publish the foot contact state estimates to LCM
-	PublishFootContactEst(msg->utime);
-    
 	
 /*
    clock_gettime(CLOCK_REALTIME, &after);

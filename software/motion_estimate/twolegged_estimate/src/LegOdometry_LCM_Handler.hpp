@@ -59,6 +59,7 @@
 //#define PUBLISH_AT_TRUE_POSITION
 
 struct command_switches {
+  bool publish_footcontact_states;
   bool do_estimation;
   bool draw_footsteps;
   bool log_data_files;

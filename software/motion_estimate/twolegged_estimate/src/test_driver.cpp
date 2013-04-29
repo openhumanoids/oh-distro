@@ -34,6 +34,7 @@ void signalHandler( int signum ){
 int main(int argc, char ** argv) {
   command_switches switches;
   
+  switches.publish_footcontact_states = false;
   switches.do_estimation = false;
   switches.draw_footsteps = false;
   switches.log_data_files = false;
