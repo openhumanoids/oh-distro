@@ -27,7 +27,6 @@
 #include <renderer_drc/renderer_driving.hpp>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_status.hpp>
-#include <renderer_drc/renderer_score.hpp>
 
 // new grid renderer:
 #include <renderer_drc/renderer_drcgrid.h>
