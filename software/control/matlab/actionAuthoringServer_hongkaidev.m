@@ -41,7 +41,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 %r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating',true));
 r = RigidBodyManipulator('');
 r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_polaris_ranger_ev/model_no_rollcage.urdf');
+r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_polaris_ranger_ev/model_no_rollcage.urdf',[0;0;0],[0;0;-pi/2]);
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
@@ -114,14 +114,14 @@ while (1)
               q_key_time_samples(:,i) = options.q_nom;
           else
               [q_key_time_samples(:,i),info] = inverseKin(r,q,ikargs{:},options);
-              if(info>10)
-                warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
-              else
-                fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
-              end
-              if(i<num_key_time_samples)
-                action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
-              end
+              %if(info>10)
+                %warning(['IK at time ',num2str(action_sequence.key_time_samples(i)),' is not successful']);
+              %else
+                %fprintf('IK at time %5.3f successful\n',action_sequence.key_time_samples(i));
+              %end
+              %if(i<num_key_time_samples)
+                %action_sequence = action_sequence.addStaticContactConstraint(r,q_key_time_samples(:,i),action_sequence.key_time_samples(i));
+              %end
           end
           kinsol = doKinematics(r,q_key_time_samples(:,i));
           com_key_time_samples(:,i) = getCOM(r,kinsol);
@@ -138,8 +138,8 @@ while (1)
           qdot0 = zeros(size(q));
           options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
           options.quasiStaticFlag = true;
-          options.Qv = eye(length(q0));
-          options.Qa = 1e1*eye(length(q0));
+          %options.Qv = eye(length(q0));
+          %options.Qa = 1e1*eye(length(q0));
           window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
           %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
           t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
