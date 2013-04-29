@@ -5,7 +5,7 @@ classdef SimplePDController < DrakeSystem
     Kp;
     Kd;
     dt;
-    controller_data; % pointer to shared data handle containing qtraj, ti_flag
+    controller_data; % pointer to shared data handle containing qtraj
     robot;
   end
   

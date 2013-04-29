@@ -9,7 +9,7 @@ classdef HarnessController < DRCController
     function obj = HarnessController(name,r,timeout)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('qtraj',[],'ti_flag',true));
+      ctrl_data = SharedDataHandle(struct('qtraj',[]));
       
       % instantiate QP controller
       options = struct();
@@ -95,7 +95,6 @@ classdef HarnessController < DRCController
         else
           qtraj = PPTrajectory(spline(ts,xtraj(6+(1:getNumDOF(obj.robot)),:)));
         end
-        obj.controller_data.setField('ti_flag',false);
         obj = setDuration(obj,inf,false); % set the controller timeout
       else
         % use saved nominal pose
@@ -107,8 +106,6 @@ classdef HarnessController < DRCController
         end
         q0 = zeros(getNumDOF(obj.robot),1);
         qtraj = PPTrajectory(spline([0 2.5],[q0 q_nom]));
-        
-        obj.controller_data.setField('ti_flag',true);
       end
       
       obj.controller_data.setField('qtraj',qtraj);

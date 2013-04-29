@@ -9,8 +9,9 @@ classdef StandingController < DRCController
     function obj = StandingController(name,r)
       typecheck(r,'Atlas');
 
-      ctrl_data = SharedDataHandle(struct('S',[],'h',[],'hddot',[], ...
-        'xlimp0',[],'qtraj',[],'supptraj',[],'ti_flag',true));
+      ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
+        'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Q',eye(2),...
+        'S',[],'s1',zeros(4,1),'xlimp0',[],'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -47,13 +48,12 @@ classdef StandingController < DRCController
       if isfield(data,'precomp')
         disp('standing controller: using precompute data');
         cdata = data.precomp.resp_data;
+        
         obj.controller_data.setField('S',cdata.S);
-        obj.controller_data.setField('h',cdata.h);
-        obj.controller_data.setField('hddot',0);
+        obj.controller_data.setField('D',-cdata.h/9.81*eye(2));
         obj.controller_data.setField('qtraj',cdata.q_nom);
         obj.controller_data.setField('xlimp0',cdata.xlimp0);
         obj.controller_data.setField('supptraj',cdata.support);
-        obj.controller_data.setField('ti_flag',true);        
         
       elseif isfield(data,'AtlasState')
         % transition from walking:
@@ -73,14 +73,12 @@ classdef StandingController < DRCController
         [~,V] = lqr(limp,comgoal);
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
-
+        
         obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('h',com(3));
-        obj.controller_data.setField('hddot',0);
+        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
-        obj.controller_data.setField('ti_flag',true);
 
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
         % standing and reaching plan
@@ -89,7 +87,6 @@ classdef StandingController < DRCController
         qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
         obj.controller_data.setField('qtraj',qtraj);
-        obj.controller_data.setField('ti_flag',false);
         obj = setDuration(obj,inf,false); % set the controller timeout
 
       else
@@ -109,12 +106,10 @@ classdef StandingController < DRCController
         foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
 
         obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('h',com(3));
-        obj.controller_data.setField('hddot',0);
+        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
-        obj.controller_data.setField('ti_flag',true);
       end
      
       obj = setDuration(obj,inf,false); % set the controller timeout

@@ -5,7 +5,7 @@ classdef WalkingPDController < DrakeSystem
     Kp;
     Kd;
     dt;
-    controller_data; % pointer to shared data handle containing qtraj, ti_flag
+    controller_data; % pointer to shared data handle containing qtraj
     ikoptions;
     rfoot_body;
     lfoot_body;

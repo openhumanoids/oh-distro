@@ -2,12 +2,12 @@ classdef QPController < MIMODrakeSystem
 
   % implementation assumes 3D atlas model
   methods
-  function obj = QPController(r,zmpdata,options)
+  function obj = QPController(r,controller_data,options)
     % @param r atlas instance
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit), and action cost (R)
     typecheck(r,'Atlas');
-    typecheck(zmpdata,'SharedDataHandle');
+    typecheck(controller_data,'SharedDataHandle');
     if nargin>2
       typecheck(options,'struct');
     else
@@ -24,7 +24,7 @@ classdef QPController < MIMODrakeSystem
     obj = setOutputFrame(obj,output_frame);
 
     obj.robot = r;
-    obj.zmpdata = zmpdata;
+    obj.controller_data = controller_data;
 
     if (isfield(options,'w'))
       typecheck(options.w,'double');
@@ -88,16 +88,16 @@ classdef QPController < MIMODrakeSystem
     q_ddot_des = varargin{1};
     x = varargin{2};
     r = obj.robot;
-    zmpd = getData(obj.zmpdata);
+    ctrl_data = getData(obj.controller_data);
 
     % get pelvis height above height map
     x(3) = x(3)-getTerrainHeight(r,x(1:2));
       
     % use support trajectory
-    if typecheck(zmpd.supptraj,'double') %zmpd.ti_flag
-      supp = zmpd.supptraj;
+    if typecheck(ctrl_data.supptraj,'double')
+      supp = ctrl_data.supptraj;
     else
-      supp = zmpd.supptraj.eval(t);
+      supp = ctrl_data.supptraj.eval(t);
     end
     active_supports = find(supp);
     
@@ -125,12 +125,12 @@ classdef QPController < MIMODrakeSystem
     end
     active_contacts = zeros(length(phi),1);
 
-    contact_data = obj.contact_est_monitor.getNextMessage(1);
-    if ~isempty(contact_data)
-      msg = drc.foot_contact_estimate_t(contact_data);
-      obj.lfoot_contact_state = msg.left_contact;
-      obj.rfoot_contact_state = msg.right_contact;
-    end
+    %contact_data = obj.contact_est_monitor.getNextMessage(1);
+    %if ~isempty(contact_data)
+    %  msg = drc.foot_contact_estimate_t(contact_data);
+      obj.lfoot_contact_state = 1;%msg.left_contact;
+      obj.rfoot_contact_state = 1;%msg.right_contact;
+    %end
         
     % if any foot point is in contact, all contact points are active
     if any(active_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
@@ -172,25 +172,28 @@ classdef QPController < MIMODrakeSystem
     end
     
     %----------------------------------------------------------------------
-    % Linear inverted pendulum stuff --------------------------------------
-    if nc > 0    
-      if typecheck(zmpd.h,'double')
-        h = zmpd.h; 
-        hddot = 0;
+    % Linear system stuff for zmp/com control -----------------------------
+    if nc > 0
+      A_ls = ctrl_data.A; % always TI
+      B_ls = ctrl_data.B; % always TI 
+      Q = ctrl_data.Q;  
+      if typecheck(ctrl_data.C,'double')
+        % output system is TI
+        C_ls = ctrl_data.C; 
+        D_ls = ctrl_data.D;  
       else
-        h = zmpd.h.eval(t); 
-        hddot = zmpd.hddot.eval(t);
+        C_ls = ctrl_data.C.eval(t); 
+        D_ls = ctrl_data.D.eval(t);  
       end
-      if typecheck(zmpd.S,'double')
-        S = zmpd.S;
-        s1= zeros(4,1); % zmpd.s1; 
-        xlimp0 = zmpd.xlimp0;
+      if typecheck(ctrl_data.S,'double')
+        S = ctrl_data.S;
+        s1= zeros(4,1); % ctrl_data.s1; 
+        xlimp0 = ctrl_data.xlimp0;
       else
-        S = zmpd.S.eval(t);
-        s1 = zmpd.s1.eval(t);
-        xlimp0 = zeros(4,1);
+        S = ctrl_data.S.eval(t);
+        s1= ctrl_data.s1.eval(t);
+        xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
       end
-      G = -h/(hddot+9.81)*eye(2); % zmp-input transfer matrix
       xlimp = [xcom(1:2); J*qd]; % state of LIP model
       x_bar = xlimp - xlimp0;
     end
@@ -256,13 +259,13 @@ classdef QPController < MIMODrakeSystem
     %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + (2*x'*S + s1')*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
     if nc > 0
-      Hqp = Iqdd'*J'*G'*obj.Qy*G*J*Iqdd;
+      Hqp = Iqdd'*J'*D_ls'*Q*D_ls*J*Iqdd;
       Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
-      fqp = x_bar'*obj.F'*obj.Qy*G*J*Iqdd;
-      fqp = fqp + qd'*Jdot'*G'*obj.Qy*G*J*Iqdd;
-      fqp = fqp + x_bar'*S*obj.E*J*Iqdd;
-      fqp = fqp + 0.5*s1'*obj.E*J*Iqdd;
+      fqp = x_bar'*C_ls'*Q*C_ls*J*Iqdd;
+      fqp = fqp + qd'*Jdot'*D_ls'*Q*D_ls*J*Iqdd;
+      fqp = fqp + x_bar'*S*B_ls*J*Iqdd;
+      fqp = fqp + 0.5*s1'*B_ls*J*Iqdd;
       fqp = fqp - obj.w*q_ddot_des'*Iqdd;
 
       % quadratic slack var cost 
@@ -380,17 +383,12 @@ classdef QPController < MIMODrakeSystem
 
   properties
     robot; % to be controlled
-    zmpdata;
+    controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w = 1.0; % objective function weight
     slack_limit = 1.0; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
     lfoot_idx;
     R; % quadratic input cost matrix
-    % LIP stuff
-    A = [zeros(2),eye(2); zeros(2,4)]; % state transfer matrix
-    E = [zeros(2); eye(2)]; % input transfer matrix
-    F = [eye(2),zeros(2)]; % zmp-state transfer matrix
-    Qy = eye(2); % output cost matrix--must match ZMP LQR cost 
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug = false;

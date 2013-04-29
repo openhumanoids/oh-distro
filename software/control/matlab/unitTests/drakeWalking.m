@@ -61,7 +61,7 @@ fnplt(comtraj);
 
 zmpdata = SharedDataHandle(struct('S',V.S,'s1',V.s1,'h',com(3),'hddot',0, ...
                     'lfoottraj',lfoottraj,'rfoottraj',rfoottraj, ...
-                    'comtraj',comtraj,'supptraj',supptraj,'ti_flag',false));
+                    'comtraj',comtraj,'supptraj',supptraj));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
