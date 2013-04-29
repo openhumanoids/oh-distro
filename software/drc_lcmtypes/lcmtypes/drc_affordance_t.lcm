@@ -27,7 +27,8 @@ struct affordance_t
   string state_names[nstates];
   
   // Bounding Box Position
-  // position can be the same as origin
+  // position and orientation is relative to origin_xyz/rpy
+  // i.e. xyz/rpy == 0 means same as origin_xyz/rpy
   // If lwh are 0,0,0 - then none were given
   // lwh dimensions in bounding box frame i.e. forward/back, sideways, up/down
   double bounding_xyz[3];

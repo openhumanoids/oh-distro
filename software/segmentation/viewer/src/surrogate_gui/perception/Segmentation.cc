@@ -875,10 +875,13 @@ namespace surrogate_gui
     pcl::PCDReader reader;
     string file = getenv("HOME") + string("/drc/software/models/otdf/car.pcd");
     reader.read(file.c_str(), *modelcloud);
+    // Transform point cloud to match model
+    /* for old car, no longer needed       
     Affine3f transformModel = Affine3f::Identity();
     transformModel.translation() = Vector3f(0.72,0,0); // correct model  TODO fix model and remove hard coding
     transformModel.linear() = ypr2rot(Vector3f(M_PI,0,0));
     transformPointCloud(*modelcloud, *modelcloud, transformModel);
+    */
     modelcloud = extractAndSmooth(modelcloud);
     
     PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
