@@ -18,6 +18,7 @@ control
 network
 gazebo_plugins
 plan
+driving
 
 # various scripts and tools e.g. BW plotting
 tools
