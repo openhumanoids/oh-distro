@@ -78,7 +78,7 @@ while true
   xtraj(3,:) = xtraj(3,:) + zmap;
   plan_pub.publish(ts,xtraj);
 
-  % if 0 % do proper TV linear system approach
+  % if 0 % do proper time-varying linear system approach
   %   disp('Computing ZMP controller...');
   %   limp = LinearInvertedPendulum(htraj);
   %   [~,V] = ZMPtracker(limp,zmptraj); 

@@ -26,26 +26,34 @@ classdef QPController < MIMODrakeSystem
     obj.robot = r;
     obj.controller_data = controller_data;
 
-    if (isfield(options,'w'))
+    if isfield(options,'w')
       typecheck(options.w,'double');
       sizecheck(options.w,1);
       obj.w = options.w;
     end
     
-    if (isfield(options,'slack_limit'))
+    if isfield(options,'slack_limit')
       typecheck(options.slack_limit,'double');
       sizecheck(options.slack_limit,1);
       obj.slack_limit = options.slack_limit;
     end
     
     nu = getNumInputs(r);
-    if (~isfield(options,'R'))
+    if ~isfield(options,'R')
       obj.R = 1e-6*eye(nu);
     else
       typecheck(options.R,'double');
       sizecheck(options.R,[nu,nu]);
       obj.R = options.R;
     end
+    
+    if ~isfield(options,'whole_body_contact')
+      obj.whole_body_contact=false; % just listen for foot contacts over LCM
+    else
+      typecheck(options.whole_body_contact,'logical');
+      obj.whole_body_contact=options.whole_body_contact;
+    end
+    
     
     if obj.solver==1 % use cplex
       obj.solver_options = cplexoptimset('cplex');
@@ -174,9 +182,14 @@ classdef QPController < MIMODrakeSystem
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
     if nc > 0
-      A_ls = ctrl_data.A; % always TI
+%       A_ls = ctrl_data.A; % always TI
       B_ls = ctrl_data.B; % always TI 
-      Q = ctrl_data.Q;  
+      Qy = ctrl_data.Qy;  
+      if isfield(ctrl_data,'R')
+        R_ls = ctrl_data.R;  
+      else
+        R_ls = zeros(2);  
+      end
       if typecheck(ctrl_data.C,'double')
         C_ls = ctrl_data.C; 
       else
@@ -260,14 +273,15 @@ classdef QPController < MIMODrakeSystem
     %----------------------------------------------------------------------
     % QP cost function ----------------------------------------------------
     %
-    %  min: quad(F*x+G*(Jdot*qd + J*qdd),Q) + (2*x'*S + s1')*(A*x + E*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
+    %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
     
     if nc > 0
-      Hqp = Iqdd'*J'*D_ls'*Q*D_ls*J*Iqdd;
+      Hqp = Iqdd'*J'*R_ls*J*Iqdd;
+      Hqp = Hqp + Iqdd'*J'*D_ls'*Qy*D_ls*J*Iqdd;
       Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
-      fqp = x_bar'*C_ls'*Q*D_ls*J*Iqdd;
-      fqp = fqp + qd'*Jdot'*D_ls'*Q*D_ls*J*Iqdd;
+      fqp = x_bar'*C_ls'*Qy*D_ls*J*Iqdd;
+      fqp = fqp + qd'*Jdot'*D_ls'*Qy*D_ls*J*Iqdd;
       fqp = fqp + x_bar'*S*B_ls*J*Iqdd;
       fqp = fqp + 0.5*s1'*B_ls*J*Iqdd;
       fqp = fqp - obj.w*q_ddot_des'*Iqdd;
@@ -400,5 +414,6 @@ classdef QPController < MIMODrakeSystem
     contact_est_monitor;
     lfoot_contact_state = 0; 
     rfoot_contact_state = 0; 
+    whole_body_contact;  
   end
 end

@@ -1,18 +1,23 @@
-classdef StandingController < DRCController
+classdef QuasistaticStandingController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
+    Q; % LQR cost
+    R; % LQR cost
   end
   
   methods
   
-    function obj = StandingController(name,r)
+    function obj = QuasistaticStandingController(name,r)
       typecheck(r,'Atlas');
 
+      Q = eye(4);
+      R = 0.001*eye(2);
+      
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
-        'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
-        'R',zeros(2),'Qy',eye(2),'S',[],'s1',zeros(4,1),'xlimp0',[],...
-        'qtraj',[],'supptraj',[]));
+        'B',[zeros(2); eye(2)],'C',[zeros(2),eye(2); zeros(2,4)],'D',...
+        [zeros(2); eye(2)],'R',R,'Qy',zeros(4),'S',[],'s1',zeros(4,1),...
+        'xlimp0',[],'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -42,6 +47,8 @@ classdef StandingController < DRCController
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
+      obj.Q=Q;
+      obj.R=R;
       
       obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
 
@@ -54,39 +61,24 @@ classdef StandingController < DRCController
     
     function obj = initialize(obj,data)
 
-      if isfield(data,'precomp')
-        disp('standing controller: using precompute data');
-        cdata = data.precomp.resp_data;
-        
-        obj.controller_data.setField('S',cdata.S);
-        obj.controller_data.setField('D',-cdata.h/9.81*eye(2));
-        obj.controller_data.setField('qtraj',cdata.q_nom);
-        obj.controller_data.setField('xlimp0',cdata.xlimp0);
-        obj.controller_data.setField('supptraj',cdata.support);
-        
-      elseif isfield(data,'AtlasState')
+      if isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
         r = obj.robot;
 
         x0 = data.AtlasState;
-				% get pelvis height above height map
-				x0(3) = x0(3)-getTerrainHeight(r,x0(1:2));
         q0 = x0(1:getNumDOF(r));
-        kinsol = doKinematics(r,q0);
-        com = getCOM(r,kinsol);
 
         % build TI-ZMP controller 
         foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
-        limp = LinearInvertedPendulum(com(3));
-        [~,V] = lqr(limp,comgoal);
+        ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
+        [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),obj.Q,obj.R);
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
         
         obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
@@ -104,20 +96,18 @@ classdef StandingController < DRCController
         % use saved nominal pose 
         d = load('data/atlas_fp.mat');
         q0 = d.xstar(1:getNumDOF(obj.robot));
-        kinsol = doKinematics(obj.robot,q0);
-        com = getCOM(obj.robot,kinsol);
+        r = obj.robot;
 
         % build TI-ZMP controller 
-        foot_pos = contactPositions(obj.robot,q0); 
+        foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
-        limp = LinearInvertedPendulum(com(3));
-        [~,V] = lqr(limp,comgoal);
+        ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
+        [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),obj.Q,obj.R);
 
         foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
 
         obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
