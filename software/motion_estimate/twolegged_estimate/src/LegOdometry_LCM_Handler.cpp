@@ -304,8 +304,9 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	  }
 	  */
 	
-	Eigen::Isometry3d currentPelvis;
-	currentPelvis = _leg_odo->getPelvisState();
+	Eigen::Isometry3d currentPelvis = _leg_odo->getPelvisState();
+	Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
+	Eigen::Vector3d local_rates     = _leg_odo->getLocalFrameRates();
 	
     bot_core::pose_t pose;
     pose.pos[0] =currentPelvis.translation().x();
@@ -314,6 +315,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     
     Eigen::Quaterniond output_q(currentPelvis.linear().transpose());
     
+    // Used this to view the angle estimates, decoupled from the position state estimation
 #ifdef PUBLISH_AT_TRUE_POSITION
     std::cout << "Using the true position for the estimated state\n";
     pose.pos[0] = msg->origin_position.translation.x;
@@ -323,8 +325,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     
     //std::cout << "Output E angles: " << InertialOdometry::QuaternionLib::q2e(output_q).transpose() << std::endl;
     //Eigen::Quaterniond output_q;
-    
-    
     
     // forcing yaw angle for testing of the pitch and roll angle values which is to be published as the estimated state of the robot
       Eigen::Quaterniond dummy_var;
@@ -346,6 +346,11 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     pose.orientation[1] =output_q.x();
     pose.orientation[2] =output_q.y();
     pose.orientation[3] =output_q.z();
+    
+    for (int i=0; i<3; i++) {
+      pose.vel[i] =velocity_states(i);
+      pose.rotation_rate[i] = local_rates(i);
+    }
     
     //lcm_->publish("POSE_KIN",&pose);
       lcm_->publish("POSE_BODY" + _channel_extension,&pose);
@@ -375,7 +380,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   origin.rotation.z = output_q.z();  
   
   drc::twist_t twist;
-  Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
+  
   twist.linear_velocity.x = velocity_states(0);
   twist.linear_velocity.y = velocity_states(1);
   twist.linear_velocity.z = velocity_states(2);
@@ -383,8 +388,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 //  twist.linear_velocity.y = TRUE_state_msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
 //  twist.linear_velocity.z = TRUE_state_msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
 
-  Eigen::Vector3d local_rates;
-  local_rates = _leg_odo->getLocalFrameRates();
+  
   
   twist.angular_velocity.x = local_rates(0);
   twist.angular_velocity.y = local_rates(1);
@@ -441,9 +445,9 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     l2head_msg.vel[0]=local_to_head_vel(0);
     l2head_msg.vel[1]=local_to_head_vel(1);
     l2head_msg.vel[2]=local_to_head_vel(2);
-    l2head_msg.rotation_rate[0]=local_to_head_rate(2);//is this the correct ordering of the roll pitch yaw
-    l2head_msg.rotation_rate[1]=local_to_head_rate(1);
-    l2head_msg.rotation_rate[2]=local_to_head_rate(0);
+    l2head_msg.rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
+    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. confirm with testing
+    l2head_msg.rotation_rate[2]=local_to_head_rate(2);
     l2head_msg.accel[0]=local_to_head_acc(0);
     l2head_msg.accel[1]=local_to_head_acc(1);
     l2head_msg.accel[2]=local_to_head_acc(2);
