@@ -15,6 +15,14 @@ pods_use_pkg_config_packages(drc-box-filter collision_object_gfe collision_detec
 pods_install_executables(drc-box-filter)
 
 
+add_executable(drc-car-clouds car-clouds.cpp)
+pods_use_pkg_config_packages(drc-car-clouds collision_object_gfe collision_detector collision_object lcm 
+  model-client
+  bot2-param-client bot2-lcmgl-client
+  bot2-frames  bot2-frames_cpp rgbd_primitives
+  pointcloud_filters  pointcloud_vis pointcloud_lcm ${PCL_LIBRARIES})
+pods_install_executables(drc-car-clouds)
+
 add_executable(drc-triangulation triangulation.cpp)
 target_link_libraries(drc-triangulation boost_system)
 pods_use_pkg_config_packages(drc-triangulation lcm 
