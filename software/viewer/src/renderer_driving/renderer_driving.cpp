@@ -251,8 +251,10 @@ typedef struct _RendererDriving {
     Eigen::Isometry3d center_arc_right;
     double max_velocity;
   
-    //
     drc_driving_controller_values_t *controller_values;
+    drc_driving_controller_status_t *controller_status;
+    drc_driving_status_t *ground_truth_status;
+
   
   
     visual_goal_type_t visual_goal_type;
@@ -602,7 +604,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         // OpenGL is x forward, y left
         double path_x, path_y;
         glBegin(GL_LINE_STRIP);
-        for (double i= path_MinTheta;i< path_MaxTheta ; i=i+0.025){
+        for (double i= path_MinTheta;i< path_MaxTheta ; i=i+0.025) {
             path_x = path_R*sin(i);
             path_y = - path_R*cos(i);
             glVertex2f(path_x, path_y + path_center); 
@@ -616,6 +618,141 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     }else{
         bot_viewer_set_status_bar_message(self->viewer, "Invalid Goal: too far or too tight");
     }
+
+
+    // Render text
+    glPushAttrib (GL_ENABLE_BIT);
+    glEnable (GL_BLEND);
+    glDisable (GL_DEPTH_TEST);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    int gl_width = (GTK_WIDGET(viewer->gl_area)->allocation.width);
+    int gl_height = (GTK_WIDGET(viewer->gl_area)->allocation.height);
+
+    // transform into window coordinates, where <0, 0> is the top left corner
+    // of the window and <viewport[2], viewport[3]> is the bottom right corner
+    // of the window
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, gl_width, 0, gl_height);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef(0, gl_height, 0);
+    glScalef(1, -1, 1);
+
+    //void *font = GLUT_BITMAP_8_BY_13;
+    void *font = GLUT_BITMAP_9_BY_15;
+    int line_height = 14;
+    int line_length = 200;
+
+    float colors[6][3] = {
+        { 1.0, 0.0, 0.0 }, // red
+        { 0.7, 0.7, 0.0 }, // yellow
+        { 0.0, 1.0, 0.5 }, // green
+        { 0.0, 0.7, 0.7 }, // ??
+        { 0.0, 0.0, 1.0 }, // blue
+        { 0.0, 0.4, 0.3 },
+    };
+    //{ 0.6, 0.6, 0.6 }, // gray        
+
+    char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
+
+
+    if (self->controller_status)
+        sprintf (line1, "Time rem: %.2f\n", ((double) self->controller_status->time_to_drive)*1E-6);
+    else
+        sprintf (line1, "Time rem: ???\n");
+
+    if (self->controller_values) {
+        sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value);
+        sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value);
+        sprintf (line4, "   Steer: %.2f\n", self->controller_values->hand_steer);
+    }
+    else {
+        sprintf (line2, "Throttle: ???\n");
+        sprintf (line3, "   Brake: ???\n");
+        sprintf (line4, "   Steer: ???\n");
+
+    }
+
+    if (self->ground_truth_status) {
+        sprintf (line5, "Throttle: %.2f [GT]\n", self->ground_truth_status->gas_pedal);
+        sprintf (line6, "   Brake: %.2f [GT]\n", self->ground_truth_status->brake_pedal);
+        sprintf (line7, "   Steer: %.2f [GT]\n", self->ground_truth_status->hand_wheel);
+        sprintf (line8, "    Dir.: %d   [GT]\n", self->ground_truth_status->direction);
+        sprintf (line9, "     Key: %d   [GT]\n", self->ground_truth_status->key);
+    }
+    else {
+        sprintf (line5, "Throttle: ??? [GT]\n");
+        sprintf (line6, "   Brake: ??? [GT]\n");
+        sprintf (line7, "   Steer: ??? [GT]\n");
+        sprintf (line8, "    Dir.: ??? [GT]\n");
+        sprintf (line9, "     Key: ??? [GT]\n");
+    }
+    
+    double x = gl_width - line_length; // hind * 150 + 120;
+    double y = 0; //gl_height - 8 * line_height;
+    
+    int x_pos = 200;//189; // text lines x_position
+    if (1) {//self->shading){
+      glColor4f(0, 0, 0, 0.7);
+      glBegin(GL_QUADS);
+      glVertex2f(x, y);
+      glVertex2f(x + line_length, y); // 21 is the number of chars in the box
+
+      glVertex2f(x + line_length, y + 10 * line_height); // 21 is the number of chars in the box
+      glVertex2f(x       , y + 10 * line_height);
+      glEnd();
+    }
+
+    glColor3fv(colors[0]);
+    glRasterPos2f(x, y + 1 * line_height);
+    glutBitmapString(font, (unsigned char*) line1);
+
+    glColor3fv(colors[0]);
+    glRasterPos2f(x, y + 2 * line_height);
+    glutBitmapString(font, (unsigned char*) line2);
+
+    glColor3fv(colors[0]);
+    glRasterPos2f(x, y + 3 * line_height);
+    glutBitmapString(font, (unsigned char*) line3);
+
+    glColor3fv(colors[0]);
+    glRasterPos2f(x, y + 4 * line_height);
+    glutBitmapString(font, (unsigned char*) line4);
+
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 5 * line_height);
+    glutBitmapString(font, (unsigned char*) line5);
+
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 6 * line_height);
+    glutBitmapString(font, (unsigned char*) line6);
+
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 7 * line_height);
+    glutBitmapString(font, (unsigned char*) line7);
+        
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 8 * line_height);
+    glutBitmapString(font, (unsigned char*) line8);
+
+    glColor3fv(colors[2]);
+    glRasterPos2f(x, y + 9 * line_height);
+    glutBitmapString(font, (unsigned char*) line9);
+
+    
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glPopAttrib ();
+
+
+
 }
 
 static void
@@ -1059,6 +1196,30 @@ static void on_controller_values(const lcm_recv_buf_t * buf, const char *channel
     bot_viewer_request_redraw(self->viewer);
 }
 
+static void on_driving_controller_status(const lcm_recv_buf_t * buf, const char *channel, 
+                                         const drc_driving_controller_status_t *msg, void *user){
+    RendererDriving *self = (RendererDriving*) user;
+
+    if(self->controller_status)
+        drc_driving_controller_status_t_destroy(self->controller_status);
+    self->controller_status = drc_driving_controller_status_t_copy(msg);
+
+
+    bot_viewer_request_redraw(self->viewer);
+}
+
+static void on_driving_ground_truth_status(const lcm_recv_buf_t * buf, const char *channel, 
+                                           const drc_driving_status_t *msg, void *user){
+    RendererDriving *self = (RendererDriving*) user;
+
+    if(self->ground_truth_status)
+        drc_driving_status_t_destroy(self->ground_truth_status);
+    self->ground_truth_status = drc_driving_status_t_copy(msg);
+
+
+    bot_viewer_request_redraw(self->viewer);
+}
+
 static void on_pointing_vector(const lcm_recv_buf_t * buf, const char *channel, 
                                const perception_pointing_vector_t *msg, void *user){
     RendererDriving *self = (RendererDriving*) user;
@@ -1187,7 +1348,10 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
     perception_pointing_vector_t_subscribe(self->lc,"OBJECT_BEARING",on_pointing_vector,self); 
 
+    // Status messages
     drc_driving_controller_values_t_subscribe(self->lc, "DRIVING_CONTROLLER_COMMAND_VALUES", on_controller_values, self);
+    drc_driving_status_t_subscribe (self->lc, "DRC_DRIVING_GROUND_TRUTH_STATUS", on_driving_ground_truth_status, self);
+    drc_driving_controller_status_t_subscribe (self->lc, "DRC_DRIVING_CONTROLLER_STATUS", on_driving_controller_status, self);
 
     // heartbeat for system status monitoring (every 1sec)
     g_timeout_add (1000, heartbeat_cb, self);
