@@ -205,6 +205,14 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
     return;
   }
   
+  /////////////// Update the body estimate ///////////
+  Eigen::Isometry3d head_to_body_cur;
+  int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", TRUE_state_msg->utime , head_to_body_cur);
+  local_to_body_ = local_to_head_ * head_to_body_cur;  
+  if (head_to_body_cur.translation().z()==0 ){
+    cout << "head to body is zero - this shouldnt happen=======================\n";  
+  }  
+  
   // Infer the Robot's head position from the ground truth root world pose
   bot_core::pose_t pose_msg;
   pose_msg.utime = TRUE_state_msg->utime;
@@ -223,7 +231,7 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   drc::position_3d_t origin;
   origin.translation.x = local_to_body_.translation().x();
   origin.translation.y = local_to_body_.translation().y();
-  origin.translation.z = TRUE_state_msg->origin_position.translation.z;
+  origin.translation.z = local_to_body_.translation().z();
 // retain the height  origin.translation.z = local_to_body_.translation().z();
   origin.rotation.w = l2body_rot.w();
   origin.rotation.x = l2body_rot.x();

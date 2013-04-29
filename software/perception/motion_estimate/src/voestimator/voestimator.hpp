@@ -47,6 +47,11 @@ public:
     zheight_initialized_ = true;
   }  
   
+  // If not using setHeadPoseZ, then set this:
+  void setHeadPoseZInitialized(){
+    zheight_initialized_=true;
+  }
+  
   // Input is assumed to be YPR -  this is required because of a poor decision by me. Calulations are all done in RPY within Eigen:
   void setBodyRotRateImu(Eigen::Vector3d body_rot_rate_imu_in){
     body_rot_rate_imu_  = body_rot_rate_imu_in;

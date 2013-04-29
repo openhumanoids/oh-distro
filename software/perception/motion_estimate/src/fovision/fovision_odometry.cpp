@@ -32,6 +32,9 @@ using namespace std;
 
 using namespace cv; // for disparity ops
 
+// to be removed:
+bool zheight_clamp = false;
+
 class StereoOdom{
   public:
     StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
@@ -93,6 +96,7 @@ class StereoOdom{
     void fuseInterial(Eigen::Quaterniond imu_robotorientation,int correction_frequency, int64_t utime);
 
     void gazeboBodyIMUHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::imu_t* msg);  
+    drc::robot_state_t last_robot_state_msg_;
 };    
 
 StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
@@ -145,6 +149,11 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
 
   
   cout <<"StereoOdom Constructed\n";
+  if (!zheight_clamp){
+    estimator_->setHeadPoseZInitialized();  
+    cout << "will not set the z-height from ground truth\n";
+  }
+  
 }
 
 
@@ -353,37 +362,34 @@ bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d
 
 void StereoOdom::trueRobotStateHandler(const lcm::ReceiveBuffer* rbuf,
                                        const std::string& channel, const  drc::robot_state_t* msg){
-  if (fusion_mode_!=3){
-    return; 
-  }
- 
-  // If successful, set the robot's head position and start state estimation:
-  Eigen::Isometry3d local_to_head_true;
-  if ( getWorldToHead(msg, local_to_head_true)   ){
-    if (!pose_initialized_){
-      std::stringstream ss2;
-      print_Isometry3d(local_to_head_true, ss2);
-      double ypr[3];
-      quat_to_euler(  Eigen::Quaterniond(local_to_head_true.rotation()) , ypr[0], ypr[1], ypr[2]);
+  if (fusion_mode_==3){
+    // If successful, set the robot's head position and start state estimation:
+    Eigen::Isometry3d local_to_head_true;
+    if ( getWorldToHead(msg, local_to_head_true)   ){
+      if (!pose_initialized_){
+        std::stringstream ss2;
+        print_Isometry3d(local_to_head_true, ss2);
+        double ypr[3];
+        quat_to_euler(  Eigen::Quaterniond(local_to_head_true.rotation()) , ypr[0], ypr[1], ypr[2]);
+        
+        if (1==1){//verbose
+          std::cout << "gt local_to_head_true: " << ss2.str() << " | "<< 
+            ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+        }
       
-      if (1==1){//verbose
-        std::cout << "gt local_to_head_true: " << ss2.str() << " | "<< 
-          ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";         
+        estimator_->setHeadPose(local_to_head_true);
+        pose_initialized_ = true;
+        cout << "got first GT Pose Head measurement from true\n";      
       }
-    
-      estimator_->setHeadPose(local_to_head_true);
-      pose_initialized_ = true;
-      cout << "got first GT Pose Head measurement from true\n";      
-    }
-    
-    bool clamp_z =true;// clamp the estimated height !!!! HACK CHEAT HACK CHEAT !!!!
-    if (clamp_z){
-      estimator_->setHeadPoseZ( local_to_head_true.translation().z() );
       
+      // clamp the estimated height !!!! HACK CHEAT HACK CHEAT !!!!
+      if (zheight_clamp){
+        estimator_->setHeadPoseZ( local_to_head_true.translation().z() );
+      }
     }
   }
   
-  estimator_->publishUpdateRobotState(msg);
+  last_robot_state_msg_ = *msg;
 }
 
 
@@ -455,7 +461,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
   }
   
   if((fusion_mode_ ==2) ||(fusion_mode_ ==3) ){
-    if (imu_counter_== correction_frequency){
+    if (1==1){//imu_counter_== correction_frequency){
       // Every X frames: replace the pitch and roll with that from the IMU
       // convert the camera pose to body frame
       // extract xyz and yaw from body frame
@@ -488,7 +494,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
       // NBNBNBNBNB was: // pitch and roll only:
       //Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr[0], ypr_imu[1], ypr_imu[2]);             
       // ypr:
-      Eigen::Quaterniond revised_local_to_head_quat = euler_to_quat( ypr_imu[0], ypr_imu[1], ypr_imu[2]);             
+      Eigen::Quaterniond revised_local_to_head_quat = imu_robotorientation;
       ///////////////////////////////////////
       Eigen::Isometry3d revised_local_to_head;
       revised_local_to_head.setIdentity();
@@ -508,6 +514,9 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
     if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
     imu_counter_++;
   }
+  
+  estimator_->publishUpdateRobotState(&last_robot_state_msg_);
+  
 }
 
 void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -523,7 +532,7 @@ void StereoOdom::gazeboHeadIMUHandler(const lcm::ReceiveBuffer* rbuf,
   Eigen::Quaterniond imu_robotorientation;
   imu_robotorientation =gazeboIMUToRobotOrientation(msg);
   //int correction_frequency=1000;
-  int correction_frequency=10; // once every 1/100 of second
+  int correction_frequency=1; // once every 1/1000 of second
   fuseInterial(imu_robotorientation, correction_frequency, msg->utime);  
 }
 
@@ -600,9 +609,11 @@ int main(int argc, char **argv){
   parser.add(fusion_mode, "i", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
   parser.add(camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
   parser.add(output_extension, "o", "output_extension", "Extension to pose channels (e.g. '_VO' ");
+  parser.add(zheight_clamp, "z", "zheight_clamp", "Clamp to GT height");
   parser.parse();
   cout << fusion_mode << " is fusion_mode\n"; 
   cout << camera_config << " is camera_config\n"; 
+  cout << zheight_clamp << " is zheight_clamp\n"; 
   
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
