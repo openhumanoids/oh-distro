@@ -150,6 +150,17 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
         it->second.points[i][2] = msg->points[i][2];
       }
 
+      // copy bounding box
+      it->second.boundingBoxXYZ[0] = msg->aff.bounding_xyz[0];
+      it->second.boundingBoxXYZ[1] = msg->aff.bounding_xyz[1];
+      it->second.boundingBoxXYZ[2] = msg->aff.bounding_xyz[2];
+      it->second.boundingBoxRPY[0] = msg->aff.bounding_rpy[0];
+      it->second.boundingBoxRPY[1] = msg->aff.bounding_rpy[1];
+      it->second.boundingBoxRPY[2] = msg->aff.bounding_rpy[2];
+      it->second.boundingBoxLWH[0] = msg->aff.bounding_lwh[0];
+      it->second.boundingBoxLWH[1] = msg->aff.bounding_lwh[1];
+      it->second.boundingBoxLWH[2] = msg->aff.bounding_lwh[2];
+
       // find links of type DynamicMesh and copy points and triangles into it.
       /*
       std::vector<boost::shared_ptr<otdf::Link> > links;

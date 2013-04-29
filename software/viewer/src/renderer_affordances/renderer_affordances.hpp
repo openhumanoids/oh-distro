@@ -57,6 +57,7 @@
 #define RENDERER_NAME "Affordances & StickyHands/Feet"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
 #define PARAM_SHOW_MESH "Show mesh"
+#define PARAM_SHOW_BOUNDING_BOX "Show bounding box"
 #define PARAM_REACHABILITY_FILTER "Enable Reachability Filter"
 //#define PARAM_ADJUST_PARAM "Adjust Params"
 #define PARAM_OTDF_SELECT "Template"
@@ -131,6 +132,12 @@ struct OtdfInstanceStruc {
     // Otherwise, we need to manage a global collision detector by add and removing links whenever an object is deleted or added.
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3i> triangles;
+
+    // bounding box info relative to object
+    Eigen::Vector3f boundingBoxXYZ;
+    Eigen::Vector3f boundingBoxRPY;
+    Eigen::Vector3f boundingBoxLWH;
+
 };   
 
 struct StickyHandStruc {
@@ -181,6 +188,7 @@ struct RendererAffordances {
     
     
     showMesh = false;
+    showBoundingBox = false;
     enableReachabilityFilter=false;
     debugMode=false;
     selection_hold_on = false;
@@ -290,6 +298,7 @@ struct RendererAffordances {
   
   // boolean flags
   bool showMesh;  // if false, draws otdf, if true, draws mesh instead
+  bool showBoundingBox;
   bool enableReachabilityFilter;
   bool debugMode;
   bool selection_hold_on;

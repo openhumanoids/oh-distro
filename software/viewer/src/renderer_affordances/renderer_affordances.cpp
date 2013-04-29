@@ -143,6 +143,28 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
       glPopMatrix();
     }
 
+    // draw bounding box
+    if(self->showBoundingBox){
+      glPushMatrix();
+      glColor4f(c[0],c[1],c[2],self->alpha);
+      // apply base transform
+      glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+      glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
+
+      // apply bounding box transform
+      const Eigen::Vector3f& bbXYZ = it->second.boundingBoxXYZ;
+      const Eigen::Vector3f& bbRPY = it->second.boundingBoxRPY;
+      glTranslatef(bbXYZ[0],bbXYZ[1],bbXYZ[2]);
+      //glRotatef(it->second.boundingBoxRPY);  TODO
+
+      // Draw box
+      const Eigen::Vector3f& lwh = it->second.boundingBoxLWH;
+      if(lwh[0]>0 && lwh[1]>0 && lwh[2]>0){
+        glScalef(lwh[0],lwh[1],lwh[2]);
+        glutWireCube(1.0);
+      } 
+      glPopMatrix();
+    }
   }
   
   if(self->selection_hold_on) { 
@@ -590,6 +612,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }else if(!strcmp(name, PARAM_SHOW_MESH)) {
     self->showMesh = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_MESH);
     bot_viewer_request_redraw(self->viewer);  
+  }else if(!strcmp(name, PARAM_SHOW_BOUNDING_BOX)) {
+    self->showBoundingBox = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_BOUNDING_BOX);
+    bot_viewer_request_redraw(self->viewer);  
   }
   else if(!strcmp(name, PARAM_REACHABILITY_FILTER)) {
     self->enableReachabilityFilter = bot_gtk_param_widget_get_bool(pw, PARAM_REACHABILITY_FILTER);
@@ -724,6 +749,7 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_MESH, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_BOUNDING_BOX, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,
   PARAM_REACHABILITY_FILTER, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,
