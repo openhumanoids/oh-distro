@@ -1,5 +1,6 @@
 function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightfun)
 
+  debug = false;
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
@@ -29,8 +30,10 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   end
   t = linspace(0, 1);
   xy = traj.eval(t);
-%   plot_lcm_points([xy(1,:)', xy(2,:)', ones(length(t), 1)], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
-
+  if debug
+    plot_lcm_points([xy(1,:)', xy(2,:)', xy(3,:)'], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
+  end
+  
   last_lambda = struct('right', 0, 'left', 0);
   
 %   function [c, ceq] = nonlcon(lambda_n)
