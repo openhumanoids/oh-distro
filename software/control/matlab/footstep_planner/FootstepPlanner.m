@@ -129,19 +129,24 @@ classdef FootstepPlanner < DRCPlanner
             d = M * [offs; 1];
             gc(:,j) = orig(1:3) + d(1:3);
           end
-          [ground_pts, normals] = mapAPIwrapper(obj.hmap_ptr, gc);
-          plot_lcm_points(ground_pts', zeros(length(gc(1,:)),3), 100, 'contact pts', 1, 1);
+          [ground_pts, normals] = mapAPIwrapper(obj.hmap_ptr, [gc, pos(1:3,:)]);
+          plot_lcm_points(ground_pts', zeros(length(gc(1,:))+1,3), 100, 'contact pts', 1, 1);
           max_z_dist = max(ground_pts(3,:)) - min(ground_pts(3,:));
-          if max_z_dist < 0.005
-            terrain_ok = true;
+          if any(isnan(ground_pts))
+            terrain_ok = false;
+            got_data = false;
           else
-            coeff = princomp(ground_pts');
-            plane_normal = coeff(:,3)';
-            cosines = [];
-            for j = 1:length(normals)
-              cosines(end+1) = dot(normals(:,j), plane_normal) / (norm(normals(:,j)) * norm(plane_normal));
+            if max_z_dist < 0.005
+              terrain_ok = true;
+            else
+              coeff = princomp(ground_pts');
+              plane_normal = coeff(:,3)';
+              cosines = [];
+              for j = 1:length(normals)
+                cosines(end+1) = dot(normals(:,j), plane_normal) / (norm(normals(:,j)) * norm(plane_normal));
+              end
+              terrain_ok = all(abs(cosines) > cos(10*pi/180));
             end
-            terrain_ok = all(abs(cosines) > cos(10*pi/180));
           end
         else
           ground_pts = [0];
