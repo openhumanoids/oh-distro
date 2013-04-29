@@ -110,7 +110,7 @@ classdef FootstepPlanner < DRCPlanner
         obj.biped.publish_footstep_plan(X, data.utime, isnew);
       end
 
-      function [ground_pos, got_data, terrain_ok] = heightfun(pos, is_right_foot)
+      function [ground_pos, got_data, terrain_ok, ground_pts] = heightfun(pos, is_right_foot)
         if nargin < 2
           is_right_foot = -1;
         end
@@ -132,7 +132,7 @@ classdef FootstepPlanner < DRCPlanner
           [ground_pts, normals] = mapAPIwrapper(obj.hmap_ptr, [gc, pos(1:3,:)]);
           plot_lcm_points(ground_pts', zeros(length(gc(1,:))+1,3), 100, 'contact pts', 1, 1);
           max_z_dist = max(ground_pts(3,:)) - min(ground_pts(3,:));
-          if any(isnan(ground_pts))
+          if any(any(isnan(ground_pts)))
             terrain_ok = false;
             got_data = false;
           else
@@ -165,7 +165,7 @@ classdef FootstepPlanner < DRCPlanner
           theta = acos(costheta);
           new_rpy = quat2rpy(axis2quat([ax;theta]));
           if ~any(isnan(new_rpy))
-            ground_pos(4:6) = new_rpy;
+            ground_pos(4:5) = new_rpy(1:2);
           end
         end
         got_data = ~any(isnan(closest_terrain_pos)) && ~any(any(isnan(ground_pts)));

@@ -1,7 +1,9 @@
 classdef Biped < TimeSteppingRigidBodyManipulator
   properties
-    step_time
+    short_step_time
+    long_step_time
     max_forward_step
+    nom_forward_step
     max_backward_step
     max_step_width
     min_step_width
@@ -25,8 +27,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         dt = 0.002;
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
-      defaults = struct('step_time', 1.4,... % s
-        'max_forward_step', 0.3,... %m
+      defaults = struct('short_step_time', 1.4,... % s
+        'long_step_time', 2,...
+        'nom_forward_step', 0.3,... %m
+        'max_forward_step', 0.4,...%m
         'max_backward_step', 0.20,...%m
         'max_step_width', 0.35,...%m
         'min_step_width', 0.2,...%m
@@ -140,7 +144,27 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));
       t = zeros(1, nsteps);
-      t(3:end) = (1:nsteps-2) * (obj.step_time/2);
+      for j = 3:2:(min(5, nsteps))
+        if abs(X(3, j-2) - X(3, j+1)) > 0.01
+          t(j) = t(j-1) + obj.long_step_time / 2;
+          t(j+1) = t(j) + obj.long_step_time / 2;
+        else
+          t(j) = t(j-1) + obj.short_step_time / 2;
+          t(j+1) = t(j) + obj.short_step_time / 2;
+        end
+      end
+      for j = 7:2:nsteps
+        if abs(X(3, j-3) - X(3, j+1)) > 0.01
+          t(j) = t(j-1) + obj.long_step_time / 2;
+          t(j+1) = t(j) + obj.long_step_time / 2;
+        else
+          t(j) = t(j-1) + obj.short_step_time / 2;
+          t(j+1) = t(j) + obj.short_step_time / 2;
+        end
+      end
+          
+        
+%       t(3:end) = (1:nsteps-2) * (obj.step_time/2);
     end
 
     function id = getNextStepID(obj)

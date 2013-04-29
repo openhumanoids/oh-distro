@@ -3,16 +3,15 @@ function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X)
 debug = false;
 
 Xpos = [X.pos];
+step_times = [X.time]
+time_ndx = 2;
 Xright = Xpos(:, [X.is_right_foot] == 1);
 Xleft = Xpos(:, [X.is_right_foot] == 0);
 bRightStep = X(1).is_right_foot;
 
-step_time = biped.step_time
-
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
-sizecheck(step_time,1);
 
 step_locations = struct('right', Xright(1:6,:), 'left', Xleft(1:6,:));
 
@@ -32,7 +31,6 @@ function pos = feetCenter(rfootpos,lfootpos)
 end
 
 ts = [0, .5];
-step_times = [0];
 footpos = struct('right', struct(), 'left', struct());
 footpos.right.orig = [foot0.right, foot0.right];
 footpos.left.orig = [foot0.left, foot0.left];
@@ -49,6 +47,8 @@ footsupport.left = [1 1];
 while 1
   step.left.orig = repmat(footpos.left.orig(:,end), 1, 5);
   step.right.orig = repmat(footpos.right.orig(:,end), 1, 5);
+  step_time = step_times(time_ndx + 2) - step_times(time_ndx)
+  time_ndx = time_ndx + 2;
   
 %   tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;
   tstep = ts(end) + [.1, .5, .85, .95, 1] * step_time;
@@ -88,7 +88,6 @@ while 1
   end
   zmp = [zmp, stepzmp(1:2,:)];
   ts = [ts, tstep];
-  step_times = [step_times, tstep(2), tstep(end)];
   bRightStep = ~bRightStep;
   if istep.left == length(step_locations.left(1,:)) && istep.right == length(step_locations.right(1,:))
     break

@@ -31,25 +31,50 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   xy = traj.eval(t);
 %   plot_lcm_points([xy(1,:)', xy(2,:)', ones(length(t), 1)], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
 
-  lambda = 0;
+  last_lambda = struct('right', 0, 'left', 0);
+  
+%   function [c, ceq] = nonlcon(lambda_n)
+%     x = traj.eval(lambda_n);
+%     if options.yaw_fixed
+%       x(6) = x0(6);
+%     end
+%     [pos_n, got_data, terrain_ok] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
+%     c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, max_forward_step);
+%     ceq = double(~terrain_ok);
+%   end
+%   opts = optimset('Algorithm', 'interior-point');
+  
   while (1)
     is_right_foot = ~X(end).is_right_foot;
+    if is_right_foot
+      lambda = last_lambda.right;
+    else
+      lambda = last_lambda.left;
+    end
     lambda_n = 1;
-    max_forward_step = biped.max_forward_step;
+    nom_forward_step = biped.nom_forward_step;
     while (1)
+      
+%       [lambda_n, ~, exitflag] = fmincon(@(x) -x, lambda_n, [], [], [], [], [0], [1], @nonlcon, opts);
+%       break
       x = traj.eval(lambda_n);
       if options.yaw_fixed
         x(6) = x0(6);
       end
       [pos_n, got_data, terrain_ok] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
-      c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, max_forward_step);
+      c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, nom_forward_step);
       if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) 
         break
-      elseif (lambda_n - lambda < 1e-3)
-        max_forward_step = max_forward_step + 0.05;
+      elseif (lambda_n - lambda < 1e-2 && nom_forward_step + 0.05 > biped.max_forward_step)
+        break
+      elseif (lambda_n - lambda < 1e-2)
+        nom_forward_step = nom_forward_step + 0.05;
+%         lambda = lambda - 0.05;
         lambda_n = 1;
       else
         lambda_n = lambda + (lambda_n - lambda) * .9;
+%         lambda_n = lambda_n - 0.03;
+%         lambda_n = lambda - 0.05 + (lambda_n - lambda + 0.05) * .9;
       end
     end
     if got_data
@@ -58,7 +83,11 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
     if ~using_heightmap
       pos_n(3) = last_good_z;
     end
-    lambda = lambda_n;
+    if is_right_foot
+      last_lambda.right = lambda_n;
+    else
+      last_lambda.left = lambda_n;
+    end
     if length(X) == 2
       last_pos = X(end-1).pos;
     else
