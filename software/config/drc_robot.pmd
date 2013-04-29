@@ -83,7 +83,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "foot-contact" {
-       exec = "drc-legged-odometry";
+       exec = "drc-foot-state";
         host = "robot";
     }
     cmd "aff_server" {
