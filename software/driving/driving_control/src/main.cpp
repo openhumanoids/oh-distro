@@ -30,6 +30,7 @@
 #include <lcmtypes/drc_driving_controller_status_t.h>
 #include <lcmtypes/perception_pointing_vector_t.h>
 #include <lcmtypes/drc_system_status_t.h>
+#include <lcmtypes/drc_driving_controller_values_t.h>
 #include <vector>
 #include <algorithm> 
 
@@ -38,6 +39,7 @@
 #define TIMER_PERIOD_MSEC 50
 
 #define STATUS_TIMER_PERIOD_MSEC 1000
+#define STATE_UPDATE_TIMER_PERIOD_MSEC 250
 
 //#define TIME_TO_TURN_PER_RADIAN 1.0
 
@@ -67,6 +69,7 @@ typedef enum {
     IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, DOING_INITIAL_TURN, 
     DOING_BRAKING, DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
 } controller_state_t;
+
 
 typedef struct{
     double xy[2];
@@ -121,8 +124,21 @@ typedef struct _state_t {
     int stop_utime;
     // Control parameters
 
+    double throttle_val;
+    double brake_val;
+    double hand_steer;
+
     int verbose;
 } state_t;
+
+void publish_system_state_values(state_t *self){
+    drc_driving_controller_values_t msg;
+    msg.utime = self->utime;
+    msg.throttle_value = self->throttle_val;
+    msg.brake_value = self->brake_val;
+    msg.hand_steer = self->hand_steer;
+    drc_driving_controller_values_t_publish(self->lcm, "DRIVING_CONTROLLER_COMMAND_VALUES", &msg);
+}
 
 void publish_status(state_t *self){
     
@@ -153,45 +169,36 @@ void publish_status(state_t *self){
         break;
     case ERROR_NO_MAP:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_MAP;
-        //s_msg.value = "NO_MAP";
         break;
     case ERROR_MAP_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_MAP_TIMEOUT;
-        //s_msg.value = "MAP_TIMEOUT";
         break;
     case DRIVING_ROAD_ONLY:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
-        //sprintf(status, "DRIVING_ROAD_ONLY : %.2f", msg.time_to_drive/1.0e6);
-        //s_msg.value = status;
         break;
     case DRIVING_TLD_AND_ROAD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
-        //sprintf(status, "DRIVING_TLD_AND_ROAD : %.2f", msg.time_to_drive/1.0e6);
-        //s_msg.value = status;
         break;
     case DRIVING_TLD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD;
-        //sprintf(status, "DRIVING_TLD : %.2f", msg.time_to_drive/1.0e6);
-        //s_msg.value = status;
         break;
     case DRIVING_USER:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_USER;
-        //s_msg.value = "DRIVING_USER";
         break;
     case ERROR_TLD_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_TLD_TIMEOUT;
-        //s_msg.value = "ERROR_TLD_HEADING_TIMEOUT";
         break;
     case ERROR_NO_VALID_GOAL:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_NO_VALID_GOAL;
-        //s_msg.value = "ERROR_NO_VALID_GOAL";
         break;
     case DOING_INITIAL_TURN:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_INITIAL_TURN;
-        //s_msg.value = "DOING_INITIAL_TURN";
         break;
+    case DOING_BRAKING:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_DOING_BRAKING;
+        break;
+
     default:
-        //s_msg.value = "ERROR - UNKNOWN STATUS";
         break;
     }
     drc_driving_controller_status_t_publish(self->lcm, "DRC_DRIVING_CONTROLLER_STATUS", &msg);
@@ -245,6 +252,9 @@ void publish_system_status(state_t *self){
         break;
     case DOING_INITIAL_TURN:
         s_msg.value = "DOING_INITIAL_TURN";
+        break;
+    case DOING_BRAKING:
+        s_msg.value = "DOING_BRAKING";
         break;
     default:
         s_msg.value = "ERROR - UNKNOWN STATUS";
@@ -952,7 +962,8 @@ find_goal_with_only_tld_heading (state_t *self)
 static void
 perform_emergency_stop (state_t *self)
 {
-
+    self->throttle_val = 0;
+    self->brake_val = 1.0;
     fprintf (stdout, "Performing emergency stop!!!!\n");
     drc_driving_control_cmd_t msg;
     msg.utime = bot_timestamp_now();
@@ -966,6 +977,14 @@ status_timer (gpointer data)
 {
     state_t *self = (state_t *) data;
     publish_system_status(self);    
+    return TRUE;
+}
+
+static gboolean
+publish_state_timer (gpointer data)
+{
+    state_t *self = (state_t *) data;
+    publish_system_state_values(self);    
     return TRUE;
 }
 
@@ -987,6 +1006,7 @@ on_controller_timer (gpointer data)
         if (self->verbose)
             fprintf (stdout, "No valid terrain classification map\n");
         self->curr_state = ERROR_NO_MAP;
+        perform_emergency_stop(self);
         publish_status(self);
         return TRUE;
     }
@@ -994,14 +1014,8 @@ on_controller_timer (gpointer data)
     //we should check if the map is stale - because of some issue with the controller   
     if((self->utime - self->cost_map_last->utime)/1.0e6 > TIMEOUT_THRESHOLD){
         fprintf(stderr, "Error - Costmap too old - asking for EStop\n");
-      
-        drc_driving_control_cmd_t msg;
-        msg.utime = bot_timestamp_now();
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
-        msg.brake_value = 1.0;
-        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
-
         self->curr_state = ERROR_MAP_TIMEOUT;
+        perform_emergency_stop(self);
         publish_status(self);
         return TRUE;
     }
@@ -1009,8 +1023,8 @@ on_controller_timer (gpointer data)
     
 
     if(self->drive_duration < 0){
-        //we are not required to drive - return TRUE      
         self->curr_state = IDLE;
+        perform_emergency_stop(self);
         publish_status(self);
         return TRUE;
     }
@@ -1019,10 +1033,7 @@ on_controller_timer (gpointer data)
     if((self->utime - self->drive_start_time)/1.0e6 > self->drive_duration){
         drc_driving_control_cmd_t msg;
         msg.utime = bot_timestamp_now();
-        //we should tell it to slow down gracefully??
-        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_BRAKE; //_DELTA_STEERING ;
-        msg.brake_value = 1.0;
-        drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
+        perform_emergency_stop(self);
         self->drive_duration = -1;
         self->curr_state = IDLE;
         publish_status(self);
@@ -1058,8 +1069,6 @@ on_controller_timer (gpointer data)
     }
 
     //add code to handle the TLD heading if we have it 
-
-  
 
     static int64_t last_utime = 0;
     
@@ -1194,15 +1203,17 @@ on_controller_timer (gpointer data)
         if(turn_only){
             throttle_val = 0;
             self->curr_state = DOING_INITIAL_TURN;
+            brake_val = 1.0;
         }
 	else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
             throttle_val = self->throttle_ratio;
+
 	}        
 
         if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
             double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
             throttle_val = 0;
-            
+            self->curr_state = DOING_BRAKING;
             if(TIME_TO_BRAKE > 0)
                 brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
             else
@@ -1253,7 +1264,10 @@ on_controller_timer (gpointer data)
 	msg.throttle_value = throttle_val;
 	msg.brake_value = brake_val;
 	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
-        
+
+        self->throttle_val = throttle_val;
+        self->brake_val = brake_val;
+        self->hand_steer = steering_input;        
     }
     else{
         self->curr_state = ERROR_NO_VALID_GOAL;
@@ -1562,6 +1576,9 @@ static void usage (int argc, char **argv)
     fprintf (stdout, "Usage: %s [options]\n"
              "\n"
              " -v, --verbose    verbose output\n"
+             " -a, --arc        Steering based on the turning radius\n"
+             " -d, --differential_cmd send differential commands\n"
+             " -h, --help    help\n"
              "\n",
              argv[0]);
 }
@@ -1574,7 +1591,7 @@ int main (int argc, char **argv) {
     state_t *self = (state_t *) calloc (1, sizeof (state_t));
     self->goal_distance = DEFAULT_GOAL_DISTANCE;
     self->curr_state = IDLE;
-    char *optstring = "vda";
+    char *optstring = "vdah";
     char c;
     struct option long_opts[] = {
         { "verbose", no_argument, 0, 'v'},
@@ -1667,6 +1684,8 @@ int main (int argc, char **argv) {
     }
 
     g_timeout_add (STATUS_TIMER_PERIOD_MSEC, status_timer, self);
+
+    g_timeout_add (STATE_UPDATE_TIMER_PERIOD_MSEC, publish_state_timer, self);
     
     // Connect LCM to the mainloop
     bot_glib_mainloop_attach_lcm (self->lcm);
