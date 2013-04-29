@@ -132,20 +132,38 @@ classdef FootstepPlanner < DRCPlanner
           [ground_pts, normals] = mapAPIwrapper(obj.hmap_ptr, gc);
           plot_lcm_points(ground_pts', zeros(length(gc(1,:)),3), 100, 'contact pts', 1, 1);
           max_z_dist = max(ground_pts(3,:)) - min(ground_pts(3,:));
-          terrain_ok =  max_z_dist <= obj.biped.terrain_step_threshold;
+          if max_z_dist < 0.005
+            terrain_ok = true;
+          else
+            coeff = princomp(ground_pts');
+            plane_normal = coeff(:,3)';
+            cosines = [];
+            for j = 1:length(normals)
+              cosines(end+1) = dot(normals(:,j), plane_normal) / (norm(normals(:,j)) * norm(plane_normal));
+            end
+            terrain_ok = all(abs(cosines) > cos(10*pi/180));
+          end
         else
-          max_z_dist = 0;
+          ground_pts = [0];
           terrain_ok = 0;
         end
 
         [closest_terrain_pos, normal] = mapAPIwrapper(obj.hmap_ptr, pos(1:3,:));
-
+        costheta = dot(normal, [0;0;1]) / norm(normal);
+        terrain_ok = terrain_ok && abs(costheta) > cos(30*pi/180);
+        
         % h = zeros(1, length(pos(1,:)));
         ground_pos = pos;
         if ~any(isnan(closest_terrain_pos))
           ground_pos(1:3) = closest_terrain_pos;
+          ax = cross([0;0;1], normal);
+          theta = acos(costheta);
+          new_rpy = quat2rpy(axis2quat([ax;theta]));
+          if ~any(isnan(new_rpy))
+            ground_pos(4:6) = new_rpy;
+          end
         end
-        got_data = ~any(isnan(closest_terrain_pos)) && ~isnan(max_z_dist);
+        got_data = ~any(isnan(closest_terrain_pos)) && ~any(any(isnan(ground_pts)));
         % ground_pos(3,:) = h;
       end
     end
