@@ -41,7 +41,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
 %r = RigidBodyManipulator('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', struct('floating',true));
 r = RigidBodyManipulator('');
 r = r.addRobotFromURDF('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf', [],[],struct('floating',true));
-r = r.addRobotFromURDF('../../models/mit_gazebo_objects/polaris_ranger_ev/model-1_3.urdf');
+r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_polaris_ranger_ev/model_no_rollcage.urdf');
 warning(s);
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(RobotStateConstraintCheckedCoder('atlas', joint_names)));
@@ -138,10 +138,14 @@ while (1)
           qdot0 = zeros(size(q));
           options.qtraj0 = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
           options.quasiStaticFlag = true;
+          options.Qv = eye(length(q0));
+          options.Qa = 1e1*eye(length(q0));
           window_size = ceil((action_sequence.tspan(end)-action_sequence.tspan(1))/dt);
-          t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+          %t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size-1);
+          t_qs_breaks = action_sequence.tspan(1)+dt*(0:window_size);
           t_qs_breaks(end) = action_sequence.tspan(end);
           options.nSample = length(t_qs_breaks)-1;
+          options.use_mex = true;
           [t_qs_breaks, q_qs_plan, qdot_qs_plan, qddot_qs_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
 
           % Drake gui playback
@@ -394,14 +398,19 @@ end
           end
       end
       if(goal.contact_type == goal.ON_GROUND_PLANE||goal.contact_type == goal.FORCE_CLOSURE)
-          contact_state0 = ones(1,size(collision_group_pts,2));
-          contact_statei = 3*ones(1,size(collision_group_pts,2));
-          contact_statef = 2*ones(1,size(collision_group_pts,2));
+          contact_state0 = {ones(1,size(collision_group_pts,2))};
+          contact_statei = {3*ones(1,size(collision_group_pts,2))};
+          contact_statef = {2*ones(1,size(collision_group_pts,2))};
       elseif(goal.contact_type == goal.NOT_IN_CONTACT)
-          contact_state0 = zeros(1,size(collision_group_pts,2));
-          contact_statei = zeros(1,size(collision_group_pts,2));
-          contact_statef = zeros(1,size(collision_group_pts,2));
+          contact_state0 = {zeros(1,size(collision_group_pts,2))};
+          contact_statei = {zeros(1,size(collision_group_pts,2))};
+          contact_statef = {zeros(1,size(collision_group_pts,2))};
       end
       kc_name = [body_ind.linkname,'_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))];
-      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef);
+
+      contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+      contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
+
+      %contact_distance{1}.max = ConstantTrajectory(inf(1,size(obj.body_pts,2)));
+      kc = ActionKinematicConstraint(r,body_ind,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,{ContactAffordance()},contact_distance,goal.object_1_contact_grp);
 end
