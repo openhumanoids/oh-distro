@@ -583,11 +583,11 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	// if the velocity which is calculated here is high for a period, we need to consider that something has gone wrong.
 	// But there is a known issue with transitioins between feet, whic create a large velocity spike.
 	// Suggested cure is a delayed Schmitt trigger once more -- this is to pass or ignore spikes with a time delay.
-	local_accelerations = accel.diff((1.e-6)*current_time, local_velocities);
+	local_accelerations = accel.diff((1.E-6)*current_time, local_velocities);
 	for (int i=0;i<3;i++) {
 		_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
 		
-		if (local_accelerations(i) < -1.0 || local_accelerations(i) > 1.0)
+		if (local_accelerations(i) < -.6 || local_accelerations(i) > .6)
 		{
 			if (!_vel_spike_isolation[i]->getState()) {
 				// accel values have not remained high, and can therefore be ignored
