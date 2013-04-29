@@ -457,6 +457,10 @@ script "d.qual_2" {
     start group "0.development";
     run_script "a.qual_2";
 }
+script "d.qual_3" { 
+    start group "0.development";
+    run_script "a.qual_3";
+}
 script "d.vrc_driving" { 
     start group "0.development";
     run_script "a.vrc_driving";
