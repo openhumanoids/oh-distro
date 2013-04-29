@@ -277,10 +277,6 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
         host = "robot";
     }
-    cmd "gz_quals_1_unpaused" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1.world";
-        host = "robot";
-    }
     cmd "gz_quals_1_steps" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_1_steps.world";
         host = "robot";
@@ -491,7 +487,7 @@ script "systest-core-stop" {
     stop cmd "Qual1StateMachine";
     stop cmd "FootstepPlanner";
     stop cmd "ZMPWalkingPlanner";
-    stop cmd "gz_quals_1_unpaused";
+    stop cmd "gz_quals_1";
     stop cmd "set-sim-rate";
 }
 
