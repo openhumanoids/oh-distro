@@ -29,7 +29,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   end
   t = linspace(0, 1);
   xy = traj.eval(t);
-  plot_lcm_points([xy(1,:)', xy(2,:)', ones(length(t), 1)], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
+%   plot_lcm_points([xy(1,:)', xy(2,:)', ones(length(t), 1)], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
 
   lambda = 0;
   while (1)
