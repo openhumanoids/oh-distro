@@ -151,11 +151,17 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
       glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
       glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
 
-      // apply bounding box transform
+      // apply bounding box translate
       const Eigen::Vector3f& bbXYZ = it->second.boundingBoxXYZ;
-      const Eigen::Vector3f& bbRPY = it->second.boundingBoxRPY;
       glTranslatef(bbXYZ[0],bbXYZ[1],bbXYZ[2]);
-      //glRotatef(it->second.boundingBoxRPY);  TODO
+
+      // apply bounding box rotation
+      const Eigen::Vector3f& bbRPY = it->second.boundingBoxRPY;
+      double bbRPYArr[] = {bbRPY[0],bbRPY[1],bbRPY[2]};
+      double bbQuat[4], bbTheta, bbAxis[3];
+      bot_roll_pitch_yaw_to_quat(bbRPYArr,bbQuat);
+      bot_quat_to_angle_axis(bbQuat, &bbTheta, bbAxis);
+      glRotatef(bbTheta * 180/M_PI, bbAxis[0], bbAxis[1], bbAxis[2]); 
 
       // Draw box
       const Eigen::Vector3f& lwh = it->second.boundingBoxLWH;
