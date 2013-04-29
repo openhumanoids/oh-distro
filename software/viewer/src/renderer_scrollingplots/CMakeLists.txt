@@ -6,7 +6,7 @@
 #
 
 find_package(PkgConfig REQUIRED)
-add_definitions(-Wall -std=gnu99)
+add_definitions( -std=gnu99)
 
 add_library(renderer_scrollingplots SHARED renderer_scrollingplots.c )
   

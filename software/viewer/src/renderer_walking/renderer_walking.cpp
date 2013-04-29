@@ -4,7 +4,7 @@
 // mfallon aug2011
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <math.h>
 
 #ifdef __APPLE__

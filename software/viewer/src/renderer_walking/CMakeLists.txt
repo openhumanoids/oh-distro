@@ -6,7 +6,6 @@
 #
 
 find_package(PkgConfig REQUIRED)
-add_definitions(-Wall -std=gnu99)
 
 add_library(renderer_walking SHARED renderer_walking.cpp )
   

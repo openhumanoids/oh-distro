@@ -5,7 +5,7 @@ find_package(PkgConfig REQUIRED)
 #    return()
 #endif(NOT BOT2_VIS_FOUND)
 
-add_definitions(-Wall -std=gnu99)
+#add_definitions( -std=gnu99)
 
 #####################################################################
 add_library(renderer_sticky_feet SHARED 
