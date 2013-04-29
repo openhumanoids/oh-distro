@@ -55,6 +55,7 @@ class TwoLegOdometry {
 		
 		DataFileLogger datafile;
 		DataFileLogger footcontactfile;
+		DataFileLogger accel_spike_isolation_log;
 		
 		SchmittTrigger* _left_contact_state;
 		SchmittTrigger* _right_contact_state;
@@ -62,6 +63,8 @@ class TwoLegOdometry {
 		// isolate and ignore velocity estimate spikes
 		BipolarSchmittTrigger* _vel_spike_isolation[3];
 		NumericalDiff accel;
+		
+		double temp_max_testing[3];
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*

@@ -58,12 +58,15 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
 	// the idea at this point is that if the accleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
-	_vel_spike_isolation[0] = new BipolarSchmittTrigger(0.5, 0.75, 3000); 
-	_vel_spike_isolation[1] = new BipolarSchmittTrigger(0.5, 0.75, 3000);
-	_vel_spike_isolation[2] = new BipolarSchmittTrigger(0.5, 0.75, 3000);
+	_vel_spike_isolation[0] = new BipolarSchmittTrigger(1, 5, 3000); 
+	_vel_spike_isolation[1] = new BipolarSchmittTrigger(1, 5, 3000);
+	_vel_spike_isolation[2] = new BipolarSchmittTrigger(1, 5, 3000);
 	
 	datafile.Open(_log_data_files,"datalog.csv");
 	footcontactfile.Open(_log_data_files,"footcontactlog.csv");
+	accel_spike_isolation_log.Open(_log_data_files,"accel_spikes.csv");
+	
+	for (int i=0;i<3;i++) {temp_max_testing[i] = 0.;}
 	
 }
 
@@ -563,6 +566,7 @@ void TwoLegOdometry::terminate() {
 	
 	datafile.Close();
 	footcontactfile.Close();
+	accel_spike_isolation_log.Close();
 }
 
 void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
@@ -584,18 +588,32 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	// But there is a known issue with transitioins between feet, whic create a large velocity spike.
 	// Suggested cure is a delayed Schmitt trigger once more -- this is to pass or ignore spikes with a time delay.
 	local_accelerations = accel.diff((1.E-6)*current_time, local_velocities);
+	stringstream accel_data_ss (stringstream::in | stringstream::out);
+	
+	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
+	
+	
+	
 	for (int i=0;i<3;i++) {
 		_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
 		
-		if (local_accelerations(i) < -.6 || local_accelerations(i) > .6)
+		accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
+		
+		if (local_accelerations(i) < -4 || local_accelerations(i) > 4)
 		{
 			if (!_vel_spike_isolation[i]->getState()) {
+				
 				// accel values have not remained high, and can therefore be ignored
 				local_velocities(i) = prev_velocities(i);
 			}
 			// else do noting and the current computed state will not be ignored
 		}
 	}
+	
+	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
+
+	accel_data_ss << std::endl;
+	accel_spike_isolation_log << accel_data_ss.str();
 	
 	previous_isometry = getPelvisState();
 	previous_isometry_time = current_time;
