@@ -422,8 +422,22 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }  
   
   // Where is the head at
-  Eigen::Isometry3d local_to_head;
-  local_to_head = currentPelvis*body_to_head; // TODO -- not sure if this is corect, must test to confirm
+  
+  Eigen::Isometry3d local_to_head; 
+  // We are now startin to test this conversion
+  if (false) {
+	// We think this method may have a problem -- but unsure if it's related to the Isometry * operator, or in the bot body_to_head data.
+	
+    local_to_head = currentPelvis*body_to_head; // TODO -- not sure if this is corect, must test to confirm
+  } else {
+	  Eigen::Quaterniond l2body_q(currentPelvis.linear().transpose());// these may be short a transpose operation, as has been the case before
+	  Eigen::Quaterniond b2head_q(body_to_head.linear().transpose());
+	  Eigen::Isometry3d local_to_head_( InertialOdometry::QuaternionLib::QuaternionProduct_(l2body_q, b2head_q) );
+	  local_to_head_.translation() = currentPelvis.translation() + body_to_head.translation();
+	  local_to_head = local_to_head_;
+	  
+  }
+  
   
   // now we need the linear and rotational velocity states -- velocity and acclerations are computed wiht the first order differential
   Eigen::Vector3d local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());

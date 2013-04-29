@@ -14,7 +14,7 @@ namespace InertialOdometry
 	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // The result is pushed back into a2 (overwrites what was in there)
     static void QuaternionProduct(double *a1, double *a2);
-	static Eigen::Quaterniond QuaternionProduct(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs);
+	static Eigen::Quaterniond QuaternionProduct_(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs);
 
     // Result is pushed back by overwritting the argument variable 
     static void QuaternionAdjoint(double *q);

@@ -48,7 +48,7 @@ namespace InertialOdometry
       q[i] = -q[i];
   }
   
-  Eigen::Quaterniond QuaternionLib::QuaternionProduct(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs) {
+  Eigen::Quaterniond QuaternionLib::QuaternionProduct_(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs) {
 	  // This function has not been tested extensively -- must ensure that the Eigen Column major scheme does not affect the creation of the Q matrix
 	  
   	Eigen::Quaterniond result;
