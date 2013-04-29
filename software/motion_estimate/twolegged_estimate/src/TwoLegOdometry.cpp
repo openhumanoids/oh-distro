@@ -116,9 +116,6 @@ void TwoLegOdometry::CalculateBodyStates(/*data*/) {
 	cout << "TwoLegOdometry::CalculateBodyStates() NOT IMPLEMENTED YET" << endl << endl;
 	
 	
-	
-	
-	
 	return;
 }
 
@@ -479,48 +476,17 @@ void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
 Eigen::Isometry3d TwoLegOdometry::add(const Eigen::Isometry3d& lhs, const Eigen::Isometry3d& rhs) {
 	Eigen::Isometry3d add;
 	
+	/*
+	 * What we did previously
+	 * 
 	add.translation() = lhs.translation() + InertialOdometry::QuaternionLib::Cyaw_rotate(lhs.linear() ,InertialOdometry::QuaternionLib::Cyaw_rotate(rhs.linear(),rhs.translation()));
-	
-	//TODO - Test and confirm the correct rotation sequence has been followed here
-	//add.rotate(lhs.rotation());
-	//add.rotate(rhs.rotation());
-	
-	//std::cout << "Going to rotation matrices for adding operation:\n" << lhs.linear() << std::endl << rhs.linear() << std::endl;
-	
 	add.linear() = lhs.linear() * rhs.linear();
+	*/
 	
-	//std::cout << "Product:\n" << add.linear() << std::endl;
+	// Using the Isometry operator directly
+	add = lhs*rhs;
 	
 	return add;
-}
-
-Eigen::Quaterniond TwoLegOdometry::mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs) {
-	Eigen::Quaterniond result;
-	
-	Eigen::Vector4d q;
-	Eigen::Vector4d p;
-	Eigen::Vector4d res;
-	//q*p - MARS Lab, Trawny Roumeliotis - Quaternion Algebra Tutorial Tech Report
-	q << rhs.x(), rhs.y(), rhs.z(), rhs.w();
-	
-	
-	Eigen::Matrix<double,4,4> Q;
-	
-	Q << 	q(3), q(2), -q(1), q(0),
-		   -q(2), q(3), q(0), q(1),
-		   q(1), -q(0), q(3), q(2),
-		   -q(0), -q(1), -q(2), q(3);
-	
-	p << lhs.x(), lhs.y(), lhs.z(), lhs.w();
-	
-	res = Q*p;
-	
-	result.w() = res(3);
-	result.x() = res(0);
-	result.y() = res(1);
-	result.z() = res(2);
-	
-	return result;
 }
 
 void TwoLegOdometry::ResetInitialConditions(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &init_states) {

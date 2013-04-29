@@ -11,6 +11,8 @@
 
 using namespace std;
 
+
+
 //TwoLegs::TwoLegOdometry* _leg_odo; // excessive, as this gets tested in _legs_motion_estimate
 LegOdometry_Handler* _legs_motion_estimate;
 
@@ -30,21 +32,26 @@ void signalHandler( int signum ){
 }
 
 int main(int argc, char ** argv) {
-  bool do_estimation = false;
-  bool plot_footsteps = false;
-  bool log_data_files = false;
-  bool lcm_add_ext = false;
+  command_switches switches;
+  
+  switches.do_estimation = false;
+  switches.draw_footsteps = false;
+  switches.log_data_files = false;
+  switches.lcm_add_ext = false;
+  switches.lcm_read_trues = false;
+  
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(do_estimation, "e", "do_estimation","Do motion estimation");
-  opt.add(plot_footsteps, "f", "plot_footsteps","Draw footstep poses in viewer");
-  opt.add(log_data_files, "l", "log_data_files","Logging some data to file");
-  opt.add(lcm_add_ext, "x", "lcm_add_ext", "Adding extension to the LCM messages");
+  opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
+  opt.add(switches.draw_footsteps, "f", "draw_footsteps","Draw footstep poses in viewer");
+  opt.add(switches.log_data_files, "l", "log_data_files","Logging some data to file");
+  opt.add(switches.lcm_add_ext, "x", "lcm_add_ext", "Adding extension to the LCM messages");
+  opt.add(switches.lcm_read_trues, "t", "lcm_read_trues", "Listening to true robot states, including POSE_HEAD");
   opt.parse();
-  std::cout << "Do motion estimation: " << do_estimation<< std::endl;
-  std::cout << "Draw footsteps: " << plot_footsteps << std::endl;
-  std::cout << "Logging of data to file: " << log_data_files << std::endl;
-  std::cout << "Adding extenstion to LCM messages: " << lcm_add_ext << std::endl;
-
+  std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
+  std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;
+  std::cout << "Logging of data to file: " << switches.log_data_files << std::endl;
+  std::cout << "Adding extenstion to LCM messages: " << switches.lcm_add_ext << std::endl;
+  std::cout << "Listening to truth LCM messages, including POSE_HEAD: " << switches.lcm_read_trues << std::endl;
 
   // register signal SIGINT and signal handler  
   signal(SIGINT, signalHandler);  
@@ -56,7 +63,7 @@ int main(int argc, char ** argv) {
     return 1;
 
   //_leg_odo = new TwoLegs::TwoLegOdometry(); // This is excessive, as the class is also invoked by LegOdometry_Handler() object.
-  _legs_motion_estimate = new LegOdometry_Handler(lcm, do_estimation, plot_footsteps, log_data_files, lcm_add_ext);
+  _legs_motion_estimate = new LegOdometry_Handler(lcm, &switches);
 
 
   // Do some stuff with the objects to test them. Preferably here you must call the internal testing functions of the different objects created..

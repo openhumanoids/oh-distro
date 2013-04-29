@@ -22,11 +22,16 @@
 using namespace TwoLegs;
 using namespace std;
 
-LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files, bool _lcm_add_ext):
-        _finish(false), lcm_(lcm_), _do_estimation(_do_estimation), _draw_footsteps(_draw_footsteps), _log_data_files(_log_data_files), _lcm_add_ext(_lcm_add_ext) {
+LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, command_switches* commands):
+        _finish(false), lcm_(lcm_) {
 	// Create the object we want to use to estimate the robot's pelvis position
 	// In this case its a two legged vehicle and we use TwoLegOdometry class for this task
-	_leg_odo = new TwoLegOdometry(_log_data_files);
+	
+	_switches = commands;
+	
+	std::cout << "Switches value for listen to LCM trues is: " << _switches->lcm_read_trues << std::endl;
+	
+	_leg_odo = new TwoLegOdometry(_switches->log_data_files);
 	
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
 	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
@@ -37,10 +42,10 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	local_to_head_acc_diff.setSize(3);
 	local_to_head_rate_diff.setSize(3);
 	
-	if (_lcm_add_ext) {
-	  _channel_extension = "_VO";
+	if (_switches->lcm_add_ext) {
+	  _channel_extension = "";
 	} else {
-		_channel_extension = "";
+		_channel_extension = "_VO";
 	}
 	
 	if(!lcm_->good())
@@ -54,6 +59,13 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	
 	lcm_->subscribe("TRUE_ROBOT_STATE",&LegOdometry_Handler::robot_state_handler,this);
 	lcm_->subscribe("TORSO_IMU",&LegOdometry_Handler::torso_imu_handler,this);
+	
+	/*
+	if (_switches->lcm_read_trues) {
+		// now we can listen to the true values of POSE_HEAD
+		lcm_->subscribe("POSE_HEAD_TRUE", &LegOdometry_Handler::pose_head_true_handler, this);
+	}
+	*/
 	
 	// Parse KDL tree
 	  if (!kdl_parser::treeFromString(  model_->getURDFString() ,tree)){
@@ -77,12 +89,12 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool
 	firstpass = true;
 	
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
-  if (_draw_footsteps) {
+  if (_switches->draw_footsteps) {
 	_viewer = new Viewer(lcm_viewer);
   }
 	//#endif
   
-    state_estimate_error_log.Open(_log_data_files,"estimated_state_errors.csv");
+    state_estimate_error_log.Open(_switches->log_data_files,"estimated_state_errors.csv");
 	
 	return;
 }
@@ -198,7 +210,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 
 	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
 	
-	if (_do_estimation){
+	if (_switches->do_estimation){
 		// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
 		if (firstpass)
 		{
@@ -230,7 +242,19 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// Think we should add the velocity estimation process here
 		_leg_odo->calculateUpdateVelocityStates(msg->utime);
 		
-		if (_draw_footsteps) {
+		
+#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
+	// here comes the drawing of poses
+	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
+	
+	drawLeftFootPose();
+	drawRightFootPose();
+	//drawSumPose();
+
+	
+#endif
+		
+		if (_switches->draw_footsteps) {
 			if (legchangeflag)
 			{
 				//std::cout << "LEGCHANGE\n";
@@ -238,9 +262,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				collectionindex++;
 				addIsometryPose(collectionindex,_leg_odo->getPrimaryInLocal());
 				collectionindex++;
+				_viewer->sendCollection(*_obj, true);
 			}
 		
-			_viewer->sendCollection(*_obj, true);
 		}
 	  
 		//clock_gettime(CLOCK_REALTIME, &threequat);
@@ -267,17 +291,9 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	elapsed_us = elapsed/1000.;
 	std::cout << "1.00, " << elapsed_us << std::endl;
 	*/
-	
-#ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
-	// here comes the drawing of poses
-	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
-	
-	drawLeftFootPose();
-	drawRightFootPose();
-	//drawSumPose();
 
-	_viewer->sendCollection(*_obj, true);
-#endif
+	
+	
 }
 
 void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg) {
@@ -411,7 +427,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff((double)msg->utime*(1E-6), InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
   
   // estimate the rotational velocity of the head
-    Eigen::Quaterniond l2head_rot(local_to_head.linear());
+    Eigen::Quaterniond l2head_rot(local_to_head.linear()); // this may need that transpose again -- to test TODO
     bot_core::pose_t l2head_msg;
     l2head_msg.utime = msg->utime;
     
@@ -436,16 +452,14 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   
   
   // Logging some some data for analysis in MATLAB
-  if (_log_data_files) {
+  if (_switches->log_data_files) {
     stringstream ss (stringstream::in | stringstream::out);
 	
-    ss << (msg->origin_position.translation.x - currentPelvis.translation().x()) << ", ";
-    ss << (msg->origin_position.translation.y - currentPelvis.translation().y()) << ", ";
-    ss << (msg->origin_position.translation.z - currentPelvis.translation().z()) << ", ";
-	
-    ss << (msg->origin_twist.linear_velocity.x - velocity_states(0)) << ", ";
-    ss << (msg->origin_twist.linear_velocity.y - velocity_states(1)) << ", ";
-    ss << (msg->origin_twist.linear_velocity.z - velocity_states(2)) << ", ";
+    ss << msg->origin_position.translation.x << ", " << msg->origin_position.translation.y << ", " << msg->origin_position.translation.z << ", ";
+    ss << currentPelvis.translation().x() << ", " << currentPelvis.translation().y() << ", " << currentPelvis.translation().z() << ", ";
+    
+    ss << msg->origin_twist.linear_velocity.x << ", " << msg->origin_twist.linear_velocity.y << ", " << msg->origin_twist.linear_velocity.z << ", ";
+    ss << velocity_states(0) << ", "  << velocity_states(1) << ", "  << velocity_states(2) << ", ";
     
     ss << E_true(0) - E_est(0) << ", ";
     ss << E_true(1) - E_est(1) << ", ";
@@ -455,9 +469,12 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     ss << msg->origin_twist.linear_velocity.y - local_rates(1) << ", ";
     ss << msg->origin_twist.linear_velocity.z - local_rates(2) << ", ";
     
-    ss << (msg->origin_twist.linear_velocity.x) << ", ";
-    ss << (msg->origin_twist.linear_velocity.y) << ", ";
-    ss << (msg->origin_twist.linear_velocity.z);
+    
+    // The true local to head state is read from an LCM message which is available during devepment
+    
+    // This is the estimated state and must be compared to the previous
+    ss << local_to_head.translation().x() << ", " << local_to_head.translation().y() << ", " << local_to_head.translation().z() << ", ";
+    
     
     ss <<std::endl;
     
@@ -484,6 +501,15 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	return;
 }
+
+/*
+void LegOdometry_Handler::pose_head_true_handler(	const lcm::ReceiveBuffer* rbuf, 
+													const std::string& channel, 
+													const bot_core_pose_t* msg) {
+
+	
+}
+*/
 
 void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
 	drc::foot_contact_estimate_t msg_contact_est;

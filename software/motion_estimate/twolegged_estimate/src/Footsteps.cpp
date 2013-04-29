@@ -14,18 +14,7 @@ void Footsteps::newFootstep(footstep newstep) {
 
 void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot) 
 {
-	//std::cout << "addFootstep function was called for Footsteps class" << std::endl;
-	
 	footstep new_footprint;
-	
-	/*
-	new_footprint.footprintlocation.position = RelativeFrameLocation.translation;
-	new_footprint.footprintlocation.orientation = RelativeFrameLocation.rotation;
-	new_footprint.foot = foot;
-	
-	active_step.footprintlocation.position = RelativeFrameLocation.translation;
-	active_step.footprintlocation.orientation = RelativeFrameLocation.rotation;
-	*/
 	
 	new_footprint.foot = foot;
 	new_footprint.footprintlocation = RelativeFrameLocation;

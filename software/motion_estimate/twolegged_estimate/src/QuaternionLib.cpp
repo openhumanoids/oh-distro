@@ -48,6 +48,36 @@ namespace InertialOdometry
       q[i] = -q[i];
   }
   
+  Eigen::Quaterniond QuaternionLib::QuaternionProduct(const Eigen::Quaterniond &lhs, const Eigen::Quaterniond &rhs) {
+	  // This function has not been tested extensively -- must ensure that the Eigen Column major scheme does not affect the creation of the Q matrix
+	  
+  	Eigen::Quaterniond result;
+  	
+  	Eigen::Vector4d q;
+  	Eigen::Vector4d p;
+  	Eigen::Vector4d res;
+  	//q*p - MARS Lab, Trawny Roumeliotis - Quaternion Algebra Tutorial Tech Report
+  	q << rhs.x(), rhs.y(), rhs.z(), rhs.w();
+  	
+  	
+  	Eigen::Matrix<double,4,4> Q;
+  	
+  	Q << 	q(3), q(2), -q(1), q(0),
+  		   -q(2), q(3), q(0), q(1),
+  		   q(1), -q(0), q(3), q(2),
+  		   -q(0), -q(1), -q(2), q(3);
+  	
+  	p << lhs.x(), lhs.y(), lhs.z(), lhs.w();
+  	
+  	res = Q*p;
+  	
+  	result.w() = res(3);
+  	result.x() = res(0);
+  	result.y() = res(1);
+  	result.z() = res(2);
+  	
+  	return result;
+  }
 
   // q is the rotation quaternion
   // v is the vector to be rotated, assumed to be size 3

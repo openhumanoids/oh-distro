@@ -47,6 +47,7 @@
 
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
+//#include <lcmtypes/bot_core_pose_t.h>
 
 //#include "urdf/model.h"
 
@@ -56,6 +57,14 @@
 //#define DRAW_DEBUG_LEGTRANSFORM_POSES
 
 //#define PUBLISH_AT_TRUE_POSITION
+
+struct command_switches {
+  bool do_estimation;
+  bool draw_footsteps;
+  bool log_data_files;
+  bool lcm_add_ext;
+  bool lcm_read_trues;
+};
 
 class LegOdometry_Handler {
 private:
@@ -68,10 +77,8 @@ private:
 	int ratecounter;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
-	bool _do_estimation;
-	bool _draw_footsteps;
-	bool _log_data_files;
-	bool _lcm_add_ext;
+
+	command_switches* _switches;
 	
 	// LCM stuff
 	const char* robot_pose_channel;
@@ -135,7 +142,7 @@ private:
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	
-	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, bool _do_estimation, bool _draw_footsteps, bool _log_data_files, bool _add_lcm_ext);
+	LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, command_switches* commands);
 	~LegOdometry_Handler();
 	
 	void finish() { _finish = true; }
