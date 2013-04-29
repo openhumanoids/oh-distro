@@ -309,6 +309,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	Eigen::Vector3d local_rates     = _leg_odo->getLocalFrameRates();
 	
     bot_core::pose_t pose;
+    pose.utime  =msg->utime;
     pose.pos[0] =currentPelvis.translation().x();
     pose.pos[1] =currentPelvis.translation().y();
     pose.pos[2] =currentPelvis.translation().z();
