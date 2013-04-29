@@ -1,0 +1,9 @@
+package drc;
+
+struct driving_controller_values_t
+{
+       int64_t utime;
+       double throttle_value;
+       double brake_value;
+       double hand_steer;
+}
