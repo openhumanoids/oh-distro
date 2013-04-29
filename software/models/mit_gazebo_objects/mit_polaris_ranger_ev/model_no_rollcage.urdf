@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+       xmlns:mat="http://www.mit.edu"
+       name="polaris_ranger_ev">
+    <link name="chassis">
+      
+      <collision name="chassis_bottom">
+         <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
+         <geometry>
+            <box size="1.5 1.34 0.06"/>
+         </geometry>
+      </collision>
+      <visual name="chassis_bottom">
+         <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
+         <geometry>
+            <box size="1.5 1.34 0.06"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_bottom">
+         <origin xyz="-0.9 0 0.9" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 1.2 0.01"/>
+         </geometry>
+      </collision>
+      <visual name="cargo_bottom">
+         <origin xyz="-0.9 0 0.9" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 1.2 0.01"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_front">
+         <origin xyz="-0.45 0 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.05 1.2 0.25"/>
+         </geometry>
+      </collision>
+      <visual name="cargo_front">
+         <origin xyz="-0.45 0 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.05 1.2 0.25"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_back">
+         <origin xyz="-1.35 0 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.05 1.2 0.25"/>
+         </geometry>
+      </collision>
+      <visual name="cargo_back">
+         <origin xyz="-1.35 0 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.05 1.2 0.25"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_left">
+         <origin xyz="-0.9 0.6 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 0.05 0.25"/>
+         </geometry>
+      </collision>
+      <visual name="cargo_left">
+         <origin xyz="-0.9 0.6 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 0.05 0.25"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_right">
+         <origin xyz="-0.9 -0.6 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 0.05 0.25"/>
+         </geometry>
+      </collision>
+      <visual name="cargo_right">
+         <origin xyz="-0.9 -0.6 1.025" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.9 0.05 0.25"/>
+         </geometry>
+      </visual>
+  
+      <collision name="seat">
+         <origin xyz="-0.1 0 0.56" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.6 1.0 0.50"/>
+         </geometry>
+      </collision>
+      <visual name="seat">
+         <origin xyz="-0.1 0 0.56" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.6 1.0 0.50"/>
+         </geometry>
+      </visual>
+  
+      <collision name="mud_seat">
+         <origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.63 1.0 0.1"/>
+         </geometry>
+      </collision>
+      <visual name="mud_seat">
+         <origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.63 1.0 0.1"/>
+         </geometry>
+      </visual>
+  
+      <collision name="seat_back">
+         <origin xyz="-0.3 0 1.125" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <box size="0.06 1.0 0.4"/>
+         </geometry>
+      </collision>
+      <visual name="seat_back">
+         <origin xyz="-0.3 0 1.125" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <box size="0.06 1.0 0.4"/>
+         </geometry>
+      </visual>
+  
+      <collision name="engine">
+         <origin xyz="1.05 0 0.7" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.58 1.0 0.8"/>
+         </geometry>
+      </collision>
+      <visual name="engine">
+         <origin xyz="1.05 0 0.7" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.58 1.0 0.8"/>
+         </geometry>
+      </visual>
+  
+      <collision name="handle_left_middle">
+         <origin xyz="-0.35 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <cylinder radius="0.02" length="0.17"/>
+         </geometry>
+      </collision>
+      <visual name="handle_left_middle">
+         <origin xyz="-0.35 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <cylinder radius="0.02" length="0.17"/>
+         </geometry>
+      </visual>
+  
+      <collision name="handle_right_middle">
+         <origin xyz="-0.3 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <cylinder radius="0.02" length="0.17"/>
+         </geometry>
+      </collision>
+      <visual name="handle_right_middle">
+         <origin xyz="-0.3 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <geometry>
+            <cylinder radius="0.02" length="0.17"/>
+         </geometry>
+      </visual>
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+      
+  
+  
+   </link>
+    <!--plugin name="seat_mud" filename="libMudPlugin.so">
+      <contact_sensor_name>chassis/seat_contact</contact_sensor_name>
+      <stiffness>0.0</stiffness>
+      <damping>100.0</damping>
+      <link_name>atlas::pelvis</link_name>
+    </plugin-->
+  </robot>

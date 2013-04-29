@@ -4,15 +4,16 @@
       <collision name="chassis_bottom">
          <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
          <geometry>
-            <box size="1.0 1.34 0.06"/>
+            <box size="1.5 1.34 0.06"/>
          </geometry>
       </collision>
   <visual name="chassis_bottom">
          <origin xyz="0.1 0 0.37" rpy="0 -0 0"/>
          <geometry>
-            <box size="1.0 1.34 0.06"/>
+            <box size="1.5 1.34 0.06"/>
          </geometry>
       </visual>
+  
       <collision name="cargo_bottom">
          <origin xyz="-0.9 0 0.9" rpy="0 -0 0"/>
          <geometry>
@@ -25,6 +26,7 @@
             <box size="0.9 1.2 0.01"/>
          </geometry>
       </visual>
+  
       <collision name="cargo_front">
          <origin xyz="-0.45 0 1.025" rpy="0 -0 0"/>
          <geometry>
@@ -37,6 +39,7 @@
             <box size="0.05 1.2 0.25"/>
          </geometry>
       </visual>
+  
       <collision name="cargo_back">
          <origin xyz="-1.35 0 1.025" rpy="0 -0 0"/>
          <geometry>
@@ -49,6 +52,7 @@
             <box size="0.05 1.2 0.25"/>
          </geometry>
       </visual>
+  
       <collision name="cargo_left">
          <origin xyz="-0.9 0.6 1.025" rpy="0 -0 0"/>
          <geometry>
@@ -61,6 +65,7 @@
             <box size="0.9 0.05 0.25"/>
          </geometry>
       </visual>
+  
       <collision name="cargo_right">
          <origin xyz="-0.9 -0.6 1.025" rpy="0 -0 0"/>
          <geometry>
@@ -73,18 +78,33 @@
             <box size="0.9 0.05 0.25"/>
          </geometry>
       </visual>
+  
       <collision name="seat">
-         <origin xyz="-0.1 0 0.585" rpy="0 -0 0"/>
+         <origin xyz="-0.1 0 0.56" rpy="0 -0 0"/>
          <geometry>
-            <box size="0.6 1.0 0.55"/>
+            <box size="0.6 1.0 0.50"/>
          </geometry>
       </collision>
   <visual name="seat">
-         <origin xyz="-0.1 0 0.585" rpy="0 -0 0"/>
+         <origin xyz="-0.1 0 0.56" rpy="0 -0 0"/>
          <geometry>
-            <box size="0.6 1.0 0.55"/>
+            <box size="0.6 1.0 0.50"/>
          </geometry>
       </visual>
+  
+      <collision name="mud_seat">
+         <origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.63 1.0 0.1"/>
+         </geometry>
+      </collision>
+  <visual name="mud_seat">
+         <origin xyz="-0.1 0 0.81" rpy="0 -0 0"/>
+         <geometry>
+            <box size="0.63 1.0 0.1"/>
+         </geometry>
+      </visual>
+  
       <collision name="seat_back">
          <origin xyz="-0.3 0 1.125" rpy="0 -0.19999999999999998 0"/>
          <geometry>
@@ -97,90 +117,46 @@
             <box size="0.06 1.0 0.4"/>
          </geometry>
       </visual>
+  
       <collision name="engine">
-         <origin xyz="0.95 0 0.7" rpy="0 -0 0"/>
+         <origin xyz="1.05 0 0.7" rpy="0 -0 0"/>
          <geometry>
             <box size="0.58 1.0 0.8"/>
          </geometry>
       </collision>
   <visual name="engine">
-         <origin xyz="0.95 0 0.7" rpy="0 -0 0"/>
+         <origin xyz="1.05 0 0.7" rpy="0 -0 0"/>
          <geometry>
             <box size="0.58 1.0 0.8"/>
          </geometry>
       </visual>
-      <collision name="handle_left_top">
-         <origin xyz="-0.23 0.61 1.175" rpy="0 -1.32 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </collision>
-  <visual name="handle_left_top">
-         <origin xyz="-0.23 0.61 1.175" rpy="0 -1.32 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </visual>
-      <collision name="handle_left_bottom">
-         <origin xyz="-0.2 0.61 0.98" rpy="0 -1.4 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </collision>
-  <visual name="handle_left_bottom">
-         <origin xyz="-0.2 0.61 0.98" rpy="0 -1.4 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </visual>
+  
       <collision name="handle_left_middle">
-         <origin xyz="-0.1 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <origin xyz="-0.35 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
          <geometry>
-            <cylinder radius="0.02" length="0.20"/>
+            <cylinder radius="0.02" length="0.17"/>
          </geometry>
       </collision>
   <visual name="handle_left_middle">
-         <origin xyz="-0.1 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <origin xyz="-0.35 0.61 1.055" rpy="0 -0.19999999999999998 0"/>
          <geometry>
-            <cylinder radius="0.02" length="0.20"/>
+            <cylinder radius="0.02" length="0.17"/>
          </geometry>
       </visual>
-      <collision name="handle_right_top">
-         <origin xyz="-0.23 -0.61 1.175" rpy="0 -1.32 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </collision>
-  <visual name="handle_right_top">
-         <origin xyz="-0.23 -0.61 1.175" rpy="0 -1.32 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </visual>
-      <collision name="handle_right_bottom">
-         <origin xyz="-0.2 -0.61 0.98" rpy="0 -1.4 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </collision>
-  <visual name="handle_right_bottom">
-         <origin xyz="-0.2 -0.61 0.98" rpy="0 -1.4 0"/>
-         <geometry>
-            <cylinder radius="0.015" length="0.25"/>
-         </geometry>
-      </visual>
+  
       <collision name="handle_right_middle">
-         <origin xyz="-0.1 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <origin xyz="-0.3 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
          <geometry>
-            <cylinder radius="0.02" length="0.20"/>
+            <cylinder radius="0.02" length="0.17"/>
          </geometry>
       </collision>
   <visual name="handle_right_middle">
-         <origin xyz="-0.1 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
+         <origin xyz="-0.3 -0.61 1.055" rpy="0 -0.19999999999999998 0"/>
          <geometry>
-            <cylinder radius="0.02" length="0.20"/>
+            <cylinder radius="0.02" length="0.17"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_top_left">
          <origin xyz="0 0.61 1.92" rpy="3.141592653589793 1.5315926535897932 3.141592653589793"/>
          <geometry>
@@ -193,6 +169,7 @@
             <cylinder radius="0.03" length="0.68"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_top_right">
          <origin xyz="0 -0.61 1.92" rpy="3.141592653589793 1.5315926535897932 3.141592653589793"/>
          <geometry>
@@ -205,6 +182,7 @@
             <cylinder radius="0.03" length="0.68"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_top_front">
          <origin xyz="0.325 0 1.89" rpy="1.570796 -0 0"/>
          <geometry>
@@ -217,6 +195,7 @@
             <cylinder radius="0.03" length="1.22"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_top_back">
          <origin xyz="-0.33 0 1.92" rpy="1.570796 -0 0"/>
          <geometry>
@@ -229,6 +208,7 @@
             <cylinder radius="0.03" length="1.22"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_front_left">
          <origin xyz="0.54 0.61 1.45" rpy="0 -0.44000000000000006 0"/>
          <geometry>
@@ -241,6 +221,7 @@
             <cylinder radius="0.03" length="1.04"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_front_right">
          <origin xyz="0.54 -0.61 1.45" rpy="0 -0.44000000000000006 0"/>
          <geometry>
@@ -253,6 +234,33 @@
             <cylinder radius="0.03" length="1.04"/>
          </geometry>
       </visual>
+  
+      <collision name="fender_front_right">
+         <origin xyz="0.64 -0.61 0.7" rpy="0 0.35 0"/>
+         <geometry>
+            <cylinder radius="0.03" length="0.72"/>
+         </geometry>
+      </collision>
+  <visual name="fender_front_right">
+         <origin xyz="0.64 -0.61 0.7" rpy="0 0.35 0"/>
+         <geometry>
+            <cylinder radius="0.03" length="0.72"/>
+         </geometry>
+      </visual>
+  
+      <collision name="fender_front_left">
+         <origin xyz="0.64 0.61 0.7" rpy="0 0.35 0"/>
+         <geometry>
+            <cylinder radius="0.03" length="0.72"/>
+         </geometry>
+      </collision>
+  <visual name="fender_front_left">
+         <origin xyz="0.64 0.61 0.7" rpy="0 0.35 0"/>
+         <geometry>
+            <cylinder radius="0.03" length="0.72"/>
+         </geometry>
+      </visual>
+  
       <collision name="rollcage_back_left">
          <origin xyz="-0.37 0.61 1.25" rpy="0 -0.14 0"/>
          <geometry>
@@ -265,6 +273,7 @@
             <cylinder radius="0.03" length="0.90"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_right">
          <origin xyz="-0.37 -0.61 1.25" rpy="0 -0.14 0"/>
          <geometry>
@@ -277,6 +286,7 @@
             <cylinder radius="0.03" length="0.90"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_midleft">
          <origin xyz="-0.37 0.155 1.25" rpy="0 -0.14 0"/>
          <geometry>
@@ -289,6 +299,7 @@
             <cylinder radius="0.023" length="0.90"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_midright">
          <origin xyz="-0.37 -0.155 1.25" rpy="0 -0.14 0"/>
          <geometry>
@@ -301,6 +312,7 @@
             <cylinder radius="0.023" length="0.90"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_upper_left">
          <origin xyz="-0.38 0.61 1.82" rpy="0 0.4 0"/>
          <geometry>
@@ -313,6 +325,7 @@
             <cylinder radius="0.03" length="0.29"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_upper_right">
          <origin xyz="-0.38 -0.61 1.82" rpy="0 0.4 0"/>
          <geometry>
@@ -325,6 +338,7 @@
             <cylinder radius="0.03" length="0.29"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_upper_midleft">
          <origin xyz="-0.38 0.155 1.82" rpy="0 0.4 0"/>
          <geometry>
@@ -337,6 +351,7 @@
             <cylinder radius="0.023" length="0.29"/>
          </geometry>
       </visual>
+  
       <collision name="rollcage_back_upper_midright">
          <origin xyz="-0.38 -0.155 1.82" rpy="0 0.4 0"/>
          <geometry>
@@ -349,110 +364,12 @@
             <cylinder radius="0.023" length="0.29"/>
          </geometry>
       </visual>
+  
    </link>
-    <!-- gas/brake pedals, steering wheel and hand brake -->
-    <link name="gas_pedal">
-      
-      <collision name="gas_pedal_collision">
-         <origin xyz="-0.0385 0 -0.086" rpy="3.141592653589793 1.1255926535897933 3.141592653589793"/>
-         <geometry>
-            <box size="0.1069000 0.0770000 0.010000"/>
-         </geometry>
-      </collision>
-  <visual name="gas_pedal_collision">
-         <origin xyz="-0.0385 0 -0.086" rpy="3.141592653589793 1.1255926535897933 3.141592653589793"/>
-         <geometry>
-            <box size="0.1069000 0.0770000 0.010000"/>
-         </geometry>
-      </visual>
-   </link>
-   <joint type="fixed" name="gas_joint">
-      <origin xyz="0.53 0.14 0.56" rpy="0 -0 0"/>
-      <axis xyz="1 0 -1"/>
-      <limit effort="1" velocity="1" lower="0.00" upper="0.15"/>
-      <parent link="chassis" type="link"/>
-      <child link="gas_pedal" type="link"/>
-   </joint>
-
-    <link name="brake_pedal">
-      
-      <collision name="brake_pedal_collision">
-         <origin xyz="-0.04 0 -0.086" rpy="3.141592653589793 1.142592653589793 3.141592653589793"/>
-         <geometry>
-            <box size="0.063 0.08 0.01"/>
-         </geometry>
-      </collision>
-  <visual name="brake_pedal_collision">
-         <origin xyz="-0.04 0 -0.086" rpy="3.141592653589793 1.142592653589793 3.141592653589793"/>
-         <geometry>
-            <box size="0.063 0.08 0.01"/>
-         </geometry>
-      </visual>
-   </link>
-   <joint type="fixed" name="brake_joint">
-      <origin xyz="0.54 0.27 0.58" rpy="0 -0 0"/>
-      <axis xyz="1 0 -0.6"/>
-      <limit effort="1" velocity="1" lower="0.00" upper="0.15"/>
-      <parent link="chassis" type="link"/>
-      <child link="brake_pedal" type="link"/>
-   </joint>
-
-    <link name="steering_wheel">
-      
-   </link>
-   <joint type="fixed" name="steering_joint">
-      <origin xyz="0.34 0.3 1.29" rpy="0 -0.87 0"/>
-      <axis xyz="-4.395184338701341E-7 0 1.3083368536045321"/>
-      <limit effort="1" velocity="1" lower="-3.14" upper="3.14"/>
-      <parent link="chassis" type="link"/>
-      <child link="steering_wheel" type="link"/>
-   </joint>
-
-    <link name="hand_brake">
-      
-      <collision name="hand_brake_collision">
-         <origin xyz="0 0 -0.1" rpy="0 -0 0"/>
-         <geometry>
-            <cylinder radius="0.01" length="0.2"/>
-         </geometry>
-      </collision>
-  <visual name="hand_brake_collision">
-         <origin xyz="0 0 -0.1" rpy="0 -0 0"/>
-         <geometry>
-            <cylinder radius="0.01" length="0.2"/>
-         </geometry>
-      </visual>
-      <visual name="hand_brake_visual">
-         <origin xyz="0 0 -0.1" rpy="0 -0 0"/>
-         <geometry>
-            <cylinder radius="0.01" length="0.2"/>
-         </geometry>
-      </visual>
-   </link>
-   <joint type="fixed" name="hand_brake_joint">
-      <origin xyz="0.5 0 1.05" rpy="3.141592653589793 -0.05840734641020694 3.141592653589793"/>
-      <axis xyz="0 -1 -0"/>
-      <limit effort="1" velocity="1" lower="0" upper="0.6"/>
-      <parent link="chassis" type="link"/>
-      <child link="hand_brake" type="link"/>
-   </joint>
-
-    
-    
-
-    
-
-    
-
-
-    
-
-
-    
-    
-    
-    
-
-    
-
+    <!--plugin name="seat_mud" filename="libMudPlugin.so">
+      <contact_sensor_name>chassis/seat_contact</contact_sensor_name>
+      <stiffness>0.0</stiffness>
+      <damping>100.0</damping>
+      <link_name>atlas::pelvis</link_name>
+    </plugin-->
   </robot>
