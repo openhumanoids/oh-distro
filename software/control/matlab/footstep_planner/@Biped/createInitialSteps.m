@@ -35,15 +35,19 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   while (1)
     is_right_foot = ~X(end).is_right_foot;
     lambda_n = 1;
+    max_forward_step = biped.max_forward_step;
     while (1)
       x = traj.eval(lambda_n);
       if options.yaw_fixed
         x(6) = x0(6);
       end
       [pos_n, got_data, terrain_ok] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
-      c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot);
-      if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) || (lambda_n - lambda < 1e-3)
+      c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, max_forward_step);
+      if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) 
         break
+      elseif (lambda_n - lambda < 1e-3)
+        max_forward_step = max_forward_step + 0.05;
+        lambda_n = 1;
       else
         lambda_n = lambda + (lambda_n - lambda) * .9;
       end

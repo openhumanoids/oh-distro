@@ -1,4 +1,8 @@
-function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
+function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot, max_forward_step)
+
+  if nargin < 5
+    max_forward_step = biped.max_forward_step;
+  end
 
   sizecheck(p0(1,:), size(p0_is_right_foot));
 
@@ -6,7 +10,7 @@ function c = checkStepFeasibility(biped, p0, pf, p0_is_right_foot)
     p0 = [p0(1, :); p0(2, :); zeros(3, size(p0, 2)); p0(3, :)];
   end
 
-  x_max = biped.max_forward_step;
+  x_max = max_forward_step;
   x_min = -biped.max_backward_step;
 
   c = zeros(3, size(p0, 2));
