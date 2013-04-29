@@ -125,12 +125,12 @@ classdef QPController < MIMODrakeSystem
     end
     active_contacts = zeros(length(phi),1);
 
-    %contact_data = obj.contact_est_monitor.getNextMessage(1);
-    %if ~isempty(contact_data)
-    %  msg = drc.foot_contact_estimate_t(contact_data);
-      obj.lfoot_contact_state = 1;%msg.left_contact;
-      obj.rfoot_contact_state = 1;%msg.right_contact;
-    %end
+    contact_data = obj.contact_est_monitor.getNextMessage(1);
+    if ~isempty(contact_data)
+      msg = drc.foot_contact_estimate_t(contact_data);
+      obj.lfoot_contact_state = msg.left_contact;
+      obj.rfoot_contact_state = msg.right_contact;
+    end
         
     % if any foot point is in contact, all contact points are active
     if any(active_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
@@ -178,12 +178,16 @@ classdef QPController < MIMODrakeSystem
       B_ls = ctrl_data.B; % always TI 
       Q = ctrl_data.Q;  
       if typecheck(ctrl_data.C,'double')
-        % output system is TI
         C_ls = ctrl_data.C; 
-        D_ls = ctrl_data.D;  
       else
         C_ls = ctrl_data.C.eval(t); 
-        D_ls = ctrl_data.D.eval(t);  
+      end
+      if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
+        D_ls = ctrl_data.D;  
+      else
+        % assumed  ZMP system
+        hddot = 0; % could use estimated comddot here
+        D_ls = -xcom(3)/(hddot+9.81)*eye(2);  
       end
       if typecheck(ctrl_data.S,'double')
         S = ctrl_data.S;
@@ -262,7 +266,7 @@ classdef QPController < MIMODrakeSystem
       Hqp = Iqdd'*J'*D_ls'*Q*D_ls*J*Iqdd;
       Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
-      fqp = x_bar'*C_ls'*Q*C_ls*J*Iqdd;
+      fqp = x_bar'*C_ls'*Q*D_ls*J*Iqdd;
       fqp = fqp + qd'*Jdot'*D_ls'*Q*D_ls*J*Iqdd;
       fqp = fqp + x_bar'*S*B_ls*J*Iqdd;
       fqp = fqp + 0.5*s1'*B_ls*J*Iqdd;

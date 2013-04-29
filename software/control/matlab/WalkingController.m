@@ -12,6 +12,13 @@ classdef WalkingController < DRCController
       options.slack_limit = 30.0;
       options.w = 0.1;
       options.R = 1e-12*eye(getNumInputs(r));
+
+      act_idx = getActuatedJoints(r);
+      joint_names = getJointNames(r);
+      joint_names = joint_names(2:end); % get rid of null string at beginning..
+      ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,strfind(joint_names,'uay'));
+      ankle_idx = find(ankle_idx(act_idx));
+
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
@@ -36,19 +43,6 @@ classdef WalkingController < DRCController
       msg_data = getfield(data,'COMMITTED_WALKING_PLAN');
       % do we have to save to file to convert a byte stream to a
       % matlab binary?
-      fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.htraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load('tmp_w.mat');
-      htraj = matdata.htraj;
-      
-      fid = fopen('tmp_w.mat','w');
-      fwrite(fid,typecast(msg_data.hddtraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load('tmp_w.mat');
-      hddtraj = matdata.hddtraj;
-      obj.controller_data.setField('D',-htraj/(hddtraj+9.81)*eye(2));
- 
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.S,'uint8'),'uint8');
       fclose(fid);
