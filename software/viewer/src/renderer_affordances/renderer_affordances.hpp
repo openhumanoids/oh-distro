@@ -53,6 +53,7 @@
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/file_access_utils.hpp>
+#include "BatchFKQueryHandler.hpp"
 
 #define RENDERER_NAME "Affordances & StickyHands/Feet"
 #define PARAM_MANAGE_INSTANCES "Manage Instances"
@@ -141,6 +142,18 @@ struct OtdfInstanceStruc {
 };   
 
 struct StickyHandStruc {
+
+    StickyHandStruc()
+    {
+     grasp_status = 0;
+     motion_trail_log_enabled = true;
+    };
+    
+     ~StickyHandStruc()
+    {
+
+    };
+    
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_hand;
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     string object_name;
@@ -151,10 +164,22 @@ struct StickyHandStruc {
     std::vector<double> joint_position;
     int uid;
     int opt_status;//RUNNING=0, SUCCESS=1, FAILURE=2;
+    int grasp_status;//CANDIDATE=0,COMMITTED=1;
+    bool motion_trail_log_enabled;
 };   
 
 
 struct StickyFootStruc {
+
+    StickyFootStruc()
+    {
+     motion_trail_log_enabled = true;
+    };
+    
+     ~StickyFootStruc()
+    {
+
+    };
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_foot;
     boost::shared_ptr<collision::Collision_Detector> _collision_detector;
     string object_name;
@@ -164,6 +189,7 @@ struct StickyFootStruc {
     std::vector<std::string> joint_name;
     std::vector<double> joint_position;
     int uid;
+    bool motion_trail_log_enabled;
    // int opt_status;
 }; 
 
@@ -197,7 +223,7 @@ struct RendererAffordances {
     dragging=false;
     show_popup_onrelease=false;
     visualize_bbox=false;
-
+    motion_trail_log_enabled=false;
     
     ray_hit_t = 0;
     otdf_id = 0;
@@ -237,6 +263,7 @@ struct RendererAffordances {
   boost::shared_ptr<GraspOptStatusListener> graspOptStatusListener;
   boost::shared_ptr<CandidateFootStepSeedManager> candidateFootStepSeedManager;
   boost::shared_ptr<ReachabilityVerifier> reachabilityVerifier;
+  boost::shared_ptr<BatchFKQueryHandler>  dofRangeFkQueryHandler;
   
   //Member Variables 
   // -----------------
@@ -247,6 +274,8 @@ struct RendererAffordances {
   // NOTE: an otdf instance can have multiple sticky_hands/feet associated with it.
   
   OtdfInstanceStruc otdf_instance_hold;// keeps a local copy of the selected object, while making changes to it and then publishes it as an affordance.
+  KDL::Frame otdf_T_world_body_hold; //store position in the world
+  std::map<std::string, double> otdf_current_jointpos_hold;
   
   int free_running_sticky_hand_cnt; // never decremented, used to set uid of sticky hands which is unique in global map scope 
   int free_running_sticky_foot_cnt;
@@ -279,6 +308,7 @@ struct RendererAffordances {
  std::vector<std::string> urdf_filenames;
  std::string otdf_dir_name;
  std::vector<std::string> otdf_filenames;
+ std::vector<std::string> popup_widget_name_list;
 
   
   std::map<std::string, int > instance_cnt; // templateName, value. keeps track of how many times each template is instantiated. (only used for creating a local aff store)
@@ -307,6 +337,7 @@ struct RendererAffordances {
   bool dragging;
   bool show_popup_onrelease;
   bool visualize_bbox;
+  bool motion_trail_log_enabled;
 };
 
 
@@ -932,8 +963,8 @@ struct RendererAffordances {
         KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
         
         Eigen::Vector3f joint_axis;
-        joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
-
+        joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // in world frame
+        joint_axis.normalize();
         Eigen::Vector3f u_body_to_joint;
         u_body_to_joint[0] = T_world_object_future.p[0]-jointInfo.future_frame.p[0];
         u_body_to_joint[1] = T_world_object_future.p[1]-jointInfo.future_frame.p[1];
@@ -942,45 +973,62 @@ struct RendererAffordances {
         double normal = acos(u_body_to_joint.dot(joint_axis));
         double flipped = acos(u_body_to_joint.dot(-joint_axis));
         
+        KDL::Frame T_World_JointAxis,T_AxisMarker_World;// Axis
+        T_World_JointAxis.p = jointInfo.frame.p;
+
         double theta;
         Eigen::Vector3f axis;      
         Eigen::Vector3f uz; 
         uz << 0 , 0 , 1; 
         axis = uz.cross(joint_axis);
         theta = acos(uz.dot(joint_axis));
- 
-        KDL::Frame JointAxisFrame;
-        JointAxisFrame.p = jointInfo.future_frame.p;//?
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
-        JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);
-        KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+        T_World_JointAxis.M = KDL::Rotation::Rot(axis_temp,theta); //T_axis_world
+        KDL::Frame T_JointAxis_Offset = KDL::Frame::Identity();
         
         double arrow_length =0.2;
         if(flipped>normal+1e-1) {
-          JointAxisOffset.p[2] =-2*arrow_length/3;          
-          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          T_JointAxis_Offset.p[2] =-2*arrow_length/3;
          }
         else{
-          JointAxisOffset.p[2] = 2*arrow_length/3;          
-          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          T_JointAxis_Offset.p[2] = 2*arrow_length/3;
         }
-     
+        T_World_JointAxis = T_World_JointAxis*T_JointAxis_Offset; // T_axismarker_world = T_axismarker_axis*T_axis_world
+        Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
+        if(diff.norm() > 0.05){
+          self->prev_ray_hit_drag = self->ray_hit_drag; 
+        }
         Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
         //convert to joint dof marker frame .
-        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,JointAxisFrame.Inverse(),hit_markerframe); 
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,JointAxisFrame.Inverse(),hitdrag_markerframe); 
-     
-        double currentAngle, angleTo, dtheta;         
-        currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
-        angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
-        dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-
-        std::map<std::string, double> jointpos_in;
-        jointpos_in = it->second._gl_object->_future_jointpos;
-        jointpos_in.find(joint_name)->second = normalize_angle_positive(jointpos_in.find(joint_name)->second +dtheta); // what about joint limits?
-        
-        it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_World_JointAxis.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_World_JointAxis.Inverse(),hitdrag_markerframe); 
+          
+        int type = jointInfo.type;   
+        if((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))
+        {          
+          double currentAngle, angleTo, dtheta;         
+          currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
+          angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
+          /*cout << "currentAngle :"<< currentAngle*(180/M_PI) <<endl;
+          cout << "angleTo :"<< angleTo*(180/M_PI) <<endl;*/
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+          std::map<std::string, double> jointpos_in;
+          jointpos_in = it->second._gl_object->_future_jointpos;
+          jointpos_in.find(joint_name)->second = (jointpos_in.find(joint_name)->second +dtheta); 
+          it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
+         }// end revolute joints
+         else if(type==otdf::Joint::PRISMATIC)
+         {
+          double s=1;
+          if(diff.dot(joint_axis)<0)
+            s = -1;
+          double distance = s*diff.norm();
+           std::map<std::string, double> jointpos_in;
+           jointpos_in = it->second._gl_object->_future_jointpos;
+           jointpos_in.find(joint_name)->second -= distance;
+           it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
+         }
       }
       
       self->prev_ray_hit_drag = self->ray_hit_drag; 
@@ -1080,7 +1128,7 @@ struct RendererAffordances {
         
         Eigen::Vector3f joint_axis;
         joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
-
+        joint_axis.normalize();
         Eigen::Vector3f u_body_to_joint;
         u_body_to_joint[0] = T_world_object.p[0]-jointInfo.frame.p[0];
         u_body_to_joint[1] = T_world_object.p[1]-jointInfo.frame.p[1];
@@ -1096,39 +1144,57 @@ struct RendererAffordances {
         axis = uz.cross(joint_axis);
         theta = acos(uz.dot(joint_axis));
  
-        KDL::Frame JointAxisFrame;
-        JointAxisFrame.p = jointInfo.frame.p;//?
+        KDL::Frame T_World_JointAxis;
+        T_World_JointAxis.p = jointInfo.frame.p;//?
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
-        JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);
-        KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+        T_World_JointAxis.M = KDL::Rotation::Rot(axis_temp,theta);
+        KDL::Frame T_JointAxis_Offset = KDL::Frame::Identity();
         
         double arrow_length =0.2;
         if(flipped>normal+1e-1) {
-          JointAxisOffset.p[2] =-2*arrow_length/3;          
-          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          T_JointAxis_Offset.p[2] =-2*arrow_length/3; 
          }
         else{
-          JointAxisOffset.p[2] = 2*arrow_length/3;          
-          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          T_JointAxis_Offset.p[2] = 2*arrow_length/3;     
         }
-     
+        T_World_JointAxis = T_World_JointAxis*T_JointAxis_Offset;
         Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
         //convert to joint dof marker frame .
-        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,JointAxisFrame.Inverse(),hit_markerframe); 
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,JointAxisFrame.Inverse(),hitdrag_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_World_JointAxis.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_World_JointAxis.Inverse(),hitdrag_markerframe); 
      
-        double currentAngle, angleTo, dtheta;         
-        currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
-        angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
-        dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-  
-        double current_pos, velocity;
-        self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
-        self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos+dtheta,velocity); 
-        self->otdf_instance_hold._otdf_instance->update(); 
-        self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
-   
+        Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
+        if(diff.norm() > 0.05){
+          self->prev_ray_hit_drag = self->ray_hit_drag; 
+        }
+        
+        int type = jointInfo.type;   
+        if((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))
+        {       
+          double currentAngle, angleTo, dtheta;         
+          currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
+          angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
+          dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
+    
+          double current_pos, velocity;
+          self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
+          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos+dtheta,velocity); 
+          self->otdf_instance_hold._otdf_instance->update(); 
+          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+        }// end revolute joints
+        else if(type==otdf::Joint::PRISMATIC)
+        {
+          double s=1;
+          if(diff.dot(joint_axis)<0)
+            s = -1;
+          double distance = s*diff.norm();
+          double current_pos, velocity;
+          self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
+          self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos-distance,velocity); 
+          self->otdf_instance_hold._otdf_instance->update(); 
+          self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
+        }
       }
           
       self->prev_ray_hit_drag = self->ray_hit_drag; 
@@ -1253,9 +1319,9 @@ struct RendererAffordances {
   /*if(!(it->second._gl_object->is_jointdof_adjustment_enabled()))
   {*/
        //it->second._gl_object->_collision_detector->num_collisions();
-        it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
-   
-        
+         it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
+        //it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt);
+               
         // Highlight all objects that intersect with ray
         if(intersected_object != NULL ){
               self->ray_hit = hit_pt;

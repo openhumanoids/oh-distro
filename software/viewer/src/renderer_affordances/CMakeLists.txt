@@ -17,6 +17,7 @@ add_library(renderer_affordances SHARED
   GraspOptStatusListener.cpp
   CandidateFootStepSeedManager.cpp
   ReachabilityVerifier.cpp
+  BatchFKQueryHandler.cpp
   )
   
 set_target_properties(renderer_affordances  PROPERTIES SOVERSION 1)
@@ -30,6 +31,10 @@ pods_install_headers(renderer_affordances.hpp
   GraspOptStatusListener.hpp
   CandidateFootStepSeedManager.hpp
   ReachabilityVerifier.hpp
+  BatchFKQueryHandler.hpp
+  otdf_instance_management_gui_utils.hpp
+  object_interaction_gui_utils.hpp
+  lcm_utils.hpp
   DESTINATION renderer_affordances )
 
 

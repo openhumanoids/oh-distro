@@ -8,6 +8,7 @@
 #include "ReachabilityVerifier.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "object_interaction_gui_utils.hpp"
+#include "lcm_utils.hpp"
 
 #define GEOM_EPSILON 1e-9
 #define PARAM_COLOR_ALPHA "Alpha"
@@ -23,7 +24,9 @@ using namespace renderer_affordances_gui_utils;
 // =================================================================================
 // DRAWING
 
-static void _draw (BotViewer *viewer, BotRenderer *renderer)
+
+// TODO: Super bloated need to break it up later.
+static void _draw (BotViewer *viewer, BotRenderer *renderer) 
 {
   RendererAffordances *self = (RendererAffordances*) renderer;
 
@@ -257,28 +260,81 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 
       }
 
-    double alpha2 = 0.15;
+    double alpha2 = 0.3;
     if(obj_it->second._gl_object->get_link_geometry_future_frame(string(hand_it->second.geometry_name),T_world_graspgeometry)) { // if future frame exists draw 
         double r,p,y;
         T_world_graspgeometry.M.GetRPY(r,p,y);
         
-        if(obj_it->second._gl_object->is_future_state_changing())
+        if((obj_it->second._gl_object->is_future_state_changing())&&(self->motion_trail_log_enabled))
           hand_it->second._gl_hand->log_motion_trail(true);
-        else
+        else {
           hand_it->second._gl_hand->log_motion_trail(false);
+        }
           
           
         float ch[3];//SANDIA_LEFT=0, SANDIA_RIGHT=1,
-        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-        if(hand_it->second.hand_type == 0) {
-          ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-        }
+
+        // Check reachability w.r.t to current pelvis
+        bool reachable;
+        if(hand_it->second.hand_type == 1)//SANDIA_LEFT=0, SANDIA_RIGHT=1,
+        {
+          reachable = true;
+          
+         KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+    
+         hand_it->second._gl_hand->get_link_future_frame("right_palm",T_geometry_palm);      
+          KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
+          KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
+          T_hand_palm_r.p[1] = -0.1;
+          T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
+
+
+          KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+          reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
+          }
+          if(reachable){
+           ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+           }
+          else{
+           ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }   
+          
+        if(hand_it->second.hand_type == 0)
+        {
+          reachable = true;
+          
+          KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+          hand_it->second._gl_hand->get_link_future_frame("left_palm",T_geometry_palm);
+           
+          KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
+          
+          KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
+          T_hand_palm_l.p[1] = 0.1;
+          T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
+
+          KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
+            reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
+          if(reachable){
+           ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+           }
+          else{
+           ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }   
+        
         hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
         
         KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
         KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
-        hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c_gray,0.8,T_world_object,T_object_graspgeometry); // accumulates in object frame.
-        //hand_it->second._gl_hand->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
+        if(obj_it->second._gl_object->is_future_display_active())
+          hand_it->second._gl_hand->accumulate_and_draw_motion_trail(c_gray,0.8,T_world_object,T_object_graspgeometry); // accumulates in object frame.
+        else{    
+          hand_it->second._gl_hand->disable_future_display();
+         }
+
       } 
   }
   
@@ -297,40 +353,124 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         double r,p,y;
         T_world_geometry.M.GetRPY(r,p,y);
         float ch[3];
-        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-        if(foot_it->second.foot_type == 0) {
-          ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-        }
+
+        
+        // Check reachability w.r.t to current pelvis
+        bool reachable;
+        if(foot_it->second.foot_type == 1)//SANDIA_LEFT=0, SANDIA_RIGHT=1,
+        {
+          reachable = true;
+          
+         KDL::Frame  T_geometry_foot = KDL::Frame::Identity(); 
+    
+         if(!foot_it->second._gl_foot->get_link_frame("r_foot",T_geometry_foot))
+           cout <<"ERROR: ee link "<< "r_foot" << " not found in sticky foot urdf"<< endl;
+      
+          KDL::Frame T_world_foot_r = T_world_geometry*T_geometry_foot; // but this is palm or frame
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+            reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
+          }
+          if(reachable){
+            ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+           }
+          else{
+            ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }   
+          
+        if(foot_it->second.foot_type == 0)
+        {
+          reachable = true;
+          
+          KDL::Frame  T_geometry_foot = KDL::Frame::Identity(); 
+          if(!foot_it->second._gl_foot->get_link_frame("l_foot",T_geometry_foot))
+            cout <<"ERROR: ee link "<< "l_foot" << " not found in sticky foot urdf"<< endl;
+          KDL::Frame T_world_foot_l = T_world_geometry*T_geometry_foot;// but this is palm or frame
+          
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
+            reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
+          if(reachable){
+            ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+           }
+          else{
+            ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }   
         
         foot_it->second._gl_foot->draw_body_in_frame (ch,alpha,T_world_geometry);//draws in geometry frame
 
       }
-    // TODO: uncomment and test the following
-    /*double alpha2 = 0.15;
+    
+    double alpha2 =  0.3;
     if(obj_it->second._gl_object->get_link_geometry_future_frame(foot_it->second.geometry_name,T_world_geometry)) { // if future frame exists draw 
         double r,p,y;
         T_world_geometry.M.GetRPY(r,p,y);
         
-        
-        
-        if(obj_it->second._gl_object->is_future_state_changing())
-          foot_it->second._gl_foot->log_motion_trail(true);
-        else
+        if((obj_it->second._gl_object->is_future_state_changing())&&(self->motion_trail_log_enabled)) // logging is not enabled when setting range goals or manual motion goals 
+          foot_it->second._gl_foot->log_motion_trail(true); //  enables motion trail logging and motion trail display too
+        else{
           foot_it->second._gl_foot->log_motion_trail(false);
-          
+        }
           
         float ch[3];//SANDIA_LEFT=0, SANDIA_RIGHT=1,
-        ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+        /*ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
         if(foot_it->second.foot_type == 0) {
           ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-        }
+        }*/
+                // Check reachability w.r.t to current pelvis
+        bool reachable;
+        if(foot_it->second.foot_type == 1)//SANDIA_LEFT=0, SANDIA_RIGHT=1,
+        {
+          reachable = true;
+          
+         KDL::Frame  T_geometry_foot = KDL::Frame::Identity(); 
+    
+          foot_it->second._gl_foot->get_link_future_frame("r_foot",T_geometry_foot);
+      
+          KDL::Frame T_world_foot_r = T_world_geometry*T_geometry_foot; // but this is palm or frame
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+          reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_r);
+          }
+          if(reachable){
+           ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
+           }
+          else{
+           ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }   
+          
+        if(foot_it->second.foot_type == 0)
+        {
+          reachable = true;
+          
+          KDL::Frame  T_geometry_foot = KDL::Frame::Identity(); 
+          foot_it->second._gl_foot->get_link_future_frame("l_foot",T_geometry_foot);
+          KDL::Frame T_world_foot_l = T_world_geometry*T_geometry_foot;// but this is palm or frame
+          
+          if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
+            reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_foot(self->robotStateListener->last_robotstate_msg,foot_it->second.foot_type,T_world_foot_l);
+          if(reachable){
+           ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+           }
+          else{
+           ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+           }
+        }  
         foot_it->second._gl_foot->draw_body_in_frame (ch,alpha2,T_world_geometry);
         
         KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
         KDL::Frame T_object_geometry = T_world_object.Inverse()*T_world_geometry;
-        foot_it->second._gl_foot->accumulate_and_draw_motion_trail (c_gray,0.8,T_world_object,T_object_geometry); // accumulates in object frame.
-        //foot_it->second._gl_foot->accumulate_and_draw_motion_trail (c2,0.8,T_world_graspgeometry);
-      } */
+        if(obj_it->second._gl_object->is_future_display_active())
+        {
+         if(foot_it->second._gl_foot->is_motion_trail_log_active())
+          foot_it->second._gl_foot->accumulate_and_draw_motion_trail (c_gray,0.8,T_world_object,T_object_geometry); // accumulates in object frame.
+         else
+          foot_it->second._gl_foot->draw_motion_trail(c_gray,0.8,T_world_object);
+        }
+        else{
+          foot_it->second._gl_foot->disable_future_display();//also clears motion history if it exists.
+         }       
+      }
   }
   
   // Maintain heartbeat with Drake
@@ -481,7 +621,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     return 1;// consumed if pop up comes up.
   }
  else if((self->stickyfoot_selection  != " ")&&(event->button==1)&&(event->type==GDK_2BUTTON_PRESS)){
-    //TODO: spawn_sticky_foot_dblclk_popup(self);
+    spawn_sticky_foot_dblclk_popup(self);
     std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
     return 1;// consumed if pop up comes up.
   }

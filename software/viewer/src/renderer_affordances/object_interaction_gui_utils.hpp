@@ -9,12 +9,12 @@
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
-#define PARAM_PREGRASP "Reach (Pre-grasp)" 
-#define PARAM_PALM_TOUCH "Palm Touch"   // publishes pre-grasp pose as ee_goal for reaching controller
-#define PARAM_GET_CLOSE "Get Close" 
-#define PARAM_COMMIT   "Commit Grasp"  // commits grasp state as setpoint and enables grasp controller
-#define PARAM_EXECUTE  "Execute Grasp" // publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
-#define PARAM_EE_MOTION "Move EE"
+#define PARAM_REACH "Reach" 
+#define PARAM_TOUCH "Touch"   // publishes pre-grasp pose as ee_goal for reaching controller
+
+#define PARAM_GRASP_UNGRASP   "Grasp/Ungrasp"  // commits grasp state as setpoint and enables grasp controller
+// publishes grasp pose as ee_goal for reaching controller. Simultaneously grasp controller executes only if ee pose is close to the committed grasp pose (if inFunnel, execute grasp)
+#define PARAM_MOVE_EE "Move"
 
 
 #define PARAM_RESEED "Re-seed"
@@ -24,14 +24,18 @@
 #define PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT "Adjust Cur JointDofs"
 #define PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT "Set Des BodyPose"
 #define PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT "Set Des JointDofs"
-#define PARAM_ADJUST_DOFS_VIA_SLIDERS "Adjust (via Sliders)"
+#define PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS "Adjust (via Sliders)"
+#define PARAM_GET_MANIP_PLAN "Get Manip Plan"
+#define PARAM_GET_MANIP_MAP "Get Manip Map"
 #define PARAM_RESET_DESIRED_STATE "Reset"
 #define PARAM_CONTACT_MASK_SELECT "Mask"
 
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
+#include "lcm_utils.hpp"
 
 using namespace renderer_affordances;
+using namespace renderer_affordances_lcm_utils;
 
 namespace renderer_affordances_gui_utils
 {
@@ -47,6 +51,7 @@ namespace renderer_affordances_gui_utils
     std::string instance_name=  self->object_selection;
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
+    self->motion_trail_log_enabled =false;
     it->second._gl_object->set_future_state_changing(false);
     self->second_stage_popup  = NULL;
   //   TODO: Send publish desired affordance state command msg    
@@ -89,9 +94,9 @@ namespace renderer_affordances_gui_utils
         T_world_object.p[1]   =  bot_gtk_param_widget_get_double (pw, "y");
         T_world_object.p[2]   =  bot_gtk_param_widget_get_double (pw, "z");
         double desired_roll,desired_pitch, desired_yaw;
-        desired_roll   =  bot_gtk_param_widget_get_double (pw, "roll");
-        desired_pitch   =  bot_gtk_param_widget_get_double (pw, "pitch");
-        desired_yaw   =  bot_gtk_param_widget_get_double (pw, "yaw");  
+        desired_roll   =  bot_gtk_param_widget_get_double (pw, "roll")*(M_PI/180);
+        desired_pitch   =  bot_gtk_param_widget_get_double (pw, "pitch")*(M_PI/180);
+        desired_yaw   =  bot_gtk_param_widget_get_double (pw, "yaw")*(M_PI/180);  
         T_world_object.M = KDL::Rotation::RPY(desired_roll,desired_pitch,desired_yaw);
     }
     
@@ -103,9 +108,9 @@ namespace renderer_affordances_gui_utils
     {     
       double desired_dof_pos = 0; // get current desired dof pos.
       if(joint->second->type!=(int) otdf::Joint::FIXED) {
-          desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str());
+          desired_dof_pos =  bot_gtk_param_widget_get_double (pw, joint->first.c_str())*(M_PI/180);
           jointpos_in.insert(make_pair(joint->first, desired_dof_pos)); 
-       cout <<  joint->first << " dof changed to " << desired_dof_pos << endl;
+       cout <<  joint->first << " dof changed to " << desired_dof_pos*(180/M_PI) << endl;
       }
      }
     it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
@@ -141,7 +146,7 @@ namespace renderer_affordances_gui_utils
 
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
     object_instance_map_type_::iterator it = self->instantiated_objects.find(instance_name);
-    
+    self->motion_trail_log_enabled =true;
     
     KDL::Frame T_world_object = it->second._gl_object->_T_world_body_future;
     double current_roll,current_pitch, current_yaw;
@@ -154,9 +159,9 @@ namespace renderer_affordances_gui_utils
         bot_gtk_param_widget_add_double(pw, "x", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[0]); 
         bot_gtk_param_widget_add_double(pw, "y", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[1]);
         bot_gtk_param_widget_add_double(pw, "z", BOT_GTK_PARAM_WIDGET_SLIDER, -4, 4, .01, T_world_object.p[2]);
-        bot_gtk_param_widget_add_double(pw, "roll", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_roll); 
-        bot_gtk_param_widget_add_double(pw, "pitch", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_pitch); 
-        bot_gtk_param_widget_add_double(pw, "yaw", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_yaw); 
+        bot_gtk_param_widget_add_double(pw, "roll", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_roll*(180/M_PI)); 
+        bot_gtk_param_widget_add_double(pw, "pitch", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_pitch*(180/M_PI)); 
+        bot_gtk_param_widget_add_double(pw, "yaw", BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_yaw*(180/M_PI)); 
     }
 
     // Need tracked joint positions of all objects.
@@ -166,11 +171,11 @@ namespace renderer_affordances_gui_utils
       double current_dof_position = 0;// TODO: dof pos tracking
       if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
         if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
-          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI, 2*M_PI, .01, current_dof_position); 
+          bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
         }
         else{
           bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-          joint->second->limits->lower, joint->second->limits->upper, .01, current_dof_position);
+          joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
         }   
       }
     }
@@ -186,11 +191,11 @@ namespace renderer_affordances_gui_utils
         if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
           if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
           bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-          -2*M_PI, 2*M_PI, .01, current_dof_position); 
+          -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
           }
           else{
           bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-          jp_it->second->joint_set[i]->limits->lower, jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+          jp_it->second->joint_set[i]->limits->lower*(180/M_PI), jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
           }   
         } // end if         
       } // end for all joints in jp
@@ -255,6 +260,7 @@ namespace renderer_affordances_gui_utils
       if(val){
         bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT,false);
         std::cout << "enabling jointdof adjustment for object " <<self->object_selection << " to "<< val << std::endl;
+        self->motion_trail_log_enabled =true;
       }
       else{
           std::cout << "disabling jointdof adjustment for object " <<self->object_selection << std::endl;
@@ -263,6 +269,7 @@ namespace renderer_affordances_gui_utils
           if(it->second._gl_object->is_future_state_changing())
             it->second._gl_object->set_future_state_changing(false);   // clear future state when both jointdof and bodypose are disabled.
          }
+         self->motion_trail_log_enabled =false;
       }
       if(it!=self->instantiated_objects.end()){
           it->second._gl_object->enable_bodypose_adjustment(false); 
@@ -277,10 +284,7 @@ namespace renderer_affordances_gui_utils
         
         if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
           self->otdf_instance_hold.uid=it->second.uid;
-          cout << "ok" << endl;
           self->otdf_instance_hold.otdf_type = it->second.otdf_type;
-          //self->otdf_instance_hold.otdf_type = new string((*it->second.otdf_type));    // SEGFAULTS With Strings  .copy((char *)it->second.otdf_type.c_str(),it->second.otdf_type.length())
-          cout << "ok" << endl;
           self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
           self->otdf_instance_hold._gl_object.reset();
           self->otdf_instance_hold._collision_detector.reset();
@@ -336,7 +340,33 @@ namespace renderer_affordances_gui_utils
 
     } 
     else if(! strcmp(name, PARAM_RESET_DESIRED_STATE)) {
-       it->second._gl_object->set_future_state(it->second._gl_object->_T_world_body,it->second._gl_object->_current_jointpos);    
+       it->second._gl_object->set_future_state(it->second._gl_object->_T_world_body,it->second._gl_object->_current_jointpos);   
+       it->second._gl_object->disable_future_display(); 
+      // clear previously accumulated motion states for all dependent bodies
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->sticky_hands.begin();
+      while (hand_it!=self->sticky_hands.end()) 
+      {
+         std::string hand_name = std::string(hand_it->second.object_name);
+         if (hand_name == (it->first))
+         {
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
+         }
+         hand_it++;
+      }
+
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.begin();
+      while (foot_it!=self->sticky_feet.end()) 
+      {
+         std::string foot_name = std::string(foot_it->second.object_name);
+         if (foot_name == (it->first))
+         {
+            foot_it->second._gl_foot->clear_desired_body_motion_history();
+         }
+         foot_it++;
+      }
+       
        bot_viewer_request_redraw(self->viewer);
     }       
     else if (! strcmp(name, PARAM_SEED_LH)) {
@@ -539,7 +569,7 @@ namespace renderer_affordances_gui_utils
       self->selection_hold_on = false;
     
     }
-    else if (! strcmp(name, PARAM_ADJUST_DOFS_VIA_SLIDERS)) {
+    else if (! strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS)) {
         spawn_adjust_dofs_popup_2(self);
     }
     else if (! strcmp(name, PARAM_HALT_ALL_OPT)) {
@@ -580,13 +610,21 @@ namespace renderer_affordances_gui_utils
       self->instance_selection  = std::string(self->object_selection);  
       spawn_adjust_dofs_popup(self);
     }
-        
+    else if(!strcmp(name,PARAM_GET_MANIP_PLAN)) {
+      //cout << "publishes ee motion constraints for all associated sticky hands and feet \n";
+      get_manip_plan(self);
+    }
+    else if(!strcmp(name,PARAM_GET_MANIP_MAP)) {
+      self->instance_selection  = std::string(self->object_selection);  
+      spawn_set_dof_range_popup(self);
+    }
+    
     bot_viewer_request_redraw(self->viewer);
-    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DOFS_VIA_SLIDERS))
+    if(strcmp(name, PARAM_CONTACT_MASK_SELECT)&&strcmp(name, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS))
       gtk_widget_destroy(self->dblclk_popup); // destroy for every other change except mask selection
   }
   
-  
+  //--------------------------------------------------------------------------
   
   static void on_dblclk_popup_close (BotGtkParamWidget *pw, void *user)
   {
@@ -595,7 +633,7 @@ namespace renderer_affordances_gui_utils
     self->dblclk_popup = NULL;
   }
   
-
+  //--------------------------------------------------------------------------
 
   static void spawn_object_geometry_dblclk_popup (RendererAffordances *self)
   {
@@ -633,12 +671,13 @@ namespace renderer_affordances_gui_utils
     contact_nums[0]=msg.ALL; contact_nums[1]=msg.FINGERS_ONLY;
     
     
-    if((!has_seeds)&&((self->marker_selection  == " ")
+    /*if((!has_seeds)&&((self->marker_selection  == " ")
       ||self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled()
-      ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) 
+      ||self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())) */
+    if((!has_seeds)&&((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
-      bot_gtk_param_widget_add_separator (pw,"of params/curr state");
+      bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
@@ -652,32 +691,27 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT, val2, NULL);
     }
-    
     if((self->marker_selection  == " ")) 
     {
-    
-      
-      
-      bot_gtk_param_widget_add_separator (pw,"Contact filter");
+     bot_gtk_param_widget_add_separator (pw,"Seed Management");
+      bot_gtk_param_widget_add_separator (pw,"(contact filter)");
       bot_gtk_param_widget_add_enumv (pw, PARAM_CONTACT_MASK_SELECT, BOT_GTK_PARAM_WIDGET_MENU, 
 				                            msg.ALL,
 				                            num_masks,
 			                              (const char **)  contact_masks,
 			                              contact_nums);
-		
-      bot_gtk_param_widget_add_separator (pw,"Seed-opt control");
+			bot_gtk_param_widget_add_separator (pw,"(seed-opt control)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RH, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_LF, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_ALL_OPT, NULL);
-
-    
+      
     }
 
 
-   has_seeds = true;// turn on everything for now: just for testing. TODO: Remove later  
+   //has_seeds = true;
    if((has_seeds)&&(!self->selection_hold_on))  
    {
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
@@ -695,8 +729,15 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
       bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT, val2, NULL);
-      bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DOFS_VIA_SLIDERS,NULL);
+      bot_gtk_param_widget_add_buttons(pw, PARAM_ADJUST_DESIRED_DOFS_VIA_SLIDERS,NULL);
       bot_gtk_param_widget_add_buttons(pw, PARAM_RESET_DESIRED_STATE,NULL);
+      
+      bot_gtk_param_widget_add_separator (pw,"Get Manip Plan/Map");
+      bot_gtk_param_widget_add_separator (pw,"(via EE pt/motion/range goal)");     
+      bot_gtk_param_widget_add_separator (pw,"(for approval)");
+      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_PLAN, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_GET_MANIP_MAP, NULL);
+
    }
     
     //cout <<self->selection << endl; // otdf_type::geom_name
@@ -726,251 +767,7 @@ namespace renderer_affordances_gui_utils
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
-  static void publish_eegoal_to_sticky_hand(boost::shared_ptr<lcm::LCM> &_lcm, StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry,bool pregrasp_flag)
-  {
-    drc::ee_goal_t goalmsg;
-    goalmsg.robot_name = "atlas";
-    goalmsg.root_name = "pelvis";
-    goalmsg.ee_name = ee_name;
 
-    // desired ee position in world frame
-    KDL::Frame T_world_ee,T_body_ee;
-    
-// Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
-   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;  // this is actually in a base frame that is not l_hand/r_hand.
-//    KDL::Frame T_base_palm = KDL::Frame::Identity();
-//    // this was there in urdf to make sure fingers are pointing in z axis.
-//    T_base_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
-//    KDL::Frame  T_geometry_palm = T_geometry_base*T_base_palm.Inverse()
-
-    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-    if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
-      cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-      
-    T_world_ee = T_world_geometry*T_geometry_palm;
-             
-   if(pregrasp_flag)
-   {
-    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
-    KDL::Vector handframe_offset;
-    handframe_offset[0]=0.1;handframe_offset[1]=0;handframe_offset[2]=0;
-    KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
-    KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
-    T_world_ee.p += worldframe_offset;
-
-   }  
-
-    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
-
-    // desired ee position wrt to robot body.
-    //T_body_ee = T_body_world*T_world_ee;
-    T_body_ee = T_world_ee; // send them in world frame for now.
-    double x,y,z,w;
-    T_body_ee.M.GetQuaternion(x,y,z,w);
-
-    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
-
-    goalmsg.ee_goal_pos.rotation.x = x;
-    goalmsg.ee_goal_pos.rotation.y = y;
-    goalmsg.ee_goal_pos.rotation.z = z;
-    goalmsg.ee_goal_pos.rotation.w = w;
-
-    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
-
-    goalmsg.num_chain_joints  = sticky_hand_struc.joint_name.size();
-    // No specified posture bias
-    goalmsg.use_posture_bias  = false;
-    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
-    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
-    for(int i = 0; i < goalmsg.num_chain_joints; i++){
-      if(!pregrasp_flag){
-        goalmsg.joint_posture_bias[i]=sticky_hand_struc.joint_position[i];
-      }
-      else{
-        goalmsg.joint_posture_bias[i]=0;//sticky_hand_struc.joint_position[i];
-      }
-      goalmsg.chain_joint_names[i]= sticky_hand_struc.joint_name[i];
-    }
-
-    // Publish the message
-    goalmsg.halt_ee_controller = false;
-
-    _lcm->publish(channel, &goalmsg);
-  }
-  
-  
-  static void publish_desired_hand_motion( StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel, void *user)
-  {
-    RendererAffordances *self = (RendererAffordances*) user;
-    drc::traj_opt_constraint_t trajmsg;
-    trajmsg.utime = self->last_state_msg_timestamp;
-    trajmsg.robot_name = "atlas";
-    
-    KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
-    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-   if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
-     cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-    KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
-
-
-    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-    object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(sticky_hand_struc.object_name));
-    KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
-    
-      trajmsg.num_links =  sticky_hand_struc._gl_hand->_desired_body_motion_history.size();
-        for(uint i = 0; i < (uint) trajmsg.num_links; i++)
-        {
-           double x,y,z,w;
-           KDL::Frame T_object_hand = sticky_hand_struc._gl_hand->_desired_body_motion_history[i];
-           KDL::Frame T_world_hand = T_world_object*T_object_hand;
-           KDL::Frame nextTfframe = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame
-           nextTfframe.M.GetQuaternion(x,y,z,w);
-
-           drc::position_3d_t pose;
-	         pose.translation.x = nextTfframe.p[0];
-	         pose.translation.y = nextTfframe.p[1];
-	         pose.translation.z = nextTfframe.p[2];
-           pose.rotation.x = x;
-           pose.rotation.y = y;
-           pose.rotation.z = z;
-           pose.rotation.w = w; 
-           trajmsg.link_name.push_back(ee_name);
-           trajmsg.link_origin_position.push_back(pose);  
-           trajmsg.link_timestamps.push_back(i);     
-	      }
-	      
-	      trajmsg.num_joints =0;
-     self->lcm->publish(channel, &trajmsg);
-  }
-  
-  
-  static void publish_grasp_state_for_execution( StickyHandStruc &sticky_hand_struc,std::string ee_name, std::string channel,KDL::Frame &T_world_geometry, bool palmtouch_flag,bool getclose_flag, bool pregrasp_flag, void *user)
-  {
-    RendererAffordances *self = (RendererAffordances*) user;
-    drc::desired_grasp_state_t msg;
-    msg.utime = self->last_state_msg_timestamp;
-    msg.robot_name = "atlas";
-    
-    msg.object_name = string(sticky_hand_struc.object_name);
-    msg.geometry_name = string(sticky_hand_struc.geometry_name);
-    msg.unique_id = sticky_hand_struc.uid;
-    msg.grasp_type = sticky_hand_struc.hand_type;
-
-    // desired ee position in world frame
-    KDL::Frame T_world_ee,T_body_ee;
-    
-// Must account for the mismatch between l_hand and base in sandia_hand urdf. Publish in palm frame.   
-   KDL::Frame  T_geometry_hand = sticky_hand_struc.T_geometry_hand;
-//    KDL::Frame T_hand_palm = KDL::Frame::Identity();
-//    // this was there in urdf to make sure fingers are pointing in z axis.
-//    T_hand_palm.M =  KDL::Rotation::RPY(0,-(M_PI/2),0); 
-//    KDL::Frame  T_geometry_palm = T_geometry_hand*T_hand_palm.Inverse()
-
-    KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-    if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
-      cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
-
-//    double ro,pi,ya;  
-//   KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
-//   T_hand_palm.M.GetRPY(ro,pi,ya);
-//    cout <<"pitch"<<pi*(180/M_PI) << endl;
-    
-    T_world_ee = T_world_geometry*T_geometry_palm;
-          
-   
-    KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; // offset
-    
-    
-    KDL::Frame T_hand_offset = KDL::Frame::Identity();
-    
-    if(palmtouch_flag){
-      T_hand_offset.p[0] += 0.001;// 2cm  away from object 
-    }  
-    if(pregrasp_flag){
-      T_hand_offset.p[0] += 0.3;  // 20cm  move away from which ever direction the palm is facing by 10 cm 
-    }  
-    if(getclose_flag){
-     T_hand_offset.p[0] += 0.09; 
-    }
-    // The palm frame is pointing in negative x axis. This is a convention for sticky hands.
-    KDL::Frame T_palm_offset =  T_palm_hand*T_hand_offset;
-    
-    // cout <<"before offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-    T_world_ee = T_world_geometry*T_geometry_palm*T_palm_offset;
-    //cout <<"after offset"<<T_world_ee.p[0]<<" "<<T_world_ee.p[1]<<" "<<T_world_ee.p[2] << endl;
-
- 
-// double ro,pi,ya;
-//   T_world_ee.M.GetRPY(ro,pi,ya);
-//   cout <<"roll"<<ro*(180/M_PI) << endl;
-//   cout <<"pitch"<<pi*(180/M_PI) << endl;
-//   cout <<"yaw"<<ya*(180/M_PI) << endl;
-   
-          
-    //T_body_world = self->robotStateListener->T_body_world; //KDL::Frame::Identity(); // must also have robot state listener.
-
-    // desired ee position wrt to robot body.
-    //T_body_ee = T_body_world*T_world_ee;
-    T_body_ee = T_world_ee; // send them in world frame for now.
-    double x,y,z,w;
-    T_body_ee.M.GetQuaternion(x,y,z,w);
-    
-    drc::position_3d_t hand_pose; 
-
-    hand_pose.translation.x = T_body_ee.p[0];
-    hand_pose.translation.y = T_body_ee.p[1];
-    hand_pose.translation.z = T_body_ee.p[2];
-
-    hand_pose.rotation.x = x;
-    hand_pose.rotation.y = y;
-    hand_pose.rotation.z = z;
-    hand_pose.rotation.w = w;
-    
-    if((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.IROBOT_LEFT)){
-      msg.l_hand_pose = hand_pose;
-      msg.num_l_joints  = sticky_hand_struc.joint_name.size();
-      msg.num_r_joints  = 0;
-      msg.l_joint_name.resize(msg.num_l_joints);
-      msg.l_joint_position.resize(msg.num_l_joints);
-      for(int i = 0; i < msg.num_l_joints; i++){
-        if((!palmtouch_flag)&&(!pregrasp_flag)&&(!getclose_flag)){
-          msg.l_joint_position[i]=sticky_hand_struc.joint_position[i];
-        }
-        else{
-          msg.l_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
-        }
-        msg.l_joint_name[i]= sticky_hand_struc.joint_name[i];
-      }
-    }
-    else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
-      msg.r_hand_pose = hand_pose;
-      msg.num_r_joints  = sticky_hand_struc.joint_name.size();
-      msg.num_l_joints  = 0;
-      msg.r_joint_name.resize(msg.num_r_joints);
-      msg.r_joint_position.resize(msg.num_r_joints);
-      for(int i = 0; i < msg.num_r_joints; i++){
-        if((!palmtouch_flag)&&(!pregrasp_flag)&&(!getclose_flag)){
-          msg.r_joint_position[i]=sticky_hand_struc.joint_position[i];
-        }
-        else{
-          msg.r_joint_position[i]=0;//sticky_hand_struc.joint_position[i];
-        }
-        msg.r_joint_name[i]= sticky_hand_struc.joint_name[i];
-      }
-    }
-
-    // Publish the message 
-    self->lcm->publish(channel, &msg);
-  }
-  
-  
   static void on_sticky_hand_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -993,41 +790,25 @@ namespace renderer_affordances_gui_utils
     else if (! strcmp(name, PARAM_RESEED)) {
       cout << "TODO" << endl;
     }
-    else if(! strcmp(name, PARAM_EE_MOTION)) {
-    
+    else if(! strcmp(name, PARAM_MOVE_EE)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
-      
-      //===================================// TODO: //DEBUG ONLY.REMOVE BLOCK LATER
-     typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
 
-      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
-      KDL::Frame T_world_graspgeometry_future = KDL::Frame::Identity(); // the object might have moved.
-
-      if(!obj_it->second._gl_object->get_link_geometry_future_frame(string(hand_it->second.geometry_name),T_world_graspgeometry_future))
-        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
-      else { 
-      //===================================// TODO: //DEBUG ONLY.REMOVE BLOCK LATER
-      
       drc::grasp_opt_control_t msg; // just to access types
       int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT){
-          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);          
-         // publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
+          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);
          }
         else if(grasp_type== msg.SANDIA_RIGHT){
           publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
-          //DEBUG ONLY. TODO: REMOVE LATER
-         // publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry_future,false,false,false,self);//DEBUG ONLY. TODO: REMOVE LATER
         }
-        
-      }// REMOVE LATER
-      
     }
-    else if (!strcmp(name, PARAM_COMMIT)) {
+    else if (!strcmp(name, PARAM_GRASP_UNGRASP)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+      
+      bool val = (hand_it->second.grasp_status==0); // is just a candidate, enable grasp
 
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(hand_it->second.object_name));
@@ -1042,13 +823,15 @@ namespace renderer_affordances_gui_utils
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,false,false,false,self);
+          publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,self);
         else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,false,false,false,self);
+          publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,val,self);
+          
+        hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
      
     }
-    else if ((!strcmp(name, PARAM_EXECUTE))||(!strcmp(name, PARAM_PALM_TOUCH))||(!strcmp(name, PARAM_PREGRASP))||(!strcmp(name, PARAM_GET_CLOSE))) {
+    else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
     
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
@@ -1062,23 +845,16 @@ namespace renderer_affordances_gui_utils
       else { 
         drc::grasp_opt_control_t msg; // just to access types
         int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-        
-        bool getclose_flag = !strcmp(name, PARAM_GET_CLOSE);
-        bool palmtouch_flag = !strcmp(name, PARAM_PALM_TOUCH);
-        bool pregrasp_flag = !strcmp(name, PARAM_PREGRASP);
+
+        bool reach_flag = !strcmp(name, PARAM_REACH);
 
         //publish ee goal msg.
         if(grasp_type == msg.SANDIA_LEFT) {
-           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
-           if(palmtouch_flag||getclose_flag||pregrasp_flag){ //DEBUG ONLY. TODO: REMOVE LATER
-            publish_grasp_state_for_execution(hand_it->second,"left_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,palmtouch_flag,getclose_flag,pregrasp_flag,self);
-           }
+           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
         }
         else if(grasp_type== msg.SANDIA_RIGHT) {
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,pregrasp_flag);
-           if(palmtouch_flag||getclose_flag||pregrasp_flag){ //DEBUG ONLY.  TODO: REMOVE LATER
-            publish_grasp_state_for_execution(hand_it->second,"right_palm","COMMITTED_GRASP_SEED",T_world_graspgeometry,palmtouch_flag,getclose_flag,pregrasp_flag,self);
-           }
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+
         }
       }
  
@@ -1094,6 +870,10 @@ namespace renderer_affordances_gui_utils
   
   static void spawn_sticky_hand_dblclk_popup (RendererAffordances *self)
   {
+  
+    typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+    sticky_hands_map_type_::iterator hand_it = self->sticky_hands.find(self->stickyhand_selection);
+  
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;
 
@@ -1116,14 +896,15 @@ namespace renderer_affordances_gui_utils
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_RESEED, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_PREGRASP,NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_GET_CLOSE, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_PALM_TOUCH, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_EXECUTE, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_EE_MOTION, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_REACH,NULL);
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_GET_CLOSE, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_GRASP_UNGRASP, NULL);
+    bool val = (hand_it->second.grasp_status==0);
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_GRASP_UNGRASP, !val, NULL);
+
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL);
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
 
     
     //cout <<self->selection << endl; // otdf_type::geom_name
@@ -1144,7 +925,123 @@ namespace renderer_affordances_gui_utils
 
   }
   
+  //--------------------------------------------------------------------------
+  // Sticky Foot Interaction
+  //
 
+  static void on_sticky_foot_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    
+    if(self->stickyfoot_selection==" "){
+      gtk_widget_destroy(self->dblclk_popup);
+      return;
+    }
+    
+    if (! strcmp(name, PARAM_DELETE)) {
+      fprintf(stderr,"\n Clearing selected sticky foot\n");
+      
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+      if(foot_it!=self->sticky_feet.end())
+        self->sticky_feet.erase(foot_it);
+      self->stickyfoot_selection = " ";
+      bot_viewer_request_redraw(self->viewer);
+    }
+    else if(! strcmp(name, PARAM_MOVE_EE)) {
+    
+      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+
+      drc::grasp_opt_control_t msg; // just to access types
+      int grasp_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+        //publish ee goal msg.
+        if(grasp_type == msg.SANDIA_LEFT){
+          publish_desired_foot_motion(foot_it->second,"l_foot","DESIRED_L_FOOT_MOTION",self);
+         }
+        else if(grasp_type== msg.SANDIA_RIGHT){
+          publish_desired_foot_motion( foot_it->second,"r_foot","DESIRED_R_FOOT_MOTION",self);
+        }
+    }
+    else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
+    
+      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator obj_it = self->instantiated_objects.find(string(foot_it->second.object_name));
+      KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+      if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_graspgeometry))
+      cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;
+      else { 
+       // just to access types
+        int foot_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+        bool touch_flag = !strcmp(name, PARAM_TOUCH);
+        bool reach_flag = !strcmp(name, PARAM_REACH);
+
+        //publish ee goal msg.
+        if(foot_type == 0) {
+           publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"l_foot","L_FOOT_GOAL",T_world_graspgeometry,reach_flag);
+        }
+        else if(foot_type== 1) {
+          publish_eegoal_to_sticky_foot(self->lcm, foot_it->second,"r_foot","R_FOOT_GOAL",T_world_graspgeometry,reach_flag);
+        }
+      }
+ 
+    }
+        
+    bot_viewer_request_redraw(self->viewer);
+    gtk_widget_destroy(self->dblclk_popup);
+    
+   }
+  
+  static void spawn_sticky_foot_dblclk_popup (RendererAffordances *self)
+  {
+  
+    typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+    sticky_feet_map_type_::iterator foot_it = self->sticky_feet.find(self->stickyfoot_selection);
+  
+    GtkWidget *window, *close_button, *vbox;
+    BotGtkParamWidget *pw;
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
+    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 150, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
+    gtk_window_set_title(GTK_WINDOW(window), "dblclk");
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+    bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_REACH,NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_TOUCH, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MOVE_EE, NULL); 
+
+
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_foot_dblclk_popup_param_widget_changed), self);
+    self->dblclk_popup  = window;
+
+    close_button = gtk_button_new_with_label ("Close");
+    g_signal_connect (G_OBJECT (close_button),"clicked",G_CALLBACK (on_popup_close),(gpointer) window);
+    g_signal_connect(G_OBJECT(pw), "destroy", G_CALLBACK(on_dblclk_popup_close), self); 
+
+
+    vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+      gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show_all(window); 
+
+  }
+  
   
   
 
