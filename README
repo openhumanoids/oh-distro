@@ -113,3 +113,7 @@ No rule to make target `/usr/lib/x86_64-linux-gnu/libGL.so
 To fix this, we just need to repair the symlinks like this:
 sudo rm /usr/lib/x86_64-linux-gnu/libGL.so
 sudo ln -s /usr/lib/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
+
+
+
+
