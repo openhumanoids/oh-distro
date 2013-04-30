@@ -190,7 +190,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
        jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
       
       _gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);
-      _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::TWO_HALF_D);
+      _gl_planned_stickyfeet_list[i]->set_bodypose_adjustment_type((int)InteractableGlKinematicBody::THREE_D);
       _planned_stickyfeet_info_list.push_back(info);
 
     }//end for num of goals;
