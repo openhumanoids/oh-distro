@@ -4,7 +4,7 @@ if nargin < 3; goal_y = 0.0; end
 if nargin < 2; goal_x = 2.0; end
 if nargin < 1; lcm_plan = true; end
 
-debug = false;
+debug = true;
 
 addpath(fullfile(pwd,'frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -56,15 +56,6 @@ while true
         for j = 1:length(footsteps)
           footsteps(j).pos(3) = footsteps(j).pos(3) - zmap;
         end
-                
-        % temp hack --- aim footsteps slightly below the ground. this will be removed
-        % when footstep planner does this explicitly. This helps force based classifier
-        % detect contact and is reasonable because the foot actually goes about 3mm below the
-        % ground in gazebo... 
-        for j = 1:length(footsteps)
-          footsteps(j).pos(3) = footsteps(j).pos(3) - 0.003;
-        end
-        % end hack %%%%%%%%%%%
       end
     end
   end
