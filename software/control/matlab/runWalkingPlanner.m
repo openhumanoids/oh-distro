@@ -40,16 +40,19 @@ while true
     foottraj = [];
 
     while waiting
-      footsteps = footstep_plan_listener.getNextMessage(0);
-      if (~isempty(footsteps))
-        msg ='Walking Planner: plan received'; disp(msg); send_status(3,0,0,msg);
-        waiting = false;
-      end
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
         % get pelvis height above height map and adjust footstep heights
         zmap = getTerrainHeight(r,x(1:2));
         x(3) = x(3) - zmap;
+        x0=x;
+      end
+       
+      footsteps = footstep_plan_listener.getNextMessage(10);
+      if (~isempty(footsteps))
+        msg ='Walking Planner: plan received'; disp(msg); send_status(3,0,0,msg);
+        waiting = false;
+
         for j = 1:length(footsteps)
           footsteps(j).pos(3) = footsteps(j).pos(3) - zmap;
         end
@@ -62,8 +65,6 @@ while true
           footsteps(j).pos(3) = footsteps(j).pos(3) - 0.003;
         end
         % end hack %%%%%%%%%%%
-        
-        x0=x;
       end
     end
   end
