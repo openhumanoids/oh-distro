@@ -178,7 +178,7 @@ while(1)
       rh_goal_received = true;
   end
   
-  if(((~isempty(rep))|| (~isempty(lep))) ||((~isempty(rfep))|| (~isempty(lfep))))
+  if(((~isempty(rep))|| (~isempty(lep))) ||((~isempty(rfep))|| (~isempty(lfep))||(~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))))
      manip_planner.generateAndPublishManipulationPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal); 
   end
 
