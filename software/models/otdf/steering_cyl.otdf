@@ -71,8 +71,16 @@
 	<child link="cylinder" type="link"/>
 	<origin rpy="0 0 0" xyz="0 0 0"/>
 	<axis xyz="0 0 1"/>
-	<limit effort="1" lower="-4.71079" upper="4.71079" velocity="1"/> 
+	<limit effort="1" lower="-3.14" upper="3.14" velocity="1"/> 
 </joint>
+
+<!--<joint name="base_joint" type="prismatic">-->
+<!--	<parent link="base_link" type="link"/>-->
+<!--	<child link="cylinder" type="link"/>-->
+<!--	<origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--	<axis xyz="0 0 1"/>-->
+<!--	<limit effort="1" lower="0" upper="0.5" velocity="1"/> -->
+<!--</joint>-->
 
 </object>
 
