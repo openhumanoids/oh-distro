@@ -19,7 +19,9 @@ namespace renderer_robot_plan
     _lcm(lcm),
     _viewer(viewer),
     _robot_name("atlas"),
-    _in_motion_keyframe_index(-1)
+    _in_motion_keyframe_index(-1),
+    _is_manip_plan(false),
+    _is_manip_map(false)
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
@@ -35,7 +37,8 @@ namespace renderer_robot_plan
 				       this);  
     _urdf_subscription_on =  true;
     lcm->subscribe("CANDIDATE_ROBOT_PLAN", &renderer_robot_plan::RobotPlanListener::handleRobotPlanMsg, this); //&this ?
-    lcm->subscribe("CANDIDATE_MANIP_PLAN", &renderer_robot_plan::RobotPlanListener::handleManipPlanMsg, this); 
+    lcm->subscribe("CANDIDATE_MANIP_PLAN", &renderer_robot_plan::RobotPlanListener::handleManipPlanMsg, this);
+    lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     
     // Pre-load hand URDFS
     std::string _left_hand_urdf_xml_string,_right_hand_urdf_xml_string;
@@ -47,8 +50,7 @@ namespace renderer_robot_plan
        unique_hand_name = "rhand_local_copy"; 
        _gl_right_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_hand_urdf_xml_string,true,unique_hand_name));
     }
-    
-    _is_manip_plan =false;
+
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
   }
   
@@ -77,6 +79,8 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       _urdf_subscription_on =  false; 	
     }
     _is_manip_plan =false;
+    _is_manip_map =false;
+    
    // 0. Make Local copy to later output
     revieved_plan_ = *msg;
 
@@ -130,6 +134,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     }
     
     _is_manip_plan =true;
+    _is_manip_map =false;
 
     // 0. Make Local copy as drc::robot_plan_t to later output
     drc::robot_plan_w_keyframes_t msgcopy =*msg;
@@ -191,6 +196,61 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     bot_viewer_request_redraw(_viewer);  
   
   }
+    //-------------------------------------------------------------------
+  
+  void RobotPlanListener::handleAffIndexedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::aff_indexed_robot_plan_t* msg)						 
+  {
+    cout << "\n received aff_indexed_robot_plan for pre-execution_approval message\n";
+
+    if (!_urdf_parsed)
+    {
+      cout << "\n handleAffIndexedRobotPlanMsg: Waiting for urdf to be parsed" << endl;
+      return;
+    }
+    if(_urdf_subscription_on)
+    {
+      cout << "\n handleRobotPlanMsg: unsubscribing from _urdf_subscription" << endl;
+      _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
+      _urdf_subscription_on =  false; 	
+    }
+    _is_manip_plan =false;
+    _is_manip_map =true;
+   // 0. Make Local copy to later output
+    revieved_map_ = *msg;
+
+  	int max_num_states = 20;
+  	int num_states = 0;
+   	int inc = 1;
+ 	if (msg->num_states > max_num_states) {
+		inc = ceil(msg->num_states/max_num_states);	
+		inc = min(max(inc,1),max_num_states);	
+		num_states = max_num_states;   
+	}   
+	else 
+		num_states = msg->num_states;   
+
+    //clear stored data
+    _gl_robot_list.clear();
+
+    int count=msg->num_states-1; 	   	// always display the last state in the plan
+    for (uint i = 0; i <(uint)num_states; i++)
+    {
+      drc::robot_state_t state_msg  = msg->plan[count];
+    	std::stringstream oss;
+    	oss << _robot_name << "_"<< count; 
+    	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
+			_gl_robot_list.insert(_gl_robot_list.begin(),new_object_ptr);
+			_gl_robot_list[0]->set_state(state_msg);
+			count-=inc;
+    }//end for num of states in robot_plan msg;
+   	
+		_last_plan_msg_timestamp = bot_timestamp_now(); //initialize
+    bot_viewer_request_redraw(_viewer);
+  } // end handleMessage
+  
+  //-------------------------------------------------------------------
 
  void RobotPlanListener::handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
 					       const  drc::robot_urdf_t* msg) 
@@ -224,6 +284,12 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _lcm->publish(channel, &msg);
   }
   
+  void RobotPlanListener::commit_manip_map(int64_t utime, std::string &channel)
+  {
+    drc::aff_indexed_robot_plan_t msg = revieved_map_;
+    msg.utime = utime;
+    _lcm->publish(channel, &msg);
+  }
   
   
   bool RobotPlanListener::load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string)

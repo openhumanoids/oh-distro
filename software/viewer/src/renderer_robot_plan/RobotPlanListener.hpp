@@ -46,6 +46,7 @@ namespace renderer_robot_plan
     int _in_motion_keyframe_index;
   public:
     bool _is_manip_plan;
+    bool _is_manip_map;
     int64_t _last_plan_msg_timestamp; 
     RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm,
 		       BotViewer *viewer);
@@ -63,9 +64,10 @@ namespace renderer_robot_plan
     //-------------message callback
     
     drc::robot_plan_t revieved_plan_;
+    drc::aff_indexed_robot_plan_t revieved_map_;
     
     void commit_robot_plan(int64_t utime,std::string &channel);
-
+    void commit_manip_map(int64_t utime,std::string &channel);
     
     void set_in_motion_hands_state(int index)
     {
@@ -162,6 +164,9 @@ namespace renderer_robot_plan
 		void handleManipPlanMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_plan_w_keyframes_t* msg);
+  void handleAffIndexedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
+						 const string& chan, 
+						 const drc::aff_indexed_robot_plan_t* msg);		      
    void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg);    
 			    

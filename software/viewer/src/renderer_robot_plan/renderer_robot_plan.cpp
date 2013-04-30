@@ -1,7 +1,8 @@
 
 #include "renderer_robot_plan.hpp"
 #include "RobotPlanListener.hpp"
-#include "plan_execution_gui_utils.hpp" // TODO: just for testing (sisir, Mar 10), will move to robot plan renderer
+#include "plan_execution_gui_utils.hpp" 
+#include "plan_approval_gui_utils.hpp"
 
 
 #define RENDERER_NAME "Robot Plan Display"
@@ -176,9 +177,11 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
 
   
- if((self->plan_execution_dock==NULL))
+ if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
       spawn_plan_execution_dock(self);
 
+ if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))
+    spawn_plan_approval_dock (self);
 }
 
 
