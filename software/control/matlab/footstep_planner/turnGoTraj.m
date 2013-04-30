@@ -12,7 +12,7 @@ classdef turnGoTraj
       sizecheck(poses(:,1), [6]);
       start_pos = poses(:,1);
       
-      angles_to_next = atan2(poses(2,2:end) - poses(2,1:(end-1)), poses(1,2:end) - poses(1,1:(end-1)))
+      angles_to_next = atan2(poses(2,2:end) - poses(2,1:(end-1)), poses(1,2:end) - poses(1,1:(end-1)));
       obj.poses = zeros(6, 3 * length(poses(1,:)) - 2);
       obj.poses(:,1) = start_pos;
       for i = 2:length(poses(1,:))
@@ -37,15 +37,15 @@ classdef turnGoTraj
   
       
 %       obj.lambdas = linspace(0, 1, length(obj.poses(1,:)));
-      obj.poses
-      obj.lambdas
+      obj.poses;
+      obj.lambdas;
 		end
 
 		function Xi = eval(obj, li)
       li = max(zeros(size(li)), li);
       li = min(ones(size(li)), li);
 			Xi = interp1(obj.lambdas, obj.poses', li)';
-      Xi(3:5, :) = 0;
+      Xi(4:5, :) = 0;
 		end
 	end
 end

@@ -1,13 +1,13 @@
 function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightfun)
 
-  debug = false;
+  debug = true;
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
 
+
   poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
   poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
-  poses = heightfun(poses);
 
   foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
 
@@ -23,7 +23,10 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   using_heightmap = false;
 
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
-  if options.yaw_fixed 
+  poses(3,:) = p0(3);
+  poses = heightfun(poses);
+  
+  if options.yaw_fixed || all(sum(diff([p0(1:3), poses(1:3,:)], 1, 2).^2, 1) <= 1)
     traj = turnGoTraj([p0, poses]);
   else
     traj = BezierTraj([p0, poses]);
@@ -96,10 +99,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
     else
       last_pos = X(end-2).pos;
     end
-    got_data
-    pos_n
     apex_pos = get_apex_pos(last_pos, pos_n);
-    apex_pos
     X(end+1) = struct('pos', apex_pos, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
     X(end+1) = struct('pos', pos_n, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
