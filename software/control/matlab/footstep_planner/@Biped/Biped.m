@@ -145,6 +145,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     function t = getStepTimes(obj, X, time_per_step)
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));
+      if nargin < 3 || time_per_step == 0
+        time_per_step = obj.short_step_time;
+      end
       t = zeros(1, nsteps);
       % j = 3;
       % if abs(X(3, j-2) - X(3, j+1)) > 0.01
