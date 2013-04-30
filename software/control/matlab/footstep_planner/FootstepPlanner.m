@@ -162,8 +162,9 @@ classdef FootstepPlanner < DRCPlanner
         if ~any(isnan(closest_terrain_pos))
           ground_pos(1:3) = closest_terrain_pos;
           ax = cross([0;0;1], normal);
-          theta = acos(costheta);
-          new_rpy = quat2rpy(axis2quat([ax;theta]));
+          theta = -acos(costheta);
+          q = axis2quat([ax;theta]);
+          new_rpy = quat2rpy(q);
           if ~any(isnan(new_rpy))
             ground_pos(4:5) = new_rpy(1:2);
           end
