@@ -8,6 +8,8 @@ cd ~/
 mkdir ~/gazebo_versions
 mkdir ~/gazebo_versions/gazebo_$GAZEBO_REV
 
+echo "Run this script to install the 3 Gazebo Repositories"
+echo "You should run it three times in order: gazebo, drcsim, models"
 read -p "gazebo, drcsim, models? (g/d/m) " RESP
 if [ "$RESP" = "g" ]; then
 
