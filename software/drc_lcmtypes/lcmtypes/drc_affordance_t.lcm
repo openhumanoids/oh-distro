@@ -5,6 +5,7 @@ struct affordance_t
 
   int64_t utime;
   string otdf_type; //name of the otdf file
+  string friendly_name; //informal, non-unique name for the affordance
   int32_t uid;      //affordance uid, should come from a free running cnt in aff store.
   // This field is not required for a NEW AFFORDANCE FIT. 
   // The aff store will figure out what the field is acc to its free running counter.
