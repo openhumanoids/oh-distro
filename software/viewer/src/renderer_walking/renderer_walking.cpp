@@ -456,7 +456,7 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
 
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
 
-  self->time_per_step_ns = (int)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
+  // self->time_per_step_ns = (int)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
 
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
 
@@ -567,7 +567,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   }
   int64_t new_step_time = (int64_t)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
-  if (new_step_time != self->min_num_steps) {
+  if (new_step_time != self->time_per_step_ns) {
     msg_changed = true;
     self->time_per_step_ns = new_step_time;
   }
