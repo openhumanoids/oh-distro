@@ -20,11 +20,23 @@ classdef WalkingPlanListener
 				x = [];
         t = -1;
       else
-        msg = drc.walking_plan_t(data);
         t = obj.monitor.getLastTimestamp();
-        
+        msg = drc.walking_plan_t(data);
+        x = decode(msg);
+			end
+    end
+  end
+  
+  methods(Static)
+    function walking_data = decode(msg)
         % do we have to save to file to convert a byte stream to a
         % matlab binary?
+        
+        fid = fopen('tmp_w.mat','w');
+        fwrite(fid,typecast(msg.qtraj,'uint8'),'uint8');
+        fclose(fid);
+        matdata = load('tmp_w.mat');
+        qtraj=matdata.qtraj;
         
         fid = fopen('tmp_w.mat','w');
         fwrite(fid,typecast(msg.htraj,'uint8'),'uint8');
@@ -74,9 +86,11 @@ classdef WalkingPlanListener
         matdata = load('tmp_w.mat');
         rfoottraj=matdata.rfoottraj;
         
-        x = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,'S',S,'s1',s1,'supptraj',supptraj);
-			end
+        walking_data = struct('qtraj',qtraj,'htraj',htraj,'hddtraj',hddtraj,...
+          'comtraj',comtraj,'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,...
+          'S',S,'s1',s1,'supptraj',supptraj);
+
     end
-	end
+  end
 
 end

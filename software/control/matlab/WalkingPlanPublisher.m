@@ -19,6 +19,13 @@ classdef WalkingPlanPublisher
       % assume: data is a struct with fields: htraj, hddtraj, S, s1, supptraj, comtraj, lfoottraj, rfoottraj
 
       % do we have to save to file to convert to byte stream?
+      qtraj = data.qtraj;
+      save('tmp_r.mat','qtraj');
+      fid = fopen('tmp_r.mat','r');
+      msg.qtraj = fread(fid,inf,'*uint8'); % note: this will be stored as an int8 in the lcmtype
+      fclose(fid);
+      msg.n_qtraj_bytes = length(msg.qtraj); 
+
       htraj = data.htraj;
       save('tmp_r.mat','htraj');
       fid = fopen('tmp_r.mat','r');

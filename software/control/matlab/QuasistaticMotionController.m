@@ -1,4 +1,4 @@
-classdef QuasistaticStandingController < DRCController
+classdef QuasistaticMotionController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
@@ -8,15 +8,15 @@ classdef QuasistaticStandingController < DRCController
   
   methods
   
-    function obj = QuasistaticStandingController(name,r)
+    function obj = QuasistaticMotionController(name,r)
       typecheck(r,'Atlas');
 
-      Q = eye(4);
+      Q = 1*eye(4);
       R = 0.001*eye(2);
       
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[zeros(2),eye(2); zeros(2,4)],'D',...
-        [zeros(2); eye(2)],'R',R,'Qy',zeros(4),'S',[],'s1',zeros(4,1),...
+        [zeros(2); eye(2)],'R',R,'Qy',zeros(4),'S',[],'s1',[],...
         'xlimp0',[],'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
@@ -50,10 +50,10 @@ classdef QuasistaticStandingController < DRCController
       obj.Q=Q;
       obj.R=R;
       
-      obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
+      %obj = addLCMTransition(obj,'COMMITTED_WALKING_PLAN',drc.walking_plan_t(),'walking');
 
-      % should make this a more specific channel name
-      %obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+      % hijack the walking plan type for now
+      obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),name); % for standing/reaching tasks
 
       obj = initialize(obj,struct());
   
@@ -79,19 +79,36 @@ classdef QuasistaticStandingController < DRCController
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
         
         obj.controller_data.setField('S',V.S);
+        obj.controller_data.setField('s1',zeros(4,1));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
 
-      elseif isfield(data,'COMMITTED_ROBOT_PLAN')
-        % standing and reaching plan
-        msg = data.COMMITTED_ROBOT_PLAN;
-        [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true); 
-        qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-
-        obj.controller_data.setField('qtraj',qtraj);
-        obj = setDuration(obj,inf,false); % set the controller timeout
-
+      elseif isfield(data,'QUASISTATIC_ROBOT_PLAN')
+        % execute quasistatic motion
+        msg = data.QUASISTATIC_ROBOT_PLAN;
+        cdata = WalkingPlanListener.decode(msg);
+        
+%         % compute TILQR
+%         comtraj = cdata.comtraj;
+%         comgoal = comtraj.eval(comtraj.tspan(2));
+%         ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
+%         [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),obj.Q,obj.R);
+%         
+%         % compute TVLQR
+%         options.tspan = linspace(comtraj.tspan(1),comtraj.tspan(2),10);
+%         options.sqrtmethod = false;
+%         x0traj = setOutputFrame([comtraj;0;0],ltisys.getStateFrame);
+%         u0traj = setOutputFrame(ConstantTrajectory([0;0]),ltisys.getInputFrame);
+%         S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenvalues, which numerically fluctuate below 0
+%         warning(S);
+%         [~,V] = tvlqr(ltisys,x0traj,u0traj,obj.Q,obj.R,V,options);
+        
+        obj.controller_data.setField('S',cdata.S);
+        obj.controller_data.setField('s1',cdata.s1);
+        obj.controller_data.setField('qtraj',cdata.qtraj);
+        obj.controller_data.setField('xlimp0',[0;0;0;0]); % ??
+        obj.controller_data.setField('supptraj',cdata.supptraj);
       else
         % use saved nominal pose 
         d = load('data/atlas_fp.mat');
@@ -108,6 +125,7 @@ classdef QuasistaticStandingController < DRCController
         foot_support=1.0*~cellfun(@isempty,strfind(obj.robot.getLinkNames(),'foot'));
 
         obj.controller_data.setField('S',V.S);
+        obj.controller_data.setField('s1',zeros(4,1));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);

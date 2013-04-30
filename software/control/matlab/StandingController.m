@@ -47,6 +47,7 @@ classdef StandingController < DRCController
 
       % should make this a more specific channel name
       %obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'QUASISTATIC_ROBOT_PLAN',drc.walking_plan_t(),'qs_motion'); % for standing/reaching tasks
 
       obj = initialize(obj,struct());
   
