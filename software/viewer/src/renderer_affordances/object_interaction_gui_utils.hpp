@@ -239,6 +239,7 @@ namespace renderer_affordances_gui_utils
       if(val){
         bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_DESIRED_JOINTDOF_ADJUSTMENT,false); 
         std::cout << "enabling bodypose adjustment for object " <<self->object_selection << std::endl;
+        self->motion_trail_log_enabled =true;
       }
      else{
          std::cout << "disabling bodypose adjustment for object " <<self->object_selection << std::endl;
@@ -247,6 +248,7 @@ namespace renderer_affordances_gui_utils
           if(it->second._gl_object->is_future_state_changing())
             it->second._gl_object->set_future_state_changing(false);   // when both jointdof and bodypose are disabled.
          }
+         self->motion_trail_log_enabled =false;
       }  
         
       if(it!=self->instantiated_objects.end()){
