@@ -905,7 +905,8 @@ namespace surrogate_gui
 
 	bool SurrogateRenderer::isPaused() const
 	{
-		return bot_gtk_param_widget_get_bool(_pw, PARAM_NAME_CLOUD_PAUSE) == 1;
+    return true; //TODO fix or remove altogether		
+    //return bot_gtk_param_widget_get_bool(_pw, PARAM_NAME_CLOUD_PAUSE) == 1;
 	}
 
 	string SurrogateRenderer::getCurrentObjectSelectedName() const
