@@ -11,7 +11,7 @@ classdef QuasistaticMotionController < DRCController
     function obj = QuasistaticMotionController(name,r)
       typecheck(r,'Atlas');
 
-      Q = 1*eye(4);
+      Q = eye(4);
       R = 0.001*eye(2);
       
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...

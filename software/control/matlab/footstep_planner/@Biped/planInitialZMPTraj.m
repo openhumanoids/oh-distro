@@ -1,6 +1,6 @@
 function [zmptraj, foottraj, supporttraj] = planInitialZMPTraj(biped, q0, X)
 
-debug = false;
+debug = true;
 
 Xpos = [X.pos];
 step_times = [X.time]

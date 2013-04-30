@@ -99,7 +99,8 @@ classdef QPController < MIMODrakeSystem
     ctrl_data = getData(obj.controller_data);
 
     % get pelvis height above height map
-    x(3) = x(3)-getTerrainHeight(r,x(1:2));
+    terrain_height = getTerrainHeight(r,x(1:2));
+    x(3) = x(3)-terrain_height;
       
     % use support trajectory
     if typecheck(ctrl_data.supptraj,'double')
@@ -127,10 +128,6 @@ classdef QPController < MIMODrakeSystem
     
     % get active contacts
     [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    if obj.debug
-      phi
-%       x(1:6)
-    end
     active_contacts = zeros(length(phi),1);
 
     contact_data = obj.contact_est_monitor.getNextMessage(1);
@@ -323,15 +320,16 @@ classdef QPController < MIMODrakeSystem
     
     if obj.debug && nc > 0
       xcomdd = Jdot * qd + J * alpha(1:nq);
-      zmppos = xcom(1:2) + G * xcomdd;
+      zmppos = xcom(1:2) + D_ls * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
-      plot_lcm_points([zmppos', getTerrainHeight(r,zmppos)], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
+      plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
       
-      [~,normals] = getTerrainHeight(r,cpos);
+      [cheight,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
 
       lambda = Iz*alpha;
       beta_full = Ibeta*alpha;
+      cpos(3,:) = cpos(3,:) + cheight;
       for kk=1:8
         if kk<=nc
           plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.25*normals(:,kk)]', [0 0 1; 0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
@@ -357,7 +355,7 @@ classdef QPController < MIMODrakeSystem
       xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=1;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
@@ -365,28 +363,28 @@ classdef QPController < MIMODrakeSystem
       xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=2;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=3;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=4;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = x(1:6); 
       msg=vs.obj_t();
       msg.id=5;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
       

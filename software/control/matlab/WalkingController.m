@@ -18,6 +18,7 @@ classdef WalkingController < DRCController
       joint_names = joint_names(2:end); % get rid of null string at beginning..
       ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,strfind(joint_names,'uay'));
       ankle_idx = find(ankle_idx(act_idx));
+      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx);
 
       qp = QPController(r,ctrl_data,options);
 
