@@ -307,6 +307,10 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_2.world";
         host = "robot";
     }
+    cmd "gz_vrc_walking_rubble" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2_stones.world";
+        host = "robot";
+    }
     cmd "gz_vrc_manip" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=/usr/local/share/drcsim-2.5/worlds/vrc_task_3.world";
         host = "robot";
