@@ -5,6 +5,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     max_forward_step
     nom_forward_step
     max_backward_step
+    max_step_dz
     max_step_width
     min_step_width
     nom_step_width
@@ -33,6 +34,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'max_forward_step', 0.4,...%m
         'max_backward_step', 0.20,...%m
         'max_step_width', 0.35,...%m
+        'max_step_dz', 0.3,...%m
         'min_step_width', 0.2,...%m
         'nom_step_width', 0.26,...%m (nominal step width)
         'nom_step_clearance', 0.05,...%m
