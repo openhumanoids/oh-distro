@@ -35,5 +35,8 @@ struct affordance_t
   double bounding_rpy[3];
   double bounding_lwh[3]; 
 
-
+  // Name of file containing model
+  // This is an alternative to setting triangles and points in the affordance_plus_t message
+  // may be a pcd file or ply
+  string modelfile;
 }

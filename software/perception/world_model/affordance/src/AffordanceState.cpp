@@ -149,6 +149,7 @@ void AffordanceState::clear()
 //  _triangles.clear();
   
   _otdf_type = AffordanceState::UNKNOWN;
+  _modelfile.clear();
 }
 
 void AffordanceState::setToBox(const double length, const double width,
@@ -163,6 +164,7 @@ void AffordanceState::setToBox(const double length, const double width,
   _params[WIDTH_NAME] = width;
   _params[HEIGHT_NAME] = height;
   _otdf_type = AffordanceState::BOX;
+  _modelfile.clear();
 
   //set rest of the fields
   _uid = uid;
@@ -182,6 +184,7 @@ void AffordanceState::setToSphere(const double radius,
 
   _params[RADIUS_NAME] = radius;
   _otdf_type = AffordanceState::SPHERE;
+  _modelfile.clear();
   //set rest of the fields
   _uid = uid;
   _map_id = mapId;
@@ -200,6 +203,7 @@ void AffordanceState::setToCylinder(const double length, const double radius,
   _params[LENGTH_NAME] = length;
   _params[RADIUS_NAME] = radius;
   _otdf_type = AffordanceState::CYLINDER;
+  _modelfile.clear();
   //set rest of the fields
   _uid = uid;
   _map_id = mapId;
@@ -212,6 +216,7 @@ void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
 {
   //do checks to make sure the relevant fields are defined
   _otdf_type = type;
+  _modelfile.clear();
 
   if (type == AffordanceState::CYLINDER && 
       !(hasRadius() && hasLength()))
@@ -242,7 +247,6 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
   memcpy(_bounding_rpy, msg->bounding_rpy, 3*sizeof(double));
   memcpy(_bounding_lwh, msg->bounding_lwh, 3*sizeof(double));
 
-  _otdf_type 		= msg->otdf_type;
   //_points 	= msg->points;
   //_triangles       = msg->triangles;
     
@@ -257,6 +261,7 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
     }
   
   _otdf_type = msg->otdf_type;
+  _modelfile = msg->modelfile;
   
   for(int i = 0; i < msg->nstates; i++)
     _states[msg->state_names[i]] = msg->states[i];
@@ -279,6 +284,7 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	msg->map_id		= _map_id;
 	msg->uid 	= _uid;
 	msg->otdf_type		= _otdf_type;
+  msg->modelfile = _modelfile;
 
 	memcpy(msg->origin_xyz, _origin_xyz, 3*sizeof(double));
 	memcpy(msg->origin_rpy, _origin_rpy, 3*sizeof(double));

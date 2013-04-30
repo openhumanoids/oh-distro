@@ -1373,13 +1373,30 @@ namespace surrogate_gui
 	  affordanceMsg.aff.map_id = 0; 	  
 	  affordanceMsg.aff.otdf_type = "car";
 
+    // read in pcd
+    /* TODO 
+       - support multiple files
+       - cache models
+    */
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PCDReader reader;
+    string modelfile = "car.pcd";
+    string file = getenv("HOME") + string("/drc/software/models/otdf/") + modelfile;
+    reader.read(file.c_str(), *modelcloud);
+    // Transform point cloud to match model
+    /* for old car, no longer needed       
+    Affine3f transformModel = Affine3f::Identity();
+    transformModel.translation() = Vector3f(0.72,0,0); // correct model  TODO fix model and remove hard coding
+    transformModel.linear() = ypr2rot(Vector3f(M_PI,0,0));
+    transformPointCloud(*modelcloud, *modelcloud, transformModel);
+    */
+
     //geometrical properties
     ObjectPointsPtr currObj = getCurrentObjectSelected();
     Vector3f xyz(0,0,0),ypr(0,0,0);
     //std::vector<double> inliers_distances; TODO
     //std::vector< vector<float> > inliers; TODO
     // PointIndices::Ptr inlierIndices = TODO
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
     Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
                                 currObj->indices, fp, 
@@ -1428,7 +1445,10 @@ namespace surrogate_gui
     affordanceMsg.aff.bounding_lwh[1] = 1.7;
     affordanceMsg.aff.bounding_lwh[2] = 2.0;
 
-    // populate points
+    // set modelfile
+    affordanceMsg.aff.modelfile = modelfile;
+
+    // populate points //TODO remove when modelfile is fully supported
     affordanceMsg.npoints = modelcloud->size();
     affordanceMsg.points.resize(modelcloud->size());
     for(int i=0;i<modelcloud->size();i++){

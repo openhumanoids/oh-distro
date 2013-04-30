@@ -66,6 +66,8 @@ namespace affordance
      the otdf extension at the end.  e.g. "cylinder"*/
     OTDF_TYPE _otdf_type;
 
+    std::string _modelfile;
+
     //-----------constructor/destructor
   public:
     AffordanceState(const drc::affordance_t *affordanceMsg);
