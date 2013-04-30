@@ -38,7 +38,7 @@ namespace affordance
        These should be used as keys in the _params map*/
     static std::string  X_NAME, Y_NAME, Z_NAME, ROLL_NAME, PITCH_NAME, YAW_NAME,
       RADIUS_NAME, LENGTH_NAME, WIDTH_NAME, HEIGHT_NAME,  R_COLOR_NAME, G_COLOR_NAME, B_COLOR_NAME;
-    
+
     //------------fields
   public: //should make get / private set methods for these
     //mimicking lcm
@@ -58,14 +58,12 @@ namespace affordance
     double _bounding_xyz[3];
     double _bounding_rpy[3];
     double _bounding_lwh[3];
-    //std::vector< std::vector <float> > _points;
-    //std::vector< std::vector <int> > _triangles;    
     
   private:
     /**type of affordance.  this is a relative otdf file name w/o
      the otdf extension at the end.  e.g. "cylinder"*/
     OTDF_TYPE _otdf_type;
-
+    std::string _friendly_name;
     std::string _modelfile;
 
     //-----------constructor/destructor
@@ -77,6 +75,10 @@ namespace affordance
     AffordanceState(const AffordanceState &other);
     AffordanceState& operator=( const AffordanceState& rhs );
     virtual ~AffordanceState();    
+
+  public:
+    static void getBoxesCylindersSpheres(const std::string &urdf_filename,
+                                         std::vector<boost::shared_ptr<AffordanceState> > &affs);
 
   private:
     void initHelper(const drc::affordance_t *msg);
@@ -90,23 +92,25 @@ namespace affordance
 
 	     
     void setToBox(const double length = 0, const double width = 0,
-		  const double height = 0,
-		  const int &uid = 0, const int &mapId = 0,
-		  const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
-		  const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
-		  
-		  
+                  const double height = 0,
+                  const int &uid = 0, const int &mapId = 0,
+                  const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+                  const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0),
+                  const std::string &friendly_name = "");
+			  
 
     void setToSphere(const double radius,
-		     const int &uid = 0, const int &mapId = 0,
-		     const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
-		     const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+                     const int &uid = 0, const int &mapId = 0,
+                     const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)),
+                     const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0),
+                     const std::string &friendly_name = "");
 
 
     void setToCylinder(const double length = 0, const double radius = 0,
-		       const int &uid = 0, const int &mapId = 0,
-		       const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)), 
-      		       const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0));
+                       const int &uid = 0, const int &mapId = 0,
+                       const KDL::Frame &frame = KDL::Frame(KDL::Vector(0,0,0)), 
+                       const Eigen::Vector3f &color = Eigen::Vector3f(1,0,0),
+                       const std::string &friendly_name = "");
     
     void setType(const OTDF_TYPE &type);
     
@@ -121,6 +125,7 @@ namespace affordance
     //ModelState interface 
     virtual GlobalUID getGlobalUniqueId() const;
     OTDF_TYPE getOTDFType() const;
+    std::string getFriendlyName() const;
     virtual std::string getName() const;
 
     virtual Eigen::Vector3f getColor() const;

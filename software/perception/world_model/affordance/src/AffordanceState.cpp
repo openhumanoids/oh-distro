@@ -6,6 +6,8 @@
  */
 
 #include "AffordanceState.h"
+#include <urdf/model.h>
+#include <kinematics/kinematics_model_gfe.h>
 #include "boost/assign.hpp"
 #include <iostream>
 
@@ -13,7 +15,7 @@ using namespace affordance;
 using namespace Eigen;
 using namespace boost;
 using namespace std;
-
+using namespace urdf;
 
 //--------set common name fields for drc::affordance_t
 
@@ -82,13 +84,123 @@ AffordanceState::AffordanceState(const AffordanceState &other)
 @param frame transformation in the map
 @param rgb color values from [0,1]
 */
-AffordanceState::AffordanceState(const int &uid, const int &mapId,
-                                 const KDL::Frame &frame,
+AffordanceState::AffordanceState(const int &uid, const int &mapId, 
+                                const KDL::Frame &frame,
                                  const Eigen::Vector3f &color)
   : _map_id(mapId), _uid(uid), _otdf_type(AffordanceState::UNKNOWN)
 {
   setFrame(frame);
   setColor(color);
+}
+
+
+static KDL::Frame poseToKDL(const Pose &p)
+{
+  return KDL::Frame(KDL::Rotation::Quaternion(p.rotation.x, 
+                                              p.rotation.y, 
+                                              p.rotation.z, 
+                                              p.rotation.w),
+               KDL::Vector(p.position.x, 
+                           p.position.y, 
+                           p.position.z));
+}
+
+static AffPtr urdfCollToAffBoxCylSphere(const shared_ptr<Collision> urdfColl,
+                                        const string &friendly_name)
+{
+  shared_ptr<Geometry> g = urdfColl->geometry;
+  Eigen::Vector3f color(1,0,0); //todo
+
+  if(g->type == Geometry::SPHERE )
+    {                  
+      shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >(g);
+      AffPtr s (new AffordanceState());
+      s->setToSphere(sphere->radius,
+                     0,0, //uid, mapid
+                     poseToKDL(urdfColl->origin),
+                     color,
+                     friendly_name);             
+      return s;
+    } 
+  if (g->type == Geometry::BOX )
+    {
+      shared_ptr< Box > box = shared_dynamic_cast< Box >(g);
+      AffPtr b (new AffordanceState());
+      b->setToBox(box->dim.x, //length
+                  box->dim.y, //width
+                  box->dim.z, //height
+                  0,0, //uid, mapid
+                  poseToKDL(urdfColl->origin),
+                  color,
+                  friendly_name);
+      return b;
+    } 
+  if (g->type == Geometry::CYLINDER )
+    {
+      shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >(g);
+      AffPtr c (new AffordanceState());
+      c->setToCylinder(cylinder->length,
+                       cylinder->radius, 
+                       0,0,  //uid, mapid
+                       poseToKDL(urdfColl->origin),
+                       color,
+                       friendly_name);
+      return c;
+    }          
+  return AffPtr();
+}
+
+/**@param urdf_filename urdf to parse
+@param affs affordances of boxes, cylinders, spheres that 
+we parse from the given urdf*/
+void AffordanceState::getBoxesCylindersSpheres(const string &urdf_filename,
+                                               vector<AffPtr> &affs)
+{
+   //----load urdf from file
+  urdf::Model model;
+  if(!model.initString(kinematics::Kinematics_Model_GFE::urdf_filename_to_xml_string(urdf_filename)))
+    {
+      cout << "\ngetBoxesCylindersSpheres: Couldn't load urdf\n" << endl;
+    }
+ 
+  //parse
+  vector<shared_ptr< Link> > links;
+  model.getLinks(links);
+  
+  //loop
+  for( unsigned int i = 0; i < links.size(); i++ )
+    {
+      for( std::map<string, shared_ptr<vector<shared_ptr<Collision> > > >::iterator it = links[i]->collision_groups.begin(); 
+           it != links[i]->collision_groups.end(); it++ )
+        {
+          for( unsigned int j = 0; j < it->second->size(); j++ )
+            {
+              if( (*it->second)[ j ] == NULL )
+                {
+                  cout << endl << links[i]->name << " null " << endl;
+                  continue;
+                }
+              
+              AffPtr a = urdfCollToAffBoxCylSphere((*it->second)[j],
+                                                   links[ i ]->name);
+              if (a != AffPtr())
+                affs.push_back(a);
+              else
+                cout << "\n null element" << endl;
+            }
+        }
+      
+      if( links[ i ]->collision == NULL )
+        {
+          cout << "\n null collision group" << endl;
+          continue;
+        }
+   
+      AffPtr a = urdfCollToAffBoxCylSphere(links[ i ]->collision,
+                                           links[ i ]->name);
+      if (a != AffPtr())
+        affs.push_back(a);    
+    }
 }
 
 
@@ -150,13 +262,15 @@ void AffordanceState::clear()
   
   _otdf_type = AffordanceState::UNKNOWN;
   _modelfile.clear();
+  _friendly_name.clear();
 }
 
 void AffordanceState::setToBox(const double length, const double width,
-			       const double height,
-			       const int &uid, const int &mapId,
-			       const KDL::Frame &frame,
-			       const Eigen::Vector3f &color)
+                               const double height,
+                               const int &uid, const int &mapId,
+                               const KDL::Frame &frame,
+                               const Eigen::Vector3f &color,
+                               const std::string &friendly_name)
 {
   clear();
   
@@ -164,6 +278,7 @@ void AffordanceState::setToBox(const double length, const double width,
   _params[WIDTH_NAME] = width;
   _params[HEIGHT_NAME] = height;
   _otdf_type = AffordanceState::BOX;
+  _friendly_name = friendly_name;
   _modelfile.clear();
 
   //set rest of the fields
@@ -176,15 +291,18 @@ void AffordanceState::setToBox(const double length, const double width,
 
 
 void AffordanceState::setToSphere(const double radius,
-				  const int &uid, const int &mapId,
-				  const KDL::Frame &frame,
-				  const Eigen::Vector3f &color)
+                                  const int &uid, const int &mapId,
+                                  const KDL::Frame &frame,
+                                  const Eigen::Vector3f &color,
+                                  const string &friendly_name)
 {
   clear();
 
   _params[RADIUS_NAME] = radius;
   _otdf_type = AffordanceState::SPHERE;
+  _friendly_name = friendly_name;
   _modelfile.clear();
+
   //set rest of the fields
   _uid = uid;
   _map_id = mapId;
@@ -193,16 +311,19 @@ void AffordanceState::setToSphere(const double radius,
 }
 
 
-void AffordanceState::setToCylinder(const double length, const double radius,
+void AffordanceState::setToCylinder(const double length, 
+                                    const double radius,
                                     const int &uid, const int &mapId,
                                     const KDL::Frame &frame,
-                                    const Eigen::Vector3f &color)
+                                    const Eigen::Vector3f &color,
+                                    const string &friendly_name)
 {
   clear();
 
   _params[LENGTH_NAME] = length;
   _params[RADIUS_NAME] = radius;
   _otdf_type = AffordanceState::CYLINDER;
+  _friendly_name = friendly_name;
   _modelfile.clear();
   //set rest of the fields
   _uid = uid;
@@ -217,6 +338,7 @@ void AffordanceState::setType(const AffordanceState::OTDF_TYPE &type)
   //do checks to make sure the relevant fields are defined
   _otdf_type = type;
   _modelfile.clear();
+  _friendly_name.clear();
 
   if (type == AffordanceState::CYLINDER && 
       !(hasRadius() && hasLength()))
@@ -262,7 +384,8 @@ void AffordanceState::initHelper(const drc::affordance_t *msg)
   
   _otdf_type = msg->otdf_type;
   _modelfile = msg->modelfile;
-  
+  _friendly_name = msg->friendly_name;
+
   for(int i = 0; i < msg->nstates; i++)
     _states[msg->state_names[i]] = msg->states[i];
 
@@ -284,7 +407,8 @@ void AffordanceState::toMsg(drc::affordance_t *msg) const
 	msg->map_id		= _map_id;
 	msg->uid 	= _uid;
 	msg->otdf_type		= _otdf_type;
-  msg->modelfile = _modelfile;
+    msg->modelfile = _modelfile;
+    msg->friendly_name = _friendly_name;
 
 	memcpy(msg->origin_xyz, _origin_xyz, 3*sizeof(double));
 	memcpy(msg->origin_rpy, _origin_rpy, 3*sizeof(double));
@@ -433,13 +557,18 @@ AffordanceState::OTDF_TYPE AffordanceState::getType() const
   return _otdf_type;
 }
 
+string AffordanceState::getFriendlyName() const
+{
+  return _friendly_name;
+}
+
 
 namespace affordance
 {
 /**operator << */
   ostream& operator<<(ostream& out, const AffordanceState& other )
   {
-    out << "=====Affordance " << other.getType() << "========" << endl;
+    out << "=====Affordance \"" << other.getFriendlyName() << "\" : type = " << other.getType() << "========" << endl;
     out << "time = " << other._utime << endl;
     out << "(mapId, uid, otdfType) = (" << other._map_id << ", "
         << other._uid << ", " << other.getType() << ")\n";
@@ -466,7 +595,8 @@ GlobalUID AffordanceState::getGlobalUniqueId() const
 
 std::string AffordanceState:: getName() const
 {
-    return _otdf_type + ToString::toStr(_uid);
+    return _friendly_name + "/" 
+      + _otdf_type + ToString::toStr(_uid);
 }
 
 AffordanceState::OTDF_TYPE AffordanceState:: getOTDFType() const
