@@ -189,6 +189,18 @@ group "a.5.a.motion_vo"{
     }
 }
 
+group "a.6.ingress" {
+    cmd "IngressStateMachine" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
+        host = "robot";
+    }
+    cmd "PrecomputationServer" {
+        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runPrecomputeServer;\"";
+        host = "robot";
+    }
+}
+
+
 group "b.1.core" {
     cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot.cfg"; 
@@ -454,6 +466,16 @@ script "comp.vrc_driving" {
     start group "b.4.driving";
 }
 
+script "comp.ingress" {
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.6.ingress";
+    wait ms 10000;
+    start cmd "gz_mit_ingress_slow"; 
+    wait ms 3000;
+    start cmd "set-sim-rate";
+}
+
 ######################################
 # with deputies:
 script "dev.qual_1" { 
@@ -481,7 +503,6 @@ script "dev.vrc_driving" {
     wait ms 6000;
     start group "b.4.driving";
 }
-
 
 script "dev.mit_walking" {
     start group "0.development";
@@ -515,6 +536,12 @@ script "dev.mit_manip" {
     start cmd "gz_mit_manip_slow";
     wait ms 6000;
     start cmd "set-sim-rate";
+}
+
+script "dev.ingress" { 
+    start group "0.development";
+    run_script "comp.ingress";
+    stop group "b.1.core";
 }
 
 ############ Misc incl System Tests ############
