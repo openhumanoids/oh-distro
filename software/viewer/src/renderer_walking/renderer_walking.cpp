@@ -35,7 +35,8 @@
 #define PARAM_GOAL_SEND "Walking Goal"
 #define PARAM_FIX_YAW "Constrain footstep yaw"
 #define PARAM_LEADING_FOOT "Leading foot"
-#define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
+// #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
+#define PARAM_STEP_TIME "Time per step (s)"
 #define PARAM_MAX_NUM_STEPS "Max. number of steps"
 #define PARAM_MIN_NUM_STEPS "Min. number of steps"
 #define PARAM_GOAL_SEND_LEFT_HAND "[L]eft Hand Goal"
@@ -182,6 +183,7 @@ typedef struct _RendererWalking {
   
   // Most recent robot position, rotation and utime
   int64_t robot_utime;
+  int64_t time_per_step_ns;
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
   
@@ -364,6 +366,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       msg.goal_pos.rotation.z = quat_out[3];
       msg.is_new_goal = true;
       msg.allow_optimization = self->allow_optimization;
+      msg.time_per_step = self->time_per_step_ns;
       msg.yaw_fixed = self->fix_step_yaw;
       if (self->leading_foot == LEADING_FOOT_RIGHT) {
         msg.right_foot_lead = true;
@@ -452,6 +455,8 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
 
   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
+
+  self->time_per_step_ns = (int)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
 
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
 
@@ -561,6 +566,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg_changed = true;
     self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   }
+  int64_t new_step_time = (int64_t)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
+  if (new_step_time != self->min_num_steps) {
+    msg_changed = true;
+    self->time_per_step_ns = new_step_time;
+  }
 
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
@@ -569,10 +579,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->fix_step_yaw = bot_gtk_param_widget_get_bool(self->pw, PARAM_FIX_YAW);
   }
 
-  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
-    msg_changed = true;
-    self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
-  }
+  // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
+  //   msg_changed = true;
+  //   self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
+  // }
 
   if (self->leading_foot != (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT)) {
     msg_changed = true;
@@ -587,6 +597,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->last_walking_msg.is_new_goal = false;
       self->last_walking_msg.yaw_fixed = self->fix_step_yaw;
       self->last_walking_msg.allow_optimization = self->allow_optimization;
+      self->last_walking_msg.time_per_step = self->time_per_step_ns;
       if (self->leading_foot == LEADING_FOOT_RIGHT) {
         self->last_walking_msg.right_foot_lead = true;
       } else {
@@ -673,6 +684,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->has_walking_msg = false;
   self->fix_step_yaw = false;
   self->allow_optimization = false;
+  self->time_per_step_ns = 1.3e9;
   self->leading_foot = LEADING_FOOT_RIGHT;
   
   self->perceptionData = new PerceptionData();
@@ -687,8 +699,9 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 0.0);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FIX_YAW, 0, NULL);
-  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
+  // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FIX_YAW, self->fix_step_yaw);
   
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
