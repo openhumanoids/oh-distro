@@ -509,7 +509,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
           ypr[0]*180/M_PI << " " << ypr[1]*180/M_PI << " " << ypr[2]*180/M_PI << "\n";        
       }
       estimator_->setHeadPose(revised_local_to_head);
-      estimator_->publishUpdate(utime);
+      //estimator_->publishUpdate(utime); // now always done in publishUpdateRobotState
     }
     if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
     imu_counter_++;

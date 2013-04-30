@@ -1,10 +1,11 @@
 #include "voestimator.hpp"
 
+using namespace Eigen;
 
 VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_,
   std::string channel_extension_):
   lcm_(lcm_), botframes_(botframes_), channel_extension_(channel_extension_),
-  prev_utime_(0), pose_initialized_(false), vo_initialized_(false), zheight_initialized_(false){
+  utime_prev_(0), pose_initialized_(false), vo_initialized_(false), zheight_initialized_(false){
   local_to_head_.setIdentity();
 
   // Assume head to camera is rigid:
@@ -36,9 +37,9 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   }
   
   // Evaluate Rates:
-  double elapsed_time =  ( (double) utime - prev_utime_)/1E6;
-  if(prev_utime_==0){
-    std::cout << "prev_utime_ is zero [at init]\n"; 
+  double elapsed_time =  ( (double) utime - utime_prev_)/1E6;
+  if(utime_prev_==0){
+    std::cout << "utime_prev_ is zero [at init]\n"; 
     vo_initialized_ = false; // reconfirming what is set above
     
   }else{
@@ -137,13 +138,18 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   ss << "\nL2H ";   print_Isometry3d(local_to_head_,ss); 
   std::cout << ss.str() << "\n";
   */
-  publishUpdate(utime);
+  
   local_to_head_prev_ = local_to_head_;
   local_to_body_prev_ = local_to_body_;  
-  prev_utime_ = utime; 
+  utime_prev_ = utime; 
+  elapsed_time_prev_ = elapsed_time;
+  delta_head_prev_ = delta_head;
+  // Publish this to see vo-only estimates
+  // however it always has delay. so will result in jerks to the POSES published
+  publishUpdate(utime_prev_, local_to_head_prev_ , local_to_body_prev_);
 }
   
-void VoEstimator::publishUpdate(int64_t utime){
+void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body){
   if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
     std::cout << "pose, vo, zheight not initialized, refusing to publish POSE_HEAD nad POSE_BODY\n";
     return;
@@ -151,12 +157,12 @@ void VoEstimator::publishUpdate(int64_t utime){
 
   
   // publish local to head pose
-  Eigen::Quaterniond l2head_rot(local_to_head_.rotation());
+  Eigen::Quaterniond l2head_rot(local_to_head.rotation());
   bot_core::pose_t l2head_msg;
   l2head_msg.utime = utime;
-  l2head_msg.pos[0] = local_to_head_.translation().x();
-  l2head_msg.pos[1] = local_to_head_.translation().y();
-  l2head_msg.pos[2] = local_to_head_.translation().z();
+  l2head_msg.pos[0] = local_to_head.translation().x();
+  l2head_msg.pos[1] = local_to_head.translation().y();
+  l2head_msg.pos[2] = local_to_head.translation().z();
   l2head_msg.orientation[0] = l2head_rot.w();
   l2head_msg.orientation[1] = l2head_rot.x();
   l2head_msg.orientation[2] = l2head_rot.y();
@@ -173,16 +179,16 @@ void VoEstimator::publishUpdate(int64_t utime){
   lcm_->publish("POSE_HEAD" + channel_extension_, &l2head_msg);  
 
   // Send vo pose to collections:
-  Isometry3dTime local_to_headT = Isometry3dTime(utime, local_to_head_);
+  Isometry3dTime local_to_headT = Isometry3dTime(utime, local_to_head);
   pc_vis_->pose_to_lcm_from_list(60000, local_to_headT);
 
   // publish local to body pose
-  Eigen::Quaterniond l2body_rot(local_to_body_.rotation());
+  Eigen::Quaterniond l2body_rot(local_to_body.rotation());
   bot_core::pose_t l2body_msg;
   l2body_msg.utime = utime;
-  l2body_msg.pos[0] = local_to_body_.translation().x();
-  l2body_msg.pos[1] = local_to_body_.translation().y();
-  l2body_msg.pos[2] = local_to_body_.translation().z();
+  l2body_msg.pos[0] = local_to_body.translation().x();
+  l2body_msg.pos[1] = local_to_body.translation().y();
+  l2body_msg.pos[2] = local_to_body.translation().z();
   l2body_msg.orientation[0] = l2body_rot.w();
   l2body_msg.orientation[1] = l2body_rot.x();
   l2body_msg.orientation[2] = l2body_rot.y();
@@ -199,21 +205,48 @@ void VoEstimator::publishUpdate(int64_t utime){
   lcm_->publish("POSE_BODY" + channel_extension_, &l2body_msg);  
 }
 
+
+
+Eigen::Isometry3d VoEstimator::extrapolateHeadRates(float d_time){
+  //std::cout << "age of pose: " << (TRUE_state_msg->utime - utime_prev_) << "\n";
+
+  if ((d_time > 0.1 )){
+    // This would only happen if the frequency is less than 10Hz
+    std::cout << "[ERROR] extrapolation time is " << d_time << "sec. capping at 0.1\n";
+    d_time =0.1;
+  }else if(d_time < 0){
+    // This would only happen if we received out of order messages    
+    std::cout << "[ERROR] extrapolation time is " << d_time << "sec. capping at 0sec\n";
+    d_time =0.0;
+  }
+  
+  Eigen::Vector3d d_linear = local_to_head_lin_rate_*d_time ;
+  Eigen::Vector3d d_rotation = local_to_head_rot_rate_*d_time ;
+  
+  /*
+  std::cout << "age of pose: " << d_time  << " sec\n";
+  std::cout << "linear  rate: " << local_to_head_lin_rate_.transpose()  << " \n";
+  std::cout << "rotationrate: " << 180*(1/M_PI)*local_to_head_rot_rate_.transpose()  << " \n";
+  std::cout << "linear delta: " << d_linear.transpose()  << " \n";
+  std::cout << "rotationdelt: " << 180*(1/M_PI)*d_rotation.transpose()  << " \n";
+  */
+  Eigen::Isometry3d extrapol =  Eigen::Isometry3d::Identity();
+  Matrix3d m;
+  m = AngleAxisd ( d_rotation(0) , Vector3d::UnitZ ())
+                  * AngleAxisd (d_rotation(1) , Vector3d::UnitY ())
+                  * AngleAxisd ( d_rotation(2) , Vector3d::UnitX ());  
+  extrapol *= m;  
+  extrapol.translation()  << d_linear;    
+  return extrapol;
+}
+
 void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg){
   if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
     std::cout << "pose or vo or zheight not initialized, refusing to publish EST_ROBOT_STATE\n";
     return;
   }
-  
-  /////////////// Update the body estimate ///////////
-  Eigen::Isometry3d head_to_body_cur;
-  int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", TRUE_state_msg->utime , head_to_body_cur);
-  local_to_body_ = local_to_head_ * head_to_body_cur;  
-  if (head_to_body_cur.translation().z()==0 ){
-    cout << "head to body is zero - this shouldnt happen=======================\n";  
-  }  
-  
   // Infer the Robot's head position from the ground truth root world pose
+  // TODO: do this somewhere else
   bot_core::pose_t pose_msg;
   pose_msg.utime = TRUE_state_msg->utime;
   pose_msg.pos[0] = TRUE_state_msg->origin_position.translation.x;
@@ -223,16 +256,33 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   pose_msg.orientation[1] = TRUE_state_msg->origin_position.rotation.x;
   pose_msg.orientation[2] = TRUE_state_msg->origin_position.rotation.y;
   pose_msg.orientation[3] = TRUE_state_msg->origin_position.rotation.z;
-  lcm_->publish("POSE_BODY_TRUE", &pose_msg);  
+  lcm_->publish("POSE_BODY_TRUE", &pose_msg);    
   
+  // 1. Extrapolate:
+  // EXTRAPOLATION IS VERY WEAK BASED OFF OF THE VO - LOTS OF JUMPING AROUND 
+  // AS ITS BASED ON IMAGES UP TO 2 FRAMES OLD
+  //float d_time = ((float) (TRUE_state_msg->utime - utime_prev_)*1E-6); // diff in time since last VO estimate
+  //Eigen::Isometry3d extrapol = extrapolateHeadRates(d_time);
+  //Eigen::Isometry3d current_local_to_head = local_to_head_ * extrapol;
+  Eigen::Isometry3d current_local_to_head = local_to_head_; // NO EXTRAPOLATION
   
+  // 2. Update the body-to-head estimate
+  Eigen::Isometry3d head_to_body_cur;
+  int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", TRUE_state_msg->utime , head_to_body_cur);
+  Eigen::Isometry3d current_local_to_body = current_local_to_head* head_to_body_cur;  
+  if (head_to_body_cur.translation().z()==0 ){
+    cout << "head to body is zero - this shouldnt happen=======================\n";  
+  }  
   
-  Eigen::Quaterniond l2body_rot(local_to_body_.rotation());
+  // Publish to Bot Frames:
+  //publishUpdate(utime_prev_, current_local_to_head , current_local_to_body);
+
+  // Publish EST_ROBOT_STATE
+  Eigen::Quaterniond l2body_rot(current_local_to_body.rotation());
   drc::position_3d_t origin;
-  origin.translation.x = local_to_body_.translation().x();
-  origin.translation.y = local_to_body_.translation().y();
-  origin.translation.z = local_to_body_.translation().z();
-// retain the height  origin.translation.z = local_to_body_.translation().z();
+  origin.translation.x = current_local_to_body.translation().x();
+  origin.translation.y = current_local_to_body.translation().y();
+  origin.translation.z = current_local_to_body.translation().z();
   origin.rotation.w = l2body_rot.w();
   origin.rotation.x = l2body_rot.x();
   origin.rotation.y = l2body_rot.y();
@@ -242,17 +292,9 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   twist.linear_velocity.x = local_to_body_lin_rate_(0);
   twist.linear_velocity.y = local_to_body_lin_rate_(1);
   twist.linear_velocity.z = local_to_body_lin_rate_(2);
-//  twist.linear_velocity.x = TRUE_state_msg->origin_twist.linear_velocity.x; //local_to_body_lin_rate_(0);
-//  twist.linear_velocity.y = TRUE_state_msg->origin_twist.linear_velocity.y; //local_to_body_lin_rate_(1);
-//  twist.linear_velocity.z = TRUE_state_msg->origin_twist.linear_velocity.z; //local_to_body_lin_rate_(2);
-
   twist.angular_velocity.x = local_to_body_rot_rate_(2);
   twist.angular_velocity.y = local_to_body_rot_rate_(1);
   twist.angular_velocity.z = local_to_body_rot_rate_(0);
-//  twist.angular_velocity.x = TRUE_state_msg->origin_twist.angular_velocity.x;
-//  twist.angular_velocity.y = TRUE_state_msg->origin_twist.angular_velocity.y;
-//  twist.angular_velocity.z = TRUE_state_msg->origin_twist.angular_velocity.z;
-  
   
   // EST is TRUE with sensor estimated position
   drc::robot_state_t msgout;
