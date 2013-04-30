@@ -349,6 +349,16 @@ struct RendererAffordances {
    RendererAffordances *self = (RendererAffordances*) user;
    drc::affordance_t msg;
 
+   // get otdf from map
+   stringstream nameSS;
+   OtdfInstanceStruc* otdf = NULL;
+   nameSS << otdf_type << "_" << uid;
+   if(self->instantiated_objects.count(nameSS.str())){
+     otdf = &self->instantiated_objects[nameSS.str()];
+   } else{
+     cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
+   }
+
    msg.utime = 0;
    msg.map_id = 0;
    
@@ -359,16 +369,28 @@ struct RendererAffordances {
    
     //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
    msg.origin_xyz[0] =instance_in->params_map_.find("x")->second;
-   msg.origin_xyz[0] =instance_in->params_map_.find("y")->second;
-   msg.origin_xyz[0] =instance_in->params_map_.find("z")->second;
+   msg.origin_xyz[1] =instance_in->params_map_.find("y")->second;
+   msg.origin_xyz[2] =instance_in->params_map_.find("z")->second;
    msg.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
-   msg.origin_rpy[0] =instance_in->params_map_.find("pitch")->second;
-   msg.origin_rpy[0] =instance_in->params_map_.find("yaw")->second;
+   msg.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
+   msg.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
    
    double bounding_xyz[]={0,0,0};
    double bounding_rpy[]={0,0,0};
    double bounding_lwh[]={0,0,0};
   
+   if(otdf){
+      bounding_xyz[0] = otdf->boundingBoxXYZ[0];
+      bounding_xyz[1] = otdf->boundingBoxXYZ[1];
+      bounding_xyz[2] = otdf->boundingBoxXYZ[2];
+      bounding_rpy[0] = otdf->boundingBoxRPY[0];
+      bounding_rpy[1] = otdf->boundingBoxRPY[1];
+      bounding_rpy[2] = otdf->boundingBoxRPY[2];
+      bounding_lwh[0] = otdf->boundingBoxLWH[0];
+      bounding_lwh[1] = otdf->boundingBoxLWH[1];
+      bounding_lwh[2] = otdf->boundingBoxLWH[2];
+   }
+
    msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
    msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
    msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
