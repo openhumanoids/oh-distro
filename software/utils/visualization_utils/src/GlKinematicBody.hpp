@@ -97,9 +97,10 @@ class GlKinematicBody
     bool enable_blinking; 
     bool initialized;
     bool is_otdf_instance;
-    bool accumulate_motion_trail;
     bool future_state_changing;
     bool future_display_active;  // set when set_future_state is called. Cleared when _T_world_body == _T_world_body_desired;
+    bool accumulate_motion_trail;
+
    
    public:
     // Constructors and destructor
@@ -116,6 +117,8 @@ class GlKinematicBody
     //Also store current jointangles map.
     std::map<std::string, double> _current_jointpos;
     std::map<std::string, double> _future_jointpos;
+    std::map<std::string, double> _jointlimit_min;
+    std::map<std::string, double> _jointlimit_max;
     std::vector<KDL::Frame> _desired_body_motion_history;
     
     // state can be set via robot_state_t, or urdf::Model,  or affordance_state_t,  or otdf::ModelInterface;
@@ -209,67 +212,86 @@ class GlKinematicBody
     
     void accumulate_and_draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_accumulationFrame,const KDL::Frame &T_accumulationFrame_currentWorldFrame)
     {
-    glColor4f(c[0],c[1],c[2],alpha);
-     if(accumulate_motion_trail)
-      {
-        KDL::Frame T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
-
-        if(_desired_body_motion_history.size()>0)
-        {  
-          KDL::Frame prev_T_accumulationFrame_body = _desired_body_motion_history.back();
-          KDL::Vector diff = prev_T_accumulationFrame_body.p -  T_accumulationFrame_body.p;
-          double distance = sqrt( diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
-
-          if(distance > 0.01)//>1cm
-          {
-           _desired_body_motion_history.push_back(T_accumulationFrame_body);
-          }
-        }
-        else
-          _desired_body_motion_history.push_back(T_accumulationFrame_body);      
-      }
-      
-      
-     if(_desired_body_motion_history.size()>0)  {     
-       glLineWidth (3.0);
-        glPushMatrix();
-        glBegin(GL_LINE_STRIP);
-        //glPointSize(5.0f);
-        //glBegin(GL_POINTS);
-        for(uint i = 0; i < _desired_body_motion_history.size(); i++)
+       if(accumulate_motion_trail)
         {
-           KDL::Frame nextTfframe = T_drawFrame_accumulationFrame*_desired_body_motion_history[i];
-	         glVertex3f(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+          KDL::Frame T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
+
+          if(_desired_body_motion_history.size()>0)
+          {  
+            KDL::Frame prev_T_accumulationFrame_body = _desired_body_motion_history.back();
+            KDL::Vector diff = prev_T_accumulationFrame_body.p -  T_accumulationFrame_body.p;
+            double distance = sqrt( diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
+
+            if(distance > 0.01)//>1cm
+            {
+             _desired_body_motion_history.push_back(T_accumulationFrame_body);
+            }
+          }
+          else
+            _desired_body_motion_history.push_back(T_accumulationFrame_body);      
         }
-        glEnd();
-        glPopMatrix();
-     }
+        draw_motion_trail(c,alpha,T_drawFrame_accumulationFrame);
+    };
     
+    void draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_accumulationFrame)
+    {
+        glColor4f(c[0],c[1],c[2],alpha);
+      
+       if(_desired_body_motion_history.size()>0)  {     
+         glLineWidth (3.0);
+          glPushMatrix();
+          glBegin(GL_LINE_STRIP);
+          //glPointSize(5.0f);
+          //glBegin(GL_POINTS);
+          for(uint i = 0; i < _desired_body_motion_history.size(); i++)
+          {
+             KDL::Frame nextTfframe = T_drawFrame_accumulationFrame*_desired_body_motion_history[i];
+	           glVertex3f(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+          }
+          glEnd();
+          glPopMatrix();
+       }
     };
     
     void log_motion_trail(bool value)
     {
-      accumulate_motion_trail = value;
+      accumulate_motion_trail=value;
     };
+    
+    bool is_motion_trail_log_active()
+    {
+      return accumulate_motion_trail;
+    };
+    
     
     void clear_desired_body_motion_history()
     {
-      std::cout << "called clear_desired_body_motion_history() " << std::endl;
-      _T_world_body_future = _T_world_body;
-      _future_jointpos.clear();
-      _future_jointpos = _current_jointpos;
-      _desired_body_motion_history.clear();
+     accumulate_motion_trail=false;
+      if(_desired_body_motion_history.size()>0) {
+        std::cout << "called clear_desired_body_motion_history() " << std::endl;
+        _T_world_body_future = _T_world_body;
+        _future_jointpos.clear();
+        _future_jointpos = _current_jointpos;
+        _desired_body_motion_history.clear();
+      }
     };
 
     void disable_future_display()
     {
+      future_state_changing=false;
       future_display_active = false;
+      clear_desired_body_motion_history();
     };
+    
+    bool is_future_display_active()
+    {
+       return future_display_active;
+    };   
     
     bool is_future_state_changing()
     {
        return future_state_changing;
-    }
+    };
 
     void set_future_state_changing(bool value)
     {
@@ -280,7 +302,7 @@ class GlKinematicBody
         _future_jointpos =  _current_jointpos;
       }
         
-    }
+    };
     
     void show_bbox(bool value)
     {
@@ -307,6 +329,11 @@ class GlKinematicBody
       return _links_map;
     };
     
+    std::map<std::string, boost::shared_ptr<otdf::Link> > get_otdf_links_map()
+    {
+      return _otdf_links_map;
+    };
+    
     std::vector<LinkFrameStruct> get_link_geometry_tfs()
     {
       return _link_geometry_tfs;
@@ -325,6 +352,18 @@ class GlKinematicBody
     bool get_mesh_struct(const std::string &link_geometry_name, MeshStruct &mesh_struct);
     bool get_joint_info(const std::string &joint_name, JointFrameStruct &jointinfo_struct);
     void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
+    
+    bool get_associated_link_name(std::string &link_geometry_name,std::string &link_name)
+    {
+      std::vector<std::string>::const_iterator found;
+      found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+      if (found != _link_geometry_names.end()) { // if doesnt exist then add*/
+        unsigned int index = found - _link_geometry_names.begin();
+        link_name = _link_names[index];
+        return true;
+      }
+      return false;
+    };
     
     void draw_whole_body_bbox(); 
     void blink(bool value){

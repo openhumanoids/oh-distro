@@ -94,9 +94,7 @@ class InteractableGlKinematicBody: public GlKinematicBody
         int64_t now=bot_timestamp_now();
         t=bot_timestamp_useconds(now)*1e-6;//in sec
         alpha=std::min(fabs(sin(M_PI*t)),1.0);
-        c[0]=0.7;
-        c[1]=0.1;
-        c[2]=0.1;
+        c[0]=0.7; c[1]=0.1; c[2]=0.1;
       }
      
       

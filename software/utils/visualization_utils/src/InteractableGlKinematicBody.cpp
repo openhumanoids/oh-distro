@@ -813,7 +813,10 @@ void InteractableGlKinematicBody::init_jointdof_marker_collision_objects()
   double dof_marker_outer_radius = 0.1;
   double torus_radius =0.5*(dof_marker_outer_radius+dof_marker_inner_radius); 
   double torus_tube_radius =0.5*(dof_marker_outer_radius-dof_marker_inner_radius);
-  
+  double trans_markersize = 0.05;
+  Eigen::Vector3f box_dims;
+  box_dims<<  trans_markersize,trans_markersize,trans_markersize;
+      
   _collision_detector_jointdof_markers.reset();
   _collision_detector_jointdof_markers = boost::shared_ptr<collision::Collision_Detector>(new collision::Collision_Detector());
 
@@ -831,6 +834,16 @@ void InteractableGlKinematicBody::init_jointdof_marker_collision_objects()
         _collision_detector_jointdof_markers->add_collision_object(&*object_ptr);
        
      }//for revolute or continuous joints
+     
+    if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
+    {
+        std::stringstream oss;
+        oss << "markers::" <<  jointInfo.name;
+        shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(),box_dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
+        _dofmarkers_collision_object_map.insert(make_pair(oss.str(), object_ptr));
+        _collision_detector_jointdof_markers->add_collision_object(&*object_ptr);
+
+     }//for prismatic
   }  
   
 }
@@ -855,10 +868,56 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
       pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
       joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
     }
-
-
-    int type = jointInfo.type;
+   joint_axis.normalize();
+   int type = jointInfo.type;
+    if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
+    {
+        double theta;
+        Eigen::Vector3f axis;      
+        Eigen::Vector3f uz; uz << 0 , 0 , 1;
+        double arrow_length =0.2;
+        
+        Eigen::Vector3f u_body_to_joint;
+        //u_body_to_joint << _T_world_body.p[0]-jointInfo.frame.p[0], _T_world_body.p[1]-jointInfo.frame.p[1],_T_world_body.p[2]-jointInfo.frame.p[2]; 
+        u_body_to_joint << _T_world_body_future.p[0]-jointInfo.future_frame.p[0], _T_world_body_future.p[1]-jointInfo.future_frame.p[1],_T_world_body_future.p[2]-jointInfo.future_frame.p[2];
+        u_body_to_joint.normalize();
+        double normal = acos(u_body_to_joint.dot(joint_axis));
+        double flipped = acos(u_body_to_joint.dot(-joint_axis));
+        
+        axis = uz.cross(joint_axis);
+        theta = acos(uz.dot(joint_axis));
+          
+        KDL::Frame JointAxisFrame;
+        JointAxisFrame.p[0] =pos[0]; JointAxisFrame.p[1] =pos[1]; JointAxisFrame.p[2] =pos[2];
+        KDL::Vector axis_temp;
+        axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
+        JointAxisFrame.M = KDL::Rotation::Rot(axis_temp,theta);          
       
+        KDL::Frame JointAxisOffset = KDL::Frame::Identity();
+       
+        if(flipped>normal+1e-1) {
+          JointAxisOffset.p[2] =-2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          double x,y,z,w;
+          JointAxisFrame.M.GetQuaternion(x,y,z,w);
+          p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
+          q << x,y,z,w;
+        }
+        else{
+          JointAxisOffset.p[2] = 2*arrow_length/3;          
+          JointAxisFrame = JointAxisFrame*JointAxisOffset;
+          double x,y,z,w;
+          JointAxisFrame.M.GetQuaternion(x,y,z,w);
+          p << JointAxisFrame.p[0],JointAxisFrame.p[1],JointAxisFrame.p[2];
+          q << x,y,z,w;
+        }
+        
+        std::stringstream oss;
+        oss << "markers::" <<  jointInfo.name;
+        shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
+        downcasted_object->set_transform(p,q);
+    }//for prismatic   
+     
     if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
     {
         //--get rotation in angle/axis form
@@ -936,7 +995,7 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
   double dof_marker_outer_radius = 0.1;
   double length =0.2;//=diff.norm();
   double head_width = 0.03; double head_length = 0.03;double body_width = 0.01;
-
+  double trans_markersize = 0.05;
    glEnable(GL_LINE_SMOOTH); 
    GLUquadricObj* quadric = gluNewQuadric();
    gluQuadricDrawStyle(quadric, GLU_FILL);
@@ -957,9 +1016,78 @@ void InteractableGlKinematicBody::draw_jointdof_markers()
       pos[0] = jointInfo.frame.p[0];  pos[1] = jointInfo.frame.p[1];  pos[2] = jointInfo.frame.p[2];
       joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // joint axis in world_frame;
     }
+    joint_axis.normalize();
     int type = jointInfo.type;
     
-    
+    if(((!is_otdf_instance)&&(type==urdf::Joint::PRISMATIC))||((is_otdf_instance)&&(type==otdf::Joint::PRISMATIC)))
+    {
+      //--get rotation in angle/axis form
+        double theta;
+        Eigen::Vector3f axis;      
+        Eigen::Vector3f ux,uz; ux << 1 , 0 , 0;uz << 0 , 0 , 1;
+        axis = ux.cross(joint_axis); // Required rotation to be align a arrow in the joint axis direction
+        theta = acos(ux.dot(joint_axis));
+             
+        float c_darkgrey[3] = {0.1,0.1,0.1};
+        float c_yellow[3] = {0.5,0.5,0.3};
+        float c_blue[3] = {0.3,0.3,0.6};
+        float c_red[3] = {0.6,0.3,0.3};
+
+        std::stringstream oss;
+        oss << "markers::" <<  jointInfo.name;
+
+        
+        Eigen::Vector3f u_body_to_joint;
+        //u_body_to_joint << _T_world_body.p[0]-jointInfo.frame.p[0], _T_world_body.p[1]-jointInfo.frame.p[1],_T_world_body.p[2]-jointInfo.frame.p[2]; 
+        u_body_to_joint << _T_world_body_future.p[0]-jointInfo.future_frame.p[0], _T_world_body_future.p[1]-jointInfo.future_frame.p[1],_T_world_body_future.p[2]-jointInfo.future_frame.p[2];
+        u_body_to_joint.normalize();
+        double normal = acos(u_body_to_joint.dot(joint_axis));
+        double flipped = acos(u_body_to_joint.dot(-joint_axis));
+        if(flipped>normal+1e-1) {
+          glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); // Rotation from joint frame to joint axis direction 
+          glTranslatef(-length/2, 0,0); 
+          bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+          glPopMatrix();
+
+          glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+          if(selected_marker==oss.str())
+            glColor4f(0.7,0.1,0.1,1.0);
+          axis = uz.cross(joint_axis);
+          theta = acos(uz.dot(joint_axis));
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
+          glTranslatef(0,0,-2*length/3);
+          glScalef(trans_markersize,trans_markersize,trans_markersize);
+          bot_gl_draw_cube();
+          glPopMatrix();
+        }
+        else{
+          glColor4f(c_darkgrey[0],c_darkgrey[1],c_darkgrey[2],1);
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+          glTranslatef(length/2, 0,0);
+          bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
+          glPopMatrix();
+
+          glColor4f(c_red[0],c_red[1],c_red[2],0.5);
+          if(selected_marker==oss.str())
+            glColor4f(0.7,0.1,0.1,1.0);
+          axis = uz.cross(joint_axis);
+          theta = acos(uz.dot(joint_axis));
+          glPushMatrix();
+          glTranslatef(pos[0],pos[1],pos[2]);
+          glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]);
+          glTranslatef(0,0,2*length/3);
+          glScalef(trans_markersize,trans_markersize,trans_markersize);
+          bot_gl_draw_cube();
+          glPopMatrix();
+        }
+    }//for prismatic       
       
     if(((!is_otdf_instance)&&((type==urdf::Joint::REVOLUTE)||(type==urdf::Joint::CONTINUOUS)))||((is_otdf_instance)&&((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))))
     {

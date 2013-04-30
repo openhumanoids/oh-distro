@@ -31,6 +31,12 @@ GlKinematicBody::GlKinematicBody(string &urdf_xml_string): initialized(false),vi
   { 
     if(it->second->type!=urdf::Joint::FIXED){ // All joints that not of the type FIXED.
       _joint_names_.push_back(it->first);
+      if((it->second->type==urdf::Joint::REVOLUTE)||(it->second->type==urdf::Joint::PRISMATIC)){
+        if(it->second->limits){
+          _jointlimit_min.insert(make_pair(it->first, it->second->limits->lower));
+          _jointlimit_max.insert(make_pair(it->first, it->second->limits->upper));
+        }
+      }
       _current_jointpos.insert(make_pair(it->first, 0)); //initialize 
       _future_jointpos.insert(make_pair(it->first, 0));
     }
@@ -182,6 +188,41 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
   _fksolver.reset();
   _otdf_links_map.clear();
   _mesh_map.clear(); 
+  
+  
+ //enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
+  typedef map<string, shared_ptr<otdf::Joint> > joints_mapType;
+  for( joints_mapType::const_iterator it = otdf_instance->joints_.begin(); it!= otdf_instance->joints_.end(); it++)
+  { 
+    if(it->second->type!=otdf::Joint::FIXED){ // All joints that not of the type FIXED.
+      _joint_names_.push_back(it->first);
+      if((it->second->type==otdf::Joint::REVOLUTE)||(it->second->type==otdf::Joint::PRISMATIC)){
+        if(it->second->limits){
+          _jointlimit_min.insert(make_pair(it->first, it->second->limits->lower));
+          _jointlimit_max.insert(make_pair(it->first, it->second->limits->upper));
+        }
+      }
+    }
+  }  
+  typedef std::map<std::string,boost::shared_ptr<otdf::Joint_pattern> > jp_mapType;
+  for (jp_mapType::iterator jp_it = otdf_instance->joint_patterns_.begin();jp_it != otdf_instance->joint_patterns_.end(); jp_it++)
+  {
+    // for all joints in joint pattern.
+    for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++)
+    {
+        if(jp_it->second->joint_set[i]->type!= otdf::Joint::FIXED) { // All joints that not of the type FIXED.
+        _joint_names_.push_back(jp_it->second->joint_set[i]->name);
+        if((jp_it->second->joint_set[i]->type==otdf::Joint::REVOLUTE)||(jp_it->second->joint_set[i]->type==otdf::Joint::PRISMATIC)){
+          if(jp_it->second->joint_set[i]->limits){
+            _jointlimit_min.insert(make_pair(jp_it->second->joint_set[i]->name, jp_it->second->joint_set[i]->limits->lower));
+            _jointlimit_max.insert(make_pair(jp_it->second->joint_set[i]->name, jp_it->second->joint_set[i]->limits->upper));
+          }
+        }
+      } // end if
+       
+    } // end for all joints in jp
+  }// for all joint patterns
+  
   
   boost::shared_ptr<const otdf::BaseEntity> root_link=otdf_instance->getRoot();
   _root_name = root_link->name;
@@ -429,9 +470,17 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, const drc::joint
   _current_jointpos.clear();
   _current_jointpos = jointpos_in;   
 
-  run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
-  if(future_display_active)
-    run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+  if(!is_otdf_instance)
+    run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  else
+    run_fk_and_update_otdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+    
+  if(future_display_active){
+    if(!is_otdf_instance)
+      run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+    else
+      run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+   }
   else{
     _T_world_body_future = _T_world_body; 
     _future_jointpos =  _current_jointpos;
@@ -449,13 +498,23 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::st
   _current_jointpos.clear();
   _current_jointpos = jointpos_in;   
 
-  run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
-  if(future_display_active)
-    run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+
+  if(!is_otdf_instance)
+    run_fk_and_update_urdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  else
+    run_fk_and_update_otdf_link_shapes_and_tfs(_current_jointpos,_T_world_body,false);
+  
+  if(future_display_active){
+    if(!is_otdf_instance)
+      run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+    else
+      run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,_T_world_body_future,true);
+   }
   else{
     _T_world_body_future = _T_world_body; 
     _future_jointpos =  _current_jointpos;
   }
+  
   
 }//end void GlKinematicBody::set_state(const KDL::Frame &, const std::map<std::string, double> & )
 
@@ -464,14 +523,13 @@ void GlKinematicBody::set_state(const KDL::Frame &T_world_body, std::map<std::st
 // space and time visualization.
 void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, std::map<std::string, double> &jointpos_in)
 {
-  cout << "1) GlKinematicBody set_future_state \n";
+
  if(!future_display_active){
    future_display_active = true;
   }
 //  std::map<std::string, double> jointpos_in;
 //  for (uint i=0; i< (uint) msg.num_joints; i++) //cast to uint to suppress compiler warning
-//    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i])); 
- cout << "_future_jointpos.size() " <<_future_jointpos.size() <<" "<<jointpos_in.size() <<endl;         
+//    jointpos_in.insert(make_pair(msg.joint_name[i], msg.joint_position[i]));     
     _future_jointpos.clear();
     _future_jointpos = jointpos_in;
     _T_world_body_future = T_world_body_future;
@@ -479,8 +537,6 @@ void GlKinematicBody::set_future_state(const KDL::Frame &T_world_body_future, st
         run_fk_and_update_otdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
     else
         run_fk_and_update_urdf_link_shapes_and_tfs(_future_jointpos,T_world_body_future,future_display_active);
-        
- cout << "2) GlKinematicBody set_future_state \n";
 
 }//end void GlKinematicBody::set_future_state
 
@@ -502,7 +558,21 @@ void GlKinematicBody::run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::s
     _joint_tfs.clear();
     }
     
+    // enforce joint limits
+    typedef map<string, double > jointpos_mapType;      
+    for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
+    { 
+       map<string,double>::const_iterator joint_it;
+       joint_it=_jointlimit_min.find(it->first);
+       if(joint_it!=_jointlimit_min.end())
+        it->second = std::max(joint_it->second,it->second);
+       joint_it=_jointlimit_max.find(it->first);
+       if(joint_it!=_jointlimit_max.end())
+        it->second = std::min(joint_it->second,it->second); 
+    }
+    
     std::map<std::string, KDL::Frame > cartpos_out;
+    
 
     // Calculate forward position kinematics
     bool kinematics_status;
@@ -774,6 +844,20 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
     _joint_names.clear();
     _joint_tfs.clear();    
     }
+    
+    
+    // enforce joint limits
+    typedef map<string, double > jointpos_mapType;      
+    for( jointpos_mapType::iterator it =  jointpos_in.begin(); it!=jointpos_in.end(); it++)
+    { 
+       map<string,double>::const_iterator joint_it;
+       joint_it=_jointlimit_min.find(it->first);
+       if(joint_it!=_jointlimit_min.end())
+        it->second = std::max(joint_it->second,it->second);
+       joint_it=_jointlimit_max.find(it->first);
+       if(joint_it!=_jointlimit_max.end())
+        it->second = std::min(joint_it->second,it->second); 
+    }    
 
     std::map<std::string, KDL::Frame > cartpos_out;
 
