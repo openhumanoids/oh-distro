@@ -146,7 +146,8 @@ classdef FootstepPlanner < DRCPlanner
               for j = 1:length(normals)
                 cosines(end+1) = dot(normals(:,j), plane_normal) / (norm(normals(:,j)) * norm(plane_normal));
               end
-              terrain_ok = all(abs(cosines) > cos(10*pi/180));
+              err = abs((ground_pts' - repmat(mean(ground_pts,2)',size(ground_pts, 2),1))*plane_normal');
+              terrain_ok = all(abs(cosines) > cos(10*pi/180)) && all(err < 0.01);
             end
           end
         else

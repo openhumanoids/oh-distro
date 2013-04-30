@@ -9,8 +9,6 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
   poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
 
-  foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
-
   if options.right_foot_lead
     X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
     X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
@@ -25,7 +23,8 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
   poses(3,:) = p0(3);
   poses = heightfun(poses);
-  
+  foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
+
   if options.yaw_fixed || all(sum(diff([p0(1:3), poses(1:3,:)], 1, 2).^2, 1) <= 1)
     traj = turnGoTraj([p0, poses]);
   else
