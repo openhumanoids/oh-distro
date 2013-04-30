@@ -1,0 +1,15 @@
+package drc;
+
+struct aff_indexed_robot_plan_t
+{
+    int64_t utime;
+    string robot_name;    
+    int32_t num_states;
+    robot_state_t plan[num_states]; //each individual state is also timed.
+    int32_t num_bytes;
+   	byte matlab_data[num_bytes];
+   	
+   	affordance_index_t aff_index[num_states];
+}
+
+
