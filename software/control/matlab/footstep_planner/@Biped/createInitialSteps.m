@@ -22,7 +22,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   last_good_z = X(1).pos(3);
   using_heightmap = false;
 
-  p0 = mean([X(1).pos, X(2).pos], 2);
+  p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
   if options.yaw_fixed 
     traj = turnGoTraj([p0, poses]);
   else
