@@ -11,6 +11,7 @@
 #include "affordance/AffordanceServer.h"
 #include "affordance/AffordanceUpWrapper.h"
 #include "affordance/AffordanceState.h"
+#include <path_util/path_util.h>
 #include <iostream>
 
 using namespace boost;
@@ -53,18 +54,22 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     cylinder.setType(AffordanceState::CYLINDER);
     wrapper.addNewlyFittedAffordance(cylinder);
 
-    //=============
-    //add a bunch of affordances w/ just names + ids
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("steering_cyl",      uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("box",       uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("ladder",      uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("cylinder",       uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("sphere",  uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("box", 		uniqueObjId++, mapId));
-    //	wrapper.addNewlyFittedAffordance(AffordanceState("ladder_cyl", 	uniqueObjId++, mapId));
+    //==car
+    string carUrdfFName = getModelsPath() + string("/mit_gazebo_objects/mit_polaris_ranger_ev/model_welded.urdf");
+    cout << "using card urdf = " << carUrdfFName << endl;
 
-    int j = 0;
-    boost::posix_time::seconds sleepTime(1); //update every 1 seconds
+    vector<AffPtr> carAffs;
+    AffordanceState::getBoxesCylindersSpheres(carUrdfFName, carAffs);
+    for(uint i = 0; i < carAffs.size(); i++)
+      wrapper.addNewlyFittedAffordance(*carAffs[i]);
+
+    cout << "\n added " << carAffs.size() << " car affordances" << endl;
+
+    //wait a few second so we get an update from the server
+    boost::this_thread::sleep(boost::posix_time::seconds(3));
+
+    //===now loop and printout periodically
+    boost::posix_time::seconds sleepTime(60); //update (printout) every 60 seconds
 
     while (true)
     {
@@ -73,10 +78,8 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
         boost::this_thread::sleep(sleepTime); //======sleep
 
         //======modify server
-        if (j++ == 10)
-        {
-            //make a modification
-        }
+        // user code
+        //===finished  modifications 
     }
 }
 

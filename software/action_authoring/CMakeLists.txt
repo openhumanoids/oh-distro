@@ -20,7 +20,7 @@ include(cmake/pods.cmake)
 SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g")
 
 set(REQUIRED_PACKAGES affordance opengl_object_gfe state_gfe kinematics_model_gfe qt4_widget
-  collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf
+  collision_detector opengl_scene opengl_object opengl_camera QtCore QtGui QtOpenGL glu gl urdf path-util
   libxml-2.0)
 
 #QT includes
@@ -92,7 +92,7 @@ pods_install_executables(action_authoring_gui)
 
 #=====demo populate executable
 add_executable(demo_populate_aff_server src/test/demo_populate_affordance_server.cpp)
-target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance)
+target_link_libraries(demo_populate_aff_server ${Boost_LIBRARIES} lcm affordance path-util)
 
 pods_install_executables(demo_populate_aff_server)
 
