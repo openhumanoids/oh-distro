@@ -30,7 +30,8 @@ classdef FootstepPlanner < DRCPlanner
         for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
-        obj.options.timeout = obj.options.timeout / 1000000;
+        obj.options.time_per_step = obj.options.time_per_step / 1e9;
+        obj.options.timeout = obj.options.timeout / 1e6;
       end
       if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X)
         msg ='Footstep Planner: Received New Goal'; disp(msg); send_status(3,0,0,msg);

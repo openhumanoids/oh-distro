@@ -47,7 +47,7 @@ footsupport.left = [1 1];
 while 1
   step.left.orig = repmat(footpos.left.orig(:,end), 1, 5);
   step.right.orig = repmat(footpos.right.orig(:,end), 1, 5);
-  step_time = step_times(time_ndx + 2) - step_times(time_ndx)
+  step_time = step_times(time_ndx + 2) - step_times(time_ndx);
   time_ndx = time_ndx + 2;
   
 %   tstep = ts(end) + [.3, .45, .6, .9, 1] * step_time;

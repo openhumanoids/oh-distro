@@ -142,32 +142,30 @@ classdef Biped < TimeSteppingRigidBodyManipulator
                    'left', int32([1:2:(total_steps-1), total_steps]));
     end
 
-    function t = getStepTimes(obj, X)
+    function t = getStepTimes(obj, X, time_per_step)
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));
       t = zeros(1, nsteps);
-      j = 3;
-      if abs(X(3, j-2) - X(3, j+1)) > 0.01
-        t(j) = t(j-1) + obj.long_step_time / 2;
-        t(j+1) = t(j) + obj.long_step_time / 2;
-      else
-        t(j) = t(j-1) + obj.short_step_time / 2;
-        t(j+1) = t(j) + obj.short_step_time / 2;
-      end
-      for j = 5:2:nsteps
-        if abs(X(3, j-3) - X(3, j+1)) > 0.01
-          t(j) = t(j-1) + obj.long_step_time / 2;
-          t(j+1) = t(j) + obj.long_step_time / 2;
-        else
-          t(j) = t(j-1) + obj.short_step_time / 2;
-          t(j+1) = t(j) + obj.short_step_time / 2;
-        end
-      end
-      t
-      diff(t)
+      % j = 3;
+      % if abs(X(3, j-2) - X(3, j+1)) > 0.01
+      %   t(j) = t(j-1) + obj.long_step_time / 2;
+      %   t(j+1) = t(j) + obj.long_step_time / 2;
+      % else
+      %   t(j) = t(j-1) + obj.short_step_time / 2;
+      %   t(j+1) = t(j) + obj.short_step_time / 2;
+      % end
+      % for j = 5:2:nsteps
+      %   if abs(X(3, j-3) - X(3, j+1)) > 0.01
+      %     t(j) = t(j-1) + obj.long_step_time / 2;
+      %     t(j+1) = t(j) + obj.long_step_time / 2;
+      %   else
+      %     t(j) = t(j-1) + obj.short_step_time / 2;
+      %     t(j+1) = t(j) + obj.short_step_time / 2;
+      %   end
+      % end
           
         
-%       t(3:end) = (1:nsteps-2) * (obj.step_time/2);
+      t(3:end) = (1:nsteps-2) * (time_per_step/2);
     end
 
     function id = getNextStepID(obj)

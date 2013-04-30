@@ -134,7 +134,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   % X(3) = struct('pos', biped.footOrig2Contact(foot_goals.right, 'center', 1), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', 1);
   % X(4) = struct('pos', biped.footOrig2Contact(foot_goals.left, 'center', 0), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', 0);
   
-  t = num2cell(biped.getStepTimes([X.pos]));
+  t = num2cell(biped.getStepTimes([X.pos], options.time_per_step));
   [X.time] = t{:};
   
   function apex_pos = get_apex_pos(last_pos, next_pos)
