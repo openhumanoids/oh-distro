@@ -103,7 +103,7 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
         if (j==0){
             subscription_string = channels[j];
         }else{
-            subscription_string += "|" + channels[j];
+            subscription_string += "$|^" + channels[j];
         }
     }  
     return subscription_string;
