@@ -238,6 +238,13 @@ public:
       std::cerr << "ERROR: Could not find joint "<< name <<" in object model "<< this->name_ << std::endl;
     }
     else{
+      if(this->joints_[name]->limits)
+      {
+       position = std::max(this->joints_[name]->limits->lower,position);
+       position = std::min(this->joints_[name]->limits->upper,position);
+       double s = 1-2*(velocity<0);
+       velocity = s*std::min(this->joints_[name]->limits->velocity,fabs(velocity));
+      }
       this->joints_[name]->position= position;
       this->joints_[name]->velocity= velocity;
     }
