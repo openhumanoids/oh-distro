@@ -288,6 +288,7 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
 	  std::cout << "FootLogic adding Footstep " << (newstep.foot == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl;
 	  standing_foot = newstep.foot;
+	  // footsteps have the correct yaw angle when they go into the footstep list -- positive is CCW, positive around +Z
 	  footsteps.newFootstep(newstep);
 	  return true;
   }
@@ -327,18 +328,22 @@ void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orie
 	
 	C = InertialOdometry::QuaternionLib::q2C(ahrs_orientation);
 	
-	imu_orientation_estimate = InertialOdometry::QuaternionLib::C2q(C.transpose());
+	//imu_orientation_estimate = InertialOdometry::QuaternionLib::C2q(C.transpose());// think there is a problem with this function 
+	imu_orientation_estimate = ahrs_orientation;
 	
 	//ComputeLocalOrientation();
 	
 	//Eigen::Vector3d local_rpy_rate = local_to_body_.linear() * ( temp_body_rpy_rate );
 	
 	Eigen::Quaterniond yaw_q;
-	yaw_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear());
+	//yaw_q = InertialOdometry::QuaternionLib::C2q(getPelvisFromStep().linear()); // This may be the problem child right here
+	//std::cout << "Yaw is being set to: " << InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().linear())(2) << std::endl;
+	yaw_q = InertialOdometry::QuaternionLib::e2q(InertialOdometry::QuaternionLib::C2e(getPelvisFromStep().linear()));
+	//std::cout << "Quat is: " << yaw_q.w() << ", " << yaw_q.x() << ", " << yaw_q.y() << ", " << yaw_q.z() << std::endl;
+	//std::cout << "Yaw is being set to:\n" << getPelvisFromStep().linear() << "\n";
 	local_frame_orientation = MergePitchRollYaw(imu_orientation_estimate,yaw_q);
 	
 	local_frame_rates = InertialOdometry::QuaternionLib::q2C(local_frame_orientation) * body_rates;
-	
 }
 
 Eigen::Vector3d const TwoLegOdometry::getLocalFrameRates() {
@@ -410,7 +415,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
 	output_state.translation() = getPelvisFromStep().translation();
 	
 	return output_state;
-}
+}	
 
 Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
 	
@@ -424,7 +429,12 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
 	//std::cout << "Primary to Pelvis: " << getPrimaryFootToPelvis().translation().transpose() << "\n";
 	//std::cout << "Add: " << add(footsteps.getLastStep(),getPrimaryFootToPelvis()).translation().transpose() << "\n";
 	
-	return add(footsteps.getLastStep(),getPrimaryFootToPelvis());
+	Eigen::Isometry3d returnval;
+	returnval = add(footsteps.getLastStep(),getPrimaryFootToPelvis());
+	//std::cout << "Returning yaw:\n" << InertialOdometry::QuaternionLib::C2e(returnval.linear())(2) << std::endl;
+	//std::cout << "Returning linear:\n" << returnval.linear() << "\n";
+	
+	return returnval;
 }
 
 Eigen::Isometry3d TwoLegOdometry::AccumulateFootPosition(const Eigen::Isometry3d &from, const int foot_id) {

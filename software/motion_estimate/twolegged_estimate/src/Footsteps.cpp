@@ -1,5 +1,6 @@
 
 #include "Footsteps.h"
+#include "QuaternionLib.h"
 
 using namespace TwoLegs;
 
@@ -14,6 +15,7 @@ void Footsteps::newFootstep(footstep newstep) {
 
 void Footsteps::addFootstep(Eigen::Isometry3d RelativeFrameLocation, int foot) 
 {
+	// Presently this function is only called once, to be combined -- TODO
 	footstep new_footprint;
 	
 	new_footprint.foot = foot;

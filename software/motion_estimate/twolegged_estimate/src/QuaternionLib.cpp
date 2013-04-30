@@ -276,7 +276,11 @@ namespace InertialOdometry
   }
   Eigen::Quaterniond QuaternionLib::C2q(const Eigen::Matrix<double, 3, 3> &C) {
 	  
+	  std::cout << "QuaternionLib::C2q -- Think there is something wrong with this function\n";
+	  
 	  Eigen::Quaterniond returnval;
+	  
+	  /*
 	  double scalar;
 	  
 	  returnval.setIdentity();
@@ -295,7 +299,52 @@ namespace InertialOdometry
 	  returnval.y() = 1/(4*scalar)*(C(2,0)-C(0,2));
 	  returnval.z() = 1/(4*scalar)*(C(0,1)-C(1,0));
 	  
+	  */
+	  
+	  double C_[9] = {C(0,0), C(1,0), C(2,0), C(0,1), C(1,1), C(2,1), C(0,2), C(1,2), C(2,2)};
+	  double q[4];
+	  
+	  matrix_to_quat(C_, q);
+	  
+	  returnval.w() = q[0];
+	  returnval.x() = q[1];
+	  returnval.y() = q[2];
+	  returnval.z() = q[3];
+	  
 	  return returnval;
+  }
+  
+  int QuaternionLib::matrix_to_quat(const double rot[9], double quat[4])
+  {
+    quat[0] = 0.5*sqrt(rot[0]+rot[4]+rot[8]+1);
+
+    if (fabs(quat[0]) > 1e-8) {
+        double w4 = 1.0/(4.0*quat[0]);
+      quat[1] = (rot[7]-rot[5]) * w4;
+      quat[2] = (rot[2]-rot[6]) * w4;
+      quat[3] = (rot[3]-rot[1]) * w4;
+    }
+    else {
+      quat[1] = sqrt(fabs(-0.5*(rot[4]+rot[8])));
+      quat[2] = sqrt(fabs(-0.5*(rot[0]+rot[8])));
+      quat[3] = sqrt(fabs(-0.5*(rot[0]+rot[4])));
+    }
+
+    /*LSF: I may be missing something but this didn't work for me until I divided by the magnitude instead:
+      double norm = quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] +
+                       quat[3]*quat[3];
+    if (fabs(norm) < 1e-10)
+    return -1; */
+    double norm = sqrt(quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] +
+                       quat[3]*quat[3]);
+
+    norm = 1/norm;
+    quat[0] *= norm;
+    quat[1] *= norm;
+    quat[2] *= norm;
+    quat[3] *= norm;
+
+    return 0;
   }
   
   Eigen::Matrix<double, 3, 3> QuaternionLib::e2C(const Eigen::Vector3d &E) {

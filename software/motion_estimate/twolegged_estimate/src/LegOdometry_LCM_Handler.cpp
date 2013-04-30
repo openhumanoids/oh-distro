@@ -314,7 +314,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     pose.pos[1] =currentPelvis.translation().y();
     pose.pos[2] =currentPelvis.translation().z();
     
-    Eigen::Quaterniond output_q(currentPelvis.linear().transpose());
+    Eigen::Quaterniond output_q(currentPelvis.linear());// ?? This was a transpose
     
     // Used this to view the angle estimates, decoupled from the position state estimation
 #ifdef PUBLISH_AT_TRUE_POSITION
@@ -414,7 +414,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   int status;
   double matx[16];
   Eigen::Isometry3d body_to_head;
-  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes,  "body", "head",  msg->utime, matx);
+  status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "head", "body", msg->utime, matx);
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       body_to_head(i,j) = matx[i*4+j];
@@ -425,7 +425,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   
   Eigen::Isometry3d local_to_head; 
   // We are now startin to test this conversion
-  if (false) {
+  if (true) {
 	// We think this method may have a problem -- but unsure if it's related to the Isometry * operator, or in the bot body_to_head data.
 	
     local_to_head = currentPelvis*body_to_head; // TODO -- not sure if this is corect, must test to confirm
