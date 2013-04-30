@@ -146,16 +146,15 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));
       t = zeros(1, nsteps);
-      for j = 3:2:(min(5, nsteps))
-        if abs(X(3, j-2) - X(3, j+1)) > 0.01
-          t(j) = t(j-1) + obj.long_step_time / 2;
-          t(j+1) = t(j) + obj.long_step_time / 2;
-        else
-          t(j) = t(j-1) + obj.short_step_time / 2;
-          t(j+1) = t(j) + obj.short_step_time / 2;
-        end
+      j = 3;
+      if abs(X(3, j-2) - X(3, j+1)) > 0.01
+        t(j) = t(j-1) + obj.long_step_time / 2;
+        t(j+1) = t(j) + obj.long_step_time / 2;
+      else
+        t(j) = t(j-1) + obj.short_step_time / 2;
+        t(j+1) = t(j) + obj.short_step_time / 2;
       end
-      for j = 7:2:nsteps
+      for j = 5:2:nsteps
         if abs(X(3, j-3) - X(3, j+1)) > 0.01
           t(j) = t(j-1) + obj.long_step_time / 2;
           t(j+1) = t(j) + obj.long_step_time / 2;
@@ -164,6 +163,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
           t(j+1) = t(j) + obj.short_step_time / 2;
         end
       end
+      t
+      diff(t)
           
         
 %       t(3:end) = (1:nsteps-2) * (obj.step_time/2);
