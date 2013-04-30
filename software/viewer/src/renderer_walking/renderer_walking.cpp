@@ -699,7 +699,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 0.0);  
-  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
+  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 1.0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FIX_YAW, 0, NULL);
   // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FIX_YAW, self->fix_step_yaw);
