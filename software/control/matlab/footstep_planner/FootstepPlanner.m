@@ -91,7 +91,8 @@ classdef FootstepPlanner < DRCPlanner
         end
         X_old = X;
 
-        if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
+        % if modified || ((now() - last_publish_time) * 24 * 60 * 60 > 1)
+        if modified
           Xout = X;
           % Convert from foot center to foot origin
           for j = 1:length(X)

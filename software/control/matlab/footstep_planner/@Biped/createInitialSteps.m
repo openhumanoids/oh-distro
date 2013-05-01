@@ -1,6 +1,6 @@
 function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightfun)
 
-  debug = true;
+  debug = false;
 
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
@@ -103,12 +103,12 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
     X(end+1) = struct('pos', pos_n, 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
     %%%%
-    Xout = X;
-    % Convert from foot center to foot origin
-    for j = 1:length(X)
-      Xout(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
-    end
-    biped.publish_footstep_plan(Xout);
+    % Xout = X;
+    % % Convert from foot center to foot origin
+    % for j = 1:length(X)
+    %   Xout(j).pos = biped.footContact2Orig(X(j).pos, 'center', X(j).is_right_foot);
+    % end
+    % biped.publish_footstep_plan(Xout);
     %%%%%
 
     if X(end).is_right_foot
