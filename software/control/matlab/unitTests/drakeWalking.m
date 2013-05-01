@@ -1,5 +1,4 @@
 function drakeWalking
-error('Knowingly broken temporarily until foot contacts are implemented here');
 
 addpath(fullfile(pwd,'..'));
 addpath(fullfile(pwd,'../frames'));
@@ -20,8 +19,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load('../data/atlas_fp.mat');
-xstar(1) = 1*randn();
-xstar(2) = 1*randn();
+xstar(1) = 10*randn();
+xstar(2) = 10*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -59,15 +58,23 @@ subplot(3,1,3); hold on;
 fnplt(zmptraj);
 fnplt(comtraj);
 
-zmpdata = SharedDataHandle(struct('S',V.S,'s1',V.s1,'h',com(3),'hddot',0, ...
-                    'lfoottraj',lfoottraj,'rfoottraj',rfoottraj, ...
-                    'comtraj',comtraj,'supptraj',supptraj));
+ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
+   'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Qy',eye(2),...
+   'S',V.S,'s1',V.s1,'comtraj',comtraj,'lfoottraj',lfoottraj, ...
+   'rfoottraj',rfoottraj,'supptraj',supptraj));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.1;
 options.R = 1e-12*eye(nu);
-qp = QPController(r,zmpdata,options);
+act_idx = getActuatedJoints(r);
+joint_names = getJointNames(r);
+joint_names = joint_names(2:end); % get rid of null string at beginning..
+ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,strfind(joint_names,'uay'));
+ankle_idx = find(ankle_idx(act_idx));
+options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
+options.lcm_foot_contacts = false;
+qp = QPController(r,ctrl_data,options);
 clear options;
 
 % feedback QP controller with atlas
@@ -80,7 +87,7 @@ clear ins outs;
 
 % feedback PD trajectory controller 
 options.q_nom = q0;
-pd = WalkingPDController(r,zmpdata,options);
+pd = WalkingPDController(r,ctrl_data,options);
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],[],outs);

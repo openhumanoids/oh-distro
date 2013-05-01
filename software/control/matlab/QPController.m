@@ -1,20 +1,27 @@
 classdef QPController < MIMODrakeSystem
 
-  % implementation assumes 3D atlas model
   methods
   function obj = QPController(r,controller_data,options)
     % @param r atlas instance
     % @param options structure for specifying objective weight (w), slack
-    % variable limits (slack_limit), and action cost (R)
+    % variable limits (slack_limit), and input cost (R)
     typecheck(r,'Atlas');
     typecheck(controller_data,'SharedDataHandle');
+
+    ctrl_data = getData(controller_data);
+    if ~isfield(ctrl_data,'B') || ~isfield(ctrl_data,'Qy') || ...
+      ~isfield(ctrl_data,'C') || ~isfield(ctrl_data,'D') || ...
+      ~isfield(ctrl_data,'S')
+      error('QPController: Missing fields in controller_data');
+    end
+    
     if nargin>2
       typecheck(options,'struct');
     else
       options = struct();
     end
     
-    qddframe = AtlasCoordinates(r);
+    qddframe = AtlasCoordinates(r); % input frame for desired qddot 
 
     input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
     output_frame = r.getInputFrame();
@@ -26,19 +33,26 @@ classdef QPController < MIMODrakeSystem
     obj.robot = r;
     obj.controller_data = controller_data;
 
+    % weight for desired qddot objective term
     if isfield(options,'w')
       typecheck(options.w,'double');
       sizecheck(options.w,1);
       obj.w = options.w;
+    else
+      obj.w = 0.5;
     end
     
+    % hard bound on slack variable values
     if isfield(options,'slack_limit')
       typecheck(options.slack_limit,'double');
       sizecheck(options.slack_limit,1);
       obj.slack_limit = options.slack_limit;
+    else
+      obj.slack_limit = 10;
     end
     
     nu = getNumInputs(r);
+    % input cost term: u'Ru
     if ~isfield(options,'R')
       obj.R = 1e-6*eye(nu);
     else
@@ -47,13 +61,21 @@ classdef QPController < MIMODrakeSystem
       obj.R = options.R;
     end
     
-    if ~isfield(options,'whole_body_contact')
-      obj.whole_body_contact=false; % just listen for foot contacts over LCM
+    if ~isfield(options,'lcm_foot_contacts')
+      obj.lcm_foot_contacts=true; % listen for foot contacts over LCM
     else
-      typecheck(options.whole_body_contact,'logical');
-      obj.whole_body_contact=options.whole_body_contact;
+      typecheck(options.lcm_foot_contacts,'logical');
+      obj.lcm_foot_contacts=options.lcm_foot_contacts;
     end
     
+    obj.lc = lcm.lcm.LCM.getSingleton();
+    obj.rfoot_idx = findLinkInd(r,'r_foot');
+    obj.lfoot_idx = findLinkInd(r,'l_foot');
+
+    if obj.lcm_foot_contacts
+      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
+      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
+    end % else estimate contact via kinematics
     
     if obj.solver==1 % use cplex
       obj.solver_options = cplexoptimset('cplex');
@@ -81,12 +103,6 @@ classdef QPController < MIMODrakeSystem
       end
     end  
     
-    obj.rfoot_idx = findLinkInd(r,'r_foot');
-    obj.lfoot_idx = findLinkInd(r,'l_foot');
-    
-    obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-    obj.lc = lcm.lcm.LCM.getSingleton();
-    obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
     
   end
     
@@ -98,6 +114,41 @@ classdef QPController < MIMODrakeSystem
     r = obj.robot;
     ctrl_data = getData(obj.controller_data);
 
+    nd = 4; % for friction cone approx, hard coded for now
+    dim = 3; % 3D
+    nu = getNumInputs(r);
+    nq = getNumDOF(r);
+   
+    % get foot contact state
+    if obj.lcm_foot_contacts
+      contact_data = obj.contact_est_monitor.getNextMessage(1);
+      if ~isempty(contact_data)
+        msg = drc.foot_contact_estimate_t(contact_data);
+        obj.lfoot_contact_state = msg.left_contact;
+        obj.rfoot_contact_state = msg.right_contact;
+      end
+    else
+      contact_threshold = 0.002; % m
+      q = x(1:nq); 
+      kinsol = doKinematics(r,q,false,true);
+    
+      % get active contacts
+      phi = contactConstraints(r,kinsol,[obj.lfoot_idx,obj.rfoot_idx]);
+
+      % if any foot point is in contact, all contact points are active
+      if any(phi(1:4)<contact_threshold)
+        obj.lfoot_contact_state = 1;
+      else
+        obj.lfoot_contact_state = 0;
+      end
+
+      if any(phi(5:8)<contact_threshold)
+        obj.rfoot_contact_state = 1;
+      else
+        obj.rfoot_contact_state = 0;
+      end
+    end
+    
     % get pelvis height above height map
     terrain_height = getTerrainHeight(r,x(1:2));
     x(3) = x(3)-terrain_height;
@@ -110,11 +161,6 @@ classdef QPController < MIMODrakeSystem
     end
     active_supports = find(supp);
     
-    nd = 4; % for friction cone approx, hard coded for now
-    dim = 3; % 3D
-    nu = getNumInputs(r);
-    nq = getNumDOF(r);
-    
     q = x(1:nq); 
     qd = x(nq+(1:nq));
     kinsol = doKinematics(r,q,false,true,qd);
@@ -126,17 +172,11 @@ classdef QPController < MIMODrakeSystem
     Jdot = forwardJacDot(r,kinsol,0);
     Jdot = Jdot(1:2,:);
     
-    % get active contacts
-    [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-    active_contacts = zeros(length(phi),1);
+    % get active contacts --- note, calling this with the z-adjusted state,
+    % so phi returned isn't useful 
+    [phi_shifted,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+    active_contacts = zeros(length(phi_shifted),1);
 
-    contact_data = obj.contact_est_monitor.getNextMessage(1);
-    if ~isempty(contact_data)
-      msg = drc.foot_contact_estimate_t(contact_data);
-      obj.lfoot_contact_state = msg.left_contact;
-      obj.rfoot_contact_state = msg.right_contact;
-    end
-        
     % if any foot point is in contact, all contact points are active
     if any(active_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
       active_contacts((find(active_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
@@ -154,7 +194,7 @@ classdef QPController < MIMODrakeSystem
       Jz = Jz(active_contacts,:); % only care about active contacts
 
       active_idx = zeros(dim*length(active_contacts),1);
-      for i=1:length(active_contacts);
+      for i=1:length(active_contacts)
         active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
       Jp = Jp(active_idx,:); 
@@ -200,6 +240,7 @@ classdef QPController < MIMODrakeSystem
         D_ls = -xcom(3)/(hddot+9.81)*eye(2);  
       end
       if typecheck(ctrl_data.S,'double')
+        % ti-lqr case
         S = ctrl_data.S;
         s1= zeros(4,1); % ctrl_data.s1; 
         xlimp0 = ctrl_data.xlimp0;
@@ -306,7 +347,7 @@ classdef QPController < MIMODrakeSystem
       model.obj = 2*fqp;
       model.A = [Aeq; Ain];
       model.rhs = [beq; bin];
-      model.sense = [repmat('=',length(beq),1); repmat('<',length(bin),1)];
+      model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
       model.lb = lb;
       model.ub = ub;
 
@@ -400,8 +441,8 @@ classdef QPController < MIMODrakeSystem
   properties
     robot; % to be controlled
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
-    w = 1.0; % objective function weight
-    slack_limit = 1.0; % maximum absolute magnitude of acceleration slack variable values
+    w; % objective function weight
+    slack_limit; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
     lfoot_idx;
     R; % quadratic input cost matrix
@@ -412,6 +453,8 @@ classdef QPController < MIMODrakeSystem
     contact_est_monitor;
     lfoot_contact_state = 0; 
     rfoot_contact_state = 0; 
-    whole_body_contact;  
+    lcm_foot_contacts;  
+    eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
+    ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
   end
 end

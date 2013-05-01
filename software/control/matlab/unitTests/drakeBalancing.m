@@ -1,8 +1,7 @@
 function drakeBalancing
 
-error('Knowingly broken temporarily until foot contacts are implemented here');
-
 % put robot in a random x,y,yaw position and balance for 5 seconds
+visualize = true;
 
 addpath(fullfile(pwd,'..'));
 addpath(fullfile(pwd,'../frames'));
@@ -14,15 +13,13 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
-v = r.constructVisualizer;
-v.display_dt = 0.05;
 nq = getNumDOF(r);
 nu = getNumInputs(r);
 
 % set initial state to fixed point
 load('../data/atlas_fp.mat');
-xstar(1) = 5*randn();
-xstar(2) = 5*randn();
+xstar(1) = 10*randn();
+xstar(2) = 10*randn();
 xstar(6) = pi*randn();
 xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
@@ -42,14 +39,24 @@ limp = LinearInvertedPendulum(com(3));
 
 foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
-zmpdata = SharedDataHandle(struct('S',V.S,'h',com(3),'hddot',0,'qtraj',q0,...
-             'xlimp0',[comgoal;0;0],'supptraj',foot_support));
-
+ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
+      'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
+      'R',zeros(2),'Qy',eye(2),'S',V.S,'s1',zeros(4,1),'xlimp0',[comgoal;0;0],...
+      'qtraj',q0,'supptraj',foot_support));           
+           
+           
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.1;
 options.R = 1e-12*eye(nu);
-qp = QPController(r,zmpdata,options);
+act_idx = getActuatedJoints(r);
+joint_names = getJointNames(r);
+joint_names = joint_names(2:end); % get rid of null string at beginning..
+ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,strfind(joint_names,'uay'));
+ankle_idx = find(ankle_idx(act_idx));
+options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
+options.lcm_foot_contacts = false;
+qp = QPController(r,ctrl_data,options);
 clear options;
 
 % feedback QP controller with atlas
@@ -62,27 +69,32 @@ clear ins outs;
 
 % feedback PD trajectory controller 
 options.q_nom = q0;
-pd = SimplePDController(r,zmpdata,options);
+pd = SimplePDController(r,ctrl_data,options);
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],[],outs);
 clear outs;
 
-S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
-output_select(1).system=1;
-output_select(1).output=1;
-sys = mimoCascade(sys,v,[],[],output_select);
-warning(S);
-
+if visualize
+  v = r.constructVisualizer;
+  v.display_dt = 0.05;
+  S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
+  output_select(1).system=1;
+  output_select(1).output=1;
+  sys = mimoCascade(sys,v,[],[],output_select);
+  warning(S);
+end
 x0(3) = 1.0; % drop it a bit
 
 traj = simulate(sys,[0 5],x0);
-playback(v,traj,struct('slider',true));
+if visualize
+  playback(v,traj,struct('slider',true));
+end
 
 xf = traj.eval(traj.tspan(2));
 
 err = norm(xf(1:6)-xstar(1:6))
-if err > 0.01
+if err > 0.02
   error('drakeBalancing unit test failed: error is too large');
 end
 
