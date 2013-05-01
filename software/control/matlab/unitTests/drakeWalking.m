@@ -18,7 +18,7 @@ v = r.constructVisualizer;
 v.display_dt = 0.05;
 
 % set initial state to fixed point
-load('../data/atlas_fp.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 10*randn();
 xstar(2) = 10*randn();
 r = r.setInitialState(xstar);

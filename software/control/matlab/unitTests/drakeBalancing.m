@@ -17,7 +17,7 @@ nq = getNumDOF(r);
 nu = getNumInputs(r);
 
 % set initial state to fixed point
-load('../data/atlas_fp.mat');
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 10*randn();
 xstar(2) = 10*randn();
 xstar(6) = pi*randn();
