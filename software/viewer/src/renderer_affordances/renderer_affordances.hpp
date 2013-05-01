@@ -124,6 +124,17 @@ typedef point3d_t vec3d_t;
 
 
 struct OtdfInstanceStruc {
+
+    OtdfInstanceStruc()
+    {
+     otdf_instance_viz_object_sync = true; 
+    };
+    
+     ~OtdfInstanceStruc()
+    {
+
+    };
+
     std::string otdf_type;
     int uid;
     boost::shared_ptr<otdf::ModelInterface> _otdf_instance;
@@ -138,6 +149,11 @@ struct OtdfInstanceStruc {
     Eigen::Vector3f boundingBoxXYZ;
     Eigen::Vector3f boundingBoxRPY;
     Eigen::Vector3f boundingBoxLWH;
+    
+    // otdf instance is in sync with aff server. 
+    // Turn off if one needs to visualize state changes before committing to aff server.    
+    bool otdf_instance_viz_object_sync;
+
 
 };   
 

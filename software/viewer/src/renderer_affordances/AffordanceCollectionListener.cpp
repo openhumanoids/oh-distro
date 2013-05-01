@@ -303,7 +303,8 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
     //TODO: set All JointStates too.
 
     it->second._otdf_instance->update();
-    it->second._gl_object->set_state(it->second._otdf_instance);  
+    if(it->second.otdf_instance_viz_object_sync)
+      it->second._gl_object->set_state(it->second._otdf_instance);  
  
 
 

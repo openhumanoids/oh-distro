@@ -174,7 +174,10 @@ namespace renderer_affordances_gui_utils
     it->second._gl_object->set_future_state_changing(false);
     it->second._gl_object->disable_future_display();
     // reset object to what it was at the time of popup
-    it->second._gl_object->set_state(self->otdf_T_world_body_hold,self->otdf_current_jointpos_hold);
+   
+    it->second.otdf_instance_viz_object_sync = true;
+    it->second._gl_object->set_state(it->second._otdf_instance);
+    //it->second._gl_object->set_state(self->otdf_T_world_body_hold,self->otdf_current_jointpos_hold);
     it->second._gl_object->set_future_state(self->otdf_T_world_body_hold,self->otdf_current_jointpos_hold);
     cout << "dof_range_widget popup close\n";
 
@@ -381,14 +384,11 @@ namespace renderer_affordances_gui_utils
         it->second._gl_object->set_future_state_changing(true);
       }      
       KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
+      it->second.otdf_instance_viz_object_sync = false;
       it->second._gl_object->set_state(T_world_object,current_jointpos_in);  
-      // Problem : this interferes with affordance server. Should you publish an update message to store? or make a local copy.     
-      //publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,self)
       it->second._gl_object->set_future_state(T_world_object,future_jointpos_in);
       bot_viewer_request_redraw(self->viewer);
 
-  
-    
   }  
   
 //------------------------------------------------------------------
@@ -435,7 +435,6 @@ namespace renderer_affordances_gui_utils
       self->otdf_instance_hold.uid=it->second.uid;
      
       self->otdf_instance_hold.otdf_type = it->second.otdf_type;
-      //self->otdf_instance_hold.otdf_type = new string((*it->second.otdf_type));    // SEGFAULTS With Strings
       self->otdf_instance_hold._otdf_instance = otdf::duplicateOTDFInstance(it->second._otdf_instance);
       self->otdf_instance_hold._gl_object.reset();
       self->otdf_instance_hold._collision_detector.reset();
