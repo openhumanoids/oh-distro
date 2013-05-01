@@ -56,7 +56,7 @@ pods_install_libraries(affordance)
 
 target_link_libraries(affordance ${Boost_LIBRARIES})			  	
 
-set(REQUIRED_PACKAGES lcm lcmtypes_drc_lcmtypes opengl_object collision_object otdf_dom)
+set(REQUIRED_PACKAGES lcm lcmtypes_drc_lcmtypes opengl_object collision_object otdf_dom kinematics_model_gfe)
 	  	  	
 pods_use_pkg_config_packages(affordance ${REQUIRED_PACKAGES})			  	
 
