@@ -52,15 +52,18 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	
 	stepcount = 0;
 	
+	// This variable is to be depreciated -- TODO
 	both_feet_in_contact = true;
+	
+	for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
 	
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
 	// the idea at this point is that if the accleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
-	_vel_spike_isolation[0] = new BipolarSchmittTrigger(1, 5, 3000); 
-	_vel_spike_isolation[1] = new BipolarSchmittTrigger(1, 5, 3000);
-	_vel_spike_isolation[2] = new BipolarSchmittTrigger(1, 5, 3000);
+	_vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, 3000); 
+	_vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, 3000);
+	_vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, 3000);
 	
 	datafile.Open(_log_data_files,"datalog.csv");
 	footcontactfile.Open(_log_data_files,"footcontactlog.csv");
@@ -581,7 +584,8 @@ void TwoLegOdometry::terminate() {
 
 void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	//std::cout << "Not implemented yet\n";
-	
+	stringstream accel_data_ss (stringstream::in | stringstream::out);
+		
 	Eigen::Vector3d current_position;
 	//Eigen::Vector3d velocity_estimate;
 	
@@ -589,8 +593,9 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	
 	Eigen::Vector3d prev_velocities;
 	prev_velocities = local_velocities;
-	local_velocities = (1.e6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
+	local_velocities = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
 	
+	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
 	// This is to ignore velocity spikes that occur on when the active foot state is transitioned from left to right
 	// This is probablydue to some uncompensated offset at the present time, but may be good enough for the present requirements
@@ -598,7 +603,6 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	// But there is a known issue with transitioins between feet, whic create a large velocity spike.
 	// Suggested cure is a delayed Schmitt trigger once more -- this is to pass or ignore spikes with a time delay.
 	local_accelerations = accel.diff((1.E-6)*current_time, local_velocities);
-	stringstream accel_data_ss (stringstream::in | stringstream::out);
 	
 	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
@@ -609,7 +613,7 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 		
 		accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
 		
-		if (local_accelerations(i) < -4 || local_accelerations(i) > 4)
+		if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
 		{
 			if (!_vel_spike_isolation[i]->getState()) {
 				
@@ -618,7 +622,11 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 			}
 			// else do noting and the current computed state will not be ignored
 		}
+
+		// here we are going to filter the velocity data	
+		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
 	}
+	
 	
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
 

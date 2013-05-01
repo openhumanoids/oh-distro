@@ -40,6 +40,7 @@ namespace InertialOdometry
     static Eigen::Matrix<double,3,3> q2C(Eigen::Quaterniond const &q_);
     static Eigen::Quaterniond C2q(const Eigen::Matrix<double, 3, 3> &C);
     static int matrix_to_quat(const double rot[9], double quat[4]);
+    static Eigen::Quaterniond bot_matrix_to_quat(const Eigen::Matrix3d &C); // Think this one may finally be the correct one
     
     // Places the 3x3 skew symmetric matrix of 3x1 vector v in skew
     static void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew);

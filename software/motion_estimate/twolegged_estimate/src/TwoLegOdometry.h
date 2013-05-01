@@ -12,6 +12,8 @@
 
 #include "SignalTap.hpp"
 
+#include "Filter.hpp"
+
 #define LOG_DATA_FILES
 
 #define SCHMITT_LEVEL	                 0.65
@@ -24,7 +26,7 @@
 
 #define HIGH_FOOT_CONTACT_THRESH          5
 #define LOW_FOOT_CONTACT_THRESH           0
-#define FOOT_CONTACT_DELAY             1000
+#define FOOT_CONTACT_DELAY             5000
 
 namespace TwoLegs {
 
@@ -63,6 +65,9 @@ class TwoLegOdometry {
 		// isolate and ignore velocity estimate spikes
 		BipolarSchmittTrigger* _vel_spike_isolation[3];
 		NumericalDiff accel;
+		
+		LowPassFilter lpfilter[3];
+		Filter* _filter[3];
 		
 		double temp_max_testing[3];
 		

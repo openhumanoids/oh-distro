@@ -40,5 +40,29 @@ int main() {
 	cout << "Orientation in Quaternion: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() <<endl;
 	cout << "Checking q2e: " << QuaternionLib::q2e(q).transpose() << endl;
 	
+	
+	cout << "Testing the C2q function\n";
+	
+	Eigen::Matrix3d C;
+	Eigen::Vector3d refE;
+	
+	Eigen::Quaterniond q1;
+	Eigen::Quaterniond q2;
+	
+	refE << -0.5,0.2,-1.;
+	C = InertialOdometry::QuaternionLib::e2C(refE);
+	
+	q1 = InertialOdometry::QuaternionLib::e2q(refE);
+	cout << "Reference:\n";
+	cout << q1.w() << ", " << q1.x() << ", " << q1.y() << ", " << q1.z() << endl;
+	cout << InertialOdometry::QuaternionLib::q2e(q1).transpose() << endl;
+	cout << "Testing:\n";
+	q2 = InertialOdometry::QuaternionLib::C2q(C);
+	//q2 = InertialOdometry::QuaternionLib::bot_matrix_to_quat(C);
+	cout << "TEST RESULT: " << q2.w() << ", " << q2.x() << ", " << q2.y() << ", " << q2.z() << endl;
+	cout << InertialOdometry::QuaternionLib::q2e(q1).transpose() << endl;
+		
+	
+	
 	return 0;
 }

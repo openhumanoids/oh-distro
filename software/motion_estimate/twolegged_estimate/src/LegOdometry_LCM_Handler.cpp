@@ -425,18 +425,18 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   
   Eigen::Isometry3d local_to_head; 
   // We are now startin to test this conversion
-  if (true) {
+ //if (true) {
 	// We think this method may have a problem -- but unsure if it's related to the Isometry * operator, or in the bot body_to_head data.
 	
-    local_to_head = currentPelvis*body_to_head; // TODO -- not sure if this is corect, must test to confirm
-  } else {
+    local_to_head = currentPelvis*body_to_head;
+  /*} else {
 	  Eigen::Quaterniond l2body_q(currentPelvis.linear().transpose());// these may be short a transpose operation, as has been the case before
 	  Eigen::Quaterniond b2head_q(body_to_head.linear().transpose());
 	  Eigen::Isometry3d local_to_head_( InertialOdometry::QuaternionLib::QuaternionProduct_(l2body_q, b2head_q) );
 	  local_to_head_.translation() = currentPelvis.translation() + body_to_head.translation();
 	  local_to_head = local_to_head_;
 	  
-  }
+  }*/
   
   
   // now we need the linear and rotational velocity states -- velocity and acclerations are computed wiht the first order differential
@@ -461,7 +461,7 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     l2head_msg.vel[1]=local_to_head_vel(1);
     l2head_msg.vel[2]=local_to_head_vel(2);
     l2head_msg.rotation_rate[0]=local_to_head_rate(0);//is this the correct ordering of the roll pitch yaw
-    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round.. confirm with testing
+    l2head_msg.rotation_rate[1]=local_to_head_rate(1);// Maurice has it the other way round..
     l2head_msg.rotation_rate[2]=local_to_head_rate(2);
     l2head_msg.accel[0]=local_to_head_acc(0);
     l2head_msg.accel[1]=local_to_head_acc(1);

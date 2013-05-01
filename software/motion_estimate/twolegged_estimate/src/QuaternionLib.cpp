@@ -280,7 +280,7 @@ namespace InertialOdometry
 	  
 	  Eigen::Quaterniond returnval;
 	  
-	  /*
+	  if (true) {
 	  double scalar;
 	  
 	  returnval.setIdentity();
@@ -299,7 +299,7 @@ namespace InertialOdometry
 	  returnval.y() = 1/(4*scalar)*(C(2,0)-C(0,2));
 	  returnval.z() = 1/(4*scalar)*(C(0,1)-C(1,0));
 	  
-	  */
+	  } else {
 	  
 	  double C_[9] = {C(0,0), C(1,0), C(2,0), C(0,1), C(1,1), C(2,1), C(0,2), C(1,2), C(2,2)};
 	  double q[4];
@@ -310,9 +310,42 @@ namespace InertialOdometry
 	  returnval.x() = q[1];
 	  returnval.y() = q[2];
 	  returnval.z() = q[3];
+	  }
 	  
 	  return returnval;
   }
+  
+  double max(double a, double b) {
+  	  return (a > b ? a : b);
+    }
+    
+    double sign(double a) {
+	  return (a>=0 ? 1. : -1);
+    }
+  
+    double copysign(double a, double b) {
+  	  return sign(b) * abs(a);
+    }
+    
+    
+  /* This does not create a normalized quaternion
+	Eigen::Quaterniond QuaternionLib::bot_matrix_to_quat(const Eigen::Matrix3d &C) {
+	  Eigen::Quaterniond q;
+	  
+	  q.setIdentity();
+	
+	  q.w() = sqrt( max( 0, 1. + C(0,0) + C(1,1) + C(2,2) ) ) / 2.;
+	  q.x() = sqrt( max( 0, 1. + C(0,0) - C(1,1) - C(2,2) ) ) / 2.;
+	  q.y() = sqrt( max( 0, 1. - C(0,0) + C(1,1) - C(2,2) ) ) / 2.;
+	  q.z() = sqrt( max( 0, 1. - C(0,0) - C(1,1) + C(2,2) ) ) / 2.;
+	  q.x() = copysign( q.x(), C(1,2) - C(2,1) );
+	  q.y() = copysign( q.y(), C(2,0) - C(0,2) );
+	  q.z() = copysign( q.z(), C(0,1) - C(1,0) );
+	  
+	  return q;
+	}*/
+  
+  
   
   int QuaternionLib::matrix_to_quat(const double rot[9], double quat[4])
   {
@@ -457,7 +490,7 @@ namespace InertialOdometry
   }
   
   /* Not ready to be used yet, as the Eigen::Quaternion has this as a constructor -- but left here for when i need it later
-  Eigen::Quaterniond QuaternionLib::affine2q(const Eigen::Matrix<3,3,double> &mat) const {
+  Eigen::Quaterniond QuaternionLib::C2q(const Eigen::Matrix<3,3,double> &C) const {
 	Eigen::Quaterniond& q;
 	
     float trace = a[0][0] + a[1][1] + a[2][2]; // I removed + 1.0f; see discussion with Ethan
