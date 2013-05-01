@@ -175,10 +175,6 @@ group "a.5.perception"{
 }
 
 group "a.5.a.motion_vo"{
-    cmd "r2l_control_moest" {
-        exec = "rosrun translators ros2lcm -c";
-        host = "robot";
-    }
     cmd "vo_moest" {
         exec = "drc-fovision-odometry -i 3";
         host = "robot";
@@ -272,7 +268,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_mit_manip_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world  gzname:=run_gazebo_paused";
         host = "robot";
     }
     cmd "gz_mit_ingress_slow" {
@@ -280,7 +276,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_mit_walking_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world  gzname:=run_gazebo_paused";
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
     cmd "gz_mit_walking_bdi" {
@@ -396,16 +392,24 @@ group "m.3.dev_tools" {
         exec = "drc-set-sim-rate 0.25";
         host = "robot";
     }
+    cmd "set-sim-rate-slower" {
+        exec = "drc-set-sim-rate 0.05";
+        host = "robot";
+    }
     cmd "systemwide-test" {
         exec = "drc-systemwide-tests";
         host = "robot";
     }
-    cmd "lcm-logger-no-vis" {
-        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v";
-        host = "robot";
-    }
     cmd "exit_car" {
         exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
+        host = "robot";
+    }
+    cmd "lcm-logger-no-vis" {
+        exec = "lcm-logger -c 'CAMERA|CAMERALEFT' -v -f $HOME/drc/latest_log.lcm";
+        host = "robot";
+    }
+    cmd "lcm-logger" {
+        exec = "lcm-logger -f $HOME/drc/latest_log.lcm";
         host = "robot";
     }
 }
@@ -480,8 +484,13 @@ script "comp.ingress" {
 # with deputies:
 script "dev.qual_1" { 
     start group "0.development";
-    run_script "comp.qual_1";
-    stop group "b.1.core";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 10000;
+    start cmd "gz_quals_1"; 
+    wait ms 3000;
+    start cmd "set-sim-rate";
 }
 script "dev.qual_2" { 
     start group "0.development";
@@ -496,13 +505,13 @@ script "dev.qual_2" {
 script "dev.vrc_driving" { 
     start group "0.development";
     start group "a.1.core";
-    start group "b.1.core";
     start group "a.4.driving";
     wait ms 500;
     start cmd "gz_mit_driving";
     wait ms 6000;
     start group "b.4.driving";
 }
+
 
 script "dev.mit_walking" {
     start group "0.development";
@@ -515,19 +524,21 @@ script "dev.mit_walking" {
     start cmd "set-sim-rate";
 }
 
-#script "dev.mit_walking" {
-#    start group "0.development";
-#    start group "a.1.core";
+
+script "dev.mit_walking_vo" {
+    start group "0.development";
+    start group "a.1.core";
 #    stop cmd "estpub";
-#    stop cmd "r2l_control";
 #    start group "a.5.a.motion_vo";
-#    start group "a.2.walking";
-#    start group "b.2.walking";
-#    wait ms 10000;
-#    start cmd "gz_mit_walking_slow";
-#    wait ms 3000;
-#    start cmd "set-sim-rate";
-#}
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 10000;
+    start cmd "gz_mit_walking_slow";
+    wait ms 3000;
+    start cmd "set-sim-rate-slower";
+    start cmd "lcm-logger-no-vis";
+}
+
 
 script "dev.mit_manip" {
     start group "0.development";
@@ -540,9 +551,15 @@ script "dev.mit_manip" {
 
 script "dev.ingress" { 
     start group "0.development";
-    run_script "comp.ingress";
-    stop group "b.1.core";
+    start group "a.1.core";
+    start group "b.1.core";
+    start group "a.6.ingress";
+    wait ms 10000;
+    start cmd "gz_mit_ingress_slow"; 
+    wait ms 3000;
+    start cmd "set-sim-rate";
 }
+
 
 ############ Misc incl System Tests ############
 script "systest-core-stop" {
@@ -567,9 +584,17 @@ script "systest-main" {
     wait ms 10000;
 }
 
-script "systest-start-vo" {
-    run_script "qual_1";
+script "systest-vo-start" {
+    start group "0.development";
+    start group "a.1.core";
     stop cmd "estpub";
-    start cmd "estpub_moest";
-    start cmd "vo_moest";
+    start group "a.5.a.motion_vo";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 10000;
+    start cmd "gz_mit_walking_slow";
+    wait ms 3000;
+    start cmd "set-sim-rate-slower";
+    start cmd "systemwide-test";
+    start cmd "lcm-logger";
 }
