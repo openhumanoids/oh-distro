@@ -381,7 +381,9 @@ namespace renderer_affordances_gui_utils
         it->second._gl_object->set_future_state_changing(true);
       }      
       KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
-      it->second._gl_object->set_state(T_world_object,current_jointpos_in);     
+      it->second._gl_object->set_state(T_world_object,current_jointpos_in);  
+      // Problem : this interferes with affordance server. Should you publish an update message to store? or make a local copy.     
+      //publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,self)
       it->second._gl_object->set_future_state(T_world_object,future_jointpos_in);
       bot_viewer_request_redraw(self->viewer);
 
