@@ -1443,7 +1443,7 @@ namespace surrogate_gui
     affordanceMsg.aff.bounding_rpy[2] = 0;
     affordanceMsg.aff.bounding_lwh[0] = 3.0;  // TODO make more general, not just car
     affordanceMsg.aff.bounding_lwh[1] = 1.7;
-    affordanceMsg.aff.bounding_lwh[2] = 2.0;
+    affordanceMsg.aff.bounding_lwh[2] = 2.2; // was 2.0, made it larger, mfallon
 
     // set modelfile
     affordanceMsg.aff.modelfile = modelfile;
