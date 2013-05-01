@@ -61,7 +61,7 @@ classdef HarnessController < DRCController
       t=max(times);
       if ~isinf(getDuration(obj)) && t>3.0
         x = input_data{1};
-        d = load('data/atlas_fp.mat');
+        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         q_nom = d.xstar(1:getNumDOF(obj.robot));
         q_nom([1,2,6]) = x([1,2,6]); % copy over pelvix x,y,yaw
         

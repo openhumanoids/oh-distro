@@ -19,8 +19,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 10*randn();
-xstar(2) = 10*randn();
+xstar(1) = 0*randn();
+xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);

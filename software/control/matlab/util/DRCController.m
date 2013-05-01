@@ -188,7 +188,7 @@ classdef DRCController
       t_offset = -1;
       lcm_check_tic = tic;
       while (1)
-        if (toc(lcm_check_tic) > 0.2) % check periodically
+        if (toc(lcm_check_tic) > 0.5) % check periodically
           obj=checkPrecomputeResponses(obj);
           % check termination conditions and break if any are true        
           [transition,data] = checkLCMTransitions(obj);
@@ -227,6 +227,7 @@ classdef DRCController
             input_frame_data{i} = x;
             input_frame_time(i) = t;
             % copy data to other subframes
+            checked_frames{length(checked_frames)+1} = fr.name;
             for j=1:obj.n_input_frames
               if strcmp(obj.controller_input_frames{j}.name,fr.name)
                 input_frame_data{j} = x;

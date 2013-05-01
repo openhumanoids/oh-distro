@@ -99,7 +99,7 @@ classdef QPController < MIMODrakeSystem
       if obj.solver_options.method == 2
         obj.solver_options.bariterlimit = 20; % iteration limit
         obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
-        obj.solver_options.barconvtol = 1e-4;
+        obj.solver_options.barconvtol = 1e-3;
       end
     end  
     
@@ -191,14 +191,14 @@ classdef QPController < MIMODrakeSystem
     active_contacts = find(active_contacts);
         
     if nc > 0
-      Jz = Jz(active_contacts,:); % only care about active contacts
+      Jz = sparse(Jz(active_contacts,:)); % only care about active contacts
 
       active_idx = zeros(dim*length(active_contacts),1);
       for i=1:length(active_contacts)
         active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
       end
-      Jp = Jp(active_idx,:); 
-      Jpdot = Jpdot(active_idx,:);
+      Jp = sparse(Jp(active_idx,:)); 
+      Jpdot = sparse(Jpdot(active_idx,:));
       
       % D_ is the parameterization of the polyhedral approximation of the 
       %    friction cone, in joint coordinates (figure 1 from Stewart96)
@@ -213,7 +213,7 @@ classdef QPController < MIMODrakeSystem
           D{k}(:,i) = D_{i}(active_contacts(k),:)'; 
         end
       end
-      Dbar = [D{:}];
+      Dbar = sparse([D{:}]);
     end
     
     %----------------------------------------------------------------------
