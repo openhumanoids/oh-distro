@@ -662,8 +662,9 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
   } 
   if (self->dragging) {
     self->dragging = 0;
-    if(self->selection_hold_on){
-     publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
+    if(self->selection_hold_on && !self->show_popup_onrelease && !self->dblclk_popup){
+      if(self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())
+         publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance,self); 
     }
   }
   if (ehandler->picking==1)
