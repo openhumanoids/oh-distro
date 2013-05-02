@@ -184,6 +184,9 @@ classdef DRCController
 
       data = struct();
       input_frame_data = cell(obj.n_input_frames,1);
+      for i=1:obj.n_input_frames
+        input_frame_data{i} = zeros(obj.controller_input_frames{i}.dim,1);
+      end
       
       t_offset = -1;
       lcm_check_tic = tic;
