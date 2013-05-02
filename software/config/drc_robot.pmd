@@ -114,10 +114,7 @@ group "a.3.grasping" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "robot";
     }
-    cmd "ReachPlanFollower_PD" {
-       exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runReachPlanFollowerLCMRobot;\"";
-       host = "robot";
-    }
+
     cmd "GraspController" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "robot";
@@ -300,8 +297,8 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_quals_2" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
-        host = "robot";
+			  exec = "roslaunch atlas_utils qual_task_2.launch";
+			  host = "robot";
     }
     cmd "gz_quals_3" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
