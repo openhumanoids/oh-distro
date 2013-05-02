@@ -459,11 +459,11 @@ struct RendererAffordances {
    
    //map<string, double >::iterator obj_it = instance_in->params_map_.find("x");
    msg.aff.origin_xyz[0] =instance_in->params_map_.find("x")->second;
-   msg.aff.origin_xyz[0] =instance_in->params_map_.find("y")->second;
-   msg.aff.origin_xyz[0] =instance_in->params_map_.find("z")->second;
+   msg.aff.origin_xyz[1] =instance_in->params_map_.find("y")->second;
+   msg.aff.origin_xyz[2] =instance_in->params_map_.find("z")->second;
    msg.aff.origin_rpy[0] =instance_in->params_map_.find("roll")->second;
-   msg.aff.origin_rpy[0] =instance_in->params_map_.find("pitch")->second;
-   msg.aff.origin_rpy[0] =instance_in->params_map_.find("yaw")->second;
+   msg.aff.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
+   msg.aff.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
    
    double bounding_xyz[]={0,0,0};
    double bounding_rpy[]={0,0,0};
