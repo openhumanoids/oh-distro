@@ -6,14 +6,14 @@
 
 <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
 <!-- World frame origin of the object -->
-<param name="x" default_value="0.0" inc="0.01" min="-100" max="100"/> 
-<param name="y" default_value="0.0" inc="0.01" min="-100" max="100"/>
-<param name="z" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="x" default_value="0.0" inc="0.001" min="-100" max="100"/> 
+<param name="y" default_value="0.0" inc="0.001" min="-100" max="100"/>
+<param name="z" default_value="0.0" inc="0.001" min="-100" max="100"/>
 
 <!--Roll,Pitch,Yaw are about Body Frame-->
-<param name="roll" default_value="0.67" inc="0.01" min="-3.1414" max="3.1414"/> 
-<param name="pitch" default_value="0.67" inc="0.01" min="-3.1414" max="3.1414"/>
-<param name="yaw" default_value="0.67" inc="0.01" min="-3.1414" max="3.1414"/>
+<param name="roll" default_value="0.67" inc="0.01" min="-3.1416" max="3.1416"/> 
+<param name="pitch" default_value="0.67" inc="0.01" min="-3.1416" max="3.1416"/>
+<param name="yaw" default_value="0.67" inc="0.01" min="-3.1416" max="3.1416"/>
 
 <!-- Size of the outer most bounding volume -->
 <param name="valve_radius" default_value="1.0" inc="0.01" min="0" max="100"/> 
