@@ -53,7 +53,7 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	stepcount = 0;
 	
 	// This variable is to be depreciated -- TODO
-	both_feet_in_contact = true;
+	//both_feet_in_contact = true;
 	
 	for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
 	
@@ -243,7 +243,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 					standingintermediate = false;
 					standing_timer = 0;
 					
-					both_feet_in_contact = false;
+					//both_feet_in_contact = false;
 				}
 				else
 				{
@@ -253,7 +253,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 			
 			if ((standing_timer > STANDING_TRANSITION_TIMEOUT && standing_delay<=0) || standingintermediate) {
 				//std::cout << "Standing for: " << standing_timer <<  "\n";
-				both_feet_in_contact = true;
+				//both_feet_in_contact = true;
 			}
 			else
 			{
@@ -267,7 +267,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 	
 	ss << standing_timer << ", " << standing_delay << ", ";
 	ss << ((standingintermediate) ? "1" : "0") << ", ";
-	ss << ((both_feet_in_contact) ? "1" : "0");
+	//ss << ((both_feet_in_contact) ? "1" : "0");
 	
 	ss << std::endl;
 	string datastr = ss.str();

@@ -36,7 +36,7 @@ class TwoLegOdometry {
 	private:
 		Footsteps footsteps;
 		int standing_foot;
-		bool both_feet_in_contact;
+		//bool both_feet_in_contact;
 		bool foottransitionintermediateflag;
 		bool standingintermediate;
 		float expectedweight;
@@ -99,6 +99,10 @@ class TwoLegOdometry {
 		float getSecondaryFootZforce();
 		void ResetInitialConditions(const Eigen::Isometry3d &left_, const Eigen::Isometry3d &init_states);
 		
+		Eigen::Isometry3d getPelvisFromStep();
+		Eigen::Isometry3d getSecondaryFootToPelvis();
+		Eigen::Isometry3d getPrimaryFootToPelvis();
+		
 		// This has been moved to QuaternionLib
 		//Eigen::Quaterniond mult(Eigen::Quaterniond lhs, Eigen::Quaterniond rhs);
 		
@@ -141,12 +145,9 @@ class TwoLegOdometry {
 		
 		Eigen::Isometry3d getSecondaryInLocal();
 		Eigen::Isometry3d getPrimaryInLocal();
-		Eigen::Isometry3d getPelvisFromStep();
 		
 		Eigen::Isometry3d getLeftInLocal();
 		Eigen::Isometry3d getRightInLocal();
-		Eigen::Isometry3d getSecondaryFootToPelvis();
-		Eigen::Isometry3d getPrimaryFootToPelvis();
 		
 		Eigen::Vector3d const getLocalFrameRates();
 		

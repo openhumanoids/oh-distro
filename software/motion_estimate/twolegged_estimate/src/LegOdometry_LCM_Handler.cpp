@@ -417,25 +417,21 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   }  
   
   // Where is the head at
-  
-  Eigen::Isometry3d local_to_head; 
-  // We are now startin to test this conversion
- //if (true) {
-	// We think this method may have a problem -- but unsure if it's related to the Isometry * operator, or in the bot body_to_head data.
-	
-    local_to_head = currentPelvis*body_to_head;
-  /*} else {
-	  Eigen::Quaterniond l2body_q(currentPelvis.linear().transpose());// these may be short a transpose operation, as has been the case before
-	  Eigen::Quaterniond b2head_q(body_to_head.linear().transpose());
-	  Eigen::Isometry3d local_to_head_( InertialOdometry::QuaternionLib::QuaternionProduct_(l2body_q, b2head_q) );
-	  local_to_head_.translation() = currentPelvis.translation() + body_to_head.translation();
-	  local_to_head = local_to_head_;
-	  
-  }*/
-  
+  Eigen::Isometry3d local_to_head;
+  local_to_head = currentPelvis*body_to_head;
   
   // now we need the linear and rotational velocity states -- velocity and acclerations are computed wiht the first order differential
-  Eigen::Vector3d local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());
+    
+  Eigen::Vector3d local_to_head_vel;
+  // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
+  if (true) {
+	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), body_to_head.translation());
+	  local_to_head_vel = velocity_states + body_to_head_vel;
+	  
+  } else {
+	  local_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), local_to_head.translation());
+  }
+  
   Eigen::Vector3d local_to_head_acc = local_to_head_acc_diff.diff((double)msg->utime*(1E-6), local_to_head_vel);
   Eigen::Vector3d local_to_head_rate = local_to_head_rate_diff.diff((double)msg->utime*(1E-6), InertialOdometry::QuaternionLib::C2e(local_to_head.linear()));
   
