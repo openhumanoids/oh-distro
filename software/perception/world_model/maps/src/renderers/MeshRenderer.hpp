@@ -18,18 +18,19 @@ namespace maps {
 class MeshRenderer {
 public:
   enum ColorMode {
-    ColorModeFlat,
-    ColorModeHeight,
-    ColorModeRange,
-    ColorModeTexture,
-    ColorModeCamera
+    ColorModeFlat,     // single solid color
+    ColorModeHeight,   // pseudocolor by z
+    ColorModeRange,    // pseudocolor by range
+    ColorModeTexture,  // general texture image
+    ColorModeCamera,   // bot_image_t from camera channel
+    ColorModeMap       // pseudocolor via colormap
   };
 
   enum MeshMode {
-    MeshModePoints,
-    MeshModeWireframe,
-    MeshModeFilled,
-    MeshModeShaded
+    MeshModePoints,      // individual points
+    MeshModeWireframe,   // unfilled wireframe mesh
+    MeshModeFilled,      // filled mesh, solid color
+    MeshModeShaded       // shaded solid mesh
   };
 
 public:
@@ -48,7 +49,11 @@ public:
   void setPointSize(const float iSize);
   void setLineWidth(const float iWidth);
   void setRangeOrigin(const Eigen::Vector3f& iOrigin);
-  // TODO void setTexture();
+
+  void setTexture(const int iWidth, const int iHeight, const int iStrideBytes,
+                  const int iFormat, const uint8_t* iData,
+                  const Eigen::Projective3f& iTransform=
+                  Eigen::Projective3f::Identity());
 
   void setData(const std::vector<Eigen::Vector3f>& iVertices,
                const std::vector<Eigen::Vector3f>& iNormals,

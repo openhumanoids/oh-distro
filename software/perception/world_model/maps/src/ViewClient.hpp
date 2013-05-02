@@ -33,10 +33,10 @@ public:
 
   void setBotWrapper(const boost::shared_ptr<BotWrapper>& iWrapper);
   void setRequestChannel(const std::string& iChannel);
-  void setOctreeChannel(const std::string& iChannel);
-  void setCloudChannel(const std::string& iChannel);
-  void setDepthChannel(const std::string& iChannel);
   void setCatalogChannel(const std::string& iChannel);
+  void addViewChannel(const std::string& iChannel);
+  void removeViewChannel(const std::string& iChannel);
+  void removeAllViewChannels();
 
   int64_t request(const ViewBase::Spec& iSpec);
 
@@ -62,10 +62,8 @@ protected:
 
 protected:
   std::string mRequestChannel;
-  std::string mOctreeChannel;
-  std::string mCloudChannel;
-  std::string mDepthChannel;
   std::string mCatalogChannel;
+  std::vector<std::string> mViewChannels;
   boost::shared_ptr<BotWrapper> mBotWrapper;
 
   boost::shared_ptr<Worker> mWorker;

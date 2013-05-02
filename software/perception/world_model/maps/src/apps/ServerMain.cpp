@@ -122,9 +122,12 @@ struct ViewWorker {
           LcmTranslator::toLcm(*octree, octMsg);
           octMsg.utime = drc::Clock::instance()->getCurrentTime();
           octMsg.map_id = localMap->getId();
-          lcm->publish("MAP_OCTREE", &octMsg);
-          std::cout << "Sent octree at " << octMsg.num_bytes <<
-            " bytes (view " << octree->getId() << ")" << std::endl;
+          std::string chan =
+            mRequest.channel.size()>0 ? mRequest.channel : "MAP_OCTREE";
+          lcm->publish(chan, &octMsg);
+          std::cout << "Sent octree on " << chan << " at " <<
+            octMsg.num_bytes << " bytes (view " << octree->getId() <<
+            ")" << std::endl;
         }
 
         // get and publish point cloud
@@ -137,9 +140,12 @@ struct ViewWorker {
           msgCloud.utime = drc::Clock::instance()->getCurrentTime();
           msgCloud.map_id = localMap->getId();
           msgCloud.blob.utime = msgCloud.utime;
-          lcm->publish("MAP_CLOUD", &msgCloud);
-          std::cout << "Sent point cloud at " << msgCloud.blob.num_bytes <<
-            " bytes (view " << cloud->getId() << ")" << std::endl;
+          std::string chan =
+            mRequest.channel.size()>0 ? mRequest.channel : "MAP_CLOUD";
+          lcm->publish(chan, &msgCloud);
+          std::cout << "Sent point cloud on " << chan << " at " <<
+            msgCloud.blob.num_bytes << " bytes (view " << cloud->getId() <<
+            ")" << std::endl;
         }
 
         // get and publish depth image
@@ -162,9 +168,12 @@ struct ViewWorker {
           msgImg.utime = drc::Clock::instance()->getCurrentTime();
           msgImg.map_id = localMap->getId();
           msgImg.blob.utime = msgImg.utime;
-          lcm->publish("MAP_DEPTH", &msgImg);
-          std::cout << "Sent depth image at " << msgImg.blob.num_bytes <<
-            " bytes (view " << image->getId() << ")" << std::endl;
+          std::string chan =
+            mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
+          lcm->publish(chan, &msgImg);
+          std::cout << "Sent depth image on " << chan << " at " <<
+            msgImg.blob.num_bytes << " bytes (view " << image->getId() <<
+            ")" << std::endl;
         }
 
         // one-shot request has 0 frequency

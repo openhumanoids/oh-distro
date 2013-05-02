@@ -3,16 +3,23 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+
 #include <gtkmm.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
 #include <drc_utils/Clock.hpp>
-#include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_macro_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
+#include <lcmtypes/occ_map/pixel_map_t.hpp>
+#include <lcmtypes/bot_core/image_t.hpp>
+
+// TODO: should use c++ version
+#include <lcmtypes/occ_map_pixel_map_t.h>
+
+#include <occ_map/PixelMap.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/Utils.hpp>
@@ -110,6 +117,9 @@ protected:
   // command parameters
   int mMacroCommand;
 
+  // for pixel map rendering
+  boost::shared_ptr<occ_map::PixelMap<float> > mPixelMap;
+
   MeshRenderer mMeshRenderer;
   ViewClient mViewClient;
   BotWrapper::Ptr mBotWrapper;
@@ -135,13 +145,38 @@ public:
     mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
     mMeshRenderer.setCameraChannel("CAMERALEFT_COMPRESSED");
     mViewClient.setBotWrapper(mBotWrapper);
-    mViewClient.setOctreeChannel("MAP_OCTREE");
-    mViewClient.setCloudChannel("MAP_CLOUD");
-    mViewClient.setDepthChannel("MAP_DEPTH");
     mViewClient.addListener(this);
+
+    // set callback for pixel maps
+    // TODO: temporary channel
+    getLcm()->subscribe("TERRAIN_DIST_MAP", &MapsRenderer::onPixelMap, this);
 
     // start listening for view data
     mViewClient.start();
+  }
+
+  void onPixelMap(const lcm::ReceiveBuffer* iBuf,
+                  const std::string& iChannel,
+                  const occ_map::pixel_map_t* iMessage) {
+    // TODO: pixel map should support c++ lcm type
+    // for now transcode to c type
+    int encodedSize = iMessage->getEncodedSize();
+    std::vector<uint8_t> bytes(encodedSize);
+    iMessage->encode(&bytes[0], 0, encodedSize);
+    occ_map_pixel_map_t msg;
+    occ_map_pixel_map_t_decode(&bytes[0], 0, encodedSize, &msg);
+
+    // form convenience wrapper object and set mesh texture
+    mPixelMap.reset(new occ_map::PixelMap<float>(&msg));
+    Eigen::Projective3f xform = Eigen::Projective3f::Identity();
+    xform(0,0) = xform(1,1) = 1/mPixelMap->metersPerPixel;
+    xform(0,3) = -mPixelMap->xy0[0]/mPixelMap->metersPerPixel;
+    xform(1,3) = -mPixelMap->xy0[1]/mPixelMap->metersPerPixel;
+    mMeshRenderer.setTexture(mPixelMap->dimensions[0],
+                             mPixelMap->dimensions[1],
+                             sizeof(float)*mPixelMap->dimensions[0],
+                             bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32,
+                             (uint8_t*)mPixelMap->data, xform);
   }
 
   void setupWidgets() {
@@ -157,8 +192,9 @@ public:
       notebook->append_page(*appearanceBox, "Appearance");
 
       ids = { MeshRenderer::ColorModeFlat, MeshRenderer::ColorModeHeight,
-              MeshRenderer::ColorModeRange, MeshRenderer::ColorModeCamera };
-      labels = { "Flat", "Height", "Range", "Camera"};
+              MeshRenderer::ColorModeRange, MeshRenderer::ColorModeCamera,
+              MeshRenderer::ColorModeMap };
+      labels = { "Flat", "Height", "Range", "Camera","Pixelmap"};
       mColorMode = MeshRenderer::ColorModeHeight;
       addCombo("Color Mode", mColorMode, labels, ids, appearanceBox);
 
@@ -563,6 +599,9 @@ public:
     // set range origin
     mMeshRenderer.setRangeOrigin(data->mLatestTransform.translation());
 
+    // set value scale
+    mMeshRenderer.setScaleRange(mMinZ, mMaxZ);
+
     // draw frustum
     ViewBase::Spec viewSpec;
     if (mViewClient.getSpec(id, viewSpec)) {
@@ -598,6 +637,25 @@ public:
       for (size_t i = 0; i < cloud->size(); ++i) {
         mesh->mVertices.push_back((*cloud)[i].getVector3fMap());
       }
+    }
+
+    // add ground polygon if using pixelmap
+    if ((mPixelMap != NULL) && (mColorMode == MeshRenderer::ColorModeMap)) {
+      float z = 0;  // TODO: for future user-selected height shift
+      std::vector<Eigen::Vector4f> pts(4);
+      pts[0] = Eigen::Vector4f(mPixelMap->xy0[0], mPixelMap->xy0[1], z, 1);
+      pts[1] = Eigen::Vector4f(mPixelMap->xy0[0], mPixelMap->xy1[1], z, 1);
+      pts[2] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy1[1], z, 1);
+      pts[3] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy0[1], z, 1);
+      Eigen::Projective3f transform = iView->getTransform();
+      for (int k = 0; k < 4; ++k) {
+        pts[k] = transform*pts[k];
+        pts[k] /= pts[k][3];
+        mesh->mVertices.push_back(pts[k].head<3>());
+      }
+      int index = (int)mesh->mVertices.size() - 4;
+      mesh->mFaces.push_back(Eigen::Vector3i(index, index+1, index+2));
+      mesh->mFaces.push_back(Eigen::Vector3i(index, index+2, index+3));
     }
 
     // set up mesh renderer

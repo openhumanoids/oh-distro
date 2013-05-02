@@ -65,6 +65,7 @@ toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
   }
   oMessage.resolution = iSpec.mResolution;
   oMessage.frequency = iSpec.mFrequency;
+  oMessage.channel = iSpec.mChannel;
   oMessage.time_min = iSpec.mTimeMin;
   oMessage.time_max = iSpec.mTimeMax;
   oMessage.width = iSpec.mWidth;
@@ -105,6 +106,7 @@ fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
   }
   oSpec.mResolution = iMessage.resolution;
   oSpec.mFrequency = iMessage.frequency;
+  oSpec.mChannel = iMessage.channel;
   oSpec.mTimeMin = iMessage.time_min;
   oSpec.mTimeMax = iMessage.time_max;
   oSpec.mWidth = iMessage.width;

@@ -27,6 +27,7 @@ operator==(const Spec& iSpec) const {
     (mType == iSpec.mType) &&
     (mResolution == iSpec.mResolution) &&
     (mFrequency == iSpec.mFrequency) &&
+    (mChannel == iSpec.mChannel) &&
     (mTimeMin == iSpec.mTimeMin) &&
     (mTimeMax == iSpec.mTimeMax) &&
     (mWidth == iSpec.mWidth) &&

@@ -9,6 +9,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
+#include <lcmtypes/drc/shaper_data_request_t.hpp>
 
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
@@ -122,6 +123,7 @@ struct Worker {
     msg.width = 140;
     msg.height = 200;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.time_min = -5*1e6;
     msg.clip_planes[0][3] = 2;
     msg.clip_planes[4][3] = 3;
     msg.clip_planes[5][3] = 0.3;
@@ -144,6 +146,7 @@ struct Worker {
     msg.resolution = 0.02;
     msg.width = msg.height = 100;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.time_min = -5*1e6;
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[1][3] = 10;
     msg.clip_planes[2][3] = 1;

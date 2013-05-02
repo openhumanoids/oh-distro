@@ -31,7 +31,7 @@ add_library(renderer_maps SHARED
 set_target_properties(renderer_maps PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(renderer_maps
-  bot2-vis maps gtkmm-2.4 jpeg-utils)
+  bot2-vis maps gtkmm-2.4 jpeg-utils occ-map)
 
 pods_install_headers(
   MapsRenderer.hpp

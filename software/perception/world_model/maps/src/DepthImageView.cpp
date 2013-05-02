@@ -196,8 +196,6 @@ getClosest(const Eigen::Vector3f& iPoint,
 
   // do neighborhood plane fit to find normal
   else {
-    oPoint = mImage->unproject(proj, depthType);
-
     // gather points in neighborhood
     const std::vector<float>& depths = mImage->getData(depthType);
     const int width = mImage->getWidth();
@@ -242,8 +240,19 @@ getClosest(const Eigen::Vector3f& iPoint,
       return false;
     }
     oNormal = plane.head<3>();
-    Eigen::Vector3f ray = mTransform.inverse().translation() - oPoint;
-    if (ray.dot(oNormal) < 0) oNormal = -oNormal;
+
+    // project point onto plane
+    Eigen::Vector3f pt = mImage->unproject(proj, depthType);
+    /* TODO: TEMP?
+    Eigen::Vector3f p0 =
+      mImage->unproject(proj-Eigen::Vector3f::UnitZ(), depthType);
+    Eigen::Vector3f depthRay = pt-p0;
+    float t = -(plane[3] + oNormal.dot(p0)) / oNormal.dot(depthRay);
+    oPoint = p0 + depthRay*t;
+    */
+    oPoint = pt;
+    Eigen::Vector3f viewRay = mTransform.inverse().translation() - pt;
+    if (viewRay.dot(oNormal) < 0) oNormal = -oNormal;
     return true;
   }
 }
@@ -389,7 +398,6 @@ fitPlaneRobust(const Eigen::MatrixX3f& iPoints, Eigen::Vector4f& oPlane) {
     weights = 1-dists2.array()/sigma2;
     weights = (weights.array() < 0).select(0.0f, weights);
   }
-  std::cout << "iters " << iter << std::endl;
   return true;
 }
 

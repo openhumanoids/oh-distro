@@ -1,4 +1,5 @@
 #include <fstream>
+#include <chrono>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
@@ -6,6 +7,7 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
+#include <lcmtypes/drc/data_request_t.hpp>
 
 #include <maps/SensorDataReceiver.hpp>
 #include <maps/MapManager.hpp>
@@ -17,6 +19,9 @@
 #include <maps/Utils.hpp>
 #include <maps/BotWrapper.hpp>
 #include <maps/DepthImage.hpp>
+
+#include <maps/ViewClient.hpp>
+#include <bot_param/param_client.h>
 
 using namespace maps;
 using namespace std;
@@ -174,7 +179,120 @@ public:
   }
 };
 
+
+
+
+struct Helper {
+  boost::shared_ptr<lcm::LCM> mLcm;
+  maps::ViewClient* mViewClient;
+  boost::thread mThread;
+  bool mIsRunning;
+
+  void operator()() {
+    while (mIsRunning) {
+      int fn = mLcm->getFileno();
+      fd_set fds;
+      FD_ZERO(&fds);
+      FD_SET(fn, &fds);
+      struct timeval timeout = { 0, 200*1000 };
+      int status = select(fn+1, &fds, NULL, NULL, &timeout);
+      if (status == 0) {
+      }
+      else if (status < 0) {
+        break;
+      }
+      else if (FD_ISSET(fn, &fds)) {
+        if (0 != mLcm->handle()) {
+          break;
+        }
+      }
+    }
+  }
+};
+
+
 int main() {
+  boost::shared_ptr<Helper> helper(new Helper());
+  helper->mViewClient = new maps::ViewClient();
+  helper->mLcm.reset(new lcm::LCM());
+  if ((NULL == helper->mLcm) || !helper->mLcm->good()) {
+    std::cout << "cannot create lcm" << std::endl;
+    return -1;
+  }
+
+  BotWrapper::Ptr botWrapper(new BotWrapper(helper->mLcm, NULL, NULL));
+  if (NULL == botWrapper->getBotParam()) {
+    std::cout << "cannot create boparam" << std::endl;
+    return -1;
+  }
+
+  helper->mIsRunning = true;
+  helper->mThread = boost::thread(boost::ref(*helper));
+
+
+  helper->mViewClient->setBotWrapper(botWrapper);
+  helper->mViewClient->start();
+
+  sleep(3);
+
+  DepthImageView::Ptr view = boost::dynamic_pointer_cast<DepthImageView>
+    (helper->mViewClient->getView(drc::data_request_t::HEIGHT_MAP_SCENE));
+  view->setNormalRadius(2);
+  view->setNormalMethod(DepthImageView::NormalMethodLeastSquares);
+  
+  State s;
+  bot_lcmgl_t* lcmgl = s.mLcmGl;
+  std::vector<Eigen::Vector3f> points, normals;
+  auto startTime = std::chrono::high_resolution_clock::now();
+  for (float y = -10; y <= 10; y += 0.1) {
+    for (float x = -10; x <= 10; x += 0.1) {
+      Eigen::Vector3f queryPt(x,y,0);
+      Eigen::Vector3f pt, normal;
+      if (view->getClosest(queryPt, pt, normal)) {
+        points.push_back(pt);
+        normals.push_back(normal);
+        std::cout << normal.transpose() << std::endl;
+      }
+    }
+  }
+  auto endTime = std::chrono::high_resolution_clock::now();
+  auto timeDiff =
+    std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+  std::cout << "Time elapsed " << timeDiff.count()/1e3 << std::endl;
+
+  std::cout << "POINTS " << points.size() << std::endl;
+
+  bot_lcmgl_color3f(lcmgl, 0, 1, 0);
+  bot_lcmgl_point_size(lcmgl, 10);
+  bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+  for (int i = 0; i < points.size(); ++i) {
+    bot_lcmgl_vertex3f(lcmgl, points[i][0], points[i][1], points[i][2]);
+  }
+  bot_lcmgl_end(lcmgl);
+
+  bot_lcmgl_color3f(lcmgl, 0, 0, 1);
+  bot_lcmgl_line_width(lcmgl, 2);
+  bot_lcmgl_begin(lcmgl, LCMGL_LINES);
+  for (int i = 0; i < normals.size(); ++i) {
+    bot_lcmgl_vertex3f(lcmgl, points[i][0], points[i][1], points[i][2]);
+    Eigen::Vector3f pt = points[i] + 0.1*normals[i];
+    bot_lcmgl_vertex3f(lcmgl, pt[0], pt[1], pt[2]);
+  }
+  bot_lcmgl_end(lcmgl);
+
+  bot_lcmgl_switch_buffer(lcmgl);
+
+  //  sleep(5);
+
+  helper->mViewClient->stop();
+  delete helper->mViewClient;
+
+  helper->mIsRunning = false;
+  helper->mThread.join();
+  helper.reset();
+
+  return 0;
+
   // create state object instance
   State state;
 

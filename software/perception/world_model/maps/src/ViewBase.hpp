@@ -25,6 +25,7 @@ public:
     Type mType;
     float mResolution;
     float mFrequency;
+    std::string mChannel;
     int64_t mTimeMin;
     int64_t mTimeMax;
     int mWidth;

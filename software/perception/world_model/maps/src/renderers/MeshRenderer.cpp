@@ -8,7 +8,6 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 #include <image_utils/jpeg.h>
-#include <image_utils/pixels.h>
 #include <lcmtypes/bot_core/image_t.hpp>
 
 #include <maps/BotWrapper.hpp>
@@ -33,6 +32,9 @@ struct MeshRenderer::InternalState {
   BotCamTrans* mCamTrans;
   Eigen::Matrix4f mProjectionMatrix;
 
+  bot_core::image_t mTextureImage;
+  Eigen::Projective3f mLocalToTexture;
+
   // appearance controls
   ColorMode mColorMode;
   MeshMode mMeshMode;
@@ -50,6 +52,7 @@ struct MeshRenderer::InternalState {
   GLuint mColorBufferId;
   GLuint mTexCoordBufferId;
   GLuint mFaceBufferId;
+  GLuint mGenericTextureId;
   GLuint mCameraTextureId;
   bool mFirstDraw;
 
@@ -70,7 +73,7 @@ struct MeshRenderer::InternalState {
                      const std::string& iChannel,
                      const bot_core::image_t* iMessage) {
     mCameraImage = *iMessage;
-    if (iMessage->pixelformat == PIXEL_FORMAT_MJPEG) {
+    if (iMessage->pixelformat == bot_core::image_t::PIXEL_FORMAT_MJPEG) {
       int stride = iMessage->width * 3;
       mCameraImage.data.resize(iMessage->height * stride);
       mCameraImage.pixelformat = 0;
@@ -114,6 +117,57 @@ struct MeshRenderer::InternalState {
 
     mNeedsUpdate = true;
   }
+
+  void remapPixelValues(const bot_core::image_t& iImage,
+                        std::vector<uint8_t>& oBytes) {
+    int width(iImage.width), height(iImage.height);
+    oBytes.resize(width * height);
+    float scale2 = 255/(mScaleMaxZ - mScaleMinZ);
+    uint8_t* out = &(oBytes[0]);
+
+    // grayscale case; simple remapping
+    if (iImage.pixelformat == bot_core::image_t::PIXEL_FORMAT_GRAY) {
+      for (int i = 0; i < height; ++i) {
+        const uint8_t* in = &(iImage.data[0]) + i*iImage.row_stride;
+        for (int j = 0; j < width; ++j, ++in, ++out) {
+          float val = *in/255.0f;
+          float mapVal = (val - mScaleMinZ)*scale2;
+          if (mapVal > 1) mapVal = 1;
+          else if (mapVal < 0) mapVal = 0;
+          *out = (uint8_t)mapVal;
+        }
+      }
+    }
+
+    // float case
+    else if (iImage.pixelformat ==
+             bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32) {
+
+      // find extremal values
+      float minVal(1e10), maxVal(-1e10);
+      for (int i = 0; i < height; ++i) {
+        float* in = (float*)(&iImage.data[0] + i*iImage.row_stride);
+        for (int j = 0; j < width; ++j, ++in) {
+          minVal = std::min(minVal, *in);
+          maxVal = std::max(maxVal, *in);
+        }
+      }
+
+      // remap
+      float scale1 = 1/(maxVal-minVal);
+      for (int i = 0; i < height; ++i) {
+        float* in = (float*)(&iImage.data[0] + i*iImage.row_stride);
+        for (int j = 0; j < width; ++j, ++in, ++out) {
+          float val = (*in - minVal) * scale1;
+          float mapVal = (val - mScaleMinZ) * scale2;
+          if (mapVal > 255) mapVal = 255;
+          else if (mapVal < 0) mapVal = 0;
+          *out = (uint8_t)mapVal;
+        }
+      }
+    }
+  }
+
 };
 
 MeshRenderer::
@@ -214,6 +268,21 @@ setRangeOrigin(const Eigen::Vector3f& iOrigin) {
   mState->mRangeOrigin = iOrigin;
 }
 
+
+void MeshRenderer::
+setTexture(const int iWidth, const int iHeight, const int iStrideBytes,
+           const int iFormat, const uint8_t* iData,
+           const Eigen::Projective3f& iTransform) {
+  mState->mTextureImage.width = iWidth;
+  mState->mTextureImage.height = iHeight;
+  mState->mTextureImage.row_stride = iStrideBytes;
+  mState->mTextureImage.pixelformat = iFormat;
+  mState->mTextureImage.size = iHeight*iStrideBytes;
+  mState->mTextureImage.data =
+    std::vector<uint8_t>(iData, iData+iHeight*iStrideBytes);
+  mState->mLocalToTexture = iTransform;
+  mState->mNeedsUpdate = true;
+}
 
 void MeshRenderer::
 setData(const std::vector<Eigen::Vector3f>& iVertices,
@@ -329,6 +398,7 @@ draw() {
     glGenBuffers(1, &mState->mTexCoordBufferId);
     glGenBuffers(1, &mState->mFaceBufferId);
     glGenTextures(1, &mState->mCameraTextureId);
+    glGenTextures(1, &mState->mGenericTextureId);
     mState->mFirstDraw = false;
   }
 
@@ -353,8 +423,8 @@ draw() {
     glColor4f(mState->mColor[0], mState->mColor[1], mState->mColor[2],
               mState->mColorAlpha);
   }
-  else if ((mState->mColorMode != ColorModeCamera) &&
-           (mState->mColorMode != ColorModeTexture)) {
+  else if ((mState->mColorMode == ColorModeHeight) ||
+           (mState->mColorMode == ColorModeRange)) {
     int numVertices = mState->mColorBuffer.size()/4;
     Eigen::Vector3f color = mState->mColor;
     float invDenom1 = 1/(mState->mMaxZ - mState->mMinZ);
@@ -399,7 +469,8 @@ draw() {
     glColorPointer(4, GL_UNSIGNED_BYTE, 0, 0);
   }
 
-  else if (mState->mCameraImage.size) {
+  else if ((mState->mColorMode == ColorModeCamera) &&
+           (mState->mCameraImage.size>0)) {
     // texture coordinates transformation
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
@@ -422,6 +493,99 @@ draw() {
     glTexImage2D(GL_TEXTURE_2D, 0, 3, mState->mCameraImage.width,
                  mState->mCameraImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
                  &mState->mCameraImage.data[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, mState->mTexCoordBufferId);
+    glBufferData(GL_ARRAY_BUFFER, mState->mVertexBuffer.size()*sizeof(float),
+                 &mState->mVertexBuffer[0], GL_STATIC_DRAW);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_FLOAT, 0, 0);
+  }
+
+  else if ((mState->mColorMode == ColorModeTexture) &&
+           (mState->mTextureImage.size>0)) {
+    // texture coordinates transformation
+    int width = mState->mTextureImage.width;
+    int height = mState->mTextureImage.height;
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0/width, 1.0/height, 1);
+    glMultMatrixf(mState->mLocalToTexture.data());
+    glMultMatrixf(mState->mTransform.data());
+
+    // draw texture
+    GLfloat color[] = {mState->mColor[0], mState->mColor[1], mState->mColor[2],
+                       mState->mColorAlpha};
+    glColor4ub(255,255,255,255*mState->mColorAlpha);
+    glBindTexture(GL_TEXTURE_2D, mState->mGenericTextureId);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    switch (mState->mTextureImage.pixelformat) {
+    case bot_core::image_t::PIXEL_FORMAT_RGB:
+      glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB,
+                   GL_UNSIGNED_BYTE, &mState->mTextureImage.data[0]);
+      break;
+    case bot_core::image_t::PIXEL_FORMAT_GRAY:
+      glTexImage2D(GL_TEXTURE_2D, 0, 1, width, height, 0, GL_LUMINANCE,
+                   GL_FLOAT, &mState->mTextureImage.data[0]);
+      break;
+    case bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32:
+      glTexImage2D(GL_TEXTURE_2D, 0, 1, width, height, 0, GL_LUMINANCE,
+                   GL_UNSIGNED_BYTE, &mState->mTextureImage.data[0]);
+      break;
+    default:
+      std::cout << "Error: invalid texture type" << std::endl;
+      break;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, mState->mTexCoordBufferId);
+    glBufferData(GL_ARRAY_BUFFER, mState->mVertexBuffer.size()*sizeof(float),
+                 &mState->mVertexBuffer[0], GL_STATIC_DRAW);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_FLOAT, 0, 0);    
+  }
+
+  // treat texture as color map
+  // TODO: this could be much more efficient
+  else if ((mState->mColorMode == ColorModeMap) &&
+           (mState->mTextureImage.size>0)) {
+    // fill in colormap indices
+    std::vector<uint8_t> bytes;
+    mState->remapPixelValues(mState->mTextureImage, bytes);
+
+    // create colormap itself
+    int numColors = 256;
+    std::vector<float> rMap(numColors), gMap(numColors), bMap(numColors);
+    for (int i = 0; i < numColors; ++i) {
+      float* jet = bot_color_util_jet(i/255.0f);
+      rMap[i] = jet[0];
+      gMap[i] = jet[1];
+      bMap[i] = jet[2];
+    }
+    glPixelTransferi(GL_MAP_COLOR, GL_TRUE);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_R, numColors, &rMap[0]);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_G, numColors, &gMap[0]);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_B, numColors, &bMap[0]);
+    
+    // draw texture
+    int width = mState->mTextureImage.width;
+    int height = mState->mTextureImage.height;
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0/width, 1.0/height, 1);
+    glMultMatrixf(mState->mLocalToTexture.data());
+    glMultMatrixf(mState->mTransform.data());
+    GLfloat color[] = {mState->mColor[0], mState->mColor[1], mState->mColor[2],
+                       mState->mColorAlpha};
+    glColor4ub(255,255,255,255*mState->mColorAlpha);
+    glBindTexture(GL_TEXTURE_2D, mState->mGenericTextureId);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_COLOR_INDEX,
+                 GL_UNSIGNED_BYTE, &bytes[0]);
     glBindBuffer(GL_ARRAY_BUFFER, mState->mTexCoordBufferId);
     glBufferData(GL_ARRAY_BUFFER, mState->mVertexBuffer.size()*sizeof(float),
                  &mState->mVertexBuffer[0], GL_STATIC_DRAW);

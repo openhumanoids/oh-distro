@@ -1,6 +1,7 @@
 #include "ViewClient.hpp"
 
 #include <lcm/lcm-cpp.hpp>
+#include <lcm/lcm_coretypes.h>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_cloud_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
@@ -29,34 +30,22 @@ struct ViewClient::Worker {
   };
 
   struct Message {
-    enum Type {
-      TypeOctree,
-      TypeCloud,
-      TypeDepth,
-      TypeCatalog
-    };
-    Type mType;
-    int64_t mId;
-    boost::shared_ptr<void> mPayload;
+    typedef boost::shared_ptr<Message> Ptr;
+    std::vector<uint8_t> mBytes;
   };
   
   ViewClient* mClient;
   BotWrapper::Ptr mBotWrapper;
   State mState;
-  lcm::Subscription* mOctreeSubscription;
-  lcm::Subscription* mCloudSubscription;
-  lcm::Subscription* mDepthSubscription;
+  std::vector<lcm::Subscription*> mViewSubscriptions;
   lcm::Subscription* mCatalogSubscription;
-  ThreadSafeQueue<Message> mMessageQueue;
+  ThreadSafeQueue<Message::Ptr> mMessageQueue;
   boost::mutex mMutex;
   boost::condition_variable mCondition;
   boost::thread mThread;
 
   Worker(ViewClient* iClient) {
     mClient = iClient;
-    mOctreeSubscription = NULL;
-    mCloudSubscription = NULL;
-    mDepthSubscription = NULL;
     mCatalogSubscription = NULL;
     mState = StateIdle;
     mThread = boost::thread(boost::ref(*this));
@@ -66,9 +55,9 @@ struct ViewClient::Worker {
     boost::mutex::scoped_lock lock(mMutex);
     if (mBotWrapper != NULL) {
       if (mBotWrapper->getLcm() != NULL) {
-        mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
-        mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
-        mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+        for (int i = 0; i < mViewSubscriptions.size(); ++i) {
+          mBotWrapper->getLcm()->unsubscribe(mViewSubscriptions[i]);
+        }
         mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
       }
     }
@@ -91,14 +80,13 @@ struct ViewClient::Worker {
     mState = StateRunning;
     lock.unlock();
     mCondition.notify_one();
-    mOctreeSubscription = mBotWrapper->getLcm()->
-      subscribe(mClient->mOctreeChannel, &Worker::onOctree, this);
-    mCloudSubscription = mBotWrapper->getLcm()->
-      subscribe(mClient->mCloudChannel, &Worker::onCloud, this);
-    mDepthSubscription = mBotWrapper->getLcm()->
-      subscribe(mClient->mDepthChannel, &Worker::onDepth, this);
+    for (int i = 0; i < mClient->mViewChannels.size(); ++i) {
+      lcm::Subscription* sub = mBotWrapper->getLcm()->
+        subscribe(mClient->mViewChannels[i], &Worker::onView, this);
+      mViewSubscriptions.push_back(sub);
+    }
     mCatalogSubscription = mBotWrapper->getLcm()->
-      subscribe(mClient->mCatalogChannel, &Worker::onCatalog, this);
+      subscribe(mClient->mCatalogChannel, &Worker::onView, this);
     return true;
   }
 
@@ -109,9 +97,9 @@ struct ViewClient::Worker {
     }
     if (mBotWrapper != NULL) {
       if (mBotWrapper->getLcm() != NULL) {
-        mBotWrapper->getLcm()->unsubscribe(mOctreeSubscription);
-        mBotWrapper->getLcm()->unsubscribe(mCloudSubscription);
-        mBotWrapper->getLcm()->unsubscribe(mDepthSubscription);
+        for (int i = 0; i < mViewSubscriptions.size(); ++i) {
+          mBotWrapper->getLcm()->unsubscribe(mViewSubscriptions[i]);
+        }
         mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
       }
     }
@@ -122,51 +110,10 @@ struct ViewClient::Worker {
     return true;
   }
 
-  void onOctree(const lcm::ReceiveBuffer* iBuf,
-                const std::string& iChannel,
-                const drc::map_octree_t* iMessage) {
-    Message msg;
-    msg.mType = Message::TypeOctree;
-    msg.mId = iMessage->view_id;
-    boost::shared_ptr<drc::map_octree_t>
-      payload(new drc::map_octree_t(*iMessage));
-    msg.mPayload = boost::static_pointer_cast<void>(payload);
-    mMessageQueue.push(msg);
-  }
-
-  void onCloud(const lcm::ReceiveBuffer* iBuf,
-               const std::string& iChannel,
-               const drc::map_cloud_t* iMessage) {
-    Message msg;
-    msg.mType = Message::TypeCloud;
-    msg.mId = iMessage->view_id;
-    boost::shared_ptr<drc::map_cloud_t>
-      payload(new drc::map_cloud_t(*iMessage));
-    msg.mPayload = boost::static_pointer_cast<void>(payload);
-    mMessageQueue.push(msg);
-  }
-
-  void onDepth(const lcm::ReceiveBuffer* iBuf,
-               const std::string& iChannel,
-               const drc::map_image_t* iMessage) {
-    Message msg;
-    msg.mType = Message::TypeDepth;
-    msg.mId = iMessage->view_id;
-    boost::shared_ptr<drc::map_image_t>
-      payload(new drc::map_image_t(*iMessage));
-    msg.mPayload = boost::static_pointer_cast<void>(payload);
-    mMessageQueue.push(msg);
-  }
-
-  void onCatalog(const lcm::ReceiveBuffer* iBuf,
-                 const std::string& iChannel,
-                 const drc::map_catalog_t* iMessage) {
-    Message msg;
-    msg.mType = Message::TypeCatalog;
-    msg.mId = 0;
-    boost::shared_ptr<drc::map_catalog_t>
-      payload(new drc::map_catalog_t(*iMessage));
-    msg.mPayload = boost::static_pointer_cast<void>(payload);
+  void onView(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
+    Message::Ptr msg(new Message);
+    const uint8_t* buf = static_cast<const uint8_t*>(iBuf->data);
+    msg->mBytes = std::vector<uint8_t>(buf, buf + iBuf->data_size);
     mMessageQueue.push(msg);
   }
 
@@ -185,20 +132,27 @@ struct ViewClient::Worker {
       }
 
       // wait for new message
-      Message msg;
+      Message::Ptr msg;
       if (!mMessageQueue.waitForData(msg)) {
         continue;
       }
 
+      // get hash of raw buffer
+      const void* buf = static_cast<const void*>(&(msg->mBytes[0]));
+      int64_t hash;
+      int len = __int64_t_decode_array(buf, 0, 8, &hash, 1);
+      if (len < 0) continue;
+      const int maxBufferSize = 1000000;
+
       // handle catalog
-      if (msg.mType == Message::TypeCatalog) {
-        boost::shared_ptr<drc::map_catalog_t> catalog =
-          boost::static_pointer_cast<drc::map_catalog_t>(msg.mPayload);
+      if (hash == drc::map_catalog_t::getHash()) {
+        drc::map_catalog_t catalog;
+        catalog.decode(buf, 0, maxBufferSize);
         bool changed = false;
         std::set<int64_t> catalogIds;
-        for (int i = 0; i < catalog->views.size(); ++i) {
+        for (int i = 0; i < catalog.views.size(); ++i) {
           ViewBase::Spec spec;
-          LcmTranslator::fromLcm(catalog->views[i], spec);
+          LcmTranslator::fromLcm(catalog.views[i], spec);
           int64_t id = spec.mViewId;
           catalogIds.insert(id);
           SpecCollection::const_iterator item = mClient->mCatalog.find(id);
@@ -231,50 +185,53 @@ struct ViewClient::Worker {
         continue;
       }
 
-      // find view or insert new one for this id
-      SpecCollection::const_iterator item = mClient->mCatalog.find(msg.mId);
-      if (item == mClient->mCatalog.end()) {
-        ViewBase::Spec spec;
-        spec.mViewId = msg.mId;
-        mClient->mCatalog[msg.mId] = spec;
-        mClient->notifyCatalogListeners(true);
-      }
       ViewPtr view;
 
       // handle octree
-      if (msg.mType == Message::TypeOctree) {
-        boost::shared_ptr<drc::map_octree_t> payload =
-          boost::static_pointer_cast<drc::map_octree_t>(msg.mPayload);
+      if (hash == drc::map_octree_t::getHash()) {
+        drc::map_octree_t octree;
+        octree.decode(buf, 0, maxBufferSize);
         OctreeView* octreeView = new OctreeView();
-        LcmTranslator::fromLcm(*payload, *octreeView);
+        LcmTranslator::fromLcm(octree, *octreeView);
         view.reset(octreeView);
-        view->setUpdateTime(payload->utime);
+        view->setUpdateTime(octree.utime);
       }
 
       // handle cloud
-      else if (msg.mType == Message::TypeCloud) {
-        boost::shared_ptr<drc::map_cloud_t> payload =
-          boost::static_pointer_cast<drc::map_cloud_t>(msg.mPayload);
+      else if (hash == drc::map_cloud_t::getHash()) {
+        drc::map_cloud_t cloud;
+        cloud.decode(buf, 0, maxBufferSize);
         PointCloudView* cloudView = new PointCloudView();
-        LcmTranslator::fromLcm(*payload, *cloudView);
+        LcmTranslator::fromLcm(cloud, *cloudView);
         view.reset(cloudView);
-        view->setUpdateTime(payload->utime);
+        view->setUpdateTime(cloud.utime);
       }
 
       // handle depth image
-      else if (msg.mType == Message::TypeDepth) { 
-        boost::shared_ptr<drc::map_image_t> payload =
-          boost::static_pointer_cast<drc::map_image_t>(msg.mPayload);
+      else if (hash == drc::map_image_t::getHash()) {
+        drc::map_image_t image;
+        image.decode(buf, 0, maxBufferSize);
         DepthImageView* depthView = new DepthImageView();
-        LcmTranslator::fromLcm(*payload, *depthView);
+        LcmTranslator::fromLcm(image, *depthView);
         view.reset(depthView);
-        view->setUpdateTime(payload->utime);
+        view->setUpdateTime(image.utime);
       }
 
-      if (view != NULL) mClient->mViews[msg.mId] = view;
+      if (view == NULL) return;
+
+      // find view or insert new one for this id
+      SpecCollection::const_iterator item =
+        mClient->mCatalog.find(view->getId());
+      if (item == mClient->mCatalog.end()) {
+        ViewBase::Spec spec;
+        spec.mViewId = view->getId();
+        mClient->mCatalog[view->getId()] = spec;
+        mClient->notifyCatalogListeners(true);
+      }
+      mClient->mViews[view->getId()] = view;
 
       // notify subscribers
-      mClient->notifyDataListeners(msg.mId);
+      mClient->notifyDataListeners(view->getId());
     }
   }
 };
@@ -282,10 +239,10 @@ struct ViewClient::Worker {
 ViewClient::
 ViewClient() {
   setRequestChannel("MAP_REQUEST");
-  setOctreeChannel("MAP_OCTREE");
-  setCloudChannel("MAP_CLOUD");
-  setDepthChannel("MAP_DEPTH");
   setCatalogChannel("MAP_CATALOG");
+  addViewChannel("MAP_OCTREE");
+  addViewChannel("MAP_CLOUD");
+  addViewChannel("MAP_DEPTH");
   mWorker.reset(new Worker(this));
 }
 
@@ -306,23 +263,22 @@ setRequestChannel(const std::string& iChannel) {
 }
 
 void ViewClient::
-setOctreeChannel(const std::string& iChannel) {
-  mOctreeChannel = iChannel;
-}
-
-void ViewClient::
-setCloudChannel(const std::string& iChannel) {
-  mCloudChannel = iChannel;
-}
-
-void ViewClient::
-setDepthChannel(const std::string& iChannel) {
-  mDepthChannel = iChannel;
-}
-
-void ViewClient::
 setCatalogChannel(const std::string& iChannel) {
   mCatalogChannel = iChannel;
+}
+
+void ViewClient::
+addViewChannel(const std::string& iChannel) {
+  mViewChannels.push_back(iChannel);
+}
+
+void ViewClient::
+removeViewChannel(const std::string& iChannel) {
+  // TODO
+}
+
+void ViewClient::removeAllViewChannels() {
+  mViewChannels.clear();
 }
 
 int64_t ViewClient::request(const ViewBase::Spec& iSpec) {
