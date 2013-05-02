@@ -16,17 +16,19 @@
 
 #define LOG_DATA_FILES
 
-#define SCHMITT_LEVEL	                 0.65
+#define SCHMITT_LEVEL	                  0.65
 #define TRANSITION_TIMEOUT             4000
 #define STANDING_TRANSITION_TIMEOUT   10000
 
-#define MIN_STANDING_FORCE			         50
-#define MIN_STANDING_FEET_X_SEP			    0.1
-#define LOADSPLIT_LEVEL				         0.75
+#define MIN_STANDING_FORCE			     50
+#define MIN_STANDING_FEET_X_SEP			  0.1
+#define LOADSPLIT_LEVEL				      0.75
 
 #define HIGH_FOOT_CONTACT_THRESH          5
 #define LOW_FOOT_CONTACT_THRESH           0
 #define FOOT_CONTACT_DELAY             5000
+
+#define VEL_SPIKE_ISOLATION_DELAY      6000
 
 namespace TwoLegs {
 
@@ -118,9 +120,11 @@ class TwoLegOdometry {
 		~TwoLegOdometry();
 		
 		// Testing function not dependent on LCM messages
-		void CalculateBodyStates_Testing(int counter);
 		// not implemented yet
-		void CalculateBodyStates();
+		void CalculateBodyStates_Testing(int counter);
+		
+		// 
+		bool UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float left_force, const float right_force);
 		
 		// Return which foot is which - these are based on the RIGHTFOOT and LEFTFOOT defines in TwoLegsEstiamte_types.h
 		int secondary_foot();

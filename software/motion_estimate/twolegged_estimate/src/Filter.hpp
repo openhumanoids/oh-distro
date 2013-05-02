@@ -4,8 +4,8 @@
 #include <Eigen/Dense>
 #include <boost/circular_buffer.hpp>
 
-
-#include "fdacoefs_30Hz_10Hzcutoff.h"
+//#include "fdacoefs_30Hz_10Hzcutoff.h"
+#include "filter_coefficients/fdacoefs_1000_10_100_-20dB.h"
 
 class Filter {
 protected:

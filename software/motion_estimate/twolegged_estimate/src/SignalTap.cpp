@@ -48,6 +48,7 @@ void SchmittTrigger::Reset() {
 	current_status = false;
 	previous_time = 0; // how to handle this when it gets called for the first time.. should we have a flag and then a reset status
 	timer = 0;
+	storedvalue = 0.;
 	
 	// first call flag is used to intialize the timer, to enable delay measuring
 	first_call = true;
@@ -58,6 +59,11 @@ void SchmittTrigger::UpdateState(long present_time, double value) {
 		first_call = false;
 		previous_time = present_time;
 	}
+	if (present_time < previous_time) {
+		std::cout << "Warning SchmittTrigger object is jumping back in time -- behaviour unpredictable.\n";
+	}
+	
+	storedvalue = value;
 	//std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
 	if (current_status)
 		{
@@ -92,6 +98,10 @@ float SchmittTrigger::getState() {
   return (current_status ? 1.f : 0.f);
 }
 
+double SchmittTrigger::getCurrentValue() {
+	return storedvalue;
+}
+
 BipolarSchmittTrigger::BipolarSchmittTrigger(double lt, double ht, long delay) {
 	_trigger = new SchmittTrigger(lt, ht, delay);
 	//_lowside  = new SchmittTrigger(-lt, -ht, delay);
@@ -106,6 +116,7 @@ BipolarSchmittTrigger::~BipolarSchmittTrigger() {
 	//delete _lowside;
 }
 
+// TODO -- made a second definition somewhere else, make this the only one
 int sign(double value) {
 	if (value >= 0)
 		return 1;

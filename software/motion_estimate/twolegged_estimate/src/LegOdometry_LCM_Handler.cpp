@@ -178,6 +178,7 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
 }
 
 void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
+	// TODO -- This must be updated to use naming and not numerical 0 and 1 for left to right foot isolation
 	left_force = msg->contacts.contact_force[0].z;
 	right_force = msg->contacts.contact_force[1].z;
 }
@@ -202,11 +203,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	
 	getTransforms(msg,left,right);
 	
-	// TODO -- get the name based left and right foot force data here
 	double left_force, right_force;
 	ParseFootForces(msg, left_force, right_force);
-	left_force = msg->contacts.contact_force[0].z;
-	right_force = msg->contacts.contact_force[1].z;
+	//left_force = msg->contacts.contact_force[0].z;
+	//right_force = msg->contacts.contact_force[1].z;
 
 	if (_switches->publish_footcontact_states) {
 	  DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process	
@@ -214,12 +214,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	}
 	
 	if (_switches->do_estimation){
-		// This will have to change to something which checks if the feet are in contact. a transition from a free to contact state should trigger the initial state reset
+		// TODO -- how to trigger the initial state reset?
 		if (firstpass)
 		{
 			firstpass = false;
 			// We need to reset the initial condition of the odometry estimate here..
-			// TODO -- can we access the true first state, or do we just follow this for initial testing. im sure we are going to have to remove this before the VRC
+			// TODO -- going to have to remove this before the VRC..
 			Eigen::Quaterniond dummy_var;
 	        dummy_var.w() = msg->origin_position.rotation.w;
 	        dummy_var.x() = msg->origin_position.rotation.x;
@@ -232,19 +232,12 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			first_pose_init.translation().z() = msg->origin_position.translation.z;
 			
 			_leg_odo->ResetWithLeftFootStates(left,right,first_pose_init);
-			//std::cout << "Footsteps initialized, pelvis at: " << _leg_odo->getPelvisFromStep().translation().transpose() <<"\n";
-			
 		}
-		_leg_odo->setLegTransforms(left, right);
 		
-		legchangeflag = _leg_odo->FootLogic(msg->utime, left_force, right_force);
-	
+		legchangeflag = _leg_odo->UpdateStates(msg->utime, left, right, left_force, right_force);
+		
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
-		
-		// Think we should add the velocity estimation process here
-		_leg_odo->calculateUpdateVelocityStates(msg->utime);
-		
 		
 #ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
 	// here comes the drawing of poses
@@ -269,13 +262,15 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			}
 		
 		}
-	  
+		
 		//clock_gettime(CLOCK_REALTIME, &threequat);
 		
 		PublishEstimatedStates(msg);
     }
 	
 /*
+ * Should make a standard time measurement object or use the boost cron tools
+ * 
    clock_gettime(CLOCK_REALTIME, &after);
 	long elapsed;
 	elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include "QuaternionLib.h"
+#include "SignalTap.hpp"
 
 using namespace std;
 using namespace InertialOdometry;
@@ -62,7 +63,34 @@ int main() {
 	cout << "TEST RESULT: " << q2.w() << ", " << q2.x() << ", " << q2.y() << ", " << q2.z() << endl;
 	cout << InertialOdometry::QuaternionLib::q2e(q1).transpose() << endl;
 		
+	cout << "Testing the Schmitt trigger ============\n";
 	
-	
+	SchmittTrigger trigger(9., 12., 4);
+	// check hig side trigger
+	for (int i=0;i<20;i++) {
+		trigger.UpdateState(i, i);
+		if (trigger.getState()) {
+			cout << "Trigger is true at: " << i << ", Value is: " << trigger.getCurrentValue() << endl;
+		}
+	}
+	// check low side trigger
+	for (int i=0;i<20;i++) {
+		trigger.UpdateState(20+i, 20.-i);
+		if (!trigger.getState()) {
+			cout << "Trigger is false at: " << 20+i << ", Value is: " << trigger.getCurrentValue() << endl;
+		}
+	}
+	for (int i=0;i<25;i++) {
+		if (i>14) {
+			trigger.UpdateState(40+i-2, i-5);
+		} else {
+			trigger.UpdateState(40+i, i);
+		}
+		
+		if (trigger.getState()) {
+			cout << "Trigger is true at: " << i << ", Value is: " << trigger.getCurrentValue() << endl;
+		}
+	}
+		
 	return 0;
 }

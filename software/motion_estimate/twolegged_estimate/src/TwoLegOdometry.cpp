@@ -61,9 +61,9 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	
 	// the idea at this point is that if the accleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
-	_vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, 3000); 
-	_vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, 3000);
-	_vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, 3000);
+	_vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY); 
+	_vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
+	_vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
 	
 	datafile.Open(_log_data_files,"datalog.csv");
 	footcontactfile.Open(_log_data_files,"footcontactlog.csv");
@@ -104,7 +104,7 @@ void TwoLegOdometry::CalculateBodyStates_Testing(int counter) {
 	
 	/*data = ? */
 	
-	CalculateBodyStates(/*data*/);
+	//CalculateBodyStates(/*data*/);
 	
 	return;
 }
@@ -117,12 +117,17 @@ int TwoLegOdometry::secondary_foot() {
 	
 }
 
-void TwoLegOdometry::CalculateBodyStates(/*data*/) {
+bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, const Eigen::Isometry3d &right, const float left_force, const float right_force) {
 	
-	cout << "TwoLegOdometry::CalculateBodyStates() NOT IMPLEMENTED YET" << endl << endl;
+	bool foot_transition = false;
 	
+	setLegTransforms(left, right);
+	foot_transition = FootLogic(utime, left_force, right_force);
 	
-	return;
+	setPelvisPosition(getPelvisFromStep());
+	calculateUpdateVelocityStates(utime);
+	
+	return foot_transition;
 }
 
 
@@ -295,6 +300,10 @@ bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
 	  footsteps.newFootstep(newstep);
 	  return true;
   }
+  
+  // Must we get the pelvis position here?
+  // No we need an intermediate function call which handles the updating of all states
+  
   return false;
 }
 
@@ -413,11 +422,15 @@ Eigen::Quaterniond TwoLegOdometry::MergePitchRollYaw(const Eigen::Quaterniond &q
 // The intended user member call to get the pelvis state. The orientation is a mix of the leg kinematics yaw and the torso IMU AHRS pitch and roll angles
 // Translation is from the accumulated leg kinematics
 Eigen::Isometry3d TwoLegOdometry::getPelvisState() {
+		
+	if (false) {
+		// This is the old way of doing-- this changed with the use of the function CalculateBodyStates
+		Eigen::Isometry3d output_state(local_frame_orientation);
+		output_state.translation() = getPelvisFromStep().translation();
+	}
 	
-	Eigen::Isometry3d output_state(local_frame_orientation);
-	output_state.translation() = getPelvisFromStep().translation();
-	
-	return output_state;
+	//return output_state;
+	return local_to_pelvis;
 }	
 
 Eigen::Vector3d TwoLegOdometry::getPelvisVelocityStates() {
@@ -607,7 +620,6 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
 	
-	
 	for (int i=0;i<3;i++) {
 		_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
 		
@@ -616,20 +628,21 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 		if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
 		{
 			if (!_vel_spike_isolation[i]->getState()) {
-				
 				// accel values have not remained high, and can therefore be ignored
 				local_velocities(i) = prev_velocities(i);
 			}
-			// else do noting and the current computed state will not be ignored
+			
 		}
-
-		// here we are going to filter the velocity data	
-		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
 	}
 	
+	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
-	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
+	for (int i=0;i<3;i++) {
+		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
+	}
 
+	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
+	
 	accel_data_ss << std::endl;
 	accel_spike_isolation_log << accel_data_ss.str();
 	

@@ -27,6 +27,7 @@ public:
 class SchmittTrigger {
 private:
 	bool current_status;
+	double storedvalue;
 	long timer;
 	long time_delay;
 	long previous_time;
@@ -39,6 +40,7 @@ public:
 	void UpdateState(long present_time, double value);
 	void Reset();
 	float getState();
+	double getCurrentValue();
 };
 
 class BipolarSchmittTrigger {

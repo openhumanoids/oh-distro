@@ -47,7 +47,7 @@ double LowPassFilter::processSample(double sample) {
 	
 	// accumulate the new composite value from all the filter coefficient and history values
 	for (int i=0;i<FILTER_TAP_SIZE;i++) {
-		accumulator += filter_coeffs[FILTER_TAP_SIZE-i] * samples_buf[i];
+		accumulator += filter_coeffs[FILTER_TAP_SIZE-i] * samples_buf.at(i);
 	}
 	
 	return accumulator;
