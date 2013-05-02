@@ -408,6 +408,7 @@ struct RendererAffordances {
       bounding_lwh[0] = otdf->boundingBoxLWH[0];
       bounding_lwh[1] = otdf->boundingBoxLWH[1];
       bounding_lwh[2] = otdf->boundingBoxLWH[2];
+      msg.modelfile = otdf->modelfile;
    }
 
    msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
