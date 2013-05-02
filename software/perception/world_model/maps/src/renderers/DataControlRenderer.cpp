@@ -16,6 +16,7 @@
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
+#include <lcmtypes/drc/neck_pitch_t.hpp>
 
 #include <bot_vis/viewer.h>
 
@@ -47,6 +48,7 @@ protected:
   Gtk::VBox* mRequestControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
+  int mHeadPitchAngle;
 
   std::unordered_map<std::string, ChannelType> mChannels;
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
@@ -159,6 +161,14 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onRateControlButton));
     sensorControlBox->pack_start(*button, false, false);
+    Gtk::HSeparator* separator = Gtk::manage(new Gtk::HSeparator());
+    sensorControlBox->pack_start(*separator, false, false);
+    mHeadPitchAngle = 45;
+    addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
+    button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
+    sensorControlBox->pack_start(*button, false, false);
     notebook->append_page(*sensorControlBox, "Sensor");
     
     container->add(*notebook);
@@ -236,6 +246,15 @@ public:
     rate.linear_velocity.y = 0.0;
     rate.linear_velocity.z = 0.0;
     getLcm()->publish("SCAN_RATE_CMD", &rate);
+  }
+
+  void onHeadPitchControlButton() {
+    const double kPi = 4*atan(1);
+    double degreesToRadians = kPi/180;
+    drc::neck_pitch_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.pitch = mHeadPitchAngle*degreesToRadians;
+    getLcm()->publish("DESIRED_NECK_PITCH", &msg);
   }
 
   void draw() {
