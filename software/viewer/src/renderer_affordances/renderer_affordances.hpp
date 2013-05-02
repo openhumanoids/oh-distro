@@ -359,6 +359,21 @@ struct RendererAffordances {
   bool motion_trail_log_enabled;
 };
 
+// if common shape (e.g. cylinder, sphere), fill in bounding box
+static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<otdf::ModelInterface> instance_in,
+                            double* bounding_xyz, double* bounding_rpy, double* bounding_lwh)
+{
+   if(otdf_type == "cylinder"){  
+      bounding_lwh[0] = instance_in->params_map_.find("radius")->second*2;
+      bounding_lwh[1] = instance_in->params_map_.find("radius")->second*2;
+      bounding_lwh[2] = instance_in->params_map_.find("length")->second;
+   } else if(otdf_type == "sphere"){  
+      bounding_lwh[0] = instance_in->params_map_.find("radius")->second*2;
+      bounding_lwh[1] = instance_in->params_map_.find("radius")->second*2;
+      bounding_lwh[2] = instance_in->params_map_.find("radius")->second*2;
+   } else if(otdf_type == "TODO"){  //TODO others...
+   }
+}
 
 // =================================================================================
 // maintaining  OtdfInstanceStruc
@@ -410,6 +425,9 @@ struct RendererAffordances {
       bounding_lwh[2] = otdf->boundingBoxLWH[2];
       msg.modelfile = otdf->modelfile;
    }
+
+   // if common shape (e.g. cylinder, sphere), fill in bounding box
+   commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
 
    msg.bounding_xyz[0] = bounding_xyz[0]; msg.bounding_xyz[1] = bounding_xyz[1]; msg.bounding_xyz[2] = bounding_xyz[2];
    msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
@@ -468,7 +486,16 @@ struct RendererAffordances {
    double bounding_xyz[]={0,0,0};
    double bounding_rpy[]={0,0,0};
    double bounding_lwh[]={0,0,0};
-  
+
+   if(otdf_type == "car"){
+      //TODO centralize these settings.  This is duplicated in segmentation code
+      msg.aff.modelfile = "car.pcd";
+      bounding_xyz[2] = 1.0;   // center of bounding box is 1m above car origin
+      bounding_lwh[0] = 3.0;
+      bounding_lwh[1] = 1.7;
+      bounding_lwh[2] = 2.2;
+   } else commonShapeBoundingBox(otdf_type, instance_in, bounding_xyz, bounding_rpy, bounding_lwh);
+
    msg.aff.bounding_xyz[0] = bounding_xyz[0]; msg.aff.bounding_xyz[1] = bounding_xyz[1];msg.aff.bounding_xyz[2] = bounding_xyz[2];
    msg.aff.bounding_rpy[0] = bounding_rpy[0]; msg.aff.bounding_rpy[1] = bounding_rpy[1];msg.aff.bounding_rpy[2] = bounding_rpy[2];
    msg.aff.bounding_lwh[0] = bounding_lwh[0]; msg.aff.bounding_lwh[1] = bounding_lwh[1];msg.aff.bounding_lwh[2] = bounding_lwh[2];
