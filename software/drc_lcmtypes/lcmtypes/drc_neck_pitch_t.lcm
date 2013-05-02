@@ -1,0 +1,8 @@
+package drc;
+
+struct neck_pitch_t 
+{
+    int64_t utime;
+    double pitch; // desired neck pitch in world frame
+}
+
