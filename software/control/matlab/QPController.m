@@ -94,7 +94,8 @@ classdef QPController < MIMODrakeSystem
     else % use gurobi
       obj.solver_options.outputflag = 0; % not verbose
       obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
-%       obj.solver_options.presolve = 0;
+      obj.solver_options.presolve = 0;
+%       obj.solver_options.prepasses = 1;
 
       if obj.solver_options.method == 2
         obj.solver_options.bariterlimit = 20; % iteration limit
@@ -351,6 +352,11 @@ classdef QPController < MIMODrakeSystem
       model.lb = lb;
       model.ub = ub;
 
+%       Q=full(Hqp);
+%       c=2*fqp;
+%       Aeq = full(Aeq);
+%       Ain = full(Ain);
+%       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
 %       tic;
       result = gurobi(model,obj.solver_options);
       alpha = result.x;
