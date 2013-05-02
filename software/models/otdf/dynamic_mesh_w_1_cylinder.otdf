@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+
+<object name="dynamic_mesh_w_1_cylinder">
+
+<!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+<!-- World frame origin of the object -->
+<param name="x" default_value="0.0" inc="0.01" min="-100" max="100"/> 
+<param name="y" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="z" default_value="0.0" inc="0.01" min="-100" max="100"/>
+
+<!--roll,pitch,yaw are about Body Frame-->
+<param name="roll" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/> 
+<param name="pitch" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+<param name="yaw" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+
+<!-- Size of the outer most bounding volume -->
+<param name="mass" default_value="1.0" inc="0.01" min="0" max="100"/>
+<!--<param name="filename" default_value="1.0" inc="0.01" min="0" max="100"/>-->
+<!-- Size of the grasping cylinder -->
+<param name="radius" default_value="0.02" inc="0.01" min="0" max="100"/> 
+<param name="length" default_value="0.13" inc="0.01" min="0" max="100"/>
+
+<!-- cyl_offset w.r.t. dynamic_mesh -->
+<param name="x_offset" default_value="0.0" inc="0.01" min="-100" max="100"/> 
+<param name="y_offset" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="z_offset" default_value="0.0" inc="0.01" min="-100" max="100"/>
+<param name="roll_offset" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/> 
+<param name="pitch_offset" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+<param name="yaw_offset" default_value="0.0" inc="0.01" min="-3.1414" max="3.1414"/>
+
+
+<link name="base_link"/>
+
+<link name="dynamic_mesh">
+<inertial>
+   <mass value="${mass}" />
+   <inertia ixx="0.1"  ixy="0.0" ixz="0.0"
+            iyy="0.1" iyz="0.0"
+            izz="0.1" />
+</inertial>
+        <visual>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <geometry>
+                        <dynamic_mesh />
+                </geometry>
+        </visual>
+        <collision>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <geometry>
+                        <dynamic_mesh />
+                </geometry>
+        </collision>
+</link>
+
+
+<link name="cylinder">
+<inertial>
+   <mass value="${mass}" />
+   <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"
+            iyy="${(mass/12)*(3*(radius^2)+(length^2))}" iyz="0.0"
+            izz="${(mass/2)*(radius^2)}" />
+</inertial>
+	<visual>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+		<geometry>
+			<cylinder radius="${radius}" length="${length}"/> 
+		</geometry>
+	</visual>
+	<collision>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+		<geometry>
+			<cylinder radius="${radius}" length="${length}"/> 
+		</geometry>
+	</collision>
+</link>
+
+<joint name="base_joint" type="fixed">
+        <parent link="base_link" type="link"/>
+        <child link="dynamic_mesh" type="link"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+</joint>
+
+<joint name="cylinder_joint" type="fixed">
+        <parent link="base_link" type="link"/>
+        <child link="cylinder" type="link"/>
+        <origin rpy="${roll_offset} ${pitch_offset} ${yaw_offset}" xyz="${x_offset} ${y_offset} ${z_offset}"/>
+</joint>
+
+</object>
+
+
+
