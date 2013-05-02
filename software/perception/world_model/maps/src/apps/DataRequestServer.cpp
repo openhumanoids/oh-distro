@@ -173,7 +173,8 @@ struct Worker {
     msg.width = msg.height = 200;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = 0;
-    Eigen::Projective3f projector = createProjector(160, msg.width, msg.height);
+    Eigen::Projective3f projector =
+        createProjector(160, 90, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
@@ -188,21 +189,31 @@ struct Worker {
       msg.clip_planes[i][3] = 2;
     }
     msg.clip_planes[0][3] = 0;
-    Eigen::Projective3f projector = createProjector(150, msg.width, msg.height);
+    msg.clip_planes[5][3] = 1;
+    Eigen::Projective3f projector =
+        createProjector(150, 90, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
-  Eigen::Projective3f createProjector(const float iFovDegrees,
+  Eigen::Projective3f createProjector(const float iHorzFovDegrees,
+                                      const float iVertFovDegrees,
                                       const int iWidth, const int iHeight) {
     const float degToRad = 4*atan(1)/180;
-    const float fov = iFovDegrees*degToRad;
+    const float hFov = iHorzFovDegrees*degToRad;
+    const float vFov = iVertFovDegrees*degToRad;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-    pose.linear() << 0,-1,0, 0,0,-1, 1,0,0;
+    Eigen::Vector3f z(cos(vFov/2), 0, -sin(vFov/2));
+    Eigen::Vector3f x = z.cross(Eigen::Vector3f::UnitZ()).normalized();
+    Eigen::Vector3f y = z.cross(x).normalized();
+    pose.linear().row(0) = x;
+    pose.linear().row(1) = y;
+    pose.linear().row(2) = z;
+    //pose.linear() << 0,-1,0, 0,0,-1, 1,0,0;
     Eigen::Projective3f calib = Eigen::Projective3f::Identity();
     calib.matrix().row(2).swap(calib.matrix().row(3));
-    calib(0,0) = iWidth/2/tan(fov/2);
-    calib(1,1) = iHeight/2/tan(fov/2);
+    calib(0,0) = iWidth/2/tan(hFov/2);
+    calib(1,1) = iHeight/2/tan(vFov/2);
     calib(0,2) = iWidth/2;
     calib(1,2) = iHeight/2;
     Eigen::Projective3f projector = calib*pose;
