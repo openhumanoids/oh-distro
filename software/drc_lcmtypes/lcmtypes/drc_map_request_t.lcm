@@ -29,6 +29,9 @@ struct map_request_t
   // how frequently to send, in Hz (0 = one time only)
   float frequency;
 
+  // which channel to publish the response on
+  string channel;
+
   // time bounds (set to -1 for unbounded)
   int64_t time_min;
   int64_t time_max;
