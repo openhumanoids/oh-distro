@@ -6,6 +6,10 @@
 
 #include "AffordanceCollectionListener.hpp"
 
+#include <pcl/point_types.h>
+#include <pcl/pcl_base.h>
+#include <pcl/io/pcd_io.h>
+
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
@@ -135,19 +139,22 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
     if (it!=_parent_affordance_renderer->instantiated_objects.end()) {
 
-      // copy triangles
-      it->second.triangles.resize(msg->triangles.size());
-      for(size_t i=0;i<msg->triangles.size();i++){
-        it->second.triangles[i][0] = msg->triangles[i][0];
-        it->second.triangles[i][1] = msg->triangles[i][1];
-        it->second.triangles[i][2] = msg->triangles[i][2];
-      }
-      // copy points
-      it->second.points.resize(msg->points.size());
-      for(size_t i=0;i<msg->points.size();i++){
-        it->second.points[i][0] = msg->points[i][0];
-        it->second.points[i][1] = msg->points[i][1];
-        it->second.points[i][2] = msg->points[i][2];
+      // if no modelfile, copy points and triangles
+      if(msg->aff.modelfile.empty()){
+        // copy triangles
+        it->second.triangles.resize(msg->triangles.size());
+        for(size_t i=0;i<msg->triangles.size();i++){
+          it->second.triangles[i][0] = msg->triangles[i][0];
+          it->second.triangles[i][1] = msg->triangles[i][1];
+          it->second.triangles[i][2] = msg->triangles[i][2];
+        }
+        // copy points
+        it->second.points.resize(msg->points.size());
+        for(size_t i=0;i<msg->points.size();i++){
+          it->second.points[i][0] = msg->points[i][0];
+          it->second.points[i][1] = msg->points[i][1];
+          it->second.points[i][2] = msg->points[i][2];
+        }
       }
 
       // copy bounding box
@@ -160,6 +167,26 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       it->second.boundingBoxLWH[0] = msg->aff.bounding_lwh[0];
       it->second.boundingBoxLWH[1] = msg->aff.bounding_lwh[1];
       it->second.boundingBoxLWH[2] = msg->aff.bounding_lwh[2];
+
+      // if modelfile has changed, read in file
+      if(msg->aff.modelfile != it->second.modelfile){
+        // read in model
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PCDReader reader;
+        string file = getenv("HOME") + string("/drc/software/models/otdf/") + msg->aff.modelfile;
+        reader.read(file.c_str(), *modelcloud);
+
+        // copy model to points
+        std::vector<Eigen::Vector3f>& pts = it->second.points;
+
+        pts.resize(modelcloud->size());
+        for(int i=0;i<pts.size();i++){
+          pts[i][0] = modelcloud->at(i).x;
+          pts[i][1] = modelcloud->at(i).y;
+          pts[i][2] = modelcloud->at(i).z;
+        }
+        it->second.modelfile = msg->aff.modelfile;
+      }
 
       // find links of type DynamicMesh and copy points and triangles into it.
       /*

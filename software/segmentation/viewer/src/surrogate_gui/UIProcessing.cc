@@ -1449,14 +1449,16 @@ namespace surrogate_gui
     affordanceMsg.aff.modelfile = modelfile;
 
     // populate points //TODO remove when modelfile is fully supported
-    affordanceMsg.npoints = modelcloud->size();
-    affordanceMsg.points.resize(modelcloud->size());
-    for(int i=0;i<modelcloud->size();i++){
-      affordanceMsg.points[i].resize(3);
-      affordanceMsg.points[i][0] = modelcloud->at(i).x;
-      affordanceMsg.points[i][1] = modelcloud->at(i).y;
-      affordanceMsg.points[i][2] = modelcloud->at(i).z;
-    }
+    if(false){
+      affordanceMsg.npoints = modelcloud->size();
+      affordanceMsg.points.resize(modelcloud->size());
+      for(int i=0;i<modelcloud->size();i++){
+        affordanceMsg.points[i].resize(3);
+        affordanceMsg.points[i][0] = modelcloud->at(i).x;
+        affordanceMsg.points[i][1] = modelcloud->at(i).y;
+        affordanceMsg.points[i][2] = modelcloud->at(i).z;
+      }
+    }else affordanceMsg.npoints = 0;
     affordanceMsg.ntriangles = 0;
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;

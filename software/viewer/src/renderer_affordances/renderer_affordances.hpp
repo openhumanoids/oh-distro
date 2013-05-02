@@ -145,6 +145,9 @@ struct OtdfInstanceStruc {
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3i> triangles;
 
+    // filename of model used to generate points or triangles (alternative to points/triangles in aff message)
+    std::string modelfile;
+
     // bounding box info relative to object
     Eigen::Vector3f boundingBoxXYZ;
     Eigen::Vector3f boundingBoxRPY;
