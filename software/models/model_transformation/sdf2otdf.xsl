@@ -155,8 +155,8 @@
       <xsl:when test="exists($current-joint)">
         <xsl:for-each select="../joint[child/text() = $link-name]">
           <xsl:call-template name="transform-joint">
-            <!--<xsl:with-param name="p_X_j" select="$p_X_j"/>-->
-            <xsl:with-param name="p_X_j" select="$p_X_c"/>
+            <xsl:with-param name="p_X_j" select="$p_X_j"/>
+            <!--<xsl:with-param name="p_X_j" select="$p_X_c"/>-->
             <xsl:with-param name="j_X_o" select="$j_X_o"/>
             <!--<xsl:with-param name="j_X_o" select="trans:inv($o_X_c)"/>-->
           </xsl:call-template>
