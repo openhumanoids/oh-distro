@@ -83,6 +83,11 @@ cmdstr = ['mex -v src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',inc
 disp(cmdstr);
 eval(cmdstr);
 
+cmdstr = ['mex -v src/MapWrapperRobot.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+disp(cmdstr);
+eval(cmdstr);
+
+
 end
 
 
