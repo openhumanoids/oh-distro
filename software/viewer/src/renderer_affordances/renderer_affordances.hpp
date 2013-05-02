@@ -378,6 +378,25 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
 // =================================================================================
 // maintaining  OtdfInstanceStruc
   
+  inline static void delete_otdf_from_affstore(string channel, string otdf_type, int uid, void *user)
+  {
+        RendererAffordances *self = (RendererAffordances*) user;
+
+        // create and send delete affordance message
+        drc::affordance_plus_t aff;
+        aff.aff.aff_store_control = drc::affordance_t::DELETE;
+        aff.aff.otdf_type = otdf_type;
+        aff.aff.uid = uid;
+        aff.aff.map_id = 0;
+        aff.aff.nparams = 0;
+        aff.aff.nstates = 0;
+        aff.npoints = 0;
+        aff.ntriangles = 0;
+        self->lcm->publish(channel, &aff);
+        cout << "Delete message sent for: " << otdf_type << "_" << uid << endl;
+  }
+
+
   inline static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
   {
    RendererAffordances *self = (RendererAffordances*) user;

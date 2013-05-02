@@ -691,28 +691,10 @@ namespace renderer_affordances_gui_utils
       typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = self->instantiated_objects.find(string(instance_name));
       
-      // send message to affordance store
-      string name = instance_name;
-      size_t pos = name.find("_"); // name of format otdftype_uid
-      if(pos == string::npos){
-        cout << "Error parsing instance_name: " << instance_name << endl;
-      }else{ 
-        // create and send delete affordance message
-        drc::affordance_plus_t aff;
-        aff.aff.aff_store_control = drc::affordance_t::DELETE;
-        aff.aff.otdf_type = name.substr(0,pos);
-        aff.aff.uid = atoi(name.substr(pos+1).c_str());
-        aff.aff.map_id = 0;
-        aff.aff.nparams = 0;
-        aff.aff.nstates = 0;
-        aff.npoints = 0;
-        aff.ntriangles = 0;
-        self->lcm->publish("AFFORDANCE_FIT", &aff);
-        cout << "Delete message sent for: " << name << endl;
-      }
-
      if(it!=self->instantiated_objects.end())
      {
+        delete_otdf_from_affstore("AFFORDANCE_FIT", it->second.otdf_type, it->second.uid, self);
+
         self->instantiated_objects.erase(it);
         if(self->object_selection==string(instance_name))
         {
