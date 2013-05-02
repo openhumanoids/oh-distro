@@ -188,7 +188,7 @@ struct Worker {
       msg.clip_planes[i][3] = 2;
     }
     msg.clip_planes[0][3] = 0;
-    Eigen::Projective3f projector = createProjector(90, msg.width, msg.height);
+    Eigen::Projective3f projector = createProjector(150, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
