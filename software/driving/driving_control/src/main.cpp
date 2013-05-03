@@ -57,6 +57,8 @@
 #define MAX_THROTTLE 0.03
 #define ALPHA .2
 #define VEHICLE_THRESHOLD 1/1.5
+#define ESTOP_VEHICLE_THRESHOLD 1/1.2
+
 #define SAFE_DISTANCE 3.0
 
 #define DIST_POW 2
@@ -478,7 +480,7 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
     BotTrans body_to_local;
 
     bot_frames_get_trans(self->frames, "body", "local", 
-			 &body_to_local);
+                         &body_to_local);
 
     BotTrans car_to_local; 
     bot_trans_apply_trans_to(&body_to_local, &car_to_body, &car_to_local);
@@ -550,8 +552,17 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
         if (!cost_map->isInMap (xy_arc_min) || !cost_map->isInMap (xy_arc_max))
             continue;
       
+
+        // Find the first point along the ray for which the inverse distance value exceeds VEHICLE_THRESHOLD
+        // We will use this to measure the effective length of the ray.
         double collision_point[2];
       
+        
+        bool estop_collision = cost_map->collisionCheck (xy_arc_min, xy_arc_max, ESTOP_VEHICLE_THRESHOLD, collision_point);
+        if (estop_collision)
+            continue;
+
+
         double threshold = VEHICLE_THRESHOLD;//1/2.0;
 
         bool collision = cost_map->collisionCheck(xy_arc_min, xy_arc_max, threshold, collision_point); 
@@ -612,6 +623,13 @@ find_goal_enhanced (occ_map::FloatPixelMap *fmap, state_t *self)
              
       
         //fprintf(stderr, "[%d] Dist : %f\n", i, ray_dist); 
+    }
+
+    // Perform estop if there are no valid goals
+    if (scores.size() == 0) {
+        fprintf (stdout, "NO VALID GOAL FOUND\n");
+        delete cost_map;
+        return 0;
     }
 
     //std::vector<std::pair<int, double> >::iterator it = std::max_element(scores.begin(), scores.end(), score_compare);
@@ -1040,6 +1058,12 @@ on_controller_timer (gpointer data)
         return TRUE;
     }
 
+    
+    // Perform emergency stop if there isn't a sufficient amount of terrain
+    // classified as road in front of the vehicle
+    
+
+
     int turn_only = 0;
     if((self->utime - self->drive_start_time)/1.0e6 < TIME_TO_TURN){
         turn_only = 1;
@@ -1321,22 +1345,22 @@ on_controller_timer (gpointer data)
 
 	drc_driving_control_cmd_t msg;
 	msg.utime = bot_timestamp_now();
-        if(self->use_differential_angle){
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
-            //if(fabs(steering_input) > bot_to_radians(5)){
-            msg.steering_angle =  steering_input;
-            /*}
-            else{
-                msg.steering_angle =  0;
-            }
-
-            fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
-        }
-        else{
-            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
-            msg.steering_angle =  steering_input;
-        }
-
+    if(self->use_differential_angle){
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
+        //if(fabs(steering_input) > bot_to_radians(5)){
+        msg.steering_angle =  steering_input;
+        /*}
+          else{
+          msg.steering_angle =  0;
+          }
+          
+          fprintf(stderr, "Steering angle : %f\n", bot_to_degrees(steering_input));*/
+    }
+    else{
+        msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE; //_DELTA_STEERING ;
+        msg.steering_angle =  steering_input;
+    }
+    
 	msg.throttle_value = throttle_val;
 	msg.brake_value = brake_val;
 	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
