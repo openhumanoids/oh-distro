@@ -92,6 +92,7 @@ private:
 	
 	// Drawing stuff
 	ObjectCollection* _obj;
+	ObjectCollection* _obj_leg_poses;
 	LinkCollection* _link;
 	
 	bool stillbusy;
@@ -130,7 +131,9 @@ private:
 	void drawSumPose();
 
 	void drawLeftFootPose();
-	void drawRightFootPose();	
+	void drawRightFootPose();
+	
+	void DrawLegPoses(const Eigen::Isometry3d target[4], const Eigen::Isometry3d &true_pelvis);
 
 	void PublishFootContactEst(int64_t utime);
 	void PublishEstimatedStates(const drc::robot_state_t * msg);

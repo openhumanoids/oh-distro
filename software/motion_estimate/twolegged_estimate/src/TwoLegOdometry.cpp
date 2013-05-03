@@ -127,6 +127,8 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	setPelvisPosition(getPelvisFromStep());
 	calculateUpdateVelocityStates(utime);
 	
+	// now we compute the head position and velocity states
+	
 	return foot_transition;
 }
 
@@ -324,13 +326,18 @@ void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen
 	pelvis_to_right = right;
 	
 	//std::cout << "Setting leg transforms\n";
+	if (true) {
+		left_to_pelvis = left.inverse();
+		right_to_pelvis = right.inverse();
+		
+	} else {
 	
-	// TODO - do the rotation assignments have not been tested yet
-	left_to_pelvis.translation() = -left.translation();
-	left_to_pelvis.linear() = left.linear().transpose();
-	right_to_pelvis.translation() = -right.translation();
-	right_to_pelvis.linear() = right.linear().transpose();
-	
+		// TODO - do the rotation assignments have not been tested yet
+		left_to_pelvis.translation() = -left.translation();
+		left_to_pelvis.linear() = left.linear().transpose();
+		right_to_pelvis.translation() = -right.translation();
+		right_to_pelvis.linear() = right.linear().transpose();
+	}
 	
 }
 

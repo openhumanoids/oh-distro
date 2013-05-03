@@ -84,6 +84,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	poseplotcounter = 0;
 	collectionindex = 101;
 	_obj = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
+	_obj_leg_poses = new ObjectCollection(1, std::string("Objects"), VS_OBJ_COLLECTION_T_POSE3D);
 	_link = new LinkCollection(2, std::string("Links"));
 	
 	firstpass = true;
@@ -106,6 +107,7 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	//delete model_;
 	delete _leg_odo;
 	delete _obj;
+	delete _obj_leg_poses;
 	delete _link;
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
@@ -213,6 +215,18 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	  PublishFootContactEst(msg->utime);
 	}
 	
+	// maintain a true pelvis position for drawing of the foot 
+	Eigen::Quaterniond true_pelvis_q;
+	true_pelvis_q.w() = msg->origin_position.rotation.w;
+	true_pelvis_q.x() = msg->origin_position.rotation.x;
+	true_pelvis_q.y() = msg->origin_position.rotation.y;
+	true_pelvis_q.z() = msg->origin_position.rotation.z;
+    
+	Eigen::Isometry3d true_pelvis(true_pelvis_q);
+	true_pelvis.translation().x() = msg->origin_position.translation.x;
+	true_pelvis.translation().y() = msg->origin_position.translation.y;
+	true_pelvis.translation().z() = msg->origin_position.translation.z;
+	
 	if (_switches->do_estimation){
 		// TODO -- how to trigger the initial state reset?
 		if (firstpass)
@@ -220,18 +234,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 			firstpass = false;
 			// We need to reset the initial condition of the odometry estimate here..
 			// TODO -- going to have to remove this before the VRC..
-			Eigen::Quaterniond dummy_var;
-	        dummy_var.w() = msg->origin_position.rotation.w;
-	        dummy_var.x() = msg->origin_position.rotation.x;
-	        dummy_var.y() = msg->origin_position.rotation.y;
-	        dummy_var.z() = msg->origin_position.rotation.z;
-	        
-			Eigen::Isometry3d first_pose_init(dummy_var);
-			first_pose_init.translation().x() = msg->origin_position.translation.x;
-			first_pose_init.translation().y() = msg->origin_position.translation.y;
-			first_pose_init.translation().z() = msg->origin_position.translation.z;
 			
-			_leg_odo->ResetWithLeftFootStates(left,right,first_pose_init);
+			_leg_odo->ResetWithLeftFootStates(left,right,true_pelvis);
 		}
 		
 		legchangeflag = _leg_odo->UpdateStates(msg->utime, left, right, left_force, right_force);
@@ -239,18 +243,30 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		// Timing profile. This is the midway point
 		//clock_gettime(CLOCK_REALTIME, &mid);
 		
+		if (_switches->draw_footsteps) {
+		
 #ifdef DRAW_DEBUG_LEGTRANSFORM_POSES
-	// here comes the drawing of poses
-	// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
-	
-	drawLeftFootPose();
-	drawRightFootPose();
-	//drawSumPose();
-
-	
+			// This adds a large amount of computation by not clearing the list -- not optimal, but not worth fixing at the moment
+			
+			//drawLeftFootPose();
+			//drawRightFootPose();
+			//drawSumPose();
+			{
+				Eigen::Isometry3d leg_isometries[4];
+				
+				leg_isometries[0] = left;
+				leg_isometries[1] = right;
+				leg_isometries[2] = left.inverse();
+				leg_isometries[3] = right.inverse();
+				
+				DrawLegPoses(leg_isometries, true_pelvis);
+			}
+			
+			// This sendCollection call will be overwritten by the one below -- moved here after testing of the forward kinematics
+			_viewer->sendCollection(*_obj_leg_poses, true);
 #endif
 		
-		if (_switches->draw_footsteps) {
+		
 			if (legchangeflag)
 			{
 				//std::cout << "LEGCHANGE\n";
@@ -260,6 +276,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 				collectionindex++;
 				_viewer->sendCollection(*_obj, true);
 			}
+			
+			_viewer->sendCollection(*_obj_leg_poses, true);
 		
 		}
 		
@@ -404,8 +422,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   
   // publish local to head pose
   
-  // We have the estimated state data here and the truth data, so think this is the best place push the estimated states to file.
-  // new
   int status;
   double matx[16];
   Eigen::Isometry3d body_to_head;
@@ -424,7 +440,8 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     
   Eigen::Vector3d local_to_head_vel;
   // this will have to change, in that the head velocity state must serially depend on the pelvis velocity estimate -- relating to the spike isolation in the velocity estimate
-  if (true) {
+  if (false) {
+	  // Will do this later -- no one is consuming POSE_HEAD velocity at the moment
 	  Eigen::Vector3d body_to_head_vel = local_to_head_vel_diff.diff((double)msg->utime*(1E-6), body_to_head.translation());
 	  local_to_head_vel = velocity_states + body_to_head_vel;
 	  
@@ -577,17 +594,33 @@ void LegOdometry_Handler::drawSumPose() {
 
 
 void LegOdometry_Handler::addIsometryPose(int objnumber, const Eigen::Isometry3d &target) {
-  // TODO - why are negatives required here
-  
-  //InertialOdometry::QuaternionLib::printEulerAngles("AddIsometryPose()", target);
   
   Eigen::Vector3d E;
-  
   InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(target.linear()),E);
-  //std::cout << "Going to draw: " << E.transpose() << " @ " << target.translation().transpose() << "\n";
+  _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),E(2),E(1),E(0)));
+}
+
+// Four Isometries must be passed -- representing pelvisto foot and and foot to pelvis transforms
+void LegOdometry_Handler::DrawLegPoses(const Eigen::Isometry3d target[4], const Eigen::Isometry3d &true_pelvis) {
+  
+  Eigen::Vector3d E;
+  Eigen::Isometry3d added_vals[2];
+  
+  Eigen::Isometry3d back_from_feet[2];
+  
+  //clear the list to prevent memory growth
+  _obj_leg_poses->clear();
 	
-  _obj->add(objnumber, isam::Pose3d(target.translation().x(),target.translation().y(),target.translation().z(),E(2),0,0));
-	
+  for (int i=0;i<2;i++) {
+    added_vals[i] = TwoLegOdometry::add(true_pelvis, target[i]); // this is the same function that is used by TwoLegOdometry to accumulate Isometry transforms
+    InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(added_vals[i].linear()),E);
+    _obj_leg_poses->add(50+i, isam::Pose3d(added_vals[i].translation().x(),added_vals[i].translation().y(),added_vals[i].translation().z(),E(2),E(1),E(0)));
+    
+    back_from_feet[i] = TwoLegOdometry::add(added_vals[i], target[i+2]);
+    InertialOdometry::QuaternionLib::q2e(Eigen::Quaterniond(back_from_feet[i].linear()),E);
+    _obj_leg_poses->add(50+i+2, isam::Pose3d(back_from_feet[i].translation().x(),back_from_feet[i].translation().y(),back_from_feet[i].translation().z(),E(2),E(1),E(0)));
+  }
+  
 }
 
 // this function may be depreciated soon
@@ -611,7 +644,7 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
       jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
    
-    if (!stillbusy)
+    if (!stillbusy) // not really required, as LCM only allows a single event, but doesn't hurt to leave it here. Maybe we see something of this in the future
     {
     	//std::cout << "Trying to solve for Joints to Cartesian\n";
     	stillbusy = true;

@@ -6,12 +6,11 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 
-#include "Footsteps.h"
-#include "TwoLegsEstimate_types.h"
 #include "lcmtypes/drc_lcmtypes.hpp"
 
+#include "Footsteps.h"
+#include "TwoLegsEstimate_types.h"
 #include "SignalTap.hpp"
-
 #include "Filter.hpp"
 
 #define LOG_DATA_FILES
@@ -72,6 +71,7 @@ class TwoLegOdometry {
 		Filter* _filter[3];
 		
 		double temp_max_testing[3];
+		
 		
 		// TODO - these were made public for debugging, but should be brought back to private members once we have confidence in the various frame transformations
 		/*
