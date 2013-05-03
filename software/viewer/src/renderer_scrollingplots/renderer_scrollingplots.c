@@ -324,7 +324,7 @@ void scrollingplots_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_
   bot_gl_scrollplot2d_set_text_color   (self->speed_plot, 0.7, 0.7, 0.7, 1);
   bot_gl_scrollplot2d_set_border_color (self->speed_plot, 1, 1, 1, 0.7);
   bot_gl_scrollplot2d_set_bgcolor (self->speed_plot, 0.1, 0.1, 0.1, 0.7);
-  bot_gl_scrollplot2d_set_ylim    (self->speed_plot, -0.1, 3);
+  bot_gl_scrollplot2d_set_ylim    (self->speed_plot, -0.1, 1.0);
   bot_gl_scrollplot2d_add_plot    (self->speed_plot, "zero", MAX_POINTS);
   bot_gl_scrollplot2d_set_color   (self->speed_plot, "zero", 1, 1, 0, 1);
   bot_gl_scrollplot2d_add_plot    (self->speed_plot, "speed_body", MAX_POINTS);
