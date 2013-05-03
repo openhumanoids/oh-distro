@@ -51,7 +51,9 @@ class Affordance {
 		    unsigned int depth); 
   void UpdateJointNames(const KDL::TreeElement* element = NULL);
   void PrintJointNames();
-  KDL::Frame GetFrameFromVector(const StateVector& state);
+
+ public:
+  static KDL::Frame GetFrameFromVector(const StateVector& state);
 
  private:
   std::ostream& m_log;
