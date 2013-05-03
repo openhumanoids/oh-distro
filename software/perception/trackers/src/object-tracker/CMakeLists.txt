@@ -2,9 +2,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
  
 set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6)
 
+### needed to read obj:
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
 
 ############ COMBINED COMPLETE APP ###########################
 add_executable (object-tracker object-tracker.cpp )
+target_link_libraries(object-tracker boost_system)
 target_link_libraries(object-tracker particle)
 pods_use_pkg_config_packages(object-tracker   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core

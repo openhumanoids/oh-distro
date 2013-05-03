@@ -6,11 +6,6 @@ include(${VTK_USE_FILE})
 
 set(PCL_LIBRARIES   pcl_io-1.6)
 
-### needed for meshes obj:
-#find_package(VTK REQUIRED)
-#include(${VTK_USE_FILE})
-
-
 ################ LIBRARIES ###############################
   add_library(affordance-utils  SHARED AffordanceUtils.cpp)
 pods_use_pkg_config_packages(affordance-utils ${PCL_LIBRARIES} rgbd_primitives)
