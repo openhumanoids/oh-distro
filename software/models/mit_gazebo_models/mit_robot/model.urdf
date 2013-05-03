@@ -4557,8 +4557,8 @@
         <topicName>true_robot_state</topicName>
         <synchronization>false</synchronization>
     </plugin>
-   -->
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
+   -->
     <plugin filename="librateset_plugin.so" name="rateset_plugin"/>
   </gazebo>
   <link name="imu_link">
