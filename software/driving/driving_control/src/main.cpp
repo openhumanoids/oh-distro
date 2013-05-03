@@ -1047,7 +1047,7 @@ on_controller_timer (gpointer data)
 
     int use_road = 1;
     int use_tld = 0;
-    
+    int user_goal = 0;
     if(self->last_driving_cmd){
         if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD)
             use_road = 1;
@@ -1058,6 +1058,11 @@ on_controller_timer (gpointer data)
         else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD){
             use_road = 0;
             use_tld =1;
+        }
+        else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING){
+            use_road = 0;
+            use_tld =0;
+            user_goal = 1;
         }
     }
     
@@ -1077,7 +1082,7 @@ on_controller_timer (gpointer data)
     self->drive_time_to_go = self->drive_duration*1.0e6 - (self->utime - self->drive_start_time);
 
     occ_map::FloatPixelMap *fmap = new occ_map::FloatPixelMap (self->cost_map_last);
-
+    
     //draw_goal_range (self);    
     double xyz_goal[3];
 
@@ -1095,6 +1100,7 @@ on_controller_timer (gpointer data)
             self->drive_duration = -1;
             self->curr_state = ERROR_NO_VALID_GOAL;
             publish_status(self);
+            delete fmap;
             return TRUE;
         }
     }
@@ -1112,6 +1118,7 @@ on_controller_timer (gpointer data)
             self->drive_duration = -1;
             self->curr_state = ERROR_NO_VALID_GOAL;
             publish_status(self);
+            delete fmap;
             return TRUE;
         }
     }
@@ -1129,9 +1136,73 @@ on_controller_timer (gpointer data)
             perform_emergency_stop(self);
             self->drive_duration = -1;
             publish_status(self);
+            delete fmap;
             return TRUE;
 
         }
+    }
+    else if(user_goal){
+        double user_steering_angle = self->last_driving_cmd->user_steering_angle;
+        double throttle_val = 0;
+	double brake_val = 0;
+        
+        if(turn_only){
+            throttle_val = 0;
+            self->curr_state = DOING_INITIAL_TURN;
+            brake_val = 1.0;
+        }
+	else if((self->utime - self->drive_start_time)/1.0e6 < (self->throttle_duration + TIME_TO_TURN)){
+            throttle_val = self->throttle_ratio;
+	}        
+
+        if((self->utime - self->drive_start_time)/1.0e6 > (self->drive_duration - TIME_TO_BRAKE)){
+            double brake_time = (self->utime - self->drive_start_time)/1.0e6 - (self->drive_duration - TIME_TO_BRAKE);
+            throttle_val = 0;
+            self->curr_state = DOING_BRAKING;
+            if(TIME_TO_BRAKE > 0)
+                brake_val = MAX_BRAKE * fmax(0, fmin(1, brake_time / TIME_TO_BRAKE));
+            else
+                brake_val = MAX_BRAKE;
+
+            //time to brake - gracefully
+        }
+
+        double max_angle = 90;
+        double steering_input = fmax(bot_to_radians(-max_angle), fmin(bot_to_radians(max_angle), user_steering_angle));
+
+	fprintf (stdout, "Steering control: Signal = %.2f (deg) Throttle : %f Brake: %f\n",
+		 bot_to_degrees(steering_input), 
+		 throttle_val, brake_val);
+
+	if(self->time_applied_to_brake > 0 && self->time_applied_to_accelerate)
+            fprintf(stderr, "Time accelerating : %f, Time braking : %f\n", self->time_applied_to_accelerate / 1.0e6, 
+                    self->time_applied_to_brake / 1.0e6);
+
+	drc_driving_control_cmd_t msg;
+	msg.utime = bot_timestamp_now();
+        if(self->use_differential_angle){
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE_DELTA_STEERING; 
+            msg.steering_angle =  steering_input;
+        }
+        else{
+            msg.type = DRC_DRIVING_CONTROL_CMD_T_TYPE_DRIVE;
+            msg.steering_angle =  steering_input;
+        }
+
+	msg.throttle_value = throttle_val;
+	msg.brake_value = brake_val;
+	drc_driving_control_cmd_t_publish(self->lcm, "DRC_DRIVING_COMMAND", &msg);
+
+        self->throttle_val = throttle_val;
+        self->brake_val = brake_val;
+        self->hand_steer = steering_input;  
+
+        publish_status(self);
+
+        delete fmap;
+
+        return TRUE;
+        
     }
     else{
         fprintf(stderr, "Error: Unknown drive command type - skipping\n");
@@ -1139,9 +1210,14 @@ on_controller_timer (gpointer data)
         self->curr_state = ERROR_NO_VALID_GOAL;
         self->drive_duration = -1;
         publish_status(self);
+
+        last_utime = self->utime;
+
+        delete fmap;
+
         return TRUE;
     }
-   
+    
     if (self->have_valid_goal) {
         // Compute the steering command
         double xyz_goal_car[3];

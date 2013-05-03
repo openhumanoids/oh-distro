@@ -47,14 +47,16 @@
 #define PARAM_VISUAL_GOAL      "Seek Visual"
 #define PARAM_GEAR_POSITION "Gear Position"
 #define PARAM_ENABLE "Enable"
+
 #define PARAM_START_SEQUENCE "Startup Car"
 #define PARAM_TURN_IGNITION "Ignition"
 #define PARAM_THROTTLE "Throttle"
-#define PARAM_STEERING_ANGLE "Steering Angle"
+
 #define PARAM_HANDBRAKE "Handbrake"
 #define PARAM_BRAKE "Brake"
 #define PARAM_STOP "E_Stop"
 
+#define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
 #define PARAM_GOAL_TYPE "Goal Type"
@@ -65,6 +67,9 @@
 #define PARAM_I_GAIN "I Gain"
 
 #define STEERING_RATIO 0.063670;
+
+#define H_WIDTH 0.6
+#define H_LENGTH 0.9
 
 #define PARAM_UPDATE "Update Params"
 
@@ -294,68 +299,28 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         double w = 1.2; 
         int draw_line  = 0;
 
-        double R = 100;
+        double R;
         
-        //if(wheel_angle < 0.01){
-            //draw a staright line
-        //   pt_to_car.trans_vec[0] = 25;
-        //  pt_to_car.trans_vec[1] = 0;
-        //  pt_to_car.trans_vec[2] = 0;
-        //  draw_line = 1;
-        //}
-        //else{
-        R = pow( pow(l/ tan(wheel_angle),2) + pow(l,2), 0.5);
-        
-        //fprintf(stderr, "R : %f\n", R);
-        //if(R > 50){
-        //draw line
-        //pt_to_car.trans_vec[0] = 25;
-        //pt_to_car.trans_vec[1] = 0;
-        //pt_to_car.trans_vec[2] = 0;
-        //draw_line = 1;
-        //}
-        //else{
-        /*if(wheel_angle >=0){
-            //the center of the circle is on the left
-            pt_to_car.trans_vec[0] = R;
-            pt_to_car.trans_vec[1] = R;
-            pt_to_car.trans_vec[2] = 0;
+        if(fabs(wheel_angle) < 0.01){
+            R = 1000;
         }
         else{
-                    //the center of the circle is on the right 
-                    pt_to_car.trans_vec[0] = R;
-                    pt_to_car.trans_vec[1] = -R;
-                    pt_to_car.trans_vec[2] = 0;
-                }                
-            }
+            R = pow( pow(l/ tan(wheel_angle),2) + pow(l,2), 0.5);
         }
-                
-        BotTrans pt_to_local;
-        bot_trans_apply_trans_to(&car_to_local, &pt_to_car, &pt_to_local);*/
-        //could draw everything in car frame also 
-        //glPushMatrix();
-        //glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
-        //glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
-        
+               
         glPushMatrix();
-        glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0);
+        glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0.05);
         glRotatef(rpy_car[2]*180/M_PI , 0, 0, 1.0);
         glColor3f(0,1,1);
-        glLineWidth(5.0);
-        /*if(draw_line){
-            glBegin(GL_LINES);
-            glVertex3f(0,0,0);
-            glVertex3f( pt_to_car.trans_vec[0],  pt_to_car.trans_vec[1],  pt_to_car.trans_vec[2]);
-            glEnd();
-        }
-        else{*/
-            //draw an arc 
-        glBegin(GL_LINE_STRIP);
-            
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         double x = 0;
         double y = 0;
             
-        //draw arc for given angle
+        //draw car footprints for given angle
         double swept_angle = 20 / R;
         
         int no_segments = 20;;
@@ -365,60 +330,120 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
             double s, c;
             bot_fasttrig_sincos(theta, &s, &c);
             x = R * s;
+                
 
+            double theta_act = theta;
             y = R*(1-c);
             if(wheel_angle <0){
                 y = -y;
+                theta = -theta;
             }
-            glVertex3f(x,y,0);
+                
+            //this is the position 
+            glPushMatrix();
+            glTranslatef(x , y , 0);
+            glRotatef(theta*180/M_PI , 0, 0, 1.0);
+
+            glBegin(GL_QUADS);
+            glVertex2f(H_LENGTH, -H_WIDTH);
+            glVertex2f(H_LENGTH, H_WIDTH);
+            glVertex2f(-H_LENGTH, H_WIDTH);
+            glVertex2f(-H_LENGTH, -H_WIDTH);
+            glEnd();
+            glPopMatrix();
         }
-        glEnd();
-            //}
+
+            
+        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);              
         glPopMatrix();
+    }
+
+    goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
+    if(goal_type == USE_USER_GOAL){
+        //draw arc based on the use steering angle 
+        BotTrans car_to_local;
         
+        bot_frames_get_trans(self->bot_frames, "car", "local", 
+                             &car_to_local);
+    
+        //this part could be done upon msg also 
+        //get the wheel arcs from the steering angle
+        double wheel_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE)) * STEERING_RATIO ;
+                
+        BotTrans pt_to_car;
+        double rpy[3];
+        bot_roll_pitch_yaw_to_quat(rpy, pt_to_car.rot_quat);
 
-        /*
-          //for an arc
-          for (int i=-1; i<=1 ; i=i+2){
-          glBegin(GL_LINE_STRIP);
-          glVertex2f(max_permissable_travel_distance, 0);
-          for (double count = 0.001; count < 1 ; count =count+0.01){
-          double r = 1/count;
-          double circ = 2*M_PI*r;  
-          double fraction =  max_permissable_travel_distance/circ;
-          double boundary_x = r*sin( fraction *2*M_PI);
-          double boundary_y = r*cos( fraction *2*M_PI);
-
-          if (sqrt(boundary_x*boundary_x +  (boundary_y)*(boundary_y))  <  self->min_turn_radius ){
-          // cout << r << " \n";
-          break; 
-          }
-      
-          if (i > 0){
-          glVertex2f(boundary_x, boundary_y - r);
-          }else{
-          glVertex2f(boundary_x, r -boundary_y );
-          }
-          }
-  
-          double r = self->min_turn_radius;
-          double circ = 2*M_PI*r;  
-          double fraction =  max_permissable_travel_distance/circ;
-          double boundary_x = r*sin( fraction *2*M_PI);
-          double boundary_y = r*cos( fraction *2*M_PI);
-
-          if (i > 0){
-          glVertex2f(boundary_x, boundary_y - r);
-          }else{
-          glVertex2f(boundary_x, r -boundary_y );
-          }
-  
-          glEnd();
-          }
-          
-         */
-        //glPopMatrix();
+        double rpy_car[3];
         
+        bot_quat_to_roll_pitch_yaw(car_to_local.rot_quat, rpy_car);
+
+        double l = 1.88;
+        double w = 1.2; 
+        int draw_line  = 0;
+
+        double R;
+
+        if(fabs(wheel_angle) < 0.01){
+            R = 1000;
+        }
+        else{
+            R = pow( pow(l/ tan(wheel_angle),2) + pow(l,2), 0.5);
+        }
+
+        glPushMatrix();
+        glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0.1);
+        glRotatef(rpy_car[2]*180/M_PI , 0, 0, 1.0);
+
+        glColor3f(1.0,0,0);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        double x = 0;
+        double y = 0;
+        
+        //draw car footprints for given angle
+        double swept_angle = 20 / R;
+        
+        int no_segments = 20;;
+        double angle_d = swept_angle/ no_segments;
+        for(int i=0; i < no_segments; i++){
+            double theta = angle_d * i;
+            double s, c;
+            bot_fasttrig_sincos(theta, &s, &c);
+            x = R * s;
+            
+            
+            double theta_act = theta;
+            y = R*(1-c);
+            if(wheel_angle <0){
+                y = -y;
+                theta = -theta;
+            }
+            
+            //this is the position 
+            glPushMatrix();
+            glTranslatef(x , y , 0);
+            glRotatef(theta*180/M_PI , 0, 0, 1.0);
+            //glVertex3f(x,y,0);
+            
+            
+            glBegin(GL_QUADS);
+            glVertex2f(H_LENGTH, -H_WIDTH);
+            glVertex2f(H_LENGTH, H_WIDTH);
+            glVertex2f(-H_LENGTH, H_WIDTH);
+            glVertex2f(-H_LENGTH, -H_WIDTH);
+            glEnd();
+            glPopMatrix();
+        }
+        
+        
+        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        glPopMatrix();
     }
   
     // Alternatively this could be controlled using the input dropdown..
@@ -1043,7 +1068,8 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
         msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
         msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
-        
+        msg.user_steering_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
         if(goal_type == USE_ROAD){
             msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD;
@@ -1076,7 +1102,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.brake_value = 0.0; //not sure if we are going to use this value
         drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
     }
-    else if(!strcmp(name, PARAM_STEERING_ANGLE)){
+    /*else if(!strcmp(name, PARAM_STEERING_ANGLE)){
         double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
         double throttle = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
     
@@ -1088,7 +1114,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.throttle_value = throttle;
         msg.brake_value = 0; //not sure if we are going to use this value
         drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
-    }
+        }*/
     else if(!strcmp(name, PARAM_BRAKE)){
         double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
         double brake_val =  bot_gtk_param_widget_get_double(self->pw, PARAM_BRAKE);
@@ -1379,6 +1405,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 10.0, 0.01, 0);
 
     
+    bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, 1, 0);
 
     //bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE, NULL);
 
@@ -1405,9 +1433,6 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.05, 0);
-
-    bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, 1, 0);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_BRAKE, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.05, 0);
