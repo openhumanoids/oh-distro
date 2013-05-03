@@ -17,6 +17,7 @@
 
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
+#include <ConciseArgs>
 
 
 using namespace pcl;
@@ -31,11 +32,12 @@ class Pass{
     }    
     
 
-    void doDemo();
+    void doDemo(int which_publish);
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
@@ -170,8 +172,10 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
   a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
   a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
   
-  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
-  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+//  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
+//  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
   //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
   // a.bounding_lwh = { 0.3, 0.36, 0.4};
   
@@ -199,6 +203,64 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
   
   return p;
 }
+
+drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="dynamic_mesh_w_1_cylinder";
+  a.aff_store_control = drc::affordance_t::NEW;
+  
+  a.params.push_back(0.1  ); a.param_names.push_back("length");
+  a.params.push_back(0.03  ); a.param_names.push_back("radius");
+  a.params.push_back(2.0  ); a.param_names.push_back("mass");
+  a.params.push_back(0.0  ); a.param_names.push_back("pitch_offset");
+  a.params.push_back(0.0  ); a.param_names.push_back("roll_offset");
+  a.params.push_back( 1.571); a.param_names.push_back("yaw_offset");
+  a.params.push_back( 0.00); a.param_names.push_back("x_offset");
+  a.params.push_back(-0.005); a.param_names.push_back("y_offset");
+  a.params.push_back( -0.02); a.param_names.push_back("z_offset");
+  a.nparams =a.params.size();
+  a.nstates =0;
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+//  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
+//  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
+  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
+  // a.bounding_lwh = { 0.3, 0.36, 0.4};
+  
+  p.aff = a;
+  
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+  
+
+  
+  int length = filename.length() ;
+  std::string extension = filename.substr (length-3,3);
+  cout << extension<<" q\n";
+  
+  if (extension=="ply"){
+    getMeshAsLists(filename , points, triangles);
+  }else if(extension=="pcd"){
+    getCloudAsLists(filename , points, triangles);
+  }
+    
+  p.points =points;
+  p.npoints=points.size(); 
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
+  
+  return p;
+}
+
 
     
 drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
@@ -217,8 +279,8 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
   a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
   a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
   
-  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
-  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=1.0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0; 
   //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
   // a.bounding_lwh = { 0.3, 0.36, 0.4};
   
@@ -250,35 +312,54 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
 
 
 
-void Pass::doDemo(){
+void Pass::doDemo(int which_publish){
   char* pHome;
   pHome = getenv("HOME");  
   string home = string(pHome);
   cout << home << "\n";  
   
+  if ((which_publish==1) || (which_publish==0)){
+    int uid0 = 12;
+    std::vector<double> xyzrpy0 = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
+    string filename0 = string(home+ "/drc/software/models/otdf/drill.ply");
+    drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
+    a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
+    lcm_->publish("AFFORDANCE_FIT",&a0);
+  }
+
+  if ((which_publish==2) || (which_publish==0)){
+    int uid0 = 13;
+    std::vector<double> xyzrpy0 = {0.51 , 0.23 , 1.16, 0. , 0 , -1.571};
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
+    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
+    string filename0 = string(home+ "/drc/software/models/otdf/drill.ply");
+    drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
+    a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
+    lcm_->publish("AFFORDANCE_FIT",&a0);
+  }
   
-  int uid = 12;
-  std::vector<double> xyzrpy = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
-  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
-  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
-  //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-  string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.ply");
-  drc::affordance_plus_t a0 = getDynamicMeshAffordancePlus(filename, xyzrpy, uid);
-  a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
-  lcm_->publish("AFFORDANCE_FIT",&a0);
-
-
-  uid = 13;
-  // a reasonable center of the point cloud is at
-  // -x 0.155 -y 0 -z -0.65 (this is what was removed from the original)
-// was  xyzrpy = {-2.85 , -2.55 , 0.64 , 0. , 0 , M_PI};
-//  xyzrpy = {0.0 , 0.0 , 0.0 , 0. , 0 , 0.0};
-  xyzrpy = {-3.0 , -2.55 , 0.0 , 0. , 0 , M_PI};  
-  filename = string(home+ "/drc/software/models/mit_gazebo_models/vehicle_otdf/meshes/vehicle.pcd");
-  drc::affordance_plus_t a1 = getCarAffordancePlus(filename, xyzrpy, uid);
-  a1.aff.bounding_lwh[0]=2.8;       a1.aff.bounding_lwh[1]=1.6;      a1.aff.bounding_lwh[2]=3.0;//1.7;
-  a1.aff.otdf_type = "car";
-  lcm_->publish("AFFORDANCE_FIT",&a1);
+  if ((which_publish==3) || (which_publish==0)){
+    int uid1 = 14;
+    std::vector<double> xyzrpy1 = {4.0 , -0.9 , 0.0 , 0. , 0 , -M_PI/2};  
+    string filename1 = string(home+ "/drc/software/models/otdf/car.pcd");
+    drc::affordance_plus_t a1 = getCarAffordancePlus(filename1, xyzrpy1, uid1 );
+    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    a1.aff.otdf_type = "car";
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }
+  
+  if ((which_publish==4) || (which_publish==0)){
+    int uid1 = 15;
+    std::vector<double> xyzrpy1 = {-1.82 , 3.65 , 1.2 , -M_PI/2 , 0 , 0};  
+    string filename1 = string(home+ "/drc/software/models/otdf/standpipe.ply");
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }  
   
   
 
@@ -295,6 +376,18 @@ void Pass::doDemo(){
 }
 
 int main( int argc, char** argv ){
+  std::cout << "manip drill is 1\n";    
+  std::cout << "qual2 drill is 2\n";    
+  std::cout << "manip car is 3\n";    
+  std::cout << "manip standpipe is 4\n";      
+
+  int which_publish=0;
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(which_publish, "e", "which_publish","which_publish [0 is all]");
+  opt.parse();
+  std::cout << "which_publish: " << which_publish << "\n";    
+  
+  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -302,6 +395,6 @@ int main( int argc, char** argv ){
   
   Pass app(lcm);
   cout << "Demo Ready" << endl << "============================" << endl;
-  app.doDemo();
+  app.doDemo(which_publish);
   return 0;
 }

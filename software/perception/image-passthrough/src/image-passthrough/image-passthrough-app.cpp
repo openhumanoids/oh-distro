@@ -168,6 +168,9 @@ bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else if(otdf_type == "dynamic_mesh"){
       //cout  << aff_uid << " is a dynamic_mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    }else if(otdf_type == "dynamic_mesh_w_1_cylinder"){ // Ignores the cylinder and just draws the mesh
+      //cout  << aff_uid << " is a dynamic_mesh_w_1_cylinder ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
     }else if(otdf_type == "plane"){
       //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);

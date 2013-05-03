@@ -68,7 +68,7 @@ void Pass::affordanceHandler(const lcm::ReceiveBuffer* rbuf,
       pc_vis_->pose_to_lcm(oconfig,poseT);
 
       if (a.triangles.size() ==0){
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = affutils.getCloudFromAffordance(a.points);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = affutils.getCloudFromAffordance(a.points, a.triangles, 100.0 );
         ptcld_cfg pconfig = ptcld_cfg(cfg_root+1,  string( "Affordance Cloud " + std::to_string(aff_id))     ,1,1, cfg_root,1, {0.2,0,0.2} );
         pc_vis_->ptcld_to_lcm(pconfig, *cloud, 0, 0);  
       }else{

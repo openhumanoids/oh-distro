@@ -10,8 +10,7 @@ set(PCL_LIBRARIES   pcl_io-1.6)
 
 ################ LIBRARIES ###############################
   add_library(affordance-utils  SHARED AffordanceUtils.cpp)
-pods_use_pkg_config_packages(affordance-utils 
-   ${PCL_LIBRARIES})
+pods_use_pkg_config_packages(affordance-utils ${PCL_LIBRARIES} rgbd_primitives)
 target_link_libraries (affordance-utils boost_system )
 set_target_properties(affordance-utils PROPERTIES SOVERSION 1)
 pods_install_libraries(affordance-utils)

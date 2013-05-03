@@ -44,6 +44,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(scale);
 
+  if (1==0){
+    /////// From original simulation
     Q_(0,0) = Q_(1,1) = 1.0;  
     //double Tx = baseline();
     Q_(3,2) = 14.2914745276283;//1.0 / Tx;
@@ -51,6 +53,17 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
     Q_(1,3) = -272.5;//-right_.cy();
     Q_(2,3) = 610.1778;//right_.fx();
     Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx; 
+  }else{
+    // 800x800 simulation
+    Q_(0,0) = Q_(1,1) = 1.0;  
+    //double Tx = baseline();
+    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
+    Q_(0,3) = -400.5;//-right_.cx();
+    Q_(1,3) = -400.5;//-right_.cy();
+    Q_(2,3) = 476.7014;//right_.fx();
+    Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx; 
+    
+  }
 
   int decimate_ =2;
   pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );

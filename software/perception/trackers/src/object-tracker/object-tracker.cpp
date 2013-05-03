@@ -56,6 +56,7 @@
 #include <affordance/AffordanceUtils.hpp>
 
 using namespace std;
+#define DO_TIMING_PROFILE FALSE
 
 // offset of affordance in mask labelling:
 #define AFFORDANCE_OFFSET 64
@@ -127,6 +128,9 @@ class Pass{
     bool use_stereo_icp_tracker_;
     
     StereoB*  stereob_;
+    int stereo_decimate_;
+    cv::Mat left_img_, right_img_;
+    
     
     // Plane Tracking Variables:
     int plane_affordance_id_;
@@ -225,20 +229,20 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   // Histogram Tracking:  
   histogram_tracker_ = new HistogramTracker();
   // ICP Tracking:
-  icp_tracker_ = new ICPTracker(lcm_, 0);
+  icp_tracker_ = new ICPTracker(lcm_, verbose_);
   pcl::ModelCoefficients::Ptr plane_coeffs_ptr_(new pcl::ModelCoefficients ());
   plane_coeffs_ = plane_coeffs_ptr_;
   // Stereo ICP Tracking:
-  float bm_scale = 0.25f;
+  float bm_scale = 0.5f;//0.25f; // scaling factor of Stereo Block Matching
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(bm_scale);
-  int decimate_ =4;
   pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
-  pc_lcm_->set_decimate( decimate_ );  
+  stereo_decimate_ = 4; // factor by which i reduce the point cloud
+  pc_lcm_->set_decimate( stereo_decimate_ );  
   
   
   // Plane Detection:
-  major_plane_ = new MajorPlane( lcm_, 2);
+  major_plane_ = new MajorPlane( lcm_, verbose_);
   plane_pose_.setIdentity();
   plane_pose_set_ = false;
   
@@ -297,6 +301,31 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+// display_tic_toc: a helper function which accepts a set of 
+// timestamps and displays the elapsed time between them as 
+// a fraction and time used [for profiling]
+void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name){
+  int tic_toc_size = tic_toc.size();
+  
+  double percent_tic_toc_last = 0;
+  double dtime = ((double) (tic_toc[tic_toc_size-1] - tic_toc[0])/1000000);
+  cout << "fraction_" << fun_name << ",";  
+  for (int i=0; i < tic_toc_size;i++){
+    double percent_tic_toc = (double) (tic_toc[i] - tic_toc[0])/(tic_toc[tic_toc_size-1] - tic_toc[0]);
+    cout <<  percent_tic_toc - percent_tic_toc_last << ", ";
+    percent_tic_toc_last = percent_tic_toc;
+  }
+  cout << "\ntime_" << fun_name << ",";
+  double time_tic_toc_last = 0;
+  for (int i=0; i < tic_toc_size;i++){
+    double percent_tic_toc = (double) (tic_toc[i] - tic_toc[0])/(tic_toc[tic_toc_size-1] - tic_toc[0]);
+    cout <<  percent_tic_toc*dtime - time_tic_toc_last << ", ";
+    time_tic_toc_last = percent_tic_toc*dtime;
+  }
+  cout << "\ntotal_time_" << fun_name << " " << dtime << "\n";  
+}
+
+
 void Pass::histogramTrackerLikelihood( std::vector<float> &loglikelihoods ){
   cv::Mat img = cv::Mat( height_ , width_ , CV_8UC3, img_.data.data());
   cv::cvtColor(img, img, CV_RGB2BGR);
@@ -349,97 +378,166 @@ void Pass::updatePF(){
   object_pose_ = pf_->IntegratePose();
   //pf_->SendParticlesLCM( img_.utime ,0);//vo_estimate_status);
   double ESS = pf_->ConsiderResample();
-  if(verbose_ >= 1){
+  if(verbose_ > 1){
     std::cerr << ESS/num_particles_ << " ESS | " << img_.utime  << " utime\n";  
   }
 }
 
 
+
+
+// A quick timing of this function 3rd May 2013:
+// SBM scale 0.25f | decimate x4 | 20 icp iterations | 800x800
+// 0.07sec total. fraction | time  [15Hz]
+//  stereoBM: 0.4   | 0.03sec     
+// unpacking: 0.17  | 0.012sec
+//   masking: 0.02  | 0.001sec 
+// transform: <nothing>
+//       icp: 0.4   | 0.029sec
+// SBM scale 0.5f | decimate x4 | 20 icp iterations | 800x800
+// 0.15sec total  6.6Hz
+//  stereoBM: 0.72   | 0.12sec     
+//
+// TODO: do masking here
+// TODO: combine masking and unpacking into one function, should make processing neglibible
+int ish_counter=0;
 void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  bot_core::image_t* msg){
-  
-  if (!tracker_initiated_){
-    // haven't been initated, quit ...
+  if (!tracker_initiated_){ // haven't been initated, quit ...
     return;
   }  
   if (!got_initial_affordance_){
     return; 
   }  
-  
   if (!use_stereo_icp_tracker_){
     return;
   }
+  
+  // Set the rate of simulation:
+  ish_counter++;
+  int fps_downsample = 5; // process 1 in X frames (5 gives 6Hz tracking)
+  if (ish_counter %fps_downsample != 0){ 
+    //cout << ish_counter << "skip\n";
+    return;
+  }  
+  
+  
+  #if DO_TIMING_PROFILE
+    std::vector<int64_t> tic_toc;
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
   int64_t update_time = msg->utime;
-    
-    
-  cout << "got stereo\n";
-
-  cv::Mat left_img, right_img;
   int w = msg->width;
   int h = msg->height/2;
-  std::cout << "a1\n";
+  Eigen::Isometry3d camera_to_local;
+  frames_cpp_->get_trans_with_utime( botframes_ , "CAMERA","local", update_time, camera_to_local);
 
-  if (left_img.empty() || left_img.rows != h || left_img.cols != w)
-      left_img.create(h, w, CV_8UC1);
-  if (right_img.empty() || right_img.rows != h || right_img.cols != w)
-      right_img.create(h, w, CV_8UC1);
+  if (left_img_.empty() || left_img_.rows != h || left_img_.cols != w)
+      left_img_.create(h, w, CV_8UC1);
+  if (right_img_.empty() || right_img_.rows != h || right_img_.cols != w)
+      right_img_.create(h, w, CV_8UC1);
 
-  memcpy(left_img.data,  msg->data.data() , msg->size/2);
-  memcpy(right_img.data,  msg->data.data() + msg->size/2 , msg->size/2);
-  stereob_->doStereoB(left_img, right_img);
-  stereob_->sendRangeImage(update_time);
+  memcpy(left_img_.data,  msg->data.data() , msg->size/2);
+  memcpy(right_img_.data,  msg->data.data() + msg->size/2 , msg->size/2);
 
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  stereob_->doStereoB(left_img_, right_img_);
+  if (verbose_>0){
+    stereob_->sendRangeImage(update_time);
+  }
+
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  // 800x800 image
   cv::Mat_<double> Q_ = cv::Mat_<double>(4,4,0.0);
   Q_(0,0) = Q_(1,1) = 1.0;  
   //double Tx = baseline();
   Q_(3,2) = 14.2914745276283;//1.0 / Tx;
-  Q_(0,3) = -512.5;//-right_.cx();
-  Q_(1,3) = -272.5;//-right_.cy();
-  Q_(2,3) = 610.1778;//right_.fx();
+  Q_(0,3) = -400.5;//-right_.cx();
+  Q_(1,3) = -400.5;//-right_.cy();
+  Q_(2,3) = 476.7014;//right_.fx();
   Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx; 
 
-
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud_orig (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pc_lcm_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, new_cloud_orig);
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  pc_lcm_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, new_cloud);
-  cout << "points: " << new_cloud->points.size() << "\n";
-
-  Eigen::Isometry3d camera_to_local;
-  frames_cpp_->get_trans_with_utime( botframes_ , "CAMERA","local", update_time, camera_to_local);
-
-  Isometry3dTime camera_to_localT = Isometry3dTime(update_time, camera_to_local);
-  pc_vis_->pose_to_lcm_from_list(1100, camera_to_localT);
-  pc_vis_->ptcld_to_lcm_from_list(1101, *new_cloud, update_time, update_time);  
+  int mask_id = AFFORDANCE_OFFSET + affordance_id_;
+  uint8_t* mask_buf;
+  if (got_mask_){
+    mask_buf = imgutils_->unzipImage( &last_mask_ );
+    int counter=0;
+    for (int v = 0; v < height_; v=v+stereo_decimate_) { // rows t2b //height
+      for (int u = 0; u < width_; u=u+stereo_decimate_) { // cols l2r
+        int pixel = v*width_ +u;
+        if (mask_buf[pixel] == mask_id){ // if the mask matches the affordance
+          new_cloud->points.push_back ( new_cloud_orig->points[counter] );
+        }
+        counter++;      
+      }
+    }
+  }
+  
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  if (verbose_>0){
+    Isometry3dTime camera_to_localT = Isometry3dTime(update_time, camera_to_local);
+    pc_vis_->pose_to_lcm_from_list(1100, camera_to_localT);
+    pc_vis_->ptcld_to_lcm_from_list(1101, *new_cloud, update_time, update_time);  
+  }
 
   Eigen::Quaternionf pose_quat( camera_to_local.cast<float>().rotation() );
   pcl::transformPointCloud (*new_cloud, *new_cloud,
     camera_to_local.cast<float>().translation(), pose_quat); // !! modifies cloud
 
+  if (verbose_>0){
+    cout << "Got a new sweep with "<< new_cloud->points.size() <<" points\n";
+    Isometry3dTime null_poseT = Isometry3dTime(update_time, Eigen::Isometry3d::Identity() );
+    pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
+    pc_vis_->ptcld_to_lcm_from_list(1001, *new_cloud, update_time, update_time);
 
-  cout << "Got a new sweep with "<< new_cloud->points.size() <<" points\n";
-  Isometry3dTime null_poseT = Isometry3dTime(update_time, Eigen::Isometry3d::Identity() );
-  pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(1001, *new_cloud, update_time, update_time);
 
+    Isometry3dTime previous_object_poseT = Isometry3dTime(update_time, object_pose_); 
+    pc_vis_->pose_to_lcm_from_list(affordance_vis_, previous_object_poseT);
+    pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
+    pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,previous_object_poseT.utime, previous_object_poseT.utime);  
+  }
 
-  Isometry3dTime previous_object_poseT = Isometry3dTime(update_time, object_pose_); 
-  pc_vis_->pose_to_lcm_from_list(affordance_vis_, previous_object_poseT);
-  pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
-  pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,previous_object_poseT.utime, previous_object_poseT.utime);  
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  object_cloud_copy = object_cloud_;
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+  #endif
+  
+  // Make a deep copy of the reference point cloud:
+  pcl::PointCloud<pcl::PointXYZRGB> object_cloud_copy_deep;
+  object_cloud_copy_deep = *object_cloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> (object_cloud_copy_deep));
   icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
   object_pose_ = icp_tracker_->getUpdatedPose();
-  //std::cout << object_pose_.translation().transpose() << " new xyz\n";
-  //std::cout << object_pose_.rotation() << " new rot\n";
-  
-  Isometry3dTime   updated_object_pose_T =  Isometry3dTime( update_time, object_pose_);
-  pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
-  pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+
+  if (verbose_ >0){
+    Isometry3dTime   updated_object_pose_T =  Isometry3dTime( update_time, object_pose_);
+    pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
+    pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+  }
   publishUpdatedAffordance(); // updated at sweep frequency  
 
-    
   
+  #if DO_TIMING_PROFILE
+    tic_toc.push_back(_timestamp_now());
+    display_tic_toc(tic_toc,"stereoTracking");
+  #endif  
 }
 
 
@@ -495,19 +593,23 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, previous_object_poseT.utime, previous_object_poseT.utime);
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,previous_object_poseT.utime, previous_object_poseT.utime);  
 
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> ());
-      object_cloud_copy = object_cloud_;
+      // Make a deep copy of the point cloud:
+      pcl::PointCloud<pcl::PointXYZRGB> object_cloud_copy_deep;
+      object_cloud_copy_deep = *object_cloud_;
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_copy (new pcl::PointCloud<pcl::PointXYZRGB> (object_cloud_copy_deep));
       icp_tracker_->doICPTracker( object_cloud_copy, new_cloud, object_pose_ );
       object_pose_ = icp_tracker_->getUpdatedPose();
       //std::cout << object_pose_.translation().transpose() << " new xyz\n";
       //std::cout << object_pose_.rotation() << " new rot\n";
       
-      Isometry3dTime   updated_object_pose_T =  Isometry3dTime( update_time, object_pose_);
-      pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
-      pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+      if(verbose_ > 0){
+        Isometry3dTime   updated_object_pose_T =  Isometry3dTime( update_time, object_pose_);
+        pc_vis_->pose_to_lcm_from_list(1020, updated_object_pose_T);
+        pc_vis_->ptcld_to_lcm_from_list(1021, *object_cloud_, updated_object_pose_T.utime, updated_object_pose_T.utime);  
+      }
       publishUpdatedAffordance(); // updated at sweep frequency
     }
-  }else{
+  }else if (use_color_tracker_ || use_histogram_tracker_){
     if (got_mask_ && got_initial_affordance_){
       updatePF();
       publishUpdatedAffordance(); // updated at image frequency
@@ -556,8 +658,14 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
-    // TODO: convert a mesh affordance to a point cloud if required
-    object_cloud_ = affutils.getCloudFromAffordance(a.points);
+    // Extract a PCL point cloud from the points or else sample the mesh:
+    if (a.triangles.size() ==0){
+      object_cloud_ = affutils.getCloudFromAffordance(a.points);
+    }else{
+      // i don't know what a good number for sampling is here
+      // the current algorithm samples per triangle which will be 
+      object_cloud_ = affutils.getCloudFromAffordance(a.points, a.triangles, 50000.0 ); 
+    }
     // cache the message and repeatedly update the position:
     last_affordance_msg_ = msg->affs_plus[aff_iter].aff;
 

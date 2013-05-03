@@ -343,22 +343,22 @@ void Pass::sendSweepCloud(){
   }
 
   // Republish as a point cloud (same as above)
-    Eigen::Isometry3d null_pose;
-    null_pose.setIdentity();
-    Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
-    pc_vis_->pose_to_lcm_from_list(91000, null_poseT);  
-    pc_vis_->ptcld_to_lcm_from_list(91001, *cloud_, current_utime_, current_utime_);      
-    
+  Eigen::Isometry3d null_pose;
+  null_pose.setIdentity();
+  Isometry3dTime null_poseT = Isometry3dTime(current_utime_, null_pose);
+  pc_vis_->pose_to_lcm_from_list(91000, null_poseT);  
+  pc_vis_->ptcld_to_lcm_from_list(91001, *cloud_, current_utime_, current_utime_);      
+  
   // Write as a PCD file:
-    if(1==1){
-      if (cloud_->points.size() > 0) {
-        pcl::PCDWriter writer;
-        stringstream ss2;
-        ss2 << "/tmp/sweep_cloud_"  << current_utime_ << ".pcd";
-        writer.write (ss2.str(), *cloud_, false);
-        cout << "finished writing PCD to:\n" << ss2.str() <<"\n";
-      }
+  if(1==1){
+    if (cloud_->points.size() > 0) {
+      pcl::PCDWriter writer;
+      stringstream ss2;
+      ss2 << "/tmp/sweep_cloud_"  << current_utime_ << ".pcd";
+      writer.write (ss2.str(), *cloud_, false);
+      cout << "finished writing PCD to:\n" << ss2.str() <<"\n";
     }
+  }
 
 }
 
@@ -386,12 +386,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 3., 3., 3.)) ){ 
 
     // use the time and space bounds to get a new cloud
-//    getSweepCloud(bounds);
+    getSweepCloud(bounds);
+    //sendSweepCloud();
+
     // use the time and space bounds to get a new depth image
     getSweepDepthImage(bounds);
-
-//    sendSweepCloud();
-
     sendSweepDepthImage();
   }
 }

@@ -286,6 +286,8 @@ double areaOfTriangle(pcl::PointXYZRGB p0, pcl::PointXYZRGB p1, pcl::PointXYZRGB
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgbd_primitives::sampleMesh(pcl::PolygonMesh::Ptr &mesh, double pts_per_msquared){
+  // this functions samples points per triangle - so will be biased for small sized of triangles
+  // TODO: fix this!
   
   int N_polygonsB = mesh->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
@@ -297,10 +299,10 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgbd_primitives::sampleMesh(pcl::PolygonM
     double area = areaOfTriangle(cloudB.points[ apoly_in.vertices[0] ] , 
                                           cloudB.points[ apoly_in.vertices[1] ] ,
                                           cloudB.points[ apoly_in.vertices[2] ]);
-    //std::cout << area << "\n";
+    
     // determine the number of points to sample on the surface:
     int n_pts = floor(area*pts_per_msquared + 0.5);// rounding at .5
-    //std::cout << n_pts<< "\n";
+    //std::cout << area << " - " << n_pts<< " | "<< (area*pts_per_msquared) << " | " << pts_per_msquared<< "\n";
     for (size_t i=0;i <n_pts; i++){
       pcl::PointXYZRGB     pt;
       pt = samplePointInTriangle(  cloudB.points[ apoly_in.vertices[0] ] , 

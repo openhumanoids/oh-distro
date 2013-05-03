@@ -162,8 +162,8 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr StatePub::readPCD(std::string filename){
 
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string pcd_filename_a = "/home/mfallon/drc/software/perception/trackers/data/car_simulator/vehicle_200000000.pcd";
-  string pcd_filename_b = "/home/mfallon/drc/software/perception/trackers/data/car_simulator/chassis.txt";
+  string pcd_filename_a = "clouda.pcd";
+  string pcd_filename_b = "cloudb.pcd";
   parser.add(pcd_filename_a, "a", "pcd_filename_a", "pcd_filename_a");
   parser.add(pcd_filename_b, "b", "pcd_filename_b", "pcd_filename_b");
   parser.parse();

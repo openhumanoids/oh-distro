@@ -41,6 +41,7 @@ Eigen::Isometry3d AffordanceUtils::getPose(double xyz[3], double rpy[3]){
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getCloudFromAffordance(std::vector< std::vector< float > > &points){
+  
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
   for (size_t i=0; i < points.size(); i++){ 
     pcl::PointXYZRGB pt;
@@ -49,7 +50,16 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getCloudFromAffordance(s
     pt.z = points[i][2];
     pts->points.push_back(pt);
   }
-  cout << pts->points.size() << " points extracted\n";
+  cout << pts->points.size() << " points extracted [converted]\n";
+  return pts;
+}
+
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getCloudFromAffordance(std::vector< std::vector< float > > &points,
+                      std::vector< std::vector< int > > &triangles, double pts_per_msquared){
+  pcl::PolygonMesh::Ptr mesh = getMeshFromAffordance(points,triangles);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts =prim_->sampleMesh(mesh, pts_per_msquared);
+  cout << pts->points.size() << " points extracted [sampled] at " <<  pts_per_msquared << " psm\n";
   return pts;
 }
 

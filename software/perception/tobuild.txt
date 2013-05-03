@@ -12,12 +12,15 @@ motion_estimate
 # utility to filter lidar self detections
 lidar-passthrough
 
+# library to creat depth masks:
+rgbd_simulation 
+
 # core lidar tools (antone) and affordance store (fleder)
 world_model
 
-# library and module to apply object masks:
-rgbd_simulation 
+# and module to apply object masks:
 image-passthrough
+
 
 # sudeep:
 opencv-utils
