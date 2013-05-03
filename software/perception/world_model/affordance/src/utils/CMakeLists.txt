@@ -1,6 +1,9 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
  
- 
+### needed to read obj:
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+
 set(PCL_LIBRARIES   pcl_io-1.6)
 
 ### needed for meshes obj:

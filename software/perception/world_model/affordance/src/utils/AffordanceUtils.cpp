@@ -253,3 +253,72 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getBoundingBoxCloud(doub
   //pc_vis_->ptcld_to_lcm_from_list(771005, *bb_pts, null_poseT_.utime, null_poseT_.utime);
 }
 
+
+
+
+bool AffordanceUtils::getMeshAsLists(std::string filename,
+                  std::vector< std::vector< float > > &points, 
+                  std::vector< std::vector< int > > &triangles){ 
+
+  pcl::PolygonMesh combined_mesh;     // (new pcl::PolygonMesh);
+  pcl::io::loadPolygonFile (filename, combined_mesh);
+  pcl::PolygonMesh::Ptr mesh (new pcl::PolygonMesh (combined_mesh));
+
+  pcl::PointCloud<pcl::PointXYZRGB> newcloud;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::fromROSMsg(mesh->cloud, *cloud_ptr );  
+
+  /*
+  moveCloud(cloud_ptr);
+  scaleCloud(cloud_ptr);
+  
+  
+  pcl::toROSMsg (*cloud_ptr, mesh->cloud);
+  pcl::io::savePolygonFile("drill_pclio.ply", *mesh);
+  savePLYFile(mesh, "drill_mfallonio.ply");
+  */
+  
+  for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
+    Eigen::Vector4f tmp = cloud_ptr->points[i].getVector4fMap();
+    std::vector<float> point;
+    point.push_back ( (float) tmp(0)  );
+    point.push_back ( (float) tmp(1)  );
+    point.push_back ( (float) tmp(2)  );
+    points.push_back(point);
+  }
+  
+  for(size_t i=0; i<  mesh->polygons.size (); i++){ // each triangle/polygon
+    pcl::Vertices poly = mesh->polygons[i];//[i];
+    if (poly.vertices.size() > 3){
+      cout << "poly " << i << " is of size " << poly.vertices.size() << " lcm cannot support this\n";
+      exit(-1); 
+    }
+    vector<int> triangle(poly.vertices.begin(), poly.vertices.end());
+    triangles.push_back(triangle );
+  }
+  cout << "Read a mesh with " << points.size() << " points and " << triangles.size() << " triangles\n";
+  return true;
+}    
+    
+    
+bool AffordanceUtils::getCloudAsLists(std::string filename,
+                  std::vector< std::vector< float > > &points, 
+                  std::vector< std::vector< int > > &triangles){    
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  
+    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( filename, *cloud_ptr) == -1){ // load the file
+      cout << "getCloudAsLists() couldn't read " << filename << ", quitting\n";
+      exit(-1);
+    } 
+    
+  for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
+    Eigen::Vector4f tmp = cloud_ptr->points[i].getVector4fMap();
+    std::vector<float> point;
+    point.push_back ( (float) tmp(0)  );
+    point.push_back ( (float) tmp(1)  );
+    point.push_back ( (float) tmp(2)  );
+    points.push_back(point);
+  }
+      
+  cout << "Read a point cloud with " << points.size() << " points\n";
+}

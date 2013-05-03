@@ -1,3 +1,6 @@
+#ifndef AFFORDANCE_UTILS_
+#define AFFORDANCE_UTILS_
+
 #include <iostream>
 #include <string>
 #include <Eigen/Dense>
@@ -12,6 +15,13 @@
 #include "pcl/PolygonMesh.h"
 #include <pcl/common/transforms.h>
 
+// define the following in order to eliminate the deprecated headers warning
+#define VTK_EXCLUDE_STRSTREAM_HEADERS
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/io/vtk_lib_io.h>
+#include "pcl/PolygonMesh.h"
+#include <pcl/common/transforms.h>
 
 #include <rgbd_simulation/rgbd_primitives.hpp>
 
@@ -56,9 +66,37 @@ class AffordanceUtils {
       }      
     }
     
+    bool getMeshAsLists(std::string filename,
+                  std::vector< std::vector< float > > &points, 
+                  std::vector< std::vector< int > > &triangles);
+    
+    bool getCloudAsLists(std::string filename,
+                  std::vector< std::vector< float > > &points, 
+                  std::vector< std::vector< int > > &triangles);
+    
+    bool getModelAsLists(std::string filename,
+                  std::vector< std::vector< float > > &points, 
+                  std::vector< std::vector< int > > &triangles){
+      bool found_file=false;
+      int length = filename.length() ;
+      std::string extension = filename.substr (length-3,3);
+      if (extension=="ply"){
+        found_file = getMeshAsLists(filename , points, triangles);
+      }else if(extension=="pcd"){
+        found_file = getCloudAsLists(filename , points, triangles);
+      }else{
+        std::cout << "I don't understand this filename " << filename << "\n";
+        found_file=false;
+      }
+      return found_file;
+    }
+    
+    
   private:
     boost::shared_ptr<rgbd_primitives>  prim_;
     
 };
 
 
+
+#endif

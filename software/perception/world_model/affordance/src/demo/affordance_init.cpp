@@ -19,6 +19,8 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
 #include <ConciseArgs>
 
+#include <affordance/AffordanceUtils.hpp>
+
 
 using namespace pcl;
 using namespace pcl::io;
@@ -38,12 +40,13 @@ class Pass{
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
+    
+    AffordanceUtils affutils;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   cout << "Finished setting up\n";
 }
-
 
 Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
   double sy = sin(yaw*0.5);
@@ -59,8 +62,6 @@ Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
   return Eigen::Quaterniond(w,x,y,z);
 }
 
-
-
 void scaleCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
   for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
     pcl::PointXYZRGB pt = cloud_ptr->points[i];
@@ -72,7 +73,6 @@ void scaleCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
   }  
 }
 
-
 void moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
     Eigen::Isometry3d local_to_lidar;
     local_to_lidar.setIdentity();
@@ -82,80 +82,9 @@ void moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
 
     pcl::transformPointCloud (*cloud_ptr, *cloud_ptr,
         local_to_lidar.translation().cast<float>(), quat.cast<float>()); // !! modifies lidar_cloud
-
-  
 }
 
 
-
-bool getMeshAsLists(std::string filename,
-                  std::vector< std::vector< float > > &points, 
-                  std::vector< std::vector< int > > &triangles){ 
-
-  pcl::PolygonMesh combined_mesh;     // (new pcl::PolygonMesh);
-  pcl::io::loadPolygonFile (filename, combined_mesh);
-  pcl::PolygonMesh::Ptr mesh (new pcl::PolygonMesh (combined_mesh));
-
-  pcl::PointCloud<pcl::PointXYZRGB> newcloud;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh->cloud, *cloud_ptr );  
-
-  /*
-  moveCloud(cloud_ptr);
-  scaleCloud(cloud_ptr);
-  
-  
-  pcl::toROSMsg (*cloud_ptr, mesh->cloud);
-  pcl::io::savePolygonFile("drill_pclio.ply", *mesh);
-  savePLYFile(mesh, "drill_mfallonio.ply");
-  */
-  
-  for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
-    Eigen::Vector4f tmp = cloud_ptr->points[i].getVector4fMap();
-    std::vector<float> point;
-    point.push_back ( (float) tmp(0)  );
-    point.push_back ( (float) tmp(1)  );
-    point.push_back ( (float) tmp(2)  );
-    points.push_back(point);
-  }
-  
-  for(size_t i=0; i<  mesh->polygons.size (); i++){ // each triangle/polygon
-    pcl::Vertices poly = mesh->polygons[i];//[i];
-    if (poly.vertices.size() > 3){
-      cout << "poly " << i << " is of size " << poly.vertices.size() << " lcm cannot support this\n";
-      exit(-1); 
-    }
-    vector<int> triangle(poly.vertices.begin(), poly.vertices.end());
-    triangles.push_back(triangle );
-  }
-  cout << "Read a mesh with " << points.size() << " points and " << triangles.size() << " triangles\n";
-  return true;
-}    
-    
-    
-bool getCloudAsLists(std::string filename,
-                  std::vector< std::vector< float > > &points, 
-                  std::vector< std::vector< int > > &triangles){    
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> ( filename, *cloud_ptr) == -1){ // load the file
-      cout << "Couldn't read " << filename << ", quitting\n";
-      exit(-1);
-    } 
-    
-  for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
-    Eigen::Vector4f tmp = cloud_ptr->points[i].getVector4fMap();
-    std::vector<float> point;
-    point.push_back ( (float) tmp(0)  );
-    point.push_back ( (float) tmp(1)  );
-    point.push_back ( (float) tmp(2)  );
-    points.push_back(point);
-  }
-      
-  cout << "Read a point cloud with " << points.size() << " points\n";
-    
-}
-    
 drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
   drc::affordance_plus_t p;
   
@@ -174,28 +103,12 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
   
   a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
   a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
-//  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
-//  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
-  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
-  // a.bounding_lwh = { 0.3, 0.36, 0.4};
-  
+
   p.aff = a;
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  
-
-  
-  int length = filename.length() ;
-  std::string extension = filename.substr (length-3,3);
-  cout << extension<<" q\n";
-  
-  if (extension=="ply"){
-    getMeshAsLists(filename , points, triangles);
-  }else if(extension=="pcd"){
-    getCloudAsLists(filename , points, triangles);
-  }
-    
+  affutils.getModelAsLists(filename, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
   p.triangles = triangles;
@@ -231,28 +144,12 @@ drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string fi
   
   a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
   a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
-//  a.bounding_xyz[0]=xyzrpy[0]; a.bounding_xyz[1]=xyzrpy[1]; a.bounding_xyz[2]=xyzrpy[2]; 
-//  a.bounding_rpy[0]=xyzrpy[3]; a.bounding_rpy[1]=xyzrpy[4]; a.bounding_rpy[2]=xyzrpy[5]; 
-  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
-  // a.bounding_lwh = { 0.3, 0.36, 0.4};
-  
+ 
   p.aff = a;
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  
-
-  
-  int length = filename.length() ;
-  std::string extension = filename.substr (length-3,3);
-  cout << extension<<" q\n";
-  
-  if (extension=="ply"){
-    getMeshAsLists(filename , points, triangles);
-  }else if(extension=="pcd"){
-    getCloudAsLists(filename , points, triangles);
-  }
-    
+  affutils.getModelAsLists(filename, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
   p.triangles = triangles;
@@ -288,19 +185,7 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  
-
-  
-  int length = filename.length() ;
-  std::string extension = filename.substr (length-3,3);
-  cout << extension<<" q\n";
-  
-  if (extension=="ply"){
-    getMeshAsLists(filename , points, triangles);
-  }else if(extension=="pcd"){
-    getCloudAsLists(filename , points, triangles);
-  }
-    
+  affutils.getModelAsLists(filename, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
   p.triangles = triangles;
@@ -359,9 +244,25 @@ void Pass::doDemo(int which_publish){
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
-  }  
-  
-  
+  }
+  if ((which_publish==5) || (which_publish==0)){
+    int uid1 = 16;
+    std::vector<double> xyzrpy1 = {-1.20 , 2.32 , 1.09 , 0 , 0 , M_PI/2};  
+    string filename1 = string(home+ "/drc/software/models/otdf/coupling.ply");
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }
+  if ((which_publish==6) || (which_publish==0)){
+    int uid1 = 17;
+    std::vector<double> xyzrpy1 = {-2.82, 3.65, 1.2, 0, -1.5707, 0};  
+    string filename1 = string(home+ "/drc/software/models/otdf/valve.ply");
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+    
+    // 1.0 -6.3 1.2 1.571 0.1 1.212<
+  }
 
 /*  
   drc::affordance_plus_collection_t aplus_coll;
@@ -386,7 +287,6 @@ int main( int argc, char** argv ){
   opt.add(which_publish, "e", "which_publish","which_publish [0 is all]");
   opt.parse();
   std::cout << "which_publish: " << which_publish << "\n";    
-  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){

@@ -33,7 +33,7 @@ pods_install_executables(affordance_points_demo_plus_receive)
 # Send the drill model as an affordance_fit
 add_executable (affordance_init affordance_init.cpp )
 target_link_libraries(affordance_init boost_system)
-pods_use_pkg_config_packages(affordance_init  lcm 
+pods_use_pkg_config_packages(affordance_init  lcm  affordance-utils
   pointcloud_vis
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_init)
