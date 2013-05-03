@@ -35,7 +35,7 @@ classdef FootstepPlanPublisher
 			trans.z = X.pos(3);
 			rot = drc.quaternion_t();
 			q = rpy2quat([X.pos(4), X.pos(5), X.pos(6)]);
-			% q = angle2quat(X.pos(4), X.pos(5), X.pos(6), 'XYZ');
+% 			q = angle2quat(X.pos(4), X.pos(5), X.pos(6), 'XYZ');
 			rot.w = q(1);
 			rot.x = q(2);
 			rot.y = q(3);
