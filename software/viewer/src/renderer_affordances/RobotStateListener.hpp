@@ -34,7 +34,7 @@ namespace renderer_affordances
     ~RobotStateListener();
     
     KDL::Frame T_body_world; // current body origin in world frame
-    long last_state_msg_timestamp;
+
     drc::robot_state_t last_robotstate_msg;
     bool _robot_state_received;
 

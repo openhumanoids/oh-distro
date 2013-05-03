@@ -687,14 +687,21 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
   if((self->show_popup_onrelease)||(self->marker_selection  != " ")){
     double t = self->ray_hit_t;
     self->ray_hit_drag << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
+
+
+
+    Eigen::Vector3f start,dir;
+    dir<< ray_dir[0], ray_dir[1], ray_dir[2];
+    start<< ray_start[0], ray_start[1], ray_start[2];
+    
     //std::cout << "motion\n" << std::endl;
     if(!(self->selection_hold_on)) 
     {
-      set_object_desired_state_on_marker_motion(self);
+      set_object_desired_state_on_marker_motion(self,start,dir);
     }
     else 
     {
-      set_object_current_state_on_marker_motion(self);
+      set_object_current_state_on_marker_motion(self,start,dir);
     }
       
   }

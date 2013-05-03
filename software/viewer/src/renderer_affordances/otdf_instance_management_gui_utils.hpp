@@ -156,7 +156,6 @@ namespace renderer_affordances_gui_utils
     }  
     it->second._gl_object->set_future_state(T_world_object,jointpos_in); 
 
-    //cout <<"    self->motion_trail_log_enabled "<< self->motion_trail_log_enabled << endl;
   
     bot_viewer_request_redraw(self->viewer);
   }

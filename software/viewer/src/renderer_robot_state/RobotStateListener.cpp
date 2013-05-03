@@ -70,7 +70,7 @@ namespace renderer_robot_state
     // Render at 100Hz of Real Time. Too much rendering will make the viewer less reponsive.
     //cout << msg->utime - _last_state_msg_timestamp << endl;
 		int64_t now = bot_timestamp_now();//msg->utime
-    if(now-_last_state_msg_timestamp >= 10000)  // timestamps are in usec
+    if(now-_last_state_msg_timestamp >= 100000)  // timestamps are in usec
     {
     // cout << now - _last_state_msg_timestamp << endl;
     _gl_robot->set_state(*msg);

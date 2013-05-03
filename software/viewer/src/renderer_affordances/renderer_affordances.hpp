@@ -948,7 +948,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
   }// end void set_hand_init_position(void *user)
   //------------------------------------------------------------------------------- 
   
-  inline static void set_object_desired_state_on_marker_motion(void *user)
+  inline static void set_object_desired_state_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
   {
       RendererAffordances *self = (RendererAffordances*) user;
       double gain = 1;
@@ -1047,64 +1047,97 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         
         visualization_utils::JointFrameStruct jointInfo;
         it->second._gl_object->get_joint_info(joint_name,jointInfo);
-        
+        KDL::Frame T_world_object = it->second._gl_object->_T_world_body;
         KDL::Frame T_world_object_future = it->second._gl_object->_T_world_body_future;
         
         Eigen::Vector3f joint_axis;
-        joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // in world frame
+        if(it->second._gl_object->is_future_display_active())        
+          joint_axis << jointInfo.future_axis[0],jointInfo.future_axis[1],jointInfo.future_axis[2];
+        else
+          joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2]; // in world frame
         joint_axis.normalize();
+       
+        
         Eigen::Vector3f u_body_to_joint;
-        u_body_to_joint[0] = T_world_object_future.p[0]-jointInfo.future_frame.p[0];
-        u_body_to_joint[1] = T_world_object_future.p[1]-jointInfo.future_frame.p[1];
-        u_body_to_joint[2] = T_world_object_future.p[2]-jointInfo.future_frame.p[2];
+        KDL::Frame T_world_joint;
+        T_world_joint = jointInfo.future_frame;
+        u_body_to_joint[0] = T_world_object_future.p[0]-T_world_joint.p[0];
+        u_body_to_joint[1] = T_world_object_future.p[1]-T_world_joint.p[1];
+        u_body_to_joint[2] = T_world_object_future.p[2]-T_world_joint.p[2];
         u_body_to_joint.normalize();
+
+        
         double normal = acos(u_body_to_joint.dot(joint_axis));
         double flipped = acos(u_body_to_joint.dot(-joint_axis));
         
-        KDL::Frame T_World_JointAxis,T_AxisMarker_World;// Axis
-        T_World_JointAxis.p = jointInfo.frame.p;
+        KDL::Frame T_world_jointaxis;// Axis
+        T_world_jointaxis.p = jointInfo.future_frame.p;
 
         double theta;
         Eigen::Vector3f axis;      
         Eigen::Vector3f uz; 
         uz << 0 , 0 , 1; 
         axis = uz.cross(joint_axis);
+        axis.normalize();
         theta = acos(uz.dot(joint_axis));
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
-        T_World_JointAxis.M = KDL::Rotation::Rot(axis_temp,theta); //T_axis_world
-        KDL::Frame T_JointAxis_Offset = KDL::Frame::Identity();
+        T_world_jointaxis.M = KDL::Rotation::Rot(axis_temp,theta); //T_axis_world
         
+        KDL::Frame T_world_marker = KDL::Frame::Identity();
+        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
         double arrow_length =0.2;
         if(flipped>normal+1e-1) {
-          T_JointAxis_Offset.p[2] =-2*arrow_length/3;
+          T_jointaxis_marker.p[2] =-2*arrow_length/3;
          }
         else{
-          T_JointAxis_Offset.p[2] = 2*arrow_length/3;
+          T_jointaxis_marker.p[2] = 2*arrow_length/3;
         }
-        T_World_JointAxis = T_World_JointAxis*T_JointAxis_Offset; // T_axismarker_world = T_axismarker_axis*T_axis_world
+        T_world_marker = T_world_jointaxis*T_jointaxis_marker; // T_axismarker_world = T_axismarker_axis*T_axis_world
+        
+       // proper hit_drag point via marker plane ray intersection.
+        Eigen::Vector3f plane_normal,plane_point;
+          
+        plane_normal = joint_axis;
+        plane_point[0]=T_world_marker.p[0];
+        plane_point[1]=T_world_marker.p[1];
+        plane_point[2]=T_world_marker.p[2];       
+        double lambda1 = dir.dot(plane_normal);
+        double lambda2 = (plane_point - start).dot(plane_normal);
+        double t;
+    
+       // check for degenerate case where ray is (more or less) parallel to plane
+       if (fabs (lambda1) >= 1e-9) {
+         t = lambda2 / lambda1;
+          self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
+         }
+        // else  no solution        
+        
+        
         Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
         if(diff.norm() > 0.05){
           self->prev_ray_hit_drag = self->ray_hit_drag; 
         }
         Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
         //convert to joint dof marker frame .
-        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_World_JointAxis.Inverse(),hit_markerframe); 
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_World_JointAxis.Inverse(),hitdrag_markerframe); 
-          
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_world_marker.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_world_marker.Inverse(),hitdrag_markerframe); 
+ 
         int type = jointInfo.type;   
         if((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))
         {          
           double currentAngle, angleTo, dtheta;         
           currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
           angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
-          /*cout << "currentAngle :"<< currentAngle*(180/M_PI) <<endl;
-          cout << "angleTo :"<< angleTo*(180/M_PI) <<endl;*/
+         /* cout << "currentAngle :"<< currentAngle*(180/M_PI)
+               << " angleTo :"<< angleTo*(180/M_PI) <<endl;
+          cout << "radius" << sqrt(pow(hitdrag_markerframe[0],2)+pow(hitdrag_markerframe[1],2)) << endl; */
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
           std::map<std::string, double> jointpos_in;
           jointpos_in = it->second._gl_object->_future_jointpos;
           jointpos_in.find(joint_name)->second = (jointpos_in.find(joint_name)->second +dtheta); 
           it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
+          bot_viewer_request_redraw(self->viewer);
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
@@ -1115,18 +1148,19 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
            std::map<std::string, double> jointpos_in;
            jointpos_in = it->second._gl_object->_future_jointpos;
            jointpos_in.find(joint_name)->second -= distance;
-           it->second._gl_object->set_future_state(T_world_object_future,jointpos_in);   
+           it->second._gl_object->set_future_state(T_world_object_future,jointpos_in); 
+            bot_viewer_request_redraw(self->viewer);  
          }
       }
       
       self->prev_ray_hit_drag = self->ray_hit_drag; 
-          
+     bot_viewer_request_redraw(self->viewer);     
   }   // end set_object_desired_state_on_marker_motion()
   
 
   //------------------------------------------------------------------------------- 
   
-  inline static void set_object_current_state_on_marker_motion(void *user)
+  inline static void set_object_current_state_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)
   {
       RendererAffordances *self = (RendererAffordances*) user;
       double gain = 1;
@@ -1217,6 +1251,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         Eigen::Vector3f joint_axis;
         joint_axis << jointInfo.axis[0],jointInfo.axis[1],jointInfo.axis[2];
         joint_axis.normalize();
+
         Eigen::Vector3f u_body_to_joint;
         u_body_to_joint[0] = T_world_object.p[0]-jointInfo.frame.p[0];
         u_body_to_joint[1] = T_world_object.p[1]-jointInfo.frame.p[1];
@@ -1231,40 +1266,62 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         uz << 0 , 0 , 1; 
         axis = uz.cross(joint_axis);
         theta = acos(uz.dot(joint_axis));
- 
-        KDL::Frame T_World_JointAxis;
-        T_World_JointAxis.p = jointInfo.frame.p;//?
+        
+        KDL::Frame T_world_marker = KDL::Frame::Identity();
+        KDL::Frame T_world_jointaxis= KDL::Frame::Identity();
+        T_world_jointaxis.p = jointInfo.frame.p;//?
         KDL::Vector axis_temp;
         axis_temp[0]=axis[0];axis_temp[1]=axis[1];axis_temp[2]=axis[2];
-        T_World_JointAxis.M = KDL::Rotation::Rot(axis_temp,theta);
-        KDL::Frame T_JointAxis_Offset = KDL::Frame::Identity();
+        T_world_jointaxis.M = KDL::Rotation::Rot(axis_temp,theta);
+        KDL::Frame T_jointaxis_marker = KDL::Frame::Identity();
         
         double arrow_length =0.2;
         if(flipped>normal+1e-1) {
-          T_JointAxis_Offset.p[2] =-2*arrow_length/3; 
+          T_jointaxis_marker.p[2] =-2*arrow_length/3; 
          }
         else{
-          T_JointAxis_Offset.p[2] = 2*arrow_length/3;     
+          T_jointaxis_marker.p[2] = 2*arrow_length/3;     
         }
-        T_World_JointAxis = T_World_JointAxis*T_JointAxis_Offset;
-        Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
-        //convert to joint dof marker frame .
-        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_World_JointAxis.Inverse(),hit_markerframe); 
-        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_World_JointAxis.Inverse(),hitdrag_markerframe); 
-     
+        T_world_marker = T_world_jointaxis*T_jointaxis_marker;
+        
+        
+        // proper hit_drag point via marker plane ray intersection.
+        Eigen::Vector3f plane_normal,plane_point;
+          
+        plane_normal = joint_axis;
+        plane_point[0]=T_world_marker.p[0];
+        plane_point[1]=T_world_marker.p[1];
+        plane_point[2]=T_world_marker.p[2];       
+        double lambda1 = dir.dot(plane_normal);
+        double lambda2 = (plane_point - start).dot(plane_normal);
+        double t;
+    
+       // check for degenerate case where ray is (more or less) parallel to plane
+       if (fabs (lambda1) >= 1e-9) {
+         t = lambda2 / lambda1;
+         self->ray_hit_drag << start[0]+t*dir[0], start[1]+t*dir[1], start[2]+t*dir[2];  
+         }
+        // else  no solution         
+             
         Eigen::Vector3f diff = self->prev_ray_hit_drag - self->ray_hit_drag; 
         if(diff.norm() > 0.05){
           self->prev_ray_hit_drag = self->ray_hit_drag; 
-        }
+        }   
+        
+        Eigen::Vector3f hit_markerframe,hitdrag_markerframe;
+        //convert to joint dof marker frame .
+        rotate_eigen_vector_given_kdl_frame(self->prev_ray_hit_drag,T_world_marker.Inverse(),hit_markerframe); 
+        rotate_eigen_vector_given_kdl_frame(self->ray_hit_drag,T_world_marker.Inverse(),hitdrag_markerframe); 
+     
         
         int type = jointInfo.type;   
         if((type==otdf::Joint::REVOLUTE)||(type==otdf::Joint::CONTINUOUS))
         {       
           double currentAngle, angleTo, dtheta;         
           currentAngle = atan2(hit_markerframe[1],hit_markerframe[0]);
-          angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);
+          angleTo = atan2(hitdrag_markerframe[1],hitdrag_markerframe[0]);      
           dtheta = gain*shortest_angular_distance(currentAngle,angleTo);
-    
+          //
           double current_pos, velocity;
           self->otdf_instance_hold._otdf_instance->getJointState(joint_name, current_pos,velocity);
           self->otdf_instance_hold._otdf_instance->setJointState(joint_name, current_pos+dtheta,velocity); 
