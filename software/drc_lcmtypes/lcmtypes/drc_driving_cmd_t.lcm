@@ -11,6 +11,8 @@ struct driving_cmd_t
         double kd_steer;
         double ki_steer;
         double lookahead_dist;
+
+        double user_steering_angle; //user defined angle - only used when TYPE_USE_USER_HEADING mode 
         
         int8_t type;    
         const int8_t TYPE_USE_ROAD_LOOKAHEAD = 0;  //use the road detection to pick the lookahead (at the set lookahead distance
