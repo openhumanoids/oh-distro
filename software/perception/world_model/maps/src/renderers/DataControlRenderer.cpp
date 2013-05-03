@@ -1,5 +1,3 @@
-#include "RendererBase.hpp"
-
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -12,6 +10,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/Clock.hpp>
+#include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/twist_timed_t.hpp>
@@ -22,9 +21,7 @@
 
 // TODO: slow sweep commands
 
-using namespace maps;
-
-class DataControlRenderer : public RendererBase {
+class DataControlRenderer : public gtkmm::RendererBase {
 protected:
   enum ChannelType {
     ChannelTypeAnonymous,
@@ -59,8 +56,8 @@ public:
   DataControlRenderer(BotViewer* iViewer, const int iPriority,
                       const lcm_t* iLcm,
                       const BotParam* iParam, const BotFrames* iFrames)
-    : RendererBase("Data Control", iViewer, iPriority, iLcm,
-                   iParam, iFrames, 0) {
+    : gtkmm::RendererBase("Data Control", iViewer, iPriority, iLcm,
+                          iParam, iFrames, 0) {
 
     // set up robot time clock
     drc::Clock::instance()->setLcm(getLcm());

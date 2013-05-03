@@ -7,3 +7,4 @@ include(cmake/pods.cmake)
 #tell cmake to build these subdirectories
 add_subdirectory(src)
 add_subdirectory(src/bot_frames_cpp)
+add_subdirectory(src/gtkmm-renderer)

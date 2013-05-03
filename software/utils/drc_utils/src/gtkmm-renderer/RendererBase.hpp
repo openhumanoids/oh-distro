@@ -1,5 +1,5 @@
-#ifndef _maps_RendererBase_hpp_
-#define _maps_RendererBase_hpp_
+#ifndef _gtkmm_RendererBase_hpp_
+#define _gtkmm_RendererBase_hpp_
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -29,7 +29,7 @@ namespace lcm {
   class Subscription;
 }
 
-namespace maps {
+namespace gtkmm {
 
 class RendererBase {
 public:

@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <iostream>
 
-using namespace maps;
+using namespace gtkmm;
 
 // convenience class for combo boxes
 struct ComboColumns : public Gtk::TreeModel::ColumnRecord {

@@ -1,5 +1,3 @@
-#include "RendererBase.hpp"
-
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -9,6 +7,7 @@
 #include <GL/glu.h>
 
 #include <drc_utils/Clock.hpp>
+#include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/map_command_t.hpp>
 #include <lcmtypes/drc/map_macro_t.hpp>
@@ -28,7 +27,7 @@
 
 namespace maps {
 
-class MapsRenderer : public RendererBase, ViewClient::Listener {
+class MapsRenderer : public gtkmm::RendererBase, ViewClient::Listener {
 protected:
   enum InputMode {
     InputModeCamera=0,
@@ -129,7 +128,7 @@ public:
   MapsRenderer(BotViewer* iViewer, const int iPriority,
                const lcm_t* iLcm,
                const BotParam* iParam, const BotFrames* iFrames)
-    : RendererBase("Maps", iViewer, iPriority, iLcm, iParam, iFrames) {
+    : gtkmm::RendererBase("Maps", iViewer, iPriority, iLcm, iParam, iFrames) {
 
     // set up robot time clock
     drc::Clock::instance()->setLcm(getLcm());

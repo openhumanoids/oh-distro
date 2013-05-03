@@ -1,5 +1,3 @@
-#include "RendererBase.hpp"
-
 #include <iostream>
 #include <unordered_map>
 
@@ -12,6 +10,7 @@
 
 #include <bot_param/param_util.h>
 #include <bot_frames/bot_frames.h>
+#include <gtkmm-renderer/RendererBase.hpp>
 
 #include <maps/Collector.hpp>
 #include <maps/Surfelizer.hpp>
@@ -39,7 +38,8 @@ struct LidarData {
   ~LidarData() {}
 };
 
-class LidarTestRenderer : public RendererBase, public Collector::DataListener {
+class LidarTestRenderer :
+  public gtkmm::RendererBase, public Collector::DataListener {
 protected:
   enum DrawMode {
     DrawModePoints,
@@ -81,7 +81,8 @@ public:
   LidarTestRenderer(BotViewer* iViewer, const int iPriority,
                     const lcm_t* iLcm,
                     const BotParam* iParam, const BotFrames* iFrames)
-    : RendererBase("Lidar Test", iViewer, iPriority, iLcm, iParam, iFrames) {
+    : gtkmm::RendererBase("Lidar Test", iViewer, iPriority, iLcm,
+                          iParam, iFrames) {
 
     // set up ui widgets
     {
