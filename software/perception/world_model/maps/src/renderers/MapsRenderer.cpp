@@ -595,11 +595,10 @@ public:
     ViewMetaData::Ptr data = mViewData[id];
     if (!data->mVisible) return;
 
-    // set range origin
+    // set mesh properties
     mMeshRenderer.setRangeOrigin(data->mLatestTransform.translation());
-
-    // set value scale
     mMeshRenderer.setScaleRange(mMinZ, mMaxZ);
+    mMeshRenderer.setPointSize(mPointSize);
 
     // draw frustum
     ViewBase::Spec viewSpec;
