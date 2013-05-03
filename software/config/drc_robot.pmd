@@ -166,7 +166,7 @@ group "a.4.driving" {
         host = "robot";
     }
     cmd "drc-terrain-classifier" {
-        exec = "drc-terrain-classifier -s";
+        exec = "drc-terrain-classifier";
         host = "robot";
     }
 }
