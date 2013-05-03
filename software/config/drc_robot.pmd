@@ -114,10 +114,21 @@ group "a.3.grasping" {
         exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab']); runQual2StateMachine;\"";
         host = "robot";
     }
-
     cmd "GraspController" {
        exec = "matlab -nosplash -nodesktop -r \"cd([getenv('DRC_PATH'),'/control/matlab/grasp_execution']); runSimpleGraspExecutionScript;\"";
        host = "robot";
+    } 
+    cmd "imagemask" {
+        exec = "drc-image-passthrough";
+        host = "robot";
+    }
+    cmd "tracker" {
+        exec = "object-tracker -s -a 1";
+        host = "robot";
+    } 
+    cmd "affordance_init" {
+        exec = "affordance_init -e 2";
+        host = "robot";
     } 
 }
 
@@ -156,17 +167,6 @@ group "a.4.driving" {
     }
     cmd "drc-terrain-classifier" {
         exec = "drc-terrain-classifier -s";
-        host = "robot";
-    }
-}
-
-group "a.5.perception"{
-    cmd "stereo-bm" {
-        exec = "stereo-bm";
-        host = "robot";
-    }
-    cmd "imagemask" {
-        exec = "drc-image-passthrough -o 1";
         host = "robot";
     }
 }
@@ -248,7 +248,7 @@ group "b.3.grasping" {
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \" cd([getenv('DRC_PATH'),'/control/matlab/pinned_manipulation']); runPinnedReachPlanningLCMBase;\"";
        host = "base";
-    }    
+    }
 }
 
 group "b.4.driving" {
@@ -341,6 +341,14 @@ group "m.1.robot" {
     }
     cmd "driving-lidar-classifier" {
         exec = "drc-lidar-classifier";
+        host = "robot";
+    }
+    cmd "driving-lidar-classifier" {
+        exec = "drc-lidar-classifier";
+        host = "robot";
+    }
+    cmd "stereo-bm" {
+        exec = "stereo-bm";
         host = "robot";
     }
 }
@@ -442,8 +450,7 @@ script "comp.qual_2" {
     start group "b.3.grasping";
     wait ms 10000;
     start cmd "gz_quals_2";    
-    wait ms 5000;  
-    start cmd "oracle2coll"; 
+    wait ms 5000;
 }
 
 script "comp.qual_3" {
@@ -492,12 +499,12 @@ script "dev.qual_1" {
 script "dev.qual_2" { 
     start group "0.development";
     start group "a.1.core";
+    wait ms 1000;
     start group "a.3.grasping";
     start group "b.3.grasping";
     wait ms 10000;
     start cmd "gz_quals_2";    
     wait ms 5000;  
-    start cmd "oracle2coll"; 
 }
 script "dev.qual_3" { 
     start group "0.development";
@@ -547,13 +554,22 @@ script "dev.mit_walking_vo" {
 }
 
 
+script "dev.mit_manip_slow" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 10000;
+    start cmd "gz_mit_manip_slow";
+    wait ms 3000;
+    start cmd "set-sim-rate";
+}
+
 script "dev.mit_manip" {
     start group "0.development";
     start group "a.1.core";
     wait ms 500;
-    start cmd "gz_mit_manip_slow";
-    wait ms 6000;
-    start cmd "set-sim-rate";
+    start cmd "gz_mit_manip";
 }
 
 script "dev.ingress" { 
