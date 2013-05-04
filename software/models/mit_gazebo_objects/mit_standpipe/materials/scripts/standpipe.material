@@ -1,0 +1,23 @@
+material mit/standpipe
+{
+    receive_shadows off
+
+	technique
+	{
+		pass
+		{
+            #lighting off
+			ambient 1.8 0.5 0.5 1.0
+			diffuse 0.8 0.2 0.2 1.0
+			specular 0.2 0.0 0.0 1.0 12.5
+
+			texture_unit
+			{
+				texture mit_metal_ripped.jpg
+				#filtering anistropic
+				#max_anisotropy 16
+				scale 1 1
+			}
+		}
+	}
+}
