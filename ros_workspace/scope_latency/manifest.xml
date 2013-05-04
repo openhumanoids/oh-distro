@@ -1,0 +1,16 @@
+<package>
+  <description brief="scope_latency">
+
+     scope_latency
+
+  </description>
+  <author>Maurice Fallon</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/scope_latency</url>
+  <depend package="osrf_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+</package>
+
+
