@@ -123,7 +123,7 @@ while(1)
   end  
   
   
-  [x,ts] = getNextMessage(state_frame,1);
+  [x,ts] = getNextMessage(state_frame,0);
   if (~isempty(x))
     %  fprintf('received state at time %f\n',ts);
     % disp('Robot state received.');
