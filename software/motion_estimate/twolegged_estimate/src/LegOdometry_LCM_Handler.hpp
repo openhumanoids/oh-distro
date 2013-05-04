@@ -65,6 +65,7 @@ struct command_switches {
   bool log_data_files;
   bool lcm_add_ext;
   bool lcm_read_trues;
+  bool use_true_z;
 };
 
 class LegOdometry_Handler {

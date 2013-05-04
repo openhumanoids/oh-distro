@@ -95,7 +95,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   }
 	//#endif
   
-    state_estimate_error_log.Open(_switches->log_data_files,"estimated_state_errors.csv");
+    state_estimate_error_log.Open(_switches->log_data_files,"true_estimated_states.csv");
 	
 	return;
 }
@@ -210,8 +210,8 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	//left_force = msg->contacts.contact_force[0].z;
 	//right_force = msg->contacts.contact_force[1].z;
 
+	DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process	
 	if (_switches->publish_footcontact_states) {
-	  DetermineLegContactStates((long)msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process	
 	  PublishFootContactEst(msg->utime);
 	}
 	
@@ -320,6 +320,10 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	Eigen::Isometry3d currentPelvis = _leg_odo->getPelvisState();
 	Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
 	Eigen::Vector3d local_rates     = _leg_odo->getLocalFrameRates();
+	
+	if (_switches->use_true_z) {
+		currentPelvis.translation().z() = msg->origin_position.translation.z;
+	}
 	
     bot_core::pose_t pose;
     pose.utime  =msg->utime;
@@ -476,31 +480,64 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     l2head_msg.accel[2]=local_to_head_acc(2);
     lcm_->publish("POSE_HEAD" + _channel_extension, &l2head_msg);  
   
-  
-  // Logging some some data for analysis in MATLAB
+    
+  // Logging csv file with true and estimated states
   if (_switches->log_data_files) {
     stringstream ss (stringstream::in | stringstream::out);
 	
-    ss << msg->origin_position.translation.x << ", " << msg->origin_position.translation.y << ", " << msg->origin_position.translation.z << ", ";
-    ss << currentPelvis.translation().x() << ", " << currentPelvis.translation().y() << ", " << currentPelvis.translation().z() << ", ";
+    // The true states are
+    ss << msg->origin_position.translation.x << ", ";
+    ss << msg->origin_position.translation.y << ", ";
+    ss << msg->origin_position.translation.z << ", ";
     
-    ss << msg->origin_twist.linear_velocity.x << ", " << msg->origin_twist.linear_velocity.y << ", " << msg->origin_twist.linear_velocity.z << ", ";
-    ss << velocity_states(0) << ", "  << velocity_states(1) << ", "  << velocity_states(2) << ", ";
+    ss << msg->origin_twist.linear_velocity.x << ", ";
+    ss << msg->origin_twist.linear_velocity.y << ", ";
+    ss << msg->origin_twist.linear_velocity.z << ", ";
     
-    ss << E_true(0) - E_est(0) << ", ";
-    ss << E_true(1) - E_est(1) << ", ";
-    ss << E_true(2) - E_est(2) << ", ";
+    ss << E_true(0) << ", ";
+    ss << E_true(1) << ", ";
+    ss << E_true(2) << ", ";
     
-    ss << msg->origin_twist.linear_velocity.x - local_rates(0) << ", ";
-    ss << msg->origin_twist.linear_velocity.y - local_rates(1) << ", ";
-    ss << msg->origin_twist.linear_velocity.z - local_rates(2) << ", ";
+    ss << msg->origin_twist.angular_velocity.x << ", ";
+    ss << msg->origin_twist.angular_velocity.y << ", ";
+    ss << msg->origin_twist.angular_velocity.z << ", ";
     
+    // The estimated states are 
+    ss << currentPelvis.translation().x() << ", ";
+    ss << currentPelvis.translation().y() << ", ";
+    ss << currentPelvis.translation().z() << ", ";
     
-    // The true local to head state is read from an LCM message which is available during devepment
+    ss << velocity_states(0) << ", ";
+    ss << velocity_states(1) << ", ";
+    ss << velocity_states(2) << ", ";
     
-    // This is the estimated state and must be compared to the previous
-    ss << local_to_head.translation().x() << ", " << local_to_head.translation().y() << ", " << local_to_head.translation().z() << ", ";
+    ss << E_est(0) << ", ";
+    ss << E_est(1) << ", ";
+    ss << E_est(2) << ", ";
     
+    ss << local_rates(0) << ", ";
+    ss << local_rates(1) << ", ";
+    ss << local_rates(2) << ", ";
+    
+    // adding timestamp a bit late, sorry
+    ss << msg->utime << ", ";
+    
+    // Adding the foot contact forces 
+    ss << msg->contacts.contact_force[0].z << ", "; // left
+    ss << msg->contacts.contact_force[1].z << ", "; // right
+    
+    // Active foot is
+    ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
+    
+    // The single foot contact states are also writen to file for reference -- even though its published by a separate processing using this same class.
+    ss << _leg_odo->leftContactStatus() << ", ";
+    ss << _leg_odo->rightContactStatus() << ", ";
+    
+    // We also looking at joint angles for this trouble shooting session
+    
+    for (int i=0;i<16;i++) {
+    	ss << msg->joint_velocity[i] << ", ";
+    }
     
     ss <<std::endl;
     

@@ -40,6 +40,7 @@ int main(int argc, char ** argv) {
   switches.log_data_files = false;
   switches.lcm_add_ext = false;
   switches.lcm_read_trues = false;
+  switches.use_true_z = false;
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
@@ -47,12 +48,14 @@ int main(int argc, char ** argv) {
   opt.add(switches.log_data_files, "l", "log_data_files","Logging some data to file");
   opt.add(switches.lcm_add_ext, "x", "lcm_add_ext", "Adding extension to the LCM messages");
   opt.add(switches.lcm_read_trues, "t", "lcm_read_trues", "Listening to true robot states, including POSE_HEAD");
+  opt.add(switches.use_true_z,"z","Use true z position data for state estimate");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;
   std::cout << "Logging of data to file: " << switches.log_data_files << std::endl;
   std::cout << "Adding extenstion to LCM messages: " << switches.lcm_add_ext << std::endl;
   std::cout << "Listening to truth LCM messages, including POSE_HEAD: " << switches.lcm_read_trues << std::endl;
+  std::cout << "Using true Z position for state estimate: " << switches.use_true_z << std::endl;
 
   // register signal SIGINT and signal handler  
   signal(SIGINT, signalHandler);  
