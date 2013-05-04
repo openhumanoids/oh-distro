@@ -35,7 +35,7 @@ class Affordance {
   typedef boost::shared_ptr<Affordance> Ptr;
   typedef std::vector<double> StateVector;
   
-  Affordance(const std::string& filename);
+  Affordance(const std::string& filename, std::ostream& log = std::cout);
   Affordance(std::ostream& log, const drc::affordance_t& msg);  
   bool GetStateFromMsg(const drc::affordance_t& msg, StateVector& state);
   void PrintState(const StateVector& state);

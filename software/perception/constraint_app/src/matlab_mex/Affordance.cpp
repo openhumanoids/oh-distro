@@ -3,7 +3,7 @@
 #include "ConstraintApp.h"
 #include <kdl/treefksolverpos_recursive.hpp>
 
-Affordance::Affordance(const std::string& filename) : m_log(std::cout) 
+Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::cout*/) : m_log(log) 
 {
   // load the OTDF file
   std::string xml_string;
