@@ -387,11 +387,11 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
     // use the time and space bounds to get a new cloud
     getSweepCloud(bounds);
-    //sendSweepCloud();
+    sendSweepCloud();
 
     // use the time and space bounds to get a new depth image
-    getSweepDepthImage(bounds);
-    sendSweepDepthImage();
+    //getSweepDepthImage(bounds);
+    //sendSweepDepthImage();
   }
 }
 

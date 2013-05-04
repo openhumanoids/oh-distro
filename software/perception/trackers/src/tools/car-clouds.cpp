@@ -1,5 +1,5 @@
 // 1. use drc-get-lidar-depth-image to create 4 point clouds:
-//     - 4 views from 2.5m away, front back, left right
+//     - 4 views from 2.5m away, front back, left right [45deg down and 3rpm]
 // 2. merge them with this tool, one by one:
 //    drc-car-clouds -a a.pcd  -b b.pcd   -----> ab.pcd clipped
 // 3. downsample with voxel grid:

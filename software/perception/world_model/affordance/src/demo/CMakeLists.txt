@@ -9,7 +9,7 @@ add_executable (affordance_points_demo affordance_points_demo.cpp )
 pods_use_pkg_config_packages(affordance_points_demo  lcm)
 pods_install_executables(affordance_points_demo)
 
-### needed to read obj:
+### needed to read meshes:
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
