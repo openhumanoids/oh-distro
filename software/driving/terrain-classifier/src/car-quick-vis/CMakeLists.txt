@@ -5,6 +5,5 @@ pods_use_pkg_config_packages(drc-car-quick-vis collision_object_gfe collision_de
   model-client
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  affordance-utils
   pointcloud_vis pointcloud_lcm)
 pods_install_executables(drc-car-quick-vis)
