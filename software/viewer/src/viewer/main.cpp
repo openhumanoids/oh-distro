@@ -37,6 +37,7 @@
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
 #include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
+#include <tracker-renderer/TrackerRenderer.hpp>
 
 
 #include "udp_util.h"
@@ -257,6 +258,8 @@ int main(int argc, char *argv[])
 
   add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA", bot_param);
+
+  tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 
   // add custom TOP VIEW button
   GtkWidget *top_view_button;

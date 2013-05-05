@@ -27,5 +27,7 @@ add_subdirectory(src/feature-tracker)
 
 add_subdirectory(src/tools)
 
+add_subdirectory(src/tracker-renderer)
+
 #pods_install_python_script(drc-send-tracker-command scripts/drc-send-tracker-command.py)
 
