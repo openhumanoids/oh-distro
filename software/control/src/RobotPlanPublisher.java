@@ -84,26 +84,16 @@ public class RobotPlanPublisher
           msg.plan[i].origin_position.translation.y = (float) x[1][i];
           msg.plan[i].origin_position.translation.z = (float) x[2][i];
           
-          double roll = x[3][i];
-          double pitch = x[4][i];
-          double yaw = x[5][i];
-
-          // covert rpy to quaternion 
-          // note: drake uses XYZ convention
-         /* double ww = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-          double xx = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-          double yy = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-          double zz = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);*/
+          double[] rpy = new double[3];
+          rpy[0] = x[3][i];
+          rpy[1] = x[4][i];
+          rpy[2] = x[5][i];
+          double[] q = drake.util.Transform.rpy2quat(rpy);
           
-          double ww = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-          double xx = Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-          double yy = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-          double zz = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
-
-          msg.plan[i].origin_position.rotation.x = (float) xx;
-          msg.plan[i].origin_position.rotation.y = (float) yy;
-          msg.plan[i].origin_position.rotation.z = (float) zz;
-          msg.plan[i].origin_position.rotation.w = (float) ww;
+          msg.plan[i].origin_position.rotation.w = (float) q[0];
+          msg.plan[i].origin_position.rotation.x = (float) q[1];
+          msg.plan[i].origin_position.rotation.y = (float) q[2];
+          msg.plan[i].origin_position.rotation.z = (float) q[3];
 
           msg.plan[i].origin_twist.linear_velocity.x = x[6+msg.plan[i].num_joints][i];
           msg.plan[i].origin_twist.linear_velocity.y = x[6+msg.plan[i].num_joints+1][i];
@@ -138,24 +128,6 @@ public class RobotPlanPublisher
       }
       LCM lcm = LCM.getSingleton();
       lcm.publish(channel_name,encode(t,x));
-    }
-    
-    
-    private double[] threeaxisrot(double r11, double r12, double r21, double r31, double r32) { 
-      // find angles for rotations about X, Y, and Z axes
-      double[] r = new double[3];
-      r[0] = Math.atan2(r11, r12);
-      r[1] = Math.asin(r21);
-      r[2] = Math.atan2(r31, r32);
-      return r;
-    }
-    
-    private double[] quatnormalize(double[] q) {
-      double norm = Math.sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
-      double[] qout = new double[4];
-      for (int i=0; i<4; i++)
-        qout[i] = q[i]/norm;
-      return qout;
     }
     
 }

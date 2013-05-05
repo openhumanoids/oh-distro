@@ -100,23 +100,6 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
           for (int i=0; i<msg.num_dims; i++) {
             fdata.val[offset + i] = msg.dims[i];
           }
-          // convert quaternion to euler
-//          double x = msg.l_hand_init_pose.rotation.x;
-//          double y = msg.l_hand_init_pose.rotation.y;
-//          double z = msg.l_hand_init_pose.rotation.z;
-//          double w = msg.l_hand_init_pose.rotation.w;
-//          double roll = Math.atan2(2*(x*y + z*w),1-2*(y*y+z*z));
-//          if (roll > Math.PI)
-//              roll -= 2*Math.PI;
-//          double pitch = -Math.asin(2*(x*z - w*y));
-//          if (pitch > Math.PI)
-//              pitch -= 2*Math.PI;              
-//          double yaw = Math.atan2(2*(x*w + y*z),1-2*(z*z+w*w))+Math.PI;
-//          if (yaw > Math.PI)
-//              yaw -= 2*Math.PI; 
-          //fdata.val[4] = roll;
-          //fdata.val[5] = pitch;
-          //fdata.val[6] = yaw;
 
           return fdata;
         //}

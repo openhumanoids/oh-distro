@@ -48,24 +48,12 @@ public class EndEffectorGoalCoder implements drake.util.LCMCoder
 				fdata.val[2] = msg.ee_goal_pos.translation.y;
 				fdata.val[3] = msg.ee_goal_pos.translation.z;
 	      
-        // convert quaternion to euler
-        // note: drake uses XYZ convention
         double[] q = new double[4];
         q[0] = msg.ee_goal_pos.rotation.w;
         q[1] = msg.ee_goal_pos.rotation.x;
         q[2] = msg.ee_goal_pos.rotation.y;
         q[3] = msg.ee_goal_pos.rotation.z;
-
-        q = quatnormalize(q);
-       /* double[] rpy = threeaxisrot(-2*(q[2]*q[3] - q[0]*q[1]), 
-            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
-            2*(q[1]*q[3] + q[0]*q[2]), -2.*(q[1]*q[2] - q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);*/
-            
-        double[] rpy = threeaxisrot(2*(q[2]*q[3] + q[0]*q[1]), 
-            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3], 
-            2*(- q[1]*q[3] + q[0]*q[2]), 2.*(q[1]*q[2] + q[0]*q[3]),
-            q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3]);     
+        double[] rpy = drake.util.Transform.quat2rpy(q);
           
         fdata.val[4] = rpy[0];
         fdata.val[5] = rpy[1];
@@ -87,46 +75,20 @@ public class EndEffectorGoalCoder implements drake.util.LCMCoder
     msg.ee_goal_pos.translation.y = (float) d.val[2];
     msg.ee_goal_pos.translation.z = (float) d.val[3];
     
-    float roll = (float) d.val[4];
-    float pitch = (float) d.val[5];
-    float yaw = (float) d.val[6];
+    double[] rpy = new double[3];
+    rpy[0] = d.val[4];
+    rpy[1] = d.val[5];
+    rpy[2] = d.val[6];
+    double[] q = drake.util.Transform.rpy2quat(rpy);
 
-    // covert rpy to quaternion 
-    // note: drake uses XYZ convention
-/*    double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-    double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);*/
-     double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);   
-    double x = Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2)-Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-    double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2)+Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-    double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2)-Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
-
-    msg.ee_goal_pos.rotation.x = (float) x;
-    msg.ee_goal_pos.rotation.y = (float) y;
-    msg.ee_goal_pos.rotation.z = (float) z;
-    msg.ee_goal_pos.rotation.w = (float) w;
+    msg.ee_goal_pos.rotation.x = (float) q[0];
+    msg.ee_goal_pos.rotation.y = (float) q[1];
+    msg.ee_goal_pos.rotation.z = (float) q[2];
+    msg.ee_goal_pos.rotation.w = (float) q[3];
 		
     return msg;
   }
       
-  private double[] threeaxisrot(double r11, double r12, double r21, double r31, double r32) { 
-    // find angles for rotations about X, Y, and Z axes
-    double[] r = new double[3];
-    r[0] = Math.atan2(r11, r12);
-    r[1] = Math.asin(r21);
-    r[2] = Math.atan2(r31, r32);
-    return r;
-  }
-    
-  private double[] quatnormalize(double[] q) {
-    double norm = Math.sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
-    double[] qout = new double[4];
-    for (int i=0; i<4; i++)
-      qout[i] = q[i]/norm;
-    return qout;
-  }
-    
   public String timestampName()
   {
     return "utime";

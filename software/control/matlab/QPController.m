@@ -196,6 +196,8 @@ classdef QPController < MIMODrakeSystem
     end
     desired_supports = find(supp);
     
+    %% todo: likely cut in and start mex version here
+    
     q = x(1:nq); 
     qd = x(nq+(1:nq));
     kinsol = doKinematics(r,q,false,true,qd);

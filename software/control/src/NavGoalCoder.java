@@ -26,19 +26,19 @@ public class NavGoalCoder implements drake.util.LCMCoder
           fdata.val = new double[7];
           fdata.t = (double)msg.utime / 1000000.0;
           
-          double q1= msg.goal_pos.rotation.x;
-          double q2 = msg.goal_pos.rotation.y;
-          double q3 = msg.goal_pos.rotation.z;
-          double q0 = msg.goal_pos.rotation.w;
-          double roll = Math.atan2(2*(q0*q1+q2*q3),1-2*(q1*q1+q2*q2));
-          double pitch = Math.asin(2*(q0*q2-q3*q1));
-          double yaw = Math.atan2(2*(q0*q3+q1*q2),1-2*(q2*q2+q3*q3));
+          double[] q = new double[4];
+          q[0] = msg.goal_pos.rotation.w;
+          q[1] = msg.goal_pos.rotation.x;
+          q[2] = msg.goal_pos.rotation.y;
+          q[3] = msg.goal_pos.rotation.z;
+          double[] rpy = drake.util.Transform.quat2rpy(q);
+
           fdata.val[0] = msg.goal_pos.translation.x;
           fdata.val[1] = msg.goal_pos.translation.y;
           fdata.val[2] = msg.goal_pos.translation.z;
-          fdata.val[3] = roll;
-          fdata.val[4] = pitch;
-          fdata.val[5] = yaw;
+          fdata.val[3] = rpy[0];
+          fdata.val[4] = rpy[1];
+          fdata.val[5] = rpy[2];
           fdata.val[6] = msg.timeout / 1000000.0;
           return fdata;
 //        }
@@ -63,17 +63,16 @@ public class NavGoalCoder implements drake.util.LCMCoder
       msg.goal_pos.translation.y = (float) d.val[1];
       msg.goal_pos.translation.z = (float) d.val[2];
       
-      // covert rpy to quaternion (drake uses XYZ convention)
-      double roll = d.val[3], pitch = d.val[4], yaw = d.val[5];
-      double w = Math.cos(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2);
-      double x = Math.cos(roll/2)*Math.sin(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.cos(pitch/2)*Math.cos(yaw/2);
-      double y = Math.cos(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2) - Math.sin(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2);
-      double z = Math.cos(roll/2)*Math.cos(pitch/2)*Math.sin(yaw/2) + Math.sin(roll/2)*Math.sin(pitch/2)*Math.cos(yaw/2);
+      double[] rpy = new double[3];
+      rpy[0] = d.val[3];
+      rpy[1] = d.val[4];
+      rpy[2] = d.val[5];
+      double[] q = drake.util.Transform.rpy2quat(rpy);
 
-      msg.goal_pos.rotation.x = (float) x;
-      msg.goal_pos.rotation.y = (float) y;
-      msg.goal_pos.rotation.z = (float) z;
-      msg.goal_pos.rotation.w = (float) w;
+      msg.goal_pos.rotation.w = (float) q[0];
+      msg.goal_pos.rotation.x = (float) q[1];
+      msg.goal_pos.rotation.y = (float) q[2];
+      msg.goal_pos.rotation.z = (float) q[3];
       msg.timeout = (long)(d.val[6] * 1000000);
       
       return msg;
