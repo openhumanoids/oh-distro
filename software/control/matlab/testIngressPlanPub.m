@@ -6,25 +6,47 @@ options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 load('data/atlas_fp.mat');
-load('data/aa_step_in_2013_04_30_0255_good.mat');
+load('data/aa_step_in_2013_05_04_2155.mat');
 t_qs_breaks = t_qs_breaks*scale_t;
 
 state_frame = getStateFrame(r);
-state_frame.subscribe('EST_ROBOT_STATE');
+state_frame.subscribe('TRUE_ROBOT_STATE');
 
-% while true
-%   [x,~] = getNextMessage(state_frame,10);
-%   if (~isempty(x))
-%     x0=x;
-%     break
-%   end
-% end
+while true
+  [x,~] = getNextMessage(state_frame,10);
+  if (~isempty(x))
+    q0=x(1:r.getNumDOF());
+    break
+  end
+end
 
+nt = numel(t_qs_breaks);
 nq = getNumDOF(r);
 q_nom = xstar(1:nq);
-q0 = q_qs_plan(1:nq,1);
-x0=[q0,zeros(size(q0))];
-% kinsol = doKinematics(r,q_qs_plan);
+q0_nom = q_qs_plan(1:nq,1);
+x0_nom = [q0,zeros(size(q0))];
+
+r_foot_body = r.findLink('r_foot');
+
+kinsol = doKinematics(r,q0_nom);
+r_foot_xyz_nom = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
+fprintf(['Nominal right foot position:\n\t' ...
+            'x: %5.3f\n\t' ...
+            'y: %5.3f\n\t'], r_foot_xyz_nom(1:2))
+kinsol = doKinematics(r,q0);
+r_foot_xyz = forwardKin(r,kinsol,r_foot_body,[0;0;0]);
+fprintf(['Actual right foot position:\n\t' ...
+            'x: %5.3f\n\t' ...
+            'y: %5.3f\n\t'], r_foot_xyz(1:2))
+
+xy_offset = r_foot_xyz(1:2) - r_foot_xyz_nom(1:2);
+
+fprintf(['Adjusting trajectories in x and y:\n\t' ...
+            'x offset: %5.3f\n\t' ...
+            'y offset: %5.3f\n'], xy_offset);
+
+q_qs_plan(1:2,:) = q_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
+com_qs_plan(1:2,:) = com_qs_plan(1:2,:) + repmat(xy_offset,1,nt);
 % com = getCOM(r,kinsol);
 
 % create desired joint trajectory
@@ -82,18 +104,19 @@ x0=[q0,zeros(size(q0))];
 % end
 qtraj = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
 comtraj = PPTrajectory(spline(t_qs_breaks,com_qs_plan(1:2,:)));
+htraj = PPTrajectory(spline(t_qs_breaks,com_qs_plan(3,:)));
 foot_support=PPTrajectory(zoh(t_qs_breaks,foot_support_qs));
 
 Q = 10*eye(4);
 R = 0.001*eye(2);
-comgoal = com_qs_plan(1:2,1);
+comgoal = com_qs_plan(1:2,end);
 ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
 [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),Q,R);
 
 % compute TVLQR
 options.tspan = linspace(comtraj.tspan(1),comtraj.tspan(2),10);
 options.sqrtmethod = false;
-x0traj = setOutputFrame([comtraj;0;0],ltisys.getStateFrame);
+x0traj = setOutputFrame([comtraj;fnder(comtraj)],ltisys.getStateFrame);
 u0traj = setOutputFrame(ConstantTrajectory([0;0]),ltisys.getInputFrame);
 S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenvalues, which numerically fluctuate below 0
 warning(S);
