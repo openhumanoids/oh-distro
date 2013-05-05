@@ -76,6 +76,10 @@ group "a.1.core" {
         exec = "data-request-server";
         host = "robot";
     }
+    cmd "affordance-gaze" {
+        exec = "affordance-gaze";
+        host = "robot";
+    }
     cmd "lidarfilt" {
         exec = "drc-lidar-passthrough";
         host = "robot";
