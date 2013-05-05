@@ -68,6 +68,14 @@ classdef QPController < MIMODrakeSystem
       obj.lcm_foot_contacts=options.lcm_foot_contacts;
     end
     
+    if isfield(options,'debug')
+      typecheck(options.debug,'logical');
+      sizecheck(options.debug,1);
+      obj.debug = options.debug;
+    else
+      obj.debug = false;
+    end
+
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
     if (isfield(options,'full_body_opt'))
@@ -77,16 +85,13 @@ classdef QPController < MIMODrakeSystem
     end
     
     if ~options.full_body_opt
-      % free_dof we perform unconstrained minimization to compute 
-      % accelerations and solve for inputs (then threshold).
-      % minimally these should be the joints for which the columns of the 
-      % contact jacobian are zero. The remaining dofs are indexed in cnstr_dof.
+      % perform unconstrained minimization to compute accelerations for a 
+      % subset of atlas DOF, then solve for inputs (then threshold).
+      % generally these should be the joints for which the columns of the 
+      % contact jacobian are zero. The remaining dofs are indexed in con_dof.
       jn = getJointNames(r);
       torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
                     ~cellfun(@isempty,strfind(jn(2:end),'neck'));
-%       torso = ~cellfun(@isempty,strfind(jn(2:end),'ely')) + ...
-%                     ~cellfun(@isempty,strfind(jn(2:end),'neck')) + ...
-%                     ~cellfun(@isempty,strfind(jn(2:end),'mwx'));
       B = getB(r);
       obj.free_dof = find(torso);
       obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
@@ -131,7 +136,7 @@ classdef QPController < MIMODrakeSystem
       if obj.solver_options.method == 2
         obj.solver_options.bariterlimit = 20; % iteration limit
         obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
-        obj.solver_options.barconvtol = 1e-3;
+        obj.solver_options.barconvtol = 5e-4;
       end
     end  
     
@@ -237,10 +242,17 @@ classdef QPController < MIMODrakeSystem
     
     nc = sum(active_contacts);
     active_contacts = find(active_contacts);
+    neps = nc*dim;
+%     neps = length(active_supports)*2*dim;
     
     if nc > 0
       [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-
+%       Jp=zeros(neps,nq);
+%       Jpdot=zeros(neps,nq);
+%       for k=1:length(active_supports)
+%         [~,Jp((k-1)*2*dim+(1:2*dim),:)] = forwardKin(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]],0);
+%         Jpdot((k-1)*2*dim+(1:2*dim),:) = forwardJacDot(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]]);
+%       end
       Jp = sparse(Jp(:,obj.con_dof)); 
       Jpdot = sparse(Jpdot(:,obj.con_dof));
 
@@ -327,20 +339,20 @@ classdef QPController < MIMODrakeSystem
     % Build handy index matrices ------------------------------------------
     
     nf = nc+nc*nd; % number of contact force variables
-    nparams = nq_con+nu_con+nf+nc*dim;
+    nparams = nq_con+nu_con+nf+neps;
     Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
     Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
     Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
     Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
-    Ieps = zeros(nc*dim,nparams); 
-    Ieps(:,nq_con+nu_con+nc+nc*nd+(1:nc*dim)) = eye(nc*dim);
+    Ieps = zeros(neps,nparams); 
+    Ieps(:,nq_con+nu_con+nc+nc*nd+(1:neps)) = eye(neps);
     
     
     %----------------------------------------------------------------------
     % Set up problem constraints ------------------------------------------
 
-    lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,nc*dim)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 500*ones(1,nf) obj.slack_limit*ones(1,nc*dim)]';
+    lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/input/contact forces/slack vars
+    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
     Aeq_ = cell(1,2);
     beq_ = cell(1,2);
@@ -399,7 +411,7 @@ classdef QPController < MIMODrakeSystem
       fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
 
       % quadratic slack var cost 
-      Hqp(nparams-nc*dim+1:end,nparams-nc*dim+1:end) = eye(nc*dim); 
+      Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
     else
       Hqp = Iqdd'*Iqdd;
       fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
@@ -554,7 +566,7 @@ classdef QPController < MIMODrakeSystem
     R; % quadratic input cost matrix
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
-    debug = false;
+    debug;
     lc;
     contact_est_monitor;
     lfoot_contact_state = 0; 
