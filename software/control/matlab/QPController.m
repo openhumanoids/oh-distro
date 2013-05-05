@@ -138,7 +138,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+%     out_tic = tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -429,11 +429,11 @@ classdef QPController < MIMODrakeSystem
 %       Aeq = full(Aeq);
 %       Ain = full(Ain);
 %       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
-      qp_tic = tic;
+%       qp_tic = tic;
       result = gurobi(model,obj.solver_options);
       alpha = result.x;
-      qp_toc = toc(qp_tic);
-      fprintf('QP solve: %2.4f\n',qp_toc);
+%       qp_toc = toc(qp_tic);
+%       fprintf('QP solve: %2.4f\n',qp_toc);
     end
     
     %----------------------------------------------------------------------
@@ -455,7 +455,11 @@ classdef QPController < MIMODrakeSystem
     end
     
     if obj.debug && nc > 0
-      xcomdd = Jdot * qd + J * alpha(1:nq);
+      if nq_free > 0
+        xcomdd = Jdot * qd + J * qdd;
+      else
+        xcomdd = Jdot * qd + J * alpha(1:nq);
+      end
       zmppos = xcom(1:2) + D_ls * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
       plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
@@ -527,9 +531,8 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-%     max(Iz*alpha)
-    out_toc=toc(out_tic);
-    fprintf('Output loop: %2.4f\n',out_toc);
+%     out_toc=toc(out_tic);
+%     fprintf('Output loop: %2.4f\n',out_toc);
    
   end
   end
