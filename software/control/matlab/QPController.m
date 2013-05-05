@@ -73,7 +73,7 @@ classdef QPController < MIMODrakeSystem
       sizecheck(options.debug,1);
       obj.debug = options.debug;
     else
-      obj.debug = false;
+      obj.debug = true;
     end
 
     % specifies whether or not to solve QP for all DOFs or just the
@@ -89,14 +89,14 @@ classdef QPController < MIMODrakeSystem
       % subset of atlas DOF, then solve for inputs (then threshold).
       % generally these should be the joints for which the columns of the 
       % contact jacobian are zero. The remaining dofs are indexed in con_dof.
-      jn = getJointNames(r);
-      torso = ~cellfun(@isempty,strfind(jn(2:end),'arm')) + ...
-                    ~cellfun(@isempty,strfind(jn(2:end),'neck'));
-      B = getB(r);
-      obj.free_dof = find(torso);
+      state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+      obj.free_dof = find(~cellfun(@isempty,strfind(state_names,'arm')) + ...
+                    ~cellfun(@isempty,strfind(state_names,'neck')));
       obj.con_dof = setdiff(1:getNumDOF(r),obj.free_dof)';
-      obj.free_inputs = find(B'*torso);
-      obj.con_inputs = find(B'*torso==0);
+      
+      input_names = r.getInputFrame.coordinates;
+      obj.free_inputs = find(~cellfun(@isempty,strfind(input_names,'arm')) | ~cellfun(@isempty,strfind(input_names,'neck')));
+      obj.con_inputs = setdiff(1:getNumInputs(r),obj.free_inputs)';
     else
       obj.free_dof = [];
       obj.con_dof = 1:getNumDOF(r);
@@ -143,7 +143,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-%     out_tic = tic;
+    out_tic = tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -477,6 +477,9 @@ classdef QPController < MIMODrakeSystem
       % Set zmp z-pos to 1m for DRC Quals 1
       plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
       
+      cpos
+      active_contacts
+      
       cpos=cpos(:,active_contacts);
       
       [cheight,normals] = getTerrainHeight(r,cpos);
@@ -546,8 +549,8 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-%     out_toc=toc(out_tic);
-%     fprintf('Output loop: %2.4f\n',out_toc);
+    out_toc=toc(out_tic);
+    fprintf('Output loop: %2.4f\n',out_toc);
    
   end
   end
