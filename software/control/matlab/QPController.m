@@ -235,6 +235,11 @@ classdef QPController < MIMODrakeSystem
     
     active_contacts = find(active_contacts);
         
+    obj.lfoot_contact_state 
+    obj.rfoot_contact_state 
+    
+    active_contacts
+    
     if nc > 0
       Jz = sparse(Jz(active_contacts,obj.con_dof)); % only care about active contacts
 
@@ -463,6 +468,8 @@ classdef QPController < MIMODrakeSystem
       zmppos = xcom(1:2) + D_ls * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
       plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
+      
+      cpos=cpos(:,active_contacts);
       
       [cheight,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
