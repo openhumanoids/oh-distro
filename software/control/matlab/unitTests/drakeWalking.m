@@ -3,7 +3,7 @@ function drakeWalking
 addpath(strcat(getenv('DRC_PATH'),'control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 20;
+num_steps = 10;
 step_length = 0.5;
 step_time = 1.0;
 

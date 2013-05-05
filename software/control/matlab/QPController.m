@@ -194,7 +194,7 @@ classdef QPController < MIMODrakeSystem
     else
       supp = ctrl_data.supptraj.eval(t);
     end
-    active_supports = find(supp);
+    desired_supports = find(supp);
     
     q = x(1:nq); 
     qd = x(nq+(1:nq));
@@ -218,37 +218,31 @@ classdef QPController < MIMODrakeSystem
     Jdot = Jdot(1:2,:);
     
     % get active contacts --- note, calling this with the z-adjusted state,
-    % so phi returned isn't useful 
-    [phi_shifted,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+    % so phi returned isn't very useful 
+    [phi_shifted,Jz,D_] = contactConstraints(r,kinsol,desired_supports);
     active_contacts = zeros(length(phi_shifted),1);
 
+    active_supports = [];
     % if any foot point is in contact, all contact points are active
-    if any(active_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
-      active_contacts((find(active_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
+    if any(desired_supports==obj.lfoot_idx) && obj.lfoot_contact_state > 0.5
+      active_contacts((find(desired_supports==obj.lfoot_idx)-1)*4+(1:4)) = 1;
+      active_supports = [active_supports; obj.lfoot_idx];
     end
-    if any(active_supports==obj.lfoot_idx) && obj.lfoot_contact_state > 0.5
-      active_contacts((find(active_supports==obj.lfoot_idx)-1)*4+(1:4)) = 1;
+    if any(desired_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
+      active_contacts((find(desired_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
+      active_supports = [active_supports; obj.rfoot_idx];
     end
     
     nc = sum(active_contacts);
-    [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-    
     active_contacts = find(active_contacts);
-        
-    obj.lfoot_contact_state 
-    obj.rfoot_contact_state 
-    
-    active_contacts
     
     if nc > 0
-      Jz = sparse(Jz(active_contacts,obj.con_dof)); % only care about active contacts
+      [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
 
-      active_idx = zeros(dim*length(active_contacts),1);
-      for i=1:length(active_contacts)
-        active_idx((i-1)*dim+1:i*dim) = (active_contacts(i)-1)*dim + (1:dim)';
-      end
-      Jp = sparse(Jp(active_idx,obj.con_dof)); 
-      Jpdot = sparse(Jpdot(active_idx,obj.con_dof));
+      Jp = sparse(Jp(:,obj.con_dof)); 
+      Jpdot = sparse(Jpdot(:,obj.con_dof));
+
+      Jz = sparse(Jz(active_contacts,obj.con_dof)); % only care about active contacts
       
       % D_ is the parameterization of the polyhedral approximation of the 
       %    friction cone, in joint coordinates (figure 1 from Stewart96)
@@ -436,9 +430,9 @@ classdef QPController < MIMODrakeSystem
 %       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
 %       qp_tic = tic;
       result = gurobi(model,obj.solver_options);
-      alpha = result.x;
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
+      alpha = result.x;
     end
     
     %----------------------------------------------------------------------

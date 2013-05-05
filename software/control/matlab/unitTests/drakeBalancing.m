@@ -55,7 +55,7 @@ ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,st
 ankle_idx = find(ankle_idx(act_idx));
 options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
-options.full_body_opt = true;
+options.full_body_opt = false;
 qp = QPController(r,ctrl_data,options);
 clear options;
 
