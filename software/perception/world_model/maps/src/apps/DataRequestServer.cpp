@@ -13,6 +13,7 @@
 
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
+#include <affordance/AffordanceUpWrapper.h>
 
 using namespace std;
 
@@ -22,6 +23,7 @@ struct Worker {
   bool mActive;
   drc::data_request_t mRequest;
   std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
   std::thread mThread;
 
   ~Worker() {
@@ -101,8 +103,22 @@ struct Worker {
   }
 
   void sendAffordanceListRequest() {
-    mLcm->publish("TRIGGER_AFFORDANCES", &mRequest);
-    cout << "Sent affordance list request" << endl;
+    std::vector<affordance::AffConstPtr> affordances;
+    mAffordanceWrapper->getAllAffordances(affordances);
+    drc::affordance_collection_t msg;
+    msg.name = "updateFromDataRequestServer";
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.map_id = -1;
+    msg.naffs = affordances.size();
+    for (int i = 0; i < affordances.size(); ++i) {
+      drc::affordance_t aff;
+      affordances[i]->toMsg(&aff);
+      aff.aff_store_control = drc::affordance_t::UPDATE;
+      msg.affs.push_back(aff);
+    }
+    mLcm->publish(affordance::AffordanceServer::
+                  AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL, &msg);
+    cout << "Sent affordance list" << endl;
   }
 
   void sendMapViewCatalogRequest() {
@@ -259,11 +275,16 @@ struct State {
   std::shared_ptr<lcm::LCM> mLcm;
   typedef std::unordered_map<int,Worker::Ptr> WorkerMap;
   WorkerMap mWorkers;
+  std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
 
   State() {
     mLcm.reset(new lcm::LCM());
     drc::Clock::instance()->setLcm(mLcm->getUnderlyingLCM());
     drc::Clock::instance()->setVerbose(false);
+
+    boost::shared_ptr<lcm::LCM>
+      boostLcm(new lcm::LCM(mLcm->getUnderlyingLCM()));
+    mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper(boostLcm));
   }
 
   ~State() {
@@ -280,6 +301,7 @@ struct State {
         Worker::Ptr worker(new Worker());
         worker->mActive = false;
         worker->mLcm = mLcm;
+        worker->mAffordanceWrapper = mAffordanceWrapper;
         mWorkers[req.type] = worker;
         item = mWorkers.find(req.type);
       }

@@ -5,7 +5,7 @@ pods_use_pkg_config_packages(maps-server maps)
 pods_install_executables(maps-server)
 
 add_executable(data-request-server DataRequestServer.cpp)
-pods_use_pkg_config_packages(data-request-server drc-utils)
+pods_use_pkg_config_packages(data-request-server drc-utils affordance)
 pods_install_executables(data-request-server)
 
 add_executable(maps-test TestMain.cpp)
