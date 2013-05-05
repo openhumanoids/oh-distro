@@ -1,3 +1,4 @@
+% function [t_test,com_test,com_nom] = testIngressPlanPub(scale_t,foot_support_qs)
 function testIngressPlanPub(scale_t,foot_support_qs)
 
 addpath(fullfile(pwd,'frames'));
@@ -6,8 +7,9 @@ options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 load('data/atlas_fp.mat');
-load('data/aa_step_in_2013_05_04_2155.mat');
+load('data/aa_step_in_2013_05_05_0920.mat');
 t_qs_breaks = t_qs_breaks*scale_t;
+foot_support_qs([1:20,22:32,34:end],:)=0;
 
 state_frame = getStateFrame(r);
 state_frame.subscribe('TRUE_ROBOT_STATE');
@@ -122,11 +124,33 @@ S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenv
 warning(S);
 [~,V] = tvlqr(ltisys,x0traj,u0traj,Q,R,V,options);
 
+% Simple PD parameters
+Kp = [];
 data = struct('qtraj',qtraj,'comtraj',comtraj,...
       'supptraj',foot_support,'htraj',[],'hddtraj',[],...
-      'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[]);
+      'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[],'Kp',Kp);
 
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 pub.publish(0,data);
 
-end
+% [x,t] = getNextMessage(state_frame,10);
+% q_test = x(1:r.getNumDOF());
+% t_start = t;
+% t_test = t;
+% 
+% for i = 1:2000
+%   disp('Get state');
+%   [x,t] = getNextMessage(state_frame,10);
+%   if (~isempty(x))
+%     q_test = [q_test, x(1:r.getNumDOF())];
+%     t_test = [t_test, t];
+%   end
+% end
+% com_test = zeros(3,size(q_test,2));
+% com_nom = zeros(2,size(q_test,2));
+% for i = 1:size(q_test,2)
+%   kinsol = doKinematics(r,q_test(:,i));
+%   com_test(:,i) = getCOM(r,kinsol);
+%   com_nom(:,i) = comtraj.eval(t_test(i));
+% end
+% com_test = com_test(1:2,:);
