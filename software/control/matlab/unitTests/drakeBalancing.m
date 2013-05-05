@@ -3,8 +3,7 @@ function drakeBalancing
 % put robot in a random x,y,yaw position and balance for 5 seconds
 visualize = true;
 
-addpath(fullfile(pwd,'..'));
-addpath(fullfile(pwd,'../frames'));
+addpath(strcat(getenv('DRC_PATH'),'control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
@@ -56,6 +55,7 @@ ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,st
 ankle_idx = find(ankle_idx(act_idx));
 options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
+options.full_body_opt = true;
 qp = QPController(r,ctrl_data,options);
 clear options;
 

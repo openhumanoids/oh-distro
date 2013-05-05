@@ -17,6 +17,8 @@ classdef StandingController < DRCController
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.1;
+      options.lcm_foot_contacts = true;
+      options.full_body_opt = false; % if false, doesn't include arms/neck in QP solve (faster)
       options.R = 1e-12*eye(getNumInputs(r));
 
       act_idx = getActuatedJoints(r);

@@ -1,7 +1,6 @@
 function drakeWalking
 
-addpath(fullfile(pwd,'..'));
-addpath(fullfile(pwd,'../frames'));
+addpath(strcat(getenv('DRC_PATH'),'control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 num_steps = 20;
@@ -38,7 +37,7 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 com = getCOM(r,kinsol);
 limp = LinearInvertedPendulum(com(3));
 % get COM traj from desired ZMP traj
-[c,V] = ZMPtracker(limp,zmptraj);
+[~,V] = ZMPtracker(limp,zmptraj);
 %comtraj = ZMPplannerFromTracker(limp,com(1:2),zeros(2,1),c,zmptraj.tspan);
 comtraj = ZMPplanner(limp,com(1:2),zeros(2,1),zmptraj);
 
@@ -74,6 +73,7 @@ ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,st
 ankle_idx = find(ankle_idx(act_idx));
 options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
+options.full_body_opt = false;
 qp = QPController(r,ctrl_data,options);
 clear options;
 
