@@ -49,6 +49,7 @@ int main(int argc, char ** argv)
 
   //create the server
   AffordanceServer s(theLcm);
+  s.setRole(role);
 
   //lcm loop
   cout << "\nstarting lcm loop" << endl;

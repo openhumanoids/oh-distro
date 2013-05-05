@@ -33,6 +33,7 @@ AffordanceServer::AffordanceServer(shared_ptr<lcm::LCM> lcm)
   : _lcm(lcm), _mapIdToAffIdMaps(),
     _nextObjectUID(1), //make the min id 1 
     _serverMutex(),
+    _role("robot"),
     _latest_utime(-1)
     
 {
@@ -46,11 +47,12 @@ AffordanceServer::AffordanceServer(shared_ptr<lcm::LCM> lcm)
 	lcm->subscribe(AFFORDANCE_FIT_CHANNEL, 
                    &AffordanceServer::handleAffordanceFitMsg, this);
 
-	lcm->subscribe(AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, 
-                   &AffordanceServer::nukeAndOverwrite, this);
+	lcm->subscribe(AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL,
+                   &AffordanceServer::overwriteAffordances, this);
 
-	lcm->subscribe(AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL, 
-                   &AffordanceServer::nukeAndOverwrite, this);
+	lcm->subscribe(AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL,
+                   &AffordanceServer::overwriteAffordances, this);
+
 
     lcm->subscribe("ROBOT_UTIME", 
                    &AffordanceServer::handleTimeUpdate, this);
@@ -66,6 +68,11 @@ AffordanceServer::~AffordanceServer()
 }
 
 //-------methods
+void AffordanceServer::setRole(const std::string& role)
+{
+  _role = role;
+}
+
 void AffordanceServer::handleAffordancePlusTrackMsg(const lcm::ReceiveBuffer* rbuf, 
                                                     const std::string& channel,
                                                     const drc::affordance_plus_t *affordance_plus)
@@ -138,6 +145,62 @@ void AffordanceServer::handleAffordanceTrackMsg(const lcm::ReceiveBuffer* rbuf,
     (*scene)[aptr->_uid]->aff = aptr; //actually update
 }
 
+void AffordanceServer::overwriteAffordances(const lcm::ReceiveBuffer* rbuf, 
+                                            const std::string& channel,
+                                            const drc::affordance_plus_collection_t *affordance_plus_col)
+{
+  if ((channel == AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL) && (_role.compare("robot") != 0)) return;
+  if ((channel == AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL) && (_role.compare("base") != 0)) return;
+
+  boost::unique_lock<boost::mutex> lock(_serverMutex);
+
+  // first update existing affordances
+  for (int i = 0; i < affordance_plus_col->naffs; ++i) {
+    AffPlusPtr aPlusPtr(new AffordancePlusState(&affordance_plus_col->affs_plus[i]));
+    AffPtr aptr = aPlusPtr->aff;
+
+    // add map for affordance if it des not exist
+    bool added = false;
+    if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end()) {
+      _mapIdToAffIdMaps[aptr->_map_id] = AffIdMap(new unordered_map<int32_t,AffPlusPtr>());
+      added = true;
+    }
+    AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
+    
+    const drc::affordance_t* aff = &affordance_plus_col->affs_plus[i].aff;
+    
+    // replace affordance if it didn't exist before, or if it is labeled as 'new'
+    if (added || aff->aff_store_control == drc::affordance_t::NEW) {
+      (*scene)[aptr->_uid] = aPlusPtr;
+      _nextObjectUID = max((int)_nextObjectUID, aptr->_uid);
+      _nextObjectUID++;
+    }
+    
+    // or just update it if it is labeled as 'update'
+    else if (aff->aff_store_control == drc::affordance_t::UPDATE) {
+      (*scene)[aptr->_uid]->aff = aptr;
+    }
+  }
+
+  // next remove affordances that are not in the incoming list
+  for(unordered_map<int32_t, AffIdMap>::const_iterator iter = _mapIdToAffIdMaps.begin();
+      iter != _mapIdToAffIdMaps.end(); ++iter) {
+    AffIdMap curMap = iter->second;
+    unordered_map<int32_t,AffPlusPtr>::iterator it = curMap->begin();
+    while (it != curMap->end()) {
+      AffPlusPtr a = it->second;
+      bool found = false;
+      for (int i = 0; i < affordance_plus_col->naffs; ++i) {
+        if (a->aff->_uid == affordance_plus_col->affs_plus[i].aff.uid) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) ++it;
+      else it = curMap->erase(it);
+    }
+  }  
+}
 
   void AffordanceServer::nukeAndOverwrite(const lcm::ReceiveBuffer* rbuf, 
                                           const std::string& channel,

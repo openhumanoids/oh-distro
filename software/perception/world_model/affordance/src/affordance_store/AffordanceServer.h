@@ -83,6 +83,9 @@ private:
 	/**mutex for _mapIdToAffIdMaps*/
 	boost::mutex _serverMutex;
 
+	/** role of this instance (robot or base) */
+	std::string _role;
+
     /**most recently received utime on ROBOT_UTIME channel*/
     int64_t _latest_utime;
 
@@ -90,6 +93,8 @@ private:
 public:
 	AffordanceServer(const boost::shared_ptr<lcm::LCM> lcm);
 	virtual ~AffordanceServer();
+
+	void setRole(const std::string& role);
 
 	//---------message handling
 private:
@@ -105,6 +110,10 @@ private:
 	void handleAffordanceFitMsg(const lcm::ReceiveBuffer* rbuf, 
                                 const std::string& channel,
                                 const drc::affordance_plus_t *affordance_plus);
+
+	void overwriteAffordances(const lcm::ReceiveBuffer* rbuf, 
+                              const std::string& channel,
+                              const drc::affordance_plus_collection_t *affordance_plus);
 
     void nukeAndOverwrite(const lcm::ReceiveBuffer* rbuf, 
                           const std::string& channel,
