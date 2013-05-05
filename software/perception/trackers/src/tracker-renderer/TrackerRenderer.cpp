@@ -169,8 +169,10 @@ public:
     int id = row[columns.mId];
     if (id < 0) return;
 
-    // TODO: design message and send it
-    // TODO getLcm()->publish("", &msg);
+    drc::gaze_command_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.affordance_id = id;
+    getLcm()->publish("GAZE_COMMAND", &msg);
   }
 
   void onUpdateAffordancesButton() {
