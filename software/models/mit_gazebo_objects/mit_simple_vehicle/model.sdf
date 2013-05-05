@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><sdf version="1.4">
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.4">
   <model name="polaris_ranger_ev">
       <link name="chassis">
          <inertial>
@@ -25,11 +26,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="chassis_bottom"><pose>0.1 0.0 0.37  0 0 0</pose><geometry>
+         <visual name="chassis_bottom">
+            <pose>0.1 0.0 0.37  0 0 0</pose>
+            <geometry>
                <box>
                   <size>1.5 1.34 0.06</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="cargo_bottom">
             <pose>-0.9 0.0 0.9 0.0 0.0 0.0</pose> 
             <geometry>
@@ -38,11 +48,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="cargo_bottom"><pose>-0.9 0.0 0.9 0.0 0.0 0.0</pose><geometry>
+         <visual name="cargo_bottom">
+            <pose>-0.9 0.0 0.9 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.9 1.2 0.01</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="cargo_front">
             <pose>-0.45 0.0 1.025 0.0 0.0 0.0</pose> 
             <geometry>
@@ -51,11 +70,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="cargo_front"><pose>-0.45 0.0 1.025 0.0 0.0 0.0</pose><geometry>
+         <visual name="cargo_front">
+            <pose>-0.45 0.0 1.025 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.05 1.2 0.25</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="cargo_back">
             <pose>-1.35 0.0 1.025 0.0 0.0 0.0</pose> 
             <geometry>
@@ -64,11 +92,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="cargo_back"><pose>-1.35 0.0 1.025 0.0 0.0 0.0</pose><geometry>
+         <visual name="cargo_back">
+            <pose>-1.35 0.0 1.025 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.05 1.2 0.25</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="cargo_left">
             <pose>-0.9 0.6 1.025 0.0 0.0 0.0</pose> 
             <geometry>
@@ -77,11 +114,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="cargo_left"><pose>-0.9 0.6 1.025 0.0 0.0 0.0</pose><geometry>
+         <visual name="cargo_left">
+            <pose>-0.9 0.6 1.025 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.9 0.05 0.25</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="cargo_right">
             <pose>-0.9 -0.6 1.025 0.0 0.0 0.0</pose> 
             <geometry>
@@ -90,11 +136,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="cargo_right"><pose>-0.9 -0.6 1.025 0.0 0.0 0.0</pose><geometry>
+         <visual name="cargo_right">
+            <pose>-0.9 -0.6 1.025 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.9 0.05 0.25</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="seat">
             <pose>-0.1 0.0 0.560  0 0 0</pose> 
             <geometry>
@@ -110,11 +165,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="seat"><pose>-0.1 0.0 0.560  0 0 0</pose><geometry>
+         <visual name="seat">
+            <pose>-0.1 0.0 0.560  0 0 0</pose>
+            <geometry>
                <box>
                   <size>0.6 1.22 0.50</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="mud_seat">
             <pose>-0.1 0.0 0.81  0 0 0</pose> 
             <geometry>
@@ -128,11 +192,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="mud_seat"><pose>-0.1 0.0 0.81  0 0 0</pose><geometry>
+         <visual name="mud_seat">
+            <pose>-0.1 0.0 0.81  0 0 0</pose>
+            <geometry>
                <box>
                   <size>0.6 1.15 0.1</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <sensor name="seat_contact" type="contact">
             <always_on>true</always_on>
             <update_rate>1000</update_rate>
@@ -148,11 +221,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="seat_back"><pose>-0.3 0.0 1.125 0.0 -0.2 0.0</pose><geometry>
+         <visual name="seat_back">
+            <pose>-0.3 0.0 1.125 0.0 -0.2 0.0</pose>
+            <geometry>
                <box>
                   <size>0.06 1.0 0.4</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <collision name="engine">
             <pose>1.05 0.0 0.7 0.0 0.0 0.0</pose> 
             <geometry>
@@ -161,11 +243,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="engine"><pose>1.05 0.0 0.7 0.0 0.0 0.0</pose><geometry>
+         <visual name="engine">
+            <pose>1.05 0.0 0.7 0.0 0.0 0.0</pose>
+            <geometry>
                <box>
                   <size>0.58 1.0 0.8</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <!-- Begin simple collision shapes for entry/exit handles -->
       <!--collision name="handle_left_top">
         <pose>-0.23 0.61 1.175  0 -1.32 0</pose>
@@ -194,12 +285,21 @@
                </cylinder>
             </geometry>
          </collision>
-  <visual name="handle_left_middle"><pose>-0.30 0.61 1.055  0 -0.20 0</pose><geometry>
+         <visual name="handle_left_middle">
+            <pose>-0.30 0.61 1.055  0 -0.20 0</pose>
+            <geometry>
                <cylinder>
                   <radius>0.02</radius>
                   <length>0.17</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <!--collision name="handle_right_top">
         <pose>-0.23 -0.61 1.175  0 -1.32 0</pose>
         <geometry>
@@ -227,12 +327,21 @@
                </cylinder>
             </geometry>
          </collision>
-  <visual name="handle_right_middle"><pose>-0.30 -0.61 1.055  0 -0.20 0</pose><geometry>
+         <visual name="handle_right_middle">
+            <pose>-0.30 -0.61 1.055  0 -0.20 0</pose>
+            <geometry>
                <cylinder>
                   <radius>0.02</radius>
                   <length>0.17</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          <!-- End simple collision shapes for entry/exit handles -->
       <!-- Begin simple collision shapes for roll cage -->
       
@@ -331,12 +440,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.32</radius>
                   <length>0.23</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
       </link>
       <link name="rear_left_wheel">
@@ -376,12 +493,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.32</radius>
                   <length>0.23</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
 
          
       </link>
@@ -423,12 +548,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.32</radius>
                   <length>0.23</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
 
          
       </link>
@@ -454,12 +587,20 @@
                </cylinder>
             </geometry>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.05</radius>
                   <length>0.01</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
       </link>
       <link name="front_left_wheel">
          <pose>1.03 0.6 0.32  -1.52 0.0 0.0</pose>
@@ -498,12 +639,20 @@
                </contact>
             </surface>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.32</radius>
                   <length>0.23</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
       </link>
       <link name="front_left_wheel_steering_block">
@@ -527,12 +676,20 @@
                </cylinder>
             </geometry>
          </collision>
-  <visual name="collision"><geometry>
+         <visual name="collision">
+            <geometry>
                <cylinder>
                   <radius>0.05</radius>
                   <length>0.01</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
       </link>
       <!-- gas/brake pedals, steering wheel and hand brake -->
     <link name="gas_pedal">
@@ -558,11 +715,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="gas_pedal_collision"><pose>-0.0385 0 -0.086 0 2.016 0</pose><geometry>
+         <visual name="gas_pedal_collision">
+            <pose>-0.0385 0 -0.086 0 2.016 0</pose>
+            <geometry>
                <box>
                   <size>0.1069000 0.0770000 0.010000</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
       </link>
 
@@ -589,11 +755,20 @@
                </box>
             </geometry>
          </collision>
-  <visual name="brake_pedal_collision"><pose>-0.040 0 -0.086 0 1.999 0</pose><geometry>
+         <visual name="brake_pedal_collision">
+            <pose>-0.040 0 -0.086 0 1.999 0</pose>
+            <geometry>
                <box>
                   <size>0.063 0.08 0.01</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
       </link>
 
@@ -632,7 +807,9 @@
                </contact>
             </surface>
          </collision>
-  <visual name="collision"><pose>0 0 0  -0.69 0 -1.570796</pose><geometry>
+         <visual name="collision">
+            <pose>0 0 0  -0.69 0 -1.570796</pose>
+            <geometry>
                <mesh>
                   <uri>model://polaris_ranger_ev/meshes/polaris.dae</uri>
                   <submesh>
@@ -640,7 +817,14 @@
                      <center>true</center>
                   </submesh>
                </mesh>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
 
          
          <!-- visual used to measure size of mesh steering wheel -->
@@ -678,12 +862,21 @@
                </cylinder>
             </geometry>
          </collision>
-  <visual name="hand_brake_collision"><pose>0 0 -0.10 0 0 0</pose><geometry>
+         <visual name="hand_brake_collision">
+            <pose>0 0 -0.10 0 0 0</pose>
+            <geometry>
                <cylinder>
                   <radius>0.01</radius>
                   <length>0.2</length>
                </cylinder>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
       </link>
 
@@ -711,11 +904,19 @@
                </box>
             </geometry>
          </collision>
-  <visual name="FNR_switch"><geometry>
+         <visual name="FNR_switch">
+            <geometry>
                <box>
                   <size>0.02 0.04 0.08</size>
                </box>
-            </geometry></visual>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
          
          
       </link>
