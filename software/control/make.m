@@ -87,6 +87,9 @@ cmdstr = ['mex -v src/MapWrapperRobot.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',i
 disp(cmdstr);
 eval(cmdstr);
 
+cmdstr = ['mex -v src/bot_timestamp_now.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+disp(cmdstr);
+eval(cmdstr);
 
 end
 
