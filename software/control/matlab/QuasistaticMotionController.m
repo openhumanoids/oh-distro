@@ -21,8 +21,9 @@ classdef QuasistaticMotionController < DRCController
       
       % instantiate QP controller
       options.slack_limit = 30.0;
-      options.w = 0.1;
-      options.R = 1e-12*eye(getNumInputs(r));
+      options.w = 1e0;
+      options.R = 0*eye(getNumInputs(r));
+      options.debug = true;
 
       act_idx = getActuatedJoints(r);
       joint_names = getJointNames(r);
@@ -30,7 +31,7 @@ classdef QuasistaticMotionController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(joint_names,'lax')) | ~cellfun(@isempty,strfind(joint_names,'uay'));
       ankle_idx = find(ankle_idx(act_idx));
       
-      options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx);
+%       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx);
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
@@ -107,6 +108,7 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('S',cdata.S);
         obj.controller_data.setField('s1',cdata.s1);
         obj.controller_data.setField('qtraj',cdata.qtraj);
+        obj.controller_data.setField('comtraj',cdata.comtraj);
         obj.controller_data.setField('xlimp0',[0;0;0;0]); % ??
         obj.controller_data.setField('supptraj',cdata.supptraj);
       else

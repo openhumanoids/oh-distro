@@ -128,7 +128,7 @@ warning(S);
 Kp = [];
 data = struct('qtraj',qtraj,'comtraj',comtraj,...
       'supptraj',foot_support,'htraj',[],'hddtraj',[],...
-      'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[],'Kp',Kp);
+      'S',V.S,'s1',V.s1,'lfoottraj',[],'rfoottraj',[]);
 
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 pub.publish(0,data);
