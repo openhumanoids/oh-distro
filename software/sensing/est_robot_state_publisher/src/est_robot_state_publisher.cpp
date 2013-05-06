@@ -25,7 +25,7 @@ using namespace std;
 class StatePub
 {
 public:
-  StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode);
+  StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode, bool _driving_mode);
   ~StatePub() {}
   boost::shared_ptr<lcm::LCM> _lcm;
   boost::shared_ptr<ModelClient> model_;
@@ -37,6 +37,8 @@ public:
 private:
   void outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
         KDL::Frame  T_body_head  );
+  void outputDriving(const drc::robot_state_t * TRUE_state_msg,
+        KDL::Frame  T_body_head  );
   void outputSensing(const drc::robot_state_t * TRUE_state_msg,
         KDL::Frame  T_body_head  );
   
@@ -47,6 +49,7 @@ private:
   KDL::Frame  _T_world_head;
   bool _initPoseHead;  
   bool _ground_truth_mode;
+  bool _driving_mode;
   
   /// used for Trigger based message demand:
   drc::robot_state_t _last_est_state;    
@@ -58,8 +61,8 @@ private:
   
 };
 
-StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
-    _lcm(_lcm),_initPoseHead(false), _ground_truth_mode(_ground_truth_mode){
+StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode, bool _driving_mode):
+    _lcm(_lcm),_initPoseHead(false), _ground_truth_mode(_ground_truth_mode), _driving_mode(_driving_mode){
   botparam_ = bot_param_new_from_server(_lcm->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(_lcm->getUnderlyingLCM(), botparam_);
       
@@ -132,6 +135,37 @@ void StatePub::outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
 }
 
 
+
+void StatePub::outputDriving(const drc::robot_state_t * TRUE_state_msg,
+  KDL::Frame  T_body_head){
+  drc::robot_state_t msgout;
+  msgout= *TRUE_state_msg;
+  msgout.origin_position.translation.x=0;
+  msgout.origin_position.translation.y=0;
+  msgout.origin_position.translation.z=1.059; 
+  // this is the assumed height of the pelvis from the ground. 
+  // this is paired with NOT running -g in drc-joint-frames to draw the height of the robot at z but with x and y =0
+  // maintained by sachi
+  _lcm->publish("EST_ROBOT_STATE", &msgout);
+  sendPose(msgout.origin_position, msgout.utime, "POSE_BODY");
+    
+  // Infer the Robot's head position from the ground truth root world pose
+  KDL::Frame T_world_body, T_world_head;
+  T_world_body.p[0]= msgout.origin_position.translation.x;
+  T_world_body.p[1]= msgout.origin_position.translation.y;
+  T_world_body.p[2]= msgout.origin_position.translation.z;
+  T_world_body.M =  KDL::Rotation::Quaternion(msgout.origin_position.rotation.x, msgout.origin_position.rotation.y, 
+                                                msgout.origin_position.rotation.z, msgout.origin_position.rotation.w);
+  T_world_head = T_world_body * T_body_head; 
+  sendPose(T_world_head, msgout.utime, "POSE_HEAD");   
+  sendPose(T_world_head, msgout.utime, "POSE_HEAD_TRUE"); // courtesy publish
+  
+  // Keep this for the trigger:
+  _last_est_state = msgout;  
+}
+
+
+
 void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
   KDL::Frame  T_body_head){
   
@@ -168,9 +202,6 @@ void StatePub::outputSensing(const drc::robot_state_t * TRUE_state_msg,
 
   // Publish robot's root link position as a curtesy - prob no necessary:
   sendPose(body_origin, msgout.utime, "POSE_BODY");   
-  
-  
-  
   // Keep this for the trigger:
   _last_est_state = msgout;
 }
@@ -234,14 +265,17 @@ void StatePub::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   
   // If not outputing the EST_ROBOT_STATE from here, 
   // Sensing mode is now provided by Motion Estimation Modules Directly
-  if(!_ground_truth_mode  ){ // formerly the sensing mode
+  if(! (_ground_truth_mode|| _driving_mode)  ){ // formerly the sensing mode
     return;
   }
   
   
     
-  //if(_ground_truth_mode  ){ // formerly est_robot_state_no_sensing
-  outputNoSensing(TRUE_state_msg, T_body_head);
+  if(_ground_truth_mode  ){ // formerly est_robot_state_no_sensing
+    outputNoSensing(TRUE_state_msg, T_body_head);
+  }else if(_driving_mode){
+    outputDriving(TRUE_state_msg, T_body_head);
+  }
   //}else{
   //  outputSensing(TRUE_state_msg, T_body_head);
   //}
@@ -282,15 +316,22 @@ void StatePub::triggerHandler(const lcm::ReceiveBuffer* rbuf,
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool ground_truth_mode=false;
+  bool driving_mode=false;
   parser.add(ground_truth_mode, "g", "ground_truth_mode", "Use Ground Truth");
+  parser.add(driving_mode, "d", "driving_mode", "Use Driving Mode [xyz=0]");
   parser.parse();
   cout << "ground_truth_mode is: " << ground_truth_mode << "\n"; 
+  cout << "driving_mode is: " << driving_mode << "\n"; 
+  if (driving_mode && ground_truth_mode){
+    std::cout << "please use either driving_mode or ground_truth_mode but not both\n";
+   exit(-1); 
+  }
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good())
     return 1;
 
-  StatePub app(lcm, ground_truth_mode);
+  StatePub app(lcm, ground_truth_mode,driving_mode);
   cout << "StatePub ready"<< endl;
   while(0 == lcm->handle());
   return 0;
