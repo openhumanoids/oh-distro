@@ -1,25 +1,26 @@
 group "network-test" {
     cmd "robot-netshaper" {
         exec = "drc-network-shaper -t manipulation -r robot -c subsystems/network/network-test.cfg -v";
-        host = "localhost";
+        host = "robot";
     }
     cmd "base-netshaper" {
         exec = "drc-network-shaper -t manipulation -r base -c subsystems/network/network-test.cfg -v";
-        host = "localhost";
+        host = "base";
     }   
     cmd "nettest" {
         exec = "drc-network-test";
-        host = "localhost";
+        host = "robot";
     }   
 }
+
 
 group "spy" {
     cmd "base_spy" {
         exec = "bot-spy -l 'udpm://239.255.76.68:7668?ttl=0'";
-        host = "localhost";
+        host = "base";
     }
     cmd "bot_spy" {
         exec = "bot-spy -l 'udpm://239.255.76.67:7667?ttl=0'";
-        host = "localhost";
+        host = "base";
     }
 }
