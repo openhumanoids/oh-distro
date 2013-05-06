@@ -40,6 +40,7 @@ int main(int argc, char ** argv) {
   switches.log_data_files = false;
   switches.lcm_add_ext = false;
   switches.lcm_read_trues = false;
+  switches.print_computation_time = false;
   
   ConciseArgs opt(argc, (char**)argv);
   //opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");

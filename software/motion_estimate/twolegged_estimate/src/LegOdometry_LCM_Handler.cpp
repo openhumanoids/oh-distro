@@ -11,7 +11,7 @@
 #include <exception>
 //#include <stdio.h>
 //#include <inttypes.h>
-#include <time.h>
+
 
 #include "LegOdometry_LCM_Handler.hpp"
 #include "QuaternionLib.h"
@@ -88,6 +88,9 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	_link = new LinkCollection(2, std::string("Links"));
 	
 	firstpass = true;
+	
+	time_avg_counter = 0;
+	elapsed_us = 0.;
 	
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
   if (_switches->draw_footsteps) {
@@ -189,14 +192,18 @@ void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double 
 void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf, 
 												const std::string& channel, 
 												const  drc::robot_state_t* msg) {
+	clock_gettime(CLOCK_REALTIME, &before);
+	//std::cout << before.tv_nsec << ", " << spare.tv_nsec << std::endl;
+	spare_time = (double)(static_cast<long long>(before.tv_nsec) - static_cast<long long>(spare.tv_nsec));
+	
 	ratecounter++;
 	if (ratecounter < 1)
 		return;
 	//std::cout << "Timestamp: " << msg->utime << std::endl;
 	ratecounter = 0;
 	
-	//timespec before, quater,mid, threequat, after;
-	//clock_gettime(CLOCK_REALTIME, &before);
+	
+	
 	
 	bool legchangeflag;
 
@@ -286,26 +293,34 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		PublishEstimatedStates(msg);
     }
 	
-/*
- * Should make a standard time measurement object or use the boost cron tools
- * 
+ 
    clock_gettime(CLOCK_REALTIME, &after);
-	long elapsed;
-	elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
-	double elapsed_us = elapsed/1000.;
+   double elapsed;
+	/*elapsed = static_cast<long>(mid.tv_nsec) - static_cast<long>(before.tv_nsec);
+	elapsed_us = elapsed/1000.;
 	std::cout << "0.50, " << elapsed_us << ", ";// << std::endl;
 	
 	elapsed = static_cast<long>(threequat.tv_nsec) - static_cast<long>(before.tv_nsec);
 	elapsed_us = elapsed/1000.;
 	std::cout << "0.75, " << elapsed_us << ", ";// << std::endl;
-	
-	elapsed = static_cast<long>(after.tv_nsec) - static_cast<long>(before.tv_nsec);
-	elapsed_us = elapsed/1000.;
-	std::cout << "1.00, " << elapsed_us << std::endl;
 	*/
-
 	
-	
+   if (_switches->print_computation_time) {
+		elapsed = (double)(static_cast<long long>(after.tv_nsec) - static_cast<long long>(before.tv_nsec));
+		elapsed_us += elapsed*1.E-3;
+		spare_us += spare_time*1.E-3;
+		int time_avg_wind = 1000;
+		if (time_avg_counter >= time_avg_wind) {
+			elapsed_us = elapsed_us/((double)time_avg_wind);
+			spare_us = spare_us/((double)time_avg_wind);
+			std::cout << "AVG computation time: [" << elapsed_us << " us]" << std::endl;//, with [" << spare_us << " us] spare" << std::endl;
+			spare_us = 0;
+			elapsed_us = 0.;
+			time_avg_counter = 0;
+		}
+		time_avg_counter++;
+   }
+  clock_gettime(CLOCK_REALTIME, &spare);
 }
 
 void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg) {
@@ -321,7 +336,21 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
 	Eigen::Vector3d velocity_states = _leg_odo->getPelvisVelocityStates();
 	Eigen::Vector3d local_rates     = _leg_odo->getLocalFrameRates();
 	
+	// estimated orientation 
+    Eigen::Quaterniond output_q(currentPelvis.linear());
+    
+    Eigen::Quaterniond dummy_var;
+    dummy_var.w() = msg->origin_position.rotation.w;
+    dummy_var.x() = msg->origin_position.rotation.x;
+    dummy_var.y() = msg->origin_position.rotation.y;
+    dummy_var.z() = msg->origin_position.rotation.z;
+    // This is to use the true yaw angle
+    Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(dummy_var);
+    //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
+    Eigen::Vector3d E_est = InertialOdometry::QuaternionLib::q2e(output_q);
+	
 	if (_switches->use_true_z) {
+		//std::cout << "Z drift hack is in affect\n";
 		currentPelvis.translation().z() = msg->origin_position.translation.z;
 	}
 	
@@ -331,7 +360,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     pose.pos[1] =currentPelvis.translation().y();
     pose.pos[2] =currentPelvis.translation().z();
     
-    Eigen::Quaterniond output_q(currentPelvis.linear());// ?? This was a transpose
     
     // Used this to view the angle estimates, decoupled from the position state estimation
 #ifdef PUBLISH_AT_TRUE_POSITION
@@ -341,24 +369,6 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
     pose.pos[2] = msg->origin_position.translation.z;
 #endif
     
-    //std::cout << "Output E angles: " << InertialOdometry::QuaternionLib::q2e(output_q).transpose() << std::endl;
-    //Eigen::Quaterniond output_q;
-    
-    // forcing yaw angle for testing of the pitch and roll angle values which is to be published as the estimated state of the robot
-      Eigen::Quaterniond dummy_var;
-      dummy_var.w() = msg->origin_position.rotation.w;
-      dummy_var.x() = msg->origin_position.rotation.x;
-      dummy_var.y() = msg->origin_position.rotation.y;
-      dummy_var.z() = msg->origin_position.rotation.z;
-      // This is to use the true yaw angle
-      Eigen::Vector3d E_true = InertialOdometry::QuaternionLib::q2e(dummy_var);
-      //InertialOdometry::QuaternionLib::printQuaternion("True quaternion is: ", dummy_var); 
-      Eigen::Vector3d E_est = InertialOdometry::QuaternionLib::q2e(output_q);
-      //E_true(0) = 0.;
-      //E_true(1) = 0.;
-      //E_est(2) = 0.;
-      // But we are not using the true yaw angle now.. -- this was for testing of the roll and pitch angles, but the problem was found as the transpose of .linear() for Eigen::Isometry3d
-      //output_q = InertialOdometry::QuaternionLib::e2q(E_true + E_est);
     
     pose.orientation[0] =output_q.w();
     pose.orientation[1] =output_q.x();
@@ -411,9 +421,23 @@ void LegOdometry_Handler::PublishEstimatedStates(const drc::robot_state_t * msg)
   twist.angular_velocity.x = local_rates(0);
   twist.angular_velocity.y = local_rates(1);
   twist.angular_velocity.z = local_rates(2);
-//  twist.angular_velocity.x = TRUE_state_msg->origin_twist.angular_velocity.x;
-//  twist.angular_velocity.y = TRUE_state_msg->origin_twist.angular_velocity.y;
-//  twist.angular_velocity.z = TRUE_state_msg->origin_twist.angular_velocity.z;
+  
+  /*
+  if (_switches->use_true_z) {
+	  twist.angular_velocity.x = msg->origin_twist.linear_velocity.x;
+	  twist.angular_velocity.y = msg->origin_twist.linear_velocity.y;
+	  twist.angular_velocity.z = msg->origin_twist.linear_velocity.z;
+  }
+  */
+  
+  /*
+   * not the part of the shaking problem
+  if (_switches->use_true_z) {
+    twist.angular_velocity.x = msg->origin_twist.angular_velocity.x;
+    twist.angular_velocity.y = msg->origin_twist.angular_velocity.y;
+    twist.angular_velocity.z = msg->origin_twist.angular_velocity.z;
+  }
+  */
   
   
   // EST is TRUE with sensor estimated position

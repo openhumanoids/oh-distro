@@ -41,6 +41,7 @@ int main(int argc, char ** argv) {
   switches.lcm_add_ext = false;
   switches.lcm_read_trues = false;
   switches.use_true_z = false;
+  switches.print_computation_time = false;
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
@@ -49,6 +50,7 @@ int main(int argc, char ** argv) {
   opt.add(switches.lcm_add_ext, "x", "lcm_add_ext", "Adding extension to the LCM messages");
   opt.add(switches.lcm_read_trues, "t", "lcm_read_trues", "Listening to true robot states, including POSE_HEAD");
   opt.add(switches.use_true_z,"z","Use true z position data for state estimate");
+  opt.add(switches.print_computation_time,"i", "Print the measured computation time to screen");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;

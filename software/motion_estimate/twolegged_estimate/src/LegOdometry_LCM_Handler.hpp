@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <time.h>
 
 //#include <lcm/lcm-cpp.hpp>
 //#include <boost/shared_ptr.hpp>
@@ -66,6 +67,7 @@ struct command_switches {
   bool lcm_add_ext;
   bool lcm_read_trues;
   bool use_true_z;
+  bool print_computation_time;
 };
 
 class LegOdometry_Handler {
@@ -107,6 +109,11 @@ private:
 	NumericalDiff local_to_head_rate_diff;
 	
 	DataFileLogger state_estimate_error_log;
+	
+	int time_avg_counter;
+	double elapsed_us, spare_us;
+	double spare_time;
+	timespec before, quater,mid, threequat, after, spare;
 	
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };

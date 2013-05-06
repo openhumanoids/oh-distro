@@ -626,23 +626,26 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	
 	accel_data_ss << local_accelerations(0) << ", "  << local_accelerations(1) << ", " << local_accelerations(2) << ", ";
 	
-	
-	for (int i=0;i<3;i++) {
-		_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
+	if (false) {
+		// this was used to isolate velocity spikes, while there was a bug in the foot to pelvis transforms -- 
 		
-		accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
-		
-		if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
-		{
-			if (!_vel_spike_isolation[i]->getState()) {
-				// accel values have not remained high, and can therefore be ignored
-				local_velocities(i) = prev_velocities(i);
-			}
+		for (int i=0;i<3;i++) {
+			_vel_spike_isolation[i]->UpdateState(current_time, local_accelerations(i));
 			
+			accel_data_ss << !_vel_spike_isolation[i]->getState()  << ", ";
+			
+			if (local_accelerations(i) < -3.5 || local_accelerations(i) > 3.5)
+			{
+				if (!_vel_spike_isolation[i]->getState()) {
+					// accel values have not remained high, and can therefore be ignored
+					local_velocities(i) = prev_velocities(i);
+				}
+				
+			}
 		}
 	}
 	
-	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
+	//accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
 	for (int i=0;i<3;i++) {
 		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
