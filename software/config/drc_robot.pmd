@@ -52,6 +52,10 @@ group "a.1.core" {
         exec = "est_robot_state_publisher -g";
         host = "robot";
     }
+    cmd "estpub2minimal" {
+        exec = "est_robot_state_to_minimal -g";
+        host = "robot";
+    }
     cmd "r2l_control" {
         exec = "rosrun translators ros2lcm -c -g";
         host = "robot";
