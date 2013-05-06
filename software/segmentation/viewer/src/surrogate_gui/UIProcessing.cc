@@ -17,11 +17,14 @@
 #include <pcl/common/transforms.h>
 
 #include <maps/BotWrapper.hpp>
+#include <affordance/AffordanceUpWrapper.h>
+#include <drc_utils/Clock.hpp>
 
 using namespace std;
 using namespace pcl;
 using namespace boost;
 using namespace Eigen;
+using namespace affordance;
 
 namespace surrogate_gui
 {
@@ -59,6 +62,12 @@ namespace surrogate_gui
 	       maps::BotWrapper::Ptr wrapper(new maps::BotWrapper(lcm));
 	       _mViewClient->setBotWrapper(wrapper);
 	       _mViewClient->start();
+
+               // set up affordance wrapper
+               _affordance_wrapper.reset(new AffordanceUpWrapper(lcm));
+               drc::Clock::instance()->setLcm(lcm);
+               drc::Clock::instance()->setVerbose(false);
+               
 	  
 		//===========================================
 		//===========================================
@@ -95,6 +104,9 @@ namespace surrogate_gui
 
 		// 5. affordance publish button
 		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUB, NULL);
+
+		// 6. affordance push button
+		bot_gtk_param_widget_add_buttons(pw, PARAM_NAME_AFFORDANCE_PUSH, NULL);
 
     bot_gtk_param_widget_add_separator (pw, "");
 
@@ -1016,6 +1028,36 @@ namespace surrogate_gui
 
   }
   
+	void UIProcessing::handleAffordancePushButton(BotGtkParamWidget *pw)
+	{
+          AffPlusPtr selectedAff = getSelectedAffordance();
+          if (selectedAff == NULL) {
+            std::cout << "No affordance selected - not pushing anything" << std::endl;
+            return;
+          }
+          std::vector<AffConstPtr> affordances;
+          _affordance_wrapper->getAllAffordances(affordances);
+          drc::affordance_collection_t msg;
+          msg.name = "updateFromSegmentationViewer";
+          msg.utime = drc::Clock::instance()->getCurrentTime();
+          msg.map_id = -1;
+          msg.naffs = affordances.size();
+          for (int i = 0; i < msg.naffs; ++i) {
+            drc::affordance_t aff;
+            affordances[i]->toMsg(&aff);
+            if (affordances[i]->_uid == selectedAff->aff.uid) {
+              aff.aff_store_control = drc::affordance_t::NEW;
+            }
+            else {
+              aff.aff_store_control = drc::affordance_t::UPDATE;
+            }
+            msg.affs.push_back(aff);
+          }
+          _lcmCpp->publish(AffordanceServer::
+                           AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
+          cout << "Sent affordance list" << endl;
+	}
+
 
 	void UIProcessing::handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp)
 	{
@@ -1699,6 +1741,12 @@ namespace surrogate_gui
 		if (stringsEqual(name, PARAM_NAME_AFFORDANCE_PUB))
 		{
 			handleAffordancePubButton(pw);
+			//return;
+		}
+
+		if (stringsEqual(name, PARAM_NAME_AFFORDANCE_PUSH))
+		{
+			handleAffordancePushButton(pw);
 			//return;
 		}
 

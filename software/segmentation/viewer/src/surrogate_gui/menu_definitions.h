@@ -15,6 +15,7 @@ namespace surrogate_gui
 	#define PARAM_NAME_CLEAR_OBJECT "Clear ObjPts"
 	#define PARAM_NAME_CURR_OBJECT "Current Object"
 	#define PARAM_NAME_AFFORDANCE_PUB "5. Affordance Pub"
+	#define PARAM_NAME_AFFORDANCE_PUSH "6. Push To Robot"
 	#define PARAM_NAME_SAVE_CLOUD "Save Point Cloud"
 	#define NO_OBJECT 0
 

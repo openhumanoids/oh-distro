@@ -36,7 +36,7 @@ target_link_libraries(surrogate
     ${OPENGL_LIBRARIES}
     )
 
-set(REQUIRED_DRC_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics otdf_dom)
+set(REQUIRED_DRC_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics otdf_dom affordance)
 pods_use_pkg_config_packages(surrogate
     ${PCL_LIBRARIES}
     bot2-vis

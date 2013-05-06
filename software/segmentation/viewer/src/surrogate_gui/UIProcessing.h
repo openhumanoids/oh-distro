@@ -44,6 +44,10 @@
 
 #include <bot_lcmgl_client/lcmgl.h>
 
+namespace affordance {
+  class AffordanceUpWrapper;
+}
+
 namespace surrogate_gui
 {
 
@@ -80,6 +84,7 @@ namespace surrogate_gui
 			boost::shared_ptr<ObjectTracker> _objTracker;
 			
 			boost::shared_ptr<maps::ViewClient> _mViewClient; //map pulling
+          boost::shared_ptr<affordance::AffordanceUpWrapper> _affordance_wrapper;  // affordance store interface
 
       bot_lcmgl_t* _lcmgl;
 
@@ -123,6 +128,7 @@ namespace surrogate_gui
 			void handleTrackLiveButton(BotGtkParamWidget *pw);
 			void handleSaveCloudButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButton(BotGtkParamWidget *pw);
+			void handleAffordancePushButton(BotGtkParamWidget *pw);
 			void handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp);
 			void handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp);
