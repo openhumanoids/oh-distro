@@ -463,7 +463,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->use_colormap = false;
       
     }
-  }else if(!strcmp(name,PARAM_START_PLAN)){
+  }
+  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
+    if (bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE)){
+      self->adjust_endstate= true;  
+    }
+    else{
+      self->adjust_endstate = false;
+    }
+  }
+  else if(!strcmp(name,PARAM_START_PLAN)){
    publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
    self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->revieved_plan_) );
@@ -520,7 +529,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
-    //bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
+    self->adjust_endstate = false;
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER,
                                    0, 1, 0.01, 1);    

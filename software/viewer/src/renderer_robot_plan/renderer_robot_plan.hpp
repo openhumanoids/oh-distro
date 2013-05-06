@@ -44,6 +44,7 @@ namespace renderer_robot_plan
     bool dragging;  
     bool visualize_bbox;
     bool use_colormap;
+    bool adjust_endstate;
     Eigen::Vector3f ray_start;
     Eigen::Vector3f ray_end;
     Eigen::Vector3f ray_hit;
@@ -268,36 +269,66 @@ namespace renderer_robot_plan
       &&(!self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled())
       &&(!self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled())) // knot points other than end points exist
      {
-
         //for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size()-1; i++) // ignore current state and end state, only intermediate stuff
-        for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size(); i++) // ignore current state, only intermediate stuff and end state
-        { 
-          self->robotPlanListener->_gl_robot_keyframe_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-          if( intersected_object != NULL ){
-            Eigen::Vector3f diff = (from-hit_pt);
-            double distance = diff.norm();
-            if(shortest_distance>0) {
-              if (distance < shortest_distance)
+        if(self->adjust_endstate)
+        {
+          for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size(); i++) // ignore current state, only intermediate stuff and end state
+          { 
+            self->robotPlanListener->_gl_robot_keyframe_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
+            if( intersected_object != NULL ){
+              Eigen::Vector3f diff = (from-hit_pt);
+              double distance = diff.norm();
+              if(shortest_distance>0) {
+                if (distance < shortest_distance)
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  self->selected_keyframe_index=i;
+                  (*self->marker_selection)  = " ";
+              }
+              else {
                 shortest_distance = distance;
                 self->ray_hit = hit_pt;
                 self->ray_hit_drag = hit_pt;
                 self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 self->selected_keyframe_index=i;
                 (*self->marker_selection)  = " ";
+               }
+              intersected_object = NULL; 
             }
-            else {
-              shortest_distance = distance;
-              self->ray_hit = hit_pt;
-              self->ray_hit_drag = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
-              self->selected_keyframe_index=i;
-              (*self->marker_selection)  = " ";
-             }
-            intersected_object = NULL; 
-          }
-
-          
-        }//end for  
+            
+          }//end for  
+        }
+        else{
+          for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size()-1; i++) // ignore current state, only intermediate stuff and end state
+            { 
+              self->robotPlanListener->_gl_robot_keyframe_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
+              if( intersected_object != NULL ){
+                Eigen::Vector3f diff = (from-hit_pt);
+                double distance = diff.norm();
+                if(shortest_distance>0) {
+                  if (distance < shortest_distance)
+                    shortest_distance = distance;
+                    self->ray_hit = hit_pt;
+                    self->ray_hit_drag = hit_pt;
+                    self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                    self->selected_keyframe_index=i;
+                    (*self->marker_selection)  = " ";
+                }
+                else {
+                  shortest_distance = distance;
+                  self->ray_hit = hit_pt;
+                  self->ray_hit_drag = hit_pt;
+                  self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                  self->selected_keyframe_index=i;
+                  (*self->marker_selection)  = " ";
+                 }
+                intersected_object = NULL; 
+              }
+              
+            }//end for 
+        }
   
      }// end if _gl_robot_keyframe_list.size()>2  
          
