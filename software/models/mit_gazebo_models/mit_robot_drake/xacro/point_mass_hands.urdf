@@ -33,14 +33,15 @@
    <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.004 0.1601 -0.0078"/>
+    <origin rpy="0 0 0" xyz="-0.0052 -0.0124  0.0972"/>
   </joint>
 
 <!-- COM numbers are made up for now -->
   <joint name="r_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="r_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.004 -0.1601 -0.0078"/>
+<!--    <origin rpy="0 0 0" xyz="0.004 -0.1601 -0.0078"/>-->
+  <origin rpy="0 0 0" xyz="-0.0052 -0.0124  0.0972"/>
   </joint>
-
+   
 </robot>
