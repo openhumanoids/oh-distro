@@ -50,6 +50,16 @@ namespace renderer_robot_plan
        unique_hand_name = "rhand_local_copy"; 
        _gl_right_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_hand_urdf_xml_string,true,unique_hand_name));
     }
+    
+     std::string _left_foot_urdf_xml_string,_right_foot_urdf_xml_string;
+    if(!load_foot_urdfs(_left_foot_urdf_xml_string,_right_foot_urdf_xml_string))
+       cerr << "\n Foot Urdfs Not Found" << endl;
+    else{
+        string unique_foot_name = "lfoot_local_copy";
+       _gl_left_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_left_foot_urdf_xml_string,true,unique_foot_name));
+       unique_foot_name = "rfoot_local_copy"; 
+       _gl_right_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_foot_urdf_xml_string,true,unique_foot_name));
+    }
 
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
   }
@@ -332,7 +342,47 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   
      return true;
   }
+
+  bool RobotPlanListener::load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string)
+  {
   
+    string urdf_models_path = string(getModelsPath()) + "/mit_gazebo_models/mit_robot_feet/"; 
+    
+
+    vector<string> urdf_files = vector<string>();
+    get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
+
+    std::string filename, ext;
+
+        
+    filename ="l_foot";
+    ext=".urdf";
+    
+    std::vector<std::string>::const_iterator found;
+    found = std::find(urdf_files.begin(),urdf_files.end(), filename);
+    if (found != urdf_files.end()) {
+      std::stringstream oss;   
+      oss << urdf_models_path  << filename << ext;   
+      get_xmlstring_from_file(oss.str(),_left_foot_urdf_xml_string);     
+    }
+    else{
+      return false;
+    }
+    
+    filename ="r_foot";
+    ext=".urdf";
+    
+    if (found != urdf_files.end()) {
+      std::stringstream oss;   
+      oss << urdf_models_path  << filename << ext;   
+      get_xmlstring_from_file(oss.str(),_right_foot_urdf_xml_string);
+    }
+    else{
+      return false;
+    }
+  
+     return true;
+  }  
 
 } //namespace renderer_robot_plan
 

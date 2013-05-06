@@ -13,6 +13,8 @@ namespace renderer_robot_plan_gui_utils
      self->robotPlanListener->_gl_robot_keyframe_list.clear();
      self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(false); 
      self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(false);
+     self->robotPlanListener->_gl_left_foot->enable_bodypose_adjustment(false); 
+     self->robotPlanListener->_gl_right_foot->enable_bodypose_adjustment(false);
      self->robotPlanListener->_is_manip_plan = false;
     }
     gtk_widget_destroy(self->plan_execution_dock);

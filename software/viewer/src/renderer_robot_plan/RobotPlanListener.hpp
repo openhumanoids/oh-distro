@@ -61,6 +61,8 @@ namespace renderer_robot_plan
     //The following are local in-motion copies that appear on doubleclk of a keyframe and can be moved around via markers
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_left_hand;
     boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_right_hand;
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_left_foot;
+    boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _gl_right_foot;
     //-------------message callback
     
     drc::robot_plan_t revieved_plan_;
@@ -148,6 +150,78 @@ namespace renderer_robot_plan
     
     };
     
+    void set_in_motion_feet_state(int index)
+    {
+ 
+      KDL::Frame T_world_foot_l,T_world_foot_r;
+     
+      _gl_robot_keyframe_list[index]->get_link_frame("l_foot",T_world_foot_l);
+      _gl_robot_keyframe_list[index]->get_link_frame("r_foot",T_world_foot_r);
+
+      // Flip marker direction to always point away from the body center.
+
+      double normal, flipped;
+      Eigen::Vector3f u_x(1,0,0);
+      Eigen::Vector3f u_y(0,1,0);
+      Eigen::Vector3f u_foot_to_body;
+      u_foot_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_foot_l.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_foot_l.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_foot_l.p[2]; 
+      u_foot_to_body.normalize();
+      
+      normal = acos(u_foot_to_body.dot(u_x));
+      flipped = acos(u_foot_to_body.dot(-u_x));
+      if(flipped>normal+1e-1) {
+        _gl_left_foot->flip_trans_marker_xdir(true);
+        }
+      else{
+       _gl_left_foot->flip_trans_marker_xdir(false);
+       }
+       
+      normal = acos(u_foot_to_body.dot(u_y));
+      flipped = acos(u_foot_to_body.dot(-u_y));
+      if(flipped>normal+1e-1){
+        _gl_left_foot->flip_trans_marker_ydir(true);
+        }
+      else{
+       _gl_left_foot->flip_trans_marker_ydir(false); 
+       }
+      u_foot_to_body << _gl_robot_keyframe_list[index]->_T_world_body.p[0]-T_world_foot_r.p[0],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[1]-T_world_foot_r.p[1],
+                           _gl_robot_keyframe_list[index]->_T_world_body.p[2]-T_world_foot_r.p[2]; 
+      u_foot_to_body.normalize();
+      
+      normal = acos(u_foot_to_body.dot(u_x));
+      flipped = acos(u_foot_to_body.dot(-u_x));
+      if(flipped>normal+1e-1){
+        _gl_right_foot->flip_trans_marker_xdir(true);
+        }
+      else{
+       _gl_right_foot->flip_trans_marker_xdir(false);
+       }
+      normal = acos(u_foot_to_body.dot(u_y));
+      flipped = acos(u_foot_to_body.dot(-u_y));
+      if(flipped>normal+1e-1){
+        _gl_right_foot->flip_trans_marker_ydir(true);
+        }
+      else{
+       _gl_right_foot->flip_trans_marker_ydir(false);  
+       }
+       
+      std::map<std::string, double> jointpos_l;
+      jointpos_l=_gl_left_foot->_current_jointpos;
+      _gl_left_foot->set_state(T_world_foot_l,jointpos_l);
+      _gl_left_foot->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
+      
+       std::map<std::string, double> jointpos_r;
+      jointpos_r = _gl_right_foot->_current_jointpos;
+      _gl_right_foot->set_state(T_world_foot_r,jointpos_r);    
+      _gl_right_foot->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
+      
+      _in_motion_keyframe_index = index;
+    
+    };    
+    
     bool is_in_motion(int index) {  
         return (index==_in_motion_keyframe_index);
     };
@@ -171,7 +245,7 @@ namespace renderer_robot_plan
 			    const  drc::robot_urdf_t* msg);    
 			    
 	 bool load_hand_urdfs(std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
-
+   bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
 
 }; //class RobotPlanListener
   

@@ -15,6 +15,7 @@
 #define PARAM_START_PLAN "Start Planning"
 #define PARAM_SEND_COMMITTED_PLAN "Send Plan"
 #define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
+#define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
 
 using namespace std;
 using namespace boost;
@@ -111,6 +112,8 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
   alpha = 0.9;
   self->robotPlanListener->_gl_left_hand->draw_body(c_blue,alpha);
   self->robotPlanListener->_gl_right_hand->draw_body(c_blue,alpha);
+  self->robotPlanListener->_gl_left_foot->draw_body(c_blue,alpha);
+  self->robotPlanListener->_gl_right_foot->draw_body(c_blue,alpha);
  } 
   
 }
@@ -336,6 +339,10 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       self->robotPlanListener->set_in_motion_hands_state(self->selected_keyframe_index);
       self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(toggle); 
       self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(toggle);
+      self->robotPlanListener->set_in_motion_feet_state(self->selected_keyframe_index);
+      self->robotPlanListener->_gl_left_foot->enable_bodypose_adjustment(toggle); 
+      self->robotPlanListener->_gl_right_foot->enable_bodypose_adjustment(toggle);     
+      
       if(!toggle){
         (*self->marker_selection)  = " ";
       }
@@ -347,14 +354,24 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   {
     self->dragging = 1;
     
-    KDL::Frame T_world_hand;
-    if(self->is_left_in_motion) {
-      T_world_hand = self->robotPlanListener->_gl_left_hand->_T_world_body; 
+    KDL::Frame T_world_ee;
+    if(self->is_hand_in_motion){
+      if(self->is_left_in_motion) {
+        T_world_ee = self->robotPlanListener->_gl_left_hand->_T_world_body; 
+      }
+      else {
+        T_world_ee = self->robotPlanListener->_gl_right_hand->_T_world_body; 
+      }
     }
-    else {
-      T_world_hand = self->robotPlanListener->_gl_right_hand->_T_world_body; 
+    else{
+       if(self->is_left_in_motion) {
+        T_world_ee = self->robotPlanListener->_gl_left_foot->_T_world_body; 
+      }
+      else {
+        T_world_ee = self->robotPlanListener->_gl_right_foot->_T_world_body; 
+      }
     }
-    self->marker_offset_on_press << self->ray_hit[0]-T_world_hand.p[0],self->ray_hit[1]-T_world_hand.p[1],self->ray_hit[2]-T_world_hand.p[2]; 
+    self->marker_offset_on_press << self->ray_hit[0]-T_world_ee.p[0],self->ray_hit[1]-T_world_ee.p[1],self->ray_hit[2]-T_world_ee.p[2]; 
     std::cout << "RendererRobotPlan: Event is consumed" <<  std::endl;
     return 1;// consumed
   }
@@ -503,6 +520,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
+    //bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER,
                                    0, 1, 0.01, 1);    
@@ -517,6 +535,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm)
   	self->selection = new std::string(" ");
     self->marker_selection = new std::string(" ");  	
     self->is_left_in_motion =  true;
+    self->is_hand_in_motion =  true;
     self->visualize_bbox = false;
     
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
