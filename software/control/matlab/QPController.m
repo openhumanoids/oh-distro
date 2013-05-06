@@ -143,7 +143,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+%    out_tic = tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -544,9 +544,21 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-    out_toc=toc(out_tic);
-    fprintf('Output loop: %2.4f\n',out_toc);
-   
+    if (0)     % simple timekeeping for performance optimization
+      % note: also need to uncomment tic at very top of this method
+      out_toc=toc(out_tic);
+      persistent average_tictoc average_tictoc_n;
+      if isempty(average_tictoc)
+        average_tictoc = out_toc;
+        average_tictoc_n = 1;
+      else
+        average_tictoc = (average_tictoc_n*average_tictoc + out_toc)/(average_tictoc_n+1);
+        average_tictoc_n = average_tictoc_n+1;
+      end
+      if mod(average_tictoc_n,50)==0
+        fprintf('Average control output duration: %2.4f\n',average_tictoc);
+      end
+    end
   end
   end
 
