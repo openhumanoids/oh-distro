@@ -224,8 +224,8 @@
   </link>
   <link name="pelvis">
     <inertial>
-		<!-- include mass of imu_link "0.1" (SISIR, 3rd may) 12.54638+0.1-->
       <mass value="12.64638"/>
+      <!-- 0.1 added to adjust for IMU link -->
       <origin rpy="0 -0 0" xyz="0.0111 0 0.0271"/>
       <inertia ixx="0.0327037" ixy="0.0008" ixz="-0.0007" iyy="0.0174182" iyz="-0.0005" izz="0.118059"/>
     </inertial>
@@ -698,9 +698,7 @@
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-		<!--<mass value="3.111"/> --><!--w NEW HAND MASS VALUES -->
-		<mass value="2.312" />		<!--w OLD HAND MASS VALUES -->
-		<!--<mass value="3.1690"/> --><!-- CECILIA'S VALUE -->
+      <mass value="3.111"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -714,9 +712,7 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-		<!--<mass value="3.111"/> --><!--w NEW HAND MASS VALUES -->
-		<mass value="2.312" />		<!--w OLD HAND MASS VALUES -->
-		<!--<mass value="3.1690"/> --><!-- CECILIA'S VALUE -->
+      <mass value="3.111"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -880,18 +876,8 @@
   <link name="head">
     <inertial>
       <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
-      <!--<mass value="1.4199"/>
-      <inertia ixx="0.0039688" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.0041178" iyz="-6.8415E-07" izz="0.0035243"/> -->
-	  
-		<!-- values IN drcsim-2.5/gazebo_models/atlas_description/atlas_sandia_hands/atlas_sandia_hands.urdf -->
-		<!-- also including mass of
-		 "hokuyo_link" 
-		"head_hokuyo_frame" "left_camera_frame" "right_camera_frame" 
-		 "head_imu_link" "right_led_frame" "left_led_frame" "center_bottom_led_frame" "center_top_led_frame"
-		1.41984+0.057654+8*(1e-5) = 1.477574
-		-->	
-	  <mass value="1.477574"/> 
-      <inertia ixx="0.0036053766" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.002080106" iyz="-6.8415E-07" izz="0.001782985"/>
+      <mass value="1.477574"/>
+      <inertia ixx="0.0039688" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.0041178" iyz="-6.8415E-07" izz="0.0035243"/>
     </inertial>
     <visual>
       <origin rpy="0 0 1.570795" xyz="-0.0446 0 0.0880"/>

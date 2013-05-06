@@ -224,7 +224,8 @@
   </link>
   <link name="pelvis">
     <inertial>
-      <mass value="12.54638"/>
+      <mass value="12.64638"/>
+      <!-- 0.1 added to adjust for IMU link -->
       <origin rpy="0 -0 0" xyz="0.0111 0 0.0271"/>
       <inertia ixx="0.0327037" ixy="0.0008" ixz="-0.0007" iyy="0.0174182" iyz="-0.0005" izz="0.118059"/>
     </inertial>
@@ -837,7 +838,7 @@
   <link name="head">
     <inertial>
       <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
-      <mass value="1.4199"/>
+      <mass value="1.477574"/>
       <inertia ixx="0.0039688" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.0041178" iyz="-6.8415E-07" izz="0.0035243"/>
     </inertial>
     <visual>
