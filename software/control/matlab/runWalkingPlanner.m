@@ -42,9 +42,6 @@ while true
     while waiting
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
-        % get pelvis height above height map and adjust footstep heights
-        zmap = getTerrainHeight(r,x(1:2));
-        x(3) = x(3) - zmap;
         x0=x;
       end
        
@@ -52,10 +49,6 @@ while true
       if (~isempty(footsteps))
         msg ='Walking Planner: plan received'; disp(msg); send_status(3,0,0,msg);
         waiting = false;
-
-        for j = 1:length(footsteps)
-          footsteps(j).pos(3) = footsteps(j).pos(3) - zmap;
-        end
       end
     end
   end
@@ -67,7 +60,6 @@ while true
   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
   plan_pub = RobotPlanPublisher('atlas',joint_names,true,'CANDIDATE_ROBOT_PLAN');
 
-  xtraj(3,:) = xtraj(3,:) + zmap;
   plan_pub.publish(ts,xtraj);
 
   % if 0 % do proper time-varying linear system approach

@@ -191,7 +191,7 @@ classdef DRCController
       t_offset = -1;
       lcm_check_tic = tic;
       while (1)
-        tic;
+%         tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
           obj=checkPrecomputeResponses(obj);
           % check termination conditions and break if any are true        
@@ -278,7 +278,7 @@ classdef DRCController
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
           obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
         end
-        toc
+%         toc
       end
     end
   end

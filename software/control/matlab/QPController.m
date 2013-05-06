@@ -193,11 +193,6 @@ classdef QPController < MIMODrakeSystem
       end
     end
     
-    % get pelvis height above height map --- should probably use height
-    % above support foot here
-    terrain_height = getTerrainHeight(r,x(1:2));
-    x(3) = x(3)-terrain_height;
-      
     % use support trajectory to get desired foot contact state
     if typecheck(ctrl_data.supptraj,'double')
       supp = ctrl_data.supptraj;
@@ -231,8 +226,8 @@ classdef QPController < MIMODrakeSystem
     
     % get active contacts --- note, calling this with the z-adjusted state,
     % so phi returned isn't very useful 
-    [phi_shifted,Jz,D_] = contactConstraints(r,kinsol,desired_supports);
-    active_contacts = zeros(length(phi_shifted),1);
+    [phi,Jz,D_] = contactConstraints(r,kinsol,desired_supports);
+    active_contacts = zeros(length(phi),1);
 
     active_supports = [];
     % if any foot point is in contact, all contact points are active
@@ -300,7 +295,8 @@ classdef QPController < MIMODrakeSystem
       else
         % assumed  ZMP system
         hddot = 0; % could use estimated comddot here
-        D_ls = -xcom(3)/(hddot+9.81)*eye(2);  
+        D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
+        % or current height above height map
       end
       if typecheck(ctrl_data.S,'double')
         % ti-lqr case

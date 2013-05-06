@@ -70,8 +70,6 @@ classdef StandingController < DRCController
         r = obj.robot;
 
         x0 = data.AtlasState;
-				% get pelvis height above height map
-				x0(3) = x0(3)-getTerrainHeight(r,x0(1:2));
         q0 = x0(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
         com = getCOM(r,kinsol);
@@ -80,13 +78,15 @@ classdef StandingController < DRCController
         foot_pos = contactPositions(r,q0); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
-        limp = LinearInvertedPendulum(com(3));
+        zmap = getTerrainHeight(r,com(1:2));
+        robot_z = com(3)-zmap;
+        limp = LinearInvertedPendulum(robot_z);
         [~,V] = lqr(limp,comgoal);
 
         foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
         
         obj.controller_data.setField('S',V.S);
-        obj.controller_data.setField('D',-com(3)/9.81*eye(2));
+        obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('xlimp0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);

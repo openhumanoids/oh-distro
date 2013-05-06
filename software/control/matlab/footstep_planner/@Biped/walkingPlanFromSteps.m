@@ -12,7 +12,8 @@ zmptraj = setOutputFrame(zmptraj,desiredZMP);
 
 % construct ZMP feedback controller
 com = getCOM(biped,kinsol);
-limp = LinearInvertedPendulum(com(3));
+zmap = getTerrainHeight(biped,com(1:2));
+limp = LinearInvertedPendulum(com(3)-zmap);
 % get COM traj from desired ZMP traj
 comtraj = ZMPplanner(limp,com(1:2),[0;0],zmptraj);
 

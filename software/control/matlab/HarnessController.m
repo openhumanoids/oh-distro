@@ -64,6 +64,7 @@ classdef HarnessController < DRCController
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         q_nom = d.xstar(1:getNumDOF(obj.robot));
         q_nom([1,2,6]) = x([1,2,6]); % copy over pelvix x,y,yaw
+        q_nom(3) = x(3)-0.02; % z is harness pelvis height, which is slightly higher than standing pelvis height
         
         disp('HarnessController:publishing standing precompute request.');
         req_msg = drc.precompute_request_t();

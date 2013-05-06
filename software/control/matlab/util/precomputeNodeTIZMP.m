@@ -71,14 +71,16 @@ function controller_data = precomputeNodeTIZMP(r,req)
   foot_pos = contactPositions(r,q_nom); 
   ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
   comgoal = mean(foot_pos(1:2,ch),2);
-  limp = LinearInvertedPendulum(com(3));
+  zmap = getTerrainHeight(r,com(1:2));
+  robot_z = com(3)-zmap;
+  limp = LinearInvertedPendulum(robot_z);
   [~,V] = lqr(limp,comgoal);
 
   foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
 
-  controller_data = struct();
+  controller_data=struct();
   controller_data.S=V.S;
-  controller_data.h=com(3);
+  controller_data.h=robot_z;
   controller_data.hddot=0;
   controller_data.q_nom=q_nom;
   controller_data.support=foot_support;
