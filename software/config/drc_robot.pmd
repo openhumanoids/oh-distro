@@ -157,10 +157,6 @@ group "a.4.driving" {
         exec = "drc-driving-tracker";
         host = "robot";
     }
-    cmd "tld-segmenter" {
-        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
-        host = "robot";
-    }
     cmd "affordance_server -r robot" {
         exec = "affordance_server -r robot";
         host = "robot";
@@ -263,6 +259,10 @@ group "b.4.driving" {
     cmd "car-vis-local" {
        exec = "drc-car-quick-vis";
        host = "base";
+    }
+    cmd "tld-segmenter" {
+        exec = "drc-tld-segmenter -c CAMERALEFT_COMPRESSED";
+        host = "base";
     }
 }
 
