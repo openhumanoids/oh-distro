@@ -44,8 +44,7 @@
 
 
 
-  <!-- Stereo image processing and TF are not necessary-->
-<!--
+  <!-- Stereo image processing -->
   <node ns="sandia_hands/l_hand/camera" name="stereo_proc" pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen">
     <param name="disparity_range" type="int" value="128"/>
     <param name="approximate_sync" type="bool" value="false"/>
@@ -58,7 +57,8 @@
     <param name="disparity_range" type="int" value="128"/>
     <param name="approximate_sync" type="bool" value="false"/>
   </node>
-  <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
+<!-- TF is not necessary-->
+<!--  <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
     <param name="buffer_size" value="1200.0"/>
   </node>
 -->
