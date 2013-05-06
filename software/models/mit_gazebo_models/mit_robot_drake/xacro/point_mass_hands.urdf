@@ -2,7 +2,7 @@
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="3.1690"/>
+      <mass value="3.111"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -17,7 +17,7 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="3.1690"/>
+      <mass value="3.111"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
