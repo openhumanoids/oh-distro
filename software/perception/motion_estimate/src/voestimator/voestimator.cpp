@@ -151,6 +151,9 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   
 void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body){
   if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
+    std::cout << (int) pose_initialized_ << " pose\n";
+    std::cout << (int) vo_initialized_ << " vo\n";
+    std::cout << (int) zheight_initialized_ << " zheight\n\n";  
     std::cout << "pose, vo, zheight not initialized, refusing to publish POSE_HEAD nad POSE_BODY\n";
     return;
   }
@@ -242,6 +245,9 @@ Eigen::Isometry3d VoEstimator::extrapolateHeadRates(float d_time){
 
 void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg){
   if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
+    std::cout << (int) pose_initialized_ << " pose\n";
+    std::cout << (int) vo_initialized_ << " vo\n";
+    std::cout << (int) zheight_initialized_ << " zheight\n\n";  
     std::cout << "pose or vo or zheight not initialized, refusing to publish EST_ROBOT_STATE\n";
     return;
   }
