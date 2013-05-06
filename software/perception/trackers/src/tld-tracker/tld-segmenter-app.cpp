@@ -46,9 +46,11 @@ struct state_t {
     int64_t  img_utime;
 
     // UI selection of desired object
-    Rect selection, selection_virtual;
+    Rect selection, selection_virtual, tld_result;
     Point origin, origin_virtual;
     bool selectObject, selectObject_virtual;
+
+    perception_image_roi_t *tracking_result;
 
     state_t () {
         // LCM, BotFrames, BotParam inits
@@ -59,7 +61,7 @@ struct state_t {
         img_mutex = PTHREAD_MUTEX_INITIALIZER;
         // Counter for debug prints
         counter = 0; 
-
+        tracking_result = NULL;
         selectObject = false;
         selectObject_virtual = false;
     }
@@ -245,6 +247,28 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     return;
 }
 
+static void on_result_frame (const lcm_recv_buf_t *rbuf, const char *channel,
+                            const perception_image_roi_t *msg, 
+                            void *user_data ) {
+    pthread_mutex_lock(&state->img_mutex);
+    state_t* state = (state_t*) user_data; 
+
+    if(state->tracking_result != NULL){
+        perception_image_roi_t_destroy(state->tracking_result);
+    }
+    state->tracking_result = perception_image_roi_t_copy(msg);
+
+    state->tld_result.x = msg->roi.x; //MIN(msg->roi.x, state->origin.x);
+    state->tld_result.y = msg->roi.y;//MIN(msg->roi.y, state->origin.y);
+
+    state->tld_result.width = msg->roi.width;
+    state->tld_result.height = msg->roi.height;
+    state->tld_result &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    pthread_mutex_unlock(&state->img_mutex);
+    return;
+}
+
 struct TLDSegmenterOptions { 
     bool vDEBUG;
     std::string vCHANNEL;
@@ -252,6 +276,7 @@ struct TLDSegmenterOptions {
     TLDSegmenterOptions () : 
         vCHANNEL(std::string("CAMERALEFT")), vDEBUG(false) {}
 };
+
 TLDSegmenterOptions options;
 
 int main(int argc, char** argv)
@@ -284,7 +309,8 @@ int main(int argc, char** argv)
 
     // Subscriptions
     bot_core_image_t_subscribe(state->lcm, options.vCHANNEL.c_str(), on_image_frame, (void*)state);
-    
+    perception_image_roi_t_subscribe(state->lcm, "TLD_OBJECT_ROI_RESULT", on_result_frame, (void*)state);
+
     // Install signal handler to free data.
     signal(SIGINT, INThandler);
 
@@ -318,6 +344,12 @@ int main(int argc, char** argv)
                 
                 cv::Mat roi(display, state->selection_virtual);
                 rectangle(display, state->selection_virtual, cv::Scalar(0,255,0), 2);
+                // bitwise_not(roi, roi);
+            }
+
+            if (state->tld_result.width > 0 && state->tld_result.height > 0) {
+                cv::Mat roi(display, state->tld_result);
+                rectangle(display, state->tld_result, cv::Scalar(0,0,255), 2);
                 // bitwise_not(roi, roi);
             }
 

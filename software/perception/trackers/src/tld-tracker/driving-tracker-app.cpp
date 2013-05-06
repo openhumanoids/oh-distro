@@ -322,6 +322,18 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
                 bot_lcmgl_vertex3f(state->lcmgl, p1l[0], p1l[1], p1l[2]);
             }
 
+            perception_image_roi_t roi_msg;
+
+            roi_msg.utime = state->img_utime;
+            roi_msg.object_id = 0;
+            roi_msg.feature_id = 0;
+
+            roi_msg.roi.x = currBB.x;
+            roi_msg.roi.y = currBB.y;
+            roi_msg.roi.width = currBB.width;
+            roi_msg.roi.height = currBB.height;
+            perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI_RESULT", &roi_msg);
+
             perception_pointing_vector_t_publish(state->lcm, "OBJECT_BEARING", &bearing_vec);
         }
 
