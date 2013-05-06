@@ -10,7 +10,7 @@ function Xo = footContact2Orig(biped, Xc, group_name, is_right_foot)
 	offs = biped.foot_contact_offsets.(foot_name).(group_name);
 
 	for j = 1:length(Xc(1,:))
-    M = rpy2rotmat(Xo(4:6,j));
+    M = rpy2rotmat(Xc(4:6,j));
     d = M * offs;
 % 		M = makehgtform('xrotate', Xc(4, j), 'yrotate', Xc(5, j), 'zrotate', Xc(6, j));
 % 		d = M * [offs; 1];
