@@ -192,16 +192,17 @@
       <!-- see MultiSenseSLPlugin.h for available modes -->
       <update_rate>30.0</update_rate>
       <camera name="left">
-        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- Spec sheet says 80deg X 45deg @ 1024x544pix.  Based on feedback
+             from teams, we're instead doing 80deg X 80deg @ 800x800pix. -->
         <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>1024</width>
-          <height>544</height>
+          <width>800</width>
+          <height>800</height>
           <format>R8G8B8</format>
         </image>
         <clip>
           <near>0.02</near>
-          <far>100</far>
+          <far>300</far>
         </clip>
         <noise>
           <type>gaussian</type>
@@ -217,16 +218,17 @@
       </camera>
       <camera name="right">
         <pose>0 -0.07 0 0 0 0</pose>
-        <!-- hfov based on spec sheet, 80 degrees X 45 degrees -->
+        <!-- Spec sheet says 80deg X 45deg @ 1024x544pix.  Based on feedback
+             from teams, we're instead doing 80deg X 80deg @ 800x800pix. -->
         <horizontal_fov>1.3962634</horizontal_fov>
         <image>
-          <width>1024</width>
-          <height>544</height>
+          <width>800</width>
+          <height>800</height>
           <format>R8G8B8</format>
         </image>
         <clip>
           <near>0.02</near>
-          <far>100</far>
+          <far>300</far>
         </clip>
         <noise>
           <type>gaussian</type>
