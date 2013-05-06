@@ -7,9 +7,16 @@ options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 load('data/atlas_fp.mat');
-load('data/aa_step_in_2013_05_05_0920.mat');
+load('data/aa_step_in.mat');
 t_qs_breaks = t_qs_breaks*scale_t;
-foot_support_qs([1:20,22:32,34:end],:)=0;
+if size(foot_support_qs,1) == 35
+  foot_support_qs(1:5,:) = [];
+end
+l_foot_ind = r.findLinkInd('l_foot');
+r_foot_ind = r.findLinkInd('r_foot');
+not_feet_ind = (1:r.getNumBodies ~= l_foot_ind) &...
+               (1:r.getNumBodies ~= r_foot_ind);
+foot_support_qs(not_feet_ind,:)=0;
 
 state_frame = getStateFrame(r);
 state_frame.subscribe('TRUE_ROBOT_STATE');
