@@ -157,6 +157,7 @@ public:
   void onPixelMap(const lcm::ReceiveBuffer* iBuf,
                   const std::string& iChannel,
                   const occ_map::pixel_map_t* iMessage) {
+    // TODO: this assumes float type
     // TODO: pixel map should support c++ lcm type
     // for now transcode to c type
     int encodedSize = iMessage->getEncodedSize();
@@ -176,6 +177,7 @@ public:
                              sizeof(float)*mPixelMap->dimensions[0],
                              bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32,
                              (uint8_t*)mPixelMap->data, xform);
+    requestDraw();
   }
 
   void setupWidgets() {

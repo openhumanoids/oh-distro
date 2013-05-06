@@ -566,6 +566,8 @@ draw() {
     glPixelMapfv(GL_PIXEL_MAP_I_TO_R, numColors, &rMap[0]);
     glPixelMapfv(GL_PIXEL_MAP_I_TO_G, numColors, &gMap[0]);
     glPixelMapfv(GL_PIXEL_MAP_I_TO_B, numColors, &bMap[0]);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     // draw texture
     int width = mState->mTextureImage.width;
