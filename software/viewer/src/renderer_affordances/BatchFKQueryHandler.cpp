@@ -151,7 +151,7 @@ namespace renderer_affordances
     }
     else
     {
-      cerr <<"ERROR: parent dof for link: "<< link_name << "  " << it->second->parent_joint->name  << "was never set in BatchFK"<< endl;
+      //cerr <<"ERROR: parent dof for link: "<< link_name << "  " << it->second->parent_joint->name  << " was never set in BatchFK"<< endl;
       return false;
     }    
  

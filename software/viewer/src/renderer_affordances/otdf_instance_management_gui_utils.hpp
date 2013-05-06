@@ -203,7 +203,7 @@ namespace renderer_affordances_gui_utils
             // e.g two right sticky hands on the same object.
             map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
             if(ee_it!=ee_frames_map.end()){
-              cerr<<" ERROR: Cannot of two seeds of the same ee. Please consider deleting redundant seeds\n";
+              cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
               return;   
             }
           
@@ -217,33 +217,34 @@ namespace renderer_affordances_gui_utils
             self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
             std::string dof_name;
             vector<double> dof_values;  
-            if(!self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values))
-            {
-              cerr << "ERROR in getAssociatedDoFNameAndVal \n";
-              return;
-            }
+            bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
             
-            int num_of_incs = T_world_geometry_frames.size();
-            vector<KDL::Frame> T_world_ee_frames;
-            vector<drc::affordance_index_t> frame_affindices;
-            for(size_t i=0;i<(size_t)num_of_incs;i++){
-              KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-              T_world_ee_frames.push_back(T_world_ee);
-              drc::affordance_index_t aff_index;
-              aff_index.utime=(int64_t)i;
-              aff_index.aff_type = it->second.otdf_type; 
-              aff_index.aff_uid = it->second.uid;   
-              aff_index.num_ees =1;  
-              aff_index.ee_name.push_back(ee_name); 
-              aff_index.dof_name.push_back(dof_name);     
-              aff_index.dof_value.push_back(dof_values[i]); 
-        
-              frame_affindices.push_back(aff_index);
-            } 
-           ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-           ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));   
+            if(isdofset) // dof range was set
+            {
+              int num_of_incs = T_world_geometry_frames.size();
+              vector<KDL::Frame> T_world_ee_frames;
+              vector<drc::affordance_index_t> frame_affindices;
+              for(size_t i=0;i<(size_t)num_of_incs;i++)
+              {
+                KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
+                T_world_ee_frames.push_back(T_world_ee);
+                drc::affordance_index_t aff_index;
+                aff_index.utime=(int64_t)i;
+                aff_index.aff_type = it->second.otdf_type; 
+                aff_index.aff_uid = it->second.uid;   
+                aff_index.num_ees =1;  
+                aff_index.ee_name.push_back(ee_name); 
+                aff_index.dof_name.push_back(dof_name);     
+                aff_index.dof_value.push_back(dof_values[i]); 
+
+                frame_affindices.push_back(aff_index);
+              } 
+              ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+              ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));   
+            }// ebd if dofset
+            
          } // end if (host_name == (it->first))
-      }
+      }// end for sticky hands
         
        // Publish EE Range goals for associated stick feet 
      typedef map<string, StickyFootStruc > sticky_feet_map_type_;
@@ -265,13 +266,13 @@ namespace renderer_affordances_gui_utils
             // e.g two right sticky hands on the same object.
             map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
             if(ee_it!=ee_frames_map.end()){
-              cerr<<" ERROR: Cannot of two seeds of the same ee. Please consider deleting redundant seeds\n";
+              cerr<<" ERROR: Cannot have two seeds of the same ee on the same affordance. Please consider deleting redundant seeds\n";
               return;   
             }      
           
             KDL::Frame  T_geometry_ee = KDL::Frame::Identity(); 
             if(!foot_it->second._gl_foot->get_link_frame(ee_name,T_geometry_ee))
-                cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+                cout <<"ERROR: ee link "<< ee_name << " not found in sticky foot urdf"<< endl;
          
          
             vector<KDL::Frame> T_world_geometry_frames;
@@ -279,35 +280,34 @@ namespace renderer_affordances_gui_utils
             self->dofRangeFkQueryHandler->getLinkFrames(seed_geometry_name,T_world_geometry_frames);
             std::string dof_name;
             vector<double> dof_values;  
-            if(!self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values))
+            bool isdofset =self->dofRangeFkQueryHandler->getAssociatedDoFNameAndVal(seed_geometry_name,dof_name,dof_values);
+            if(isdofset) // dof range was set
             {
-              cerr << "ERROR in getAssociatedDoFNameAndVal \n";
-              return;
-            }
-
-            int num_of_incs = T_world_geometry_frames.size();
-            vector<KDL::Frame> T_world_ee_frames;
-            vector<drc::affordance_index_t> frame_affindices;
-            for(size_t i=0;i<(size_t)num_of_incs;i++){
-              KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
-              T_world_ee_frames.push_back(T_world_ee);
+              int num_of_incs = T_world_geometry_frames.size();
+              vector<KDL::Frame> T_world_ee_frames;
+              vector<drc::affordance_index_t> frame_affindices;
+              for(size_t i=0;i<(size_t)num_of_incs;i++){
+                KDL::Frame  T_world_ee = T_world_geometry_frames[i]*T_geometry_ee;     
+                T_world_ee_frames.push_back(T_world_ee);
+                
+                drc::affordance_index_t aff_index;
+                aff_index.utime=(int64_t)i;
+                aff_index.aff_type = it->second.otdf_type; 
+                aff_index.aff_uid = it->second.uid; 
+                aff_index.num_ees =1; 
+                aff_index.ee_name.push_back(ee_name); 
+                aff_index.dof_name.push_back(dof_name);     
+                aff_index.dof_value.push_back(dof_values[i]); 
+                frame_affindices.push_back(aff_index);
+              } 
               
-              drc::affordance_index_t aff_index;
-              aff_index.utime=(int64_t)i;
-              aff_index.aff_type = it->second.otdf_type; 
-              aff_index.aff_uid = it->second.uid; 
-              aff_index.num_ees =1;  
-              aff_index.ee_name.push_back(ee_name); 
-              aff_index.dof_name.push_back(dof_name);     
-              aff_index.dof_value.push_back(dof_values[i]); 
-              frame_affindices.push_back(aff_index);
-            } 
-            
-           ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
-           ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices));    
-         }
+             ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+             ee_frame_affindices_map.insert(make_pair(ee_name, frame_affindices)); 
+           } // end if isdofset  
+         } // end if (host_name == (it->first))
       
-      } 
+      } // end sticky feet
+
       
    string channel  ="DESIRED_MANIP_MAP_EE_LOCI"; 
    publish_aff_indexed_traj_opt_constraint(channel, ee_frames_map, ee_frame_affindices_map, self);
