@@ -150,69 +150,69 @@
                </script>
             </material>
          </visual>
-         <!--<collision name="seat">-->
-            <!--<pose>-0.1 0.0 0.560  0 0 0</pose> -->
-            <!--<geometry>-->
-               <!--<box>-->
-                  <!--<size>0.6 1.22 0.50</size>-->
-               <!--</box>-->
-            <!--</geometry>-->
-            <!--<surface>-->
-               <!--<contact>-->
-                  <!--<ode>-->
-                     <!--<min_depth>0.01</min_depth>-->
-                  <!--</ode>-->
-               <!--</contact>-->
-            <!--</surface>-->
-         <!--</collision>-->
-         <!--<visual name="seat">-->
-            <!--<pose>-0.1 0.0 0.560  0 0 0</pose>-->
-            <!--<geometry>-->
-               <!--<box>-->
-                  <!--<size>0.6 1.22 0.50</size>-->
-               <!--</box>-->
-            <!--</geometry>-->
-            <!--<material>-->
-               <!--<script>-->
-                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
-                  <!--<name>Gazebo/Wood</name>-->
-               <!--</script>-->
-            <!--</material>-->
-         <!--</visual>-->
-         <!--<collision name="mud_seat">-->
-            <!--<pose>-0.1 0.0 0.81  0 0 0</pose> -->
-            <!--<geometry>-->
-               <!--<box>-->
-                  <!--<size>0.6 1.15 0.1</size>-->
-               <!--</box>-->
-            <!--</geometry>-->
-            <!--<surface>-->
-               <!--<contact>-->
-                  <!--<collide_without_contact>true</collide_without_contact>-->
-               <!--</contact>-->
-            <!--</surface>-->
-         <!--</collision>-->
-         <!--<visual name="mud_seat">-->
-            <!--<pose>-0.1 0.0 0.81  0 0 0</pose>-->
-            <!--<geometry>-->
-               <!--<box>-->
-                  <!--<size>0.6 1.15 0.1</size>-->
-               <!--</box>-->
-            <!--</geometry>-->
-            <!--<material>-->
-               <!--<script>-->
-                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
-                  <!--<name>Gazebo/Wood</name>-->
-               <!--</script>-->
-            <!--</material>-->
-         <!--</visual>-->
-         <!--<sensor name="seat_contact" type="contact">-->
-            <!--<always_on>true</always_on>-->
-            <!--<update_rate>1000</update_rate>-->
-            <!--<contact>-->
-               <!--<collision>mud_seat</collision>-->
-            <!--</contact>-->
-         <!--</sensor>-->
+         <collision name="seat">
+            <pose>-0.1 0.0 0.560  0 0 0</pose> 
+            <geometry>
+               <box>
+                  <size>0.6 1.22 0.50</size>
+               </box>
+            </geometry>
+            <surface>
+               <contact>
+                  <ode>
+                     <min_depth>0.01</min_depth>
+                  </ode>
+               </contact>
+            </surface>
+         </collision>
+         <visual name="seat">
+            <pose>-0.1 0.0 0.560  0 0 0</pose>
+            <geometry>
+               <box>
+                  <size>0.6 1.22 0.50</size>
+               </box>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
+         <collision name="mud_seat">
+            <pose>-0.1 0.0 0.81  0 0 0</pose> 
+            <geometry>
+               <box>
+                  <size>0.6 1.15 0.1</size>
+               </box>
+            </geometry>
+            <surface>
+               <contact>
+                  <collide_without_contact>true</collide_without_contact>
+               </contact>
+            </surface>
+         </collision>
+         <visual name="mud_seat">
+            <pose>-0.1 0.0 0.81  0 0 0</pose>
+            <geometry>
+               <box>
+                  <size>0.6 1.15 0.1</size>
+               </box>
+            </geometry>
+            <material>
+               <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Wood</name>
+               </script>
+            </material>
+         </visual>
+         <sensor name="seat_contact" type="contact">
+            <always_on>true</always_on>
+            <update_rate>1000</update_rate>
+            <contact>
+               <collision>mud_seat</collision>
+            </contact>
+         </sensor>
          <collision name="seat_back">
             <pose>-0.3 0.0 1.125 0.0 -0.2 0.0</pose> 
             <geometry>
@@ -235,28 +235,28 @@
                </script>
             </material>
          </visual>
-         <collision name="engine">
-            <pose>1.05 0.0 0.7 0.0 0.0 0.0</pose> 
-            <geometry>
-               <box>
-                  <size>0.58 1.0 0.8</size>
-               </box>
-            </geometry>
-         </collision>
-         <visual name="engine">
-            <pose>1.05 0.0 0.7 0.0 0.0 0.0</pose>
-            <geometry>
-               <box>
-                  <size>0.58 1.0 0.8</size>
-               </box>
-            </geometry>
-            <material>
-               <script>
-                  <uri>file://media/materials/scripts/gazebo.material</uri>
-                  <name>Gazebo/Wood</name>
-               </script>
-            </material>
-         </visual>
+         <!--<collision name="engine">-->
+            <!--<pose>1.05 0.0 0.7 0.0 0.0 0.0</pose> -->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.58 1.0 0.8</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+         <!--</collision>-->
+         <!--<visual name="engine">-->
+            <!--<pose>1.05 0.0 0.7 0.0 0.0 0.0</pose>-->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.58 1.0 0.8</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<material>-->
+               <!--<script>-->
+                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
+                  <!--<name>Gazebo/Wood</name>-->
+               <!--</script>-->
+            <!--</material>-->
+         <!--</visual>-->
          <!-- Begin simple collision shapes for entry/exit handles -->
       <!--collision name="handle_left_top">
         <pose>-0.23 0.61 1.175  0 -1.32 0</pose>
@@ -839,87 +839,87 @@
       </visual-->
     </link>
 
-      <link name="hand_brake">
-         <pose>0.50 0.00 1.05 0.0 3.2 0.0</pose> 
-         <inertial>
-            <mass>1.0</mass>
-            <pose>0 0 -0.15 0 0 0</pose>
-            <inertia>
-               <ixx>0.1</ixx>
-               <ixy>0</ixy>
-               <ixz>0</ixz>
-               <iyy>0.1</iyy>
-               <iyz>0</iyz>
-               <izz>1.0</izz>
-            </inertia>
-         </inertial>
-         <collision name="hand_brake_collision">
-            <pose>0 0 -0.10 0 0 0</pose>
-            <geometry>
-               <cylinder>
-                  <radius>0.01</radius>
-                  <length>0.2</length>
-               </cylinder>
-            </geometry>
-         </collision>
-         <visual name="hand_brake_collision">
-            <pose>0 0 -0.10 0 0 0</pose>
-            <geometry>
-               <cylinder>
-                  <radius>0.01</radius>
-                  <length>0.2</length>
-               </cylinder>
-            </geometry>
-            <material>
-               <script>
-                  <uri>file://media/materials/scripts/gazebo.material</uri>
-                  <name>Gazebo/Wood</name>
-               </script>
-            </material>
-         </visual>
+      <!--<link name="hand_brake">-->
+         <!--<pose>0.50 0.00 1.05 0.0 3.2 0.0</pose> -->
+         <!--<inertial>-->
+            <!--<mass>1.0</mass>-->
+            <!--<pose>0 0 -0.15 0 0 0</pose>-->
+            <!--<inertia>-->
+               <!--<ixx>0.1</ixx>-->
+               <!--<ixy>0</ixy>-->
+               <!--<ixz>0</ixz>-->
+               <!--<iyy>0.1</iyy>-->
+               <!--<iyz>0</iyz>-->
+               <!--<izz>1.0</izz>-->
+            <!--</inertia>-->
+         <!--</inertial>-->
+         <!--<collision name="hand_brake_collision">-->
+            <!--<pose>0 0 -0.10 0 0 0</pose>-->
+            <!--<geometry>-->
+               <!--<cylinder>-->
+                  <!--<radius>0.01</radius>-->
+                  <!--<length>0.2</length>-->
+               <!--</cylinder>-->
+            <!--</geometry>-->
+         <!--</collision>-->
+         <!--<visual name="hand_brake_collision">-->
+            <!--<pose>0 0 -0.10 0 0 0</pose>-->
+            <!--<geometry>-->
+               <!--<cylinder>-->
+                  <!--<radius>0.01</radius>-->
+                  <!--<length>0.2</length>-->
+               <!--</cylinder>-->
+            <!--</geometry>-->
+            <!--<material>-->
+               <!--<script>-->
+                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
+                  <!--<name>Gazebo/Wood</name>-->
+               <!--</script>-->
+            <!--</material>-->
+         <!--</visual>-->
          
-      </link>
+      <!--</link>-->
 
-      <link name="FNR_switch">
-         <pose>0.56 0.05 1.08  0 0.25 0</pose> 
-         <inertial>
-            <mass>0.1</mass>
-            <inertia>
-          <!-- constrained about x axis -->
-          <!--ixx>0.00002</ixx-->
-          <ixx>0.1</ixx>
-               <ixy>0</ixy>
-               <ixz>0</ixz>
-               <iyy>0.00006</iyy>
-               <iyz>0</iyz>
-               <!-- constrained about z axis -->
-          <!--izz>0.00007</izz-->
-          <izz>0.1</izz>
-            </inertia>
-         </inertial>
-         <collision name="FNR_switch">
-            <geometry>
-               <box>
-                  <size>0.02 0.04 0.08</size>
-               </box>
-            </geometry>
-         </collision>
-         <visual name="FNR_switch">
-            <geometry>
-               <box>
-                  <size>0.02 0.04 0.08</size>
-               </box>
-            </geometry>
-            <material>
-               <script>
-                  <uri>file://media/materials/scripts/gazebo.material</uri>
-                  <name>Gazebo/Wood</name>
-               </script>
-            </material>
-         </visual>
+      <!--<link name="FNR_switch">-->
+         <!--<pose>0.56 0.05 1.08  0 0.25 0</pose> -->
+         <!--<inertial>-->
+            <!--<mass>0.1</mass>-->
+            <!--<inertia>-->
+          <!--[> constrained about x axis <]-->
+          <!--[>ixx>0.00002</ixx<]-->
+          <!--<ixx>0.1</ixx>-->
+               <!--<ixy>0</ixy>-->
+               <!--<ixz>0</ixz>-->
+               <!--<iyy>0.00006</iyy>-->
+               <!--<iyz>0</iyz>-->
+               <!--[> constrained about z axis <]-->
+          <!--[>izz>0.00007</izz<]-->
+          <!--<izz>0.1</izz>-->
+            <!--</inertia>-->
+         <!--</inertial>-->
+         <!--<collision name="FNR_switch">-->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.02 0.04 0.08</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+         <!--</collision>-->
+         <!--<visual name="FNR_switch">-->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.02 0.04 0.08</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<material>-->
+               <!--<script>-->
+                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
+                  <!--<name>Gazebo/Wood</name>-->
+               <!--</script>-->
+            <!--</material>-->
+         <!--</visual>-->
          
          
-      </link>
+      <!--</link>-->
 
       <joint type="revolute" name="front_left_steering_joint">
          <child>front_left_wheel_steering_block</child>
@@ -1053,44 +1053,44 @@
             </limit>
          </axis>
       </joint>
-      <joint name="hand_brake_joint" type="revolute">
-         <parent>chassis</parent>
-         <child>hand_brake</child>
-         <axis>
-            <xyz>0.0 -1.0 0.0</xyz>
-            <limit>
-               <lower>0</lower>
-               <upper>0.6</upper>
-            </limit>
-            <dynamics>
-               <damping>3.0</damping>
-            </dynamics>
-         </axis>
-        <physics>
-            <ode>
-               <cfm_damping>1</cfm_damping>
-            </ode>
-        </physics>
-      </joint>
-      <joint name="FNR_switch_joint" type="revolute">
-         <parent>chassis</parent>
-         <child>FNR_switch</child>
-         <axis>
-            <xyz>0.0 -1.0 0.0</xyz>
-            <limit>
-               <lower>-0.3</lower>
-               <upper>0.3</upper>
-            </limit>
-            <dynamics>
-               <damping>0.1</damping>
-            </dynamics>
-         </axis>
-        <physics>
-            <ode>
-               <cfm_damping>1</cfm_damping>
-            </ode>
-        </physics>
-      </joint>
+      <!--<joint name="hand_brake_joint" type="revolute">-->
+         <!--<parent>chassis</parent>-->
+         <!--<child>hand_brake</child>-->
+         <!--<axis>-->
+            <!--<xyz>0.0 -1.0 0.0</xyz>-->
+            <!--<limit>-->
+               <!--<lower>0</lower>-->
+               <!--<upper>0.6</upper>-->
+            <!--</limit>-->
+            <!--<dynamics>-->
+               <!--<damping>3.0</damping>-->
+            <!--</dynamics>-->
+         <!--</axis>-->
+        <!--<physics>-->
+            <!--<ode>-->
+               <!--<cfm_damping>1</cfm_damping>-->
+            <!--</ode>-->
+        <!--</physics>-->
+      <!--</joint>-->
+      <!--<joint name="FNR_switch_joint" type="revolute">-->
+         <!--<parent>chassis</parent>-->
+         <!--<child>FNR_switch</child>-->
+         <!--<axis>-->
+            <!--<xyz>0.0 -1.0 0.0</xyz>-->
+            <!--<limit>-->
+               <!--<lower>-0.3</lower>-->
+               <!--<upper>0.3</upper>-->
+            <!--</limit>-->
+            <!--<dynamics>-->
+               <!--<damping>0.1</damping>-->
+            <!--</dynamics>-->
+         <!--</axis>-->
+        <!--<physics>-->
+            <!--<ode>-->
+               <!--<cfm_damping>1</cfm_damping>-->
+            <!--</ode>-->
+        <!--</physics>-->
+      <!--</joint>-->
 
   </model>
 </sdf>
