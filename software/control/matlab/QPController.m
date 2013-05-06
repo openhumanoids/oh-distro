@@ -73,7 +73,7 @@ classdef QPController < MIMODrakeSystem
       sizecheck(options.debug,1);
       obj.debug = options.debug;
     else
-      obj.debug = true;
+      obj.debug = false;
     end
 
     % specifies whether or not to solve QP for all DOFs or just the
@@ -476,11 +476,6 @@ classdef QPController < MIMODrakeSystem
       zmppos = xcom(1:2) + D_ls * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
       plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
-      
-      cpos
-      active_contacts
-      
-      cpos=cpos(:,active_contacts);
       
       [cheight,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
