@@ -128,6 +128,11 @@ classdef QPController < MIMODrakeSystem
       obj.solver_options.qpmethod = 4; 
       
     else % use gurobi
+
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      
       obj.solver_options.outputflag = 0; % not verbose
       obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
       obj.solver_options.presolve = 0;
@@ -447,6 +452,11 @@ classdef QPController < MIMODrakeSystem
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
       alpha = result.x;
+      
+%      solver_options = obj.solver_options
+%      save QPmex.mat model solver_options alpha;
+%      alphamex = QPControllermex(model,obj.solver_options);
+%      valuecheck(alpha,alphamex);
     end
     
     %----------------------------------------------------------------------

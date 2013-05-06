@@ -60,36 +60,39 @@ make;
 
 cd(p);
 
-mex src/lcmTest.cpp -llcm
-
 %% build drc drake mexfiles
 
-[~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
-incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
+if (1) % build maps
+  [~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
+  incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
+  
+  [~,libs]=system('pkg-config --libs maps eigen3 lcm');
+  libs = strrep(libs,'-pthread','');%-lpthread');
+  
+  cmdstr = ['mex -v src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  %cmdstr = ['mex -v src/mapAPIwrapper.cpp LDFLAGS=''\$LDFLAGS -static-libstdc++'' -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  disp(cmdstr);
+  eval(cmdstr);
+  
+  cmdstr = ['mex -v src/MapWrapperRobot.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  disp(cmdstr);
+  eval(cmdstr);
+  
+  cmdstr = ['mex -v src/bot_timestamp_now.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
+  disp(cmdstr);
+  eval(cmdstr);
+end
 
-[~,libs]=system('pkg-config --libs maps eigen3 lcm');
-libs = strrep(libs,'-pthread','');%-lpthread');
-
-%% link statically against libstdc++ (to avoid the matlab version found at runtime
-%[~,libgcc] = system('gcc -print-libgcc-file-name');
-%libgccpath = fileparts(libgcc);
-%libs = strrep(libs,'-lstdc++','');
-
-%libs = [fullfile(libgccpath,'libstdc++.so'),' ',libs];  
-
-				      
-cmdstr = ['mex -v src/mapAPIwrapper.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-%cmdstr = ['mex -v src/mapAPIwrapper.cpp LDFLAGS=''\$LDFLAGS -static-libstdc++'' -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-disp(cmdstr);
-eval(cmdstr);
-
-cmdstr = ['mex -v src/MapWrapperRobot.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-disp(cmdstr);
-eval(cmdstr);
-
-cmdstr = ['mex -v src/bot_timestamp_now.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',incs,' ',libs];
-disp(cmdstr);
-eval(cmdstr);
+if strcmpi(getenv('USER'),'russt') && ismac   % sorry... :)
+  gurobi_os_dir = '/Library/gurobi510/mac64';
+  args = {'-largeArrayDims', ...
+	['-I',fullfile(gurobi_os_dir,'/include')], ...
+	['-L',fullfile(gurobi_os_dir,'lib')],...
+	'-lgurobi51'};
+  cmdstr = ['mex -g src/QPControllermex.cpp -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
+  disp(cmdstr);
+  eval(cmdstr);
+end
 
 end
 
