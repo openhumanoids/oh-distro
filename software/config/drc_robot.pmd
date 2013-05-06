@@ -385,6 +385,11 @@ group "m.2.simple-control" {
 }
 
 group "m.3.dev_tools" {
+    cmd "enable_gravity_when_pinned" {
+        exec = "rostopic pub atlas/mode std_msgs/String 'pinned_with_gravity'";
+        host = "robot";
+    }
+
     cmd "teleport_to_steps" {
         exec = "rostopic pub /atlas/set_pose geometry_msgs/Pose '[-3.5, 12.5, 1.55]' '[0, 0, 0, 1]'";
         host = "robot";
@@ -513,6 +518,7 @@ script "dev.qual_2" {
     wait ms 10000;
     start cmd "gz_quals_2";    
     wait ms 5000;  
+    start cmd "enable_gravity_when_pinned"; 
 }
 script "dev.qual_3" { 
     start group "0.development";
