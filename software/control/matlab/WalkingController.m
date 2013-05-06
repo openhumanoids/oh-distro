@@ -31,6 +31,18 @@ classdef WalkingController < DRCController
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
       
+      % cascade footstep replanner 
+      fs = FootstepReplanner(r,ctrl_data);
+      ins(1).system = 1;
+      ins(1).input = 1;
+      ins(2).system = 2;
+      ins(2).input = 2;
+      outs(1).system = 2;
+      outs(1).output = 1;
+      connection.from_output = 1;
+      connection.to_input = 1;
+      sys = mimoCascade(fs,sys,connection,ins,outs);
+      
       obj = obj@DRCController(name,sys);
 
       obj.controller_data = ctrl_data;
