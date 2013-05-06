@@ -15,6 +15,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     terrain_step_threshold
     r_foot_name
     l_foot_name
+    foot_bodies
     lc
   end
   
@@ -50,10 +51,11 @@ classdef Biped < TimeSteppingRigidBodyManipulator
           obj.(fields{i}) = options.(fields{i});
         end
       end
-      
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.foot_contact_offsets = obj.findContactOffsets();
+      obj.foot_bodies = struct('right', findLink(obj, obj.r_foot_name),...
+                            'left', findLink(obj, obj.l_foot_name));
     end
     
     function X = planFootsteps(obj, x0, navgoal, options)
