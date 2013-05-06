@@ -578,7 +578,7 @@ script "dev.mit_manip" {
 
 script "dev.ingress" { 
     start group "0.development";
-    start group "b.1.core";
+    start group "a.1.core";
     start group "a.6.ingress";
     wait ms 10000;
     start cmd "gz_mit_ingress_slow"; 
