@@ -45,7 +45,7 @@ struct CommandLineConfig
     std::string role;
     bool verbose;
 };
-    
+
 
 ///////////////////////////////////////////////////////////////
 class KMCLApp{

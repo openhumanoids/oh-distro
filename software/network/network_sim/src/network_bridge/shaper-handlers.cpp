@@ -13,10 +13,7 @@
 #include "goby/acomms/amac.h"
 #include "goby/acomms/dccl.h"
 
-#include "network-bridge.h"
-#include "shaper-packet.pb.h"
-
-#include "ldpc/ldpc_wrapper.h"
+#include "shaper-handlers.h"
 
 using namespace boost; 
 using namespace std;
@@ -24,200 +21,7 @@ using namespace std;
 using goby::glog;
 using namespace goby::common::logger;
 
-enum { RECEIVE_MODULUS = 16 };    
-enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };
 
-enum Node { BASE = 1, ROBOT = 2};
-
-struct MessageQueue
-{
-    MessageQueue(const std::string& ch,
-                 int buffer_size,
-                 const std::vector<char>& initial_msg,
-                 bool is_on_demand = false)
-        : message_count(0),
-          channel(ch),
-          messages(buffer_size, 1, initial_msg),
-          on_demand(is_on_demand)
-        {
-            
-        }
-
-    int message_count;
-    std::string channel;
-    boost::circular_buffer< std::vector<char> > messages;
-    bool on_demand;
-};
-
-
-struct DataUsage
-{
-    DataUsage() : queued_msgs(0),
-                  queued_bytes(0),
-                  sent_bytes(0),
-                  received_bytes(0) 
-        { }
-        
-    int queued_msgs; // number of queued messaged
-    int queued_bytes; // sum of the total number of LCM bytes of this message type queued for transmission
-
-    int sent_bytes; // sum of the total number of bytes of this message type transmitted. Does *not* include overhead of UDP or IPv4, so it should be an accurate count of the bytes counted by DARPA
-    int received_bytes; // sum of the total number of bytes of this message type received. Does *not* include overhead of UDP or IPv4. If packets are dropped, this may be less than the total sent.
-};
-
-
-std::string DebugStringNoData(const drc::ShaperPacket& a)
-{
-    std::string s = a.ShortDebugString();
-    return s.substr(0, s.find("data:")) + " data.size(): " + goby::util::as<std::string>(a.data().length());    
-}
-
-template<typename Char>
-unsigned int xor_cs(const std::vector<Char>& data)
-{
-    unsigned char cs = 0;
-    for(typename std::vector<Char>::const_iterator it = data.begin(), end = data.end();
-        it != end; ++it)
-        cs ^= *it;
-    return cs;
-}
-
-// rounds down to the closest highest power of 2
-unsigned int floor_multiple_sixteen(unsigned int v)
-{
-    unsigned int lg = (v / 16)*16;
-    return lg;
-}
-
-void check_rc(int rc)
-{
-    if(rc == -1)
-        glog.is(WARN) && glog << group("publish") << "Error: LCM publish failed!" << std::endl;
-}
-
-namespace drc
-{    
-    bool operator< (const ShaperPacket& a, const ShaperPacket& b)
-    {
-        return (a.header().priority() == b.header().priority()) ?
-            a.header().fragment() > b.header().fragment() : // higher fragment has lower priority
-            a.header().priority() < b.header().priority();
-    }
-
-}
-
-
-
-
-class DRCShaper
-{
-public:
-    DRCShaper(KMCLApp& app, Node node);
-    void run();
-
-private:
-    void outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
-    void udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg);
-    void data_request_handler( goby::acomms::protobuf::ModemTransmission* msg);
-
-    void on_demand_handler(const lcm::ReceiveBuffer *rbuf,
-                           const std::string &channel,
-                           const drc::shaper_data_request_t *msg)
-        {
-            glog.is(VERBOSE) && glog << "On demand request for channel: " << msg->channel
-                                     << std::endl;
-
-            std::map<std::string, MessageQueue >::iterator it =
-                queues_.find(msg->channel);
-
-            if(!fill_send_queue(it, msg->priority))
-                glog.is(WARN) && glog << "Failed to fill request for channel: " << msg->channel
-                                      << std::endl;
-        }
-    
-    
-    bool fill_send_queue(std::map<std::string, MessageQueue >::iterator it,
-                         int priority = 1);
-    
-    // wrap message number into the [0, RECEIVE_MODULUS) space
-    void receive_mod(int& i)
-        {
-            if(i < 0) i += RECEIVE_MODULUS;
-            if(i >= RECEIVE_MODULUS) i -= RECEIVE_MODULUS;
-        }
-    void try_decode( std::map<int, drc::ShaperPacket>& received_frags);
-
-    void post_bw_stats();
-
-    friend void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
-private:
-    KMCLApp& app_;
-    boost::asio::io_service udp_service_;
-    boost::shared_ptr<goby::acomms::UDPDriver> udp_driver_;
-    goby::acomms::MACManager mac_;
-
-    Node node_;
-    Node partner_;
-    boost::shared_ptr<lcm::LCM> lcm_;
-
-    // maps channel to ring buffer
-    std::map<std::string, MessageQueue > queues_;
-
-    // maps channel number to channel name
-    boost::bimap<std::string, int> channel_id_;
-
-    // maps channel number to data usage
-    std::map<int, DataUsage> data_usage_;
-
-    int last_send_type_;
-
-    int largest_id_;
-
-    int max_frame_size_;
-    
-    std::priority_queue<drc::ShaperPacket> send_queue_;
-
-    class ReceiveMessageParts
-    {
-    public:
-        ReceiveMessageParts()
-            : decoder_done_(false)
-            {  }
-        
-        void add_fragment(const drc::ShaperPacket& fragment);
-        bool decoder_done() { return decoder_done_; }
-        void get_decoded(std::vector<unsigned char>* buffer)
-            {
-                decoder_->getObject(&(*buffer)[0]);
-            }
-
-        int expected()
-            {
-                if(fragments_.size())
-                    return ceil(fragments_.begin()->second.header().message_size()*fec_ / 
-                                fragments_.begin()->second.data().size());
-                else
-                    return -1;
-            }
-        
-        
-        std::map<int, drc::ShaperPacket>::size_type size() { return fragments_.size(); }
-        
-        
-      private:
-        bool decoder_done_;
-        boost::shared_ptr<ldpc_dec_wrapper> decoder_;
-        std::map<int, drc::ShaperPacket> fragments_;
-    };
-    
-    // maps channel id to (map of message_number to MessageParts)
-    std::map<int, std::map<int,  ReceiveMessageParts> > receive_queue_;    
-    
-    static double fec_;
-
-    int channel_buffer_size_;
-    goby::acomms::DCCLCodec* dccl_;    
-};
 
 double DRCShaper::fec_ = 1;
 
@@ -268,6 +72,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->validate<drc::ShaperHeader>();
+
+    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec)));
+    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec)));
+    
     
     glog.set_name("drc-network-shaper");
     glog.add_group("ch-push", goby::common::Colors::blue);
@@ -384,7 +192,17 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         data_usage_[channel_id_.left.at(channel)].queued_msgs++;
         data_usage_[channel_id_.left.at(channel)].queued_bytes += rbuf->data_size;
         
-        std::vector<char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
+        std::vector<unsigned char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
+        if(custom_codecs_.count(channel))
+        {
+            std::vector<unsigned char> lcm_data = data;
+            glog.is(VERBOSE) && glog << group("ch-push") << "running custom encoder: " << app_.get_current_utime() << " | " << channel  << " | " << std::endl;
+            if(!custom_codecs_[channel]->encode(lcm_data, &data))
+            {
+                glog.is(VERBOSE) && glog << group("ch-push") << "custom encoder returns false, discarding message." << std::endl;
+                return;
+            }    
+        }
         
         std::map<std::string, MessageQueue>::iterator q_it = queues_.find(channel);
         
@@ -404,7 +222,7 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         glog.is(VERBOSE) && glog << group("ch-push") << "queueing: " << app_.get_current_utime()
                                  << " | " << channel  << " | "
                                  << "qsize: " << queues_.find(channel)->second.messages.size()
-                                 << " | " << rbuf->data_size << " bytes *" << xor_cs(data)
+                                 << " | " << data.size() << " bytes *" << xor_cs(data)
                                  << " | on_demand: " << std::boolalpha << on_demand 
                                  << std::endl;
     }
@@ -467,7 +285,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
 {
     if(it != queues_.end() && !it->second.messages.empty())
     {
-        std::vector<char>& qmsg = it->second.messages.front();
+        std::vector<unsigned char>& qmsg = it->second.messages.front();
         ++it->second.message_count;
         receive_mod(it->second.message_count);
 
@@ -552,14 +370,13 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
 
     if(packet.header().is_last_fragment() && packet.header().fragment() == 0)
     {
-        glog.is(VERBOSE) && glog << group("publish") << "publishing: " << app_.get_current_utime() << " | "
-                                 << channel_id_.right.at(packet.header().channel()) << " #" << packet.header().message_number() << " | " << packet.data().size() << " bytes" << std::endl;
         std::vector<unsigned char> buffer(packet.data().size());
         for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
             buffer[i] = packet.data()[i];
-	    
-        check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.header().channel()).c_str(),
-                             &buffer[0], packet.data().size()));
+
+        publish_receive(channel_id_.right.at(packet.header().channel()),
+                        packet.header().message_number(),
+                        buffer);
     }
     else
     {
@@ -618,18 +435,41 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             {
                 std::vector<unsigned char> buffer(packet.header().message_size());
                 message_parts.get_decoded(&buffer);
-                glog.is(VERBOSE) && glog << group("publish")
-                                         << "publishing: " << app_.get_current_utime()
-                                         << " | " << channel_id_.right.at(packet.header().channel())
-                                         << " #" << packet.header().message_number() << " | "
-                                         << buffer.size() << " bytes *" << xor_cs(buffer) << std::endl;
-                
-                check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel_id_.right.at(packet.header().channel()).c_str(), 
-                                     &buffer[0], buffer.size()));
+                publish_receive(channel_id_.right.at(packet.header().channel()),
+                                packet.header().message_number(),
+                                buffer);
             }
         }
     }    
 }
+
+void DRCShaper::publish_receive(const std::string& channel,
+                                int message_number,
+                                std::vector<unsigned char>& lcm_data)
+{
+    
+    if(custom_codecs_.count(channel))
+    {
+        std::vector<unsigned char> transmit_data = lcm_data;
+        glog.is(VERBOSE) && glog << group("ch-pop") << "running custom decoder: " << app_.get_current_utime() << " | " << channel  << " | " << std::endl;
+        if(!custom_codecs_[channel]->decode(&lcm_data, transmit_data))
+        {
+            glog.is(VERBOSE) && glog << group("ch-pop") << "custom decoder returns false, discarding message." << std::endl;
+            return;
+        }
+    }
+
+    glog.is(VERBOSE) && glog << group("publish")
+                             << "publishing: " << app_.get_current_utime()
+                             << " | " << channel
+                             << " #" << message_number << " | "
+                             << lcm_data.size() << " bytes *" << xor_cs(lcm_data) << std::endl;
+
+    check_rc(lcm_publish(lcm_->getUnderlyingLCM(), channel.c_str(), 
+                         &lcm_data[0], lcm_data.size()));
+}
+
+
 
 void DRCShaper::post_bw_stats()
 {
