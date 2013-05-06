@@ -6,6 +6,11 @@
 #include <mex.h>
 #include <gurobi_c++.h>
 
+//struct QPControllerData {
+//  
+//};
+
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
@@ -26,7 +31,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nx = mxGetN(A), i;
 
   GRBenv *env = NULL;  
-  error = GRBloadenv(&env,"test.out");
+  error = GRBloadenv(&env,NULL);
 
   // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
   error = GRBsetintparam(env,"outputflag",0);
