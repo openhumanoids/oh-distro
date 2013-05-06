@@ -1,9 +1,9 @@
 /*
-TLD's work well w/ features (keypts) low-level features
+  TLD's work well w/ features (keypts) low-level features
 
-- DoT works well with textureless objects (contoures)
-- Use both to bootstrap a contour and features based reconstruction 
-- Does going to 3D from contour make tracking possible ??
+  - DoT works well with textureless objects (contoures)
+  - Use both to bootstrap a contour and features based reconstruction 
+  - Does going to 3D from contour make tracking possible ??
 
 */
 #define WINDOW_NAME "TLD Segmenter"
@@ -25,6 +25,8 @@ const int WINDOW_HEIGHT = 800;
 int MAX_IMAGE_WIDTH = 0;
 int MAX_IMAGE_HEIGHT = 0;
 
+const int MAX_THUMB_SIZE = 100;
+
 int32_t OBJECT_ID = 1; 
 int32_t FEATURE_ID = 1; // 1 for object (reference), -1 for virtual heading object
 using namespace cv;
@@ -41,6 +43,8 @@ struct state_t {
 
     // Img
     cv::Mat img; 
+
+    cv::Mat img_selection;
 
     // utimes for image
     int64_t  img_utime;
@@ -97,6 +101,9 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         state->selection.width = std::abs(x - state->origin.x);
         state->selection.height = std::abs(y - state->origin.y);
         state->selection &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+
+                   
     }
 
     if (state->selectObject_virtual) {
@@ -157,6 +164,19 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
         img_selection.roi.width = state->selection.width * sx;
         img_selection.roi.height = state->selection.height * sy;
         perception_image_roi_t_publish(state->lcm, "TLD_OBJECT_ROI", &img_selection);
+
+        float sc_x = sx * state->img.cols;
+        float sc_y = sy * state->img.rows;
+        
+        int x_s = state->selection.x * sc_x;
+        int y_s = state->selection.y * sc_y;
+        int width_s = state->selection.width * sc_x;
+        int height_s = state->selection.height * sc_y;
+
+        if(width_s > 0 && height_s >0){
+            state->img_selection = state->img(cv::Rect(x_s, y_s, width_s, height_s)).clone();                       
+         
+        } 
         // destroyWindow(WINDOW_NAME);
         // state->img = cv::Mat();
 
@@ -182,24 +202,24 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
             img.create(msg->height, msg->width, CV_8UC3);
         else 
             img.create(msg->height, msg->width, CV_8UC1);
-    std::cerr << "msg: " << ch << " " << msg->row_stride << " " << msg->width << "x" << msg->height << std::endl;
+    //std::cerr << "msg: " << ch << " " << msg->row_stride << " " << msg->width << "x" << msg->height << std::endl;
         
-  // extract image data
-  switch (msg->pixelformat) {
+    // extract image data
+    switch (msg->pixelformat) {
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
         memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height * 3);
         cv::cvtColor(img, img, CV_RGB2BGR);
-      break;
+        break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
-      // for some reason msg->row_stride is 0, so we use msg->width instead.
+        // for some reason msg->row_stride is 0, so we use msg->width instead.
         if (ch == 3) { 
             jpeg_decompress_8u_rgb(msg->data,
-                                    msg->size,
-                                    img.data,
-                                    msg->width,
-                                    msg->height,
-                                    msg->width * ch);
-        cv::cvtColor(img, img, CV_RGB2BGR);
+                                   msg->size,
+                                   img.data,
+                                   msg->width,
+                                   msg->height,
+                                   msg->width * ch);
+            cv::cvtColor(img, img, CV_RGB2BGR);
         } else {  
             jpeg_decompress_8u_gray(msg->data,
                                     msg->size,
@@ -208,15 +228,15 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
                                     msg->height,
                                     msg->width);
         }
-      break;
-  case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
-      memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
-      break;
+        break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+        memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
+        break;
     default:
-      fprintf(stderr, "Unrecognized image format\n");
-      break;
-  }
-  return;
+        fprintf(stderr, "Unrecognized image format\n");
+        break;
+    }
+    return;
 }
 
 static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
@@ -248,8 +268,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
 }
 
 static void on_result_frame (const lcm_recv_buf_t *rbuf, const char *channel,
-                            const perception_image_roi_t *msg, 
-                            void *user_data ) {
+                             const perception_image_roi_t *msg, 
+                             void *user_data ) {
     pthread_mutex_lock(&state->img_mutex);
     state_t* state = (state_t*) user_data; 
 
@@ -319,10 +339,10 @@ int main(int argc, char** argv)
 	// lcm_handle(state->lcm);
         if (c == 'q') { 
             break;
-        // } else if (c == 'd') { 
-        //     FEATURE_ID++;
-        // } else if (c == 'a') { 
-        //     FEATURE_ID--;
+            // } else if (c == 'd') { 
+            //     FEATURE_ID++;
+            // } else if (c == 'a') { 
+            //     FEATURE_ID--;
         } else if (c == 'w') { 
             OBJECT_ID++;
         } else if (c == 's') { 
@@ -353,6 +373,42 @@ int main(int argc, char** argv)
                 // bitwise_not(roi, roi);
             }
 
+            if(!state->img_selection.empty()){
+
+                int border_width = 2;
+                
+                float sx = 1.f / WINDOW_WIDTH ; 
+                float sy = 1.f / WINDOW_HEIGHT;
+                
+                int width = state->img_selection.cols / (sx * state->img.cols);
+                int height = state->img_selection.rows / (sx * state->img.rows);
+
+                int max_dim = fmax(width, height);
+                
+                double scale = 1.0;
+                if(max_dim > MAX_THUMB_SIZE){
+                    scale =  MAX_THUMB_SIZE / (double) max_dim;
+                    width = width * scale;
+                    height = height * scale;
+                }
+
+                cv::Mat img_sel;
+                cv::resize(state->img_selection.clone(), img_sel, cv::Size(width, height)); 
+
+                cv::Rect border(WINDOW_WIDTH - width - border_width , WINDOW_HEIGHT - height - border_width , width + border_width/2.0, height + border_width / 2.0);
+
+                cv::Mat obj_roi = cv::Mat(display, cv::Rect(WINDOW_WIDTH - width - border_width , WINDOW_HEIGHT - height - border_width , width, height));
+                
+                img_sel.copyTo(obj_roi);
+
+                cv::rectangle(display, border, cv::Scalar(100 ,0,255), border_width);
+
+                //cv.
+                //show this at the bottom somewhere
+                
+                //cv::imshow("Img Selection" , img_sel);
+            }
+
 
             // Show OBJECT_ID, FEATURE_ID
             cv::putText(display, cv::format("OBJ: %ld", OBJECT_ID),
@@ -360,6 +416,18 @@ int main(int argc, char** argv)
 
             imshow(WINDOW_NAME, display);
         }
+        if(0 && !state->img_selection.empty()){
+            float sx = 1.f / WINDOW_WIDTH ; 
+            float sy = 1.f / WINDOW_HEIGHT;
+
+            int width = state->img_selection.cols / (sx * state->img.cols);
+            int height = state->img_selection.rows / (sx * state->img.rows);
+            
+            cv::Mat img_sel;
+            cv::resize(state->img_selection.clone(), img_sel, cv::Size(width, height)); 
+            cv::imshow("Img Selection" , img_sel);
+        }
+
         pthread_mutex_unlock(&state->img_mutex);
     }
 
