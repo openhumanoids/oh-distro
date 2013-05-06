@@ -150,69 +150,69 @@
                </script>
             </material>
          </visual>
-         <collision name="seat">
-            <pose>-0.1 0.0 0.560  0 0 0</pose> 
-            <geometry>
-               <box>
-                  <size>0.6 1.22 0.50</size>
-               </box>
-            </geometry>
-            <surface>
-               <contact>
-                  <ode>
-                     <min_depth>0.01</min_depth>
-                  </ode>
-               </contact>
-            </surface>
-         </collision>
-         <visual name="seat">
-            <pose>-0.1 0.0 0.560  0 0 0</pose>
-            <geometry>
-               <box>
-                  <size>0.6 1.22 0.50</size>
-               </box>
-            </geometry>
-            <material>
-               <script>
-                  <uri>file://media/materials/scripts/gazebo.material</uri>
-                  <name>Gazebo/Wood</name>
-               </script>
-            </material>
-         </visual>
-         <collision name="mud_seat">
-            <pose>-0.1 0.0 0.81  0 0 0</pose> 
-            <geometry>
-               <box>
-                  <size>0.6 1.15 0.1</size>
-               </box>
-            </geometry>
-            <surface>
-               <contact>
-                  <collide_without_contact>true</collide_without_contact>
-               </contact>
-            </surface>
-         </collision>
-         <visual name="mud_seat">
-            <pose>-0.1 0.0 0.81  0 0 0</pose>
-            <geometry>
-               <box>
-                  <size>0.6 1.15 0.1</size>
-               </box>
-            </geometry>
-            <material>
-               <script>
-                  <uri>file://media/materials/scripts/gazebo.material</uri>
-                  <name>Gazebo/Wood</name>
-               </script>
-            </material>
-         </visual>
-         <sensor name="seat_contact" type="contact">
-            <always_on>true</always_on>
-            <update_rate>1000</update_rate>
-            <contact>
-               <collision>mud_seat</collision>
-            </contact>
-         </sensor>
+         <!--<collision name="seat">-->
+            <!--<pose>-0.1 0.0 0.560  0 0 0</pose> -->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.6 1.22 0.50</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<surface>-->
+               <!--<contact>-->
+                  <!--<ode>-->
+                     <!--<min_depth>0.01</min_depth>-->
+                  <!--</ode>-->
+               <!--</contact>-->
+            <!--</surface>-->
+         <!--</collision>-->
+         <!--<visual name="seat">-->
+            <!--<pose>-0.1 0.0 0.560  0 0 0</pose>-->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.6 1.22 0.50</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<material>-->
+               <!--<script>-->
+                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
+                  <!--<name>Gazebo/Wood</name>-->
+               <!--</script>-->
+            <!--</material>-->
+         <!--</visual>-->
+         <!--<collision name="mud_seat">-->
+            <!--<pose>-0.1 0.0 0.81  0 0 0</pose> -->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.6 1.15 0.1</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<surface>-->
+               <!--<contact>-->
+                  <!--<collide_without_contact>true</collide_without_contact>-->
+               <!--</contact>-->
+            <!--</surface>-->
+         <!--</collision>-->
+         <!--<visual name="mud_seat">-->
+            <!--<pose>-0.1 0.0 0.81  0 0 0</pose>-->
+            <!--<geometry>-->
+               <!--<box>-->
+                  <!--<size>0.6 1.15 0.1</size>-->
+               <!--</box>-->
+            <!--</geometry>-->
+            <!--<material>-->
+               <!--<script>-->
+                  <!--<uri>file://media/materials/scripts/gazebo.material</uri>-->
+                  <!--<name>Gazebo/Wood</name>-->
+               <!--</script>-->
+            <!--</material>-->
+         <!--</visual>-->
+         <!--<sensor name="seat_contact" type="contact">-->
+            <!--<always_on>true</always_on>-->
+            <!--<update_rate>1000</update_rate>-->
+            <!--<contact>-->
+               <!--<collision>mud_seat</collision>-->
+            <!--</contact>-->
+         <!--</sensor>-->
          <collision name="seat_back">
             <pose>-0.3 0.0 1.125 0.0 -0.2 0.0</pose> 
             <geometry>
