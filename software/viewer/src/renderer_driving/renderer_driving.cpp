@@ -56,6 +56,8 @@
 #define PARAM_BRAKE "Brake"
 #define PARAM_STOP "E_Stop"
 
+#define PARAM_STOP_CONTROLLER "Stop Controller"
+
 #define PARAM_STEERING_ANGLE "Steering Angle"
 #define PARAM_THROTTLE_RATIO "Gas ratio"
 #define PARAM_THROTTLE_DURATION "Acceleration duration (s)"
@@ -450,200 +452,6 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     if (!bot_gtk_param_widget_get_bool (self->pw, PARAM_ENABLE)) {
         return; 
     }
-  
-    glLineWidth(2.0);
-    glPushMatrix();
-    if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
-        glColor3f(0,1,1); //cyan
-    }else{
-        glColor3f(0.65,0.16,0.16); //brown
-    }
-    glBegin(GL_LINE_STRIP);
-    glVertex3f(self->local_pointpose_from[0], self->local_pointpose_from[1],
-               self->local_pointpose_from[2] );
-    glVertex3f(self->local_pointpose_to[0], self->local_pointpose_to[1],
-               self->local_pointpose_to[2] );
-
-    glEnd();
-    glPopMatrix();
-  
-  
-    
-
-  
-  
-    // select xy (theta) point
-    // convert to local space
-    // determine if within feasable region
-    // draw
-  
-  
-  
-    // Determine the left and right max turning circles:
-    Eigen::Isometry3d offset;
-    offset.setIdentity();
-    offset.translation()  << 0, self->min_turn_radius,0;
-    self->center_arc_left  = self->robot_pose * offset;
-    offset.translation()  << 0,- (self->min_turn_radius) ,0;
-    self->center_arc_right = self->robot_pose * offset;  
-  
-    // Circles representing the left and right wheels at the limits:
-    glLineWidth(2.0);
-    glPushMatrix();
-    glTranslatef(self->center_arc_left.translation().x() , self->center_arc_left.translation().y() , self->center_arc_left.translation().z());
-    glColor3f(0,0.5,1);
-    bot_gl_draw_circle( self->min_turn_radius - self->wheel_separation/2.0 ); // inner radius
-    glColor3f(1.0,0.1,0);
-    bot_gl_draw_circle( self->min_turn_radius );
-    glPopMatrix();
-    glPushMatrix();
-    glTranslatef(self->center_arc_right.translation().x() , self->center_arc_right.translation().y() , self->center_arc_right.translation().z());
-    glColor3f(0,0.5,1);
-    bot_gl_draw_circle( self->min_turn_radius - self->wheel_separation/2.0 ); // inner radius
-    glColor3f(1.0,0.1,0);
-    bot_gl_draw_circle( self->min_turn_radius );
-    glPopMatrix();
-
-    // Maximum permissable distance arc:
-    double max_permissable_travel_distance =  self->goal_timeout * self->max_velocity;
-    //cout << "max_permissable_travel_distance: " << max_permissable_travel_distance << "\n";
-    glColor3f(1.0,0.1,0);
-    glPushMatrix();
-    glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
-    glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
-    // Line straight out in front:
-    glBegin(GL_LINE_STRIP);
-    glVertex2f(0.0,0.0);
-    glVertex2f(max_permissable_travel_distance, 0);
-    glEnd();
-    for (int i=-1; i<=1 ; i=i+2){
-        glBegin(GL_LINE_STRIP);
-        glVertex2f(max_permissable_travel_distance, 0);
-        for (double count = 0.001; count < 1 ; count =count+0.01){
-            double r = 1/count;
-            double circ = 2*M_PI*r;  
-            double fraction =  max_permissable_travel_distance/circ;
-            double boundary_x = r*sin( fraction *2*M_PI);
-            double boundary_y = r*cos( fraction *2*M_PI);
-
-            if (sqrt(boundary_x*boundary_x +  (boundary_y)*(boundary_y))  <  self->min_turn_radius ){
-                // cout << r << " \n";
-                break; 
-            }
-      
-            if (i > 0){
-                glVertex2f(boundary_x, boundary_y - r);
-            }else{
-                glVertex2f(boundary_x, r -boundary_y );
-            }
-        }
-  
-        double r = self->min_turn_radius;
-        double circ = 2*M_PI*r;  
-        double fraction =  max_permissable_travel_distance/circ;
-        double boundary_x = r*sin( fraction *2*M_PI);
-        double boundary_y = r*cos( fraction *2*M_PI);
-
-        if (i > 0){
-            glVertex2f(boundary_x, boundary_y - r);
-        }else{
-            glVertex2f(boundary_x, r -boundary_y );
-        }
-  
-        glEnd();
-    }
-    glPopMatrix();
-  
-
-    // Determine if end goal is within the permissable region:
-    // NB: this code mixes the relative openGL axes and the relative northings|eastings  axes
-    // 1. Convert the point into a relative angle and range
-    double dx = self->click_pos.x - self->robot_pose.translation().x(); 
-    double dy = self->click_pos.y - self->robot_pose.translation().y();
-    //cout << dx << " and " << dy <<" top\n";
-    double click_rel_heading =  atan2(dy, dx)   - self->robot_yaw;
-    click_rel_heading  = WrapPosNegPI (click_rel_heading );   // click rel heading: + to left | - to right. forward 0 behind +/ pi
-    double click_pos_rel_range = sqrt(dx*dx + dy*dy);
-    // Only used below for renderering:
-    double gl_click_pos_rel_x =  click_pos_rel_range * cos(click_rel_heading);
-    double gl_click_pos_rel_y =  click_pos_rel_range * sin(click_rel_heading);
-    ////////////////////////////////////
-    click_rel_heading = click_rel_heading + M_PI/2; // convert to theta=0 at eastings convention
-  
-    // 2. Determine the radius and path length
-    double xyframe_rel_x = click_pos_rel_range * cos(click_rel_heading);
-    double xyframe_rel_y = click_pos_rel_range * sin(click_rel_heading);  
-    double path_R =100;
-    double path_MaxTheta = 0.8;
-    double path_MinTheta =0;
-    double path_center=0;
-    double path_Angle = 0;
-    if (click_rel_heading >=  M_PI/2){ //LHS of robot
-        double alpha = M_PI/2 - click_rel_heading;
-        double h = xyframe_rel_y/(2* sin(alpha));
-        path_R = abs( h/sin( click_rel_heading) );
-        path_center = path_R;
-        path_Angle = abs(alpha*2);
-        path_MaxTheta = path_Angle;
-        path_MinTheta =0;
-    }else{ // RHS of robot
-        double alpha = M_PI/2 - click_rel_heading;
-        double h = xyframe_rel_y/(2* sin(alpha));
-        path_R = abs( h/sin( click_rel_heading) );
-        path_center = -path_R;
-        path_Angle = abs(alpha*2);
-        path_MaxTheta =M_PI ;
-        path_MinTheta =M_PI  - path_Angle;
-    }
-    double frac = path_Angle / (2*M_PI);
-    double proposed_distance = frac *2*M_PI * path_R;
-    //cout << "frac: " << frac << "\n";
-    //cout << "proposed_distance: " << proposed_distance << "\n";
-  
-    // the end goal in openGL coordinates:
-    glColor3f(0, 1,0.5 );
-    glPushMatrix();
-    glPointSize(5.0f);
-    glBegin(GL_POINTS);
-    glVertex2f(self->click_pos.x, self->click_pos.y);
-    glEnd();
-    glPopMatrix();  
-    // the end goal in the robot frame:
-    glColor3f(0.0, 0.4,0.05 );
-    glPushMatrix();
-    glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
-    glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
-    glPointSize(5.0f);
-    glBegin(GL_POINTS);
-    glVertex2f(gl_click_pos_rel_x, gl_click_pos_rel_y);
-    glEnd();
-    glPopMatrix();      
-
-    // if in permisable region - draw it.
-    if ((proposed_distance < max_permissable_travel_distance) && 
-        (path_R > self->min_turn_radius )) {
-  
-        glPushMatrix();
-        glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
-        glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
-        // OpenGL is x forward, y left
-        double path_x, path_y;
-        glBegin(GL_LINE_STRIP);
-        for (double i= path_MinTheta;i< path_MaxTheta ; i=i+0.025) {
-            path_x = path_R*sin(i);
-            path_y = - path_R*cos(i);
-            glVertex2f(path_x, path_y + path_center); 
-        }
-        path_x = path_R*sin(path_MaxTheta);
-        path_y = - path_R*cos(path_MaxTheta);
-        glVertex2f(path_x, path_y + path_center);
-        glEnd();
-        glPopMatrix();
-        bot_viewer_set_status_bar_message(self->viewer, "Valid Goal, click \"Seek Relative\" to send it");
-    }else{
-        bot_viewer_set_status_bar_message(self->viewer, "Invalid Goal: too far or too tight");
-    }
-
 
     // Render text
     glPushAttrib (GL_ENABLE_BIT);
@@ -776,8 +584,201 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
 
     glPopAttrib ();
 
+    if(0){
+  
+        glLineWidth(2.0);
+        glPushMatrix();
+        if (self->visual_goal_type == VISUAL_GOAL_GLOBAL){
+            glColor3f(0,1,1); //cyan
+        }else{
+            glColor3f(0.65,0.16,0.16); //brown
+        }
+        glBegin(GL_LINE_STRIP);
+        glVertex3f(self->local_pointpose_from[0], self->local_pointpose_from[1],
+                   self->local_pointpose_from[2] );
+        glVertex3f(self->local_pointpose_to[0], self->local_pointpose_to[1],
+                   self->local_pointpose_to[2] );
 
+        glEnd();
+        glPopMatrix();
+  
+  
+    
 
+  
+  
+        // select xy (theta) point
+        // convert to local space
+        // determine if within feasable region
+        // draw
+  
+  
+  
+        // Determine the left and right max turning circles:
+        Eigen::Isometry3d offset;
+        offset.setIdentity();
+        offset.translation()  << 0, self->min_turn_radius,0;
+        self->center_arc_left  = self->robot_pose * offset;
+        offset.translation()  << 0,- (self->min_turn_radius) ,0;
+        self->center_arc_right = self->robot_pose * offset;  
+  
+        // Circles representing the left and right wheels at the limits:
+        glLineWidth(2.0);
+        glPushMatrix();
+        glTranslatef(self->center_arc_left.translation().x() , self->center_arc_left.translation().y() , self->center_arc_left.translation().z());
+        glColor3f(0,0.5,1);
+        bot_gl_draw_circle( self->min_turn_radius - self->wheel_separation/2.0 ); // inner radius
+        glColor3f(1.0,0.1,0);
+        bot_gl_draw_circle( self->min_turn_radius );
+        glPopMatrix();
+        glPushMatrix();
+        glTranslatef(self->center_arc_right.translation().x() , self->center_arc_right.translation().y() , self->center_arc_right.translation().z());
+        glColor3f(0,0.5,1);
+        bot_gl_draw_circle( self->min_turn_radius - self->wheel_separation/2.0 ); // inner radius
+        glColor3f(1.0,0.1,0);
+        bot_gl_draw_circle( self->min_turn_radius );
+        glPopMatrix();
+
+        // Maximum permissable distance arc:
+        double max_permissable_travel_distance =  self->goal_timeout * self->max_velocity;
+        //cout << "max_permissable_travel_distance: " << max_permissable_travel_distance << "\n";
+        glColor3f(1.0,0.1,0);
+        glPushMatrix();
+        glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
+        glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
+        // Line straight out in front:
+        glBegin(GL_LINE_STRIP);
+        glVertex2f(0.0,0.0);
+        glVertex2f(max_permissable_travel_distance, 0);
+        glEnd();
+        for (int i=-1; i<=1 ; i=i+2){
+            glBegin(GL_LINE_STRIP);
+            glVertex2f(max_permissable_travel_distance, 0);
+            for (double count = 0.001; count < 1 ; count =count+0.01){
+                double r = 1/count;
+                double circ = 2*M_PI*r;  
+                double fraction =  max_permissable_travel_distance/circ;
+                double boundary_x = r*sin( fraction *2*M_PI);
+                double boundary_y = r*cos( fraction *2*M_PI);
+
+                if (sqrt(boundary_x*boundary_x +  (boundary_y)*(boundary_y))  <  self->min_turn_radius ){
+                    // cout << r << " \n";
+                    break; 
+                }
+      
+                if (i > 0){
+                    glVertex2f(boundary_x, boundary_y - r);
+                }else{
+                    glVertex2f(boundary_x, r -boundary_y );
+                }
+            }
+  
+            double r = self->min_turn_radius;
+            double circ = 2*M_PI*r;  
+            double fraction =  max_permissable_travel_distance/circ;
+            double boundary_x = r*sin( fraction *2*M_PI);
+            double boundary_y = r*cos( fraction *2*M_PI);
+
+            if (i > 0){
+                glVertex2f(boundary_x, boundary_y - r);
+            }else{
+                glVertex2f(boundary_x, r -boundary_y );
+            }
+  
+            glEnd();
+        }
+        glPopMatrix();
+  
+
+        // Determine if end goal is within the permissable region:
+        // NB: this code mixes the relative openGL axes and the relative northings|eastings  axes
+        // 1. Convert the point into a relative angle and range
+        double dx = self->click_pos.x - self->robot_pose.translation().x(); 
+        double dy = self->click_pos.y - self->robot_pose.translation().y();
+        //cout << dx << " and " << dy <<" top\n";
+        double click_rel_heading =  atan2(dy, dx)   - self->robot_yaw;
+        click_rel_heading  = WrapPosNegPI (click_rel_heading );   // click rel heading: + to left | - to right. forward 0 behind +/ pi
+        double click_pos_rel_range = sqrt(dx*dx + dy*dy);
+        // Only used below for renderering:
+        double gl_click_pos_rel_x =  click_pos_rel_range * cos(click_rel_heading);
+        double gl_click_pos_rel_y =  click_pos_rel_range * sin(click_rel_heading);
+        ////////////////////////////////////
+        click_rel_heading = click_rel_heading + M_PI/2; // convert to theta=0 at eastings convention
+  
+        // 2. Determine the radius and path length
+        double xyframe_rel_x = click_pos_rel_range * cos(click_rel_heading);
+        double xyframe_rel_y = click_pos_rel_range * sin(click_rel_heading);  
+        double path_R =100;
+        double path_MaxTheta = 0.8;
+        double path_MinTheta =0;
+        double path_center=0;
+        double path_Angle = 0;
+        if (click_rel_heading >=  M_PI/2){ //LHS of robot
+            double alpha = M_PI/2 - click_rel_heading;
+            double h = xyframe_rel_y/(2* sin(alpha));
+            path_R = abs( h/sin( click_rel_heading) );
+            path_center = path_R;
+            path_Angle = abs(alpha*2);
+            path_MaxTheta = path_Angle;
+            path_MinTheta =0;
+        }else{ // RHS of robot
+            double alpha = M_PI/2 - click_rel_heading;
+            double h = xyframe_rel_y/(2* sin(alpha));
+            path_R = abs( h/sin( click_rel_heading) );
+            path_center = -path_R;
+            path_Angle = abs(alpha*2);
+            path_MaxTheta =M_PI ;
+            path_MinTheta =M_PI  - path_Angle;
+        }
+        double frac = path_Angle / (2*M_PI);
+        double proposed_distance = frac *2*M_PI * path_R;
+        //cout << "frac: " << frac << "\n";
+        //cout << "proposed_distance: " << proposed_distance << "\n";
+  
+        // the end goal in openGL coordinates:
+        glColor3f(0, 1,0.5 );
+        glPushMatrix();
+        glPointSize(5.0f);
+        glBegin(GL_POINTS);
+        glVertex2f(self->click_pos.x, self->click_pos.y);
+        glEnd();
+        glPopMatrix();  
+        // the end goal in the robot frame:
+        glColor3f(0.0, 0.4,0.05 );
+        glPushMatrix();
+        glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
+        glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
+        glPointSize(5.0f);
+        glBegin(GL_POINTS);
+        glVertex2f(gl_click_pos_rel_x, gl_click_pos_rel_y);
+        glEnd();
+        glPopMatrix();      
+
+        // if in permisable region - draw it.
+        if ((proposed_distance < max_permissable_travel_distance) && 
+            (path_R > self->min_turn_radius )) {
+  
+            glPushMatrix();
+            glTranslatef(self->robot_pose.translation().x() , self->robot_pose.translation().y() , self->robot_pose.translation().z());
+            glRotatef(self->robot_yaw*180/M_PI , 0, 0, 1.0); // rotate on z-axis
+            // OpenGL is x forward, y left
+            double path_x, path_y;
+            glBegin(GL_LINE_STRIP);
+            for (double i= path_MinTheta;i< path_MaxTheta ; i=i+0.025) {
+                path_x = path_R*sin(i);
+                path_y = - path_R*cos(i);
+                glVertex2f(path_x, path_y + path_center); 
+            }
+            path_x = path_R*sin(path_MaxTheta);
+            path_y = - path_R*cos(path_MaxTheta);
+            glVertex2f(path_x, path_y + path_center);
+            glEnd();
+            glPopMatrix();
+            bot_viewer_set_status_bar_message(self->viewer, "Valid Goal, click \"Seek Relative\" to send it");
+        }else{
+            bot_viewer_set_status_bar_message(self->viewer, "Invalid Goal: too far or too tight");
+        }
+    }
 }
 
 static void
@@ -1048,6 +1049,36 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.brake_value = 1.0; //not sure if we are going to use this value
         drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
     }
+    else if(!strcmp(name, PARAM_STOP_CONTROLLER)){
+        bot_viewer_set_status_bar_message(self->viewer, "Sent STOP to Controller");
+        drc_driving_cmd_t msg;
+        msg.utime = bot_timestamp_now();
+        msg.drive_duration = 0;
+        msg.throttle_ratio = 0;
+        msg.throttle_duration = 0;
+        msg.kp_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_P_GAIN);
+        msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
+        msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
+        msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
+        msg.user_steering_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+
+        goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
+        if(goal_type == USE_ROAD){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD;
+        }
+        else if(goal_type == USE_TLD_WITH_ROAD){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD;
+        }
+        else if(goal_type == USE_TLD_IGNORE_ROAD){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD;
+        }
+        else if(goal_type == USE_USER_GOAL){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING;
+        }       
+        
+        drc_driving_cmd_t_publish(self->lc, "DRIVING_CONTROLLER_COMMAND", &msg);        
+    }
+    
     else if(!strcmp(name, PARAM_START_SEQUENCE)){
         bot_viewer_set_status_bar_message(self->viewer, "Initialized startup sequence");
         drc_driving_control_cmd_t msg;
@@ -1422,6 +1453,8 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, USE_ROAD, "Use Road", USE_ROAD, "Use TLD (Road)", USE_TLD_WITH_ROAD,  "Use TLD (No Road)", USE_TLD_IGNORE_ROAD, "Use User Goal", USE_USER_GOAL, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_DRIVE_COMMAND, NULL);
+
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_STOP_CONTROLLER, NULL);
   
     bot_gtk_param_widget_add_separator (self->pw, "Low Level Driving controller");
 
