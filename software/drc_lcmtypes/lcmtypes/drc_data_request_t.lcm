@@ -15,6 +15,7 @@ struct data_request_t {
   const int8_t OCTREE_SCENE           = 5;
   const int8_t HEIGHT_MAP_SCENE       = 6;
   const int8_t HEIGHT_MAP_CORRIDOR    = 7;
-  const int8_t DEPTH_MAP_SCENE        = 8;
-  const int8_t DEPTH_MAP_WORKSPACE    = 9;
+  const int8_t HEIGHT_MAP_COARSE      = 8;
+  const int8_t DEPTH_MAP_SCENE        = 9;
+  const int8_t DEPTH_MAP_WORKSPACE    = 10;
 }

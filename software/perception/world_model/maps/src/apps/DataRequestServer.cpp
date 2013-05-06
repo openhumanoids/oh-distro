@@ -68,6 +68,8 @@ struct Worker {
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
         sendHeightMapCorridorRequest();
         break;
+      case drc::data_request_t::HEIGHT_MAP_COARSE:
+        sendHeightMapCoarseRequest();
       case drc::data_request_t::DEPTH_MAP_SCENE:
         sendDepthMapSceneRequest();
         break;
@@ -139,7 +141,7 @@ struct Worker {
     msg.width = 140;
     msg.height = 200;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
-    msg.time_min = -5*1e6;
+    msg.time_min = -8*1e6;
     msg.clip_planes[0][3] = 2;
     msg.clip_planes[4][3] = 3;
     msg.clip_planes[5][3] = 0.3;
@@ -179,6 +181,16 @@ struct Worker {
     calib(1,3) = msg.clip_planes[2][3]*calib(1,1);
     Eigen::Projective3f projector = calib*pose.inverse();
     setTransform(projector, msg);
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendHeightMapCoarseRequest() {
+    const Eigen::Vector3f minPt(-5, -20, -3);
+    const Eigen::Vector3f maxPt(30, 20, 0.3);
+    drc::map_request_t msg =
+      prepareHeightRequestMessage(minPt, maxPt, 0.5, 0.5);
+    msg.view_id = drc::data_request_t::HEIGHT_MAP_COARSE;
+    msg.time_min = -10*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
@@ -244,6 +256,34 @@ struct Worker {
       }
     }
   }    
+
+  drc::map_request_t
+  prepareHeightRequestMessage(const Eigen::Vector3f& iMinPt,
+                              const Eigen::Vector3f& iMaxPt,
+                              const float iResX, const float iResY) {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.resolution = 0.5*(iResX + iResY);
+    msg.width = int((iMaxPt[0] - iMinPt[0]) / iResX);
+    msg.height = int((iMaxPt[1] - iMinPt[1]) / iResY);
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.clip_planes[0][3] = -iMinPt[0];
+    msg.clip_planes[1][3] = iMaxPt[0];
+    msg.clip_planes[2][3] = -iMinPt[1];
+    msg.clip_planes[3][3] = iMaxPt[1];
+    msg.clip_planes[4][3] = -iMinPt[2];
+    msg.clip_planes[5][3] = iMaxPt[2];
+    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+    pose.translation() = Eigen::Vector3f(0,0,10);
+    pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
+    Eigen::Affine3f calib = Eigen::Affine3f::Identity();
+    calib(0,0) = 1/iResX;
+    calib(1,1) = 1/iResY;
+    calib(0,3) = -iMinPt[0]*calib(0,0);
+    calib(1,3) = -iMinPt[1]*calib(1,1);
+    Eigen::Projective3f projector = calib*pose.inverse();
+    setTransform(projector, msg);
+    return msg;
+  }
 
   drc::map_request_t prepareRequestMessage() {
     drc::map_request_t msg;

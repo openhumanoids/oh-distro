@@ -134,11 +134,17 @@ public:
                "AFFORDANCE_LIST", ChannelTypeAnonymous);
     addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog",
                "MAP_CATALOG", ChannelTypeAnonymous);
+    /*
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Octree",
                "MAP_OCTREE", ChannelTypeAnonymous);
+    */
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    /*
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    */
+    addControl(drc::data_request_t::HEIGHT_MAP_COARSE, "Coarse Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);

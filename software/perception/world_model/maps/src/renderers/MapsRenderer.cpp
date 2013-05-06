@@ -722,6 +722,8 @@ public:
         data->mLabel = "Heightmap Scene";  break;
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
         data->mLabel = "Heightmap Corridor";  break;
+      case drc::data_request_t::HEIGHT_MAP_COARSE:
+        data->mLabel = "Heightmap Coarse";  break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
         data->mLabel = "Depthmap Scene";  break;
       case drc::data_request_t::DEPTH_MAP_WORKSPACE:
