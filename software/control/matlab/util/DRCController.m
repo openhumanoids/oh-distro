@@ -139,7 +139,7 @@ classdef DRCController
       transition=false;
       
       for i=1:length(obj.transition_monitors)
-        d = obj.transition_monitors{i}.getNextMessage(1);
+        d = obj.transition_monitors{i}.getNextMessage(0);
         if ~isempty(d)
           if isempty(obj.transition_coders{i})
             data = setfield(data,obj.transition_targets{i},struct(obj.transition_channels{i},obj.constructors(i).newInstance(d)));
@@ -155,7 +155,7 @@ classdef DRCController
       if ~isempty(obj.precompute_response_monitors)
         fn = fieldnames(obj.precompute_response_targets);
         for i=1:length(obj.precompute_response_monitors)
-          d = obj.precompute_response_monitors{i}.getNextMessage(1);
+          d = obj.precompute_response_monitors{i}.getNextMessage(0);
           if ~isempty(d)
             disp(['received precompute response on ' obj.precompute_response_channels{i}]);
             msg = drc.precompute_request_t(d);
@@ -191,6 +191,7 @@ classdef DRCController
       t_offset = -1;
       lcm_check_tic = tic;
       while (1)
+        tic;
         if (toc(lcm_check_tic) > 0.5) % check periodically
           obj=checkPrecomputeResponses(obj);
           % check termination conditions and break if any are true        
@@ -216,7 +217,7 @@ classdef DRCController
           if any(strcmp(fr.name,checked_frames))
             continue;
           end
-          [x,tsim] = getNextMessage(fr,1);
+          [x,tsim] = getNextMessage(fr,0);
           if (~isempty(x))
             if (t_offset == -1)
               if obj.absolute_time
@@ -277,6 +278,7 @@ classdef DRCController
           u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
           obj.controller_output_frame.publish(tt+t_offset,u,defaultChannel(obj.controller_output_frame));
         end
+        toc
       end
     end
   end

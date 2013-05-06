@@ -35,7 +35,8 @@ classdef DRCTerrainMap < RigidBodyTerrain
       [p,normal] = mapAPIwrapper(obj.map_ptr.getData(),[xy;0*xy(1,:)]);
       z=p(3,:);
       if any(isnan(z))  % temporary hack because the robot is initialized without knowing the ground under it's feet
-        normal(:,isnan(z)) = repmat([0;0;1],1,sum(isnan(z)));
+        nn=sum(isnan(z)); 
+        normal(:,isnan(z)) = [zeros(2,nn);ones(1,nn)];
         z(isnan(z))=obj.minval;
       end      
     end
