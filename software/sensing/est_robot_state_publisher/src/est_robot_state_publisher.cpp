@@ -32,7 +32,7 @@ public:
   
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * TRUE_state_msg);
   void handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
-  void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::data_request_t* msg);
+  //void triggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::data_request_t* msg);
 
 private:
   void outputNoSensing(const drc::robot_state_t * TRUE_state_msg,
@@ -50,7 +50,7 @@ private:
   
   /// used for Trigger based message demand:
   drc::robot_state_t _last_est_state;    
-  void sendTriggerOutput();
+  //void sendTriggerOutput();
   
   BotParam* botparam_;
   BotFrames* botframes_;
@@ -71,7 +71,7 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &_lcm, bool _ground_truth_mode):
 
   _lcm->subscribe("TRUE_ROBOT_STATE", &StatePub::handleRobotStateMsg, this); //
   _lcm->subscribe("POSE_HEAD",&StatePub::handlePoseHeadMsg,this);
-  _lcm->subscribe("TRIGGER_STATE",&StatePub::triggerHandler,this);
+  //_lcm->subscribe("TRIGGER_STATE",&StatePub::triggerHandler,this);
   
   // Parse KDL tree
   KDL::Tree tree;
@@ -257,6 +257,8 @@ void StatePub::handlePoseHeadMsg(const lcm::ReceiveBuffer* rbuf, const std::stri
 };
 
 
+// This is now done in a different program "est_robot_state_to_minimal"
+/*
 // This function can also be used to publish on 
 // a regular basis e.g. if set to publish at 1Hz
 void StatePub::sendTriggerOutput(){
@@ -275,6 +277,7 @@ void StatePub::triggerHandler(const lcm::ReceiveBuffer* rbuf,
                     const std::string& channel, const  drc::data_request_t* msg){
   sendTriggerOutput();
 }
+*/
 
 int main (int argc, char ** argv){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
