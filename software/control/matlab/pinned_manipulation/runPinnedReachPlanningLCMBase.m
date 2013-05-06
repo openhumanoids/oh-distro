@@ -151,7 +151,7 @@ while(1)
      else
       disp('Manip planner currently expects one constraint at a time') ; 
      end     
-      manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint);
+      manip_planner.adjustAndPublishManipulationPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint);
        
   end
   
