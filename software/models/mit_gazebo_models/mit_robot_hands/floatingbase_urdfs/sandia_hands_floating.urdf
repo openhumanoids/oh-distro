@@ -1507,6 +1507,108 @@
     <mu1>0.9</mu1>
     <mu2>0.9</mu2>
   </gazebo>
+  <joint name="right_palm_left_camera_frame_joint" type="fixed">
+    <origin rpy="0.6708 -1.57079632679 3.14159265359" xyz="0.0683774130138 0.0138342911048 0.025"/>
+    <parent link="right_palm"/>
+    <child link="right_palm_left_camera_frame"/>
+  </joint>
+  <link name="right_palm_left_camera_frame">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual group="default">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.003 0.010 0.007"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_palm_left_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
+    <parent link="right_palm_left_camera_frame"/>
+    <child link="right_palm_left_camera_optical_frame"/>
+  </joint>
+  <link name="right_palm_left_camera_optical_frame"/>
+  <gazebo reference="right_palm_left_camera_frame">
+    <sensor name="right_palm_stereo_camera" type="multicamera">
+      <update_rate>60.0</update_rate>
+      <camera name="left">
+        <horizontal_fov>1.25663706144</horizontal_fov>
+        <image>
+          <width>752</width>
+          <height>480</height>
+          <format>L8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <camera name="right">
+        <pose>0 -0.04 0  0 0 0</pose>
+        <horizontal_fov>1.25663706144</horizontal_fov>
+        <image>
+          <width>752</width>
+          <height>480</height>
+          <format>L8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>sandia_hands/right_base_yaw/camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>right_palm_left_camera_optical_frame</frameName>
+        <hackBaseline>0.04</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <joint name="right_palm_right_camera_frame_joint" type="fixed">
+    <origin rpy="0.6708 -1.57079632679 3.14159265359" xyz="0.0435128991906 0.0451672761576 0.025"/>
+    <parent link="right_palm"/>
+    <child link="right_palm_right_camera_frame"/>
+  </joint>
+  <link name="right_palm_right_camera_frame">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual group="default">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.003 0.010 0.007"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_palm_right_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
+    <parent link="right_palm_right_camera_frame"/>
+    <child link="right_palm_right_camera_optical_frame"/>
+  </joint>
+  <link name="right_palm_right_camera_optical_frame"/>
   <link name="left_base_x">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
@@ -2999,6 +3101,108 @@
     <mu1>0.9</mu1>
     <mu2>0.9</mu2>
   </gazebo>
+  <joint name="left_palm_left_camera_frame_joint" type="fixed">
+    <origin rpy="-0.6708 -1.57079632679 3.14159265359" xyz="0.0435128991906 -0.0451672761576 0.025"/>
+    <parent link="left_palm"/>
+    <child link="left_palm_left_camera_frame"/>
+  </joint>
+  <link name="left_palm_left_camera_frame">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual group="default">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.003 0.010 0.007"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_palm_left_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
+    <parent link="left_palm_left_camera_frame"/>
+    <child link="left_palm_left_camera_optical_frame"/>
+  </joint>
+  <link name="left_palm_left_camera_optical_frame"/>
+  <gazebo reference="left_palm_left_camera_frame">
+    <sensor name="left_palm_stereo_camera" type="multicamera">
+      <update_rate>60.0</update_rate>
+      <camera name="left">
+        <horizontal_fov>1.25663706144</horizontal_fov>
+        <image>
+          <width>752</width>
+          <height>480</height>
+          <format>L8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <camera name="right">
+        <pose>0 -0.04 0  0 0 0</pose>
+        <horizontal_fov>1.25663706144</horizontal_fov>
+        <image>
+          <width>752</width>
+          <height>480</height>
+          <format>L8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>sandia_hands/left_base_yaw/camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>left_palm_left_camera_optical_frame</frameName>
+        <hackBaseline>0.04</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <joint name="left_palm_right_camera_frame_joint" type="fixed">
+    <origin rpy="-0.6708 -1.57079632679 3.14159265359" xyz="0.0683774130138 -0.0138342911048 0.025"/>
+    <parent link="left_palm"/>
+    <child link="left_palm_right_camera_frame"/>
+  </joint>
+  <link name="left_palm_right_camera_frame">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual group="default">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.003 0.010 0.007"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_palm_right_camera_optical_frame_joint" type="fixed">
+    <origin rpy="-1.57079632679 0.0 -1.57079632679" xyz="0 0 0"/>
+    <parent link="left_palm_right_camera_frame"/>
+    <child link="left_palm_right_camera_optical_frame"/>
+  </joint>
+  <link name="left_palm_right_camera_optical_frame"/>
   <gazebo>
     <plugin filename="liboracle_plugin.so" name="oracle_plugin"/>
     <plugin filename="libFloatingSandiaHandPlugin.so" name="floating_sandia_hand_plugin"/>

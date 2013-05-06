@@ -23,6 +23,9 @@ private:
 	/**affordances in the server*/
 	std::vector<AffConstPtr> _affordances;
 
+        /**affordance plus objects in the server*/
+        std::vector<AffPlusPtr> _affordances_plus;
+
 	/**mutex for accessing _affordances*/
 	boost::mutex _accessMutex;
 
@@ -33,6 +36,7 @@ public:
 
 	//-----------accessors
 	void getAllAffordances(std::vector<AffConstPtr> &affs);
+	void getAllAffordancesPlus(std::vector<AffPlusPtr> &affs);
 
 	//--observers
 	std::string toString();
@@ -46,6 +50,9 @@ public:
 private:
 	void handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
 							 const drc::affordance_collection_t *collection);
+	void handlePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+							 const drc::affordance_plus_collection_t *collection);
+
 
 };
 

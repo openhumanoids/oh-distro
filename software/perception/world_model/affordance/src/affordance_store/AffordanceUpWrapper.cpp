@@ -16,10 +16,12 @@ namespace affordance {
 /**We use the given lcm object to subscribe.  We assume some other part of the code needs to
  * while(true)lcm->handle()*/
 AffordanceUpWrapper::AffordanceUpWrapper(const boost::shared_ptr<lcm::LCM> lcm)
-	: _lcm(lcm), _affordances(), _accessMutex()
+	: _lcm(lcm), _affordances(), _affordances_plus(), _accessMutex()
 {
 	lcm->subscribe(AffordanceServer::AFF_SERVER_CHANNEL,
 			       &AffordanceUpWrapper::handleCollectionMsg, this);
+        lcm->subscribe(AffordanceServer::AFF_PLUS_SERVER_CHANNEL,
+                       &AffordanceUpWrapper::handlePlusCollectionMsg, this);
 }
 
 
@@ -35,6 +37,14 @@ void AffordanceUpWrapper::getAllAffordances(std::vector<AffConstPtr> &affs)
 {
 	_accessMutex.lock(); //==========lock
 	affs = _affordances; //assignment operator
+	_accessMutex.unlock(); //unlock
+}
+
+/**@return all affordances stored on the server*/
+void AffordanceUpWrapper::getAllAffordancesPlus(std::vector<AffPlusPtr> &affs_plus)
+{
+	_accessMutex.lock(); //==========lock
+	affs_plus = _affordances_plus; //assignment operator
 	_accessMutex.unlock(); //unlock
 }
 
@@ -123,12 +133,43 @@ void AffordanceUpWrapper::handleCollectionMsg(const lcm::ReceiveBuffer* rbuf, co
 	_affordances.clear();
 	for(uint i = 0; i < collection->affs.size(); i++)
 	{
-		AffConstPtr next(new AffordanceState(&collection->affs[i]));
+		AffPtr next(new AffordanceState(&collection->affs[i]));
 		_affordances.push_back(next);
+                bool found = false;
+                for (uint j = 0; j < _affordances_plus.size(); ++j) {
+                    if ((_affordances_plus[j]->aff == NULL) ||
+                        (_affordances_plus[j]->aff->_uid == next->_uid)) {
+                        _affordances_plus[j]->aff = next;
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    AffPlusPtr aff_plus(new AffordancePlusState());
+                    aff_plus->aff = next;
+                    _affordances_plus.push_back(aff_plus);
+                }
 	}
 
 	_accessMutex.unlock(); //=======unlock
 }
+
+/**receives affordance plus collection message from server -- which represents
+ * all affordance plus objects on the server.*/
+void AffordanceUpWrapper::handlePlusCollectionMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+						 	 	 	 	 	  const drc::affordance_plus_collection_t *collection)
+{
+	_accessMutex.lock(); //========lock
+
+	_affordances_plus.clear();
+	for(uint i = 0; i < collection->affs_plus.size(); i++)
+	{
+		AffPlusPtr next(new AffordancePlusState(&collection->affs_plus[i]));
+		_affordances_plus.push_back(next);
+	}
+
+	_accessMutex.unlock(); //=======unlock
+}
+
 
 
 /**get a string representation of the server stat*/

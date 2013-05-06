@@ -103,18 +103,18 @@ struct Worker {
   }
 
   void sendAffordanceListRequest() {
-    std::vector<affordance::AffConstPtr> affordances;
-    mAffordanceWrapper->getAllAffordances(affordances);
-    drc::affordance_collection_t msg;
+    std::vector<affordance::AffPlusPtr> affordances;
+    mAffordanceWrapper->getAllAffordancesPlus(affordances);
+    drc::affordance_plus_collection_t msg;
     msg.name = "updateFromDataRequestServer";
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.map_id = -1;
     msg.naffs = affordances.size();
     for (int i = 0; i < affordances.size(); ++i) {
-      drc::affordance_t aff;
-      affordances[i]->toMsg(&aff);
-      aff.aff_store_control = drc::affordance_t::UPDATE;
-      msg.affs.push_back(aff);
+      drc::affordance_plus_t affPlus;
+      affordances[i]->toMsg(&affPlus);
+      affPlus.aff.aff_store_control = drc::affordance_t::UPDATE;
+      msg.affs_plus.push_back(affPlus);
     }
     mLcm->publish(affordance::AffordanceServer::
                   AFFORDANCE_PLUS_BASE_OVERWRITE_CHANNEL, &msg);
@@ -207,7 +207,7 @@ struct Worker {
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[5][3] = 1;
     Eigen::Projective3f projector =
-        createProjector(150, 90, msg.width, msg.height);
+        createProjector(100, 90, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }

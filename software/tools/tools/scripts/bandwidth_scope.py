@@ -152,7 +152,7 @@ plt.plot()
 plt.draw()
 
 def lcm_thread():
-  sub1 = lc.subscribe("BW_STATS", on_bw) # required
+  sub1 = lc.subscribe("BASE_BW_STATS", on_bw) # required
   
   while True:
     ## Handle LCM if new messages have arrived.
