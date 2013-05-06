@@ -159,18 +159,19 @@ void AffordanceServer::overwriteAffordances(const lcm::ReceiveBuffer* rbuf,
     AffPlusPtr aPlusPtr(new AffordancePlusState(&affordance_plus_col->affs_plus[i]));
     AffPtr aptr = aPlusPtr->aff;
 
-    // add map for affordance if it des not exist
-    bool added = false;
+    // add map for affordance if it does not exist
     if (_mapIdToAffIdMaps.find(aptr->_map_id) == _mapIdToAffIdMaps.end()) {
       _mapIdToAffIdMaps[aptr->_map_id] = AffIdMap(new unordered_map<int32_t,AffPlusPtr>());
-      added = true;
     }
     AffIdMap scene(_mapIdToAffIdMaps[aptr->_map_id]);
     
     const drc::affordance_t* aff = &affordance_plus_col->affs_plus[i].aff;
+
+    // see if affordance exists
+    bool affordanceExists = (scene->find(aptr->_uid) != scene->end());
     
     // replace affordance if it didn't exist before, or if it is labeled as 'new'
-    if (added || aff->aff_store_control == drc::affordance_t::NEW) {
+    if (!affordanceExists || aff->aff_store_control == drc::affordance_t::NEW) {
       (*scene)[aptr->_uid] = aPlusPtr;
       _nextObjectUID = max((int)_nextObjectUID, aptr->_uid);
       _nextObjectUID++;
@@ -196,7 +197,7 @@ void AffordanceServer::overwriteAffordances(const lcm::ReceiveBuffer* rbuf,
           break;
         }
       }
-      if (!found) ++it;
+      if (found) ++it;
       else it = curMap->erase(it);
     }
   }  
