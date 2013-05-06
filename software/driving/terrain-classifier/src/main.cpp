@@ -731,6 +731,18 @@ void create_contour_pixelmap(Terrain *self, int64_t utime, cv::Size img_size, co
         }
     }
 
+    if(transformed_contour_points.size() == 0){
+        fprintf(stderr, "Error - No points projected to ground\n");
+        delete distance_map->data;
+        distance_map->data = NULL;
+        delete distance_map;
+        
+        if(lcmgl){
+            bot_lcmgl_end(lcmgl);
+            bot_lcmgl_switch_buffer(lcmgl);
+        }  
+    }
+
     vector< vector<cv::Point> > transformed_obstacles;
   
     for(size_t i=0; i < obstacles.size(); i++){
