@@ -1,14 +1,17 @@
-function drakeWalking
+function drakeWalking(use_mex)
 
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 10;
+num_steps = 2;
 step_length = 0.5;
 step_time = 1.0;
 
 options.floating = true;
 options.dt = 0.002;
+if (nargin>0) options.use_mex = use_mex;
+else options.use_mex = false; end
+
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);

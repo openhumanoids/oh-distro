@@ -89,7 +89,7 @@ if strcmpi(getenv('USER'),'russt') && ismac   % sorry... :)
 	['-I',fullfile(gurobi_os_dir,'/include')], ...
 	['-L',fullfile(gurobi_os_dir,'lib')],...
 	'-lgurobi51'};
-  cmdstr = ['mex -g src/QPControllermex.cpp -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
+  cmdstr = ['mex src/QPControllermex.cpp -O -outdir ',BUILD_PREFIX,'/matlab ',sprintf('%s ',args{:})];
   disp(cmdstr);
   eval(cmdstr);
 end

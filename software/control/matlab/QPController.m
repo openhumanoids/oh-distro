@@ -76,6 +76,20 @@ classdef QPController < MIMODrakeSystem
       obj.debug = false;
     end
 
+    if isfield(options,'use_mex')
+      % 0 - no mex
+      % 1 - use mex
+      % 2 - run mex and non-mex and valuecheck the result
+      sizecheck(options.use_mex,1);
+      obj.use_mex = uint32(options.use_mex);
+      rangecheck(obj.use_mex,0,2);
+      if (obj.use_mex && exist('QPControllermex')~=3)
+        error('can''t find QPControllermex.  did you build it?');
+      end
+    else
+      obj.use_mex = 0;
+    end
+    
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
     if (isfield(options,'full_body_opt'))
@@ -145,10 +159,13 @@ classdef QPController < MIMODrakeSystem
       end
     end  
     
+    if (obj.use_mex>0)
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0));
+    end
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-%    out_tic = tic;
+    out_tic = tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -438,17 +455,26 @@ classdef QPController < MIMODrakeSystem
       model.lb = lb;
       model.ub = ub;
 
+      if (obj.use_mex==0 || obj.use_mex==2)
 %       Q=full(Hqp);
 %       c=2*fqp;
 %       Aeq = full(Aeq);
 %       Ain = full(Ain);
 %       save(sprintf('data/model_t_%2.3f.mat',t),'Q','c','Aeq','beq','Ain','bin','lb','ub');
 %       qp_tic = tic;
-      result = gurobi(model,obj.solver_options);
+        result = gurobi(model,obj.solver_options);
 %       qp_toc = toc(qp_tic);
 %       fprintf('QP solve: %2.4f\n',qp_toc);
-      alpha = result.x;
-      
+        alpha = result.x;
+        
+        if (obj.use_mex==2) alpha_des = alpha; end
+      end
+
+      if (obj.use_mex>0)
+        alpha = QPControllermex(obj.mex_ptr.getData(),model);
+      end
+      if (obj.use_mex==2) valuecheck(alpha,alpha_des); end
+
 %      solver_options = obj.solver_options
 %      save QPmex.mat model solver_options alpha;
 %      alphamex = QPControllermex(model,obj.solver_options);
@@ -550,7 +576,7 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
@@ -583,6 +609,8 @@ classdef QPController < MIMODrakeSystem
     solver = 0; % 0: gurobi, 1:cplex
     solver_options = struct();
     debug;
+    use_mex;
+    mex_ptr;
     lc;
     contact_est_monitor;
     lfoot_contact_state = 0; 
