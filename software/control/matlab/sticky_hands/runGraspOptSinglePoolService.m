@@ -82,8 +82,9 @@ while(1)
             q2 = hand_rot(2);
             q3 = hand_rot(3);
             qw = hand_rot(4);
-            [x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
-          
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
             
             [xstar] = iterativeGraspSearch(r_l,double(x0));
@@ -108,8 +109,9 @@ while(1)
             q3 = hand_rot(3);
             qw = hand_rot(4);
             %[qw q1 q2 q3]
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
             %rpy(1:3) = quat2angle([qw q1 q2 q3],'XYZ')
-            [x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             candidate_grasp_publisher.publish(ts,hand_trans,hand_rot,x0(7:size_q));
             [xstar] = iterativeGraspSearch(r_r,double(x0));
             %[xstar,zstar] = iterativeGraspSearch2(r_r,double(xstar));
@@ -125,14 +127,16 @@ while(1)
             hand_rot = [msg.l_hand_init_pose.rotation.x,msg.l_hand_init_pose.rotation.y,msg.l_hand_init_pose.rotation.z,msg.l_hand_init_pose.rotation.w];
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
-            [x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             [xstar] = iterativeGraspSearch(r_l,double(x0));
         elseif (msg.grasp_type ==msg.SANDIA_RIGHT)
             hand_trans = [msg.r_hand_init_pose.translation.x,msg.r_hand_init_pose.translation.y,msg.r_hand_init_pose.translation.z];
             hand_rot = [msg.r_hand_init_pose.rotation.x,msg.r_hand_init_pose.rotation.y,msg.r_hand_init_pose.rotation.z,msg.r_hand_init_pose.rotation.w];
             x0(1:3) = hand_trans(1:3);
             q1=  hand_rot(1); q2 = hand_rot(2); q3 = hand_rot(3); qw = hand_rot(4);
-            [x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
+            x0(4:6)=quat2rpy([qw q1 q2 q3]);
+            %[x0(4),x0(5),x0(6)] = quat2angle([qw q1 q2 q3],'XYZ');
             [xstar] = iterativeGraspSearch(r_r,double(x0));
         end
         if(~reset_optimization)
@@ -254,8 +258,11 @@ end %end while
             trans(3) = q(3) -manipuland_params.xc(3);
             
             r = q(4); p =q(5); y =q(6);
-            dcm = angle2dcm(r,p,y,'XYZ');
-            quat=dcm2quat(dcm);
+            
+            dcm=rpy2rotmat(q(4:6));
+            quat=rotmat2quat(dcm);
+            %dcm = angle2dcm(r,p,y,'XYZ');
+            %quat=dcm2quat(dcm);
             rot = [quat(2);quat(3);quat(4);quat(1)];
             
             if(msg.grasp_type ==msg.SANDIA_LEFT)
