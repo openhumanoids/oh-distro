@@ -23,7 +23,7 @@ set(ldpc_sources
     )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR} shaper-packet.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR} shaper-packet.proto procman-analogs.proto) 
 add_executable(drc-network-shaper 
   network-bridge.cpp 
   shaper-handlers.cpp 

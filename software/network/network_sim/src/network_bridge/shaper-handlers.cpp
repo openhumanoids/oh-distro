@@ -73,8 +73,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->validate<drc::ShaperHeader>();
 
-    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec)));
-    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec)));
+    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
+    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
     
     
     glog.set_name("drc-network-shaper");
