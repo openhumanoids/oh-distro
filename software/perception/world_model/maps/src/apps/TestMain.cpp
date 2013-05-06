@@ -23,6 +23,9 @@
 #include <maps/ViewClient.hpp>
 #include <bot_param/param_client.h>
 
+// TODO TEMP
+#include <bot_core/timestamp.h>
+
 using namespace maps;
 using namespace std;
 
