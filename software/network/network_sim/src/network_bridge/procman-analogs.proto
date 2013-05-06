@@ -1,0 +1,87 @@
+import "goby/acomms/protobuf/dccl_option_extensions.proto";
+
+package drc;
+
+message ProcManWrapper
+{
+  enum MessageType
+  {
+    FULL = 0;
+    DIFF = 1;
+  }
+  required MessageType type = 1;
+  enum Host
+  {
+    BASE = 0;
+    ROBOT = 1;
+  }
+
+  required Host host = 2;
+  optional bool request_full = 3 [default = false];
+  required bytes data = 4;
+}
+
+message PMDOrdersDiff
+{
+  option (dccl.msg).max_bytes = 0x4000;
+  option (dccl.msg).id = 126;
+
+  required int64 reference_utime = 1; // absolute time of reference
+
+  // time difference
+  optional int64 utime = 2;
+
+  // set to absolute value, if different
+  optional string sheriff_name = 3;
+  repeated PMDSheriffCmdDiff cmds = 5;  
+  
+  repeated string varnames = 7;
+  repeated string varvals = 8;
+
+
+  message PMDSheriffCmdDiff
+  {
+    optional string name = 1;
+    optional string nickname = 2;
+    optional string group = 3;
+    optional int32 desired_runid = 4;
+    optional bool force_quit = 5;
+    optional int32 sheriff_id = 6;
+    optional bool auto_respawn = 7;
+  }
+}
+
+
+message PMDInfoDiff
+{
+  option (dccl.msg).max_bytes = 0x4000;
+  option (dccl.msg).id = 125;
+
+  required int64 reference_utime = 1;   // absolute time of reference
+
+  optional int64 utime = 2;
+  optional float cpu_load = 3;
+  optional int64 phys_mem_total_bytes = 4;
+  optional int64 phys_mem_free_bytes = 5;
+  optional int64 swap_total_bytes = 6;
+  optional int64 swap_free_bytes = 7;
+  optional int32 ncmds = 8;
+
+  repeated PMDDeputyCmdDiff cmds = 9;
+
+  message PMDDeputyCmdDiff
+{
+    optional string name = 1;
+    optional string nickname = 2;
+    optional string group = 3;
+    optional int32 pid = 4;
+    optional int32 actual_runid = 5;
+    optional int32 exit_code = 6;
+    optional float cpu_usage = 7;
+    optional int64 mem_vsize_bytes = 8;
+    optional int64 mem_rss_bytes = 9;
+    optional int32 sheriff_id = 10;
+    optional bool auto_respawn = 11;
+  }
+}
+
