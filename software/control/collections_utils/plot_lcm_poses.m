@@ -11,6 +11,13 @@ function plot_lcm(values , ypr, id, name, type, reset, draw_links, link_id)
 % HEXAGON=9, 
 % SONARCONE=10;
 
+m = drc.utime_two_t();
+lc = lcm.lcm.LCM.getSingleton();
+m.utime_sim =10;
+m.utime_wall =20;
+lc.publish('OBJ_COLLECTION', m);
+
+
 m = vs.obj_collection_t();
 m.objs = javaArray('vs.obj_t', size(values, 1));
 for i=1:size(values,1)

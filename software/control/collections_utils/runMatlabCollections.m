@@ -1,3 +1,10 @@
+%int32(floor(86400 * (datenum(date) - datenum('01-Jan-1970'))))
+m = drc.utime_two_t();
+lc = lcm.lcm.LCM.getSingleton();
+m.utime_sim =1
+m.utime_wall =[utime_from_wall_clock];
+lc.publish('UTIME_TWO', m);
+
 % demonstration of Collections to LCM
 
 % 2. Plot a set of axes - and connect them:
@@ -56,3 +63,6 @@ pos = [0.5  , 0 ,0;
 pos(:,1)= pos(:,1) + 3;
 cols=repmat( [0,1,0], size(pos)) % red
 plot_lcm_points(pos, cols, 15, 'Polygon', 10, 1)
+
+
+
