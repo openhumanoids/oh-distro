@@ -24,6 +24,7 @@ classdef QuasistaticMotionController < DRCController
       options.w = 1e-1;
       options.R = 1e-50*eye(getNumInputs(r));
       options.debug = true;
+      options.lcm_foot_contacts = false;
 
 %       input_names = r.getInputFrame.coordinates;
 %       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
