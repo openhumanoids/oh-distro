@@ -13,8 +13,10 @@
   <!--Width and thickness of toe target visual element-->
   <param name="toe_target_w" default_value="0.01" inc="0.01" min="0" max="0.1"/>
    <param name="toe_target_h" default_value="0.01" inc="0.01" min="0" max="0.1"/>
-   <param name="foot_width" default_value="0.1249" inc="0.01" min="0" max="0.1"/>
   
+   <!--Foot dimensions-->
+   <param name="foot_length" default_value="0.26" inc="0.01" min="0" max="0.1"/> 
+   <param name="foot_width" default_value="0.1249" inc="0.01" min="0" max="0.1"/> 
   
   <!--X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
   <!--World frame origin of the object-->
@@ -383,6 +385,20 @@
               xyz="${(l_toe_x+r_toe_x)/2} ${(l_toe_y+r_toe_y)/2} ${toe_target_h/2}"/>
       <parent link="chassis" type="link"/>
       <child link="toe_target" type="link"/>
+   </joint>
+   <link name="center_target">
+     <visual name="center_target">
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+       <geometry>
+         <box size="${foot_length/2} ${toe_target_w} ${toe_target_h}"/>
+       </geometry>
+     </visual>
+   </link>
+   <joint name="center_target_joint" type="fixed">
+     <origin rpy="0 0 ${pi/2}" 
+             xyz="0 ${foot_length/4} 0"/>
+     <parent link="toe_target" type="link"/>
+     <child link="center_target" type="link"/>
    </joint>
    <joint name="chassis_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 -0 0"/>
