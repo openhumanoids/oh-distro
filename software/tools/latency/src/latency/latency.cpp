@@ -11,6 +11,7 @@ Latency::Latency() {
   latency_count_ =0;
   latency_step_cumsum_=0; 
       
+  verbose_=false;
 }
 
 void Latency::add_from(int64_t js_time, int64_t js_walltime){
@@ -19,6 +20,11 @@ void Latency::add_from(int64_t js_time, int64_t js_walltime){
 }
 
 void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message ){
+
+  if (verbose_){
+    std::cout << "marker: " <<  jc_utime << " and " << jc_walltime << "\n";  
+  }  
+  
   std::vector<std::int64_t>::iterator it = std::find( js_utime_.begin(), js_utime_.end(), jc_utime );
   if( it == js_utime_.end() ){
     return;
@@ -27,6 +33,13 @@ void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message 
   int idx = std::distance( js_utime_.begin(), it );
   int step_latency = js_utime_.size() - 1 - idx;
   int64_t  elapsed_walltime = jc_walltime - js_walltime_[idx]  ;
+
+  if (verbose_){
+    for (size_t i =0; i <js_utime_.size() ; i++){
+      std::cout << i << ": "<< js_utime_[i] << " and " << js_walltime_[i] << "\n";
+    }
+    std::cout << elapsed_walltime << " elapsed_walltime " << step_latency << " step_latency\n\n";
+  }
   
   js_walltime_.clear();
   js_utime_.clear();

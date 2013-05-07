@@ -24,6 +24,7 @@ class Latency {
     int period_;
     float period_f_;
     
+    bool verbose_;
 };
 
 

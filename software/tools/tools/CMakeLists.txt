@@ -21,3 +21,6 @@ pods_install_python_script(drc-scope-jointrate scripts/jointrate_scope.py)
 pods_install_python_script(drc-set-sim-rate scripts/send_a_rateset.py)
 pods_install_python_script(drc-init-laser scripts/init_laser.py)
 
+#
+pods_install_python_script(drc_latency scripts/drc_latency.py)
+
