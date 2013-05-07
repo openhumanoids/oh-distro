@@ -13,7 +13,7 @@ function [ground_pos, got_data, terrain_ok, ground_pts] = checkTerrain(biped, po
     end
     for j = 1:length(gc(1,:))
       M = makehgtform('xrotate', orig(4), 'yrotate', orig(5), 'zrotate', orig(6));
-      offs = gc(:,j) * 1.1;
+      offs = gc(:,j) * 1.25;
       d = M * [offs; 1];
       gc(:,j) = orig(1:3) + d(1:3);
     end

@@ -1,4 +1,4 @@
-function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightfun)
+function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 
   debug = false;
 
@@ -22,7 +22,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
 
   p0 = [mean([X(1).pos(1:3), X(2).pos(1:3)], 2); X(1).pos(4:6)];
   poses(3,:) = p0(3);
-  poses = heightfun(poses);
+  poses = biped.checkTerrain(poses);
   foot_goals = struct('right', biped.stepCenter2FootCenter(poses(1:6,end), 1), 'left', biped.stepCenter2FootCenter(poses(1:6,end), 0));
 
   if options.yaw_fixed || all(sum(diff([p0(1:3), poses(1:3,:)], 1, 2).^2, 1) <= 1)
@@ -66,13 +66,13 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
       if options.yaw_fixed
         x(6) = x0(6);
       end
-      [pos_n, got_data, terrain_ok] = heightfun(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
+      [pos_n, got_data, terrain_ok] = biped.checkTerrain(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
       c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, nom_forward_step);
       if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) 
         break
-      elseif (lambda_n - lambda < 1e-2 && nom_forward_step + 0.05 > biped.max_forward_step)
+      elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 1e-2 && nom_forward_step + 0.05 > biped.max_forward_step)
         break
-      elseif (lambda_n - lambda < 1e-2)
+      elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 5e-2)
         nom_forward_step = nom_forward_step + 0.05;
 %         lambda = lambda - 0.05;
         lambda_n = 1;
@@ -138,11 +138,12 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options, heightf
   
   function apex_pos = get_apex_pos(last_pos, next_pos)
     apex_pos = mean([last_pos, next_pos], 2);
-    if last_pos(3) - next_pos(3) > (0.8 * biped.nom_step_clearance)
-      apex_pos(1:2) = next_pos(1:2);
-    elseif next_pos(3) - last_pos(3) > (0.8 * biped.nom_step_clearance)
-      apex_pos(1:2) = last_pos(1:2);
-    end
+    % if last_pos(3) - next_pos(3) > (0.8 * biped.nom_step_clearance)
+    %   apex_pos(1:2) = next_pos(1:2);
+    % elseif next_pos(3) - last_pos(3) > (0.8 * biped.nom_step_clearance)
+    %   apex_pos(1:2) = last_pos(1:2);
+    % end
     apex_pos(3) = max([last_pos(3), next_pos(3)]) + biped.nom_step_clearance;
   end
+  
 end
