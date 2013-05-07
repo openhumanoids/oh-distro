@@ -145,6 +145,7 @@ public:
     mMeshRenderer.setCameraChannel("CAMERALEFT_COMPRESSED");
     mViewClient.setBotWrapper(mBotWrapper);
     mViewClient.addListener(this);
+    mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
 
     // set callback for pixel maps
     // TODO: temporary channel
@@ -728,6 +729,8 @@ public:
         data->mLabel = "Depthmap Scene";  break;
       case drc::data_request_t::DEPTH_MAP_WORKSPACE:
         data->mLabel = "Depthmap Workspace";  break;
+      case 1000:
+        data->mLabel = "Heightmap Controller"; break;
       default:
         data->mLabel = static_cast<std::ostringstream*>
           (&(std::ostringstream() << data->mId) )->str();
