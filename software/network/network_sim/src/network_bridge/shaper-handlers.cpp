@@ -341,7 +341,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         {
             msg_frag.set_data(&qmsg[0], qmsg.size());
             msg_head->set_is_last_fragment(true);
-            for(int i = 0, n = std::ceil(fec_); i < n; ++i)
+            for(int i = 0, n = round(fec_); i < n; ++i)
                 send_queue_.push(msg_frag);
         }
         else
