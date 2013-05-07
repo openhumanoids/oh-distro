@@ -2,6 +2,7 @@
 #define _gtkmm_RendererBase_hpp_
 
 #include <string>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 
 // forward declarations
@@ -113,7 +114,7 @@ protected:
 
 private:
   struct InternalHelper;
-  boost::shared_ptr<InternalHelper> mHelper;
+  std::shared_ptr<InternalHelper> mHelper;
 };
 
 }

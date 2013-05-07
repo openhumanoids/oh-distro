@@ -39,7 +39,7 @@ _MakeWidgetTraits(Gtk::ComboBoxText, WidgetTypeList);
 
 // base class for bindings
 struct WidgetBinding {
-  typedef boost::shared_ptr<WidgetBinding> Ptr;
+  typedef std::shared_ptr<WidgetBinding> Ptr;
   typedef Glib::SignalProxy0<void> Signal;
   Gtk::Widget* mWidget;
   virtual void load(const Glib::KeyFile& iKeyFile, const std::string& iGroup,
@@ -393,10 +393,10 @@ bool RendererBase::
 bind(W* iWidget, const std::string& iName, T& iData) {
   typedef typename WidgetTraits<W>::WidgetType WidgetType;
   typedef WidgetBindingImpl<WidgetType,W,T> BindingType;
-  boost::shared_ptr<BindingType> binding(new BindingType());
+  std::shared_ptr<BindingType> binding(new BindingType());
   binding->set(iWidget, iData);
   mHelper->mWidgetBindings[iName] =
-    boost::dynamic_pointer_cast<BindingType>(binding);
+    std::dynamic_pointer_cast<BindingType>(binding);
   binding->signal().connect(sigc::mem_fun(*this, &RendererBase::requestDraw));
   return true;
 }
