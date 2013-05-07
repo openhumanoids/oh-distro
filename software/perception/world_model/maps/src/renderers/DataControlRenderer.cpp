@@ -18,8 +18,17 @@
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 
 #include <bot_vis/viewer.h>
+#include <affordance/AffordanceUpWrapper.h>
 
 // TODO: slow sweep commands
+
+// convenience class for affordance list box
+struct AffordanceColumns : public Gtk::TreeModel::ColumnRecord {
+  Gtk::TreeModelColumn<int> mId;
+  Gtk::TreeModelColumn<Glib::ustring> mLabel;
+  AffordanceColumns() { add(mId); add(mLabel); }
+};
+
 
 class DataControlRenderer : public gtkmm::RendererBase {
 protected:
@@ -43,9 +52,14 @@ protected:
 
 protected:
   Gtk::VBox* mRequestControlBox;
+  Gtk::VBox* mPushControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mSpinRate;
   int mHeadPitchAngle;
+
+  Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
+  Gtk::TreeView* mAffordanceListBox;
+  std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
 
   std::unordered_map<std::string, ChannelType> mChannels;
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
@@ -63,12 +77,19 @@ public:
     drc::Clock::instance()->setLcm(getLcm());
     drc::Clock::instance()->setVerbose(false);
 
+    // set up affordance wrapper
+    mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper(getLcm()));
+
     // create and show ui widgets
     setupWidgets();
 
     // create update timer
     Glib::signal_timeout().connect
       (sigc::mem_fun(*this, &DataControlRenderer::checkTimers), 500);
+
+    // create affordance update timer
+    Glib::signal_timeout().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::checkAffordances), 500);
   }
 
   ~DataControlRenderer() {
@@ -91,6 +112,47 @@ public:
 	}
       }
     }
+    return true;
+  }
+
+  bool checkAffordances() {
+
+    struct Functor {
+      std::vector<int> mIds;
+      void callback(const Gtk::TreeModel::iterator& iIter) {
+        AffordanceColumns columns;
+        Gtk::TreeModel::Row row = *iIter;
+        mIds.push_back(row[columns.mId]);
+      }
+    };
+
+    // save existing selection
+    AffordanceColumns columns;
+    Functor functor;
+    auto activeRows = mAffordanceListBox->get_selection();
+    activeRows->selected_foreach_iter
+      (sigc::mem_fun(functor, &Functor::callback) );
+
+    // populate new list
+    std::vector<affordance::AffConstPtr> affordances;
+    mAffordanceWrapper->getAllAffordances(affordances);
+    mAffordanceTreeModel->clear();
+    mAffordanceListBox->remove_all_columns();
+    mAffordanceListBox->append_column("name",columns.mLabel);
+    for (size_t i = 0; i < affordances.size(); ++i) {
+      Gtk::TreeModel::iterator localIter = mAffordanceTreeModel->append();
+      const Gtk::TreeModel::Row& row = *localIter;
+      row[columns.mId] = affordances[i]->_uid;
+      char name[256];
+      sprintf(name, "%d - %s", affordances[i]->_uid,
+              affordances[i]->getName().c_str());
+      row[columns.mLabel] = name;
+      if (std::find(functor.mIds.begin(), functor.mIds.end(),
+                    affordances[i]->_uid) != functor.mIds.end()) {
+        activeRows->select(localIter);
+      }
+    }
+
     return true;
   }
 
@@ -154,7 +216,30 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
     mRequestControlBox->add(*button);
-    notebook->append_page(*mRequestControlBox, "Data");
+    notebook->append_page(*mRequestControlBox, "Pull");
+
+    // for pushing data (e.g., affordances)
+    mPushControlBox = Gtk::manage(new Gtk::VBox());
+    Gtk::VBox* vbox = Gtk::manage(new Gtk::VBox());
+    Gtk::Label* label =
+      Gtk::manage(new Gtk::Label("Affordances", Gtk::ALIGN_LEFT));
+    vbox->pack_start(*label, false, false);
+    Gtk::ScrolledWindow* scroll = Gtk::manage(new Gtk::ScrolledWindow());
+    scroll->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    scroll->set_size_request(-1, 100);
+    AffordanceColumns columns;
+    mAffordanceTreeModel = Gtk::ListStore::create(AffordanceColumns());
+    mAffordanceListBox = Gtk::manage(new Gtk::TreeView());
+    mAffordanceListBox->set_model(mAffordanceTreeModel);
+    mAffordanceListBox->get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
+    scroll->add(*mAffordanceListBox);
+    vbox->pack_start(*scroll, false, false);
+    mPushControlBox->pack_start(*vbox, false, false);
+    button = Gtk::manage(new Gtk::Button("Push"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onDataPushButton));
+    mPushControlBox->pack_start(*button, false, false);
+    notebook->append_page(*mPushControlBox, "Push");
 
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
@@ -235,6 +320,24 @@ public:
     if (msg.num_requests > 0) {
       getLcm()->publish("DATA_REQUEST", &msg);
     }
+  }
+
+  void onDataPushButton() {
+    std::vector<affordance::AffPlusPtr> affordances;
+    mAffordanceWrapper->getAllAffordancesPlus(affordances);
+    drc::affordance_plus_collection_t msg;
+    msg.name = "updateFromDataControlRenderer";
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.map_id = -1;
+    msg.naffs = affordances.size();
+    for (int i = 0; i < msg.naffs; ++i) {
+      drc::affordance_plus_t aff;
+      affordances[i]->toMsg(&aff);
+      msg.affs_plus.push_back(aff);
+    }
+    getLcm()->publish(affordance::AffordanceServer::
+                      AFFORDANCE_PLUS_BOT_OVERWRITE_CHANNEL, &msg);
+    std::cout << "Sent affordance list" << std::endl;
   }
 
   void onRateControlButton() {
