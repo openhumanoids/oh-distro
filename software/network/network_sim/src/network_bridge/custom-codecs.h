@@ -224,8 +224,8 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                 if(!make_diff(lcm_object, Codec::state_[lcm_object.host], &diff))
                     return false;
 
-//                diff.SerializeToString(wrapper.mutable_data());
-                dccl_->encode(wrapper.mutable_data(), diff);
+                diff.SerializeToString(wrapper.mutable_data());
+                //                dccl_->encode(wrapper.mutable_data(), diff);
             }
 
             glog.is(VERBOSE) && glog << "ProcMan Message type is: "
@@ -274,7 +274,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                 DiffType diff;
 //                diff.ParseFromString(wrapper.data());
                 DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
-                dccl_->decode(wrapper.data(), &diff);
+                //                dccl_->decode(wrapper.data(), &diff);
 
                 if(!reverse_diff(&lcm_object, Codec::state_[host], diff))
                 {
