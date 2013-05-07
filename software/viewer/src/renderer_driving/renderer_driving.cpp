@@ -68,7 +68,13 @@
 #define PARAM_D_GAIN "D Gain"
 #define PARAM_I_GAIN "I Gain"
 
-#define STEERING_RATIO 0.063670;
+#define STEERING_RATIO 0.063670
+
+#define MAX_ACCELERATION_TIME 6
+#define DEFAULT_ACCELERATION_TIME 2
+
+#define MAX_DRIVE_TIME 40
+#define DEFAULT_DRIVE_TIME 10
 
 #define H_WIDTH 0.6
 #define H_LENGTH 0.9
@@ -1442,10 +1448,10 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     //bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE, NULL);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_DRIVE_TIME, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 200.0, 0.1, 20);
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, MAX_DRIVE_TIME, 0.1, DEFAULT_DRIVE_TIME);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_DURATION, 
-                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 100.0, 0.1, 5);
+                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, MAX_ACCELERATION_TIME, 0.1, DEFAULT_ACCELERATION_TIME);
 
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_RATIO, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0.04);
