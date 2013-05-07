@@ -768,11 +768,9 @@ classdef ManipulationPlanner < handle
                       disp('rh end state is modified')
                       r_hand_poseT(1:3) = rhand_int_constraint(1:3);
                       r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
+                      obj.rhandT = rhand_int_constraint;    
                       rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                       rh_ee_goal=[];
-%                       rhandT(1:3) = r_hand_poseT(1:3);
-%                       rhandT(4:6) =rpy;
-%                       obj.rhandT = rhandT;              
                     end                    
                 end
                 
@@ -793,11 +791,9 @@ classdef ManipulationPlanner < handle
                       disp('lh end state is modified')
                       l_hand_poseT(1:3) = lhand_int_constraint(1:3);
                       l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
+                      obj.lhandT = lhand_int_constraint;        
                       lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                       lh_ee_goal=[];
-%                       lhandT(1:3) = l_hand_poseT(1:3);
-%                       lhandT(4:6) =rpy;
-%                       obj.lhandT = lhandT;              
                     end
                 end
                 
@@ -817,11 +813,9 @@ classdef ManipulationPlanner < handle
                       disp('rf end state is modified')
                       r_foot_poseT(1:3) = rfoot_int_constraint(1:3);
                       r_foot_poseT(4:7) = rpy2quat(rfoot_int_constraint(4:6));
+                      obj.rfootT = rfoot_int_constraint;    
                       rfoot_int_constraint = [nan;nan;nan;nan;nan;nan];
-                      rf_ee_goal=[];
-%                       rfootT(1:3) = r_foot_poseT(1:3);
-%                       rfootT(4:6) =rpy;
-%                       obj.rfootT = rfootT;               
+                      rf_ee_goal=[];            
                     end              
                 end
                 
@@ -841,11 +835,9 @@ classdef ManipulationPlanner < handle
                       disp('lf end state is modified')
                       l_foot_poseT(1:3) = lfoot_int_constraint(1:3);
                       l_foot_poseT(4:7) = rpy2quat(lfoot_int_constraint(4:6));
+                      obj.lfootT = lfoot_int_constraint;    
                       lfoot_int_constraint = [nan;nan;nan;nan;nan;nan];
-                      lf_ee_goal=[];
-%                       lfootT(1:3) = l_foot_poseT(1:3);
-%                       lfootT(4:6) =rpy;
-%                       obj.lfootT = lfootT;               
+                      lf_ee_goal=[];             
                     end 
                 end
                 
