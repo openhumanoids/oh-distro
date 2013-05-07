@@ -42,3 +42,28 @@ material mit/firehose_coupling
 		}
 	}
 }
+
+
+material mit/firehose_coupling_red
+{
+    receive_shadows off
+
+	technique
+	{
+		pass
+		{
+            #lighting off
+			ambient 1.8 0.2 0.2 1.0
+			diffuse 1.0 0.2 0.2 1.0
+			specular 0.0 0.0 0.2 1.0 12.5
+
+			texture_unit
+			{
+				texture mit_metal_ripped.jpg
+				#filtering anistropic
+				#max_anisotropy 16
+				scale 2 2
+			}
+		}
+	}
+}

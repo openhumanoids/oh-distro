@@ -50,8 +50,13 @@
           </cylinder>
         </geometry>
         <material>
-          <diffuse>1 0 0 1</diffuse>
-          <ambient>1 .5 .5 1</ambient>
+          <script>
+            <uri>model://mit_firehose_long/materials/scripts</uri>
+            <uri>model://mit_firehose_long/materials/textures</uri>
+            <name>mit/firehose_coupling_red</name>
+          </script>
+        </material>
+        <material>
         </material>
       </visual>
       <collision name="attachment_col">
