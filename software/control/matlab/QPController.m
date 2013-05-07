@@ -182,11 +182,14 @@ classdef QPController < MIMODrakeSystem
     
     % get foot contact state
     if obj.lcm_foot_contacts
-      contact_data = obj.contact_est_monitor.getNextMessage(1);
-      if ~isempty(contact_data)
+      contact_data = obj.contact_est_monitor.getLastMessage();
+      if isempty(contact_data)
+        lfoot_contact_state = 0;
+        rfoot_contact_state = 0;
+      else
         msg = drc.foot_contact_estimate_t(contact_data);
-        obj.lfoot_contact_state = msg.left_contact;
-        obj.rfoot_contact_state = msg.right_contact;
+        lfoot_contact_state = msg.left_contact;
+        rfoot_contact_state = msg.right_contact;
       end
     else
       contact_threshold = 0.002; % m
@@ -198,15 +201,15 @@ classdef QPController < MIMODrakeSystem
 
       % if any foot point is in contact, all contact points are active
       if any(phi(1:4)<contact_threshold)
-        obj.lfoot_contact_state = 1;
+        lfoot_contact_state = 1;
       else
-        obj.lfoot_contact_state = 0;
+        lfoot_contact_state = 0;
       end
 
       if any(phi(5:8)<contact_threshold)
-        obj.rfoot_contact_state = 1;
+        rfoot_contact_state = 1;
       else
-        obj.rfoot_contact_state = 0;
+        rfoot_contact_state = 0;
       end
     end
     
@@ -248,11 +251,11 @@ classdef QPController < MIMODrakeSystem
 
     active_supports = [];
     % if any foot point is in contact, all contact points are active
-    if any(desired_supports==obj.lfoot_idx) && obj.lfoot_contact_state > 0.5
+    if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
       active_contacts((find(desired_supports==obj.lfoot_idx)-1)*4+(1:4)) = 1;
       active_supports = [active_supports; obj.lfoot_idx];
     end
-    if any(desired_supports==obj.rfoot_idx) && obj.rfoot_contact_state > 0.5
+    if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
       active_contacts((find(desired_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
       active_supports = [active_supports; obj.rfoot_idx];
     end
@@ -613,8 +616,6 @@ classdef QPController < MIMODrakeSystem
     mex_ptr;
     lc;
     contact_est_monitor;
-    lfoot_contact_state = 0; 
-    rfoot_contact_state = 0; 
     lcm_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
