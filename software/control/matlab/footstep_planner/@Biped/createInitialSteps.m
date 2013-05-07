@@ -6,9 +6,13 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   foot_orig = biped.feetPosition(q0);
 
 
-  poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
-  poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
-
+  if options.yaw_fixed
+    poses(6, :) = foot_orig.right(6);
+  else
+    poses(6, poses(6,:) < -pi) = poses(6, poses(6,:) < -pi) + 2 * pi;
+    poses(6, poses(6,:) > pi) = poses(6, poses(6,:) > pi) - 2 * pi;
+  end
+    
   if options.right_foot_lead
     X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
     X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'time', 0, 'id', biped.getNextStepID(), 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
@@ -48,6 +52,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 %     ceq = double(~terrain_ok);
 %   end
 %   opts = optimset('Algorithm', 'interior-point');
+stall_count = 0;
   
   while (1)
     is_right_foot = ~X(end).is_right_foot;
@@ -69,8 +74,10 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
       [pos_n, got_data, terrain_ok] = biped.checkTerrain(biped.stepCenter2FootCenter(x, is_right_foot), is_right_foot);
       c = biped.checkStepFeasibility(X(end).pos, pos_n, ~is_right_foot, nom_forward_step);
       if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) 
+        stall_count = 0
         break
       elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 1e-2 && nom_forward_step + 0.05 > biped.max_forward_step)
+        stall_count = stall_count + 1
         break
       elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 5e-2)
         nom_forward_step = nom_forward_step + 0.05;
@@ -81,6 +88,9 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
 %         lambda_n = lambda_n - 0.03;
 %         lambda_n = lambda - 0.05 + (lambda_n - lambda + 0.05) * .9;
       end
+    end
+    if stall_count >= 2
+      break
     end
     if got_data
       using_heightmap = true;
