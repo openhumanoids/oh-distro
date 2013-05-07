@@ -14,7 +14,7 @@ message ShaperHeader
                                      (dccl.field).max = 15];
   optional uint32 fragment = 4 [(dccl.field).min = 0,
                                 (dccl.field).max = 0xFFFFF,
-                                codec: "presence_bit"]; // 1 Megabyte
+                                (dccl.field).codec = "presence_bit"]; // 1 Megabyte
   required bool is_last_fragment = 5;
   optional uint32 message_size = 10 [(dccl.field).min = 0,
                                      (dccl.field).max = 0xFFFFF]; // 1 Megabyte
