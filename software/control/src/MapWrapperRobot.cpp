@@ -14,9 +14,6 @@
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImageView.hpp>
 
-#include <lcmtypes/drc/data_request_t.hpp>
-#include <lcmtypes/drc/map_request_t.hpp>
-
 static const std::string kHeightMapChannel("MAP_CONTROL_HEIGHT");
 static const int kHeightMapViewId = 1000;
 
@@ -227,49 +224,42 @@ public:
   }
 
   void requestHeightMap() {
-    drc::map_request_t msg;
-
     const Eigen::Vector3f minPt(-2, -5, -3);
     const Eigen::Vector3f maxPt(5, 5, 0.3);
     const float timeWindowSeconds = 5;
 
-    msg.resolution = 0.1;
-    msg.width = int((maxPt[0] - minPt[0]) / msg.resolution);
-    msg.height = int((maxPt[1] - minPt[1]) / msg.resolution);
-    msg.time_min = -5*1e6;
-    msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, -minPt[0]}));
-    msg.clip_planes.push_back(std::vector<float>({-1, 0, 0,  maxPt[0]}));
-    msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, -minPt[1]}));
-    msg.clip_planes.push_back(std::vector<float>({ 0,-1, 0,  maxPt[1]}));
-    msg.clip_planes.push_back(std::vector<float>({ 0, 0, 1, -minPt[2]}));
-    msg.clip_planes.push_back(std::vector<float>({ 0, 0,-1,  maxPt[2]}));
-    msg.num_clip_planes = msg.clip_planes.size();
+    maps::ViewBase::Spec spec;
+    spec.mResolution = 0.1;
+    spec.mWidth = int((maxPt[0] - minPt[0]) / spec.mResolution);
+    spec.mHeight = int((maxPt[1] - minPt[1]) / spec.mResolution);
+    spec.mTimeMin = -5*1e6;
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 1, 0, 0, -minPt[0]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f(-1, 0, 0,  maxPt[0]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 1, 0, -minPt[1]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0,-1, 0,  maxPt[1]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0, 1, -minPt[2]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0,-1,  maxPt[2]));
 
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.map_id = 1;
-    msg.view_id = kHeightMapViewId;
-    msg.type = drc::map_request_t::DEPTH_IMAGE;
-    msg.channel = kHeightMapChannel;
-    msg.frequency = 1;
-    msg.time_max = 0;
-    msg.relative_time = true;
-    msg.relative_location = true;
-    msg.active = true;
+    spec.mMapId = 1;
+    spec.mViewId = kHeightMapViewId;
+    spec.mType = maps::ViewBase::TypeDepthImage;
+    spec.mChannel = kHeightMapChannel;
+    spec.mFrequency = 1;
+    spec.mTimeMax = 0;
+    spec.mRelativeTime = true;
+    spec.mRelativeLocation = true;
+    spec.mActive = true;
     Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
     pose.translation() = Eigen::Vector3f(0,0,10);
     pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
     Eigen::Affine3f calib = Eigen::Affine3f::Identity();
-    calib(0,0) = 1/msg.resolution;
-    calib(1,1) = 1/msg.resolution;
-    calib(0,3) = -minPt[0]/msg.resolution;
-    calib(1,3) = -minPt[1]/msg.resolution;
+    calib(0,0) = 1/spec.mResolution;
+    calib(1,1) = 1/spec.mResolution;
+    calib(0,3) = -minPt[0]*calib(0,0);
+    calib(1,3) = -minPt[1]*calib(1,1);
     Eigen::Projective3f projector = calib*pose.inverse();
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        msg.transform[i][j] = projector(i,j);
-      }
-    }
-    mLcm->publish("MAP_REQUEST", &msg);
+    spec.mTransform = projector;
+    mViewClient.request(spec);
   }
   
 };
