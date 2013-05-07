@@ -19,7 +19,7 @@ material mit/firehose_canvas
 	}
 }
 
-material vrc/firehose_coupling
+material mit/firehose_coupling
 {
     receive_shadows off
 
