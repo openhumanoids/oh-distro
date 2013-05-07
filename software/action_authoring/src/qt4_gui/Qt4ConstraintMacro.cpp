@@ -318,14 +318,3 @@ updateElementsFromState()
     _gui_constraintType->blockSignals(false);
     _updatingElementsFromState = false;
 }
-
-std::string
-Qt4ConstraintMacro::
-getModePrompt()
-{
-    std::stringstream ss;
-    ss << "<b>constraint " << _constraintIndex << "</b>:" <<
-       _constraint->getAtomicConstraint()->getRelationState()->getState() <<
-       "<br/><b>prompt: </b>" << _constraint->getAtomicConstraint()->getRelationState()->getPrompt();
-    return ss.str();
-}

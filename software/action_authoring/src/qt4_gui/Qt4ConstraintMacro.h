@@ -41,7 +41,6 @@ public:
         return _constraintIndex;
     }
     void setActiveExternal();
-    std::string getModePrompt();
     void setPlannerStatus(TogglePanel::PlannerStatus p);
 
 

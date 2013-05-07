@@ -20,12 +20,7 @@ using namespace affordance;
 
 #define ROBOT_URDF_MODEL_PATH "/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf"
 
-#define DEFAULT_OFFSET 0.0
-
 #define ROBOT_NAME "atlas" //used for LCM messages that go to planning
-
-typedef PointContactRelation PCR;
-typedef PointContactRelationPtr PcrPtr;
 
 /*
  * Filler method to populate affordance and constraint lists until we get proper
@@ -109,9 +104,9 @@ void MainWindow::handleAffordancesChanged()
     //	  this, SLOT(mainRaycastCallback(Eigen::Vector3f)));
 
     // TODO resolve path
-    //_worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle",
-    //"/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
-    //_widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
+//    _worldState.colorVehicle = new opengl::OpenGL_Object_DAE("vehicle",
+//    "/home/drc/drc/software/models/mit_gazebo_models/" "mit_golf_cart/meshes/new_golf_cart.dae");
+//    _widget_opengl.opengl_scene().add_object(*_worldState.colorVehicle); //add vehicle
 
     _widget_opengl.update();
     //_widget_opengl.add_object_with_collision(_collision_object_gfe);
@@ -194,7 +189,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     QPushButton *planbutton = new QPushButton("Publish For Planning");
     planbutton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DriveNetIcon));
     toolbar->addWidget(planbutton);
-
 
     vbox->addWidget(toolbar);
 
@@ -316,60 +310,14 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
 
     QVBoxLayout *rightsidelayout = new QVBoxLayout();
     QWidget *rightside = new QWidget();
-    _actionDescLabel = new QLabel();
-    _actionDescLabel->setTextFormat(Qt::RichText);
     _scrubber = new DefaultValueSlider(Qt::Horizontal, this);
     _scrubber->setRange(0, 1000);
-    rightsidelayout->addWidget(_actionDescLabel);
 
-    _xOffset = new QDoubleSpinBox();
-    _yOffset = new QDoubleSpinBox();
-    _zOffset = new QDoubleSpinBox();
-    
-    //todo
-    _xOffset->setValue(DEFAULT_OFFSET);
-    _yOffset->setValue(DEFAULT_OFFSET);
-    _zOffset->setValue(DEFAULT_OFFSET);
-    //    rightsidelayout->addWidget(_xOffset);
-    //rightsidelayout->addWidget(_yOffset);
-    //rightsidelayout->addWidget(_zOffset);
-
-    _xInequality = new QComboBox();
-    _yInequality = new QComboBox();
-    _zInequality = new QComboBox();
-    
-    _xInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
-    _xInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
-    _xInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
-    _xInequality->insertItem(0, PCR::EQUAL_STR.c_str());
-
-    _yInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
-    _yInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
-    _yInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
-    _yInequality->insertItem(0, PCR::EQUAL_STR.c_str());
-
-    _zInequality->insertItem(0, PCR::UNDEFINED_STR.c_str());
-    _zInequality->insertItem(0, PCR::GREATER_THAN_STR.c_str());
-    _zInequality->insertItem(0, PCR::LESS_THAN_STR.c_str());
-    _zInequality->insertItem(0, PCR::EQUAL_STR.c_str());
-
-    QWidget *inequalities = new QWidget(this);
-    QHBoxLayout* inequalitiesLayout = new QHBoxLayout();
-
-    inequalitiesLayout->addWidget(new QLabel("x-axis: "));
-    inequalitiesLayout->addWidget(_xInequality);
-    inequalitiesLayout->addWidget(_xOffset);
-    
-    inequalitiesLayout->addWidget(new QLabel("y-axis: "));
-    inequalitiesLayout->addWidget(_yInequality);
-    inequalitiesLayout->addWidget(_yOffset);
-
-    inequalitiesLayout->addWidget(new QLabel("z-axis: "));
-    inequalitiesLayout->addWidget(_zInequality);
-    inequalitiesLayout->addWidget(_zOffset);
-
-    inequalities->setLayout(inequalitiesLayout);
-    rightsidelayout->addWidget(inequalities);
+    _authoringState._selected_pcr_gui = QtPointContactRelationPtr(new QtPointContactRelation());
+    _authoringState._selected_pcr_gui->setPointContactRelation(getCurrentPCR());
+    connect(_authoringState._selected_pcr_gui.get(), SIGNAL(activatedSignal()),
+            this, SLOT(updatePointContactRelation()));
+    rightsidelayout->addWidget(_authoringState._selected_pcr_gui->getPanel());
 
     //    rightsidelayout->addWidget(_jointSlider);
     rightsidelayout->addWidget(_segmentedButton);
@@ -413,13 +361,6 @@ MainWindow::MainWindow(const shared_ptr<lcm::LCM> &theLcm, QWidget *parent)
     connect(savebutton, SIGNAL(released()), this, SLOT(handleSaveAction()));
     connect(loaddiff, SIGNAL(released()), this, SLOT(handleLoadAction()));
     connect(loadfromcombo, SIGNAL(released()), this, SLOT(handleLoadActionCombo()));
-
-    connect(_xOffset, SIGNAL(valueChanged(double)), this, SLOT(handleXOffsetChange()));
-    connect(_yOffset, SIGNAL(valueChanged(double)), this, SLOT(handleYOffsetChange()));
-    connect(_zOffset, SIGNAL(valueChanged(double)), this, SLOT(handleZOffsetChange()));
-    connect(_xInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleXIneqChange()));
-    connect(_yInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleYIneqChange()));
-    connect(_zInequality, SIGNAL(currentIndexChanged(int)), this, SLOT(handleZIneqChange()));
 
     connect(_scrubber, SIGNAL(valueChanged(int)), this, SLOT(handleScrubberChange()));
 
@@ -717,9 +658,8 @@ setSelectedAction(Qt4ConstraintMacro *activator)
     {
         return;
     }
-
-    int selected_index = -1;
-    bool noChange = false;
+    //int selected_index = -1;
+    //bool noChange = false;
 
     for (std::vector<int>::size_type i = 0; i != _authoringState._all_gui_constraints.size(); i++)
     {
@@ -727,16 +667,10 @@ setSelectedAction(Qt4ConstraintMacro *activator)
         {
             _authoringState._all_gui_constraints[i]->setSelected(true);
 
-            if (_authoringState._selected_gui_constraint == _authoringState._all_gui_constraints[i])
-            {
-                noChange = true;
-            }
-            else
+            if (_authoringState._selected_gui_constraint != _authoringState._all_gui_constraints[i])
             {
                 _authoringState._selected_gui_constraint = _authoringState._all_gui_constraints[i];
             }
-
-            selected_index = i;
         }
         else
         {
@@ -760,11 +694,6 @@ setSelectedAction(Qt4ConstraintMacro *activator)
 
     updatePointVisualizer();
 
-    // prompt to set relation state
-    std::cout << "getting mode states" << std::endl;
-    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-    std::cout << "done getting mode states" << std::endl;
-    
     //update the inequality constraints display
     setP2PFromCurrConstraint();
 }
@@ -920,12 +849,9 @@ selectedOpenGLObjectChanged(const std::string &modelGUID, Eigen::Vector3f hitPoi
                 pc->setPoint1(hitPoint);
             }
             updatePointVisualizer();
+            _authoringState._selected_pcr_gui->setPointContactRelation(pc);
         }
     }
-
-    // prompt to set relation state
-    _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-
     return;
 }
 
@@ -1221,90 +1147,15 @@ such PCR*/
 PointContactRelationPtr MainWindow::getCurrentPCR()
 {
   if (_authoringState._selected_gui_constraint == NULL)
-    return PcrPtr();
+    return PointContactRelationPtr();
   
   // get the currently selected constraint and verify its relation is of type POINT_CONTACT
   RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
-  if (rel->getRelationType() != RelationState::POINT_CONTACT) 
-    return PcrPtr();
+  if (rel->getRelationType() != RelationState::POINT_CONTACT)
+    return PointContactRelationPtr();
 
-  return boost::dynamic_pointer_cast<PointContactRelation>(rel);        
+  return boost::dynamic_pointer_cast<PointContactRelation>(rel);
 }
-
-/**set the corresponding point contact relation to reflect the change
-in the inequality menu*/
-void MainWindow::handleXIneqChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setXInequality(PointContactRelation::strToType(_xInequality->currentText().toStdString()));
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
-/**set the corresponding point contact relation to reflect the change
-in the inequality menu*/
-void MainWindow::handleYIneqChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setYInequality(PointContactRelation::strToType(_yInequality->currentText().toStdString()));
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
-/**set the corresponding point contact relation to reflect the change
-in the inequality menu*/
-void MainWindow::handleZIneqChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setZInequality(PointContactRelation::strToType(_zInequality->currentText().toStdString()));
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
- 
-/**set the corresponding point contact relation to reflect the change
-in the offset box*/
-void MainWindow::handleXOffsetChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setOffset(Eigen::Vector3f(_xOffset->value(),  //change only the x
-                                  prel->getYOffset(),
-                                  prel->getZOffset()));
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
-/**set the corresponding point contact relation to reflect the change
-in the offset box*/
-void MainWindow::handleYOffsetChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setOffset(Eigen::Vector3f(prel->getXOffset(),
-                                  _yOffset->value(),  //change only the y
-                                  prel->getZOffset()));
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
-
-/**set the corresponding point contact relation to reflect the change
-in the offset box*/
-void MainWindow::handleZOffsetChange()
-{
-  PcrPtr prel = getCurrentPCR();
-  if (prel == PcrPtr())
-    return;
-  prel->setOffset(Eigen::Vector3f(prel->getXOffset(),
-                                  prel->getYOffset(),
-                                  _zOffset->value()));  //change only the z
-  _actionDescLabel->setText(QString::fromStdString(_authoringState._selected_gui_constraint->getModePrompt()));
-}
-
 
 /**sets the inequality constraints menu (x-axis, ...) from the currently selected gui constraint*/
 void MainWindow::setP2PFromCurrConstraint()
@@ -1316,36 +1167,22 @@ void MainWindow::setP2PFromCurrConstraint()
     RelationStatePtr rel = _authoringState._selected_gui_constraint->getConstraintMacro()->getAtomicConstraint()->getRelationState();
 
     if (rel->getRelationType() != RelationState::POINT_CONTACT) 
-      {
+    {
         //set to undefined
         return;
-      }
+    }
 
     // update the relation
-    PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);        
-
-    //set the x,y,z relations
-    string xiq = PCR::typeToStr(prel->getXInequality());
-    string yiq = PCR::typeToStr(prel->getYInequality());
-    string ziq = PCR::typeToStr(prel->getZInequality());
-
-    int xIndex = _xInequality->findText(xiq.c_str());
-    int yIndex = _yInequality->findText(yiq.c_str());
-    int zIndex = _zInequality->findText(ziq.c_str());    
-
-    if (xIndex != -1)
-      _xInequality->setCurrentIndex(xIndex);
-    if (yIndex != -1)
-      _yInequality->setCurrentIndex(yIndex);
-    if (zIndex != -1)
-      _zInequality->setCurrentIndex(zIndex);
-
-    //set offset if any of the above got set
-    if (xIndex != -1 || yIndex != -1 || zIndex != -1)
-      {
-        _xOffset->setValue(prel->getXOffset());
-        _yOffset->setValue(prel->getYOffset());
-        _zOffset->setValue(prel->getZOffset());
-      }
+    PointContactRelationPtr prel = boost::dynamic_pointer_cast<PointContactRelation>(rel);
+    _authoringState._selected_pcr_gui->setPointContactRelation(prel); // automatically calls updateGUIFromState();
 }
 
+void MainWindow::updatePointContactRelation() {
+    cout << "received signal!" << endl;
+    _authoringState._selected_gui_constraint->
+        getConstraintMacro()->getAtomicConstraint()->setRelationState(
+        _authoringState._selected_pcr_gui->getPointContactRelation());
+
+    // redraw it
+    updatePointVisualizer();
+}

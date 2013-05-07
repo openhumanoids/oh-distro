@@ -12,6 +12,7 @@
 #include "../qt4_widgets/CustomSlider.h"
 #include "../qt4_widgets/segmentedbutton/qtsegmentcontrol.h"
 #include "Qt4ConstraintMacro.h"
+#include "QtPointContactRelation.h"
 
 // OpenGL includes
 #include "opengl/opengl_object.h"
@@ -129,6 +130,7 @@ typedef struct
     Qt4ConstraintMacroPtr _selected_gui_constraint;
     std::string _selected_affordance_guid;
     std::string _selected_manipulator_guid;
+    QtPointContactRelationPtr _selected_pcr_gui;
 } AuthoringState;
 
 //===========MAIN WINDOW
@@ -151,7 +153,6 @@ private:
     QLineEdit *_actionName;
     QComboBox *_filesList;
     DefaultValueSlider *_scrubber;
-    QLabel *_actionDescLabel;
     double _MaxEndTime; // the length of time for all robot actions to complete. max of all upperTimeBounds
     robot_opengl::SelectableOpenGLWidget _widget_opengl;
     QWidget *_constraint_container;
@@ -168,12 +169,6 @@ private:
     QWidget *_liveWidgets;
     QWidget *_authoringWidgets;
 
-    QDoubleSpinBox* _xOffset;
-    QDoubleSpinBox* _yOffset;
-    QDoubleSpinBox* _zOffset;
-    QComboBox* _xInequality;
-    QComboBox* _yInequality;
-    QComboBox* _zInequality;
 
     int _newConstraintCounter;
 
@@ -201,7 +196,7 @@ private:
     void setP2PFromCurrConstraint(); //set point2Point from curr selection
 
 protected:
-    virtual void  keyPressEvent(QKeyEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event);
 
 private slots:
     void affordanceUpdateCheck(); //called to see if should update _worldState.affordances
@@ -226,14 +221,8 @@ private slots:
     void requestMotionPlan();
     void changeMode();
 
-    //offsets and inequalities
     action_authoring::PointContactRelationPtr getCurrentPCR();
-    void handleXIneqChange();
-    void handleYIneqChange();
-    void handleZIneqChange();
-    void handleXOffsetChange();
-    void handleYOffsetChange();
-    void handleZOffsetChange();
+    void updatePointContactRelation();
 
     void getContactGoals(std::vector<drc::contact_goal_t> *contact_goals);
     void requestIKSolution();
