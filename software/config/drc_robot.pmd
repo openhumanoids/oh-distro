@@ -556,8 +556,8 @@ script "dev.mit_walking" {
 script "dev.mit_walking_vo" {
     start group "0.development";
     start group "a.1.core";
-#    stop cmd "estpub";
-#    start group "a.5.a.motion_vo";
+    stop cmd "estpub";
+    start group "a.5.a.motion_vo";
     start group "a.2.walking";
     start group "b.2.walking";
     wait ms 10000;
