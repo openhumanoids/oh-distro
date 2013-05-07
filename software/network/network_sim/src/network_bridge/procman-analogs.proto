@@ -34,7 +34,7 @@ message PMDOrdersDiff
 
   // set to absolute value, if different
   optional string sheriff_name = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field).max_repeat = 32];  
+  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field).max_repeat = 64];  
   
   //  repeated string varnames = 7;
   // repeated string varvals = 8;
@@ -67,7 +67,7 @@ message PMDInfoDiff
   optional int64 swap_free_kbytes = 7 [(dccl.field) = { min: 0 max: 0x10000000 }]; // 256 GB max
 
   
-  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field).max_repeat = 32];  
+  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field).max_repeat = 64];  
 
   message PMDDeputyCmdDiff
   {
