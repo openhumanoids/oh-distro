@@ -698,7 +698,10 @@
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="3.111"/>
+      <!--  <mass value="3.131"/>-->
+      <!--NEW value-->
+      <mass value="2.312"/>
+      <!--OLD value-->
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -712,7 +715,10 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="3.111"/>
+      <!--  <mass value="3.131"/>-->
+      <!--NEW value-->
+      <mass value="2.312"/>
+      <!--OLD value-->
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
@@ -726,13 +732,18 @@
   <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/>
+    <!--    <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/>-->
+    <!--NEW value-->
+    <origin rpy="0 0 0" xyz="0.0054 0.1905 -0.0129"/>
+    <!--OLD value-->
   </joint>
   <joint name="r_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="r_hand_point_mass"/>
-    <!--    <origin rpy="0 0 0" xyz="0.004 -0.1601 -0.0078"/>-->
-    <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/>
+    <!--   <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/>-->
+    <!--NEW value-->
+    <origin rpy="0 0 0" xyz="0.0054 -0.1905 -0.0129"/>
+    <!--OLD value-->
   </joint>
   <transmission name="back_lbz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_lbz"/>
