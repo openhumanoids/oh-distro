@@ -182,7 +182,7 @@ classdef QPController < MIMODrakeSystem
     
     % get foot contact state
     if obj.lcm_foot_contacts
-      contact_data = obj.contact_est_monitor.getLastMessage();
+      contact_data = obj.contact_est_monitor.getNextMessage();
       if isempty(contact_data)
         lfoot_contact_state = 0;
         rfoot_contact_state = 0;
