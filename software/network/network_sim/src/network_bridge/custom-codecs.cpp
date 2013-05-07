@@ -143,7 +143,10 @@ bool PMDOrdersCodec::reverse_diff(bot_procman::orders_t* orders, const bot_procm
 
     
     if(((reference.utime / 100000) % 256) != diff.reference_time())
-        return false;
+        {
+            glog.is(WARN) && glog << "Wrong time reference, cannot reassemble diff. " << std::endl;
+            return false;
+        }
 
     orders->utime = reference.utime + diff.utime();
     orders->host = reference.host;
