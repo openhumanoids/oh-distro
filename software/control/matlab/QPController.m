@@ -160,7 +160,7 @@ classdef QPController < MIMODrakeSystem
     end  
     
     if (obj.use_mex>0)
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot)));
     end
   end
     
@@ -169,20 +169,11 @@ classdef QPController < MIMODrakeSystem
 
     q_ddot_des = varargin{1};
     x = varargin{2};
-    r = obj.robot;
     ctrl_data = getData(obj.controller_data);
-
-    nd = 4; % for friction cone approx, hard coded for now
-    dim = 3; % 3D
-    nu = getNumInputs(r);
-    nq = getNumDOF(r);
-    nq_free = length(obj.free_dof); 
-    nq_con = length(obj.con_dof); 
-    nu_con = length(obj.con_inputs);  
     
     % get foot contact state
     if obj.lcm_foot_contacts
-      contact_data = obj.contact_est_monitor.getNextMessage();
+      contact_data = obj.contact_est_monitor.getMessage();
       if isempty(contact_data)
         lfoot_contact_state = 0;
         rfoot_contact_state = 0;
@@ -192,6 +183,8 @@ classdef QPController < MIMODrakeSystem
         rfoot_contact_state = msg.right_contact;
       end
     else
+      r = obj.robot;
+      nq = getNumDOF(r);
       contact_threshold = 0.002; % m
       q = x(1:nq); 
       kinsol = doKinematics(r,q,false,true);
@@ -221,244 +214,251 @@ classdef QPController < MIMODrakeSystem
     end
     desired_supports = find(supp);
     
-    %% todo: likely cut in and start mex version here
-    
-    q = x(1:nq); 
-    qd = x(nq+(1:nq));
-    kinsol = doKinematics(r,q,false,true,qd);
-    
-    [H,C,B] = manipulatorDynamics(r,q,qd);
-
-    H_con = H(obj.con_dof,:); 
-    C_con = C(obj.con_dof);
-    B_con = B(obj.con_dof,obj.con_inputs);
-    
-    if nq_free > 0
-      H_free = H(obj.free_dof,:); 
-      C_free = C(obj.free_dof);
-      B_free = B(obj.free_dof,obj.free_inputs);
-    end
-    
-    [xcom,J] = getCOM(r,kinsol);
-    J = J(1:2,:); % only need COM x-y
-    Jdot = forwardJacDot(r,kinsol,0);
-    Jdot = Jdot(1:2,:);
-    
-    % get active contacts --- note, calling this with the z-adjusted state,
-    % so phi returned isn't very useful 
-    [phi,Jz,D_] = contactConstraints(r,kinsol,desired_supports);
-    active_contacts = zeros(length(phi),1);
-
     active_supports = [];
-    % if any foot point is in contact, all contact points are active
     if any(desired_supports==obj.lfoot_idx) && lfoot_contact_state > 0.5
-      active_contacts((find(desired_supports==obj.lfoot_idx)-1)*4+(1:4)) = 1;
       active_supports = [active_supports; obj.lfoot_idx];
     end
     if any(desired_supports==obj.rfoot_idx) && rfoot_contact_state > 0.5
-      active_contacts((find(desired_supports==obj.rfoot_idx)-1)*4+(1:4)) = 1;
       active_supports = [active_supports; obj.rfoot_idx];
     end
     
-    nc = sum(active_contacts);
-    active_contacts = find(active_contacts);
-    neps = nc*dim;
-%     neps = length(active_supports)*2*dim;
-    
-    if nc > 0
-      [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
-%       Jp=zeros(neps,nq);
-%       Jpdot=zeros(neps,nq);
-%       for k=1:length(active_supports)
-%         [~,Jp((k-1)*2*dim+(1:2*dim),:)] = forwardKin(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]],0);
-%         Jpdot((k-1)*2*dim+(1:2*dim),:) = forwardJacDot(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]]);
-%       end
-      Jp = sparse(Jp(:,obj.con_dof)); 
-      Jpdot = sparse(Jpdot(:,obj.con_dof));
-
-      Jz = sparse(Jz(active_contacts,obj.con_dof)); % only care about active contacts
+    if (obj.use_mex==0 || obj.use_mex==2)
+      r = obj.robot;
+      nu = getNumInputs(r);
+      nq = getNumDOF(r);
+      dim = 3; % 3D
+      nd = 4; % for friction cone approx, hard coded for now
+      nq_free = length(obj.free_dof);
+      nq_con = length(obj.con_dof);
+      nu_con = length(obj.con_inputs);
       
-      % D_ is the parameterization of the polyhedral approximation of the 
-      %    friction cone, in joint coordinates (figure 1 from Stewart96)
-      %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
-      % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for 
-      % the kth contact point
-      %
-      % OPT---this isn't necessary
-      D = cell(1,nc);
-      for k=1:nc
-        for i=1:nd
-          D{k}(:,i) = D_{i}(active_contacts(k),obj.con_dof)'; 
+      q = x(1:nq);
+      qd = x(nq+(1:nq));
+      kinsol = doKinematics(r,q,false,true,qd);
+      
+      [H,C,B] = manipulatorDynamics(r,q,qd);
+      
+      H_con = H(obj.con_dof,:);
+      C_con = C(obj.con_dof);
+      B_con = B(obj.con_dof,obj.con_inputs);
+      
+      if nq_free > 0
+        H_free = H(obj.free_dof,:);
+        C_free = C(obj.free_dof);
+        B_free = B(obj.free_dof,obj.free_inputs);
+      end
+      
+      [xcom,J] = getCOM(r,kinsol);
+      Jdot = forwardJacDot(r,kinsol,0);
+      J = J(1:2,:); % only need COM x-y
+      Jdot = Jdot(1:2,:);
+    
+      [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+
+      nc = length(phi);
+      neps = nc*dim;
+      %     neps = length(active_supports)*2*dim;
+      
+      if nc > 0
+        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports);
+        %       Jp=zeros(neps,nq);
+        %       Jpdot=zeros(neps,nq);
+        %       for k=1:length(active_supports)
+        %         [~,Jp((k-1)*2*dim+(1:2*dim),:)] = forwardKin(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]],0);
+        %         Jpdot((k-1)*2*dim+(1:2*dim),:) = forwardJacDot(r,kinsol,active_supports(k),[[1;0;0],[0;1;0]]);
+        %       end
+        Jp = sparse(Jp(:,obj.con_dof));
+        Jpdot = sparse(Jpdot(:,obj.con_dof));
+        
+        Jz = sparse(Jz(:,obj.con_dof)); % only care about active contacts
+        
+        % D_ is the parameterization of the polyhedral approximation of the
+        %    friction cone, in joint coordinates (figure 1 from Stewart96)
+        %    D{k}(i,:) is the kth direction vector for the ith contact (of nC)
+        % Create Dbar such that Dbar(:,(k-1)*nd+i) is ith direction vector for
+        % the kth contact point
+        %
+        % OPT---this isn't necessary
+        D = cell(1,nc);
+        for k=1:nc
+          for i=1:nd
+            D{k}(:,i) = D_{i}(k,obj.con_dof)';
+          end
+        end
+        Dbar = sparse([D{:}]);
+      end      
+    if (obj.use_mex==2) y_des = cpos; end
+    end
+  
+    if (obj.use_mex>0)
+      y = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
+    end
+    if (obj.use_mex==2) valuecheck(y,y_des); end
+        
+      %----------------------------------------------------------------------
+      % Linear system stuff for zmp/com control -----------------------------
+      if nc > 0
+        %       A_ls = ctrl_data.A; % always TI
+        B_ls = ctrl_data.B; % always TI
+        Qy = ctrl_data.Qy;
+        if isfield(ctrl_data,'R')
+          R_ls = ctrl_data.R;
+        else
+          R_ls = zeros(2);
+        end
+        if typecheck(ctrl_data.C,'double')
+          C_ls = ctrl_data.C;
+        else
+          C_ls = ctrl_data.C.eval(t);
+        end
+        if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
+          D_ls = ctrl_data.D;
+        else
+          % assumed  ZMP system
+          hddot = 0; % could use estimated comddot here
+          D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
+          % or current height above height map
+        end
+        if typecheck(ctrl_data.S,'double')
+          % ti-lqr case
+          S = ctrl_data.S;
+          s1= zeros(4,1); % ctrl_data.s1;
+          xlimp0 = ctrl_data.xlimp0;
+        else
+          S = ctrl_data.S.eval(t);
+          s1= ctrl_data.s1.eval(t);
+          xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
+        end
+        xlimp = [xcom(1:2); J*qd]; % state of LIP model
+        x_bar = xlimp - xlimp0;
+      end
+      
+      %----------------------------------------------------------------------
+      % Free DOF cost function ----------------------------------------------
+      
+      if nq_free > 0
+        if nc > 0
+          % approximate quadratic cost for free dofs with the appropriate matrix block
+          Hqp = J(:,obj.free_dof)'*R_ls*J(:,obj.free_dof);
+          Hqp = Hqp + J(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
+          Hqp = Hqp + obj.w*eye(nq_free);
+          
+          fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
+          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
+          fqp = fqp + x_bar'*S*B_ls*J(:,obj.free_dof);
+          fqp = fqp + 0.5*s1'*B_ls*J(:,obj.free_dof);
+          fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
+        else
+          Hqp = eye(nq_free);
+          fqp = -q_ddot_des(obj.free_dof)';
+        end
+        
+        % solve for qdd_free unconstrained
+        qdd_free = -inv(Hqp)*fqp';
+      end
+    
+      %----------------------------------------------------------------------
+      % Build handy index matrices ------------------------------------------
+      
+      nf = nc+nc*nd; % number of contact force variables
+      nparams = nq_con+nu_con+nf+neps;
+      Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
+      Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
+      Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
+      Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
+      Ieps = zeros(neps,nparams);
+      Ieps(:,nq_con+nu_con+nc+nc*nd+(1:neps)) = eye(neps);
+      
+      
+      %----------------------------------------------------------------------
+      % Set up problem constraints ------------------------------------------
+      
+      lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/input/contact forces/slack vars
+      ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      
+      Aeq_ = cell(1,2);
+      beq_ = cell(1,2);
+      Ain_ = cell(1,nc);
+      bin_ = cell(1,nc);
+      
+      % constrained dynamics
+      if nc>0
+        Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu - Jz'*Iz - Dbar*Ibeta;
+      else
+        Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu;
+      end
+      if nq_free > 0
+        beq_{1} = -C_con - H_con(:,obj.free_dof)*qdd_free;
+      else
+        beq_{1} = -C_con;
+      end
+      
+      if nc > 0
+        % relative acceleration constraint
+        Aeq_{2} = Jp*Iqdd + Ieps;
+        beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
+        
+        % linear friction constraints
+        % TEMP: hard code mu
+        mu = 0.5*ones(nc,1);
+        for i=1:nc
+          Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
+          bin_{i} = 0;
         end
       end
-      Dbar = sparse([D{:}]);
-    end
-    
-    %----------------------------------------------------------------------
-    % Linear system stuff for zmp/com control -----------------------------
-    if nc > 0
-%       A_ls = ctrl_data.A; % always TI
-      B_ls = ctrl_data.B; % always TI 
-      Qy = ctrl_data.Qy;  
-      if isfield(ctrl_data,'R')
-        R_ls = ctrl_data.R;  
-      else
-        R_ls = zeros(2);  
-      end
-      if typecheck(ctrl_data.C,'double')
-        C_ls = ctrl_data.C; 
-      else
-        C_ls = ctrl_data.C.eval(t); 
-      end
-      if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
-        D_ls = ctrl_data.D;  
-      else
-        % assumed  ZMP system
-        hddot = 0; % could use estimated comddot here
-        D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
-        % or current height above height map
-      end
-      if typecheck(ctrl_data.S,'double')
-        % ti-lqr case
-        S = ctrl_data.S;
-        s1= zeros(4,1); % ctrl_data.s1; 
-        xlimp0 = ctrl_data.xlimp0;
-      else
-        S = ctrl_data.S.eval(t);
-        s1= ctrl_data.s1.eval(t);
-        xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
-      end
-      xlimp = [xcom(1:2); J*qd]; % state of LIP model
-      x_bar = xlimp - xlimp0;
-    end
-    
-    %----------------------------------------------------------------------
-    % Free DOF cost function ----------------------------------------------
+      
+      % linear equality constraints: Aeq*alpha = beq
+      Aeq = sparse(vertcat(Aeq_{:}));
+      beq = vertcat(beq_{:});
+      
+      % linear inequality constraints: Ain*alpha <= bin
+      Ain = sparse(vertcat(Ain_{:}));
+      bin = vertcat(bin_{:});
 
-    if nq_free > 0
+    
+      %----------------------------------------------------------------------
+      % QP cost function ----------------------------------------------------
+      %
+      %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
+      
       if nc > 0
-        % approximate quadratic cost for free dofs with the appropriate matrix block
-        Hqp = J(:,obj.free_dof)'*R_ls*J(:,obj.free_dof);
-        Hqp = Hqp + J(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
-        Hqp = Hqp + obj.w*eye(nq_free);
-
-        fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
-        fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
-        fqp = fqp + x_bar'*S*B_ls*J(:,obj.free_dof);
-        fqp = fqp + 0.5*s1'*B_ls*J(:,obj.free_dof);
-        fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
-      else
-        Hqp = eye(nq_free);
-        fqp = -q_ddot_des(obj.free_dof)';
-      end
-      
-      % solve for qdd_free unconstrained
-      qdd_free = -inv(Hqp)*fqp';
-    end
-    
-    %----------------------------------------------------------------------
-    % Build handy index matrices ------------------------------------------
-    
-    nf = nc+nc*nd; % number of contact force variables
-    nparams = nq_con+nu_con+nf+neps;
-    Iqdd = zeros(nq_con,nparams); Iqdd(:,1:nq_con) = eye(nq_con);
-    Iu = zeros(nu_con,nparams); Iu(:,nq_con+(1:nu_con)) = eye(nu_con);
-    Iz = zeros(nc,nparams); Iz(:,nq_con+nu_con+(1:nc)) = eye(nc);
-    Ibeta = zeros(nc*nd,nparams); Ibeta(:,nq_con+nu_con+nc+(1:nc*nd)) = eye(nc*nd);
-    Ieps = zeros(neps,nparams); 
-    Ieps(:,nq_con+nu_con+nc+nc*nd+(1:neps)) = eye(neps);
-    
-    
-    %----------------------------------------------------------------------
-    % Set up problem constraints ------------------------------------------
-
-    lb = [-1e3*ones(1,nq_con) r.umin(obj.con_inputs)' zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/input/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq_con) r.umax(obj.con_inputs)' 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
-
-    Aeq_ = cell(1,2);
-    beq_ = cell(1,2);
-    Ain_ = cell(1,nc);
-    bin_ = cell(1,nc);
-    
-    % constrained dynamics
-    if nc>0
-      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu - Jz'*Iz - Dbar*Ibeta;
-    else
-      Aeq_{1} = H_con(:,obj.con_dof)*Iqdd - B_con*Iu;
-    end
-    if nq_free > 0
-      beq_{1} = -C_con - H_con(:,obj.free_dof)*qdd_free;
-    else
-      beq_{1} = -C_con;
-    end
-    
-    if nc > 0
-      % relative acceleration constraint
-      Aeq_{2} = Jp*Iqdd + Ieps;
-      beq_{2} = -Jpdot*qd(obj.con_dof) - 1.0*Jp*qd(obj.con_dof);
-
-      % linear friction constraints
-      % TEMP: hard code mu
-      mu = 0.5*ones(nc,1);
-      for i=1:nc
-        Ain_{i} = -mu(i)*Iz(i,:) + sum(Ibeta((i-1)*nd+(1:nd),:));
-        bin_{i} = 0;
-      end
-    end
-    
-    % linear equality constraints: Aeq*alpha = beq
-    Aeq = sparse(vertcat(Aeq_{:}));
-    beq = vertcat(beq_{:});
-      
-    % linear inequality constraints: Ain*alpha <= bin
-    Ain = sparse(vertcat(Ain_{:}));
-    bin = vertcat(bin_{:});
-
-    
-    %----------------------------------------------------------------------
-    % QP cost function ----------------------------------------------------
-    %
-    %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
-    
-    if nc > 0
-      Hqp = Iqdd'*J(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd;
-      Hqp = Hqp + Iqdd'*J(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-      Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
-
-      fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-      fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-      fqp = fqp + x_bar'*S*B_ls*J(:,obj.con_dof)*Iqdd;
-      fqp = fqp + 0.5*s1'*B_ls*J(:,obj.con_dof)*Iqdd;
-      fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
-
-      % quadratic slack var cost 
-      Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
-    else
-      Hqp = Iqdd'*Iqdd;
-      fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
-    end
-    
-    % quadratic input cost
-    Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
- 
-
-    %----------------------------------------------------------------------
-    % Solve QP ------------------------------------------------------------
+        Hqp = Iqdd'*J(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd;
+        Hqp = Hqp + Iqdd'*J(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
         
-    if obj.solver==1
-      % CURRENTLY CRASHES MATLAB ON MY MACHINE -sk
-      alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
-    
-    else
-      model.Q = sparse(Hqp);
-      model.obj = 2*fqp;
-      model.A = [Aeq; Ain];
-      model.rhs = [beq; bin];
-      model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
-      model.lb = lb;
-      model.ub = ub;
+        fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + x_bar'*S*B_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + 0.5*s1'*B_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
+        
+        % quadratic slack var cost
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps);
+      else
+        Hqp = Iqdd'*Iqdd;
+        fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
+      end
+      
+      % quadratic input cost
+      Hqp(nq_con+(1:nu_con),nq_con+(1:nu_con)) = obj.R(obj.con_inputs,obj.con_inputs);
+      
 
-      if (obj.use_mex==0 || obj.use_mex==2)
+      %----------------------------------------------------------------------
+      % Solve QP ------------------------------------------------------------
+      
+      if obj.solver==1
+        % CURRENTLY CRASHES MATLAB ON MY MACHINE -sk
+        alpha = cplexqp(Hqp,fqp,Ain,bin,Aeq,beq,lb,ub,[],obj.solver_options);
+        
+      else
+        model.Q = sparse(Hqp);
+        model.obj = 2*fqp;
+        model.A = [Aeq; Ain];
+        model.rhs = [beq; bin];
+        model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
+        model.lb = lb;
+        model.ub = ub;
+
 %       Q=full(Hqp);
 %       c=2*fqp;
 %       Aeq = full(Aeq);
@@ -470,37 +470,27 @@ classdef QPController < MIMODrakeSystem
 %       fprintf('QP solve: %2.4f\n',qp_toc);
         alpha = result.x;
         
-        if (obj.use_mex==2) alpha_des = alpha; end
       end
 
-      if (obj.use_mex>0)
-        alpha = QPControllermex(obj.mex_ptr.getData(),model);
+      %----------------------------------------------------------------------
+      % Solve for free inputs -----------------------------------------------
+      if nq_free > 0
+        qdd = zeros(nq,1);
+        qdd(obj.free_dof) = qdd_free;
+        qdd(obj.con_dof) = alpha(1:nq_con);
+        
+        u_free = B_free\(H_free*qdd + C_free);
+        u = zeros(nu,1);
+        u(obj.free_inputs) = u_free;
+        u(obj.con_inputs) = alpha(nq_con+(1:nu_con));
+        
+        % saturate inputs
+        y = max(r.umin,min(r.umax,u));
+      else
+        y = alpha(nq+(1:nu));
       end
-      if (obj.use_mex==2) valuecheck(alpha,alpha_des); end
 
-%      solver_options = obj.solver_options
-%      save QPmex.mat model solver_options alpha;
-%      alphamex = QPControllermex(model,obj.solver_options);
-%      valuecheck(alpha,alphamex);
-    end
-    
-    %----------------------------------------------------------------------
-    % Solve for free inputs -----------------------------------------------
-    if nq_free > 0
-      qdd = zeros(nq,1);
-      qdd(obj.free_dof) = qdd_free;
-      qdd(obj.con_dof) = alpha(1:nq_con);
-
-      u_free = B_free\(H_free*qdd + C_free);
-      u = zeros(nu,1);
-      u(obj.free_inputs) = u_free;
-      u(obj.con_inputs) = alpha(nq_con+(1:nu_con));
-
-      % saturate inputs
-      y = max(r.umin,min(r.umax,u));
-    else
-      y = alpha(nq+(1:nu));
-    end
+  %% todo: finish mex here?  
     
     if obj.debug && nc > 0
       if nq_free > 0
@@ -597,7 +587,7 @@ classdef QPController < MIMODrakeSystem
   end
   end
 
-  properties
+  properties (SetAccess=private)
     robot; % to be controlled
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w; % objective function weight
