@@ -222,6 +222,42 @@ classdef QPController < MIMODrakeSystem
       active_supports = [active_supports; obj.rfoot_idx];
     end
     
+    %----------------------------------------------------------------------
+    % Linear system stuff for zmp/com control -----------------------------
+    if ~isempty(active_supports)
+      %       A_ls = ctrl_data.A; % always TI
+      B_ls = ctrl_data.B; % always TI
+      Qy = ctrl_data.Qy;
+      if isfield(ctrl_data,'R')
+        R_ls = ctrl_data.R;
+      else
+        R_ls = zeros(2);
+      end
+      if typecheck(ctrl_data.C,'double')
+        C_ls = ctrl_data.C;
+      else
+        C_ls = ctrl_data.C.eval(t);
+      end
+      if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
+        D_ls = ctrl_data.D;
+      else
+        % assumed  ZMP system
+        hddot = 0; % could use estimated comddot here
+        D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
+        % or current height above height map
+      end
+      if typecheck(ctrl_data.S,'double')
+        % ti-lqr case
+        S = ctrl_data.S;
+        s1= zeros(4,1); % ctrl_data.s1;
+        xlimp0 = ctrl_data.xlimp0;
+      else
+        S = ctrl_data.S.eval(t);
+        s1= ctrl_data.s1.eval(t);
+        xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
+      end
+    end
+    
     if (obj.use_mex==0 || obj.use_mex==2)
       r = obj.robot;
       nu = getNumInputs(r);
@@ -287,52 +323,57 @@ classdef QPController < MIMODrakeSystem
         end
         Dbar = sparse([D{:}]);
       end      
-    if (obj.use_mex==2) y_des = cpos; end
+        
+      if (obj.use_mex==2) 
+        des.H_con = H_con; 
+        des.C_con = C_con;
+        des.B_con = B_con;
+        des.H_free = H_free;
+        des.C_free = C_free;
+        des.B_free = B_free;
+        des.xcom = xcom;
+        des.J = J;
+        des.Jdot = Jdot;
+        des.Jz = Jz;
+        des.Dbar = Dbar;
+        des.Jp = Jp;
+        des.Jpdot = Jpdot;
+      end
     end
   
     if (obj.use_mex>0)
-      y = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
+      [H_con,C_con,B_con, ...
+        H_free,C_free,B_free, ...
+        xcom, J, Jdot, ...
+        Jz,Dbar,Jp,Jpdot] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
+      J=J(1:2,:);
+      Jdot=Jdot(1:2,:);
+      Jz = sparse(Jz);
+      Dbar = sparse(Dbar);
+      Jp = sparse(Jp);
+      Jpdot = sparse(Jpdot);
     end
-    if (obj.use_mex==2) valuecheck(y,y_des); end
-        
-      %----------------------------------------------------------------------
-      % Linear system stuff for zmp/com control -----------------------------
-      if nc > 0
-        %       A_ls = ctrl_data.A; % always TI
-        B_ls = ctrl_data.B; % always TI
-        Qy = ctrl_data.Qy;
-        if isfield(ctrl_data,'R')
-          R_ls = ctrl_data.R;
-        else
-          R_ls = zeros(2);
-        end
-        if typecheck(ctrl_data.C,'double')
-          C_ls = ctrl_data.C;
-        else
-          C_ls = ctrl_data.C.eval(t);
-        end
-        if ~isempty(ctrl_data.D) && typecheck(ctrl_data.D,'double')
-          D_ls = ctrl_data.D;
-        else
-          % assumed  ZMP system
-          hddot = 0; % could use estimated comddot here
-          D_ls = -0.89/(hddot+9.81)*eye(2); % TMP hard coding height here. Could be replaced with htraj from planner
-          % or current height above height map
-        end
-        if typecheck(ctrl_data.S,'double')
-          % ti-lqr case
-          S = ctrl_data.S;
-          s1= zeros(4,1); % ctrl_data.s1;
-          xlimp0 = ctrl_data.xlimp0;
-        else
-          S = ctrl_data.S.eval(t);
-          s1= ctrl_data.s1.eval(t);
-          xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
-        end
+    if (obj.use_mex==2) 
+      valuecheck(H_con,des.H_con);
+      valuecheck(C_con,des.C_con);
+      valuecheck(B_con,des.B_con);
+      valuecheck(H_free,des.H_free);
+      valuecheck(C_free,des.C_free);
+      valuecheck(B_free,des.B_free);
+      valuecheck(xcom,des.xcom);
+      valuecheck(J,des.J);
+      valuecheck(Jdot,des.Jdot);
+      valuecheck(Jz,des.Jz);
+      valuecheck(Dbar,des.Dbar);
+      valuecheck(Jp,des.Jp);
+      valuecheck(Jpdot,des.Jpdot);
+    end
+
+      if (nc>0)
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
         x_bar = xlimp - xlimp0;
       end
-      
+    
       %----------------------------------------------------------------------
       % Free DOF cost function ----------------------------------------------
       

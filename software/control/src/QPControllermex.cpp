@@ -5,6 +5,7 @@
 
 #include <mex.h>
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <set>
 #include <vector>
@@ -13,7 +14,6 @@
 
 #include "RigidBodyManipulator.h"
 
-const double PI = 3.1416;
 const int m_surface_tangents = 2;
 
 using namespace std;
@@ -27,8 +27,6 @@ struct QPControllerData {
   set<int> con_dof;
   set<int> free_inputs;
   set<int> con_inputs;
-  int rfoot_idx;
-  int lfoot_idx;
   MatrixXd R; // quadratic input cost matrix
   MatrixXd B;
   void* map_ptr;
@@ -77,21 +75,20 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
   t2 = t1.cross(normal);
       
   for (int k=0; k<m_surface_tangents; k++) {
-    theta = k*PI/m_surface_tangents;
+    theta = k*M_PI/m_surface_tangents;
     d.col(k)=cos(theta)*t1 + sin(theta)*t2;
   }
 }
 
-void activeContactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd D[2*m_surface_tangents], MatrixXd &Jp, MatrixXd &Jpdot) 
+int contactConstraints(struct QPControllerData* pdata, set<int> body_idx, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot) 
 {
   int i, j, k=0, nc = pdata->r->getNumContacts(body_idx), nq = pdata->r->num_dof;
 
 //  phi.resize(nc);
   n.resize(nc,nq);
+  D.resize(nq,nc*2*m_surface_tangents);
   Jp.resize(3*nc,nq);
   Jpdot.resize(3*nc,nq);
-  
-  for (j=0; j<m_surface_tangents; j++) D[j].resize(nc,nq);
   
   Vector3d contact_pos,pos,normal; Vector4d tmp;
   MatrixXd J(3,nq);
@@ -117,21 +114,22 @@ void activeContactConstraints(struct QPControllerData* pdata, set<int> body_idx,
 
         n.row(k) = normal.transpose()*J;
         for (j=0; j<m_surface_tangents; j++) {
-          D[j].row(k) = d.col(j).transpose()*J;
+          D.col(2*k*m_surface_tangents+j) = J.transpose()*d.col(j);
+          D.col((2*k+1)*m_surface_tangents+j) = -D.col(2*k*m_surface_tangents+j);
         }
 
         // store away kin sols into Jp and Jpdot
         // NOTE: I'm cheating and using a slightly different ordering of J and Jdot here
-        Jp.rows(3*k,3) = J;
+        Jp.block(3*k,0,3,nq) = J;
         pdata->r->forwardJacDot(*iter,tmp,J);
-        Jpdot.rows(3*k,3) = J;
+        Jpdot.block(3*k,0,3,nq) = J;
         
         k++;
       }
     }
   }
-  for (j=0; j<m_surface_tangents; j++) 
-    D[m_surface_tangents+j] = -D[j];
+  
+  return k;
 }
 
 
@@ -177,12 +175,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pr = mxGetPr(pm);
     for (i=0; i<mxGetNumberOfElements(pm); i++)
       pdata->con_inputs.insert((int)pr[i] - 1);
-    
-    pm = myGetProperty(pobj,"rfoot_idx");
-    pdata->rfoot_idx = (int) mxGetScalar(pm) - 1;
-
-    pm = myGetProperty(pobj,"lfoot_idx");
-    pdata->lfoot_idx = (int) mxGetScalar(pm) - 1;
     
     pm = myGetProperty(pobj,"R");
     pdata->R.resize(mxGetM(pm),mxGetN(pm));
@@ -239,15 +231,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q = mxGetPr(prhs[1]);
   double *qd = &q[nq];
   
-  bool lfoot_contact_state = (bool) mxGetScalar(prhs[2]),
-       rfoot_contact_state = (bool) mxGetScalar(prhs[3]);
+  set<int> active_supports;
+  pr = mxGetPr(prhs[2]);
+  for (i=0; i<mxGetNumberOfElements(prhs[2]); i++)
+    active_supports.insert((int)pr[i] - 1);
   
-  set<int> desired_supports;
-  pr = mxGetPr(prhs[4]);
-  for (i=0; i<mxGetNumberOfElements(prhs[4]); i++)
-    desired_supports.insert((int)pr[i] - 1);
-  
-
   pdata->r->doKinematics(q,false,qd);
   
   MatrixXd H(nq,nq);
@@ -258,23 +246,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // todo: push the building of these matrices up into constructor time
   set<int>::iterator iter;
   int k;
-  MatrixXd qselector = MatrixXd::Zero(pdata->con_dof.size(),nq);
-  MatrixXd uselector = MatrixXd::Zero(nu,pdata->con_inputs.size());
-  k=0; for (iter=pdata->con_dof.begin(); iter!=pdata->con_dof.end(); iter++) qselector(k++,*iter)=1;
-  k=0; for (iter=pdata->con_inputs.begin(); iter!=pdata->con_inputs.end(); iter++) uselector(*iter,k++)=1;
-  MatrixXd H_con = qselector*H,
-          C_con = qselector*C,
-          B_con = qselector*pdata->B*uselector,
+  MatrixXd qselector_con = MatrixXd::Zero(pdata->con_dof.size(),nq);
+  MatrixXd uselector_con = MatrixXd::Zero(nu,pdata->con_inputs.size());
+  k=0; for (iter=pdata->con_dof.begin(); iter!=pdata->con_dof.end(); iter++) qselector_con(k++,*iter)=1;
+  k=0; for (iter=pdata->con_inputs.begin(); iter!=pdata->con_inputs.end(); iter++) uselector_con(*iter,k++)=1;
+  MatrixXd H_con = qselector_con*H,
+          C_con = qselector_con*C,
+          B_con = qselector_con*pdata->B*uselector_con,
           H_free,C_free,B_free;
   
   if (nq_free>0) {
-    qselector = MatrixXd::Zero(pdata->free_dof.size(),nq);
-    k=0; for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++) qselector(k++,*iter)=1;
-    uselector = MatrixXd::Zero(nu,pdata->free_inputs.size());
-    k=0; for (iter=pdata->free_inputs.begin(); iter!=pdata->free_inputs.end(); iter++) uselector(*iter, k++)=1;
-    H_free = qselector*H;
-    C_free = qselector*C;
-    B_free = qselector*pdata->B*uselector;
+    MatrixXd qselector_free = MatrixXd::Zero(pdata->free_dof.size(),nq);
+    k=0; for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++) qselector_free(k++,*iter)=1;
+    MatrixXd uselector_free = MatrixXd::Zero(nu,pdata->free_inputs.size());
+    k=0; for (iter=pdata->free_inputs.begin(); iter!=pdata->free_inputs.end(); iter++) uselector_free(*iter, k++)=1;
+    H_free = qselector_free*H;
+    C_free = qselector_free*C;
+    B_free = qselector_free*pdata->B*uselector_free;
   }
 
   // todo: preallocate everything like this!
@@ -289,37 +277,32 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 //  J = J.topRows(2);
 //  Jdot = Jdot.topRows(2);
   
-  VectorXd phi;
-  MatrixXd Jz,Jp,Jpdot,D[2*m_surface_tangents];
-  activeContactConstraints(pdata,lfoot_contact_state,rfoot_contact_state,desired_supports,phi,n,D);
+//  VectorXd phi;
+  MatrixXd Jz,Jp,Jpdot,D;
+  int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot);
 
-  set<int> active_contacts, active_supports;
-
-  // go through and figure out which contacts are active
-  int nc,j,k=0;
-  if (lfoot_contact_state || rfoot_contact_state) {
-    nc = pdata->r->bodies[*iter].contact_pts.cols();
-    if (nc>0) {
-      for (set<int>::iterator iter=desired_supports.begin(); iter!=desired_supports.end(); iter++) {
-        if (lfoot_contact_state && *iter==pdata->l_foot_idx) {
-          active_supports.insert(pdata->l_foot_idx);
-          for (j=0; j<nc; j++) active_contacts.insert(k+j);
-        }
-        if (rfoot_contact_state && *iter==pdata->r_foot_idx) {
-          active_supports.insert(pdata->r_foot_idx);
-          for (j=0; j<nc; j++) active_contacts.insert(k+j);
-        }
-      }
-      k+=nc;
-    }
-  }    
-
-  int neps = dim*active_contacts.size();
-  
-  
-  if (nlhs>0) {
-    plhs[0] = eigenToMatlab(D[0]);
+  if (nc>0) {
+    Jz *= qselector_con.transpose();
+    D = qselector_con*D;
+    Jp *= qselector_con.transpose();
+    Jpdot *= qselector_con.transpose();
   }
+
+  if (nlhs<13) mexErrMsgTxt("take all my outputs!"); 
+
+  plhs[0] = eigenToMatlab(H_con);
+  plhs[1] = eigenToMatlab(C_con);
+  plhs[2] = eigenToMatlab(B_con);
+  plhs[3] = eigenToMatlab(H_free);
+  plhs[4] = eigenToMatlab(C_free);
+  plhs[5] = eigenToMatlab(B_free);
+  plhs[6] = eigenToMatlab(xcom);
+  plhs[7] = eigenToMatlab(J);
+  plhs[8] = eigenToMatlab(Jdot);
+  plhs[9] = eigenToMatlab(Jz);
+  plhs[10] = eigenToMatlab(D);
+  plhs[11] = eigenToMatlab(Jp);
+  plhs[12] = eigenToMatlab(Jpdot);
   
   /*
   { 
