@@ -9,8 +9,8 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 biped = compile(r);
 biped = biped.setTerrain(SampleTerrain())
 
-last_pos = [0;0;0;0;0;0];
-next_pos = [.5;0;0;0;0;0];
+last_pos = [0;1.2;0;0;0;0];
+next_pos = [.5;2.1;0;0;0;0];
 
 
 step_traj = planSwing(biped, last_pos, next_pos)
