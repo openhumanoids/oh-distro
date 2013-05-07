@@ -314,6 +314,12 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
   typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
   object_instance_map_type_::iterator it = _parent_affordance_renderer->instantiated_objects.find(oss.str());
 
+  // set non-standard params from affordance message
+   for (size_t i=0; i < (size_t)aff.nparams; i++)
+   {   
+       it->second._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
+   }
+
   // set standard params from affordance message
   it->second._otdf_instance->setParam("x",aff.origin_xyz[0]);
   it->second._otdf_instance->setParam("y",aff.origin_xyz[1]);
@@ -322,11 +328,6 @@ void AffordanceCollectionListener::update_object_instance (const drc::affordance
   it->second._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
   it->second._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
        
-  // set non-standard params from affordance message
-   for (size_t i=0; i < (size_t)aff.nparams; i++)
-   {   
-       it->second._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
-   }
     //TODO: set All JointStates too.
 
     it->second._otdf_instance->update();
