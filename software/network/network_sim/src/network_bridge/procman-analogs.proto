@@ -23,7 +23,7 @@ message ProcManWrapper
 
 message PMDOrdersDiff
 {
-  option (dccl.msg).max_bytes = 0x4000;
+  option (dccl.msg).max_bytes = 100000;
   option (dccl.msg).id = 126;
 
   // absolute time of reference
@@ -54,7 +54,7 @@ message PMDOrdersDiff
 
 message PMDInfoDiff
 {
-  option (dccl.msg).max_bytes = 0x4000;
+  option (dccl.msg).max_bytes = 100000;
   option (dccl.msg).id = 125;
 
   required int64 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
