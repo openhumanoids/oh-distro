@@ -46,7 +46,7 @@ classdef HarnessQPController < MIMODrakeSystem
 %       obj.solver_options.presolve = 0;
 
       if obj.solver_options.method == 2
-        obj.solver_options.bariterlimit = 18; % iteration limit
+        obj.solver_options.bariterlimit = 30; % iteration limit
         obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
         obj.solver_options.barconvtol = 1e-4;
       end

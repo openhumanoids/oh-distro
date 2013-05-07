@@ -22,8 +22,8 @@ floating =false;
 l_jointNames = r_left.getStateFrame.coordinates(1:nq_l);
 r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 
-Kp = 5*[15  10  10   15  10  10    15  10  10 15  10  10]';
-Kd = [1.5 0.9 0.6 1.5 0.9 0.6   1.5 0.9 0.6 1.5 0.9 0.6]';
+Kp = 10*[15  10  10   15  10  10    15  10  10 15  10  10]';
+Kd = 0.5*[1.5 0.9 0.6 1.5 0.9 0.6   1.5 0.9 0.6 1.5 0.9 0.6]';
 
 l_coder = JLCMCoder(SandiaJointCommandCoder('atlas',floating,'left', l_jointNames,Kp,Kd));
 l_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_left',4*nq_l,'q',l_coder);
@@ -65,7 +65,7 @@ while(1)
         e_r =q_r*0;
         e_l(find(pos_control_flag>0)) = 0;
         e_r(find(pos_control_flag>0)) = 0;
-        torque =2*0.2;
+        torque =5*0.2;
         if(sum(msg.l_joint_position)>0)
            e_l(find(pos_control_flag==0)) = torque;   
 %            K_pos(find(pos_control_flag==0))= 0;
