@@ -1692,10 +1692,8 @@ namespace surrogate_gui
 				maps::PointCloud::Ptr cloudFull(new maps::PointCloud());
 				for (size_t v = 0; v < views.size(); ++v)
 				{
-					//if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_SCENE 
-          //   || views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE
-          //   || views[v]->getId() == drc::data_request_t::HEIGHT_MAP_SCENE) {
-          if(views[v]->getId() != 1)
+          if(views[v]->getId() == drc::data_request_t::DEPTH_MAP_WORKSPACE  
+              || views[v]->getId() > 9999)  // some of the old messages have invalid view_id
           {
 					  maps::PointCloud::Ptr cloud = views[v]->getAsPointCloud();
                                           /*
