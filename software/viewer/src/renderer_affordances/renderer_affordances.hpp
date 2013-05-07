@@ -396,7 +396,14 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
         cout << "Delete message sent for: " << otdf_type << "_" << uid << endl;
   }
 
-
+  // xyz_ypr is already in message, no need to duplicate it   
+  inline static bool isRedundantParam(const std::string& param)
+  {
+    if(param=="x" || param=="y" || param=="z" || 
+       param=="yaw" || param=="pitch" || param=="roll") return true;
+    else return false;
+  }
+  
   inline static void publish_otdf_instance_to_affstore(string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
   {
    RendererAffordances *self = (RendererAffordances*) user;
@@ -428,6 +435,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
    msg.origin_rpy[1] =instance_in->params_map_.find("pitch")->second;
    msg.origin_rpy[2] =instance_in->params_map_.find("yaw")->second;
    
+
    double bounding_xyz[]={0,0,0};
    double bounding_rpy[]={0,0,0};
    double bounding_lwh[]={0,0,0};
@@ -452,13 +460,16 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
    msg.bounding_rpy[0] = bounding_rpy[0]; msg.bounding_rpy[1] = bounding_rpy[1];msg.bounding_rpy[2] = bounding_rpy[2];
    msg.bounding_lwh[0] = bounding_lwh[0]; msg.bounding_lwh[1] = bounding_lwh[1];msg.bounding_lwh[2] = bounding_lwh[2];
     
-   msg.nparams =  instance_in->params_map_.size();
    typedef std::map<std::string, double > params_mapType;
    for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
    { 
+      // don't copy xyz ypr
+      if(isRedundantParam(it->first)) continue;
+      // copy all other params
       msg.param_names.push_back(it->first);
       msg.params.push_back(it->second);
    }
+   msg.nparams =  msg.param_names.size();
 
   int cnt=0;
    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
@@ -479,8 +490,7 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
    self->lcm->publish(channel, &msg);
 
   } 
-  
-  
+
   inline static void publish_new_otdf_instance_to_affstore( string channel, string otdf_type, int uid, const boost::shared_ptr<otdf::ModelInterface> instance_in,void *user)
   {
    RendererAffordances *self = (RendererAffordances*) user;
@@ -520,13 +530,16 @@ static void commonShapeBoundingBox(const string& otdf_type, boost::shared_ptr<ot
    msg.aff.bounding_lwh[0] = bounding_lwh[0]; msg.aff.bounding_lwh[1] = bounding_lwh[1];msg.aff.bounding_lwh[2] = bounding_lwh[2];
 
   
-   msg.aff.nparams =  instance_in->params_map_.size();
    typedef std::map<std::string, double > params_mapType;
    for( params_mapType::const_iterator it = instance_in->params_map_.begin(); it!=instance_in->params_map_.end(); it++)
-   { 
+   {
+      // don't copy xyz ypr
+      if(isRedundantParam(it->first)) continue;
+      // copy all other params
       msg.aff.param_names.push_back(it->first);
       msg.aff.params.push_back(it->second);
    }
+   msg.aff.nparams =  msg.aff.param_names.size();
 
   int cnt=0;
    typedef std::map<std::string,boost::shared_ptr<otdf::Joint> > joints_mapType;
