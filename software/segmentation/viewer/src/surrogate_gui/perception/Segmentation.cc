@@ -876,7 +876,10 @@ namespace surrogate_gui
 #if 1
     pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
 
-    icp.setMaxCorrespondenceDistance(1);
+    icp.setMaxCorrespondenceDistance(0.5);
+    icp.setMaximumIterations (20);
+    //icp.setEuclideanFitnessEpsilon(1e-6);
+    icp.setTransformationEpsilon (0.003);
 
     //icp.setRANSACOutlierRejectionThreshold (1);
     //icp.setTransformationEpsilon (0.001);
