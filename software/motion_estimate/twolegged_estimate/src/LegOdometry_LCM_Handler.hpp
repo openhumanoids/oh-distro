@@ -50,8 +50,12 @@
 #include <bot_frames/bot_frames.h>
 //#include <lcmtypes/bot_core_pose_t.h>
 
+
+#include "Filter.hpp"
+
 //#include "urdf/model.h"
 
+#define FILTER_ARR                 8
 #define DISPLAY_FOOTSTEP_POSES
 
 // At present this places a large computational burden on the system -- new poses are added at full rate but is not cleared, not important to fix for me at this point, so take note
@@ -114,6 +118,9 @@ private:
 	double elapsed_us, spare_us;
 	double spare_time;
 	timespec before, quater,mid, threequat, after, spare;
+	
+	LowPassFilter lpfilter[FILTER_ARR];
+	Filter* _filter[FILTER_ARR];
 	
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };

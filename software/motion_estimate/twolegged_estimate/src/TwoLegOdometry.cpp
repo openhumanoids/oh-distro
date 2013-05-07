@@ -56,6 +56,8 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files)
 	//both_feet_in_contact = true;
 	
 	for (int i=0;i<3;i++) {_filter[i] = &lpfilter[i];}
+	for (int i=0;i<3;i++) {_pos_filter[i] = &pos_lpfilter[i];}
+	
 	
 	_left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
 	_right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
@@ -124,10 +126,26 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	setLegTransforms(left, right);
 	foot_transition = FootLogic(utime, left_force, right_force);
 	
-	setPelvisPosition(getPelvisFromStep());
+	Eigen::Isometry3d pelvis;
+	pelvis = getPelvisFromStep();
+	
+	double pos[3];
+	
+	pos[0] = pos_lpfilter[0].processSample(pelvis.translation().x());
+	pos[1] = pos_lpfilter[1].processSample(pelvis.translation().y());
+	pos[2] = pos_lpfilter[2].processSample(pelvis.translation().z());
+	
+	// Eigen is not robust to direct variable self assignemnt
+	pelvis.translation().x() = pos[0];
+	pelvis.translation().y() = pos[1];
+	pelvis.translation().z() = pos[2];
+	
+	setPelvisPosition(pelvis);
+	
 	calculateUpdateVelocityStates(utime);
 	
 	// now we compute the head position and velocity states
+	// presently part of the publish methods -- not repeated for internal state representation yet
 	
 	return foot_transition;
 }
@@ -505,6 +523,8 @@ Eigen::Isometry3d TwoLegOdometry::getRightInLocal() {
 }
 
 void TwoLegOdometry::setPelvisPosition(Eigen::Isometry3d transform) {
+	// 
+	
 	local_to_pelvis = transform;
 }
 
@@ -613,8 +633,9 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	
 	Eigen::Vector3d prev_velocities;
 	prev_velocities = local_velocities;
-	local_velocities = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
-	
+	Eigen::Vector3d unfiltered_vel;
+	unfiltered_vel = (1.E6)*(current_position - previous_isometry.translation())/(current_time - previous_isometry_time);
+		
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2) << ", ";
 	
 	// This is to ignore velocity spikes that occur on when the active foot state is transitioned from left to right
@@ -650,7 +671,7 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time) {
 	for (int i=0;i<3;i++) {
 		local_velocities(i) = lpfilter[i].processSample(local_velocities(i));
 	}
-
+	
 	accel_data_ss << local_velocities(0) << ", " << local_velocities(1) << ", " << local_velocities(2);
 	
 	accel_data_ss << std::endl;

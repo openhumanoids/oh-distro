@@ -31,7 +31,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	std::cout << "Switches value for listen to LCM trues is: " << _switches->lcm_read_trues << std::endl;
 	
-	_leg_odo = new TwoLegOdometry(_switches->log_data_files);
+	for (int i=0;i<FILTER_ARR;i++) {_filter[i] = &lpfilter[i];}
+	
 	
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
 	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
@@ -91,7 +92,8 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	
 	time_avg_counter = 0;
 	elapsed_us = 0.;
-	
+
+	_leg_odo = new TwoLegOdometry(_switches->log_data_files);
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
   if (_switches->draw_footsteps) {
 	_viewer = new Viewer(lcm_viewer);
@@ -184,8 +186,9 @@ void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, fl
 
 void LegOdometry_Handler::ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force) {
 	// TODO -- This must be updated to use naming and not numerical 0 and 1 for left to right foot isolation
-	left_force = msg->contacts.contact_force[0].z;
-	right_force = msg->contacts.contact_force[1].z;
+	
+	left_force = lpfilter[0].processSample(msg->contacts.contact_force[0].z);
+	right_force = lpfilter[1].processSample(msg->contacts.contact_force[1].z);
 }
 
 
@@ -197,13 +200,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 	spare_time = (double)(static_cast<long long>(before.tv_nsec) - static_cast<long long>(spare.tv_nsec));
 	
 	ratecounter++;
-	if (ratecounter < 1)
-		return;
+	//if (ratecounter < 1)// this may cause the filters to not work correctly -- filters were designed for 1kHz -- so be prepared if you are going to change this
+		//return;
 	//std::cout << "Timestamp: " << msg->utime << std::endl;
-	ratecounter = 0;
-	
-	
-	
+	//ratecounter = 0;
 	
 	bool legchangeflag;
 
@@ -289,8 +289,10 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 		
 		//clock_gettime(CLOCK_REALTIME, &threequat);
-		
-		PublishEstimatedStates(msg);
+		if (ratecounter >= 5) {
+		  PublishEstimatedStates(msg);
+		  ratecounter=0;
+		}
     }
 	
  
@@ -574,16 +576,22 @@ void LegOdometry_Handler::torso_imu_handler(	const lcm::ReceiveBuffer* rbuf,
 												const std::string& channel, 
 												const  drc::imu_t* msg) {
 	
-	
+	double rates[3];
+	double angles[3];
 	Eigen::Quaterniond q(msg->orientation[0],msg->orientation[1],msg->orientation[2],msg->orientation[3]);
-	Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
-
-	/*
-	std::cout << "AHRS - q: " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl
-			  << "E: " << InertialOdometry::QuaternionLib::q2e(q).transpose()
-			  << std::endl;
-	*/
 	
+	Eigen::Vector3d E;
+	E = InertialOdometry::QuaternionLib::q2e(q);
+	
+	for (int i=0;i<3;i++) {
+	  rates[i] = lpfilter[i+2].processSample(msg->angular_velocity[i]); // +2 since the foot force values use the first two filters
+	  angles[i] = lpfilter[i+5].processSample(E(i));
+	}
+	
+	//Eigen::Vector3d rates_b(msg->angular_velocity[0],msg->angular_velocity[1],msg->angular_velocity[2]);
+	Eigen::Vector3d rates_b(rates[0], rates[1], rates[2]);
+	q = InertialOdometry::QuaternionLib::e2q(E);
+			
 	_leg_odo->setOrientationTransform(q, rates_b);
 	
 	return;
