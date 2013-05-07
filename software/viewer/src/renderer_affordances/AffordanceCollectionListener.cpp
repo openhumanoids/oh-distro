@@ -255,6 +255,13 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   }
   
   //instance_struc._otdf_instance->name_ = aff.name;
+
+  // set non-standard params from affordance message
+  for (size_t i=0; i < (size_t)aff.nparams; i++)
+    {   
+      instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
+    }
+
   
   // set standard params from affordance message
   instance_struc._otdf_instance->setParam("x",aff.origin_xyz[0]);
@@ -264,11 +271,6 @@ void AffordanceCollectionListener::add_new_otdf_object_instance (std::string &fi
   instance_struc._otdf_instance->setParam("pitch",aff.origin_rpy[1]);
   instance_struc._otdf_instance->setParam("yaw",  aff.origin_rpy[2]);
 
-  // set non-standard params from affordance message
-  for (size_t i=0; i < (size_t)aff.nparams; i++)
-    {   
-      instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
-    }
   instance_struc._otdf_instance->update();
   
   //TODO: set All JointStates too.
