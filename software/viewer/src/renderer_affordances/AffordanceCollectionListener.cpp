@@ -9,6 +9,7 @@
 #include <pcl/point_types.h>
 #include <pcl/pcl_base.h>
 #include <pcl/io/pcd_io.h>
+#include <drc_utils/PointConvert.h>
 
 #include <affordance/AffordanceUtils.hpp>
 
@@ -16,22 +17,10 @@ using namespace std;
 using namespace boost;
 using namespace visualization_utils;
 using namespace collision;
+using namespace drc::PointConvert;
 
 namespace renderer_affordances
 {
-
-  template<typename T1, typename T2>
-  static void convert3(const T1& in, T2& out){
-    out[0]=in[0];  
-    out[1]=in[1];  
-    out[2]=in[2];  
-  }
-
-  template<typename T1, typename T2>
-  static void convertVec3(const vector<T1>& in, vector<T2>& out){
-    out.resize(in.size());
-    for(int i=0;i<in.size();i++) convert3(in[i],out[i]);
-  }
 
   //==================constructor / destructor
 

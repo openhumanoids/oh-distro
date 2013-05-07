@@ -40,6 +40,7 @@
 using namespace std;
 using namespace pcl;
 using namespace Eigen;
+using namespace drc::PointConvert;
 
 namespace surrogate_gui
 {

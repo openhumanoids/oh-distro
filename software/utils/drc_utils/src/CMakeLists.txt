@@ -13,6 +13,7 @@ pods_install_headers(
   Clock.hpp
   LcmWrapper.hpp
   BotWrapper.hpp
+  PointConvert.h
   DESTINATION drc_utils)
 
 # make the library public

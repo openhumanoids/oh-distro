@@ -16,6 +16,10 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/PolygonMesh.h>
 
+#include <drc_utils/PointConvert.h>
+
+#include <vector>
+
 namespace surrogate_gui
 {
 

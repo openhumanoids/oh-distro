@@ -19,6 +19,7 @@
 #include <maps/BotWrapper.hpp>
 #include <affordance/AffordanceUpWrapper.h>
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/PointConvert.h>
 
 #include <affordance/AffordanceUtils.hpp>
 
@@ -27,6 +28,7 @@ using namespace pcl;
 using namespace boost;
 using namespace Eigen;
 using namespace affordance;
+using namespace drc::PointConvert;
 
 namespace surrogate_gui
 {
@@ -1118,42 +1120,19 @@ namespace surrogate_gui
 
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
-          // set bounding
-          affordanceMsg.aff.origin_xyz[0] = x;
-          affordanceMsg.aff.origin_xyz[1] = y;
-          affordanceMsg.aff.origin_xyz[2] = z;
-          affordanceMsg.aff.origin_rpy[0] = roll;
-          affordanceMsg.aff.origin_rpy[1] = pitch;
-          affordanceMsg.aff.origin_rpy[2] = yaw;
-          affordanceMsg.aff.bounding_xyz[0] = 0;
-          affordanceMsg.aff.bounding_xyz[1] = 0;
-          affordanceMsg.aff.bounding_xyz[2] = 0;
-          affordanceMsg.aff.bounding_rpy[0] = 0;
-          affordanceMsg.aff.bounding_rpy[1] = 0;
-          affordanceMsg.aff.bounding_rpy[2] = 0;
-          affordanceMsg.aff.bounding_lwh[0] = radius*2;
-          affordanceMsg.aff.bounding_lwh[1] = radius*2;
-          affordanceMsg.aff.bounding_lwh[2] = length;
 
-          // populate points
-          affordanceMsg.npoints = points.size();
-          affordanceMsg.points.resize(points.size());
-          for(int i=0;i<points.size();i++){
-            affordanceMsg.points[i].resize(3);
-            affordanceMsg.points[i][0] = points[i][0];
-            affordanceMsg.points[i][1] = points[i][1];
-            affordanceMsg.points[i][2] = points[i][2];
-          }
+    // set origin and bounding
+    convert3(Vector3f(x,y,z), affordanceMsg.aff.origin_xyz);
+    convert3(Vector3f(roll,pitch,yaw), affordanceMsg.aff.origin_rpy);
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_xyz); 
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_rpy);
+    convert3(Vector3f(radius*2,radius*2,length), affordanceMsg.aff.bounding_lwh); 
 
-          // populate triangles
-          affordanceMsg.ntriangles = triangles.size();
-          affordanceMsg.triangles.resize(triangles.size());
-          for(int i=0;i<triangles.size();i++){
-            affordanceMsg.triangles[i].resize(3);
-            affordanceMsg.triangles[i][0] = triangles[i][0];
-            affordanceMsg.triangles[i][1] = triangles[i][1];
-            affordanceMsg.triangles[i][2] = triangles[i][2];
-          }
+    // populate points and triangles
+    affordanceMsg.npoints = points.size();
+    affordanceMsg.ntriangles = triangles.size();
+    convertVec3(points, affordanceMsg.points);
+    convertVec3(triangles, affordanceMsg.triangles);
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
 
@@ -1195,22 +1174,12 @@ namespace surrogate_gui
 	  affordanceMsg.aff.param_names.push_back("radius");
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
-          // set bounding
-          affordanceMsg.aff.origin_xyz[0] = x;
-          affordanceMsg.aff.origin_xyz[1] = y;
-          affordanceMsg.aff.origin_xyz[2] = z;
-          affordanceMsg.aff.origin_rpy[0] = 0;
-          affordanceMsg.aff.origin_rpy[1] = 0;
-          affordanceMsg.aff.origin_rpy[2] = 0;
-          affordanceMsg.aff.bounding_xyz[0] = 0;
-          affordanceMsg.aff.bounding_xyz[1] = 0;
-          affordanceMsg.aff.bounding_xyz[2] = 0;
-          affordanceMsg.aff.bounding_rpy[0] = 0;
-          affordanceMsg.aff.bounding_rpy[1] = 0;
-          affordanceMsg.aff.bounding_rpy[2] = 0;
-          affordanceMsg.aff.bounding_lwh[0] = radius*2;
-          affordanceMsg.aff.bounding_lwh[1] = radius*2;
-          affordanceMsg.aff.bounding_lwh[2] = radius*2;
+    // set origin and bounding
+    convert3(Vector3f(x,y,z), affordanceMsg.aff.origin_xyz);
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.origin_rpy);
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_xyz); 
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_rpy);
+    convert3(Vector3f(radius*2,radius*2,radius*2), affordanceMsg.aff.bounding_lwh); 
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
@@ -1265,22 +1234,12 @@ namespace surrogate_gui
 
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
-          // set bounding
-          affordanceMsg.aff.origin_xyz[0] = x;
-          affordanceMsg.aff.origin_xyz[1] = y;
-          affordanceMsg.aff.origin_xyz[2] = z;
-          affordanceMsg.aff.origin_rpy[0] = roll;
-          affordanceMsg.aff.origin_rpy[1] = pitch;
-          affordanceMsg.aff.origin_rpy[2] = yaw;
-          affordanceMsg.aff.bounding_xyz[0] = 0;
-          affordanceMsg.aff.bounding_xyz[1] = 0;
-          affordanceMsg.aff.bounding_xyz[2] = 0;
-          affordanceMsg.aff.bounding_rpy[0] = 0;
-          affordanceMsg.aff.bounding_rpy[1] = 0;
-          affordanceMsg.aff.bounding_rpy[2] = 0;
-          affordanceMsg.aff.bounding_lwh[0] = radius*2;
-          affordanceMsg.aff.bounding_lwh[1] = radius*2;
-          affordanceMsg.aff.bounding_lwh[2] = 0;
+    // set origin and bounding
+    convert3(Vector3f(x,y,z), affordanceMsg.aff.origin_xyz);
+    convert3(Vector3f(roll,pitch,yaw), affordanceMsg.aff.origin_rpy);
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_xyz); 
+    convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_rpy);
+    convert3(Vector3f(radius*2,radius*2,0), affordanceMsg.aff.bounding_lwh); 
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
@@ -1339,16 +1298,11 @@ namespace surrogate_gui
               points[3] = Vector3f( width/2, -length/2, 0);
             */
             
-            int nPoints = p.convexHull.size();
-            vector<Vector3f>& points = p.convexHull;
             
             // add points to message
+            int nPoints = p.convexHull.size();
             affordanceMsg.npoints = nPoints;
-            affordanceMsg.points.resize(nPoints);
-            for(int i=0; i<nPoints; i++){
-              affordanceMsg.points[i].resize(3);
-              for(int j=0; j<3; j++) affordanceMsg.points[i][j] = points[i][j];
-            }
+            convertVec3(p.convexHull, affordanceMsg.points);
             
             // add triangles ot message
             affordanceMsg.ntriangles = nPoints-2;
@@ -1356,26 +1310,16 @@ namespace surrogate_gui
             for(int i=0; i<affordanceMsg.ntriangles; i++){
               Vector3i triangle(0,i+1,i+2);
               affordanceMsg.triangles[i].resize(3);
-              for(int j=0;j<3;j++) affordanceMsg.triangles[i][j] = triangle[j];
+              convert3(triangle, affordanceMsg.triangles[i]);
             }
-            
-            // set bounding
-            affordanceMsg.aff.origin_xyz[0] = p.xyz[0];
-            affordanceMsg.aff.origin_xyz[1] = p.xyz[1];
-            affordanceMsg.aff.origin_xyz[2] = p.xyz[2];
-            affordanceMsg.aff.origin_rpy[0] = p.ypr[2];
-            affordanceMsg.aff.origin_rpy[1] = p.ypr[1];
-            affordanceMsg.aff.origin_rpy[2] = p.ypr[0];
-            affordanceMsg.aff.bounding_xyz[0] = 0;
-            affordanceMsg.aff.bounding_xyz[1] = 0;
-            affordanceMsg.aff.bounding_xyz[2] = 0;
-            affordanceMsg.aff.bounding_rpy[0] = 0;
-            affordanceMsg.aff.bounding_rpy[1] = 0;
-            affordanceMsg.aff.bounding_rpy[2] = 0;
-            affordanceMsg.aff.bounding_lwh[0] = p.width;
-            affordanceMsg.aff.bounding_lwh[1] = p.length;
-            affordanceMsg.aff.bounding_lwh[2] = 0;
-            
+
+            // set origin and bounding
+            convert3(p.xyz, affordanceMsg.aff.origin_xyz);
+            convert3(p.ypr.reverse(), affordanceMsg.aff.origin_rpy);
+            convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_xyz); 
+            convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_rpy);
+            convert3(Vector3f(p.width,p.length,0), affordanceMsg.aff.bounding_lwh); 
+
             cout << "\n npoints = " << affordanceMsg.npoints << endl;
             
 
@@ -1419,22 +1363,9 @@ namespace surrogate_gui
     AffPlusPtr selectedAff = getSelectedAffordance();
     if(selectedAff){
       isInitialSet = true;
-      initialXYZ[0] = selectedAff->aff.origin_xyz[0];
-      initialXYZ[1] = selectedAff->aff.origin_xyz[1];
-      initialXYZ[2] = selectedAff->aff.origin_xyz[2];
-      initialYPR[0] = selectedAff->aff.origin_rpy[2];
-      initialYPR[1] = selectedAff->aff.origin_rpy[1];
-      initialYPR[2] = selectedAff->aff.origin_rpy[0];
-
-      // old style params
-      for(int i=0;i<selectedAff->aff.params.size();i++){
-        if(selectedAff->aff.param_names[i] == "x") initialXYZ[0] = selectedAff->aff.params[i];
-        if(selectedAff->aff.param_names[i] == "y") initialXYZ[1] = selectedAff->aff.params[i];
-        if(selectedAff->aff.param_names[i] == "z") initialXYZ[2] = selectedAff->aff.params[i];
-        if(selectedAff->aff.param_names[i] == "roll")  initialYPR[2] = selectedAff->aff.params[i];
-        if(selectedAff->aff.param_names[i] == "pitch") initialYPR[1] = selectedAff->aff.params[i];
-        if(selectedAff->aff.param_names[i] == "yaw")   initialYPR[0] = selectedAff->aff.params[i];
-      }
+      convert3(selectedAff->aff.origin_xyz, initialXYZ);
+      convert3(selectedAff->aff.origin_rpy, initialYPR);
+      initialYPR.reverseInPlace();  //RPY to YPR
     }
 
 	  //todo: map_utime, map_id, object_id
@@ -1488,47 +1419,19 @@ namespace surrogate_gui
     bot_lcmgl_switch_buffer(_lcmgl);
     */
 
-    // copy results accounting for difference between model and pointcloud
-    float x = xyz[0]; 
-    float y = xyz[1];
-    float z = xyz[2]; 
-    float yaw   = ypr[0];
-    float pitch = ypr[1];
-    float roll  = ypr[2];
-	
 	  affordanceMsg.aff.nparams = affordanceMsg.aff.params.size();
 
-    // set bounding
-    affordanceMsg.aff.origin_xyz[0] = x;
-    affordanceMsg.aff.origin_xyz[1] = y;
-    affordanceMsg.aff.origin_xyz[2] = z;
-    affordanceMsg.aff.origin_rpy[0] = roll;
-    affordanceMsg.aff.origin_rpy[1] = pitch;
-    affordanceMsg.aff.origin_rpy[2] = yaw;
-    affordanceMsg.aff.bounding_xyz[0] = 0;
-    affordanceMsg.aff.bounding_xyz[1] = 0;
-    affordanceMsg.aff.bounding_xyz[2] = 1.0; // center of car above ground 
-    affordanceMsg.aff.bounding_rpy[0] = 0;
-    affordanceMsg.aff.bounding_rpy[1] = 0;
-    affordanceMsg.aff.bounding_rpy[2] = 0;
-    affordanceMsg.aff.bounding_lwh[0] = 3.0;  // TODO make more general, not just car
-    affordanceMsg.aff.bounding_lwh[1] = 1.7;
-    affordanceMsg.aff.bounding_lwh[2] = 2.2; // was 2.0, made it larger, mfallon
+    // set origin and bounding
+    convert3(xyz,                   affordanceMsg.aff.origin_xyz);
+    convert3(ypr.reverse(),         affordanceMsg.aff.origin_rpy);
+    convert3(Vector3f(0,0,1),       affordanceMsg.aff.bounding_xyz); // center of car above ground 
+    convert3(Vector3f(0,0,0),       affordanceMsg.aff.bounding_rpy);
+    convert3(Vector3f(3.0,1.7,2.2), affordanceMsg.aff.bounding_lwh); // TODO make more general, not just car
 
     // set modelfile
     affordanceMsg.aff.modelfile = modelfile;
 
-    // populate points //TODO remove when modelfile is fully supported
-    if(false){
-      affordanceMsg.npoints = modelcloud->size();
-      affordanceMsg.points.resize(modelcloud->size());
-      for(int i=0;i<modelcloud->size();i++){
-        affordanceMsg.points[i].resize(3);
-        affordanceMsg.points[i][0] = modelcloud->at(i).x;
-        affordanceMsg.points[i][1] = modelcloud->at(i).y;
-        affordanceMsg.points[i][2] = modelcloud->at(i).z;
-      }
-    }else affordanceMsg.npoints = 0;
+    affordanceMsg.npoints = 0;
     affordanceMsg.ntriangles = 0;
 
 	  cout << "\n npoints = " << affordanceMsg.npoints << endl;
