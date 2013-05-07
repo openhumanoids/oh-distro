@@ -1,5 +1,3 @@
-#include <vector>
-
 /*
   Generic templated methods for converting from one point type to another.
   Works with c-arrays, c++ vectors, Eigen::Vector3*.  
@@ -18,7 +16,11 @@
 
 */
 
+#pragma once
 
+#include <vector>
+
+namespace drc{
 namespace PointConvert{
 
   template<typename T1, typename T2>
@@ -43,4 +45,5 @@ namespace PointConvert{
     }
   }
 
+};
 };
