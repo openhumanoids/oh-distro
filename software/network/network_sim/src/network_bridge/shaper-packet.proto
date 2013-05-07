@@ -9,13 +9,14 @@ message ShaperHeader
   required int32 channel = 1 [(dccl.field).min = 0,
                               (dccl.field).max = 255];
   required int32 priority = 2 [(dccl.field).min = 0,
-                               (dccl.field).max = 7];
+                               (dccl.field).max = 3];
   required int32 message_number = 3 [(dccl.field).min = 0,
                                      (dccl.field).max = 15];
-  required uint32 fragment = 4 [(dccl.field).min = 0,
-                                (dccl.field).max = 0xFFFFF]; // 1 Megabyte
+  optional uint32 fragment = 4 [(dccl.field).min = 0,
+                                (dccl.field).max = 0xFFFFF,
+                                codec: "presence_bit"]; // 1 Megabyte
   required bool is_last_fragment = 5;
-  required uint32 message_size = 10 [(dccl.field).min = 0,
+  optional uint32 message_size = 10 [(dccl.field).min = 0,
                                      (dccl.field).max = 0xFFFFF]; // 1 Megabyte
 }
 

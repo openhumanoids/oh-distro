@@ -73,8 +73,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
     dccl_->set_id_codec("drc_header_codec");    
-
-    dccl_->validate<drc::ShaperHeader>();
     
     glog.set_name("drc-network-shaper");
     glog.add_group("ch-push", goby::common::Colors::blue);
@@ -95,6 +93,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
     custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
 
+    dccl_->validate<drc::ShaperHeader>();
+    
     goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << *dccl_ << std::endl;
 
     // test pmd info diff
@@ -335,19 +335,19 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         int16_t fragment = 0;
         msg_head->set_channel(channel_id_.left.at(it->second.channel));
         msg_head->set_message_number(it->second.message_count);
-        msg_head->set_message_size(qmsg.size());
         msg_head->set_priority(priority);
 
         if(qmsg.size() <= payload_size)
         {
             msg_frag.set_data(&qmsg[0], qmsg.size());
-            msg_head->set_fragment(0);
             msg_head->set_is_last_fragment(true);
             for(int i = 0, n = std::ceil(fec_); i < n; ++i)
                 send_queue_.push(msg_frag);
         }
         else
-        {                
+        {
+            msg_head->set_message_size(qmsg.size());
+
             payload_size = floor_multiple_sixteen(max_frame_size_-overhead);
             while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
                 payload_size = floor_multiple_sixteen(payload_size-1);
@@ -407,7 +407,7 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
 
-    if(packet.header().is_last_fragment() && packet.header().fragment() == 0)
+    if(packet.header().is_last_fragment() && !packet.header().has_fragment())
     {
         std::vector<unsigned char> buffer(packet.data().size());
         for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
