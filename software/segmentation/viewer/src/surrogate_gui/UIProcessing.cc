@@ -989,6 +989,9 @@ namespace surrogate_gui
 
   void UIProcessing::handleAffordancePubButton(BotGtkParamWidget *pw)
   {
+    // clear warning text
+    _surrogate_renderer.setWarningText("");
+
 		Segmentation::FittingParams fp;
 		fp.minRadius = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MIN_RADIUS);
 		fp.maxRadius = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_RADIUS);
@@ -1000,15 +1003,37 @@ namespace surrogate_gui
 		fp.maxAngle = bot_gtk_param_widget_get_double(pw, PARAM_NAME_MAX_ANGLE);
     */
 
-    // TODO: support selected afforance for other objects
     AffPlusPtr selectedAff = getSelectedAffordance();
     if(selectedAff){
-      if(getGeometricPrimitive()!=CAR){
-        cout << "************ Only car affordance currently handled with selected affordances\n";
+      GeometricPrimitive prim = getGeometricPrimitive();
+      string otdf = selectedAff->aff.otdf_type;
+
+      // check for match
+      bool match=false;
+      if(prim==CYLINDER  && otdf=="cylinder") match=true;
+      if(prim==SPHERE    && otdf=="sphere")   match=true;
+      if(prim==CIRCLE_3D && otdf=="cylinder") match=true;
+      if(prim==PLANE     && otdf=="plane")    match=true;
+      if(prim==CAR       && otdf=="car")      match=true;
+      if(prim==LINE      && otdf=="TODO")     match=true;
+      if(prim==TORUS     && otdf=="TODO")     match=true;
+      if(prim==CUBE      && otdf=="TODO")     match=true;
+      if(!match){
+        _surrogate_renderer.setWarningText("Selected affordance does not match geometric primitive.");
+        return;
       }
-      if(selectedAff->aff.otdf_type != "car"){
-        cout << "************ Only car affordance currently handled with selected affordances\n";
+
+      // TODO: support selected afforance for other objects
+      if(prim!=CAR || otdf!="car"){
+        _surrogate_renderer.setWarningText("car is the only currently handled selected affordance.");
+        return;
       }
+    }
+
+    // TODO improve car support without seeding
+    if(!selectedAff && getGeometricPrimitive()==CAR){
+        _surrogate_renderer.setWarningText("Car fitting requires selected affordance.");
+        return;
     }
 
 	  switch(getGeometricPrimitive()){
