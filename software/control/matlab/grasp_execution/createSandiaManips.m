@@ -12,3 +12,16 @@ function [r_left,r_right] = createSandiaManips()
     r_right=TimeSteppingRigidBodyManipulator(filelocation,dt,options);
 
 end
+
+
+
+%filelocation=[drc_path '/models/mit_gazebo_models/mit_robot_drake/test_hands/sandia_drake_left.urdf'];
+%filelocation=[drc_path '/models/mit_gazebo_models/mit_robot_drake/test_hands/sandia_drake_left_old.urdf'];
+%filelocation=[drc_path '/models/mit_gazebo_models/mit_robot_drake/test_hands/sandia_drake_right.urdf'];
+%filelocation=[drc_path '/models/mit_gazebo_models/mit_robot_drake/test_hands/sandia_drake_right_old.urdf'];
+% x0 = getInitialState(r_left);
+% q0 = x0(1:getNumDOF(r_left));
+% test=r_left.getCOM(q0)
+% test=r_right.getCOM(q0)
+% test=r_right.getMass(q0)
+% test=r_left.getMass()
