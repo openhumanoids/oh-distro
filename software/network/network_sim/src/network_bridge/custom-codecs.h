@@ -272,8 +272,8 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
                     return false;
                 
                 DiffType diff;
-                diff.ParseFromString(wrapper.data());
-                //DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
+                //diff.ParseFromString(wrapper.data());
+                DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<DiffType>();
                 dccl_->decode(wrapper.data(), &diff);
 
                 if(!reverse_diff(&lcm_object, Codec::state_[host], diff))
