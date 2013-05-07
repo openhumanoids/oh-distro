@@ -10,6 +10,8 @@
 #include <pcl/pcl_base.h>
 #include <pcl/io/pcd_io.h>
 
+#include <affordance/AffordanceUtils.hpp>
+
 using namespace std;
 using namespace boost;
 using namespace visualization_utils;
@@ -17,6 +19,20 @@ using namespace collision;
 
 namespace renderer_affordances
 {
+
+  template<typename T1, typename T2>
+  static void convert3(const T1& in, T2& out){
+    out[0]=in[0];  
+    out[1]=in[1];  
+    out[2]=in[2];  
+  }
+
+  template<typename T1, typename T2>
+  static void convertVec3(const vector<T1>& in, vector<T2>& out){
+    out.resize(in.size());
+    for(int i=0;i<in.size();i++) convert3(in[i],out[i]);
+  }
+
   //==================constructor / destructor
 
 //   AffordanceCollectionListener::AffordanceCollectionListener(boost::shared_ptr<lcm::LCM> &lcm, RendererAffordances* affordance_renderer):
@@ -141,50 +157,28 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 
       // if no modelfile, copy points and triangles
       if(msg->aff.modelfile.empty()){
-        // copy triangles
-        it->second.triangles.resize(msg->triangles.size());
-        for(size_t i=0;i<msg->triangles.size();i++){
-          it->second.triangles[i][0] = msg->triangles[i][0];
-          it->second.triangles[i][1] = msg->triangles[i][1];
-          it->second.triangles[i][2] = msg->triangles[i][2];
-        }
-        // copy points
-        it->second.points.resize(msg->points.size());
-        for(size_t i=0;i<msg->points.size();i++){
-          it->second.points[i][0] = msg->points[i][0];
-          it->second.points[i][1] = msg->points[i][1];
-          it->second.points[i][2] = msg->points[i][2];
-        }
+        // copy triangles and points
+        convertVec3(msg->points, it->second.points);
+        convertVec3(msg->triangles, it->second.triangles);
       }
 
       // copy bounding box
-      it->second.boundingBoxXYZ[0] = msg->aff.bounding_xyz[0];
-      it->second.boundingBoxXYZ[1] = msg->aff.bounding_xyz[1];
-      it->second.boundingBoxXYZ[2] = msg->aff.bounding_xyz[2];
-      it->second.boundingBoxRPY[0] = msg->aff.bounding_rpy[0];
-      it->second.boundingBoxRPY[1] = msg->aff.bounding_rpy[1];
-      it->second.boundingBoxRPY[2] = msg->aff.bounding_rpy[2];
-      it->second.boundingBoxLWH[0] = msg->aff.bounding_lwh[0];
-      it->second.boundingBoxLWH[1] = msg->aff.bounding_lwh[1];
-      it->second.boundingBoxLWH[2] = msg->aff.bounding_lwh[2];
+      convert3(msg->aff.bounding_xyz, it->second.boundingBoxXYZ);
+      convert3(msg->aff.bounding_rpy, it->second.boundingBoxRPY);
+      convert3(msg->aff.bounding_lwh, it->second.boundingBoxLWH);
 
       // if modelfile has changed, read in file
       if(msg->aff.modelfile != it->second.modelfile){
         // read in model
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
-        pcl::PCDReader reader;
+        vector<vector<float> > points;
+        vector<vector<int> > triangles;
         string file = getenv("HOME") + string("/drc/software/models/otdf/") + msg->aff.modelfile;
-        reader.read(file.c_str(), *modelcloud);
+        AffordanceUtils affutils;
+        affutils.getModelAsLists(file, points, triangles);
+        
+        convertVec3(points, it->second.points);
+        convertVec3(triangles, it->second.triangles);
 
-        // copy model to points
-        std::vector<Eigen::Vector3f>& pts = it->second.points;
-
-        pts.resize(modelcloud->size());
-        for(int i=0;i<pts.size();i++){
-          pts[i][0] = modelcloud->at(i).x;
-          pts[i][1] = modelcloud->at(i).y;
-          pts[i][2] = modelcloud->at(i).z;
-        }
         it->second.modelfile = msg->aff.modelfile;
       }
 

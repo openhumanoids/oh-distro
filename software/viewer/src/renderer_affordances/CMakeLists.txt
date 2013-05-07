@@ -7,6 +7,10 @@ find_package(PkgConfig REQUIRED)
 
 #add_definitions( -std=gnu99)
 
+# required for affordance-utils
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+
 set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
     pcl_segmentation-1.6 pcl_sample_consensus-1.6
     pcl_features-1.6)
@@ -56,5 +60,5 @@ pods_install_pkg_config_file(renderer_affordances
     REQUIRES ${REQUIRED_PACKAGES_AFFORDANCES} 
     VERSION 0.0.1)
 
-pods_use_pkg_config_packages(renderer_affordances 
+pods_use_pkg_config_packages(renderer_affordances affordance-utils
   ${REQUIRED_PACKAGES_AFFORDANCES})

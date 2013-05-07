@@ -20,6 +20,8 @@
 #include <affordance/AffordanceUpWrapper.h>
 #include <drc_utils/Clock.hpp>
 
+#include <affordance/AffordanceUtils.hpp>
+
 using namespace std;
 using namespace pcl;
 using namespace boost;
@@ -41,7 +43,7 @@ namespace surrogate_gui
   {
     BotViewer *self = (BotViewer*) user_data;
     if (start_spy_counter >0){ // is there a better way than this counter?
-      int i = system ("bot-spy &> /dev/null &");
+      int i = ::system ("bot-spy &> /dev/null &");
     }
     start_spy_counter++;
   }
@@ -1443,6 +1445,7 @@ namespace surrogate_gui
     // read in pcd
     /* TODO 
        - support multiple files
+       - support ply files
        - cache models
     */
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud(new pcl::PointCloud<pcl::PointXYZRGB>());

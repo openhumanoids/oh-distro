@@ -5,6 +5,10 @@ add_definitions(-Wall -std=gnu99)
 #    return()
 #endif(NOT BOT2_VIS_FOUND)
 
+# required for affordance-utils
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+
 find_package(PkgConfig REQUIRED)
 find_package(OpenGL REQUIRED)
 
@@ -45,7 +49,7 @@ pods_use_pkg_config_packages(surrogate
     bot2-lcmgl-client
     lcmtypes_drc_lcmtypes
     maps
-    pointcloud_filters pointcloud_vis pointcloud_math
+    pointcloud_filters pointcloud_vis pointcloud_math affordance-utils
     ${REQUIRED_DRC_PACKAGES})
 
 pods_install_headers(SurrogateRenderer.h UIProcessing.h SurrogateException.h LinearAlgebra.h 
