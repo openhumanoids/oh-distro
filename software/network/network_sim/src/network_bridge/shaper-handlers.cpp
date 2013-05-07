@@ -71,11 +71,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       dccl_(goby::acomms::DCCLCodec::get())
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
-    dccl_->validate<drc::ShaperHeader>();
+    dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
+    dccl_->set_id_codec("drc_header_codec");    
 
-    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
-    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
-    
+    dccl_->validate<drc::ShaperHeader>();
     
     glog.set_name("drc-network-shaper");
     glog.add_group("ch-push", goby::common::Colors::blue);
@@ -91,6 +90,44 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
+
+    
+    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node))));
+    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node))));
+
+    goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << *dccl_ << std::endl;
+
+    // test pmd info diff
+    {
+        drc::PMDInfoDiff diff, diff_out;
+        diff.set_reference_time(243);
+        diff.set_utime(6000000);
+        diff.set_cpu_load(0.56);
+        diff.set_phys_mem_total_kbytes(1024);
+        // diff.set_phys_mem_free_kbytes(166542024);
+        diff.set_swap_total_kbytes(5024);
+        diff.set_swap_free_kbytes(67543);
+        
+        drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
+        diff_cmd->set_name("FOO");
+        diff_cmd->set_group("BAR");
+        diff_cmd->set_pid(263);
+
+        std::string bytes;
+        dccl_->encode(&bytes, diff);
+
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
+        dccl_->decode(bytes, &diff_out);
+
+        // round to one decimal place
+        diff.set_cpu_load(0.6);
+
+        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
+        assert(diff.SerializeAsString() == diff_out.SerializeAsString());
+
+    }
+        
+    
     
     
     const std::vector<Resend>& resendlist = app.resendlist();
@@ -360,6 +397,8 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
 void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission& msg)
 {    
     drc::ShaperPacket packet;
+
+    DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
     dccl_->decode(msg.frame(0), packet.mutable_header());
     packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 

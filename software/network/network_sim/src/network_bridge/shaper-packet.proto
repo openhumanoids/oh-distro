@@ -7,7 +7,7 @@ message ShaperHeader
   option (dccl.msg).max_bytes = 9;
   option (dccl.msg).id = 124;
   required int32 channel = 1 [(dccl.field).min = 0,
-                              (dccl.field).max = 1023];
+                              (dccl.field).max = 255];
   required int32 priority = 2 [(dccl.field).min = 0,
                                (dccl.field).max = 7];
   required int32 message_number = 3 [(dccl.field).min = 0,
