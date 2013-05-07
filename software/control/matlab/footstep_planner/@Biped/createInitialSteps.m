@@ -76,10 +76,10 @@ stall_count = 0;
       if (all(c <= 0)  && ~((got_data || using_heightmap) && ~terrain_ok)) 
         stall_count = 0
         break
-      elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 1e-2 && nom_forward_step + 0.05 > biped.max_forward_step)
+      elseif (lambda_n - lambda < 0.01 && nom_forward_step + 0.05 > biped.max_forward_step)
         stall_count = stall_count + 1
         break
-      elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 5e-2)
+      elseif (sqrt(sum((x - traj.eval(lambda)).^2)) < 5e-2 && nom_forward_step + 0.05 <= biped.max_forward_step)
         nom_forward_step = nom_forward_step + 0.05;
 %         lambda = lambda - 0.05;
         lambda_n = 1;
