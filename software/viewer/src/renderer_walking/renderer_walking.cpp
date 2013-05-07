@@ -32,7 +32,8 @@
 #include <maps/BotWrapper.hpp>
 
 #define RENDERER_NAME "Walking"
-#define PARAM_GOAL_SEND "Walking Goal"
+#define PARAM_GOAL_SEND "Place New Walking Goal"
+#define PARAM_GOAL_UPDATE "Update Current Goal"
 #define PARAM_FIX_YAW "Constrain footstep yaw"
 #define PARAM_LEADING_FOOT "Leading foot"
 // #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
@@ -603,13 +604,15 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       } else {
         self->last_walking_msg.right_foot_lead = false;
       }
-      fprintf(stderr, "Sending WALKING_GOAL\n");
-      drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
-      bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
     }
   }
-  
-  if(!strcmp(name, PARAM_REINITIALIZE)) {
+
+  if(!strcmp(name, PARAM_GOAL_UPDATE)) {
+    fprintf(stderr, "\nClicked Update Walking Goal\n");
+    fprintf(stderr, "Sending WALKING_GOAL\n");
+    drc_walking_goal_t_publish(self->lc, "WALKING_GOAL", &(self->last_walking_msg));
+    bot_viewer_set_status_bar_message(self->viewer, "Sent WALKING_GOAL");
+  } else if(!strcmp(name, PARAM_REINITIALIZE)) {
     fprintf(stderr,"\nClicked REINIT\n");
     //bot_viewer_request_pick (self->viewer, &(self->ehandler));
     activate(self, 1);
@@ -696,6 +699,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
+  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_UPDATE, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 10.0);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30.0, 1.0, 0.0);  
@@ -704,6 +708,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FIX_YAW, self->fix_step_yaw);
   
+  bot_gtk_param_widget_add_separator(self->pw, "Other goals and requests");
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_REINITIALIZE, NULL);
 
