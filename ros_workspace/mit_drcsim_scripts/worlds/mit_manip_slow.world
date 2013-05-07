@@ -96,7 +96,7 @@
     <include><uri>model://mit_robot_nohands</uri><pose>0.0 0.0 0.93 0 0 0</pose></include> 
 
 <!-- some people have problems with this car loading - remove if necessary-->
-    <include><uri>model://drc_vehicle</uri><pose>4.0 -0.9 0 0 0 -1.5707</pose></include>
+    <include><uri>model://mit_vehicle</uri><pose>4.0 -0.9 0 0 0 -1.5707</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
