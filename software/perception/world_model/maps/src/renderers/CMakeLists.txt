@@ -9,8 +9,10 @@ add_library(renderer_data_control SHARED
   
 set_target_properties(renderer_data_control PROPERTIES SOVERSION 1)
 
-pods_use_pkg_config_packages(renderer_data_control
+pods_use_pkg_config_packages(renderer_data_control affordance
   drc-utils lcmtypes_drc_lcmtypes gtkmm-renderer gtkmm-2.4)
+
+
 
 pods_install_headers(DataControlRenderer.hpp
   DESTINATION renderer_data_control)
