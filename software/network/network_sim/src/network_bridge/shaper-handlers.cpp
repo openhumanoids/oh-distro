@@ -519,6 +519,7 @@ void DRCShaper::post_bw_stats()
         drc::bandwidth_stats_t stats;
         stats.utime = now;
         stats.previous_utime = app_.bw_init_utime;
+	stats.sim_utime = app_.get_current_utime();	
         stats.bytes_from_robot = 0;
         stats.bytes_to_robot = 0;
         stats.num_channels = data_usage_.size();
