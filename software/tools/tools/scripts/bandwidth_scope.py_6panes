@@ -47,72 +47,83 @@ def plot_data():
   global channels
   front_block =0 # offset into the future (to ensure no recent data not viewed)
   #print "len of channels: %d" %  len(channels)
-  cols = 'rgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmc'
   if ( len(msgs.utimes) >1):
     plt.figure(1)
     ############################################################
     ax1.cla()
-    j=-1
-    for i in range(0,len(channels)): 
-      if(cumqueued_MB.v[-1,i]>0):
-        if(j==-1):
-          ax1.fill_between( cumqueued_MB.utimes[1:,0][:], 0 , cumqueued_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        else:
-          ax1.fill_between( cumqueued_MB.utimes[1:,0][:], cumqueued_MB.v[1:,j][:] , cumqueued_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        j=i
-        ax1.plot(cumqueued_MB.utimes[1:], np.transpose(cumqueued_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
-    ax1.set_ylabel('Cum MB Queued [' + stats_channel +']');  ax1.grid(True)
-    ax1.legend(loc=2,prop={'size':10})
+    cols = 'rgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmcrgbkmc'
+    for i in range(len(channels)): 
+      if(msgs.v[-1,i]>0):
+        ax1.plot(msgs.utimes[1:], np.transpose(msgs.v[1:,i]),color=cols[i] , linewidth=1,label=channels[i])
+    ax1.set_ylabel('Msgs queued');  ax1.grid(True)
     ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
-    ax1.set_ylim( bottom=0)
-    
-    ############################################################
+
     ax2.cla()
-    j=-1
-    for i in range(0,len(channels)): 
-      if(cumsent_MB.v[-1,i]>0):
-        if(j==-1):
-          ax2.fill_between( cumsent_MB.utimes[1:,0][:], 0 , cumsent_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        else:
-          ax2.fill_between( cumsent_MB.utimes[1:,0][:], cumsent_MB.v[1:,j][:] , cumsent_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        j=i
-        ax2.plot(cumsent_MB.utimes[1:], np.transpose(cumsent_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
-    ax2.set_ylabel('Cum MB Sent [' + stats_channel +']');  ax2.grid(True)
-    ax2.legend(loc=2,prop={'size':10})
+    for i in range(len(channels)): 
+      if(queued_MB.v[-1,i]>0):
+        ax2.plot(queued_MB.utimes[1:], np.transpose(queued_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+    ax2.set_ylabel('MB Queued');  ax2.grid(True)
     ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ax2.set_ylim( bottom=0)
-
-    ############################################################
+    
     ax3.cla()
-    j=-1
-    for i in range(0,len(channels)): 
-      if(cumreceived_MB.v[-1,i]>0):
-        if(j==-1):
-          ax3.fill_between( cumreceived_MB.utimes[1:,0][:], 0 , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        else:
-          ax3.fill_between( cumreceived_MB.utimes[1:,0][:], cumreceived_MB.v[1:,j][:] , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-        j=i
-        ax3.plot(cumreceived_MB.utimes[1:], np.transpose(cumreceived_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
-    ax3.set_ylabel('Cum MB Received [' + stats_channel +']');  ax3.grid(True)
+    for i in range(len(channels)): 
+      if(cumqueued_MB.v[-1,i]>0):
+        ax3.plot(cumqueued_MB.utimes[1:], np.transpose(cumqueued_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+
+    ax3.set_ylabel('Cum MB Queued');  ax3.grid(True)
     ax3.legend(loc=2,prop={'size':10})
     ax3.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ax3.set_ylim( bottom=0)
-    
+
     ############################################################
     ax4.cla()
     j=-1
     for i in range(0,len(channels)): 
-      if(cumreceived_MB.v[-1,i]>0):
+      if(cumqueued_MB.v[-1,i]>0):
         if(j==-1):
-          ax4.fill_between( cumreceived_MB.utimes[1:,0][:], 0 , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+          ax4.fill_between( cumqueued_MB.utimes[1:,0][:], 0 , cumqueued_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
         else:
-          ax4.fill_between( cumreceived_MB.utimes[1:,0][:], cumreceived_MB.v[1:,j][:] , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+          ax4.fill_between( cumqueued_MB.utimes[1:,0][:], cumqueued_MB.v[1:,j][:] , cumqueued_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
         j=i
-        ax4.plot(cumreceived_MB.utimes[1:], np.transpose(cumreceived_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
-    ax4.set_ylabel('Cum MB Received [' + stats_channel +']');  ax4.grid(True)
+        ax4.plot(cumqueued_MB.utimes[1:], np.transpose(cumqueued_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+    ax4.set_ylabel('Cum MB Queued');  ax4.grid(True)
+    ax4.legend(loc=2,prop={'size':10})
     ax4.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ax4.set_ylim( bottom=0)
+    
+    ############################################################
+    ax5.cla()
+    j=-1
+    for i in range(0,len(channels)): 
+      if(cumsent_MB.v[-1,i]>0):
+        if(j==-1):
+          ax5.fill_between( cumsent_MB.utimes[1:,0][:], 0 , cumsent_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        else:
+          ax5.fill_between( cumsent_MB.utimes[1:,0][:], cumsent_MB.v[1:,j][:] , cumsent_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        j=i
+        ax5.plot(cumsent_MB.utimes[1:], np.transpose(cumsent_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+    ax5.set_ylabel('Cum MB Sent');  ax5.grid(True)
+    ax5.legend(loc=2,prop={'size':10})
+    ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax5.set_ylim( bottom=0)
 
+    ############################################################
+    ax6.cla()
+    j=-1
+    for i in range(0,len(channels)): 
+      if(cumreceived_MB.v[-1,i]>0):
+        if(j==-1):
+          ax6.fill_between( cumreceived_MB.utimes[1:,0][:], 0 , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        else:
+          ax6.fill_between( cumreceived_MB.utimes[1:,0][:], cumreceived_MB.v[1:,j][:] , cumreceived_MB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        j=i
+        ax6.plot(cumreceived_MB.utimes[1:], np.transpose(cumreceived_MB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+    ax6.set_ylabel('Cum MB Received');  ax6.grid(True)
+    ax6.legend(loc=2,prop={'size':10})
+    ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
+    ax6.set_ylim( bottom=0)
+    
   plt.plot()
   plt.draw()
   
@@ -133,9 +144,8 @@ def on_bw(channel, data):
   this_received_MB=tuple([x/1024.0/1024.0 for x in m.received_bytes]) 
   #received_MB.append(m.utime,this_received_MB)
   cumreceived_MB.append(m.utime,np.cumsum(this_received_MB))
+
   
-  global stats_channel
-  stats_channel = channel
   global channels
   channels = m.channels
   global last_utime
@@ -146,7 +156,6 @@ def on_bw(channel, data):
   
 #################################################################################
 channels=[]
-stats_channel=''
 
 lc = lcm.LCM()
 print "started"
@@ -156,18 +165,23 @@ plot_window=30*1000000 #3sec
 msgs = SensorData(17); queued_MB = SensorData(17);
 cumqueued_MB = SensorData(17); cumsent_MB = SensorData(17); cumreceived_MB = SensorData(17);
 
-left, bottom, width, height =0.07, 0.07, 0.395, 0.395
-box_ul = [left, 2*bottom+height, width, height]
-box_ur = [2*left+width, 2*bottom+height, width, height]
-box_ll = [left, bottom, width, height]
-box_lr = [2*left+width, bottom, width, height]
+#left, bottom, width, height =0.07, 0.07, 0.395, 0.395
+left, bottom, width, height =0.07, 0.07, 0.255, 0.395
+box_1 = [left          , 2*bottom+height, width, height]
+box_2 = [2*left+width  , 2*bottom+height, width, height]
+box_3 = [3*left+2*width, 2*bottom+height, width, height]
+box_4 = [left          , bottom, width, height]
+box_5 = [2*left+width  , bottom, width, height]
+box_6 = [3*left+2*width, bottom, width, height]
 
 
-fig1 = plt.figure(num=1, figsize=(14, 10), dpi=80, facecolor='w', edgecolor='k')
-ax1 = fig1.add_axes(box_ul)
-ax2 = fig1.add_axes(box_ur)
-ax3 = fig1.add_axes(box_ll)
-ax4 = fig1.add_axes(box_lr)
+fig1 = plt.figure(num=1, figsize=(14, 8), dpi=80, facecolor='w', edgecolor='k')
+ax1 = fig1.add_axes(box_1)
+ax2 = fig1.add_axes(box_2)
+ax3 = fig1.add_axes(box_3)
+ax4 = fig1.add_axes(box_4)
+ax5 = fig1.add_axes(box_5)
+ax6 = fig1.add_axes(box_6)
 
 plt.interactive(True)
 plt.plot()
@@ -175,7 +189,6 @@ plt.draw()
 
 def lcm_thread():
   sub1 = lc.subscribe("BASE_BW_STATS", on_bw) # required
-  sub1 = lc.subscribe("ROBOT_BW_STATS", on_bw) # required
   
   while True:
     ## Handle LCM if new messages have arrived.
