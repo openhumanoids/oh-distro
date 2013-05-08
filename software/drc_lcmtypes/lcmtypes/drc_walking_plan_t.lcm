@@ -26,12 +26,14 @@ struct walking_plan_t
 	int32_t n_comtraj_bytes;
   byte comtraj[n_comtraj_bytes];
 
+	int32_t n_zmptraj_bytes;
+  byte zmptraj[n_zmptraj_bytes];
+
 	int32_t n_rfoottraj_bytes;
   byte rfoottraj[n_rfoottraj_bytes];
 
 	int32_t n_lfoottraj_bytes;
   byte lfoottraj[n_lfoottraj_bytes];
   
-  //footstep_plan_t footstep_plan;
 }
 
