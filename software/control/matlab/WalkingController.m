@@ -6,7 +6,8 @@ classdef WalkingController < DRCController
 
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Qy',eye(2),...
-        'S',[],'s1',[],'comtraj',[],'lfoottraj',[],'rfoottraj',[],'supptraj',[]));
+        'S',[],'s1',[],'x0',zeros(4,1),'u0',zeros(2,1),'comtraj',[],'lfoottraj',[],...
+        'rfoottraj',[],'supptraj',[]));
 
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -78,7 +79,13 @@ classdef WalkingController < DRCController
       fclose(fid);
       matdata = load('tmp_w.mat');
       obj.controller_data.setField('comtraj',matdata.comtraj);
-      
+
+      fid = fopen('tmp_w.mat','w');
+      fwrite(fid,typecast(msg_data.zmptraj,'uint8'),'uint8');
+      fclose(fid);
+      matdata = load('tmp_w.mat');
+      obj.controller_data.setField('x0',[matdata.zmptraj.eval(matdata.zmptraj.tspan(2));0;0]);
+
       fid = fopen('tmp_w.mat','w');
       fwrite(fid,typecast(msg_data.lfoottraj,'uint8'),'uint8');
       fclose(fid);

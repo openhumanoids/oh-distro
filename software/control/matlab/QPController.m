@@ -89,7 +89,7 @@ classdef QPController < MIMODrakeSystem
     else
       obj.use_mex = 0;
     end
-    
+
     % specifies whether or not to solve QP for all DOFs or just the
     % important subset
     if (isfield(options,'full_body_opt'))
@@ -165,7 +165,7 @@ classdef QPController < MIMODrakeSystem
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+%     out_tic = tic;
 
     q_ddot_des = varargin{1};
     x = varargin{2};
@@ -250,11 +250,19 @@ classdef QPController < MIMODrakeSystem
         % ti-lqr case
         S = ctrl_data.S;
         s1= zeros(4,1); % ctrl_data.s1;
-        xlimp0 = ctrl_data.xlimp0;
       else
         S = ctrl_data.S.eval(t);
         s1= ctrl_data.s1.eval(t);
-        xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
+      end
+      if typecheck(ctrl_data.x0,'double')
+        x0 = ctrl_data.x0;
+      else
+        x0 = ctrl_data.x0.eval(t); 
+      end
+      if typecheck(ctrl_data.u0,'double')
+        u0 = ctrl_data.u0;
+      else
+        u0 = ctrl_data.u0.eval(t); 
       end
     end
 
@@ -356,7 +364,11 @@ classdef QPController < MIMODrakeSystem
          Jz,Dbar,Jp,Jpdot] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
        J=J(1:2,:);
        Jdot=Jdot(1:2,:);
-       nc = size(Jz,1);
+       if ~isempty(active_supports)
+         nc = size(Jz,1);
+       else
+         nc = 0;
+       end
        neps = nc*dim;
 %      Jz = sparse(Jz);
 %      Dbar = sparse(Dbar);
@@ -381,29 +393,32 @@ classdef QPController < MIMODrakeSystem
 
       if (nc>0)
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
-        x_bar = xlimp - xlimp0;
+        x_bar = xlimp - x0;      
       end
     
       %----------------------------------------------------------------------
       % Free DOF cost function ----------------------------------------------
-      
+
       if nq_free > 0
         if nc > 0
           % approximate quadratic cost for free dofs with the appropriate matrix block
           Hqp = J(:,obj.free_dof)'*R_ls*J(:,obj.free_dof);
           Hqp = Hqp + J(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
           Hqp = Hqp + obj.w*eye(nq_free);
-          
+
           fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
           fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
           fqp = fqp + x_bar'*S*B_ls*J(:,obj.free_dof);
           fqp = fqp + 0.5*s1'*B_ls*J(:,obj.free_dof);
+          fqp = fqp - u0'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
           fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
+          fqp = fqp - u0'*R_ls*J(:,obj.free_dof);
+          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*R_ls*J(:,obj.free_dof); 
         else
           Hqp = eye(nq_free);
           fqp = -q_ddot_des(obj.free_dof)';
         end
-        
+
         % solve for qdd_free unconstrained
         qdd_free = -inv(Hqp)*fqp';
       end
@@ -470,21 +485,24 @@ classdef QPController < MIMODrakeSystem
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
       %
-      %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
+      %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x_bar+D*(Jdot*qd + J*qdd),Qy) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd-u0)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
       
       if nc > 0
         Hqp = Iqdd'*J(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd;
         Hqp = Hqp + Iqdd'*J(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
-        
+
         fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + x_bar'*S*B_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + 0.5*s1'*B_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp - u0'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
-        
-        % quadratic slack var cost
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps);
+        fqp = fqp - u0'*R_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd; 
+
+        % quadratic slack var cost 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des(obj.con_dof)'*Iqdd;
@@ -555,14 +573,13 @@ classdef QPController < MIMODrakeSystem
       end
       zmppos = xcom(1:2) + D_ls * xcomdd;
       % Set zmp z-pos to 1m for DRC Quals 1
-      plot_lcm_points([zmppos', terrain_height], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
+      plot_lcm_points([zmppos', mean(cpos(3,:))], [1, 0, 0], 660, 'Commanded ZMP', 1, true);
       
-      [cheight,normals] = getTerrainHeight(r,cpos);
+      [~,normals] = getTerrainHeight(r,cpos);
       d = RigidBodyManipulator.surfaceTangents(normals);
 
       lambda = Iz*alpha;
       beta_full = Ibeta*alpha;
-      cpos(3,:) = cpos(3,:) + cheight;
       for kk=1:8
         if kk<=nc
           plot_lcm_points([cpos(:,kk) cpos(:,kk)+0.25*normals(:,kk)]', [0 0 1; 0 0 1], 23489083+kk, sprintf('Foot Contact Normal %d',kk), 2, true);
@@ -588,7 +605,7 @@ classdef QPController < MIMODrakeSystem
       xzyrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=1;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
@@ -596,35 +613,35 @@ classdef QPController < MIMODrakeSystem
       xzyrpy = forwardKin(r,kinsol,head,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=2;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=3;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
       msg=vs.obj_t();
       msg.id=4;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
 
       xzyrpy = x(1:6); 
       msg=vs.obj_t();
       msg.id=5;
-      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3)+terrain_height;
+      msg.x=xzyrpy(1); msg.y=xzyrpy(2); msg.z=xzyrpy(3);
       msg.roll=xzyrpy(4); msg.pitch=xzyrpy(5); msg.yaw=xzyrpy(6);
       m.objs(msg.id) = msg;
       
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;

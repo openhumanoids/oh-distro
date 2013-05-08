@@ -3,7 +3,7 @@ function drakeWalking(use_mex)
 addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-num_steps = 2;
+num_steps = 3;
 step_length = 0.5;
 step_time = 1.0;
 
@@ -21,8 +21,8 @@ v.display_dt = 0.05;
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 0*randn();
-xstar(2) = 0*randn();
+xstar(1) =1000*randn();
+xstar(2) = 1000*randn();
 r = r.setInitialState(xstar);
 
 nq = getNumDOF(r);
@@ -61,8 +61,10 @@ fnplt(zmptraj);
 fnplt(comtraj);
 
 ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
-   'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Qy',eye(2),...
-   'S',V.S,'s1',V.s1,'comtraj',comtraj,'lfoottraj',lfoottraj, ...
+   'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
+   'Qy',eye(2),'R',zeros(2),'S',V.S,'s1',V.s1,...
+   'x0',[zmptraj.eval(T);0;0],'u0',zeros(2,1),...
+   'comtraj',comtraj,'lfoottraj',lfoottraj, ...
    'rfoottraj',rfoottraj,'supptraj',supptraj));
 
 % instantiate QP controller

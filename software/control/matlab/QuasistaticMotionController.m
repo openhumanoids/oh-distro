@@ -17,7 +17,7 @@ classdef QuasistaticMotionController < DRCController
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[zeros(2),eye(2); zeros(2,4)],'D',...
         [zeros(2); eye(2)],'R',R,'Qy',zeros(4),'S',[],'s1',[],...
-        'xlimp0',[],'qtraj',[],'supptraj',[]));
+        'x0',[],'u0',0,'y0',[],'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -81,7 +81,7 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('s1',zeros(4,1));
         obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
 
       elseif isfield(data,'QUASISTATIC_ROBOT_PLAN')
@@ -108,7 +108,7 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('s1',cdata.s1);
         obj.controller_data.setField('qtraj',cdata.qtraj);
         obj.controller_data.setField('comtraj',cdata.comtraj);
-        obj.controller_data.setField('xlimp0',[0;0;0;0]); % ??
+        obj.controller_data.setField('x0',[cdata.comtraj;0;0]); % ??
         obj.controller_data.setField('supptraj',cdata.supptraj);
       else
         % use saved nominal pose 
@@ -128,7 +128,7 @@ classdef QuasistaticMotionController < DRCController
         obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('s1',zeros(4,1));
         obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
       end
      

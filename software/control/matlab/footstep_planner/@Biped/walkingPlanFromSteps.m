@@ -1,4 +1,4 @@
-function [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts] = walkingPlanFromSteps(biped, x0, qstar, X)
+function [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(biped, x0, qstar, X)
 Xpos = [X.pos];
 Xright = Xpos(:, [X.is_right_foot] == 1);
 Xleft = Xpos(:, [X.is_right_foot] == 0);

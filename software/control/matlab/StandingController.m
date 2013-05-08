@@ -11,7 +11,7 @@ classdef StandingController < DRCController
 
       ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
         'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
-        'R',zeros(2),'Qy',eye(2),'S',[],'s1',zeros(4,1),'xlimp0',[],...
+        'R',zeros(2),'Qy',eye(2),'S',[],'s1',zeros(4,1),'x0',zeros(4,1),'u0',zeros(2,1),...
         'qtraj',[],'supptraj',[]));
       
       % instantiate QP controller
@@ -61,7 +61,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('S',cdata.S);
         obj.controller_data.setField('D',-cdata.h/9.81*eye(2));
         obj.controller_data.setField('qtraj',cdata.q_nom);
-        obj.controller_data.setField('xlimp0',cdata.xlimp0);
+        obj.controller_data.setField('x0',cdata.x0);
         obj.controller_data.setField('supptraj',cdata.support);
         
       elseif isfield(data,'AtlasState')
@@ -75,7 +75,7 @@ classdef StandingController < DRCController
         com = getCOM(r,kinsol);
 
         % build TI-ZMP controller 
-        foot_pos = contactPositions(r,q0); 
+        foot_pos = contactPositions(r,kinsol); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
         zmap = getTerrainHeight(r,com(1:2));
@@ -88,7 +88,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
 
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
@@ -108,7 +108,7 @@ classdef StandingController < DRCController
         com = getCOM(obj.robot,kinsol);
 
         % build TI-ZMP controller 
-        foot_pos = contactPositions(obj.robot,q0); 
+        foot_pos = contactPositions(obj.robot,kinsol); 
         ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
         comgoal = mean(foot_pos(1:2,ch),2);
         limp = LinearInvertedPendulum(com(3));
@@ -119,7 +119,7 @@ classdef StandingController < DRCController
         obj.controller_data.setField('S',V.S);
         obj.controller_data.setField('D',-com(3)/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('xlimp0',[comgoal;0;0]);
+        obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('supptraj',foot_support);
       end
      

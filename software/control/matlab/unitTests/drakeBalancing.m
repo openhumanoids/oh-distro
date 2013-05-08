@@ -1,9 +1,9 @@
 function drakeBalancing
 
-% put robot in a random x,y,yaw position and balance for 5 seconds
-visualize = true;
+% put robot in a random x,y,yaw position and balance for 4 seconds
+visualize = false;
 
-addpath(strcat(getenv('DRC_PATH'),'control/matlab/frames'));
+addpath(strcat(getenv('DRC_PATH'),'/control/matlab/frames'));
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
@@ -17,8 +17,8 @@ nu = getNumInputs(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 10*randn();
-xstar(2) = 10*randn();
+xstar(1) = 1000*randn();
+xstar(2) = 1000*randn();
 xstar(6) = pi*randn();
 xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
@@ -37,12 +37,10 @@ limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
 foot_support=1.0*~cellfun(@isempty,strfind(r.getLinkNames(),'foot'));
-
+    
 ctrl_data = SharedDataHandle(struct('A',[zeros(2),eye(2); zeros(2,4)],...
-      'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],...
-      'R',zeros(2),'Qy',eye(2),'S',V.S,'s1',zeros(4,1),'xlimp0',[comgoal;0;0],...
-      'qtraj',q0,'supptraj',foot_support));           
-           
+   'B',[zeros(2); eye(2)],'C',[eye(2),zeros(2)],'D',[],'Qy',eye(2),...
+   'S',V.S,'s1',V.s1,'x0',[comgoal;0;0],'u0',zeros(2,1),'qtraj',q0,'supptraj',foot_support));           
            
 % instantiate QP controller
 options.slack_limit = 30.0;
@@ -84,7 +82,7 @@ if visualize
 end
 x0(3) = 1.0; % drop it a bit
 
-traj = simulate(sys,[0 5],x0);
+traj = simulate(sys,[0 4],x0);
 if visualize
   playback(v,traj,struct('slider',true));
 end

@@ -52,7 +52,7 @@ while true
       end
     end
   end
-  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts] = walkingPlanFromSteps(r, x0, qstar, footsteps);
+  [xtraj, qtraj, htraj, supptraj, comtraj, lfoottraj,rfoottraj, V, ts,zmptraj] = walkingPlanFromSteps(r, x0, qstar, footsteps);
   
   % publish robot plan
   msg ='Walking Planner: Publishing robot plan...'; disp(msg); send_status(3,0,0,msg);
@@ -108,7 +108,7 @@ while true
     walking_pub = WalkingPlanPublisher('COMMITTED_WALKING_PLAN');
     walking_pub.publish(0,struct('S',V.S,'s1',V.s1,'htraj',htraj,'hddtraj', ...
       hddot,'supptraj',supptraj,'comtraj',comtraj,'qtraj',[],...
-      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj));
+      'lfoottraj',lfoottraj,'rfoottraj',rfoottraj,'zmptraj',zmptraj));
   end
 end
 

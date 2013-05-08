@@ -68,7 +68,7 @@ function controller_data = precomputeNodeTIZMP(r,req)
   com = getCOM(r,kinsol);
 
   % build TI-ZMP controller 
-  foot_pos = contactPositions(r,q_nom); 
+  foot_pos = contactPositions(r,kinsol); 
   ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
   comgoal = mean(foot_pos(1:2,ch),2);
   zmap = getTerrainHeight(r,com(1:2));
@@ -84,6 +84,6 @@ function controller_data = precomputeNodeTIZMP(r,req)
   controller_data.hddot=0;
   controller_data.q_nom=q_nom;
   controller_data.support=foot_support;
-  controller_data.xlimp0=[comgoal;0;0];
+  controller_data.x0=[comgoal;0;0];
        
 end
