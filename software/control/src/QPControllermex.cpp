@@ -23,13 +23,15 @@ struct QPControllerData {
   RigidBodyManipulator* r;
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
-  set<int> free_dof; // dofs for which we perform unconstrained minimization
-  set<int> con_dof;
-  set<int> free_inputs;
-  set<int> con_inputs;
   MatrixXd R; // quadratic input cost matrix
-  MatrixXd B;
+  MatrixXd B, B_con, B_free;
   void* map_ptr;
+
+  set<int> free_dof, con_dof, free_inputs, con_inputs; 
+  MatrixXd q_selector_con_left, q_selector_con_right, 
+          u_selector_con_left, u_selector_con_right,
+          q_selector_free_left, q_selector_free_right,
+          u_selector_free_left, u_selector_free_right;
 };
 
 mxArray* myGetProperty(const mxArray* pobj, const char* propname)
@@ -45,7 +47,8 @@ template <int DerivedA, int DerivedB>
 mxArray* eigenToMatlab(Matrix<double,DerivedA,DerivedB> &m)
 {
   mxArray* pm = mxCreateDoubleMatrix(m.rows(),m.cols(),mxREAL);
-  memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
+  if (m.rows()*m.cols()>0)
+    memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
   return pm;
 }
 
@@ -176,20 +179,48 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     for (i=0; i<mxGetNumberOfElements(pm); i++)
       pdata->con_inputs.insert((int)pr[i] - 1);
     
-    pm = myGetProperty(pobj,"R");
-    pdata->R.resize(mxGetM(pm),mxGetN(pm));
-    memcpy(pdata->R.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
-    
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
     memcpy(&(pdata->r),mxGetData(prhs[2]),sizeof(pdata->r));
     
-
     pdata->B.resize(mxGetM(prhs[3]),mxGetN(prhs[3]));
     memcpy(pdata->B.data(),mxGetPr(prhs[3]),sizeof(double)*mxGetM(prhs[3])*mxGetN(prhs[3]));
 
+    int nq = pdata->r->num_dof, nu = pdata->B.cols();
+    
+    // pre-allocate a bunch of these to keep things fast inside the loop
+    // q_selector_con_left*A is equivalent to A(obj.con_dof,:)
+    // A*q_selector_con_right is equivalent to A(:,obj.con_dof)
+    // etc, etc...
+    set<int>::iterator iter;
+    int k;
+    pdata->q_selector_con_left = MatrixXd::Zero(pdata->con_dof.size(),nq);
+    pdata->u_selector_con_left = MatrixXd::Zero(pdata->con_inputs.size(),nu);
+    k=0; for (iter=pdata->con_dof.begin(); iter!=pdata->con_dof.end(); iter++) pdata->q_selector_con_left(k++,*iter)=1;
+    k=0; for (iter=pdata->con_inputs.begin(); iter!=pdata->con_inputs.end(); iter++) pdata->u_selector_con_left(k++,*iter)=1;
+    pdata->q_selector_con_right = pdata->q_selector_con_left.transpose();
+    pdata->u_selector_con_right = pdata->u_selector_con_left.transpose();
+  
+    if (pdata->free_dof.size()>0) {
+      pdata->q_selector_free_left = MatrixXd::Zero(pdata->free_dof.size(),nq);
+      k=0; for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++) pdata->q_selector_free_left(k++,*iter)=1;
+      pdata->q_selector_free_right = pdata->q_selector_free_left.transpose();
+    }
+    if (pdata->free_inputs.size()>0) {
+      pdata->u_selector_free_left = MatrixXd::Zero(pdata->free_inputs.size(),nu);
+      k=0; for (iter=pdata->free_inputs.begin(); iter!=pdata->free_inputs.end(); iter++) pdata->u_selector_free_left(k++,*iter)=1;
+      pdata->u_selector_free_right = pdata->u_selector_free_left.transpose();
+    }
+    
+    pdata->B_con = pdata->q_selector_con_left*pdata->B*pdata->u_selector_con_right;
+    if (pdata->free_dof.size()>0 && pdata->free_inputs.size()>0)
+      pdata->B_free = pdata->q_selector_free_left*pdata->B*pdata->u_selector_free_right;
 
+    pm = myGetProperty(pobj,"R");
+    pdata->R.resize(mxGetM(pm),mxGetN(pm));
+    memcpy(pdata->R.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
+    
     pdata->map_ptr = NULL;
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
@@ -243,28 +274,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,H,C,(MatrixXd*)NULL,(MatrixXd*)NULL);
 
-  // todo: push the building of these matrices up into constructor time
-  set<int>::iterator iter;
-  int k;
-  MatrixXd qselector_con = MatrixXd::Zero(pdata->con_dof.size(),nq);
-  MatrixXd uselector_con = MatrixXd::Zero(nu,pdata->con_inputs.size());
-  k=0; for (iter=pdata->con_dof.begin(); iter!=pdata->con_dof.end(); iter++) qselector_con(k++,*iter)=1;
-  k=0; for (iter=pdata->con_inputs.begin(); iter!=pdata->con_inputs.end(); iter++) uselector_con(*iter,k++)=1;
-  MatrixXd H_con = qselector_con*H,
-          C_con = qselector_con*C,
-          B_con = qselector_con*pdata->B*uselector_con,
-          H_free,C_free,B_free;
+  MatrixXd H_con = pdata->q_selector_con_left*H,
+          C_con = pdata->q_selector_con_left*C,
+          H_free,C_free;
   
   if (nq_free>0) {
-    MatrixXd qselector_free = MatrixXd::Zero(pdata->free_dof.size(),nq);
-    k=0; for (iter=pdata->free_dof.begin(); iter!=pdata->free_dof.end(); iter++) qselector_free(k++,*iter)=1;
-    MatrixXd uselector_free = MatrixXd::Zero(nu,pdata->free_inputs.size());
-    k=0; for (iter=pdata->free_inputs.begin(); iter!=pdata->free_inputs.end(); iter++) uselector_free(*iter, k++)=1;
-    H_free = qselector_free*H;
-    C_free = qselector_free*C;
-    B_free = qselector_free*pdata->B*uselector_free;
+    H_free = pdata->q_selector_free_left*H;
+    C_free = pdata->q_selector_free_left*C;
   }
-
+  
   // todo: preallocate everything like this!
   Vector3d xcom;
   MatrixXd J(3,nq), Jdot(3,nq);
@@ -282,20 +300,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nc = contactConstraints(pdata,active_supports,Jz,D,Jp,Jpdot);
 
   if (nc>0) {
-    Jz *= qselector_con.transpose();
-    D = qselector_con*D;
-    Jp *= qselector_con.transpose();
-    Jpdot *= qselector_con.transpose();
+    Jz *= pdata->q_selector_con_right;
+    D = pdata->q_selector_con_left*D;
+    Jp *= pdata->q_selector_con_right;
+    Jpdot *= pdata->q_selector_con_right;
   }
 
   if (nlhs<13) mexErrMsgTxt("take all my outputs!"); 
 
   plhs[0] = eigenToMatlab(H_con);
   plhs[1] = eigenToMatlab(C_con);
-  plhs[2] = eigenToMatlab(B_con);
+  plhs[2] = eigenToMatlab(pdata->B_con);
   plhs[3] = eigenToMatlab(H_free);
   plhs[4] = eigenToMatlab(C_free);
-  plhs[5] = eigenToMatlab(B_free);
+  plhs[5] = eigenToMatlab(pdata->B_free);
   plhs[6] = eigenToMatlab(xcom);
   plhs[7] = eigenToMatlab(J);
   plhs[8] = eigenToMatlab(Jdot);

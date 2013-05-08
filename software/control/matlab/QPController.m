@@ -257,8 +257,8 @@ classdef QPController < MIMODrakeSystem
         xlimp0 = zeros(4,1); % not needed in TV case, capture by s1 term
       end
     end
-    
-    if (obj.use_mex==0 || obj.use_mex==2)
+
+    % todo: move mex start to here
       r = obj.robot;
       nu = getNumInputs(r);
       nq = getNumDOF(r);
@@ -270,6 +270,8 @@ classdef QPController < MIMODrakeSystem
       
       q = x(1:nq);
       qd = x(nq+(1:nq));
+
+    if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
       
       [H,C,B] = manipulatorDynamics(r,q,qd);
@@ -342,16 +344,21 @@ classdef QPController < MIMODrakeSystem
     end
   
     if (obj.use_mex>0)
-      [H_con,C_con,B_con, ...
-        H_free,C_free,B_free, ...
-        xcom, J, Jdot, ...
-        Jz,Dbar,Jp,Jpdot] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
-      J=J(1:2,:);
-      Jdot=Jdot(1:2,:);
-      Jz = sparse(Jz);
-      Dbar = sparse(Dbar);
-      Jp = sparse(Jp);
-      Jpdot = sparse(Jpdot);
+%      [H_con,C_con,B_con, ...
+%        H_free,C_free,B_free, ...
+%        xcom,J] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
+       [H_con,C_con,B_con, ...
+         H_free,C_free,B_free, ...
+         xcom, J, Jdot, ...
+         Jz,Dbar,Jp,Jpdot] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
+       J=J(1:2,:);
+       Jdot=Jdot(1:2,:);
+       nc = size(Jz,1);
+       neps = nc*dim;
+%      Jz = sparse(Jz);
+%      Dbar = sparse(Dbar);
+%      Jp = sparse(Jp);
+%      Jpdot = sparse(Jpdot);
     end
     if (obj.use_mex==2) 
       valuecheck(H_con,des.H_con);
@@ -499,6 +506,10 @@ classdef QPController < MIMODrakeSystem
         model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
         model.lb = lb;
         model.ub = ub;
+        
+        if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
+          keyboard;
+        end
 
 %       Q=full(Hqp);
 %       c=2*fqp;
