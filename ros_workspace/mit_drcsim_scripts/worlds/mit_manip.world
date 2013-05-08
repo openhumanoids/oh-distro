@@ -8,8 +8,8 @@
         <solver>
           <type>quick</type>
           <dt>0.001</dt>
-          <iters>40</iters>
-          <sor>1.0</sor>
+          <iters>50</iters>
+          <sor>1.4</sor>
         </solver>
         <constraints>
           <cfm>0.0</cfm>
@@ -69,6 +69,7 @@
       </attenuation>
     </light>
 
+<!--    <include><uri>model://ground_plane</uri></include> -->
 
     <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>0.0 0.0 -0.5 0 0 0</pose></include>
     <include><name>sbox3</name><uri>model://simple_box</uri><pose>-4.0 -6.9 1.5 0 0 0</pose></include>

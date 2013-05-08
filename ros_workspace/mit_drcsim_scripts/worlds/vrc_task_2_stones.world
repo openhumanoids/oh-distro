@@ -18,8 +18,8 @@
       <ode>
         <solver>
           <type>quick</type>
-          <iters>150</iters>
-          <sor>1.3</sor>
+          <iters>50</iters>
+          <sor>1.4</sor>
         </solver>
         <constraints>
           <cfm>0.0</cfm>
