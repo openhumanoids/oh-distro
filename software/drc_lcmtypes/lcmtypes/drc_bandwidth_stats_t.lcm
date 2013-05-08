@@ -4,8 +4,13 @@ package drc;
 
 struct bandwidth_stats_t
 {
+    // Wall Times:
     int64_t utime;
     int64_t previous_utime;
+    
+    // Sim Time:
+    int64_t sim_utime;
+    
     int32_t bytes_from_robot;
     int32_t bytes_to_robot;
 
