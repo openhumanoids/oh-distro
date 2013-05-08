@@ -291,9 +291,12 @@ classdef QPController < MIMODrakeSystem
       J = J(1:2,:); % only need COM x-y
       Jdot = Jdot(1:2,:);
     
-      [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
-
-      nc = length(phi);
+      if ~isempty(active_supports)
+        [phi,Jz,D_] = contactConstraints(r,kinsol,active_supports);
+        nc = length(phi);
+      else
+        nc = 0;
+      end
       neps = nc*dim;
       %     neps = length(active_supports)*2*dim;
       
