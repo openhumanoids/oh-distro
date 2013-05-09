@@ -212,6 +212,8 @@ public:
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::TERRAIN_COST, "Terrain Cost",
+               "TERRAIN_DIST_MAP", ChannelTypeAnonymous);
     Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));

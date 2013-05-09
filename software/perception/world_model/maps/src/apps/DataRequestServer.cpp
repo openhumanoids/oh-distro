@@ -76,6 +76,9 @@ struct Worker {
       case drc::data_request_t::DEPTH_MAP_WORKSPACE:
         sendDepthMapWorkspaceRequest();
         break;
+      case drc::data_request_t::TERRAIN_COST:
+        sendTerrainCostRequest();
+        break;
       default:
         cout << "Unknown request type" << endl;
         break;
@@ -222,6 +225,13 @@ struct Worker {
         createProjector(100, 90, msg.width, msg.height);
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendTerrainCostRequest() {
+    drc::shaper_data_request_t msg;
+    msg.channel = "TERRAIN_DIST_MAP";
+    msg.priority = 1;
+    mLcm->publish("SHAPER_DATA_REQUEST", &msg);
   }
 
   Eigen::Projective3f createProjector(const float iHorzFovDegrees,
