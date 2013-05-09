@@ -54,7 +54,7 @@ classdef FootstepPlanner < DRCPlanner
         [X.time] = t{:};
       end
 
-      for j = 1:size(X, 2)
+      for j = 3:size(X, 2)
         if X(j).is_in_contact
           X(j).pos = obj.biped.checkTerrain(X(j).pos);
         end
