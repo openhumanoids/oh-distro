@@ -160,13 +160,11 @@ classdef QPController < MIMODrakeSystem
     end  
     
     if (obj.use_mex>0)
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot)));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.getData(),getB(obj.robot),r.umin,r.umax));
     end
   end
     
   function y=mimoOutput(obj,t,~,varargin)
-%     out_tic = tic;
-
     q_ddot_des = varargin{1};
     x = varargin{2};
     ctrl_data = getData(obj.controller_data);
@@ -264,9 +262,15 @@ classdef QPController < MIMODrakeSystem
       else
         u0 = ctrl_data.u0.eval(t); 
       end
+    else
+      % allocate these for passing into mex
+      B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);D_ls=zeros(2);
+      S=zeros(4);s1=zeros(4,1);x0=zeros(4,1);u0=zeros(2,1);
     end
 
-    % todo: move mex start to here
+    out_tic = tic;
+
+    if (obj.use_mex==0 || obj.use_mex==2)
       r = obj.robot;
       nu = getNumInputs(r);
       nq = getNumDOF(r);
@@ -279,7 +283,6 @@ classdef QPController < MIMODrakeSystem
       q = x(1:nq);
       qd = x(nq+(1:nq));
 
-    if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
       
       [H,C,B] = manipulatorDynamics(r,q,qd);
@@ -337,65 +340,11 @@ classdef QPController < MIMODrakeSystem
         Dbar = sparse([D{:}]);
       end      
         
-      if (obj.use_mex==2) 
-        des.H_con = H_con; 
-        des.C_con = C_con;
-        des.B_con = B_con;
-        des.H_free = H_free;
-        des.C_free = C_free;
-        des.B_free = B_free;
-        des.xcom = xcom;
-        des.J = J;
-        des.Jdot = Jdot;
-        des.Jz = Jz;
-        des.Dbar = Dbar;
-        des.Jp = Jp;
-        des.Jpdot = Jpdot;
-      end
-    end
-  
-    if (obj.use_mex>0)
-%      [H_con,C_con,B_con, ...
-%        H_free,C_free,B_free, ...
-%        xcom,J] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
-       [H_con,C_con,B_con, ...
-         H_free,C_free,B_free, ...
-         xcom, J, Jdot, ...
-         Jz,Dbar,Jp,Jpdot] = QPControllermex(obj.mex_ptr.getData(),x,active_supports);
-       J=J(1:2,:);
-       Jdot=Jdot(1:2,:);
-       if ~isempty(active_supports)
-         nc = size(Jz,1);
-       else
-         nc = 0;
-       end
-       neps = nc*dim;
-%      Jz = sparse(Jz);
-%      Dbar = sparse(Dbar);
-%      Jp = sparse(Jp);
-%      Jpdot = sparse(Jpdot);
-    end
-    if (obj.use_mex==2) 
-      valuecheck(H_con,des.H_con);
-      valuecheck(C_con,des.C_con);
-      valuecheck(B_con,des.B_con);
-      valuecheck(H_free,des.H_free);
-      valuecheck(C_free,des.C_free);
-      valuecheck(B_free,des.B_free);
-      valuecheck(xcom,des.xcom);
-      valuecheck(J,des.J);
-      valuecheck(Jdot,des.Jdot);
-      valuecheck(Jz,des.Jz);
-      valuecheck(Dbar,des.Dbar);
-      valuecheck(Jp,des.Jp);
-      valuecheck(Jpdot,des.Jpdot);
-    end
-
       if (nc>0)
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
         x_bar = xlimp - x0;      
       end
-    
+      
       %----------------------------------------------------------------------
       % Free DOF cost function ----------------------------------------------
 
@@ -421,7 +370,8 @@ classdef QPController < MIMODrakeSystem
 
         % solve for qdd_free unconstrained
         qdd_free = -inv(Hqp)*fqp';
-      end
+      end      
+        
     
       %----------------------------------------------------------------------
       % Build handy index matrices ------------------------------------------
@@ -562,8 +512,28 @@ classdef QPController < MIMODrakeSystem
       else
         y = alpha(nq+(1:nu));
       end
-
-  %% todo: finish mex here?  
+      
+      if (obj.use_mex==2)
+        des.y = y;
+      end
+    end
+  
+    if (obj.use_mex==1)
+       y = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0);
+    end
+    
+    if (obj.use_mex==2)
+      [y,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.getData(),q_ddot_des,x,active_supports,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,x0,u0);
+      valuecheck(Q'+Q,model.Q'+model.Q);
+      valuecheck(gobj,model.obj);
+      valuecheck(A,model.A);
+      valuecheck(rhs,model.rhs);
+      valuecheck(sense',model.sense);
+      valuecheck(lb,model.lb);
+      valuecheck(ub,model.ub);
+%      valuecheck(y,des.y);  % they are close, but not *quite* the same.
+    end
+    
     
     if obj.debug && nc > 0
       if nq_free > 0
@@ -641,7 +611,7 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
