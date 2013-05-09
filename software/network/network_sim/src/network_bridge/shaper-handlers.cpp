@@ -156,6 +156,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         {
             glog.is(VERBOSE) && glog << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
             channel_id_.insert(boost::bimap<std::string, int>::value_type(resendlist[i].channel, current_id));
+            data_usage_.insert(std::make_pair(current_id, DataUsage()));
             ++current_id;
         }
     }
