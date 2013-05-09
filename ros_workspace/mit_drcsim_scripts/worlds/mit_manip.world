@@ -69,44 +69,19 @@
       </attenuation>
     </light>
 
-<!--    <include><uri>model://ground_plane</uri></include> -->
 
+
+<!-- VRC manip +1 , +13, +0 -->
     <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>0.0 0.0 -0.5 0 0 0</pose></include>
-    <include><name>sbox3</name><uri>model://simple_box</uri><pose>-4.0 -6.9 1.5 0 0 0</pose></include>
-    <include><name>sbox4</name><uri>model://white_box</uri><pose>2.5 -7.5 1.5 0 0 2.742</pose></include>
-    <include><name>mit_standpipe</name><uri>model://mit_standpipe</uri><pose>.5 -7.0 1.2 1.571 0.1 1.212</pose></include>
-    <include><name>mit_valve</name><uri>model://mit_valve</uri><pose>1.0 -6.3 1.2 1.571 0.1 1.212</pose></include>
+    <include><uri>model://table</uri><static>true</static><pose>5.1 3.0 0 0 0 1.5707</pose></include>
+    <include><uri>model://mit_firehose_long</uri><pose>4.8 2.3 1.1 0 0 1.5707</pose></include>
+    <include><uri>model://mit_standpipe</uri><pose>4.18 3.5 1.2 -1.5707 0 0</pose></include>
+    <include><uri>model://mit_valve</uri><pose>3.18 3.5 1.2 -1.5707 0 0</pose></include>
+    <include><uri>model://gas_station</uri><static>true</static><pose>3.356 12.0 -0.28 0 0 -1.5707</pose></include>
 
 
-<!-- VRC manip +1 , +7, +0 -->
-    <include><uri>model://table</uri><static>true</static><pose>-0.9 3.0 0 0 0 1.5707</pose></include>
-    <include><uri>model://mit_firehose_long</uri><pose>-1.2 2.3 1.1 0 0 1.5707</pose></include>
-    <include><uri>model://mit_standpipe</uri><pose>-1.82 3.5 1.2 -1.5707 0 0</pose></include>
-    <include><uri>model://mit_valve</uri><pose>-2.82 3.5 1.2 -1.5707 0 0</pose></include>
-    <include><uri>model://gas_station</uri><static>true</static><pose>-2.644 12.0 -0.28 0 0 -1.5707</pose></include>
-
-<!--    <include><uri>model://table</uri><static>true</static><pose>-0.9 3.0 0 0 0 1.5707</pose></include>
-    <include><uri>model://vrc_firehose_long</uri><pose>-1.2 2.3 1.1 0 0 1.5707</pose></include>
-    <include><uri>model://vrc_standpipe</uri><pose>-1.82 3.5 1.2 -1.5707 0 0</pose></include>
-    <include><uri>model://vrc_valve</uri><pose>-2.82 3.5 1.2 -1.5707 0 0</pose></include>
-    <include><uri>model://gas_station</uri><static>true</static><pose>-2.644 12.0 -0.28 0 0 -1.5707</pose></include>
--->
-
-
-
-    <include><uri>model://mit_table</uri><pose>    1.5  1.8 0.0 0 0 1.571</pose></include>
-    <include><uri>model://duff_beer</uri><pose> 1.3  2.4 1.18 0 0 0</pose></include>
-    <include><uri>model://mit_coke_can</uri><pose> 1.3  1.8 1.10 0 0 0</pose></include>
-    <include><uri>model://mit_cordless_drill</uri><pose>1.3 1.3 1.02 0 0 -1.571</pose></include>
-
-
-
-    <!-- DRC specific components -->
-<!-- Manipulation in front of the table -->
-    <include><uri>model://mit_robot_nohands</uri><pose>0.0 0.0 0.93 0 0 0</pose></include> 
-
-<!-- some people have problems with this car loading - remove if necessary-->
-    <include><uri>model://mit_vehicle</uri><pose>4.0 -0.9 0 0 0 -1.5707</pose></include>
+    <include><uri>model://mit_robot</uri><pose>0.0 0.0 0.93 0 0 0</pose></include> 
+    <include><uri>model://mit_vehicle</uri><pose>4.0 -0.2 0 0 0 -1.5707</pose></include>
 
     <plugin filename="libVRCPlugin.so" name="vrc_plugin">
       <atlas>
@@ -135,6 +110,27 @@
 
 
 
+
+
+<!--    <include><uri>model://ground_plane</uri></include> 
+    <include><name>simple_box_stage_1</name><uri>model://simple_box_stage</uri><pose>0.0 0.0 -0.5 0 0 0</pose></include>
+    <include><name>sbox3</name><uri>model://simple_box</uri><pose>-4.0 -6.9 1.5 0 0 0</pose></include>
+    <include><name>sbox4</name><uri>model://white_box</uri><pose>2.5 -7.5 1.5 0 0 2.742</pose></include>
+    <include><name>mit_standpipe</name><uri>model://mit_standpipe</uri><pose>.5 -7.0 1.2 1.571 0.1 1.212</pose></include>
+    <include><name>mit_valve</name><uri>model://mit_valve</uri><pose>1.0 -6.3 1.2 1.571 0.1 1.212</pose></include>
+
+    <include><uri>model://mit_table</uri><pose>    1.5  1.8 0.0 0 0 1.571</pose></include>
+    <include><uri>model://duff_beer</uri><pose> 1.3  2.4 1.18 0 0 0</pose></include>
+    <include><uri>model://mit_coke_can</uri><pose> 1.3  1.8 1.10 0 0 0</pose></include>
+    <include><uri>model://mit_cordless_drill</uri><pose>1.3 1.3 1.02 0 0 -1.571</pose></include>
+-->
+
+<!--    <include><uri>model://table</uri><static>true</static><pose>-0.9 3.0 0 0 0 1.5707</pose></include>
+    <include><uri>model://vrc_firehose_long</uri><pose>-1.2 2.3 1.1 0 0 1.5707</pose></include>
+    <include><uri>model://vrc_standpipe</uri><pose>-1.82 3.5 1.2 -1.5707 0 0</pose></include>
+    <include><uri>model://vrc_valve</uri><pose>-2.82 3.5 1.2 -1.5707 0 0</pose></include>
+    <include><uri>model://gas_station</uri><static>true</static><pose>-2.644 12.0 -0.28 0 0 -1.5707</pose></include>
+-->
 <!--
     <include><uri>model://table</uri><static>true</static><pose>3.0 -1.9 0 0 0 0</pose></include>
     <include><uri>model://vrc_firehose_long</uri><pose>2.35 -1.65 1.1 0 0 0</pose></include>
