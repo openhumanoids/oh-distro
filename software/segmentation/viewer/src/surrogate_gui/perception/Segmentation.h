@@ -105,7 +105,7 @@ namespace surrogate_gui
                                  std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
     static pcl::PointCloud<pcl::PointXYZRGB>::Ptr subSampleCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float voxel_grid_size);
 
-    static pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud);
+    static pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, int i);
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);

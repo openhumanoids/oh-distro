@@ -14,7 +14,7 @@ find_package(OpenGL REQUIRED)
 
 set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
     pcl_segmentation-1.6 pcl_sample_consensus-1.6
-    pcl_features-1.6)
+    pcl_features-1.6 pcl_visualization-1.6)
 
 include_directories(. perception)
 include_directories(. display_objects)
