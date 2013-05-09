@@ -2,6 +2,7 @@
 #include <otdf_lcm_utils/otdf_lcm_utils.h>
 #include "ConstraintApp.h"
 #include <kdl/treefksolverpos_recursive.hpp>
+#include <kdl/treejnttojacsolver.hpp>
 
 Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::cout*/) : m_log(log) 
 {
@@ -19,12 +20,40 @@ Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::c
   std::string urdf_xml_string(otdf::convertObjectInstanceToCompliantURDFstring(otdf_instance));
 
   // Parse KDL tree
-  if ( !kdl_parser::treeFromString(urdf_xml_string, m_tree) ) {
+  KDL::Tree deviceTree;
+  if ( !kdl_parser::treeFromString(urdf_xml_string, deviceTree) ) {
     m_log << "ERROR: Failed to extract kdl tree from " << filename 
 	  << " otdf object instance "<< std::endl; 
     return;
   }
 
+  //add a base joint
+  m_tree.addSegment(KDL::Segment("segment_x", 
+				 KDL::Joint("x", KDL::Joint::TransX), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))),  
+		    "root");
+  m_tree.addSegment(KDL::Segment("segment_y", 
+				 KDL::Joint("y", KDL::Joint::TransY), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))),
+		    "segment_x");
+  m_tree.addSegment(KDL::Segment("segment_z", 
+				 KDL::Joint("z", KDL::Joint::TransZ), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))),
+		    "segment_y");
+  m_tree.addSegment(KDL::Segment("segment_yaw",   
+				 KDL::Joint("yaw", KDL::Joint::RotZ), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))), 
+		    "segment_z");
+  m_tree.addSegment(KDL::Segment("segment_pitch",   
+				 KDL::Joint("pitch", KDL::Joint::RotY), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))), 
+		    "segment_yaw");
+  m_tree.addSegment(KDL::Segment("segment_roll", 
+				 KDL::Joint("roll", KDL::Joint::RotX), 
+				 KDL::Frame(KDL::Vector(0.0,0.0,0.0))),
+		    "segment_pitch");
+  m_tree.addTree(deviceTree, "segment_roll");
+  
   UpdateJointNames();
 
   //print some debug info on the new affordance
@@ -38,6 +67,8 @@ Affordance::Affordance(const std::string& filename, std::ostream& log /*= std::c
 
 Affordance::Affordance(std::ostream& log, const drc::affordance_t& msg) : m_log(log)
 {
+  m_log << "ERROR: you might need to alter this function to add the world-to-base transform, unless the OTDF's already contain such a joint" << std::endl;
+  assert(false);
   /*
   std::string urdf_xml_string;
   if ( !otdf::AffordanceLcmMsgToUrdfString(msg, urdf_xml_string) ) {
@@ -131,8 +162,8 @@ void Affordance::UpdateJointNames(const KDL::TreeElement* element /*=NULL*/)
 	iter != m_joints.end(); ++iter ) {
       if ( q_nr != iter->num ) {
 	m_log << "ERROR: while parsing tree, expected joint #" << q_nr << ", found joint #" << iter->num << std::endl;
-	m_joints.clear();
-	m_tree = KDL::Tree();
+	//m_joints.clear();
+	//m_tree = KDL::Tree();
 	return;
       }
       q_nr++;
@@ -164,6 +195,9 @@ void Affordance::GetState(std::vector<double>& state) const
 
 bool Affordance::GetStateFromMsg(const drc::affordance_t& msg, StateVector& state) 
 {
+  m_log << "ERROR: this function is broken, the xyzrpw are now themselves joints in teh tree" << std::endl;
+  assert(false);
+
   //extract the x,y,z,r,p,w from the msg params
   ConstraintApp::OptionalKDLFrame msgFrame(ConstraintApp::GetFrameFromParams(&msg));
   if ( !msgFrame ) {
@@ -230,18 +264,27 @@ bool Affordance::DecodeState(const StateVector& state, KDL::Frame& root_expresse
   return true;
 }
 
-bool Affordance::GetSegmentExpressedInWorld(const std::string& segmentName, const StateVector& state, 
+void Affordance::DecodeState(const StateVector& state, KDL::JntArray& joints)
+{
+  joints.resize(state.size());
+  for ( int i = 0; i < state.size(); i++ ) {
+    joints(i) = state[i];
+  }
+  //state has order rpw, but joints has order wpr
+  joints(3) = state[5];
+  joints(4) = state[4];
+  joints(5) = state[3];
+}
+
+bool Affordance::GetSegmentExpressedInWorld(const std::string& segmentName, 
+					    const StateVector& state, 
 					    KDL::Frame& segment_expressedIn_world)
 {
-  KDL::Frame root_expressedIn_world;
   KDL::JntArray joints;
-  if ( !DecodeState(state, root_expressedIn_world, joints) ) {
-    return false;
-  }
+  DecodeState(state, joints);
 
-  KDL::Frame segment_expressedIn_root;
   KDL::TreeFkSolverPos_recursive fk(m_tree);
-  int fkret = fk.JntToCart(joints, segment_expressedIn_root, segmentName);
+  int fkret = fk.JntToCart(joints, segment_expressedIn_world, segmentName);
   if ( fkret < 0 ) {
     m_log << "ERROR: Affordance::GetSegmentExpressedInWorld: fk returned " << fkret << std::endl
 	  << "   segmentName=" << segmentName << std::endl
@@ -252,7 +295,29 @@ bool Affordance::GetSegmentExpressedInWorld(const std::string& segmentName, cons
     return false;
   }
 
-  segment_expressedIn_world = root_expressedIn_world * segment_expressedIn_root;
+  return true;
+}
+
+bool Affordance::GetSegmentJacobianExpressedInWorld(const std::string& segmentName, 
+						    const StateVector& state, 
+						    KDL::Jacobian& jacobian)
+{
+  KDL::JntArray joints;
+  DecodeState(state, joints);
+
+  jacobian.resize(state.size());
+  KDL::TreeJntToJacSolver jntjac(m_tree);
+  int result = jntjac.JntToJac(joints, jacobian, segmentName);
+  if ( result < 0 ) {
+    m_log << "ERROR: Affordance::GetSegmentJacobianExpressedInWorld: JntToJac returned " 
+	  << result << std::endl
+	  << "   segmentName=" << segmentName << std::endl
+	  << "   joints=" << joints.data << std::endl;
+    m_log << "   state=";
+    for ( int i = 0; i < state.size(); i++ ) m_log << state[i] << ", ";
+    m_log << std::endl;
+    return false;
+  }
 
   return true;
 }

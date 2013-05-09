@@ -42,7 +42,11 @@ class Affordance {
   KDL::Tree& GetTree() { return m_tree; }
   bool GetSegmentExpressedInWorld(const std::string& segmentName, const StateVector& state, 
 				  KDL::Frame& segment_expressedIn_world);
+  bool GetSegmentJacobianExpressedInWorld(const std::string& segmentName, 
+					  const StateVector& state, 
+					  KDL::Jacobian& jacobian);
   bool DecodeState(const StateVector& state, KDL::Frame& root_expressedIn_world, KDL::JntArray& joints);
+  void DecodeState(const StateVector& state, KDL::JntArray& joints);
   void PrintKdlTree() { PrintKdlTree(m_tree, m_tree.getRootSegment()->second, 0); }
 
  private:
