@@ -18,7 +18,7 @@ Qt4_Widget_Authoring::
 Qt4_Widget_Authoring( const std::string& urdfFilename, 
                       unsigned int numConstraints,
                       QWidget * parent ) : QWidget( parent ),
-                                            _widget_opengl( new Qt4_Widget_OpenGL( this ) ),
+                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( this ) ),
                                             _text_edit_info( new QTextEdit( "[<b>OK</b>] authoring widget started", this ) ),
                                             _push_button_grab( new QPushButton( QString( "grab" ), this ) ),
                                             _push_button_import( new QPushButton( QString( "import" ), this ) ),
@@ -74,12 +74,14 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   tab_widget->addTab( plan_scroll_area, QString( "plan" ) ); 
 
   QGridLayout * widget_layout = new QGridLayout();
-  widget_layout->addWidget( _widget_opengl );
+  widget_layout->addWidget( _widget_opengl_authoring );
   widget_layout->addWidget( _text_edit_info );
   widget_layout->addWidget( controls_group_box );
   widget_layout->addWidget( tab_widget );
   setLayout( widget_layout );
 
+  connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
+              _widget_opengl_authoring, SLOT( update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
@@ -104,14 +106,14 @@ Qt4_Widget_Authoring::
 
 Qt4_Widget_Authoring::
 Qt4_Widget_Authoring( const Qt4_Widget_Authoring& other ) : QWidget(),
-                                                            _widget_opengl( new Qt4_Widget_OpenGL( this ) ) {
+                                                            _widget_opengl_authoring( new Qt4_Widget_OpenGL_Authoring( this ) ) {
 
 }
 
 Qt4_Widget_Authoring&
 Qt4_Widget_Authoring::
 operator=( const Qt4_Widget_Authoring& other ) {
-  _widget_opengl = other._widget_opengl;
+  _widget_opengl_authoring = other._widget_opengl_authoring;
   return (*this);
 }
 
@@ -200,7 +202,9 @@ _push_button_export_pressed( void )
   return;
 }
 
-void Qt4_Widget_Authoring::create_msg(action_sequence_t &action_sequence)
+void 
+Qt4_Widget_Authoring::
+create_msg(action_sequence_t &action_sequence)
 {
   action_sequence.num_contact_goals = 0;
   cout << "_constraints.size(): " << _constraints.size() << endl;

@@ -16,6 +16,8 @@ Qt4_Widget_Authoring_LCM_Interface( QWidget * parent ) : QMainWindow( parent ),
   connect( _lcm_timer, SIGNAL( timeout() ), this, SLOT( _handle_lcm_timer_timeout() ) ); 
   connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
             _qt4_widget_authoring, SLOT( update_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
+  connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
+            _qt4_widget_authoring->qt4_widget_opengl_authoring(), SLOT( update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& ) ) );
   _lcm->subscribe( "EST_ROBOT_STATE", &Qt4_Widget_Authoring_LCM_Interface::_handle_est_robot_state_msg, this );
   _lcm->subscribe( "AFFORDANCE_COLLECTION", &Qt4_Widget_Authoring_LCM_Interface::_handle_affordance_collection_msg, this );
   _lcm->subscribe( "CANDIDATE_ROBOT_PLAN", &Qt4_Widget_Authoring_LCM_Interface::_handle_candidate_robot_plan_msg, this );

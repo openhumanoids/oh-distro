@@ -54,7 +54,11 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   contact_goal_t contact_goal;
   actionSequence.contact_goals.push_back( contact_goal );  
   actionSequence.contact_goals.back().utime = 0;
-  actionSequence.contact_goals.back().object_1_name = _parent.first->name;
+  if( _parent.first != shared_ptr< Link >() ){
+    actionSequence.contact_goals.back().object_1_name = _parent.first->name;
+  } else {
+    actionSequence.contact_goals.back().object_1_name = "N/A";
+  }
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
   if( _child != NULL ){
     actionSequence.contact_goals.back().object_2_name = _child->getName();
@@ -74,7 +78,11 @@ add_to_drc_action_sequence_t( drc::action_sequence_t& actionSequence ){
   actionSequence.contact_goals.back().z_relation = contact_goal_t::REL_GREATER_THAN;
   actionSequence.contact_goals.push_back( contact_goal ); 
   actionSequence.contact_goals.back().utime = 0;
-  actionSequence.contact_goals.back().object_1_name = _parent.first->name;
+  if( _parent.first != shared_ptr< Link >() ){
+    actionSequence.contact_goals.back().object_1_name = _parent.first->name;
+  } else {
+    actionSequence.contact_goals.back().object_1_name = "N/A";
+  }
   actionSequence.contact_goals.back().object_1_contact_grp = _parent.second;
   if( _child != NULL ){
     actionSequence.contact_goals.back().object_2_name = _child->getName();

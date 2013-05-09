@@ -2,6 +2,4 @@
 # and lines starting with '#' are ignored
 
 # mypod1
-constraint
-opengl
-qt4
+object_object_authoring

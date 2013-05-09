@@ -14,6 +14,7 @@
 
 #include <authoring/constraint.h>
 #include <authoring/qt4_widget_constraint_editor.h>
+#include <authoring/qt4_widget_opengl_authoring.h>
 
 namespace authoring {
   class Qt4_Widget_Authoring : public QWidget {
@@ -23,10 +24,11 @@ namespace authoring {
     ~Qt4_Widget_Authoring();
     Qt4_Widget_Authoring( const Qt4_Widget_Authoring& other );
     Qt4_Widget_Authoring& operator=( const Qt4_Widget_Authoring& other );
+    inline Qt4_Widget_OpenGL_Authoring* qt4_widget_opengl_authoring( void ){ return _widget_opengl_authoring; };
 
   private:
     void create_msg(drc::action_sequence_t &action_sequence);
-
+  
   signals:
     void info_update( const QString& info );
     void time_min_update( double timeMin );
@@ -46,7 +48,7 @@ namespace authoring {
     
 
   protected:
-    qt4::Qt4_Widget_OpenGL * _widget_opengl;
+    Qt4_Widget_OpenGL_Authoring * _widget_opengl_authoring;
     QTextEdit * _text_edit_info;
     QPushButton * _push_button_grab;
     QPushButton * _push_button_import;
