@@ -148,7 +148,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     
     const std::vector<Resend>& resendlist = app.resendlist();
-
+    
     int current_id = 0;
     for(int i = 0, n = resendlist.size(); i < n; ++i)
     {
@@ -156,9 +156,27 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         {
             glog.is(VERBOSE) && glog << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
             channel_id_.insert(boost::bimap<std::string, int>::value_type(resendlist[i].channel, current_id));
-            data_usage_.insert(std::make_pair(current_id, DataUsage()));
+
+            if(node_ == ROBOT)
+            {
+                if(resendlist[i].robot2base)
+                    sent_data_usage_.insert(std::make_pair(current_id, DataUsage()));
+                else
+                    received_data_usage_.insert(std::make_pair(current_id, DataUsage()));
+            }
+            else
+            {
+                if(resendlist[i].robot2base)
+                    received_data_usage_.insert(std::make_pair(current_id, DataUsage()));
+                else
+                    sent_data_usage_.insert(std::make_pair(current_id, DataUsage()));
+            }
+            
+            
             ++current_id;
         }
+
+
     }
     largest_id_ = current_id-1;
     
@@ -244,8 +262,8 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
     bool on_demand = false;
     if (app_.determine_resend_from_list(channel, app_.get_current_utime(), unused, rbuf->data_size, &on_demand))
     {
-        data_usage_[channel_id_.left.at(channel)].queued_msgs++;
-        data_usage_[channel_id_.left.at(channel)].queued_bytes += rbuf->data_size;
+        sent_data_usage_[channel_id_.left.at(channel)].queued_msgs++;
+        sent_data_usage_[channel_id_.left.at(channel)].queued_bytes += rbuf->data_size;
         
         std::vector<unsigned char> data((uint8_t*)rbuf->data, (uint8_t*)rbuf->data + rbuf->data_size);
         if(custom_codecs_.count(channel))
@@ -327,7 +345,7 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     glog.is(VERBOSE) && glog << group("tx") << "Data size: " << send_queue_.top().data().size() << std::endl;
     glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << msg->frame(0).size() << std::endl;
 
-    data_usage_[send_queue_.top().header().channel()].sent_bytes += msg->frame(0).size();
+    sent_data_usage_[send_queue_.top().header().channel()].sent_bytes += msg->frame(0).size();
     
     send_queue_.pop();
 
@@ -420,7 +438,7 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     dccl_->decode(msg.frame(0), packet.mutable_header());
     packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 
-    data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
+    received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
     
     glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
@@ -539,23 +557,24 @@ void DRCShaper::post_bw_stats()
         stats.utime = now;
         stats.previous_utime = app_.bw_init_utime;
 	stats.sim_utime = app_.get_current_utime();	
-        stats.bytes_from_robot = 0;
-        stats.bytes_to_robot = 0;
-        stats.num_channels = data_usage_.size();
+        stats.num_sent_channels = sent_data_usage_.size();
+        stats.num_received_channels = received_data_usage_.size();
 
-        for (std::map<int, DataUsage>::const_iterator it = data_usage_.begin(),
-                 end = data_usage_.end(); it != end; ++it)
+        for (std::map<int, DataUsage>::const_iterator it = sent_data_usage_.begin(),
+                 end = sent_data_usage_.end(); it != end; ++it)
         {
-            stats.channels.push_back(channel_id_.right.at(it->first));
+            stats.sent_channels.push_back(channel_id_.right.at(it->first));
             stats.queued_msgs.push_back(it->second.queued_msgs);
             stats.queued_bytes.push_back(it->second.queued_bytes);
             stats.sent_bytes.push_back(it->second.sent_bytes);
-            stats.received_bytes.push_back(it->second.received_bytes);
-            
-            stats.bytes_to_robot += (node_ == BASE ? it->second.sent_bytes : it->second.received_bytes);
-            stats.bytes_from_robot += (node_ == BASE ? it->second.received_bytes : it->second.sent_bytes);
         }
         
+        for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
+                 end = received_data_usage_.end(); it != end; ++it)
+        {
+            stats.received_channels.push_back(channel_id_.right.at(it->first));
+            stats.received_bytes.push_back(it->second.received_bytes);
+        }        
         
         lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
         app_.bw_init_utime = stats.utime;

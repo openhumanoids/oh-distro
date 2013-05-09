@@ -2,27 +2,26 @@ package drc;
 
 // message bandwidth for the robot to base comms
 
+
 struct bandwidth_stats_t
 {
     // Wall Times:
     int64_t utime;
     int64_t previous_utime;
-    
+   
     // Sim Time:
     int64_t sim_utime;
-    
-    int32_t bytes_from_robot;
-    int32_t bytes_to_robot;
-
-    int32_t num_channels;
-    string channels [num_channels];
-    
-    // this is just queued - not transmitted or additional transport overhead
-    int32_t queued_msgs [num_channels];
-    int32_t queued_bytes [num_channels];
-
+   
+    int32_t num_sent_channels;
+    string sent_channels [num_sent_channels];
     // actual cumulative bytes (without UDP or IPv4 overhead) transmitted or received per LCM channel
-    int32_t sent_bytes [num_channels];
-    int32_t received_bytes [num_channels];
-}
+    int32_t sent_bytes [num_sent_channels];
+   
+    // this is just queued - not transmitted or additional transport overhead
+    int32_t queued_msgs [num_sent_channels];
+    int32_t queued_bytes [num_sent_channels];
 
+    int32_t num_received_channels;
+    string received_channels [num_received_channels];
+    int32_t received_bytes [num_received_channels];
+}

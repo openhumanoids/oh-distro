@@ -28,8 +28,8 @@ void generic_handler (const lcm_recv_buf_t *rbuf, const char *channel, void *use
     drc::bandwidth_stats_t stats;
     stats.utime = app->get_current_utime();
     stats.previous_utime = app->bw_init_utime;
-    stats.bytes_from_robot = app->bw_cumsum_robot2base;
-    stats.bytes_to_robot = app->bw_cumsum_base2robot;
+//    stats.bytes_from_robot = app->bw_cumsum_robot2base;
+//    stats.bytes_to_robot = app->bw_cumsum_base2robot;
     app->robot_lcm->publish("BW_STATS", &stats);
     app->base_lcm->publish("BW_STATS", &stats);
      

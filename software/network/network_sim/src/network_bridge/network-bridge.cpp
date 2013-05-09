@@ -168,16 +168,14 @@ void KMCLApp::send_resend_list(){
     drc::bandwidth_stats_t stats;
     stats.utime = get_current_utime();
     stats.previous_utime = bw_init_utime;
-    stats.bytes_from_robot = bw_cumsum_robot2base;
-    stats.bytes_to_robot = bw_cumsum_base2robot;
   
     for (size_t i=0; i < resendlist_.size() ; i++){
         Resend r = resendlist_[i];
-        stats.channels.push_back( r.channel);
+        stats.sent_channels.push_back( r.channel);
         stats.queued_msgs.push_back( r.queued_msgs);
         stats.queued_bytes.push_back( r.queued_bytes);
     }
-    stats.num_channels = stats.channels.size();
+    stats.num_sent_channels = stats.sent_channels.size();
     robot_lcm->publish("BW_STATS", &stats);  
     base_lcm->publish("BW_STATS", &stats);  
 }
