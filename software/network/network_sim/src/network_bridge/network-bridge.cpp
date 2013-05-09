@@ -201,6 +201,8 @@ int main (int argc, char ** argv) {
     cl_cfg.config_file ="drc_robot.cfg";
     cl_cfg.enable_gui = false;
     cl_cfg.verbose = false;
+    cl_cfg.file_log = false;
+    cl_cfg.log_path = ".";
   
     ConciseArgs opt(argc, (char**)argv);
     opt.add(cl_cfg.task, "t", "task","Task: driving, walking, manipulation");
@@ -208,6 +210,8 @@ int main (int argc, char ** argv) {
     opt.add(cl_cfg.role, "r", "role", "Role: robot, base or both (local system mode)");
     opt.add(cl_cfg.enable_gui, "g", "gui", "Enable NCurses GUI (for debugging)");
     opt.add(cl_cfg.verbose, "v", "verbose", "Enable verbose terminal output");
+    opt.add(cl_cfg.file_log, "l", "log", "Log verbose output to file");
+    opt.add(cl_cfg.log_path, "p", "logpath", "Path to directory in which to write log (requires -l)");
   
     opt.parse();
     std::cout << "task: " << cl_cfg.task << "\n";

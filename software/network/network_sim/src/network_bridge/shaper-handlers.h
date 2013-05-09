@@ -162,6 +162,8 @@ class DRCShaper
 
     // maps channel name to special purpose enCODer/DECoder.
     std::map<std::string, boost::shared_ptr<CustomChannelCodec> > custom_codecs_;
+
+    std::ofstream flog_;
     
     class ReceiveMessageParts
     {

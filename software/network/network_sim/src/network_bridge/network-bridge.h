@@ -44,6 +44,8 @@ struct CommandLineConfig
     bool enable_gui;
     std::string role;
     bool verbose;
+    bool file_log;
+    std::string log_path;
 };
 
 

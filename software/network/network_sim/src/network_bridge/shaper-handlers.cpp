@@ -84,6 +84,24 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     glog.add_group("rx-cleanup", goby::common::Colors::lt_green);
 
     goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+
+    if(app.cl_cfg.file_log)
+    {
+        using namespace boost::posix_time;
+
+        std::string file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + to_iso_string(second_clock::universal_time()) + ".txt";
+        
+        flog_.open(file_name.c_str());
+        if(!flog_.is_open())
+        {
+            std::cerr << "Failed to open requested log file: " << file_name << ". Check value and permissions on --logpath" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
+                              &flog_);
+    }
+
     
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
@@ -333,7 +351,6 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         
         int16_t fragment = 0;
         msg_head->set_channel(channel_id_.left.at(it->second.channel));
-        msg_head->set_message_number(it->second.message_count);
         msg_head->set_priority(priority);
 
         if(qmsg.size() <= payload_size)
@@ -346,6 +363,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         else
         {
             msg_head->set_message_size(qmsg.size());
+            msg_head->set_message_number(it->second.message_count);
 
             payload_size = floor_multiple_sixteen(max_frame_size_-overhead);
             while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
@@ -406,7 +424,8 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
     glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
          << DebugStringNoData(packet) << std::endl;    
 
-    if(packet.header().is_last_fragment() && !packet.header().has_fragment())
+    if(packet.header().is_last_fragment()
+       && !packet.header().has_fragment())
     {
         std::vector<unsigned char> buffer(packet.data().size());
         for(std::string::size_type i = 0, n = packet.data().size(); i < n; ++i)
