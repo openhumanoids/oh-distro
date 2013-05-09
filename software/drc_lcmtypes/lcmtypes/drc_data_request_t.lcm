@@ -18,4 +18,5 @@ struct data_request_t {
   const int8_t HEIGHT_MAP_COARSE      = 8;
   const int8_t DEPTH_MAP_SCENE        = 9;
   const int8_t DEPTH_MAP_WORKSPACE    = 10;
+  const int8_t TERRAIN_COST           = 11;
 }
