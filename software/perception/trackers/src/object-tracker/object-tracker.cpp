@@ -646,25 +646,37 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
      cout << "Error: Affordance UID " <<  affordance_id_ << " could not be found\n";
      return;
   }
+
   //std::cout << "The element contining the aff is " << aff_iter << '\n';  
-  
-  // Bootstrap the filter off the user-provided pose, then ignore:
+  // Bootstrap the filter off the user-provided pose, then ignore incoming messages:
   if  ( !got_initial_affordance_ ) {
     cout << "got initial position for Affordance "<< affordance_id_ <<"\n";
     drc::affordance_plus_t a = msg->affs_plus[aff_iter];
-//    object_pose_ = affutils.getPose( a.aff.param_names, a.aff.params );
     object_pose_ = affutils.getPose( a.aff.origin_xyz, a.aff.origin_rpy );
     pf_ ->ReinitializeComplete(object_pose_, pf_initial_var_);
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
-    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
-    // Extract a PCL point cloud from the points or else sample the mesh:
-    if (a.triangles.size() ==0){
+    Eigen::Isometry3d boundbox_pose = affutils.getPose( a.aff.bounding_xyz, a.aff.bounding_rpy );
+    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right, boundbox_pose.cast<float>() );
+    
+    // 
+    if (! a.aff.modelfile.empty() ){ // If a filename is specified, then read it and 
+      std::cout << a.aff.modelfile << " is the filename\n";
+      std::vector< std::vector< float > > points;
+      std::vector< std::vector< int > > triangles;
+      string filename = getenv("HOME") + string("/drc/software/models/otdf/") + a.aff.modelfile;
+      affutils.getModelAsLists(filename, points, triangles);
+      if (triangles.size() ==0){
+        object_cloud_ = affutils.getCloudFromAffordance(points);
+      }else{
+        object_cloud_ = affutils.getCloudFromAffordance(points, triangles, 50000.0 ); /// 
+      }      
+    }else if (a.triangles.size() ==0){ // Extract a PCL point cloud from the points 
       object_cloud_ = affutils.getCloudFromAffordance(a.points);
-    }else{
+    }else{ // Sample the mesh
       // i don't know what a good number for sampling is here
-      // the current algorithm samples per triangle which will be 
-      object_cloud_ = affutils.getCloudFromAffordance(a.points, a.triangles, 50000.0 ); 
+      // the current algorithm samples per triangle which will be undersampled
+      object_cloud_ = affutils.getCloudFromAffordance(a.points, a.triangles, 50000.0 ); /// 
     }
     // cache the message and repeatedly update the position:
     last_affordance_msg_ = msg->affs_plus[aff_iter].aff;
@@ -676,8 +688,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+2, *object_bb_cloud_,object_poseT.utime, object_poseT.utime);  
       pc_vis_->ptcld_to_lcm_from_list(affordance_vis_+1, *object_cloud_, object_poseT.utime, object_poseT.utime);
     }
+    got_initial_affordance_ =true;  
   }
-  got_initial_affordance_ =true;  
 
   // Update the tracked plane:
   if (use_plane_tracker_){

@@ -19,7 +19,8 @@ class ICPTracker
 
 
     // Set the bounding box of the object to be tracked:
-    void setBoundingBox( Eigen::Vector3f & boundbox_lower_left_in, Eigen::Vector3f & boundbox_upper_right_in );
+    void setBoundingBox( Eigen::Vector3f  boundbox_lower_left_in, Eigen::Vector3f  boundbox_upper_right_in,
+                  Eigen::Isometry3f boundingbox_pose_in);
     
     void drawBoundingBox(Eigen::Isometry3f pose);
     
@@ -48,6 +49,7 @@ class ICPTracker
 
     Eigen::Isometry3d new_pose_; 
     
+    Eigen::Isometry3f boundingbox_pose_; // bounding box is relative to the affordance pose:
     Eigen::Vector3f boundbox_lower_left_;
     Eigen::Vector3f boundbox_upper_right_;
 

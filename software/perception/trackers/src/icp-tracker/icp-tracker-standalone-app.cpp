@@ -117,7 +117,8 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string new_cloud_file
     Eigen::Vector3f boundbox_upper_right = Eigen::Vector3f( 0.15, 0.18,  0.2);
   }  
   
-  icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);  
+  Eigen::Isometry3f boundbox_pose= Eigen::Isometry3f::Identity();
+  icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right, boundbox_pose);  
 
   Isometry3dTime previous_poseT = Isometry3dTime(0, previous_pose); 
   pc_vis_->pose_to_lcm_from_list(1005, previous_poseT);

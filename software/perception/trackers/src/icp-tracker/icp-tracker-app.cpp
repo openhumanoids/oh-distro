@@ -250,7 +250,8 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     
     Eigen::Vector3f boundbox_lower_left = -0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
     Eigen::Vector3f boundbox_upper_right = 0.5* Eigen::Vector3f( a.aff.bounding_lwh[0], a.aff.bounding_lwh[1], a.aff.bounding_lwh[2]);
-    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right);
+    Eigen::Isometry3d boundbox_pose = affutils.getPose( a.aff.bounding_xyz, a.aff.bounding_rpy );
+    icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right, boundbox_pose.cast<float>() );
 
     
     /*

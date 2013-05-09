@@ -30,9 +30,11 @@ ICPTracker::ICPTracker(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_):
 }
 
 
-void ICPTracker::setBoundingBox( Eigen::Vector3f & boundbox_lower_left_in, Eigen::Vector3f & boundbox_upper_right_in ){
+void ICPTracker::setBoundingBox( Eigen::Vector3f  boundbox_lower_left_in, Eigen::Vector3f  boundbox_upper_right_in,
+                  Eigen::Isometry3f  boundingbox_pose_in ){
   boundbox_lower_left_=boundbox_lower_left_in;
   boundbox_upper_right_=boundbox_upper_right_in;
+  boundingbox_pose_ = boundingbox_pose_in;
 }
 
 
@@ -104,11 +106,13 @@ bool ICPTracker::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
 
 
 void ICPTracker::boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, Eigen::Isometry3f pose){
+  // Determine the bounding box in the world frame
+  Eigen::Isometry3f bb_pose_world =  pose* boundingbox_pose_;
   
-  Eigen::Isometry3f pose_i = pose.inverse();
-  Eigen::Quaternionf quat_i(pose_i.rotation());
+  Eigen::Isometry3f bb_pose_world_i = bb_pose_world.inverse();
+  Eigen::Quaternionf quat_i(bb_pose_world_i.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
-        pose_i.translation(), quat_i); // !! modifies lidar_cloud
+        bb_pose_world_i.translation(), quat_i); // !! modifies lidar_cloud
 
   pcl::PassThrough<pcl::PointXYZRGB> pass;
   pass.setInputCloud (cloud);
@@ -127,14 +131,15 @@ void ICPTracker::boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud
   pass.filter (*cloud);
 
 
-  Eigen::Quaternionf quat(pose.rotation());
+  Eigen::Quaternionf quat(bb_pose_world.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
-        pose.translation(), quat); // !! modifies lidar_cloud
+        bb_pose_world.translation(), quat); // !! modifies lidar_cloud
 }
 
 
 void ICPTracker::drawBoundingBox(Eigen::Isometry3f pose){
-  cout << "use the bounding box in affordance utils instead ===========\n";
+  cout << "use getBoundingBoxCloud() in affordance utils instead ===========\n";
+  return;
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bb_pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8;
