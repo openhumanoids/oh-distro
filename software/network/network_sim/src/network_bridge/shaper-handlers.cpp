@@ -7,7 +7,6 @@
 
 #include "goby/common/logger.h"
 #include "goby/common/time.h"
-#include "goby/acomms/modemdriver/udp_driver.h"
 #include "goby/acomms/connect.h"
 #include "goby/acomms/bind.h"
 #include "goby/acomms/amac.h"
@@ -154,8 +153,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     lcm_->subscribe("SHAPER_DATA_REQUEST", &DRCShaper::on_demand_handler, this);
     
        glog.is(VERBOSE) && glog << "subscribed to: [" << subscription << "]" << std::endl;
-    udp_driver_.reset(new goby::acomms::UDPDriver(&udp_service_));
-
+    udp_driver_.reset(new DRCUDPDriver(&udp_service_));
+    
     max_frame_size_ = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
     {
         goby::acomms::protobuf::DriverConfig cfg;

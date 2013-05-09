@@ -3,6 +3,7 @@
 
 #include "network-bridge.h"
 #include "shaper-packet.pb.h"
+#include "drc_udp_driver.h"
 #include "ldpc/ldpc_wrapper.h"
 #include "custom-codecs.h"
 
@@ -135,7 +136,7 @@ class DRCShaper
   private:
     KMCLApp& app_;
     boost::asio::io_service udp_service_;
-    boost::shared_ptr<goby::acomms::UDPDriver> udp_driver_;
+    boost::shared_ptr<DRCUDPDriver> udp_driver_;
     goby::acomms::MACManager mac_;
 
     Node node_;

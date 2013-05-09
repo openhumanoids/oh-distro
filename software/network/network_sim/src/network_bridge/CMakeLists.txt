@@ -28,6 +28,7 @@ add_executable(drc-network-shaper
   network-bridge.cpp 
   shaper-handlers.cpp 
   custom-codecs.cpp
+  drc_udp_driver.cpp
   ldpc/ldpc_wrapper.cpp
   ${ldpc_sources}
   ${PROTO_SRCS} ${PROTO_HDRS})
