@@ -161,7 +161,11 @@ _push_button_import_pressed( void ){
   QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
                                                   "/home",
                                                   tr("ActioncSequence (*.bin)"));  
+  if (fileName.isEmpty())
+    return;
+
   //---read from file
+  cout << "\n\n\n about to read file from disk" << endl;
   lcm::LogFile lFileReader(fileName.toUtf8().constData(), "r"); //'read'
   const lcm::LogEvent *eventFromFile = lFileReader.readNextEvent();
   drc::action_sequence_t action_sequence;
@@ -182,23 +186,42 @@ _push_button_export_pressed( void )
   //convert to lcm message
   action_sequence_t msg;
   create_msg(msg);
- 
+  cout << "\n\n encoded size = " << msg.getEncodedSize() << endl;
+
+
   //ask user for save file name
   QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                                   "/home/untitled.bin",
                                                   tr("ActionSequence (*.bin)"));
+  cout << "\n\n going to write to file = " << fileName.toUtf8().constData() << endl;
+  
+  if (fileName.isEmpty())
+    return;
+
   //write to disk
+  cout << "\n about to malloc w/ size = " << msg.getEncodedSize() << endl;
   void *buffer = malloc(msg.getEncodedSize());
+
+  cout << "\n about to encode" << endl;
   msg.encode(buffer,0,msg.getEncodedSize());
+
+  cout << "about to construct logEvent" << endl;
+
   lcm::LogEvent logEvent;
   logEvent.eventnum = 0;
   logEvent.timestamp = 0;
   logEvent.channel = "action_sequence_gui_io";
   logEvent.datalen = msg.getEncodedSize();
   logEvent.data = buffer;
+
+  cout << "\n\nabout to write" << endl;
+
   lcm::LogFile lFileWriter(fileName.toUtf8().constData(), "w"); //'write'
   lFileWriter.writeEvent(&logEvent);
-  
+
+
+  cout << "\n wrote to file " << fileName.toUtf8().constData() << endl;
+
   return;
 }
 
@@ -207,11 +230,12 @@ Qt4_Widget_Authoring::
 create_msg(action_sequence_t &action_sequence)
 {
   action_sequence.num_contact_goals = 0;
+  action_sequence.robot_name = "atlas";
   cout << "_constraints.size(): " << _constraints.size() << endl;
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     if( (*it) != NULL ){
       cout << "adding to drc action sequence" << endl;
-      (*it)->add_to_drc_action_sequence_t( action_sequence );
+      (*it)->add_to_drc_action_sequence_t(action_sequence );
     }
   }
   cout << "utime: " << action_sequence.utime << endl;
