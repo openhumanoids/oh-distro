@@ -57,6 +57,10 @@ int main(int argc, char ** argv)
    drc::affordance_t msgFromFile;
    msgFromFile.decode(eventFromFile->data, 0, eventFromFile->datalen);
 
+   //NOW we can delete the lFileReader.  we couldn't delete it before 
+   //b/c we had a pointer to the log event it read and seems to store internally
+   delete lFileReader;
+
    //now convert back to an AffordanceStateObject
    AffPtr cylinderFromFile(new AffordanceState());   
    cylinderFromFile->fromMsg(&msgFromFile);
