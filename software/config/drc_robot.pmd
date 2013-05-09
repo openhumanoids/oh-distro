@@ -104,6 +104,14 @@ group "a.1.core" {
         exec = "drc-init-laser";
         host = "robot";
     }
+    cmd "tracker-1" {
+        exec = "object-tracker -t 1";
+        host = "base";
+    }
+    cmd "tracker-2" {
+        exec = "object-tracker -t 2";
+        host = "base";
+    }
 }
 
 group "a.2.walking" {
@@ -278,6 +286,10 @@ group "g.0.gazebo" {
     }
     cmd "gz_mit_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
+        host = "robot";
+    }
+    cmd "gz_mit_walking_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_slow.world";
         host = "robot";
     }
     cmd "gz_mit_driving" {
@@ -536,6 +548,17 @@ script "dev.mit_walking" {
     start group "b.2.walking";
     wait ms 12000;
     start cmd "gz_mit_walking";
+    wait ms 3000;
+    start cmd "set-sim-rate";
+}
+
+script "dev.mit_walking" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.walking";
+    start group "b.2.walking";
+    wait ms 12000;
+    start cmd "gz_mit_walking_slow";
     wait ms 3000;
     start cmd "set-sim-rate";
 }
