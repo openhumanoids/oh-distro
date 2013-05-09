@@ -245,12 +245,13 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr AffordanceUtils::getBoundingBoxCloud(doub
   bb_pts->points.push_back(pt5);  bb_pts->points.push_back(pt7);    
   bb_pts->points.push_back(pt6);  bb_pts->points.push_back(pt8);    
 
-  return bb_pts;
-  //Eigen::Quaternionf quat(pose.rotation());
-  //pcl::transformPointCloud (*bb_pts, *bb_pts,
-  //      pose.translation(), quat); // !! modifies lidar_cloud
+  
+  Eigen::Isometry3d bb_pose_ = getPose( bounding_xyz, bounding_rpy );
+  Eigen::Quaternionf bb_quat_f(bb_pose_.cast<float>().rotation()  );
+  pcl::transformPointCloud (*bb_pts, *bb_pts,
+        bb_pose_.cast<float>().translation() , bb_quat_f); // !! modifies cloud
 
-  //pc_vis_->ptcld_to_lcm_from_list(771005, *bb_pts, null_poseT_.utime, null_poseT_.utime);
+  return bb_pts;
 }
 
 

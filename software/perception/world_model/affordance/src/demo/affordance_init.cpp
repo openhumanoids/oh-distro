@@ -245,14 +245,23 @@ void Pass::doDemo(int which_publish){
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
-  if ((which_publish==5) || (which_publish==0)){
+/*  if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
     std::vector<double> xyzrpy1 = {-1.20 , 2.32 , 1.09 , 0 , 0 , M_PI/2};  
     string filename1 = string(home+ "/drc/software/models/otdf/coupling.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
+  }*/
+  if ((which_publish==5) || (which_publish==0)){
+    int uid1 = 16;
+    std::vector<double> xyzrpy1 = {-1.2 , 2.3 , 1.05 , M_PI/2 , 0 , 0};  
+    string filename1 = string(home+ "/drc/software/models/otdf/firehose.ply");
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
   }
+  
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
     std::vector<double> xyzrpy1 = {-2.82, 3.65, 1.2, 0, -1.5707, 0};  
