@@ -21,6 +21,6 @@ group "spy" {
     }
     cmd "bot_spy" {
         exec = "bot-spy -l 'udpm://239.255.76.67:7667?ttl=0'";
-        host = "base";
+        host = "robot";
     }
 }

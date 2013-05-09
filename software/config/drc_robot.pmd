@@ -540,7 +540,6 @@ script "dev.vrc_driving" {
     start group "b.4.driving";
 }
 
-
 script "dev.mit_walking" {
     start group "0.development";
     start group "a.1.core";
@@ -551,18 +550,6 @@ script "dev.mit_walking" {
     wait ms 3000;
     start cmd "set-sim-rate";
 }
-
-script "dev.mit_walking" {
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    wait ms 12000;
-    start cmd "gz_mit_walking_slow";
-    wait ms 3000;
-    start cmd "set-sim-rate";
-}
-
 
 script "dev.mit_walking_vo" {
     start group "0.development";
