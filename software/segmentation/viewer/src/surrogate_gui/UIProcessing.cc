@@ -1399,11 +1399,26 @@ namespace surrogate_gui
     //std::vector< vector<float> > inliers; TODO
     // PointIndices::Ptr inlierIndices = TODO
     vector<pcl::PointCloud<pcl::PointXYZRGB> > clouds;
-    Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
+
+
+    if(true) {
+      Segmentation::fitPointCloud(_surrogate_renderer._display_info.cloud,
                                 currObj->indices, fp, 
                                 isInitialSet, initialXYZ, initialYPR, 
                                 modelcloud,
                                 xyz, ypr, clouds);
+    }else{
+      Segmentation::FpfhParams fpfhParams;
+      fpfhParams.minSampleDistance = 0.05;
+      fpfhParams.maxCorrespondenceDistance = 0.25;
+      fpfhParams.maxIterations = 500;
+      fpfhParams.numberOfSamples = 3;
+      Segmentation::fitPointCloudFpfh(_surrogate_renderer._display_info.cloud,
+                                  currObj->indices, fp, 
+                                  isInitialSet, initialXYZ, initialYPR, 
+                                  modelcloud,
+                                  xyz, ypr, clouds, fpfhParams);
+    }
 
     /*
     // lcmgl display for debugging

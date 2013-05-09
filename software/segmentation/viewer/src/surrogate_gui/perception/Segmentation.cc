@@ -944,7 +944,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Segmentation::subSampleCloud(const pcl::P
   return tempCloud; 
 }
 
-pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, int i)
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float normalRadius, float fpfhRadius)
 {
   ////////////////////////////////////////
   // compute fpfh TODO: only compute once
@@ -956,7 +956,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
   ne.setSearchMethod (tree);
   pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
-  ne.setRadiusSearch (0.25);
+  ne.setRadiusSearch (normalRadius);
   ne.compute (*normals);
 
   // Create the FPFH estimation class, and pass the input dataset+normals to it
@@ -964,7 +964,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::
   fpfh.setInputCloud (cloud);
   fpfh.setInputNormals (normals);
 
-  {
+  /*{
     pcl::visualization::PCLVisualizer pclvis;
     pclvis.addPointCloud<pcl::PointXYZRGB>(cloud,"cloud");
     pclvis.addPointCloudNormals<pcl::PointXYZRGB,pcl::Normal>(cloud, normals,1,0.02,"normal");
@@ -975,7 +975,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::
     
     while (!pclvis.wasStopped ()) pclvis.spinOnce (100);
 
-  }
+  }*/
 
   // Create an empty kdtree representation, and pass it to the FPFH estimation object.
   // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
@@ -985,7 +985,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::
 
   // Use all neighbors in a sphere of radius 5cm
   // IMPORTANT: the radius used here has to be larger than the radius used to estimate the surface normals!!!
-  fpfh.setRadiusSearch (0.5);
+  fpfh.setRadiusSearch (fpfhRadius);
 
   // Compute the features
   pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfhs(new pcl::PointCloud<pcl::FPFHSignature33>);
@@ -1000,12 +1000,13 @@ void Segmentation::fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::Co
                                  Vector3f initialYPR,
                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
                                  Vector3f& xyz, Vector3f& ypr,
-                                 vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
+                                 vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds,
+                                 FpfhParams params)
 {
 
   // subsample
-  PointCloud<PointXYZRGB>::Ptr subcloud = subSampleCloud(extractAndSmooth(cloud, subcloudIndices), 0.05);
-  PointCloud<PointXYZRGB>::Ptr submodelcloud = subSampleCloud(modelcloud, 0.05);
+  PointCloud<PointXYZRGB>::Ptr subcloud = subSampleCloud(extractAndSmooth(cloud, subcloudIndices), params.gridSize);
+  PointCloud<PointXYZRGB>::Ptr submodelcloud = subSampleCloud(modelcloud, params.gridSize);
   //PointCloud<PointXYZRGB>::Ptr subcloud = extractAndSmooth(cloud, subcloudIndices);
   //PointCloud<PointXYZRGB>::Ptr submodelcloud = modelcloud;
 
@@ -1023,9 +1024,10 @@ void Segmentation::fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::Co
 
   // compute fpfh
   cout << "computing cloud fpfh\n";
-  pcl::PointCloud<pcl::FPFHSignature33>::Ptr cloudFpfh = computeFpfh(subcloud,1);
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr cloudFpfh = computeFpfh(subcloud, params.normalRadius, params.fpfhRadius);
   cout << "computing model fpfh\n";
-  pcl::PointCloud<pcl::FPFHSignature33>::Ptr modelFpfh = computeFpfh(submodelcloud,2);  //TODO only once
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr modelFpfh = computeFpfh(submodelcloud, params.normalRadius,
+                                                                   params.fpfhRadius);  //TODO only once
   cout << "Done\n";
 
   SampleConsensusInitialAlignment<pcl::PointXYZRGB, pcl::PointXYZRGB, pcl::FPFHSignature33> scia;
@@ -1033,12 +1035,10 @@ void Segmentation::fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::Co
   scia.setSourceFeatures(modelFpfh);
   scia.setInputTarget(subcloud);
   scia.setTargetFeatures(cloudFpfh);
-  //scia.setMinSampleDistance (0.05);
-  scia.setMaxCorrespondenceDistance (0.25);
-  //scia.setMaximumIterations (500);
-  //scia.setNumberOfSamples(3);
-
-  cout << "Num Samples: " << scia.getNumberOfSamples() <<  endl;
+  scia.setMinSampleDistance (params.minSampleDistance);
+  scia.setMaxCorrespondenceDistance (params.maxCorrespondenceDistance);
+  scia.setMaximumIterations (params.maxIterations);
+  scia.setNumberOfSamples(params.numberOfSamples);
 
   pcl::PointCloud<pcl::PointXYZRGB> registration_output;
   cout << "Aligning...\n";

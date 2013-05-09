@@ -95,6 +95,16 @@ namespace surrogate_gui
                               Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
                               std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
 
+    struct FpfhParams{
+      float gridSize;
+      float normalRadius, fpfhRadius;
+      float minSampleDistance, maxCorrespondenceDistance;
+      int maxIterations, numberOfSamples;
+      FpfhParams(): gridSize(0.05), normalRadius(0.25), fpfhRadius(0.5),
+            minSampleDistance(0), maxCorrespondenceDistance(1e100), maxIterations(1000), numberOfSamples(3) {}
+      
+    };
+
     static void fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
                                  boost::shared_ptr<std::set<int> >  subcloudIndices,
                                  const FittingParams& fp,
@@ -102,10 +112,11 @@ namespace surrogate_gui
                                  Eigen::Vector3f initialYPR,
                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
                                  Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
-                                 std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
+                                 std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds, FpfhParams params);
+
     static pcl::PointCloud<pcl::PointXYZRGB>::Ptr subSampleCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float voxel_grid_size);
 
-    static pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, int i);
+    static pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float normalRadius, float fpfhRadius);
 
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
