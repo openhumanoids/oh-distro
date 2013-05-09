@@ -106,11 +106,11 @@ group "a.1.core" {
     }
     cmd "tracker-1" {
         exec = "object-tracker -t 1";
-        host = "base";
+        host = "robot";
     }
     cmd "tracker-2" {
         exec = "object-tracker -t 2";
-        host = "base";
+        host = "robot";
     }
 }
 
@@ -280,16 +280,16 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip.world";
         host = "robot";
     }
+    cmd "gz_mit_manip_slow" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_manip_slow.world";
+        host = "robot";
+    }
     cmd "gz_mit_ingress" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
         host = "robot";
     }
     cmd "gz_mit_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
-        host = "robot";
-    }
-    cmd "gz_mit_walking_slow" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$HOME/drc/ros_workspace/mit_drcsim_scripts/worlds/mit_walking_slow.world";
         host = "robot";
     }
     cmd "gz_mit_driving" {
@@ -566,15 +566,22 @@ script "dev.mit_walking_vo" {
 }
 
 
-script "dev.mit_manip" {
+script "dev.mit_manip_slow" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
     wait ms 12000;
-    start cmd "gz_mit_manip";
+    start cmd "gz_mit_manip_slow";
     wait ms 3000;
     start cmd "set-sim-rate";
+}
+
+script "dev.mit_manip" {
+    start group "0.development";
+    start group "a.1.core";
+    wait ms 500;
+    start cmd "gz_mit_manip";
 }
 
 script "dev.ingress" { 
