@@ -267,6 +267,7 @@ classdef QPController < MIMODrakeSystem
       B_ls=zeros(4,2);Qy=zeros(2);R_ls=zeros(2);C_ls=zeros(2,4);D_ls=zeros(2);
       S=zeros(4);s1=zeros(4,1);x0=zeros(4,1);u0=zeros(2,1);
     end
+    R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
     out_tic = tic;
 
@@ -351,18 +352,15 @@ classdef QPController < MIMODrakeSystem
       if nq_free > 0
         if nc > 0
           % approximate quadratic cost for free dofs with the appropriate matrix block
-          Hqp = J(:,obj.free_dof)'*R_ls*J(:,obj.free_dof);
-          Hqp = Hqp + J(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
+          Hqp = J(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
           Hqp = Hqp + obj.w*eye(nq_free);
 
           fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.free_dof);
-          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
+          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*R_DQyD_ls*J(:,obj.free_dof);
           fqp = fqp + x_bar'*S*B_ls*J(:,obj.free_dof);
           fqp = fqp + 0.5*s1'*B_ls*J(:,obj.free_dof);
-          fqp = fqp - u0'*D_ls'*Qy*D_ls*J(:,obj.free_dof);
+          fqp = fqp - u0'*R_DQyD_ls*J(:,obj.free_dof);
           fqp = fqp - obj.w*q_ddot_des(obj.free_dof)';
-          fqp = fqp - u0'*R_ls*J(:,obj.free_dof);
-          fqp = fqp + qd(obj.free_dof)'*Jdot(:,obj.free_dof)'*R_ls*J(:,obj.free_dof); 
         else
           Hqp = eye(nq_free);
           fqp = -q_ddot_des(obj.free_dof)';
@@ -438,18 +436,15 @@ classdef QPController < MIMODrakeSystem
       %  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x_bar+D*(Jdot*qd + J*qdd),Qy) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd-u0)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
       
       if nc > 0
-        Hqp = Iqdd'*J(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd;
-        Hqp = Hqp + Iqdd'*J(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        Hqp = Iqdd'*J(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
         Hqp(1:nq_con,1:nq_con) = Hqp(1:nq_con,1:nq_con) + obj.w*eye(nq_con);
 
         fqp = x_bar'*C_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + x_bar'*S*B_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp + 0.5*s1'*B_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp - u0'*D_ls'*Qy*D_ls*J(:,obj.con_dof)*Iqdd;
+        fqp = fqp - u0'*R_DQyD_ls*J(:,obj.con_dof)*Iqdd;
         fqp = fqp - obj.w*q_ddot_des(obj.con_dof)'*Iqdd;
-        fqp = fqp - u0'*R_ls*J(:,obj.con_dof)*Iqdd;
-        fqp = fqp + qd(obj.con_dof)'*Jdot(:,obj.con_dof)'*R_ls*J(:,obj.con_dof)*Iqdd; 
 
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 

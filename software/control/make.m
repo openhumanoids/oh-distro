@@ -62,7 +62,7 @@ cd(p);
 
 %% build drc drake mexfiles
 
-if (1) % build maps
+if isunix && ~ismac % build maps
   [~,cflags]=system('pkg-config --cflags maps eigen3 lcm');
   incs = regexp(cflags,'-I\S+','match'); incs = sprintf('%s ',incs{:});
   

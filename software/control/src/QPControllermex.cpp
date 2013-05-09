@@ -382,6 +382,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==1);
   Map< Vector2d > u0(mxGetPr(prhs[narg++]));
   
+  Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
+  
   pdata->r->doKinematics(q,false,qd);
   
   MatrixXd H(nq,nq);
@@ -447,14 +449,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       getRows(pdata->free_dof,qdvec,qd_free);
       
       // approximate quadratic cost for free dofs with the appropriate matrix block
-      Hqp = J_free.transpose()*(R_ls + D_ls.transpose()*Qy*D_ls)*J_free;
+      Hqp = J_free.transpose()*R_DQyD_ls*J_free;
       Hqp += pdata->w*MatrixXd::Identity(nq_free,nq_free);
               
       fqp = (C_ls*x_bar).transpose()*Qy*D_ls*J_free;
-      fqp += (Jdot_free*qd_free).transpose()*(R_ls+D_ls.transpose()*Qy*D_ls)*J_free;
-      fqp += x_bar.transpose()*S*B_ls*J_free;
-      fqp -= u0.transpose()*(R_ls + D_ls.transpose()*Qy*D_ls)*J_free;
-      fqp += 0.5*s1.transpose()*B_ls*J_free;
+      fqp += (Jdot_free*qd_free).transpose()*R_DQyD_ls*J_free;
+      fqp += (S*x_bar + 0.5*s1).transpose()*B_ls*J_free;
+      fqp -= u0.transpose()*R_DQyD_ls*J_free;
       fqp -= pdata->w*q_ddot_des_free.transpose();
       
       // solve for qdd_free unconstrained
@@ -500,14 +501,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       getCols(pdata->con_dof,J.topRows(2),J_con);
       getCols(pdata->con_dof,Jdot.topRows(2),Jdot_con);
       
-      Hqp_con = J_con.transpose()*(R_ls+D_ls.transpose()*Qy*D_ls)*J_con;
+      Hqp_con = J_con.transpose()*R_DQyD_ls*J_con;
       Hqp_con += pdata->w*MatrixXd::Identity(nq_con,nq_con);
               
       fqp_con = (C_ls*x_bar).transpose()*Qy*D_ls*J_con;
-      fqp_con += (Jdot_con*qd_con).transpose()*(R_ls+D_ls.transpose()*Qy*D_ls)*J_con;
-      fqp_con += x_bar.transpose()*S*B_ls*J_con;
-      fqp_con += 0.5*s1.transpose()*B_ls*J_con;
-      fqp_con -= u0.transpose()*(R_ls +D_ls.transpose()*Qy*D_ls)*J_con;
+      fqp_con += (Jdot_con*qd_con).transpose()*R_DQyD_ls*J_con;
+      fqp_con += (S*x_bar + 0.5*s1).transpose()*B_ls*J_con;
+      fqp_con -= u0.transpose()*R_DQyD_ls*J_con;
       fqp_con -= pdata->w*q_ddot_des_con.transpose();
 
       // Q(1:nq_con,1:nq_con) = Hqp_con
