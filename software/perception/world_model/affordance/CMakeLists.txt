@@ -82,5 +82,7 @@ add_executable(server_test src/test/server_test.cpp )
 target_link_libraries(server_test affordance ${REQUIRED_PACKAGES})
 add_executable(affordance_test src/test/affordance_test.cpp )		   
 target_link_libraries(affordance_test affordance ${REQUIRED_PACKAGES})
+add_executable(lcm_io_test src/test/lcm_io_test.cpp )		   
+target_link_libraries(lcm_io_test affordance ${REQUIRED_PACKAGES})
 
 
