@@ -44,20 +44,20 @@ def reset_all():
   
 def plot_data():
   global last_utime
-  global channels, got_rate
+  global sent_channels, got_rate
   front_block =0 # offset into the future (to ensure no recent data not viewed)
-  #print "len of channels: %d" %  len(channels)
+  #print "len of sent_channels: %d" %  len(sent_channels)
   cols = 'bgrcykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmykbgrcmyk'
   if ( len(msgs.times) >1):
     plt.figure(1)
     ############################################################
     ax1.cla()
-    for i in range(0,len(channels)-1): 
+    for i in range(0,len(sent_channels)-1): 
       if(i==0):
-        ax1.fill_between( cumsent_KB.times[1:,0][:], 0 , cumsent_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        ax1.fill_between( cumsent_KB.times[1:,0][:], 0 , cumsent_KB.v[1:,i][:],color=cols[i] , label=sent_channels[i]) 
       else:
-        ax1.fill_between( cumsent_KB.times[1:,0][:], cumsent_KB.v[1:,i-1][:] , cumsent_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-      ax1.plot(cumsent_KB.times[1:], np.transpose(cumsent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+        ax1.fill_between( cumsent_KB.times[1:,0][:], cumsent_KB.v[1:,i-1][:] , cumsent_KB.v[1:,i][:],color=cols[i] , label=sent_channels[i]) 
+      ax1.plot(cumsent_KB.times[1:], np.transpose(cumsent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=sent_channels[i])
     
     ax1.set_ylabel('Cum KB Sent [' + msg_channel +']');  ax2.grid(True)
     ax1.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -66,12 +66,12 @@ def plot_data():
     
     ############################################################
     ax2.cla()
-    for i in range(0,len(channels)-1): 
+    for i in range(0,len(sent_channels)-1): 
       if(i==0):
-        ax2.fill_between( cumsent_KB.times[1:,0][:], 0 , cumsent_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        ax2.fill_between( cumsent_KB.times[1:,0][:], 0 , cumsent_KB.v[1:,i][:],color=cols[i] , label=sent_channels[i]) 
       else:
-        ax2.fill_between( cumsent_KB.times[1:,0][:], cumsent_KB.v[1:,i-1][:] , cumsent_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-      ax2.plot(cumsent_KB.times[1:], np.transpose(cumsent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+        ax2.fill_between( cumsent_KB.times[1:,0][:], cumsent_KB.v[1:,i-1][:] , cumsent_KB.v[1:,i][:],color=cols[i] , label=sent_channels[i]) 
+      ax2.plot(cumsent_KB.times[1:], np.transpose(cumsent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=sent_channels[i])
     
     one_strip = np.ones( ( len(cumsent_KB.times[1:,0][:]),1) )
     ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 4 ),'r:',linewidth=2 )
@@ -88,18 +88,18 @@ def plot_data():
     #print "ax3:"
     #print got_rate
     if (got_rate):
-      for i in range(0,len(channels)-1): 
+      for i in range(0,len(sent_channels)-1): 
         if(i==0):
-          ax3.fill_between( ratesent_KB.times[1:,0][:], 0 , ratesent_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+          ax3.fill_between( ratesent_KB.times[1:,0][:], 0 , ratesent_KB.v[1:,i][:],color=cols[i] , label=sent_channels[i]) 
         else:
           #print i
           #print cols[i]
-          #print channels
+          #print sent_channels
           #print ratesent_KB.times
           #print ratesent_KB.v
           ax3.fill_between( ratesent_KB.times[1:,0][:], ratesent_KB.v[1:,i-1][:] , ratesent_KB.v[1:,i][:],color=cols[i] ,
- label=channels[i]) 
-        ax3.plot(ratesent_KB.times[1:], np.transpose(ratesent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+ label=sent_channels[i]) 
+        ax3.plot(ratesent_KB.times[1:], np.transpose(ratesent_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=sent_channels[i])
       
       one_strip = np.ones( ( len(ratesent_KB.times[1:,0][:]),1) )
       ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,4.01),'r:',linewidth=2 )
@@ -112,29 +112,30 @@ def plot_data():
     
     ############################################################
     ax4.cla()
-    for i in range(0,len(channels)-1): 
+    for i in range(0,len(received_channels)-1): 
       if(i==0):
-        ax4.fill_between( cumreceived_KB.times[1:,0][:], 0 , cumreceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        ax4.fill_between( cumreceived_KB.times[1:,0][:], 0 , cumreceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
       else:
-        ax4.fill_between( cumreceived_KB.times[1:,0][:], cumreceived_KB.v[1:,i-1][:] , cumreceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-      ax4.plot(cumreceived_KB.times[1:], np.transpose(cumreceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+        ax4.fill_between( cumreceived_KB.times[1:,0][:], cumreceived_KB.v[1:,i-1][:] , cumreceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
+      ax4.plot(cumreceived_KB.times[1:], np.transpose(cumreceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=received_channels[i])
     ax4.set_ylabel('Cum KB Received [' + msg_channel +']');  ax4.grid(True)
     ax4.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
     ax4.set_ylim( bottom=0)
+    ax4.legend(loc=2,prop={'size':10})
 
     ############################################################
     ax5.cla()
-    for i in range(0,len(channels)-1): 
+    for i in range(0,len(received_channels)-1): 
       if(i==0):
-        ax5.fill_between( cumreceived_KB.times[1:,0][:], 0 , cumreceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+        ax5.fill_between( cumreceived_KB.times[1:,0][:], 0 , cumreceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
       else:
-        ax5.fill_between( cumreceived_KB.times[1:,0][:], cumreceived_KB.v[1:,i-1][:] , cumreceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-      ax5.plot(cumreceived_KB.times[1:], np.transpose(cumreceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+        ax5.fill_between( cumreceived_KB.times[1:,0][:], cumreceived_KB.v[1:,i-1][:] , cumreceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
+      ax5.plot(cumreceived_KB.times[1:], np.transpose(cumreceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=received_channels[i])
 
-    one_strip = np.ones( ( len(cumsent_KB.times[1:,0][:]),1) )
-    ax5.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 256 ),'r:',linewidth=2 )
-    ax5.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 128 ),'y:',linewidth=2 )
-    ax5.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 64 ),'g:',linewidth=2 )
+    one_strip = np.ones( ( len(cumreceived_KB.times[1:,0][:]),1) )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 256 ),'r:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 128 ),'y:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 64 ),'g:',linewidth=2 )
 
     ax5.set_ylabel('Cum KB Received [' + msg_channel +']');  ax5.grid(True)
     ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -144,17 +145,17 @@ def plot_data():
     ############################################################
     ax6.cla()
     if (got_rate):
-      for i in range(0,len(channels)-1): 
+      for i in range(0,len(received_channels)-1): 
         if(i==0):
-          ax6.fill_between( ratereceived_KB.times[1:,0][:], 0 , ratereceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
+          ax6.fill_between( ratereceived_KB.times[1:,0][:], 0 , ratereceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
         else:
-          ax6.fill_between( ratereceived_KB.times[1:,0][:], ratereceived_KB.v[1:,i-1][:] , ratereceived_KB.v[1:,i][:],color=cols[i] , label=channels[i]) 
-      ax6.plot(ratereceived_KB.times[1:], np.transpose(ratereceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=channels[i])
+          ax6.fill_between( ratereceived_KB.times[1:,0][:], ratereceived_KB.v[1:,i-1][:] , ratereceived_KB.v[1:,i][:],color=cols[i] , label=received_channels[i]) 
+      ax6.plot(ratereceived_KB.times[1:], np.transpose(ratereceived_KB.v[1:,i]),color=cols[i] ,  linewidth=1,label=received_channels[i])
 
-      one_strip = np.ones( ( len(ratesent_KB.times[1:,0][:]),1) )
-      ax6.plot(ratesent_KB.times[1:], np.multiply(one_strip  ,256.1),'r:',linewidth=2)
-      ax6.plot(ratesent_KB.times[1:], np.multiply(one_strip  ,128),'y:',linewidth=2 )
-      ax6.plot(ratesent_KB.times[1:], np.multiply(one_strip  ,64),'g:',linewidth=2 )
+      one_strip = np.ones( ( len(ratereceived_KB.times[1:,0][:]),1) )
+      ax6.plot(ratereceived_KB.times[1:], np.multiply(one_strip  ,256.1),'r:',linewidth=2)
+      ax6.plot(ratereceived_KB.times[1:], np.multiply(one_strip  ,128),'y:',linewidth=2 )
+      ax6.plot(ratereceived_KB.times[1:], np.multiply(one_strip  ,64),'g:',linewidth=2 )
 
       ax6.set_ylabel('Rate KB Received [' + msg_channel +']');  ax6.grid(True)
       ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -168,19 +169,21 @@ def plot_data():
 def on_bw(channel, data):
   m = bandwidth_stats_t.decode(data)
 
-  global rate_window, msg_last_rate, last_rate_utime, got_rate, msg_channel, channels
-  #print len(channels)
-  #print len(m.channels)
-  if ( len(channels) != len(m.channels) ):
+  global rate_window, msg_last_rate, last_rate_utime, got_rate, msg_channel, sent_channels, received_channels
+  #print len(sent_channels)
+  #print len(m.sent_channels)
+  if ( len(sent_channels) != len(m.sent_channels) ):
     print "number of messages has changed resetting [main]"
     got_rate=False
     reset_all()
     msg_channel = channel
-    channels = m.channels
+    sent_channels = m.sent_channels
+    received_channels = m.received_channels
     return
 
   msg_channel = channel
-  channels = m.channels
+  sent_channels = m.sent_channels
+  received_channels = m.received_channels
 
   which_utime = m.sim_utime # m.utime
   msgs.append(which_utime,m.queued_msgs)
@@ -209,13 +212,13 @@ def on_bw(channel, data):
       #print m.sim_utime
       #print msg_last_rate.sim_utime
       #print elapsed_time
-      if (msg_last_rate.num_channels != m.num_channels):
-         print "number of messages has changed resetting"
-         got_rate=False
-         reset_all()
-         last_rate_utime = which_utime
-         msg_last_rate = m
-         return
+      #if (msg_last_rate.num_sent_channels != m.num_sent_channels):
+      #   print "number of messages has changed resetting"
+      #   got_rate=False
+      #   reset_all()
+      #   last_rate_utime = which_utime
+      #   msg_last_rate = m
+      #   return
 
       last_sent_KB=tuple([x/1024.0 for x in msg_last_rate.sent_bytes]) 
       this_ratesent_KB = np.divide( np.subtract(np.array(this_sent_KB),np.array(last_sent_KB)) ,elapsed_time)
@@ -243,7 +246,8 @@ def on_bw(channel, data):
 
   
 #################################################################################
-channels=[]
+sent_channels=[]
+received_channels=[]
 msg_channel=''
 
 lc = lcm.LCM()
