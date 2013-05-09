@@ -89,7 +89,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     {
         using namespace boost::posix_time;
 
-        std::string file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + to_iso_string(second_clock::universal_time()) + ".txt";
+        std::string file_name = app.cl_cfg.log_path + "/drc-network-shaper-" + (node == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
         
         flog_.open(file_name.c_str());
         if(!flog_.is_open())
@@ -119,17 +119,18 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         drc::PMDInfoDiff diff, diff_out;
         diff.set_reference_time(243);
         diff.set_utime(6000000);
-        diff.set_cpu_load(0.56);
-        diff.set_phys_mem_total_kbytes(1024);
+//        diff.set_cpu_load(0.56);
+//        diff.set_phys_mem_total_kbytes(1024);
         // diff.set_phys_mem_free_kbytes(166542024);
-        diff.set_swap_total_kbytes(5024);
-        diff.set_swap_free_kbytes(67543);
+//        diff.set_swap_total_kbytes(5024);
+//        diff.set_swap_free_kbytes(67543);
         
         drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
         diff_cmd->set_name("FOO");
         diff_cmd->set_group("BAR");
         diff_cmd->set_pid(263);
-
+        diff_cmd->set_auto_respawn(false);
+        
         std::string bytes;
         dccl_->encode(&bytes, diff);
 
@@ -137,7 +138,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         dccl_->decode(bytes, &diff_out);
 
         // round to one decimal place
-        diff.set_cpu_load(0.6);
+//        diff.set_cpu_load(0.6);
 
         std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
         assert(diff.SerializeAsString() == diff_out.SerializeAsString());
