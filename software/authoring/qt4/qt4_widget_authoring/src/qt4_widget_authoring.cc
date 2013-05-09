@@ -1,7 +1,7 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QGroupBox>
-
+#include <QFileDialog>
 #include <kinematics/kinematics_model_gfe.h>
 
 #include "authoring/qt4_widget_authoring.h"
@@ -155,21 +155,53 @@ void
 Qt4_Widget_Authoring::
 _push_button_import_pressed( void ){
   emit info_update( QString( "[<b>OK</b>] import pressed" ) );
+
+  QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
+                                                  "/home",
+                                                  tr("ActioncSequence (*.bin)"));  
+  //---read from file
+  lcm::LogFile lFileReader(fileName.toUtf8().constData(), "r"); //'read'
+  const lcm::LogEvent *eventFromFile = lFileReader.readNextEvent();
+  drc::action_sequence_t action_sequence;
+  action_sequence.decode(eventFromFile->data,0,eventFromFile->datalen);
+
+  //---todo: now do something w/ the msg
+  cout << "\nread file from disk." << endl;
+
   return;
 }
 
 void
 Qt4_Widget_Authoring::
-_push_button_export_pressed( void ){
+_push_button_export_pressed( void )
+{
   emit info_update( QString( "[<b>OK</b>] export pressed" ) );
+ 
+  //convert to lcm message
+  action_sequence_t msg;
+  create_msg(msg);
+ 
+  //ask user for save file name
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                  "/home/untitled.bin",
+                                                  tr("ActionSequence (*.bin)"));
+  //write to disk
+  void *buffer = malloc(msg.getEncodedSize());
+  msg.encode(buffer,0,msg.getEncodedSize());
+  lcm::LogEvent logEvent;
+  logEvent.eventnum = 0;
+  logEvent.timestamp = 0;
+  logEvent.channel = "action_sequence_gui_io";
+  logEvent.datalen = msg.getEncodedSize();
+  logEvent.data = buffer;
+  lcm::LogFile lFileWriter(fileName.toUtf8().constData(), "w"); //'write'
+  lFileWriter.writeEvent(&logEvent);
+  
   return;
 }
 
-void
-Qt4_Widget_Authoring::
-_push_button_publish_pressed( void ){
-  emit info_update( QString( "[<b>OK</b>] publish pressed" ) );
-  action_sequence_t action_sequence;
+void Qt4_Widget_Authoring::create_msg(action_sequence_t &action_sequence)
+{
   action_sequence.num_contact_goals = 0;
   cout << "_constraints.size(): " << _constraints.size() << endl;
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
@@ -196,6 +228,16 @@ _push_button_publish_pressed( void ){
     cout << "  y_relation: " << it->y_relation << endl;
     cout << "  z_relation: " << it->z_relation << endl;
   }
+}
+
+
+void
+Qt4_Widget_Authoring::
+_push_button_publish_pressed( void ){
+  emit info_update( QString( "[<b>OK</b>] publish pressed" ) );
+  action_sequence_t action_sequence;  
+  create_msg(action_sequence);
+             
   return;
 }
 

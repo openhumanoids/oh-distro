@@ -24,6 +24,9 @@ namespace authoring {
     Qt4_Widget_Authoring( const Qt4_Widget_Authoring& other );
     Qt4_Widget_Authoring& operator=( const Qt4_Widget_Authoring& other );
 
+  private:
+    void create_msg(drc::action_sequence_t &action_sequence);
+
   signals:
     void info_update( const QString& info );
     void time_min_update( double timeMin );
@@ -40,6 +43,7 @@ namespace authoring {
     void _push_button_export_pressed( void );
     void _push_button_publish_pressed( void );
     void _double_spin_box_end_time_changed( double endTime );
+    
 
   protected:
     qt4::Qt4_Widget_OpenGL * _widget_opengl;
