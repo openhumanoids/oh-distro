@@ -116,6 +116,10 @@ void StatePub::handleMinimalRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
   lcm_->publish( output_channel_, &msgout);        
   sendPose(msgout.origin_position, msgout.utime, "POSE_BODY");
 
+  drc::utime_t utime_out;
+  utime_out.utime = msgout.utime;
+  lcm_->publish( "ROBOT_UTIME", &utime_out);        
+
   cout << "Minimal message received and republished "<< msg->utime<<"\n";
 }
 
