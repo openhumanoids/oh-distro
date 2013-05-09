@@ -120,6 +120,17 @@ set_color( Vector4f color ){
   return;
 }
 
+void
+OpenGL_Object_Cylinder::
+set_transparency( double transparency ){
+  _transparency = transparency;
+  if( _dl != 0 && glIsList( _dl ) == GL_TRUE ){
+    glDeleteLists( _dl, 0 );
+    _dl = 0;
+  }
+  return;
+}
+
 /**
  * draw
  * draws the cylinder using opengl commands

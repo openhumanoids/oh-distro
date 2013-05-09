@@ -20,6 +20,7 @@ namespace opengl {
     void set( KDL::Frame transform, Eigen::Vector3f dimensions );
     virtual void set_color( Eigen::Vector3f color );
     virtual void set_color( Eigen::Vector4f color );
+    virtual void set_transparency( double transparency );
 
     virtual void draw( void );
     virtual void draw( Eigen::Vector3f color );
