@@ -95,6 +95,18 @@ namespace surrogate_gui
                               Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
                               std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
 
+    static void fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                 boost::shared_ptr<std::set<int> >  subcloudIndices,
+                                 const FittingParams& fp,
+                                 bool isInitialSet, Eigen::Vector3f initialXYZ, 
+                                 Eigen::Vector3f initialYPR,
+                                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
+                                 Eigen::Vector3f& xyz, Eigen::Vector3f& ypr,
+                                 std::vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds);
+    static pcl::PointCloud<pcl::PointXYZRGB>::Ptr subSampleCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float voxel_grid_size);
+
+    static pcl::PointCloud<pcl::FPFHSignature33>::Ptr computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud);
+
 			static std::vector<pcl::PointIndices::Ptr> getEuclideanClusters(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
 																			pcl::PointIndices::Ptr indicesToCluster);
 

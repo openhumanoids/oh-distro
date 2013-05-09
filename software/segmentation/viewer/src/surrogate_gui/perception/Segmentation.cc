@@ -931,7 +931,107 @@ namespace surrogate_gui
     cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
 
   }
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr Segmentation::subSampleCloud(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, float voxel_grid_size)
+{
+  pcl::VoxelGrid<pcl::PointXYZRGB> vox_grid;
+  vox_grid.setInputCloud (cloud);
+  vox_grid.setLeafSize (voxel_grid_size, voxel_grid_size, voxel_grid_size);
+  //vox_grid.filter (*cloud); // Please see this http://www.pcl-developers.org/Possible-problem-in-new-VoxelGrid-implementation-from-PCL-1-5-0-td5490361.html
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempCloud (new pcl::PointCloud<pcl::PointXYZRGB>); 
+  vox_grid.filter (*tempCloud);
+  return tempCloud; 
+}
+
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr Segmentation::computeFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud)
+{
+  ////////////////////////////////////////
+  // compute fpfh TODO: only compute once
+
+  // compute normals
+  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  ne.setInputCloud (cloud);
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  ne.setSearchMethod (tree);
+  pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+  ne.setRadiusSearch (0.1);
+  ne.compute (*normals);
+
+  // Create the FPFH estimation class, and pass the input dataset+normals to it
+  pcl::FPFHEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::FPFHSignature33> fpfh;
+  fpfh.setInputCloud (cloud);
+  fpfh.setInputNormals (normals);
+
+  // Create an empty kdtree representation, and pass it to the FPFH estimation object.
+  // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
+  pcl::search::KdTree<PointXYZRGB>::Ptr tree2 (new pcl::search::KdTree<PointXYZRGB>);
+
+  fpfh.setSearchMethod (tree2);
+
+  // Use all neighbors in a sphere of radius 5cm
+  // IMPORTANT: the radius used here has to be larger than the radius used to estimate the surface normals!!!
+  fpfh.setRadiusSearch (0.1);
+
+  // Compute the features
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr fpfhs(new pcl::PointCloud<pcl::FPFHSignature33>);
+  fpfh.compute (*fpfhs);
+  return fpfhs;
+}
+
+void Segmentation::fitPointCloudFpfh(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud,
+                                 boost::shared_ptr<set<int> >  subcloudIndices,
+                                 const FittingParams& fp,
+                                 bool isInitialSet, Vector3f initialXYZ, 
+                                 Vector3f initialYPR,
+                                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr modelcloud,
+                                 Vector3f& xyz, Vector3f& ypr,
+                                 vector<pcl::PointCloud<pcl::PointXYZRGB> >& clouds)
+{
+
+  // subsample
+  PointCloud<PointXYZRGB>::Ptr subcloud = subSampleCloud(extractAndSmooth(cloud, subcloudIndices), 0.05);
+  PointCloud<PointXYZRGB>::Ptr submodelcloud = subSampleCloud(modelcloud, 0.05);
+
+  // create guess matrix
+  Matrix4f guess = Matrix4f::Identity();
+  cout << "Initial guess XYZYPR: " << initialXYZ.transpose() << " " 
+       << initialYPR.transpose() << endl;
+  if(isInitialSet){
+    Matrix3f rot = ypr2rot(initialYPR);
+    guess.block<3,3>(0,0) = rot;
+    guess(0,3) = initialXYZ[0];
+    guess(1,3) = initialXYZ[1];
+    guess(2,3) = initialXYZ[2];
+  }
+
+  // compute fpfh
+  cout << "computing cloud fpfh\n";
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr cloudFpfh = computeFpfh(subcloud);
+  cout << "computing model fpfh\n";
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr modelFpfh = computeFpfh(submodelcloud);  //TODO only once
+  cout << "Done\n";
+
+  SampleConsensusInitialAlignment<pcl::PointXYZRGB, pcl::PointXYZRGB, pcl::FPFHSignature33> scia;
+  scia.setInputCloud(submodelcloud);
+  scia.setSourceFeatures(modelFpfh);
+  scia.setInputTarget(subcloud);
+  scia.setTargetFeatures(cloudFpfh);
+
+  pcl::PointCloud<pcl::PointXYZRGB> registration_output;
+  cout << "Aligning...\n";
+  scia.align (registration_output, guess);
+  cout << "Done.\n";
+  Matrix4f transformation = scia.getFinalTransformation();
  
+  Matrix3f rot = transformation.block<3,3>(0,0);
+  xyz = transformation.block<3,1>(0,3);
+  ypr = rot2ypr(rot);
+  
+  cout << "Matrix:\n" << transformation << endl;
+  cout << "xyz_ypr: " << xyz.transpose() << " " << ypr.transpose() << endl;
+      
+}
+
 /* calculates bounding box, center, and orientation of plane given theta
  * Rotates points to XY plane finds bounds and center, rotates center back to original rotation frame
  */
