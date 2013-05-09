@@ -140,8 +140,8 @@ public:
 
       // constants
       const int64_t curTime = drc::Clock::instance()->getCurrentTime();
-      const float resolutionX = 0.1;
-      const float resolutionY = 0.1;
+      const float resolutionX = 0.05;
+      const float resolutionY = 0.05;
       const Eigen::Vector3f minPt(-2, -5, -3);
       const Eigen::Vector3f maxPt(5, 5, 0.3);
       const float timeWindowSeconds = 5;
