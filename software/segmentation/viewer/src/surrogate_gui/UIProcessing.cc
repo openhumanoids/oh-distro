@@ -1029,8 +1029,7 @@ namespace surrogate_gui
 
       // TODO: support selected afforance for other objects
       if(prim!=CAR || otdf!="car"){
-        _surrogate_renderer.setWarningText("car is the only currently handled selected affordance.");
-        return;
+        _surrogate_renderer.setWarningText("Warning: initial posistion is currrently ignored for this shape.");
       }
     }
 
@@ -1090,6 +1089,17 @@ namespace surrogate_gui
 
 	void UIProcessing::handleAffordancePubButtonCylinder(const Segmentation::FittingParams& fp)
 	{
+    // retrieve initial pos from selected object if available
+    Vector3f initialXYZ, initialYPR;
+    bool isInitialSet = false;
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
+      isInitialSet = true;
+      convert3(selectedAff->aff.origin_xyz, initialXYZ);
+      convert3(selectedAff->aff.origin_rpy, initialYPR);
+      initialYPR.reverseInPlace();  //RPY to YPR
+    }
+
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  	  
@@ -1144,15 +1154,34 @@ namespace surrogate_gui
 	  affordanceMsg.aff.nstates = 0;
           affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
-	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
-	  cout << "\n ***published \n" << endl;
+    cout << "\n about to publish" << endl;
+    if(selectedAff){
+      affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
+      affordanceMsg.aff.uid = selectedAff->aff.uid;
+      _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
+    }else{
+      affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
+	    _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+    }
+    cout << "\n ***published \n" << endl;
 	  
 	  return;
 	}
 
 	void UIProcessing::handleAffordancePubButtonSphere(const Segmentation::FittingParams& fp)
 	{
+
+    // retrieve initial pos from selected object if available
+    Vector3f initialXYZ, initialYPR;
+    bool isInitialSet = false;
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
+      isInitialSet = true;
+      convert3(selectedAff->aff.origin_xyz, initialXYZ);
+      convert3(selectedAff->aff.origin_rpy, initialYPR);
+      initialYPR.reverseInPlace();  //RPY to YPR
+    }
+
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  
@@ -1195,15 +1224,34 @@ namespace surrogate_gui
 	  affordanceMsg.aff.nstates = 0;
           affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
-	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
-	  cout << "\n ***published \n" << endl;
+    cout << "\n about to publish" << endl;
+    if(selectedAff){
+      affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
+      affordanceMsg.aff.uid = selectedAff->aff.uid;
+      _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
+    }else{
+      affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
+	    _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+    }
+    cout << "\n ***published \n" << endl;
 	  
 	  return;
 	}
 
 	void UIProcessing::handleAffordancePubButtonCircle3d(const Segmentation::FittingParams& fp)
 	{
+
+    // retrieve initial pos from selected object if available
+    Vector3f initialXYZ, initialYPR;
+    bool isInitialSet = false;
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
+      isInitialSet = true;
+      convert3(selectedAff->aff.origin_xyz, initialXYZ);
+      convert3(selectedAff->aff.origin_rpy, initialYPR);
+      initialYPR.reverseInPlace();  //RPY to YPR
+    }
+
 	  //todo: map_utime, map_id, object_id
 	  drc::affordance_plus_t affordanceMsg;
 	  	  
@@ -1255,9 +1303,16 @@ namespace surrogate_gui
 	  affordanceMsg.aff.nstates = 0;
           affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
 	  
-	  cout << "\n about to publish" << endl;
-	  _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
-	  cout << "\n ***published \n" << endl;
+    cout << "\n about to publish" << endl;
+    if(selectedAff){
+      affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
+      affordanceMsg.aff.uid = selectedAff->aff.uid;
+      _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
+    }else{
+      affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
+	    _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+    }
+    cout << "\n ***published \n" << endl;
 	  
 	  return;
 	}
@@ -1265,6 +1320,17 @@ namespace surrogate_gui
 	void UIProcessing::handleAffordancePubButtonPlane(const Segmentation::FittingParams& fp)
 	{
 	  //todo: map_utime, map_id, object_id
+
+    // retrieve initial pos from selected object if available
+    Vector3f initialXYZ, initialYPR;
+    bool isInitialSet = false;
+    AffPlusPtr selectedAff = getSelectedAffordance();
+    if(selectedAff){
+      isInitialSet = true;
+      convert3(selectedAff->aff.origin_xyz, initialXYZ);
+      convert3(selectedAff->aff.origin_rpy, initialYPR);
+      initialYPR.reverseInPlace();  //RPY to YPR
+    }
 
           //geometrical properties
 	  ObjectPointsPtr currObj = getCurrentObjectSelected();
@@ -1332,7 +1398,14 @@ namespace surrogate_gui
             affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; // added by mfallon march 2012
             
             cout << "\n about to publish" << endl;
-            _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+            if(selectedAff){
+              affordanceMsg.aff.aff_store_control = drc::affordance_t::UPDATE;
+              affordanceMsg.aff.uid = selectedAff->aff.uid;
+              _lcmCpp->publish("AFFORDANCE_PLUS_TRACK", &affordanceMsg);
+            }else{
+              affordanceMsg.aff.aff_store_control =drc::affordance_t::NEW; 
+	            _lcmCpp->publish("AFFORDANCE_FIT", &affordanceMsg);
+            }
             cout << "\n ***published \n" << endl;
 	  }
 
