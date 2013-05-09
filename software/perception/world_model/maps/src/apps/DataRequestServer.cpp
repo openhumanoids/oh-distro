@@ -117,7 +117,8 @@ struct Worker {
     msg.naffs = affordances.size();
     for (int i = 0; i < affordances.size(); ++i) {
       drc::affordance_plus_t affPlus;
-      affordances[i]->toMsg(&affPlus);
+      affPlus.npoints = affPlus.ntriangles = 0;
+      affordances[i]->aff->toMsg(&affPlus.aff);
       affPlus.aff.aff_store_control = drc::affordance_t::UPDATE;
       msg.affs_plus.push_back(affPlus);
     }
