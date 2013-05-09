@@ -162,8 +162,8 @@ on_bw_stats(const lcm_recv_buf_t * buf, const char *channel, const drc_bandwidth
 
   double elapsed_time = (double) (msg->utime - msg->previous_utime)/1E6 ;
   // 1024 is also used in bot spy:
-  double bw_base2robot =  msg->bytes_to_robot /(1024.0* elapsed_time );
-  double bw_robot2base=  msg->bytes_from_robot / (1024.0* elapsed_time );
+  double bw_base2robot =  0; 
+  double bw_robot2base=  0; 
   
   bot_gl_scrollplot2d_add_point (self->bandwidth_plot, "To Robot", 
                                 msg->utime * 1.0e-6,
