@@ -1287,7 +1287,7 @@ namespace surrogate_gui
     convert3(Vector3f(roll,pitch,yaw), affordanceMsg.aff.origin_rpy);
     convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_xyz); 
     convert3(Vector3f(0,0,0), affordanceMsg.aff.bounding_rpy);
-    convert3(Vector3f(radius*2,radius*2,0), affordanceMsg.aff.bounding_lwh); 
+    convert3(Vector3f(radius*2,radius*2,0.01), affordanceMsg.aff.bounding_lwh); 
 
 	  //inliers
           affordanceMsg.npoints = inliers.size();
