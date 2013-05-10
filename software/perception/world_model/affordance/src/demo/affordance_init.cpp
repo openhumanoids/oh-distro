@@ -291,7 +291,6 @@ void Pass::doDemo(int which_publish, bool add_filename){
     // 1.0 -6.3 1.2 1.571 0.1 1.212<
   }
 
-  
   if ((which_publish==7)){ // only send on its own
     int uid1 = 15;
     

@@ -5,6 +5,7 @@ m.utime_sim =int64(utime_sim) ;
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish(channel, m); 
 
+% DRCController.m
 %          send_utime_two('LATENCY_CONTROL_B', (tt+t_offset)*1E6, bot_timestamp_now);                
 %          u = obj.controller.output(tt,[],vertcat(input_frame_data{:}));
 %          send_utime_two('LATENCY_CONTROL_C', (tt+t_offset)*1E6, bot_timestamp_now);                
