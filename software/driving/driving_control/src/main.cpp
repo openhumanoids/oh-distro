@@ -817,9 +817,8 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
                 double car_stop[2] = {car_e_to_local.trans_vec[0], car_e_to_local.trans_vec[1]};
                 
                 //
-                fprintf(stderr, "LCMGL\n");
-                bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
-                bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
+                
+               
                 
                 double collision_point[2];
 
@@ -840,6 +839,9 @@ find_goal_enhanced_arc (occ_map::FloatPixelMap *fmap, state_t *self)
                             x, y, car_start[0], car_start[1], car_stop[0], car_stop[1]);
                     break;
                 }
+
+                bot_lcmgl_vertex3f(lcmgl, car_start[0], car_start[1], 0);
+                bot_lcmgl_vertex3f(lcmgl, car_stop[0], car_stop[1], 0);
 
                 last_xy[0] = x;
                 last_xy[1] = y;
