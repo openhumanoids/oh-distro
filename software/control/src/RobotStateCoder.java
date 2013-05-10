@@ -131,13 +131,19 @@ public class RobotStateCoder implements drake.util.LCMCoder
         q[3] = msg.origin_position.rotation.z;
         double[] rpy = drake.util.Transform.quat2rpy(q);
 
+	double[] omega = new double[3];
+	omega[0] = msg.origin_twist.angular_velocity.x;
+	omega[1] = msg.origin_twist.angular_velocity.y;
+	omega[2] = msg.origin_twist.angular_velocity.z;
+	double[] rpydot = drake.util.Transform.angularvel2rpydot(rpy,omega);
+
         j = m_floating_joint_map.get("base_roll");
         if (j!=null) {
           index = j.intValue();
           fdata.val[index] = rpy[0];
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
-          fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.x;
+          fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[0];
         }
 
         j = m_floating_joint_map.get("base_pitch");
@@ -146,7 +152,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
           fdata.val[index] = rpy[1];
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
-          fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.y;
+          fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[1];
         }
 
         j = m_floating_joint_map.get("base_yaw");
@@ -155,7 +161,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
           fdata.val[index] = rpy[2];
           if (fdata.val[index] > Math.PI)
             fdata.val[index] -= 2*Math.PI;
-          fdata.val[index+m_num_joints+m_num_floating_joints] = msg.origin_twist.angular_velocity.z;
+          fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[2];
         }
 
         return fdata;
@@ -200,25 +206,30 @@ public class RobotStateCoder implements drake.util.LCMCoder
         }
 
         double[] rpy = new double[3];
+	double[] rpydot = new double[3];
         index = m_floating_joint_map.get("base_roll").intValue();
-        rpy[0] = (float) d.val[index];
-        msg.origin_twist.angular_velocity.x = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        rpy[0] = d.val[index];
+        rpydot[0] = d.val[index+m_num_joints+m_num_floating_joints];
 
         index = m_floating_joint_map.get("base_pitch").intValue();
-        rpy[1] = (float) d.val[index];
-        msg.origin_twist.angular_velocity.y = (float) d.val[index+m_num_joints+m_num_floating_joints]; 
+        rpy[1] = d.val[index];
+        rpydot[1] = d.val[index+m_num_joints+m_num_floating_joints]; 
 
         index = m_floating_joint_map.get("base_yaw").intValue();
-        rpy[2] = (float) d.val[index];
-        msg.origin_twist.angular_velocity.z = (float) d.val[index+m_num_joints+m_num_floating_joints];
+        rpy[2] = d.val[index];
+        rpydot[2] = d.val[index+m_num_joints+m_num_floating_joints];
 
         // covert rpy to quaternion 
         double[] q = drake.util.Transform.rpy2quat(rpy);
-
         msg.origin_position.rotation.w = (float) q[0];
         msg.origin_position.rotation.x = (float) q[1];
         msg.origin_position.rotation.y = (float) q[2];
         msg.origin_position.rotation.z = (float) q[3];
+
+	double[] omega = drake.util.Transform.rpydot2angularvel(rpy,rpydot);
+	msg.origin_twist.angular_velocity.x = (float) omega[0];
+	msg.origin_twist.angular_velocity.y = (float) omega[1];
+	msg.origin_twist.angular_velocity.z = (float) omega[2];
       }
       
       return msg;
