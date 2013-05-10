@@ -25,6 +25,10 @@
 using namespace pcl;
 using namespace pcl::io;
 
+char* pHome = getenv("HOME");  
+string home = string(pHome);
+
+
 using namespace std;
 class Pass{
   public:
@@ -34,11 +38,11 @@ class Pass{
     }    
     
 
-    void doDemo(int which_publish);
+    void doDemo(int which_publish, bool add_filename);
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
-    drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
+    drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid, bool add_filename);
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     
     AffordanceUtils affutils;
@@ -85,7 +89,7 @@ void moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
 }
 
 
-drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
+drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid, bool add_filename){ 
   drc::affordance_plus_t p;
   
   drc::affordance_t a;
@@ -106,13 +110,20 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
 
   p.aff = a;
   
-  std::vector< std::vector< float > > points;
-  std::vector< std::vector< int > > triangles;
-  affutils.getModelAsLists(filename, points, triangles);
-  p.points =points;
-  p.npoints=points.size(); 
-  p.triangles = triangles;
-  p.ntriangles =p.triangles.size();
+  if (add_filename){
+    p.aff.modelfile = filename;
+    p.npoints=0; 
+    p.ntriangles =0;
+  }else{
+    string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+    std::vector< std::vector< float > > points;
+    std::vector< std::vector< int > > triangles;
+    affutils.getModelAsLists(filename_full, points, triangles);
+    p.points =points;
+    p.triangles = triangles;
+    p.npoints=points.size(); 
+    p.ntriangles =p.triangles.size();
+  }
   
   return p;
 }
@@ -147,9 +158,11 @@ drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string fi
  
   p.aff = a;
   
+  
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  affutils.getModelAsLists(filename, points, triangles);
+  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
   p.triangles = triangles;
@@ -185,7 +198,8 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  affutils.getModelAsLists(filename, points, triangles);
+  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
   p.triangles = triangles;
@@ -197,11 +211,7 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
 
 
 
-void Pass::doDemo(int which_publish){
-  char* pHome;
-  pHome = getenv("HOME");  
-  string home = string(pHome);
-  cout << home << "\n";  
+void Pass::doDemo(int which_publish, bool add_filename){
   
   if ((which_publish==1) || (which_publish==0)){
     int uid0 = 12;
@@ -209,7 +219,7 @@ void Pass::doDemo(int which_publish){
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = string(home+ "/drc/software/models/otdf/drill.ply");
+    string filename0 = "drill.ply";
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
     lcm_->publish("AFFORDANCE_FIT",&a0);
@@ -221,7 +231,7 @@ void Pass::doDemo(int which_publish){
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = string(home+ "/drc/software/models/otdf/drill.ply");
+    string filename0 = "drill.ply"; //string(home+ "/drc/software/models/otdf/drill.ply");
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
     lcm_->publish("AFFORDANCE_FIT",&a0);
@@ -230,7 +240,7 @@ void Pass::doDemo(int which_publish){
   if ((which_publish==3) || (which_publish==0)){
     int uid1 = 14;
     std::vector<double> xyzrpy1 = {4.0 , -0.9 , 0.0 , 0. , 0 , -M_PI/2};  
-    string filename1 = string(home+ "/drc/software/models/otdf/car.pcd");
+    string filename1 = "car.pcd";
     drc::affordance_plus_t a1 = getCarAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     a1.aff.otdf_type = "car";
@@ -240,8 +250,8 @@ void Pass::doDemo(int which_publish){
   if ((which_publish==4) || (which_publish==0)){
     int uid1 = 15;
     std::vector<double> xyzrpy1 = {4.18 , 3.65 , 1.2 , -M_PI/2 , 0 , 0};  
-    string filename1 = string(home+ "/drc/software/models/otdf/standpipe.ply");
-    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    string filename1 = "standpipe.ply";
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1, add_filename );
     a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.2; 
     a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
@@ -258,8 +268,8 @@ void Pass::doDemo(int which_publish){
   if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
     std::vector<double> xyzrpy1 = {4.79 , 2.29 , 1.11 , M_PI/2 , 0 , 0};  
-    string filename1 = string(home+ "/drc/software/models/otdf/firehose.ply");
-    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    string filename1 = "firehose.ply";
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 , add_filename );
     a1.aff.bounding_lwh[0]=0.16;       a1.aff.bounding_lwh[1]=0.16;      a1.aff.bounding_lwh[2]=0.3;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
     a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
@@ -269,8 +279,8 @@ void Pass::doDemo(int which_publish){
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
     std::vector<double> xyzrpy1 = {3.18, 3.65, 1.2, 0, -1.5707, 0};  
-    string filename1 = string(home+ "/drc/software/models/otdf/valve.ply");
-    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
+    string filename1 = "valve.ply";
+    drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1, add_filename  );
     a1.aff.bounding_lwh[0]=0.34;       a1.aff.bounding_lwh[1]=0.14;      a1.aff.bounding_lwh[2]=0.34;
     a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
     a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
@@ -281,6 +291,43 @@ void Pass::doDemo(int which_publish){
     // 1.0 -6.3 1.2 1.571 0.1 1.212<
   }
 
+  
+  if ((which_publish==7)){ // only send on its own
+    int uid1 = 15;
+    
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =18;
+    a.otdf_type ="cylinder";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("radius");
+    a.params.push_back(0.100000);
+    a.param_names.push_back("length");
+    a.params.push_back(0.080000);
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy = {4.18 , 3.695 , 1.2 , -M_PI/2 , 0 , 0};  
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+    a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+    
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    a1.npoints=0; 
+    a1.ntriangles =0;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }  
+  
 /*  
   drc::affordance_plus_collection_t aplus_coll;
   aplus_coll.affs_plus.push_back( a0 );
@@ -302,10 +349,13 @@ int main( int argc, char** argv ){
   std::cout << "manip valve is 6\n";      
 
   int which_publish=0;
+  bool add_filename=false;
   ConciseArgs opt(argc, (char**)argv);
+  opt.add(add_filename, "f", "add_filename","add_filename [send only filename or send pts/mesh]");
   opt.add(which_publish, "e", "which_publish","which_publish [0 is all]");
   opt.parse();
   std::cout << "which_publish: " << which_publish << "\n";    
+  std::cout << "add_filename: " << add_filename << "\n";    
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -314,6 +364,6 @@ int main( int argc, char** argv ){
   
   Pass app(lcm);
   cout << "Demo Ready" << endl << "============================" << endl;
-  app.doDemo(which_publish);
+  app.doDemo(which_publish, add_filename);
   return 0;
 }
