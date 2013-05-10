@@ -6,7 +6,7 @@ struct driving_controller_status_t
 
   int8_t status; 
   int64_t time_to_drive; 
-  
+ 
   const int8_t IDLE = 0;
   const int8_t DRIVING_ROAD_ONLY = 1;
   const int8_t DRIVING_TLD_AND_ROAD = 2;

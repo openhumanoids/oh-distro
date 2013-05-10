@@ -116,6 +116,9 @@ typedef struct _state_t {
     double error_last; 
     
     double goal_distance;
+    
+    double actual_goal_distance;
+    double goal_heading;
     double kp_steer;
     double kd_steer;
 
@@ -139,6 +142,8 @@ void publish_system_state_values(state_t *self){
     msg.throttle_value = self->throttle_val;
     msg.brake_value = self->brake_val;
     msg.hand_steer = self->hand_steer;
+    msg.goal_distance = self->actual_goal_distance;
+    msg.goal_heading_angle = self->goal_heading;
     drc_driving_controller_values_t_publish(self->lcm, "DRIVING_CONTROLLER_COMMAND_VALUES", &msg);
 }
 
@@ -1061,8 +1066,6 @@ on_controller_timer (gpointer data)
     
     // Perform emergency stop if there isn't a sufficient amount of terrain
     // classified as road in front of the vehicle
-    
-
 
     int turn_only = 0;
     if((self->utime - self->drive_start_time)/1.0e6 < TIME_TO_TURN){
@@ -1266,7 +1269,10 @@ on_controller_timer (gpointer data)
 	bot_trans_apply_trans_to(&body_to_car, &goal_to_body, &goal_to_car);
 
         double heading_error = bot_fasttrig_atan2 (goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);  // xyz_goal_car[1], xyz_goal_car[0]);
-        
+
+        self->goal_heading = heading_error;
+        self->actual_goal_distance = hypot(goal_to_car.trans_vec[1], goal_to_car.trans_vec[0]);
+
         fprintf(stderr, "Gains => p : %f d : %f \n\tComponents => p_c : %f d_c : %f\n", self->kp_steer, self->kd_steer, 
                 self->kp_steer * heading_error, self->kd_steer * (heading_error - self->error_last));
 

@@ -4,6 +4,9 @@ struct driving_controller_values_t
 {
        int64_t utime;
        double throttle_value;
+       //we can prob ignore sending the brake value 
        double brake_value;
        double hand_steer;
+       double goal_heading_angle; 
+       double goal_distance;
 }

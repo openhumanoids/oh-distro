@@ -319,12 +319,31 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         glPushMatrix();
         glTranslatef(car_to_local.trans_vec[0] , car_to_local.trans_vec[1] , 0.05);
         glRotatef(rpy_car[2]*180/M_PI , 0, 0, 1.0);
-        glColor3f(0,1,1);
 
+        double goal_heading = self->controller_values->goal_heading_angle;
+        double goal_distance = self->controller_values->goal_distance;
+
+        double gs, gc;
+        bot_fasttrig_sincos(goal_heading, &gs, &gc);
+        double gx = goal_distance * gc;
+        double gy = goal_distance * gs;
+        
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        glColor3f(1,0,0);
+
+        glPushMatrix();
+        glTranslatef(gx , gy , 0.05);
+        glLineWidth(5.0);
+        bot_gl_draw_circle(0.3);
+        glPopMatrix();
+        
+        
+        glColor3f(0,1,1);
+
+        
         double x = 0;
         double y = 0;
             
@@ -1254,7 +1273,6 @@ static void on_controller_values(const lcm_recv_buf_t * buf, const char *channel
     if(self->controller_values)
         drc_driving_controller_values_t_destroy(self->controller_values);
     self->controller_values = drc_driving_controller_values_t_copy(msg);
-
 
     bot_viewer_request_redraw(self->viewer);
 }
