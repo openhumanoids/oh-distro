@@ -239,10 +239,10 @@ void Pass::doDemo(int which_publish){
   
   if ((which_publish==4) || (which_publish==0)){
     int uid1 = 15;
-    std::vector<double> xyzrpy1 = {-1.82 , 3.65 , 1.2 , -M_PI/2 , 0 , 0};  
+    std::vector<double> xyzrpy1 = {4.18 , 3.65 , 1.2 , -M_PI/2 , 0 , 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/standpipe.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
-    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    a1.aff.bounding_lwh[0]=0.5;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=1.0;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
 /*  if ((which_publish==5) || (which_publish==0)){
@@ -255,7 +255,7 @@ void Pass::doDemo(int which_publish){
   }*/
   if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
-    std::vector<double> xyzrpy1 = {-1.2 , 2.3 , 1.05 , M_PI/2 , 0 , 0};  
+    std::vector<double> xyzrpy1 = {4.8 , 2.3 , 1.05 , M_PI/2 , 0 , 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/firehose.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
@@ -264,11 +264,13 @@ void Pass::doDemo(int which_publish){
   
   if ((which_publish==6) || (which_publish==0)){
     int uid1 = 17;
-    std::vector<double> xyzrpy1 = {-2.82, 3.65, 1.2, 0, -1.5707, 0};  
+    std::vector<double> xyzrpy1 = {3.18, 3.65, 1.2, 0, -1.5707, 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/valve.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
+    // 3.17
+    //valve
     
     // 1.0 -6.3 1.2 1.571 0.1 1.212<
   }
@@ -290,6 +292,8 @@ int main( int argc, char** argv ){
   std::cout << "qual2 drill is 2\n";    
   std::cout << "manip car is 3\n";    
   std::cout << "manip standpipe is 4\n";      
+  std::cout << "manip firehose is 5\n";      
+  std::cout << "manip valve is 6\n";      
 
   int which_publish=0;
   ConciseArgs opt(argc, (char**)argv);
