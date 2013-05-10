@@ -294,6 +294,9 @@ namespace renderer_affordances_gui_utils
           self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
           self->otdf_instance_hold._otdf_instance->update();
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+          self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
+          self->otdf_instance_hold._gl_object->points = it->second._gl_object->points;
+          self->otdf_instance_hold._gl_object->isShowMeshSelected = it->second._gl_object->isShowMeshSelected;
           self->selection_hold_on=true;
         }
         
@@ -326,6 +329,9 @@ namespace renderer_affordances_gui_utils
           self->otdf_instance_hold._gl_object = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(self->otdf_instance_hold._otdf_instance,self->otdf_instance_hold._collision_detector,true,"otdf_instance_hold"));
           self->otdf_instance_hold._otdf_instance->update();
           self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance);
+          self->otdf_instance_hold._gl_object->triangles = it->second._gl_object->triangles;
+          self->otdf_instance_hold._gl_object->points = it->second._gl_object->points;
+          self->otdf_instance_hold._gl_object->isShowMeshSelected = it->second._gl_object->isShowMeshSelected;
           self->selection_hold_on=true;
         }
         

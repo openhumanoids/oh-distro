@@ -147,8 +147,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       // if no modelfile, copy points and triangles
       if(msg->aff.modelfile.empty()){
         // copy triangles and points
-        convertVec3(msg->points, it->second.points);
-        convertVec3(msg->triangles, it->second.triangles);
+        convertVec3(msg->points, it->second._gl_object->points);
+        convertVec3(msg->triangles, it->second._gl_object->triangles);
       }
 
       // copy bounding box
@@ -165,8 +165,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
         AffordanceUtils affutils;
         affutils.getModelAsLists(file, points, triangles);
         
-        convertVec3(points, it->second.points);
-        convertVec3(triangles, it->second.triangles);
+        convertVec3(points, it->second._gl_object->points);
+        convertVec3(triangles, it->second._gl_object->triangles);
 
         it->second.modelfile = msg->aff.modelfile;
       }

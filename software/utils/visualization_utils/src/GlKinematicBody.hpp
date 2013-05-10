@@ -121,6 +121,11 @@ class GlKinematicBody
     std::map<std::string, double> _jointlimit_max;
     std::vector<KDL::Frame> _desired_body_motion_history;
     
+    // mesh for drawing
+    std::vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3i> triangles;
+    bool isShowMeshSelected;
+
     // state can be set via robot_state_t, or urdf::Model,  or affordance_state_t,  or otdf::ModelInterface;
     void set_state(const drc::robot_state_t &msg);
     void set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg); 
@@ -170,6 +175,7 @@ class GlKinematicBody
     
     void draw_body (float (&c)[3], float alpha)
     {
+
       //glColor3f(c[0],c[1],c[2]);
       glColor4f(c[0],c[1],c[2],alpha);
       double t;
