@@ -80,6 +80,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
     goal.timeout = 0;
     goal.step_speed = 0.5;
     goal.follow_spline = true;
+    goal.ignore_terrain = false;
     goal.allow_optimization = false;
     goal.is_new_goal = true;
     goal.right_foot_lead = true;

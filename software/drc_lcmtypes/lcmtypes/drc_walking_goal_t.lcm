@@ -24,6 +24,8 @@ struct walking_goal_t
 
 	boolean follow_spline;
 
+	boolean ignore_terrain;
+
 	// whether to allow optimization of the foostep plan
 	boolean allow_optimization;
 

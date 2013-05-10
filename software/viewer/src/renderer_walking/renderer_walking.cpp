@@ -35,6 +35,7 @@
 #define PARAM_GOAL_SEND "Place New Walking Goal"
 #define PARAM_GOAL_UPDATE "Update Current Goal"
 #define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
+#define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
 #define PARAM_LEADING_FOOT "Leading foot"
 // #define PARAM_ALLOW_OPTIMIZATION "Allow optimization"
 // #define PARAM_STEP_TIME "Time per step (s)"
@@ -161,6 +162,7 @@ typedef struct _RendererWalking {
 
   bool has_walking_msg;
   bool follow_spline;
+  bool ignore_terrain;
   bool allow_optimization;
   drc_walking_goal_t last_walking_msg;
   
@@ -372,6 +374,7 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler,
       // msg.time_per_step = self->time_per_step_ns;
       msg.step_speed = self->step_speed;
       msg.follow_spline = self->follow_spline;
+      msg.ignore_terrain = self->ignore_terrain;
       if (self->leading_foot == LEADING_FOOT_RIGHT) {
         msg.right_foot_lead = true;
       } else {
@@ -560,49 +563,60 @@ static void update_heightmap (RendererWalking *self) {
 
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
-  bool msg_changed = false;
   RendererWalking *self = (RendererWalking*) user;
-  if (bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS) != self->max_num_steps) {
-    msg_changed = true;
-    self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
-  }
-  if (bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS) != self->min_num_steps) {
-    msg_changed = true;
-    self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
-  }
-
-  self->last_walking_msg.step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
-  self->step_speed = self->last_walking_msg.step_speed;
-  // int64_t new_step_time = (int64_t)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
-  // if (new_step_time != self->time_per_step_ns) {
-  //   msg_changed = true;
-  //   self->time_per_step_ns = new_step_time;
-  // }
-
+  self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
+  self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
+  self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
   self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
   self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
-  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE) != self->follow_spline) {
-    msg_changed = true;
-    self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
-  }
+  self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
+  self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
+  self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
 
-  // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
+
+  // if (bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS) != self->max_num_steps) {
   //   msg_changed = true;
-  //   self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
+  //   self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
+  // }
+  // if (bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS) != self->min_num_steps) {
+  //   msg_changed = true;
+  //   self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   // }
 
-  if (self->leading_foot != (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT)) {
-    msg_changed = true;
-    self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
-  }
+  // self->last_walking_msg.step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
+  // self->step_speed = self->last_walking_msg.step_speed;
+  // // int64_t new_step_time = (int64_t)(bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_TIME) * 1e9);
+  // // if (new_step_time != self->time_per_step_ns) {
+  // //   msg_changed = true;
+  // //   self->time_per_step_ns = new_step_time;
+  // // }
 
-  if (msg_changed) {
+  // self->lidar_rate = bot_gtk_param_widget_get_double(self->pw, PARAM_LIDAR_RATE);
+  // self->heightmap_res =(heightmap_res_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_HEIGHTMAP_RES);
+  // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE) != self->follow_spline) {
+  //   msg_changed = true;
+  //   self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
+  // }
+
+  // // if (bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION) != self->allow_optimization) {
+  // //   msg_changed = true;
+  // //   self->allow_optimization = bot_gtk_param_widget_get_bool(self->pw, PARAM_ALLOW_OPTIMIZATION);
+  // // }
+
+  // if (self->leading_foot != (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT)) {
+  //   msg_changed = true;
+  //   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
+  // }
+
+  // if (msg_changed) {
     if (self->has_walking_msg) {
       self->last_walking_msg.utime = self->robot_utime; //bot_timestamp_now();
       self->last_walking_msg.max_num_steps = self->max_num_steps;
       self->last_walking_msg.min_num_steps = self->min_num_steps;
       self->last_walking_msg.is_new_goal = false;
       self->last_walking_msg.follow_spline = self->follow_spline;
+      self->last_walking_msg.ignore_terrain = self->ignore_terrain;
+      self->last_walking_msg.step_speed = self->step_speed;
       self->last_walking_msg.allow_optimization = self->allow_optimization;
       // self->last_walking_msg.time_per_step = self->time_per_step_ns;
       if (self->leading_foot == LEADING_FOOT_RIGHT) {
@@ -611,7 +625,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         self->last_walking_msg.right_foot_lead = false;
       }
     }
-  }
+  // }
 
   if(!strcmp(name, PARAM_GOAL_UPDATE)) {
     fprintf(stderr, "\nClicked Update Walking Goal\n");
@@ -692,6 +706,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   self->has_walking_msg = false;
   self->follow_spline = true;
+  self->ignore_terrain = false;
   self->allow_optimization = false;
   // self->time_per_step_ns = 1.3e9;
   self->step_speed = 0.5; // m/s
@@ -713,8 +728,9 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   // bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_TIME, BOT_GTK_PARAM_WIDGET_SPINBOX, 1.0, 10, 0.1, ((double)self->time_per_step_ns) / 1e9);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.1, 2, 0.1, self->step_speed);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
-  // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ALLOW_OPTIMIZATION, 0, NULL);
+  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
   bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
+  bot_gtk_param_widget_set_bool(self->pw, PARAM_IGNORE_TERRAIN, self->ignore_terrain);
   
   bot_gtk_param_widget_add_separator(self->pw, "Other goals and requests");
   bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND_LEFT_HAND, NULL);
