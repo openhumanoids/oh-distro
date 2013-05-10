@@ -106,6 +106,19 @@ bool ICPTracker::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
 
 
 void ICPTracker::boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, Eigen::Isometry3f pose){
+  if (boundbox_lower_left_(0) == boundbox_upper_right_(0) ){
+    std::cout <<  "boundingBoxFilter() box is degenerate [0]\n";
+    exit(-1);
+  }
+  if (boundbox_lower_left_(1) == boundbox_upper_right_(1) ){
+    std::cout <<  "boundingBoxFilter() box is degenerate [1]\n";
+    exit(-1);
+  }  
+  if (boundbox_lower_left_(2) == boundbox_upper_right_(2) ){
+    std::cout <<  "boundingBoxFilter() box is degenerate [2]\n";
+    exit(-1);
+  }
+  
   // Determine the bounding box in the world frame
   Eigen::Isometry3f bb_pose_world =  pose* boundingbox_pose_;
   

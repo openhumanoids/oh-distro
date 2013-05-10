@@ -53,6 +53,7 @@
 #include <trackers/histogram-tracker.hpp>
 #include <trackers/icp-tracker.hpp>
 
+#include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <affordance/AffordanceUtils.hpp>
 
 using namespace std;
@@ -158,6 +159,7 @@ class Pass{
     drc::affordance_t last_affordance_msg_; // The last update of the affordance msg:
     void publishUpdatedAffordance();
     AffordanceUtils affutils;    
+    boost::shared_ptr<rgbd_primitives>  prim_;
     
     int counter_;    
     int64_t last_utime_;    
@@ -660,24 +662,58 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf,
     icp_tracker_->setBoundingBox (boundbox_lower_left, boundbox_upper_right, boundbox_pose.cast<float>() );
     
     // 
+    std::map<string,double> am;
+    for (size_t j=0; j< a.aff.nparams; j++){
+      am[ a.aff.param_names[j] ] = a.aff.params[j];
+    }
+    string otdf_type = a.aff.otdf_type;
+    Eigen::Isometry3d transform = affutils.getPose(a.aff.origin_xyz, a.aff.origin_rpy );
+    pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh());
+    
+    /// Create a reference point cloud to track
+    // 1. modelfile is provided read it and use it
+    // 2. if the points and/or triangles are provided use them
+    // 3. else if a simple object is provided sample it
     if (! a.aff.modelfile.empty() ){ // If a filename is specified, then read it and 
       std::cout << a.aff.modelfile << " is the filename\n";
+      string filename = getenv("HOME") + string("/drc/software/models/otdf/") + a.aff.modelfile;
       std::vector< std::vector< float > > points;
       std::vector< std::vector< int > > triangles;
-      string filename = getenv("HOME") + string("/drc/software/models/otdf/") + a.aff.modelfile;
       affutils.getModelAsLists(filename, points, triangles);
       if (triangles.size() ==0){
         object_cloud_ = affutils.getCloudFromAffordance(points);
       }else{
         object_cloud_ = affutils.getCloudFromAffordance(points, triangles, 50000.0 ); /// 
       }      
-    }else if (a.triangles.size() ==0){ // Extract a PCL point cloud from the points 
-      object_cloud_ = affutils.getCloudFromAffordance(a.points);
-    }else{ // Sample the mesh
-      // i don't know what a good number for sampling is here
-      // the current algorithm samples per triangle which will be undersampled
-      object_cloud_ = affutils.getCloudFromAffordance(a.points, a.triangles, 50000.0 ); /// 
-    }
+    }else if(a.points.size() >0 ) { // if we have points (and triangles) use them
+      if (a.triangles.size() ==0){ // Extract a PCL point cloud from the points 
+        object_cloud_ = affutils.getCloudFromAffordance(a.points);
+      }else{ // Sample the mesh
+        // i don't know what a good number for sampling is here
+        // the current algorithm samples per triangle which will be undersampled
+        object_cloud_ = affutils.getCloudFromAffordance(a.points, a.triangles, 50000.0 ); /// 
+      }
+    }else if (otdf_type == "box"){
+      cout  << affordance_id_ << " is a box\n";
+      transform.setIdentity();
+      mesh = prim_->getCubeWithTransform(transform,am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second);
+      object_cloud_ =prim_->sampleMesh(mesh, 50000.0); ///
+    }else if(otdf_type == "cylinder"){
+      cout  << affordance_id_ << " is a cylinder\n";
+      std::cout << a.aff.origin_xyz[0] << " " << a.aff.origin_xyz[1] << " " << a.aff.origin_xyz[2] << "\n";
+      transform.setIdentity();
+      mesh = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
+      object_cloud_ =prim_->sampleMesh(mesh, 50000.0); ///
+    }else if(otdf_type == "steering_cyl"){
+      cout  << affordance_id_ << " is a steering_cyl\n";
+      mesh = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
+      object_cloud_ =prim_->sampleMesh(mesh, 50000.0); ///
+    }else{
+      cout  << affordance_id_ << " is a not recognised ["<< otdf_type <<"] not supported yet\n";
+      exit(-1);
+    }    
+      
+      
     // cache the message and repeatedly update the position:
     last_affordance_msg_ = msg->affs_plus[aff_iter].aff;
 

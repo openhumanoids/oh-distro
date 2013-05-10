@@ -16,7 +16,7 @@ pods_use_pkg_config_packages(object-tracker   particle
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_math pointcloud_lcm
   opencv image_io_utils
-  major-plane-detect 
+  major-plane-detect rgbd_primitives
   color-tracker histogram-tracker icp-tracker
   stereo-bm
   affordance-utils
