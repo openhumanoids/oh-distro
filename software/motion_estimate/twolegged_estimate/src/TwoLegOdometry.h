@@ -12,22 +12,8 @@
 #include "TwoLegsEstimate_types.h"
 #include "SignalTap.hpp"
 #include "Filter.hpp"
+#include "LegOdo_Parameters.hpp"
 
-#define LOG_DATA_FILES
-
-#define SCHMITT_LEVEL	                  0.65
-#define TRANSITION_TIMEOUT             4000
-#define STANDING_TRANSITION_TIMEOUT   10000
-
-#define MIN_STANDING_FORCE			     50
-#define MIN_STANDING_FEET_X_SEP			  0.1
-#define LOADSPLIT_LEVEL				      0.75
-
-#define HIGH_FOOT_CONTACT_THRESH          5
-#define LOW_FOOT_CONTACT_THRESH           0
-#define FOOT_CONTACT_DELAY             5000
-
-#define VEL_SPIKE_ISOLATION_DELAY      6000
 
 namespace TwoLegs {
 

@@ -12,12 +12,8 @@
 //#include <stdio.h>
 //#include <inttypes.h>
 
-
 #include "LegOdometry_LCM_Handler.hpp"
 #include "QuaternionLib.h"
-
-
-
 
 using namespace TwoLegs;
 using namespace std;
@@ -37,7 +33,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	 _botparam = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
 	 _botframes= bot_frames_get_global(lcm_->getUnderlyingLCM(), _botparam);
 	
-	
+	first_get_transforms = true;
 	ratecounter = 0;
 	local_to_head_vel_diff.setSize(3);
 	local_to_head_acc_diff.setSize(3);
@@ -75,8 +71,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	  }
 	  
 	  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
-
-	
+	  
 	stillbusy = false;
 	
 	// This is for viewing results in the collections_viewer. check delete of new memory
@@ -99,7 +94,6 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
 	_viewer = new Viewer(lcm_viewer);
   }
 	//#endif
-  
     state_estimate_error_log.Open(_switches->log_data_files,"true_estimated_states.csv");
 	
 	return;
@@ -114,6 +108,8 @@ LegOdometry_Handler::~LegOdometry_Handler() {
 	delete _obj;
 	delete _obj_leg_poses;
 	delete _link;
+	
+	joint_lpfilters.clear();
 	
 	lcm_destroy(lcm_viewer); //destroy viewer memory at executable end
 	delete _viewer;
@@ -135,6 +131,13 @@ void LegOdometry_Handler::setupLCM() {
 	
 	
 	return;
+}
+
+void LegOdometry_Handler::InitializeFilters(const int num_filters) {
+	
+	for (int i=0;i<num_filters;i++) {
+		joint_lpfilters.push_back(LowPassFilter());
+	}
 }
 			
 
@@ -289,7 +292,7 @@ void LegOdometry_Handler::robot_state_handler(	const lcm::ReceiveBuffer* rbuf,
 		}
 		
 		//clock_gettime(CLOCK_REALTIME, &threequat);
-		if (ratecounter >= 5) {
+		if (ratecounter >= 1) {
 		  PublishEstimatedStates(msg);
 		  ratecounter=0;
 		}
@@ -710,8 +713,14 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     map<string, double> jointpos_in;
     map<string, drc::transform_t > cartpos_out;
     
-    for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-      jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+    if (first_get_transforms) {
+    	first_get_transforms = false;
+    	InitializeFilters((int)msg->num_joints);
+    }
+    
+    for (uint i=0; i< (uint) msg->num_joints; i++) { //cast to uint to suppress compiler warning
+      jointpos_in.insert(make_pair(msg->joint_name[i], joint_lpfilters.at(i).processSample(msg->joint_position[i])));
+    }
    
     if (!stillbusy) // not really required, as LCM only allows a single event, but doesn't hurt to leave it here. Maybe we see something of this in the future
     {
@@ -722,7 +731,7 @@ void LegOdometry_Handler::getTransforms(const drc::robot_state_t * msg, Eigen::I
     }
     else
     {
-    	std::cout << "JntToCart is still busy" << std::endl;
+    	std::cout << "JntToCart is still busy -- overrunning computational window" << std::endl;
     	// This should generate some type of error or serious warning
     }
     

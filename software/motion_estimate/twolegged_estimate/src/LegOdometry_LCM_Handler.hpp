@@ -81,7 +81,6 @@ private:
     BotParam* _botparam;
     BotFrames* _botframes;
 	
-	
 	int ratecounter;
 	
 	lcm_t * lcm_viewer; // using this one separately for displaying leg odometry results in the collections viewer
@@ -102,7 +101,8 @@ private:
 	ObjectCollection* _obj_leg_poses;
 	LinkCollection* _link;
 	
-	bool stillbusy;
+	volatile bool stillbusy;
+	volatile bool first_get_transforms;
 	int poseplotcounter;
 	int collectionindex;
 	bool firstpass;
@@ -121,6 +121,9 @@ private:
 	
 	LowPassFilter lpfilter[FILTER_ARR];
 	Filter* _filter[FILTER_ARR];
+	
+	std::vector<LowPassFilter> joint_lpfilters;
+	//std::vector<Filter*> _joint_filters;
 	
 	// TODO -- This must be removed and the actual valued from the LCM message should be used directly
 	enum { UNKNOWN, DIFF_SCHMITT_WITH_DELAY };
@@ -156,7 +159,7 @@ private:
 	void ParseFootForces(const drc::robot_state_t* msg, double &left_force, double &right_force);
 	// This function may move to a new class in the future. This is just the starting location for testing of the functionality
 	void DetermineLegContactStates(long utime, float left_z, float right_z);
-	
+	void InitializeFilters(const int num_filters);
 	
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
