@@ -12,6 +12,8 @@
 #include <urdf/model.h>
 #include <affordance/AffordanceState.h>
 
+#include <state/state_gfe.h>
+
 #include <authoring/constraint.h>
 #include <authoring/qt4_widget_constraint_editor.h>
 #include <authoring/qt4_widget_opengl_authoring.h>
@@ -26,18 +28,18 @@ namespace authoring {
     Qt4_Widget_Authoring& operator=( const Qt4_Widget_Authoring& other );
     inline Qt4_Widget_OpenGL_Authoring* qt4_widget_opengl_authoring( void ){ return _widget_opengl_authoring; };
 
-  private:
-    void create_msg(drc::action_sequence_t &action_sequence);
-  
   signals:
     void info_update( const QString& info );
     void time_min_update( double timeMin );
     void time_max_update( double timeMax );
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void state_gfe_update( state::State_GFE& stateGFE );
+    void drc_action_sequence_t_publish( const drc::action_sequence_t& msg );
 
   public slots:
     void update_info( const QString& info );
     void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void update_state_gfe( state::State_GFE& stateGFE );
 
   protected slots:
     void _push_button_grab_pressed( void );
@@ -48,6 +50,8 @@ namespace authoring {
     
 
   protected:
+    void _create_drc_action_sequence_t( drc::action_sequence_t& msg );
+  
     Qt4_Widget_OpenGL_Authoring * _widget_opengl_authoring;
     QTextEdit * _text_edit_info;
     QPushButton * _push_button_grab;
@@ -60,11 +64,13 @@ namespace authoring {
     urdf::Model _robot_model;
     std::vector< affordance::AffordanceState > _affordance_collection;
     std::vector< affordance::AffordanceState > _affordance_collection_ghost;
+    state::State_GFE _state_gfe;
+    state::State_GFE _state_gfe_ghost;
     std::vector< Constraint* > _constraints;
     std::vector< Qt4_Widget_Constraint_Editor* > _constraint_editors;
 
   private:
-
+    
   };
   std::ostream& operator<<( std::ostream& out, const Qt4_Widget_Authoring& other );
 }

@@ -126,7 +126,7 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
 
   if( _constraint != NULL ){
     _label_id->setText( QString::fromStdString( _constraint->id() ) );
-    if( _constraint->parent().first != NULL ){
+    if( _constraint->parent().first != shared_ptr< Link >() ){
       for( unsigned int i = 0; i < _robot_affordances.size(); i++ ){
         if( _robot_affordances[ i ].first->name == _constraint->parent().first->name ){
           if( _robot_affordances[ i ].second == _constraint->parent().second ){
@@ -134,12 +134,21 @@ Qt4_Widget_Constraint_Task_Space_Region_Editor( Constraint_Task_Space_Region * c
           }
         }
       }
+    } else {
+      if( !_robot_affordances.empty() ){
+        _constraint->parent().first = _robot_affordances.begin()->first;
+        _constraint->parent().second = _robot_affordances.begin()->second;
+      }
     }
     if( _constraint->child() != NULL ){
       for( unsigned int i = 0; i < _object_affordances.size(); i++ ){
         if( _object_affordances[ i ].getName() == _constraint->child()->getName() ){
           _combo_box_child->setCurrentIndex( i );
         }
+      }
+    } else {
+      if( !_object_affordances.empty() ){
+        _constraint->child() = &(*_object_affordances.begin());
       }
     }
     _double_spin_box_x_min->setValue( _constraint->ranges()[0].first );

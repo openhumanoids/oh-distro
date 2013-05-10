@@ -7,6 +7,8 @@
 #include <qt4/qt4_widget_opengl.h>
 
 #include <affordance/AffordanceState.h>
+#include <opengl/opengl_object_gfe.h>
+#include <state/state_gfe.h>
 
 #include <authoring/opengl_object_affordance_collection.h>
 
@@ -22,10 +24,14 @@ namespace authoring {
   public slots:
     void update_opengl_object_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_opengl_object_affordance_collection_ghost( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void update_opengl_object_gfe( state::State_GFE& stateGFE );
+    void update_opengl_object_gfe_ghost( state::State_GFE& stateGFE );
 
   protected:
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection;
     OpenGL_Object_Affordance_Collection _opengl_object_affordance_collection_ghost;
+    opengl::OpenGL_Object_GFE _opengl_object_gfe;
+    opengl::OpenGL_Object_GFE _opengl_object_gfe_ghost;
 
   private:
 

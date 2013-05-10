@@ -11,6 +11,8 @@
 
 #include <affordance/AffordanceState.h>
 
+#include <state/state_gfe.h>
+
 #include <authoring/qt4_widget_authoring.h>
 
 namespace authoring {
@@ -24,6 +26,10 @@ namespace authoring {
 
   signals:
     void affordance_collection_update( std::vector< affordance::AffordanceState >& affordanceCollection );
+    void state_gfe_update( state::State_GFE& stateGFE );
+
+  public slots:
+    void publish_drc_action_sequence_t( const drc::action_sequence_t& msg );
 
   protected slots:
     void _handle_lcm_timer_timeout( void );

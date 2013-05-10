@@ -29,7 +29,6 @@ namespace authoring {
     void info_update( const QString& info );
 
   public slots:
-//    void update_affordance_collection( std::vector< affordance::AffordanceState >& affordanceCollection );
     void update_time_min( double timeMin );
     void update_time_max( double timeMax );
 
@@ -43,7 +42,8 @@ namespace authoring {
   protected:
     Constraint *& _constraint;
     urdf::Model& _robot_model;
-    std::vector< affordance::AffordanceState >& _affordance_collection;
+    std::vector< std::pair< boost::shared_ptr< urdf::Link >, std::string > > _robot_affordances;
+    std::vector< affordance::AffordanceState >& _object_affordances;
     std::string _id;
     double _time_min;
     double _time_max;

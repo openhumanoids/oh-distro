@@ -4,6 +4,7 @@
 #include "authoring/qt4_widget_constraint_editor.h"
 
 using namespace std;
+using namespace boost;
 using namespace urdf;
 using namespace affordance;
 using namespace authoring;
@@ -16,7 +17,8 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
                               QWidget * parent ) : QWidget( parent ),
                                                     _constraint( constraint ),
                                                     _robot_model( robotModel ),
-                                                    _affordance_collection( affordanceCollection ),
+                                                    _robot_affordances(),
+                                                    _object_affordances( affordanceCollection ),
                                                     _id( id ),
                                                     _time_min( 0.0 ),
                                                     _time_max( 0.0 ),
@@ -28,6 +30,14 @@ Qt4_Widget_Constraint_Editor( Constraint *& constraint,
                                                     _label_time_start( new QLabel( "N/A", this ) ),
                                                     _label_time_end( new QLabel( "N/A", this ) ),
                                                     _constraint_editor_popup( NULL ) {
+  vector< shared_ptr< Link > > links;
+  _robot_model.getLinks( links );
+  for( vector< shared_ptr< Link > >::iterator it1 = links.begin(); it1 != links.end(); it1++ ){
+    for( map< string, shared_ptr< vector< shared_ptr< Collision > > > >::iterator it2 = (*it1)->collision_groups.begin(); it2 != (*it1)->collision_groups.end(); it2++ ){
+      _robot_affordances.push_back( pair< shared_ptr< Link >, std::string >( (*it1), it2->first ) );
+    }
+  }
+
   for( unsigned int i = 0; i < NUM_CONSTRAINT_TYPES; i++ ){
     _combo_box_type->addItem( QString::fromStdString( Constraint::constraint_type_t_to_std_string( ( constraint_type_t )( i ) ) ) );
   }
@@ -77,7 +87,7 @@ Qt4_Widget_Constraint_Editor::
 Qt4_Widget_Constraint_Editor( const Qt4_Widget_Constraint_Editor& other ) : QWidget(),
                                                                             _constraint( other._constraint ),
                                                                             _robot_model( other._robot_model ),
-                                                                            _affordance_collection( other._affordance_collection ) {
+                                                                            _object_affordances( other._object_affordances ) {
 
 }
 
@@ -90,8 +100,8 @@ operator=( const Qt4_Widget_Constraint_Editor& other ) {
 /*
 void
 Qt4_Widget_Constraint_Editor::
-update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
-  _affordance_collection = affordanceCollection;
+update_object_affordances( vector< AffordanceState >& affordanceCollection ){
+  _object_affordances = affordanceCollection;
   return;
 }
 */
@@ -212,7 +222,14 @@ _combo_box_type_changed( int index ){
       _widget_double_slider->setEnabled( true );
       _label_time_start->setEnabled( true );
       _label_time_end->setEnabled( true );
-      _constraint = new Constraint_Task_Space_Region( _id );  
+      _constraint = new Constraint_Task_Space_Region( _id );
+      if( !_robot_affordances.empty() ){
+        dynamic_cast< Constraint_Task_Space_Region* >( _constraint )->parent().first = _robot_affordances.begin()->first;
+        dynamic_cast< Constraint_Task_Space_Region* >( _constraint )->parent().second = _robot_affordances.begin()->second;
+      } 
+      if( !_object_affordances.empty() ){
+        dynamic_cast< Constraint_Task_Space_Region* >( _constraint )->child() = &(*_object_affordances.begin());
+      } 
       emit info_update( QString( "[<b>OK</b>] instatiated new point-to-point constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;
     case ( CONSTRAINT_CONFIGURATION_TYPE ):
@@ -239,7 +256,7 @@ _push_button_edit_pressed( void ){
   if( _constraint != NULL ){
     switch( _constraint->type() ){
     case ( CONSTRAINT_TASK_SPACE_REGION_TYPE ):
-      _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( dynamic_cast< Constraint_Task_Space_Region* >( _constraint ), _robot_model, _affordance_collection, this );
+      _constraint_editor_popup = new Qt4_Widget_Constraint_Task_Space_Region_Editor( dynamic_cast< Constraint_Task_Space_Region* >( _constraint ), _robot_model, _object_affordances, this );
       _constraint_editor_popup->show();
       emit info_update( QString( "[<b>OK</b>] launching editor for constraint %1" ).arg( QString::fromStdString( _constraint->id() ) ) );
       break;

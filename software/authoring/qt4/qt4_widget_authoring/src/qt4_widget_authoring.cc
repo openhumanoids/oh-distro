@@ -11,6 +11,7 @@ using namespace opengl;
 using namespace qt4;
 using namespace drc;
 using namespace kinematics;
+using namespace state;
 using namespace affordance;
 using namespace authoring;
 
@@ -85,10 +86,6 @@ Qt4_Widget_Authoring( const std::string& urdfFilename,
   connect( this, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
   for( vector< Qt4_Widget_Constraint_Editor* >::iterator it = _constraint_editors.begin(); it != _constraint_editors.end(); it++ ){
     connect( *it, SIGNAL( info_update( const QString& ) ), this, SLOT( update_info( const QString& ) ) );
-/*
-    connect( this, SIGNAL( affordance_collection_update( std::vector< affordance::AffordanceState >& ) ),
-              *it, SLOT( update_affordance_collection( std::vector< affordance::AffordanceState >& ) ) );
-*/
     connect( this, SIGNAL( time_min_update( double ) ), *it, SLOT( update_time_min( double ) ) );
     connect( this, SIGNAL( time_max_update( double ) ), *it, SLOT( update_time_max( double ) ) );
   }
@@ -130,15 +127,15 @@ void
 Qt4_Widget_Authoring::
 update_affordance_collection( vector< AffordanceState >& affordanceCollection ){
   _affordance_collection_ghost = affordanceCollection;
-/*
-  _text_edit_affordance_collection->clear();
-  for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
-    _text_edit_affordance_collection->append( QString( "name: %1 uid: <%2,%3> xyz: (%4,%5,%6) rpy: (%7,%8,%9)" ).arg( QString::fromStdString( it->getName() ) ).arg( it->getGlobalUniqueId().first ).arg( it->getGlobalUniqueId().second ).arg( QString::number( it->getXYZ().x() ) ).arg( QString::number( it->getXYZ().y() ) ).arg( QString::number( it->getXYZ().z() ) ).arg( QString::number( it->getRPY().x() ) ).arg( QString::number( it->getRPY().y() ) ).arg( QString::number( it->getRPY().z() ) ) );
-  }
-  emit affordance_collection_update( affordanceCollection );
-*/
   return;
 }
+
+void
+Qt4_Widget_Authoring::
+update_state_gfe( State_GFE& stateGFE ){
+  _state_gfe_ghost = stateGFE;
+  return;
+} 
 
 void
 Qt4_Widget_Authoring::
@@ -149,7 +146,9 @@ _push_button_grab_pressed( void ){
   for( vector< AffordanceState >::iterator it = _affordance_collection.begin(); it != _affordance_collection.end(); it++ ){
     _text_edit_affordance_collection->append( QString( "name: %1 uid: <%2,%3> xyz: (%4,%5,%6) rpy: (%7,%8,%9)" ).arg( QString::fromStdString( it->getName() ) ).arg( it->getGlobalUniqueId().first ).arg( it->getGlobalUniqueId().second ).arg( QString::number( it->getXYZ().x() ) ).arg( QString::number( it->getXYZ().y() ) ).arg( QString::number( it->getXYZ().z() ) ).arg( QString::number( it->getRPY().x() ) ).arg( QString::number( it->getRPY().y() ) ).arg( QString::number( it->getRPY().z() ) ) );
   }
+  _state_gfe = _state_gfe_ghost;
   emit affordance_collection_update( _affordance_collection );
+  emit state_gfe_update( _state_gfe );
   return;
 }
 
@@ -185,7 +184,7 @@ _push_button_export_pressed( void )
  
   //convert to lcm message
   action_sequence_t msg;
-  create_msg(msg);
+  _create_drc_action_sequence_t(msg);
   cout << "\n\n encoded size = " << msg.getEncodedSize() << endl;
 
 
@@ -225,23 +224,41 @@ _push_button_export_pressed( void )
   return;
 }
 
-void 
+void
 Qt4_Widget_Authoring::
-create_msg(action_sequence_t &action_sequence)
+_push_button_publish_pressed( void ){
+  emit info_update( QString( "[<b>OK</b>] publish pressed" ) );
+  action_sequence_t msg;  
+  _create_drc_action_sequence_t( msg );
+  emit drc_action_sequence_t_publish( msg );      
+  return;
+}
+
+void
+Qt4_Widget_Authoring::
+_double_spin_box_end_time_changed( double endTime ){
+  emit time_max_update( _double_spin_box_end_time->value() );
+  return;
+} 
+
+void
+Qt4_Widget_Authoring::
+_create_drc_action_sequence_t(action_sequence_t& msg)
 {
-  action_sequence.num_contact_goals = 0;
-  action_sequence.robot_name = "atlas";
+  msg.num_contact_goals = 0;
+  msg.robot_name = "atlas";
+  msg.q0.num_joints = 0;
   cout << "_constraints.size(): " << _constraints.size() << endl;
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     if( (*it) != NULL ){
       cout << "adding to drc action sequence" << endl;
-      (*it)->add_to_drc_action_sequence_t(action_sequence );
+      (*it)->add_to_drc_action_sequence_t(msg );
     }
   }
-  cout << "utime: " << action_sequence.utime << endl;
-  cout << "robot_name: " << action_sequence.robot_name << endl;
-  cout << "num_contact_goals: " << action_sequence.num_contact_goals << endl;
-  for( vector< contact_goal_t >::iterator it = action_sequence.contact_goals.begin(); it != action_sequence.contact_goals.end(); it++ ){
+  cout << "utime: " << msg.utime << endl;
+  cout << "robot_name: " << msg.robot_name << endl;
+  cout << "num_contact_goals: " << msg.num_contact_goals << endl;
+  for( vector< contact_goal_t >::iterator it = msg.contact_goals.begin(); it != msg.contact_goals.end(); it++ ){
     cout << "  object_1_name: " << it->object_1_name << endl;
     cout << "  object_1_contact_grp: " << it->object_1_contact_grp << endl;
     cout << "  object_2_name: " << it->object_2_name << endl;
@@ -257,24 +274,6 @@ create_msg(action_sequence_t &action_sequence)
     cout << "  z_relation: " << it->z_relation << endl;
   }
 }
-
-
-void
-Qt4_Widget_Authoring::
-_push_button_publish_pressed( void ){
-  emit info_update( QString( "[<b>OK</b>] publish pressed" ) );
-  action_sequence_t action_sequence;  
-  create_msg(action_sequence);
-             
-  return;
-}
-
-void
-Qt4_Widget_Authoring::
-_double_spin_box_end_time_changed( double endTime ){
-  emit time_max_update( _double_spin_box_end_time->value() );
-  return;
-} 
 
 namespace authoring {
   ostream&

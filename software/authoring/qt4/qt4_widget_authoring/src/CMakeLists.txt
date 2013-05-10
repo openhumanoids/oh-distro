@@ -33,7 +33,7 @@ pods_install_headers(qt4_widget_double_slider.h
 pods_install_libraries(qt4_widget_authoring)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES opengl_object_authoring constraint_authoring affordance qt4_widget opengl_object lcm)
+set(REQUIRED_PACKAGES opengl_object_authoring constraint_authoring opengl_object_gfe state_gfe affordance qt4_widget opengl_object lcm)
 pods_use_pkg_config_packages(qt4_widget_authoring ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
