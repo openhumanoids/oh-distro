@@ -44,10 +44,11 @@ using namespace cv;
 struct DrivingTrackerOptions { 
     bool vDEBUG;
     float vSCALE;
+    bool vVERBOSE;
     std::string vCHANNEL;
 
     DrivingTrackerOptions () : 
-        vCHANNEL(std::string("CAMERALEFT")), vSCALE(0.5f), vDEBUG(false) {}
+        vCHANNEL(std::string("CAMERALEFT")), vSCALE(0.5f), vDEBUG(false), vVERBOSE(false) {}
 };
 DrivingTrackerOptions options;
 
@@ -342,7 +343,8 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
             tr->addOverlay(display, idx, state->id_colors[idx]); idx++;
 
     }
-    cv::imshow("Driving Tracker", display);
+    if(options.vVERBOSE)
+        cv::imshow("Driving Tracker", display);
 
     // Finish up drawing
     if(state->lcmgl){
@@ -371,6 +373,7 @@ int main(int argc, char** argv)
     opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
     opt.add(options.vSCALE, "s", "scale","Scale Factor");
     opt.add(options.vDEBUG, "d", "debug","Debug mode");
+    opt.add(options.vVERBOSE, "v", "verbose","Verbose mode");
     opt.parse();
 
     std::cerr << "===========  TLD Driving Tracker ============" << std::endl;
