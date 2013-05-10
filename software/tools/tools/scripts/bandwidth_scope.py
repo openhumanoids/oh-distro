@@ -86,9 +86,10 @@ def plot_data():
           j=j+1
     
     one_strip = np.ones( ( len(cumsent_KB.times[1:,0][:]),1) )
-    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 4 ),'r:',linewidth=2 )
-    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 1 ),'y:',linewidth=2 )
-    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 0.25 ),'g:',linewidth=2 )
+    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 4 ),'k:',linewidth=2 )
+    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 1 ),'r:',linewidth=2 )
+    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 0.25 ),'y:',linewidth=2 )
+    ax2.plot(cumsent_KB.times[1:,0][:],  np.multiply( cumsent_KB.times[1:,0][:] , 0.0625 ),'g:',linewidth=2 )
 
     ax2.set_ylabel('Cum KB Sent [' + msg_channel +']');  ax2.grid(True)
     ax2.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -112,11 +113,12 @@ def plot_data():
             j=j+1
       
       one_strip = np.ones( ( len(ratesent_KB.times[1:,0][:]),1) )
-      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,4.01),'r:',linewidth=2 )
-      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,1),'y:',linewidth=2 )
-      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,0.25),'g:',linewidth=2 )
+      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,4.01),'k:',linewidth=2 )
+      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,1),'r:',linewidth=2 )
+      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,0.25),'y:',linewidth=2 )
+      ax3.plot(ratesent_KB.times[1:],  np.multiply(one_strip  ,0.0625),'g:',linewidth=2 )
 
-      ax3.set_ylabel('Rate KB Sent [' + msg_channel +']');  ax5.grid(True)
+      ax3.set_ylabel('Rate KB Sent [' + msg_channel +']');  ax3.grid(True)
       ax3.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
       ax3.set_ylim( bottom=0)
       ax3.legend(loc=2,prop={'size':10})    
@@ -156,9 +158,10 @@ def plot_data():
           j=j+1
 
     one_strip = np.ones( ( len(cumreceived_KB.times[1:,0][:]),1) )
-    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 256 ),'r:',linewidth=2 )
-    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 128 ),'y:',linewidth=2 )
-    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 64 ),'g:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 256 ),'k:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 128 ),'r:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 64 ),'y:',linewidth=2 )
+    ax5.plot(cumreceived_KB.times[1:,0][:],  np.multiply( cumreceived_KB.times[1:,0][:] , 32 ),'g:',linewidth=2 )
 
     ax5.set_ylabel('Cum KB Received [' + msg_channel +']');  ax5.grid(True)
     ax5.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
@@ -182,9 +185,10 @@ def plot_data():
             j=j+1
       
       one_strip = np.ones( ( len(ratereceived_KB.times[1:,0][:]),1) )
-      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,256.01),'r:',linewidth=2 )
-      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,128),'y:',linewidth=2 )
-      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,64),'g:',linewidth=2 )
+      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,256.01),'k:',linewidth=2 )
+      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,128),'r:',linewidth=2 )
+      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,64),'y:',linewidth=2 )
+      ax6.plot(ratereceived_KB.times[1:],  np.multiply(one_strip  ,32),'g:',linewidth=2 )
 
       ax6.set_ylabel('Rate KB Received [' + msg_channel +']');  ax6.grid(True)
       ax6.set_xlim( (last_utime - plot_window - first_utime)/1000000 , (last_utime + front_block - first_utime)/1000000 )
