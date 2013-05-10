@@ -142,7 +142,8 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     //clear stored data
     _gl_planned_stickyfeet_list.clear();
     _planned_stickyfeet_info_list.clear();
-    _gl_planned_stickyfeet_timestamps.clear();
+    // _gl_planned_stickyfeet_timestamps.clear();
+    _gl_planned_stickyfeet_speeds.clear();
     _gl_planned_stickyfeet_ids.clear();
     
     
@@ -155,7 +156,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
      
     
       drc::footstep_goal_t goal_msg  = msg->footstep_goals[i]; 
-      _gl_planned_stickyfeet_timestamps.push_back(goal_msg.step_time);
+      _gl_planned_stickyfeet_speeds.push_back(goal_msg.step_speed);
       _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
       
       
@@ -279,7 +280,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       //   T_worldframe_meshframe =  T_worldframe_groundframe*(_T_bodyframe_groundframe_right.Inverse())*_T_bodyframe_meshframe_right;
       // } 
       transformKDLToLCM(T_worldframe_footframe,goal_msg.pos); 
-      goal_msg.step_time+=utime-old_utime;
+      // goal_msg.step_time+=utime-old_utime;
       msg.footstep_goals[i] =  goal_msg;
       // msg.goal_times[i]+=utime-old_utime;
     }

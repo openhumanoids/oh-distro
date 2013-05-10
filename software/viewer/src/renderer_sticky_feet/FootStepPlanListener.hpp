@@ -74,7 +74,8 @@ namespace renderer_sticky_feet
 
     // the cache
     std::vector< boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> >  _gl_planned_stickyfeet_list; 
-    std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
+    // std::vector< int64_t >  _gl_planned_stickyfeet_timestamps; 
+    std::vector< double >  _gl_planned_stickyfeet_speeds; 
     std::vector< int32_t >  _gl_planned_stickyfeet_ids;
     enum _foot_type
     {

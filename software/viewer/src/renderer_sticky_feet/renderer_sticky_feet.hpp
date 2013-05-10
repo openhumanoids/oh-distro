@@ -268,7 +268,8 @@ namespace renderer_sticky_feet{
     transformKDLToLCM(T_worldframe_footframe,pose); 
 
      goal_msg.pos = pose;
-     goal_msg.step_time = 0.0; // Ignored on the other end
+     // goal_msg.step_time = 0.0; // Ignored on the other end
+     goal_msg.step_speed = self->footStepPlanListener->_gl_planned_stickyfeet_speeds[i];
      goal_msg.id = self->footStepPlanListener->_gl_planned_stickyfeet_ids[i];
      goal_msg.fixed_x = 1;
      goal_msg.fixed_y = 1;

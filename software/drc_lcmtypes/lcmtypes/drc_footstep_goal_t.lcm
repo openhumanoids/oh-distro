@@ -5,7 +5,7 @@ struct footstep_goal_t
 	int64_t utime;
 	string robot_name;
 	position_3d_t pos;
-	int64_t step_time;
+	double step_speed;
 	int32_t id;
 	boolean is_right_foot;
 	boolean is_in_contact;

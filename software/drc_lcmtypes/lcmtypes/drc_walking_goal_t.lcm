@@ -16,11 +16,13 @@ struct walking_goal_t
     // Max time to spend walking (in ns)
 	int64_t timeout;
 
-	// Default time per step (in ns)
-	int64_t time_per_step;
+	// // Default time per step (in ns)
+	// int64_t time_per_step;
 
-	// whether to fix the yaw of each step (to force sidestepping, for example)
-	boolean yaw_fixed;
+	// speed at which the foot should move while swinging (m/s)
+	double step_speed; 
+
+	boolean follow_spline;
 
 	// whether to allow optimization of the foostep plan
 	boolean allow_optimization;
