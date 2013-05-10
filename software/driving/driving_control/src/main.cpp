@@ -70,7 +70,7 @@
 #define CAR_FRAME "body" // placeholder until we have the car frame
 
 typedef enum {
-    IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY, DOING_INITIAL_TURN, 
+    IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT, DRIVING_ROAD_ONLY_CARROT, DRIVING_ROAD_ONLY_ARC, DOING_INITIAL_TURN, 
     DOING_BRAKING, DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
 } controller_state_t;
 
@@ -166,7 +166,7 @@ void publish_status(state_t *self){
         msg.time_to_drive = 0;
     }
     /*
-      IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY, 
+      IDLE, ERROR_NO_MAP, ERROR_MAP_TIMEOUT,  DRIVING_ROAD_ONLY_CARROT, DRIVING_ROAD_ONLY_ARC, 
     DRIVING_TLD_AND_ROAD, DRIVING_TLD, DRIVING_USER, ERROR_TLD_TIMEOUT, ERROR_NO_VALID_GOAL
      */
     char status[1024];
@@ -182,8 +182,11 @@ void publish_status(state_t *self){
     case ERROR_MAP_TIMEOUT:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_ERROR_MAP_TIMEOUT;
         break;
-    case DRIVING_ROAD_ONLY:
-        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY;
+    case DRIVING_ROAD_ONLY_CARROT:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY_CARROT;
+        break;
+    case DRIVING_ROAD_ONLY_ARC:
+        msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_ROAD_ONLY_ARC;
         break;
     case DRIVING_TLD_AND_ROAD:
         msg.status = DRC_DRIVING_CONTROLLER_STATUS_T_DRIVING_TLD_AND_ROAD;
@@ -238,8 +241,12 @@ void publish_system_status(state_t *self){
     case ERROR_MAP_TIMEOUT:
         s_msg.value = "MAP_TIMEOUT";
         break;
-    case DRIVING_ROAD_ONLY:
-        sprintf(status, "DRIVING_ROAD_ONLY : %.2f", time_to_drive/1.0e6);
+    case DRIVING_ROAD_ONLY_CARROT:
+        sprintf(status, "DRIVING_ROAD_ONLY_CARROT : %.2f", time_to_drive/1.0e6);
+        s_msg.value = status;
+        break;
+    case DRIVING_ROAD_ONLY_ARC:
+        sprintf(status, "DRIVING_ROAD_ONLY_ARC : %.2f", time_to_drive/1.0e6);
         s_msg.value = status;
         break;
     case DRIVING_TLD_AND_ROAD:
@@ -1403,22 +1410,29 @@ on_controller_timer (gpointer data)
         turn_only = 1;
     }
 
-    int use_road = 1;
+    int use_road_carrot = 1;
+    int use_road_arc = 0;
     int use_tld = 0;
     int user_goal = 0;
     if(self->last_driving_cmd){
-        if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD)
-            use_road = 1;
+        if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT)
+            use_road_carrot = 1;
+        else if (self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC) {
+            use_road_carrot = 0;
+            use_road_arc = 1;
+        }
         else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD){
-            use_road = 1;
+            use_road_carrot = 1;
             use_tld = 1;
         }
         else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_IGNORE_ROAD){
-            use_road = 0;
-            use_tld =1;
+            use_road_carrot = 0;
+            use_road_arc = 0;
+            use_tld = 1;
         }
         else if(self->last_driving_cmd->type == DRC_DRIVING_CMD_T_TYPE_USE_USER_HEADING){
-            use_road = 0;
+            use_road_carrot = 0;
+            use_road_arc = 0;
             use_tld =0;
             user_goal = 1;
         }
@@ -1444,19 +1458,29 @@ on_controller_timer (gpointer data)
     //draw_goal_range (self);    
     double xyz_goal[3];
 
-    if(use_road && !use_tld){
-        if(1)
-            find_goal_enhanced_arc(fmap,self);
-
-        if (find_goal_enhanced (fmap, self)) {
-            draw_goal (self);
-            self->have_valid_goal = 1;
-            self->curr_state = DRIVING_ROAD_ONLY;
+    if((use_road_carrot || use_road_arc) && !use_tld){
+        int have_valid_goal = 0;
+        fprintf (stdout, "use_road_arc = %d\n");
+        if(use_road_arc) {
+            if (find_goal_enhanced_arc (fmap, self)) {
+                have_valid_goal = 1;
+                self->have_valid_goal = 1;
+                self->curr_state = DRIVING_ROAD_ONLY_ARC;
+            }
         }
-        else {
+        else if (use_road_carrot) {
+            if (find_goal_enhanced (fmap, self)) {
+                have_valid_goal = 1;
+                draw_goal (self);
+                self->have_valid_goal = 1;
+                self->curr_state = DRIVING_ROAD_ONLY_CARROT;
+            }
+        }
+
+        if (!have_valid_goal) {
             if (self->verbose)
                 fprintf (stdout, "Unable to find goal in PixMap - Stopping\n");
-        
+            
             perform_emergency_stop(self);
             self->drive_duration = -1;
             self->curr_state = ERROR_NO_VALID_GOAL;
@@ -1465,7 +1489,7 @@ on_controller_timer (gpointer data)
             return TRUE;
         }
     }
-    else if(use_road && use_tld){
+    else if(use_road_carrot && use_tld){
         if (find_goal_enhanced_with_tld_heading (fmap, self)) {
             draw_goal (self);
             self->have_valid_goal = 1;
@@ -1483,7 +1507,7 @@ on_controller_timer (gpointer data)
             return TRUE;
         }
     }
-    else if(use_tld && !use_road){
+    else if(use_tld && !use_road_carrot){
         //fprintf(stderr, "Not handled right now - returning\n");
         if (find_goal_with_only_tld_heading(self)){
             draw_goal (self);

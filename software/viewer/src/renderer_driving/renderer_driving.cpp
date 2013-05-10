@@ -90,7 +90,7 @@ typedef enum _gear_type_t {
 } gear_type_t;
 
 typedef enum _goal_type_t {
-    USE_ROAD, USE_TLD_WITH_ROAD, USE_TLD_IGNORE_ROAD, USE_USER_GOAL
+    USE_ROAD_CARROT, USE_ROAD_ARC, USE_TLD_WITH_ROAD, USE_TLD_IGNORE_ROAD, USE_USER_GOAL
 } goal_type_t;
 
 
@@ -1048,7 +1048,30 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     RendererDriving *self = (RendererDriving*) user;
     self->goal_timeout = bot_gtk_param_widget_get_double(self->pw, PARAM_GOAL_TIMEOUT);
     self->visual_goal_type =(visual_goal_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_VISUAL_GOAL_TYPE);
-  
+
+    // Disable certain sliders depending upon goal mode
+    goal_type_t goal_type_temp  = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
+    if (goal_type_temp == USE_ROAD_CARROT) {
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_P_GAIN, 1);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_D_GAIN, 1);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_I_GAIN, 1);
+    }
+    else {
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_P_GAIN, 0);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_D_GAIN, 0);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_I_GAIN, 0);
+    }
+
+    if (goal_type_temp == USE_USER_GOAL) {
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 1);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_LOOKAHEAD, 0);
+    }
+    else {
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
+        bot_gtk_param_widget_set_enabled (self->pw, PARAM_LOOKAHEAD, 1);
+    }
+
+
     if(!strcmp(name, PARAM_VISUAL_GOAL)) {
         send_seek_goal_visual(self);
     }else if(!strcmp(name, PARAM_GOAL_SEND)) {
@@ -1080,8 +1103,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
-        if(goal_type == USE_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD;
+        if(goal_type == USE_ROAD_CARROT){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT;
+        }
+        if(goal_type == USE_ROAD_ARC){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC;
         }
         else if(goal_type == USE_TLD_WITH_ROAD){
             msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD;
@@ -1119,8 +1145,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
-        if(goal_type == USE_ROAD){
-            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD;
+        if(goal_type == USE_ROAD_CARROT){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_CARROT;
+        }
+        if(goal_type == USE_ROAD_ARC){
+            msg.type = DRC_DRIVING_CMD_T_TYPE_USE_ROAD_LOOKAHEAD_ARC;
         }
         else if(goal_type == USE_TLD_WITH_ROAD){
             msg.type = DRC_DRIVING_CMD_T_TYPE_USE_TLD_LOOKAHEAD_WITH_ROAD;
@@ -1454,6 +1483,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     
     bot_gtk_param_widget_add_double(self->pw, PARAM_STEERING_ANGLE, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, -180, 180, 1, 0);
+    bot_gtk_param_widget_set_enabled (self->pw, PARAM_STEERING_ANGLE, 0);
 
     //bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE, NULL);
 
@@ -1466,7 +1496,7 @@ BotRenderer *renderer_driving_new (BotViewer *viewer, int render_priority, lcm_t
     bot_gtk_param_widget_add_double(self->pw, PARAM_THROTTLE_RATIO, 
                                     BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1.0, 0.01, 0.04);
 
-    bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, USE_ROAD, "Use Road", USE_ROAD, "Use TLD (Road)", USE_TLD_WITH_ROAD,  "Use TLD (No Road)", USE_TLD_IGNORE_ROAD, "Use User Goal", USE_USER_GOAL, NULL);
+    bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, USE_ROAD_CARROT, "Use Road (Carrot)", USE_ROAD_CARROT, "Use Road (Arc)", USE_ROAD_ARC, "Use TLD (Road)", USE_TLD_WITH_ROAD,  "Use TLD (No Road)", USE_TLD_IGNORE_ROAD, "Use User Goal", USE_USER_GOAL, NULL);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_DRIVE_COMMAND, NULL);
 
