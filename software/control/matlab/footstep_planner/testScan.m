@@ -1,4 +1,4 @@
-function testSwing()
+function testScan()
 
 
 options.floating = true;
@@ -7,12 +7,13 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 % r = setTerrain(r,DRCTerrainMap());
 biped = compile(r);
-biped = biped.setTerrain(SampleTerrain())
+biped = biped.setTerrain(SampleTerrain());
 
-last_pos = [0;1.2;0;0;0;0];
-next_pos = [.5;2.1;0;0;0;0];
-apex_pos = [0.25;1.65;0.05;0;0;0];
 
-step_traj = planSwing(biped, last_pos, next_pos, apex_pos)
+p0 = [0;0;0;0;0;0];
+poses = [.5;0;0;0;0;0];
+traj = BezierTraj([p0, poses]);
+
+[lambdas, feasibility] = scanWalkingTerrain(biped, traj);
 
 end

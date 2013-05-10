@@ -27,10 +27,10 @@ classdef FootstepPlanner < DRCPlanner
     function X = updatePlan(obj, X, data, changed, changelist)
       if changelist.goal || isempty(X)
         msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'time_per_step', 'yaw_fixed', 'is_new_goal', 'right_foot_lead'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_speed', 'follow_spline', 'is_new_goal', 'right_foot_lead'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
-        obj.options.time_per_step = obj.options.time_per_step / 1e9;
+        % obj.options.time_per_step = obj.options.time_per_step / 1e9;
         obj.options.timeout = obj.options.timeout / 1e6;
       end
       if (changelist.goal && (data.goal.is_new_goal || ~data.goal.allow_optimization)) || isempty(X)
@@ -50,8 +50,8 @@ classdef FootstepPlanner < DRCPlanner
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
         new_X.pos(3) = new_X.pos(3) + 0.003; % add back the 3mm we subtracted before publishing
         X([X.id] == new_X.id) = new_X;
-        t = num2cell(obj.biped.getStepTimes([X.pos]));
-        [X.time] = t{:};
+        % t = num2cell(obj.biped.getStepTimes([X.pos]));
+        % [X.time] = t{:};
       end
 
       for j = 3:size(X, 2)

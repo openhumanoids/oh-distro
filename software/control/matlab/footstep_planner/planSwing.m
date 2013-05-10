@@ -1,16 +1,15 @@
-function [step_traj, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, apex_pos)
+function [step_traj, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, apex_pos, options)
 % Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
 
-if nargin < 4
-  apex_pos = mean([last_pos, next_pos], 2);
-  apex_pos(3) = max([last_pos(3), next_pos(3)]) + biped.nom_step_clearance;
+if ~isfield(options, 'foot_speed')
+  options.foot_speed = 0.5 % m/s
 end
 
 debug = false;
+
 planar_clearance = 0.05;
 nom_z_clearance = 0.02;
-foot_speed = 0.5 / (1.3 * .75); % m/s
-hold_time = 0.1 * 1.3;
+hold_frac = 1/7.5;
 ramp_distance = 0.03; % m
 
 % Let lambda be a variable which indicates cartesian distance along the line from last_pos to next_pos. 
@@ -18,7 +17,7 @@ step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
 if step_dist_xy > 0.01
   % Create a single default apex pose to ensure that we at least rise by this much on flat ground
-  if nargin < 4
+  if nargin < 5
     apex_pos_l = [step_dist_xy / 2; apex_pos(3)];
   else
     apex_lambda = dot(apex_pos(1:2) - last_pos(1:2), next_pos(1:2) - last_pos(1:2)) / step_dist_xy;
@@ -71,8 +70,10 @@ else
   traj_pts_xyz = [last_pos(1:3), apex_pos(1:3), next_pos(1:3)];
 end
 
-traj_ts = [0, cumsum(sqrt(sum(diff(traj_pts_xyz, 1, 2).^2, 1)))] ./ foot_speed;
+traj_ts = [0, cumsum(sqrt(sum(diff(traj_pts_xyz, 1, 2).^2, 1)))] ./ options.foot_speed;
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
+
+hold_time = traj_ts(end) * hold_frac;
 traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time];
 landing_time = traj_ts(end-1);
 takeoff_time = traj_ts(2);

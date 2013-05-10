@@ -45,7 +45,8 @@ classdef FootstepPlanListener
 		         goal_msg.pos.translation.y;...
 		         goal_msg.pos.translation.z;...
 		         rpy];
-		  X.time = goal_msg.step_time / 1000000;
+		  % X.time = goal_msg.step_time / 1000000;
+		  X.step_speed = goal_msg.step_speed;
 		  X.id = goal_msg.id;
 		  X.pos_fixed = [goal_msg.fixed_x;
 					           goal_msg.fixed_y;
