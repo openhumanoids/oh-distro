@@ -144,6 +144,11 @@ classdef Biped < TimeSteppingRigidBodyManipulator
                    'left', int32([1:2:(total_steps-1), total_steps]));
     end
 
+    function apex_pos = get_apex_pos(obj, last_pos, next_pos)
+      apex_pos = mean([last_pos, next_pos], 2);
+      apex_pos(3) = max([last_pos(3), next_pos(3)]) + obj.nom_step_clearance;
+    end
+
     function t = getStepTimes(obj, X, time_per_step)
       % Assume the columns of X are already in order by time
       nsteps = length(X(1,:));

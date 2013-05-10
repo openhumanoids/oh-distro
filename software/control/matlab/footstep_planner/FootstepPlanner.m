@@ -27,7 +27,7 @@ classdef FootstepPlanner < DRCPlanner
     function X = updatePlan(obj, X, data, changed, changelist)
       if changelist.goal || isempty(X)
         msg ='Footstep Planner: Received Goal Info'; disp(msg); send_status(3,0,0,msg);
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_speed', 'follow_spline', 'is_new_goal', 'right_foot_lead'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_speed', 'follow_spline', 'is_new_goal', 'ignore_terrain', 'right_foot_lead'}
           obj.options.(x{1}) = data.goal.(x{1});
         end
         % obj.options.time_per_step = obj.options.time_per_step / 1e9;
@@ -49,13 +49,30 @@ classdef FootstepPlanner < DRCPlanner
         new_X = new_X(1);
         new_X.pos = obj.biped.footOrig2Contact(new_X.pos, 'center', new_X.is_right_foot);
         new_X.pos(3) = new_X.pos(3) + 0.003; % add back the 3mm we subtracted before publishing
-        X([X.id] == new_X.id) = new_X;
+        matching_ndx = find([X.id] == new_X.id);
+        old_x = X(matching_ndx);
+        X(matching_ndx) = new_X;
+        X(matching_ndx).is_in_contact = old_x.is_in_contact;
+        if X(matching_ndx).is_in_contact 
+          if ~any(X(matching_ndx - 1).pos_fixed(1:3))
+            if matching_ndx > 3
+              n = matching_ndx - 3;
+              if matching_ndx > 5
+                n = matching_ndx - 4;
+              end
+              X(matching_ndx-1).pos = obj.biped.get_apex_pos(X(n).pos, X(matching_ndx).pos);
+            end
+          end
+          if (matching_ndx < length(X) - 2) && ~any(X(matching_ndx + 1).pos_fixed(1:3))
+              X(matching_ndx+1).pos = obj.biped.get_apex_pos(X(matching_ndx+1).pos, X(matching_ndx).pos);
+          end
+        end
         % t = num2cell(obj.biped.getStepTimes([X.pos]));
         % [X.time] = t{:};
       end
 
       for j = 3:size(X, 2)
-        if X(j).is_in_contact
+        if X(j).is_in_contact && ~obj.options.ignore_terrain
           X(j).pos = obj.biped.checkTerrain(X(j).pos);
         end
       end

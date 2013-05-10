@@ -39,7 +39,15 @@ function [X, foot_goals] = createInitialSteps(biped, x0, poses, options)
   % end
   t = linspace(0, 1);
   xy = traj.eval(t);
+
   [lambdas, infeasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0);
+  if options.ignore_terrain
+    infeasibility.right = zeros(size(infeasibility.right));
+    infeasibility.left = zeros(size(infeasibility.left));
+    foot_centers.right(3,:) = p0(3);
+    foot_centers.left(3,:) = p0(3);
+  end
+
   if debug
     plot_lcm_points([xy(1,:)', xy(2,:)', xy(3,:)'], repmat([0, 0, 1], length(t), 1), 50, 'Foostep Spline', 2, 1);
   end
@@ -147,7 +155,7 @@ aborted = false;
     else
       last_pos = X(end-2).pos;
     end
-    apex_pos = get_apex_pos(last_pos, pos_n);
+    apex_pos = biped.get_apex_pos(last_pos, pos_n);
     X(end+1) = struct('pos', apex_pos, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
     X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
@@ -185,7 +193,7 @@ aborted = false;
       else
         last_pos = X(end-2).pos;
       end
-      apex_pos = get_apex_pos(last_pos, final_pos);
+      apex_pos = biped.get_apex_pos(last_pos, final_pos);
       X(end+1) = struct('pos', apex_pos, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', false);
 
       X(end+1) = struct('pos', final_pos, 'step_speed', 0, 'id', biped.getNextStepID(), 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
@@ -199,16 +207,6 @@ aborted = false;
   % [X.time] = t{:};
   for j = 1:length(X)
     X(j).step_speed = options.step_speed;
-  end
-  
-  function apex_pos = get_apex_pos(last_pos, next_pos)
-    apex_pos = mean([last_pos, next_pos], 2);
-    % if last_pos(3) - next_pos(3) > (0.8 * biped.nom_step_clearance)
-    %   apex_pos(1:2) = next_pos(1:2);
-    % elseif next_pos(3) - last_pos(3) > (0.8 * biped.nom_step_clearance)
-    %   apex_pos(1:2) = last_pos(1:2);
-    % end
-    apex_pos(3) = max([last_pos(3), next_pos(3)]) + biped.nom_step_clearance;
   end
   
 end
