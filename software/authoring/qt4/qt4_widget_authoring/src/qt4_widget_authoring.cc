@@ -185,8 +185,8 @@ _push_button_export_pressed( void )
   //convert to lcm message
   action_sequence_t msg;
   _create_drc_action_sequence_t(msg);
+  cout << "\n constructed message\n" << endl;
   cout << "\n\n encoded size = " << msg.getEncodedSize() << endl;
-
 
   //ask user for save file name
   QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
@@ -247,7 +247,9 @@ _create_drc_action_sequence_t(action_sequence_t& msg)
 {
   msg.num_contact_goals = 0;
   msg.robot_name = "atlas";
-  msg.q0.num_joints = 0;
+  //msg.q0.num_joints = 0;
+  _state_gfe.to_lcm(&msg.q0);
+
   cout << "_constraints.size(): " << _constraints.size() << endl;
   for( vector< Constraint* >::iterator it = _constraints.begin(); it != _constraints.end(); it++ ){
     if( (*it) != NULL ){
