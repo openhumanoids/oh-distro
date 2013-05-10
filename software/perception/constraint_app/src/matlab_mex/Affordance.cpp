@@ -319,6 +319,11 @@ bool Affordance::GetSegmentJacobianExpressedInWorld(const std::string& segmentNa
     return false;
   }
 
+  //swap the wpr back to rpw
+  Eigen::MatrixXd temp(jacobian.data.col(3));
+  jacobian.data.col(3) = jacobian.data.col(5);
+  jacobian.data.col(5) = temp;
+
   return true;
 }
 
