@@ -242,7 +242,9 @@ void Pass::doDemo(int which_publish){
     std::vector<double> xyzrpy1 = {4.18 , 3.65 , 1.2 , -M_PI/2 , 0 , 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/standpipe.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
-    a1.aff.bounding_lwh[0]=0.5;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=1.0;//1.7;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.2; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
 /*  if ((which_publish==5) || (which_publish==0)){
@@ -255,10 +257,12 @@ void Pass::doDemo(int which_publish){
   }*/
   if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
-    std::vector<double> xyzrpy1 = {4.8 , 2.3 , 1.05 , M_PI/2 , 0 , 0};  
+    std::vector<double> xyzrpy1 = {4.79 , 2.29 , 1.11 , M_PI/2 , 0 , 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/firehose.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
-    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    a1.aff.bounding_lwh[0]=0.16;       a1.aff.bounding_lwh[1]=0.16;      a1.aff.bounding_lwh[2]=0.3;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
   
@@ -267,7 +271,9 @@ void Pass::doDemo(int which_publish){
     std::vector<double> xyzrpy1 = {3.18, 3.65, 1.2, 0, -1.5707, 0};  
     string filename1 = string(home+ "/drc/software/models/otdf/valve.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
-    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
+    a1.aff.bounding_lwh[0]=0.34;       a1.aff.bounding_lwh[1]=0.14;      a1.aff.bounding_lwh[2]=0.34;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0; a1.aff.bounding_xyz[2]=0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
     lcm_->publish("AFFORDANCE_FIT",&a1);
     // 3.17
     //valve
