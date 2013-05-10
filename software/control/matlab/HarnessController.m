@@ -106,7 +106,8 @@ classdef HarnessController < DRCController
           q_nom = d.xstar(1:getNumDOF(obj.robot));
         end
         q0 = zeros(getNumDOF(obj.robot),1);
-        qtraj = PPTrajectory(spline([0 2.5],[q0 q_nom]));
+%         qtraj = PPTrajectory(spline([0 2.5],[q0 q_nom]));
+        qtraj = PPTrajectory(spline([0 2.5],[q0 q0]));
       end
       
       obj.controller_data.setField('qtraj',qtraj);

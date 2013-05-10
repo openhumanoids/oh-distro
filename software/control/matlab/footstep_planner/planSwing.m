@@ -73,7 +73,8 @@ end
 traj_ts = [0, cumsum(sqrt(sum(diff(traj_pts_xyz, 1, 2).^2, 1)))] ./ options.foot_speed;
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
 
-hold_time = traj_ts(end) * hold_frac;
+%hold_time = traj_ts(end) * hold_frac;
+hold_time = 0.13;
 traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time];
 landing_time = traj_ts(end-1);
 takeoff_time = traj_ts(2);

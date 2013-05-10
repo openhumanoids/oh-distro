@@ -5,7 +5,7 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-r = setTerrain(r,DRCTerrainMap());
+r = setTerrain(r,DRCTerrainMap(@MapWrapperRobot));
 r = compile(r);
 
 harness_controller = HarnessController('harnessed',r);

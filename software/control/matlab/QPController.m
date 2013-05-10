@@ -169,6 +169,12 @@ classdef QPController < MIMODrakeSystem
     x = varargin{2};
     ctrl_data = getData(obj.controller_data);
     
+%   debugging for the rpy velocities
+    nq = getNumDOF(obj.robot); qd = x(nq+(1:nq)); 
+    scope('atlas','rolldot',t,qd(4),struct('scope_id',1));
+    scope('atlas','pitchdot',t,qd(5),struct('scope_id',2));
+    scope('atlas','yawdot',t,qd(6),struct('scope_id',3));
+    
     % get foot contact state
     if obj.lcm_foot_contacts
       contact_data = obj.contact_est_monitor.getMessage();
@@ -269,7 +275,7 @@ classdef QPController < MIMODrakeSystem
     end
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
-    out_tic = tic;
+%    out_tic = tic;
 
     if (obj.use_mex==0 || obj.use_mex==2)
       r = obj.robot;
@@ -606,7 +612,7 @@ classdef QPController < MIMODrakeSystem
       obj.lc.publish('OBJ_COLLECTION', m);
     end
 
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;

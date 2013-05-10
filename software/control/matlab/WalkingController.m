@@ -12,7 +12,7 @@ classdef WalkingController < DRCController
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.1;
-      options.lcm_foot_contacts = true;
+      options.lcm_foot_contacts = false;
       options.full_body_opt = false; % if false, doesn't include arms/neck in QP solve (faster)
       nu=getNumInputs(r);
       options.R = 1e-12*eye(nu);
@@ -20,6 +20,7 @@ classdef WalkingController < DRCController
       ankle_idx = ~cellfun(@isempty,strfind(input_names,'lax')) | ~cellfun(@isempty,strfind(input_names,'uay'));
       ankle_idx = find(ankle_idx);
       options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
+      options.use_mex = true;
       qp = QPController(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
@@ -32,17 +33,17 @@ classdef WalkingController < DRCController
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
       
-      % cascade footstep replanner 
-      fs = FootstepReplanner(r,ctrl_data);
-      ins(1).system = 1;
-      ins(1).input = 1;
-      ins(2).system = 2;
-      ins(2).input = 2;
-      outs(1).system = 2;
-      outs(1).output = 1;
-      connection.from_output = 1;
-      connection.to_input = 1;
-      sys = mimoCascade(fs,sys,connection,ins,outs);
+%       % cascade footstep replanner 
+%       fs = FootstepReplanner(r,ctrl_data);
+%       ins(1).system = 1;
+%       ins(1).input = 1;
+%       ins(2).system = 2;
+%       ins(2).input = 2;
+%       outs(1).system = 2;
+%       outs(1).output = 1;
+%       connection.from_output = 1;
+%       connection.to_input = 1;
+%       sys = mimoCascade(fs,sys,connection,ins,outs);
       
       obj = obj@DRCController(name,sys);
 

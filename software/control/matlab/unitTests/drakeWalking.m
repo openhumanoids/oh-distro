@@ -77,6 +77,7 @@ ankle_idx = find(ankle_idx);
 options.R(ankle_idx,ankle_idx) = 10*options.R(ankle_idx,ankle_idx); % soft ankles
 options.lcm_foot_contacts = false;
 options.full_body_opt = false;
+options.use_mex = true;
 qp = QPController(r,ctrl_data,options);
 clear options;
 

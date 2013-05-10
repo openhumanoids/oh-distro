@@ -36,7 +36,7 @@ classdef FootstepReplanner < DrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.1;
+        obj.dt = 0.2;
       end
       
 %       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
@@ -52,7 +52,7 @@ classdef FootstepReplanner < DrakeSystem
     end
     
     function y=output(obj,t,~,x)
-      if mod(t,obj.dt)==0 % manually enforce sample time here, not correct because states do not arrive at a reliable interval
+      if mod(t,obj.dt)==0 % manually enforce sample time here, not the correct way to do it because states do not arrive at a reliable interval
         contact_data = obj.contact_est_monitor.getNextMessage(0);
         if ~isempty(contact_data)
           msg = drc.foot_contact_estimate_t(contact_data);
