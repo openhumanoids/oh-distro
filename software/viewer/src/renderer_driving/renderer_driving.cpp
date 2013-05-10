@@ -377,7 +377,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     
         //this part could be done upon msg also 
         //get the wheel arcs from the steering angle
-        double wheel_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE)) * STEERING_RATIO ;
+        double wheel_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE)) * STEERING_RATIO ;
                 
         BotTrans pt_to_car;
         double rpy[3];
@@ -1066,7 +1066,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
         msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
         msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
-        msg.user_steering_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+        msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
         if(goal_type == USE_ROAD){
@@ -1105,7 +1105,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         msg.kd_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_D_GAIN);
         msg.ki_steer = bot_gtk_param_widget_get_double(self->pw, PARAM_I_GAIN);
         msg.lookahead_dist = bot_gtk_param_widget_get_double(self->pw, PARAM_LOOKAHEAD);
-        msg.user_steering_angle = bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
+        msg.user_steering_angle = -bot_to_radians(bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE));
 
         goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
         if(goal_type == USE_ROAD){
@@ -1153,7 +1153,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
         }*/
     else if(!strcmp(name, PARAM_BRAKE)){
-        double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
+        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
         double brake_val =  bot_gtk_param_widget_get_double(self->pw, PARAM_BRAKE);
         bot_viewer_set_status_bar_message(self->viewer, "Sent Brake : %f", brake_val);
         drc_driving_control_cmd_t msg;
@@ -1165,7 +1165,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         drc_driving_control_cmd_t_publish(self->lc, "DRC_DRIVING_COMMAND", &msg);
     }
     else if(!strcmp(name, PARAM_THROTTLE)){
-        double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
+        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
         double throttle = bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
     
         bot_viewer_set_status_bar_message(self->viewer, "Sent Drive : Angle : %f Throttle : %f", angle, throttle);
@@ -1179,7 +1179,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
     else if(!strcmp(name, PARAM_GEAR_POSITION)){
         gear_type_t gear_pos =(gear_type_t)  bot_gtk_param_widget_get_enum(self->pw, PARAM_GEAR_POSITION);
-        double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
+        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
         double throttle = 0;//bot_gtk_param_widget_get_double(self->pw, PARAM_THROTTLE);
     
         drc_driving_control_cmd_t msg;
@@ -1204,7 +1204,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     }
     else if(!strcmp(name, PARAM_TURN_IGNITION)){
         bool engine_on = bot_gtk_param_widget_get_bool(self->pw, PARAM_TURN_IGNITION);
-        double angle = bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
+        double angle = -bot_gtk_param_widget_get_double(self->pw, PARAM_STEERING_ANGLE);
 
         if(engine_on)
             bot_viewer_set_status_bar_message(self->viewer, "Starting vehicle");
