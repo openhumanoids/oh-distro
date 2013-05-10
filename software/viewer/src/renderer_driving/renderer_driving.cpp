@@ -386,6 +386,7 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         glPopMatrix();
     }
 
+
     goal_type_t goal_type = (goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
     if(goal_type == USE_USER_GOAL){
         //draw arc based on the use steering angle 
@@ -524,9 +525,19 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
         sprintf (line1, "Time rem: ???\n");
 
     if (self->controller_values) {
-        sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value);
-        sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value);
-        sprintf (line4, "   Steer: %.2f\n", self->controller_values->hand_steer);
+        if (self->ground_truth_status) {
+            sprintf (line2, "Throttle: %.2f [%.2f]\n", self->controller_values->throttle_value, 
+                     self->ground_truth_status->gas_pedal);
+            sprintf (line3, "   Brake: %.2f [%.2f]\n", self->controller_values->brake_value,
+                     self->ground_truth_status->brake_pedal);
+            sprintf (line4, "   Steer: %.2f [%.2f]\n", self->controller_values->hand_steer,
+                     self->ground_truth_status->hand_wheel);
+        }
+        else {
+            sprintf (line2, "Throttle: %.2f\n", self->controller_values->throttle_value);
+            sprintf (line3, "   Brake: %.2f\n", self->controller_values->brake_value);
+            sprintf (line4, "   Steer: %.2f\n", self->controller_values->hand_steer);
+        }
     }
     else {
         sprintf (line2, "Throttle: ???\n");
@@ -536,21 +547,15 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     }
 
     if (self->ground_truth_status) {
-        sprintf (line5, "Throttle: %.2f [GT]\n", self->ground_truth_status->gas_pedal);
-        sprintf (line6, "   Brake: %.2f [GT]\n", self->ground_truth_status->brake_pedal);
-        sprintf (line7, "   Steer: %.2f [GT]\n", self->ground_truth_status->hand_wheel);
-        sprintf (line8, "    Dir.: %d   [GT]\n", self->ground_truth_status->direction);
-        sprintf (line9, "     Key: %d   [GT]\n", self->ground_truth_status->key);
+        sprintf (line5, "     Dir: %d\n", self->ground_truth_status->direction);
+        sprintf (line6, "     Key: %d\n", self->ground_truth_status->key);
     }
     else {
-        sprintf (line5, "Throttle: ??? [GT]\n");
-        sprintf (line6, "   Brake: ??? [GT]\n");
-        sprintf (line7, "   Steer: ??? [GT]\n");
-        sprintf (line8, "    Dir.: ??? [GT]\n");
-        sprintf (line9, "     Key: ??? [GT]\n");
+        sprintf (line5, "    Dir.: ??? [GT]\n");
+        sprintf (line6, "     Key: ??? [GT]\n");
     }
     
-    double x = gl_width - line_length; // hind * 150 + 120;
+    double x = 0; //gl_width - line_length; // hind * 150 + 120;
     double y = 0; //gl_height - 8 * line_height;
     
     int x_pos = 200;//189; // text lines x_position
@@ -560,8 +565,8 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
       glVertex2f(x, y);
       glVertex2f(x + line_length, y); // 21 is the number of chars in the box
 
-      glVertex2f(x + line_length, y + 10 * line_height); // 21 is the number of chars in the box
-      glVertex2f(x       , y + 10 * line_height);
+      glVertex2f(x + line_length, y + 7 * line_height); // 21 is the number of chars in the box
+      glVertex2f(x       , y + 7 * line_height);
       glEnd();
     }
 
@@ -588,19 +593,6 @@ _draw (BotViewer *viewer, BotRenderer *renderer)
     glColor3fv(colors[2]);
     glRasterPos2f(x, y + 6 * line_height);
     glutBitmapString(font, (unsigned char*) line6);
-
-    glColor3fv(colors[2]);
-    glRasterPos2f(x, y + 7 * line_height);
-    glutBitmapString(font, (unsigned char*) line7);
-        
-    glColor3fv(colors[2]);
-    glRasterPos2f(x, y + 8 * line_height);
-    glutBitmapString(font, (unsigned char*) line8);
-
-    glColor3fv(colors[2]);
-    glRasterPos2f(x, y + 9 * line_height);
-    glutBitmapString(font, (unsigned char*) line9);
-
     
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
