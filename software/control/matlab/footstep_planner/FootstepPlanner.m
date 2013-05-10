@@ -53,6 +53,9 @@ classdef FootstepPlanner < DRCPlanner
         old_x = X(matching_ndx);
         X(matching_ndx) = new_X;
         X(matching_ndx).is_in_contact = old_x.is_in_contact;
+        if obj.options.ignore_terrain
+          X(matching_ndx).pos(3) = old_x.pos(3);
+        end
         if X(matching_ndx).is_in_contact 
           if ~any(X(matching_ndx - 1).pos_fixed(1:3))
             if matching_ndx > 3
