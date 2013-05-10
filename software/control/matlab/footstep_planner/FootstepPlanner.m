@@ -66,9 +66,9 @@ classdef FootstepPlanner < DRCPlanner
               X(matching_ndx-1).pos = obj.biped.get_apex_pos(X(n).pos, X(matching_ndx).pos);
             end
           end
-          if (matching_ndx < length(X) - 2) && ~any(X(matching_ndx + 1).pos_fixed(1:3))
-              X(matching_ndx+1).pos = obj.biped.get_apex_pos(X(matching_ndx+1).pos, X(matching_ndx).pos);
-          end
+          % if (matching_ndx < length(X) - 2) && ~any(X(matching_ndx + 1).pos_fixed(1:3))
+          %     X(matching_ndx+1).pos = obj.biped.get_apex_pos(X(matching_ndx+1).pos, X(matching_ndx).pos);
+          % end
         end
         % t = num2cell(obj.biped.getStepTimes([X.pos]));
         % [X.time] = t{:};
