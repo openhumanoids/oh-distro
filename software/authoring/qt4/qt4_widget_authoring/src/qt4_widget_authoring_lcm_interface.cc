@@ -25,7 +25,7 @@ Qt4_Widget_Authoring_LCM_Interface( QWidget * parent ) : QMainWindow( parent ),
   connect( _qt4_widget_authoring, SIGNAL( drc_action_sequence_t_publish( const drc::action_sequence_t& ) ), this, SLOT( publish_drc_action_sequence_t( const drc::action_sequence_t& ) ) );
   _lcm->subscribe( "EST_ROBOT_STATE", &Qt4_Widget_Authoring_LCM_Interface::_handle_est_robot_state_msg, this );
   _lcm->subscribe( "AFFORDANCE_COLLECTION", &Qt4_Widget_Authoring_LCM_Interface::_handle_affordance_collection_msg, this );
-  _lcm->subscribe( "CANDIDATE_ROBOT_PLAN", &Qt4_Widget_Authoring_LCM_Interface::_handle_candidate_robot_plan_msg, this );
+  _lcm->subscribe( "RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE", &Qt4_Widget_Authoring_LCM_Interface::_handle_candidate_robot_plan_msg, this );
 
   _lcm_timer->start( 10 );
 }
@@ -52,7 +52,7 @@ operator=( const Qt4_Widget_Authoring_LCM_Interface& other ) {
 void 
 Qt4_Widget_Authoring_LCM_Interface::
 publish_drc_action_sequence_t( const action_sequence_t& msg ){
-  _lcm->publish( "CANDIDATE_ACTION_SEQUENCE", &msg );
+  _lcm->publish( "REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE", &msg );
   return;
 }
 

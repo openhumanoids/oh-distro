@@ -55,7 +55,7 @@ void runPopulate(const shared_ptr<lcm::LCM> lcm)
     wrapper.addNewlyFittedAffordance(cylinder);
 
     //==car
-    string carUrdfFName = getModelsPath() + string("/mit_gazebo_objects/mit_polaris_ranger_ev/model_welded.urdf");
+    string carUrdfFName = getModelsPath() + string("/mit_gazebo_objects/mit_simple_vehicle/model.urdf");
     cout << "using card urdf = " << carUrdfFName << endl;
 
     vector<AffPtr> carAffs;
