@@ -237,7 +237,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(bm_scale);
   pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
-  stereo_decimate_ = 4; // factor by which i reduce the point cloud
+  stereo_decimate_ = 1; // factor by which i reduce the point cloud
   pc_lcm_->set_decimate( stereo_decimate_ );  
   
   

@@ -4269,7 +4269,8 @@
     </inertial>
   </link>
   <gazebo reference="head_hokuyo_frame">
-    <sensor name="head_hokuyo_sensor" type="ray">
+<!--    <sensor name="head_hokuyo_sensor" type="ray"> -->
+    <sensor name="head_hokuyo_sensor" type="gpu_ray">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>40</update_rate>
@@ -4297,7 +4298,8 @@
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller">
+      <plugin filename="libgazebo_ros_gpu_laser.so" name="gazebo_ros_head_hokuyo_controller">
+<!--      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller"> -->
         <topicName>/multisense_sl/laser/scan</topicName>
         <frameName>head_hokuyo_frame</frameName>
       </plugin>
